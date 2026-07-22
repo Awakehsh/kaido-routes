@@ -284,6 +284,65 @@ func runtimeClosureActivatesReleasedRecovery() {
   #expect(engine.snapshot.requiresRouteEditingWhileMoving == false)
 }
 
+@Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
+func carPlayDisconnectPreservesSharedNavigationState() {
+  let routePlan = RoutePlan(
+    id: "test.plan.carplay-handoff",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(id: "first", index: 0, kind: .edge, entityID: "test.edge.first"),
+      RouteOccurrence(id: "second", index: 1, kind: .edge, entityID: "test.edge.second"),
+    ]
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      guidanceAnchors: [
+        GuidanceAnchorDefinition(
+          occurrenceID: "first",
+          anchorID: "PREPARE",
+          promptID: "prompt.first.prepare"
+        ),
+        GuidanceAnchorDefinition(
+          occurrenceID: "second",
+          anchorID: "PREPARE",
+          promptID: "prompt.second.prepare"
+        ),
+      ]
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.start()
+  engine.reachGuidanceAnchor(occurrenceID: "first", anchorID: "PREPARE")
+  engine.connectCarPlay()
+  engine.observeLocation(
+    LocationObservation(
+      expectedOccurrenceID: "second",
+      reportedConfidence: .high
+    ))
+  engine.disconnectCarPlay()
+
+  #expect(engine.snapshot.presentationSurface == .iPhone)
+  #expect(engine.snapshot.carPlayConnectionState == .disconnected)
+  #expect(engine.snapshot.activeRoutePlanID == routePlan.id)
+  #expect(engine.snapshot.currentOccurrenceID == "second")
+  #expect(engine.snapshot.journeyPhase == .strictRoute)
+  #expect(engine.snapshot.emittedGuidancePromptIDs == ["prompt.first.prepare"])
+  #expect(engine.snapshot.requiresPhoneTouchWhileMoving == false)
+
+  engine.reachGuidanceAnchor(occurrenceID: "second", anchorID: "PREPARE")
+  #expect(
+    engine.snapshot.emittedGuidancePromptIDs
+      == ["prompt.first.prepare", "prompt.second.prepare"])
+}
+
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",

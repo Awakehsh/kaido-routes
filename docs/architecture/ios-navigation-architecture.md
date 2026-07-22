@@ -122,12 +122,22 @@ That is a development fact, not yet the minimum deployment target.
   interaction, route preview, maneuvers, lane guidance, and alerts.
 - A dedicated CarPlay adapter consumes the same `GuidanceFrame` as the phone. It
   cannot contain its own progress, recovery, or route-selection logic.
+- Connecting or disconnecting CarPlay changes only the active presentation
+  surface. The shared `NavigationSession` retains the RoutePlan, current
+  occurrence, confidence, recovery state, and emitted-prompt ledger. Disconnect
+  falls back to iPhone presentation without requiring a phone touch or replaying
+  an already emitted prompt.
 - Do not depend on iOS 27 route-sharing or new panel APIs for the first slice.
   They may be added later behind availability checks.
 
 Apple's CarPlay sample explicitly lets a navigation app draw a custom map while
 `CPMapTemplate` supplies the interaction overlay. This supports the topology-map
 direction without requiring an Apple base map on the CarPlay surface.
+
+The pure Swift lifecycle scenario proves this ownership boundary only. CarPlay
+entitlement, scene connection order, audio routing, simulator rendering, process
+termination, and wired/wireless head-unit behavior remain platform integration
+and field-test gates.
 
 ## Routing responsibilities
 

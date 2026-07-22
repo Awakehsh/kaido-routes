@@ -110,6 +110,10 @@ private struct ScenarioHarness {
         occurrenceID: try event.payload.requiredString("occurrence_id"),
         anchorID: try event.payload.requiredString("anchor_id")
       )
+    case "CARPLAY_CONNECTED":
+      engine.connectCarPlay()
+    case "CARPLAY_DISCONNECTED":
+      engine.disconnectCarPlay()
     default:
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
@@ -750,6 +754,8 @@ extension NavigationSnapshot {
       "guidance.anchor_status": .string(guidanceAnchorStatus.rawValue),
       "guidance.emitted_prompt_ids": .strings(emittedGuidancePromptIDs),
       "guidance.emitted_prompt_count": .integer(emittedGuidancePromptIDs.count),
+      "presentation.active_surface": .string(presentationSurface.rawValue),
+      "presentation.carplay_connection_state": .string(carPlayConnectionState.rawValue),
       "guidance.prohibited_actions": .strings(prohibitedGuidanceActions),
       "ui.requires_route_editing_while_moving": .bool(requiresRouteEditingWhileMoving),
       "ui.requires_phone_touch_while_moving": .bool(requiresPhoneTouchWhileMoving),
@@ -798,6 +804,11 @@ extension NavigationSnapshot {
     }
     if let lastGuidancePromptID {
       values["guidance.last_prompt_id"] = .string(lastGuidancePromptID)
+    }
+    if let lastPresentationTransitionTrigger {
+      values["presentation.last_transition_trigger"] = .string(
+        lastPresentationTransitionTrigger
+      )
     }
     return values
   }

@@ -174,6 +174,16 @@ public enum GuidanceAnchorStatus: String, Codable, Sendable {
   case invalidDefinition = "INVALID_DEFINITION"
 }
 
+public enum NavigationPresentationSurface: String, Codable, Sendable {
+  case iPhone = "IPHONE"
+  case carPlay = "CARPLAY"
+}
+
+public enum CarPlayConnectionState: String, Codable, Sendable {
+  case disconnected = "DISCONNECTED"
+  case connected = "CONNECTED"
+}
+
 public struct RecoveryState: Equatable, Sendable {
   public enum Status: String, Sendable {
     case inactive = "INACTIVE"
@@ -231,6 +241,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var guidanceAnchorStatus: GuidanceAnchorStatus
   public var emittedGuidancePromptIDs: [String]
   public var lastGuidancePromptID: String?
+  public var presentationSurface: NavigationPresentationSurface
+  public var carPlayConnectionState: CarPlayConnectionState
+  public var lastPresentationTransitionTrigger: String?
   public var prohibitedGuidanceActions: [String]
   public var requiresRouteEditingWhileMoving: Bool
   public var requiresPhoneTouchWhileMoving: Bool
@@ -268,6 +281,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.guidanceAnchorStatus = .inactive
     self.emittedGuidancePromptIDs = []
     self.lastGuidancePromptID = nil
+    self.presentationSurface = .iPhone
+    self.carPlayConnectionState = .disconnected
+    self.lastPresentationTransitionTrigger = nil
     self.prohibitedGuidanceActions = []
     self.requiresRouteEditingWhileMoving = false
     self.requiresPhoneTouchWhileMoving = false

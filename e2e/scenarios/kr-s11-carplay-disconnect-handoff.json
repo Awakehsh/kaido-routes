@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S11",
+  "title": "CarPlay disconnect hands presentation to iPhone without losing route state",
+  "layer": "SIMULATION",
+  "tags": ["carplay", "handoff", "occurrence", "guidance"],
+  "purpose": "Keep the active RoutePlan, current occurrence, and prompt ledger in the shared navigation core while presentation falls back from CarPlay to iPhone.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This deterministic lifecycle contract does not verify entitlement, CPMapTemplate behavior, vehicle display timing, audio routing, or a physical wired or wireless CarPlay session."
+    ],
+    "release_blockers": [
+      "The equivalent handoff must pass in the CarPlay simulator and on approved wired and wireless hardware before release."
+    ]
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.carplay-handoff-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.carplay-handoff",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "first-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.first"
+        },
+        {
+          "occurrence_id": "second-edge",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.second"
+        }
+      ]
+    },
+    "inputs": {
+      "guidance_anchors": [
+        {
+          "occurrence_id": "first-edge",
+          "anchor_id": "PREPARE",
+          "prompt_id": "prompt.first.prepare"
+        },
+        {
+          "occurrence_id": "second-edge",
+          "anchor_id": "PREPARE",
+          "prompt_id": "prompt.second.prepare"
+        }
+      ]
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.carplay-handoff",
+      "current_occurrence_id": "first-edge",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "first-prompt",
+      "at_ms": 500,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "first-edge",
+        "anchor_id": "PREPARE"
+      }
+    },
+    {
+      "id": "carplay-connects",
+      "at_ms": 1000,
+      "type": "CARPLAY_CONNECTED",
+      "payload": {}
+    },
+    {
+      "id": "advance-on-carplay",
+      "at_ms": 1500,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "expected_occurrence_id": "second-edge",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "carplay-disconnects",
+      "at_ms": 2000,
+      "type": "CARPLAY_DISCONNECTED",
+      "payload": {}
+    },
+    {
+      "id": "phone-prompt",
+      "at_ms": 2500,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "second-edge",
+        "anchor_id": "PREPARE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "carplay-became-active-surface",
+      "after": "carplay-connects",
+      "category": "UI",
+      "subject": "presentation.active_surface",
+      "matcher": "EQUALS",
+      "expected": "CARPLAY",
+      "rationale": "Connection changes presentation ownership without creating another navigation session."
+    },
+    {
+      "id": "phone-became-fallback-surface",
+      "after": "carplay-disconnects",
+      "category": "UI",
+      "subject": "presentation.active_surface",
+      "matcher": "EQUALS",
+      "expected": "IPHONE",
+      "rationale": "The available phone surface resumes presentation automatically."
+    },
+    {
+      "id": "disconnect-state-visible",
+      "after": "carplay-disconnects",
+      "category": "UI",
+      "subject": "presentation.carplay_connection_state",
+      "matcher": "EQUALS",
+      "expected": "DISCONNECTED",
+      "rationale": "Presentation can explain why the vehicle display disappeared without guessing."
+    },
+    {
+      "id": "route-plan-survives-handoff",
+      "after": "carplay-disconnects",
+      "category": "NAVIGATION",
+      "subject": "navigation.active_route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.carplay-handoff",
+      "rationale": "CarPlay lifecycle never owns or replaces the selected route."
+    },
+    {
+      "id": "occurrence-survives-handoff",
+      "after": "carplay-disconnects",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "second-edge",
+      "rationale": "The shared session keeps progress made while CarPlay was active."
+    },
+    {
+      "id": "journey-phase-survives-handoff",
+      "after": "carplay-disconnects",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "STRICT_ROUTE",
+      "rationale": "A presentation disconnect is not a route deviation or restart."
+    },
+    {
+      "id": "prompt-ledger-survives-handoff",
+      "after": "carplay-disconnects",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["prompt.first.prepare"],
+      "rationale": "Switching surfaces cannot replay an already emitted prompt."
+    },
+    {
+      "id": "no-phone-touch-required",
+      "after": "carplay-disconnects",
+      "category": "SAFETY",
+      "subject": "ui.requires_phone_touch_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Fallback is automatic and does not ask the driver to handle the phone."
+    },
+    {
+      "id": "phone-guidance-continues",
+      "after": "phone-prompt",
+      "category": "NAVIGATION",
+      "subject": "guidance.anchor_status",
+      "matcher": "EQUALS",
+      "expected": "EMITTED",
+      "rationale": "The shared scheduler remains live after the presentation handoff."
+    },
+    {
+      "id": "ledger-continues-without-replay",
+      "after": "phone-prompt",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["prompt.first.prepare", "prompt.second.prepare"],
+      "rationale": "The phone receives the next occurrence prompt while retaining prior emissions exactly once."
+    }
+  ]
+}

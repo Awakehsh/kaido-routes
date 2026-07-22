@@ -115,6 +115,19 @@ public struct NavigationEngine: Sendable {
     snapshot.lastGuidancePromptID = definition.promptID
   }
 
+  public mutating func connectCarPlay() {
+    snapshot.carPlayConnectionState = .connected
+    snapshot.presentationSurface = .carPlay
+    snapshot.lastPresentationTransitionTrigger = "CARPLAY_CONNECTED"
+  }
+
+  public mutating func disconnectCarPlay() {
+    snapshot.carPlayConnectionState = .disconnected
+    snapshot.presentationSurface = .iPhone
+    snapshot.lastPresentationTransitionTrigger = "CARPLAY_DISCONNECTED"
+    snapshot.requiresPhoneTouchWhileMoving = false
+  }
+
   public mutating func enterTunnel() {
     isInTunnel = true
     tunnelSignalWasDegraded = false

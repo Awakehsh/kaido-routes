@@ -16,6 +16,12 @@ public struct MatcherCoordinate: Codable, Equatable, Sendable {
 }
 
 public enum MatcherLocationSource: String, Codable, Sendable {
+  /// Replay and calibration cohort for an iPhone-delivered observation.
+  ///
+  /// These values are not hardware-source proof. In particular, Core Location
+  /// can report that a fix came from an external accessory, but public CarPlay
+  /// APIs do not distinguish wired from wireless location transport. Apple
+  /// adapters must preserve that raw evidence separately from this cohort.
   case phone = "PHONE"
   case wiredCarPlay = "WIRED_CARPLAY"
   case wirelessCarPlay = "WIRELESS_CARPLAY"

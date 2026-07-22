@@ -23,8 +23,8 @@ Use a hybrid architecture:
    OSRM, and GraphHopper on the same entrance fixtures.
 6. Keep Valhalla Meili as the first open-source offline map-matching oracle and
    use the small route-aware Swift online Viterbi prototype as the live matcher
-   direction, pending a Core Location adapter, device profiling, and field
-   calibration.
+   direction. Feed it through the implemented Core Location boundary, pending
+   device profiling and field calibration.
 7. Do not make a commercial full-stack navigation SDK or a generic shortest-path
    engine the source of truth for route occurrences, junction movements, recovery,
    signs, toll boundaries, or egress.
@@ -367,14 +367,43 @@ jumps, and branch commits made inside an observation gap. The negative control
 does not become a fallback matcher merely because its expected failures are
 reproducible.
 
+### Apple observation boundary
+
+`CoreLocationObservationAdapter` is the only Apple-framework entry point into
+the live matcher. It converts each `CLLocation` callback batch into ordered
+`RouteMatcherObservation` values while preserving the fix timestamp, callback
+receive timestamp, deterministic observation ID, horizontal accuracy, valid
+course/speed evidence, and source provenance. Invalid coordinates, non-positive
+horizontal accuracy, unrepresentable or future timestamps, and software-
+simulated locations are recorded as typed rejections. Simulation can be admitted
+only through an explicit testing policy.
+
+Apple source evidence and CarPlay test context are different fields:
+
+- `CLLocation.sourceInformation.isProducedByAccessory` means an external
+  accessory such as CarPlay or MFi produced the location; it does not identify
+  wired versus wireless transport.
+- `isSimulatedBySoftware` records software simulation and is rejected by the
+  production default.
+- a connected CarPlay scene is stored as `CONNECTED_TRANSPORT_UNKNOWN` unless a
+  passenger-operated field run explicitly declares wired or wireless context;
+- `WIRED_CARPLAY` and `WIRELESS_CARPLAY` in matcher fixtures are calibration
+  cohorts, not claims about the physical GPS source.
+
+The system source-evidence reader is replaceable for deterministic tests, but
+production uses Core Location's values unchanged. Nine focused tests cover
+source separation, simulation policy, invalid/future fixes, motion-field
+sanitization, callback order, stale no-signal delivery, receive-time reversal,
+and the live matcher handoff. They do not replace iPhone/head-unit field tests.
+
 ### Candidate generation
 
 - Query directed edges from an R-tree or equivalent spatial index using the
   reported horizontal accuracy plus a bounded margin.
 - Include expected route occurrences and a limited legal deviation neighborhood.
 - Keep the same edge entity at different route occurrences as distinct states.
-- Record location source, including whether Core Location reports a CarPlay or
-  other external accessory.
+- Record Core Location external-accessory evidence separately from the declared
+  phone/wired/wireless field calibration cohort.
 
 ### Emission cost
 
@@ -483,8 +512,8 @@ may commit HIGH, and restarting the matcher cannot move navigation backward.
 
 This is still not a calibrated production engine. The current grid has only
 synthetic complexity coverage, confidence thresholds lack device reliability
-bins, and no `CLLocation` source adapter or on-device CPU, memory, thermal, and
-battery profile exists. Those are the next core gates. C++ or Rust is not
+bins, and no on-device CPU, memory, thermal, or battery profile exists. Device
+trace calibration and profiling are the next core gates. C++ or Rust is not
 justified unless profiling this bounded implementation exposes a measured
 failure that cannot be fixed within the Swift boundary.
 
@@ -592,7 +621,10 @@ bounded role it may own.
 - [Apple `MKRoute` geometry](https://developer.apple.com/documentation/mapkit/mkroute/polyline)
 - [Apple CarPlay navigation integration](https://developer.apple.com/documentation/carplay/integrating-carplay-with-your-navigation-app)
 - [Apple background location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
+- [Apple `CLLocation` source information](https://developer.apple.com/documentation/corelocation/cllocation/sourceinformation)
 - [Apple external-accessory location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory)
+- [Apple software-simulation location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/issimulatedbysoftware)
+- [Apple location timestamp](https://developer.apple.com/documentation/corelocation/cllocation/timestamp)
 - [Apple Core Motion](https://developer.apple.com/documentation/coremotion/)
 - [Swift Testing](https://developer.apple.com/xcode/swift-testing/)
 - [Swift Package Manager](https://docs.swift.org/swiftpm/documentation/packagemanagerdocs/)

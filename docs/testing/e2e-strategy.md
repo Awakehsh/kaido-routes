@@ -144,14 +144,15 @@ Field tests require a separate, dated test plan and safe roles:
 - a passenger or automated logger records observations;
 - the route, direction, entrances, exits, planned restrictions, and safe abort
   points are reviewed before departure;
-- device, iOS, vehicle/head-unit, wired/wireless state, timestamps, and location
-  source metadata are recorded;
+- device, iOS, vehicle/head-unit, passenger-declared wired/wireless state,
+  timestamps, and Core Location source metadata are recorded as separate fields;
 - road signs, police directions, closures, and safety always override the test;
 - raw personal location traces remain private unless deliberately redacted and
   licensed.
 
-Field success is configuration-scoped. For example, one successful wireless
-CarPlay tunnel run does not prove that phone-only positioning works.
+Field success is configuration-scoped. For example, one passenger-declared
+wireless CarPlay tunnel run does not prove that phone-only positioning works,
+and an external-accessory source flag does not by itself prove the transport.
 
 ## Initial release gate
 

@@ -71,8 +71,8 @@ should become scenarios when their layer is built.
 |---|---|---:|
 | KR-F01 | Official toll query inputs and scalar result are reproducible and dated | P0 |
 | KR-F02 | Phone-only Yamate Tunnel run records confidence degradation honestly | P0 |
-| KR-F03 | Wired CarPlay run records location source and recovery | P0 |
-| KR-F04 | Wireless CarPlay run records location source and recovery | P0 |
+| KR-F03 | Declared wired CarPlay run separately records source evidence and recovery | P0 |
+| KR-F04 | Declared wireless CarPlay run separately records source evidence and recovery | P0 |
 | KR-F05 | Critical movement prompt matches current route shield and Japanese sign | P0 |
 | KR-F06 | Optional PA restriction leaves a safe mainline experience | P1 |
 | KR-F07 | A route review detects a facility removed after an old recommendation | P0 |

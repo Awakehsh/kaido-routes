@@ -177,6 +177,14 @@ configurable seven-state cap over 200 repeated occurrences. KR-S16 additionally
 projects matcher confidence and occurrence output into `NavigationEngine`.
 These are deterministic architecture gates, not latency or battery evidence.
 
+The Apple input boundary is also executable. Nine focused tests drive
+`CoreLocationObservationAdapter` through source-provenance separation, explicit
+wired/wireless field cohorts, software-simulation policy, invalid/future fixes,
+motion-field sanitization, callback order, a stale no-signal delivery, receive-
+time reversal, and `RouteMatcherSession`. The system source reader uses
+`CLLocation.sourceInformation`; deterministic tests inject source facts because
+desktop-created locations are not iPhone/head-unit evidence.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -426,6 +434,8 @@ still fails. A success response with zero candidates is an invalid response.
 - Driver drives; passenger or automated logger observes.
 - Record iPhone model, OS, mount, wired/wireless CarPlay, head unit, location
   source information, timestamps, and configuration hash.
+- Record wired/wireless as a passenger-declared field configuration and Core
+  Location external-accessory/simulation flags as separate runtime evidence.
 - Compare phone-only and accessory-produced fixes separately.
 - Never tune using a test drive and report the same drive as independent proof.
 - Keep a held-out field route for the release gate.
@@ -520,26 +530,29 @@ gate.
    three Tomigaya entrance-mouth misses, and the expected 0/195 occurrence result.
 9. **Partial complete:** the route-aware Swift online Viterbi prototype, both
    tracked/private comparisons, a fixture-independent incremental session,
-   version-bound corridor, spatial index, bounded state beam, and vertical KR-S16
-   scenario are executable. Add the Core Location adapter, profile the target
-   device matrix, and calibrate confidence with device traces and reliability
-   bins.
+   version-bound corridor, spatial index, bounded state beam, vertical KR-S16
+   scenario, and Core Location observation/provenance adapter are executable.
+   Profile the target device matrix and calibrate confidence with device traces
+   and reliability bins.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is the Apple location
-boundary: translate timestamped `CLLocation` updates into receive-ordered session
-observations, preserve source provenance, profile device cost, and collect
-calibration traces around entrance mouths, stacked roads, and tunnel
-reacquisition. This is not yet an iPhone screen and not a C++ or Rust rewrite.
+the released facility corpus. The next implementation/evidence task is a
+passenger-safe device logger and performance profile for the completed Apple
+location boundary, followed by held-out calibration traces around entrance
+mouths, stacked roads, and tunnel reacquisition. This is not yet an iPhone
+screen and not a C++ or Rust rewrite.
 
 ## Sources checked 2026-07-23
 
 - [Swift Testing](https://developer.apple.com/xcode/swift-testing/)
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
+- [Apple `CLLocation` source information](https://developer.apple.com/documentation/corelocation/cllocation/sourceinformation)
+- [Apple external-accessory location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory)
+- [Apple software-simulation location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/issimulatedbysoftware)
 - [Valhalla Meili](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [Valhalla 3.8.2 trace-attribute JSON serializer](https://github.com/valhalla/valhalla/blob/3.8.2/src/tyr/trace_serializer.cc)

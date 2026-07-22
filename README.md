@@ -89,8 +89,12 @@ state cap bound repeated-lap growth. Batch and streamed results are identical on
 all tracked fixtures. KR-S16 sends stale, post-gap, confirmed, and reset session
 updates through `NavigationEngine`, proving that only fresh HIGH evidence can
 advance an occurrence and that a matcher restart cannot move navigation
-backward. A Core Location adapter, device profiling, and confidence calibration
-remain intentionally outside this checkpoint.
+backward. `CoreLocationObservationAdapter` now converts Apple callback batches
+into receive-ordered matcher observations, preserves raw source provenance,
+rejects invalid, future, and software-simulated fixes by default, and keeps
+field-declared wired/wireless calibration cohorts separate from what Core
+Location can actually prove. Device profiling and confidence calibration remain
+intentionally outside this checkpoint.
 
 The feasibility core currently executes portable scenarios for seventeen hard
 properties that must remain proven as the product expands:

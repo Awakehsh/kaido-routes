@@ -25,6 +25,10 @@ func presentationSurfacesShareNavigationTruth() throws {
   #expect(projection.interfaceLocale == .simplifiedChinese)
   #expect(projection.voice.locale == .english)
   #expect(projection.voice.spokenText == "Keep left for Route B toward Yokohama")
+  #expect(projection.voice.promptID == "test.prompt.prepare")
+  #expect(projection.voice.stage == .prepare)
+  #expect(projection.voice.distanceMeters == 800)
+  #expect(projection.voice.maneuver == .keepLeft)
   #expect(projection.iPhone.currentOccurrenceID == projection.carPlay.currentOccurrenceID)
   #expect(
     projection.iPhone.nextMovementOccurrenceID
@@ -33,8 +37,48 @@ func presentationSurfacesShareNavigationTruth() throws {
   #expect(projection.iPhone.japaneseSignText == "B 湾岸線・横浜方面")
   #expect(projection.carPlay.japaneseSignText == "B 湾岸線・横浜方面")
   #expect(projection.iPhone.localizedDisplayText == "保持左侧，跟随 B 湾岸线・横滨方向")
+  #expect(projection.iPhone.decisionPointNameJapanese == "辰巳JCT")
+  #expect(projection.iPhone.localizedDecisionPointName == "辰巳 JCT")
+  #expect(projection.iPhone.lanePreparation == .useLeftLanes)
   #expect(!projection.iPhone.isPrimarySurface)
   #expect(projection.carPlay.isPrimarySurface)
+}
+
+@Test("Guidance frame rejects missing identity, invalid distance, and localized JCT drift")
+func guidanceFrameFailsClosed() {
+  let snapshot = NavigationSnapshot()
+  #expect(throws: NavigationPresentationProjectionError.missingPromptID) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: snapshot,
+        guidanceFrame: validGuidanceFrame(promptID: "")
+      )
+    )
+  }
+  #expect(throws: NavigationPresentationProjectionError.invalidDistanceMeters) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: snapshot,
+        guidanceFrame: validGuidanceFrame(distanceMeters: .infinity)
+      )
+    )
+  }
+  #expect(
+    throws: NavigationPresentationProjectionError.decisionPointJapaneseNameMismatch
+  ) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: snapshot,
+        guidanceFrame: validGuidanceFrame(
+          localizedDecisionPointNames: [
+            .japanese: "translated replacement",
+            .simplifiedChinese: "辰巳 JCT",
+            .english: "Tatsumi JCT",
+          ]
+        )
+      )
+    )
+  }
 }
 
 @Test("Every release locale must preserve one exact Japanese sign target")
@@ -261,16 +305,16 @@ private func makePresentationRequest(
     isVehicleMoving: false,
     isInsideDecisionZone: false
   ),
-  facilityNames: [String: LocalizedFacilityName] = [:]
+  facilityNames: [String: LocalizedFacilityName] = [:],
+  guidanceFrame: GuidanceFrame? = nil
 ) -> NavigationPresentationRequest {
   NavigationPresentationRequest(
     snapshot: snapshot,
-    nextMovementOccurrenceID: nextMovementOccurrenceID,
-    guidance: GuidancePresentationSource(
-      routeShields: ["B"],
-      japaneseSignText: "B 湾岸線・横浜方面",
-      localizedContent: localizedContent
-    ),
+    guidanceFrame: guidanceFrame
+      ?? validGuidanceFrame(
+        movementOccurrenceID: nextMovementOccurrenceID ?? "test.occurrence.next",
+        localizedContent: localizedContent
+      ),
     languages: NavigationLanguageSelection(
       interfaceLocale: interfaceLocale,
       guidanceVoiceLocale: voiceLocale
@@ -278,6 +322,36 @@ private func makePresentationRequest(
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     drivingContext: drivingContext,
     facilityNames: facilityNames
+  )
+}
+
+private func validGuidanceFrame(
+  promptID: String = "test.prompt.prepare",
+  movementOccurrenceID: String = "test.occurrence.next",
+  distanceMeters: Double = 800,
+  localizedDecisionPointNames: [KaidoReleaseLocale: String] = [
+    .japanese: "辰巳JCT",
+    .simplifiedChinese: "辰巳 JCT",
+    .english: "Tatsumi JCT",
+  ],
+  localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent] =
+    validLocalizedContent()
+) -> GuidanceFrame {
+  GuidanceFrame(
+    promptID: promptID,
+    anchorID: "PREPARE",
+    movementOccurrenceID: movementOccurrenceID,
+    stage: .prepare,
+    distanceMeters: distanceMeters,
+    decisionPointNameJapanese: "辰巳JCT",
+    localizedDecisionPointNames: localizedDecisionPointNames,
+    maneuver: .keepLeft,
+    lanePreparation: .useLeftLanes,
+    presentationSource: GuidancePresentationSource(
+      routeShields: ["B"],
+      japaneseSignText: "B 湾岸線・横浜方面",
+      localizedContent: localizedContent
+    )
   )
 }
 

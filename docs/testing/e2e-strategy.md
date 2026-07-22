@@ -109,6 +109,26 @@ presentation.kernel.phone.current_occurrence_id
 presentation.kernel.phone.next_movement_occurrence_id
 presentation.kernel.carplay.current_occurrence_id
 presentation.kernel.carplay.next_movement_occurrence_id
+presentation.kernel.voice.prompt_id
+presentation.kernel.voice.stage
+presentation.kernel.voice.distance_meters
+presentation.kernel.voice.maneuver
+presentation.kernel.phone.guidance.prompt_id
+presentation.kernel.phone.guidance.anchor_id
+presentation.kernel.phone.guidance.stage
+presentation.kernel.phone.guidance.distance_meters
+presentation.kernel.phone.guidance.decision_point_name_ja
+presentation.kernel.phone.guidance.localized_decision_point_name
+presentation.kernel.phone.guidance.maneuver
+presentation.kernel.phone.guidance.lane_preparation
+presentation.kernel.carplay.guidance.prompt_id
+presentation.kernel.carplay.guidance.anchor_id
+presentation.kernel.carplay.guidance.stage
+presentation.kernel.carplay.guidance.distance_meters
+presentation.kernel.carplay.guidance.decision_point_name_ja
+presentation.kernel.carplay.guidance.localized_decision_point_name
+presentation.kernel.carplay.guidance.maneuver
+presentation.kernel.carplay.guidance.lane_preparation
 presentation.kernel.phone.marker
 presentation.kernel.phone.passage_tone
 presentation.kernel.phone.route_editing_availability
@@ -140,10 +160,13 @@ for a real geofence.
 
 The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08
 and KR-U10 through U12. These scenarios verify semantic view values shared by
-phone, CarPlay, and voice. They remain L1/L2 contract execution until real
-SwiftUI and `CPMapTemplate` adapters bind those values to accessibility-visible
-views in L3/L4; their `layer` records the intended final verification surface,
-not a claim that a simulator or head unit ran in CI.
+phone, CarPlay, and voice, including a structured occurrence-scoped guidance
+frame with prompt and anchor identity, stage, distance, decision point, maneuver,
+and lane preparation. They remain L1/L2 contract execution until a guidance
+planner produces those frames from navigation progress and real SwiftUI and
+`CPMapTemplate` adapters bind the projections to accessibility-visible views in
+L3/L4; their `layer` records the intended final verification surface, not a
+claim that a simulator or head unit ran in CI.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

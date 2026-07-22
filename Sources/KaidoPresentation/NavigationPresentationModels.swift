@@ -55,6 +55,71 @@ public struct GuidancePresentationSource: Equatable, Sendable {
   }
 }
 
+public enum GuidancePromptStage: String, Codable, Sendable {
+  case preview = "PREVIEW"
+  case prepare = "PREPARE"
+  case commit = "COMMIT"
+  case recovery = "RECOVERY"
+  case finish = "FINISH"
+}
+
+public enum GuidanceManeuver: String, Codable, Sendable {
+  case stayMainline = "STAY_MAINLINE"
+  case keepLeft = "KEEP_LEFT"
+  case keepRight = "KEEP_RIGHT"
+  case takeExitLeft = "TAKE_EXIT_LEFT"
+  case takeExitRight = "TAKE_EXIT_RIGHT"
+  case mergeLeft = "MERGE_LEFT"
+  case mergeRight = "MERGE_RIGHT"
+}
+
+public enum GuidanceLanePreparation: String, Codable, Sendable {
+  case none = "NONE"
+  case stayMainline = "STAY_MAINLINE"
+  case keepLeft = "KEEP_LEFT"
+  case keepRight = "KEEP_RIGHT"
+  case useLeftLanes = "USE_LEFT_LANES"
+  case useRightLanes = "USE_RIGHT_LANES"
+}
+
+/// One occurrence-scoped, structured instruction shared by every adapter.
+public struct GuidanceFrame: Equatable, Sendable {
+  public let promptID: String
+  public let anchorID: String
+  public let movementOccurrenceID: String
+  public let stage: GuidancePromptStage
+  public let distanceMeters: Double
+  public let decisionPointNameJapanese: String
+  public let localizedDecisionPointNames: [KaidoReleaseLocale: String]
+  public let maneuver: GuidanceManeuver
+  public let lanePreparation: GuidanceLanePreparation
+  public let presentationSource: GuidancePresentationSource
+
+  public init(
+    promptID: String,
+    anchorID: String,
+    movementOccurrenceID: String,
+    stage: GuidancePromptStage,
+    distanceMeters: Double,
+    decisionPointNameJapanese: String,
+    localizedDecisionPointNames: [KaidoReleaseLocale: String],
+    maneuver: GuidanceManeuver,
+    lanePreparation: GuidanceLanePreparation,
+    presentationSource: GuidancePresentationSource
+  ) {
+    self.promptID = promptID
+    self.anchorID = anchorID
+    self.movementOccurrenceID = movementOccurrenceID
+    self.stage = stage
+    self.distanceMeters = distanceMeters
+    self.decisionPointNameJapanese = decisionPointNameJapanese
+    self.localizedDecisionPointNames = localizedDecisionPointNames
+    self.maneuver = maneuver
+    self.lanePreparation = lanePreparation
+    self.presentationSource = presentationSource
+  }
+}
+
 public enum RoutePassageEvidence: String, Codable, Sendable {
   case knownClosed = "KNOWN_CLOSED"
   case plannedConflict = "PLANNED_CONFLICT"
@@ -138,8 +203,7 @@ public struct FinishDrivePresentation: Equatable, Sendable {
 
 public struct NavigationPresentationRequest: Equatable, Sendable {
   public let snapshot: NavigationSnapshot
-  public let nextMovementOccurrenceID: String?
-  public let guidance: GuidancePresentationSource
+  public let guidanceFrame: GuidanceFrame
   public let languages: NavigationLanguageSelection
   public let passageEvidence: RoutePassageEvidence
   public let drivingContext: PresentationDrivingContext
@@ -147,16 +211,14 @@ public struct NavigationPresentationRequest: Equatable, Sendable {
 
   public init(
     snapshot: NavigationSnapshot,
-    nextMovementOccurrenceID: String? = nil,
-    guidance: GuidancePresentationSource,
+    guidanceFrame: GuidanceFrame,
     languages: NavigationLanguageSelection,
     passageEvidence: RoutePassageEvidence,
     drivingContext: PresentationDrivingContext,
     facilityNames: [String: LocalizedFacilityName] = [:]
   ) {
     self.snapshot = snapshot
-    self.nextMovementOccurrenceID = nextMovementOccurrenceID
-    self.guidance = guidance
+    self.guidanceFrame = guidanceFrame
     self.languages = languages
     self.passageEvidence = passageEvidence
     self.drivingContext = drivingContext
@@ -170,6 +232,14 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
   public let routePlanID: String?
   public let currentOccurrenceID: String?
   public let nextMovementOccurrenceID: String?
+  public let guidancePromptID: String
+  public let guidanceAnchorID: String
+  public let guidanceStage: GuidancePromptStage
+  public let distanceMeters: Double
+  public let decisionPointNameJapanese: String
+  public let localizedDecisionPointName: String
+  public let maneuver: GuidanceManeuver
+  public let lanePreparation: GuidanceLanePreparation
   public let marker: NavigationMarkerPresentation
   public let routeShields: [String]
   public let japaneseSignText: String
@@ -185,6 +255,14 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
     routePlanID: String?,
     currentOccurrenceID: String?,
     nextMovementOccurrenceID: String?,
+    guidancePromptID: String,
+    guidanceAnchorID: String,
+    guidanceStage: GuidancePromptStage,
+    distanceMeters: Double,
+    decisionPointNameJapanese: String,
+    localizedDecisionPointName: String,
+    maneuver: GuidanceManeuver,
+    lanePreparation: GuidanceLanePreparation,
     marker: NavigationMarkerPresentation,
     routeShields: [String],
     japaneseSignText: String,
@@ -199,6 +277,14 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
     self.routePlanID = routePlanID
     self.currentOccurrenceID = currentOccurrenceID
     self.nextMovementOccurrenceID = nextMovementOccurrenceID
+    self.guidancePromptID = guidancePromptID
+    self.guidanceAnchorID = guidanceAnchorID
+    self.guidanceStage = guidanceStage
+    self.distanceMeters = distanceMeters
+    self.decisionPointNameJapanese = decisionPointNameJapanese
+    self.localizedDecisionPointName = localizedDecisionPointName
+    self.maneuver = maneuver
+    self.lanePreparation = lanePreparation
     self.marker = marker
     self.routeShields = routeShields
     self.japaneseSignText = japaneseSignText
@@ -212,10 +298,25 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
 
 public struct NavigationVoicePresentation: Equatable, Sendable {
   public let locale: KaidoReleaseLocale
+  public let promptID: String
+  public let stage: GuidancePromptStage
+  public let distanceMeters: Double
+  public let maneuver: GuidanceManeuver
   public let spokenText: String
 
-  public init(locale: KaidoReleaseLocale, spokenText: String) {
+  public init(
+    locale: KaidoReleaseLocale,
+    promptID: String,
+    stage: GuidancePromptStage,
+    distanceMeters: Double,
+    maneuver: GuidanceManeuver,
+    spokenText: String
+  ) {
     self.locale = locale
+    self.promptID = promptID
+    self.stage = stage
+    self.distanceMeters = distanceMeters
+    self.maneuver = maneuver
     self.spokenText = spokenText
   }
 }

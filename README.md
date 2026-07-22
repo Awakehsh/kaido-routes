@@ -107,14 +107,17 @@ No iPhone/head-unit trace has been collected yet, so device performance and
 confidence calibration remain unproven.
 
 The platform-light presentation boundary is executable as a separate
-`KaidoPresentation` module. It projects one `NavigationSnapshot` into phone,
-CarPlay, and voice values without owning route progress. Japanese sign text and
-route shields remain visible in every locale, UI and voice languages are
-independent, estimated positions cannot render as measured, unconfirmed passage
-cannot use a positive open-road state, moving decision zones expose no route
-editing, and Finish drive names its compiled exit first. Eight new portable
-presentation scenarios prove those semantics; they are not SwiftUI, CarPlay
-entitlement, accessibility, audio, or physical head-unit tests.
+`KaidoPresentation` module. It projects one `NavigationSnapshot` and one
+occurrence-scoped `GuidanceFrame` into phone, CarPlay, and voice values without
+owning route progress. The frame carries prompt, anchor, movement occurrence,
+stage, distance, Japanese decision-point name, maneuver, lane preparation,
+route shields, sign target, and localized content. Japanese sign text and route
+shields remain visible in every locale, UI and voice languages are independent,
+estimated positions cannot render as measured, unconfirmed passage cannot use a
+positive open-road state, moving decision zones expose no route editing, and
+Finish drive names its compiled exit first. Eight portable presentation
+scenarios prove those semantics; they are not a guidance planner, SwiftUI,
+CarPlay entitlement, accessibility, audio, or physical head-unit tests.
 
 The feasibility core currently executes portable scenarios for twenty-one hard
 properties that must remain proven as the product expands:

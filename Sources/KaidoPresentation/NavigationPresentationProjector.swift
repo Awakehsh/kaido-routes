@@ -2,6 +2,13 @@ import Foundation
 import KaidoDomain
 
 public enum NavigationPresentationProjectionError: Error, Equatable, Sendable {
+  case missingPromptID
+  case missingAnchorID
+  case missingMovementOccurrenceID
+  case invalidDistanceMeters
+  case missingDecisionPointNameJapanese
+  case missingDecisionPointLocale(KaidoReleaseLocale)
+  case decisionPointJapaneseNameMismatch
   case missingRouteShield
   case missingJapaneseSignText
   case missingLocale(KaidoReleaseLocale)
@@ -24,11 +31,14 @@ public enum NavigationPresentationProjector {
     try validate(request)
 
     guard
-      let interfaceContent = request.guidance.localizedContent[
+      let interfaceContent = request.guidanceFrame.presentationSource.localizedContent[
         request.languages.interfaceLocale
       ],
-      let voiceContent = request.guidance.localizedContent[
+      let voiceContent = request.guidanceFrame.presentationSource.localizedContent[
         request.languages.guidanceVoiceLocale
+      ],
+      let interfaceDecisionPointName = request.guidanceFrame.localizedDecisionPointNames[
+        request.languages.interfaceLocale
       ]
     else {
       // Full locale validation above makes this unreachable, but retain a typed
@@ -50,6 +60,7 @@ public enum NavigationPresentationProjector {
       .iPhone,
       request: request,
       displayText: interfaceContent.displayText,
+      decisionPointName: interfaceDecisionPointName,
       marker: marker,
       passage: passage,
       routeEditingAvailability: routeEditingAvailability,
@@ -59,6 +70,7 @@ public enum NavigationPresentationProjector {
       .carPlay,
       request: request,
       displayText: interfaceContent.displayText,
+      decisionPointName: interfaceDecisionPointName,
       marker: marker,
       passage: passage,
       routeEditingAvailability: routeEditingAvailability,
@@ -71,6 +83,10 @@ public enum NavigationPresentationProjector {
       carPlay: carPlay,
       voice: NavigationVoicePresentation(
         locale: request.languages.guidanceVoiceLocale,
+        promptID: request.guidanceFrame.promptID,
+        stage: request.guidanceFrame.stage,
+        distanceMeters: request.guidanceFrame.distanceMeters,
+        maneuver: request.guidanceFrame.maneuver,
         spokenText: voiceContent.spokenText
       )
     )
@@ -108,21 +124,56 @@ public enum NavigationPresentationProjector {
   }
 
   private static func validate(_ request: NavigationPresentationRequest) throws {
-    guard !request.guidance.routeShields.isEmpty,
-      request.guidance.routeShields.allSatisfy({
+    let frame = request.guidanceFrame
+    guard !frame.promptID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      throw NavigationPresentationProjectionError.missingPromptID
+    }
+    guard !frame.anchorID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      throw NavigationPresentationProjectionError.missingAnchorID
+    }
+    guard
+      !frame.movementOccurrenceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    else {
+      throw NavigationPresentationProjectionError.missingMovementOccurrenceID
+    }
+    guard frame.distanceMeters.isFinite, frame.distanceMeters >= 0 else {
+      throw NavigationPresentationProjectionError.invalidDistanceMeters
+    }
+    guard
+      !frame.decisionPointNameJapanese.trimmingCharacters(in: .whitespacesAndNewlines)
+        .isEmpty
+    else {
+      throw NavigationPresentationProjectionError.missingDecisionPointNameJapanese
+    }
+    for locale in KaidoReleaseLocale.allCases {
+      guard let name = frame.localizedDecisionPointNames[locale],
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      else {
+        throw NavigationPresentationProjectionError.missingDecisionPointLocale(locale)
+      }
+    }
+    guard
+      frame.localizedDecisionPointNames[.japanese] == frame.decisionPointNameJapanese
+    else {
+      throw NavigationPresentationProjectionError.decisionPointJapaneseNameMismatch
+    }
+
+    let source = frame.presentationSource
+    guard !source.routeShields.isEmpty,
+      source.routeShields.allSatisfy({
         !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       })
     else {
       throw NavigationPresentationProjectionError.missingRouteShield
     }
     guard
-      !request.guidance.japaneseSignText.trimmingCharacters(in: .whitespacesAndNewlines)
+      !source.japaneseSignText.trimmingCharacters(in: .whitespacesAndNewlines)
         .isEmpty
     else {
       throw NavigationPresentationProjectionError.missingJapaneseSignText
     }
     for locale in KaidoReleaseLocale.allCases {
-      guard let content = request.guidance.localizedContent[locale] else {
+      guard let content = source.localizedContent[locale] else {
         throw NavigationPresentationProjectionError.missingLocale(locale)
       }
       guard
@@ -136,7 +187,7 @@ public enum NavigationPresentationProjector {
       else {
         throw NavigationPresentationProjectionError.incompleteLocale(locale)
       }
-      guard content.preservedJapaneseSignText == request.guidance.japaneseSignText else {
+      guard content.preservedJapaneseSignText == source.japaneseSignText else {
         throw NavigationPresentationProjectionError.japaneseSignTextMismatch(locale)
       }
     }
@@ -218,6 +269,7 @@ public enum NavigationPresentationProjector {
     _ surface: NavigationPresentationSurface,
     request: NavigationPresentationRequest,
     displayText: String,
+    decisionPointName: String,
     marker: NavigationMarkerPresentation,
     passage: RoutePassagePresentation,
     routeEditingAvailability: RouteEditingAvailability,
@@ -228,10 +280,18 @@ public enum NavigationPresentationProjector {
       isPrimarySurface: request.snapshot.presentationSurface == surface,
       routePlanID: request.snapshot.activeRoutePlanID,
       currentOccurrenceID: request.snapshot.currentOccurrenceID,
-      nextMovementOccurrenceID: request.nextMovementOccurrenceID,
+      nextMovementOccurrenceID: request.guidanceFrame.movementOccurrenceID,
+      guidancePromptID: request.guidanceFrame.promptID,
+      guidanceAnchorID: request.guidanceFrame.anchorID,
+      guidanceStage: request.guidanceFrame.stage,
+      distanceMeters: request.guidanceFrame.distanceMeters,
+      decisionPointNameJapanese: request.guidanceFrame.decisionPointNameJapanese,
+      localizedDecisionPointName: decisionPointName,
+      maneuver: request.guidanceFrame.maneuver,
+      lanePreparation: request.guidanceFrame.lanePreparation,
       marker: marker,
-      routeShields: request.guidance.routeShields,
-      japaneseSignText: request.guidance.japaneseSignText,
+      routeShields: request.guidanceFrame.presentationSource.routeShields,
+      japaneseSignText: request.guidanceFrame.presentationSource.japaneseSignText,
       localizedDisplayText: displayText,
       passage: passage,
       routeEditingAvailability: routeEditingAvailability,

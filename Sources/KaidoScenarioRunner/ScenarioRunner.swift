@@ -746,8 +746,7 @@ private struct ScenarioHarness {
     }
     return NavigationPresentationRequest(
       snapshot: engine.snapshot,
-      nextMovementOccurrenceID: value.string("next_movement_occurrence_id"),
-      guidance: try guidancePresentationSource(guidanceValue),
+      guidanceFrame: try guidanceFrame(guidanceValue),
       languages: NavigationLanguageSelection(
         interfaceLocale: interfaceLocale,
         guidanceVoiceLocale: voiceLocale
@@ -758,6 +757,43 @@ private struct ScenarioHarness {
         isInsideDecisionZone: drivingContext.bool("inside_decision_zone") ?? false
       ),
       facilityNames: try localizedFacilityNames(value.object("facility_names") ?? [:])
+    )
+  }
+
+  private func guidanceFrame(
+    _ value: [String: JSONValue]
+  ) throws -> GuidanceFrame {
+    guard let stage = value.string("stage").flatMap(GuidancePromptStage.init(rawValue:)),
+      let maneuver = value.string("maneuver").flatMap(GuidanceManeuver.init(rawValue:)),
+      let lanePreparation = value.string("lane_preparation")
+        .flatMap(GuidanceLanePreparation.init(rawValue:)),
+      let distanceMeters = value.double("distance_meters"),
+      let localizedNameValues = value.object("localized_decision_point_names")
+    else {
+      throw ScenarioExecutionError.invalidInput("presentation.guidance.frame")
+    }
+    var localizedNames: [KaidoReleaseLocale: String] = [:]
+    for (localeValue, nameValue) in localizedNameValues {
+      guard let locale = KaidoReleaseLocale(rawValue: localeValue),
+        let name = nameValue.stringValue
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "presentation.guidance.localized_decision_point_names"
+        )
+      }
+      localizedNames[locale] = name
+    }
+    return GuidanceFrame(
+      promptID: try value.requiredString("prompt_id"),
+      anchorID: try value.requiredString("anchor_id"),
+      movementOccurrenceID: try value.requiredString("movement_occurrence_id"),
+      stage: stage,
+      distanceMeters: distanceMeters,
+      decisionPointNameJapanese: try value.requiredString("decision_point_name_ja"),
+      localizedDecisionPointNames: localizedNames,
+      maneuver: maneuver,
+      lanePreparation: lanePreparation,
+      presentationSource: try guidancePresentationSource(value)
     )
   }
 
@@ -852,6 +888,18 @@ private struct ScenarioHarness {
     adapterObservations["presentation.kernel.voice.spoken_text"] = .string(
       projection.voice.spokenText
     )
+    adapterObservations["presentation.kernel.voice.prompt_id"] = .string(
+      projection.voice.promptID
+    )
+    adapterObservations["presentation.kernel.voice.stage"] = .string(
+      projection.voice.stage.rawValue
+    )
+    adapterObservations["presentation.kernel.voice.distance_meters"] = .number(
+      projection.voice.distanceMeters
+    )
+    adapterObservations["presentation.kernel.voice.maneuver"] = .string(
+      projection.voice.maneuver.rawValue
+    )
     publish(projection.iPhone, prefix: "presentation.kernel.phone")
     publish(projection.carPlay, prefix: "presentation.kernel.carplay")
   }
@@ -862,6 +910,30 @@ private struct ScenarioHarness {
   ) {
     adapterObservations["\(prefix).primary"] = .bool(presentation.isPrimarySurface)
     adapterObservations["\(prefix).marker"] = .string(presentation.marker.rawValue)
+    adapterObservations["\(prefix).guidance.prompt_id"] = .string(
+      presentation.guidancePromptID
+    )
+    adapterObservations["\(prefix).guidance.anchor_id"] = .string(
+      presentation.guidanceAnchorID
+    )
+    adapterObservations["\(prefix).guidance.stage"] = .string(
+      presentation.guidanceStage.rawValue
+    )
+    adapterObservations["\(prefix).guidance.distance_meters"] = .number(
+      presentation.distanceMeters
+    )
+    adapterObservations["\(prefix).guidance.decision_point_name_ja"] = .string(
+      presentation.decisionPointNameJapanese
+    )
+    adapterObservations["\(prefix).guidance.localized_decision_point_name"] = .string(
+      presentation.localizedDecisionPointName
+    )
+    adapterObservations["\(prefix).guidance.maneuver"] = .string(
+      presentation.maneuver.rawValue
+    )
+    adapterObservations["\(prefix).guidance.lane_preparation"] = .string(
+      presentation.lanePreparation.rawValue
+    )
     adapterObservations["\(prefix).route_shields"] = .strings(
       presentation.routeShields
     )

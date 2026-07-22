@@ -31,6 +31,19 @@
           "inside_decision_zone": false
         },
         "guidance": {
+          "prompt_id": "test.prompt.u06.preview",
+          "anchor_id": "PREVIEW",
+          "movement_occurrence_id": "test.occurrence.c2-oi",
+          "stage": "PREVIEW",
+          "distance_meters": 1500,
+          "decision_point_name_ja": "大井JCT",
+          "localized_decision_point_names": {
+            "ja-JP": "大井JCT",
+            "zh-Hans": "大井 JCT",
+            "en": "Oi JCT"
+          },
+          "maneuver": "STAY_MAINLINE",
+          "lane_preparation": "STAY_MAINLINE",
           "route_shields": ["C2"],
           "japanese_sign_text": "C2 中央環状線・大井方面",
           "localized_content": {

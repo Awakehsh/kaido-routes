@@ -42,7 +42,6 @@
     },
     "inputs": {
       "presentation": {
-        "next_movement_occurrence_id": "test.occurrence.next-movement",
         "language_selection": {
           "interface_locale": "en",
           "guidance_voice_locale": "en"
@@ -53,6 +52,19 @@
           "inside_decision_zone": false
         },
         "guidance": {
+          "prompt_id": "test.prompt.u10.prepare",
+          "anchor_id": "PREPARE",
+          "movement_occurrence_id": "test.occurrence.next-movement",
+          "stage": "PREPARE",
+          "distance_meters": 800,
+          "decision_point_name_ja": "辰巳JCT",
+          "localized_decision_point_names": {
+            "ja-JP": "辰巳JCT",
+            "zh-Hans": "辰巳 JCT",
+            "en": "Tatsumi JCT"
+          },
+          "maneuver": "KEEP_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
           "route_shields": ["B"],
           "japanese_sign_text": "B 湾岸線・横浜方面",
           "localized_content": {
@@ -153,6 +165,87 @@
       "matcher": "EQUALS",
       "expected": false,
       "rationale": "The phone can remain a companion without becoming a second navigation authority."
+    },
+    {
+      "id": "phone-prompt-identity",
+      "after": "connect",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.phone.guidance.prompt_id",
+      "matcher": "EQUALS",
+      "expected": "test.prompt.u10.prepare",
+      "rationale": "Prompt identity is part of the shared occurrence-scoped frame."
+    },
+    {
+      "id": "carplay-prompt-identity",
+      "after": "connect",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.carplay.guidance.prompt_id",
+      "matcher": "EQUALS",
+      "expected": "test.prompt.u10.prepare",
+      "rationale": "CarPlay cannot schedule an independent prompt."
+    },
+    {
+      "id": "phone-distance",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.guidance.distance_meters",
+      "matcher": "EQUALS",
+      "expected": 800,
+      "rationale": "The phone displays the frame's semantic distance."
+    },
+    {
+      "id": "carplay-distance",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.guidance.distance_meters",
+      "matcher": "EQUALS",
+      "expected": 800,
+      "rationale": "CarPlay receives the identical distance value."
+    },
+    {
+      "id": "phone-maneuver",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.guidance.maneuver",
+      "matcher": "EQUALS",
+      "expected": "KEEP_LEFT",
+      "rationale": "The phone does not infer a maneuver from prose."
+    },
+    {
+      "id": "carplay-maneuver",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.guidance.maneuver",
+      "matcher": "EQUALS",
+      "expected": "KEEP_LEFT",
+      "rationale": "CarPlay consumes the same structured maneuver."
+    },
+    {
+      "id": "phone-lane-preparation",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.guidance.lane_preparation",
+      "matcher": "EQUALS",
+      "expected": "USE_LEFT_LANES",
+      "rationale": "Lane preparation is structured separately from the maneuver."
+    },
+    {
+      "id": "carplay-lane-preparation",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.guidance.lane_preparation",
+      "matcher": "EQUALS",
+      "expected": "USE_LEFT_LANES",
+      "rationale": "The vehicle display cannot invent a different lane target."
+    },
+    {
+      "id": "japanese-decision-point-is-shared",
+      "after": "connect",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.guidance.decision_point_name_ja",
+      "matcher": "EQUALS",
+      "expected": "辰巳JCT",
+      "rationale": "The physical decision-point name remains Japanese and identical across adapters."
     }
   ]
 }

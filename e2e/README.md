@@ -38,11 +38,13 @@ CLI, then projects its confidence and occurrence into `NavigationEngine`. This
 keeps matcher-to-navigation commit policy executable without importing Core
 Location or a UI framework into the portable core.
 
-Presentation scenarios project the same current occurrence, next movement,
-Japanese sign target, locale selection, confidence marker, road-evidence tone,
-and interaction policy into semantic phone and CarPlay values. They do not
-claim that SwiftUI, `CPMapTemplate`, accessibility, audio, or hardware rendering
-has run; those adapters must consume the same values at their later layers.
+Presentation scenarios project the same current occurrence and structured
+occurrence-scoped guidance frame into semantic phone, CarPlay, and voice values.
+The frame carries prompt and anchor identity, stage, distance, decision point,
+maneuver, lane preparation, Japanese sign target, route shields, and localized
+content. These scenarios do not claim that a guidance planner, SwiftUI,
+`CPMapTemplate`, accessibility, audio, or hardware rendering has run; those
+later layers must produce or consume the same semantics without inferring them.
 
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.

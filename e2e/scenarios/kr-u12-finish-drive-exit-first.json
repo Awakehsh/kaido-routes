@@ -51,7 +51,6 @@
         }
       ],
       "presentation": {
-        "next_movement_occurrence_id": "test.occurrence.egress",
         "language_selection": {
           "interface_locale": "zh-Hans",
           "guidance_voice_locale": "en"
@@ -62,6 +61,19 @@
           "inside_decision_zone": false
         },
         "guidance": {
+          "prompt_id": "test.prompt.u12.finish",
+          "anchor_id": "FINISH",
+          "movement_occurrence_id": "test.occurrence.egress",
+          "stage": "FINISH",
+          "distance_meters": 1200,
+          "decision_point_name_ja": "芝公園出口",
+          "localized_decision_point_names": {
+            "ja-JP": "芝公園出口",
+            "zh-Hans": "芝公园出口",
+            "en": "Shibakoen Exit"
+          },
+          "maneuver": "TAKE_EXIT_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
           "route_shields": ["C1"],
           "japanese_sign_text": "芝公園出口",
           "localized_content": {

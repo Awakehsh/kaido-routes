@@ -31,6 +31,19 @@
           "inside_decision_zone": false
         },
         "guidance": {
+          "prompt_id": "test.prompt.u05.prepare",
+          "anchor_id": "PREPARE",
+          "movement_occurrence_id": "test.occurrence.b-yokohama",
+          "stage": "PREPARE",
+          "distance_meters": 800,
+          "decision_point_name_ja": "辰巳JCT",
+          "localized_decision_point_names": {
+            "ja-JP": "辰巳JCT",
+            "zh-Hans": "辰巳 JCT",
+            "en": "Tatsumi JCT"
+          },
+          "maneuver": "KEEP_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
           "route_shields": ["B"],
           "japanese_sign_text": "B 湾岸線・横浜方面",
           "localized_content": {

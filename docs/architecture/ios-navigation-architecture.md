@@ -234,22 +234,29 @@ actor, clock, device, or main thread.
 
 `KaidoPresentation` now implements the first executable part of this boundary.
 `NavigationPresentationProjector` consumes one immutable `NavigationSnapshot`
-and produces phone, CarPlay, and voice values. Both visual surfaces carry the
-same route-plan ID, current occurrence, next movement, marker certainty, route
-shield, Japanese sign target, passage evidence, interaction policy, and optional
-Finish drive exit; only `isPrimarySurface` differs across a CarPlay handoff.
-The voice locale is selected separately from the interface locale.
+plus one occurrence-scoped `GuidanceFrame` and produces phone, CarPlay, and voice
+values. Both visual surfaces carry the same route-plan ID, current occurrence,
+next movement, prompt and anchor IDs, prompt stage, distance, Japanese and
+localized decision-point names, maneuver, lane preparation, marker certainty,
+route shield, Japanese sign target, passage evidence, interaction policy, and
+optional Finish drive exit; only `isPrimarySurface` differs across a CarPlay
+handoff. The voice locale is selected separately from the interface locale.
 
-The projector fails closed when any release locale is incomplete, a locale
-replaces the Japanese sign target, CarPlay ownership contradicts connection
-state, or the selected Finish drive exit lacks a name in the interface locale.
+The projector fails closed when prompt, anchor, or movement occurrence identity
+is absent; distance is invalid; the Japanese decision-point name is absent or
+drifts from its Japanese localized value; any release locale is incomplete; a
+locale replaces the Japanese sign target; CarPlay ownership contradicts
+connection state; or the selected Finish drive exit lacks a name in the
+interface locale.
 Only `REALTIME_CONFIRMED_PASSABLE` may authorize a positive open-road color;
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` remains explicitly unconfirmed.
 LOW/projected or ambiguous positions become `ESTIMATED` or `UNRESOLVED`, and a
 moving decision zone exposes no route editor or required phone touch.
 
-This is a semantic projection kernel, not the full `GuidanceFrame` planner or a
-rendered UI. Distance stages, maneuver/lane fields, dynamic layout,
+This is a complete structured frame and semantic projection boundary, not the
+planner that selects and updates a frame from DecisionZone and occurrence
+progress, and not a rendered UI. `NavigationSession` must later bind that planner
+to the navigation engine's occurrence-scoped prompt ledger. Dynamic layout,
 accessibility, installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`,
 audio routing, and physical display timing remain adapter work and device gates.
 
@@ -621,9 +628,12 @@ matched occurrence and progress
 → phone / CarPlay / AVSpeech adapters
 ```
 
-`GuidanceFrame` contains the Japanese sign target, route shield, localized
-explanation, lane preparation, maneuver, distance, confidence, and prompt ID.
-Adapters may shorten layout-specific copy but cannot change the target movement.
+The executable `GuidanceFrame` contains prompt, anchor, and movement occurrence
+identity; prompt stage; distance; Japanese and localized decision-point names;
+maneuver; lane preparation; Japanese sign target; route shields; and localized
+display and spoken content. Position confidence remains part of the paired
+`NavigationSnapshot`. Adapters may shorten layout-specific copy but cannot
+change the target movement or reconstruct missing guidance semantics.
 
 Prompt scheduling is occurrence-scoped. Each released
 `GuidanceAnchorDefinition` binds one `occurrence_id + anchor_id` pair to one

@@ -15,8 +15,8 @@ Metropolitan Expressway Company Limited.
 This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core. It does not yet contain an iPhone/CarPlay app,
 production road database, or released provider integration. It includes a
-bounded MapKit feasibility adapter and offline surface-routing hard gates; no
-live MapKit call runs in deterministic tests.
+bounded MapKit feasibility adapter, an offline directed-road graph inspector,
+and surface-routing hard gates; no live MapKit call runs in deterministic tests.
 
 The feasibility core currently executes portable scenarios for six hard
 properties that must remain proven as the product expands:

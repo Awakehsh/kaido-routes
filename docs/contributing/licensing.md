@@ -33,6 +33,36 @@ The ignored `research/` directory is never covered merely because it exists next
 to the repository. Verified conclusions must be rewritten into project-authored
 contracts or evidence records without copying restricted source material.
 
+## OSM road-data product boundary
+
+OpenStreetMap data is available under ODbL 1.0, including commercial use, with
+attribution and share-alike obligations for the database and derivative
+databases. Apache-2.0 continues to cover Kaido's source code, schemas, and
+project-authored documentation; it does not relicense an extracted or transformed
+OSM road graph.
+
+Before an OSM-derived graph is distributed, it needs a separately identified
+data boundary with:
+
+- an ODbL licence and OpenStreetMap contributor attribution;
+- the source snapshot, extraction method, and retained OSM object lineage;
+- a machine-readable copy or reconstruction offer required for public use;
+- an in-app attribution surface appropriate for any interactive map;
+- no assumption that operator-reviewed additions are outside share-alike merely
+  because they are stored in another file.
+
+Unless a documented licence review establishes that combined data types are
+independent, publish a combined OSM-based routing graph conservatively as an
+ODbL derivative database. A rendered schematic may be a Produced Work, but that
+does not make its underlying OSM-derived database Apache-2.0.
+
+Primary references:
+
+- [OpenStreetMap copyright and licence](https://www.openstreetmap.org/copyright/en-US)
+- [OSMF attribution guideline](https://osmfoundation.org/wiki/Licence/Attribution_Guidelines)
+- [OSMF Produced Work guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Produced_Work_-_Guideline)
+- [OSMF Collective Database guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Collective_Database_Guideline_Guideline)
+
 ## Names and marks
 
 The software licence grants copyright and patent permissions only as stated in

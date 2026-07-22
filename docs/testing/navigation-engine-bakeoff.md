@@ -1,8 +1,9 @@
 # Navigation engine bake-off
 
 **Status:** B0 is executable. B1 has a versioned fixture schema, synthetic
-three-origin fixture, provider-neutral hard-gate runner, and MapKit adapter.
-The reviewed real entrance corpus and road-graph inspector are not implemented.
+three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
+pure Swift directed-road graph inspector. The reviewed real entrance corpus and
+local live-probe command are not implemented.
 
 **Checked:** 2026-07-22
 
@@ -291,8 +292,9 @@ gate.
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
    existing 15 scenarios executable at L1/L2.
 2. **In progress:** the fixture format, normalized result, offline hard-gate
-   evaluator, and MapKit candidate adapter are complete. Build the reviewed
-   ten-entrance corpus, graph inspector, and local live-probe command.
+   evaluator, MapKit candidate adapter, and synthetic directed-road graph
+   inspector are complete. Build the reviewed ten-entrance corpus and local
+   live-probe command, then run all three origins for every released entrance.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.

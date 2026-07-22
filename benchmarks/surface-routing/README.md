@@ -62,14 +62,19 @@ status gate. Missing inspection evidence fails closed.
 ## Current implementation boundary
 
 `KaidoSurfaceRouting` owns the provider-neutral fixture, candidate, inspection,
-hard-gate, and normalized-result types. `KaidoAppleAdapters` contains the first
-`MKDirections` adapter. The adapter requests automobile alternatives and asks
-MapKit to avoid highways and tolls for the bounded surface leg, but those options
-are hints rather than proof.
+hard-gate, and normalized-result types. Its `DirectedRoadGraphInspector`
+resamples candidate geometry, scores directed edges using distance and heading,
+checks graph continuity, detects ambiguous parallel edges, and reports early
+expressway and toll-domain crossings. It fails closed on invalid or mismatched
+network snapshots. This is a surface-probe inspector, not the live Shuto matcher.
 
-No real entrance is released yet. A road-graph inspector and the reviewed
-ten-entrance corpus are the next evidence tasks; deterministic CI does not call
-MapKit.
+`KaidoAppleAdapters` contains the first `MKDirections` adapter. The adapter
+requests automobile alternatives and asks MapKit to avoid highways and tolls for
+the bounded surface leg, but those options are hints rather than proof.
+
+No real entrance is released yet. The reviewed ten-entrance corpus, its licensed
+road-graph snapshots, and the local live-probe command are the next evidence
+tasks; deterministic CI does not call MapKit.
 
 Run the offline checks with:
 

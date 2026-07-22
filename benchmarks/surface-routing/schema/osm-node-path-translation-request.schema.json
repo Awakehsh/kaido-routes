@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaido-routes.example/schema/osm-node-path-translation-request-v1.json",
+  "title": "Kaido Routes OSM node-path translation request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider_dataset_id",
+    "route_coordinates",
+    "ordered_osm_node_ids"
+  ],
+  "properties": {
+    "provider_dataset_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route_coordinates": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/coordinate"
+      }
+    },
+    "ordered_osm_node_ids": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 50000,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    }
+  },
+  "$defs": {
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["latitude", "longitude"],
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    }
+  }
+}

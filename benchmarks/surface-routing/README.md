@@ -14,6 +14,7 @@ benchmarks/surface-routing/
 │   ├── provider-probe-stability-summary.schema.json
 │   ├── provider-probe-cross-window-summary.schema.json
 │   ├── osm-selected-path-translation-request.schema.json
+│   ├── osm-node-path-translation-request.schema.json
 │   └── surface-routing-build-manifest.schema.json
 ├── fixtures/synthetic/
 └── raw/ and runs/                    # local and gitignored
@@ -90,8 +91,11 @@ hard-gate, normalized-result, and OSM selected-path translation types. Its
 `OSMSelectedPathTranslator` expands provider OSM way/start-node/direction
 identity onto exact Kaido edges, trims partial first and last edges against the
 provider route geometry, and rejects cross-dataset, missing, ambiguous,
-reversed, repeated, or disconnected identity. Its `DirectedRoadGraphInspector`
-resamples candidate geometry, scores directed edges using distance and heading,
+reversed, repeated, or disconnected identity. `OSMNodePathTranslator`
+independently resolves complete ordered node paths and fails whenever one node
+pair identifies zero or multiple directed edges. Its
+`DirectedRoadGraphInspector` resamples candidate geometry, scores directed edges
+using distance and heading,
 uses a bounded sequence beam to preserve graph continuity, and compares the
 observed distance between consecutive samples with directed graph travel between
 their along-edge projections. This transition-distance penalty can reject a
@@ -148,6 +152,21 @@ six hard gates. Long-running service supervision, broader road coverage, ODbL
 distribution review, retained sign/lane/temporal evidence, and field checks
 remain release blockers.
 
+The OSRM baseline has its own fail-closed path. `OSRMSurfaceRouteProvider`
+requests one full GeoJSON route with `annotations=nodes`, checks response
+`data_version` against the manifest, requires left-driving steps, and passes the
+ordered node sequence to `OSMNodePathTranslator`. Every consecutive node pair
+must resolve to exactly one directed Kaido edge; missing and parallel pairs are
+rejected. OSRM maneuver fields are diagnostic only and do not supply localized
+product guidance.
+
+A private LAB_ONLY MLD build now passes the same supervised Shinjuku 3x3 run
+through the public OSRM URLSession adapter. The selected paths contain 1, 8, and
+44 exact Kaido edges, with no unmatched, ambiguous, disconnected, early
+expressway, or forbidden-toll result. The build uses a synthetic bounded
+left-driving polygon, so this is a provider-baseline pass rather than a released
+entrance or a release-quality Japan data build.
+
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
 inspection latency separately so routing-network delay is not confused with
@@ -187,6 +206,20 @@ swift run kaido-surface-probe \
   --manifest research/path/to/surface-routing-build-manifest.json \
   --base-url http://127.0.0.1:18002 \
   --allow-live-valhalla \
+  --repeat 3 \
+  --pretty
+```
+
+Run the independent manifest-bound OSRM baseline through the same pipeline:
+
+```sh
+swift run kaido-surface-probe \
+  --fixture research/path/to/entrance.json \
+  --graph research/path/to/directed-road-graph.json \
+  --origin example.origin.same-side \
+  --manifest research/path/to/surface-routing-build-manifest.json \
+  --base-url http://127.0.0.1:18003 \
+  --allow-live-osrm \
   --repeat 3 \
   --pretty
 ```
@@ -306,6 +339,19 @@ swift run kaido-surface-evidence normalize-valhalla \
   --pretty
 ```
 
+Normalize a retained OSRM response only when its `data_version` is set and
+matches graph provenance:
+
+```sh
+swift run kaido-surface-evidence normalize-osrm \
+  --route-response research/evidence/route.json \
+  --graph research/evidence/bounded-surface-graph.json \
+  --provider-id osrm.local \
+  --provider-dataset-id 2026072101 \
+  --candidate-id example.candidate \
+  --pretty
+```
+
 Run the offline checks with:
 
 ```sh
@@ -317,5 +363,6 @@ python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.sch
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-cross-window-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/osm-selected-path-translation-request.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/osm-node-path-translation-request.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/surface-routing-build-manifest.schema.json >/dev/null
 ```

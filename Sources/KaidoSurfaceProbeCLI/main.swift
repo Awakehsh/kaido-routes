@@ -53,7 +53,7 @@
             graph: graph,
             manifest: manifest,
             configuration: ValhallaSurfaceProviderConfiguration(
-              candidateProviderID: arguments.valhallaProviderID,
+              candidateProviderID: arguments.providerID,
               adapterVersion: "live-probe.1",
               narrativeLanguage: .japanese,
               dataReviewStatus: .reviewRequired,
@@ -69,6 +69,44 @@
             arguments: arguments,
             environment: [
               "mode": "local-live-valhalla",
+              "manifest_id": manifest.id,
+              "provider_dataset_id": manifest.providerDatasetID,
+              "service_origin": baseURL.originDescription,
+            ]
+          )
+
+        case .osrm:
+          guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) else {
+            throw LiveProbeCommandError.unsupportedURLSessionPlatform
+          }
+          let manifest: SurfaceRoutingBuildManifest = try decodeJSON(
+            at: try arguments.required(arguments.manifestPath, flag: "--manifest")
+          )
+          let baseURLValue = try arguments.required(arguments.baseURL, flag: "--base-url")
+          guard let baseURL = URL(string: baseURLValue) else {
+            throw LiveProbeCommandError.invalidBaseURL(baseURLValue)
+          }
+          let binding = try makeOSRMBinding(fixture: fixture, graph: graph)
+          let transport = try URLSessionOSRMHTTPTransport(baseURL: baseURL)
+          let provider = try OSRMSurfaceRouteProvider(
+            graph: graph,
+            manifest: manifest,
+            configuration: OSRMSurfaceProviderConfiguration(
+              candidateProviderID: arguments.providerID,
+              adapterVersion: "live-probe.1",
+              dataReviewStatus: .reviewRequired,
+              manifestValidationProfile: .structural,
+              approachBindings: [binding]
+            ),
+            transport: transport
+          )
+          results = try await runProbes(
+            provider: provider,
+            fixture: fixture,
+            graph: graph,
+            arguments: arguments,
+            environment: [
+              "mode": "local-live-osrm",
               "manifest_id": manifest.id,
               "provider_dataset_id": manifest.providerDatasetID,
               "service_origin": baseURL.originDescription,
@@ -94,6 +132,7 @@
   private enum LiveProbeProvider: String {
     case mapKit
     case valhalla
+    case osrm
   }
 
   private struct SummaryComparisonArguments {
@@ -129,7 +168,7 @@
     let provider: LiveProbeProvider
     let manifestPath: String?
     let baseURL: String?
-    let valhallaProviderID: String
+    let providerID: String
     let repeatCount: Int
     let pretty: Bool
 
@@ -140,8 +179,7 @@
       var provider: LiveProbeProvider?
       var manifestPath: String?
       var baseURL: String?
-      var valhallaProviderID = "valhalla.local"
-      var valhallaProviderIDWasSet = false
+      var providerID: String?
       var repeatCount = 1
       var pretty = false
       var index = 1
@@ -161,8 +199,7 @@
         case "--base-url":
           baseURL = try value(after: &index, in: commandLine)
         case "--provider-id":
-          valhallaProviderID = try value(after: &index, in: commandLine)
-          valhallaProviderIDWasSet = true
+          providerID = try value(after: &index, in: commandLine)
         case "--repeat":
           let rawValue = try value(after: &index, in: commandLine)
           guard let count = Int(rawValue), (1...20).contains(count) else {
@@ -175,6 +212,8 @@
           provider = try select(.mapKit, current: provider)
         case "--allow-live-valhalla":
           provider = try select(.valhalla, current: provider)
+        case "--allow-live-osrm":
+          provider = try select(.osrm, current: provider)
         default:
           throw LiveProbeCommandError.unknownArgument(commandLine[index])
         }
@@ -187,12 +226,22 @@
       guard let fixturePath, let graphPath, let originID else {
         throw LiveProbeCommandError.missingRequiredArgument
       }
-      if provider == .valhalla {
-        guard manifestPath != nil, baseURL != nil, !valhallaProviderID.isEmpty else {
-          throw LiveProbeCommandError.missingValhallaArgument
+      let resolvedProviderID: String
+      if provider == .valhalla || provider == .osrm {
+        guard manifestPath != nil, baseURL != nil else {
+          throw LiveProbeCommandError.missingSelfHostedArgument(provider.rawValue)
         }
-      } else if manifestPath != nil || baseURL != nil || valhallaProviderIDWasSet {
-        throw LiveProbeCommandError.valhallaArgumentWithMapKit
+        resolvedProviderID =
+          providerID
+          ?? (provider == .valhalla ? "valhalla.local" : "osrm.local")
+        guard !resolvedProviderID.isEmpty else {
+          throw LiveProbeCommandError.missingSelfHostedArgument(provider.rawValue)
+        }
+      } else {
+        guard manifestPath == nil, baseURL == nil, providerID == nil else {
+          throw LiveProbeCommandError.selfHostedArgumentWithMapKit
+        }
+        resolvedProviderID = "mapkit.apple"
       }
       return LiveProbeArguments(
         fixturePath: fixturePath,
@@ -201,7 +250,7 @@
         provider: provider,
         manifestPath: manifestPath,
         baseURL: baseURL,
-        valhallaProviderID: valhallaProviderID,
+        providerID: resolvedProviderID,
         repeatCount: repeatCount,
         pretty: pretty
       )
@@ -238,8 +287,8 @@
     case unknownArgument(String)
     case missingValue(String)
     case missingRequiredArgument
-    case missingValhallaArgument
-    case valhallaArgumentWithMapKit
+    case missingSelfHostedArgument(String)
+    case selfHostedArgumentWithMapKit
     case liveProviderNotAcknowledged
     case multipleLiveProviders
     case invalidRepeatCount(String)
@@ -256,12 +305,12 @@
         "missing value for \(argument)"
       case .missingRequiredArgument:
         "--fixture, --graph, and --origin are required"
-      case .missingValhallaArgument:
-        "--manifest and --base-url are required for a live Valhalla probe"
-      case .valhallaArgumentWithMapKit:
+      case .missingSelfHostedArgument(let provider):
+        "--manifest and --base-url are required for a live \(provider) probe"
+      case .selfHostedArgumentWithMapKit:
         "--manifest, --base-url, and --provider-id are not valid for a MapKit probe"
       case .liveProviderNotAcknowledged:
-        "one of --allow-live-mapkit or --allow-live-valhalla is required"
+        "one of --allow-live-mapkit, --allow-live-valhalla, or --allow-live-osrm is required"
       case .multipleLiveProviders:
         "choose exactly one live provider"
       case .invalidRepeatCount(let value):
@@ -271,7 +320,7 @@
       case .invalidApproachEdge(let edgeID):
         "approach edge does not end at a retained OSM node: \(edgeID)"
       case .unsupportedURLSessionPlatform:
-        "the live Valhalla transport requires URLSession async support"
+        "the live self-hosted transport requires URLSession async support"
       case .atLeastTwoSummariesRequired:
         "at least two --compare-summary files are required"
       }
@@ -331,6 +380,25 @@
     )
   }
 
+  private func makeOSRMBinding(
+    fixture: EntranceProbeFixture,
+    graph: SurfaceRoadGraphSnapshot
+  ) throws -> OSRMApproachIdentityBinding {
+    let edgeID = fixture.approachAnchor.directedSurfaceEdgeID
+    guard let edge = graph.edges.first(where: { $0.id == edgeID }),
+      edge.toNodeID.hasPrefix("osm.node."),
+      let terminalOSMNodeID = Int64(edge.toNodeID.dropFirst("osm.node.".count)),
+      terminalOSMNodeID > 0
+    else {
+      throw LiveProbeCommandError.invalidApproachEdge(edgeID)
+    }
+    return OSRMApproachIdentityBinding(
+      anchorID: fixture.approachAnchor.id,
+      directedSurfaceEdgeID: edgeID,
+      terminalOSMNodeID: terminalOSMNodeID
+    )
+  }
+
   private let usage = """
     Usage:
       kaido-surface-probe \\
@@ -346,6 +414,15 @@
         --manifest <surface-routing-build-manifest.json> \\
         --base-url <self-hosted-valhalla-origin> \\
         --allow-live-valhalla [--provider-id <id>] \\
+        [--repeat <1...20>] [--pretty]
+
+      kaido-surface-probe \\
+        --fixture <entrance-fixture.json> \\
+        --graph <directed-road-graph.json> \\
+        --origin <origin-id> \\
+        --manifest <surface-routing-build-manifest.json> \\
+        --base-url <self-hosted-osrm-origin> \\
+        --allow-live-osrm [--provider-id <id>] \\
         [--repeat <1...20>] [--pretty]
 
     One request writes a normalized raw-local result. Repeated requests write a

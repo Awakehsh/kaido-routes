@@ -98,6 +98,32 @@ terminal OSM node from the reviewed approach edge, and uses bounded timeout and
 response-size policies. A supervised private local 3x3 window passed through
 this exact URLSession boundary; long-running service operations remain open.
 
+The independent OSRM baseline uses a deliberately weaker but still exact
+identity contract. The adapter requests `annotations=nodes`, a full GeoJSON
+shape, steps, one route, and the reviewed destination bearing. Its build must set
+`osrm-extract --data_version` to the manifest/graph dataset ID; a missing or
+different response `data_version` fails closed. `OSMNodePathTranslator` maps
+every consecutive OSM node pair to exactly one Kaido directed edge and rejects
+parallel-pair ambiguity rather than guessing an OSM way. The inspector then
+binds the returned geometry to that complete edge sequence and applies the same
+terminal, early-expressway, and toll gates.
+
+The pinned car profile does not accept the combined `motorway,toll` exclusion
+used by the default surface preference. The bounded adapter prioritizes
+`exclude=motorway` when both preferences are requested, then treats every
+expressway edge and forbidden toll domain as a Kaido graph hard gate. Provider
+avoidance remains a search hint; it is not the safety decision.
+
+OSRM's default car profile is right-driving unless a way tag, profile setting,
+or location-dependent property overrides it. The private LAB_ONLY build first
+failed this gate, then used the official `--location-dependent-data` mechanism
+and returned `driving_side=left` for every diagnostic step. All nine Shinjuku
+runs passed through `OSRMSurfaceRouteProvider`, `URLSessionOSRMHTTPTransport`,
+and the public probe CLI with one path variant and no unmatched, ambiguous, or
+disconnected selected edges. The synthetic bounded driving-side polygon proves
+the mechanism only; a release boundary source, broader coverage, operations,
+distribution review, and field evidence remain blockers.
+
 Valhalla route narration is provider prose, not product guidance. The adapter
 requests only an explicitly supported Japanese or English locale and currently
 returns the primary route candidate. Chinese guidance, actual Japanese sign
@@ -409,7 +435,7 @@ loading rather than UI-oriented object persistence.
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
 | Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; bounded private tiles and HTTP adapter still need live-service, distribution, broader-coverage, and field review | **Manifest/admin/path protocol and bounded adapter proven; operations pending** |
-| OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, permissive licence | optimized fastest-path service; weaker runtime policy customization | **Secondary comparator** |
+| OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, BSD-2-Clause; complete route node annotations can bind to the Kaido graph | node-pair identity fails on parallel pairs; build must add dataset and left-driving context; generic fastest-path semantics | **Bounded surface baseline proven; release inputs and operations pending** |
 | GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |
 
@@ -445,6 +471,9 @@ bounded role it may own.
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [Valhalla `trace_attributes` and `edge_walk`](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [OSRM backend and services](https://github.com/Project-OSRM/osrm-backend)
+- [OSRM HTTP route, annotation, and `data_version` contract](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/docs/http.md)
+- [OSRM car-profile driving-side handler](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/profiles/lib/way_handlers.lua)
+- [OSRM location-dependent left-driving test](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/features/car/side_bias.feature)
 - [OSRM licence](https://raw.githubusercontent.com/Project-OSRM/osrm-backend/master/LICENSE.TXT)
 - [GraphHopper open-source engine](https://github.com/graphhopper/graphhopper)
 - [Newson and Krumm, HMM map matching](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)

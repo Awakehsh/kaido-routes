@@ -4,8 +4,10 @@
 three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
 pure Swift directed-road graph inspector plus an explicit local live-probe
 command. Four private directional pilots have been attempted; one stacked-road
-origin produces a repeatable hard-gate failure. No real entrance fixture is
-released; private provider output remains outside the repository.
+origin produces a repeatable geometry-only hard-gate failure. Manifest-bound
+Valhalla and OSRM selected-path baselines now pass that same origin without
+weakening the gate. No real entrance fixture is released; private provider
+output remains outside the repository.
 
 **Checked:** 2026-07-22
 
@@ -193,6 +195,17 @@ path counts of 1, 8, and 84 after Japanese driving-side and country costing take
 effect. This is a bounded path/admin feasibility pass, not a released entrance
 or final provider choice.
 
+The OSRM comparator now passes the same bounded path gate through its public
+Swift adapter. Its first default-car build correctly failed because every Tokyo
+step reported right-side driving. A manifest-bound LAB_ONLY rebuild supplies
+left-side context through OSRM's official location-dependent data mechanism and
+sets `--data_version 2026072101`; missing or drifting response identity is a hard
+failure. `annotations=nodes` produced complete 1-, 8-, and 44-edge paths for the
+three Shinjuku origins. Across three public-CLI runs per origin, all nine were
+accepted with no unmatched, ambiguous, or disconnected edge. This establishes
+OSRM as an independent surface baseline, not a route-plan owner or released
+Japan data build.
+
 ## Matcher test
 
 ### Hard gates
@@ -373,17 +386,24 @@ gate.
    one resolved path variant per origin and no unmatched, ambiguous, or
    disconnected selected edges. Long-running service operations, ODbL
    distribution review, broader coverage, and field evidence remain open.
-5. Run OSRM and GraphHopper against the same surface fixtures.
-6. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
+5. **Complete for the bounded OSRM baseline:** the response normalizer requires
+   manifest-bound `data_version`, left-side steps, full GeoJSON, and ordered OSM
+   nodes. The node-pair translator rejects missing, parallel, repeated, and
+   cross-dataset paths. A supervised Shinjuku 3x3 window passed through the
+   public URLSession adapter. Release-quality administration, broader coverage,
+   operations, distribution review, and field evidence remain open.
+6. Run GraphHopper against the same surface fixtures.
+7. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
    matcher oracle.
-7. Implement the route-aware Swift HMM and compare calibration.
-8. Add SwiftUI phone presentation, then the CarPlay adapter.
-9. Perform passenger-observed tunnel and entry tests only after synthetic and
+8. Implement the route-aware Swift HMM and compare calibration.
+9. Add SwiftUI phone presentation, then the CarPlay adapter.
+10. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next provider task is to extend the same manifest-bound HTTP run to the
-remaining directional entrance corpus, then compare OSRM and GraphHopper in step
-5. It is not an iPhone screen and not a rewrite of the Swift route-first core.
+The next provider tasks are to extend the manifest-bound Valhalla and OSRM runs
+to the remaining directional entrance corpus, then add the independent
+GraphHopper baseline. This is not an iPhone screen and not a rewrite of the Swift
+route-first core.
 
 ## Sources checked 2026-07-22
 
@@ -397,5 +417,7 @@ remaining directional entrance corpus, then compare OSRM and GraphHopper in step
 - [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)
 - [Timezone Boundary Builder data licence](https://github.com/evansiroky/timezone-boundary-builder/blob/master/DATA_LICENSE)
 - [OSRM route and match services](https://github.com/Project-OSRM/osrm-backend)
+- [OSRM HTTP API and node annotations](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/docs/http.md)
+- [OSRM location-dependent left-driving test](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/features/car/side_bias.feature)
 - [GraphHopper routing and map matching](https://github.com/graphhopper/graphhopper)
 - [Newson and Krumm HMM map-matching paper and public test data](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)

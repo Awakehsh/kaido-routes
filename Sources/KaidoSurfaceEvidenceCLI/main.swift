@@ -92,6 +92,27 @@ enum KaidoSurfaceEvidenceCLI {
           normalized.translatedCandidate(graph: graph),
           pretty: arguments.pretty
         )
+      case .normalizeOSRM:
+        let graph: SurfaceRoadGraphSnapshot = try decodeJSON(at: arguments.graphPath)
+        let routePath = try arguments.requiredPath(
+          arguments.routeResponsePath,
+          flag: "--route-response"
+        )
+        let normalizer = OSRMSurfaceRouteNormalizer(
+          providerID: try arguments.requiredPath(arguments.providerID, flag: "--provider-id"),
+          expectedProviderDatasetID: try arguments.requiredPath(
+            arguments.providerDatasetID,
+            flag: "--provider-dataset-id"
+          )
+        )
+        let normalized = try normalizer.normalize(
+          routeResponseData: try Data(contentsOf: URL(fileURLWithPath: routePath)),
+          candidateID: try arguments.requiredPath(arguments.candidateID, flag: "--candidate-id")
+        )
+        try writeJSON(
+          normalized.translatedCandidate(graph: graph),
+          pretty: arguments.pretty
+        )
       }
     } catch {
       writeStandardError("kaido-surface-evidence: \(error)\n\n\(usage)")
@@ -106,6 +127,7 @@ private struct Arguments {
     case evaluate
     case validateManifest = "validate-manifest"
     case normalizeValhalla = "normalize-valhalla"
+    case normalizeOSRM = "normalize-osrm"
   }
 
   let command: Command
@@ -198,7 +220,7 @@ private enum CLIError: Error, CustomStringConvertible {
   var description: String {
     switch self {
     case .missingCommand:
-      "expected translate, evaluate, validate-manifest, or normalize-valhalla"
+      "expected translate, evaluate, validate-manifest, normalize-valhalla, or normalize-osrm"
     case .missingValue(let flag):
       "missing value for \(flag)"
     case .invalidValue(let flag, let value):
@@ -233,6 +255,13 @@ private let usage = """
       --provider-id <provider-id> \\
       --provider-dataset-id <dataset-id> \\
       --terminal-osm-node-id <osm-node-id> [--pretty]
+
+    kaido-surface-evidence normalize-osrm \\
+      --graph <directed-road-graph.json> \\
+      --route-response <route-response.json> \\
+      --candidate-id <candidate-id> \\
+      --provider-id <provider-id> \\
+      --provider-dataset-id <dataset-id> [--pretty]
   """
 
 private func decodeJSON<Value: Decodable>(at path: String) throws -> Value {

@@ -191,7 +191,13 @@ private struct ScenarioHarness {
           surfaceETAMinutes: try requiredDouble(candidate, key: "surface_eta_minutes"),
           legalJoinOccurrenceIDs: Set(
             (candidate.array("legal_join_occurrence_ids") ?? []).compactMap(\.stringValue)
-          )
+          ),
+          approachAvailability: try candidate.string("approach_availability").map { value in
+            guard let availability = EntranceApproachAvailability(rawValue: value) else {
+              throw ScenarioExecutionError.invalidInput("approach_availability")
+            }
+            return availability
+          } ?? .available
         )
       }
       publish(

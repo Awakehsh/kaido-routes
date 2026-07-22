@@ -25,8 +25,9 @@ properties that must remain proven as the product expands:
 1. repeated road segments remain distinct ordered occurrences;
 2. only legal directional junction movements can be authored and executed;
 3. navigation stays honest when tunnel or stacked-road positioning is uncertain;
-4. a current-location recommendation selects a compatible directional entrance,
-   not merely the nearest IC name;
+4. a current-location recommendation selects a compatible directional entrance
+   approach that is available at the predicted entry time, not merely the
+   nearest IC name;
 5. a deviation rejoins the active route plan instead of becoming a generic
    destination reroute;
 6. Japanese, Simplified Chinese, and English guidance preserve the same physical

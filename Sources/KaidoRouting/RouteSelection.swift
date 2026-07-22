@@ -1,22 +1,31 @@
 import Foundation
 import KaidoDomain
 
+public enum EntranceApproachAvailability: String, Equatable, Sendable {
+  case available = "AVAILABLE"
+  case unavailable = "UNAVAILABLE"
+  case unknown = "UNKNOWN"
+}
+
 public struct EntranceCandidate: Equatable, Sendable {
   public let facilityID: String
   public let straightLineDistanceKM: Double
   public let surfaceETAMinutes: Double
   public let legalJoinOccurrenceIDs: Set<String>
+  public let approachAvailability: EntranceApproachAvailability
 
   public init(
     facilityID: String,
     straightLineDistanceKM: Double,
     surfaceETAMinutes: Double,
-    legalJoinOccurrenceIDs: Set<String>
+    legalJoinOccurrenceIDs: Set<String>,
+    approachAvailability: EntranceApproachAvailability = .available
   ) {
     self.facilityID = facilityID
     self.straightLineDistanceKM = straightLineDistanceKM
     self.surfaceETAMinutes = surfaceETAMinutes
     self.legalJoinOccurrenceIDs = legalJoinOccurrenceIDs
+    self.approachAvailability = approachAvailability
   }
 }
 
@@ -45,10 +54,23 @@ public enum EntranceRecommender {
     var rejections: [String: [String]] = [:]
 
     for candidate in candidates {
+      switch candidate.approachAvailability {
+      case .available:
+        break
+      case .unavailable:
+        rejections[candidate.facilityID, default: []].append(
+          "APPROACH_UNAVAILABLE_AT_ENTRY_TIME"
+        )
+      case .unknown:
+        rejections[candidate.facilityID, default: []].append(
+          "APPROACH_AVAILABILITY_UNKNOWN"
+        )
+      }
       let joins = candidate.legalJoinOccurrenceIDs.intersection(allowedJoinOccurrenceIDs)
       if joins.isEmpty {
         rejections[candidate.facilityID, default: []].append("NO_LEGAL_ROUTE_JOIN")
-      } else {
+      }
+      if candidate.approachAvailability == .available, !joins.isEmpty {
         eligible.append((candidate, joins))
       }
     }

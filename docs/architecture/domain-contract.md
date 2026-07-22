@@ -57,10 +57,16 @@ AccessComplex
 
 EntranceFacility
   facility_id
-  surface_approach_anchor_id
+  approach_variant_ids[]
   target_carriageway_id
   target_direction
   connector_edge_ids[]
+
+EntranceApproachVariant
+  approach_variant_id
+  surface_approach_anchor_id
+  directed_surface_movement_edge_ids[]
+  availability_rule_id
 
 ExitFacility
   facility_id
@@ -78,6 +84,19 @@ Surface anchors are directed points on an ordinary-road edge. An approach anchor
 must leave enough distance for guidance before the ramp and must not represent a
 place where the driver should stop. An exit handoff anchor is beyond the ramp at
 a point where ordinary-road routing can resume.
+
+One directional entrance may have more than one legal surface approach. A turn
+restriction can make one approach legal only at particular times while another,
+longer approach remains legal. These are separate `EntranceApproachVariant`
+records, not interchangeable coordinates under one IC name. The selected variant
+must be evaluated at the predicted entry time in the road's local time zone.
+Unknown or conflicting availability blocks that variant. A provider route
+calculated "now" does not prove that the movement will be legal at another time.
+
+The B1 v1 probe fixture carries one approach anchor. A facility that needs
+multiple or conditional variants cannot be released from that format until the
+temporal movement contract and evidence are implemented. A conservative,
+reviewed, always-legal variant may still be tested independently.
 
 ## Route occurrence identity
 
@@ -200,6 +219,12 @@ REALTIME_UNCONFIRMED
 
 `NO_KNOWN_CONFLICT` means only that checked planned information contains no
 conflict. It cannot be rendered as a live-open confirmation.
+
+Recurring legal movement restrictions are also separate from operational
+closures. They require a versioned availability rule with source, local time
+zone, day/holiday semantics, effective interval, and last review date. OSM
+conditional syntax may identify a candidate rule, but it is not operator proof
+and must not be silently discarded by graph conversion.
 
 ## Toll contract
 

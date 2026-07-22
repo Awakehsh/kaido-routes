@@ -94,13 +94,19 @@ Hard filters:
 2. Its entry transition reaches an approved join occurrence in the selected
    route or template.
 3. The full path to the intended exit remains inside allowed toll domains.
-4. Vehicle, payment, time, and known restriction constraints pass.
+4. Vehicle, payment, predicted entry time, recurring movement rules, and known
+   operational restriction constraints pass for the exact approach variant.
 5. The surface route reaches the approach anchor without entering the wrong
    expressway facility first.
 
 Scoring after those filters may consider surface ETA, turn complexity near the
 ramp, Shuto lead-in distance, decision-zone difficulty, egress convenience, and
 evidence freshness. Straight-line distance alone is never sufficient.
+
+If a closer approach has time-conditioned turns, recommendation may choose a
+longer reviewed approach that is legal for the full supported time range. The UI
+must explain that choice. It must not route to an approach whose availability is
+unknown and ask the driver to improvise at the ramp.
 
 A route does not have to begin on C1 or C2. A verified radial-road lead-in may
 join a later ring occurrence. A closed loop can be rotated to a compatible join

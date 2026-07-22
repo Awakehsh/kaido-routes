@@ -72,6 +72,11 @@ official and OSM evidence
 checked_at
 ```
 
+Before a conditional approach can enter the released corpus, a later fixture
+version must also record the exact approach variant, evaluated departure/entry
+time, local time zone, recurring movement rule, and its evidence. The v1 fixture
+is intentionally insufficient for releasing a time-dependent approach.
+
 For each entrance, choose at least three surface origins with different approach
 geometry: simple same-side access, a cross-direction approach, and a case where
 the geometrically nearest IC is incompatible.
@@ -292,14 +297,16 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   existing 15 scenarios executable at L1/L2.
+   existing 16 scenarios executable at L1/L2.
 2. **In progress:** the fixture format, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
    inspector plus local live-probe command are complete. The private Iikura
-   vertical slice has passed two observations per origin but remains `RETEST`;
-   build the reviewed ten-entrance corpus, repeat all three origins for stability,
-   profile longer inspections, and promote only evidence whose licence and
-   field-review gates pass.
+   vertical slice has passed a three-run scalar batch per origin but remains
+   `RETEST`. A private Shibakoen outer pilot correctly fails closed on one
+   opposite-direction micro-path ambiguity and exposed a temporal-movement data
+   gap. Build the reviewed ten-entrance corpus, repeat all three origins for
+   cross-time stability, profile longer inspections, and promote only evidence
+   whose licence, temporal-rule, and field-review gates pass.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.

@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D17",
+  "title": "Entrance recommendation rejects unavailable or unknown timed approaches",
+  "layer": "DOMAIN",
+  "tags": ["current-location", "entrance", "recommendation", "time-restriction"],
+  "purpose": "Choose a legal approach for the predicted entry time instead of a closer time-restricted or unevaluated approach.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Facilities, ETAs, availability, and route-template joins are synthetic."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.temporal-entry-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "predicted_entry_at": "2026-07-22T17:00:00+09:00",
+      "route_template": {
+        "template_id": "test.template.outer-loop",
+        "allowed_join_occurrence_ids": ["loop-join-outer"]
+      },
+      "entrance_candidates": [
+        {
+          "facility_id": "test.entry.closest.timed-closed",
+          "straight_line_distance_km": 0.4,
+          "surface_eta_minutes": 3,
+          "target_carriageway_id": "test.carriageway.ring-outer",
+          "legal_join_occurrence_ids": ["loop-join-outer"],
+          "approach_availability": "UNAVAILABLE"
+        },
+        {
+          "facility_id": "test.entry.second.unknown",
+          "straight_line_distance_km": 0.7,
+          "surface_eta_minutes": 5,
+          "target_carriageway_id": "test.carriageway.ring-outer",
+          "legal_join_occurrence_ids": ["loop-join-outer"],
+          "approach_availability": "UNKNOWN"
+        },
+        {
+          "facility_id": "test.entry.farther.available",
+          "straight_line_distance_km": 1.5,
+          "surface_eta_minutes": 8,
+          "target_carriageway_id": "test.carriageway.ring-outer",
+          "legal_join_occurrence_ids": ["loop-join-outer"],
+          "approach_availability": "AVAILABLE"
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {
+        "recommend_entry_from_current_location": true
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "available-entry-selected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "entry_recommendation.selected_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.entry.farther.available",
+      "rationale": "Availability at the predicted entry time is a hard filter before ETA scoring."
+    },
+    {
+      "id": "available-join-selected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "entry_recommendation.join_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "loop-join-outer",
+      "rationale": "The selected approach must still join the active route plan."
+    },
+    {
+      "id": "timed-rejection-explained",
+      "after": "compile",
+      "category": "UI",
+      "subject": "entry_recommendation.rejections.test.entry.closest.timed-closed",
+      "matcher": "CONTAINS",
+      "expected": "APPROACH_UNAVAILABLE_AT_ENTRY_TIME",
+      "rationale": "A closer approach cannot be recommended outside its legal time window."
+    },
+    {
+      "id": "unknown-rejection-explained",
+      "after": "compile",
+      "category": "UI",
+      "subject": "entry_recommendation.rejections.test.entry.second.unknown",
+      "matcher": "CONTAINS",
+      "expected": "APPROACH_AVAILABILITY_UNKNOWN",
+      "rationale": "Unknown movement availability must fail closed instead of being treated as open."
+    }
+  ]
+}

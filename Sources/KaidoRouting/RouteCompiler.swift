@@ -15,6 +15,8 @@ public struct CompileResult: Equatable, Sendable {
   public let unresolvedRequiredEntityIDs: [String]
   public let crossedTollDomainIDs: [String]
   public let boundaryOccurrenceIDs: [String]
+  public let selectedTemplateVariantID: String?
+  public let selectedTemplateParameters: [String]
 
   public init(
     status: Status,
@@ -24,7 +26,9 @@ public struct CompileResult: Equatable, Sendable {
     validatedRequiredEntityIDs: [String] = [],
     unresolvedRequiredEntityIDs: [String] = [],
     crossedTollDomainIDs: [String] = [],
-    boundaryOccurrenceIDs: [String] = []
+    boundaryOccurrenceIDs: [String] = [],
+    selectedTemplateVariantID: String? = nil,
+    selectedTemplateParameters: [String] = []
   ) {
     self.status = status
     self.errorCodes = errorCodes
@@ -34,6 +38,8 @@ public struct CompileResult: Equatable, Sendable {
     self.unresolvedRequiredEntityIDs = unresolvedRequiredEntityIDs
     self.crossedTollDomainIDs = crossedTollDomainIDs
     self.boundaryOccurrenceIDs = boundaryOccurrenceIDs
+    self.selectedTemplateVariantID = selectedTemplateVariantID
+    self.selectedTemplateParameters = selectedTemplateParameters
   }
 }
 
@@ -79,6 +85,38 @@ public struct RouteComponentRequirement: Equatable, Sendable {
 
   public init(templateID: String, requiredEntityIDsInOrder: [String]) {
     self.templateID = templateID
+    self.requiredEntityIDsInOrder = requiredEntityIDsInOrder
+  }
+}
+
+public struct RouteTemplateVariantSelection: Equatable, Sendable {
+  public let templateID: String
+  public let parameters: [String: String]
+
+  public init(templateID: String, parameters: [String: String]) {
+    self.templateID = templateID
+    self.parameters = parameters
+  }
+}
+
+public struct ApprovedRouteTemplateVariant: Equatable, Sendable {
+  public let id: String
+  public let templateID: String
+  public let networkSnapshotID: String
+  public let parameters: [String: String]
+  public let requiredEntityIDsInOrder: [String]
+
+  public init(
+    id: String,
+    templateID: String,
+    networkSnapshotID: String,
+    parameters: [String: String],
+    requiredEntityIDsInOrder: [String]
+  ) {
+    self.id = id
+    self.templateID = templateID
+    self.networkSnapshotID = networkSnapshotID
+    self.parameters = parameters
     self.requiredEntityIDsInOrder = requiredEntityIDsInOrder
   }
 }
@@ -206,6 +244,76 @@ public struct DirectionalParkingAreaPath: Equatable, Sendable {
 }
 
 public enum StrictRouteCompiler {
+  public static func validate(
+    routePlan: RoutePlan,
+    templateSelection: RouteTemplateVariantSelection,
+    approvedVariants: [ApprovedRouteTemplateVariant]
+  ) -> CompileResult {
+    guard !templateSelection.templateID.isEmpty,
+      !templateSelection.parameters.contains(where: { key, value in
+        key.isEmpty || value.isEmpty
+      })
+    else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["INVALID_TEMPLATE_PARAMETERS"]
+      )
+    }
+
+    let parameterMatchingVariants = approvedVariants.filter {
+      $0.templateID == templateSelection.templateID
+        && $0.parameters == templateSelection.parameters
+    }
+    guard !parameterMatchingVariants.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["UNAPPROVED_TEMPLATE_PARAMETERS"]
+      )
+    }
+    let parameterBindings = templateSelection.parameters.map {
+      "\($0.key)=\($0.value)"
+    }.sorted()
+    let matchingVariants = parameterMatchingVariants.filter {
+      $0.networkSnapshotID == routePlan.networkSnapshotID
+    }
+    guard !matchingVariants.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["TEMPLATE_VARIANT_SNAPSHOT_MISMATCH"],
+        selectedTemplateParameters: parameterBindings
+      )
+    }
+    guard matchingVariants.count == 1, let variant = matchingVariants.first else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["AMBIGUOUS_APPROVED_TEMPLATE_VARIANT"]
+      )
+    }
+
+    guard !variant.id.isEmpty, !variant.networkSnapshotID.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["INVALID_APPROVED_TEMPLATE_VARIANT"],
+        selectedTemplateParameters: parameterBindings
+      )
+    }
+    let componentResult = validate(
+      routePlan: routePlan,
+      componentRequirement: RouteComponentRequirement(
+        templateID: variant.templateID,
+        requiredEntityIDsInOrder: variant.requiredEntityIDsInOrder
+      )
+    )
+    return CompileResult(
+      status: componentResult.status,
+      errorCodes: componentResult.errorCodes,
+      validatedRequiredEntityIDs: componentResult.validatedRequiredEntityIDs,
+      unresolvedRequiredEntityIDs: componentResult.unresolvedRequiredEntityIDs,
+      selectedTemplateVariantID: variant.id,
+      selectedTemplateParameters: parameterBindings
+    )
+  }
+
   public static func appendLap(
     to routePlan: RoutePlan,
     request: LapDuplicationRequest,

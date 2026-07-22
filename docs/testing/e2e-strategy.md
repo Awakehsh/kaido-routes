@@ -107,6 +107,8 @@ presentation.active_surface
 presentation.carplay_connection_state
 shared_route.network_snapshot_id
 shared_route.occurrence_ids
+compiler.selected_template_variant_id
+compiler.selected_template_parameters
 route.executable
 route.blocking_reasons
 route.blocking_occurrence_ids

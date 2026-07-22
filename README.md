@@ -19,7 +19,7 @@ bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, and an explicit local live-probe command; no live
 MapKit call runs in deterministic tests.
 
-The feasibility core currently executes portable scenarios for fifteen hard
+The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -53,6 +53,8 @@ properties that must remain proven as the product expands:
     occurrence and occurrence-scoped prompt ledger continue unchanged.
 15. a versioned shared-route document preserves its network snapshot, evidence
     state, template intent, and every repeated or optional occurrence on import.
+16. guided template parameters compile only through one exact approved,
+    snapshot-bound variant whose required route components still validate.
 
 ## Repository map
 

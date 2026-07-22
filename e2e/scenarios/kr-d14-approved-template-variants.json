@@ -1,0 +1,200 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D14",
+  "title": "Route-template parameters compile only through an approved variant",
+  "layer": "DOMAIN",
+  "tags": ["template", "parameters", "approval", "snapshot"],
+  "purpose": "Accept one exact snapshot-bound template parameter variant and reject an unapproved combination instead of dynamically inventing movements.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic entities prove parameter gating only; real template variants require released directional movement evidence for their exact network snapshot."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.template-variant-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.approved-template",
+      "network_snapshot_id": "test.snapshot.template-variant-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "c2-arc",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.route.c2-arc",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "c2-to-b",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c2-to-b",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "b-connector",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.route.b-connector",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "b-to-c2",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.b-to-c2",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "template_variant_requests": {
+        "approved-one-lap": {
+          "template_id": "test.template.c2-circuit",
+          "parameters": {
+            "lap_count": "1",
+            "pa_policy": "NONE"
+          }
+        },
+        "unapproved-three-laps": {
+          "template_id": "test.template.c2-circuit",
+          "parameters": {
+            "lap_count": "3",
+            "pa_policy": "OPTIONAL"
+          }
+        }
+      },
+      "approved_template_variants": [
+        {
+          "variant_id": "test.variant.c2-one-lap-no-pa",
+          "template_id": "test.template.c2-circuit",
+          "network_snapshot_id": "test.snapshot.template-variant-v1",
+          "parameters": {
+            "lap_count": "1",
+            "pa_policy": "NONE"
+          },
+          "required_entity_ids_in_order": [
+            "test.route.c2-arc",
+            "test.movement.c2-to-b",
+            "test.route.b-connector",
+            "test.movement.b-to-c2"
+          ]
+        },
+        {
+          "variant_id": "test.variant.c2-two-laps-optional-pa",
+          "template_id": "test.template.c2-circuit",
+          "network_snapshot_id": "test.snapshot.template-variant-v1",
+          "parameters": {
+            "lap_count": "2",
+            "pa_policy": "OPTIONAL"
+          },
+          "required_entity_ids_in_order": [
+            "test.route.c2-arc",
+            "test.movement.c2-to-b",
+            "test.route.b-connector",
+            "test.movement.b-to-c2"
+          ]
+        }
+      ]
+    },
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "compile-approved-variant",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {
+        "request_id": "approved-one-lap"
+      }
+    },
+    {
+      "id": "compile-unapproved-variant",
+      "at_ms": 1,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {
+        "request_id": "unapproved-three-laps"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "approved-variant-accepted",
+      "after": "compile-approved-variant",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "ACCEPTED",
+      "rationale": "An exact parameter set may compile only because a unique approved record exists."
+    },
+    {
+      "id": "approved-variant-identified",
+      "after": "compile-approved-variant",
+      "category": "EVIDENCE",
+      "subject": "compiler.selected_template_variant_id",
+      "matcher": "EQUALS",
+      "expected": "test.variant.c2-one-lap-no-pa",
+      "rationale": "The compile result names the reviewed variant that authorized the route."
+    },
+    {
+      "id": "approved-parameters-retained",
+      "after": "compile-approved-variant",
+      "category": "DOMAIN",
+      "subject": "compiler.selected_template_parameters",
+      "matcher": "EQUALS",
+      "expected": ["lap_count=1", "pa_policy=NONE"],
+      "rationale": "The accepted parameter intent remains inspectable and deterministic."
+    },
+    {
+      "id": "approved-components-validated",
+      "after": "compile-approved-variant",
+      "category": "DOMAIN",
+      "subject": "compiler.validated_required_entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.route.c2-arc",
+        "test.movement.c2-to-b",
+        "test.route.b-connector",
+        "test.movement.b-to-c2"
+      ],
+      "rationale": "Parameter approval does not replace ordered movement validation."
+    },
+    {
+      "id": "unapproved-variant-rejected",
+      "after": "compile-unapproved-variant",
+      "category": "SAFETY",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "A user-visible control cannot synthesize an unreviewed route combination."
+    },
+    {
+      "id": "unapproved-reason-explicit",
+      "after": "compile-unapproved-variant",
+      "category": "EVIDENCE",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "UNAPPROVED_TEMPLATE_PARAMETERS",
+      "rationale": "The UI can explain that the combination lacks an approved movement variant."
+    },
+    {
+      "id": "prior-approval-not-leaked",
+      "after": "compile-unapproved-variant",
+      "category": "SAFETY",
+      "subject": "compiler.selected_template_variant_id",
+      "matcher": "ABSENT",
+      "rationale": "A prior successful compile cannot make a later rejected request appear approved."
+    }
+  ]
+}

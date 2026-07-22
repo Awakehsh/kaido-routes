@@ -195,6 +195,68 @@ func circuitTemplateRequiresEveryComponentInOrder() {
     ])
 }
 
+@Test("Template parameters select only one approved snapshot-bound variant")
+func templateParametersRequireApprovedVariant() {
+  let plan = routePlan(entityIDs: ["test.edge.c1", "test.movement.loop"])
+  let approvedVariant = ApprovedRouteTemplateVariant(
+    id: "test.variant.two-laps",
+    templateID: "test.template.loop",
+    networkSnapshotID: plan.networkSnapshotID,
+    parameters: ["lap_count": "2", "pa_policy": "NONE"],
+    requiredEntityIDsInOrder: ["test.edge.c1", "test.movement.loop"]
+  )
+
+  let accepted = StrictRouteCompiler.validate(
+    routePlan: plan,
+    templateSelection: RouteTemplateVariantSelection(
+      templateID: "test.template.loop",
+      parameters: ["lap_count": "2", "pa_policy": "NONE"]
+    ),
+    approvedVariants: [
+      ApprovedRouteTemplateVariant(
+        id: "test.variant.retired-two-laps",
+        templateID: approvedVariant.templateID,
+        networkSnapshotID: "test.snapshot.retired",
+        parameters: approvedVariant.parameters,
+        requiredEntityIDsInOrder: approvedVariant.requiredEntityIDsInOrder
+      ),
+      approvedVariant,
+    ]
+  )
+  let unapproved = StrictRouteCompiler.validate(
+    routePlan: plan,
+    templateSelection: RouteTemplateVariantSelection(
+      templateID: "test.template.loop",
+      parameters: ["lap_count": "3", "pa_policy": "NONE"]
+    ),
+    approvedVariants: [approvedVariant]
+  )
+  let staleSnapshot = StrictRouteCompiler.validate(
+    routePlan: plan,
+    templateSelection: RouteTemplateVariantSelection(
+      templateID: "test.template.loop",
+      parameters: approvedVariant.parameters
+    ),
+    approvedVariants: [
+      ApprovedRouteTemplateVariant(
+        id: approvedVariant.id,
+        templateID: approvedVariant.templateID,
+        networkSnapshotID: "test.snapshot.retired",
+        parameters: approvedVariant.parameters,
+        requiredEntityIDsInOrder: approvedVariant.requiredEntityIDsInOrder
+      )
+    ]
+  )
+
+  #expect(accepted.status == .accepted)
+  #expect(accepted.selectedTemplateVariantID == approvedVariant.id)
+  #expect(accepted.selectedTemplateParameters == ["lap_count=2", "pa_policy=NONE"])
+  #expect(unapproved.status == .rejected)
+  #expect(unapproved.errorCodes == ["UNAPPROVED_TEMPLATE_PARAMETERS"])
+  #expect(staleSnapshot.status == .rejected)
+  #expect(staleSnapshot.errorCodes == ["TEMPLATE_VARIANT_SNAPSHOT_MISMATCH"])
+}
+
 @Test("A route cannot hide external or unclassified toll-domain occurrences")
 func routeCannotHideTollDomainBoundaries() {
   let routePlan = RoutePlan(

@@ -77,7 +77,7 @@ private struct ScenarioHarness {
   mutating func apply(_ event: ScenarioEvent) throws {
     switch event.type {
     case "ROUTE_COMPILE_REQUESTED":
-      try compileRoute()
+      try compileRoute(event.payload)
     case "NAVIGATION_STARTED":
       projectSignGuidance()
       projectLocalization()
@@ -119,7 +119,7 @@ private struct ScenarioHarness {
     }
   }
 
-  private mutating func compileRoute() throws {
+  private mutating func compileRoute(_ payload: [String: JSONValue]) throws {
     let inputs = scenario.given.inputs
 
     if let roundTrip = inputs.object("shared_route_round_trip"),
@@ -270,6 +270,49 @@ private struct ScenarioHarness {
       return
     }
 
+    if let requests = inputs.object("template_variant_requests"),
+      let variantValues = inputs.array("approved_template_variants"),
+      let routePlan = scenario.given.routePlan
+    {
+      let requestID = try payload.requiredString("request_id")
+      guard let request = requests.object(requestID) else {
+        throw ScenarioExecutionError.invalidInput("request_id")
+      }
+      let parameters = request.object("parameters") ?? [:]
+      guard parameters.values.allSatisfy({ $0.stringValue != nil }) else {
+        throw ScenarioExecutionError.invalidInput("parameters")
+      }
+      let variants = try variantValues.map { value in
+        guard let variant = value.objectValue else {
+          throw ScenarioExecutionError.invalidInput("approved_template_variants")
+        }
+        let variantParameters = variant.object("parameters") ?? [:]
+        guard variantParameters.values.allSatisfy({ $0.stringValue != nil }) else {
+          throw ScenarioExecutionError.invalidInput("approved_template_variants.parameters")
+        }
+        return ApprovedRouteTemplateVariant(
+          id: try variant.requiredString("variant_id"),
+          templateID: try variant.requiredString("template_id"),
+          networkSnapshotID: try variant.requiredString("network_snapshot_id"),
+          parameters: variantParameters.compactMapValues(\.stringValue),
+          requiredEntityIDsInOrder: try requiredStrings(
+            variant,
+            key: "required_entity_ids_in_order"
+          )
+        )
+      }
+      publish(
+        StrictRouteCompiler.validate(
+          routePlan: routePlan,
+          templateSelection: RouteTemplateVariantSelection(
+            templateID: try request.requiredString("template_id"),
+            parameters: parameters.compactMapValues(\.stringValue)
+          ),
+          approvedVariants: variants
+        ))
+      return
+    }
+
     if let requirement = inputs.object("route_component_requirement"),
       let routePlan = scenario.given.routePlan
     {
@@ -345,6 +388,7 @@ private struct ScenarioHarness {
   }
 
   private mutating func publish(_ result: CompileResult) {
+    clearCompilerObservations()
     adapterObservations["compiler.status"] = .string(result.status.rawValue)
     adapterObservations["compiler.error_codes"] = .strings(result.errorCodes)
     adapterObservations["compiler.synthetic_facility_ids"] = .strings(result.syntheticFacilityIDs)
@@ -358,9 +402,18 @@ private struct ScenarioHarness {
       result.crossedTollDomainIDs)
     adapterObservations["compiler.boundary_occurrence_ids"] = .strings(
       result.boundaryOccurrenceIDs)
+    if let selectedTemplateVariantID = result.selectedTemplateVariantID {
+      adapterObservations["compiler.selected_template_variant_id"] = .string(
+        selectedTemplateVariantID
+      )
+    }
+    adapterObservations["compiler.selected_template_parameters"] = .strings(
+      result.selectedTemplateParameters
+    )
   }
 
   private mutating func publish(_ result: RoutePlanExpansionResult) {
+    clearCompilerObservations()
     adapterObservations["compiler.status"] = .string(result.status.rawValue)
     adapterObservations["compiler.error_codes"] = .strings(result.errorCodes)
     guard let routePlan = result.routePlan else { return }
@@ -373,6 +426,12 @@ private struct ScenarioHarness {
     adapterObservations["compiler.expanded_occurrence_indexes"] = .array(
       routePlan.occurrences.map { .integer($0.index) }
     )
+  }
+
+  private mutating func clearCompilerObservations() {
+    for key in adapterObservations.keys.filter({ $0.hasPrefix("compiler.") }) {
+      adapterObservations.removeValue(forKey: key)
+    }
   }
 
   private mutating func publish(_ document: SharedRouteDocument) {

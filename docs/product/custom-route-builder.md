@@ -33,6 +33,13 @@ The system then presents a concrete compiled route and validation report. A
 template is not a loose list of attractions: each allowed parameter combination
 must map to checked movements in the selected network snapshot.
 
+The compiler performs an exact lookup over approved variants. A variant records
+its ID, template ID, complete parameter map, network snapshot, and ordered
+required entities. It rejects a partial parameter match, an unapproved
+combination, more than one matching approval, a stale snapshot, or missing and
+out-of-order components. Target duration remains a filter among approved
+variants; it never authorizes dynamic shortcut or movement generation.
+
 ## Expert authoring
 
 The user selects an entrance facility. At each decision point, the editor shows

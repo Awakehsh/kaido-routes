@@ -157,6 +157,14 @@ candidate occurrence list in order and rejects any unresolved component. A UI
 label such as “C2 circuit” is never permission to manufacture an edge between
 two similarly named or nearby route sections.
 
+Guided controls select an `ApprovedRouteTemplateVariant` by exact `template_id`
+and the complete parameter map. Each variant is also bound to one
+`network_snapshot_id` and declares its ordered required entities. Compilation
+requires exactly one parameter match, the same snapshot as the RoutePlan, and a
+successful component validation. Missing, duplicated, stale-snapshot, or
+partially matching variants fail closed; parameters are never interpreted as
+permission to generate an unreviewed movement.
+
 ## Composite journey
 
 A `RoutePlan` is the Shuto route contract. A `JourneyPlan` composes it with

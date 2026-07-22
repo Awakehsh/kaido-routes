@@ -408,6 +408,26 @@ Valhalla Meili implements an HMM/Viterbi matcher and exposes configurable emissi
 and transition parameters, so it is the first external oracle. Its output still
 uses Valhalla edges and must be translated before comparison with Kaido occurrences.
 
+`ValhallaMatcherReplayOracle` now implements that bounded comparison path. It
+uses the manifest-bound `osm_changeset` and expands each provider edge through
+OSM way ID, begin/end node ID, and digitized direction on the exact Kaido graph.
+Unlike strict selected-route translation, the provider-edge translator preserves
+repeated traversal. A matched point's along-edge fraction selects one translated
+segment only when it is not within the declared boundary tolerance; otherwise
+the result stays ambiguous.
+
+The batch request preserves increasing observation time and disables Meili point
+interpolation. Because Meili accepts one trace-level GPS accuracy and search
+radius rather than Kaido's per-observation accuracy values, the adapter records
+the maximum reported accuracy and derives one disclosed bounded radius. A stale
+point received out of timestamp order is rejected rather than reordered, so the
+batch oracle cannot claim to model that online case.
+
+Most importantly, `matched` is not treated as `HIGH`. The documented response
+contains match type and distance but no calibrated confidence and no RoutePlan
+occurrence. The adapter emits `LOW`, leaves occurrence absent, and cannot advance
+the journey reducer. Real shared-snapshot replay metrics remain pending.
+
 ## Tunnel behavior
 
 When GPS observations stop:

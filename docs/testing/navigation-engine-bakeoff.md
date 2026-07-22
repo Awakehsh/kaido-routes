@@ -125,6 +125,23 @@ and named safety failures. Its nearest-edge negative control intentionally
 ignores heading, transitions, occurrences, age, and source; a passing replay
 means it reproduced the fixture's expected failures deterministically.
 
+The first Meili adapter boundary is also executable without a live CI call. It
+posts `trace_attributes` with `shape_match=map_snap`, increasing point times,
+`interpolation_distance=0`, and one disclosed global `gps_accuracy` and
+`search_radius` derived from the trace. The response must retain `osm_changeset`,
+OSM way, begin/end OSM nodes, digitized direction, and the one-to-one
+`matched_points` fields. Provider edges then expand to exact same-dataset Kaido
+edges; repeat traversal is preserved and an observation at a translated segment
+boundary stays ambiguous.
+
+Meili exposes `matched`, `interpolated`, or `unmatched` plus distance, but no
+calibrated confidence and no RoutePlan occurrence. The bridge therefore emits
+at most `LOW`, and the shared evaluator correctly reports occurrence identity as
+unavailable. Reordered observed time is rejected instead of silently sorted,
+because the official API requires an increasing time sequence. The adapter is a
+batch oracle, not an online safety matcher. A private same-snapshot replay is
+still required before reporting real edge accuracy.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -458,8 +475,10 @@ gate.
    differences remain a field-review task, not a reason to weaken hard gates.
 8. **Partial complete:** the schema, six-fixture synthetic replay corpus,
    23-observation ground truth, shared evaluator, CLI, and deterministic
-   nearest-edge negative control are executable. Add Valhalla Meili as the first
-   external matcher oracle using provider-to-Kaido identity translation.
+   nearest-edge negative control are executable. The manifest-bound Meili
+   request/normalization/translation bridge is deterministic and deliberately
+   LOW-confidence. Run the first private same-snapshot Meili replay window and
+   record its compatibility gaps and edge metrics.
 9. Implement the route-aware Swift HMM and compare calibration.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
@@ -467,9 +486,9 @@ gate.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is the Valhalla Meili
-replay adapter and identity translation, followed by the route-aware Swift HMM.
-This is not yet an iPhone screen and not a rewrite of the Swift route-first core.
+the released facility corpus. The next implementation task is a private
+same-snapshot Meili replay window, followed by the route-aware Swift HMM. This is
+not yet an iPhone screen and not a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-23
 

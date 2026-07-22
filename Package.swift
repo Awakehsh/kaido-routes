@@ -29,7 +29,7 @@ let package = Package(
     .target(name: "KaidoSurfaceRouting"),
     .target(
       name: "KaidoAppleAdapters",
-      dependencies: ["KaidoSurfaceRouting"]
+      dependencies: ["KaidoNavigation", "KaidoSurfaceRouting"]
     ),
     .target(
       name: "KaidoScenarioRunner",

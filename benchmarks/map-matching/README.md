@@ -56,8 +56,15 @@ route occurrence, observation age, and location source. It is not production
 navigation code. Its result establishes the minimum comparison floor for
 Valhalla Meili and the route-aware Swift HMM.
 
-The next oracle adapter must normalize Valhalla `trace_attributes` map-matching
-output into `MatcherEstimate` without treating provider edge IDs as Kaido edge
-or occurrence IDs. Translation requires a shared dataset identity before the
-same evaluator can compare edge accuracy, occurrence accuracy, branch safety,
-gaps, and calibration.
+`ValhallaMatcherReplayOracle` now defines that normalization boundary for an
+offline batch oracle. It accepts only a manifest-pinned, same-snapshot response,
+translates OSM way plus begin/end node and digitized direction into Kaido edge
+chains, preserves repeated traversal, and leaves an internal segment boundary
+ambiguous. A Valhalla `matched` result becomes LOW confidence because Meili does
+not provide Kaido's calibrated live confidence or `RoutePlan` occurrence.
+Non-increasing observation times are rejected rather than silently reordered.
+
+The next evidence step is a private same-snapshot Meili replay window. Until
+that window exists, this adapter proves request and identity semantics only; it
+does not establish real-road matching accuracy or justify a live provider in
+the production navigation authority.

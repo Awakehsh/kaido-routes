@@ -51,6 +51,18 @@ nearest-edge matching viable; it establishes the comparison contract that
 Valhalla Meili and the route-aware Swift HMM must beat without any false
 high-confidence safety commit.
 
+The manifest-bound Valhalla Meili oracle boundary is now deterministic as well.
+It sends bounded `trace_attributes` `map_snap` requests with increasing point
+times, one explicit global accuracy/search-radius policy, and no interpolation
+merging. Response edge identity must translate from the same dataset through OSM
+way, begin/end node, and digitized direction before an observation can name a
+Kaido edge. Repeated traversals remain repeated and a point on a translated
+segment boundary remains ambiguous. Valhalla exposes match type and distance,
+not calibrated confidence or RoutePlan occurrence identity, so the adapter emits
+only `LOW` confidence and cannot authorize a branch commit. A real shared-snapshot
+replay window is still pending; deterministic tests use synthetic responses and
+make no live provider call.
+
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:
 

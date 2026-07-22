@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D10",
+  "title": "Actual planned distance remains separate from tariff distance",
+  "layer": "DOMAIN",
+  "tags": ["distance", "official-query", "toll"],
+  "purpose": "Present a dated official circuit quote without calculating toll from the much longer driven route.",
+  "evidence": {
+    "classification": "OFFICIAL_CHECKED",
+    "sources": [
+      {
+        "id": "shutoko-route-query-2026-07-22",
+        "uri": "https://search.shutoko.jp/",
+        "checked_at": "2026-07-22",
+        "supports": "A standard ETC car query for Iikura to Shibakoen via Takaracho returned a 23.3 km route and a JPY 300 daytime quote."
+      },
+      {
+        "id": "shutoko-tariff-distance-rule",
+        "uri": "https://www.shutoko.jp/fee/fee-info/pay_etc/distance/",
+        "checked_at": "2026-07-22",
+        "supports": "When multiple Shuto-only routes exist, tariff distance is based on the shortest applicable route rather than the actual route."
+      }
+    ],
+    "limitations": [
+      "The query is dated and is not a permanent toll guarantee.",
+      "It does not prove arbitrary lap count or elapsed-time behavior.",
+      "The final ETC statement can be affected by a different actual entry, exit, vehicle, time, or network boundary."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "shutoko.snapshot.2026-07-22",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "tariff_quotes": [
+      {
+        "quote_id": "iikura-takaracho-shibakoen-day",
+        "status": "VERIFIED_QUERY",
+        "vehicle_class": "STANDARD_CAR_ETC",
+        "tariff_version_id": "shutoko.tariff.2026-07-22-active",
+        "tariff_distance_km": 1.6,
+        "estimated_amount_yen": 300,
+        "checked_at": "2026-07-22T12:00:00+09:00",
+        "official_query_reference": "https://search.shutoko.jp/"
+      }
+    ],
+    "inputs": {
+      "route_summary": {
+        "entry": "飯倉",
+        "via": "宝町",
+        "exit": "芝公園",
+        "actual_distance_km": 23.3,
+        "departure_local_time": "2026-07-23T10:00:00+09:00"
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "quote",
+      "at_ms": 0,
+      "type": "TARIFF_QUOTED",
+      "payload": {
+        "quote_id": "iikura-takaracho-shibakoen-day"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "actual-distance-visible",
+      "after": "quote",
+      "category": "TOLL",
+      "subject": "route_summary.actual_distance_km",
+      "matcher": "EQUALS",
+      "expected": 23.3,
+      "rationale": "The user needs to know how far the selected route actually plans to travel."
+    },
+    {
+      "id": "tariff-distance-visible",
+      "after": "quote",
+      "category": "TOLL",
+      "subject": "route_summary.tariff_distance_km",
+      "matcher": "EQUALS",
+      "expected": 1.6,
+      "rationale": "Tariff distance has different meaning and provenance from planned distance."
+    },
+    {
+      "id": "distances-not-collapsed",
+      "after": "quote",
+      "category": "TOLL",
+      "subject": "route_summary.tariff_distance_km",
+      "matcher": "NOT_EQUALS",
+      "expected": 23.3,
+      "rationale": "The implementation must not calculate the quote from the actual circuit length."
+    },
+    {
+      "id": "dated-quote-visible",
+      "after": "quote",
+      "category": "EVIDENCE",
+      "subject": "route_summary.toll.status",
+      "matcher": "EQUALS",
+      "expected": "VERIFIED_QUERY",
+      "rationale": "A reproduced result must retain its evidence status rather than becoming an undated guarantee."
+    },
+    {
+      "id": "daytime-amount",
+      "after": "quote",
+      "category": "TOLL",
+      "subject": "route_summary.toll.estimated_amount_yen",
+      "matcher": "EQUALS",
+      "expected": 300,
+      "rationale": "This is the exact scalar result reproduced for the dated official query."
+    }
+  ]
+}
+

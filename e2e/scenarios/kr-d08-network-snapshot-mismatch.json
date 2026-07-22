@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D08",
+  "title": "A route cannot silently migrate across network snapshots",
+  "layer": "DOMAIN",
+  "tags": ["snapshot", "topology", "versioning"],
+  "purpose": "Reject a saved route when its movement IDs belong to a different topology snapshot and no reviewed migration exists.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic snapshots model a facility change without claiming a real effective date."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.current-v2",
+      "status": "TEST",
+      "effective_at": "2099-01-01T00:00:00+09:00"
+    },
+    "inputs": {
+      "saved_route": {
+        "network_snapshot_id": "test.snapshot.retired-v1",
+        "movement_ids": [
+          "test.movement.removed-in-v2"
+        ]
+      },
+      "reviewed_migrations": []
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "mismatch-rejected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "INCOMPATIBLE_NETWORK_SNAPSHOT",
+      "rationale": "A route built for retired topology must be revalidated rather than silently rewritten."
+    },
+    {
+      "id": "no-automatic-substitution",
+      "after": "compile",
+      "category": "SAFETY",
+      "subject": "compiler.substituted_movement_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "An unreviewed movement substitution can change the intended road experience or create an unsafe instruction."
+    }
+  ]
+}

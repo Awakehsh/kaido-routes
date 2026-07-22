@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S15",
+  "title": "A geofence-only entrance observation cannot enter strict-route mode",
+  "layer": "SIMULATION",
+  "tags": ["entry", "geofence", "location-confidence", "manual-fallback"],
+  "purpose": "Keep the journey in entry transition when proximity is known but exact ramp, direction, and continuity are not.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The proximity event is synthetic; operating-system wake behavior requires device testing."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.low-confidence-entry-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.entry-fallback",
+      "entry_facility_id": "test.entry.tunnel-adjacent",
+      "exit_facility_id": "test.exit.after-loop",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "first-route-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.first-route"
+        }
+      ]
+    },
+    "inputs": {
+      "entry_transition": {
+        "facility_id": "test.entry.tunnel-adjacent",
+        "required_directed_edge_ids": [
+          "test.edge.entry-ramp",
+          "test.edge.entry-merge"
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "ENTRY_TRANSITION",
+      "vehicle_is_moving": true,
+      "location_confidence": "LOW"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "entry-region-observed",
+      "at_ms": 1500,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "inside_entry_region": true,
+        "directed_edge_id": null,
+        "heading_matches": null,
+        "forward_continuity": false,
+        "confidence": "LOW"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "transition-remains-uncommitted",
+      "after": "entry-region-observed",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "Proximity without a directed-ramp match cannot prove entry onto the selected carriageway."
+    },
+    {
+      "id": "automatic-switch-blocked",
+      "after": "entry-region-observed",
+      "category": "SAFETY",
+      "subject": "journey.strict_route_auto_commit_allowed",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The app must remain honest when GPS is weak near tunnels or stacked roads."
+    },
+    {
+      "id": "reason-is-visible",
+      "after": "entry-region-observed",
+      "category": "UI",
+      "subject": "journey.ambiguity_reason",
+      "matcher": "EQUALS",
+      "expected": "GEOFENCE_ONLY_NO_DIRECTED_RAMP_MATCH",
+      "rationale": "A low-confidence mode must be explainable rather than silently snapping."
+    },
+    {
+      "id": "no-phone-touch-required",
+      "after": "entry-region-observed",
+      "category": "SAFETY",
+      "subject": "ui.requires_phone_touch_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A manual fallback may use a safe voice or CarPlay action but cannot demand phone interaction while moving."
+    },
+    {
+      "id": "route-target-remains-visible",
+      "after": "entry-region-observed",
+      "category": "UI",
+      "subject": "guidance.shows_entry_route_shield_and_direction",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The driver still needs the planned sign target while the phase is uncertain."
+    }
+  ]
+}

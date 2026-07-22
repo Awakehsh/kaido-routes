@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S14",
+  "title": "Finish drive activates a legal precomputed egress",
+  "layer": "SIMULATION",
+  "tags": ["egress", "exit", "finish-drive", "loop", "safety"],
+  "purpose": "End a repeated expressway drive through a checked future exit sequence without reversing or taking an arbitrary nearby ramp.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The loop, exit facilities, and egress movements are synthetic."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.finish-egress-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.repeated-loop",
+      "entry_facility_id": "test.entry.loop",
+      "exit_facility_id": "test.exit.default",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "loop-pass-1-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop"
+        },
+        {
+          "occurrence_id": "loop-pass-1-continue",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.loop-continue"
+        },
+        {
+          "occurrence_id": "loop-pass-2-edge",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop"
+        },
+        {
+          "occurrence_id": "loop-pass-2-decision",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.loop-decision"
+        },
+        {
+          "occurrence_id": "default-egress-approach",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.default-egress"
+        }
+      ]
+    },
+    "inputs": {
+      "finish_policy": "FINISH_ON_REQUEST",
+      "precomputed_egress_options": [
+        {
+          "egress_option_id": "test.egress.finish-compatible",
+          "first_eligible_occurrence_id": "loop-pass-2-decision",
+          "exit_facility_id": "test.exit.finish-compatible",
+          "egress_occurrence_ids": [
+            "test.egress.movement-to-exit",
+            "test.egress.exit-ramp"
+          ],
+          "released": true
+        }
+      ],
+      "geometrically_nearest_exit_facility_id": "test.exit.nearby-unapproved"
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "current_occurrence_id": "loop-pass-1-edge",
+      "vehicle_is_moving": true
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "finish-requested",
+      "at_ms": 1000,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "FINISH_DRIVE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "egress-plan-active",
+      "after": "finish-requested",
+      "category": "NAVIGATION",
+      "subject": "egress_plan.status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "Finish drive activates a previously compiled route object rather than an ad hoc reversal."
+    },
+    {
+      "id": "compatible-exit-selected",
+      "after": "finish-requested",
+      "category": "DOMAIN",
+      "subject": "egress_plan.exit_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.exit.finish-compatible",
+      "rationale": "Only the released directional exit in the precomputed option is eligible."
+    },
+    {
+      "id": "later-decision-is-respected",
+      "after": "finish-requested",
+      "category": "NAVIGATION",
+      "subject": "egress_plan.first_eligible_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "loop-pass-2-decision",
+      "rationale": "The driver remains on the loop until the next legal planned egress branch."
+    },
+    {
+      "id": "nearest-exit-not-substituted",
+      "after": "finish-requested",
+      "category": "SAFETY",
+      "subject": "egress_plan.exit_facility_id",
+      "matcher": "NOT_EQUALS",
+      "expected": "test.exit.nearby-unapproved",
+      "rationale": "Geometric proximity cannot bypass directional and evidence constraints."
+    },
+    {
+      "id": "exit-is-announced",
+      "after": "finish-requested",
+      "category": "UI",
+      "subject": "guidance.finish_confirmation.exit_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.exit.finish-compatible",
+      "rationale": "The user sees which exit will end the drive before branch guidance changes."
+    },
+    {
+      "id": "no-reversal",
+      "after": "finish-requested",
+      "category": "SAFETY",
+      "subject": "egress_plan.prohibited_actions",
+      "matcher": "CONTAINS",
+      "expected": "U_TURN_OR_REVERSAL",
+      "rationale": "Finishing never means turning around on the expressway."
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S04",
+  "title": "A missed branch rejoins the active RoutePlan instead of routing to a destination",
+  "layer": "SIMULATION",
+  "tags": ["deviation", "recovery", "safety"],
+  "purpose": "Keep the selected drive as the recovery target by joining a legal later occurrence in the same RoutePlan after a planned movement is missed.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The rejoin graph is synthetic; real recovery paths require released movement data."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.recovery-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.recovery",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "planned-branch",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.planned"
+        },
+        {
+          "occurrence_id": "planned-after-branch",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.planned-after"
+        },
+        {
+          "occurrence_id": "planned-loop-movement",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.loop-return"
+        },
+        {
+          "occurrence_id": "planned-rejoin",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.rejoin"
+        },
+        {
+          "occurrence_id": "planned-egress-approach",
+          "index": 5,
+          "kind": "EDGE",
+          "entity_id": "test.edge.egress-approach"
+        }
+      ]
+    },
+    "inputs": {
+      "recovery_candidates": [
+        {
+          "target_occurrence_id": "planned-rejoin",
+          "recovery_occurrence_ids": [
+            "recovery-unplanned-connector",
+            "recovery-loop-edge"
+          ],
+          "released": true,
+          "stays_in_allowed_toll_domain": true
+        }
+      ],
+      "safe_exit_fallback": {
+        "exit_facility_id": "test.exit.safe",
+        "use_only_when_no_released_rejoin": true
+      }
+    },
+    "system_state": {
+      "current_occurrence_id": "approach",
+      "vehicle_is_moving": true
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "wrong-branch",
+      "at_ms": 8000,
+      "type": "BRANCH_OBSERVED",
+      "payload": {
+        "observed_movement_id": "test.movement.unplanned",
+        "confidence": "HIGH"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "safe-recovery-started",
+      "after": "wrong-branch",
+      "category": "NAVIGATION",
+      "subject": "recovery.status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "The deterministic fixture contains one released legal rejoin path."
+    },
+    {
+      "id": "route-plan-is-the-objective",
+      "after": "wrong-branch",
+      "category": "NAVIGATION",
+      "subject": "recovery.objective",
+      "matcher": "EQUALS",
+      "expected": "REJOIN_ACTIVE_ROUTE_PLAN",
+      "rationale": "Recovery preserves the route-first product contract instead of optimizing toward a destination."
+    },
+    {
+      "id": "same-plan-retained",
+      "after": "wrong-branch",
+      "category": "DOMAIN",
+      "subject": "recovery.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.recovery",
+      "rationale": "The recovery plan retains an explicit reference to the selected RoutePlan."
+    },
+    {
+      "id": "later-occurrence-selected",
+      "after": "wrong-branch",
+      "category": "DOMAIN",
+      "subject": "recovery.chosen_rejoin_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "planned-rejoin",
+      "rationale": "Repeated or shared road entities are disambiguated by the later occurrence ID."
+    },
+    {
+      "id": "destination-reroute-disabled",
+      "after": "wrong-branch",
+      "category": "NAVIGATION",
+      "subject": "recovery.destination_reroute_used",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A generic destination route is not equivalent to returning to the designed drive."
+    },
+    {
+      "id": "exit-fallback-not-activated",
+      "after": "wrong-branch",
+      "category": "NAVIGATION",
+      "subject": "egress_plan.status",
+      "matcher": "EQUALS",
+      "expected": "INACTIVE",
+      "rationale": "A released route rejoin exists, so recovery cannot silently leave the expressway."
+    },
+    {
+      "id": "no-abrupt-correction",
+      "after": "wrong-branch",
+      "category": "SAFETY",
+      "subject": "guidance.prohibited_actions",
+      "matcher": "CONTAINS",
+      "expected": "ABRUPT_LANE_CHANGE_OR_REVERSAL",
+      "rationale": "Missing a route branch never justifies an unsafe correction."
+    },
+    {
+      "id": "no-moving-editor",
+      "after": "wrong-branch",
+      "category": "SAFETY",
+      "subject": "ui.requires_route_editing_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Recovery must not require complex touch interaction in a decision zone."
+    },
+    {
+      "id": "planned-branch-not-completed",
+      "after": "wrong-branch",
+      "category": "DOMAIN",
+      "subject": "navigation.completed_occurrence_ids",
+      "matcher": "NOT_EQUALS",
+      "expected": ["approach", "planned-branch"],
+      "rationale": "The planned movement was missed and cannot be marked complete."
+    }
+  ]
+}

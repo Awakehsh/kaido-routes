@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D09",
+  "title": "Japanese sign targets remain primary under localization",
+  "layer": "DOMAIN",
+  "tags": ["localization", "sign", "voice"],
+  "purpose": "Keep the text a driver sees on the road intact while adding an English explanation and romaji.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The sign set is illustrative and is not evidence for a released movement."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.sign-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "locale": "en",
+      "sign_set": {
+        "route_shields": ["B"],
+        "destinations_ja": ["湾岸線", "横浜方面"],
+        "destinations_en_official": ["Bayshore Route", "Yokohama"],
+        "destinations_romaji": ["Wangan-sen", "Yokohama-homen"]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "japanese-preserved",
+      "after": "start",
+      "category": "UI",
+      "subject": "guidance.destinations_ja",
+      "matcher": "EQUALS",
+      "expected": ["湾岸線", "横浜方面"],
+      "rationale": "The user must be able to compare the app with the physical Japanese sign."
+    },
+    {
+      "id": "route-shield-preserved",
+      "after": "start",
+      "category": "UI",
+      "subject": "guidance.route_shields",
+      "matcher": "CONTAINS",
+      "expected": "B",
+      "rationale": "Route shields are the most stable bilingual navigation anchor."
+    },
+    {
+      "id": "english-layer-added",
+      "after": "start",
+      "category": "UI",
+      "subject": "guidance.destinations_en",
+      "matcher": "EQUALS",
+      "expected": ["Bayshore Route", "Yokohama"],
+      "rationale": "Localization explains the sign without replacing it."
+    }
+  ]
+}
+

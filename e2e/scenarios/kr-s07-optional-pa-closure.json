@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S07",
+  "title": "An optional PA closure preserves the mainline route",
+  "layer": "SIMULATION",
+  "tags": ["closure", "optional", "pa"],
+  "purpose": "Treat an optional parking-area visit as a conditional subgraph instead of making the whole drive fail.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The PA and movements are synthetic and do not state that any real PA is currently closed."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.pa-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.optional-pa",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "mainline-before-pa",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.mainline-before-pa"
+        },
+        {
+          "occurrence_id": "optional-pa-visit",
+          "index": 1,
+          "kind": "PA_VISIT",
+          "entity_id": "test.pa.daikoku-like",
+          "optional": true
+        },
+        {
+          "occurrence_id": "mainline-after-pa",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.mainline-after-pa"
+        }
+      ]
+    },
+    "inputs": {
+      "mainline_bypass_movement_id": "test.movement.keep-mainline"
+    },
+    "system_state": {
+      "route_status": "READY"
+    }
+  },
+  "when": [
+    {
+      "id": "pa-closes",
+      "at_ms": 0,
+      "type": "RESTRICTION_UPDATED",
+      "payload": {
+        "subject_id": "test.pa.daikoku-like",
+        "state": "KNOWN_CLOSED"
+      }
+    },
+    {
+      "id": "start",
+      "at_ms": 1000,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "route-still-executable",
+      "after": "pa-closes",
+      "category": "NAVIGATION",
+      "subject": "route.executable",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The PA stop is optional and the checked mainline route remains available."
+    },
+    {
+      "id": "visit-skipped",
+      "after": "pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.skipped_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "optional-pa-visit",
+      "rationale": "The conditional visit is explicitly skipped rather than treated as completed."
+    },
+    {
+      "id": "mainline-preserved",
+      "after": "start",
+      "category": "DOMAIN",
+      "subject": "navigation.pending_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "mainline-after-pa",
+      "rationale": "Closing the PA must not discard the useful mainline experience."
+    },
+    {
+      "id": "closure-warning-visible",
+      "after": "pa-closes",
+      "category": "UI",
+      "subject": "route.warnings",
+      "matcher": "CONTAINS",
+      "expected": "OPTIONAL_PA_UNAVAILABLE",
+      "rationale": "The user should understand why the saved route changed."
+    }
+  ]
+}
+

@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaido-routes.example/schema/e2e-scenario-v1.json",
+  "title": "Kaido Routes portable E2E scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "layer",
+    "tags",
+    "purpose",
+    "evidence",
+    "given",
+    "when",
+    "then"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^KR-[A-Z][0-9]{2}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "layer": {
+      "enum": ["DOMAIN", "SIMULATION", "IPHONE_UI", "CARPLAY", "FIELD"]
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    },
+    "given": {
+      "$ref": "#/$defs/given"
+    },
+    "when": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "then": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/assertion"
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "uri", "checked_at", "supports"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "supports": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "sources", "limitations", "release_blockers"],
+      "properties": {
+        "classification": {
+          "enum": [
+            "SYNTHETIC",
+            "COMMUNITY_CANDIDATE",
+            "OFFICIAL_CHECKED",
+            "FIELD_CHECKED",
+            "RELEASED",
+            "STALE_REVIEW_REQUIRED"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "release_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "network_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "effective_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": ["ACTIVE", "PROPOSED", "RETIRED", "TEST"]
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["occurrence_id", "index", "kind", "entity_id"],
+      "properties": {
+        "occurrence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kind": {
+          "enum": ["EDGE", "JUNCTION_MOVEMENT", "PA_VISIT"]
+        },
+        "entity_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      }
+    },
+    "route_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_id",
+        "entry_facility_id",
+        "exit_facility_id",
+        "recovery_policy",
+        "occurrences"
+      ],
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entry_facility_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exit_facility_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recovery_policy": {
+          "enum": ["STRICT", "SAFE_REJOIN", "SAFE_EXIT", "MANUAL_WHEN_PARKED"]
+        },
+        "actual_distance_km": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "occurrences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/occurrence"
+          }
+        }
+      }
+    },
+    "tariff_quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quote_id",
+        "status",
+        "vehicle_class",
+        "tariff_version_id",
+        "checked_at",
+        "official_query_reference"
+      ],
+      "properties": {
+        "quote_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": ["VERIFIED_QUERY", "ESTIMATED", "UNKNOWN"]
+        },
+        "vehicle_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tariff_version_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tariff_distance_km": {
+          "type": "number",
+          "minimum": 0
+        },
+        "estimated_amount_yen": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "official_query_reference": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "given": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network_snapshot", "inputs", "system_state"],
+      "properties": {
+        "network_snapshot": {
+          "$ref": "#/$defs/network_snapshot"
+        },
+        "route_plan": {
+          "$ref": "#/$defs/route_plan"
+        },
+        "tariff_quotes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tariff_quote"
+          }
+        },
+        "inputs": {
+          "type": "object"
+        },
+        "system_state": {
+          "type": "object"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "at_ms", "type", "payload"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "at_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "enum": [
+            "ROUTE_COMPILE_REQUESTED",
+            "NAVIGATION_STARTED",
+            "LOCATION_UPDATED",
+            "TUNNEL_ENTERED",
+            "TUNNEL_EXITED",
+            "BRANCH_OBSERVED",
+            "RESTRICTION_UPDATED",
+            "CARPLAY_CONNECTED",
+            "CARPLAY_DISCONNECTED",
+            "USER_ACTION",
+            "TARIFF_QUOTED"
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "after", "category", "subject", "matcher", "rationale"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "after": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "enum": ["DOMAIN", "NAVIGATION", "UI", "SAFETY", "TOLL", "EVIDENCE"]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "matcher": {
+          "enum": [
+            "EQUALS",
+            "NOT_EQUALS",
+            "CONTAINS",
+            "ONE_OF",
+            "PRESENT",
+            "ABSENT",
+            "LESS_THAN",
+            "GREATER_THAN"
+          ]
+        },
+        "expected": true,
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
+

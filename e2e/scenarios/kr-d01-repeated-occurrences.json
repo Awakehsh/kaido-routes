@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D01",
+  "title": "Repeated road entities remain distinct route occurrences",
+  "layer": "DOMAIN",
+  "tags": ["occurrence", "loop", "progress"],
+  "purpose": "Prevent route progress from jumping to the first copy of a road entity when the planned route traverses it again.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic entity IDs test occurrence semantics, not a real C1 movement."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.loop-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.two-laps",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "lap-1-edge-a",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.c1-a"
+        },
+        {
+          "occurrence_id": "lap-1-movement-a-b",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c1-a-b"
+        },
+        {
+          "occurrence_id": "lap-1-edge-b",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.c1-b"
+        },
+        {
+          "occurrence_id": "lap-1-movement-b-a",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c1-b-a"
+        },
+        {
+          "occurrence_id": "lap-2-edge-a",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.c1-a"
+        },
+        {
+          "occurrence_id": "lap-2-movement-a-b",
+          "index": 5,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c1-a-b"
+        },
+        {
+          "occurrence_id": "lap-2-edge-b",
+          "index": 6,
+          "kind": "EDGE",
+          "entity_id": "test.edge.c1-b"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "navigation_status": "READY"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "first-edge-a-fix",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_entity_id": "test.edge.c1-a",
+        "expected_occurrence_id": "lap-1-edge-a",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "second-edge-a-fix",
+      "at_ms": 21000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_entity_id": "test.edge.c1-a",
+        "expected_occurrence_id": "lap-2-edge-a",
+        "confidence": "HIGH"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "later-occurrence-selected",
+      "after": "second-edge-a-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "lap-2-edge-a",
+      "rationale": "Entity identity is not sufficient to identify progress through a repeated route."
+    },
+    {
+      "id": "later-index-selected",
+      "after": "second-edge-a-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.occurrence_index",
+      "matcher": "EQUALS",
+      "expected": 4,
+      "rationale": "The second traversal must advance to its own ordered occurrence."
+    },
+    {
+      "id": "first-occurrence-retained",
+      "after": "second-edge-a-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.completed_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "lap-1-edge-a",
+      "rationale": "Completing an earlier copy must not remove it from the route history."
+    }
+  ]
+}
+

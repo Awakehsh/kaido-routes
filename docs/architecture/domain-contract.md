@@ -1,0 +1,266 @@
+# Route and road-network domain contract
+
+This document defines implementation-independent invariants. Concrete field
+names may evolve, but implementations and tests must preserve the semantics.
+
+## Time-versioned directed multigraph
+
+The routable network is a directed multigraph bound to an effective snapshot.
+Named roads and named junctions are presentation concepts; routing operates on
+directional carriageways, facilities, approaches, connectors, and movements.
+
+```text
+NetworkSnapshot
+├── RoadRoute
+│   └── Carriageway
+│       └── DirectedRoadEdge
+├── AccessComplex
+│   ├── EntranceFacility
+│   └── ExitFacility
+├── JunctionComplex
+│   ├── JunctionApproach
+│   ├── JunctionMovement
+│   └── DecisionZone
+├── ParkingAreaSubgraph
+├── ExternalBoundary
+└── OperationalRestriction
+```
+
+Overlapping coordinates do not establish connectivity. Direction, level,
+structure, and connector identity do.
+
+## Canonical junction choice
+
+A route choice is:
+
+```text
+incoming carriageway and approach
+→ named junction complex and ordered connector sequence
+→ outgoing carriageway and direction
+```
+
+Lane preparation, sign destinations, maneuver, prompt anchors, and risk flags
+attach to this movement. They do not attach only to the JCT name.
+
+## Directional facilities
+
+An entrance and an exit are separate routable facilities. A UI may group them
+under one `AccessComplex`, but the route compiler cannot infer missing directions
+or treat a full IC as the default.
+
+```text
+AccessComplex
+  access_complex_id
+  display_name
+  directional_facility_ids[]
+  access_pattern: FULL | HALF | QUARTER | IRREGULAR | UNKNOWN
+
+EntranceFacility
+  facility_id
+  surface_approach_anchor_id
+  target_carriageway_id
+  target_direction
+  connector_edge_ids[]
+
+ExitFacility
+  facility_id
+  source_carriageway_id
+  source_direction
+  connector_edge_ids[]
+  surface_handoff_anchor_id
+```
+
+`access_pattern` is derived metadata for education and filtering. It never
+creates a missing entrance, exit, or direction. Exact facilities and connector
+edges in the selected network snapshot are the routing truth.
+
+Surface anchors are directed points on an ordinary-road edge. An approach anchor
+must leave enough distance for guidance before the ramp and must not represent a
+place where the driver should stop. An exit handoff anchor is beyond the ramp at
+a point where ordinary-road routing can resume.
+
+## Route occurrence identity
+
+A route plan is an ordered list of occurrences:
+
+```text
+RoutePlan
+  network_snapshot_id
+  entry_facility_id
+  occurrences[]
+  exit_facility_id
+  recovery_policy
+
+RouteOccurrence
+  occurrence_id
+  index
+  kind: EDGE | JUNCTION_MOVEMENT | PA_VISIT
+  entity_id
+```
+
+The same entity may appear any number of times. Runtime identity is the
+occurrence, not the entity or coordinate. Progress, import/export, recovery,
+analytics, and UI selection must all preserve occurrence order.
+
+## Composite journey
+
+A `RoutePlan` is the Shuto route contract. A `JourneyPlan` composes it with
+bounded ordinary-road access and egress:
+
+```text
+JourneyPlan
+  journey_plan_id
+  origin
+  access_leg
+  entry_transition
+  shuto_route_plan_id
+  finish_policy: FIXED_EXIT | RETURN_NEAR_ORIGIN | FINISH_ON_REQUEST
+  precomputed_egress_options[]
+  exit_transition
+  surface_egress_leg
+
+JourneyPhase
+  PLANNING | APPROACH_TO_ENTRY | ENTRY_TRANSITION | STRICT_ROUTE
+  | ROUTE_RECOVERY | EXIT_TRANSITION | SURFACE_EGRESS | COMPLETED
+```
+
+The access router may propose an ordinary-road leg, but the journey compiler
+accepts it only if it reaches the selected facility's approach anchor without
+entering another expressway facility. Entry and exit transitions come from the
+versioned Kaido network, not from an IC name returned by a surface router.
+
+Phase changes are evidence-based. A proximity region may create an entry
+candidate, but only matching the directed transition, heading, and continuous
+forward progress may automatically commit `STRICT_ROUTE`. Low confidence keeps
+the journey in `ENTRY_TRANSITION` and cannot be hidden by a UI mode change.
+
+## Route-first recovery and egress
+
+Deviation recovery retains the original plan reference:
+
+```text
+RecoveryPlan
+  recovery_plan_id
+  route_plan_id
+  deviation_occurrence_id
+  observed_state
+  candidate_rejoin_occurrence_ids[]
+  chosen_rejoin_occurrence_id
+  recovery_occurrences[]
+  skipped_occurrence_ids[]
+  status: SEARCHING | ACTIVE | REJOINED | NO_RELEASED_REJOIN
+```
+
+Every candidate target is a later occurrence in the active route plan. The
+search may add legal recovery occurrences but cannot substitute a generic
+destination route, silently cross an external boundary, or treat an exit as a
+successful rejoin. If no released rejoin exists, an explicit safe egress marks
+the route interrupted.
+
+`FINISH_ON_REQUEST` similarly activates a versioned `EgressPlan` from the current
+or a later eligible occurrence to an exact exit facility. It never reverses the
+occurrence sequence. Before activation, an exit connector is an off-route branch
+and cannot be used as a shortcut.
+
+## PA semantics
+
+A PA visit is an explicit access movement, stopping state, and return movement.
+It may be optional or required. If an optional PA closes, the mainline route may
+remain executable; if a required PA is unavailable, compilation fails.
+
+## Navigation state
+
+Navigation tracks at least:
+
+```text
+route_plan_id
+occurrence_index
+progress_within_occurrence
+location_confidence: HIGH | MEDIUM | LOW | LOST
+location_source
+candidate_states
+last_reliable_fix
+ambiguity_reason
+```
+
+Candidate matching is constrained around the expected occurrence. Nearest-line
+matching alone is insufficient for repeated, parallel, stacked, or tunnel roads.
+
+## Operational status
+
+Topology and operational status are separate. Status applies to an edge,
+movement, facility, or PA over an interval:
+
+```text
+KNOWN_CLOSED
+PLANNED_CONFLICT
+NO_KNOWN_CONFLICT
+REALTIME_UNCONFIRMED
+```
+
+`NO_KNOWN_CONFLICT` means only that checked planned information contains no
+conflict. It cannot be rendered as a live-open confirmation.
+
+## Toll contract
+
+The planned route and toll quote are independent records:
+
+```text
+RoutePlan.actual_distance_km
+
+TariffQuote
+  entry_facility_id
+  exit_facility_id
+  tariff_version_id
+  tariff_distance_km
+  vehicle_class
+  estimated_amount_yen
+  status: VERIFIED_QUERY | ESTIMATED | UNKNOWN
+  checked_at
+  official_query_reference
+```
+
+Never calculate a final toll from actual route distance. Proposed tariff
+versions are non-active until primary evidence establishes an effective rule.
+
+## Signs and localization
+
+Store displayed sign evidence separately from localized explanation:
+
+```text
+route_shields[]
+destinations_ja[]
+destinations_en_official[]
+destinations_romaji[]
+explanations_localized[]
+spoken_forms_localized[]
+lane_arrows[]
+source_evidence[]
+verified_at
+```
+
+Japanese text and displayed order are preserved so the driver can match the
+physical sign. A translation cannot silently replace them.
+
+The minimum release locales are `ja-JP`, `zh-Hans`, and `en`. Display guidance
+and spoken guidance are complete, versioned bundles, and their languages can be
+selected independently. Each bundle records reviewed spoken forms for route
+codes, named facilities, and Japanese terms. Missing text, missing spoken forms,
+or an unavailable matching device voice must be surfaced before departure; the
+runtime cannot silently fall back to a wrong-language pronunciation.
+
+## Evidence lifecycle
+
+Suggested movement lifecycle:
+
+```text
+DRAFT_OSM
+→ OFFICIAL_DIAGRAM_CHECKED
+→ SIGN_EVIDENCE_CHECKED
+→ FIELD_TRACE_CHECKED
+→ RELEASED
+→ STALE_REVIEW_REQUIRED
+```
+
+Shipping a smaller released subgraph is preferable to presenting the whole
+network as equally trustworthy.

@@ -1,0 +1,20 @@
+/research/
+
+# macOS
+.DS_Store
+
+# Xcode and Swift
+DerivedData/
+.build/
+build/
+xcuserdata/
+*.xcuserstate
+
+# Local environment and generated test output
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+/artifacts/
+/test-results/

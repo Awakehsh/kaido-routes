@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D15",
+  "title": "Released guidance is complete in Japanese, Simplified Chinese, and English",
+  "layer": "DOMAIN",
+  "tags": ["localization", "sign", "text", "voice"],
+  "purpose": "Require three-language text and speech while preserving one exact Japanese sign target and allowing UI and voice languages to differ.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The guidance wording is illustrative and is not sign evidence for a released movement."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.trilingual-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "required_locales": ["ja-JP", "zh-Hans", "en"],
+      "settings": {
+        "ui_locale": "zh-Hans",
+        "guidance_voice_locale": "en"
+      },
+      "available_voice_languages": ["ja-JP", "zh-CN", "en-US"],
+      "sign_target": {
+        "route_shields": ["B"],
+        "exact_text_ja": "B 湾岸線・横浜方面"
+      },
+      "guidance_bundles": {
+        "ja-JP": {
+          "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+          "spoken_text": "左側を進み、B 湾岸線、横浜方面へ",
+          "spoken_forms": {
+            "B": "ビー",
+            "湾岸線": "わんがんせん"
+          },
+          "preserved_sign_text_ja": "B 湾岸線・横浜方面"
+        },
+        "zh-Hans": {
+          "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+          "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+          "spoken_forms": {
+            "B": "B 路线",
+            "湾岸線": "湾岸线"
+          },
+          "preserved_sign_text_ja": "B 湾岸線・横浜方面"
+        },
+        "en": {
+          "display_text": "Keep left for Route B, Bayshore Route, toward Yokohama",
+          "spoken_text": "Keep left for Route B, Bayshore Route, toward Yokohama",
+          "spoken_forms": {
+            "B": "Route B",
+            "湾岸線": "Bayshore Route"
+          },
+          "preserved_sign_text_ja": "B 湾岸線・横浜方面"
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "locale-gate-passes",
+      "after": "start",
+      "category": "DOMAIN",
+      "subject": "localization.release_gate",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Every required locale has display text, spoken text, reviewed forms, and the preserved sign target."
+    },
+    {
+      "id": "japanese-sign-is-identical",
+      "after": "start",
+      "category": "UI",
+      "subject": "guidance.visible_sign_text_ja",
+      "matcher": "EQUALS",
+      "expected": "B 湾岸線・横浜方面",
+      "rationale": "All localized experiences must point to the same physical Japanese sign."
+    },
+    {
+      "id": "ui-language-is-chinese",
+      "after": "start",
+      "category": "UI",
+      "subject": "localization.active_ui_locale",
+      "matcher": "EQUALS",
+      "expected": "zh-Hans",
+      "rationale": "The user selected Simplified Chinese for the interface."
+    },
+    {
+      "id": "voice-language-is-independent",
+      "after": "start",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_voice_locale",
+      "matcher": "EQUALS",
+      "expected": "en",
+      "rationale": "English voice may be selected without changing the Chinese interface."
+    },
+    {
+      "id": "no-wrong-language-fallback",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "guidance.used_implicit_wrong_language_voice",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A missing matching voice must be disclosed before driving, not hidden by an unrelated pronunciation."
+    }
+  ]
+}

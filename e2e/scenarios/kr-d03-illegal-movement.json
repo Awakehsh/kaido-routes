@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D03",
+  "title": "An illegal directional junction movement is rejected",
+  "layer": "DOMAIN",
+  "tags": ["compiler", "junction", "movement"],
+  "purpose": "Ensure that sharing a JCT name never creates a directional connection that is absent from the selected network snapshot.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The approaches are synthetic so this scenario tests compiler behavior only."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.directional-jct-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "candidate_route": {
+        "incoming_approach_id": "test.approach.radial-up",
+        "junction_complex_id": "test.junction.alpha",
+        "requested_outgoing_carriageway_id": "test.carriageway.ring-inner"
+      },
+      "legal_movement_ids": [
+        "test.movement.radial-up-to-ring-outer"
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "compile-rejected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "The compiler may emit only movements present for the exact incoming approach."
+    },
+    {
+      "id": "actionable-error",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "ILLEGAL_JUNCTION_MOVEMENT",
+      "rationale": "The editor needs a stable reason to remove or explain an unavailable branch."
+    }
+  ]
+}
+

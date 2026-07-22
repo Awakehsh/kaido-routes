@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D16",
+  "title": "Entrance recommendation prefers legal route compatibility over proximity",
+  "layer": "DOMAIN",
+  "tags": ["current-location", "entrance", "recommendation", "route-template"],
+  "purpose": "Choose an exact directional entrance that can join the selected route instead of the geometrically nearest IC.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Locations, ETAs, facilities, and route-template joins are synthetic."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.entry-recommendation-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "current_location": {
+        "latitude": 35.0000,
+        "longitude": 139.0000
+      },
+      "route_template": {
+        "template_id": "test.template.inner-loop",
+        "allowed_join_occurrence_ids": ["loop-join-inner"]
+      },
+      "entrance_candidates": [
+        {
+          "facility_id": "test.entry.nearest.outer",
+          "straight_line_distance_km": 0.8,
+          "surface_eta_minutes": 4,
+          "target_carriageway_id": "test.carriageway.ring-outer",
+          "legal_join_occurrence_ids": []
+        },
+        {
+          "facility_id": "test.entry.farther.inner",
+          "straight_line_distance_km": 2.1,
+          "surface_eta_minutes": 8,
+          "target_carriageway_id": "test.carriageway.ring-inner",
+          "legal_join_occurrence_ids": ["loop-join-inner"]
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {
+        "recommend_entry_from_current_location": true
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "compatible-entry-selected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "entry_recommendation.selected_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.entry.farther.inner",
+      "rationale": "Legal access to the selected route is a hard constraint before distance or ETA scoring."
+    },
+    {
+      "id": "join-occurrence-selected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "entry_recommendation.join_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "loop-join-inner",
+      "rationale": "The recommendation must identify where the entrance joins the route, not only which IC is nearby."
+    },
+    {
+      "id": "nearest-rejection-explained",
+      "after": "compile",
+      "category": "UI",
+      "subject": "entry_recommendation.rejections.test.entry.nearest.outer",
+      "matcher": "CONTAINS",
+      "expected": "NO_LEGAL_ROUTE_JOIN",
+      "rationale": "The UI can explain why the nearest named entrance is unsuitable."
+    }
+  ]
+}

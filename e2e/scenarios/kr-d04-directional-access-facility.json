@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D04",
+  "title": "An IC access-pattern summary cannot synthesize a missing entrance",
+  "layer": "DOMAIN",
+  "tags": ["compiler", "direction", "facility", "ic"],
+  "purpose": "Keep full, half, and quarter IC terminology as derived metadata while routing only through explicit directional facilities.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The access complex and facilities are synthetic; this scenario tests model semantics only."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.access-pattern-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "access_complex": {
+        "access_complex_id": "test.ic.alpha",
+        "display_name": "Alpha IC",
+        "access_pattern": "HALF",
+        "directional_facility_ids": [
+          "test.entry.alpha.outer",
+          "test.exit.alpha.inner"
+        ]
+      },
+      "explicit_facilities": [
+        {
+          "facility_id": "test.entry.alpha.outer",
+          "kind": "ENTRANCE",
+          "target_carriageway_id": "test.carriageway.ring-outer"
+        },
+        {
+          "facility_id": "test.exit.alpha.inner",
+          "kind": "EXIT",
+          "source_carriageway_id": "test.carriageway.ring-inner"
+        }
+      ],
+      "requested_facility": {
+        "kind": "ENTRANCE",
+        "target_carriageway_id": "test.carriageway.ring-inner"
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "compile-rejected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "No explicit inner-direction entrance exists in the selected snapshot."
+    },
+    {
+      "id": "missing-directional-facility",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "MISSING_DIRECTIONAL_ENTRANCE",
+      "rationale": "The failure identifies the absent facility rather than treating the IC name as connectivity."
+    },
+    {
+      "id": "nothing-synthesized",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.synthetic_facility_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "Derived access-pattern metadata may never invent a ramp."
+    }
+  ]
+}

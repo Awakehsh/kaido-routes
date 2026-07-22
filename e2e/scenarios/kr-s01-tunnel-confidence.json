@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S01",
+  "title": "Tunnel positioning degrades without fabricating branch progress",
+  "layer": "SIMULATION",
+  "tags": ["confidence", "tunnel", "yamate"],
+  "purpose": "Keep preplanned guidance useful while clearly degrading position confidence and withholding branch confirmation when fixes become stale in a tunnel.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The event timing is synthetic and does not claim universal Yamate Tunnel hardware behavior.",
+      "Separate field scenarios are required for phone-only, wired CarPlay, and wireless CarPlay configurations."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.tunnel-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.tunnel-branch",
+      "entry_facility_id": "test.access.tunnel-entry",
+      "exit_facility_id": "test.access.after-tunnel",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "approach-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.c2-tunnel-approach"
+        },
+        {
+          "occurrence_id": "tunnel-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c2-outer-branch"
+        },
+        {
+          "occurrence_id": "after-branch-edge",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.after-branch"
+        }
+      ]
+    },
+    "inputs": {
+      "next_sign": {
+        "route_shields": ["C2"],
+        "destinations_ja": ["中央環状線", "外回り"],
+        "destinations_en": ["Central Circular Route", "Outer"]
+      }
+    },
+    "system_state": {
+      "location_confidence": "HIGH",
+      "current_occurrence_id": "approach-edge"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "reliable-fix",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 8.0,
+        "age_ms": 0,
+        "source": "PHONE",
+        "matched_occurrence_id": "approach-edge"
+      }
+    },
+    {
+      "id": "tunnel-entry",
+      "at_ms": 5000,
+      "type": "TUNNEL_ENTERED",
+      "payload": {
+        "portal_id": "test.portal.yamate-like"
+      }
+    },
+    {
+      "id": "stale-fix",
+      "at_ms": 20000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": -1,
+        "age_ms": 15000,
+        "source": "PHONE",
+        "projected_occurrence_id": "tunnel-movement"
+      }
+    },
+    {
+      "id": "ambiguous-branch",
+      "at_ms": 26000,
+      "type": "BRANCH_OBSERVED",
+      "payload": {
+        "candidate_occurrence_ids": ["tunnel-movement", "test.wrong-branch-occurrence"],
+        "confidence": "LOW"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "confidence-degraded",
+      "after": "stale-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.location_confidence",
+      "matcher": "ONE_OF",
+      "expected": ["LOW", "LOST"],
+      "rationale": "A stale, invalid-accuracy fix cannot support a precise live position."
+    },
+    {
+      "id": "estimated-marker",
+      "after": "stale-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "ESTIMATED",
+      "rationale": "The topology marker must visually communicate projection rather than measurement."
+    },
+    {
+      "id": "guidance-remains-available",
+      "after": "stale-fix",
+      "category": "NAVIGATION",
+      "subject": "guidance.next.route_shields",
+      "matcher": "CONTAINS",
+      "expected": "C2",
+      "rationale": "Known pre-branch sign guidance remains useful even when position confidence degrades."
+    },
+    {
+      "id": "branch-not-confirmed",
+      "after": "ambiguous-branch",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "NOT_EQUALS",
+      "expected": "after-branch-edge",
+      "rationale": "Ambiguous tunnel evidence must not falsely advance the route beyond the branch."
+    }
+  ]
+}
+

@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S13",
+  "title": "Verified ramp continuity automatically enters strict-route mode",
+  "layer": "SIMULATION",
+  "tags": ["entry", "journey-phase", "location", "mode-switch"],
+  "purpose": "Switch automatically from surface approach to the selected Shuto RoutePlan only after exact directed-ramp and forward-continuity evidence agrees.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Location fixes and transition geometry are synthetic; device thresholds require field calibration."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.entry-transition-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.after-entry",
+      "entry_facility_id": "test.entry.inner",
+      "exit_facility_id": "test.exit.inner",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "first-mainline-occurrence",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.mainline-inner"
+        },
+        {
+          "occurrence_id": "first-junction-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.inner-continue"
+        }
+      ]
+    },
+    "inputs": {
+      "entry_transition": {
+        "facility_id": "test.entry.inner",
+        "surface_approach_anchor_id": "test.anchor.surface-before-ramp",
+        "directed_edge_ids": [
+          "test.edge.surface-approach",
+          "test.edge.entry-ramp",
+          "test.edge.mainline-merge"
+        ],
+        "first_route_occurrence_id": "first-mainline-occurrence"
+      }
+    },
+    "system_state": {
+      "journey_phase": "APPROACH_TO_ENTRY",
+      "active_route_plan_id": "test.plan.after-entry"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "approach-anchor-matched",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "directed_edge_id": "test.edge.surface-approach",
+        "heading_matches": true,
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "ramp-matched",
+      "at_ms": 2500,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "directed_edge_id": "test.edge.entry-ramp",
+        "heading_matches": true,
+        "forward_continuity": true,
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "mainline-merge-matched",
+      "at_ms": 4500,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "directed_edge_id": "test.edge.mainline-merge",
+        "heading_matches": true,
+        "forward_continuity": true,
+        "reachable_occurrence_ids": ["first-mainline-occurrence"],
+        "confidence": "HIGH"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "ramp-is-still-transition",
+      "after": "ramp-matched",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "Matching the ramp starts the owned transition but does not prematurely complete it."
+    },
+    {
+      "id": "strict-route-entered",
+      "after": "mainline-merge-matched",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "STRICT_ROUTE",
+      "rationale": "The exact ramp sequence, heading, continuity, and reachable first occurrence agree."
+    },
+    {
+      "id": "automatic-commit-recorded",
+      "after": "mainline-merge-matched",
+      "category": "NAVIGATION",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "VERIFIED_ENTRY_CONTINUITY",
+      "rationale": "The mode change is automatic when the transition evidence is sufficient."
+    },
+    {
+      "id": "route-plan-retained",
+      "after": "mainline-merge-matched",
+      "category": "DOMAIN",
+      "subject": "navigation.active_route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.after-entry",
+      "rationale": "Surface access hands into the chosen route rather than calculating a new destination route."
+    },
+    {
+      "id": "first-occurrence-selected",
+      "after": "mainline-merge-matched",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "first-mainline-occurrence",
+      "rationale": "The transition binds to an explicit route occurrence."
+    }
+  ]
+}

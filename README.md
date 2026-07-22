@@ -41,6 +41,7 @@ properties that must remain proven as the product expands:
 - [`docs/testing/scenario-catalog.md`](docs/testing/scenario-catalog.md): behavior inventory and implementation order.
 - [`docs/testing/navigation-engine-bakeoff.md`](docs/testing/navigation-engine-bakeoff.md): hard-gated comparison plan for surface routers and map matchers.
 - [`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md): evidence gates for route data.
+- [`docs/contributing/licensing.md`](docs/contributing/licensing.md): Apache-2.0 and third-party material boundaries.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`Sources/`](Sources): platform-light Swift domain, routing, navigation, and scenario-adapter modules.
 - [`Tests/`](Tests): Swift Testing suites that execute the portable scenarios.
@@ -52,7 +53,7 @@ be rewritten into a tracked contract or evidence record with direct source links
 ## Documentation audiences
 
 Tracked English Markdown, JSON scenarios, and code are the authoritative source
-for coding agents and open-source collaborators. Substantial project-owner
+for coding agents and open-source contributors. Substantial project-owner
 summaries may be rendered as self-contained Chinese HTML files on the Desktop.
 Those HTML files are presentation snapshots rather than a second source of truth:
 they should summarize and link to the tracked contracts, not define behavior that
@@ -80,3 +81,14 @@ Kaido Routes is for lawful route planning, driving assistance, and road-culture
 discovery. On-road signs, police directions, and traffic controls always take
 priority over the app. The product must not reward speed, lap time, unsafe phone
 interaction, or attempts to evade enforcement.
+
+## License
+
+Kaido Routes is open-source software licensed under the
+[Apache License 2.0](LICENSE). The licence permits commercial and noncommercial
+use, modification, and distribution under its terms, including its notice and
+patent provisions.
+
+Separately identified third-party software, data, and assets remain under their
+own terms. In particular, the project licence does not grant rights to operator
+maps, traffic-service payloads, or an OSM-derived database.

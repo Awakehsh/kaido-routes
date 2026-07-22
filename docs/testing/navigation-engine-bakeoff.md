@@ -155,6 +155,19 @@ with 20-meter declared accuracy. All three LOW misses occurred at the Tomigaya
 entrance mouth and occurrence remained 0/195. These are protocol and identity
 metrics, not phone, CarPlay, tunnel, or production calibration claims.
 
+The first route-aware Swift online Viterbi prototype is executable through the
+same CLI and evaluator. On the six tracked fixtures it is repeat-identical with
+18/23 edge top-1, 21/21 occurrence, and zero named safety failures. Its five
+non-top-1 results are abstentions or delayed commitment on the exact cases where
+nearest-edge produced unsafe HIGH output.
+
+On the same private entrance window, Swift produced 190/195 edge top-1 and
+195/195 occurrence hypotheses. All five non-top-1 points were LOW abstentions
+with no selected directed edge. Meili produced 192/195 and 0/195 respectively;
+two of its three Tomigaya misses selected a wrong ordinary-road edge at LOW and
+one stayed ambiguous. Track edge coverage, wrong selections, abstentions, and
+occurrence accuracy separately; top-1 alone would hide the safer tradeoff.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -486,24 +499,27 @@ gate.
    45/45 final requests on one shared snapshot. Valhalla route destinations now
    bind reviewed heading/tolerance and disable node snapping; provider route
    differences remain a field-review task, not a reason to weaken hard gates.
-8. **Complete for the external oracle boundary:** the schema, six-fixture synthetic replay corpus,
-   23-observation ground truth, shared evaluator, CLI, and deterministic
-   nearest-edge negative control are executable. The manifest-bound Meili
-   request/normalization/translation bridge is deterministic and deliberately
-   LOW-confidence. Its first private same-snapshot controlled window made 45
-   requests and recorded repeat-identical 192/195 edge top-1, three Tomigaya
-   entrance-mouth misses, and the expected 0/195 occurrence result.
-9. Implement the route-aware Swift HMM and compare calibration.
+8. **Complete for the external oracle boundary:** the schema, six-fixture
+   synthetic replay corpus, 23-observation ground truth, shared evaluator, CLI,
+   and deterministic nearest-edge negative control are executable. The
+   manifest-bound Meili request/normalization/translation bridge is deterministic
+   and deliberately LOW-confidence. Its first private same-snapshot controlled
+   window made 45 requests and recorded repeat-identical 192/195 edge top-1,
+   three Tomigaya entrance-mouth misses, and the expected 0/195 occurrence result.
+9. **Partial complete:** the route-aware Swift online Viterbi prototype and both
+   tracked/private comparisons are executable. Extract a fixture-independent
+   matcher session and corridor spatial index, then calibrate confidence with
+   device traces and reliability bins.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is the route-aware
-Swift HMM, starting with the three Tomigaya entrance-mouth failures and tracked
-repeated-occurrence/tunnel/stale cases. This is not yet an iPhone screen and not
-a rewrite of the Swift route-first core.
+the released facility corpus. The next implementation task is the production
+Swift matcher boundary: a RoutePlan corridor index, incremental session state,
+and device-trace calibration around entrance mouths, stacked roads, and tunnel
+reacquisition. This is not yet an iPhone screen and not a C++ or Rust rewrite.
 
 ## Sources checked 2026-07-23
 

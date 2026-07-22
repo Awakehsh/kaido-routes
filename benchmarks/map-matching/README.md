@@ -66,6 +66,19 @@ Live mode emits a scalar-only local summary by default. `--raw-local` includes
 normalized estimates for diagnosis; its output, provider responses, fixture,
 and private graph must remain outside Git pending provenance and licence review.
 
+Run the pure-Swift route-aware prototype against the same corpus:
+
+```sh
+swift run kaido-matcher-replay \
+  --swift-hmm benchmarks/map-matching/fixtures/synthetic
+```
+
+The tracked result is deterministic 18/23 edge top-1 and 21/21 occurrence with
+no named safety failure. The five non-top-1 observations are safe outcomes:
+three indistinguishable stacked points have no directed top-1, one parallel-road
+point stays ambiguous, and the first noisy wrong-branch point is not promoted.
+`--raw-local` can expose normalized estimates for an ignored diagnostic run.
+
 `NearestEdgeNegativeControl` intentionally ignores course, graph transition,
 route occurrence, observation age, and location source. It is not production
 navigation code. Its result establishes the minimum comparison floor for
@@ -93,3 +106,11 @@ Its observations were synthesized from private OSM graph geometry, so it does
 not establish phone or CarPlay accuracy, tunnel performance, calibration, or a
 live production-provider decision. Raw fixtures, responses, and reports remain
 ignored.
+
+The Swift prototype scored 190/195 edge top-1 and 195/195 occurrence hypotheses
+on the same private fixtures. Every non-top-1 result was a LOW abstention with no
+selected directed edge. Meili scored 192/195 edge top-1 and 0/195 occurrence;
+its three Tomigaya misses contained two LOW wrong-edge selections and one
+ambiguity. This comparison selects the Swift matcher as the live RoutePlan
+authority direction and keeps Meili as an offline oracle. It does not calibrate
+either confidence scale.

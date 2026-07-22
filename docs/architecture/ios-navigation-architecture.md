@@ -2,8 +2,9 @@
 
 **Status:** accepted and implemented for the platform-light feasibility core;
 the current bake-off selects Valhalla as the leading shared implementation
-behind a provider boundary, subject to broader matcher, operations, and field
-evidence in `docs/testing/navigation-engine-bakeoff.md`.
+behind the bounded surface-routing/oracle boundary and pure Swift for live
+RoutePlan matching, subject to production-session, operations, and field evidence
+in `docs/testing/navigation-engine-bakeoff.md`.
 
 **Checked:** 2026-07-23
 
@@ -20,8 +21,9 @@ Use a hybrid architecture:
    adapter, not as the default path-identity source and never as Shuto authority.
 5. Maintain replaceable provider adapters and compare MapKit with Valhalla,
    OSRM, and GraphHopper on the same entrance fixtures.
-6. Use Valhalla Meili as the first open-source map-matching oracle while a small
-   route-aware Swift matcher is developed and calibrated.
+6. Keep Valhalla Meili as the first open-source offline map-matching oracle and
+   use the small route-aware Swift online Viterbi prototype as the live matcher
+   direction, pending a production session API and field calibration.
 7. Do not make a commercial full-stack navigation SDK or a generic shortest-path
    engine the source of truth for route occurrences, junction movements, recovery,
    signs, toll boundaries, or egress.
@@ -442,6 +444,31 @@ at the first Tomigaya entrance-mouth observations; later ramp and merge points
 recovered. Occurrence remained 0/195 by design. This is protocol and identity
 evidence from synthetic graph-derived observations, not device calibration or a
 reason to give Meili live navigation authority.
+
+`RouteAwareSwiftMatcher` is now the first executable platform-light alternative.
+Its hidden state is `(directed edge, RoutePlan occurrence)`. Geometry distance
+and heading form the emission score; forward occurrence order, along-edge
+progress, elapsed time, speed, and graph connectivity constrain transitions.
+It consumes fixes in receive order, never advances on a stale fix, and caps
+ambiguous or first post-gap evidence at LOW. It emits no prediction-only HIGH
+commit inside an observation gap.
+
+On the six tracked fixtures the prototype is deterministic with 18/23 edge
+top-1, 21/21 occurrence, and no named safety failure. The edge count deliberately
+does not reward guessing: three stacked points and one equal parallel-road point
+abstain, while the first noisy wrong-branch point remains uncommitted. On the
+same private five-entrance window it produced 190/195 edge top-1 and 195/195
+occurrence hypotheses. All five non-top-1 results were LOW abstentions with no
+selected edge. Meili produced 192/195 edge top-1 and 0/195 occurrence, with two
+LOW wrong-edge selections and one ambiguity at Tomigaya.
+
+This selects pure Swift for the live matcher boundary; it does not make the
+prototype production-ready. The current benchmark adapter is fixture-shaped,
+candidate search is linear over the supplied edge set, and score thresholds are
+uncalibrated. The next core step is a fixture-independent matcher session fed by
+a RoutePlan corridor index, followed by device trace calibration. C++ or Rust is
+not justified unless profiling that bounded implementation exposes a measured
+CPU, memory, or battery failure.
 
 ## Tunnel behavior
 

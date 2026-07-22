@@ -10,6 +10,8 @@ struct KaidoMatcherReplayCLI {
       let arguments = Array(CommandLine.arguments.dropFirst())
       if arguments.contains("--allow-live-valhalla") {
         try await runLiveValhalla(arguments: arguments)
+      } else if arguments.first == "--swift-hmm" {
+        try runSwiftHMM(arguments: arguments)
       } else {
         try runNegativeControl(arguments: arguments)
       }
@@ -54,6 +56,65 @@ struct KaidoMatcherReplayCLI {
     print(
       "PASS: replayed \(fixtureURLs.count) matcher fixtures and \(totalObservations) observations"
     )
+  }
+
+  private static func runSwiftHMM(arguments: [String]) throws {
+    guard (2...3).contains(arguments.count),
+      arguments.dropFirst(2).allSatisfy({ $0 == "--raw-local" })
+    else { throw CLIError.usage }
+    let rawLocal = arguments.contains("--raw-local")
+    let fixtureURLs = try fixtureURLs(at: URL(fileURLWithPath: arguments[1]))
+    guard !fixtureURLs.isEmpty else { throw CLIError.noFixtures(arguments[1]) }
+
+    let decoder = JSONDecoder()
+    let matcher = try RouteAwareSwiftMatcher()
+    var failedFixtureIDs: [String] = []
+    var totalObservations = 0
+    var totalEdgeCorrect = 0
+    var totalOccurrenceTruth = 0
+    var totalOccurrenceCorrect = 0
+    var reports: [MatcherReplayReport] = []
+    for fixtureURL in fixtureURLs {
+      let fixture = try decoder.decode(
+        MatcherReplayFixture.self,
+        from: Data(contentsOf: fixtureURL)
+      )
+      let firstReport = try matcher.run(fixture: fixture)
+      let secondReport = try matcher.run(fixture: fixture)
+      let deterministic = firstReport == secondReport
+      let passed = deterministic && firstReport.safetyFailures.isEmpty
+      reports.append(firstReport)
+      if !passed { failedFixtureIDs.append(fixture.fixtureID) }
+      totalObservations += firstReport.metrics.observationCount
+      totalEdgeCorrect += firstReport.metrics.edgeTop1CorrectCount
+      totalOccurrenceTruth += firstReport.metrics.occurrenceTruthCount
+      totalOccurrenceCorrect += firstReport.metrics.occurrenceCorrectCount
+      if !rawLocal {
+        let status = passed ? "PASS" : "FAIL"
+        let failures = firstReport.safetyFailures.map(\.rawValue).joined(separator: ",")
+        print(
+          "\(status) \(fixture.fixtureID) — observations=\(firstReport.metrics.observationCount) "
+            + "edge_top1=\(firstReport.metrics.edgeTop1CorrectCount) "
+            + "occurrence=\(firstReport.metrics.occurrenceCorrectCount)/"
+            + "\(firstReport.metrics.occurrenceTruthCount) "
+            + "safety_failures=[\(failures)] deterministic=\(deterministic)"
+        )
+      }
+    }
+    guard failedFixtureIDs.isEmpty else {
+      throw CLIError.matcherSafetyFailures(failedFixtureIDs)
+    }
+    if rawLocal {
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      print(String(decoding: try encoder.encode(reports), as: UTF8.self))
+    } else {
+      print(
+        "PASS: Swift HMM replayed \(fixtureURLs.count) fixtures; "
+          + "edge_top1=\(totalEdgeCorrect)/\(totalObservations) "
+          + "occurrence=\(totalOccurrenceCorrect)/\(totalOccurrenceTruth)"
+      )
+    }
   }
 
   private static func runLiveValhalla(arguments: [String]) async throws {
@@ -158,6 +219,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case notFound(String)
   case noFixtures(String)
   case fixtureFailures([String])
+  case matcherSafetyFailures([String])
   case missingArgument(String)
   case unknownArgument(String)
   case invalidRepeatCount(String)
@@ -174,6 +236,8 @@ private enum CLIError: Error, CustomStringConvertible {
       "fixture directory contains no JSON files: \(path)"
     case .fixtureFailures(let fixtureIDs):
       "matcher replay expectation mismatch: \(fixtureIDs.joined(separator: ", "))"
+    case .matcherSafetyFailures(let fixtureIDs):
+      "Swift HMM replay safety failure: \(fixtureIDs.joined(separator: ", "))"
     case .missingArgument(let flag):
       "missing required argument: \(flag)"
     case .unknownArgument(let argument):
@@ -307,6 +371,8 @@ private let usage = """
   Usage:
     kaido-matcher-replay <fixture.json|fixture-directory>
 
+    kaido-matcher-replay --swift-hmm <fixture.json|fixture-directory> [--raw-local]
+
     kaido-matcher-replay \\
       --fixture <matcher-fixture.json> \\
       --graph <directed-road-graph.json> \\
@@ -315,7 +381,9 @@ private let usage = """
       --allow-live-valhalla [--repeat <1...20>] [--pretty] [--raw-local]
 
   The default mode executes the deterministic nearest-edge negative control.
-  Live mode is opt-in and writes a scalar-only local summary. Keep raw traces,
+  `--swift-hmm` runs the route-aware prototype against the same evaluator and
+  fails for nondeterminism or any named safety failure. Live mode is opt-in and
+  writes a scalar-only local summary. Keep raw traces,
   provider responses, private graph-derived fixtures, and explicit `--raw-local`
   output outside Git.
   """

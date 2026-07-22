@@ -70,6 +70,17 @@ misses were LOW-confidence points at the Tomigaya entrance mouth; occurrence
 identity remained 0/195 by design. This validates the real protocol and identity
 bridge, not phone accuracy, tunnel behavior, or a live production dependency.
 
+The first pure-Swift route-aware online Viterbi prototype now runs through the
+same evaluator. On the six tracked fixtures it is deterministic, preserves all
+21/21 truth occurrences, and produces no named safety failure; its 18/23 edge
+top-1 includes deliberate abstention on indistinguishable stacked and parallel
+geometry. On the same private five-entrance window it produced 190/195 edge
+top-1 and 195/195 occurrence hypotheses. All five non-top-1 results were LOW
+abstentions with no selected edge, while Meili's three misses contained two LOW
+wrong-edge selections and one ambiguity. This establishes Swift as the live
+RoutePlan matcher direction and Meili as an offline edge oracle, not calibrated
+field accuracy or a production-ready confidence model.
+
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:
 

@@ -146,6 +146,125 @@ func replayValidationReportsDuplicateOccurrences() throws {
   #expect(invalid.validationIssues.contains("occurrence indexes must be contiguous from zero"))
 }
 
+@Test("Route-aware Swift HMM is deterministic and has no safety failures")
+func routeAwareSwiftMatcherClearsTrackedSafetyFloor() throws {
+  let fixtures = try loadMatcherFixtures()
+  let matcher = try RouteAwareSwiftMatcher()
+  var observationCount = 0
+  var occurrenceTruthCount = 0
+  var occurrenceCorrectCount = 0
+
+  for fixture in fixtures {
+    let first = try matcher.run(fixture: fixture)
+    let second = try matcher.run(fixture: fixture)
+    #expect(first == second)
+    #expect(first.safetyFailures.isEmpty, "\(fixture.fixtureID): \(first.safetyFailures)")
+    observationCount += first.metrics.observationCount
+    occurrenceTruthCount += first.metrics.occurrenceTruthCount
+    occurrenceCorrectCount += first.metrics.occurrenceCorrectCount
+  }
+
+  #expect(observationCount == 23)
+  #expect(occurrenceTruthCount == 21)
+  #expect(occurrenceCorrectCount == occurrenceTruthCount)
+}
+
+@Test("Route-aware Swift HMM resolves repeated occurrences without a backward jump")
+func routeAwareSwiftMatcherResolvesRepeatedOccurrences() throws {
+  let fixture = try loadMatcherFixture(named: "repeated-edge-gaps")
+  let report = try RouteAwareSwiftMatcher().run(fixture: fixture)
+
+  #expect(report.metrics.edgeTop1CorrectCount == 7)
+  #expect(report.metrics.occurrenceCorrectCount == 7)
+  #expect(
+    report.estimates.compactMap(\.occurrenceID) == [
+      "test.occurrence.lap-1",
+      "test.occurrence.lap-1",
+      "test.occurrence.lap-2",
+      "test.occurrence.lap-2",
+      "test.occurrence.lap-3",
+      "test.occurrence.lap-3",
+      "test.occurrence.lap-4",
+    ])
+  #expect(report.safetyFailures.isEmpty)
+}
+
+@Test("Route-aware Swift HMM keeps ambiguity, stale fixes, and tunnel reacquisition low")
+func routeAwareSwiftMatcherKeepsUnsafeEvidenceLow() throws {
+  let matcher = try RouteAwareSwiftMatcher()
+  let stacked = try matcher.run(fixture: loadMatcherFixture(named: "stacked-carriageway"))
+  #expect(stacked.estimates.allSatisfy { $0.confidence == .low })
+  #expect(stacked.estimates.allSatisfy { $0.candidateEdgeIDs.count == 2 })
+
+  let stale = try matcher.run(fixture: loadMatcherFixture(named: "stale-reordered-sources"))
+  let lateFix = try #require(
+    stale.estimates.first { $0.observationID == "late-wireless-fix" }
+  )
+  #expect(lateFix.confidence == .low)
+
+  let tunnel = try matcher.run(fixture: loadMatcherFixture(named: "tunnel-branch-reacquisition"))
+  let reacquired = try #require(tunnel.estimates.first { $0.observationID == "after-tunnel" })
+  #expect(reacquired.confidence == .low)
+  #expect(reacquired.occurrenceID == "test.occurrence.tunnel-planned")
+  #expect(tunnel.estimates.allSatisfy { $0.observationID != nil })
+}
+
+@Test("Route-aware Swift HMM never promotes a stale first observation")
+func routeAwareSwiftMatcherKeepsInitialStaleFixLow() throws {
+  let source = try loadMatcherFixture(named: "stale-reordered-sources")
+  let observation = MatcherReplayObservation(
+    id: "initial-stale-fix",
+    observedAtMilliseconds: 0,
+    receivedAtMilliseconds: 10_000,
+    coordinate: source.observations[0].coordinate,
+    horizontalAccuracyMeters: 4,
+    courseDegrees: 90,
+    speedMetersPerSecond: 12,
+    source: .phone
+  )
+  let fixture = MatcherReplayFixture(
+    fixtureID: "synthetic.matcher.initial-stale-fix",
+    networkSnapshotID: source.networkSnapshotID,
+    evidenceClassification: "SYNTHETIC",
+    configuration: source.configuration,
+    edges: source.edges,
+    routeOccurrences: source.routeOccurrences,
+    initialOccurrenceID: source.initialOccurrenceID,
+    observations: [observation],
+    groundTruthIntervals: [
+      MatcherGroundTruthInterval(
+        startMilliseconds: 0,
+        endMilliseconds: 0,
+        directedEdgeID: source.edges[0].id,
+        occurrenceID: source.initialOccurrenceID,
+        classification: .onRoute
+      )
+    ],
+    expectedNegativeControlFailures: []
+  )
+
+  let report = try RouteAwareSwiftMatcher().run(fixture: fixture)
+  #expect(report.estimates[0].confidence == .low)
+  #expect(!report.safetyFailures.contains(.highConfidenceStaleObservation))
+}
+
+@Test("Route-aware Swift HMM does not high-commit the first noisy wrong-branch fix")
+func routeAwareSwiftMatcherDefersNoisyBranchCommit() throws {
+  let fixture = try loadMatcherFixture(named: "wrong-branch-noisy-fix")
+  let report = try RouteAwareSwiftMatcher().run(fixture: fixture)
+  let firstAfterBranch = try #require(
+    report.estimates.first { $0.observationID == "first-noisy-after-branch" }
+  )
+  let laterAfterBranch = try #require(
+    report.estimates.first { $0.observationID == "later-after-branch" }
+  )
+
+  #expect(firstAfterBranch.confidence == .low)
+  #expect(firstAfterBranch.candidateEdgeIDs.count > 1)
+  #expect(laterAfterBranch.directedEdgeID == "test.edge.wrong-branch")
+  #expect(report.safetyFailures.isEmpty)
+}
+
 private func loadMatcherFixtures() throws -> [MatcherReplayFixture] {
   let directory = matcherFixtureDirectory()
   return try FileManager.default.contentsOfDirectory(

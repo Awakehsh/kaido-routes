@@ -212,6 +212,9 @@ def make_edge(
         "to_node_id": f"osm.node.{to_node['id']}",
         "kind": kind,
         "coordinates": [coordinate(from_node), coordinate(to_node)],
+        "source_osm_way_id": way_id,
+        "source_osm_segment_index": segment_index,
+        "source_osm_direction": direction,
     }
     if toll_domain_id and kind != "ORDINARY_ROAD":
         edge["toll_domain_id"] = toll_domain_id

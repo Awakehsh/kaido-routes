@@ -45,6 +45,8 @@ For a long handoff, preserve: objective, accepted decisions and reasons, files c
 - `docs/architecture/ios-navigation-architecture.md` is the accepted direction for architecture spikes. Provider selection remains conditional on `docs/testing/navigation-engine-bakeoff.md`.
 - Keep domain, routing, and navigation policy in platform-light Swift modules. MapKit, Core Location, Core Motion, CarPlay, speech, and third-party engines are adapters and must not become domain dependencies.
 - Treat a MapKit or other provider result as a bounded surface-leg candidate. It cannot author, optimize, mutate, recover, or erase the active Shuto `RoutePlan`.
+- Geometry-only provider output cannot resolve vertically stacked roads. Accept `selected_path_evidence` only when the provider's complete OSM way/start-node/direction sequence has been translated onto the exact Kaido graph and its dataset ID matches graph provenance.
+- The shared-snapshot Valhalla path translator is proven for the private Shinjuku three-origin corpus. Valhalla remains a bounded surface provider/oracle; its HTTP adapter, reproducible tile manifest, complete Japanese admin context, and operational review are still pending.
 - The strict compiler, occurrence progress, deviation recovery, legal egress, confidence policy, and structured guidance remain Kaido-owned behavior.
 - Do not add a commercial navigation SDK or production provider dependency before its bounded role, licence, data-use constraints, hard gates, and comparison fixtures are documented.
 - Keep the portable scenarios executable against the pure Swift core before building an iPhone screen. UI work consumes navigation snapshots; it does not define navigation semantics.

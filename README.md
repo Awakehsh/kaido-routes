@@ -16,9 +16,12 @@ This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core. It does not yet contain an iPhone/CarPlay app,
 production road database, or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
-surface-routing hard gates, an explicit local live-probe command, and a
-scalar-only cross-window stability comparator; no live MapKit call runs in
-deterministic tests.
+surface-routing hard gates, an OSM selected-path translator, an offline evidence
+CLI, an explicit local live-probe command, and a scalar-only cross-window
+stability comparator; no live provider call runs in deterministic tests. A
+private same-source Valhalla spike has passed the three-origin Shinjuku
+selected-path identity gates, while the production HTTP adapter, reproducible
+tile/admin pipeline, field evidence, and entrance release remain pending.
 
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:

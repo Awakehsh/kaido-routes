@@ -173,18 +173,22 @@ up pilot passed its same-side and cross-direction batches, but its approach from
 a nearby incompatible down entrance failed all three runs: Route 20 and Route 4
 are vertically stacked, and the MapKit geometry did not identify which level it
 used. This is `RETEST` for MapKit's surface role, not evidence that the provider
-actually took the expressway. The next Valhalla probe must retain its own
-selected edge sequence, using `trace_attributes` plus `shape_match=edge_walk`
-where practical; rematching MapKit output is not a substitute.
+actually took the expressway. The Valhalla probe therefore retains its own
+selected edge sequence, using `trace_attributes` plus `shape_match=edge_walk`;
+rematching MapKit output is not a substitute.
 
-A first private Valhalla protocol probe has now completed the narrower API
-question. For each Shinjuku origin, `route -> trace_attributes(edge_walk)`
-returned a stable ordered edge sequence across three requests. Every returned
-edge expanded to the private Kaido graph using OSM way ID, start-node ID, and
-direction. This is not yet a hard-gate pass: the public Valhalla service's
-dataset is not proven identical to the reviewed Kaido snapshot. The code contract
-therefore accepts only complete, already translated, same-snapshot selected-path
-evidence and rejects partial or mismatched evidence.
+The public-service protocol probe first established the response shape without
+claiming a hard-gate pass. The follow-up private build closes that gap: Valhalla
+3.8.2 tiles and the Kaido graph were generated from one pinned extract, assigned
+the same dataset ID, and tested through the production hard-gate types. Across
+three runs per Shinjuku origin, all nine candidates were accepted. The translated
+paths contained 1, 8, and 44 Kaido edges for same-side, cross-direction, and
+nearest-incompatible origins respectively, with no unmatched, ambiguous, or
+disconnected selected edges. This is a path-identity feasibility pass, not a
+released entrance or final provider choice. Complete Japan/Tokyo admin polygons
+were unavailable in the regional extract, so the lab explicitly disabled admin
+enrichment; production route costing and guidance still require complete,
+versioned Japanese admin context.
 
 ## Matcher test
 
@@ -350,20 +354,25 @@ gate.
    Hatsudai nearest-incompatible batch failed 0/3 with 19 stacked-road ambiguous
    edges per run. Keep the failure; it is the first evidence that geometry-only
    provider output cannot satisfy the whole corpus.
-3. **In progress:** the Valhalla route/edge-walk response contract and exact OSM
-   translation are proven on the Shinjuku failure plus accepted controls. Build
-   Valhalla tiles from the same reviewed snapshot, implement the bounded adapter
-   and translator, then run the actual hard-gate comparison. After that, run
-   OSRM and GraphHopper against the same surface fixtures.
-4. Implement the nearest-edge negative control and replay harness.
-5. Add Valhalla Meili as the first matcher oracle.
-6. Implement the route-aware Swift HMM and compare calibration.
-7. Add SwiftUI phone presentation, then the CarPlay adapter.
-8. Perform passenger-observed tunnel and entry tests only after synthetic and
+3. **Complete for the bounded protocol:** shared-snapshot Valhalla tiles, exact
+   OSM way/node/direction translation, partial-edge trimming, and the actual
+   Shinjuku three-by-three hard-gate comparison are executable. The Swift core
+   rejects mismatched datasets, missing/ambiguous paths, reversed direction,
+   repeated edges, and discontinuity.
+4. Turn the private build into a reproducible reviewed tile manifest, supply
+   complete Japanese admin context, and implement the bounded Valhalla HTTP
+   adapter without moving route-first ownership out of Swift.
+5. Run OSRM and GraphHopper against the same surface fixtures.
+6. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
+   matcher oracle.
+7. Implement the route-aware Swift HMM and compare calibration.
+8. Add SwiftUI phone presentation, then the CarPlay adapter.
+9. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is the shared-snapshot Valhalla tile/translation spike in
-step 3, not an iPhone screen and not a rewrite of the Swift route-first core.
+The next coding task is the reproducible Valhalla tile/admin manifest and bounded
+HTTP adapter in step 4, not an iPhone screen and not a rewrite of the Swift
+route-first core.
 
 ## Sources checked 2026-07-22
 
@@ -371,6 +380,8 @@ step 3, not an iPhone screen and not a rewrite of the Swift route-first core.
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
 - [Valhalla Meili](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
+- [Valhalla Mjolnir tile build guide](https://valhalla.github.io/valhalla/mjolnir/getting_started_guide/)
+- [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)
 - [OSRM route and match services](https://github.com/Project-OSRM/osrm-backend)
 - [GraphHopper routing and map matching](https://github.com/graphhopper/graphhopper)
 - [Newson and Krumm HMM map-matching paper and public test data](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)

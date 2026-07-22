@@ -52,21 +52,30 @@ preserve explicit roads, movements, and repetitions even when they are not the
 shortest or fastest path. A generic provider may support that process, but cannot
 own its semantics.
 
-The next Valhalla comparison must preserve the path selected by Valhalla itself.
-Its route shape can be passed to `trace_attributes` with `shape_match=edge_walk`
-to recover ordered edge attributes and OSM way IDs. Rematching a MapKit polyline
-with another engine would only create a second inference and must not be treated
-as proof of MapKit's chosen road level.
+The Valhalla comparison preserves the path selected by Valhalla itself. Its
+route shape is passed to `trace_attributes` with `shape_match=edge_walk` to
+recover ordered edge attributes, OSM way IDs, beginning OSM nodes, and digitized
+direction. Rematching a MapKit polyline with another engine would only create a
+second inference and must not be treated as proof of MapKit's chosen road level.
 
 The provider-neutral contract now accepts optional `selected_path_evidence`
 only after a provider's complete path has been translated to exact Kaido
 directed edge IDs and bound to the same network snapshot. The Swift inspector
 then requires the evidence's provider dataset ID to match graph provenance and
 checks path continuity, geometry, terminal anchor, expressway edges, and toll
-domains. MapKit leaves the field absent. A private Valhalla API experiment
-proved that `way_id + start node + direction` can translate all three tested
-paths, but its public tileset is not the reviewed Kaido snapshot; no live
-Valhalla adapter may claim same-snapshot evidence yet.
+domains. MapKit leaves the field absent.
+
+The Swift `OSMSelectedPathTranslator` now implements the exact translation. A
+private shared-snapshot Valhalla 3.8.2 build and Kaido graph were produced from
+one pinned Kanto extract with the same explicit dataset ID. The three Shinjuku
+origins each passed three repeated hard-gate runs after translation: the
+same-side path resolved to one Kaido edge, cross-direction to eight, and the
+nearest-incompatible control to 44. This proves the bounded path-identity
+contract, including the stacked Route 20/Route 4 case. It does not release the
+entrance or approve a production Valhalla service. The regional extract could
+not construct complete Japan/Tokyo admin polygons, so admin enrichment was
+explicitly disabled for the lab; a production tile pipeline needs complete,
+versioned Japanese admin context plus an operational/data-use review.
 
 ## System boundary
 
@@ -372,7 +381,7 @@ loading rather than UI-oriented object persistence.
 |---|---|---|---|---|
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
-| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into way IDs | integration/data build weight; requires a shared-snapshot tile build and exact edge translation before hard-gate use | **Comparator contract proven; adapter pending** |
+| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; production tiles need complete Japanese admin context, reproducible builds, and operational review | **Shared-snapshot translator proven; HTTP adapter/pipeline pending** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, permissive licence | optimized fastest-path service; weaker runtime policy customization | **Secondary comparator** |
 | GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |
@@ -402,6 +411,9 @@ bounded role it may own.
 - [Swift Testing](https://developer.apple.com/xcode/swift-testing/)
 - [Swift Package Manager](https://docs.swift.org/swiftpm/documentation/packagemanagerdocs/)
 - [Valhalla project and licence](https://github.com/valhalla/valhalla)
+- [Valhalla official Docker images](https://github.com/valhalla/valhalla/blob/master/docker/README.md)
+- [Valhalla Mjolnir tile build guide](https://valhalla.github.io/valhalla/mjolnir/getting_started_guide/)
+- [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)
 - [Valhalla Meili map matching](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [Valhalla `trace_attributes` and `edge_walk`](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)

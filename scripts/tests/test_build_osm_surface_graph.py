@@ -46,6 +46,9 @@ class OSMSurfaceGraphBuilderTests(unittest.TestCase):
         self.assertEqual(graph["edges"][0]["edge_id"], "osm.way.42.segment.0.forward")
         self.assertEqual(graph["edges"][0]["kind"], "ENTRY_TRANSITION")
         self.assertEqual(graph["edges"][0]["toll_domain_id"], "test.toll-domain")
+        self.assertEqual(graph["edges"][0]["source_osm_way_id"], 42)
+        self.assertEqual(graph["edges"][0]["source_osm_segment_index"], 0)
+        self.assertEqual(graph["edges"][0]["source_osm_direction"], "forward")
 
     def test_osm_xml_requires_explicit_snapshot_time(self) -> None:
         with self.assertRaisesRegex(ValueError, "source-snapshot-at"):

@@ -6,6 +6,11 @@ public enum SurfaceRoadEdgeKind: String, Codable, Sendable {
   case expressway = "EXPRESSWAY"
 }
 
+public enum OSMWayDirection: String, Codable, Sendable {
+  case forward
+  case reverse
+}
+
 public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
   public let id: String
   public let fromNodeID: String
@@ -13,6 +18,9 @@ public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
   public let kind: SurfaceRoadEdgeKind
   public let coordinates: [SurfaceCoordinate]
   public let tollDomainID: String?
+  public let sourceOSMWayID: Int64?
+  public let sourceOSMSegmentIndex: Int?
+  public let sourceOSMDirection: OSMWayDirection?
 
   public init(
     id: String,
@@ -20,7 +28,10 @@ public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
     toNodeID: String,
     kind: SurfaceRoadEdgeKind,
     coordinates: [SurfaceCoordinate],
-    tollDomainID: String? = nil
+    tollDomainID: String? = nil,
+    sourceOSMWayID: Int64? = nil,
+    sourceOSMSegmentIndex: Int? = nil,
+    sourceOSMDirection: OSMWayDirection? = nil
   ) {
     self.id = id
     self.fromNodeID = fromNodeID
@@ -28,6 +39,9 @@ public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
     self.kind = kind
     self.coordinates = coordinates
     self.tollDomainID = tollDomainID
+    self.sourceOSMWayID = sourceOSMWayID
+    self.sourceOSMSegmentIndex = sourceOSMSegmentIndex
+    self.sourceOSMDirection = sourceOSMDirection
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -37,6 +51,9 @@ public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
     case kind
     case coordinates
     case tollDomainID = "toll_domain_id"
+    case sourceOSMWayID = "source_osm_way_id"
+    case sourceOSMSegmentIndex = "source_osm_segment_index"
+    case sourceOSMDirection = "source_osm_direction"
   }
 }
 

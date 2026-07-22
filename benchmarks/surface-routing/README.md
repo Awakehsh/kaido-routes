@@ -84,7 +84,11 @@ status gate. Missing inspection evidence fails closed.
 ## Current implementation boundary
 
 `KaidoSurfaceRouting` owns the provider-neutral fixture, candidate, inspection,
-hard-gate, and normalized-result types. Its `DirectedRoadGraphInspector`
+hard-gate, normalized-result, and OSM selected-path translation types. Its
+`OSMSelectedPathTranslator` expands provider OSM way/start-node/direction
+identity onto exact Kaido edges, trims partial first and last edges against the
+provider route geometry, and rejects cross-dataset, missing, ambiguous,
+reversed, repeated, or disconnected identity. Its `DirectedRoadGraphInspector`
 resamples candidate geometry, scores directed edges using distance and heading,
 uses a bounded sequence beam to preserve graph continuity, and compares the
 observed distance between consecutive samples with directed graph travel between
@@ -113,11 +117,15 @@ candidate can have ordinary-road instructions and `has_highways=false` while its
 polyline still admits continuous surface and expressway interpretations. The
 inspector fails that candidate closed and withholds conclusive crossing arrays.
 MapKit remains a bounded adapter under test, but it cannot satisfy the entire B1
-role with geometry-only evidence. The next Valhalla comparator must preserve its
-own selected path identity, rather than rematching MapKit geometry and treating
-the second engine's inference as proof. The normalized selected-path contract
-and deterministic stacked-level tests are executable; a live Valhalla adapter
-and shared-snapshot tile pipeline are not implemented.
+role with geometry-only evidence.
+
+A private shared-snapshot Valhalla build now proves the selected-path boundary:
+three runs for each of the same-side, cross-direction, and nearest-incompatible
+Shinjuku origins passed all six gates after exact translation. The public Swift
+translator and offline CLI are executable; the PBF, tiles, routes, and raw edge
+evidence remain ignored private research data. A production Valhalla HTTP
+adapter, reproducible reviewed tile manifest, complete Japanese admin dataset,
+and operational/data-use review remain pending.
 
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
@@ -177,7 +185,8 @@ reviewed.
 
 For private feasibility work, `scripts/build_osm_surface_graph.py` converts a
 bounded Overpass JSON or OSM API XML extract into the inspector's directed-edge
-format. It preserves OSM way and node lineage in every ID plus the source
+format. It preserves OSM way, segment, digitized direction, and node lineage in
+explicit fields plus every edge ID, along with the source
 snapshot timestamp and ODbL attribution in graph provenance. OSM XML has no
 Overpass base timestamp, so `--source-snapshot-at` is mandatory for that input.
 The generated graph is ODbL data and must remain outside the Apache-2.0 code
@@ -200,6 +209,29 @@ strong claim that the provider routing graph was built from the exact reviewed
 dataset represented by this Kaido graph. A timestamp, public-server status
 value, or successful best-effort way translation is not sufficient by itself.
 
+Translate retained OSM provider identity and evaluate a candidate without a
+live provider call:
+
+```sh
+swift run kaido-surface-evidence translate \
+  --graph research/evidence/bounded-surface-graph.json \
+  --request research/evidence/osm-path-translation-request.json \
+  --pretty > research/evidence/selected-path-evidence.json
+
+swift run kaido-surface-evidence evaluate \
+  --graph research/evidence/bounded-surface-graph.json \
+  --fixture research/evidence/entrance.json \
+  --origin example.origin.same-side \
+  --candidate research/evidence/candidate-with-selected-path.json \
+  --expected-provider-id valhalla.local \
+  --pretty > research/evidence/evaluation.json
+```
+
+The translation request must contain the provider dataset ID, complete ordered
+edge references, route coordinates, and the reviewed terminal OSM node. It is
+raw local evidence and remains subject to the same retention and licence rules
+as provider output.
+
 Run the offline checks with:
 
 ```sh
@@ -210,4 +242,5 @@ python3 -m json.tool benchmarks/surface-routing/schema/entrance-probe-fixture.sc
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-cross-window-summary.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/osm-selected-path-translation-request.schema.json >/dev/null
 ```

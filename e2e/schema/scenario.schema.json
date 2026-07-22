@@ -312,6 +312,10 @@
         "type": {
           "enum": [
             "ROUTE_COMPILE_REQUESTED",
+            "ROUTE_EDITOR_STARTED",
+            "ROUTE_EDITOR_CHOICE_SELECTED",
+            "ROUTE_EDITOR_UNDO_REQUESTED",
+            "ROUTE_EDITOR_COMPILE_REQUESTED",
             "NAVIGATION_STARTED",
             "LOCATION_UPDATED",
             "MATCHER_SESSION_STARTED",

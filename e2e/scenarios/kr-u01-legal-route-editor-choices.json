@@ -1,0 +1,350 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U01",
+  "title": "Parked route editor exposes only legal directional choices",
+  "layer": "IPHONE_UI",
+  "tags": ["route-editor", "junction", "directional-facility", "parked"],
+  "purpose": "Keep SwiftUI from inventing JCT branches: one snapshot-bound authoring session owns the current incoming approach, legal outgoing choices, fresh occurrences, and explicit exit.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic IDs prove editor state and identity semantics only; real entrance, movement, sign, closure, and exit data still require release evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.editor-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.editor-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.directional",
+            "initial_edge_id": "test.edge.entry-mainline",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.first"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.first",
+            "incoming_approach_id": "test.approach.first",
+            "junction_complex_id": "test.junction.first",
+            "choices": [
+              {
+                "choice_id": "test.choice.continue",
+                "movement_id": "test.movement.continue",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.continue",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "next_decision_point_id": "test.decision.second"
+              },
+              {
+                "choice_id": "test.choice.early-exit",
+                "movement_id": "test.movement.early-exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.early-exit-ramp",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.early-directional"
+              }
+            ]
+          },
+          {
+            "decision_point_id": "test.decision.second",
+            "incoming_approach_id": "test.approach.second",
+            "junction_complex_id": "test.junction.second",
+            "choices": [
+              {
+                "choice_id": "test.choice.final-exit",
+                "movement_id": "test.movement.final-exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.final-exit-ramp",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.final-directional"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start-editor",
+      "at_ms": 0,
+      "type": "ROUTE_EDITOR_STARTED",
+      "payload": {
+        "route_plan_id": "test.plan.authored",
+        "entrance_facility_id": "test.entrance.directional",
+        "initial_occurrence_id": "test.occurrence.entry-mainline",
+        "recovery_policy": "SAFE_REJOIN",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-future-choice",
+      "at_ms": 1,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.final-exit",
+        "movement_occurrence_id": "test.occurrence.invalid-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.invalid-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-moving-edit",
+      "at_ms": 2,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.continue",
+        "movement_occurrence_id": "test.occurrence.continue-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.continue-edge",
+        "vehicle_moving": true
+      }
+    },
+    {
+      "id": "select-continue",
+      "at_ms": 3,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.continue",
+        "movement_occurrence_id": "test.occurrence.continue-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.continue-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "select-final-exit",
+      "at_ms": 4,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.final-exit",
+        "movement_occurrence_id": "test.occurrence.final-exit-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.final-exit-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "compile-editor-route",
+      "at_ms": 5,
+      "type": "ROUTE_EDITOR_COMPILE_REQUESTED",
+      "payload": {
+        "vehicle_moving": false
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "editor-starts-parked",
+      "after": "start-editor",
+      "category": "UI",
+      "subject": "editor.state",
+      "matcher": "EQUALS",
+      "expected": "EDITING",
+      "rationale": "A reviewed directional entrance creates an editable pre-drive session."
+    },
+    {
+      "id": "incoming-approach-is-explicit",
+      "after": "start-editor",
+      "category": "DOMAIN",
+      "subject": "editor.incoming_approach_id",
+      "matcher": "EQUALS",
+      "expected": "test.approach.first",
+      "rationale": "The editor cursor is an incoming approach, not only a named JCT."
+    },
+    {
+      "id": "junction-complex-is-explicit",
+      "after": "start-editor",
+      "category": "DOMAIN",
+      "subject": "editor.junction_complex_id",
+      "matcher": "EQUALS",
+      "expected": "test.junction.first",
+      "rationale": "Identical road names at another complex cannot become the current choice set."
+    },
+    {
+      "id": "only-current-choices-are-visible",
+      "after": "start-editor",
+      "category": "SAFETY",
+      "subject": "editor.available_choice_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.choice.continue", "test.choice.early-exit"],
+      "rationale": "A future exit choice is not selectable before its exact incoming approach."
+    },
+    {
+      "id": "entrance-creates-one-edge-occurrence",
+      "after": "start-editor",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.entry-mainline"],
+      "rationale": "The exact directional entrance seeds one fresh mainline occurrence."
+    },
+    {
+      "id": "future-choice-is-rejected",
+      "after": "reject-future-choice",
+      "category": "SAFETY",
+      "subject": "editor.last_error",
+      "matcher": "EQUALS",
+      "expected": "ILLEGAL_EDITOR_CHOICE",
+      "rationale": "The UI cannot submit a choice belonging to another decision point."
+    },
+    {
+      "id": "rejected-choice-does-not-mutate-route",
+      "after": "reject-future-choice",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.entry-mainline"],
+      "rationale": "Rejected authoring input leaves the occurrence sequence unchanged."
+    },
+    {
+      "id": "moving-edit-is-locked",
+      "after": "reject-moving-edit",
+      "category": "SAFETY",
+      "subject": "editor.last_error",
+      "matcher": "EQUALS",
+      "expected": "EDITOR_INTERACTION_LOCKED",
+      "rationale": "The same pure editor boundary rejects authoring while the vehicle is moving."
+    },
+    {
+      "id": "moving-edit-does-not-mutate-route",
+      "after": "reject-moving-edit",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.entry-mainline"],
+      "rationale": "A moving-time edit attempt cannot add a movement or edge occurrence."
+    },
+    {
+      "id": "valid-choice-advances-editor-cursor",
+      "after": "select-continue",
+      "category": "NAVIGATION",
+      "subject": "editor.current_decision_point_id",
+      "matcher": "EQUALS",
+      "expected": "test.decision.second",
+      "rationale": "The selected legal movement determines the next reviewed decision point."
+    },
+    {
+      "id": "next-decision-has-own-choice-set",
+      "after": "select-continue",
+      "category": "UI",
+      "subject": "editor.available_choice_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.choice.final-exit"],
+      "rationale": "SwiftUI receives only the next approach's legal outgoing choice."
+    },
+    {
+      "id": "movement-and-edge-get-fresh-occurrences",
+      "after": "select-continue",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.entry-mainline",
+        "test.occurrence.continue-movement",
+        "test.occurrence.continue-edge"
+      ],
+      "rationale": "A selected transition appends separate movement and outgoing-edge occurrences."
+    },
+    {
+      "id": "explicit-exit-finishes-authoring",
+      "after": "select-final-exit",
+      "category": "UI",
+      "subject": "editor.state",
+      "matcher": "EQUALS",
+      "expected": "FINISHED",
+      "rationale": "Only an explicit directional exit choice completes the editor session."
+    },
+    {
+      "id": "selected-exit-is-directional",
+      "after": "select-final-exit",
+      "category": "DOMAIN",
+      "subject": "editor.selected_exit_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.exit.final-directional",
+      "rationale": "The result stores the selected directional exit facility, not an IC label."
+    },
+    {
+      "id": "finished-editor-has-no-more-choices",
+      "after": "select-final-exit",
+      "category": "SAFETY",
+      "subject": "editor.available_choice_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A finished editor cannot silently append another branch."
+    },
+    {
+      "id": "route-compiles",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.status",
+      "matcher": "EQUALS",
+      "expected": "COMPILED",
+      "rationale": "A finished parked authoring session produces one RoutePlan."
+    },
+    {
+      "id": "compiled-snapshot-is-identical",
+      "after": "compile-editor-route",
+      "category": "EVIDENCE",
+      "subject": "editor.compiled.network_snapshot_id",
+      "matcher": "EQUALS",
+      "expected": "test.snapshot.editor-v1",
+      "rationale": "The authored route cannot migrate to another graph snapshot."
+    },
+    {
+      "id": "compiled-entrance-is-identical",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.entrance_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.entrance.directional",
+      "rationale": "Compilation preserves the exact selected entrance."
+    },
+    {
+      "id": "compiled-exit-is-identical",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.exit_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.exit.final-directional",
+      "rationale": "Compilation preserves the exact selected exit."
+    },
+    {
+      "id": "compiled-occurrences-remain-ordered",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.entry-mainline",
+        "test.occurrence.continue-movement",
+        "test.occurrence.continue-edge",
+        "test.occurrence.final-exit-movement",
+        "test.occurrence.final-exit-edge"
+      ],
+      "rationale": "The RoutePlan preserves every authoring decision as a fresh ordered occurrence."
+    },
+    {
+      "id": "compiled-entities-match-reviewed-choices",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.edge.entry-mainline",
+        "test.movement.continue",
+        "test.edge.continue",
+        "test.movement.final-exit",
+        "test.edge.final-exit-ramp"
+      ],
+      "rationale": "No optimizer or UI layer substitutes a different road or movement."
+    }
+  ]
+}

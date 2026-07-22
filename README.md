@@ -128,7 +128,17 @@ ledger, and presentation projection. Production corridor construction,
 DecisionZone calibration, SwiftUI, CarPlay entitlement, accessibility, audio,
 and physical head-unit behavior remain unimplemented or unproven.
 
-The feasibility core currently executes portable scenarios for twenty-three hard
+The parked expert-authoring boundary is now executable without SwiftUI.
+`ExpertRouteEditorSession` starts from one exact directional entrance and a
+snapshot-bound reviewed catalog. Its cursor names the incoming approach and
+junction complex, exposes only that decision point's legal choices, appends
+fresh movement and outgoing-edge occurrences, supports reviewed cycles and
+parked undo, and compiles only after an explicit directional exit choice. UI
+code cannot submit a future decision's choice or edit while moving. KR-U01
+executes this stateful boundary; real released editor catalogs, labels, topology
+rendering, accessibility, and the iPhone scene remain pending.
+
+The feasibility core currently executes portable scenarios for twenty-four hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -182,6 +192,10 @@ properties that must remain proven as the product expands:
 23. a HIGH route-aware matcher estimate exposes along-edge progress separately
     from lateral residual, and only an exact snapshot-, RoutePlan-, occurrence-,
     edge-, and DecisionZone-bound corridor may convert it into guidance distance.
+24. parked route authoring starts from an exact directional entrance, exposes
+    only the current incoming approach's reviewed choices, preserves cycles as
+    fresh occurrences, rejects moving-time edits, and finishes only through an
+    explicit directional exit.
 
 ## Repository map
 

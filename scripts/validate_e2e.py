@@ -49,6 +49,10 @@ GUIDANCE_LANE_PREPARATIONS = {
 }
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
+    "ROUTE_EDITOR_STARTED",
+    "ROUTE_EDITOR_CHOICE_SELECTED",
+    "ROUTE_EDITOR_UNDO_REQUESTED",
+    "ROUTE_EDITOR_COMPILE_REQUESTED",
     "NAVIGATION_STARTED",
     "LOCATION_UPDATED",
     "MATCHER_SESSION_STARTED",
@@ -468,6 +472,159 @@ def validate_matcher_guidance_inputs(v: Validation, given: dict[str, Any]) -> No
         v.add("given.inputs.guidance_progress_bridge.entry_offset_meters must be non-negative")
 
 
+def validate_expert_route_editor(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "expert_route_editor_catalog" not in inputs:
+        return
+    catalog = inputs["expert_route_editor_catalog"]
+    required = {"network_snapshot_id", "entrances", "decision_points"}
+    if not v.require_keys(catalog, required, "given.inputs.expert_route_editor_catalog"):
+        return
+    snapshot = given.get("network_snapshot")
+    snapshot_id = snapshot.get("id") if isinstance(snapshot, dict) else None
+    if catalog["network_snapshot_id"] != snapshot_id:
+        v.add("expert route editor catalog must match given.network_snapshot.id")
+
+    entrances = catalog["entrances"]
+    decisions = catalog["decision_points"]
+    if not isinstance(entrances, list) or not entrances:
+        v.add("expert route editor catalog entrances must be a non-empty array")
+        entrances = []
+    if not isinstance(decisions, list) or not decisions:
+        v.add("expert route editor catalog decision_points must be a non-empty array")
+        decisions = []
+
+    decision_by_id: dict[str, dict[str, Any]] = {}
+    choice_ids: set[str] = set()
+    for index, decision in enumerate(decisions):
+        context = f"given.inputs.expert_route_editor_catalog.decision_points[{index}]"
+        decision_required = {
+            "decision_point_id",
+            "incoming_approach_id",
+            "junction_complex_id",
+            "choices",
+        }
+        if not v.require_keys(decision, decision_required, context):
+            continue
+        decision_id = decision["decision_point_id"]
+        if not isinstance(decision_id, str) or not decision_id.strip():
+            v.add(f"{context}.decision_point_id must be non-empty")
+        elif decision_id in decision_by_id:
+            v.add(f"duplicate editor decision_point_id: {decision_id}")
+        else:
+            decision_by_id[decision_id] = decision
+        for field in ("incoming_approach_id", "junction_complex_id"):
+            if not isinstance(decision[field], str) or not decision[field].strip():
+                v.add(f"{context}.{field} must be non-empty")
+        choices = decision["choices"]
+        if not isinstance(choices, list) or not choices:
+            v.add(f"{context}.choices must be a non-empty array")
+            continue
+        for choice_index, choice in enumerate(choices):
+            choice_context = f"{context}.choices[{choice_index}]"
+            choice_required = {
+                "choice_id",
+                "movement_id",
+                "movement_toll_domain_id",
+                "outgoing_edge_id",
+                "outgoing_edge_toll_domain_id",
+            }
+            if not v.require_keys(choice, choice_required, choice_context):
+                continue
+            for field in choice_required:
+                if not isinstance(choice[field], str) or not choice[field].strip():
+                    v.add(f"{choice_context}.{field} must be non-empty")
+            choice_id = choice["choice_id"]
+            if not isinstance(choice_id, str) or not choice_id.strip():
+                v.add(f"{choice_context}.choice_id must be non-empty")
+            else:
+                if choice_id in choice_ids:
+                    v.add(f"duplicate editor choice_id: {choice_id}")
+                choice_ids.add(choice_id)
+            destinations = [
+                key
+                for key in ("next_decision_point_id", "exit_facility_id")
+                if isinstance(choice.get(key), str) and choice[key].strip()
+            ]
+            if len(destinations) != 1:
+                v.add(f"{choice_context} must name exactly one editor destination")
+        movement_ids = [
+            choice.get("movement_id")
+            for choice in choices
+            if isinstance(choice, dict)
+            and isinstance(choice.get("movement_id"), str)
+        ]
+        if len(movement_ids) != len(set(movement_ids)):
+            v.add(f"{context}.choices must not repeat a movement")
+
+    entrance_ids: set[str] = set()
+    for index, entrance in enumerate(entrances):
+        context = f"given.inputs.expert_route_editor_catalog.entrances[{index}]"
+        entrance_required = {
+            "facility_id",
+            "initial_edge_id",
+            "initial_edge_toll_domain_id",
+            "first_decision_point_id",
+        }
+        if not v.require_keys(entrance, entrance_required, context):
+            continue
+        for field in entrance_required:
+            if not isinstance(entrance[field], str) or not entrance[field].strip():
+                v.add(f"{context}.{field} must be non-empty")
+        facility_id = entrance["facility_id"]
+        if not isinstance(facility_id, str) or not facility_id.strip():
+            v.add(f"{context}.facility_id must be non-empty")
+        else:
+            if facility_id in entrance_ids:
+                v.add(f"duplicate editor entrance facility_id: {facility_id}")
+            entrance_ids.add(facility_id)
+        first_decision_point_id = entrance["first_decision_point_id"]
+        if (
+            isinstance(first_decision_point_id, str)
+            and first_decision_point_id not in decision_by_id
+        ):
+            v.add(f"{context}.first_decision_point_id must name a decision point")
+
+    for decision_id, decision in decision_by_id.items():
+        for choice in decision.get("choices", []):
+            if not isinstance(choice, dict):
+                continue
+            next_id = choice.get("next_decision_point_id")
+            if isinstance(next_id, str) and next_id not in decision_by_id:
+                v.add(
+                    f"editor decision {decision_id!r} references unknown next decision {next_id!r}"
+                )
+
+    for entrance in entrances:
+        if not isinstance(entrance, dict):
+            continue
+        pending = [entrance.get("first_decision_point_id")]
+        visited: set[str] = set()
+        has_exit = False
+        while pending:
+            decision_id = pending.pop()
+            if not isinstance(decision_id, str) or decision_id in visited:
+                continue
+            visited.add(decision_id)
+            decision = decision_by_id.get(decision_id)
+            if decision is None:
+                continue
+            for choice in decision.get("choices", []):
+                if not isinstance(choice, dict):
+                    continue
+                exit_id = choice.get("exit_facility_id")
+                if isinstance(exit_id, str) and exit_id.strip():
+                    has_exit = True
+                    break
+                pending.append(choice.get("next_decision_point_id"))
+            if has_exit:
+                break
+        if not has_exit:
+            v.add(
+                f"editor entrance {entrance.get('facility_id')!r} has no reachable exit"
+            )
+
+
 def validate_released_guidance(v: Validation, given: dict[str, Any]) -> None:
     inputs = given.get("inputs")
     if not isinstance(inputs, dict) or "released_guidance" not in inputs:
@@ -730,6 +887,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_guidance_anchors(v, given)
         validate_matcher_guidance_inputs(v, given)
+        validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")

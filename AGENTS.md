@@ -56,6 +56,7 @@ For a long handoff, preserve: objective, accepted decisions and reasons, files c
 - The strict compiler, occurrence progress, deviation recovery, legal egress, confidence policy, and structured guidance remain Kaido-owned behavior.
 - Do not add a commercial navigation SDK or production provider dependency before its bounded role, licence, data-use constraints, hard gates, and comparison fixtures are documented.
 - Keep the portable scenarios executable against the pure Swift core before building an iPhone screen. UI work consumes navigation snapshots; it does not define navigation semantics.
+- `ExpertRouteEditorSession` in `KaidoRouting` owns the parked expert-authoring cursor. It starts from an exact directional entrance, exposes only the current reviewed incoming-approach/JCT choices, appends fresh movement and edge occurrences, permits reviewed cycles, and compiles only after an explicit directional exit. Moving-time edits, future-decision choices, duplicate occurrence IDs, invalid catalogs, and exitless catalogs fail closed. SwiftUI may render `ExpertRouteEditorSnapshot` and submit stable choice IDs; it must not infer graph legality or mutate RoutePlan directly. KR-U01 executes this boundary. Released catalog construction, localized labels, topology rendering, accessibility, and the iPhone scene remain pending.
 
 ## Project licence language
 

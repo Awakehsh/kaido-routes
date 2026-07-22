@@ -59,6 +59,7 @@ private struct ScenarioHarness {
   var engine: NavigationEngine
   var matcherSession: RouteMatcherSession?
   var matcherCorridor: RouteMatcherCorridor?
+  var routeEditorSession: ExpertRouteEditorSession?
   var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
@@ -72,6 +73,7 @@ private struct ScenarioHarness {
     )
     matcherSession = nil
     matcherCorridor = nil
+    routeEditorSession = nil
     lastGuidancePromptEmission = nil
   }
 
@@ -86,6 +88,14 @@ private struct ScenarioHarness {
     switch event.type {
     case "ROUTE_COMPILE_REQUESTED":
       try compileRoute(event.payload)
+    case "ROUTE_EDITOR_STARTED":
+      try startRouteEditor(event.payload)
+    case "ROUTE_EDITOR_CHOICE_SELECTED":
+      try selectRouteEditorChoice(event.payload)
+    case "ROUTE_EDITOR_UNDO_REQUESTED":
+      try undoRouteEditorChoice(event.payload)
+    case "ROUTE_EDITOR_COMPILE_REQUESTED":
+      try compileRouteEditor(event.payload)
     case "NAVIGATION_STARTED":
       projectSignGuidance()
       projectLocalization()
@@ -413,6 +423,167 @@ private struct ScenarioHarness {
     }
 
     throw ScenarioExecutionError.unsupportedCompileShape
+  }
+
+  private mutating func startRouteEditor(_ payload: [String: JSONValue]) throws {
+    guard let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog") else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_catalog")
+    }
+    let recoveryPolicyValue = try payload.requiredString("recovery_policy")
+    guard let recoveryPolicy = RoutePlan.RecoveryPolicy(rawValue: recoveryPolicyValue) else {
+      throw ScenarioExecutionError.invalidInput("recovery_policy")
+    }
+    let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    guard catalog.networkSnapshotID == scenario.given.networkSnapshot.id else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_catalog.network_snapshot_id")
+    }
+    do {
+      let session = try ExpertRouteEditorSession(
+        catalog: catalog,
+        routePlanID: try payload.requiredString("route_plan_id"),
+        entranceFacilityID: try payload.requiredString("entrance_facility_id"),
+        initialOccurrenceID: try payload.requiredString("initial_occurrence_id"),
+        recoveryPolicy: recoveryPolicy,
+        interaction: try routeEditorInteraction(payload)
+      )
+      routeEditorSession = session
+      publish(session.snapshot)
+    } catch let error as ExpertRouteEditorError {
+      routeEditorSession = nil
+      publishRouteEditorError(error)
+    }
+  }
+
+  private mutating func selectRouteEditorChoice(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard var session = routeEditorSession else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
+    }
+    do {
+      try session.select(
+        choiceID: try payload.requiredString("choice_id"),
+        movementOccurrenceID: try payload.requiredString("movement_occurrence_id"),
+        outgoingEdgeOccurrenceID: try payload.requiredString(
+          "outgoing_edge_occurrence_id"
+        ),
+        interaction: try routeEditorInteraction(payload)
+      )
+      routeEditorSession = session
+      publish(session.snapshot)
+    } catch let error as ExpertRouteEditorError {
+      routeEditorSession = session
+      publish(session.snapshot)
+      adapterObservations["editor.last_error"] = .string(error.code)
+    }
+  }
+
+  private mutating func undoRouteEditorChoice(_ payload: [String: JSONValue]) throws {
+    guard var session = routeEditorSession else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
+    }
+    do {
+      try session.undo(interaction: try routeEditorInteraction(payload))
+      routeEditorSession = session
+      publish(session.snapshot)
+    } catch let error as ExpertRouteEditorError {
+      routeEditorSession = session
+      publish(session.snapshot)
+      adapterObservations["editor.last_error"] = .string(error.code)
+    }
+  }
+
+  private mutating func compileRouteEditor(_ payload: [String: JSONValue]) throws {
+    guard let session = routeEditorSession else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
+    }
+    do {
+      let routePlan = try session.makeRoutePlan(
+        interaction: try routeEditorInteraction(payload)
+      )
+      publish(session.snapshot)
+      publishCompiledRoutePlan(routePlan)
+    } catch let error as ExpertRouteEditorError {
+      publish(session.snapshot)
+      adapterObservations["editor.last_error"] = .string(error.code)
+    }
+  }
+
+  private mutating func publish(_ snapshot: ExpertRouteEditorSnapshot) {
+    clearRouteEditorObservations()
+    adapterObservations["editor.state"] = .string(snapshot.state.rawValue)
+    adapterObservations["editor.network_snapshot_id"] = .string(
+      snapshot.networkSnapshotID
+    )
+    adapterObservations["editor.route_plan_id"] = .string(snapshot.routePlanID)
+    adapterObservations["editor.entrance_facility_id"] = .string(
+      snapshot.entranceFacilityID
+    )
+    adapterObservations["editor.available_choice_ids"] = .strings(
+      snapshot.availableChoices.map(\.id)
+    )
+    adapterObservations["editor.available_movement_ids"] = .strings(
+      snapshot.availableChoices.map(\.movementID)
+    )
+    adapterObservations["editor.occurrence_ids"] = .strings(
+      snapshot.occurrences.map(\.id)
+    )
+    adapterObservations["editor.occurrence_entity_ids"] = .strings(
+      snapshot.occurrences.map(\.entityID)
+    )
+    adapterObservations["editor.occurrence_kinds"] = .strings(
+      snapshot.occurrences.map { $0.kind.rawValue }
+    )
+    adapterObservations["editor.occurrence_indexes"] = .array(
+      snapshot.occurrences.map { .integer($0.index) }
+    )
+    if let currentDecisionPointID = snapshot.currentDecisionPointID {
+      adapterObservations["editor.current_decision_point_id"] = .string(
+        currentDecisionPointID
+      )
+    }
+    if let incomingApproachID = snapshot.incomingApproachID {
+      adapterObservations["editor.incoming_approach_id"] = .string(incomingApproachID)
+    }
+    if let junctionComplexID = snapshot.junctionComplexID {
+      adapterObservations["editor.junction_complex_id"] = .string(junctionComplexID)
+    }
+    if let selectedExitFacilityID = snapshot.selectedExitFacilityID {
+      adapterObservations["editor.selected_exit_facility_id"] = .string(
+        selectedExitFacilityID
+      )
+    }
+  }
+
+  private mutating func publishCompiledRoutePlan(_ routePlan: RoutePlan) {
+    adapterObservations["editor.compiled.status"] = .string("COMPILED")
+    adapterObservations["editor.compiled.network_snapshot_id"] = .string(
+      routePlan.networkSnapshotID
+    )
+    adapterObservations["editor.compiled.route_plan_id"] = .string(routePlan.id)
+    adapterObservations["editor.compiled.entrance_facility_id"] = .string(
+      routePlan.entryFacilityID
+    )
+    adapterObservations["editor.compiled.exit_facility_id"] = .string(
+      routePlan.exitFacilityID
+    )
+    adapterObservations["editor.compiled.occurrence_ids"] = .strings(
+      routePlan.occurrences.map(\.id)
+    )
+    adapterObservations["editor.compiled.entity_ids"] = .strings(
+      routePlan.occurrences.map(\.entityID)
+    )
+  }
+
+  private mutating func publishRouteEditorError(_ error: ExpertRouteEditorError) {
+    clearRouteEditorObservations()
+    adapterObservations["editor.last_error"] = .string(error.code)
+  }
+
+  private mutating func clearRouteEditorObservations() {
+    for key in adapterObservations.keys.filter({ $0.hasPrefix("editor.") }) {
+      adapterObservations.removeValue(forKey: key)
+    }
   }
 
   private mutating func publish(_ result: CompileResult) {
@@ -1387,6 +1558,88 @@ private struct ScenarioHarness {
       throw ScenarioExecutionError.invalidInput("facility.kind")
     }
     return kind
+  }
+
+  private func reviewedRouteEditorCatalog(
+    _ value: [String: JSONValue]
+  ) throws -> ReviewedRouteEditorCatalog {
+    guard let entranceValues = value.array("entrances"),
+      let decisionPointValues = value.array("decision_points")
+    else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_catalog")
+    }
+    let entrances = try entranceValues.map { entranceValue in
+      guard let entrance = entranceValue.objectValue else {
+        throw ScenarioExecutionError.invalidInput("expert_route_editor_catalog.entrances")
+      }
+      return ReviewedRouteEditorEntrance(
+        facilityID: try entrance.requiredString("facility_id"),
+        initialEdgeID: try entrance.requiredString("initial_edge_id"),
+        initialEdgeTollDomainID: try entrance.requiredString(
+          "initial_edge_toll_domain_id"
+        ),
+        firstDecisionPointID: try entrance.requiredString("first_decision_point_id")
+      )
+    }
+    let decisionPoints = try decisionPointValues.map { decisionPointValue in
+      guard let decisionPoint = decisionPointValue.objectValue,
+        let choiceValues = decisionPoint.array("choices")
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "expert_route_editor_catalog.decision_points"
+        )
+      }
+      let choices = try choiceValues.map { choiceValue in
+        guard let choice = choiceValue.objectValue else {
+          throw ScenarioExecutionError.invalidInput(
+            "expert_route_editor_catalog.choices"
+          )
+        }
+        let nextDecisionPointID = choice.string("next_decision_point_id")
+        let exitFacilityID = choice.string("exit_facility_id")
+        let destination: ReviewedRouteEditorDestination
+        switch (nextDecisionPointID, exitFacilityID) {
+        case (.some(let id), .none):
+          destination = .decisionPoint(id)
+        case (.none, .some(let id)):
+          destination = .exitFacility(id)
+        default:
+          throw ScenarioExecutionError.invalidInput(
+            "expert_route_editor_catalog.choice.destination"
+          )
+        }
+        return ReviewedRouteEditorChoice(
+          id: try choice.requiredString("choice_id"),
+          movementID: try choice.requiredString("movement_id"),
+          movementTollDomainID: try choice.requiredString("movement_toll_domain_id"),
+          outgoingEdgeID: try choice.requiredString("outgoing_edge_id"),
+          outgoingEdgeTollDomainID: try choice.requiredString(
+            "outgoing_edge_toll_domain_id"
+          ),
+          destination: destination
+        )
+      }
+      return ReviewedRouteEditorDecisionPoint(
+        id: try decisionPoint.requiredString("decision_point_id"),
+        incomingApproachID: try decisionPoint.requiredString("incoming_approach_id"),
+        junctionComplexID: try decisionPoint.requiredString("junction_complex_id"),
+        choices: choices
+      )
+    }
+    return ReviewedRouteEditorCatalog(
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      entrances: entrances,
+      decisionPoints: decisionPoints
+    )
+  }
+
+  private func routeEditorInteraction(
+    _ payload: [String: JSONValue]
+  ) throws -> RouteEditorInteractionContext {
+    guard let vehicleMoving = payload.bool("vehicle_moving") else {
+      throw ScenarioExecutionError.invalidInput("vehicle_moving")
+    }
+    return vehicleMoving ? .moving : .parked
   }
 
   private func requiredDouble(

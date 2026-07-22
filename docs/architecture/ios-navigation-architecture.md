@@ -218,7 +218,7 @@ when measurements or independent release needs justify it.
 | Module | Owns | Must not import |
 |---|---|---|
 | `KaidoDomain` | IDs, graph entities, occurrences, released guidance/frame semantics, status, evidence metadata, value types | MapKit, Core Location, CarPlay, SwiftUI |
-| `KaidoRouting` | strict compilation, entrance ranking, recovery search, egress precomputation | SwiftUI, CarPlay |
+| `KaidoRouting` | strict compilation, parked route-editor session, entrance ranking, recovery search, egress precomputation | SwiftUI, CarPlay |
 | `KaidoNavigation` | journey reducer, route-aware matcher, confidence, prompt scheduling | SwiftUI, CarPlay |
 | `KaidoSurfaceRouting` | provider-neutral surface requests, candidates, fixture validation, inspection gates, probe records | MapKit, Core Location, route-plan mutation |
 | `KaidoData` | versioned snapshot loading, spatial index, migration and integrity checks | UI frameworks |
@@ -288,6 +288,10 @@ That is a development fact, not yet the minimum deployment target.
 - The bounded surface access and egress screens may use MapKit for geographic
   context and render accepted provider geometry as overlays.
 - Complex authoring is disabled while moving.
+- SwiftUI renders `ExpertRouteEditorSnapshot` and submits stable reviewed choice
+  IDs. `KaidoRouting`, not the view tree, owns the current incoming approach,
+  legal movement set, fresh occurrence creation, parked undo, and explicit exit
+  completion. KR-U01 executes this pure boundary; the visual editor is not built.
 
 ### CarPlay
 

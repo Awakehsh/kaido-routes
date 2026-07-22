@@ -103,6 +103,14 @@ navigation.active_route_plan_id
 navigation.current_occurrence_id
 navigation.signal_reacquisition_status
 navigation.route_candidate_resolution
+editor.state
+editor.current_decision_point_id
+editor.incoming_approach_id
+editor.junction_complex_id
+editor.available_choice_ids
+editor.occurrence_ids
+editor.selected_exit_facility_id
+editor.compiled.occurrence_ids
 matcher.fraction_along_edge
 matcher.lateral_distance_meters
 guidance.progress_bridge.status
@@ -185,9 +193,17 @@ the transient matching emission that alone sets `voice.should_speak`. KR-S18
 starts with actual Swift matcher observations and proves that occurrence-bound
 along-edge progress, not lateral map-match residual or straight-line distance,
 becomes the DecisionZone scalar. These remain L1/L2 contract executions until
-production graph/zone data and real SwiftUI and `CPMapTemplate` adapters bind projections to
-accessibility-visible views in L3/L4; their `layer` records the intended final
-verification surface, not a claim that a simulator or head unit ran in CI.
+production graph/zone data and real SwiftUI and `CPMapTemplate` adapters bind
+projections to accessibility-visible views in L3/L4; their `layer` records the
+intended final verification surface, not a claim that a simulator or head unit
+ran in CI.
+
+KR-U01 executes the parked `ExpertRouteEditorSession` at L1/L2 even though its
+declared final surface is iPhone UI. The runner starts from an exact directional
+entrance, observes the incoming-approach/JCT choice set, rejects a future choice
+and a moving-time edit, advances through reviewed choices, and compares the final
+RoutePlan occurrence sequence. A later SwiftUI test must bind these semantic
+values to accessible controls without recreating movement legality in the view.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

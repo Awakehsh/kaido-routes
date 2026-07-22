@@ -53,7 +53,7 @@ should become scenarios when their layer is built.
 
 | ID | Behavior | Priority | State |
 |---|---|---:|---|
-| KR-U01 | Guided editor exposes only legal next choices | P0 | Planned |
+| KR-U01 | Parked editor exposes only legal next choices and compiles an explicit directional exit | P0 | Seeded |
 | KR-U02 | Expert editor can duplicate a closed subsequence as another lap | P0 | Planned |
 | KR-U03 | An ambiguous freehand corridor asks for resolution while parked | P1 | Planned |
 | KR-U04 | Pre-drive review separates actual distance, tariff distance, and toll status | P0 | Seeded |

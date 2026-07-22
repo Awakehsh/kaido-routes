@@ -471,13 +471,14 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 42 scenarios with 253 semantic assertions executable at L1/L2. KR-S16
+   current 43 scenarios with 274 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
    geometry to that same guidance path without using lateral residual;
-   KR-U04 through U08 and KR-U10 through U12 cross the shared presentation
-   projection boundary.
+   KR-U01 crosses the parked expert-editor cursor and exact RoutePlan compilation
+   boundary; KR-U04 through U08 and KR-U10 through U12 cross the shared
+   presentation projection boundary.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
@@ -562,7 +563,13 @@ gate.
     bridge. Next add production corridor/DecisionZone construction and calibration,
     then the SwiftUI phone renderer and accessibility binding, followed by the
     `CPMapTemplate` adapter; none of those platform layers exists yet.
-11. Perform passenger-observed tunnel and entry tests only after synthetic and
+11. **Partial complete:** the snapshot-bound `ExpertRouteEditorSession` exposes
+    only legal choices for the exact incoming approach/JCT, creates fresh
+    occurrences across cycles, locks moving-time interaction, supports parked
+    undo, and requires an explicit directional exit before RoutePlan compilation.
+    KR-U01 executes this boundary. Build released editor catalogs and the
+    accessible SwiftUI topology/editor adapter without moving graph logic into UI.
+12. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
 The next provider tasks are exact cross-engine route-difference review, a

@@ -63,6 +63,20 @@ network snapshot. The pure compiler receives caller-generated deterministic IDs,
 rejects any collision, copies all semantic fields, and reindexes the expanded
 sequence. It does not infer a closed loop from matching labels or coordinates.
 
+The platform-light `ExpertRouteEditorSession` now implements the stepwise cursor
+contract. A `ReviewedRouteEditorCatalog` is bound to one network snapshot and
+contains exact directional entrances, decision points keyed by incoming approach
+and junction complex, reviewed movement choices, outgoing edges, and either the
+next decision point or an explicit directional exit. The session returns an
+immutable snapshot for UI rendering; selecting a stable choice ID appends fresh
+movement and edge occurrences. Cycles are valid, but duplicate identities,
+unknown references, exitless entrance graphs, future-decision choices, and any
+edit while moving fail closed. Parked undo removes only the last authored pair
+and restores the prior decision point. SwiftUI remains an adapter over this
+state; it never determines legal choices itself. KR-U01 executes the first
+vertical contract with synthetic data. Released catalogs and the actual iPhone
+editor remain pending.
+
 ### Circuit composition is explicit
 
 A marketing name does not define graph connectivity. The current official route

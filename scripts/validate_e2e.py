@@ -201,6 +201,11 @@ def validate_route_plan(v: Validation, route_plan: Any) -> None:
                 parking_groups.setdefault(parking_area_id, []).append(occurrence)
         elif occurrence.get("kind") == "PA_VISIT":
             v.add(f"{context} PA_VISIT requires parking_area_id")
+        toll_domain_id = occurrence.get("toll_domain_id")
+        if toll_domain_id is not None and (
+            not isinstance(toll_domain_id, str) or not toll_domain_id.strip()
+        ):
+            v.add(f"{context}.toll_domain_id must be non-empty when present")
 
     if indexes != list(range(len(occurrences))):
         v.add("route occurrence indexes must be contiguous and match array order from zero")

@@ -37,6 +37,7 @@ public struct RouteOccurrence: Codable, Equatable, Hashable, Sendable {
   public let kind: Kind
   public let entityID: String
   public let parkingAreaID: String?
+  public let tollDomainID: String?
   public let isOptional: Bool
 
   public init(
@@ -45,6 +46,7 @@ public struct RouteOccurrence: Codable, Equatable, Hashable, Sendable {
     kind: Kind,
     entityID: String,
     parkingAreaID: String? = nil,
+    tollDomainID: String? = nil,
     isOptional: Bool = false
   ) {
     self.id = id
@@ -52,6 +54,7 @@ public struct RouteOccurrence: Codable, Equatable, Hashable, Sendable {
     self.kind = kind
     self.entityID = entityID
     self.parkingAreaID = parkingAreaID
+    self.tollDomainID = tollDomainID
     self.isOptional = isOptional
   }
 
@@ -61,6 +64,7 @@ public struct RouteOccurrence: Codable, Equatable, Hashable, Sendable {
     case kind
     case entityID = "entity_id"
     case parkingAreaID = "parking_area_id"
+    case tollDomainID = "toll_domain_id"
     case isOptional = "optional"
   }
 
@@ -71,6 +75,7 @@ public struct RouteOccurrence: Codable, Equatable, Hashable, Sendable {
     kind = try container.decode(Kind.self, forKey: .kind)
     entityID = try container.decode(String.self, forKey: .entityID)
     parkingAreaID = try container.decodeIfPresent(String.self, forKey: .parkingAreaID)
+    tollDomainID = try container.decodeIfPresent(String.self, forKey: .tollDomainID)
     isOptional = try container.decodeIfPresent(Bool.self, forKey: .isOptional) ?? false
   }
 }

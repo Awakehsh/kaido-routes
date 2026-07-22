@@ -116,11 +116,28 @@ RouteOccurrence
   kind: EDGE | JUNCTION_MOVEMENT | PA_VISIT
   entity_id
   parking_area_id: present on each PA access, visit, and return occurrence
+  toll_domain_id: operator or charging domain classification for this occurrence
 ```
 
 The same entity may appear any number of times. Runtime identity is the
 occurrence, not the entity or coordinate. Progress, import/export, recovery,
 analytics, and UI selection must all preserve occurrence order.
+
+An additional lap is value expansion, not an object reference. A
+`ReviewedLapTemplate` identifies one contiguous, evidence-reviewed source
+subsequence. `LapDuplicationRequest` supplies the same number of fresh occurrence
+IDs. Compilation rejects an absent source sequence, count mismatch, empty ID,
+collision, or duplicate. The resulting route preserves entity, PA, optionality,
+and toll-domain fields while assigning contiguous new indexes.
+
+## Reviewed route-component requirements
+
+A friendly route template may span multiple official route names. Its
+`required_entity_ids_in_order` is an evidence-reviewed subsequence of exact
+directed edges and junction movements. Strict compilation advances through the
+candidate occurrence list in order and rejects any unresolved component. A UI
+label such as “C2 circuit” is never permission to manufacture an edge between
+two similarly named or nearby route sections.
 
 ## Composite journey
 
@@ -249,6 +266,21 @@ conditional syntax may identify a candidate rule, but it is not operator proof
 and must not be silently discarded by graph conversion.
 
 ## Toll contract
+
+Every strict route is compiled under a `TollDomainPolicy`:
+
+```text
+allowed_toll_domain_ids[]
+requires_every_occurrence_classified: true
+```
+
+An occurrence in an external domain produces
+`EXTERNAL_TOLL_DOMAIN_BOUNDARY`; a missing classification produces
+`UNCLASSIFIED_TOLL_DOMAIN`. Both are hard blockers for a Shuto-only route. The
+compiler returns the exact boundary occurrence IDs and external domain IDs so
+pre-drive review can explain the failure. A broader journey may cross a boundary
+only through a separately reviewed policy and tariff contract; geometry alone
+cannot authorize it.
 
 The planned route and toll quote are independent records:
 

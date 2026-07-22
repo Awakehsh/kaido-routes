@@ -11,7 +11,9 @@ e2e/
 The JSON Schema documents the envelope. The dependency-free validator also
 checks cross-field rules that are awkward to express in JSON Schema, including
 contiguous occurrence indexes, unique event IDs, event ordering, and assertion
-references.
+references. Route occurrences may also carry `parking_area_id` and
+`toll_domain_id`; both are explicit domain data rather than labels inferred by
+the runner.
 
 Run:
 

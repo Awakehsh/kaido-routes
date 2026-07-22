@@ -11,17 +11,88 @@ public struct CompileResult: Equatable, Sendable {
   public let errorCodes: [String]
   public let syntheticFacilityIDs: [String]
   public let substitutedMovementIDs: [String]
+  public let validatedRequiredEntityIDs: [String]
+  public let unresolvedRequiredEntityIDs: [String]
+  public let crossedTollDomainIDs: [String]
+  public let boundaryOccurrenceIDs: [String]
 
   public init(
     status: Status,
     errorCodes: [String] = [],
     syntheticFacilityIDs: [String] = [],
-    substitutedMovementIDs: [String] = []
+    substitutedMovementIDs: [String] = [],
+    validatedRequiredEntityIDs: [String] = [],
+    unresolvedRequiredEntityIDs: [String] = [],
+    crossedTollDomainIDs: [String] = [],
+    boundaryOccurrenceIDs: [String] = []
   ) {
     self.status = status
     self.errorCodes = errorCodes
     self.syntheticFacilityIDs = syntheticFacilityIDs
     self.substitutedMovementIDs = substitutedMovementIDs
+    self.validatedRequiredEntityIDs = validatedRequiredEntityIDs
+    self.unresolvedRequiredEntityIDs = unresolvedRequiredEntityIDs
+    self.crossedTollDomainIDs = crossedTollDomainIDs
+    self.boundaryOccurrenceIDs = boundaryOccurrenceIDs
+  }
+}
+
+public struct ReviewedLapTemplate: Equatable, Sendable {
+  public let id: String
+  public let sourceOccurrenceIDs: [String]
+
+  public init(id: String, sourceOccurrenceIDs: [String]) {
+    self.id = id
+    self.sourceOccurrenceIDs = sourceOccurrenceIDs
+  }
+}
+
+public struct LapDuplicationRequest: Equatable, Sendable {
+  public let reviewedTemplateID: String
+  public let newOccurrenceIDs: [String]
+
+  public init(reviewedTemplateID: String, newOccurrenceIDs: [String]) {
+    self.reviewedTemplateID = reviewedTemplateID
+    self.newOccurrenceIDs = newOccurrenceIDs
+  }
+}
+
+public struct RoutePlanExpansionResult: Equatable, Sendable {
+  public let status: CompileResult.Status
+  public let errorCodes: [String]
+  public let routePlan: RoutePlan?
+
+  public init(
+    status: CompileResult.Status,
+    errorCodes: [String] = [],
+    routePlan: RoutePlan? = nil
+  ) {
+    self.status = status
+    self.errorCodes = errorCodes
+    self.routePlan = routePlan
+  }
+}
+
+public struct RouteComponentRequirement: Equatable, Sendable {
+  public let templateID: String
+  public let requiredEntityIDsInOrder: [String]
+
+  public init(templateID: String, requiredEntityIDsInOrder: [String]) {
+    self.templateID = templateID
+    self.requiredEntityIDsInOrder = requiredEntityIDsInOrder
+  }
+}
+
+public struct TollDomainPolicy: Equatable, Sendable {
+  public let allowedTollDomainIDs: Set<String>
+  public let requiresEveryOccurrenceClassified: Bool
+
+  public init(
+    allowedTollDomainIDs: Set<String>,
+    requiresEveryOccurrenceClassified: Bool = true
+  ) {
+    self.allowedTollDomainIDs = allowedTollDomainIDs
+    self.requiresEveryOccurrenceClassified = requiresEveryOccurrenceClassified
   }
 }
 
@@ -135,6 +206,168 @@ public struct DirectionalParkingAreaPath: Equatable, Sendable {
 }
 
 public enum StrictRouteCompiler {
+  public static func appendLap(
+    to routePlan: RoutePlan,
+    request: LapDuplicationRequest,
+    reviewedTemplate: ReviewedLapTemplate
+  ) -> RoutePlanExpansionResult {
+    guard request.reviewedTemplateID == reviewedTemplate.id,
+      !reviewedTemplate.sourceOccurrenceIDs.isEmpty,
+      reviewedTemplate.sourceOccurrenceIDs.count == request.newOccurrenceIDs.count
+    else {
+      return RoutePlanExpansionResult(
+        status: .rejected,
+        errorCodes: ["INVALID_REVIEWED_LAP_TEMPLATE"]
+      )
+    }
+
+    let sourceCount = reviewedTemplate.sourceOccurrenceIDs.count
+    let sourceOccurrences = routePlan.occurrences
+    let existingIDs = Set(sourceOccurrences.map(\.id))
+    guard existingIDs.count == sourceOccurrences.count,
+      sourceOccurrences.enumerated().allSatisfy({ offset, occurrence in
+        occurrence.index == offset
+      })
+    else {
+      return RoutePlanExpansionResult(
+        status: .rejected,
+        errorCodes: ["INVALID_ROUTE_OCCURRENCE_SEQUENCE"]
+      )
+    }
+    guard sourceCount <= sourceOccurrences.count,
+      let sourceStart = sourceOccurrences.indices.first(where: { start in
+        guard start + sourceCount <= sourceOccurrences.count else { return false }
+        return Array(sourceOccurrences[start..<(start + sourceCount)].map(\.id))
+          == reviewedTemplate.sourceOccurrenceIDs
+      })
+    else {
+      return RoutePlanExpansionResult(
+        status: .rejected,
+        errorCodes: ["REVIEWED_LAP_SEQUENCE_NOT_FOUND"]
+      )
+    }
+
+    let newIDs = Set(request.newOccurrenceIDs)
+    guard !request.newOccurrenceIDs.contains(where: \.isEmpty) else {
+      return RoutePlanExpansionResult(
+        status: .rejected,
+        errorCodes: ["INVALID_OCCURRENCE_ID"]
+      )
+    }
+    guard newIDs.count == request.newOccurrenceIDs.count,
+      newIDs.isDisjoint(with: existingIDs)
+    else {
+      return RoutePlanExpansionResult(
+        status: .rejected,
+        errorCodes: ["DUPLICATE_OCCURRENCE_ID"]
+      )
+    }
+
+    let sourceSlice = sourceOccurrences[sourceStart..<(sourceStart + sourceCount)]
+    let duplicated = zip(sourceSlice, request.newOccurrenceIDs).enumerated().map {
+      offset, pair in
+      let (source, newID) = pair
+      return RouteOccurrence(
+        id: newID,
+        index: sourceOccurrences.count + offset,
+        kind: source.kind,
+        entityID: source.entityID,
+        parkingAreaID: source.parkingAreaID,
+        tollDomainID: source.tollDomainID,
+        isOptional: source.isOptional
+      )
+    }
+    let expandedPlan = RoutePlan(
+      id: routePlan.id,
+      entryFacilityID: routePlan.entryFacilityID,
+      exitFacilityID: routePlan.exitFacilityID,
+      recoveryPolicy: routePlan.recoveryPolicy,
+      actualDistanceKM: routePlan.actualDistanceKM,
+      occurrences: sourceOccurrences + duplicated
+    )
+    return RoutePlanExpansionResult(status: .accepted, routePlan: expandedPlan)
+  }
+
+  public static func validate(
+    routePlan: RoutePlan,
+    componentRequirement: RouteComponentRequirement
+  ) -> CompileResult {
+    guard !componentRequirement.requiredEntityIDsInOrder.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["EMPTY_ROUTE_COMPONENT_REQUIREMENT"]
+      )
+    }
+
+    var nextRequiredIndex = 0
+    var validated: [String] = []
+    for occurrence in routePlan.occurrences
+    where nextRequiredIndex < componentRequirement.requiredEntityIDsInOrder.count {
+      let requiredID = componentRequirement.requiredEntityIDsInOrder[nextRequiredIndex]
+      if occurrence.entityID == requiredID {
+        validated.append(requiredID)
+        nextRequiredIndex += 1
+      }
+    }
+
+    let unresolved = Array(
+      componentRequirement.requiredEntityIDsInOrder.dropFirst(nextRequiredIndex)
+    )
+    guard unresolved.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["MISSING_OR_OUT_OF_ORDER_ROUTE_COMPONENT"],
+        validatedRequiredEntityIDs: validated,
+        unresolvedRequiredEntityIDs: unresolved
+      )
+    }
+    return CompileResult(
+      status: .accepted,
+      validatedRequiredEntityIDs: validated
+    )
+  }
+
+  public static func validate(
+    routePlan: RoutePlan,
+    tollDomainPolicy: TollDomainPolicy
+  ) -> CompileResult {
+    var crossedDomainIDs: [String] = []
+    var boundaryOccurrenceIDs: [String] = []
+    var hasUnclassifiedOccurrence = false
+
+    for occurrence in routePlan.occurrences {
+      guard let domainID = occurrence.tollDomainID else {
+        if tollDomainPolicy.requiresEveryOccurrenceClassified {
+          hasUnclassifiedOccurrence = true
+          boundaryOccurrenceIDs.append(occurrence.id)
+        }
+        continue
+      }
+      guard !tollDomainPolicy.allowedTollDomainIDs.contains(domainID) else { continue }
+      boundaryOccurrenceIDs.append(occurrence.id)
+      if !crossedDomainIDs.contains(domainID) {
+        crossedDomainIDs.append(domainID)
+      }
+    }
+
+    var errorCodes: [String] = []
+    if !crossedDomainIDs.isEmpty {
+      errorCodes.append("EXTERNAL_TOLL_DOMAIN_BOUNDARY")
+    }
+    if hasUnclassifiedOccurrence {
+      errorCodes.append("UNCLASSIFIED_TOLL_DOMAIN")
+    }
+    guard errorCodes.isEmpty else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: errorCodes,
+        crossedTollDomainIDs: crossedDomainIDs,
+        boundaryOccurrenceIDs: boundaryOccurrenceIDs
+      )
+    }
+    return CompileResult(status: .accepted)
+  }
+
   public static func validate(
     movement request: DirectedMovementRequest,
     legalMovements: [LegalMovement]

@@ -207,6 +207,68 @@ private struct ScenarioHarness {
       return
     }
 
+    if let duplication = inputs.object("lap_duplication"),
+      let reviewedTemplate = inputs.object("reviewed_lap_template"),
+      let routePlan = scenario.given.routePlan
+    {
+      let request = LapDuplicationRequest(
+        reviewedTemplateID: try duplication.requiredString("reviewed_template_id"),
+        newOccurrenceIDs: try requiredStrings(
+          duplication,
+          key: "new_occurrence_ids"
+        )
+      )
+      let template = ReviewedLapTemplate(
+        id: try reviewedTemplate.requiredString("template_id"),
+        sourceOccurrenceIDs: try requiredStrings(
+          reviewedTemplate,
+          key: "source_occurrence_ids"
+        )
+      )
+      publish(
+        StrictRouteCompiler.appendLap(
+          to: routePlan,
+          request: request,
+          reviewedTemplate: template
+        ))
+      return
+    }
+
+    if let requirement = inputs.object("route_component_requirement"),
+      let routePlan = scenario.given.routePlan
+    {
+      let result = StrictRouteCompiler.validate(
+        routePlan: routePlan,
+        componentRequirement: RouteComponentRequirement(
+          templateID: try requirement.requiredString("template_id"),
+          requiredEntityIDsInOrder: try requiredStrings(
+            requirement,
+            key: "required_entity_ids_in_order"
+          )
+        )
+      )
+      publish(result)
+      return
+    }
+
+    if let policy = inputs.object("toll_domain_policy"),
+      let routePlan = scenario.given.routePlan
+    {
+      let result = StrictRouteCompiler.validate(
+        routePlan: routePlan,
+        tollDomainPolicy: TollDomainPolicy(
+          allowedTollDomainIDs: Set(
+            try requiredStrings(policy, key: "allowed_toll_domain_ids")
+          ),
+          requiresEveryOccurrenceClassified: policy.bool(
+            "requires_every_occurrence_classified"
+          ) ?? true
+        )
+      )
+      publish(result)
+      return
+    }
+
     if let template = inputs.object("route_template"),
       let candidateValues = inputs.array("entrance_candidates")
     {
@@ -252,6 +314,29 @@ private struct ScenarioHarness {
     adapterObservations["compiler.synthetic_facility_ids"] = .strings(result.syntheticFacilityIDs)
     adapterObservations["compiler.substituted_movement_ids"] = .strings(
       result.substitutedMovementIDs)
+    adapterObservations["compiler.validated_required_entity_ids"] = .strings(
+      result.validatedRequiredEntityIDs)
+    adapterObservations["compiler.unresolved_required_entity_ids"] = .strings(
+      result.unresolvedRequiredEntityIDs)
+    adapterObservations["compiler.crossed_toll_domain_ids"] = .strings(
+      result.crossedTollDomainIDs)
+    adapterObservations["compiler.boundary_occurrence_ids"] = .strings(
+      result.boundaryOccurrenceIDs)
+  }
+
+  private mutating func publish(_ result: RoutePlanExpansionResult) {
+    adapterObservations["compiler.status"] = .string(result.status.rawValue)
+    adapterObservations["compiler.error_codes"] = .strings(result.errorCodes)
+    guard let routePlan = result.routePlan else { return }
+    adapterObservations["compiler.expanded_occurrence_ids"] = .strings(
+      routePlan.occurrences.map(\.id)
+    )
+    adapterObservations["compiler.expanded_entity_ids"] = .strings(
+      routePlan.occurrences.map(\.entityID)
+    )
+    adapterObservations["compiler.expanded_occurrence_indexes"] = .array(
+      routePlan.occurrences.map { .integer($0.index) }
+    )
   }
 
   private mutating func publish(_ recommendation: EntranceRecommendation) {
@@ -512,6 +597,18 @@ private struct ScenarioHarness {
       throw ScenarioExecutionError.invalidInput(key)
     }
     return value
+  }
+
+  private func requiredStrings(
+    _ object: [String: JSONValue],
+    key: String
+  ) throws -> [String] {
+    guard let values = object.array(key),
+      values.allSatisfy({ $0.stringValue != nil })
+    else {
+      throw ScenarioExecutionError.invalidInput(key)
+    }
+    return values.compactMap(\.stringValue)
   }
 }
 

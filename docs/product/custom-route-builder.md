@@ -50,7 +50,32 @@ entrance facility
 
 The user may select a previous closed subsequence and choose **Add another lap**.
 This copies the subsequence as new occurrences with new occurrence IDs. It must
-not create references to the original occurrence objects.
+not create references to the original occurrence objects. The selectable slice
+must come from a reviewed lap template whose topology closes in the active
+network snapshot. The pure compiler receives caller-generated deterministic IDs,
+rejects any collision, copies all semantic fields, and reindexes the expanded
+sequence. It does not infer a closed loop from matching labels or coordinates.
+
+### Circuit composition is explicit
+
+A marketing name does not define graph connectivity. The current official route
+catalog lists the Central Circular Route and Bayshore Route separately, while
+the current complex-JCT catalog identifies Kasai JCT and Oi JCT as decision
+points. Therefore a product route described as a practical “C2 circuit” is a
+reviewed multi-route template: its ordered component requirement must retain the
+exact C2 edges, B edges, and directional boundary movements that were verified
+for that variant. The compiler rejects a missing or out-of-order component; the
+UI may still present one friendly route name.
+
+Current primary references, checked 2026-07-22:
+
+- [Central Circular Route](https://www.shutoko.jp/use/network/map/route-c2/)
+- [Bayshore Route](https://www.shutoko.jp/use/network/map/route-b/)
+- [JCT and complex route guide](https://www.shutoko.jp/use/network/jct/)
+
+These references support the network-modeling rule, not a released directional
+route. Exact real movements still require a versioned evidence record and field
+review.
 
 Freehand drawing may be used as a gesture for selecting a desired corridor, but
 it cannot directly create a route. The compiler must snap the gesture to legal

@@ -9,12 +9,12 @@ should become scenarios when their layer is built.
 | ID | Behavior | Priority | State |
 |---|---|---:|---|
 | KR-D01 | Repeated entity IDs remain distinct ordered occurrences | P0 | Seeded |
-| KR-D02 | Adding another C1 lap creates new occurrence IDs | P0 | Planned |
+| KR-D02 | Adding another C1 lap creates new occurrence IDs | P0 | Seeded |
 | KR-D03 | Illegal incoming-to-outgoing junction movement is rejected | P0 | Seeded |
 | KR-D04 | Full, half, or quarter IC metadata cannot synthesize a missing directional facility | P0 | Seeded |
-| KR-D05 | A practical C2 circuit is modeled as C2 plus the required B movements | P0 | Planned |
+| KR-D05 | A practical C2 circuit is modeled as C2 plus the required B movements | P0 | Seeded |
 | KR-D06 | PA access and return are directional subgraph movements | P0 | Seeded |
-| KR-D07 | Crossing an external toll-domain boundary is explicit | P0 | Planned |
+| KR-D07 | Crossing an external toll-domain boundary is explicit | P0 | Seeded |
 | KR-D08 | A route cannot silently migrate to an incompatible network snapshot | P0 | Seeded |
 | KR-D09 | Japanese sign text survives localization and serialization | P0 | Seeded |
 | KR-D10 | Actual route distance and tariff distance remain separate | P0 | Seeded |

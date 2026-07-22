@@ -1,3 +1,4 @@
+import KaidoDomain
 import KaidoRouting
 import Testing
 
@@ -62,4 +63,197 @@ func parkingAreaPathRequiresExactDirections() {
   #expect(rejected.status == .rejected)
   #expect(rejected.errorCodes == ["MISSING_DIRECTIONAL_PA_PATH"])
   #expect(accepted.status == .accepted)
+}
+
+@Test("Adding a reviewed lap creates fresh occurrences without aliasing the source")
+func addingReviewedLapCreatesFreshOccurrences() {
+  let routePlan = RoutePlan(
+    id: "test.plan.one-lap",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .strict,
+    occurrences: [
+      RouteOccurrence(
+        id: "lap-1-edge",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.circuit",
+        tollDomainID: "test.toll.shuto"
+      ),
+      RouteOccurrence(
+        id: "lap-1-movement",
+        index: 1,
+        kind: .junctionMovement,
+        entityID: "test.movement.circuit",
+        tollDomainID: "test.toll.shuto"
+      ),
+    ]
+  )
+  let template = ReviewedLapTemplate(
+    id: "test.template.reviewed-lap",
+    sourceOccurrenceIDs: ["lap-1-edge", "lap-1-movement"]
+  )
+
+  let accepted = StrictRouteCompiler.appendLap(
+    to: routePlan,
+    request: LapDuplicationRequest(
+      reviewedTemplateID: template.id,
+      newOccurrenceIDs: ["lap-2-edge", "lap-2-movement"]
+    ),
+    reviewedTemplate: template
+  )
+  let rejected = StrictRouteCompiler.appendLap(
+    to: routePlan,
+    request: LapDuplicationRequest(
+      reviewedTemplateID: template.id,
+      newOccurrenceIDs: ["lap-1-edge", "lap-2-movement"]
+    ),
+    reviewedTemplate: template
+  )
+  let malformedPlan = RoutePlan(
+    id: routePlan.id,
+    entryFacilityID: routePlan.entryFacilityID,
+    exitFacilityID: routePlan.exitFacilityID,
+    recoveryPolicy: routePlan.recoveryPolicy,
+    occurrences: [
+      RouteOccurrence(
+        id: "lap-1-edge",
+        index: 1,
+        kind: .edge,
+        entityID: "test.edge.circuit"
+      ),
+      RouteOccurrence(
+        id: "lap-1-edge",
+        index: 2,
+        kind: .junctionMovement,
+        entityID: "test.movement.circuit"
+      ),
+    ]
+  )
+  let malformed = StrictRouteCompiler.appendLap(
+    to: malformedPlan,
+    request: LapDuplicationRequest(
+      reviewedTemplateID: template.id,
+      newOccurrenceIDs: ["lap-2-edge", "lap-2-movement"]
+    ),
+    reviewedTemplate: template
+  )
+
+  #expect(accepted.status == .accepted)
+  #expect(
+    accepted.routePlan?.occurrences.map(\.id) == [
+      "lap-1-edge", "lap-1-movement", "lap-2-edge", "lap-2-movement",
+    ])
+  #expect(
+    accepted.routePlan?.occurrences.map(\.entityID) == [
+      "test.edge.circuit", "test.movement.circuit",
+      "test.edge.circuit", "test.movement.circuit",
+    ])
+  #expect(accepted.routePlan?.occurrences.map(\.index) == [0, 1, 2, 3])
+  #expect(accepted.routePlan?.occurrences.last?.tollDomainID == "test.toll.shuto")
+  #expect(rejected.errorCodes == ["DUPLICATE_OCCURRENCE_ID"])
+  #expect(malformed.errorCodes == ["INVALID_ROUTE_OCCURRENCE_SEQUENCE"])
+}
+
+@Test("A reviewed circuit template requires every directional component in order")
+func circuitTemplateRequiresEveryComponentInOrder() {
+  let requirement = RouteComponentRequirement(
+    templateID: "test.template.c2-b-circuit",
+    requiredEntityIDsInOrder: [
+      "test.route.c2-arc",
+      "test.movement.c2-to-b",
+      "test.route.b-connector",
+      "test.movement.b-to-c2",
+    ]
+  )
+  let acceptedPlan = routePlan(entityIDs: requirement.requiredEntityIDsInOrder)
+  let wrongOrderPlan = routePlan(entityIDs: [
+    "test.route.c2-arc",
+    "test.route.b-connector",
+    "test.movement.c2-to-b",
+    "test.movement.b-to-c2",
+  ])
+
+  let accepted = StrictRouteCompiler.validate(
+    routePlan: acceptedPlan,
+    componentRequirement: requirement
+  )
+  let rejected = StrictRouteCompiler.validate(
+    routePlan: wrongOrderPlan,
+    componentRequirement: requirement
+  )
+
+  #expect(accepted.status == .accepted)
+  #expect(accepted.validatedRequiredEntityIDs == requirement.requiredEntityIDsInOrder)
+  #expect(rejected.status == .rejected)
+  #expect(rejected.errorCodes == ["MISSING_OR_OUT_OF_ORDER_ROUTE_COMPONENT"])
+  #expect(
+    rejected.unresolvedRequiredEntityIDs == [
+      "test.route.b-connector", "test.movement.b-to-c2",
+    ])
+}
+
+@Test("A route cannot hide external or unclassified toll-domain occurrences")
+func routeCannotHideTollDomainBoundaries() {
+  let routePlan = RoutePlan(
+    id: "test.plan.toll-boundary",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .strict,
+    occurrences: [
+      RouteOccurrence(
+        id: "shuto-edge",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.shuto",
+        tollDomainID: "test.toll.shuto"
+      ),
+      RouteOccurrence(
+        id: "external-edge",
+        index: 1,
+        kind: .edge,
+        entityID: "test.edge.external",
+        tollDomainID: "test.toll.external"
+      ),
+      RouteOccurrence(
+        id: "unknown-edge",
+        index: 2,
+        kind: .edge,
+        entityID: "test.edge.unknown"
+      ),
+    ]
+  )
+
+  let result = StrictRouteCompiler.validate(
+    routePlan: routePlan,
+    tollDomainPolicy: TollDomainPolicy(
+      allowedTollDomainIDs: ["test.toll.shuto"]
+    )
+  )
+
+  #expect(result.status == .rejected)
+  #expect(
+    result.errorCodes == [
+      "EXTERNAL_TOLL_DOMAIN_BOUNDARY", "UNCLASSIFIED_TOLL_DOMAIN",
+    ])
+  #expect(result.crossedTollDomainIDs == ["test.toll.external"])
+  #expect(result.boundaryOccurrenceIDs == ["external-edge", "unknown-edge"])
+}
+
+private func routePlan(entityIDs: [String]) -> RoutePlan {
+  RoutePlan(
+    id: "test.plan.components",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .strict,
+    occurrences: entityIDs.enumerated().map { index, entityID in
+      RouteOccurrence(
+        id: "occurrence-\(index)",
+        index: index,
+        kind: .edge,
+        entityID: entityID,
+        tollDomainID: "test.toll.shuto"
+      )
+    }
+  )
 }

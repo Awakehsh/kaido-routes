@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D05",
+  "title": "A reviewed C2 circuit template includes its required B-route components",
+  "layer": "DOMAIN",
+  "tags": ["c2", "circuit", "route-template"],
+  "purpose": "Prevent a route template from presenting C2 as a self-contained closed line when the reviewed circuit definition requires separate B-route edges and junction movements.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic directional component IDs prove template compilation semantics only; every real C2 and B movement still requires current official and field evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.c2-b-template-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.reviewed-c2-b-circuit",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "c2-arc",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.route.c2-arc",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "c2-to-b",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.c2-to-b",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "b-connector",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.route.b-connector",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "b-to-c2",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.b-to-c2",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "route_component_requirement": {
+        "template_id": "test.template.c2-b-circuit",
+        "required_entity_ids_in_order": [
+          "test.route.c2-arc",
+          "test.movement.c2-to-b",
+          "test.route.b-connector",
+          "test.movement.b-to-c2"
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "reviewed-components-accepted",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "ACCEPTED",
+      "rationale": "The route contains every reviewed component in directional order."
+    },
+    {
+      "id": "entire-component-sequence-validated",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.validated_required_entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.route.c2-arc",
+        "test.movement.c2-to-b",
+        "test.route.b-connector",
+        "test.movement.b-to-c2"
+      ],
+      "rationale": "Validation covers route edges and both boundary movements, not only a C2 label."
+    },
+    {
+      "id": "b-route-component-explicit",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.validated_required_entity_ids",
+      "matcher": "CONTAINS",
+      "expected": "test.route.b-connector",
+      "rationale": "The B portion remains an explicit component of the circuit."
+    },
+    {
+      "id": "no-unresolved-components",
+      "after": "compile",
+      "category": "EVIDENCE",
+      "subject": "compiler.unresolved_required_entity_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A released template cannot hide missing or out-of-order components."
+    }
+  ]
+}

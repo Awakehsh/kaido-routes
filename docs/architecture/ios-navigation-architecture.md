@@ -141,8 +141,9 @@ Compilation is deterministic:
 ```text
 template or expert choices
 → resolve exact network snapshot
-→ expand each legal movement
-→ assign fresh occurrence IDs
+→ validate reviewed route components in directional order
+→ expand each legal movement or reviewed lap template
+→ assign fresh, collision-free occurrence IDs
 → validate closures, PA, boundaries and evidence
 → attach guidance and recovery anchors
 → emit immutable RoutePlan
@@ -151,6 +152,12 @@ template or expert choices
 No shortest-path algorithm may remove an explicit lap, movement, road, or PA.
 For a manually authored route, compilation is validation and expansion rather
 than route optimization.
+
+Circuit names are presentation metadata. For example, a reviewed practical C2
+circuit retains its separately modeled B edges and the exact movements at both
+route boundaries. Likewise, `toll_domain_id` is carried per occurrence and
+checked before the plan becomes executable. Unknown classification is not
+silently treated as the current domain.
 
 Curated template generation may later use a bounded depth-first or beam search
 over legal movements. Its objective is to satisfy explicit route constraints,

@@ -19,7 +19,7 @@ bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, and an explicit local live-probe command; no live
 MapKit call runs in deterministic tests.
 
-The feasibility core currently executes portable scenarios for seven hard
+The feasibility core currently executes portable scenarios for ten hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -36,6 +36,13 @@ properties that must remain proven as the product expands:
    sign target in both text and voice.
 7. PA visits require an exact directional access-and-return path; operational
    closures skip a whole optional PA subgraph but block a required occurrence.
+8. adding another reviewed lap copies values into fresh, contiguous occurrences
+   instead of aliasing the first traversal;
+9. a reviewed circuit template must contain every required route edge and
+   boundary movement in order, including any separately named route used to
+   close the circuit;
+10. every strict route occurrence is classified against an allowed toll-domain
+    policy, and external or unknown domains fail closed.
 
 ## Repository map
 

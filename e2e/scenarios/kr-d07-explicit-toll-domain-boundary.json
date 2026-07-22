@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D07",
+  "title": "An external toll-domain boundary is explicit and blocks strict compilation",
+  "layer": "DOMAIN",
+  "tags": ["boundary", "compiler", "toll"],
+  "purpose": "Keep an external operator or charging domain from being silently treated as another internal route edge with unchanged toll assumptions.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic domains test fail-closed compilation; real operator boundaries and tariffs require dated official evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.toll-boundary-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.external-toll-domain",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "shuto-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shuto",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "operator-boundary",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.operator-boundary",
+          "toll_domain_id": "test.toll.external"
+        },
+        {
+          "occurrence_id": "external-edge",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.external",
+          "toll_domain_id": "test.toll.external"
+        }
+      ]
+    },
+    "inputs": {
+      "toll_domain_policy": {
+        "allowed_toll_domain_ids": ["test.toll.shuto"],
+        "requires_every_occurrence_classified": true
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "external-domain-rejected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "A strict Shuto-only route cannot silently cross into another toll domain."
+    },
+    {
+      "id": "boundary-error-explicit",
+      "after": "compile",
+      "category": "TOLL",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "EXTERNAL_TOLL_DOMAIN_BOUNDARY",
+      "rationale": "The rejection names the charging-domain boundary rather than a generic route failure."
+    },
+    {
+      "id": "external-domain-identified",
+      "after": "compile",
+      "category": "TOLL",
+      "subject": "compiler.crossed_toll_domain_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.toll.external"],
+      "rationale": "Pre-drive review can explain exactly which external domain would be entered."
+    },
+    {
+      "id": "boundary-occurrences-identified",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.boundary_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["operator-boundary", "external-edge"],
+      "rationale": "Every affected occurrence remains explicit for correction or user review."
+    }
+  ]
+}

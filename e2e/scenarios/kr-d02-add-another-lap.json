@@ -1,0 +1,102 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D02",
+  "title": "Adding another reviewed lap creates fresh route occurrences",
+  "layer": "DOMAIN",
+  "tags": ["authoring", "lap", "occurrence"],
+  "purpose": "Ensure an explicit extra lap duplicates a reviewed closed subsequence as new ordered values instead of aliasing or reusing the first traversal.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The reviewed template and entity IDs are synthetic; this scenario proves authoring identity semantics, not a real C1 route."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.lap-authoring-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.one-lap",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "lap-1-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.circuit",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "lap-1-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.circuit",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "reviewed_lap_template": {
+        "template_id": "test.template.reviewed-lap",
+        "source_occurrence_ids": ["lap-1-edge", "lap-1-movement"]
+      },
+      "lap_duplication": {
+        "reviewed_template_id": "test.template.reviewed-lap",
+        "new_occurrence_ids": ["lap-2-edge", "lap-2-movement"]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "lap-expansion-accepted",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "ACCEPTED",
+      "rationale": "A reviewed contiguous lap subsequence with fresh IDs may be appended."
+    },
+    {
+      "id": "fresh-occurrence-ids",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.expanded_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["lap-1-edge", "lap-1-movement", "lap-2-edge", "lap-2-movement"],
+      "rationale": "The second traversal owns new occurrence identities."
+    },
+    {
+      "id": "semantic-entities-duplicated",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.expanded_entity_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.edge.circuit", "test.movement.circuit", "test.edge.circuit", "test.movement.circuit"],
+      "rationale": "Adding a lap repeats the semantic road sequence without collapsing it."
+    },
+    {
+      "id": "expanded-indexes-contiguous",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.expanded_occurrence_indexes",
+      "matcher": "EQUALS",
+      "expected": [0, 1, 2, 3],
+      "rationale": "New occurrences extend the immutable route order."
+    }
+  ]
+}

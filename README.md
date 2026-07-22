@@ -93,8 +93,18 @@ backward. `CoreLocationObservationAdapter` now converts Apple callback batches
 into receive-ordered matcher observations, preserves raw source provenance,
 rejects invalid, future, and software-simulated fixes by default, and keeps
 field-declared wired/wireless calibration cohorts separate from what Core
-Location can actually prove. Device profiling and confidence calibration remain
-intentionally outside this checkpoint.
+Location can actually prove.
+
+The device-evidence boundary is now executable without pretending that desktop
+tests are field evidence. `CoreLocationMatcherCalibrationSession` measures the
+actual adapter-to-matcher pipeline and builds an in-memory
+`PRIVATE_RAW_LOCATION` trace; it performs no file I/O. The shared evaluator can
+emit a coordinate-free scalar report with p95 timings and confidence reliability
+bins only within one exact snapshot, matcher configuration, device configuration,
+and declared transport context. Mixed configurations fail closed, and synthetic
+or software-simulated samples can never satisfy the field statistical floor.
+No iPhone/head-unit trace has been collected yet, so device performance and
+confidence calibration remain unproven.
 
 The feasibility core currently executes portable scenarios for seventeen hard
 properties that must remain proven as the product expands:

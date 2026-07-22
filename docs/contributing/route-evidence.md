@@ -59,6 +59,14 @@ facts, and review metadata. Do not commit copied maps, route screenshots,
 operator images, videos, or third-party article bodies. OSM-derived databases
 require their own attribution and ODbL analysis.
 
+Raw device traces contain personal location and configuration data. Keep
+`MatcherPrivateTrace` values in ignored private storage and never commit them as
+route evidence. A coordinate-free `MatcherCalibrationReport` may enter review
+only after checking its opaque configuration scope and collection method. Its
+statistical-floor status is matcher evidence, not `FIELD_CHECKED` route approval;
+the underlying lawful run and independent annotation still require privacy and
+source review.
+
 ## Contradiction handling
 
 When sources disagree:
@@ -68,4 +76,3 @@ When sources disagree:
 3. prefer a current primary source for topology and operations;
 4. block release if the safety-relevant conflict remains unresolved;
 5. add a scenario when the contradiction exposes a reusable failure mode.
-

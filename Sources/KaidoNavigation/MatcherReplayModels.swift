@@ -15,7 +15,7 @@ public struct MatcherCoordinate: Codable, Equatable, Sendable {
   }
 }
 
-public enum MatcherLocationSource: String, Codable, Sendable {
+public enum MatcherLocationSource: String, Codable, Hashable, Sendable {
   /// Replay and calibration cohort for an iPhone-delivered observation.
   ///
   /// These values are not hardware-source proof. In particular, Core Location
@@ -28,7 +28,7 @@ public enum MatcherLocationSource: String, Codable, Sendable {
   case accessory = "ACCESSORY"
 }
 
-public enum MatcherConfidence: String, Codable, Sendable {
+public enum MatcherConfidence: String, Codable, Hashable, Sendable {
   case lost = "LOST"
   case low = "LOW"
   case medium = "MEDIUM"

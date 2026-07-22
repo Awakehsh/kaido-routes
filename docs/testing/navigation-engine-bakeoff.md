@@ -185,6 +185,15 @@ time reversal, and `RouteMatcherSession`. The system source reader uses
 `CLLocation.sourceInformation`; deterministic tests inject source facts because
 desktop-created locations are not iPhone/head-unit evidence.
 
+The privacy/performance calibration boundary is executable too. Thirteen tests
+cover the in-memory `PRIVATE_RAW_LOCATION` trace, coordinate-free scalar report,
+exact snapshot/matcher/device/transport scoping, annotation validity, held-out
+floor, false-`HIGH` blocking, categorical reliability bins, nearest-rank p95,
+synthetic/simulated exclusion, and the measured Apple-adapter-to-matcher path.
+The default 30 held-out samples per observed cohort is a provisional minimum,
+not a release threshold. `STATISTICAL_FLOOR_MET_NOT_RELEASE_APPROVAL` explicitly
+does not promote a route or confidence policy. No device trace has run yet.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -531,20 +540,21 @@ gate.
 9. **Partial complete:** the route-aware Swift online Viterbi prototype, both
    tracked/private comparisons, a fixture-independent incremental session,
    version-bound corridor, spatial index, bounded state beam, vertical KR-S16
-   scenario, and Core Location observation/provenance adapter are executable.
-   Profile the target device matrix and calibrate confidence with device traces
-   and reliability bins.
+   scenario, Core Location observation/provenance adapter, private trace recorder,
+   scoped reliability evaluator, and timed calibration session are executable.
+   Run the target device matrix and collect independently annotated held-out
+   evidence; no current test substitutes for that field work.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation/evidence task is a
-passenger-safe device logger and performance profile for the completed Apple
-location boundary, followed by held-out calibration traces around entrance
-mouths, stacked roads, and tunnel reacquisition. This is not yet an iPhone
-screen and not a C++ or Rust rewrite.
+the released facility corpus. The next implementation/evidence task is a thin,
+internal iPhone capture harness around the completed memory-only logger, followed
+by passenger-safe held-out runs and performance profiles around entrance mouths,
+stacked roads, and tunnel reacquisition. This is not yet the product UI and not a
+C++ or Rust rewrite.
 
 ## Sources checked 2026-07-23
 

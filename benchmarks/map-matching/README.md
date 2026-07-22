@@ -26,6 +26,30 @@ must remain ignored. A future tracked derivative requires deliberate redaction,
 licence review, provenance, and an explicit evidence classification rather than
 being copied from `raw/`.
 
+## Device calibration contract
+
+The implementation now separates two values:
+
+- `MatcherPrivateTrace` contains raw coordinates and complete device/run context,
+  is always classified `PRIVATE_RAW_LOCATION`, and remains local;
+- `MatcherCalibrationReport` contains no coordinates or per-observation IDs and
+  is the only structurally trackable output after deliberate review.
+
+`CoreLocationMatcherCalibrationSession` measures the Apple adapter and Swift
+matcher with monotonic uptime while preserving rejections. The evaluator refuses
+mixed network snapshots, matcher configurations, device configurations, field
+transport contexts, and collection methods. It reports held-out reliability bins,
+false `HIGH` results, and adapter/matcher/pipeline p95 latency. A synthetic trace
+returns `SYNTHETIC_EVIDENCE_ONLY`; software simulation returns
+`SIMULATED_EVIDENCE_PRESENT`; neither can become device evidence. The current
+categorical confidence has no probability value, so a Brier score would be
+fabricated and remains unavailable.
+
+The default 30 held-out samples per observed cohort and 50 ms matcher p95 are
+provisional spike floors. Even `STATISTICAL_FLOOR_MET_NOT_RELEASE_APPROVAL` is
+not a release decision. Route coverage, independent annotation, device thermal
+behavior, and safety review remain separate gates.
+
 ## Initial corpus
 
 | Fixture | Contract exercised |

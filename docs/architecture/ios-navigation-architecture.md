@@ -396,6 +396,46 @@ source separation, simulation policy, invalid/future fixes, motion-field
 sanitization, callback order, stale no-signal delivery, receive-time reversal,
 and the live matcher handoff. They do not replace iPhone/head-unit field tests.
 
+### Private trace and calibration boundary
+
+`CoreLocationMatcherCalibrationSession` executes the actual
+`CoreLocationObservationAdapter` → `RouteMatcherSession` path in callback order
+and measures both stages with monotonic uptime. It records accepted estimates,
+adapter rejections, matcher rejections, source provenance, and timings through
+`CoreLocationPrivateTraceRecorder`.
+
+The privacy split is structural rather than a naming convention:
+
+- `MatcherPrivateTrace` is always `PRIVATE_RAW_LOCATION`. It contains coordinates,
+  observation IDs, route-plan ID, device/OS, mount, and optional head-unit detail.
+  The recorder is memory-only and offers no persistence API.
+- `MatcherCalibrationReport` has no coordinate, observation ID, trace ID,
+  route-plan ID, device model, mount, or head-unit field. It contains an opaque
+  device-configuration ID, scalar counts, nearest-rank p95 timings, and observed
+  reliability bins.
+- raw inputs remain under ignored private storage. Only a deliberately reviewed,
+  coordinate-free report is structurally eligible for tracking.
+
+Evaluation is scoped to exactly one network snapshot, matcher algorithm/config,
+device configuration, and field transport context. Combining phone, wired,
+wireless, or unknown-transport runs by accident fails. Ground-truth annotations
+must name accepted matched observations; attaching truth to a rejected sample is
+an error rather than a silently ignored record.
+
+The provisional evaluator requires held-out samples per observed source cohort
+and blocks on any annotated false `HIGH` edge or occurrence. Its default 30-
+sample floor is only a small-sample guard, not statistical proof or release
+approval. Synthetic collection and software-simulated samples have explicit
+non-field gate states and cannot satisfy the field floor. Current confidence is
+categorical, so Brier score remains unavailable until the matcher emits a
+calibrated probability; observed accuracy by confidence bin is descriptive only.
+
+Thirteen focused tests cover raw/report separation, mixed-scope rejection,
+held-out sufficiency, false-`HIGH` blocking, synthetic/simulated exclusion,
+annotation validity, p95 calculation, Apple provenance mapping, real pipeline
+timing, adapter rejection, and matcher receive-order rejection. These tests
+prove the recording/evaluation contract, not any iPhone performance result.
+
 ### Candidate generation
 
 - Query directed edges from an R-tree or equivalent spatial index using the
@@ -510,12 +550,12 @@ adapter and `NavigationEngine`: stale evidence does not mutate the session, the
 first post-gap occurrence hypothesis remains LOW, a fresh second observation
 may commit HIGH, and restarting the matcher cannot move navigation backward.
 
-This is still not a calibrated production engine. The current grid has only
-synthetic complexity coverage, confidence thresholds lack device reliability
-bins, and no on-device CPU, memory, thermal, or battery profile exists. Device
-trace calibration and profiling are the next core gates. C++ or Rust is not
-justified unless profiling this bounded implementation exposes a measured
-failure that cannot be fixed within the Swift boundary.
+This is still not a calibrated production engine. The trace and reliability
+pipeline now exists, but the current grid has only synthetic complexity coverage
+and zero iPhone/head-unit calibration traces. No on-device CPU, memory, thermal,
+or battery profile exists. Actual device evidence is the next core gate. C++ or
+Rust is not justified unless profiling this bounded implementation exposes a
+measured failure that cannot be fixed within the Swift boundary.
 
 ## Tunnel behavior
 

@@ -5,7 +5,7 @@
 - Use Chinese for chat with the project owner. Use English for tracked documentation, code, commits, pull requests, issues, and public comments.
 - For substantial product or design summaries intended for the project owner, prefer a self-contained Chinese HTML file on the Desktop. Quick status and clarification may remain in chat.
 - Treat tracked English Markdown and machine-readable E2E scenarios as the authoritative agent and OSS contract. A user-facing HTML file is a presentation snapshot: it must not introduce a product decision that is absent from the tracked contract, and it should link back to the relevant Markdown.
-- This repository is in product-contract and feasibility work. Do not start an app implementation, choose a UI framework, or add dependencies unless the task explicitly asks for it.
+- This repository is in product-contract and feasibility work with a platform-light Swift core. Do not start iPhone/CarPlay app targets, provider integration, or new dependencies unless the task explicitly asks for it.
 - Lead with verified outcomes. Never claim that a route, junction movement, toll, closure, test, or device behavior is verified without dated evidence.
 
 ## Context loading
@@ -47,7 +47,7 @@ For a long handoff, preserve: objective, accepted decisions and reasons, files c
 - Treat a MapKit or other provider result as a bounded surface-leg candidate. It cannot author, optimize, mutate, recover, or erase the active Shuto `RoutePlan`.
 - The strict compiler, occurrence progress, deviation recovery, legal egress, confidence policy, and structured guidance remain Kaido-owned behavior.
 - Do not add a commercial navigation SDK or production provider dependency before its bounded role, licence, data-use constraints, hard gates, and comparison fixtures are documented.
-- Before building an iPhone screen, make the portable scenarios executable against the pure Swift core. UI work consumes navigation snapshots; it does not define navigation semantics.
+- Keep the portable scenarios executable against the pure Swift core before building an iPhone screen. UI work consumes navigation snapshots; it does not define navigation semantics.
 
 ## Evidence and data boundaries
 
@@ -91,6 +91,8 @@ Do not weaken a scenario merely to make an implementation pass. If the scenario 
 - Field tests supplement deterministic tests; they never replace them.
 
 Run `python3 scripts/validate_e2e.py` after changing a scenario or schema.
+Run `swift test` and `swift run kaido-scenarios e2e/scenarios` after changing
+the Swift core or scenario semantics.
 
 ## Git
 

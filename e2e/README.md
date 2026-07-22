@@ -17,11 +17,17 @@ Run:
 
 ```sh
 python3 scripts/validate_e2e.py
+swift run kaido-scenarios e2e/scenarios
+swift test
 ```
+
+The Python command validates the portable envelope and cross-field rules. The
+Swift CLI executes the events against `KaidoDomain`, `KaidoRouting`, and
+`KaidoNavigation`, then evaluates every semantic assertion. `swift test` runs
+the same corpus through Swift Testing without a simulator or live service.
 
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.
 
 Real operator data is allowed only as a small, dated evidence fixture with
 direct source links. All other road IDs must be visibly synthetic.
-

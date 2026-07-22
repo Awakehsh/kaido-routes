@@ -25,8 +25,13 @@
         "junction_complex_id": "test.junction.alpha",
         "requested_outgoing_carriageway_id": "test.carriageway.ring-inner"
       },
-      "legal_movement_ids": [
-        "test.movement.radial-up-to-ring-outer"
+      "legal_movements": [
+        {
+          "movement_id": "test.movement.radial-up-to-ring-outer",
+          "incoming_approach_id": "test.approach.radial-up",
+          "junction_complex_id": "test.junction.alpha",
+          "outgoing_carriageway_id": "test.carriageway.ring-outer"
+        }
       ]
     },
     "system_state": {}
@@ -60,4 +65,3 @@
     }
   ]
 }
-

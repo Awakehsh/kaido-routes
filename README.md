@@ -12,10 +12,12 @@ Metropolitan Expressway Company Limited.
 
 ## Current status
 
-This repository currently defines product, domain, evidence, and test contracts.
-It does not yet contain an app implementation or production road database.
+This repository defines product, domain, evidence, and test contracts plus a
+pure Swift feasibility core. It does not yet contain an iPhone/CarPlay app,
+provider integration, or production road database.
 
-The first implementation should prove six hard properties before expanding:
+The feasibility core currently executes portable scenarios for six hard
+properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
 2. only legal directional junction movements can be authored and executed;
@@ -40,6 +42,8 @@ The first implementation should prove six hard properties before expanding:
 - [`docs/testing/navigation-engine-bakeoff.md`](docs/testing/navigation-engine-bakeoff.md): hard-gated comparison plan for surface routers and map matchers.
 - [`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md): evidence gates for route data.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
+- [`Sources/`](Sources): platform-light Swift domain, routing, navigation, and scenario-adapter modules.
+- [`Tests/`](Tests): Swift Testing suites that execute the portable scenarios.
 
 `research/` is a local, ignored notebook for source discovery and raw analysis.
 It is deliberately not part of the public repository. Verified conclusions must
@@ -54,17 +58,21 @@ Those HTML files are presentation snapshots rather than a second source of truth
 they should summarize and link to the tracked contracts, not define behavior that
 the repository does not contain.
 
-## Contract validation
+## Build and contract validation
 
-The scenario validator has no third-party dependencies:
+The package uses only the Swift toolchain and Foundation. Run the executable
+scenario suite and the independent schema validator:
 
 ```sh
+swift test
+swift run kaido-scenarios e2e/scenarios
 python3 scripts/validate_e2e.py
 ```
 
-It checks the portable scenario envelope, route-occurrence identity, event
-ordering, evidence references, and assertion references. Product code will add
-its own language-specific test runner later.
+`swift test` executes the domain and simulation semantics in process. The CLI
+prints a result for every scenario and assertion. The Python validator remains
+an independent L0 check for the portable envelope, route-occurrence identity,
+event ordering, evidence references, and assertion references.
 
 ## Safety
 

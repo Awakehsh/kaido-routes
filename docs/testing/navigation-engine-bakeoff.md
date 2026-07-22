@@ -1,7 +1,7 @@
 # Navigation engine bake-off
 
-**Status:** executable test plan; real entrance fixtures and provider adapters are
-not implemented yet.
+**Status:** executable test plan; the B0 pure Swift scenario adapter is
+implemented, while real entrance fixtures and provider adapters are not.
 
 **Checked:** 2026-07-22
 
@@ -277,8 +277,8 @@ gate.
 
 ## Execution order
 
-1. Implement the pure Swift portable-scenario adapter and make the existing 15
-   scenarios executable at L1/L2.
+1. **Complete:** implement the pure Swift portable-scenario adapter and make the
+   existing 15 scenarios executable at L1/L2.
 2. Build the ten-entrance fixture format and MapKit probe.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
@@ -288,7 +288,7 @@ gate.
 8. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is step 1, not an iPhone screen.
+The next coding task is step 2, not an iPhone screen.
 
 ## Sources checked 2026-07-22
 

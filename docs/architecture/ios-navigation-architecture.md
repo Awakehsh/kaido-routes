@@ -1,7 +1,8 @@
 # iOS navigation architecture direction
 
-**Status:** accepted for architecture spikes; provider selection remains subject
-to the bake-off in `docs/testing/navigation-engine-bakeoff.md`.
+**Status:** accepted and implemented for the platform-light feasibility core;
+provider selection remains subject to the bake-off in
+`docs/testing/navigation-engine-bakeoff.md`.
 
 **Checked:** 2026-07-22
 

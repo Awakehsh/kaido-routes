@@ -97,9 +97,11 @@ independently resolves complete ordered node paths and fails whenever one node
 pair identifies zero or multiple directed edges. Its
 `OSMWayPointPathTranslator` handles providers that expose directional edge keys
 and OSM way IDs for every unsimplified route point-pair. It requires exact
-dataset identity, ordered progress on one same-way directed Kaido edge per pair,
-and a continuous nonrepeating result; missing, simplified, ambiguous, or reused
-provider-edge identity fails closed. Its
+dataset identity and ordered progress on same-way directed Kaido edges. Local
+point-pair ambiguity caused by short or rounded geometry is accepted only when
+whole-path continuity leaves one unique, nonrepeating Kaido edge sequence;
+missing, simplified, unresolved ambiguous, or reused provider-edge identity
+fails closed. Its
 `DirectedRoadGraphInspector` resamples candidate geometry, scores directed edges
 using distance and heading,
 uses a bounded sequence beam to preserve graph continuity, and compares the
@@ -361,6 +363,21 @@ capabilities, a checksummed Tokyo left-driving observation,
 `RELEASE_CANDIDATE` intended use, and zero blockers.
 The manifest is audit metadata, not permission to redistribute its referenced
 data.
+
+Validate that a directional entrance fixture references one continuous surface
+approach, entry transition, and target expressway edge in the same graph:
+
+```sh
+swift run kaido-surface-evidence validate-fixture \
+  --fixture research/evidence/entrance.json \
+  --graph research/evidence/bounded-surface-graph.json \
+  --profile STRUCTURAL \
+  --pretty
+```
+
+`RELEASE_CANDIDATE` additionally requires an explicit target expressway edge
+and all existing release evidence gates. A structural pass proves graph binding,
+not operator, sign, lane, field, or redistribution review.
 
 Normalize retained Valhalla route and exact edge-walk responses offline:
 

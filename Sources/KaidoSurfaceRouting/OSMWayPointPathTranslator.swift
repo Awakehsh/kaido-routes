@@ -131,9 +131,12 @@ extension OSMWayPointPathTranslationError: CustomStringConvertible {
 ///
 /// This is stricter than matching an opaque polyline. Every consecutive route
 /// point pair must carry one directional provider edge key and one OSM way ID,
-/// then bind to exactly one directed edge in the snapshot-bound Kaido graph.
-/// Missing import geometry, simplified responses, parallel ambiguity, and
-/// cross-dataset paths fail closed.
+/// then contribute to exactly one complete directed-edge sequence in the
+/// snapshot-bound Kaido graph. A short or rounded point pair may match more
+/// than one local edge, but it is accepted only when whole-path continuity
+/// leaves one unique edge sequence. Missing import geometry, simplified
+/// responses, unresolved parallel ambiguity, and cross-dataset paths fail
+/// closed.
 public struct OSMWayPointPathTranslator: Sendable {
   public let graph: SurfaceRoadGraphSnapshot
   public let configuration: OSMWayPointPathTranslatorConfiguration
@@ -201,7 +204,9 @@ public struct OSMWayPointPathTranslator: Sendable {
     var wayIDByProviderEdgeKey: [Int64: Int64] = [:]
     var closedProviderEdgeKeys: Set<Int64> = []
     var previousProviderEdgeKey: Int64?
-    var selectedEdges: [SurfaceRoadEdge] = []
+    var activePaths: [String: Set<Int>] = [:]
+    var pathInterner = WayPointPathInterner()
+    var firstAmbiguousIndex: Int?
 
     for index in 0..<expectedSegmentCount {
       let identity = request.segmentIdentities[index]
@@ -240,21 +245,57 @@ public struct OSMWayPointPathTranslator: Sendable {
       guard !candidates.isEmpty else {
         throw OSMWayPointPathTranslationError.missingPath(index: index)
       }
-      guard candidates.count == 1 else {
-        throw OSMWayPointPathTranslationError.ambiguousPath(index: index)
+      if candidates.count > 1, firstAmbiguousIndex == nil {
+        firstAmbiguousIndex = index
       }
-      if selectedEdges.last?.id != candidates[0].id {
-        selectedEdges.append(candidates[0])
+
+      var nextPaths: [String: Set<Int>] = [:]
+      if index == 0 {
+        for candidate in candidates {
+          nextPaths[candidate.id, default: []].insert(
+            pathInterner.intern(parentID: nil, edge: candidate)
+          )
+        }
+      } else {
+        for candidate in candidates {
+          for (previousEdgeID, pathIDs) in activePaths {
+            guard let previousEdge = pathInterner.edge(for: previousEdgeID) else {
+              throw OSMWayPointPathTranslationError.invalidGraph
+            }
+            if previousEdge.id == candidate.id {
+              nextPaths[candidate.id, default: []].formUnion(pathIDs)
+            } else if previousEdge.toNodeID == candidate.fromNodeID {
+              for pathID in pathIDs {
+                nextPaths[candidate.id, default: []].insert(
+                  pathInterner.intern(parentID: pathID, edge: candidate)
+                )
+              }
+            }
+          }
+        }
       }
+      guard !nextPaths.isEmpty else {
+        throw OSMWayPointPathTranslationError.discontinuousPath
+      }
+      let activePathCount = nextPaths.values.reduce(0) { $0 + $1.count }
+      guard activePathCount <= maximumActiveWayPointPathCount else {
+        throw OSMWayPointPathTranslationError.ambiguousPath(
+          index: firstAmbiguousIndex ?? index
+        )
+      }
+      activePaths = nextPaths
     }
 
-    guard !selectedEdges.isEmpty,
-      zip(selectedEdges, selectedEdges.dropFirst()).allSatisfy({ pair in
-        pair.0.toNodeID == pair.1.fromNodeID
-      })
-    else {
+    let finalPathIDs = Set(activePaths.values.flatMap { $0 })
+    guard !finalPathIDs.isEmpty else {
       throw OSMWayPointPathTranslationError.discontinuousPath
     }
+    guard finalPathIDs.count == 1, let finalPathID = finalPathIDs.first else {
+      throw OSMWayPointPathTranslationError.ambiguousPath(
+        index: firstAmbiguousIndex ?? (expectedSegmentCount - 1)
+      )
+    }
+    let selectedEdges = pathInterner.edges(endingAt: finalPathID)
     let selectedEdgeIDs = selectedEdges.map(\.id)
     guard Set(selectedEdgeIDs).count == selectedEdgeIDs.count else {
       throw OSMWayPointPathTranslationError.repeatedDirectedEdge
@@ -295,6 +336,51 @@ public struct OSMWayPointPathTranslator: Sendable {
 private struct IndexedWayPointEdge: Sendable {
   let wayID: Int64
   let edge: SurfaceRoadEdge
+}
+
+private struct WayPointPathNodeKey: Hashable {
+  let parentID: Int?
+  let edgeID: String
+}
+
+private struct WayPointPathNode {
+  let parentID: Int?
+  let edge: SurfaceRoadEdge
+}
+
+/// Interning keeps equivalent collapsed edge sequences identical even when a
+/// provider point lies close enough to either side of an edge boundary.
+private struct WayPointPathInterner {
+  private var nodeIDByKey: [WayPointPathNodeKey: Int] = [:]
+  private var nodes: [WayPointPathNode] = []
+  private var edgeByID: [String: SurfaceRoadEdge] = [:]
+
+  mutating func intern(parentID: Int?, edge: SurfaceRoadEdge) -> Int {
+    let key = WayPointPathNodeKey(parentID: parentID, edgeID: edge.id)
+    if let existing = nodeIDByKey[key] {
+      return existing
+    }
+    let nodeID = nodes.count
+    nodes.append(WayPointPathNode(parentID: parentID, edge: edge))
+    nodeIDByKey[key] = nodeID
+    edgeByID[edge.id] = edge
+    return nodeID
+  }
+
+  func edge(for edgeID: String) -> SurfaceRoadEdge? {
+    edgeByID[edgeID]
+  }
+
+  func edges(endingAt finalNodeID: Int) -> [SurfaceRoadEdge] {
+    var reversedEdges: [SurfaceRoadEdge] = []
+    var nodeID: Int? = finalNodeID
+    while let currentNodeID = nodeID {
+      let node = nodes[currentNodeID]
+      reversedEdges.append(node.edge)
+      nodeID = node.parentID
+    }
+    return reversedEdges.reversed()
+  }
 }
 
 private struct WayPointProjection: Sendable {
@@ -399,3 +485,4 @@ private func wayPointNormalizedDegrees(_ degrees: Double) -> Double {
 }
 
 private let wayPointEarthRadiusMeters = 6_371_000.0
+private let maximumActiveWayPointPathCount = 256

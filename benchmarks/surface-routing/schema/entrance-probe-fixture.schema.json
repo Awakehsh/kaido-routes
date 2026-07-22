@@ -223,6 +223,9 @@
         },
         "first_route_occurrence_id": {
           "$ref": "#/$defs/id"
+        },
+        "target_expressway_edge_id": {
+          "$ref": "#/$defs/id"
         }
       }
     },
@@ -253,7 +256,6 @@
         },
         "compatible_exit_facility_ids": {
           "type": "array",
-          "minItems": 1,
           "uniqueItems": true,
           "items": {
             "$ref": "#/$defs/id"

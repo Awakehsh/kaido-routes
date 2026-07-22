@@ -62,6 +62,20 @@ enum KaidoSurfaceEvidenceCLI {
         if !report.isValid {
           Foundation.exit(EXIT_FAILURE)
         }
+      case .validateFixture:
+        let graph: SurfaceRoadGraphSnapshot = try decodeJSON(at: arguments.graphPath)
+        let fixture: EntranceProbeFixture = try decodeJSON(
+          at: try arguments.requiredPath(arguments.fixturePath, flag: "--fixture")
+        )
+        let report = EntranceProbeFixtureValidator.validate(
+          fixture,
+          graph: graph,
+          profile: try arguments.fixtureValidationProfile()
+        )
+        try writeJSON(report, pretty: arguments.pretty)
+        if !report.isValid {
+          Foundation.exit(EXIT_FAILURE)
+        }
       case .normalizeValhalla:
         let graph: SurfaceRoadGraphSnapshot = try decodeJSON(at: arguments.graphPath)
         let routePath = try arguments.requiredPath(
@@ -176,6 +190,7 @@ private struct Arguments {
     case translate
     case evaluate
     case validateManifest = "validate-manifest"
+    case validateFixture = "validate-fixture"
     case normalizeValhalla = "normalize-valhalla"
     case normalizeOSRM = "normalize-osrm"
     case normalizeGraphHopper = "normalize-graphhopper"
@@ -258,6 +273,14 @@ private struct Arguments {
     return profile
   }
 
+  func fixtureValidationProfile() throws -> EntranceProbeFixtureValidationProfile {
+    let value = try requiredPath(profile, flag: "--profile").uppercased()
+    guard let profile = EntranceProbeFixtureValidationProfile(rawValue: value) else {
+      throw CLIError.invalidValue("--profile", value)
+    }
+    return profile
+  }
+
   func requiredInt64(_ value: String?, flag: String) throws -> Int64 {
     let value = try requiredPath(value, flag: flag)
     guard let parsed = Int64(value), parsed > 0 else {
@@ -275,7 +298,7 @@ private enum CLIError: Error, CustomStringConvertible {
   var description: String {
     switch self {
     case .missingCommand:
-      "expected translate, evaluate, validate-manifest, normalize-valhalla, normalize-osrm, or normalize-graphhopper"
+      "expected translate, evaluate, validate-manifest, validate-fixture, normalize-valhalla, normalize-osrm, or normalize-graphhopper"
     case .missingValue(let flag):
       "missing value for \(flag)"
     case .invalidValue(let flag, let value):
@@ -300,6 +323,11 @@ private let usage = """
     kaido-surface-evidence validate-manifest \\
       --graph <directed-road-graph.json> \\
       --manifest <surface-routing-build-manifest.json> \\
+      --profile <STRUCTURAL|RELEASE_CANDIDATE> [--pretty]
+
+    kaido-surface-evidence validate-fixture \\
+      --graph <directed-road-graph.json> \\
+      --fixture <entrance-fixture.json> \\
       --profile <STRUCTURAL|RELEASE_CANDIDATE> [--pretty]
 
     kaido-surface-evidence normalize-valhalla \\

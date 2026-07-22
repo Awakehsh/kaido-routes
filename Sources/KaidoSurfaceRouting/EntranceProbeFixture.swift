@@ -182,15 +182,22 @@ public struct ProbeEntranceFacility: Codable, Equatable, Sendable {
 public struct ProbeEntryTransition: Codable, Equatable, Sendable {
   public let directedEdgeIDs: [String]
   public let firstRouteOccurrenceID: String
+  public let targetExpresswayEdgeID: String?
 
-  public init(directedEdgeIDs: [String], firstRouteOccurrenceID: String) {
+  public init(
+    directedEdgeIDs: [String],
+    firstRouteOccurrenceID: String,
+    targetExpresswayEdgeID: String? = nil
+  ) {
     self.directedEdgeIDs = directedEdgeIDs
     self.firstRouteOccurrenceID = firstRouteOccurrenceID
+    self.targetExpresswayEdgeID = targetExpresswayEdgeID
   }
 
   private enum CodingKeys: String, CodingKey {
     case directedEdgeIDs = "directed_edge_ids"
     case firstRouteOccurrenceID = "first_route_occurrence_id"
+    case targetExpresswayEdgeID = "target_expressway_edge_id"
   }
 }
 
@@ -345,6 +352,9 @@ extension EntranceProbeFixture {
         entryTransition.firstRouteOccurrenceID,
       ]
       syntheticIDs.append(contentsOf: entryTransition.directedEdgeIDs)
+      if let targetExpresswayEdgeID = entryTransition.targetExpresswayEdgeID {
+        syntheticIDs.append(targetExpresswayEdgeID)
+      }
       syntheticIDs.append(contentsOf: journeyCompatibility.allowedJoinOccurrenceIDs)
       syntheticIDs.append(contentsOf: journeyCompatibility.compatibleExitFacilityIDs)
       syntheticIDs.append(contentsOf: prohibitions.forbiddenEarlyExpresswayEdgeIDs)

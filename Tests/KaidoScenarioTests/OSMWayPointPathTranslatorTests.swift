@@ -66,6 +66,73 @@ func osmWayPointPathRejectsParallelWayEdge() {
   }
 }
 
+@Test("OSM way-point path uses whole-path continuity to resolve a short segment")
+func osmWayPointPathResolvesLocalAmbiguityWithContinuity() throws {
+  let coordinates = [
+    SurfaceCoordinate(latitude: 35, longitude: 139),
+    SurfaceCoordinate(latitude: 35, longitude: 139.001),
+    SurfaceCoordinate(latitude: 35, longitude: 139.00102),
+    SurfaceCoordinate(latitude: 35, longitude: 139.002),
+  ]
+  let graph = SurfaceRoadGraphSnapshot(
+    networkSnapshotID: wayPointSnapshotID,
+    provenance: wayPointProvenance,
+    edges: [
+      makeWayPointEdge(
+        id: "test.context.edge.1",
+        from: 1,
+        to: 2,
+        coordinateIndex: 0,
+        segmentIndex: 0,
+        coordinates: coordinates
+      ),
+      makeWayPointEdge(
+        id: "test.context.edge.2",
+        from: 2,
+        to: 3,
+        coordinateIndex: 1,
+        segmentIndex: 1,
+        coordinates: coordinates
+      ),
+      makeWayPointEdge(
+        id: "test.context.edge.2.disconnected",
+        from: 8,
+        to: 9,
+        coordinateIndex: 1,
+        segmentIndex: 99,
+        coordinates: coordinates
+      ),
+      makeWayPointEdge(
+        id: "test.context.edge.3",
+        from: 3,
+        to: 4,
+        coordinateIndex: 2,
+        segmentIndex: 2,
+        coordinates: coordinates
+      ),
+    ]
+  )
+  let request = OSMWayPointPathTranslationRequest(
+    providerDatasetID: wayPointDatasetID,
+    routeCoordinates: coordinates,
+    segmentIdentities: [
+      OSMWayPointPathSegmentIdentity(providerDirectedEdgeKey: 20, osmWayID: 42),
+      OSMWayPointPathSegmentIdentity(providerDirectedEdgeKey: 21, osmWayID: 42),
+      OSMWayPointPathSegmentIdentity(providerDirectedEdgeKey: 22, osmWayID: 42),
+    ]
+  )
+
+  let evidence = try OSMWayPointPathTranslator(graph: graph).translate(request)
+
+  #expect(
+    evidence.directedEdgeIDs == [
+      "test.context.edge.1",
+      "test.context.edge.2",
+      "test.context.edge.3",
+    ]
+  )
+}
+
 @Test("OSM way-point path rejects identity drift and noncontiguous provider keys")
 func osmWayPointPathRejectsIdentityDrift() {
   #expect(

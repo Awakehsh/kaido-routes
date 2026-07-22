@@ -32,7 +32,7 @@ should become scenarios when their layer is built.
 |---|---|---:|---|
 | KR-S01 | Tunnel uncertainty decays confidence and removes false precision | P0 | Seeded |
 | KR-S02 | A planned tunnel branch is not confirmed without sufficient evidence | P0 | Covered by KR-S01 |
-| KR-S03 | Signal recovery resumes the correct later route occurrence | P0 | Planned |
+| KR-S03 | Signal recovery resumes the correct later route occurrence | P0 | Seeded |
 | KR-S04 | A missed branch rejoins a later occurrence in the active RoutePlan, not a destination route | P0 | Seeded |
 | KR-S05 | A planned movement closure blocks route start | P0 | Planned |
 | KR-S06 | A restriction arriving during a drive changes state without unsafe interaction | P1 | Planned |

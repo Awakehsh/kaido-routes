@@ -31,6 +31,12 @@ public enum LocationConfidence: String, Codable, Comparable, Sendable {
   }
 }
 
+public enum SignalReacquisitionStatus: String, Codable, Sendable {
+  case inactive = "INACTIVE"
+  case pending = "PENDING"
+  case confirmed = "CONFIRMED"
+}
+
 public struct EntryTransition: Equatable, Sendable {
   public let facilityID: String
   public let directedEdgeIDs: [String]
@@ -52,7 +58,9 @@ public struct LocationObservation: Equatable, Sendable {
   public let matchedEntityID: String?
   public let expectedOccurrenceID: String?
   public let matchedOccurrenceID: String?
+  public let candidateOccurrenceIDs: Set<String>
   public let projectedOccurrenceID: String?
+  public let observedAtMilliseconds: Int?
   public let reportedConfidence: LocationConfidence?
   public let horizontalAccuracyMeters: Double?
   public let ageMilliseconds: Int?
@@ -66,7 +74,9 @@ public struct LocationObservation: Equatable, Sendable {
     matchedEntityID: String? = nil,
     expectedOccurrenceID: String? = nil,
     matchedOccurrenceID: String? = nil,
+    candidateOccurrenceIDs: Set<String> = [],
     projectedOccurrenceID: String? = nil,
+    observedAtMilliseconds: Int? = nil,
     reportedConfidence: LocationConfidence? = nil,
     horizontalAccuracyMeters: Double? = nil,
     ageMilliseconds: Int? = nil,
@@ -79,7 +89,9 @@ public struct LocationObservation: Equatable, Sendable {
     self.matchedEntityID = matchedEntityID
     self.expectedOccurrenceID = expectedOccurrenceID
     self.matchedOccurrenceID = matchedOccurrenceID
+    self.candidateOccurrenceIDs = candidateOccurrenceIDs
     self.projectedOccurrenceID = projectedOccurrenceID
+    self.observedAtMilliseconds = observedAtMilliseconds
     self.reportedConfidence = reportedConfidence
     self.horizontalAccuracyMeters = horizontalAccuracyMeters
     self.ageMilliseconds = ageMilliseconds
@@ -175,6 +187,8 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var locationConfidence: LocationConfidence
   public var markerStyle: String
   public var ambiguityReason: String?
+  public var signalReacquisitionStatus: SignalReacquisitionStatus
+  public var signalReacquisitionTrigger: String?
   public var strictRouteAutoCommitAllowed: Bool
   public var routeExecutable: Bool
   public var routeWarnings: [String]
@@ -204,6 +218,8 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.locationConfidence = locationConfidence
     self.markerStyle = "MEASURED"
     self.ambiguityReason = nil
+    self.signalReacquisitionStatus = .inactive
+    self.signalReacquisitionTrigger = nil
     self.strictRouteAutoCommitAllowed = false
     self.routeExecutable = true
     self.routeWarnings = []

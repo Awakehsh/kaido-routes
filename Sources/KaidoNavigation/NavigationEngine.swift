@@ -8,19 +8,31 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let recoveryCandidates: [RecoveryCandidate]
   public let egressOptions: [EgressOption]
   public let nextSign: SignGuidance
+  public let signalReacquisitionMinimumObservations: Int
+  public let signalReacquisitionMaximumGapMilliseconds: Int
 
   public init(
     routePlan: RoutePlan? = nil,
     entryTransition: EntryTransition? = nil,
     recoveryCandidates: [RecoveryCandidate] = [],
     egressOptions: [EgressOption] = [],
-    nextSign: SignGuidance = SignGuidance()
+    nextSign: SignGuidance = SignGuidance(),
+    signalReacquisitionMinimumObservations: Int = 2,
+    signalReacquisitionMaximumGapMilliseconds: Int = 5_000
   ) {
     self.routePlan = routePlan
     self.entryTransition = entryTransition
     self.recoveryCandidates = recoveryCandidates
     self.egressOptions = egressOptions
     self.nextSign = nextSign
+    self.signalReacquisitionMinimumObservations = max(
+      2,
+      signalReacquisitionMinimumObservations
+    )
+    self.signalReacquisitionMaximumGapMilliseconds = max(
+      0,
+      signalReacquisitionMaximumGapMilliseconds
+    )
   }
 }
 
@@ -29,6 +41,10 @@ public struct NavigationEngine: Sendable {
 
   private let configuration: NavigationConfiguration
   private var isInTunnel = false
+  private var tunnelSignalWasDegraded = false
+  private var reacquisitionCandidateOccurrenceIDs: Set<String> = []
+  private var reacquisitionObservationCount = 0
+  private var lastReacquisitionObservationAtMilliseconds: Int?
   private var entryTransitionProgress = -1
 
   public init(
@@ -57,16 +73,38 @@ public struct NavigationEngine: Sendable {
 
   public mutating func enterTunnel() {
     isInTunnel = true
+    tunnelSignalWasDegraded = false
+    resetSignalReacquisition(status: .inactive)
   }
 
   public mutating func exitTunnel() {
     isInTunnel = false
+    guard tunnelSignalWasDegraded else { return }
+    resetSignalReacquisition(status: .pending)
+    snapshot.ambiguityReason = "POST_TUNNEL_REACQUISITION_PENDING"
   }
 
   public mutating func observeLocation(_ observation: LocationObservation) {
     let confidence = observation.effectiveConfidence
     snapshot.locationConfidence = confidence
     snapshot.markerStyle = confidence <= .low ? "ESTIMATED" : "MEASURED"
+
+    if isInTunnel && confidence <= .low {
+      tunnelSignalWasDegraded = true
+      snapshot.ambiguityReason = "TUNNEL_POSITION_UNCERTAIN"
+    }
+
+    if isInTunnel && tunnelSignalWasDegraded && confidence == .high,
+      snapshot.signalReacquisitionStatus == .inactive
+    {
+      resetSignalReacquisition(status: .pending)
+      snapshot.ambiguityReason = "POST_TUNNEL_REACQUISITION_PENDING"
+    }
+
+    if snapshot.signalReacquisitionStatus == .pending {
+      updateSignalReacquisition(with: observation, confidence: confidence)
+      return
+    }
 
     if observation.insideEntryRegion,
       observation.directedEdgeID == nil,
@@ -217,6 +255,100 @@ public struct NavigationEngine: Sendable {
     snapshot.strictRouteAutoCommitAllowed = true
     snapshot.ambiguityReason = nil
     advance(to: firstOccurrenceID)
+  }
+
+  private mutating func updateSignalReacquisition(
+    with observation: LocationObservation,
+    confidence: LocationConfidence
+  ) {
+    guard confidence == .high else { return }
+    snapshot.markerStyle = "UNRESOLVED"
+
+    let candidates = eligibleReacquisitionCandidates(from: observation)
+    guard !candidates.isEmpty,
+      let observedAt = observation.observedAtMilliseconds
+    else {
+      return
+    }
+
+    guard let previousObservedAt = lastReacquisitionObservationAtMilliseconds else {
+      beginReacquisitionWindow(candidates: candidates, observedAt: observedAt)
+      return
+    }
+
+    let gap = observedAt - previousObservedAt
+    guard gap >= 0,
+      gap <= configuration.signalReacquisitionMaximumGapMilliseconds
+    else {
+      beginReacquisitionWindow(candidates: candidates, observedAt: observedAt)
+      return
+    }
+
+    let consistentCandidates = reacquisitionCandidateOccurrenceIDs.intersection(candidates)
+    guard !consistentCandidates.isEmpty else {
+      beginReacquisitionWindow(candidates: candidates, observedAt: observedAt)
+      return
+    }
+
+    reacquisitionCandidateOccurrenceIDs = consistentCandidates
+    reacquisitionObservationCount += 1
+    lastReacquisitionObservationAtMilliseconds = observedAt
+
+    guard
+      reacquisitionObservationCount
+        >= configuration.signalReacquisitionMinimumObservations,
+      consistentCandidates.count == 1,
+      let occurrenceID = consistentCandidates.first
+    else {
+      return
+    }
+
+    advance(to: occurrenceID)
+    snapshot.signalReacquisitionStatus = .confirmed
+    snapshot.signalReacquisitionTrigger = "CONSISTENT_POST_TUNNEL_WINDOW"
+    snapshot.ambiguityReason = nil
+    snapshot.markerStyle = "MEASURED"
+    tunnelSignalWasDegraded = false
+    reacquisitionCandidateOccurrenceIDs = []
+    reacquisitionObservationCount = 0
+    lastReacquisitionObservationAtMilliseconds = nil
+  }
+
+  private func eligibleReacquisitionCandidates(
+    from observation: LocationObservation
+  ) -> Set<String> {
+    guard let routePlan = configuration.routePlan else { return [] }
+    var candidateIDs = observation.candidateOccurrenceIDs
+    if let expectedOccurrenceID = observation.expectedOccurrenceID {
+      candidateIDs.insert(expectedOccurrenceID)
+    }
+    if let matchedOccurrenceID = observation.matchedOccurrenceID {
+      candidateIDs.insert(matchedOccurrenceID)
+    }
+    let currentIndex = snapshot.currentOccurrenceIndex ?? -1
+    return Set(
+      candidateIDs.filter { occurrenceID in
+        routePlan.occurrence(id: occurrenceID).map { $0.index >= currentIndex } ?? false
+      })
+  }
+
+  private mutating func beginReacquisitionWindow(
+    candidates: Set<String>,
+    observedAt: Int
+  ) {
+    reacquisitionCandidateOccurrenceIDs = candidates
+    reacquisitionObservationCount = 1
+    lastReacquisitionObservationAtMilliseconds = observedAt
+  }
+
+  private mutating func resetSignalReacquisition(
+    status: SignalReacquisitionStatus
+  ) {
+    snapshot.signalReacquisitionStatus = status
+    snapshot.signalReacquisitionTrigger = nil
+    reacquisitionCandidateOccurrenceIDs = []
+    reacquisitionObservationCount = 0
+    lastReacquisitionObservationAtMilliseconds = nil
   }
 
   private mutating func advance(to occurrenceID: String) {

@@ -256,6 +256,17 @@ When GPS observations stop:
 5. do not commit an ambiguous tunnel branch during the gap;
 6. on signal return, replay a short buffered window before confirming a new state.
 
+The feasibility reducer makes that final step explicit. After a low or lost
+tunnel observation, signal reacquisition is `PENDING`. A single good coordinate
+does not advance the route or restore a precise topology marker. At least two
+high-confidence occurrence-level candidate sets must arrive within a bounded
+gap and intersect to one exact current-or-later occurrence before the state is
+`CONFIRMED`. Entity IDs are insufficient because the same road may appear in
+multiple route occurrences. The initial two-observation and five-second values
+are deterministic spike parameters, not field-calibrated release thresholds;
+replay and field evidence must calibrate them separately for phone, wired,
+wireless, and accessory-produced location sources.
+
 Core Motion can provide attitude, rotation rate, and acceleration, but phone
 placement varies and inertial drift accumulates. It is supporting evidence, not a
 promise of precise tunnel dead reckoning. Some Core Location fixes may be produced

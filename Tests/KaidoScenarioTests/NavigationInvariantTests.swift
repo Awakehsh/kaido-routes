@@ -78,6 +78,52 @@ func entryTransitionRequiresOrderedContinuity() {
   #expect(engine.snapshot.currentOccurrenceID == "first")
 }
 
+@Test("Post-tunnel reacquisition restarts when the evidence window is too old")
+func postTunnelReacquisitionRequiresATimelyWindow() {
+  let routePlan = testRoutePlan()
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.enterTunnel()
+  engine.observeLocation(
+    LocationObservation(
+      observedAtMilliseconds: 1_000,
+      horizontalAccuracyMeters: -1
+    ))
+  engine.exitTunnel()
+  engine.observeLocation(
+    LocationObservation(
+      candidateOccurrenceIDs: ["second"],
+      observedAtMilliseconds: 2_000,
+      reportedConfidence: .high
+    ))
+  engine.observeLocation(
+    LocationObservation(
+      candidateOccurrenceIDs: ["second"],
+      observedAtMilliseconds: 8_000,
+      reportedConfidence: .high
+    ))
+
+  #expect(engine.snapshot.signalReacquisitionStatus == .pending)
+  #expect(engine.snapshot.currentOccurrenceID == "first")
+
+  engine.observeLocation(
+    LocationObservation(
+      candidateOccurrenceIDs: ["second"],
+      observedAtMilliseconds: 9_000,
+      reportedConfidence: .high
+    ))
+
+  #expect(engine.snapshot.signalReacquisitionStatus == .confirmed)
+  #expect(engine.snapshot.currentOccurrenceID == "second")
+}
+
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",

@@ -83,7 +83,11 @@ private struct ScenarioHarness {
       projectLocalization()
       engine.start()
     case "LOCATION_UPDATED":
-      engine.observeLocation(locationObservation(from: event.payload))
+      engine.observeLocation(
+        locationObservation(
+          from: event.payload,
+          observedAtMilliseconds: event.atMilliseconds
+        ))
     case "TUNNEL_ENTERED":
       engine.enterTunnel()
     case "TUNNEL_EXITED":
@@ -333,13 +337,20 @@ private struct ScenarioHarness {
     }
   }
 
-  private func locationObservation(from payload: [String: JSONValue]) -> LocationObservation {
+  private func locationObservation(
+    from payload: [String: JSONValue],
+    observedAtMilliseconds: Int
+  ) -> LocationObservation {
     LocationObservation(
       directedEdgeID: payload.string("directed_edge_id"),
       matchedEntityID: payload.string("matched_entity_id"),
       expectedOccurrenceID: payload.string("expected_occurrence_id"),
       matchedOccurrenceID: payload.string("matched_occurrence_id"),
+      candidateOccurrenceIDs: Set(
+        (payload.array("candidate_occurrence_ids") ?? []).compactMap(\.stringValue)
+      ),
       projectedOccurrenceID: payload.string("projected_occurrence_id"),
+      observedAtMilliseconds: observedAtMilliseconds,
       reportedConfidence: payload.string("confidence").flatMap(LocationConfidence.init(rawValue:)),
       horizontalAccuracyMeters: payload.double("horizontal_accuracy_m"),
       ageMilliseconds: payload.int("age_ms"),
@@ -533,6 +544,7 @@ extension NavigationSnapshot {
       "navigation.pending_occurrence_ids": .strings(pendingOccurrenceIDs),
       "navigation.location_confidence": .string(locationConfidence.rawValue),
       "navigation.marker_style": .string(markerStyle),
+      "navigation.signal_reacquisition_status": .string(signalReacquisitionStatus.rawValue),
       "route.executable": .bool(routeExecutable),
       "route.skipped_occurrence_ids": .strings(skippedOccurrenceIDs),
       "route.warnings": .strings(routeWarnings),
@@ -561,6 +573,11 @@ extension NavigationSnapshot {
     }
     if let ambiguityReason {
       values["journey.ambiguity_reason"] = .string(ambiguityReason)
+    }
+    if let signalReacquisitionTrigger {
+      values["navigation.signal_reacquisition_trigger"] = .string(
+        signalReacquisitionTrigger
+      )
     }
     if let objective = recovery.objective {
       values["recovery.objective"] = .string(objective)

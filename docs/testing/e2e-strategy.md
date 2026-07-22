@@ -101,6 +101,7 @@ journey.phase
 journey.ambiguity_reason
 navigation.active_route_plan_id
 navigation.current_occurrence_id
+navigation.signal_reacquisition_status
 entry_recommendation.selected_facility_id
 recovery.route_plan_id
 recovery.chosen_rejoin_occurrence_id

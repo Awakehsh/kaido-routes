@@ -350,6 +350,37 @@
           "items": {
             "type": "string"
           }
+        },
+        "selected_path_evidence": {
+          "$ref": "#/$defs/selected_path_evidence"
+        }
+      }
+    },
+    "selected_path_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_snapshot_id",
+        "provider_dataset_id",
+        "directed_edge_ids"
+      ],
+      "properties": {
+        "network_snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_dataset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "directed_edge_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

@@ -58,6 +58,16 @@ to recover ordered edge attributes and OSM way IDs. Rematching a MapKit polyline
 with another engine would only create a second inference and must not be treated
 as proof of MapKit's chosen road level.
 
+The provider-neutral contract now accepts optional `selected_path_evidence`
+only after a provider's complete path has been translated to exact Kaido
+directed edge IDs and bound to the same network snapshot. The Swift inspector
+then requires the evidence's provider dataset ID to match graph provenance and
+checks path continuity, geometry, terminal anchor, expressway edges, and toll
+domains. MapKit leaves the field absent. A private Valhalla API experiment
+proved that `way_id + start node + direction` can translate all three tested
+paths, but its public tileset is not the reviewed Kaido snapshot; no live
+Valhalla adapter may claim same-snapshot evidence yet.
+
 ## System boundary
 
 ```text
@@ -362,7 +372,7 @@ loading rather than UI-oriented object persistence.
 |---|---|---|---|---|
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
-| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into way IDs | integration/data build weight; generic graph IDs and routing objectives | **Next executable comparator** |
+| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into way IDs | integration/data build weight; requires a shared-snapshot tile build and exact edge translation before hard-gate use | **Comparator contract proven; adapter pending** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, permissive licence | optimized fastest-path service; weaker runtime policy customization | **Secondary comparator** |
 | GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |

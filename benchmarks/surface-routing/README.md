@@ -45,13 +45,28 @@ The provider adapter returns only a normalized `SurfaceRouteCandidate`:
 - localized steps and notices;
 - distance and ETA;
 - provider-exposed highway and toll indicators;
+- optional complete selected-path evidence already translated to exact Kaido
+  directed edge IDs from the same network snapshot;
 - a disclosed provider failure when no candidate exists.
+
+Opaque providers omit selected-path evidence. An adapter must also omit it when
+the provider path is partial, when its dataset is not bound to the fixture's
+network snapshot, or when it was inferred by rematching another provider's
+polyline. The raw provider dataset ID remains in the evidence for audit.
 
 A separate `SurfaceCandidateInspector` binds that geometry to the versioned
 Kaido road graph. It must establish the directed approach edge, terminal heading,
 early expressway crossings, toll-domain crossings, and whether the binding is
 unambiguous. A provider's `hasHighways == false` value cannot replace this graph
 inspection.
+
+When complete same-snapshot selected-path evidence is present, the inspector
+restricts binding to that exact ordered edge sequence. It still verifies every
+edge exists, the sequence is directly continuous and ends on the approach edge,
+the candidate geometry follows the asserted path, and the provider dataset ID
+equals the graph provenance's `source_dataset_id`. Missing, duplicate,
+disconnected, wrong-snapshot, wrong-dataset, or geometry-inconsistent evidence
+fails closed.
 
 Every successful candidate must pass all six gates:
 
@@ -100,7 +115,9 @@ inspector fails that candidate closed and withholds conclusive crossing arrays.
 MapKit remains a bounded adapter under test, but it cannot satisfy the entire B1
 role with geometry-only evidence. The next Valhalla comparator must preserve its
 own selected path identity, rather than rematching MapKit geometry and treating
-the second engine's inference as proof.
+the second engine's inference as proof. The normalized selected-path contract
+and deterministic stacked-level tests are executable; a live Valhalla adapter
+and shared-snapshot tile pipeline are not implemented.
 
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
@@ -171,11 +188,17 @@ python3 scripts/build_osm_surface_graph.py \
   --input research/evidence/bounded-map.osm \
   --input-format osm-xml \
   --source-snapshot-at 2026-07-22T14:00:00Z \
+  --source-dataset-id reviewed-routing-dataset-id \
   --source-uri 'https://api.openstreetmap.org/api/0.6/map?bbox=reviewed-bounds' \
   --network-snapshot-id private.reviewed.snapshot \
   --expressway-toll-domain-id jp.shuto \
   --output research/evidence/bounded-surface-graph.json
 ```
+
+Omit `--source-dataset-id` for ordinary geometry-only probes. Supplying it is a
+strong claim that the provider routing graph was built from the exact reviewed
+dataset represented by this Kaido graph. A timestamp, public-server status
+value, or successful best-effort way translation is not sufficient by itself.
 
 Run the offline checks with:
 

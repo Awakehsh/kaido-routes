@@ -176,6 +176,168 @@ func directedGraphInspectorRejectsContinuousStackedLevels() async throws {
   #expect(inspection.disconnectedDirectedEdgeIDs == [])
 }
 
+@Test("Complete same-snapshot path evidence resolves a stacked surface route")
+func directedGraphInspectorUsesSelectedSurfacePathEvidence() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  var edges = makeInspectorGraph().edges
+  edges.append(
+    SurfaceRoadEdge(
+      id: "test.edge.stacked-expressway",
+      fromNodeID: "test.node.stacked-origin",
+      toNodeID: "test.node.middle",
+      kind: .expressway,
+      coordinates: [inspectorOrigin, inspectorMiddle],
+      tollDomainID: "test.toll.external"
+    )
+  )
+  let candidate = makeInspectorCandidate(
+    request: request,
+    selectedPathEvidence: SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshotID,
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: ["test.edge.surface-initial", "test.edge.approach"]
+    )
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: SurfaceRoadGraphSnapshot(
+      networkSnapshotID: fixture.networkSnapshotID,
+      provenance: makeInspectorGraphProvenance(),
+      edges: edges
+    )
+  ).inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+  let result = SurfaceHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    fixture: fixture,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(inspection.expresswayEdgeIDsBeforeEntry == [])
+  #expect(inspection.crossedTollDomainIDs == [])
+  #expect(inspection.ambiguousDirectedEdgeIDs == [])
+  #expect(
+    inspection.resolvedPathEdgeIDs == [
+      "test.edge.surface-initial", "test.edge.approach",
+    ]
+  )
+  #expect(result.disposition == .accepted)
+}
+
+@Test("Selected path evidence exposes a stacked expressway crossing")
+func directedGraphInspectorReportsSelectedExpresswayPath() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  var edges = makeInspectorGraph().edges
+  edges.append(
+    SurfaceRoadEdge(
+      id: "test.edge.forbidden-expressway",
+      fromNodeID: "test.node.stacked-origin",
+      toNodeID: "test.node.middle",
+      kind: .expressway,
+      coordinates: [inspectorOrigin, inspectorMiddle],
+      tollDomainID: "test.toll.external"
+    )
+  )
+  let candidate = makeInspectorCandidate(
+    request: request,
+    selectedPathEvidence: SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshotID,
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: ["test.edge.forbidden-expressway", "test.edge.approach"]
+    )
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: SurfaceRoadGraphSnapshot(
+      networkSnapshotID: fixture.networkSnapshotID,
+      provenance: makeInspectorGraphProvenance(),
+      edges: edges
+    )
+  ).inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+  let result = SurfaceHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    fixture: fixture,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+  let statuses = Dictionary(uniqueKeysWithValues: result.hardGates.map { ($0.gate, $0.status) })
+
+  #expect(candidate.hasHighways == false)
+  #expect(candidate.hasTolls == false)
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(inspection.expresswayEdgeIDsBeforeEntry == ["test.edge.forbidden-expressway"])
+  #expect(inspection.crossedTollDomainIDs == ["test.toll.external"])
+  #expect(statuses[.noEarlyExpressway] == .fail)
+  #expect(statuses[.allowedTollDomain] == .fail)
+  #expect(result.disposition == .rejected)
+}
+
+@Test("Selected path evidence must be complete and snapshot-bound")
+func directedGraphInspectorRejectsInvalidSelectedPathEvidence() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  let inspector = DirectedRoadGraphInspector(graph: makeInspectorGraph())
+  let invalidEvidence = [
+    SurfaceSelectedPathEvidence(
+      networkSnapshotID: "test.snapshot.other",
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: ["test.edge.surface-initial", "test.edge.approach"]
+    ),
+    SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshotID,
+      providerDatasetID: "test.provider-dataset.other",
+      directedEdgeIDs: ["test.edge.surface-initial", "test.edge.approach"]
+    ),
+    SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshotID,
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: ["test.edge.missing", "test.edge.approach"]
+    ),
+    SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshotID,
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: ["test.edge.approach", "test.edge.surface-initial"]
+    ),
+  ]
+
+  for evidence in invalidEvidence {
+    let candidate = makeInspectorCandidate(
+      request: request,
+      selectedPathEvidence: evidence
+    )
+    let inspection = await inspector.inspect(
+      candidate: candidate,
+      request: request,
+      fixture: fixture
+    )
+    let result = SurfaceHardGateEvaluator.evaluate(
+      candidate: candidate,
+      request: request,
+      fixture: fixture,
+      inspection: inspection,
+      expectedProviderID: "test.provider"
+    )
+
+    #expect(inspection.geometryBindingIsUnambiguous == false)
+    #expect(inspection.expresswayEdgeIDsBeforeEntry == nil)
+    #expect(inspection.crossedTollDomainIDs == nil)
+    #expect(result.disposition == .rejected)
+  }
+}
+
 @Test("Graph travel distance resolves a longer connected detour")
 func directedGraphInspectorUsesGraphTravelDistance() async throws {
   let fixture = makeInspectorFixture()
@@ -456,6 +618,18 @@ func directedGraphInspectorRejectsSnapshotMismatch() async throws {
 private let inspectorOrigin = SurfaceCoordinate(latitude: 35, longitude: 139)
 private let inspectorMiddle = SurfaceCoordinate(latitude: 35, longitude: 139.0005)
 private let inspectorAnchor = SurfaceCoordinate(latitude: 35, longitude: 139.001)
+private let inspectorProviderDatasetID = "test.provider-dataset.1"
+
+private func makeInspectorGraphProvenance() -> SurfaceRoadGraphProvenance {
+  SurfaceRoadGraphProvenance(
+    source: "Synthetic",
+    sourceSnapshotAt: "2026-07-22T12:00:00Z",
+    sourceDatasetID: inspectorProviderDatasetID,
+    sourceURI: "https://example.invalid/synthetic-graph",
+    licence: "TEST-ONLY",
+    attribution: "Synthetic test data"
+  )
+}
 
 private func makeInspectorGraph(
   initialKind: SurfaceRoadEdgeKind = .ordinaryRoad,
@@ -464,6 +638,7 @@ private func makeInspectorGraph(
 ) -> SurfaceRoadGraphSnapshot {
   SurfaceRoadGraphSnapshot(
     networkSnapshotID: "test.snapshot.inspector-v1",
+    provenance: makeInspectorGraphProvenance(),
     edges: [
       SurfaceRoadEdge(
         id: initialEdgeID,
@@ -484,7 +659,10 @@ private func makeInspectorGraph(
   )
 }
 
-private func makeInspectorCandidate(request: SurfaceRouteRequest) -> SurfaceRouteCandidate {
+private func makeInspectorCandidate(
+  request: SurfaceRouteRequest,
+  selectedPathEvidence: SurfaceSelectedPathEvidence? = nil
+) -> SurfaceRouteCandidate {
   SurfaceRouteCandidate(
     id: "test.candidate.inspector",
     providerID: "test.provider",
@@ -493,7 +671,8 @@ private func makeInspectorCandidate(request: SurfaceRouteRequest) -> SurfaceRout
     distanceMeters: 92,
     expectedTravelTimeSeconds: 20,
     hasHighways: false,
-    hasTolls: false
+    hasTolls: false,
+    selectedPathEvidence: selectedPathEvidence
   )
 }
 

@@ -62,6 +62,13 @@ def parse_arguments() -> argparse.Namespace:
         help="Human-readable source or query URI retained in provenance",
     )
     parser.add_argument(
+        "--source-dataset-id",
+        help=(
+            "Optional exact routing-dataset ID bound to this graph; required before "
+            "provider-selected path evidence can be accepted"
+        ),
+    )
+    parser.add_argument(
         "--expressway-toll-domain-id",
         help="Reviewed toll-domain ID applied to motorway and motorway_link edges",
     )
@@ -216,6 +223,7 @@ def convert(
     network_snapshot_id: str,
     source_uri: str,
     expressway_toll_domain_id: str | None,
+    source_dataset_id: str | None = None,
 ) -> dict[str, Any]:
     timestamp = document.get("osm3s", {}).get("timestamp_osm_base")
     if not timestamp:
@@ -278,15 +286,19 @@ def convert(
     if not edges:
         raise ValueError("extract produced no motor-accessible road edges")
 
+    provenance = {
+        "source": "OpenStreetMap",
+        "source_snapshot_at": timestamp,
+        "source_uri": source_uri,
+        "licence": "ODbL-1.0",
+        "attribution": "© OpenStreetMap contributors",
+    }
+    if source_dataset_id:
+        provenance["source_dataset_id"] = source_dataset_id
+
     return {
         "network_snapshot_id": network_snapshot_id,
-        "provenance": {
-            "source": "OpenStreetMap",
-            "source_snapshot_at": timestamp,
-            "source_uri": source_uri,
-            "licence": "ODbL-1.0",
-            "attribution": "© OpenStreetMap contributors",
-        },
+        "provenance": provenance,
         "edges": edges,
     }
 
@@ -302,6 +314,7 @@ def main() -> None:
         arguments.network_snapshot_id,
         arguments.source_uri,
         arguments.expressway_toll_domain_id,
+        arguments.source_dataset_id,
     )
     write_json(result, arguments.output)
 

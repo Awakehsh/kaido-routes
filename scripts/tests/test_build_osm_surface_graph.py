@@ -32,11 +32,15 @@ class OSMSurfaceGraphBuilderTests(unittest.TestCase):
             "test.snapshot",
             "https://api.openstreetmap.org/api/0.6/map?bbox=test",
             "test.toll-domain",
+            "test.provider-dataset.1",
         )
 
         self.assertEqual(graph["network_snapshot_id"], "test.snapshot")
         self.assertEqual(
             graph["provenance"]["source_snapshot_at"], "2026-07-22T14:00:00Z"
+        )
+        self.assertEqual(
+            graph["provenance"]["source_dataset_id"], "test.provider-dataset.1"
         )
         self.assertEqual(len(graph["edges"]), 1)
         self.assertEqual(graph["edges"][0]["edge_id"], "osm.way.42.segment.0.forward")

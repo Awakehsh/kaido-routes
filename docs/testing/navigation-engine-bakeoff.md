@@ -177,6 +177,15 @@ actually took the expressway. The next Valhalla probe must retain its own
 selected edge sequence, using `trace_attributes` plus `shape_match=edge_walk`
 where practical; rematching MapKit output is not a substitute.
 
+A first private Valhalla protocol probe has now completed the narrower API
+question. For each Shinjuku origin, `route -> trace_attributes(edge_walk)`
+returned a stable ordered edge sequence across three requests. Every returned
+edge expanded to the private Kaido graph using OSM way ID, start-node ID, and
+direction. This is not yet a hard-gate pass: the public Valhalla service's
+dataset is not proven identical to the reviewed Kaido snapshot. The code contract
+therefore accepts only complete, already translated, same-snapshot selected-path
+evidence and rejects partial or mismatched evidence.
+
 ## Matcher test
 
 ### Hard gates
@@ -341,9 +350,11 @@ gate.
    Hatsudai nearest-incompatible batch failed 0/3 with 19 stacked-road ambiguous
    edges per run. Keep the failure; it is the first evidence that geometry-only
    provider output cannot satisfy the whole corpus.
-3. Run Valhalla first against the Shinjuku failure and the accepted controls,
-   preserving the engine-selected edge/way sequence. Then run OSRM and
-   GraphHopper against the same surface fixtures.
+3. **In progress:** the Valhalla route/edge-walk response contract and exact OSM
+   translation are proven on the Shinjuku failure plus accepted controls. Build
+   Valhalla tiles from the same reviewed snapshot, implement the bounded adapter
+   and translator, then run the actual hard-gate comparison. After that, run
+   OSRM and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.
 6. Implement the route-aware Swift HMM and compare calibration.
@@ -351,8 +362,8 @@ gate.
 8. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is the path-identity-preserving Valhalla comparator in step
-3, not an iPhone screen.
+The next coding task is the shared-snapshot Valhalla tile/translation spike in
+step 3, not an iPhone screen and not a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-22
 

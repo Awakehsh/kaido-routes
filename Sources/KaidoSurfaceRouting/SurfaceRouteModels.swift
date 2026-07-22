@@ -134,6 +134,34 @@ public struct SurfaceRouteStep: Codable, Equatable, Sendable {
   }
 }
 
+/// A provider-selected path translated onto the exact Kaido graph snapshot.
+///
+/// Adapters must omit this value unless their complete selected path can be
+/// mapped to Kaido directed edge IDs from the same network snapshot. Provider
+/// hints, maneuver names, or a second engine rematching an opaque polyline are
+/// not selected-path evidence.
+public struct SurfaceSelectedPathEvidence: Codable, Equatable, Sendable {
+  public let networkSnapshotID: String
+  public let providerDatasetID: String
+  public let directedEdgeIDs: [String]
+
+  public init(
+    networkSnapshotID: String,
+    providerDatasetID: String,
+    directedEdgeIDs: [String]
+  ) {
+    self.networkSnapshotID = networkSnapshotID
+    self.providerDatasetID = providerDatasetID
+    self.directedEdgeIDs = directedEdgeIDs
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case providerDatasetID = "provider_dataset_id"
+    case directedEdgeIDs = "directed_edge_ids"
+  }
+}
+
 public struct SurfaceRouteCandidate: Codable, Equatable, Sendable {
   public let id: String
   public let providerID: String
@@ -144,6 +172,7 @@ public struct SurfaceRouteCandidate: Codable, Equatable, Sendable {
   public let hasHighways: Bool?
   public let hasTolls: Bool?
   public let advisoryNotices: [String]
+  public let selectedPathEvidence: SurfaceSelectedPathEvidence?
 
   public init(
     id: String,
@@ -154,7 +183,8 @@ public struct SurfaceRouteCandidate: Codable, Equatable, Sendable {
     expectedTravelTimeSeconds: Double,
     hasHighways: Bool? = nil,
     hasTolls: Bool? = nil,
-    advisoryNotices: [String] = []
+    advisoryNotices: [String] = [],
+    selectedPathEvidence: SurfaceSelectedPathEvidence? = nil
   ) {
     self.id = id
     self.providerID = providerID
@@ -165,6 +195,7 @@ public struct SurfaceRouteCandidate: Codable, Equatable, Sendable {
     self.hasHighways = hasHighways
     self.hasTolls = hasTolls
     self.advisoryNotices = advisoryNotices
+    self.selectedPathEvidence = selectedPathEvidence
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -177,6 +208,7 @@ public struct SurfaceRouteCandidate: Codable, Equatable, Sendable {
     case hasHighways = "has_highways"
     case hasTolls = "has_tolls"
     case advisoryNotices = "advisory_notices"
+    case selectedPathEvidence = "selected_path_evidence"
   }
 }
 

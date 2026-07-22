@@ -415,7 +415,14 @@ private func makeStabilityResult(
     distanceMeters: distanceMeters,
     expectedTravelTimeSeconds: 40,
     hasHighways: false,
-    hasTolls: false
+    hasTolls: false,
+    selectedPathEvidence: pathEdgeIDs.isEmpty
+      ? nil
+      : SurfaceSelectedPathEvidence(
+        networkSnapshotID: fixture.networkSnapshotID,
+        providerDatasetID: "secret.provider.dataset",
+        directedEdgeIDs: pathEdgeIDs
+      )
   )
   let inspection = SurfaceCandidateInspection(
     anchorBinding: accepted

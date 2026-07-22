@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "test.surface-entry.inner-v1",
+  "network_snapshot_id": "test.snapshot.surface-entry-v1",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "checked_at": "2026-07-22",
+    "sources": [],
+    "limitations": [
+      "All coordinates, facilities, edges, toll domains, and route occurrences are synthetic."
+    ],
+    "release_blockers": [
+      "Replace with dated operator and licensed structured-data evidence before release."
+    ]
+  },
+  "entrance": {
+    "facility_id": "test.entry.inner",
+    "access_complex_id": "test.access-complex.inner",
+    "target_carriageway_id": "test.carriageway.inner",
+    "target_direction": "INNER"
+  },
+  "approach_anchor": {
+    "anchor_id": "test.anchor.entry.inner",
+    "coordinate": {
+      "latitude": 35.001,
+      "longitude": 139.001
+    },
+    "directed_surface_edge_id": "test.surface-edge.entry.inner.approach",
+    "expected_bearing_degrees": 90,
+    "bearing_tolerance_degrees": 30,
+    "max_terminal_distance_meters": 25
+  },
+  "entry_transition": {
+    "directed_edge_ids": [
+      "test.entry-transition.inner.ramp",
+      "test.entry-transition.inner.merge"
+    ],
+    "first_route_occurrence_id": "test.occurrence.inner.join-0"
+  },
+  "journey_compatibility": {
+    "allowed_join_occurrence_ids": [
+      "test.occurrence.inner.join-0"
+    ],
+    "finish_policies": [
+      "FIXED_EXIT",
+      "FINISH_ON_REQUEST"
+    ],
+    "compatible_exit_facility_ids": [
+      "test.exit.inner"
+    ]
+  },
+  "prohibitions": {
+    "forbidden_early_expressway_edge_ids": [
+      "test.expressway-edge.wrong-early-entry"
+    ],
+    "forbidden_toll_domain_ids": [
+      "test.toll-domain.external"
+    ]
+  },
+  "origins": [
+    {
+      "origin_id": "test.origin.inner.same-side",
+      "kind": "SAME_SIDE",
+      "coordinate": {
+        "latitude": 35.0005,
+        "longitude": 139.0005
+      },
+      "notes": "Simple approach already aligned with the directed surface edge."
+    },
+    {
+      "origin_id": "test.origin.inner.cross-direction",
+      "kind": "CROSS_DIRECTION",
+      "coordinate": {
+        "latitude": 35.0015,
+        "longitude": 139.0005
+      },
+      "notes": "Requires a legal surface-road approach from the opposite direction."
+    },
+    {
+      "origin_id": "test.origin.inner.nearest-incompatible",
+      "kind": "NEAREST_INCOMPATIBLE",
+      "coordinate": {
+        "latitude": 35.0005,
+        "longitude": 139.0015
+      },
+      "notes": "A geometrically nearer facility exists but cannot join the selected route."
+    }
+  ]
+}

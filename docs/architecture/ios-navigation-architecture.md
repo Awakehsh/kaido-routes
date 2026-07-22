@@ -87,6 +87,7 @@ when measurements or independent release needs justify it.
 | `KaidoDomain` | IDs, graph entities, occurrences, status, evidence metadata, value types | MapKit, Core Location, CarPlay, SwiftUI |
 | `KaidoRouting` | strict compilation, entrance ranking, recovery search, egress precomputation | SwiftUI, CarPlay |
 | `KaidoNavigation` | journey reducer, route-aware matcher, confidence, prompt scheduling | SwiftUI, CarPlay |
+| `KaidoSurfaceRouting` | provider-neutral surface requests, candidates, fixture validation, inspection gates, probe records | MapKit, Core Location, route-plan mutation |
 | `KaidoData` | versioned snapshot loading, spatial index, migration and integrity checks | UI frameworks |
 | `KaidoAppleAdapters` | Core Location, Core Motion, MapKit, AVFAudio, lifecycle translation | route-policy decisions |
 | `KaidoPresentation` | phone and CarPlay presentation snapshots and localized formatting | graph search implementation |

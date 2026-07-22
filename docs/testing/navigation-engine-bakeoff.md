@@ -1,7 +1,8 @@
 # Navigation engine bake-off
 
-**Status:** executable test plan; the B0 pure Swift scenario adapter is
-implemented, while real entrance fixtures and provider adapters are not.
+**Status:** B0 is executable. B1 has a versioned fixture schema, synthetic
+three-origin fixture, provider-neutral hard-gate runner, and MapKit adapter.
+The reviewed real entrance corpus and road-graph inspector are not implemented.
 
 **Checked:** 2026-07-22
 
@@ -76,6 +77,12 @@ the geometrically nearest IC is incompatible.
 Provider calls are live integration probes and are stored outside deterministic
 CI. A reviewed result may later be reduced to a dated fixture if its licence
 allows retention.
+
+The tracked format lives under
+[`benchmarks/surface-routing/`](../../benchmarks/surface-routing/README.md).
+Synthetic fixtures must use visibly synthetic IDs. A non-synthetic fixture cannot
+pass the Swift release validator without operator and structured-data evidence,
+`RELEASED` classification, and no remaining release blockers.
 
 ### B2: matcher replay corpus
 
@@ -247,6 +254,10 @@ retention/licence classification
 Do not commit raw provider payloads until retention and redistribution rights are
 reviewed. A report may keep scalar metrics and hashes when allowed.
 
+The current Swift runner fails closed when the graph inspection is missing. An
+explicit provider error passes only `HONEST_PROVIDER_STATUS`; the entrance run
+still fails. A success response with zero candidates is an invalid response.
+
 ### Device and field
 
 - Driver drives; passenger or automated logger observes.
@@ -279,7 +290,9 @@ gate.
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
    existing 15 scenarios executable at L1/L2.
-2. Build the ten-entrance fixture format and MapKit probe.
+2. **In progress:** the fixture format, normalized result, offline hard-gate
+   evaluator, and MapKit candidate adapter are complete. Build the reviewed
+   ten-entrance corpus, graph inspector, and local live-probe command.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.
@@ -288,7 +301,8 @@ gate.
 8. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is step 2, not an iPhone screen.
+The next coding task is the evidence-backed remainder of step 2, not an iPhone
+screen.
 
 ## Sources checked 2026-07-22
 

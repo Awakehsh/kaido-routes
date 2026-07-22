@@ -18,3 +18,5 @@ __pycache__/
 *.py[cod]
 /artifacts/
 /test-results/
+/benchmarks/surface-routing/raw/
+/benchmarks/surface-routing/runs/

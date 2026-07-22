@@ -8,6 +8,8 @@ let package = Package(
     .library(name: "KaidoDomain", targets: ["KaidoDomain"]),
     .library(name: "KaidoRouting", targets: ["KaidoRouting"]),
     .library(name: "KaidoNavigation", targets: ["KaidoNavigation"]),
+    .library(name: "KaidoSurfaceRouting", targets: ["KaidoSurfaceRouting"]),
+    .library(name: "KaidoAppleAdapters", targets: ["KaidoAppleAdapters"]),
     .library(name: "KaidoScenarioRunner", targets: ["KaidoScenarioRunner"]),
     .executable(name: "kaido-scenarios", targets: ["KaidoScenariosCLI"]),
   ],
@@ -20,6 +22,11 @@ let package = Package(
     .target(
       name: "KaidoNavigation",
       dependencies: ["KaidoDomain", "KaidoRouting"]
+    ),
+    .target(name: "KaidoSurfaceRouting"),
+    .target(
+      name: "KaidoAppleAdapters",
+      dependencies: ["KaidoSurfaceRouting"]
     ),
     .target(
       name: "KaidoScenarioRunner",
@@ -35,6 +42,8 @@ let package = Package(
         "KaidoDomain",
         "KaidoRouting",
         "KaidoNavigation",
+        "KaidoSurfaceRouting",
+        "KaidoAppleAdapters",
         "KaidoScenarioRunner",
       ]
     ),

@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaido-routes.example/schema/entrance-probe-fixture-v1.json",
+  "title": "Kaido Routes directional entrance probe fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "network_snapshot_id",
+    "evidence",
+    "entrance",
+    "approach_anchor",
+    "entry_transition",
+    "journey_compatibility",
+    "prohibitions",
+    "origins"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "$ref": "#/$defs/id"
+    },
+    "network_snapshot_id": {
+      "$ref": "#/$defs/id"
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence"
+    },
+    "entrance": {
+      "$ref": "#/$defs/entrance"
+    },
+    "approach_anchor": {
+      "$ref": "#/$defs/approach_anchor"
+    },
+    "entry_transition": {
+      "$ref": "#/$defs/entry_transition"
+    },
+    "journey_compatibility": {
+      "$ref": "#/$defs/journey_compatibility"
+    },
+    "prohibitions": {
+      "$ref": "#/$defs/prohibitions"
+    },
+    "origins": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/origin"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["latitude", "longitude"],
+      "properties": {
+        "latitude": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "uri", "licence_class", "checked_at", "supports"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["OPERATOR", "STRUCTURED_DATA", "FIELD", "COMMUNITY"]
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        },
+        "licence_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "supports": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "checked_at", "sources", "limitations", "release_blockers"],
+      "properties": {
+        "classification": {
+          "enum": [
+            "SYNTHETIC",
+            "COMMUNITY_CANDIDATE",
+            "OFFICIAL_CHECKED",
+            "FIELD_CHECKED",
+            "RELEASED",
+            "STALE_REVIEW_REQUIRED"
+          ]
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "release_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "entrance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "facility_id",
+        "access_complex_id",
+        "target_carriageway_id",
+        "target_direction"
+      ],
+      "properties": {
+        "facility_id": {
+          "$ref": "#/$defs/id"
+        },
+        "access_complex_id": {
+          "$ref": "#/$defs/id"
+        },
+        "target_carriageway_id": {
+          "$ref": "#/$defs/id"
+        },
+        "target_direction": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "approach_anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchor_id",
+        "coordinate",
+        "directed_surface_edge_id",
+        "expected_bearing_degrees",
+        "bearing_tolerance_degrees",
+        "max_terminal_distance_meters"
+      ],
+      "properties": {
+        "anchor_id": {
+          "$ref": "#/$defs/id"
+        },
+        "coordinate": {
+          "$ref": "#/$defs/coordinate"
+        },
+        "directed_surface_edge_id": {
+          "$ref": "#/$defs/id"
+        },
+        "expected_bearing_degrees": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "bearing_tolerance_degrees": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180
+        },
+        "max_terminal_distance_meters": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "entry_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directed_edge_ids", "first_route_occurrence_id"],
+      "properties": {
+        "directed_edge_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "first_route_occurrence_id": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "journey_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_join_occurrence_ids",
+        "finish_policies",
+        "compatible_exit_facility_ids"
+      ],
+      "properties": {
+        "allowed_join_occurrence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "finish_policies": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["FIXED_EXIT", "RETURN_NEAR_ORIGIN", "FINISH_ON_REQUEST"]
+          }
+        },
+        "compatible_exit_facility_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "prohibitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_early_expressway_edge_ids", "forbidden_toll_domain_ids"],
+      "properties": {
+        "forbidden_early_expressway_edge_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "forbidden_toll_domain_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin_id", "kind", "coordinate", "notes"],
+      "properties": {
+        "origin_id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["SAME_SIDE", "CROSS_DIRECTION", "NEAREST_INCOMPATIBLE"]
+        },
+        "coordinate": {
+          "$ref": "#/$defs/coordinate"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

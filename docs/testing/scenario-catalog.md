@@ -35,7 +35,7 @@ should become scenarios when their layer is built.
 | KR-S03 | Signal recovery resumes the correct later route occurrence | P0 | Seeded |
 | KR-S04 | A missed branch rejoins a later occurrence in the active RoutePlan, not a destination route | P0 | Seeded |
 | KR-S05 | A planned movement closure blocks route start | P0 | Seeded |
-| KR-S06 | A restriction arriving during a drive changes state without unsafe interaction | P1 | Planned |
+| KR-S06 | A restriction arriving during a drive changes state without unsafe interaction | P1 | Seeded |
 | KR-S07 | Optional PA closure skips the visit while preserving the mainline route | P0 | Seeded |
 | KR-S08 | Required PA closure blocks route execution | P0 | Seeded |
 | KR-S09 | Stacked-road candidates remain ambiguous until evidence separates them | P0 | Seeded |

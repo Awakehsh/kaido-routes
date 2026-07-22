@@ -1,5 +1,6 @@
 import KaidoDomain
 import KaidoNavigation
+import KaidoRouting
 import Testing
 
 @Test("Occurrence progress never moves backward")
@@ -226,6 +227,61 @@ func guidancePromptsEmitOncePerOccurrenceAnchor() {
   restoredEngine.reachGuidanceAnchor(occurrenceID: "second", anchorID: "PREPARE")
   #expect(restoredEngine.snapshot.guidanceAnchorStatus == .duplicateSuppressed)
   #expect(restoredEngine.snapshot.emittedGuidancePromptIDs.count == 2)
+}
+
+@Test("A runtime closure activates a released rejoin to the current route plan")
+func runtimeClosureActivatesReleasedRecovery() {
+  let routePlan = RoutePlan(
+    id: "test.plan.runtime-closure",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(id: "current", index: 0, kind: .edge, entityID: "test.edge.current"),
+      RouteOccurrence(
+        id: "blocked",
+        index: 1,
+        kind: .junctionMovement,
+        entityID: "test.movement.blocked"
+      ),
+      RouteOccurrence(id: "rejoin", index: 2, kind: .edge, entityID: "test.edge.rejoin"),
+    ]
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      recoveryCandidates: [
+        RecoveryCandidate(
+          targetOccurrenceID: "blocked",
+          recoveryOccurrenceIDs: ["test.recovery.still-hits-closure"],
+          isReleased: true,
+          staysInAllowedTollDomain: true
+        ),
+        RecoveryCandidate(
+          targetOccurrenceID: "rejoin",
+          recoveryOccurrenceIDs: ["test.recovery.bypass"],
+          isReleased: true,
+          staysInAllowedTollDomain: true
+        ),
+      ]
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "current",
+      locationConfidence: .high
+    )
+  )
+
+  engine.updateRestriction(subjectID: "test.movement.blocked", state: "KNOWN_CLOSED")
+
+  #expect(engine.snapshot.journeyPhase == .routeRecovery)
+  #expect(engine.snapshot.recovery.status == .active)
+  #expect(engine.snapshot.recovery.objective == "REJOIN_ACTIVE_ROUTE_PLAN")
+  #expect(engine.snapshot.recovery.routePlanID == routePlan.id)
+  #expect(engine.snapshot.recovery.chosenRejoinOccurrenceID == "rejoin")
+  #expect(engine.snapshot.recovery.destinationRerouteUsed == false)
+  #expect(engine.snapshot.prohibitedGuidanceActions.contains("ABRUPT_LANE_CHANGE_OR_REVERSAL"))
+  #expect(engine.snapshot.requiresRouteEditingWhileMoving == false)
 }
 
 private func testRoutePlan() -> RoutePlan {

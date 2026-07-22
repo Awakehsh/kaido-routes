@@ -19,7 +19,7 @@ bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, and an explicit local live-probe command; no live
 MapKit call runs in deterministic tests.
 
-The feasibility core currently executes portable scenarios for twelve hard
+The feasibility core currently executes portable scenarios for thirteen hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -47,6 +47,8 @@ properties that must remain proven as the product expands:
     versions remain visible evidence but cannot supply the payable amount.
 12. deterministic guidance anchors emit once per occurrence, suppress duplicate
     location triggers, and remain independently eligible on a later lap.
+13. a newly known blocking restriction during a drive activates a released
+    rejoin to the existing RoutePlan without abrupt guidance or moving-time edits.
 
 ## Repository map
 

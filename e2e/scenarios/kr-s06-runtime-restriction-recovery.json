@@ -1,0 +1,156 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S06",
+  "title": "A runtime restriction activates safe recovery without changing the route objective",
+  "layer": "SIMULATION",
+  "tags": ["closure", "recovery", "runtime"],
+  "purpose": "Handle a newly closed required movement during a drive by activating a released rejoin to the existing RoutePlan without abrupt guidance or moving-time editing.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic restriction and recovery IDs prove state transitions only; real closures and bypass movements require authorized current data and released evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.runtime-restriction-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.runtime-recovery",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "current-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.current"
+        },
+        {
+          "occurrence_id": "soon-closed-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.soon-closed"
+        },
+        {
+          "occurrence_id": "later-rejoin-edge",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.rejoin"
+        }
+      ]
+    },
+    "inputs": {
+      "recovery_candidates": [
+        {
+          "target_occurrence_id": "later-rejoin-edge",
+          "recovery_occurrence_ids": ["test.recovery.safe-bypass"],
+          "released": true,
+          "stays_in_allowed_toll_domain": true
+        }
+      ]
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.runtime-recovery",
+      "current_occurrence_id": "current-edge",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "closure-arrives",
+      "at_ms": 1000,
+      "type": "RESTRICTION_UPDATED",
+      "payload": {
+        "subject_id": "test.movement.soon-closed",
+        "state": "KNOWN_CLOSED"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "recovery-phase-active",
+      "after": "closure-arrives",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ROUTE_RECOVERY",
+      "rationale": "A blocking update during an active drive changes execution mode instead of pretending the route remains executable."
+    },
+    {
+      "id": "released-recovery-active",
+      "after": "closure-arrives",
+      "category": "NAVIGATION",
+      "subject": "recovery.status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "The pre-reviewed bypass is selected without asking the driver to edit."
+    },
+    {
+      "id": "objective-remains-route-plan",
+      "after": "closure-arrives",
+      "category": "DOMAIN",
+      "subject": "recovery.objective",
+      "matcher": "EQUALS",
+      "expected": "REJOIN_ACTIVE_ROUTE_PLAN",
+      "rationale": "The restriction does not turn recovery into navigation toward the exit or destination."
+    },
+    {
+      "id": "same-plan-retained",
+      "after": "closure-arrives",
+      "category": "DOMAIN",
+      "subject": "recovery.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.runtime-recovery",
+      "rationale": "Recovery keeps the original route intent."
+    },
+    {
+      "id": "later-occurrence-targeted",
+      "after": "closure-arrives",
+      "category": "NAVIGATION",
+      "subject": "recovery.chosen_rejoin_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "later-rejoin-edge",
+      "rationale": "The bypass rejoins a later occurrence beyond the closed movement."
+    },
+    {
+      "id": "destination-reroute-unused",
+      "after": "closure-arrives",
+      "category": "SAFETY",
+      "subject": "recovery.destination_reroute_used",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A generic destination route cannot replace the selected drive."
+    },
+    {
+      "id": "abrupt-correction-prohibited",
+      "after": "closure-arrives",
+      "category": "SAFETY",
+      "subject": "guidance.prohibited_actions",
+      "matcher": "CONTAINS",
+      "expected": "ABRUPT_LANE_CHANGE_OR_REVERSAL",
+      "rationale": "Late traffic data never justifies an unsafe correction."
+    },
+    {
+      "id": "no-moving-route-editor",
+      "after": "closure-arrives",
+      "category": "UI",
+      "subject": "ui.requires_route_editing_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The driver receives prepared guidance rather than an editor."
+    }
+  ]
+}

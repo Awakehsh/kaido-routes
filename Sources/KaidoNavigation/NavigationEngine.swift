@@ -240,16 +240,7 @@ public struct NavigationEngine: Sendable {
       snapshot.recovery.status = .unavailable
       return
     }
-
-    snapshot.journeyPhase = .routeRecovery
-    snapshot.recovery.status = .active
-    snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
-    snapshot.recovery.routePlanID = routePlan.id
-    snapshot.recovery.chosenRejoinOccurrenceID = recovery.targetOccurrenceID
-    snapshot.recovery.destinationRerouteUsed = false
-    snapshot.egress.status = .inactive
-    appendUnique("ABRUPT_LANE_CHANGE_OR_REVERSAL", to: &snapshot.prohibitedGuidanceActions)
-    snapshot.requiresRouteEditingWhileMoving = false
+    activateRecovery(recovery, routePlan: routePlan)
   }
 
   public mutating func updateRestriction(subjectID: String, state: String) {
@@ -483,6 +474,55 @@ public struct NavigationEngine: Sendable {
     for occurrence in occurrences {
       appendUnique(occurrence.id, to: &snapshot.routeBlockingOccurrenceIDs)
     }
+    activateRestrictionRecoveryIfDriving()
+  }
+
+  private mutating func activateRestrictionRecoveryIfDriving() {
+    guard snapshot.journeyPhase == .strictRoute || snapshot.journeyPhase == .routeRecovery,
+      let routePlan = configuration.routePlan
+    else { return }
+    let currentIndex = snapshot.currentOccurrenceIndex ?? -1
+    let blockedIndex =
+      snapshot.routeBlockingOccurrenceIDs.compactMap {
+        routePlan.occurrence(id: $0)?.index
+      }.max() ?? currentIndex
+    let avoidThroughIndex = max(currentIndex, blockedIndex)
+    guard
+      let recovery = RecoveryPlanner.choose(
+        candidates: configuration.recoveryCandidates,
+        routePlan: routePlan,
+        after: avoidThroughIndex
+      )
+    else {
+      snapshot.journeyPhase = .routeRecovery
+      snapshot.recovery.status = .unavailable
+      snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
+      snapshot.recovery.routePlanID = routePlan.id
+      snapshot.recovery.destinationRerouteUsed = false
+      snapshot.egress.status = .inactive
+      appendUnique(
+        "ABRUPT_LANE_CHANGE_OR_REVERSAL",
+        to: &snapshot.prohibitedGuidanceActions
+      )
+      snapshot.requiresRouteEditingWhileMoving = false
+      return
+    }
+    activateRecovery(recovery, routePlan: routePlan)
+  }
+
+  private mutating func activateRecovery(
+    _ recovery: RecoveryCandidate,
+    routePlan: RoutePlan
+  ) {
+    snapshot.journeyPhase = .routeRecovery
+    snapshot.recovery.status = .active
+    snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
+    snapshot.recovery.routePlanID = routePlan.id
+    snapshot.recovery.chosenRejoinOccurrenceID = recovery.targetOccurrenceID
+    snapshot.recovery.destinationRerouteUsed = false
+    snapshot.egress.status = .inactive
+    appendUnique("ABRUPT_LANE_CHANGE_OR_REVERSAL", to: &snapshot.prohibitedGuidanceActions)
+    snapshot.requiresRouteEditingWhileMoving = false
   }
 
   private mutating func advance(to occurrenceID: String) {

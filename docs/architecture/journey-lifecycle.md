@@ -188,6 +188,15 @@ UI marks the original route interrupted, identifies the exit, and warns that
 distance or toll expectations may change. It never describes that result as a
 successful completion of the original route.
 
+A newly known restriction during `STRICT_ROUTE` uses the same objective. If a
+required upcoming movement or PA path becomes blocked, the plan becomes
+non-executable for future strict progress and the journey enters
+`ROUTE_RECOVERY`. A released, allowed-domain candidate may rejoin a later
+occurrence beyond every known blocking occurrence. If none exists, recovery is
+explicitly unavailable until a safe egress or reviewed alternative is selected.
+In both cases, destination rerouting, abrupt lane changes, reversal, and
+moving-time route editing remain prohibited.
+
 ## Ending a loop without an illegal reversal
 
 Supported finish policies are:

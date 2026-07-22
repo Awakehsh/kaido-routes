@@ -255,6 +255,10 @@
         "inspection": {
           "$ref": "#/$defs/inspection"
         },
+        "inspection_latency_milliseconds": {
+          "type": "integer",
+          "minimum": 0
+        },
         "disposition": {
           "enum": ["ACCEPTED", "REJECTED", "PROVIDER_FAILURE", "INVALID_RESPONSE"]
         },
@@ -388,6 +392,30 @@
           }
         },
         "crossed_toll_domain_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unmatched_sample_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ambiguous_directed_edge_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "disconnected_directed_edge_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "resolved_path_edge_ids": {
           "type": "array",
           "items": {
             "type": "string"

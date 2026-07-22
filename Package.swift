@@ -12,6 +12,7 @@ let package = Package(
     .library(name: "KaidoAppleAdapters", targets: ["KaidoAppleAdapters"]),
     .library(name: "KaidoScenarioRunner", targets: ["KaidoScenarioRunner"]),
     .executable(name: "kaido-scenarios", targets: ["KaidoScenariosCLI"]),
+    .executable(name: "kaido-surface-probe", targets: ["KaidoSurfaceProbeCLI"]),
   ],
   targets: [
     .target(name: "KaidoDomain"),
@@ -35,6 +36,10 @@ let package = Package(
     .executableTarget(
       name: "KaidoScenariosCLI",
       dependencies: ["KaidoScenarioRunner"]
+    ),
+    .executableTarget(
+      name: "KaidoSurfaceProbeCLI",
+      dependencies: ["KaidoSurfaceRouting", "KaidoAppleAdapters"]
     ),
     .testTarget(
       name: "KaidoScenarioTests",

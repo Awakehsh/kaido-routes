@@ -2,8 +2,9 @@
 
 **Status:** B0 is executable. B1 has a versioned fixture schema, synthetic
 three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
-pure Swift directed-road graph inspector. The reviewed real entrance corpus and
-local live-probe command are not implemented.
+pure Swift directed-road graph inspector plus an explicit local live-probe
+command. No real entrance fixture is released; private provider output remains
+outside the repository.
 
 **Checked:** 2026-07-22
 
@@ -133,6 +134,7 @@ released set or trigger a provider change; it cannot be averaged away by good ET
 
 - request success and error class;
 - cold and warm response latency;
+- directed-graph inspection latency, recorded separately from provider latency;
 - route distance and ETA;
 - last-500-meter maneuver count and decision complexity;
 - distance from final geometry to the directed anchor;
@@ -293,8 +295,11 @@ gate.
    existing 15 scenarios executable at L1/L2.
 2. **In progress:** the fixture format, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
-   inspector are complete. Build the reviewed ten-entrance corpus and local
-   live-probe command, then run all three origins for every released entrance.
+   inspector plus local live-probe command are complete. The private Iikura
+   vertical slice has passed two observations per origin but remains `RETEST`;
+   build the reviewed ten-entrance corpus, repeat all three origins for stability,
+   profile longer inspections, and promote only evidence whose licence and
+   field-review gates pass.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.

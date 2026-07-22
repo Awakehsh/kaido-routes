@@ -88,6 +88,35 @@ func surfaceCandidateInspectionFailsClosed() throws {
   #expect(statuses[.honestProviderStatus] == .pass)
 }
 
+@Test("Disconnected directed geometry has a distinct hard-gate reason")
+func disconnectedSurfaceGeometryReason() throws {
+  let fixture = try loadSyntheticEntranceFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.inner.same-side")
+  let candidate = makeCandidate(request: request)
+  let inspection = SurfaceCandidateInspection(
+    anchorBinding: makePassingInspection(fixture: fixture).anchorBinding,
+    geometryBindingIsUnambiguous: false,
+    expresswayEdgeIDsBeforeEntry: [],
+    crossedTollDomainIDs: [],
+    unmatchedSampleCount: 0,
+    ambiguousDirectedEdgeIDs: [],
+    disconnectedDirectedEdgeIDs: ["test.edge.before-gap", "test.edge.after-gap"],
+    resolvedPathEdgeIDs: ["test.edge.before-gap", "test.edge.after-gap"]
+  )
+
+  let result = SurfaceHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    fixture: fixture,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+  let geometryGate = result.hardGates.first { $0.gate == .geometryBindable }
+
+  #expect(geometryGate?.status == .fail)
+  #expect(geometryGate?.reasonCodes == ["GEOMETRY_PATH_DISCONNECTED"])
+}
+
 @Test("Probe runner records accepted candidates without live routing")
 func offlineProbeRunnerAcceptsInspectedCandidate() async throws {
   let fixture = try loadSyntheticEntranceFixture()
@@ -110,6 +139,8 @@ func offlineProbeRunnerAcceptsInspectedCandidate() async throws {
   #expect(result.responseStatus == .success)
   #expect(result.decision == .pass)
   #expect(result.providerLatencyMilliseconds >= 0)
+  #expect(result.evaluations[0].inspectionLatencyMilliseconds != nil)
+  #expect(result.evaluations[0].inspectionLatencyMilliseconds! >= 0)
   #expect(result.evaluations.count == 1)
   #expect(
     try JSONDecoder().decode(SurfaceProbeResult.self, from: JSONEncoder().encode(result)) == result)

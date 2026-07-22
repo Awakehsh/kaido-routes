@@ -42,10 +42,16 @@ public struct SurfaceRoadEdge: Codable, Equatable, Sendable {
 
 public struct SurfaceRoadGraphSnapshot: Codable, Equatable, Sendable {
   public let networkSnapshotID: String
+  public let provenance: SurfaceRoadGraphProvenance?
   public let edges: [SurfaceRoadEdge]
 
-  public init(networkSnapshotID: String, edges: [SurfaceRoadEdge]) {
+  public init(
+    networkSnapshotID: String,
+    provenance: SurfaceRoadGraphProvenance? = nil,
+    edges: [SurfaceRoadEdge]
+  ) {
     self.networkSnapshotID = networkSnapshotID
+    self.provenance = provenance
     self.edges = edges
   }
 
@@ -61,7 +67,38 @@ public struct SurfaceRoadGraphSnapshot: Codable, Equatable, Sendable {
 
   private enum CodingKeys: String, CodingKey {
     case networkSnapshotID = "network_snapshot_id"
+    case provenance
     case edges
+  }
+}
+
+public struct SurfaceRoadGraphProvenance: Codable, Equatable, Sendable {
+  public let source: String
+  public let sourceSnapshotAt: String
+  public let sourceURI: String
+  public let licence: String
+  public let attribution: String
+
+  public init(
+    source: String,
+    sourceSnapshotAt: String,
+    sourceURI: String,
+    licence: String,
+    attribution: String
+  ) {
+    self.source = source
+    self.sourceSnapshotAt = sourceSnapshotAt
+    self.sourceURI = sourceURI
+    self.licence = licence
+    self.attribution = attribution
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case source
+    case sourceSnapshotAt = "source_snapshot_at"
+    case sourceURI = "source_uri"
+    case licence
+    case attribution
   }
 }
 
@@ -72,6 +109,9 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
   public let headingPenaltyMeters: Double
   public let ambiguityMarginMeters: Double
   public let maximumSkippedEdgeHops: Int
+  public let maximumMatchesPerSample: Int
+  public let maximumSequenceStates: Int
+  public let skippedEdgePenaltyMeters: Double
 
   public init(
     sampleIntervalMeters: Double = 12,
@@ -79,7 +119,10 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     maximumHeadingDifferenceDegrees: Double = 55,
     headingPenaltyMeters: Double = 5,
     ambiguityMarginMeters: Double = 3,
-    maximumSkippedEdgeHops: Int = 8
+    maximumSkippedEdgeHops: Int = 8,
+    maximumMatchesPerSample: Int = 24,
+    maximumSequenceStates: Int = 48,
+    skippedEdgePenaltyMeters: Double = 0.5
   ) {
     self.sampleIntervalMeters = sampleIntervalMeters
     self.maximumMatchDistanceMeters = maximumMatchDistanceMeters
@@ -87,13 +130,17 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     self.headingPenaltyMeters = headingPenaltyMeters
     self.ambiguityMarginMeters = ambiguityMarginMeters
     self.maximumSkippedEdgeHops = maximumSkippedEdgeHops
+    self.maximumMatchesPerSample = maximumMatchesPerSample
+    self.maximumSequenceStates = maximumSequenceStates
+    self.skippedEdgePenaltyMeters = skippedEdgePenaltyMeters
   }
 
   fileprivate var isValid: Bool {
     sampleIntervalMeters > 0 && maximumMatchDistanceMeters > 0
       && (0...180).contains(maximumHeadingDifferenceDegrees)
       && headingPenaltyMeters >= 0 && ambiguityMarginMeters >= 0
-      && maximumSkippedEdgeHops >= 0
+      && maximumSkippedEdgeHops >= 0 && maximumMatchesPerSample > 0
+      && maximumSequenceStates > 0 && skippedEdgePenaltyMeters >= 0
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -103,6 +150,9 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     case headingPenaltyMeters = "heading_penalty_meters"
     case ambiguityMarginMeters = "ambiguity_margin_meters"
     case maximumSkippedEdgeHops = "maximum_skipped_edge_hops"
+    case maximumMatchesPerSample = "maximum_matches_per_sample"
+    case maximumSequenceStates = "maximum_sequence_states"
+    case skippedEdgePenaltyMeters = "skipped_edge_penalty_meters"
   }
 }
 
@@ -139,45 +189,50 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       return failedInspection()
     }
 
-    var matchedEdges: [SurfaceRoadEdge] = []
-    var geometryIsUnambiguous = true
-
-    for sample in samples {
-      let matches = edgeMatches(at: sample.coordinate, headingDegrees: sample.headingDegrees)
-      guard let best = matches.first else {
-        geometryIsUnambiguous = false
-        continue
-      }
-
-      if isAmbiguous(best: best, matches: matches) {
-        geometryIsUnambiguous = false
-      }
-      matchedEdges.append(best.edge)
-    }
-
-    if matchedEdges.count != samples.count {
-      geometryIsUnambiguous = false
-    }
-
     let terminalCoordinate = candidate.coordinates[candidate.coordinates.count - 1]
-    let terminalMatches = edgeMatches(
-      at: terminalCoordinate,
-      headingDegrees: terminalHeading
-    )
+    var matchesBySample = samples.map {
+      edgeMatches(at: $0.coordinate, headingDegrees: $0.headingDegrees)
+    }
+    let unmatchedSampleCount = matchesBySample.count { $0.isEmpty }
+    let terminalMatches = matchesBySample.last ?? []
     let terminalMatch = preferredTerminalMatch(
       matches: terminalMatches,
       expectedEdgeID: request.destinationAnchor.directedSurfaceEdgeID
     )
-
-    if let terminalMatch, isAmbiguous(best: terminalMatch, matches: terminalMatches) {
-      geometryIsUnambiguous = false
+    if let terminalMatch,
+      terminalMatch.edge.id == request.destinationAnchor.directedSurfaceEdgeID
+    {
+      matchesBySample[matchesBySample.count - 1] = [terminalMatch]
     }
 
-    if matchedEdges.count == samples.count, let terminalMatch {
-      matchedEdges[matchedEdges.count - 1] = terminalMatch.edge
+    let outgoingEdges = makeOutgoingEdges()
+    let selection = selectContinuousSequence(
+      matchesBySample: matchesBySample,
+      outgoingEdges: outgoingEdges
+    )
+    let pointwiseEdges = matchesBySample.compactMap { $0.first?.edge }
+    let matchedEdges = selection?.sampleEdges ?? pointwiseEdges
+    let matchedSequence = collapseAdjacentDuplicates(in: matchedEdges)
+    let fallbackResolvedEdges = resolveContinuousPath(
+      matchedSequence,
+      outgoingEdges: outgoingEdges
+    )
+    let inspectedEdges = selection?.resolvedEdges ?? fallbackResolvedEdges ?? matchedSequence
+    let disconnectedEdgeIDs =
+      selection == nil
+      ? disconnectedEdgePairs(in: matchedSequence, outgoingEdges: outgoingEdges) : []
+    let ambiguousEdgeIDs =
+      selection?.ambiguousEdgeIDs
+      ?? pointwiseAmbiguousEdgeIDs(matchesBySample)
+    let geometryIsUnambiguous =
+      unmatchedSampleCount == 0 && selection != nil
+      && ambiguousEdgeIDs.isEmpty
+
+    let selectedTerminalMatch = matchedEdges.last.flatMap { selectedEdge in
+      terminalMatches.first { $0.edge.id == selectedEdge.id }
     }
 
-    let anchorBinding = terminalMatch.map { match in
+    let anchorBinding = selectedTerminalMatch.map { match in
       AnchorBindingObservation(
         anchorID: request.destinationAnchor.id,
         directedSurfaceEdgeID: match.edge.id,
@@ -189,19 +244,17 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       )
     }
 
-    let matchedSequence = collapseAdjacentDuplicates(in: matchedEdges)
-    let resolvedEdges = resolveContinuousPath(matchedSequence)
-    if resolvedEdges == nil {
-      geometryIsUnambiguous = false
-    }
-    let inspectedEdges = resolvedEdges ?? matchedSequence
     return SurfaceCandidateInspection(
       anchorBinding: anchorBinding,
       geometryBindingIsUnambiguous: geometryIsUnambiguous && anchorBinding != nil,
       expresswayEdgeIDsBeforeEntry: uniqueIDs(
         inspectedEdges.filter { $0.kind != .ordinaryRoad }.map(\.id)
       ),
-      crossedTollDomainIDs: uniqueIDs(inspectedEdges.compactMap(\.tollDomainID))
+      crossedTollDomainIDs: uniqueIDs(inspectedEdges.compactMap(\.tollDomainID)),
+      unmatchedSampleCount: unmatchedSampleCount,
+      ambiguousDirectedEdgeIDs: uniqueIDs(ambiguousEdgeIDs),
+      disconnectedDirectedEdgeIDs: disconnectedEdgeIDs,
+      resolvedPathEdgeIDs: inspectedEdges.map(\.id)
     )
   }
 
@@ -210,7 +263,11 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       anchorBinding: nil,
       geometryBindingIsUnambiguous: false,
       expresswayEdgeIDsBeforeEntry: nil,
-      crossedTollDomainIDs: nil
+      crossedTollDomainIDs: nil,
+      unmatchedSampleCount: nil,
+      ambiguousDirectedEdgeIDs: nil,
+      disconnectedDirectedEdgeIDs: nil,
+      resolvedPathEdgeIDs: nil
     )
   }
 
@@ -307,25 +364,150 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       ? expected : best
   }
 
-  private func isAmbiguous(best: EdgeMatch, matches: [EdgeMatch]) -> Bool {
-    matches.contains { alternative in
+  private func ambiguousAlternatives(best: EdgeMatch, matches: [EdgeMatch]) -> [EdgeMatch] {
+    matches.filter { alternative in
       alternative.edge.id != best.edge.id
         && alternative.score <= best.score + configuration.ambiguityMarginMeters
         && !edgesFormOneDirectedPath(best.edge, alternative.edge)
     }
   }
 
+  private func pointwiseAmbiguousEdgeIDs(_ matchesBySample: [[EdgeMatch]]) -> [String] {
+    var result: [String] = []
+    for matches in matchesBySample {
+      guard let best = matches.first else { continue }
+      let alternatives = ambiguousAlternatives(best: best, matches: matches)
+      if !alternatives.isEmpty {
+        result.append(best.edge.id)
+        result.append(contentsOf: alternatives.map(\.edge.id))
+      }
+    }
+    return uniqueIDs(result)
+  }
+
+  private func makeOutgoingEdges() -> [String: [SurfaceRoadEdge]] {
+    Dictionary(grouping: graph.edges, by: \.fromNodeID).mapValues {
+      $0.sorted { $0.id < $1.id }
+    }
+  }
+
+  private func selectContinuousSequence(
+    matchesBySample: [[EdgeMatch]],
+    outgoingEdges: [String: [SurfaceRoadEdge]]
+  ) -> SequenceSelection? {
+    guard let firstMatches = matchesBySample.first, !firstMatches.isEmpty,
+      matchesBySample.allSatisfy({ !$0.isEmpty })
+    else { return nil }
+
+    var states = firstMatches.prefix(configuration.maximumMatchesPerSample).map { match in
+      SequenceState(
+        cost: match.score,
+        sampleEdges: [match.edge],
+        resolvedEdges: [match.edge]
+      )
+    }
+    var connectorCache: [EdgePair: ConnectorLookup] = [:]
+
+    for matches in matchesBySample.dropFirst() {
+      var nextStates: [SequenceState] = []
+      for state in states {
+        guard let source = state.sampleEdges.last else { continue }
+        for match in matches.prefix(configuration.maximumMatchesPerSample) {
+          let pair = EdgePair(sourceID: source.id, targetID: match.edge.id)
+          let lookup: ConnectorLookup
+          if let cached = connectorCache[pair] {
+            lookup = cached
+          } else if let connectors = connectorEdges(
+            from: source,
+            to: match.edge,
+            outgoingEdges: outgoingEdges
+          ) {
+            lookup = .found(connectors)
+            connectorCache[pair] = lookup
+          } else {
+            lookup = .missing
+            connectorCache[pair] = lookup
+          }
+
+          guard case .found(let connectors) = lookup else { continue }
+          var resolvedEdges = state.resolvedEdges
+          for edge in connectors + [match.edge] where resolvedEdges.last?.id != edge.id {
+            resolvedEdges.append(edge)
+          }
+          nextStates.append(
+            SequenceState(
+              cost: state.cost + match.score
+                + Double(connectors.count) * configuration.skippedEdgePenaltyMeters,
+              sampleEdges: state.sampleEdges + [match.edge],
+              resolvedEdges: resolvedEdges
+            )
+          )
+        }
+      }
+
+      var signatures: Set<String> = []
+      states = nextStates.sorted(by: sequenceStateOrder).filter { state in
+        signatures.insert(state.pathSignature).inserted
+      }
+      if states.count > configuration.maximumSequenceStates {
+        states.removeLast(states.count - configuration.maximumSequenceStates)
+      }
+      guard !states.isEmpty else { return nil }
+    }
+
+    let ordered = states.sorted(by: sequenceStateOrder)
+    guard let best = ordered.first else { return nil }
+    let alternative = ordered.dropFirst().first {
+      $0.cost <= best.cost + configuration.ambiguityMarginMeters
+        && $0.pathSignature != best.pathSignature
+    }
+    return SequenceSelection(
+      sampleEdges: best.sampleEdges,
+      resolvedEdges: best.resolvedEdges,
+      ambiguousEdgeIDs: alternative.map {
+        differingEdgeIDs(best.resolvedEdges, $0.resolvedEdges)
+      } ?? []
+    )
+  }
+
+  private func sequenceStateOrder(_ lhs: SequenceState, _ rhs: SequenceState) -> Bool {
+    if lhs.cost != rhs.cost { return lhs.cost < rhs.cost }
+    return lhs.pathSignature < rhs.pathSignature
+  }
+
+  private func differingEdgeIDs(
+    _ lhs: [SurfaceRoadEdge],
+    _ rhs: [SurfaceRoadEdge]
+  ) -> [String] {
+    let lhsIDs = lhs.map(\.id)
+    let rhsIDs = rhs.map(\.id)
+    let lhsSet = Set(lhsIDs)
+    let rhsSet = Set(rhsIDs)
+    let difference =
+      lhsIDs.filter { !rhsSet.contains($0) }
+      + rhsIDs.filter { !lhsSet.contains($0) }
+    if !difference.isEmpty { return uniqueIDs(difference) }
+    return uniqueIDs([lhs.last?.id, rhs.last?.id].compactMap { $0 })
+  }
+
   private func edgesFormOneDirectedPath(_ lhs: SurfaceRoadEdge, _ rhs: SurfaceRoadEdge) -> Bool {
     lhs.toNodeID == rhs.fromNodeID || rhs.toNodeID == lhs.fromNodeID
   }
 
-  private func resolveContinuousPath(_ edges: [SurfaceRoadEdge]) -> [SurfaceRoadEdge]? {
+  private func resolveContinuousPath(
+    _ edges: [SurfaceRoadEdge],
+    outgoingEdges: [String: [SurfaceRoadEdge]]
+  ) -> [SurfaceRoadEdge]? {
     guard let first = edges.first else { return nil }
     var result = [first]
 
     for target in edges.dropFirst() {
       guard let source = result.last,
-        let connectors = connectorEdges(from: source, to: target)
+        let connectors = connectorEdges(
+          from: source,
+          to: target,
+          outgoingEdges: outgoingEdges
+        )
       else { return nil }
 
       for connector in connectors where result.last?.id != connector.id {
@@ -338,15 +520,31 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
     return result
   }
 
+  private func disconnectedEdgePairs(
+    in edges: [SurfaceRoadEdge],
+    outgoingEdges: [String: [SurfaceRoadEdge]]
+  ) -> [String] {
+    guard edges.count > 1 else { return [] }
+    var result: [String] = []
+    for (source, target) in zip(edges, edges.dropFirst())
+    where connectorEdges(
+      from: source,
+      to: target,
+      outgoingEdges: outgoingEdges
+    ) == nil {
+      result.append(source.id)
+      result.append(target.id)
+    }
+    return uniqueIDs(result)
+  }
+
   private func connectorEdges(
     from source: SurfaceRoadEdge,
-    to target: SurfaceRoadEdge
+    to target: SurfaceRoadEdge,
+    outgoingEdges: [String: [SurfaceRoadEdge]]
   ) -> [SurfaceRoadEdge]? {
     if source.id == target.id || source.toNodeID == target.fromNodeID { return [] }
 
-    let outgoing = Dictionary(grouping: graph.edges, by: \.fromNodeID).mapValues {
-      $0.sorted { $0.id < $1.id }
-    }
     var queue: [(nodeID: String, path: [SurfaceRoadEdge])] = [(source.toNodeID, [])]
     var visited: Set<String> = [source.toNodeID]
     var cursor = 0
@@ -357,7 +555,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       if state.nodeID == target.fromNodeID { return state.path }
       guard state.path.count < configuration.maximumSkippedEdgeHops else { continue }
 
-      for edge in outgoing[state.nodeID, default: []] {
+      for edge in outgoingEdges[state.nodeID, default: []] {
         if edge.id == target.id { return state.path }
         let path = state.path + [edge]
         if edge.toNodeID == target.fromNodeID { return path }
@@ -391,6 +589,32 @@ private struct EdgeMatch {
   let distanceMeters: Double
   let headingDifferenceDegrees: Double
   let score: Double
+}
+
+private struct SequenceSelection {
+  let sampleEdges: [SurfaceRoadEdge]
+  let resolvedEdges: [SurfaceRoadEdge]
+  let ambiguousEdgeIDs: [String]
+}
+
+private struct SequenceState {
+  let cost: Double
+  let sampleEdges: [SurfaceRoadEdge]
+  let resolvedEdges: [SurfaceRoadEdge]
+
+  var pathSignature: String {
+    resolvedEdges.map(\.id).joined(separator: "|")
+  }
+}
+
+private struct EdgePair: Hashable {
+  let sourceID: String
+  let targetID: String
+}
+
+private enum ConnectorLookup {
+  case found([SurfaceRoadEdge])
+  case missing
 }
 
 private struct EdgeProjection {

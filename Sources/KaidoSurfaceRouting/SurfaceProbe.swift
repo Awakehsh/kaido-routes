@@ -31,17 +31,29 @@ public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
   public let geometryBindingIsUnambiguous: Bool?
   public let expresswayEdgeIDsBeforeEntry: [String]?
   public let crossedTollDomainIDs: [String]?
+  public let unmatchedSampleCount: Int?
+  public let ambiguousDirectedEdgeIDs: [String]?
+  public let disconnectedDirectedEdgeIDs: [String]?
+  public let resolvedPathEdgeIDs: [String]?
 
   public init(
     anchorBinding: AnchorBindingObservation?,
     geometryBindingIsUnambiguous: Bool?,
     expresswayEdgeIDsBeforeEntry: [String]?,
-    crossedTollDomainIDs: [String]?
+    crossedTollDomainIDs: [String]?,
+    unmatchedSampleCount: Int? = nil,
+    ambiguousDirectedEdgeIDs: [String]? = nil,
+    disconnectedDirectedEdgeIDs: [String]? = nil,
+    resolvedPathEdgeIDs: [String]? = nil
   ) {
     self.anchorBinding = anchorBinding
     self.geometryBindingIsUnambiguous = geometryBindingIsUnambiguous
     self.expresswayEdgeIDsBeforeEntry = expresswayEdgeIDsBeforeEntry
     self.crossedTollDomainIDs = crossedTollDomainIDs
+    self.unmatchedSampleCount = unmatchedSampleCount
+    self.ambiguousDirectedEdgeIDs = ambiguousDirectedEdgeIDs
+    self.disconnectedDirectedEdgeIDs = disconnectedDirectedEdgeIDs
+    self.resolvedPathEdgeIDs = resolvedPathEdgeIDs
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -49,6 +61,10 @@ public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
     case geometryBindingIsUnambiguous = "geometry_binding_is_unambiguous"
     case expresswayEdgeIDsBeforeEntry = "expressway_edge_ids_before_entry"
     case crossedTollDomainIDs = "crossed_toll_domain_ids"
+    case unmatchedSampleCount = "unmatched_sample_count"
+    case ambiguousDirectedEdgeIDs = "ambiguous_directed_edge_ids"
+    case disconnectedDirectedEdgeIDs = "disconnected_directed_edge_ids"
+    case resolvedPathEdgeIDs = "resolved_path_edge_ids"
   }
 }
 
@@ -96,6 +112,7 @@ public struct SurfaceCandidateEvaluation: Codable, Equatable, Sendable {
   public let candidateID: String?
   public let candidate: SurfaceRouteCandidate?
   public let inspection: SurfaceCandidateInspection?
+  public let inspectionLatencyMilliseconds: Int?
   public let disposition: SurfaceProbeDisposition
   public let hardGates: [HardGateResult]
 
@@ -103,12 +120,14 @@ public struct SurfaceCandidateEvaluation: Codable, Equatable, Sendable {
     candidateID: String?,
     candidate: SurfaceRouteCandidate? = nil,
     inspection: SurfaceCandidateInspection? = nil,
+    inspectionLatencyMilliseconds: Int? = nil,
     disposition: SurfaceProbeDisposition,
     hardGates: [HardGateResult]
   ) {
     self.candidateID = candidateID
     self.candidate = candidate
     self.inspection = inspection
+    self.inspectionLatencyMilliseconds = inspectionLatencyMilliseconds
     self.disposition = disposition
     self.hardGates = hardGates
   }
@@ -119,6 +138,7 @@ public struct SurfaceCandidateEvaluation: Codable, Equatable, Sendable {
     case candidateID = "candidate_id"
     case candidate
     case inspection
+    case inspectionLatencyMilliseconds = "inspection_latency_milliseconds"
     case disposition
     case hardGates = "hard_gates"
   }
@@ -130,7 +150,8 @@ public enum SurfaceHardGateEvaluator {
     request: SurfaceRouteRequest,
     fixture: EntranceProbeFixture,
     inspection: SurfaceCandidateInspection,
-    expectedProviderID: String
+    expectedProviderID: String,
+    inspectionLatencyMilliseconds: Int? = nil
   ) -> SurfaceCandidateEvaluation {
     let gates = [
       directedApproachGate(request: request, fixture: fixture, inspection: inspection),
@@ -147,6 +168,7 @@ public enum SurfaceHardGateEvaluator {
       candidateID: candidate.id,
       candidate: candidate,
       inspection: inspection,
+      inspectionLatencyMilliseconds: inspectionLatencyMilliseconds,
       disposition: disposition,
       hardGates: gates
     )
@@ -299,7 +321,22 @@ public enum SurfaceHardGateEvaluator {
     case true:
       break
     case false:
-      reasons.append("GEOMETRY_BINDING_AMBIGUOUS")
+      var hasBindingReason = false
+      if let count = inspection.unmatchedSampleCount, count > 0 {
+        reasons.append("GEOMETRY_SAMPLES_UNMATCHED")
+        hasBindingReason = true
+      }
+      if let edgeIDs = inspection.ambiguousDirectedEdgeIDs, !edgeIDs.isEmpty {
+        reasons.append("GEOMETRY_BINDING_AMBIGUOUS")
+        hasBindingReason = true
+      }
+      if let edgeIDs = inspection.disconnectedDirectedEdgeIDs, !edgeIDs.isEmpty {
+        reasons.append("GEOMETRY_PATH_DISCONNECTED")
+        hasBindingReason = true
+      }
+      if !hasBindingReason {
+        reasons.append("GEOMETRY_BINDING_AMBIGUOUS")
+      }
     case nil:
       reasons.append("GEOMETRY_BINDING_UNKNOWN")
     }
@@ -514,10 +551,15 @@ where Provider: SurfaceRouteProvider, Inspector: SurfaceCandidateInspector {
     case .success(let candidates):
       var evaluations: [SurfaceCandidateEvaluation] = []
       for candidate in candidates {
+        let inspectionStartedAt = ProcessInfo.processInfo.systemUptime
         let inspection = await inspector.inspect(
           candidate: candidate,
           request: request,
           fixture: fixture
+        )
+        let inspectionLatency = max(
+          0,
+          Int((ProcessInfo.processInfo.systemUptime - inspectionStartedAt) * 1_000)
         )
         evaluations.append(
           SurfaceHardGateEvaluator.evaluate(
@@ -525,7 +567,8 @@ where Provider: SurfaceRouteProvider, Inspector: SurfaceCandidateInspector {
             request: request,
             fixture: fixture,
             inspection: inspection,
-            expectedProviderID: provider.metadata.id
+            expectedProviderID: provider.metadata.id,
+            inspectionLatencyMilliseconds: inspectionLatency
           )
         )
       }

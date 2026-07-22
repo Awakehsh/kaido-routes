@@ -25,6 +25,14 @@ func directedGraphInspectorAcceptsLegalApproach() async throws {
   #expect(inspection.geometryBindingIsUnambiguous == true)
   #expect(inspection.expresswayEdgeIDsBeforeEntry == [])
   #expect(inspection.crossedTollDomainIDs == [])
+  #expect(inspection.unmatchedSampleCount == 0)
+  #expect(inspection.ambiguousDirectedEdgeIDs == [])
+  #expect(inspection.disconnectedDirectedEdgeIDs == [])
+  #expect(
+    inspection.resolvedPathEdgeIDs == [
+      "test.edge.surface-initial", "test.edge.approach",
+    ]
+  )
   #expect(result.disposition == .accepted)
 }
 
@@ -69,9 +77,9 @@ func directedGraphInspectorRejectsAmbiguousParallelEdges() async throws {
     SurfaceRoadEdge(
       id: "test.edge.parallel",
       fromNodeID: "test.node.parallel-from",
-      toNodeID: "test.node.parallel-to",
+      toNodeID: "test.node.middle",
       kind: .ordinaryRoad,
-      coordinates: [inspectorMiddle, inspectorAnchor]
+      coordinates: [inspectorOrigin, inspectorMiddle]
     )
   )
   let inspector = DirectedRoadGraphInspector(
@@ -89,6 +97,45 @@ func directedGraphInspectorRejectsAmbiguousParallelEdges() async throws {
 
   #expect(inspection.anchorBinding?.directedSurfaceEdgeID == "test.edge.approach")
   #expect(inspection.geometryBindingIsUnambiguous == false)
+  #expect(inspection.ambiguousDirectedEdgeIDs?.contains("test.edge.parallel") == true)
+  #expect(inspection.disconnectedDirectedEdgeIDs == [])
+}
+
+@Test("Sequence continuity rejects a nearer but disconnected edge")
+func directedGraphInspectorUsesSequenceContinuity() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  let candidate = makeInspectorCandidate(request: request)
+  var edges = makeInspectorGraph().edges
+  edges.append(
+    SurfaceRoadEdge(
+      id: "test.edge.aaa-disconnected-decoy",
+      fromNodeID: "test.node.decoy-from",
+      toNodeID: "test.node.decoy-to",
+      kind: .ordinaryRoad,
+      coordinates: [inspectorMiddle, inspectorAnchor]
+    )
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: SurfaceRoadGraphSnapshot(
+      networkSnapshotID: fixture.networkSnapshotID,
+      edges: edges
+    )
+  ).inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(inspection.ambiguousDirectedEdgeIDs == [])
+  #expect(inspection.disconnectedDirectedEdgeIDs == [])
+  #expect(
+    inspection.resolvedPathEdgeIDs == [
+      "test.edge.surface-initial", "test.edge.approach",
+    ]
+  )
 }
 
 @Test("Terminal heading selects the actual directed edge instead of reverse geometry")
@@ -184,9 +231,11 @@ func directedGraphInspectorReportsSkippedConnector() async throws {
     fixture: fixture
   )
 
-  #expect(inspection.geometryBindingIsUnambiguous == false)
+  #expect(inspection.geometryBindingIsUnambiguous == true)
   #expect(inspection.expresswayEdgeIDsBeforeEntry == ["test.edge.forbidden-expressway"])
   #expect(inspection.crossedTollDomainIDs == ["test.toll.external"])
+  #expect(inspection.resolvedPathEdgeIDs?.contains("test.edge.forbidden-expressway") == true)
+  #expect(inspection.disconnectedDirectedEdgeIDs == [])
 }
 
 @Test("Inspector fails closed when fixture and graph snapshots differ")
@@ -209,6 +258,10 @@ func directedGraphInspectorRejectsSnapshotMismatch() async throws {
   #expect(inspection.geometryBindingIsUnambiguous == false)
   #expect(inspection.expresswayEdgeIDsBeforeEntry == nil)
   #expect(inspection.crossedTollDomainIDs == nil)
+  #expect(inspection.unmatchedSampleCount == nil)
+  #expect(inspection.ambiguousDirectedEdgeIDs == nil)
+  #expect(inspection.disconnectedDirectedEdgeIDs == nil)
+  #expect(inspection.resolvedPathEdgeIDs == nil)
 }
 
 private let inspectorOrigin = SurfaceCoordinate(latitude: 35, longitude: 139)

@@ -64,7 +64,8 @@ status gate. Missing inspection evidence fails closed.
 `KaidoSurfaceRouting` owns the provider-neutral fixture, candidate, inspection,
 hard-gate, and normalized-result types. Its `DirectedRoadGraphInspector`
 resamples candidate geometry, scores directed edges using distance and heading,
-checks graph continuity, detects ambiguous parallel edges, and reports early
+uses a bounded sequence beam to preserve graph continuity, retains skipped
+connector edges, detects near-optimal path ambiguity, and reports early
 expressway and toll-domain crossings. It fails closed on invalid or mismatched
 network snapshots. This is a surface-probe inspector, not the live Shuto matcher.
 
@@ -72,9 +73,36 @@ network snapshots. This is a surface-probe inspector, not the live Shuto matcher
 requests automobile alternatives and asks MapKit to avoid highways and tolls for
 the bounded surface leg, but those options are hints rather than proof.
 
-No real entrance is released yet. The reviewed ten-entrance corpus, its licensed
-road-graph snapshots, and the local live-probe command are the next evidence
-tasks; deterministic CI does not call MapKit.
+No real entrance is released yet. The local live-probe command is implemented;
+the reviewed ten-entrance corpus, licensed road-graph snapshots, repeated runs,
+and field checks remain evidence tasks. Deterministic CI does not call MapKit.
+
+The local command requires an explicit live-provider acknowledgement and writes
+one normalized JSON result to stdout. The result records provider and local
+inspection latency separately so routing-network delay is not confused with
+directed-graph matching cost:
+
+```sh
+swift run kaido-surface-probe \
+  --fixture research/path/to/entrance.json \
+  --graph research/path/to/directed-road-graph.json \
+  --origin example.origin.same-side \
+  --allow-live-mapkit \
+  --pretty \
+  > benchmarks/surface-routing/runs/example.json
+```
+
+Both real inputs remain under ignored `research/`; output remains under ignored
+`runs/`. The command records `RAW_LOCAL_ONLY` and the MapKit adapter still reports
+`REVIEW_REQUIRED`. Do not commit or redistribute provider geometry, instructions,
+or raw output until the relevant terms have been reviewed.
+
+For private feasibility work, `scripts/build_osm_surface_graph.py` converts a
+bounded Overpass JSON extract into the inspector's directed-edge format. It
+preserves OSM way and node lineage in every ID plus the OSM base timestamp and
+ODbL attribution in graph provenance. The generated graph is ODbL data and must
+remain outside the Apache-2.0 code boundary unless a deliberate data release is
+prepared.
 
 Run the offline checks with:
 

@@ -176,6 +176,37 @@ private struct ScenarioHarness {
       return
     }
 
+    if let requestedPath = inputs.object("requested_pa_path"),
+      let pathValues = inputs.array("released_pa_paths")
+    {
+      let request = ParkingAreaPathRequest(
+        parkingAreaID: try requestedPath.requiredString("parking_area_id"),
+        sourceCarriagewayID: try requestedPath.requiredString("source_carriageway_id"),
+        accessMovementID: try requestedPath.requiredString("access_movement_id"),
+        returnMovementID: try requestedPath.requiredString("return_movement_id"),
+        returnCarriagewayID: try requestedPath.requiredString("return_carriageway_id")
+      )
+      let paths = try pathValues.map { value in
+        guard let path = value.objectValue else {
+          throw ScenarioExecutionError.invalidInput("released_pa_paths")
+        }
+        return DirectionalParkingAreaPath(
+          id: try path.requiredString("path_id"),
+          parkingAreaID: try path.requiredString("parking_area_id"),
+          sourceCarriagewayID: try path.requiredString("source_carriageway_id"),
+          accessMovementID: try path.requiredString("access_movement_id"),
+          returnMovementID: try path.requiredString("return_movement_id"),
+          returnCarriagewayID: try path.requiredString("return_carriageway_id")
+        )
+      }
+      publish(
+        StrictRouteCompiler.validate(
+          parkingAreaPath: request,
+          releasedPaths: paths
+        ))
+      return
+    }
+
     if let template = inputs.object("route_template"),
       let candidateValues = inputs.array("entrance_candidates")
     {
@@ -549,6 +580,8 @@ extension NavigationSnapshot {
       "navigation.signal_reacquisition_status": .string(signalReacquisitionStatus.rawValue),
       "navigation.route_candidate_resolution": .string(routeCandidateResolution.rawValue),
       "route.executable": .bool(routeExecutable),
+      "route.blocking_reasons": .strings(routeBlockingReasons),
+      "route.blocking_occurrence_ids": .strings(routeBlockingOccurrenceIDs),
       "route.skipped_occurrence_ids": .strings(skippedOccurrenceIDs),
       "route.warnings": .strings(routeWarnings),
       "recovery.status": .string(recovery.status.rawValue),

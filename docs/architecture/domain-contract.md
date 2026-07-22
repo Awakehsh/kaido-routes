@@ -115,6 +115,7 @@ RouteOccurrence
   index
   kind: EDGE | JUNCTION_MOVEMENT | PA_VISIT
   entity_id
+  parking_area_id: present on each PA access, visit, and return occurrence
 ```
 
 The same entity may appear any number of times. Runtime identity is the
@@ -186,6 +187,27 @@ and cannot be used as a shortcut.
 A PA visit is an explicit access movement, stopping state, and return movement.
 It may be optional or required. If an optional PA closes, the mainline route may
 remain executable; if a required PA is unavailable, compilation fails.
+
+```text
+DirectionalParkingAreaPath
+  path_id
+  parking_area_id
+  source_carriageway_id
+  access_movement_id
+  return_movement_id
+  return_carriageway_id
+
+Compiled occurrence group
+  JUNCTION_MOVEMENT parking_area_id=...  # access
+  PA_VISIT          parking_area_id=...  # stopping state
+  JUNCTION_MOVEMENT parking_area_id=...  # return
+```
+
+The compiler matches all five directional path fields. A path released for the
+opposite carriageway cannot be borrowed because the PA name is the same. Every
+occurrence in one compiled PA group has the same optionality. An operational
+closure skips the complete optional group or blocks the complete required group;
+it never leaves an orphan access or return movement in the pending route.
 
 ## Navigation state
 

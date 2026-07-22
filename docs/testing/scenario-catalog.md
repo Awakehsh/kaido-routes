@@ -13,7 +13,7 @@ should become scenarios when their layer is built.
 | KR-D03 | Illegal incoming-to-outgoing junction movement is rejected | P0 | Seeded |
 | KR-D04 | Full, half, or quarter IC metadata cannot synthesize a missing directional facility | P0 | Seeded |
 | KR-D05 | A practical C2 circuit is modeled as C2 plus the required B movements | P0 | Planned |
-| KR-D06 | PA access and return are directional subgraph movements | P0 | Planned |
+| KR-D06 | PA access and return are directional subgraph movements | P0 | Seeded |
 | KR-D07 | Crossing an external toll-domain boundary is explicit | P0 | Planned |
 | KR-D08 | A route cannot silently migrate to an incompatible network snapshot | P0 | Seeded |
 | KR-D09 | Japanese sign text survives localization and serialization | P0 | Seeded |
@@ -34,10 +34,10 @@ should become scenarios when their layer is built.
 | KR-S02 | A planned tunnel branch is not confirmed without sufficient evidence | P0 | Covered by KR-S01 |
 | KR-S03 | Signal recovery resumes the correct later route occurrence | P0 | Seeded |
 | KR-S04 | A missed branch rejoins a later occurrence in the active RoutePlan, not a destination route | P0 | Seeded |
-| KR-S05 | A planned movement closure blocks route start | P0 | Planned |
+| KR-S05 | A planned movement closure blocks route start | P0 | Seeded |
 | KR-S06 | A restriction arriving during a drive changes state without unsafe interaction | P1 | Planned |
 | KR-S07 | Optional PA closure skips the visit while preserving the mainline route | P0 | Seeded |
-| KR-S08 | Required PA closure blocks route execution | P0 | Planned |
+| KR-S08 | Required PA closure blocks route execution | P0 | Seeded |
 | KR-S09 | Stacked-road candidates remain ambiguous until evidence separates them | P0 | Seeded |
 | KR-S10 | Voice prompts fire once per occurrence at deterministic anchors | P0 | Planned |
 | KR-S11 | CarPlay disconnect falls back without losing route occurrence | P1 | Planned |

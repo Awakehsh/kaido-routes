@@ -172,6 +172,7 @@ def validate_route_plan(v: Validation, route_plan: Any) -> None:
 
     occurrence_ids: set[str] = set()
     indexes: list[int] = []
+    parking_groups: dict[str, list[dict[str, Any]]] = {}
     for position, occurrence in enumerate(occurrences):
         context = f"given.route_plan.occurrences[{position}]"
         required_occurrence = {"occurrence_id", "index", "kind", "entity_id"}
@@ -192,9 +193,47 @@ def validate_route_plan(v: Validation, route_plan: Any) -> None:
             v.add(f"{context}.kind is unknown: {occurrence['kind']!r}")
         if not isinstance(occurrence["entity_id"], str) or not occurrence["entity_id"].strip():
             v.add(f"{context}.entity_id must be non-empty")
+        parking_area_id = occurrence.get("parking_area_id")
+        if parking_area_id is not None:
+            if not isinstance(parking_area_id, str) or not parking_area_id.strip():
+                v.add(f"{context}.parking_area_id must be non-empty when present")
+            else:
+                parking_groups.setdefault(parking_area_id, []).append(occurrence)
+        elif occurrence.get("kind") == "PA_VISIT":
+            v.add(f"{context} PA_VISIT requires parking_area_id")
 
     if indexes != list(range(len(occurrences))):
         v.add("route occurrence indexes must be contiguous and match array order from zero")
+
+    for parking_area_id, group in parking_groups.items():
+        visits = [item for item in group if item.get("kind") == "PA_VISIT"]
+        if len(visits) != 1:
+            v.add(f"parking area {parking_area_id!r} requires exactly one PA_VISIT")
+            continue
+        visit_index = visits[0].get("index")
+        if not isinstance(visit_index, int) or isinstance(visit_index, bool):
+            continue
+        access_movements = [
+            item
+            for item in group
+            if item.get("kind") == "JUNCTION_MOVEMENT"
+            and isinstance(item.get("index"), int)
+            and item["index"] < visit_index
+        ]
+        return_movements = [
+            item
+            for item in group
+            if item.get("kind") == "JUNCTION_MOVEMENT"
+            and isinstance(item.get("index"), int)
+            and item["index"] > visit_index
+        ]
+        if not access_movements:
+            v.add(f"parking area {parking_area_id!r} requires an access movement before PA_VISIT")
+        if not return_movements:
+            v.add(f"parking area {parking_area_id!r} requires a return movement after PA_VISIT")
+        optional_values = {item.get("optional", False) for item in group}
+        if len(optional_values) != 1:
+            v.add(f"parking area {parking_area_id!r} has inconsistent optional flags")
 
 
 def validate_timeline(v: Validation, events: Any) -> set[str]:
@@ -343,4 +382,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

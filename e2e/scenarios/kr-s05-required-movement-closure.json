@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S05",
+  "title": "A required movement closure blocks route start",
+  "layer": "SIMULATION",
+  "tags": ["closure", "movement", "route-start"],
+  "purpose": "Prevent navigation from starting when a known closure affects a required occurrence in the compiled route.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The movement and closure are synthetic and make no current traffic claim."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.required-closure-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.required-closure",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "before-required-movement",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.before"
+        },
+        {
+          "occurrence_id": "required-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.required"
+        },
+        {
+          "occurrence_id": "after-required-movement",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.after"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "movement-closes",
+      "at_ms": 0,
+      "type": "RESTRICTION_UPDATED",
+      "payload": {
+        "subject_id": "test.movement.required",
+        "state": "KNOWN_CLOSED"
+      }
+    },
+    {
+      "id": "start-attempt",
+      "at_ms": 1000,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "route-is-blocked",
+      "after": "movement-closes",
+      "category": "SAFETY",
+      "subject": "route.executable",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A required route movement cannot be skipped silently."
+    },
+    {
+      "id": "blocking-reason-is-explicit",
+      "after": "movement-closes",
+      "category": "NAVIGATION",
+      "subject": "route.blocking_reasons",
+      "matcher": "CONTAINS",
+      "expected": "REQUIRED_OCCURRENCE_CLOSED",
+      "rationale": "The user and diagnostics can distinguish a hard route closure from a warning."
+    },
+    {
+      "id": "blocking-occurrence-is-named",
+      "after": "movement-closes",
+      "category": "DOMAIN",
+      "subject": "route.blocking_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "required-movement",
+      "rationale": "The hard block retains exact occurrence identity."
+    },
+    {
+      "id": "start-does-not-select-an-occurrence",
+      "after": "start-attempt",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "ABSENT",
+      "rationale": "A blocked plan never enters active occurrence progress."
+    },
+    {
+      "id": "journey-remains-in-planning",
+      "after": "start-attempt",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "PLANNING",
+      "rationale": "The UI remains in a safe pre-drive state after the blocked start."
+    }
+  ]
+}

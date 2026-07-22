@@ -23,3 +23,43 @@ func legalMovementMatchesExactJunction() {
   #expect(result.status == .rejected)
   #expect(result.errorCodes.contains("ILLEGAL_JUNCTION_MOVEMENT"))
 }
+
+@Test("A parking-area path requires exact access and return directions")
+func parkingAreaPathRequiresExactDirections() {
+  let request = ParkingAreaPathRequest(
+    parkingAreaID: "test.pa",
+    sourceCarriagewayID: "test.carriageway.outer",
+    accessMovementID: "test.movement.access",
+    returnMovementID: "test.movement.return",
+    returnCarriagewayID: "test.carriageway.outer"
+  )
+  let exact = DirectionalParkingAreaPath(
+    id: "test.pa-path.outer",
+    parkingAreaID: "test.pa",
+    sourceCarriagewayID: "test.carriageway.outer",
+    accessMovementID: "test.movement.access",
+    returnMovementID: "test.movement.return",
+    returnCarriagewayID: "test.carriageway.outer"
+  )
+  let wrongReturn = DirectionalParkingAreaPath(
+    id: "test.pa-path.wrong-return",
+    parkingAreaID: "test.pa",
+    sourceCarriagewayID: "test.carriageway.outer",
+    accessMovementID: "test.movement.access",
+    returnMovementID: "test.movement.return",
+    returnCarriagewayID: "test.carriageway.inner"
+  )
+
+  let rejected = StrictRouteCompiler.validate(
+    parkingAreaPath: request,
+    releasedPaths: [wrongReturn]
+  )
+  let accepted = StrictRouteCompiler.validate(
+    parkingAreaPath: request,
+    releasedPaths: [exact]
+  )
+
+  #expect(rejected.status == .rejected)
+  #expect(rejected.errorCodes == ["MISSING_DIRECTIONAL_PA_PATH"])
+  #expect(accepted.status == .accepted)
+}

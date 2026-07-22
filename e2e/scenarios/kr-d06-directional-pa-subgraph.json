@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D06",
+  "title": "A PA visit requires one released directional access and return path",
+  "layer": "DOMAIN",
+  "tags": ["direction", "pa", "route-compilation"],
+  "purpose": "Reject a parking-area request when only a path for another carriageway direction exists instead of synthesizing access or return movements from the shared PA name.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The PA, carriageways, and movements are synthetic and make no claim about a real facility."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.directional-pa-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "inputs": {
+      "requested_pa_path": {
+        "parking_area_id": "test.pa.shared-name",
+        "source_carriageway_id": "test.carriageway.outer",
+        "access_movement_id": "test.movement.outer-pa-access",
+        "return_movement_id": "test.movement.outer-pa-return",
+        "return_carriageway_id": "test.carriageway.outer"
+      },
+      "released_pa_paths": [
+        {
+          "path_id": "test.pa-path.inner-only",
+          "parking_area_id": "test.pa.shared-name",
+          "source_carriageway_id": "test.carriageway.inner",
+          "access_movement_id": "test.movement.inner-pa-access",
+          "return_movement_id": "test.movement.inner-pa-return",
+          "return_carriageway_id": "test.carriageway.inner"
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "compile",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "directional-pa-path-rejected",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.status",
+      "matcher": "EQUALS",
+      "expected": "REJECTED",
+      "rationale": "A path released for another carriageway cannot satisfy this request."
+    },
+    {
+      "id": "missing-path-is-explicit",
+      "after": "compile",
+      "category": "DOMAIN",
+      "subject": "compiler.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "MISSING_DIRECTIONAL_PA_PATH",
+      "rationale": "The compiler reports the missing exact access-and-return path."
+    },
+    {
+      "id": "no-movement-substitution",
+      "after": "compile",
+      "category": "SAFETY",
+      "subject": "compiler.substituted_movement_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "The compiler cannot borrow access or return movements from the other direction."
+    },
+    {
+      "id": "no-synthetic-facility",
+      "after": "compile",
+      "category": "EVIDENCE",
+      "subject": "compiler.synthetic_facility_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A shared PA label cannot synthesize a directional facility path."
+    }
+  ]
+}

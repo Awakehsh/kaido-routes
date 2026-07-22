@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S08",
+  "title": "A required PA closure blocks the entire directional visit path",
+  "layer": "SIMULATION",
+  "tags": ["closure", "pa", "required"],
+  "purpose": "Block route execution when a required PA becomes unavailable and retain the exact access, visit, and return occurrences that caused the failure.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The PA and closure are synthetic and make no current facility-status claim."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.required-pa-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.required-pa",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "mainline-before-required-pa",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.before-pa"
+        },
+        {
+          "occurrence_id": "required-pa-access",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.pa-access",
+          "parking_area_id": "test.pa.required"
+        },
+        {
+          "occurrence_id": "required-pa-visit",
+          "index": 2,
+          "kind": "PA_VISIT",
+          "entity_id": "test.pa.required",
+          "parking_area_id": "test.pa.required"
+        },
+        {
+          "occurrence_id": "required-pa-return",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.pa-return",
+          "parking_area_id": "test.pa.required"
+        },
+        {
+          "occurrence_id": "mainline-after-required-pa",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.after-pa"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "required-pa-closes",
+      "at_ms": 0,
+      "type": "RESTRICTION_UPDATED",
+      "payload": {
+        "subject_id": "test.pa.required",
+        "state": "KNOWN_CLOSED"
+      }
+    },
+    {
+      "id": "start-attempt",
+      "at_ms": 1000,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "required-pa-blocks-route",
+      "after": "required-pa-closes",
+      "category": "SAFETY",
+      "subject": "route.executable",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A required PA visit cannot be silently converted into a mainline bypass."
+    },
+    {
+      "id": "required-pa-reason-is-explicit",
+      "after": "required-pa-closes",
+      "category": "NAVIGATION",
+      "subject": "route.blocking_reasons",
+      "matcher": "CONTAINS",
+      "expected": "REQUIRED_PA_UNAVAILABLE",
+      "rationale": "The hard block is distinguishable from a generic movement closure."
+    },
+    {
+      "id": "access-occurrence-blocks",
+      "after": "required-pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.blocking_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "required-pa-access",
+      "rationale": "PA access is part of the required directional subgraph."
+    },
+    {
+      "id": "return-occurrence-blocks",
+      "after": "required-pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.blocking_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "required-pa-return",
+      "rationale": "PA return is part of the required directional subgraph."
+    },
+    {
+      "id": "required-visit-is-not-skipped",
+      "after": "required-pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.skipped_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A required path remains blocked rather than being rewritten as optional."
+    },
+    {
+      "id": "blocked-pa-route-does-not-start",
+      "after": "start-attempt",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "ABSENT",
+      "rationale": "Navigation cannot begin on a route whose required PA subgraph is unavailable."
+    }
+  ]
+}

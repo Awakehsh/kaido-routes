@@ -87,6 +87,53 @@ public struct FacilityRequest: Equatable, Sendable {
   }
 }
 
+public struct ParkingAreaPathRequest: Equatable, Sendable {
+  public let parkingAreaID: String
+  public let sourceCarriagewayID: String
+  public let accessMovementID: String
+  public let returnMovementID: String
+  public let returnCarriagewayID: String
+
+  public init(
+    parkingAreaID: String,
+    sourceCarriagewayID: String,
+    accessMovementID: String,
+    returnMovementID: String,
+    returnCarriagewayID: String
+  ) {
+    self.parkingAreaID = parkingAreaID
+    self.sourceCarriagewayID = sourceCarriagewayID
+    self.accessMovementID = accessMovementID
+    self.returnMovementID = returnMovementID
+    self.returnCarriagewayID = returnCarriagewayID
+  }
+}
+
+public struct DirectionalParkingAreaPath: Equatable, Sendable {
+  public let id: String
+  public let parkingAreaID: String
+  public let sourceCarriagewayID: String
+  public let accessMovementID: String
+  public let returnMovementID: String
+  public let returnCarriagewayID: String
+
+  public init(
+    id: String,
+    parkingAreaID: String,
+    sourceCarriagewayID: String,
+    accessMovementID: String,
+    returnMovementID: String,
+    returnCarriagewayID: String
+  ) {
+    self.id = id
+    self.parkingAreaID = parkingAreaID
+    self.sourceCarriagewayID = sourceCarriagewayID
+    self.accessMovementID = accessMovementID
+    self.returnMovementID = returnMovementID
+    self.returnCarriagewayID = returnCarriagewayID
+  }
+}
+
 public enum StrictRouteCompiler {
   public static func validate(
     movement request: DirectedMovementRequest,
@@ -134,6 +181,26 @@ public enum StrictRouteCompiler {
       return CompileResult(
         status: .rejected,
         errorCodes: ["INCOMPATIBLE_NETWORK_SNAPSHOT"]
+      )
+    }
+    return CompileResult(status: .accepted)
+  }
+
+  public static func validate(
+    parkingAreaPath request: ParkingAreaPathRequest,
+    releasedPaths: [DirectionalParkingAreaPath]
+  ) -> CompileResult {
+    let exists = releasedPaths.contains { path in
+      path.parkingAreaID == request.parkingAreaID
+        && path.sourceCarriagewayID == request.sourceCarriagewayID
+        && path.accessMovementID == request.accessMovementID
+        && path.returnMovementID == request.returnMovementID
+        && path.returnCarriagewayID == request.returnCarriagewayID
+    }
+    guard exists else {
+      return CompileResult(
+        status: .rejected,
+        errorCodes: ["MISSING_DIRECTIONAL_PA_PATH"]
       )
     }
     return CompileResult(status: .accepted)

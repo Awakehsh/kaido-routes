@@ -32,15 +32,32 @@
           "entity_id": "test.edge.mainline-before-pa"
         },
         {
-          "occurrence_id": "optional-pa-visit",
+          "occurrence_id": "optional-pa-access",
           "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.optional-pa-access",
+          "parking_area_id": "test.pa.daikoku-like",
+          "optional": true
+        },
+        {
+          "occurrence_id": "optional-pa-visit",
+          "index": 2,
           "kind": "PA_VISIT",
           "entity_id": "test.pa.daikoku-like",
+          "parking_area_id": "test.pa.daikoku-like",
+          "optional": true
+        },
+        {
+          "occurrence_id": "optional-pa-return",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.optional-pa-return",
+          "parking_area_id": "test.pa.daikoku-like",
           "optional": true
         },
         {
           "occurrence_id": "mainline-after-pa",
-          "index": 2,
+          "index": 4,
           "kind": "EDGE",
           "entity_id": "test.edge.mainline-after-pa"
         }
@@ -81,6 +98,15 @@
       "rationale": "The PA stop is optional and the checked mainline route remains available."
     },
     {
+      "id": "access-skipped",
+      "after": "pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.skipped_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "optional-pa-access",
+      "rationale": "The access movement belongs to the same optional PA subgraph."
+    },
+    {
       "id": "visit-skipped",
       "after": "pa-closes",
       "category": "DOMAIN",
@@ -88,6 +114,15 @@
       "matcher": "CONTAINS",
       "expected": "optional-pa-visit",
       "rationale": "The conditional visit is explicitly skipped rather than treated as completed."
+    },
+    {
+      "id": "return-skipped",
+      "after": "pa-closes",
+      "category": "DOMAIN",
+      "subject": "route.skipped_occurrence_ids",
+      "matcher": "CONTAINS",
+      "expected": "optional-pa-return",
+      "rationale": "The return movement cannot remain pending after its PA visit is skipped."
     },
     {
       "id": "mainline-preserved",
@@ -109,4 +144,3 @@
     }
   ]
 }
-

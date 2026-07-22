@@ -61,7 +61,9 @@ public struct NavigationEngine: Sendable {
   }
 
   public mutating func start() {
-    guard let routePlan = configuration.routePlan else { return }
+    guard snapshot.routeExecutable,
+      let routePlan = configuration.routePlan
+    else { return }
 
     snapshot.activeRoutePlanID = routePlan.id
     if snapshot.currentOccurrenceID == nil {
@@ -210,18 +212,48 @@ public struct NavigationEngine: Sendable {
 
   public mutating func updateRestriction(subjectID: String, state: String) {
     guard state == "KNOWN_CLOSED",
-      let routePlan = configuration.routePlan,
-      let occurrence = routePlan.occurrences.first(where: {
-        $0.entityID == subjectID && $0.isOptional
-      })
+      let routePlan = configuration.routePlan
     else {
       return
     }
 
-    appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
-    appendUnique("OPTIONAL_PA_UNAVAILABLE", to: &snapshot.routeWarnings)
-    snapshot.routeExecutable = true
-    refreshPendingOccurrences()
+    let parkingAreaOccurrences = routePlan.occurrences.filter {
+      $0.parkingAreaID == subjectID
+    }
+    if !parkingAreaOccurrences.isEmpty {
+      if parkingAreaOccurrences.allSatisfy(\.isOptional) {
+        for occurrence in parkingAreaOccurrences {
+          appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+        }
+        appendUnique("OPTIONAL_PA_UNAVAILABLE", to: &snapshot.routeWarnings)
+        refreshPendingOccurrences()
+      } else {
+        let reason =
+          parkingAreaOccurrences.allSatisfy { !$0.isOptional }
+          ? "REQUIRED_PA_UNAVAILABLE"
+          : "PA_OPTIONALITY_INCONSISTENT"
+        blockRoute(occurrences: parkingAreaOccurrences, reason: reason)
+      }
+      return
+    }
+
+    let affectedOccurrences = routePlan.occurrences.filter {
+      $0.entityID == subjectID
+    }
+    guard !affectedOccurrences.isEmpty else { return }
+    let requiredOccurrences = affectedOccurrences.filter { !$0.isOptional }
+    if requiredOccurrences.isEmpty {
+      for occurrence in affectedOccurrences {
+        appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+      }
+      appendUnique("OPTIONAL_ROUTE_OCCURRENCE_UNAVAILABLE", to: &snapshot.routeWarnings)
+      refreshPendingOccurrences()
+    } else {
+      blockRoute(
+        occurrences: requiredOccurrences,
+        reason: "REQUIRED_OCCURRENCE_CLOSED"
+      )
+    }
   }
 
   public mutating func finishDrive() {
@@ -398,6 +430,17 @@ public struct NavigationEngine: Sendable {
     reacquisitionCandidateOccurrenceIDs = []
     reacquisitionObservationCount = 0
     lastReacquisitionObservationAtMilliseconds = nil
+  }
+
+  private mutating func blockRoute(
+    occurrences: [RouteOccurrence],
+    reason: String
+  ) {
+    snapshot.routeExecutable = false
+    appendUnique(reason, to: &snapshot.routeBlockingReasons)
+    for occurrence in occurrences {
+      appendUnique(occurrence.id, to: &snapshot.routeBlockingOccurrenceIDs)
+    }
   }
 
   private mutating func advance(to occurrenceID: String) {

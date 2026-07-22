@@ -202,6 +202,8 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var strictRouteAutoCommitAllowed: Bool
   public var routeExecutable: Bool
   public var routeWarnings: [String]
+  public var routeBlockingReasons: [String]
+  public var routeBlockingOccurrenceIDs: [String]
   public var recovery: RecoveryState
   public var egress: EgressState
   public var signGuidance: SignGuidance
@@ -234,6 +236,8 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.strictRouteAutoCommitAllowed = false
     self.routeExecutable = true
     self.routeWarnings = []
+    self.routeBlockingReasons = []
+    self.routeBlockingOccurrenceIDs = []
     self.recovery = RecoveryState()
     self.egress = EgressState()
     self.signGuidance = SignGuidance()

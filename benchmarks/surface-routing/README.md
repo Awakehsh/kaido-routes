@@ -12,7 +12,9 @@ benchmarks/surface-routing/
 │   ├── entrance-probe-fixture.schema.json
 │   ├── provider-probe-result.schema.json
 │   ├── provider-probe-stability-summary.schema.json
-│   └── provider-probe-cross-window-summary.schema.json
+│   ├── provider-probe-cross-window-summary.schema.json
+│   ├── osm-selected-path-translation-request.schema.json
+│   └── surface-routing-build-manifest.schema.json
 ├── fixtures/synthetic/
 └── raw/ and runs/                    # local and gitignored
 ```
@@ -119,13 +121,30 @@ inspector fails that candidate closed and withholds conclusive crossing arrays.
 MapKit remains a bounded adapter under test, but it cannot satisfy the entire B1
 role with geometry-only evidence.
 
-A private shared-snapshot Valhalla build now proves the selected-path boundary:
-three runs for each of the same-side, cross-direction, and nearest-incompatible
-Shinjuku origins passed all six gates after exact translation. The public Swift
-translator and offline CLI are executable; the PBF, tiles, routes, and raw edge
-evidence remain ignored private research data. A production Valhalla HTTP
-adapter, reproducible reviewed tile manifest, complete Japanese admin dataset,
-and operational/data-use review remain pending.
+A private manifest-bound Valhalla build now proves the selected-path and admin
+boundaries: three runs for each of the same-side, cross-direction, and
+nearest-incompatible Shinjuku origins passed all six gates after exact
+translation. The build uses complete Japan administrative input, resolves Tokyo
+as `JP` / state `13`, reports `drive_on_right=false`, and binds the engine image,
+sources, tiles, admin/time-zone databases, and Kaido graph by checksum. The PBF,
+tiles, routes, and raw edge evidence remain ignored private research data.
+
+The public `ValhallaSurfaceRouteProvider` performs one `/route` request, sends
+the returned encoded polyline unchanged to `/trace_attributes` with
+`shape_match=edge_walk`, validates the provider dataset ID, and translates the
+complete OSM identity before returning one candidate. The concrete URLSession
+transport is deliberately only HTTP I/O. The first adapter returns the primary
+candidate even when alternatives are preferred; provider operations and
+alternate-response normalization remain separate evidence work.
+
+Valhalla narrative prose is accepted only in its supported Japanese or English
+locale. It does not supply Kaido's multilingual navigation contract: Japanese,
+Chinese, and English signs, terminology, and speech remain structured
+`GuidanceFrame` data owned by the Swift core.
+
+No real entrance is released yet. Live HTTP service supervision, broader road
+coverage, ODbL distribution review, retained sign/lane/temporal evidence, and
+field checks remain release blockers.
 
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
@@ -232,6 +251,38 @@ edge references, route coordinates, and the reviewed terminal OSM node. It is
 raw local evidence and remains subject to the same retention and licence rules
 as provider output.
 
+Validate a checksummed routing build before using its path evidence:
+
+```sh
+swift run kaido-surface-evidence validate-manifest \
+  --manifest research/evidence/surface-routing-build-manifest.json \
+  --graph research/evidence/bounded-surface-graph.json \
+  --profile structural \
+  --pretty
+```
+
+`structural` binds identity and checks metadata, including a road source,
+routing tiles, and the exact Kaido graph artifact, without pretending a lab
+build is releasable. `release-candidate` additionally requires all source and artifact
+roles, complete admin/time-zone/node-ID capabilities, a checksummed Tokyo
+left-driving observation, `RELEASE_CANDIDATE` intended use, and zero blockers.
+The manifest is audit metadata, not permission to redistribute its referenced
+data.
+
+Normalize retained Valhalla route and exact edge-walk responses offline:
+
+```sh
+swift run kaido-surface-evidence normalize-valhalla \
+  --route-response research/evidence/route.json \
+  --trace-response research/evidence/trace-attributes.json \
+  --graph research/evidence/bounded-surface-graph.json \
+  --provider-id valhalla.local \
+  --provider-dataset-id 2026072101 \
+  --candidate-id example.candidate \
+  --terminal-osm-node-id 123456 \
+  --pretty
+```
+
 Run the offline checks with:
 
 ```sh
@@ -243,4 +294,5 @@ python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.sch
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-cross-window-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/osm-selected-path-translation-request.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/surface-routing-build-manifest.schema.json >/dev/null
 ```

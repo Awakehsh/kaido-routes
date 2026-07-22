@@ -17,11 +17,13 @@ pure Swift feasibility core. It does not yet contain an iPhone/CarPlay app,
 production road database, or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, an OSM selected-path translator, an offline evidence
-CLI, an explicit local live-probe command, and a scalar-only cross-window
-stability comparator; no live provider call runs in deterministic tests. A
-private same-source Valhalla spike has passed the three-origin Shinjuku
-selected-path identity gates, while the production HTTP adapter, reproducible
-tile/admin pipeline, field evidence, and entrance release remain pending.
+CLI, an explicit local live-probe command, a scalar-only cross-window stability
+comparator, a checksummed routing-build manifest, and a bounded Valhalla
+provider/HTTP boundary; no live provider call runs in deterministic tests. A
+private same-source Valhalla build with complete Japan/Tokyo administrative
+context has passed the three-origin Shinjuku selected-path identity gates and
+reports left-side driving. Live-service operations, ODbL distribution review,
+broader road coverage, field evidence, and entrance release remain pending.
 
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:

@@ -65,17 +65,40 @@ then requires the evidence's provider dataset ID to match graph provenance and
 checks path continuity, geometry, terminal anchor, expressway edges, and toll
 domains. MapKit leaves the field absent.
 
-The Swift `OSMSelectedPathTranslator` now implements the exact translation. A
+The Swift `OSMSelectedPathTranslator` implements the exact translation. A
 private shared-snapshot Valhalla 3.8.2 build and Kaido graph were produced from
-one pinned Kanto extract with the same explicit dataset ID. The three Shinjuku
-origins each passed three repeated hard-gate runs after translation: the
-same-side path resolved to one Kaido edge, cross-direction to eight, and the
-nearest-incompatible control to 44. This proves the bounded path-identity
-contract, including the stacked Route 20/Route 4 case. It does not release the
-entrance or approve a production Valhalla service. The regional extract could
-not construct complete Japan/Tokyo admin polygons, so admin enrichment was
-explicitly disabled for the lab; a production tile pipeline needs complete,
-versioned Japanese admin context plus an operational/data-use review.
+one pinned Kanto source with the same explicit dataset ID. A later rebuild uses
+the complete, same-day Japan PBF for administrative polygons while retaining the
+bounded Kanto road input. Valhalla reports `has_admins=true`,
+`has_timezones=true`, Tokyo as country `JP` / state `13`, and
+`drive_on_right=false`. The three Shinjuku origins each passed three repeated
+hard-gate runs after this rebuild: the translated paths contain one, eight, and
+84 Kaido edges for same-side, cross-direction, and nearest-incompatible origins.
+This proves the bounded path-identity and Japanese admin context contracts,
+including the stacked Route 20/Route 4 case. It does not release the entrance or
+approve production operations.
+
+`SurfaceRoutingBuildManifest` records the engine image digest, provider dataset
+ID, source and artifact checksums, admin/time-zone capabilities, retained OSM
+node identity, and checksummed admin observations. Structural validation binds
+the manifest to Kaido graph provenance. The stricter release profile additionally
+requires every source/artifact role, a Tokyo left-driving observation, and zero
+release blockers. The private build intentionally remains `LAB_ONLY` because its
+road coverage is bounded and operational, distribution, sign, lane, and field
+review are incomplete.
+
+`ValhallaSurfaceRouteProvider` and `URLSessionValhallaHTTPTransport` now implement
+the bounded HTTP flow: POST one `/route`, pass that exact encoded shape to
+`/trace_attributes` with `shape_match=edge_walk`, normalize the response, enforce
+the manifest dataset ID, translate to Kaido edges, and only then return a generic
+surface candidate. Deterministic tests use a transport stub; no live provider is
+called from CI.
+
+Valhalla route narration is provider prose, not product guidance. The adapter
+requests only an explicitly supported Japanese or English locale and currently
+returns the primary route candidate. Chinese guidance, actual Japanese sign
+text, route shields, transliteration, lane semantics, and all three product
+locales remain structured `GuidanceFrame` data owned and versioned by Kaido.
 
 ## System boundary
 
@@ -381,7 +404,7 @@ loading rather than UI-oriented object persistence.
 |---|---|---|---|---|
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
-| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; production tiles need complete Japanese admin context, reproducible builds, and operational review | **Shared-snapshot translator proven; HTTP adapter/pipeline pending** |
+| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; bounded private tiles and HTTP adapter still need live-service, distribution, broader-coverage, and field review | **Manifest/admin/path protocol and bounded adapter proven; operations pending** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, permissive licence | optimized fastest-path service; weaker runtime policy customization | **Secondary comparator** |
 | GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |

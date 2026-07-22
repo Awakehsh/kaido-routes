@@ -182,13 +182,16 @@ claiming a hard-gate pass. The follow-up private build closes that gap: Valhalla
 3.8.2 tiles and the Kaido graph were generated from one pinned extract, assigned
 the same dataset ID, and tested through the production hard-gate types. Across
 three runs per Shinjuku origin, all nine candidates were accepted. The translated
-paths contained 1, 8, and 44 Kaido edges for same-side, cross-direction, and
-nearest-incompatible origins respectively, with no unmatched, ambiguous, or
-disconnected selected edges. This is a path-identity feasibility pass, not a
-released entrance or final provider choice. Complete Japan/Tokyo admin polygons
-were unavailable in the regional extract, so the lab explicitly disabled admin
-enrichment; production route costing and guidance still require complete,
-versioned Japanese admin context.
+paths initially contained 1, 8, and 44 Kaido edges for same-side,
+cross-direction, and nearest-incompatible origins respectively, with no
+unmatched, ambiguous, or disconnected selected edges. The first build explicitly
+disabled admin enrichment because a regional extract cannot close Japan/Tokyo
+polygons. A later manifest-bound rebuild uses a complete same-day Japan admin
+input and pinned timezone data. It reports `JP`, Tokyo state `13`, and
+`drive_on_right=false`; all nine hard-gate runs remain accepted, with translated
+path counts of 1, 8, and 84 after Japanese driving-side and country costing take
+effect. This is a bounded path/admin feasibility pass, not a released entrance
+or final provider choice.
 
 ## Matcher test
 
@@ -354,14 +357,19 @@ gate.
    Hatsudai nearest-incompatible batch failed 0/3 with 19 stacked-road ambiguous
    edges per run. Keep the failure; it is the first evidence that geometry-only
    provider output cannot satisfy the whole corpus.
-3. **Complete for the bounded protocol:** shared-snapshot Valhalla tiles, exact
+3. **Complete for the bounded path protocol:** shared-snapshot Valhalla tiles, exact
    OSM way/node/direction translation, partial-edge trimming, and the actual
    Shinjuku three-by-three hard-gate comparison are executable. The Swift core
    rejects mismatched datasets, missing/ambiguous paths, reversed direction,
    repeated edges, and discontinuity.
-4. Turn the private build into a reproducible reviewed tile manifest, supply
-   complete Japanese admin context, and implement the bounded Valhalla HTTP
-   adapter without moving route-first ownership out of Swift.
+4. **Complete for the implementation boundary:** a checksummed build-manifest
+   schema and Swift validator bind source, image, tiles, admin/timezone databases,
+   Kaido graph, dataset identity, and observed Tokyo driving side. The private
+   Japan-admin build passes structural validation and intentionally fails release
+   validation only on declared lab blockers. The bounded Valhalla provider,
+   response normalizer, edge-walk sequence, and URLSession transport are
+   implemented with deterministic transport fixtures. Live-service operations,
+   ODbL distribution review, broader coverage, and field evidence remain open.
 5. Run OSRM and GraphHopper against the same surface fixtures.
 6. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
    matcher oracle.
@@ -370,9 +378,10 @@ gate.
 9. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is the reproducible Valhalla tile/admin manifest and bounded
-HTTP adapter in step 4, not an iPhone screen and not a rewrite of the Swift
-route-first core.
+The next provider task is to run the bounded HTTP adapter against a supervised
+local service across the reviewed corpus, then compare OSRM and GraphHopper in
+step 5. It is not an iPhone screen and not a rewrite of the Swift route-first
+core.
 
 ## Sources checked 2026-07-22
 
@@ -380,8 +389,11 @@ route-first core.
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
 - [Valhalla Meili](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
+- [Valhalla route API and response codes](https://valhalla.github.io/valhalla/api/route/api-reference/)
+- [Valhalla status API](https://valhalla.github.io/valhalla/api/status/)
 - [Valhalla Mjolnir tile build guide](https://valhalla.github.io/valhalla/mjolnir/getting_started_guide/)
 - [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)
+- [Timezone Boundary Builder data licence](https://github.com/evansiroky/timezone-boundary-builder/blob/master/DATA_LICENSE)
 - [OSRM route and match services](https://github.com/Project-OSRM/osrm-backend)
 - [GraphHopper routing and map matching](https://github.com/graphhopper/graphhopper)
 - [Newson and Krumm HMM map-matching paper and public test data](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)

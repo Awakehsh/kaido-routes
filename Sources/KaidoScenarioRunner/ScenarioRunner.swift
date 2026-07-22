@@ -1,6 +1,7 @@
 import Foundation
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 import KaidoRouting
 
 public struct ScenarioRunner {
@@ -125,6 +126,7 @@ private struct ScenarioHarness {
     default:
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
+    try refreshPresentation()
   }
 
   private mutating func compileRoute(_ payload: [String: JSONValue]) throws {
@@ -696,15 +698,214 @@ private struct ScenarioHarness {
       throw ScenarioExecutionError.invalidInput("quote_id")
     }
 
-    if let actualDistance = routeSummary.double("actual_distance_km") {
-      adapterObservations["route_summary.actual_distance_km"] = .number(actualDistance)
+    guard let actualDistance = routeSummary.double("actual_distance_km"),
+      let tollEvidenceStatus = TollEvidenceStatus(rawValue: quote.status),
+      let passageEvidence = RoutePassageEvidence(
+        rawValue: routeSummary.string("passage_evidence")
+          ?? RoutePassageEvidence.noKnownConflictRealtimeUnconfirmed.rawValue
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput("route_summary")
     }
-    if let tariffDistance = quote.tariffDistanceKM {
-      adapterObservations["route_summary.tariff_distance_km"] = .number(tariffDistance)
+    let review = try PreDriveReviewProjector.project(
+      PreDriveReviewRequest(
+        actualDistanceKM: actualDistance,
+        tariffDistanceKM: quote.tariffDistanceKM,
+        estimatedAmountYen: quote.estimatedAmountYen,
+        tollEvidenceStatus: tollEvidenceStatus,
+        passageEvidence: passageEvidence
+      )
+    )
+    publish(review)
+  }
+
+  private mutating func refreshPresentation() throws {
+    for key in adapterObservations.keys.filter({ $0.hasPrefix("presentation.kernel.") }) {
+      adapterObservations.removeValue(forKey: key)
     }
-    adapterObservations["route_summary.toll.status"] = .string(quote.status)
-    if let amount = quote.estimatedAmountYen {
-      adapterObservations["route_summary.toll.estimated_amount_yen"] = .integer(amount)
+    guard let value = scenario.given.inputs.object("presentation") else { return }
+    let request = try presentationRequest(value)
+    let projection = try NavigationPresentationProjector.project(request)
+    publish(projection)
+  }
+
+  private func presentationRequest(
+    _ value: [String: JSONValue]
+  ) throws -> NavigationPresentationRequest {
+    guard let languageSelection = value.object("language_selection"),
+      let interfaceLocale = languageSelection.string("interface_locale")
+        .flatMap(KaidoReleaseLocale.init(rawValue:)),
+      let voiceLocale = languageSelection.string("guidance_voice_locale")
+        .flatMap(KaidoReleaseLocale.init(rawValue:)),
+      let passageEvidence = value.string("passage_evidence")
+        .flatMap(RoutePassageEvidence.init(rawValue:)),
+      let drivingContext = value.object("driving_context"),
+      let guidanceValue = value.object("guidance")
+    else {
+      throw ScenarioExecutionError.invalidInput("presentation")
+    }
+    return NavigationPresentationRequest(
+      snapshot: engine.snapshot,
+      nextMovementOccurrenceID: value.string("next_movement_occurrence_id"),
+      guidance: try guidancePresentationSource(guidanceValue),
+      languages: NavigationLanguageSelection(
+        interfaceLocale: interfaceLocale,
+        guidanceVoiceLocale: voiceLocale
+      ),
+      passageEvidence: passageEvidence,
+      drivingContext: PresentationDrivingContext(
+        isVehicleMoving: drivingContext.bool("vehicle_moving") ?? false,
+        isInsideDecisionZone: drivingContext.bool("inside_decision_zone") ?? false
+      ),
+      facilityNames: try localizedFacilityNames(value.object("facility_names") ?? [:])
+    )
+  }
+
+  private func guidancePresentationSource(
+    _ value: [String: JSONValue]
+  ) throws -> GuidancePresentationSource {
+    guard let localizedValues = value.object("localized_content") else {
+      throw ScenarioExecutionError.invalidInput("presentation.guidance.localized_content")
+    }
+    var localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent] = [:]
+    for (localeValue, contentValue) in localizedValues {
+      guard let locale = KaidoReleaseLocale(rawValue: localeValue),
+        let content = contentValue.objectValue,
+        let spokenFormValues = content.object("spoken_forms")
+      else {
+        throw ScenarioExecutionError.invalidInput("presentation.guidance.localized_content")
+      }
+      let spokenForms = spokenFormValues.compactMapValues(\.stringValue)
+      guard spokenForms.count == spokenFormValues.count else {
+        throw ScenarioExecutionError.invalidInput("presentation.guidance.spoken_forms")
+      }
+      localizedContent[locale] = LocalizedGuidanceContent(
+        displayText: try content.requiredString("display_text"),
+        spokenText: try content.requiredString("spoken_text"),
+        spokenForms: spokenForms,
+        preservedJapaneseSignText: try content.requiredString(
+          "preserved_japanese_sign_text"
+        )
+      )
+    }
+    return GuidancePresentationSource(
+      routeShields: (value.array("route_shields") ?? []).compactMap(\.stringValue),
+      japaneseSignText: try value.requiredString("japanese_sign_text"),
+      localizedContent: localizedContent
+    )
+  }
+
+  private func localizedFacilityNames(
+    _ values: [String: JSONValue]
+  ) throws -> [String: LocalizedFacilityName] {
+    var result: [String: LocalizedFacilityName] = [:]
+    for (facilityID, namesValue) in values {
+      guard let names = namesValue.objectValue else {
+        throw ScenarioExecutionError.invalidInput("presentation.facility_names")
+      }
+      var localizedNames: [KaidoReleaseLocale: String] = [:]
+      for (localeValue, nameValue) in names {
+        guard let locale = KaidoReleaseLocale(rawValue: localeValue),
+          let name = nameValue.stringValue
+        else {
+          throw ScenarioExecutionError.invalidInput("presentation.facility_names")
+        }
+        localizedNames[locale] = name
+      }
+      result[facilityID] = LocalizedFacilityName(values: localizedNames)
+    }
+    return result
+  }
+
+  private mutating func publish(_ review: PreDriveReviewPresentation) {
+    adapterObservations["route_summary.actual_distance_km"] = .number(
+      review.actualDistanceKM
+    )
+    adapterObservations["route_summary.toll.status"] = .string(
+      review.tollEvidenceStatus.rawValue
+    )
+    adapterObservations["route_summary.passage.tone"] = .string(
+      review.passage.tone.rawValue
+    )
+    adapterObservations["route_summary.passage.uses_positive_open_color"] = .bool(
+      review.passage.usesPositiveOpenColor
+    )
+    if let tariffDistanceKM = review.tariffDistanceKM {
+      adapterObservations["route_summary.tariff_distance_km"] = .number(
+        tariffDistanceKM
+      )
+    }
+    if let estimatedAmountYen = review.estimatedAmountYen {
+      adapterObservations["route_summary.toll.estimated_amount_yen"] = .integer(
+        estimatedAmountYen
+      )
+    }
+  }
+
+  private mutating func publish(_ projection: NavigationPresentationProjection) {
+    adapterObservations["presentation.kernel.interface_locale"] = .string(
+      projection.interfaceLocale.rawValue
+    )
+    adapterObservations["presentation.kernel.voice_locale"] = .string(
+      projection.voice.locale.rawValue
+    )
+    adapterObservations["presentation.kernel.voice.spoken_text"] = .string(
+      projection.voice.spokenText
+    )
+    publish(projection.iPhone, prefix: "presentation.kernel.phone")
+    publish(projection.carPlay, prefix: "presentation.kernel.carplay")
+  }
+
+  private mutating func publish(
+    _ presentation: NavigationSurfacePresentation,
+    prefix: String
+  ) {
+    adapterObservations["\(prefix).primary"] = .bool(presentation.isPrimarySurface)
+    adapterObservations["\(prefix).marker"] = .string(presentation.marker.rawValue)
+    adapterObservations["\(prefix).route_shields"] = .strings(
+      presentation.routeShields
+    )
+    adapterObservations["\(prefix).japanese_sign_text"] = .string(
+      presentation.japaneseSignText
+    )
+    adapterObservations["\(prefix).localized_display_text"] = .string(
+      presentation.localizedDisplayText
+    )
+    adapterObservations["\(prefix).passage_tone"] = .string(
+      presentation.passage.tone.rawValue
+    )
+    adapterObservations["\(prefix).uses_positive_open_color"] = .bool(
+      presentation.passage.usesPositiveOpenColor
+    )
+    adapterObservations["\(prefix).route_editing_availability"] = .string(
+      presentation.routeEditingAvailability.rawValue
+    )
+    adapterObservations["\(prefix).requires_phone_touch_while_moving"] = .bool(
+      presentation.requiresPhoneTouchWhileMoving
+    )
+    if let routePlanID = presentation.routePlanID {
+      adapterObservations["\(prefix).route_plan_id"] = .string(routePlanID)
+    }
+    if let currentOccurrenceID = presentation.currentOccurrenceID {
+      adapterObservations["\(prefix).current_occurrence_id"] = .string(
+        currentOccurrenceID
+      )
+    }
+    if let nextMovementOccurrenceID = presentation.nextMovementOccurrenceID {
+      adapterObservations["\(prefix).next_movement_occurrence_id"] = .string(
+        nextMovementOccurrenceID
+      )
+    }
+    if let finishDrive = presentation.finishDrive {
+      adapterObservations["\(prefix).finish.exit_facility_id"] = .string(
+        finishDrive.exitFacilityID
+      )
+      adapterObservations["\(prefix).finish.localized_exit_name"] = .string(
+        finishDrive.localizedExitName
+      )
+      adapterObservations["\(prefix).finish.announcement_priority"] = .string(
+        finishDrive.announcementPriority.rawValue
+      )
     }
   }
 

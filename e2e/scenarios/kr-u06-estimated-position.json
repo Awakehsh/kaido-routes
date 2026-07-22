@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U06",
+  "title": "Estimated topology position is visually distinct from a measured fix",
+  "layer": "IPHONE_UI",
+  "tags": ["position", "confidence", "tunnel"],
+  "purpose": "Prevent a low-confidence or projected topology location from being rendered as a precise measured vehicle position.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This checks presentation semantics, not visual pixels or device location quality."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-position-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "zh-Hans"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "route_shields": ["C2"],
+          "japanese_sign_text": "C2 中央環状線・大井方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "C2 中央環状線・大井方面",
+              "spoken_text": "中央環状線、大井方面",
+              "spoken_forms": {"C2": "シーツー"},
+              "preserved_japanese_sign_text": "C2 中央環状線・大井方面"
+            },
+            "zh-Hans": {
+              "display_text": "跟随 C2 中央环状线・大井方向",
+              "spoken_text": "跟随 C2 中央环状线，大井方向",
+              "spoken_forms": {"C2": "C2 路线"},
+              "preserved_japanese_sign_text": "C2 中央環状線・大井方面"
+            },
+            "en": {
+              "display_text": "Follow C2 toward Oi",
+              "spoken_text": "Follow Route C2 toward Oi",
+              "spoken_forms": {"C2": "Route C2"},
+              "preserved_japanese_sign_text": "C2 中央環状線・大井方面"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "degraded-fix",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "confidence": "LOW",
+        "age_ms": 12000
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "phone-marker-is-estimated",
+      "after": "degraded-fix",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.marker",
+      "matcher": "EQUALS",
+      "expected": "ESTIMATED",
+      "rationale": "The phone cannot show a measured marker for stale low-confidence evidence."
+    },
+    {
+      "id": "carplay-marker-is-estimated",
+      "after": "degraded-fix",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.marker",
+      "matcher": "EQUALS",
+      "expected": "ESTIMATED",
+      "rationale": "CarPlay receives the same conservative marker semantics."
+    },
+    {
+      "id": "core-confidence-remains-low",
+      "after": "degraded-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.location_confidence",
+      "matcher": "EQUALS",
+      "expected": "LOW",
+      "rationale": "Presentation does not upgrade the navigation confidence source."
+    }
+  ]
+}

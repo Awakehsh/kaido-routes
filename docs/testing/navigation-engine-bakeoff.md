@@ -471,8 +471,9 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 32 scenarios with 181 semantic assertions executable at L1/L2. KR-S16
-   crosses the incremental matcher-to-navigation boundary.
+   current 40 scenarios with 215 semantic assertions executable at L1/L2. KR-S16
+   crosses the incremental matcher-to-navigation boundary; KR-U04 through U08
+   and KR-U10 through U12 cross the shared presentation projection boundary.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
@@ -544,7 +545,11 @@ gate.
    scoped reliability evaluator, and timed calibration session are executable.
    Run the target device matrix and collect independently annotated held-out
    evidence; no current test substitutes for that field work.
-10. Add SwiftUI phone presentation, then the CarPlay adapter.
+10. **Partial complete:** `KaidoPresentation` now projects one navigation snapshot
+    into phone, CarPlay, and independently selected voice values, with executable
+    sign, confidence, road-status, interaction, pre-drive, handoff, and Finish
+    drive contracts. Add the SwiftUI phone renderer and accessibility binding,
+    then the `CPMapTemplate` adapter; neither platform layer exists yet.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 

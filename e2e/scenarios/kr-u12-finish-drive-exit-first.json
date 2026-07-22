@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U12",
+  "title": "Finish drive names the planned exit before changing branch guidance",
+  "layer": "CARPLAY",
+  "tags": ["finish-drive", "exit", "guidance", "safety"],
+  "purpose": "Tell the driver which released exit will end the cruise before presenting its branch sequence.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The facility and guidance text are synthetic and do not release a real exit path."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-finish-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.presentation-finish",
+      "network_snapshot_id": "test.snapshot.presentation-finish-v1",
+      "entry_facility_id": "test.entry",
+      "exit_facility_id": "test.exit.default",
+      "recovery_policy": "SAFE_EXIT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.current",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.current"
+        },
+        {
+          "occurrence_id": "test.occurrence.egress",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.egress"
+        }
+      ]
+    },
+    "inputs": {
+      "precomputed_egress_options": [
+        {
+          "egress_option_id": "test.egress.shibakoen",
+          "first_eligible_occurrence_id": "test.occurrence.egress",
+          "exit_facility_id": "test.exit.shibakoen",
+          "egress_occurrence_ids": ["test.occurrence.egress"],
+          "released": true
+        }
+      ],
+      "presentation": {
+        "next_movement_occurrence_id": "test.occurrence.egress",
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "REALTIME_CONFIRMED_PASSABLE",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "route_shields": ["C1"],
+          "japanese_sign_text": "芝公園出口",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "芝公園出口へ進みます",
+              "spoken_text": "芝公園出口へ進みます",
+              "spoken_forms": {"芝公園": "しばこうえん"},
+              "preserved_japanese_sign_text": "芝公園出口"
+            },
+            "zh-Hans": {
+              "display_text": "将从芝公园出口结束驾驶",
+              "spoken_text": "将从芝公园出口结束驾驶",
+              "spoken_forms": {"芝公園": "芝公园"},
+              "preserved_japanese_sign_text": "芝公園出口"
+            },
+            "en": {
+              "display_text": "Finish at Shibakoen Exit",
+              "spoken_text": "Finish at Shibakoen Exit",
+              "spoken_forms": {"芝公園": "Shibakoen"},
+              "preserved_japanese_sign_text": "芝公園出口"
+            }
+          }
+        },
+        "facility_names": {
+          "test.exit.shibakoen": {
+            "ja-JP": "芝公園出口",
+            "zh-Hans": "芝公园出口",
+            "en": "Shibakoen Exit"
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.presentation-finish",
+      "current_occurrence_id": "test.occurrence.current",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "finish",
+      "at_ms": 0,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "FINISH_DRIVE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "egress-plan-is-active",
+      "after": "finish",
+      "category": "NAVIGATION",
+      "subject": "egress_plan.status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "Finish drive activates a released egress plan rather than an arbitrary nearby ramp."
+    },
+    {
+      "id": "phone-names-exit",
+      "after": "finish",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.finish.localized_exit_name",
+      "matcher": "EQUALS",
+      "expected": "芝公园出口",
+      "rationale": "The interface names the selected exit in the interface language."
+    },
+    {
+      "id": "carplay-names-same-exit",
+      "after": "finish",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.finish.exit_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.exit.shibakoen",
+      "rationale": "Phone and CarPlay present the same selected exit facility."
+    },
+    {
+      "id": "exit-announcement-precedes-branch",
+      "after": "finish",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.finish.announcement_priority",
+      "matcher": "EQUALS",
+      "expected": "BEFORE_BRANCH_GUIDANCE",
+      "rationale": "The user first learns where the drive will end, then receives branch instructions."
+    },
+    {
+      "id": "no-reversal-is-authorized",
+      "after": "finish",
+      "category": "SAFETY",
+      "subject": "egress_plan.prohibited_actions",
+      "matcher": "CONTAINS",
+      "expected": "U_TURN_OR_REVERSAL",
+      "rationale": "Finish drive never means back, reverse, or U-turn."
+    }
+  ]
+}

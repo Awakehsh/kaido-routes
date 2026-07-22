@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U11",
+  "title": "Interface and guidance voice languages are selected independently",
+  "layer": "IPHONE_UI",
+  "tags": ["localization", "voice", "language", "sign"],
+  "purpose": "Allow a Chinese interface with English spoken guidance while preserving the Japanese physical sign target.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This does not verify installed system voices or final pronunciation quality."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-language-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": false,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "B 湾岸線、横浜方面へ",
+              "spoken_forms": {"B": "ビー"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {"B": "B 路线"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {"B": "Route B"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "interface-is-chinese",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.kernel.interface_locale",
+      "matcher": "EQUALS",
+      "expected": "zh-Hans",
+      "rationale": "Interface selection controls displayed explanatory text."
+    },
+    {
+      "id": "phone-copy-is-chinese",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.localized_display_text",
+      "matcher": "EQUALS",
+      "expected": "保持左侧，跟随 B 湾岸线・横滨方向",
+      "rationale": "The phone uses the selected interface language."
+    },
+    {
+      "id": "voice-is-english",
+      "after": "start",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice_locale",
+      "matcher": "EQUALS",
+      "expected": "en",
+      "rationale": "Voice language changes independently from the interface."
+    },
+    {
+      "id": "spoken-copy-is-english",
+      "after": "start",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.spoken_text",
+      "matcher": "EQUALS",
+      "expected": "Keep left for Route B toward Yokohama",
+      "rationale": "The voice adapter receives the reviewed English spoken form."
+    },
+    {
+      "id": "sign-remains-japanese",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.japanese_sign_text",
+      "matcher": "EQUALS",
+      "expected": "B 湾岸線・横浜方面",
+      "rationale": "Neither language setting can replace the physical sign target."
+    }
+  ]
+}

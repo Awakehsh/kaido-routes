@@ -106,7 +106,17 @@ or software-simulated samples can never satisfy the field statistical floor.
 No iPhone/head-unit trace has been collected yet, so device performance and
 confidence calibration remain unproven.
 
-The feasibility core currently executes portable scenarios for seventeen hard
+The platform-light presentation boundary is executable as a separate
+`KaidoPresentation` module. It projects one `NavigationSnapshot` into phone,
+CarPlay, and voice values without owning route progress. Japanese sign text and
+route shields remain visible in every locale, UI and voice languages are
+independent, estimated positions cannot render as measured, unconfirmed passage
+cannot use a positive open-road state, moving decision zones expose no route
+editing, and Finish drive names its compiled exit first. Eight new portable
+presentation scenarios prove those semantics; they are not SwiftUI, CarPlay
+entitlement, accessibility, audio, or physical head-unit tests.
+
+The feasibility core currently executes portable scenarios for twenty-one hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -145,6 +155,15 @@ properties that must remain proven as the product expands:
 17. an incremental matcher session cannot advance navigation on stale or first
     post-gap evidence, and resetting matcher evidence cannot move RoutePlan
     progress backward.
+18. phone and CarPlay consume one occurrence and next-movement projection, while
+    connection state changes only which surface is primary.
+19. Japanese sign targets and route shields survive all three interface locales,
+    while UI and guidance-voice languages remain independently selectable.
+20. estimated or unresolved positions and realtime-unconfirmed road status retain
+    conservative presentation semantics on every surface.
+21. pre-drive review keeps actual distance, tariff distance, toll evidence, and
+    live-passage evidence separate; moving decision zones cannot request route
+    editing, and Finish drive names the compiled exit before branch guidance.
 
 ## Repository map
 
@@ -162,7 +181,8 @@ properties that must remain proven as the product expands:
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`benchmarks/surface-routing/`](benchmarks/surface-routing/README.md): directional entrance fixtures and provider hard gates.
 - [`benchmarks/map-matching/`](benchmarks/map-matching/README.md): deterministic matcher replay fixtures, evaluator, and negative control.
-- [`Sources/`](Sources): platform-light Swift domain, routing, navigation, and scenario-adapter modules.
+- [`Sources/`](Sources): platform-light Swift domain, routing, navigation,
+  presentation, and scenario-adapter modules.
 - [`Tests/`](Tests): Swift Testing suites that execute the portable scenarios.
 
 `research/` is a local, ignored notebook for source discovery and raw analysis.

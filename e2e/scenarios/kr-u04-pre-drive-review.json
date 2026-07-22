@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U04",
+  "title": "Pre-drive review separates driven distance, tariff distance, toll evidence, and live status",
+  "layer": "IPHONE_UI",
+  "tags": ["pre-drive", "distance", "tariff", "realtime"],
+  "purpose": "Prevent the route UI from presenting actual distance as tariff distance or an unconfirmed traffic feed as proof that the route is open.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Scalar values are illustrative product-contract fixtures, not a current toll quote."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.pre-drive-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "tariff_quotes": [
+      {
+        "quote_id": "test.quote.pre-drive",
+        "status": "ESTIMATED",
+        "vehicle_class": "STANDARD",
+        "tariff_version_id": "test.tariff.active",
+        "tariff_version_status": "ACTIVE",
+        "tariff_distance_km": 14.2,
+        "estimated_amount_yen": 630,
+        "checked_at": "2026-07-23T00:00:00+09:00",
+        "official_query_reference": "https://search.shutoko.jp/"
+      }
+    ],
+    "inputs": {
+      "route_summary": {
+        "actual_distance_km": 72.4,
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED"
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "review",
+      "at_ms": 0,
+      "type": "TARIFF_QUOTED",
+      "payload": {
+        "quote_id": "test.quote.pre-drive"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "actual-distance-is-route-distance",
+      "after": "review",
+      "category": "UI",
+      "subject": "route_summary.actual_distance_km",
+      "matcher": "EQUALS",
+      "expected": 72.4,
+      "rationale": "The planned drive distance remains its own review metric."
+    },
+    {
+      "id": "tariff-distance-is-separate",
+      "after": "review",
+      "category": "TOLL",
+      "subject": "route_summary.tariff_distance_km",
+      "matcher": "EQUALS",
+      "expected": 14.2,
+      "rationale": "Tariff distance cannot be derived from the user's repeated route occurrences."
+    },
+    {
+      "id": "toll-evidence-is-labeled",
+      "after": "review",
+      "category": "TOLL",
+      "subject": "route_summary.toll.status",
+      "matcher": "EQUALS",
+      "expected": "ESTIMATED",
+      "rationale": "The displayed amount carries its evidence status."
+    },
+    {
+      "id": "unconfirmed-status-is-explicit",
+      "after": "review",
+      "category": "UI",
+      "subject": "route_summary.passage.tone",
+      "matcher": "EQUALS",
+      "expected": "UNCONFIRMED",
+      "rationale": "No known planned conflict still does not prove live passage."
+    },
+    {
+      "id": "unconfirmed-status-is-not-green",
+      "after": "review",
+      "category": "SAFETY",
+      "subject": "route_summary.passage.uses_positive_open_color",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The pre-drive review cannot visually imply a confirmed open road without live evidence."
+    }
+  ]
+}

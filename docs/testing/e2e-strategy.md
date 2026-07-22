@@ -105,6 +105,13 @@ navigation.signal_reacquisition_status
 navigation.route_candidate_resolution
 presentation.active_surface
 presentation.carplay_connection_state
+presentation.kernel.phone.current_occurrence_id
+presentation.kernel.phone.next_movement_occurrence_id
+presentation.kernel.carplay.current_occurrence_id
+presentation.kernel.carplay.next_movement_occurrence_id
+presentation.kernel.phone.marker
+presentation.kernel.phone.passage_tone
+presentation.kernel.phone.route_editing_availability
 shared_route.network_snapshot_id
 shared_route.occurrence_ids
 compiler.selected_template_variant_id
@@ -130,6 +137,13 @@ This split lets coding agents implement MapKit, Core Location, iPhone UI, and
 CarPlay adapters independently without changing route semantics. CI injects
 surface candidates and sensor observations; it never calls live MapKit or waits
 for a real geofence.
+
+The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08
+and KR-U10 through U12. These scenarios verify semantic view values shared by
+phone, CarPlay, and voice. They remain L1/L2 contract execution until real
+SwiftUI and `CPMapTemplate` adapters bind those values to accessibility-visible
+views in L3/L4; their `layer` records the intended final verification surface,
+not a claim that a simulator or head unit ran in CI.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U07",
+  "title": "Realtime-unconfirmed passage never renders as a green open-road state",
+  "layer": "IPHONE_UI",
+  "tags": ["realtime", "closure", "status", "safety"],
+  "purpose": "Keep missing realtime evidence visibly distinct from confirmed passage on phone and CarPlay.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This verifies semantic tone and color authority, not a final visual palette."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-status-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "ja-JP",
+          "guidance_voice_locale": "ja-JP"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": false,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "route_shields": ["C1"],
+          "japanese_sign_text": "C1 都心環状線",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "C1 都心環状線",
+              "spoken_text": "都心環状線",
+              "spoken_forms": {"C1": "シーワン"},
+              "preserved_japanese_sign_text": "C1 都心環状線"
+            },
+            "zh-Hans": {
+              "display_text": "C1 都心环状线",
+              "spoken_text": "C1 都心环状线",
+              "spoken_forms": {"C1": "C1 路线"},
+              "preserved_japanese_sign_text": "C1 都心環状線"
+            },
+            "en": {
+              "display_text": "C1 Inner Circular Route",
+              "spoken_text": "Route C1, Inner Circular Route",
+              "spoken_forms": {"C1": "Route C1"},
+              "preserved_japanese_sign_text": "C1 都心環状線"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "review",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "phone-tone-is-unconfirmed",
+      "after": "review",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.passage_tone",
+      "matcher": "EQUALS",
+      "expected": "UNCONFIRMED",
+      "rationale": "The phone says realtime passage is unconfirmed."
+    },
+    {
+      "id": "phone-has-no-positive-open-color",
+      "after": "review",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.uses_positive_open_color",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Unconfirmed evidence cannot authorize a green open-road treatment."
+    },
+    {
+      "id": "carplay-has-no-positive-open-color",
+      "after": "review",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.uses_positive_open_color",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "CarPlay cannot make a stronger operational claim than the phone."
+    }
+  ]
+}

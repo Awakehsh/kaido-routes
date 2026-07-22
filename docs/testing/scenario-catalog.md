@@ -49,21 +49,21 @@ should become scenarios when their layer is built.
 
 ## iPhone and CarPlay experience
 
-| ID | Behavior | Priority |
-|---|---|---:|
-| KR-U01 | Guided editor exposes only legal next choices | P0 |
-| KR-U02 | Expert editor can duplicate a closed subsequence as another lap | P0 |
-| KR-U03 | An ambiguous freehand corridor asks for resolution while parked | P1 |
-| KR-U04 | Pre-drive review separates actual distance, tariff distance, and toll status | P0 |
-| KR-U05 | Japanese sign target remains primary in Japanese, Chinese, and English UI | P0 |
-| KR-U06 | Estimated topology position is visually distinct from measured position | P0 |
-| KR-U07 | `REALTIME_UNCONFIRMED` cannot render as a green open-road state | P0 |
-| KR-U08 | Driving mode requires no route editing in a decision zone | P0 |
-| KR-U09 | Dynamic Type, VoiceOver, contrast, and route-shield recognition remain usable | P1 |
-| KR-U10 | Phone and CarPlay surfaces agree on current occurrence and next movement | P0 |
-| KR-U11 | UI and guidance-voice languages can be selected independently | P0 |
-| KR-U12 | Finish drive names the planned exit before changing branch guidance | P0 |
-| KR-U13 | Entrance recommendations explain directional compatibility, not only proximity | P0 |
+| ID | Behavior | Priority | State |
+|---|---|---:|---|
+| KR-U01 | Guided editor exposes only legal next choices | P0 | Planned |
+| KR-U02 | Expert editor can duplicate a closed subsequence as another lap | P0 | Planned |
+| KR-U03 | An ambiguous freehand corridor asks for resolution while parked | P1 | Planned |
+| KR-U04 | Pre-drive review separates actual distance, tariff distance, and toll status | P0 | Seeded |
+| KR-U05 | Japanese sign target remains primary in Japanese, Chinese, and English UI | P0 | Seeded |
+| KR-U06 | Estimated topology position is visually distinct from measured position | P0 | Seeded |
+| KR-U07 | `REALTIME_UNCONFIRMED` cannot render as a green open-road state | P0 | Seeded |
+| KR-U08 | Driving mode requires no route editing in a decision zone | P0 | Seeded |
+| KR-U09 | Dynamic Type, VoiceOver, contrast, and route-shield recognition remain usable | P1 | Planned |
+| KR-U10 | Phone and CarPlay surfaces agree on current occurrence and next movement | P0 | Seeded |
+| KR-U11 | UI and guidance-voice languages can be selected independently | P0 | Seeded |
+| KR-U12 | Finish drive names the planned exit before changing branch guidance | P0 | Seeded |
+| KR-U13 | Entrance recommendations explain directional compatibility, not only proximity | P0 | Planned |
 
 ## Evidence and field verification
 

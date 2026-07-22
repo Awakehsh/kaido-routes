@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U10",
+  "title": "Phone and CarPlay agree on the current occurrence and next movement",
+  "layer": "CARPLAY",
+  "tags": ["carplay", "phone", "occurrence", "guidance"],
+  "purpose": "Project both surfaces from one navigation snapshot instead of maintaining two route-progress states.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This is a platform-light presentation contract, not a CPMapTemplate or physical head-unit test."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-handoff-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.presentation-handoff",
+      "network_snapshot_id": "test.snapshot.presentation-handoff-v1",
+      "entry_facility_id": "test.entry",
+      "exit_facility_id": "test.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.current",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.current"
+        },
+        {
+          "occurrence_id": "test.occurrence.next-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.next"
+        }
+      ]
+    },
+    "inputs": {
+      "presentation": {
+        "next_movement_occurrence_id": "test.occurrence.next-movement",
+        "language_selection": {
+          "interface_locale": "en",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "REALTIME_CONFIRMED_PASSABLE",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "B 湾岸線、横浜方面へ",
+              "spoken_forms": {"B": "ビー"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {"B": "B 路线"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {"B": "Route B"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.presentation-handoff",
+      "current_occurrence_id": "test.occurrence.current",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "connect",
+      "at_ms": 1000,
+      "type": "CARPLAY_CONNECTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "phone-current-occurrence",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.current",
+      "rationale": "The phone projection reads the shared current occurrence."
+    },
+    {
+      "id": "carplay-current-occurrence",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.current",
+      "rationale": "CarPlay reads the same occurrence rather than maintaining its own progress."
+    },
+    {
+      "id": "phone-next-movement",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.next_movement_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.next-movement",
+      "rationale": "The next branch is occurrence-scoped on the phone."
+    },
+    {
+      "id": "carplay-next-movement",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.next_movement_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.next-movement",
+      "rationale": "CarPlay must show the same next branch occurrence."
+    },
+    {
+      "id": "carplay-is-primary",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.primary",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "Connection changes presentation ownership, not navigation state."
+    },
+    {
+      "id": "phone-is-companion",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.primary",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The phone can remain a companion without becoming a second navigation authority."
+    }
+  ]
+}

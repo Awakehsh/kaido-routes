@@ -232,6 +232,27 @@ location, provider, restriction, and user events. Its internal state transitions
 remain pure reducer functions so that deterministic simulation does not need an
 actor, clock, device, or main thread.
 
+`KaidoPresentation` now implements the first executable part of this boundary.
+`NavigationPresentationProjector` consumes one immutable `NavigationSnapshot`
+and produces phone, CarPlay, and voice values. Both visual surfaces carry the
+same route-plan ID, current occurrence, next movement, marker certainty, route
+shield, Japanese sign target, passage evidence, interaction policy, and optional
+Finish drive exit; only `isPrimarySurface` differs across a CarPlay handoff.
+The voice locale is selected separately from the interface locale.
+
+The projector fails closed when any release locale is incomplete, a locale
+replaces the Japanese sign target, CarPlay ownership contradicts connection
+state, or the selected Finish drive exit lacks a name in the interface locale.
+Only `REALTIME_CONFIRMED_PASSABLE` may authorize a positive open-road color;
+`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` remains explicitly unconfirmed.
+LOW/projected or ambiguous positions become `ESTIMATED` or `UNRESOLVED`, and a
+moving decision zone exposes no route editor or required phone touch.
+
+This is a semantic projection kernel, not the full `GuidanceFrame` planner or a
+rendered UI. Distance stages, maneuver/lane fields, dynamic layout,
+accessibility, installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`,
+audio routing, and physical display timing remain adapter work and device gates.
+
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
 
@@ -267,10 +288,10 @@ Apple's CarPlay sample explicitly lets a navigation app draw a custom map while
 `CPMapTemplate` supplies the interaction overlay. This supports the topology-map
 direction without requiring an Apple base map on the CarPlay surface.
 
-The pure Swift lifecycle scenario proves this ownership boundary only. CarPlay
-entitlement, scene connection order, audio routing, simulator rendering, process
-termination, and wired/wireless head-unit behavior remain platform integration
-and field-test gates.
+The pure Swift lifecycle and presentation scenarios prove this ownership
+boundary only. CarPlay entitlement, scene connection order, audio routing,
+simulator rendering, process termination, and wired/wireless head-unit behavior
+remain platform integration and field-test gates.
 
 ## Routing responsibilities
 

@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U08",
+  "title": "Driving mode requires no route editing inside a decision zone",
+  "layer": "CARPLAY",
+  "tags": ["decision-zone", "interaction", "safety", "carplay"],
+  "purpose": "Make route editing unavailable and avoid requiring phone touch while the vehicle is moving through a branch decision.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Vehicle-motion and decision-zone state are synthetic inputs, not an automotive integration test."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.presentation-interaction-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "zh-Hans"
+        },
+        "passage_evidence": "REALTIME_CONFIRMED_PASSABLE",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": true
+        },
+        "guidance": {
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "左側を進み、B 湾岸線、横浜方面へ",
+              "spoken_forms": {"B": "ビー"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {"B": "B 路线"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {"B": "Route B"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "driving",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "phone-editor-is-unavailable",
+      "after": "driving",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.route_editing_availability",
+      "matcher": "EQUALS",
+      "expected": "UNAVAILABLE_IN_DECISION_ZONE",
+      "rationale": "The route is configured before driving, not while choosing a JCT branch."
+    },
+    {
+      "id": "carplay-editor-is-unavailable",
+      "after": "driving",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.route_editing_availability",
+      "matcher": "EQUALS",
+      "expected": "UNAVAILABLE_IN_DECISION_ZONE",
+      "rationale": "The vehicle display cannot expose a different editing policy."
+    },
+    {
+      "id": "phone-touch-is-not-required",
+      "after": "driving",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.requires_phone_touch_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The current guidance must remain executable without touching the phone."
+    }
+  ]
+}

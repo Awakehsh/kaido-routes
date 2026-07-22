@@ -145,16 +145,29 @@ instructions, raw output, or scalar output until the relevant terms have been
 reviewed.
 
 For private feasibility work, `scripts/build_osm_surface_graph.py` converts a
-bounded Overpass JSON extract into the inspector's directed-edge format. It
-preserves OSM way and node lineage in every ID plus the OSM base timestamp and
-ODbL attribution in graph provenance. The generated graph is ODbL data and must
-remain outside the Apache-2.0 code boundary unless a deliberate data release is
-prepared.
+bounded Overpass JSON or OSM API XML extract into the inspector's directed-edge
+format. It preserves OSM way and node lineage in every ID plus the source
+snapshot timestamp and ODbL attribution in graph provenance. OSM XML has no
+Overpass base timestamp, so `--source-snapshot-at` is mandatory for that input.
+The generated graph is ODbL data and must remain outside the Apache-2.0 code
+boundary unless a deliberate data release is prepared.
+
+```sh
+python3 scripts/build_osm_surface_graph.py \
+  --input research/evidence/bounded-map.osm \
+  --input-format osm-xml \
+  --source-snapshot-at 2026-07-22T14:00:00Z \
+  --source-uri 'https://api.openstreetmap.org/api/0.6/map?bbox=reviewed-bounds' \
+  --network-snapshot-id private.reviewed.snapshot \
+  --expressway-toll-domain-id jp.shuto \
+  --output research/evidence/bounded-surface-graph.json
+```
 
 Run the offline checks with:
 
 ```sh
 swift test
+python3 -m unittest discover -s scripts/tests
 xcrun swift-format lint --strict --recursive Package.swift Sources Tests
 python3 -m json.tool benchmarks/surface-routing/schema/entrance-probe-fixture.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.schema.json >/dev/null

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert a bounded Overpass extract into a Kaido surface graph.
+"""Convert a bounded OpenStreetMap extract into a Kaido surface graph.
 
 The generated graph is derived from OpenStreetMap and remains under ODbL. This
 script is Apache-2.0 project code; its output is not relicensed by the repository.
@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -37,8 +38,23 @@ FORBIDDEN_ACCESS = {"no", "private"}
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", default="-", help="Overpass JSON path or - for stdin")
+    parser.add_argument(
+        "--input", default="-", help="Overpass JSON or OSM XML path, or - for stdin"
+    )
     parser.add_argument("--output", default="-", help="Graph JSON path or - for stdout")
+    parser.add_argument(
+        "--input-format",
+        choices=("auto", "overpass-json", "osm-xml"),
+        default="auto",
+        help="Input encoding; auto inspects the first non-whitespace character",
+    )
+    parser.add_argument(
+        "--source-snapshot-at",
+        help=(
+            "Explicit retrieval timestamp required for OSM XML, whose root does not "
+            "carry an Overpass base timestamp"
+        ),
+    )
     parser.add_argument("--network-snapshot-id", required=True)
     parser.add_argument(
         "--source-uri",
@@ -52,13 +68,86 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: str) -> dict[str, Any]:
+def load_text(path: str) -> str:
     stream: TextIO
     if path == "-":
         stream = sys.stdin
-        return json.load(stream)
+        return stream.read()
     with Path(path).open(encoding="utf-8") as stream:
-        return json.load(stream)
+        return stream.read()
+
+
+def parse_osm_xml(text: str, source_snapshot_at: str | None) -> dict[str, Any]:
+    if not source_snapshot_at:
+        raise ValueError("--source-snapshot-at is required for OSM XML input")
+
+    root = ET.fromstring(text)
+    if root.tag != "osm":
+        raise ValueError("OSM XML root element must be osm")
+
+    elements: list[dict[str, Any]] = []
+    for child in root:
+        if child.tag == "node":
+            node_id = child.get("id")
+            latitude = child.get("lat")
+            longitude = child.get("lon")
+            if node_id is None or latitude is None or longitude is None:
+                continue
+            elements.append(
+                {
+                    "type": "node",
+                    "id": int(node_id),
+                    "lat": float(latitude),
+                    "lon": float(longitude),
+                }
+            )
+        elif child.tag == "way":
+            way_id = child.get("id")
+            if way_id is None:
+                continue
+            elements.append(
+                {
+                    "type": "way",
+                    "id": int(way_id),
+                    "nodes": [
+                        int(node.attrib["ref"])
+                        for node in child.findall("nd")
+                        if "ref" in node.attrib
+                    ],
+                    "tags": {
+                        tag.attrib["k"]: tag.attrib["v"]
+                        for tag in child.findall("tag")
+                        if "k" in tag.attrib and "v" in tag.attrib
+                    },
+                }
+            )
+
+    return {
+        "osm3s": {"timestamp_osm_base": source_snapshot_at},
+        "elements": elements,
+    }
+
+
+def load_document(
+    path: str, input_format: str, source_snapshot_at: str | None
+) -> dict[str, Any]:
+    text = load_text(path)
+    resolved_format = input_format
+    if resolved_format == "auto":
+        first_character = text.lstrip()[:1]
+        if first_character in {"{", "["}:
+            resolved_format = "overpass-json"
+        elif first_character == "<":
+            resolved_format = "osm-xml"
+        else:
+            raise ValueError("could not detect input format")
+
+    if resolved_format == "overpass-json":
+        document = json.loads(text)
+        if not isinstance(document, dict):
+            raise ValueError("Overpass JSON root must be an object")
+        return document
+    return parse_osm_xml(text, source_snapshot_at)
 
 
 def write_json(value: dict[str, Any], path: str) -> None:
@@ -205,7 +294,11 @@ def convert(
 def main() -> None:
     arguments = parse_arguments()
     result = convert(
-        load_json(arguments.input),
+        load_document(
+            arguments.input,
+            arguments.input_format,
+            arguments.source_snapshot_at,
+        ),
         arguments.network_snapshot_id,
         arguments.source_uri,
         arguments.expressway_toll_domain_id,

@@ -349,6 +349,8 @@ private struct ScenarioHarness {
       candidateOccurrenceIDs: Set(
         (payload.array("candidate_occurrence_ids") ?? []).compactMap(\.stringValue)
       ),
+      candidateResolution: payload.string("candidate_resolution")
+        .flatMap(RouteCandidateResolution.init(rawValue:)) ?? .unknown,
       projectedOccurrenceID: payload.string("projected_occurrence_id"),
       observedAtMilliseconds: observedAtMilliseconds,
       reportedConfidence: payload.string("confidence").flatMap(LocationConfidence.init(rawValue:)),
@@ -545,6 +547,7 @@ extension NavigationSnapshot {
       "navigation.location_confidence": .string(locationConfidence.rawValue),
       "navigation.marker_style": .string(markerStyle),
       "navigation.signal_reacquisition_status": .string(signalReacquisitionStatus.rawValue),
+      "navigation.route_candidate_resolution": .string(routeCandidateResolution.rawValue),
       "route.executable": .bool(routeExecutable),
       "route.skipped_occurrence_ids": .strings(skippedOccurrenceIDs),
       "route.warnings": .strings(routeWarnings),

@@ -124,6 +124,44 @@ func postTunnelReacquisitionRequiresATimelyWindow() {
   #expect(engine.snapshot.currentOccurrenceID == "second")
 }
 
+@Test("Resolved route-candidate evidence must identify exactly one occurrence")
+func resolvedCandidateEvidenceRequiresOneOccurrence() {
+  let routePlan = testRoutePlan()
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: routePlan),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.observeLocation(
+    LocationObservation(
+      matchedOccurrenceID: "second",
+      candidateOccurrenceIDs: ["first", "second"],
+      candidateResolution: .resolved,
+      observedAtMilliseconds: 1_000,
+      reportedConfidence: .high
+    ))
+
+  #expect(engine.snapshot.currentOccurrenceID == "first")
+  #expect(engine.snapshot.markerStyle == "UNRESOLVED")
+  #expect(engine.snapshot.ambiguityReason == "ROUTE_CANDIDATE_EVIDENCE_INCONSISTENT")
+
+  engine.observeLocation(
+    LocationObservation(
+      matchedOccurrenceID: "second",
+      candidateOccurrenceIDs: ["second"],
+      candidateResolution: .resolved,
+      observedAtMilliseconds: 2_000,
+      reportedConfidence: .high
+    ))
+
+  #expect(engine.snapshot.currentOccurrenceID == "second")
+  #expect(engine.snapshot.ambiguityReason == nil)
+}
+
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",

@@ -38,10 +38,10 @@ should become scenarios when their layer is built.
 | KR-S06 | A restriction arriving during a drive changes state without unsafe interaction | P1 | Planned |
 | KR-S07 | Optional PA closure skips the visit while preserving the mainline route | P0 | Seeded |
 | KR-S08 | Required PA closure blocks route execution | P0 | Planned |
-| KR-S09 | Stacked-road candidates remain ambiguous until evidence separates them | P0 | Planned |
+| KR-S09 | Stacked-road candidates remain ambiguous until evidence separates them | P0 | Seeded |
 | KR-S10 | Voice prompts fire once per occurrence at deterministic anchors | P0 | Planned |
 | KR-S11 | CarPlay disconnect falls back without losing route occurrence | P1 | Planned |
-| KR-S12 | A stale location timestamp cannot confirm a committed movement | P0 | Planned |
+| KR-S12 | A stale location timestamp cannot confirm a committed movement | P0 | Seeded |
 | KR-S13 | Exact ramp, heading, and continuity evidence automatically enter strict-route mode | P0 | Seeded |
 | KR-S14 | Finish drive activates a legal precomputed egress without reversing or taking an arbitrary exit | P0 | Seeded |
 | KR-S15 | A geofence-only or low-confidence entrance observation cannot enter strict-route mode | P0 | Seeded |

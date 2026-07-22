@@ -25,7 +25,8 @@ properties that must remain proven as the product expands:
 1. repeated road segments remain distinct ordered occurrences;
 2. only legal directional junction movements can be authored and executed;
 3. navigation stays honest when tunnel or stacked-road positioning is uncertain,
-   and requires a consistent post-gap window before resuming an exact occurrence;
+   keeps route-candidate resolution separate from raw fix quality, and requires a
+   consistent post-gap window before resuming an exact occurrence;
 4. a current-location recommendation selects a compatible directional entrance
    approach that is available at the predicted entry time, not merely the
    nearest IC name;

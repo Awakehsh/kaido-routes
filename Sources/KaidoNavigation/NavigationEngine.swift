@@ -88,6 +88,7 @@ public struct NavigationEngine: Sendable {
     let confidence = observation.effectiveConfidence
     snapshot.locationConfidence = confidence
     snapshot.markerStyle = confidence <= .low ? "ESTIMATED" : "MEASURED"
+    snapshot.routeCandidateResolution = observation.candidateResolution
 
     if isInTunnel && confidence <= .low {
       tunnelSignalWasDegraded = true
@@ -106,6 +107,26 @@ public struct NavigationEngine: Sendable {
       return
     }
 
+    let claimedOccurrenceIDs = claimedOccurrenceIDs(from: observation)
+    if observation.candidateResolution == .ambiguous {
+      snapshot.markerStyle = "UNRESOLVED"
+      snapshot.ambiguityReason = "MULTIPLE_OCCURRENCE_CANDIDATES"
+      return
+    }
+    if observation.candidateResolution == .resolved,
+      claimedOccurrenceIDs.count != 1
+    {
+      snapshot.markerStyle = "UNRESOLVED"
+      snapshot.ambiguityReason = "ROUTE_CANDIDATE_EVIDENCE_INCONSISTENT"
+      return
+    }
+    if isRouteCandidateAmbiguity(snapshot.ambiguityReason),
+      observation.candidateResolution != .resolved
+    {
+      snapshot.markerStyle = "UNRESOLVED"
+      return
+    }
+
     if observation.insideEntryRegion,
       observation.directedEdgeID == nil,
       confidence <= .low
@@ -120,8 +141,18 @@ public struct NavigationEngine: Sendable {
 
     guard confidence == .high else { return }
 
+    if observation.candidateResolution == .resolved,
+      isRouteCandidateAmbiguity(snapshot.ambiguityReason)
+    {
+      snapshot.ambiguityReason = nil
+      snapshot.markerStyle = "MEASURED"
+    }
+
+    let singletonCandidateOccurrenceID =
+      claimedOccurrenceIDs.count == 1 ? claimedOccurrenceIDs.first : nil
     if let occurrenceID = observation.expectedOccurrenceID
       ?? observation.matchedOccurrenceID
+      ?? singletonCandidateOccurrenceID
     {
       advance(to: occurrenceID)
       return
@@ -330,6 +361,24 @@ public struct NavigationEngine: Sendable {
       candidateIDs.filter { occurrenceID in
         routePlan.occurrence(id: occurrenceID).map { $0.index >= currentIndex } ?? false
       })
+  }
+
+  private func claimedOccurrenceIDs(
+    from observation: LocationObservation
+  ) -> Set<String> {
+    var candidateIDs = observation.candidateOccurrenceIDs
+    if let expectedOccurrenceID = observation.expectedOccurrenceID {
+      candidateIDs.insert(expectedOccurrenceID)
+    }
+    if let matchedOccurrenceID = observation.matchedOccurrenceID {
+      candidateIDs.insert(matchedOccurrenceID)
+    }
+    return candidateIDs
+  }
+
+  private func isRouteCandidateAmbiguity(_ reason: String?) -> Bool {
+    reason == "MULTIPLE_OCCURRENCE_CANDIDATES"
+      || reason == "ROUTE_CANDIDATE_EVIDENCE_INCONSISTENT"
   }
 
   private mutating func beginReacquisitionWindow(

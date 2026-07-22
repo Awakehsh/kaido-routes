@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S09",
+  "title": "Stacked-road candidates remain unresolved until occurrence evidence separates them",
+  "layer": "SIMULATION",
+  "tags": ["ambiguity", "confidence", "stacked-road"],
+  "purpose": "Keep route progress and topology presentation unresolved while more than one route occurrence remains plausible, even when the raw location fix or provisional winner reports high confidence.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The stacked geometry and score separation are synthetic.",
+      "Replay and field traces are required to calibrate candidate generation and confidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.stacked-road-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.stacked-road",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "stacked-approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "upper-carriageway",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.upper"
+        },
+        {
+          "occurrence_id": "later-connector",
+          "index": 2,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.connector"
+        },
+        {
+          "occurrence_id": "lower-carriageway",
+          "index": 3,
+          "kind": "EDGE",
+          "entity_id": "test.edge.lower"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH",
+      "current_occurrence_id": "stacked-approach"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "ambiguous-stacked-fix",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 5,
+        "age_ms": 0,
+        "confidence": "HIGH",
+        "candidate_resolution": "AMBIGUOUS",
+        "matched_occurrence_id": "upper-carriageway",
+        "candidate_occurrence_ids": [
+          "upper-carriageway",
+          "lower-carriageway"
+        ]
+      }
+    },
+    {
+      "id": "separated-stacked-fix",
+      "at_ms": 2000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 5,
+        "age_ms": 0,
+        "confidence": "HIGH",
+        "candidate_resolution": "RESOLVED",
+        "matched_occurrence_id": "upper-carriageway",
+        "candidate_occurrence_ids": ["upper-carriageway"]
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "candidate-resolution-is-ambiguous",
+      "after": "ambiguous-stacked-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.route_candidate_resolution",
+      "matcher": "EQUALS",
+      "expected": "AMBIGUOUS",
+      "rationale": "Route-level candidate resolution is independent from raw coordinate confidence."
+    },
+    {
+      "id": "ambiguous-fix-does-not-advance",
+      "after": "ambiguous-stacked-fix",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "stacked-approach",
+      "rationale": "A provisional winner cannot commit while another stacked occurrence remains plausible."
+    },
+    {
+      "id": "stacked-position-is-unresolved",
+      "after": "ambiguous-stacked-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "UNRESOLVED",
+      "rationale": "Good coordinate accuracy must not render route-level ambiguity as a precise topology position."
+    },
+    {
+      "id": "stacked-ambiguity-is-named",
+      "after": "ambiguous-stacked-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.ambiguity_reason",
+      "matcher": "EQUALS",
+      "expected": "MULTIPLE_OCCURRENCE_CANDIDATES",
+      "rationale": "Presentation and telemetry need an auditable reason distinct from poor GPS accuracy."
+    },
+    {
+      "id": "candidate-resolution-is-resolved",
+      "after": "separated-stacked-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.route_candidate_resolution",
+      "matcher": "EQUALS",
+      "expected": "RESOLVED",
+      "rationale": "The matcher explicitly reports when the winner is sufficiently separated."
+    },
+    {
+      "id": "separated-fix-advances",
+      "after": "separated-stacked-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "upper-carriageway",
+      "rationale": "A fresh high-confidence singleton may advance to its exact route occurrence."
+    },
+    {
+      "id": "resolved-position-is-measured",
+      "after": "separated-stacked-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "MEASURED",
+      "rationale": "The marker becomes precise only after route candidates separate."
+    },
+    {
+      "id": "stacked-ambiguity-clears",
+      "after": "separated-stacked-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.ambiguity_reason",
+      "matcher": "ABSENT",
+      "rationale": "Resolved occurrence evidence clears the matching ambiguity without hiding unrelated states."
+    }
+  ]
+}

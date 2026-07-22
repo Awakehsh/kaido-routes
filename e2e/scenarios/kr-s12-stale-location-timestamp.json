@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S12",
+  "title": "A stale location timestamp cannot confirm route progress",
+  "layer": "SIMULATION",
+  "tags": ["confidence", "safety", "timestamp"],
+  "purpose": "Prevent an old location observation from committing a route occurrence even when the adapter reports high confidence and good horizontal accuracy.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The ten-second age boundary is a deterministic spike value rather than a field-calibrated universal threshold."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.stale-location-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.stale-location",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "timestamp-approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "timestamp-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.target"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH",
+      "current_occurrence_id": "timestamp-approach"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "stale-high-fix",
+      "at_ms": 15000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 6,
+        "age_ms": 12000,
+        "confidence": "HIGH",
+        "candidate_resolution": "RESOLVED",
+        "matched_occurrence_id": "timestamp-movement",
+        "candidate_occurrence_ids": ["timestamp-movement"]
+      }
+    },
+    {
+      "id": "fresh-high-fix",
+      "at_ms": 16000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 6,
+        "age_ms": 0,
+        "confidence": "HIGH",
+        "candidate_resolution": "RESOLVED",
+        "matched_occurrence_id": "timestamp-movement",
+        "candidate_occurrence_ids": ["timestamp-movement"]
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "stale-confidence-is-downgraded",
+      "after": "stale-high-fix",
+      "category": "SAFETY",
+      "subject": "navigation.location_confidence",
+      "matcher": "EQUALS",
+      "expected": "LOW",
+      "rationale": "Observation age overrides an adapter's optimistic reported confidence."
+    },
+    {
+      "id": "stale-marker-is-estimated",
+      "after": "stale-high-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "ESTIMATED",
+      "rationale": "A stale fix cannot render a precise measured marker."
+    },
+    {
+      "id": "stale-fix-does-not-advance",
+      "after": "stale-high-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "timestamp-approach",
+      "rationale": "Stale evidence cannot commit the target movement."
+    },
+    {
+      "id": "fresh-confidence-is-high",
+      "after": "fresh-high-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.location_confidence",
+      "matcher": "EQUALS",
+      "expected": "HIGH",
+      "rationale": "Fresh matcher evidence restores high location confidence."
+    },
+    {
+      "id": "fresh-fix-advances",
+      "after": "fresh-high-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "timestamp-movement",
+      "rationale": "A fresh high-confidence singleton may commit the exact occurrence."
+    },
+    {
+      "id": "fresh-marker-is-measured",
+      "after": "fresh-high-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "MEASURED",
+      "rationale": "Fresh resolved evidence restores measured presentation."
+    }
+  ]
+}

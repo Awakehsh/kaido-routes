@@ -239,6 +239,14 @@ is not a renamed GPS accuracy value. A branch or phase transition commits only
 when the winning path is sufficiently separated from alternatives and the
 required movement evidence is present.
 
+Adapters therefore report route-candidate resolution separately from observation
+quality. `AMBIGUOUS` keeps the topology marker unresolved and blocks occurrence
+progress even if the coordinate itself is fresh and accurate. `RESOLVED` must
+name exactly one occurrence after combining the winner and retained candidate
+IDs; contradictory resolved evidence fails closed. A later explicit singleton
+may clear that ambiguity. This prevents a stacked carriageway or repeated route
+entity from being committed merely because one provisional candidate was first.
+
 Valhalla Meili implements an HMM/Viterbi matcher and exposes configurable emission
 and transition parameters, so it is the first external oracle. Its output still
 uses Valhalla edges and must be translated before comparison with Kaido occurrences.

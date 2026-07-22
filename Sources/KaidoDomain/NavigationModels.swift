@@ -37,6 +37,12 @@ public enum SignalReacquisitionStatus: String, Codable, Sendable {
   case confirmed = "CONFIRMED"
 }
 
+public enum RouteCandidateResolution: String, Codable, Sendable {
+  case unknown = "UNKNOWN"
+  case ambiguous = "AMBIGUOUS"
+  case resolved = "RESOLVED"
+}
+
 public struct EntryTransition: Equatable, Sendable {
   public let facilityID: String
   public let directedEdgeIDs: [String]
@@ -59,6 +65,7 @@ public struct LocationObservation: Equatable, Sendable {
   public let expectedOccurrenceID: String?
   public let matchedOccurrenceID: String?
   public let candidateOccurrenceIDs: Set<String>
+  public let candidateResolution: RouteCandidateResolution
   public let projectedOccurrenceID: String?
   public let observedAtMilliseconds: Int?
   public let reportedConfidence: LocationConfidence?
@@ -75,6 +82,7 @@ public struct LocationObservation: Equatable, Sendable {
     expectedOccurrenceID: String? = nil,
     matchedOccurrenceID: String? = nil,
     candidateOccurrenceIDs: Set<String> = [],
+    candidateResolution: RouteCandidateResolution = .unknown,
     projectedOccurrenceID: String? = nil,
     observedAtMilliseconds: Int? = nil,
     reportedConfidence: LocationConfidence? = nil,
@@ -90,6 +98,7 @@ public struct LocationObservation: Equatable, Sendable {
     self.expectedOccurrenceID = expectedOccurrenceID
     self.matchedOccurrenceID = matchedOccurrenceID
     self.candidateOccurrenceIDs = candidateOccurrenceIDs
+    self.candidateResolution = candidateResolution
     self.projectedOccurrenceID = projectedOccurrenceID
     self.observedAtMilliseconds = observedAtMilliseconds
     self.reportedConfidence = reportedConfidence
@@ -189,6 +198,7 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var ambiguityReason: String?
   public var signalReacquisitionStatus: SignalReacquisitionStatus
   public var signalReacquisitionTrigger: String?
+  public var routeCandidateResolution: RouteCandidateResolution
   public var strictRouteAutoCommitAllowed: Bool
   public var routeExecutable: Bool
   public var routeWarnings: [String]
@@ -220,6 +230,7 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.ambiguityReason = nil
     self.signalReacquisitionStatus = .inactive
     self.signalReacquisitionTrigger = nil
+    self.routeCandidateResolution = .unknown
     self.strictRouteAutoCommitAllowed = false
     self.routeExecutable = true
     self.routeWarnings = []

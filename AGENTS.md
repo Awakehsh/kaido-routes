@@ -40,6 +40,15 @@ For a long handoff, preserve: objective, accepted decisions and reasons, files c
 - Tunnel and stacked-road positioning must expose confidence and degraded mode; never render an estimated position as a precise measured fix.
 - Keep the product focused on lawful route planning, safe driving assistance, and road culture. Do not add speed, lap-time, racing, evasion, or unsafe interaction mechanics.
 
+## Navigation architecture boundaries
+
+- `docs/architecture/ios-navigation-architecture.md` is the accepted direction for architecture spikes. Provider selection remains conditional on `docs/testing/navigation-engine-bakeoff.md`.
+- Keep domain, routing, and navigation policy in platform-light Swift modules. MapKit, Core Location, Core Motion, CarPlay, speech, and third-party engines are adapters and must not become domain dependencies.
+- Treat a MapKit or other provider result as a bounded surface-leg candidate. It cannot author, optimize, mutate, recover, or erase the active Shuto `RoutePlan`.
+- The strict compiler, occurrence progress, deviation recovery, legal egress, confidence policy, and structured guidance remain Kaido-owned behavior.
+- Do not add a commercial navigation SDK or production provider dependency before its bounded role, licence, data-use constraints, hard gates, and comparison fixtures are documented.
+- Before building an iPhone screen, make the portable scenarios executable against the pure Swift core. UI work consumes navigation snapshots; it does not define navigation semantics.
+
 ## Evidence and data boundaries
 
 Use this evidence order for routing and safety claims:

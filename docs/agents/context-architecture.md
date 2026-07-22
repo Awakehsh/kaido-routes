@@ -42,10 +42,12 @@ context.
 | Task signal | Load |
 |---|---|
 | route compiler, progress, loops | `docs/architecture/domain-contract.md` plus the target domain scenario |
+| iOS modules, navigation engine, provider choice | `docs/architecture/ios-navigation-architecture.md` and `docs/testing/navigation-engine-bakeoff.md` |
 | route editor or library | `docs/product/custom-route-builder.md` plus relevant UI scenarios |
 | test change | `docs/testing/e2e-strategy.md`, target scenario, test runner code |
 | route-data contribution | `docs/contributing/route-evidence.md`, exact source records, relevant snapshot |
-| tunnel or CarPlay behavior | exact positioning scenarios, runtime logs, platform docs |
+| surface access or MapKit probe | `docs/testing/navigation-engine-bakeoff.md`, `docs/architecture/journey-lifecycle.md`, exact entrance fixtures |
+| matcher, tunnel, or CarPlay behavior | `docs/architecture/ios-navigation-architecture.md`, exact positioning scenarios, runtime logs, platform docs |
 | product decision | `docs/product/principles.md` and only the affected contracts |
 
 ### Discovery-only context
@@ -116,4 +118,3 @@ The must-pass dimensions are:
 
 Completeness and elegance are secondary to these gates. A visually polished but
 unverified route is a failure.
-

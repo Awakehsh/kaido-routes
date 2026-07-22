@@ -33,9 +33,11 @@ The first implementation should prove six hard properties before expanding:
 - [`docs/product/custom-route-builder.md`](docs/product/custom-route-builder.md): curated and expert route-authoring model.
 - [`docs/architecture/domain-contract.md`](docs/architecture/domain-contract.md): stable route and road-network concepts.
 - [`docs/architecture/journey-lifecycle.md`](docs/architecture/journey-lifecycle.md): surface access, entry recognition, recovery, and legal egress.
+- [`docs/architecture/ios-navigation-architecture.md`](docs/architecture/ios-navigation-architecture.md): accepted Swift, CarPlay, routing, matching, and provider boundaries.
 - [`docs/agents/context-architecture.md`](docs/agents/context-architecture.md): how coding agents should load and preserve context.
 - [`docs/testing/e2e-strategy.md`](docs/testing/e2e-strategy.md): layered verification strategy.
 - [`docs/testing/scenario-catalog.md`](docs/testing/scenario-catalog.md): behavior inventory and implementation order.
+- [`docs/testing/navigation-engine-bakeoff.md`](docs/testing/navigation-engine-bakeoff.md): hard-gated comparison plan for surface routers and map matchers.
 - [`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md): evidence gates for route data.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 

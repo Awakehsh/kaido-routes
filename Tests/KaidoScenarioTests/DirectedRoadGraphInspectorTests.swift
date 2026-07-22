@@ -138,6 +138,92 @@ func directedGraphInspectorUsesSequenceContinuity() async throws {
   )
 }
 
+@Test("Graph travel distance resolves a longer connected detour")
+func directedGraphInspectorUsesGraphTravelDistance() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  let candidate = SurfaceRouteCandidate(
+    id: "test.candidate.distance-transition",
+    providerID: "test.provider",
+    coordinates: [inspectorOrigin, inspectorAnchor],
+    steps: [],
+    distanceMeters: 92,
+    expectedTravelTimeSeconds: 20,
+    hasHighways: false,
+    hasTolls: false
+  )
+  let detour = SurfaceCoordinate(latitude: 35.0002, longitude: 139.00025)
+  let graph = SurfaceRoadGraphSnapshot(
+    networkSnapshotID: fixture.networkSnapshotID,
+    edges: [
+      SurfaceRoadEdge(
+        id: "test.edge.surface-initial",
+        fromNodeID: "test.node.origin",
+        toNodeID: "test.node.middle",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorOrigin, inspectorMiddle]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.detour-first",
+        fromNodeID: "test.node.origin",
+        toNodeID: "test.node.detour",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorOrigin, detour]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.detour-second",
+        fromNodeID: "test.node.detour",
+        toNodeID: "test.node.middle",
+        kind: .ordinaryRoad,
+        coordinates: [detour, inspectorMiddle]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.approach",
+        fromNodeID: "test.node.middle",
+        toNodeID: "test.node.anchor",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorMiddle, inspectorAnchor]
+      ),
+    ]
+  )
+  let inspector = DirectedRoadGraphInspector(
+    graph: graph,
+    configuration: DirectedRoadGraphInspectorConfiguration(
+      sampleIntervalMeters: 200,
+      headingPenaltyMeters: 0
+    )
+  )
+  let inspectorWithoutTransitionDistance = DirectedRoadGraphInspector(
+    graph: graph,
+    configuration: DirectedRoadGraphInspectorConfiguration(
+      sampleIntervalMeters: 200,
+      headingPenaltyMeters: 0,
+      transitionDistancePenaltyFactor: 0
+    )
+  )
+
+  let inspection = await inspector.inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+  let inspectionWithoutTransitionDistance = await inspectorWithoutTransitionDistance.inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+
+  #expect(inspectionWithoutTransitionDistance.geometryBindingIsUnambiguous == false)
+  #expect(inspectionWithoutTransitionDistance.ambiguousDirectedEdgeIDs?.isEmpty == false)
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(inspection.ambiguousDirectedEdgeIDs == [])
+  #expect(
+    inspection.resolvedPathEdgeIDs == [
+      "test.edge.surface-initial", "test.edge.approach",
+    ]
+  )
+}
+
 @Test("Terminal heading selects the actual directed edge instead of reverse geometry")
 func directedGraphInspectorRejectsReverseApproach() async throws {
   let fixture = makeInspectorFixture()

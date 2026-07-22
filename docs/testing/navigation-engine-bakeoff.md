@@ -302,11 +302,14 @@ gate.
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
    inspector plus local live-probe command are complete. The private Iikura
    vertical slice has passed a three-run scalar batch per origin but remains
-   `RETEST`. A private Shibakoen outer pilot correctly fails closed on one
-   opposite-direction micro-path ambiguity and exposed a temporal-movement data
-   gap. Build the reviewed ten-entrance corpus, repeat all three origins for
-   cross-time stability, profile longer inspections, and promote only evidence
-   whose licence, temporal-rule, and field-review gates pass.
+   `RETEST`. The inspector now compares observed sample displacement with
+   directed graph travel distance; a synthetic longer-detour case passes while
+   an equal-geometry parallel-edge case remains ambiguous. The private Shibakoen
+   outer pilot then passed all three same-day origin batches without loosening
+   its ambiguity gate, but it exposed a temporal-movement data gap and still
+   remains `RETEST`. Build the reviewed ten-entrance corpus, repeat all three
+   origins for cross-time stability, profile longer inspections, and promote
+   only evidence whose licence, temporal-rule, and field-review gates pass.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.

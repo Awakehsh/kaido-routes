@@ -112,6 +112,7 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
   public let maximumMatchesPerSample: Int
   public let maximumSequenceStates: Int
   public let skippedEdgePenaltyMeters: Double
+  public let transitionDistancePenaltyFactor: Double
 
   public init(
     sampleIntervalMeters: Double = 12,
@@ -122,7 +123,8 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     maximumSkippedEdgeHops: Int = 8,
     maximumMatchesPerSample: Int = 24,
     maximumSequenceStates: Int = 48,
-    skippedEdgePenaltyMeters: Double = 0.5
+    skippedEdgePenaltyMeters: Double = 0.5,
+    transitionDistancePenaltyFactor: Double = 0.5
   ) {
     self.sampleIntervalMeters = sampleIntervalMeters
     self.maximumMatchDistanceMeters = maximumMatchDistanceMeters
@@ -133,6 +135,7 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     self.maximumMatchesPerSample = maximumMatchesPerSample
     self.maximumSequenceStates = maximumSequenceStates
     self.skippedEdgePenaltyMeters = skippedEdgePenaltyMeters
+    self.transitionDistancePenaltyFactor = transitionDistancePenaltyFactor
   }
 
   fileprivate var isValid: Bool {
@@ -141,6 +144,7 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
       && headingPenaltyMeters >= 0 && ambiguityMarginMeters >= 0
       && maximumSkippedEdgeHops >= 0 && maximumMatchesPerSample > 0
       && maximumSequenceStates > 0 && skippedEdgePenaltyMeters >= 0
+      && transitionDistancePenaltyFactor >= 0
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -153,6 +157,7 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
     case maximumMatchesPerSample = "maximum_matches_per_sample"
     case maximumSequenceStates = "maximum_sequence_states"
     case skippedEdgePenaltyMeters = "skipped_edge_penalty_meters"
+    case transitionDistancePenaltyFactor = "transition_distance_penalty_factor"
   }
 }
 
@@ -164,6 +169,8 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
 public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
   public let graph: SurfaceRoadGraphSnapshot
   public let configuration: DirectedRoadGraphInspectorConfiguration
+  private let measuredEdges: [MeasuredEdge]
+  private let edgeLengths: [String: Double]
 
   public init(
     graph: SurfaceRoadGraphSnapshot,
@@ -171,6 +178,11 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
   ) {
     self.graph = graph
     self.configuration = configuration
+    let measuredEdges = graph.edges.compactMap(MeasuredEdge.init(edge:))
+    self.measuredEdges = measuredEdges
+    self.edgeLengths = Dictionary(
+      uniqueKeysWithValues: measuredEdges.map { ($0.edge.id, $0.lengthMeters) }
+    )
   }
 
   public func inspect(
@@ -180,6 +192,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
   ) async -> SurfaceCandidateInspection {
     guard graph.networkSnapshotID == fixture.networkSnapshotID,
       graph.isStructurallyValid,
+      measuredEdges.count == graph.edges.count,
       configuration.isValid,
       candidate.coordinates.count >= 2,
       candidate.coordinates.allSatisfy(\.isValid),
@@ -191,7 +204,11 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
     let terminalCoordinate = candidate.coordinates[candidate.coordinates.count - 1]
     var matchesBySample = samples.map {
-      edgeMatches(at: $0.coordinate, headingDegrees: $0.headingDegrees)
+      edgeMatches(
+        at: $0.coordinate,
+        headingDegrees: $0.headingDegrees,
+        measuredEdges: measuredEdges
+      )
     }
     let unmatchedSampleCount = matchesBySample.count { $0.isEmpty }
     let terminalMatches = matchesBySample.last ?? []
@@ -207,8 +224,10 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
     let outgoingEdges = makeOutgoingEdges()
     let selection = selectContinuousSequence(
+      samples: samples,
       matchesBySample: matchesBySample,
-      outgoingEdges: outgoingEdges
+      outgoingEdges: outgoingEdges,
+      edgeLengths: edgeLengths
     )
     let pointwiseEdges = matchesBySample.compactMap { $0.first?.edge }
     let matchedEdges = selection?.sampleEdges ?? pointwiseEdges
@@ -304,13 +323,17 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
   private func edgeMatches(
     at coordinate: SurfaceCoordinate,
-    headingDegrees: Double
+    headingDegrees: Double,
+    measuredEdges: [MeasuredEdge]
   ) -> [EdgeMatch] {
-    graph.edges.compactMap { edge in
+    measuredEdges.compactMap { measuredEdge in
+      let edge = measuredEdge.edge
       var bestProjection: EdgeProjection?
       for index in 0..<(edge.coordinates.count - 1) {
         let start = edge.coordinates[index]
         let end = edge.coordinates[index + 1]
+        let segmentLength = measuredEdge.segmentLengths[index]
+        guard segmentLength > 0 else { continue }
         let projection = project(coordinate, ontoSegmentFrom: start, to: end)
         let headingDifference = angularDifference(
           headingDegrees,
@@ -322,7 +345,10 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
         let candidate = EdgeProjection(
           distanceMeters: projection.distanceMeters,
-          headingDifferenceDegrees: headingDifference
+          headingDifferenceDegrees: headingDifference,
+          alongEdgeDistanceMeters: measuredEdge.segmentStartDistances[index]
+            + projection.fraction * segmentLength,
+          edgeLengthMeters: measuredEdge.lengthMeters
         )
         if bestProjection == nil
           || candidate.score(configuration: configuration)
@@ -337,6 +363,8 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
         edge: edge,
         distanceMeters: bestProjection.distanceMeters,
         headingDifferenceDegrees: bestProjection.headingDifferenceDegrees,
+        alongEdgeDistanceMeters: bestProjection.alongEdgeDistanceMeters,
+        edgeLengthMeters: bestProjection.edgeLengthMeters,
         score: bestProjection.score(configuration: configuration)
       )
     }
@@ -392,33 +420,42 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
   }
 
   private func selectContinuousSequence(
+    samples: [RouteSample],
     matchesBySample: [[EdgeMatch]],
-    outgoingEdges: [String: [SurfaceRoadEdge]]
+    outgoingEdges: [String: [SurfaceRoadEdge]],
+    edgeLengths: [String: Double]
   ) -> SequenceSelection? {
-    guard let firstMatches = matchesBySample.first, !firstMatches.isEmpty,
+    guard samples.count == matchesBySample.count,
+      let firstMatches = matchesBySample.first, !firstMatches.isEmpty,
       matchesBySample.allSatisfy({ !$0.isEmpty })
     else { return nil }
 
     var states = firstMatches.prefix(configuration.maximumMatchesPerSample).map { match in
       SequenceState(
         cost: match.score,
+        lastMatch: match,
         sampleEdges: [match.edge],
         resolvedEdges: [match.edge]
       )
     }
     var connectorCache: [EdgePair: ConnectorLookup] = [:]
 
-    for matches in matchesBySample.dropFirst() {
+    for sampleIndex in 1..<matchesBySample.count {
+      let matches = matchesBySample[sampleIndex]
+      let observedDistance = distanceMeters(
+        from: samples[sampleIndex - 1].coordinate,
+        to: samples[sampleIndex].coordinate
+      )
       var nextStates: [SequenceState] = []
       for state in states {
-        guard let source = state.sampleEdges.last else { continue }
+        let source = state.lastMatch
         for match in matches.prefix(configuration.maximumMatchesPerSample) {
-          let pair = EdgePair(sourceID: source.id, targetID: match.edge.id)
+          let pair = EdgePair(sourceID: source.edge.id, targetID: match.edge.id)
           let lookup: ConnectorLookup
           if let cached = connectorCache[pair] {
             lookup = cached
           } else if let connectors = connectorEdges(
-            from: source,
+            from: source.edge,
             to: match.edge,
             outgoingEdges: outgoingEdges
           ) {
@@ -430,6 +467,17 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
           }
 
           guard case .found(let connectors) = lookup else { continue }
+          guard
+            let graphDistance = graphTravelDistance(
+              from: source,
+              through: connectors,
+              to: match,
+              edgeLengths: edgeLengths
+            )
+          else { continue }
+          let transitionPenalty =
+            abs(graphDistance - observedDistance)
+            * configuration.transitionDistancePenaltyFactor
           var resolvedEdges = state.resolvedEdges
           for edge in connectors + [match.edge] where resolvedEdges.last?.id != edge.id {
             resolvedEdges.append(edge)
@@ -437,7 +485,9 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
           nextStates.append(
             SequenceState(
               cost: state.cost + match.score
-                + Double(connectors.count) * configuration.skippedEdgePenaltyMeters,
+                + Double(connectors.count) * configuration.skippedEdgePenaltyMeters
+                + transitionPenalty,
+              lastMatch: match,
               sampleEdges: state.sampleEdges + [match.edge],
               resolvedEdges: resolvedEdges
             )
@@ -468,6 +518,26 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
         differingEdgeIDs(best.resolvedEdges, $0.resolvedEdges)
       } ?? []
     )
+  }
+
+  private func graphTravelDistance(
+    from source: EdgeMatch,
+    through connectors: [SurfaceRoadEdge],
+    to target: EdgeMatch,
+    edgeLengths: [String: Double]
+  ) -> Double? {
+    if source.edge.id == target.edge.id {
+      let progress = target.alongEdgeDistanceMeters - source.alongEdgeDistanceMeters
+      guard progress >= -projectionProgressToleranceMeters else { return nil }
+      return max(0, progress)
+    }
+
+    let connectorLengths = connectors.compactMap { edgeLengths[$0.id] }
+    guard connectorLengths.count == connectors.count else { return nil }
+    let connectorDistance = connectorLengths.reduce(0, +)
+    return max(0, source.edgeLengthMeters - source.alongEdgeDistanceMeters)
+      + connectorDistance
+      + target.alongEdgeDistanceMeters
   }
 
   private func sequenceStateOrder(_ lhs: SequenceState, _ rhs: SequenceState) -> Bool {
@@ -584,10 +654,35 @@ private struct RouteSample {
   let headingDegrees: Double
 }
 
+private struct MeasuredEdge {
+  let edge: SurfaceRoadEdge
+  let segmentLengths: [Double]
+  let segmentStartDistances: [Double]
+  let lengthMeters: Double
+
+  init?(edge: SurfaceRoadEdge) {
+    let segmentLengths = zip(edge.coordinates, edge.coordinates.dropFirst()).map {
+      distanceMeters(from: $0, to: $1)
+    }
+    var length = 0.0
+    let segmentStartDistances = segmentLengths.map { segmentLength in
+      defer { length += segmentLength }
+      return length
+    }
+    guard length > 0 else { return nil }
+    self.edge = edge
+    self.segmentLengths = segmentLengths
+    self.segmentStartDistances = segmentStartDistances
+    self.lengthMeters = length
+  }
+}
+
 private struct EdgeMatch {
   let edge: SurfaceRoadEdge
   let distanceMeters: Double
   let headingDifferenceDegrees: Double
+  let alongEdgeDistanceMeters: Double
+  let edgeLengthMeters: Double
   let score: Double
 }
 
@@ -599,6 +694,7 @@ private struct SequenceSelection {
 
 private struct SequenceState {
   let cost: Double
+  let lastMatch: EdgeMatch
   let sampleEdges: [SurfaceRoadEdge]
   let resolvedEdges: [SurfaceRoadEdge]
 
@@ -620,6 +716,8 @@ private enum ConnectorLookup {
 private struct EdgeProjection {
   let distanceMeters: Double
   let headingDifferenceDegrees: Double
+  let alongEdgeDistanceMeters: Double
+  let edgeLengthMeters: Double
 
   func score(configuration: DirectedRoadGraphInspectorConfiguration) -> Double {
     distanceMeters
@@ -629,6 +727,7 @@ private struct EdgeProjection {
 }
 
 private let earthRadiusMeters = 6_371_000.0
+private let projectionProgressToleranceMeters = 0.5
 
 private func distanceMeters(from start: SurfaceCoordinate, to end: SurfaceCoordinate) -> Double {
   let startLatitude = radians(start.latitude)

@@ -65,10 +65,19 @@ status gate. Missing inspection evidence fails closed.
 `KaidoSurfaceRouting` owns the provider-neutral fixture, candidate, inspection,
 hard-gate, and normalized-result types. Its `DirectedRoadGraphInspector`
 resamples candidate geometry, scores directed edges using distance and heading,
-uses a bounded sequence beam to preserve graph continuity, retains skipped
-connector edges, detects near-optimal path ambiguity, and reports early
-expressway and toll-domain crossings. It fails closed on invalid or mismatched
-network snapshots. This is a surface-probe inspector, not the live Shuto matcher.
+uses a bounded sequence beam to preserve graph continuity, and compares the
+observed distance between consecutive samples with directed graph travel between
+their along-edge projections. This transition-distance penalty can reject a
+connected detour that is geometrically close but materially longer. Skipped
+connector edges remain visible to the hard gates, while truly equal-cost
+parallel paths remain ambiguous. The inspector also reports early expressway and
+toll-domain crossings and fails closed on invalid or mismatched network
+snapshots.
+
+The transition factor is an uncalibrated feasibility heuristic, not a confidence
+model. Connector lookup is hop-bounded and currently retains one deterministic
+connector path per edge pair. This is a surface-probe inspector, not the live
+Shuto matcher or a replacement for the planned Valhalla and Swift HMM comparison.
 
 `KaidoAppleAdapters` contains the first `MKDirections` adapter. The adapter
 requests automobile alternatives and asks MapKit to avoid highways and tolls for

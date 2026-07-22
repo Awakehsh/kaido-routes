@@ -326,7 +326,8 @@
             "USER_ACTION",
             "TARIFF_QUOTED",
             "TARIFF_SELECTION_REQUESTED",
-            "GUIDANCE_ANCHOR_REACHED"
+            "GUIDANCE_ANCHOR_REACHED",
+            "GUIDANCE_PROGRESS_UPDATED"
           ]
         },
         "payload": {

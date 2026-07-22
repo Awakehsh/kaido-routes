@@ -29,6 +29,7 @@ func presentationSurfacesShareNavigationTruth() throws {
   #expect(projection.voice.stage == .prepare)
   #expect(projection.voice.distanceMeters == 800)
   #expect(projection.voice.maneuver == .keepLeft)
+  #expect(!projection.voice.shouldSpeak)
   #expect(projection.iPhone.currentOccurrenceID == projection.carPlay.currentOccurrenceID)
   #expect(
     projection.iPhone.nextMovementOccurrenceID
@@ -39,9 +40,46 @@ func presentationSurfacesShareNavigationTruth() throws {
   #expect(projection.iPhone.localizedDisplayText == "保持左侧，跟随 B 湾岸线・横滨方向")
   #expect(projection.iPhone.decisionPointNameJapanese == "辰巳JCT")
   #expect(projection.iPhone.localizedDecisionPointName == "辰巳 JCT")
+  #expect(projection.iPhone.guidanceAnchorOccurrenceID == "test.occurrence.c1.4")
+  #expect(projection.iPhone.decisionZoneID == "test.zone.tatsumi")
   #expect(projection.iPhone.lanePreparation == .useLeftLanes)
   #expect(!projection.iPhone.isPrimarySurface)
   #expect(projection.carPlay.isPrimarySurface)
+}
+
+@Test("Voice speaks only for a matching one-shot prompt emission")
+func voiceRequiresMatchingPromptEmission() throws {
+  let frame = validGuidanceFrame()
+  let emission = GuidancePromptEmission(
+    promptID: frame.promptID,
+    anchorID: frame.anchorID,
+    anchorOccurrenceID: frame.anchorOccurrenceID
+  )
+  var snapshot = NavigationSnapshot()
+  snapshot.emittedGuidancePromptIDs = [frame.promptID]
+  snapshot.lastGuidancePromptID = frame.promptID
+  let projection = try NavigationPresentationProjector.project(
+    makePresentationRequest(
+      snapshot: snapshot,
+      guidanceFrame: frame,
+      promptEmission: emission
+    )
+  )
+  #expect(projection.voice.shouldSpeak)
+
+  #expect(throws: NavigationPresentationProjectionError.promptEmissionMismatch) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: snapshot,
+        guidanceFrame: frame,
+        promptEmission: GuidancePromptEmission(
+          promptID: "test.prompt.other",
+          anchorID: frame.anchorID,
+          anchorOccurrenceID: frame.anchorOccurrenceID
+        )
+      )
+    )
+  }
 }
 
 @Test("Guidance frame rejects missing identity, invalid distance, and localized JCT drift")
@@ -306,15 +344,18 @@ private func makePresentationRequest(
     isInsideDecisionZone: false
   ),
   facilityNames: [String: LocalizedFacilityName] = [:],
-  guidanceFrame: GuidanceFrame? = nil
+  guidanceFrame: GuidanceFrame? = nil,
+  promptEmission: GuidancePromptEmission? = nil
 ) -> NavigationPresentationRequest {
   NavigationPresentationRequest(
     snapshot: snapshot,
     guidanceFrame: guidanceFrame
       ?? validGuidanceFrame(
+        anchorOccurrenceID: snapshot.currentOccurrenceID ?? "test.occurrence.anchor",
         movementOccurrenceID: nextMovementOccurrenceID ?? "test.occurrence.next",
         localizedContent: localizedContent
       ),
+    promptEmission: promptEmission,
     languages: NavigationLanguageSelection(
       interfaceLocale: interfaceLocale,
       guidanceVoiceLocale: voiceLocale
@@ -327,6 +368,7 @@ private func makePresentationRequest(
 
 private func validGuidanceFrame(
   promptID: String = "test.prompt.prepare",
+  anchorOccurrenceID: String = "test.occurrence.anchor",
   movementOccurrenceID: String = "test.occurrence.next",
   distanceMeters: Double = 800,
   localizedDecisionPointNames: [KaidoReleaseLocale: String] = [
@@ -340,7 +382,9 @@ private func validGuidanceFrame(
   GuidanceFrame(
     promptID: promptID,
     anchorID: "PREPARE",
+    anchorOccurrenceID: anchorOccurrenceID,
     movementOccurrenceID: movementOccurrenceID,
+    decisionZoneID: "test.zone.tatsumi",
     stage: .prepare,
     distanceMeters: distanceMeters,
     decisionPointNameJapanese: "辰巳JCT",

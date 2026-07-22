@@ -42,9 +42,13 @@ Presentation scenarios project the same current occurrence and structured
 occurrence-scoped guidance frame into semantic phone, CarPlay, and voice values.
 The frame carries prompt and anchor identity, stage, distance, decision point,
 maneuver, lane preparation, Japanese sign target, route shields, and localized
-content. These scenarios do not claim that a guidance planner, SwiftUI,
-`CPMapTemplate`, accessibility, audio, or hardware rendering has run; those
-later layers must produce or consume the same semantics without inferring them.
+content. KR-S17 additionally streams fresh route-resolved distance observations
+through the pure `GuidanceFramePlanner`, `NavigationEngine` prompt ledger, and
+the projector. It proves most-actionable anchor selection, no stage regression,
+stale-progress rejection, and one-shot `voice.should_speak`. It does not derive
+distance from coordinates or claim that SwiftUI, `CPMapTemplate`, accessibility,
+audio, or hardware rendering has run; those later layers must consume the same
+semantics without inferring them.
 
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.

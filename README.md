@@ -106,20 +106,21 @@ or software-simulated samples can never satisfy the field statistical floor.
 No iPhone/head-unit trace has been collected yet, so device performance and
 confidence calibration remain unproven.
 
-The platform-light presentation boundary is executable as a separate
-`KaidoPresentation` module. It projects one `NavigationSnapshot` and one
-occurrence-scoped `GuidanceFrame` into phone, CarPlay, and voice values without
-owning route progress. The frame carries prompt, anchor, movement occurrence,
-stage, distance, Japanese decision-point name, maneuver, lane preparation,
-route shields, sign target, and localized content. Japanese sign text and route
-shields remain visible in every locale, UI and voice languages are independent,
-estimated positions cannot render as measured, unconfirmed passage cannot use a
-positive open-road state, moving decision zones expose no route editing, and
-Finish drive names its compiled exit first. Eight portable presentation
-scenarios prove those semantics; they are not a guidance planner, SwiftUI,
-CarPlay entitlement, accessibility, audio, or physical head-unit tests.
+The platform-light guidance-to-presentation boundary is executable end to end.
+`KaidoDomain` owns released frame semantics, while `GuidanceFramePlanner` accepts
+an already resolved occurrence and fresh distance-to-DecisionZone observation.
+`NavigationEngine` selects the most actionable released anchor, prevents stage
+regression, updates its prompt ledger, and emits a one-shot voice command.
+`KaidoPresentation` then projects the same occurrence-scoped `GuidanceFrame` into
+phone, CarPlay, and independently localized voice values. Japanese sign text and
+route shields remain visible in every locale, estimated positions cannot render
+as measured, unconfirmed passage cannot use a positive open-road state, moving
+decision zones expose no route editing, and Finish drive names its compiled exit
+first. KR-S17 proves this pure Swift chain, but the adapter that derives remaining
+DecisionZone distance from matcher/graph progress, SwiftUI, CarPlay entitlement,
+accessibility, audio, and physical head-unit behavior remain unimplemented.
 
-The feasibility core currently executes portable scenarios for twenty-one hard
+The feasibility core currently executes portable scenarios for twenty-two hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -167,6 +168,9 @@ properties that must remain proven as the product expands:
 21. pre-drive review keeps actual distance, tariff distance, toll evidence, and
     live-passage evidence separate; moving decision zones cannot request route
     editing, and Finish drive names the compiled exit before branch guidance.
+22. fresh resolved route progress chooses one released occurrence-scoped frame,
+    skips obsolete catch-up prompts, never regresses after distance jitter, and
+    sends voice only with a matching one-shot engine emission.
 
 ## Repository map
 

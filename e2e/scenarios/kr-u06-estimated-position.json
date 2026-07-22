@@ -33,7 +33,9 @@
         "guidance": {
           "prompt_id": "test.prompt.u06.preview",
           "anchor_id": "PREVIEW",
+          "anchor_occurrence_id": "test.occurrence.u06-anchor",
           "movement_occurrence_id": "test.occurrence.c2-oi",
+          "decision_zone_id": "test.zone.oi",
           "stage": "PREVIEW",
           "distance_meters": 1500,
           "decision_point_name_ja": "大井JCT",

@@ -33,7 +33,9 @@
         "guidance": {
           "prompt_id": "test.prompt.u08.commit",
           "anchor_id": "COMMIT",
+          "anchor_occurrence_id": "test.occurrence.u08-anchor",
           "movement_occurrence_id": "test.occurrence.kasai-b-west",
+          "decision_zone_id": "test.zone.kasai",
           "stage": "COMMIT",
           "distance_meters": 300,
           "decision_point_name_ja": "葛西JCT",

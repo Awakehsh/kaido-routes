@@ -63,7 +63,9 @@
         "guidance": {
           "prompt_id": "test.prompt.u12.finish",
           "anchor_id": "FINISH",
+          "anchor_occurrence_id": "test.occurrence.current",
           "movement_occurrence_id": "test.occurrence.egress",
+          "decision_zone_id": "test.zone.shibakoen-exit",
           "stage": "FINISH",
           "distance_meters": 1200,
           "decision_point_name_ja": "芝公園出口",

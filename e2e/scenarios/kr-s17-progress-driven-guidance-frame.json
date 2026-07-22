@@ -1,0 +1,400 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S17",
+  "title": "Resolved route progress produces one shared occurrence-scoped guidance frame",
+  "layer": "SIMULATION",
+  "tags": ["guidance", "occurrence", "presentation", "voice"],
+  "purpose": "Generate phone, CarPlay, and one-shot voice semantics from released distance anchors without letting an adapter schedule or replay prompts.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic distances prove planner ordering and ledger behavior only; release thresholds, sign wording, lane advice, timing, and pronunciation require reviewed road evidence and device tests."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.progress-guidance-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.progress-guidance",
+      "network_snapshot_id": "test.snapshot.progress-guidance-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.before-jct.entity"
+        },
+        {
+          "occurrence_id": "test.movement.at-jct",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.at-jct.entity"
+        }
+      ]
+    },
+    "inputs": {
+      "released_guidance": [
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "anchor_id": "PREVIEW",
+          "prompt_id": "test.prompt.preview",
+          "trigger_distance_meters": 2000,
+          "frame": {
+            "movement_occurrence_id": "test.movement.at-jct",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "PREVIEW",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        },
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "anchor_id": "PREPARE",
+          "prompt_id": "test.prompt.prepare",
+          "trigger_distance_meters": 800,
+          "frame": {
+            "movement_occurrence_id": "test.movement.at-jct",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "PREPARE",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        },
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "anchor_id": "COMMIT",
+          "prompt_id": "test.prompt.commit",
+          "trigger_distance_meters": 250,
+          "frame": {
+            "movement_occurrence_id": "test.movement.at-jct",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "COMMIT",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        }
+      ],
+      "presentation": {
+        "guidance_source": "NAVIGATION_ACTIVE",
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.progress-guidance",
+      "current_occurrence_id": "test.edge.before-jct",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "resolve-route",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "expected_occurrence_id": "test.edge.before-jct",
+        "candidate_occurrence_ids": ["test.edge.before-jct"],
+        "candidate_resolution": "RESOLVED",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "before-preview",
+      "at_ms": 2000,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 2500
+      }
+    },
+    {
+      "id": "preview-anchor",
+      "at_ms": 3000,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 1900
+      }
+    },
+    {
+      "id": "preview-update",
+      "at_ms": 4000,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 1800
+      }
+    },
+    {
+      "id": "jump-to-commit",
+      "at_ms": 5000,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 100
+      }
+    },
+    {
+      "id": "distance-jitter",
+      "at_ms": 6000,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 300
+      }
+    },
+    {
+      "id": "stale-progress",
+      "at_ms": 6500,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 50,
+        "observed_at_ms": 5500
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "outer-frame-visible-before-voice",
+      "after": "before-preview",
+      "category": "NAVIGATION",
+      "subject": "guidance.planning_status",
+      "matcher": "EQUALS",
+      "expected": "WAITING_FOR_ANCHOR",
+      "rationale": "The next reviewed instruction can be displayed before its speech threshold."
+    },
+    {
+      "id": "outer-frame-stage",
+      "after": "before-preview",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_frame.stage",
+      "matcher": "EQUALS",
+      "expected": "PREVIEW",
+      "rationale": "The outermost released stage is the deterministic pre-threshold frame."
+    },
+    {
+      "id": "no-early-speech",
+      "after": "before-preview",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Rendering a frame does not itself authorize a voice emission."
+    },
+    {
+      "id": "preview-emits",
+      "after": "preview-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.planning_status",
+      "matcher": "EQUALS",
+      "expected": "PROMPT_EMITTED",
+      "rationale": "Crossing the reviewed threshold emits the occurrence-scoped prompt once."
+    },
+    {
+      "id": "preview-speaks-once",
+      "after": "preview-anchor",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The presentation layer receives the engine's matching one-shot emission."
+    },
+    {
+      "id": "shared-decision-zone-phone",
+      "after": "preview-anchor",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.guidance.decision_zone_id",
+      "matcher": "EQUALS",
+      "expected": "test.zone.jct",
+      "rationale": "Phone renders the released DecisionZone identity."
+    },
+    {
+      "id": "shared-decision-zone-carplay",
+      "after": "preview-anchor",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.guidance.decision_zone_id",
+      "matcher": "EQUALS",
+      "expected": "test.zone.jct",
+      "rationale": "CarPlay consumes the same frame rather than selecting its own junction."
+    },
+    {
+      "id": "duplicate-frame-update",
+      "after": "preview-update",
+      "category": "NAVIGATION",
+      "subject": "guidance.planning_status",
+      "matcher": "EQUALS",
+      "expected": "FRAME_UPDATED",
+      "rationale": "A later distance refresh updates the frame without replaying the prompt."
+    },
+    {
+      "id": "duplicate-does-not-speak",
+      "after": "preview-update",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Voice emission remains an event, not a property inferred from the active frame."
+    },
+    {
+      "id": "jump-selects-commit",
+      "after": "jump-to-commit",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_frame.stage",
+      "matcher": "EQUALS",
+      "expected": "COMMIT",
+      "rationale": "A large progress jump selects the most actionable eligible anchor."
+    },
+    {
+      "id": "skips-stale-prepare-prompt",
+      "after": "jump-to-commit",
+      "category": "SAFETY",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.prompt.preview", "test.prompt.commit"],
+      "rationale": "The engine does not play every crossed historical prompt after a location jump."
+    },
+    {
+      "id": "jitter-does-not-regress-stage",
+      "after": "distance-jitter",
+      "category": "SAFETY",
+      "subject": "guidance.active_frame.stage",
+      "matcher": "EQUALS",
+      "expected": "COMMIT",
+      "rationale": "Distance jitter cannot regress from a previously emitted commit stage."
+    },
+    {
+      "id": "stale-progress-rejected",
+      "after": "stale-progress",
+      "category": "SAFETY",
+      "subject": "guidance.planning_status",
+      "matcher": "EQUALS",
+      "expected": "STALE_OBSERVATION",
+      "rationale": "A delayed progress sample cannot mutate current guidance."
+    },
+    {
+      "id": "stale-progress-keeps-distance",
+      "after": "stale-progress",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_frame.distance_meters",
+      "matcher": "EQUALS",
+      "expected": 300,
+      "rationale": "The last fresh frame remains active after rejecting delayed progress."
+    },
+    {
+      "id": "stale-progress-does-not-speak",
+      "after": "stale-progress",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Rejected progress cannot create a voice command."
+    }
+  ]
+}

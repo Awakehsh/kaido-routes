@@ -33,7 +33,9 @@
         "guidance": {
           "prompt_id": "test.prompt.u11.prepare",
           "anchor_id": "PREPARE",
+          "anchor_occurrence_id": "test.occurrence.u11-anchor",
           "movement_occurrence_id": "test.occurrence.b-yokohama",
+          "decision_zone_id": "test.zone.tatsumi",
           "stage": "PREPARE",
           "distance_meters": 800,
           "decision_point_name_ja": "辰巳JCT",

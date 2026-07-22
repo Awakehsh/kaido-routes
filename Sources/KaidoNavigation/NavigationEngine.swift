@@ -9,6 +9,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let egressOptions: [EgressOption]
   public let nextSign: SignGuidance
   public let guidanceAnchors: [GuidanceAnchorDefinition]
+  public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let signalReacquisitionMinimumObservations: Int
   public let signalReacquisitionMaximumGapMilliseconds: Int
 
@@ -19,6 +20,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     egressOptions: [EgressOption] = [],
     nextSign: SignGuidance = SignGuidance(),
     guidanceAnchors: [GuidanceAnchorDefinition] = [],
+    releasedGuidance: [ReleasedGuidanceDefinition] = [],
     signalReacquisitionMinimumObservations: Int = 2,
     signalReacquisitionMaximumGapMilliseconds: Int = 5_000
   ) {
@@ -28,6 +30,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     self.egressOptions = egressOptions
     self.nextSign = nextSign
     self.guidanceAnchors = guidanceAnchors
+    self.releasedGuidance = releasedGuidance
     self.signalReacquisitionMinimumObservations = max(
       2,
       signalReacquisitionMinimumObservations
@@ -62,7 +65,7 @@ public struct NavigationEngine: Sendable {
       ?? initialSnapshot.activeRoutePlanID
     self.snapshot.signGuidance = configuration.nextSign
     self.emittedGuidanceAnchorKeys = Set(
-      configuration.guidanceAnchors.compactMap { definition in
+      configuration.allGuidanceAnchors.compactMap { definition in
         guard self.snapshot.emittedGuidancePromptIDs.contains(definition.promptID) else {
           return nil
         }
@@ -92,7 +95,7 @@ public struct NavigationEngine: Sendable {
     occurrenceID: String,
     anchorID: String
   ) {
-    let matches = configuration.guidanceAnchors.filter {
+    let matches = configuration.allGuidanceAnchors.filter {
       $0.occurrenceID == occurrenceID && $0.anchorID == anchorID
     }
     guard matches.count == 1, let definition = matches.first else {
@@ -113,6 +116,43 @@ public struct NavigationEngine: Sendable {
     snapshot.guidanceAnchorStatus = .emitted
     snapshot.emittedGuidancePromptIDs.append(definition.promptID)
     snapshot.lastGuidancePromptID = definition.promptID
+  }
+
+  @discardableResult
+  public mutating func observeGuidanceProgress(
+    _ observation: GuidanceProgressObservation
+  ) -> GuidancePromptEmission? {
+    if let lastObservedAt = snapshot.lastGuidanceProgressAtMilliseconds,
+      observation.observedAtMilliseconds <= lastObservedAt
+    {
+      snapshot.guidancePlanningStatus = .staleObservation
+      return nil
+    }
+    snapshot.lastGuidanceProgressAtMilliseconds = observation.observedAtMilliseconds
+
+    let result = GuidanceFramePlanner.plan(
+      snapshot: snapshot,
+      routePlan: configuration.routePlan,
+      definitions: configuration.releasedGuidance,
+      observation: observation
+    )
+    snapshot.guidancePlanningStatus = result.status
+    guard let frame = result.frame else { return nil }
+    snapshot.activeGuidanceFrame = frame
+
+    guard let emission = result.promptEmission else { return nil }
+    let key = GuidanceAnchorKey(
+      occurrenceID: emission.anchorOccurrenceID,
+      anchorID: emission.anchorID
+    )
+    guard emittedGuidanceAnchorKeys.insert(key).inserted else {
+      snapshot.guidancePlanningStatus = .frameUpdated
+      return nil
+    }
+    snapshot.guidanceAnchorStatus = .emitted
+    snapshot.emittedGuidancePromptIDs.append(emission.promptID)
+    snapshot.lastGuidancePromptID = emission.promptID
+    return emission
   }
 
   public mutating func connectCarPlay() {
@@ -547,6 +587,10 @@ public struct NavigationEngine: Sendable {
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
     guard target.index >= currentIndex else { return }
 
+    if snapshot.currentOccurrenceID != target.id {
+      snapshot.activeGuidanceFrame = nil
+      snapshot.guidancePlanningStatus = .inactive
+    }
     snapshot.currentOccurrenceID = target.id
     snapshot.currentOccurrenceIndex = target.index
     snapshot.completedOccurrenceIDs = routePlan.occurrences
@@ -582,6 +626,12 @@ public struct NavigationEngine: Sendable {
 
   private func appendUnique(_ value: String, to array: inout [String]) {
     if !array.contains(value) { array.append(value) }
+  }
+}
+
+extension NavigationConfiguration {
+  fileprivate var allGuidanceAnchors: [GuidanceAnchorDefinition] {
+    guidanceAnchors + releasedGuidance.map(\.anchor)
   }
 }
 

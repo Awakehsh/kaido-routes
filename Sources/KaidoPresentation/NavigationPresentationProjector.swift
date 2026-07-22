@@ -4,7 +4,9 @@ import KaidoDomain
 public enum NavigationPresentationProjectionError: Error, Equatable, Sendable {
   case missingPromptID
   case missingAnchorID
+  case missingAnchorOccurrenceID
   case missingMovementOccurrenceID
+  case missingDecisionZoneID
   case invalidDistanceMeters
   case missingDecisionPointNameJapanese
   case missingDecisionPointLocale(KaidoReleaseLocale)
@@ -14,6 +16,8 @@ public enum NavigationPresentationProjectionError: Error, Equatable, Sendable {
   case missingLocale(KaidoReleaseLocale)
   case incompleteLocale(KaidoReleaseLocale)
   case japaneseSignTextMismatch(KaidoReleaseLocale)
+  case promptEmissionMismatch
+  case guidanceFrameNotCurrentOccurrence
   case inconsistentSurfaceState
   case missingExitName(String, KaidoReleaseLocale)
 }
@@ -87,7 +91,8 @@ public enum NavigationPresentationProjector {
         stage: request.guidanceFrame.stage,
         distanceMeters: request.guidanceFrame.distanceMeters,
         maneuver: request.guidanceFrame.maneuver,
-        spokenText: voiceContent.spokenText
+        spokenText: voiceContent.spokenText,
+        shouldSpeak: request.promptEmission != nil
       )
     )
   }
@@ -124,72 +129,25 @@ public enum NavigationPresentationProjector {
   }
 
   private static func validate(_ request: NavigationPresentationRequest) throws {
-    let frame = request.guidanceFrame
-    guard !frame.promptID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      throw NavigationPresentationProjectionError.missingPromptID
+    do {
+      try GuidanceFrameValidator.validate(request.guidanceFrame)
+    } catch let error as GuidanceFrameValidationError {
+      throw projectionError(for: error)
     }
-    guard !frame.anchorID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      throw NavigationPresentationProjectionError.missingAnchorID
-    }
-    guard
-      !frame.movementOccurrenceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    else {
-      throw NavigationPresentationProjectionError.missingMovementOccurrenceID
-    }
-    guard frame.distanceMeters.isFinite, frame.distanceMeters >= 0 else {
-      throw NavigationPresentationProjectionError.invalidDistanceMeters
-    }
-    guard
-      !frame.decisionPointNameJapanese.trimmingCharacters(in: .whitespacesAndNewlines)
-        .isEmpty
-    else {
-      throw NavigationPresentationProjectionError.missingDecisionPointNameJapanese
-    }
-    for locale in KaidoReleaseLocale.allCases {
-      guard let name = frame.localizedDecisionPointNames[locale],
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    if let emission = request.promptEmission {
+      guard emission.promptID == request.guidanceFrame.promptID,
+        emission.anchorID == request.guidanceFrame.anchorID,
+        emission.anchorOccurrenceID == request.guidanceFrame.anchorOccurrenceID,
+        request.snapshot.lastGuidancePromptID == emission.promptID,
+        request.snapshot.emittedGuidancePromptIDs.contains(emission.promptID)
       else {
-        throw NavigationPresentationProjectionError.missingDecisionPointLocale(locale)
+        throw NavigationPresentationProjectionError.promptEmissionMismatch
       }
     }
-    guard
-      frame.localizedDecisionPointNames[.japanese] == frame.decisionPointNameJapanese
-    else {
-      throw NavigationPresentationProjectionError.decisionPointJapaneseNameMismatch
-    }
-
-    let source = frame.presentationSource
-    guard !source.routeShields.isEmpty,
-      source.routeShields.allSatisfy({
-        !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-      })
-    else {
-      throw NavigationPresentationProjectionError.missingRouteShield
-    }
-    guard
-      !source.japaneseSignText.trimmingCharacters(in: .whitespacesAndNewlines)
-        .isEmpty
-    else {
-      throw NavigationPresentationProjectionError.missingJapaneseSignText
-    }
-    for locale in KaidoReleaseLocale.allCases {
-      guard let content = source.localizedContent[locale] else {
-        throw NavigationPresentationProjectionError.missingLocale(locale)
-      }
-      guard
-        !content.displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        !content.spokenText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        !content.spokenForms.isEmpty,
-        content.spokenForms.allSatisfy({
-          !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        })
-      else {
-        throw NavigationPresentationProjectionError.incompleteLocale(locale)
-      }
-      guard content.preservedJapaneseSignText == source.japaneseSignText else {
-        throw NavigationPresentationProjectionError.japaneseSignTextMismatch(locale)
-      }
+    if let currentOccurrenceID = request.snapshot.currentOccurrenceID,
+      currentOccurrenceID != request.guidanceFrame.anchorOccurrenceID
+    {
+      throw NavigationPresentationProjectionError.guidanceFrameNotCurrentOccurrence
     }
     switch (
       request.snapshot.presentationSurface,
@@ -199,6 +157,27 @@ public enum NavigationPresentationProjector {
       break
     case (.iPhone, .connected), (.carPlay, .disconnected):
       throw NavigationPresentationProjectionError.inconsistentSurfaceState
+    }
+  }
+
+  private static func projectionError(
+    for error: GuidanceFrameValidationError
+  ) -> NavigationPresentationProjectionError {
+    switch error {
+    case .missingPromptID: .missingPromptID
+    case .missingAnchorID: .missingAnchorID
+    case .missingAnchorOccurrenceID: .missingAnchorOccurrenceID
+    case .missingMovementOccurrenceID: .missingMovementOccurrenceID
+    case .missingDecisionZoneID: .missingDecisionZoneID
+    case .invalidDistanceMeters: .invalidDistanceMeters
+    case .missingDecisionPointNameJapanese: .missingDecisionPointNameJapanese
+    case .missingDecisionPointLocale(let locale): .missingDecisionPointLocale(locale)
+    case .decisionPointJapaneseNameMismatch: .decisionPointJapaneseNameMismatch
+    case .missingRouteShield: .missingRouteShield
+    case .missingJapaneseSignText: .missingJapaneseSignText
+    case .missingLocale(let locale): .missingLocale(locale)
+    case .incompleteLocale(let locale): .incompleteLocale(locale)
+    case .japaneseSignTextMismatch(let locale): .japaneseSignTextMismatch(locale)
     }
   }
 
@@ -283,6 +262,8 @@ public enum NavigationPresentationProjector {
       nextMovementOccurrenceID: request.guidanceFrame.movementOccurrenceID,
       guidancePromptID: request.guidanceFrame.promptID,
       guidanceAnchorID: request.guidanceFrame.anchorID,
+      guidanceAnchorOccurrenceID: request.guidanceFrame.anchorOccurrenceID,
+      decisionZoneID: request.guidanceFrame.decisionZoneID,
       guidanceStage: request.guidanceFrame.stage,
       distanceMeters: request.guidanceFrame.distanceMeters,
       decisionPointNameJapanese: request.guidanceFrame.decisionPointNameJapanese,

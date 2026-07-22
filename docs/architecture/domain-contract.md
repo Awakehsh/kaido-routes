@@ -373,6 +373,25 @@ sensor triggers for one key are suppressed, while the same anchor stage on a
 later occurrence is a new key and may emit normally. A delayed anchor from an
 older occurrence cannot become current guidance.
 
+A release-ready anchor is wrapped by `ReleasedGuidanceDefinition`, which also
+contains a non-negative trigger distance and immutable `GuidanceFrameTemplate`.
+The template names the target movement occurrence and DecisionZone, prompt
+stage, maneuver, lane preparation, Japanese decision-point and sign text, route
+shields, and all three localized display/spoken bundles. The anchor occurrence
+and target movement must both exist in the same RoutePlan; the target must be a
+forward junction-movement occurrence. Definitions for one anchor occurrence may
+not point at different movements or reuse the same trigger distance.
+
+Runtime progress is a separate value: resolved anchor occurrence, remaining
+distance to its reviewed DecisionZone, and observation time. It does not contain
+localized prose. The planner may update a frame only with fresh HIGH-confidence,
+route-resolved evidence outside post-gap reacquisition. A large position jump
+selects only the most actionable eligible anchor rather than speaking every
+missed prompt. An emitted later stage remains active through distance jitter.
+Voice authorization is a transient `GuidancePromptEmission`, not a property of
+the persisted frame; restoring the frame and prompt ledger therefore cannot
+replay speech.
+
 ## Evidence lifecycle
 
 Suggested movement lifecycle:

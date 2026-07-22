@@ -239,6 +239,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var egress: EgressState
   public var signGuidance: SignGuidance
   public var guidanceAnchorStatus: GuidanceAnchorStatus
+  public var guidancePlanningStatus: GuidancePlanningStatus
+  public var activeGuidanceFrame: GuidanceFrame?
+  public var lastGuidanceProgressAtMilliseconds: Int?
   public var emittedGuidancePromptIDs: [String]
   public var lastGuidancePromptID: String?
   public var presentationSurface: NavigationPresentationSurface
@@ -279,6 +282,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.egress = EgressState()
     self.signGuidance = SignGuidance()
     self.guidanceAnchorStatus = .inactive
+    self.guidancePlanningStatus = .inactive
+    self.activeGuidanceFrame = nil
+    self.lastGuidanceProgressAtMilliseconds = nil
     self.emittedGuidancePromptIDs = []
     self.lastGuidancePromptID = nil
     self.presentationSurface = .iPhone

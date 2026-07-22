@@ -217,7 +217,7 @@ when measurements or independent release needs justify it.
 
 | Module | Owns | Must not import |
 |---|---|---|
-| `KaidoDomain` | IDs, graph entities, occurrences, status, evidence metadata, value types | MapKit, Core Location, CarPlay, SwiftUI |
+| `KaidoDomain` | IDs, graph entities, occurrences, released guidance/frame semantics, status, evidence metadata, value types | MapKit, Core Location, CarPlay, SwiftUI |
 | `KaidoRouting` | strict compilation, entrance ranking, recovery search, egress precomputation | SwiftUI, CarPlay |
 | `KaidoNavigation` | journey reducer, route-aware matcher, confidence, prompt scheduling | SwiftUI, CarPlay |
 | `KaidoSurfaceRouting` | provider-neutral surface requests, candidates, fixture validation, inspection gates, probe records | MapKit, Core Location, route-plan mutation |
@@ -232,33 +232,42 @@ location, provider, restriction, and user events. Its internal state transitions
 remain pure reducer functions so that deterministic simulation does not need an
 actor, clock, device, or main thread.
 
-`KaidoPresentation` now implements the first executable part of this boundary.
+The pure Swift guidance and presentation path now implements this boundary.
+`GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
+definitions, and one fresh resolved occurrence/distance observation. It never
+reads coordinates or mutates RoutePlan progress. `NavigationEngine` owns the
+prompt ledger and returns a transient matching `GuidancePromptEmission` only when
+a reviewed threshold is first crossed.
+
 `NavigationPresentationProjector` consumes one immutable `NavigationSnapshot`
 plus one occurrence-scoped `GuidanceFrame` and produces phone, CarPlay, and voice
 values. Both visual surfaces carry the same route-plan ID, current occurrence,
-next movement, prompt and anchor IDs, prompt stage, distance, Japanese and
-localized decision-point names, maneuver, lane preparation, marker certainty,
-route shield, Japanese sign target, passage evidence, interaction policy, and
-optional Finish drive exit; only `isPrimarySurface` differs across a CarPlay
-handoff. The voice locale is selected separately from the interface locale.
+anchor occurrence, next movement, DecisionZone, prompt and anchor IDs, prompt
+stage, distance, Japanese and localized decision-point names, maneuver, lane
+preparation, marker certainty, route shield, Japanese sign target, passage
+evidence, interaction policy, and optional Finish drive exit; only
+`isPrimarySurface` differs across a CarPlay handoff. The voice locale is selected
+separately from the interface locale. `voice.shouldSpeak` is true only when the
+request carries an emission matching the frame and persisted engine ledger.
 
-The projector fails closed when prompt, anchor, or movement occurrence identity
-is absent; distance is invalid; the Japanese decision-point name is absent or
-drifts from its Japanese localized value; any release locale is incomplete; a
-locale replaces the Japanese sign target; CarPlay ownership contradicts
-connection state; or the selected Finish drive exit lacks a name in the
-interface locale.
+The projector fails closed when prompt, anchor occurrence, movement occurrence,
+or DecisionZone identity is absent; the frame does not belong to the current
+occurrence; distance is invalid; a voice emission disagrees with the frame or
+ledger; the Japanese decision-point name is absent or drifts from its Japanese
+localized value; any release locale is incomplete; a locale replaces the
+Japanese sign target; CarPlay ownership contradicts connection state; or the
+selected Finish drive exit lacks a name in the interface locale.
 Only `REALTIME_CONFIRMED_PASSABLE` may authorize a positive open-road color;
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` remains explicitly unconfirmed.
 LOW/projected or ambiguous positions become `ESTIMATED` or `UNRESOLVED`, and a
 moving decision zone exposes no route editor or required phone touch.
 
-This is a complete structured frame and semantic projection boundary, not the
-planner that selects and updates a frame from DecisionZone and occurrence
-progress, and not a rendered UI. `NavigationSession` must later bind that planner
-to the navigation engine's occurrence-scoped prompt ledger. Dynamic layout,
-accessibility, installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`,
-audio routing, and physical display timing remain adapter work and device gates.
+The released frame, pure planner, ledger update, and semantic projection are
+executable. The remaining core input adapter must derive distance-to-DecisionZone
+from matcher/graph progress without fabricating certainty; KR-S17 injects that
+already resolved scalar. Dynamic layout, accessibility, installed voice
+discovery, SwiftUI lifecycle, `CPMapTemplate`, audio routing, and physical display
+timing remain adapter work and device gates.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
@@ -628,10 +637,11 @@ matched occurrence and progress
 → phone / CarPlay / AVSpeech adapters
 ```
 
-The executable `GuidanceFrame` contains prompt, anchor, and movement occurrence
-identity; prompt stage; distance; Japanese and localized decision-point names;
-maneuver; lane preparation; Japanese sign target; route shields; and localized
-display and spoken content. Position confidence remains part of the paired
+The executable `GuidanceFrame` is a `KaidoDomain` value containing prompt, anchor,
+anchor occurrence, movement occurrence, and DecisionZone identity; prompt stage;
+distance; Japanese and localized decision-point names; maneuver; lane
+preparation; Japanese sign target; route shields; and localized display and
+spoken content. Position confidence remains part of the paired
 `NavigationSnapshot`. Adapters may shorten layout-specific copy but cannot
 change the target movement or reconstruct missing guidance semantics.
 
@@ -645,6 +655,17 @@ core; phone, CarPlay, and speech adapters consume emissions but cannot retrigger
 them independently. Restoring a navigation snapshot also restores emitted keys
 from prompt IDs, so an adapter or process lifecycle transition does not replay a
 prompt merely because the engine value was reconstructed.
+
+`ReleasedGuidanceDefinition` binds that identity to a reviewed trigger distance
+and immutable frame template. For one anchor occurrence, thresholds advance from
+the outer instruction toward the most actionable eligible instruction. If a fix
+jumps across several thresholds, the planner emits only the most actionable
+prompt; it does not play historical catch-up speech. Once a later stage has been
+emitted, distance jitter cannot regress the active frame to an earlier stage.
+Stale timestamps, a non-current occurrence, LOW/ambiguous route evidence, and
+post-gap reacquisition cannot update the frame or authorize voice. The engine
+returns a transient `GuidancePromptEmission`; the frame itself never means
+“speak now.”
 
 ## Snapshot storage direction
 

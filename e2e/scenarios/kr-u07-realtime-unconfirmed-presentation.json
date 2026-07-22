@@ -33,7 +33,9 @@
         "guidance": {
           "prompt_id": "test.prompt.u07.preview",
           "anchor_id": "PREVIEW",
+          "anchor_occurrence_id": "test.occurrence.u07-anchor",
           "movement_occurrence_id": "test.occurrence.c1-mainline",
+          "decision_zone_id": "test.zone.edobashi",
           "stage": "PREVIEW",
           "distance_meters": 1200,
           "decision_point_name_ja": "江戸橋JCT",

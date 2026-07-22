@@ -46,6 +46,7 @@ should become scenarios when their layer is built.
 | KR-S14 | Finish drive activates a legal precomputed egress without reversing or taking an arbitrary exit | P0 | Seeded |
 | KR-S15 | A geofence-only or low-confidence entrance observation cannot enter strict-route mode | P0 | Seeded |
 | KR-S16 | Incremental matcher evidence requires fresh confirmation and reset cannot move navigation backward | P0 | Seeded |
+| KR-S17 | Fresh resolved progress produces a non-regressing shared frame and one-shot voice emission | P0 | Seeded |
 
 ## iPhone and CarPlay experience
 

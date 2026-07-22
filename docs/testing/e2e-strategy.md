@@ -113,8 +113,11 @@ presentation.kernel.voice.prompt_id
 presentation.kernel.voice.stage
 presentation.kernel.voice.distance_meters
 presentation.kernel.voice.maneuver
+presentation.kernel.voice.should_speak
 presentation.kernel.phone.guidance.prompt_id
 presentation.kernel.phone.guidance.anchor_id
+presentation.kernel.phone.guidance.anchor_occurrence_id
+presentation.kernel.phone.guidance.decision_zone_id
 presentation.kernel.phone.guidance.stage
 presentation.kernel.phone.guidance.distance_meters
 presentation.kernel.phone.guidance.decision_point_name_ja
@@ -123,6 +126,8 @@ presentation.kernel.phone.guidance.maneuver
 presentation.kernel.phone.guidance.lane_preparation
 presentation.kernel.carplay.guidance.prompt_id
 presentation.kernel.carplay.guidance.anchor_id
+presentation.kernel.carplay.guidance.anchor_occurrence_id
+presentation.kernel.carplay.guidance.decision_zone_id
 presentation.kernel.carplay.guidance.stage
 presentation.kernel.carplay.guidance.distance_meters
 presentation.kernel.carplay.guidance.decision_point_name_ja
@@ -147,6 +152,13 @@ localization.release_gate
 guidance.active_voice_locale
 guidance.visible_sign_text_ja
 guidance.anchor_status
+guidance.planning_status
+guidance.active_frame.prompt_id
+guidance.active_frame.anchor_occurrence_id
+guidance.active_frame.movement_occurrence_id
+guidance.active_frame.decision_zone_id
+guidance.active_frame.stage
+guidance.active_frame.distance_meters
 guidance.emitted_prompt_ids
 tariff_selection.selected_tariff_version_id
 tariff_selection.selected_tariff_version_status
@@ -162,11 +174,14 @@ The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08
 and KR-U10 through U12. These scenarios verify semantic view values shared by
 phone, CarPlay, and voice, including a structured occurrence-scoped guidance
 frame with prompt and anchor identity, stage, distance, decision point, maneuver,
-and lane preparation. They remain L1/L2 contract execution until a guidance
-planner produces those frames from navigation progress and real SwiftUI and
-`CPMapTemplate` adapters bind the projections to accessibility-visible views in
-L3/L4; their `layer` records the intended final verification surface, not a
-claim that a simulator or head unit ran in CI.
+and lane preparation. KR-S17 additionally injects a fresh route-resolved
+distance-to-DecisionZone observation through the pure guidance planner, engine
+ledger, and the same projector. It distinguishes a persistent active frame from
+the transient matching emission that alone sets `voice.should_speak`. These
+remain L1/L2 contract executions until matcher/graph progress derives the scalar
+and real SwiftUI and `CPMapTemplate` adapters bind projections to
+accessibility-visible views in L3/L4; their `layer` records the intended final
+verification surface, not a claim that a simulator or head unit ran in CI.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

@@ -58,6 +58,7 @@ private struct ScenarioHarness {
   let scenario: PortableScenario
   var engine: NavigationEngine
   var matcherSession: RouteMatcherSession?
+  var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
   init(scenario: PortableScenario) throws {
@@ -69,6 +70,7 @@ private struct ScenarioHarness {
       initialSnapshot: initialSnapshot
     )
     matcherSession = nil
+    lastGuidancePromptEmission = nil
   }
 
   var observations: [String: JSONValue] {
@@ -78,6 +80,7 @@ private struct ScenarioHarness {
   }
 
   mutating func apply(_ event: ScenarioEvent) throws {
+    lastGuidancePromptEmission = nil
     switch event.type {
     case "ROUTE_COMPILE_REQUESTED":
       try compileRoute(event.payload)
@@ -89,7 +92,8 @@ private struct ScenarioHarness {
       engine.observeLocation(
         locationObservation(
           from: event.payload,
-          observedAtMilliseconds: event.atMilliseconds
+          observedAtMilliseconds: event.payload.int("observed_at_ms")
+            ?? event.atMilliseconds
         ))
     case "MATCHER_SESSION_STARTED":
       try startMatcherSession(event.payload)
@@ -118,6 +122,18 @@ private struct ScenarioHarness {
       engine.reachGuidanceAnchor(
         occurrenceID: try event.payload.requiredString("occurrence_id"),
         anchorID: try event.payload.requiredString("anchor_id")
+      )
+    case "GUIDANCE_PROGRESS_UPDATED":
+      lastGuidancePromptEmission = engine.observeGuidanceProgress(
+        GuidanceProgressObservation(
+          occurrenceID: try event.payload.requiredString("occurrence_id"),
+          distanceToDecisionPointMeters: try requiredDouble(
+            event.payload,
+            key: "distance_to_decision_point_meters"
+          ),
+          observedAtMilliseconds: event.payload.int("observed_at_ms")
+            ?? event.atMilliseconds
+        )
       )
     case "CARPLAY_CONNECTED":
       engine.connectCarPlay()
@@ -724,6 +740,11 @@ private struct ScenarioHarness {
       adapterObservations.removeValue(forKey: key)
     }
     guard let value = scenario.given.inputs.object("presentation") else { return }
+    if value.string("guidance_source") == "NAVIGATION_ACTIVE",
+      engine.snapshot.activeGuidanceFrame == nil
+    {
+      return
+    }
     let request = try presentationRequest(value)
     let projection = try NavigationPresentationProjector.project(request)
     publish(projection)
@@ -739,14 +760,26 @@ private struct ScenarioHarness {
         .flatMap(KaidoReleaseLocale.init(rawValue:)),
       let passageEvidence = value.string("passage_evidence")
         .flatMap(RoutePassageEvidence.init(rawValue:)),
-      let drivingContext = value.object("driving_context"),
-      let guidanceValue = value.object("guidance")
+      let drivingContext = value.object("driving_context")
     else {
       throw ScenarioExecutionError.invalidInput("presentation")
     }
+    let frame: GuidanceFrame
+    if value.string("guidance_source") == "NAVIGATION_ACTIVE" {
+      guard let activeFrame = engine.snapshot.activeGuidanceFrame else {
+        throw ScenarioExecutionError.invalidInput("presentation.active_guidance_frame")
+      }
+      frame = activeFrame
+    } else {
+      guard let guidanceValue = value.object("guidance") else {
+        throw ScenarioExecutionError.invalidInput("presentation.guidance")
+      }
+      frame = try Self.guidanceFrame(guidanceValue)
+    }
     return NavigationPresentationRequest(
       snapshot: engine.snapshot,
-      guidanceFrame: try guidanceFrame(guidanceValue),
+      guidanceFrame: frame,
+      promptEmission: lastGuidancePromptEmission,
       languages: NavigationLanguageSelection(
         interfaceLocale: interfaceLocale,
         guidanceVoiceLocale: voiceLocale
@@ -760,14 +793,29 @@ private struct ScenarioHarness {
     )
   }
 
-  private func guidanceFrame(
+  private static func guidanceFrame(
     _ value: [String: JSONValue]
   ) throws -> GuidanceFrame {
+    guard let distanceMeters = value.double("distance_meters") else {
+      throw ScenarioExecutionError.invalidInput("presentation.guidance.distance_meters")
+    }
+    return try guidanceFrameTemplate(value).makeFrame(
+      anchor: GuidanceAnchorDefinition(
+        occurrenceID: try value.requiredString("anchor_occurrence_id"),
+        anchorID: try value.requiredString("anchor_id"),
+        promptID: try value.requiredString("prompt_id")
+      ),
+      distanceMeters: distanceMeters
+    )
+  }
+
+  private static func guidanceFrameTemplate(
+    _ value: [String: JSONValue]
+  ) throws -> GuidanceFrameTemplate {
     guard let stage = value.string("stage").flatMap(GuidancePromptStage.init(rawValue:)),
       let maneuver = value.string("maneuver").flatMap(GuidanceManeuver.init(rawValue:)),
       let lanePreparation = value.string("lane_preparation")
         .flatMap(GuidanceLanePreparation.init(rawValue:)),
-      let distanceMeters = value.double("distance_meters"),
       let localizedNameValues = value.object("localized_decision_point_names")
     else {
       throw ScenarioExecutionError.invalidInput("presentation.guidance.frame")
@@ -783,12 +831,10 @@ private struct ScenarioHarness {
       }
       localizedNames[locale] = name
     }
-    return GuidanceFrame(
-      promptID: try value.requiredString("prompt_id"),
-      anchorID: try value.requiredString("anchor_id"),
+    return GuidanceFrameTemplate(
       movementOccurrenceID: try value.requiredString("movement_occurrence_id"),
+      decisionZoneID: try value.requiredString("decision_zone_id"),
       stage: stage,
-      distanceMeters: distanceMeters,
       decisionPointNameJapanese: try value.requiredString("decision_point_name_ja"),
       localizedDecisionPointNames: localizedNames,
       maneuver: maneuver,
@@ -797,7 +843,7 @@ private struct ScenarioHarness {
     )
   }
 
-  private func guidancePresentationSource(
+  private static func guidancePresentationSource(
     _ value: [String: JSONValue]
   ) throws -> GuidancePresentationSource {
     guard let localizedValues = value.object("localized_content") else {
@@ -900,6 +946,9 @@ private struct ScenarioHarness {
     adapterObservations["presentation.kernel.voice.maneuver"] = .string(
       projection.voice.maneuver.rawValue
     )
+    adapterObservations["presentation.kernel.voice.should_speak"] = .bool(
+      projection.voice.shouldSpeak
+    )
     publish(projection.iPhone, prefix: "presentation.kernel.phone")
     publish(projection.carPlay, prefix: "presentation.kernel.carplay")
   }
@@ -915,6 +964,12 @@ private struct ScenarioHarness {
     )
     adapterObservations["\(prefix).guidance.anchor_id"] = .string(
       presentation.guidanceAnchorID
+    )
+    adapterObservations["\(prefix).guidance.anchor_occurrence_id"] = .string(
+      presentation.guidanceAnchorOccurrenceID
+    )
+    adapterObservations["\(prefix).guidance.decision_zone_id"] = .string(
+      presentation.decisionZoneID
     )
     adapterObservations["\(prefix).guidance.stage"] = .string(
       presentation.guidanceStage.rawValue
@@ -1067,7 +1122,8 @@ private struct ScenarioHarness {
       recoveryCandidates: try recoveryCandidates(from: given.inputs),
       egressOptions: try egressOptions(from: given.inputs),
       nextSign: signGuidance(from: given.inputs),
-      guidanceAnchors: try guidanceAnchors(from: given.inputs)
+      guidanceAnchors: try guidanceAnchors(from: given.inputs),
+      releasedGuidance: try releasedGuidance(from: given.inputs)
     )
   }
 
@@ -1156,6 +1212,28 @@ private struct ScenarioHarness {
         occurrenceID: try anchor.requiredString("occurrence_id"),
         anchorID: try anchor.requiredString("anchor_id"),
         promptID: try anchor.requiredString("prompt_id")
+      )
+    }
+  }
+
+  private static func releasedGuidance(
+    from inputs: [String: JSONValue]
+  ) throws -> [ReleasedGuidanceDefinition] {
+    try (inputs.array("released_guidance") ?? []).map { value in
+      guard let definition = value.objectValue,
+        let frameValue = definition.object("frame"),
+        let triggerDistanceMeters = definition.double("trigger_distance_meters")
+      else {
+        throw ScenarioExecutionError.invalidInput("released_guidance")
+      }
+      return ReleasedGuidanceDefinition(
+        anchor: GuidanceAnchorDefinition(
+          occurrenceID: try definition.requiredString("occurrence_id"),
+          anchorID: try definition.requiredString("anchor_id"),
+          promptID: try definition.requiredString("prompt_id")
+        ),
+        triggerDistanceMeters: triggerDistanceMeters,
+        frameTemplate: try guidanceFrameTemplate(frameValue)
       )
     }
   }
@@ -1343,6 +1421,7 @@ extension NavigationSnapshot {
       "egress_plan.prohibited_actions": .strings(egress.prohibitedActions),
       "guidance.next.route_shields": .strings(signGuidance.routeShields),
       "guidance.anchor_status": .string(guidanceAnchorStatus.rawValue),
+      "guidance.planning_status": .string(guidancePlanningStatus.rawValue),
       "guidance.emitted_prompt_ids": .strings(emittedGuidancePromptIDs),
       "guidance.emitted_prompt_count": .integer(emittedGuidancePromptIDs.count),
       "presentation.active_surface": .string(presentationSurface.rawValue),
@@ -1395,6 +1474,28 @@ extension NavigationSnapshot {
     }
     if let lastGuidancePromptID {
       values["guidance.last_prompt_id"] = .string(lastGuidancePromptID)
+    }
+    if let activeGuidanceFrame {
+      values["guidance.active_frame.prompt_id"] = .string(activeGuidanceFrame.promptID)
+      values["guidance.active_frame.anchor_id"] = .string(activeGuidanceFrame.anchorID)
+      values["guidance.active_frame.anchor_occurrence_id"] = .string(
+        activeGuidanceFrame.anchorOccurrenceID
+      )
+      values["guidance.active_frame.movement_occurrence_id"] = .string(
+        activeGuidanceFrame.movementOccurrenceID
+      )
+      values["guidance.active_frame.decision_zone_id"] = .string(
+        activeGuidanceFrame.decisionZoneID
+      )
+      values["guidance.active_frame.stage"] = .string(activeGuidanceFrame.stage.rawValue)
+      values["guidance.active_frame.distance_meters"] = .number(
+        activeGuidanceFrame.distanceMeters
+      )
+    }
+    if let lastGuidanceProgressAtMilliseconds {
+      values["guidance.last_progress_at_ms"] = .integer(
+        lastGuidanceProgressAtMilliseconds
+      )
     }
     if let lastPresentationTransitionTrigger {
       values["presentation.last_transition_trigger"] = .string(

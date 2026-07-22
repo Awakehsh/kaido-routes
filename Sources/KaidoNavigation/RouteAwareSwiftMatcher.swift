@@ -47,6 +47,12 @@ public struct RouteMatcherDirectedEdge: Equatable, Sendable {
     self.coordinates = coordinates
     self.successorEdgeIDs = successorEdgeIDs
   }
+
+  public var lengthMeters: Double {
+    zip(coordinates, coordinates.dropFirst()).reduce(0) {
+      $0 + matcherCoordinateDistanceMeters($1.0, $1.1)
+    }
+  }
 }
 
 public struct RouteMatcherOccurrence: Equatable, Sendable {
@@ -69,17 +75,20 @@ public struct RouteMatcherOccurrence: Equatable, Sendable {
 public struct RouteMatcherCorridor: Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
+  public let routePlanID: String
   public let edges: [RouteMatcherDirectedEdge]
   public let occurrences: [RouteMatcherOccurrence]
 
   public init(
     id: String,
     networkSnapshotID: String,
+    routePlanID: String,
     edges: [RouteMatcherDirectedEdge],
     occurrences: [RouteMatcherOccurrence]
   ) {
     self.id = id
     self.networkSnapshotID = networkSnapshotID
+    self.routePlanID = routePlanID
     self.edges = edges
     self.occurrences = occurrences
   }
@@ -88,6 +97,7 @@ public struct RouteMatcherCorridor: Equatable, Sendable {
     var issues: [String] = []
     if id.isEmpty { issues.append("corridor id is empty") }
     if networkSnapshotID.isEmpty { issues.append("network snapshot id is empty") }
+    if routePlanID.isEmpty { issues.append("route plan id is empty") }
     if edges.isEmpty { issues.append("corridor edges are empty") }
     let edgeIDs = edges.map(\.id)
     let edgeIDSet = Set(edgeIDs)
@@ -583,7 +593,8 @@ public struct RouteMatcherSession: Sendable {
       occurrenceID: selected.state.occurrenceID,
       candidateEdgeIDs: candidateEdgeIDs,
       confidence: confidence,
-      distanceMeters: selected.measurement.distanceMeters
+      distanceMeters: selected.measurement.distanceMeters,
+      fractionAlongEdge: selected.measurement.fractionAlong
     )
   }
 
@@ -598,7 +609,8 @@ public struct RouteMatcherSession: Sendable {
       occurrenceID: nil,
       candidateEdgeIDs: candidateEdgeIDs,
       confidence: .lost,
-      distanceMeters: nil
+      distanceMeters: nil,
+      fractionAlongEdge: nil
     )
   }
 }
@@ -1016,7 +1028,7 @@ private func angularDifferenceDegrees(_ lhs: Double, _ rhs: Double) -> Double {
   return min(difference, 360 - difference)
 }
 
-private func matcherCoordinateDistanceMeters(
+func matcherCoordinateDistanceMeters(
   _ lhs: MatcherCoordinate,
   _ rhs: MatcherCoordinate
 ) -> Double {
@@ -1054,6 +1066,7 @@ extension MatcherReplayFixture {
     return RouteMatcherCorridor(
       id: fixtureID,
       networkSnapshotID: networkSnapshotID,
+      routePlanID: fixtureID,
       edges: corridorEdges,
       occurrences: routeOccurrences.map {
         RouteMatcherOccurrence(

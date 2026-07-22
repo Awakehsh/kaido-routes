@@ -471,9 +471,11 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 41 scenarios with 239 semantic assertions executable at L1/L2. KR-S16
+   current 42 scenarios with 253 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
+   KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
+   geometry to that same guidance path without using lateral residual;
    KR-U04 through U08 and KR-U10 through U12 cross the shared presentation
    projection boundary.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
@@ -544,7 +546,10 @@ gate.
    tracked/private comparisons, a fixture-independent incremental session,
    version-bound corridor, spatial index, bounded state beam, vertical KR-S16
    scenario, Core Location observation/provenance adapter, private trace recorder,
-   scoped reliability evaluator, and timed calibration session are executable.
+   scoped reliability evaluator, timed calibration session, and occurrence-bound
+   distance bridge are executable. KR-S18 proves that only HIGH along-edge
+   progress on the exact RoutePlan corridor becomes DecisionZone distance; the
+   lateral matcher residual is never route progress.
    Run the target device matrix and collect independently annotated held-out
    evidence; no current test substitutes for that field work.
 10. **Partial complete:** released frame semantics live in `KaidoDomain`, and the
@@ -552,8 +557,9 @@ gate.
     from fresh resolved occurrence/distance input. `NavigationEngine` owns the
     prompt ledger and one-shot emission; `KaidoPresentation` projects that frame
     into phone, CarPlay, and independently selected voice values. KR-S17 executes
-    the chain, including no catch-up speech and no restoration replay. Add the
-    adapter that derives distance-to-DecisionZone from matcher/graph progress,
+    planning from resolved progress, including no catch-up speech and no
+    restoration replay. KR-S18 adds the deterministic Swift matcher-to-distance
+    bridge. Next add production corridor/DecisionZone construction and calibration,
     then the SwiftUI phone renderer and accessibility binding, followed by the
     `CPMapTemplate` adapter; none of those platform layers exists yet.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and

@@ -180,6 +180,29 @@ public struct ReleasedGuidanceDefinition: Equatable, Sendable {
   }
 }
 
+/// Locates one reviewed DecisionZone entry on a specific RoutePlan movement occurrence.
+public struct DecisionZoneProgressDefinition: Equatable, Sendable {
+  public let id: String
+  public let networkSnapshotID: String
+  public let routePlanID: String
+  public let movementOccurrenceID: String
+  public let entryOffsetMeters: Double
+
+  public init(
+    id: String,
+    networkSnapshotID: String,
+    routePlanID: String,
+    movementOccurrenceID: String,
+    entryOffsetMeters: Double
+  ) {
+    self.id = id
+    self.networkSnapshotID = networkSnapshotID
+    self.routePlanID = routePlanID
+    self.movementOccurrenceID = movementOccurrenceID
+    self.entryOffsetMeters = entryOffsetMeters
+  }
+}
+
 public struct GuidanceProgressObservation: Equatable, Sendable {
   public let occurrenceID: String
   public let distanceToDecisionPointMeters: Double

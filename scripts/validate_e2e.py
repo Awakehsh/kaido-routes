@@ -365,6 +365,109 @@ def validate_guidance_anchors(v: Validation, given: dict[str, Any]) -> None:
         prompt_ids.add(prompt_id)
 
 
+def validate_matcher_guidance_inputs(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict):
+        return
+    corridor = inputs.get("matcher_corridor")
+    bridge = inputs.get("guidance_progress_bridge")
+    if corridor is None and bridge is None:
+        return
+
+    route_plan = given.get("route_plan")
+    if not isinstance(route_plan, dict):
+        v.add("matcher guidance inputs require given.route_plan")
+        return
+    network_snapshot = given.get("network_snapshot")
+    snapshot_id = network_snapshot.get("id") if isinstance(network_snapshot, dict) else None
+    plan_id = route_plan.get("plan_id")
+    route_occurrences = route_plan.get("occurrences", [])
+    route_occurrence_by_id = {
+        occurrence.get("occurrence_id"): occurrence
+        for occurrence in route_occurrences
+        if isinstance(occurrence, dict)
+        and isinstance(occurrence.get("occurrence_id"), str)
+    }
+
+    if corridor is not None:
+        corridor_required = {
+            "corridor_id",
+            "network_snapshot_id",
+            "route_plan_id",
+            "edges",
+            "occurrences",
+        }
+        if not v.require_keys(corridor, corridor_required, "given.inputs.matcher_corridor"):
+            return
+        if corridor["network_snapshot_id"] != snapshot_id:
+            v.add("given.inputs.matcher_corridor.network_snapshot_id must match the snapshot")
+        if corridor["route_plan_id"] != plan_id:
+            v.add("given.inputs.matcher_corridor.route_plan_id must match the RoutePlan")
+
+        edges = corridor["edges"]
+        edge_ids = {
+            edge.get("directed_edge_id")
+            for edge in edges
+            if isinstance(edge, dict) and isinstance(edge.get("directed_edge_id"), str)
+        } if isinstance(edges, list) else set()
+        if not isinstance(edges, list) or not edges:
+            v.add("given.inputs.matcher_corridor.edges must be a non-empty array")
+
+        occurrences = corridor["occurrences"]
+        if not isinstance(occurrences, list) or not occurrences:
+            v.add("given.inputs.matcher_corridor.occurrences must be a non-empty array")
+        else:
+            for index, occurrence in enumerate(occurrences):
+                context = f"given.inputs.matcher_corridor.occurrences[{index}]"
+                required = {"occurrence_id", "index", "directed_edge_id"}
+                if not v.require_keys(occurrence, required, context):
+                    continue
+                route_occurrence = route_occurrence_by_id.get(occurrence["occurrence_id"])
+                if route_occurrence is None:
+                    v.add(f"{context}.occurrence_id must name a RoutePlan occurrence")
+                    continue
+                if occurrence["index"] != route_occurrence.get("index"):
+                    v.add(f"{context}.index must match the RoutePlan occurrence")
+                if occurrence["directed_edge_id"] not in edge_ids:
+                    v.add(f"{context}.directed_edge_id must name a corridor edge")
+                if (
+                    route_occurrence.get("kind") == "EDGE"
+                    and occurrence["directed_edge_id"] != route_occurrence.get("entity_id")
+                ):
+                    v.add(f"{context}.directed_edge_id must match the RoutePlan EDGE entity")
+
+    if bridge is None:
+        return
+    if corridor is None:
+        v.add("given.inputs.guidance_progress_bridge requires matcher_corridor")
+        return
+    bridge_required = {
+        "decision_zone_id",
+        "network_snapshot_id",
+        "route_plan_id",
+        "movement_occurrence_id",
+        "entry_offset_meters",
+    }
+    if not v.require_keys(bridge, bridge_required, "given.inputs.guidance_progress_bridge"):
+        return
+    if bridge["network_snapshot_id"] != snapshot_id:
+        v.add("given.inputs.guidance_progress_bridge.network_snapshot_id must match the snapshot")
+    if bridge["route_plan_id"] != plan_id:
+        v.add("given.inputs.guidance_progress_bridge.route_plan_id must match the RoutePlan")
+    if not isinstance(bridge["decision_zone_id"], str) or not bridge["decision_zone_id"].strip():
+        v.add("given.inputs.guidance_progress_bridge.decision_zone_id must be non-empty")
+    movement = route_occurrence_by_id.get(bridge["movement_occurrence_id"])
+    if movement is None or movement.get("kind") != "JUNCTION_MOVEMENT":
+        v.add("given.inputs.guidance_progress_bridge.movement_occurrence_id must name a junction movement")
+    offset = bridge["entry_offset_meters"]
+    if (
+        not isinstance(offset, (int, float))
+        or isinstance(offset, bool)
+        or offset < 0
+    ):
+        v.add("given.inputs.guidance_progress_bridge.entry_offset_meters must be non-negative")
+
+
 def validate_released_guidance(v: Validation, given: dict[str, Any]) -> None:
     inputs = given.get("inputs")
     if not isinstance(inputs, dict) or "released_guidance" not in inputs:
@@ -626,6 +729,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_guidance_anchors(v, given)
+        validate_matcher_guidance_inputs(v, given)
         validate_released_guidance(v, given)
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")

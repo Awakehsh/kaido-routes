@@ -106,9 +106,15 @@ or software-simulated samples can never satisfy the field statistical floor.
 No iPhone/head-unit trace has been collected yet, so device performance and
 confidence calibration remain unproven.
 
-The platform-light guidance-to-presentation boundary is executable end to end.
+The platform-light matcher-to-guidance-to-presentation boundary is executable
+end to end for the pure Swift core.
 `KaidoDomain` owns released frame semantics, while `GuidanceFramePlanner` accepts
 an already resolved occurrence and fresh distance-to-DecisionZone observation.
+`GuidanceProgressBridge` accepts only a HIGH Swift matcher estimate with an exact
+RoutePlan occurrence, directed edge, and along-edge fraction. It accumulates the
+version-bound corridor geometry to a reviewed DecisionZone entry offset. The
+matcher's `distanceMeters` remains the lateral point-to-road residual and is
+never interpreted as route progress.
 `NavigationEngine` selects the most actionable released anchor, prevents stage
 regression, updates its prompt ledger, and emits a one-shot voice command.
 `KaidoPresentation` then projects the same occurrence-scoped `GuidanceFrame` into
@@ -116,11 +122,13 @@ phone, CarPlay, and independently localized voice values. Japanese sign text and
 route shields remain visible in every locale, estimated positions cannot render
 as measured, unconfirmed passage cannot use a positive open-road state, moving
 decision zones expose no route editing, and Finish drive names its compiled exit
-first. KR-S17 proves this pure Swift chain, but the adapter that derives remaining
-DecisionZone distance from matcher/graph progress, SwiftUI, CarPlay entitlement,
-accessibility, audio, and physical head-unit behavior remain unimplemented.
+first. KR-S17 proves planning from resolved progress, and KR-S18 proves the
+occurrence-scoped Swift matcher distance bridge through the same planner,
+ledger, and presentation projection. Production corridor construction,
+DecisionZone calibration, SwiftUI, CarPlay entitlement, accessibility, audio,
+and physical head-unit behavior remain unimplemented or unproven.
 
-The feasibility core currently executes portable scenarios for twenty-two hard
+The feasibility core currently executes portable scenarios for twenty-three hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -171,6 +179,9 @@ properties that must remain proven as the product expands:
 22. fresh resolved route progress chooses one released occurrence-scoped frame,
     skips obsolete catch-up prompts, never regresses after distance jitter, and
     sends voice only with a matching one-shot engine emission.
+23. a HIGH route-aware matcher estimate exposes along-edge progress separately
+    from lateral residual, and only an exact snapshot-, RoutePlan-, occurrence-,
+    edge-, and DecisionZone-bound corridor may convert it into guidance distance.
 
 ## Repository map
 

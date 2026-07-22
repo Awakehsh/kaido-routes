@@ -103,6 +103,10 @@ navigation.active_route_plan_id
 navigation.current_occurrence_id
 navigation.signal_reacquisition_status
 navigation.route_candidate_resolution
+matcher.fraction_along_edge
+matcher.lateral_distance_meters
+guidance.progress_bridge.status
+guidance.progress_bridge.distance_meters
 presentation.active_surface
 presentation.carplay_connection_state
 presentation.kernel.phone.current_occurrence_id
@@ -177,9 +181,11 @@ frame with prompt and anchor identity, stage, distance, decision point, maneuver
 and lane preparation. KR-S17 additionally injects a fresh route-resolved
 distance-to-DecisionZone observation through the pure guidance planner, engine
 ledger, and the same projector. It distinguishes a persistent active frame from
-the transient matching emission that alone sets `voice.should_speak`. These
-remain L1/L2 contract executions until matcher/graph progress derives the scalar
-and real SwiftUI and `CPMapTemplate` adapters bind projections to
+the transient matching emission that alone sets `voice.should_speak`. KR-S18
+starts with actual Swift matcher observations and proves that occurrence-bound
+along-edge progress, not lateral map-match residual or straight-line distance,
+becomes the DecisionZone scalar. These remain L1/L2 contract executions until
+production graph/zone data and real SwiftUI and `CPMapTemplate` adapters bind projections to
 accessibility-visible views in L3/L4; their `layer` records the intended final
 verification surface, not a claim that a simulator or head unit ran in CI.
 

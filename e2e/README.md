@@ -32,7 +32,7 @@ Swift Testing without a simulator or live service.
 Matcher lifecycle scenarios use `MATCHER_SESSION_STARTED`,
 `MATCHER_OBSERVATION_RECEIVED`, and `MATCHER_SESSION_RESET`. Their
 `matcher_corridor` input is a synthetic, snapshot-bound set of directed edges,
-legal successors, and RoutePlan occurrence bindings. The runner streams each
+legal successors, and exact RoutePlan occurrence bindings. The runner streams each
 observation through the same public `RouteMatcherSession` used by the replay
 CLI, then projects its confidence and occurrence into `NavigationEngine`. This
 keeps matcher-to-navigation commit policy executable without importing Core
@@ -45,8 +45,11 @@ maneuver, lane preparation, Japanese sign target, route shields, and localized
 content. KR-S17 additionally streams fresh route-resolved distance observations
 through the pure `GuidanceFramePlanner`, `NavigationEngine` prompt ledger, and
 the projector. It proves most-actionable anchor selection, no stage regression,
-stale-progress rejection, and one-shot `voice.should_speak`. It does not derive
-distance from coordinates or claim that SwiftUI, `CPMapTemplate`, accessibility,
+stale-progress rejection, and one-shot `voice.should_speak`. KR-S18 supplies
+Swift matcher observations and a reviewed DecisionZone entry, then proves that
+HIGH occurrence plus along-edge progress becomes route-corridor distance while
+the separate lateral residual is ignored. Neither scenario claims that
+production geometry, zone calibration, SwiftUI, `CPMapTemplate`, accessibility,
 audio, or hardware rendering has run; those later layers must consume the same
 semantics without inferring them.
 

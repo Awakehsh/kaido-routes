@@ -58,6 +58,7 @@ private struct ScenarioHarness {
   let scenario: PortableScenario
   var engine: NavigationEngine
   var matcherSession: RouteMatcherSession?
+  var matcherCorridor: RouteMatcherCorridor?
   var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
@@ -70,6 +71,7 @@ private struct ScenarioHarness {
       initialSnapshot: initialSnapshot
     )
     matcherSession = nil
+    matcherCorridor = nil
     lastGuidancePromptEmission = nil
   }
 
@@ -578,9 +580,10 @@ private struct ScenarioHarness {
     }
     let corridor = try routeMatcherCorridor(corridorValue)
     guard corridor.networkSnapshotID == scenario.given.networkSnapshot.id,
-      scenario.given.routePlan?.networkSnapshotID == corridor.networkSnapshotID
+      scenario.given.routePlan?.networkSnapshotID == corridor.networkSnapshotID,
+      scenario.given.routePlan?.id == corridor.routePlanID
     else {
-      throw ScenarioExecutionError.invalidInput("matcher_corridor.network_snapshot_id")
+      throw ScenarioExecutionError.invalidInput("matcher_corridor.route_binding")
     }
     let configurationValue = scenario.given.inputs.object("matcher_session_configuration") ?? [:]
     let sessionConfiguration = RouteMatcherSessionConfiguration(
@@ -600,6 +603,7 @@ private struct ScenarioHarness {
       sessionConfiguration: sessionConfiguration,
       initialOccurrenceID: payload.string("initial_occurrence_id")
     )
+    matcherCorridor = corridor
     publishMatcherSessionStatus("ACTIVE")
   }
 
@@ -636,6 +640,44 @@ private struct ScenarioHarness {
           - observation.observedAtMilliseconds
       )
     )
+    try updateGuidanceProgress(from: estimate)
+  }
+
+  private mutating func updateGuidanceProgress(from estimate: MatcherEstimate) throws {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("guidance.progress_bridge.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+    guard let value = scenario.given.inputs.object("guidance_progress_bridge") else {
+      return
+    }
+    guard let routePlan = scenario.given.routePlan, let matcherCorridor else {
+      throw ScenarioExecutionError.invalidInput("guidance_progress_bridge.route_binding")
+    }
+    let decisionZone = try Self.decisionZoneProgressDefinition(value)
+    do {
+      let progress = try GuidanceProgressBridge.resolve(
+        estimate: estimate,
+        routePlan: routePlan,
+        corridor: matcherCorridor,
+        decisionZone: decisionZone,
+        skippedOccurrenceIDs: Set(engine.snapshot.skippedOccurrenceIDs)
+      )
+      adapterObservations["guidance.progress_bridge.status"] = .string("RESOLVED")
+      adapterObservations["guidance.progress_bridge.distance_meters"] = .number(
+        progress.distanceToDecisionPointMeters
+      )
+      lastGuidancePromptEmission = engine.observeGuidanceProgress(progress)
+    } catch GuidanceProgressBridgeError.insufficientMatcherEvidence {
+      adapterObservations["guidance.progress_bridge.status"] = .string(
+        "INSUFFICIENT_MATCHER_EVIDENCE"
+      )
+    } catch {
+      throw ScenarioExecutionError.invalidInput(
+        "guidance_progress_bridge.\(String(describing: error))"
+      )
+    }
   }
 
   private mutating func resetMatcherSession(_ payload: [String: JSONValue]) throws {
@@ -672,6 +714,12 @@ private struct ScenarioHarness {
     }
     if let occurrenceID = estimate.occurrenceID {
       adapterObservations["matcher.occurrence_id"] = .string(occurrenceID)
+    }
+    if let fractionAlongEdge = estimate.fractionAlongEdge {
+      adapterObservations["matcher.fraction_along_edge"] = .number(fractionAlongEdge)
+    }
+    if let distanceMeters = estimate.distanceMeters {
+      adapterObservations["matcher.lateral_distance_meters"] = .number(distanceMeters)
     }
     publishMatcherSessionStatus("ACTIVE")
   }
@@ -1238,6 +1286,23 @@ private struct ScenarioHarness {
     }
   }
 
+  private static func decisionZoneProgressDefinition(
+    _ value: [String: JSONValue]
+  ) throws -> DecisionZoneProgressDefinition {
+    guard let entryOffsetMeters = value.double("entry_offset_meters") else {
+      throw ScenarioExecutionError.invalidInput(
+        "guidance_progress_bridge.entry_offset_meters"
+      )
+    }
+    return DecisionZoneProgressDefinition(
+      id: try value.requiredString("decision_zone_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      routePlanID: try value.requiredString("route_plan_id"),
+      movementOccurrenceID: try value.requiredString("movement_occurrence_id"),
+      entryOffsetMeters: entryOffsetMeters
+    )
+  }
+
   private static func languageCode(_ locale: String) -> String {
     locale.split(separator: "-").first.map(String.init) ?? locale
   }
@@ -1283,6 +1348,7 @@ private struct ScenarioHarness {
     return RouteMatcherCorridor(
       id: try value.requiredString("corridor_id"),
       networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      routePlanID: try value.requiredString("route_plan_id"),
       edges: edges,
       occurrences: occurrences
     )

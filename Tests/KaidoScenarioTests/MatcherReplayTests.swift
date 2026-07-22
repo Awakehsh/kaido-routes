@@ -350,6 +350,7 @@ func routeMatcherSessionUsesCorridorSpatialIndex() throws {
   let corridor = RouteMatcherCorridor(
     id: "test.corridor.indexed",
     networkSnapshotID: "test.snapshot",
+    routePlanID: "test.plan",
     edges: [RouteMatcherDirectedEdge(id: "local", coordinates: localCoordinates)]
       + distantEdges,
     occurrences: [RouteMatcherOccurrence(id: "local-occurrence", index: 0, directedEdgeID: "local")]
@@ -388,6 +389,7 @@ func routeMatcherSessionBoundsActiveStates() throws {
   let corridor = RouteMatcherCorridor(
     id: "test.corridor.repeated-state-bound",
     networkSnapshotID: "test.snapshot",
+    routePlanID: "test.plan",
     edges: [edge],
     occurrences: (0..<200).map {
       RouteMatcherOccurrence(id: "loop-\($0)", index: $0, directedEdgeID: edge.id)
@@ -485,6 +487,7 @@ private func routeMatcherCorridor(_ fixture: MatcherReplayFixture) -> RouteMatch
   return RouteMatcherCorridor(
     id: fixture.fixtureID,
     networkSnapshotID: fixture.networkSnapshotID,
+    routePlanID: fixture.fixtureID,
     edges: edges,
     occurrences: fixture.routeOccurrences.map {
       RouteMatcherOccurrence(

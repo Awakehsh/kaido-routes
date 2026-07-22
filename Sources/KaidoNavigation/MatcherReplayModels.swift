@@ -277,6 +277,7 @@ public struct MatcherEstimate: Codable, Equatable, Sendable {
   public let candidateEdgeIDs: [String]
   public let confidence: MatcherConfidence
   public let distanceMeters: Double?
+  public let fractionAlongEdge: Double?
 
   public init(
     observationID: String?,
@@ -285,7 +286,8 @@ public struct MatcherEstimate: Codable, Equatable, Sendable {
     occurrenceID: String?,
     candidateEdgeIDs: [String],
     confidence: MatcherConfidence,
-    distanceMeters: Double?
+    distanceMeters: Double?,
+    fractionAlongEdge: Double? = nil
   ) {
     self.observationID = observationID
     self.estimatedAtMilliseconds = estimatedAtMilliseconds
@@ -294,6 +296,7 @@ public struct MatcherEstimate: Codable, Equatable, Sendable {
     self.candidateEdgeIDs = candidateEdgeIDs
     self.confidence = confidence
     self.distanceMeters = distanceMeters
+    self.fractionAlongEdge = fractionAlongEdge
   }
 }
 

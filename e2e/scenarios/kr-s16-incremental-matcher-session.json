@@ -45,6 +45,7 @@
       "matcher_corridor": {
         "corridor_id": "test.corridor.matcher-session",
         "network_snapshot_id": "test.snapshot.matcher-session-v1",
+        "route_plan_id": "test.plan.matcher-session",
         "edges": [
           {
             "directed_edge_id": "test.edge.matcher-a",

@@ -214,6 +214,7 @@
     let corridor = RouteMatcherCorridor(
       id: "core-location-corridor",
       networkSnapshotID: "snapshot",
+      routePlanID: "plan",
       edges: [edge],
       occurrences: [
         RouteMatcherOccurrence(id: "occurrence", index: 0, directedEdgeID: edge.id)
@@ -328,6 +329,7 @@
     let corridor = RouteMatcherCorridor(
       id: "core-location-corridor",
       networkSnapshotID: "snapshot",
+      routePlanID: "plan",
       edges: [edge],
       occurrences: [
         RouteMatcherOccurrence(id: "occurrence", index: 0, directedEdgeID: edge.id)

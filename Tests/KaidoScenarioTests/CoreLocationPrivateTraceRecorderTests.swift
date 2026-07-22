@@ -244,6 +244,7 @@
     let corridor = RouteMatcherCorridor(
       id: "corridor",
       networkSnapshotID: "snapshot",
+      routePlanID: "plan",
       edges: [edge],
       occurrences: [
         RouteMatcherOccurrence(id: "occurrence", index: 0, directedEdgeID: "edge")

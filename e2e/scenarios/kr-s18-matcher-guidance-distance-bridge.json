@@ -1,0 +1,404 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S18",
+  "title": "Swift matcher progress becomes route distance to one reviewed DecisionZone",
+  "layer": "SIMULATION",
+  "tags": ["guidance", "map-matching", "occurrence", "route-distance"],
+  "purpose": "Bridge HIGH occurrence and along-edge evidence through the exact RoutePlan corridor instead of misusing lateral map-match error or straight-line distance as guidance progress.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic geometry proves identity and distance semantics only; production graph lengths, DecisionZone offsets, phone accuracy, and prompt thresholds require released data and field evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.matcher-guidance-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.matcher-guidance",
+      "network_snapshot_id": "test.snapshot.matcher-guidance-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.approach-a",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach-a"
+        },
+        {
+          "occurrence_id": "test.occurrence.approach-b",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach-b"
+        },
+        {
+          "occurrence_id": "test.occurrence.movement",
+          "index": 2,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.jct"
+        }
+      ]
+    },
+    "inputs": {
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.matcher-guidance",
+        "network_snapshot_id": "test.snapshot.matcher-guidance-v1",
+        "route_plan_id": "test.plan.matcher-guidance",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.approach-a",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.76},
+              {"latitude": 35.68, "longitude": 139.761}
+            ],
+            "successor_edge_ids": ["test.edge.approach-b"]
+          },
+          {
+            "directed_edge_id": "test.edge.approach-b",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.68, "longitude": 139.762}
+            ],
+            "successor_edge_ids": ["test.edge.movement"]
+          },
+          {
+            "directed_edge_id": "test.edge.movement",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.762},
+              {"latitude": 35.68, "longitude": 139.7622}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.approach-a",
+            "index": 0,
+            "directed_edge_id": "test.edge.approach-a"
+          },
+          {
+            "occurrence_id": "test.occurrence.approach-b",
+            "index": 1,
+            "directed_edge_id": "test.edge.approach-b"
+          },
+          {
+            "occurrence_id": "test.occurrence.movement",
+            "index": 2,
+            "directed_edge_id": "test.edge.movement"
+          }
+        ]
+      },
+      "matcher_session_configuration": {
+        "ambiguity_margin_meters": 2,
+        "stale_observation_threshold_ms": 10000,
+        "observation_gap_threshold_ms": 10000,
+        "spatial_cell_size_meters": 50,
+        "maximum_active_states": 16,
+        "score_beam_width": 30
+      },
+      "guidance_progress_bridge": {
+        "decision_zone_id": "test.zone.jct",
+        "network_snapshot_id": "test.snapshot.matcher-guidance-v1",
+        "route_plan_id": "test.plan.matcher-guidance",
+        "movement_occurrence_id": "test.occurrence.movement",
+        "entry_offset_meters": 0
+      },
+      "released_guidance": [
+        {
+          "occurrence_id": "test.occurrence.approach-a",
+          "anchor_id": "PREPARE",
+          "prompt_id": "test.prompt.prepare",
+          "trigger_distance_meters": 170,
+          "frame": {
+            "movement_occurrence_id": "test.occurrence.movement",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "PREPARE",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        },
+        {
+          "occurrence_id": "test.occurrence.approach-b",
+          "anchor_id": "COMMIT",
+          "prompt_id": "test.prompt.commit",
+          "trigger_distance_meters": 30,
+          "frame": {
+            "movement_occurrence_id": "test.occurrence.movement",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "COMMIT",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        }
+      ],
+      "presentation": {
+        "guidance_source": "NAVIGATION_ACTIVE",
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.matcher-guidance",
+      "current_occurrence_id": "test.occurrence.approach-a",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start-navigation",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "start-matcher",
+      "at_ms": 0,
+      "type": "MATCHER_SESSION_STARTED",
+      "payload": {"initial_occurrence_id": "test.occurrence.approach-a"}
+    },
+    {
+      "id": "early-approach",
+      "at_ms": 1000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "early-approach",
+        "observed_at_ms": 1000,
+        "received_at_ms": 1000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7602},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 45,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "late-first-edge",
+      "at_ms": 2000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "late-first-edge",
+        "observed_at_ms": 2000,
+        "received_at_ms": 2000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7607},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 45,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "late-second-edge",
+      "at_ms": 3000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "late-second-edge",
+        "observed_at_ms": 3000,
+        "received_at_ms": 3000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7617},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 45,
+        "source": "PHONE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "swift-fraction-is-exposed",
+      "after": "early-approach",
+      "category": "NAVIGATION",
+      "subject": "matcher.fraction_along_edge",
+      "matcher": "GREATER_THAN",
+      "expected": 0.19,
+      "rationale": "The Swift matcher exposes along-edge progress separately from lateral error."
+    },
+    {
+      "id": "lateral-error-is-small",
+      "after": "early-approach",
+      "category": "NAVIGATION",
+      "subject": "matcher.lateral_distance_meters",
+      "matcher": "LESS_THAN",
+      "expected": 1,
+      "rationale": "The map-match residual is near zero but is not the remaining route distance."
+    },
+    {
+      "id": "bridge-distance-is-route-length",
+      "after": "early-approach",
+      "category": "SAFETY",
+      "subject": "guidance.progress_bridge.distance_meters",
+      "matcher": "GREATER_THAN",
+      "expected": 150,
+      "rationale": "Remaining guidance distance includes the rest of the current and intermediate occurrences."
+    },
+    {
+      "id": "bridge-resolves",
+      "after": "early-approach",
+      "category": "NAVIGATION",
+      "subject": "guidance.progress_bridge.status",
+      "matcher": "EQUALS",
+      "expected": "RESOLVED",
+      "rationale": "Snapshot, RoutePlan, occurrence, edge, and DecisionZone bindings all agree."
+    },
+    {
+      "id": "prepare-frame-is-active",
+      "after": "early-approach",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_frame.stage",
+      "matcher": "EQUALS",
+      "expected": "PREPARE",
+      "rationale": "The resolved route distance enters the existing released guidance planner."
+    },
+    {
+      "id": "prepare-speaks-once",
+      "after": "early-approach",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The first threshold crossing produces a matching engine emission."
+    },
+    {
+      "id": "distance-decreases-on-same-occurrence",
+      "after": "late-first-edge",
+      "category": "NAVIGATION",
+      "subject": "guidance.progress_bridge.distance_meters",
+      "matcher": "LESS_THAN",
+      "expected": 120,
+      "rationale": "Along-edge progress reduces route distance without changing occurrence identity."
+    },
+    {
+      "id": "same-anchor-does-not-replay",
+      "after": "late-first-edge",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A fresh distance update is not another voice authorization."
+    },
+    {
+      "id": "matcher-advances-second-occurrence",
+      "after": "late-second-edge",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.approach-b",
+      "rationale": "The exact later occurrence becomes the distance origin."
+    },
+    {
+      "id": "commit-distance-is-near-zone",
+      "after": "late-second-edge",
+      "category": "NAVIGATION",
+      "subject": "guidance.progress_bridge.distance_meters",
+      "matcher": "LESS_THAN",
+      "expected": 30,
+      "rationale": "Only the remainder of the second approach edge remains before zone entry."
+    },
+    {
+      "id": "commit-frame-replaces-cleared-prior-frame",
+      "after": "late-second-edge",
+      "category": "NAVIGATION",
+      "subject": "guidance.active_frame.stage",
+      "matcher": "EQUALS",
+      "expected": "COMMIT",
+      "rationale": "Occurrence advance clears the old frame before planning the new occurrence's released anchor."
+    },
+    {
+      "id": "decision-zone-remains-identical",
+      "after": "late-second-edge",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.guidance.decision_zone_id",
+      "matcher": "EQUALS",
+      "expected": "test.zone.jct",
+      "rationale": "The same reviewed DecisionZone survives matcher, planner, and CarPlay projection."
+    },
+    {
+      "id": "commit-speaks-once",
+      "after": "late-second-edge",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The second occurrence owns its distinct one-shot commit prompt."
+    },
+    {
+      "id": "both-prompts-retained",
+      "after": "late-second-edge",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.prompt.prepare", "test.prompt.commit"],
+      "rationale": "The shared ledger preserves both occurrence-scoped emissions in order."
+    }
+  ]
+}

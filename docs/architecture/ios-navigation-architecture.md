@@ -263,11 +263,15 @@ LOW/projected or ambiguous positions become `ESTIMATED` or `UNRESOLVED`, and a
 moving decision zone exposes no route editor or required phone touch.
 
 The released frame, pure planner, ledger update, and semantic projection are
-executable. The remaining core input adapter must derive distance-to-DecisionZone
-from matcher/graph progress without fabricating certainty; KR-S17 injects that
-already resolved scalar. Dynamic layout, accessibility, installed voice
-discovery, SwiftUI lifecycle, `CPMapTemplate`, audio routing, and physical display
-timing remain adapter work and device gates.
+executable. `GuidanceProgressBridge` now derives distance-to-DecisionZone from a
+HIGH Swift estimate only when along-edge progress, RoutePlan occurrence, directed
+edge, complete version-bound corridor geometry, and reviewed DecisionZone entry
+offset agree. It never consumes the matcher's lateral residual as route distance.
+KR-S17 injects an already resolved scalar; KR-S18 executes the matcher bridge
+through planning, ledger, and projection. Production corridor construction and
+zone calibration remain data/field gates. Dynamic layout, accessibility,
+installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`, audio routing,
+and physical display timing remain adapter work and device gates.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
@@ -571,8 +575,8 @@ LOW wrong-edge selections and one ambiguity at Tomigaya.
 
 This selects pure Swift for the live matcher boundary. `RouteMatcherSession` now
 turns the algorithm into a fixture-independent incremental API: the session is
-bound to a versioned `RouteMatcherCorridor`, accepts observations in receive
-order, retains temporal path state, rejects invalid receive ordering, and
+bound to one RoutePlan and versioned `RouteMatcherCorridor`, accepts observations
+in receive order, retains temporal path state, rejects invalid receive ordering, and
 supports explicit reset or restart at a reviewed occurrence. A fixed-grid
 spatial index measures only nearby corridor edges before expanding their route
 occurrence states. A score beam and configurable active-state cap bound growth
@@ -586,6 +590,16 @@ all tracked fixtures. KR-S16 drives the public session through the scenario
 adapter and `NavigationEngine`: stale evidence does not mutate the session, the
 first post-gap occurrence hypothesis remains LOW, a fresh second observation
 may commit HIGH, and restarting the matcher cannot move navigation backward.
+
+For HIGH unambiguous Swift results, `MatcherEstimate.fractionAlongEdge` carries
+the selected geometry projection separately from `distanceMeters`, which is the
+lateral point-to-road residual. `GuidanceProgressBridge` accumulates the
+remaining current edge, complete intervening route occurrences, and the reviewed
+offset to the target movement's DecisionZone. Every binding is occurrence-scoped,
+so a repeated edge on another lap is not interchangeable. LOW results, external
+oracle estimates without along-edge progress, skipped occurrences, incomplete
+geometry, and ID drift fail closed. KR-S18 proves this deterministic boundary;
+it is not a substitute for field-calibrated geometry or prompt timing.
 
 This is still not a calibrated production engine. The trace and reliability
 pipeline now exists, but the current grid has only synthetic complexity coverage

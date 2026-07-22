@@ -392,6 +392,15 @@ Voice authorization is a transient `GuidancePromptEmission`, not a property of
 the persisted frame; restoring the frame and prompt ledger therefore cannot
 replay speech.
 
+`DecisionZoneProgressDefinition` locates the entry of one reviewed DecisionZone
+on a specific junction-movement occurrence. It carries the network snapshot ID,
+RoutePlan ID, movement occurrence ID, and a non-negative offset along that
+movement's corridor geometry. A distance bridge may consume it only when the
+current matcher estimate, complete occurrence corridor, RoutePlan, and zone all
+share the same identities. Matcher lateral residual, straight-line distance,
+LOW confidence, missing along-edge progress, skipped occurrences, or geometry
+from another snapshot cannot produce runtime guidance progress.
+
 ## Evidence lifecycle
 
 Suggested movement lifecycle:

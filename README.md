@@ -22,7 +22,9 @@ comparator, a checksummed routing-build manifest, and a bounded Valhalla
 provider/HTTP boundary; no live provider call runs in deterministic tests. A
 private same-source Valhalla build with complete Japan/Tokyo administrative
 context has passed the three-origin Shinjuku selected-path identity gates and
-reports left-side driving. Live-service operations, ODbL distribution review,
+reports left-side driving. A supervised private 3x3 run also passes through the
+public URLSession adapter and probe CLI; deterministic tests still make no live
+provider call. Long-running service operations, ODbL distribution review,
 broader road coverage, field evidence, and entrance release remain pending.
 
 The feasibility core currently executes portable scenarios for sixteen hard

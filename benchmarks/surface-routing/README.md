@@ -142,9 +142,11 @@ locale. It does not supply Kaido's multilingual navigation contract: Japanese,
 Chinese, and English signs, terminology, and speech remain structured
 `GuidanceFrame` data owned by the Swift core.
 
-No real entrance is released yet. Live HTTP service supervision, broader road
-coverage, ODbL distribution review, retained sign/lane/temporal evidence, and
-field checks remain release blockers.
+No real entrance is released yet. A supervised private local HTTP window now
+passes all nine Shinjuku runs through the public URLSession adapter and the same
+six hard gates. Long-running service supervision, broader road coverage, ODbL
+distribution review, retained sign/lane/temporal evidence, and field checks
+remain release blockers.
 
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
@@ -173,6 +175,27 @@ swift run kaido-surface-probe \
   --repeat 3 \
   --pretty
 ```
+
+Run the same hard-gate pipeline against a self-hosted, manifest-bound Valhalla
+service only with an explicit live-provider acknowledgement:
+
+```sh
+swift run kaido-surface-probe \
+  --fixture research/path/to/entrance.json \
+  --graph research/path/to/directed-road-graph.json \
+  --origin example.origin.same-side \
+  --manifest research/path/to/surface-routing-build-manifest.json \
+  --base-url http://127.0.0.1:18002 \
+  --allow-live-valhalla \
+  --repeat 3 \
+  --pretty
+```
+
+The CLI derives the retained terminal OSM node from the reviewed approach edge,
+validates the manifest structurally, records only the service origin, and marks
+provider data `REVIEW_REQUIRED`. The URLSession transport has a 15-second
+request timeout and an 8 MiB response limit. One-shot output is raw local data;
+repeat output is still local scalar evidence, not permission to publish it.
 
 The repeat summary excludes coordinates, instructions, edge IDs, candidate IDs,
 and path hashes. It distinguishes `STABLE_PASS`, `VARIABLE_PASS`, and `FAIL`, but

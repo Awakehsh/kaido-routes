@@ -17,6 +17,7 @@ public struct ValhallaHTTPResponse: Equatable, Sendable {
 
 public enum ValhallaHTTPTransportFailure: Error, Equatable, Sendable {
   case network(String?)
+  case timedOut
   case cancelled
   case responseTooLarge
   case invalidResponse
@@ -335,6 +336,8 @@ public struct ValhallaSurfaceRouteProvider: SurfaceRouteProvider {
     switch failure {
     case .cancelled:
       SurfaceProviderFailure(kind: .cancelled)
+    case .timedOut:
+      SurfaceProviderFailure(kind: .network, providerErrorCode: "REQUEST_TIMED_OUT")
     case .network(let message):
       SurfaceProviderFailure(kind: .network, message: message)
     case .responseTooLarge:

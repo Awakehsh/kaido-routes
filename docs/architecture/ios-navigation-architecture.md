@@ -92,7 +92,11 @@ the bounded HTTP flow: POST one `/route`, pass that exact encoded shape to
 `/trace_attributes` with `shape_match=edge_walk`, normalize the response, enforce
 the manifest dataset ID, translate to Kaido edges, and only then return a generic
 surface candidate. Deterministic tests use a transport stub; no live provider is
-called from CI.
+called from CI. The public probe CLI also requires an explicit
+`--allow-live-valhalla` acknowledgement, validates the manifest, derives the
+terminal OSM node from the reviewed approach edge, and uses bounded timeout and
+response-size policies. A supervised private local 3x3 window passed through
+this exact URLSession boundary; long-running service operations remain open.
 
 Valhalla route narration is provider prose, not product guidance. The adapter
 requests only an explicitly supported Japanese or English locale and currently

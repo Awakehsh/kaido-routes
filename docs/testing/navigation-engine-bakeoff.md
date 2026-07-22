@@ -368,8 +368,11 @@ gate.
    Japan-admin build passes structural validation and intentionally fails release
    validation only on declared lab blockers. The bounded Valhalla provider,
    response normalizer, edge-walk sequence, and URLSession transport are
-   implemented with deterministic transport fixtures. Live-service operations,
-   ODbL distribution review, broader coverage, and field evidence remain open.
+   implemented with deterministic transport fixtures. A supervised local HTTP
+   window then passed all three origins three times through the public CLI, with
+   one resolved path variant per origin and no unmatched, ambiguous, or
+   disconnected selected edges. Long-running service operations, ODbL
+   distribution review, broader coverage, and field evidence remain open.
 5. Run OSRM and GraphHopper against the same surface fixtures.
 6. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
    matcher oracle.
@@ -378,10 +381,9 @@ gate.
 9. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next provider task is to run the bounded HTTP adapter against a supervised
-local service across the reviewed corpus, then compare OSRM and GraphHopper in
-step 5. It is not an iPhone screen and not a rewrite of the Swift route-first
-core.
+The next provider task is to extend the same manifest-bound HTTP run to the
+remaining directional entrance corpus, then compare OSRM and GraphHopper in step
+5. It is not an iPhone screen and not a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-22
 

@@ -4,6 +4,7 @@ import KaidoSurfaceRouting
 public enum URLSessionValhallaHTTPTransportInitializationError: Error, Equatable, Sendable {
   case invalidBaseURL
   case invalidResponseLimit
+  case invalidRequestTimeout
 }
 
 /// Minimal POST transport for a self-hosted Valhalla service.
@@ -15,11 +16,13 @@ public actor URLSessionValhallaHTTPTransport: ValhallaHTTPTransport {
   private let baseURL: URL
   private let session: URLSession
   private let maximumResponseBytes: Int
+  private let requestTimeoutSeconds: TimeInterval
 
   public init(
     baseURL: URL,
     session: URLSession = .shared,
-    maximumResponseBytes: Int = 8 * 1_024 * 1_024
+    maximumResponseBytes: Int = 8 * 1_024 * 1_024,
+    requestTimeoutSeconds: TimeInterval = 15
   ) throws {
     guard ["http", "https"].contains(baseURL.scheme?.lowercased()), baseURL.host != nil else {
       throw URLSessionValhallaHTTPTransportInitializationError.invalidBaseURL
@@ -27,9 +30,13 @@ public actor URLSessionValhallaHTTPTransport: ValhallaHTTPTransport {
     guard maximumResponseBytes > 0 else {
       throw URLSessionValhallaHTTPTransportInitializationError.invalidResponseLimit
     }
+    guard requestTimeoutSeconds.isFinite, requestTimeoutSeconds > 0 else {
+      throw URLSessionValhallaHTTPTransportInitializationError.invalidRequestTimeout
+    }
     self.baseURL = baseURL
     self.session = session
     self.maximumResponseBytes = maximumResponseBytes
+    self.requestTimeoutSeconds = requestTimeoutSeconds
   }
 
   public func post(
@@ -40,6 +47,7 @@ public actor URLSessionValhallaHTTPTransport: ValhallaHTTPTransport {
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = jsonBody
+    request.timeoutInterval = requestTimeoutSeconds
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("application/json", forHTTPHeaderField: "Accept")
 
@@ -58,6 +66,8 @@ public actor URLSessionValhallaHTTPTransport: ValhallaHTTPTransport {
       throw failure
     } catch let error as URLError where error.code == .cancelled {
       throw ValhallaHTTPTransportFailure.cancelled
+    } catch let error as URLError where error.code == .timedOut {
+      throw ValhallaHTTPTransportFailure.timedOut
     } catch let error as URLError {
       throw ValhallaHTTPTransportFailure.network(error.code.rawValue.description)
     } catch {

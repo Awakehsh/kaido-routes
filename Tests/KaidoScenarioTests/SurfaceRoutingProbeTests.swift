@@ -146,6 +146,90 @@ func offlineProbeRunnerAcceptsInspectedCandidate() async throws {
     try JSONDecoder().decode(SurfaceProbeResult.self, from: JSONEncoder().encode(result)) == result)
 }
 
+@Test("Repeated probes produce a scalar-only stable summary")
+func repeatedSurfaceProbesProduceStableScalarSummary() throws {
+  let results = try [
+    makeStabilityResult(
+      runID: "test.stability.1",
+      requestedAt: "2026-07-22T12:00:00+09:00",
+      pathEdgeIDs: ["secret.provider.edge.a", "secret.provider.edge.b"],
+      distanceMeters: 120,
+      providerLatencyMilliseconds: 10,
+      inspectionLatencyMilliseconds: 3
+    ),
+    makeStabilityResult(
+      runID: "test.stability.2",
+      requestedAt: "2026-07-22T12:01:00+09:00",
+      pathEdgeIDs: ["secret.provider.edge.a", "secret.provider.edge.b"],
+      distanceMeters: 121,
+      providerLatencyMilliseconds: 30,
+      inspectionLatencyMilliseconds: 7
+    ),
+  ]
+
+  let summary = try SurfaceProbeStabilitySummarizer.summarize(results)
+  let encoded = try JSONEncoder().encode(summary)
+  let json = String(decoding: encoded, as: UTF8.self)
+
+  #expect(summary.assessment == .stablePass)
+  #expect(summary.retentionClassification == .scalarLocalOnly)
+  #expect(summary.runCount == 2)
+  #expect(summary.passingRunCount == 2)
+  #expect(summary.failingRunCount == 0)
+  #expect(summary.acceptedResolvedPathVariantCount == 1)
+  #expect(summary.acceptedRouteSetVariantCount == 1)
+  #expect(summary.providerLatencyMilliseconds.minimum == 10)
+  #expect(summary.providerLatencyMilliseconds.median == 20)
+  #expect(summary.providerLatencyMilliseconds.percentile95 == 30)
+  #expect(summary.inspectionLatencyPerRunMilliseconds?.maximum == 7)
+  #expect(summary.acceptedDistanceMeters == SurfaceProbeDoubleRange(minimum: 120, maximum: 121))
+  #expect(!json.contains("secret.provider.edge"))
+  #expect(!json.contains("provider-only instruction"))
+  #expect(!json.contains("latitude"))
+  #expect(
+    try JSONDecoder().decode(SurfaceProbeStabilitySummary.self, from: encoded) == summary)
+}
+
+@Test("Repeated probes distinguish route variability from a failed run")
+func repeatedSurfaceProbesClassifyVariabilityAndFailure() throws {
+  let first = try makeStabilityResult(
+    runID: "test.variability.1",
+    requestedAt: "2026-07-22T12:00:00+09:00",
+    pathEdgeIDs: ["test.path.a"],
+    distanceMeters: 120,
+    providerLatencyMilliseconds: 10,
+    inspectionLatencyMilliseconds: 3
+  )
+  let second = try makeStabilityResult(
+    runID: "test.variability.2",
+    requestedAt: "2026-07-22T12:01:00+09:00",
+    pathEdgeIDs: ["test.path.b"],
+    distanceMeters: 121,
+    providerLatencyMilliseconds: 11,
+    inspectionLatencyMilliseconds: 4
+  )
+  let failed = try makeStabilityResult(
+    runID: "test.variability.3",
+    requestedAt: "2026-07-22T12:02:00+09:00",
+    pathEdgeIDs: [],
+    distanceMeters: 0,
+    providerLatencyMilliseconds: 12,
+    inspectionLatencyMilliseconds: 5,
+    accepted: false
+  )
+
+  let variableSummary = try SurfaceProbeStabilitySummarizer.summarize([first, second])
+  let failedSummary = try SurfaceProbeStabilitySummarizer.summarize([first, failed])
+
+  #expect(variableSummary.assessment == .variablePass)
+  #expect(variableSummary.acceptedResolvedPathVariantCount == 2)
+  #expect(variableSummary.acceptedRouteSetVariantCount == 2)
+  #expect(failedSummary.assessment == .fail)
+  #expect(failedSummary.passingRunCount == 1)
+  #expect(failedSummary.failingRunCount == 1)
+  #expect(failedSummary.hardGateFailureCounts[SurfaceHardGate.geometryBindable.rawValue] == 1)
+}
+
 @Test("A disclosed provider failure is honest but does not pass the entrance run")
 func disclosedProviderFailureStillFailsRun() async throws {
   let fixture = try loadSyntheticEntranceFixture()
@@ -245,6 +329,83 @@ private func makePassingInspection(
     geometryBindingIsUnambiguous: true,
     expresswayEdgeIDsBeforeEntry: [],
     crossedTollDomainIDs: []
+  )
+}
+
+private func makeStabilityResult(
+  runID: String,
+  requestedAt: String,
+  pathEdgeIDs: [String],
+  distanceMeters: Double,
+  providerLatencyMilliseconds: Int,
+  inspectionLatencyMilliseconds: Int,
+  accepted: Bool = true
+) throws -> SurfaceProbeResult {
+  let fixture = try loadSyntheticEntranceFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.inner.same-side")
+  let candidate = SurfaceRouteCandidate(
+    id: "secret.provider.candidate",
+    providerID: "test.provider",
+    coordinates: [request.origin, request.destinationAnchor.coordinate],
+    steps: [
+      SurfaceRouteStep(
+        id: "secret.provider.step",
+        instruction: "provider-only instruction",
+        distanceMeters: distanceMeters
+      )
+    ],
+    distanceMeters: distanceMeters,
+    expectedTravelTimeSeconds: 40,
+    hasHighways: false,
+    hasTolls: false
+  )
+  let inspection = SurfaceCandidateInspection(
+    anchorBinding: accepted
+      ? AnchorBindingObservation(
+        anchorID: fixture.approachAnchor.id,
+        directedSurfaceEdgeID: fixture.approachAnchor.directedSurfaceEdgeID,
+        terminalDistanceMeters: 5,
+        terminalBearingDegrees: fixture.approachAnchor.expectedBearingDegrees
+      )
+      : nil,
+    geometryBindingIsUnambiguous: accepted,
+    expresswayEdgeIDsBeforeEntry: [],
+    crossedTollDomainIDs: [],
+    unmatchedSampleCount: accepted ? 0 : 1,
+    ambiguousDirectedEdgeIDs: [],
+    disconnectedDirectedEdgeIDs: [],
+    resolvedPathEdgeIDs: pathEdgeIDs
+  )
+  let gates = SurfaceHardGate.allCases.map { gate in
+    HardGateResult(
+      gate: gate,
+      status: accepted || gate != .geometryBindable ? .pass : .fail,
+      reasonCodes: accepted || gate != .geometryBindable ? [] : ["GEOMETRY_SAMPLES_UNMATCHED"]
+    )
+  }
+  let evaluation = SurfaceCandidateEvaluation(
+    candidateID: candidate.id,
+    candidate: candidate,
+    inspection: inspection,
+    inspectionLatencyMilliseconds: inspectionLatencyMilliseconds,
+    disposition: accepted ? .accepted : .rejected,
+    hardGates: gates
+  )
+
+  return SurfaceProbeResult(
+    context: SurfaceProbeRunContext(
+      runID: runID,
+      requestedAt: requestedAt,
+      environment: ["mode": "offline-stability"]
+    ),
+    fixtureID: fixture.id,
+    originID: "test.origin.inner.same-side",
+    request: request,
+    provider: FakeSurfaceProvider(response: .success([])).metadata,
+    responseStatus: .success,
+    providerFailure: nil,
+    evaluations: [evaluation],
+    providerLatencyMilliseconds: providerLatencyMilliseconds
   )
 }
 

@@ -10,7 +10,8 @@ author, optimize, or recover the Shuto route plan.
 benchmarks/surface-routing/
 ├── schema/
 │   ├── entrance-probe-fixture.schema.json
-│   └── provider-probe-result.schema.json
+│   ├── provider-probe-result.schema.json
+│   └── provider-probe-stability-summary.schema.json
 ├── fixtures/synthetic/
 └── raw/ and runs/                    # local and gitignored
 ```
@@ -92,10 +93,29 @@ swift run kaido-surface-probe \
   > benchmarks/surface-routing/runs/example.json
 ```
 
-Both real inputs remain under ignored `research/`; output remains under ignored
-`runs/`. The command records `RAW_LOCAL_ONLY` and the MapKit adapter still reports
-`REVIEW_REQUIRED`. Do not commit or redistribute provider geometry, instructions,
-or raw output until the relevant terms have been reviewed.
+For short-term repeatability checks, `--repeat` runs requests sequentially and
+emits only counts and scalar ranges:
+
+```sh
+swift run kaido-surface-probe \
+  --fixture research/path/to/entrance.json \
+  --graph research/path/to/directed-road-graph.json \
+  --origin example.origin.same-side \
+  --allow-live-mapkit \
+  --repeat 3 \
+  --pretty
+```
+
+The repeat summary excludes coordinates, instructions, edge IDs, candidate IDs,
+and path hashes. It distinguishes `STABLE_PASS`, `VARIABLE_PASS`, and `FAIL`, but
+never overrides a failed hard gate. `SCALAR_LOCAL_ONLY` describes reduced local
+retention; it does not mean the provider's terms have been reviewed.
+
+Both real inputs remain under ignored `research/`; raw output remains under
+ignored `runs/`. One-shot results record `RAW_LOCAL_ONLY`, and the MapKit adapter
+still reports `REVIEW_REQUIRED`. Do not commit or redistribute provider geometry,
+instructions, raw output, or scalar output until the relevant terms have been
+reviewed.
 
 For private feasibility work, `scripts/build_osm_surface_graph.py` converts a
 bounded Overpass JSON extract into the inspector's directed-edge format. It
@@ -111,4 +131,5 @@ swift test
 xcrun swift-format lint --strict --recursive Package.swift Sources Tests
 python3 -m json.tool benchmarks/surface-routing/schema/entrance-probe-fixture.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-summary.schema.json >/dev/null
 ```

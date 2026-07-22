@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaido-routes.example/schema/provider-probe-stability-summary-v1.json",
+  "title": "Kaido Routes scalar-only surface-probe stability summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "origin_id",
+    "provider",
+    "observed_from",
+    "observed_through",
+    "retention_classification",
+    "run_count",
+    "passing_run_count",
+    "failing_run_count",
+    "assessment",
+    "response_status_counts",
+    "hard_gate_failure_counts",
+    "provider_latency_milliseconds",
+    "accepted_candidate_count_range",
+    "accepted_resolved_path_variant_count",
+    "accepted_route_set_variant_count",
+    "accepted_approach_edge_variant_count",
+    "missing_resolved_path_evaluation_count",
+    "maximum_unmatched_sample_count",
+    "maximum_ambiguous_edge_count",
+    "maximum_disconnected_edge_count"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "origin_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "observed_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observed_through": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "retention_classification": {
+      "const": "SCALAR_LOCAL_ONLY"
+    },
+    "run_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "passing_run_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failing_run_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "assessment": {
+      "enum": ["STABLE_PASS", "VARIABLE_PASS", "FAIL"]
+    },
+    "response_status_counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "hard_gate_failure_counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "provider_latency_milliseconds": {
+      "$ref": "#/$defs/integer_distribution"
+    },
+    "inspection_latency_per_run_milliseconds": {
+      "$ref": "#/$defs/integer_distribution"
+    },
+    "accepted_candidate_count_range": {
+      "$ref": "#/$defs/count_range"
+    },
+    "accepted_distance_meters": {
+      "$ref": "#/$defs/double_range"
+    },
+    "accepted_travel_time_seconds": {
+      "$ref": "#/$defs/double_range"
+    },
+    "terminal_distance_meters": {
+      "$ref": "#/$defs/double_range"
+    },
+    "terminal_bearing_degrees": {
+      "$ref": "#/$defs/double_range"
+    },
+    "accepted_resolved_path_variant_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "accepted_route_set_variant_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "accepted_approach_edge_variant_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missing_resolved_path_evaluation_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maximum_unmatched_sample_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maximum_ambiguous_edge_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maximum_disconnected_edge_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "$defs": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "adapter_version", "data_review_status"],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_review_status": {
+          "enum": [
+            "REVIEW_REQUIRED",
+            "SCALAR_RETENTION_REVIEWED",
+            "DERIVED_FIXTURE_REVIEWED"
+          ]
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "integer_distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "median", "percentile_95", "maximum"],
+      "properties": {
+        "minimum": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "median": {
+          "type": "number",
+          "minimum": 0
+        },
+        "percentile_95": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "count_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "double_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

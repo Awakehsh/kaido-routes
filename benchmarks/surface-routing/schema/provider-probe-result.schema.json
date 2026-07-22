@@ -79,7 +79,12 @@
           }
         },
         "retention_classification": {
-          "enum": ["RAW_LOCAL_ONLY", "REVIEWED_SCALARS", "REVIEWED_DERIVED_FIXTURE"]
+          "enum": [
+            "RAW_LOCAL_ONLY",
+            "SCALAR_LOCAL_ONLY",
+            "REVIEWED_SCALARS",
+            "REVIEWED_DERIVED_FIXTURE"
+          ]
         }
       }
     },

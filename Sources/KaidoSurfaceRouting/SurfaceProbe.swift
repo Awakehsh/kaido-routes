@@ -396,6 +396,7 @@ public protocol SurfaceCandidateInspector: Sendable {
 
 public enum ProbeRetentionClassification: String, Codable, Sendable {
   case rawLocalOnly = "RAW_LOCAL_ONLY"
+  case scalarLocalOnly = "SCALAR_LOCAL_ONLY"
   case reviewedScalars = "REVIEWED_SCALARS"
   case reviewedDerivedFixture = "REVIEWED_DERIVED_FIXTURE"
 }

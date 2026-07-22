@@ -162,6 +162,72 @@ func resolvedCandidateEvidenceRequiresOneOccurrence() {
   #expect(engine.snapshot.ambiguityReason == nil)
 }
 
+@Test("Guidance prompts emit once for each occurrence anchor")
+func guidancePromptsEmitOncePerOccurrenceAnchor() {
+  let routePlan = testRoutePlan()
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      guidanceAnchors: [
+        GuidanceAnchorDefinition(
+          occurrenceID: "first",
+          anchorID: "PREPARE",
+          promptID: "prompt.first.prepare"
+        ),
+        GuidanceAnchorDefinition(
+          occurrenceID: "second",
+          anchorID: "PREPARE",
+          promptID: "prompt.second.prepare"
+        ),
+      ]
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.reachGuidanceAnchor(occurrenceID: "first", anchorID: "PREPARE")
+  engine.reachGuidanceAnchor(occurrenceID: "first", anchorID: "PREPARE")
+  #expect(engine.snapshot.guidanceAnchorStatus == .duplicateSuppressed)
+  #expect(engine.snapshot.emittedGuidancePromptIDs == ["prompt.first.prepare"])
+
+  engine.observeLocation(
+    LocationObservation(
+      expectedOccurrenceID: "second",
+      reportedConfidence: .high
+    ))
+  engine.reachGuidanceAnchor(occurrenceID: "first", anchorID: "PREPARE")
+  #expect(engine.snapshot.guidanceAnchorStatus == .notCurrentOccurrence)
+
+  engine.reachGuidanceAnchor(occurrenceID: "second", anchorID: "PREPARE")
+  #expect(engine.snapshot.guidanceAnchorStatus == .emitted)
+  #expect(
+    engine.snapshot.emittedGuidancePromptIDs == [
+      "prompt.first.prepare", "prompt.second.prepare",
+    ])
+
+  var restoredSnapshot = engine.snapshot
+  restoredSnapshot.currentOccurrenceID = "second"
+  var restoredEngine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      guidanceAnchors: [
+        GuidanceAnchorDefinition(
+          occurrenceID: "second",
+          anchorID: "PREPARE",
+          promptID: "prompt.second.prepare"
+        )
+      ]
+    ),
+    initialSnapshot: restoredSnapshot
+  )
+  restoredEngine.reachGuidanceAnchor(occurrenceID: "second", anchorID: "PREPARE")
+  #expect(restoredEngine.snapshot.guidanceAnchorStatus == .duplicateSuppressed)
+  #expect(restoredEngine.snapshot.emittedGuidancePromptIDs.count == 2)
+}
+
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",

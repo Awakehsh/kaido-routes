@@ -8,6 +8,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let recoveryCandidates: [RecoveryCandidate]
   public let egressOptions: [EgressOption]
   public let nextSign: SignGuidance
+  public let guidanceAnchors: [GuidanceAnchorDefinition]
   public let signalReacquisitionMinimumObservations: Int
   public let signalReacquisitionMaximumGapMilliseconds: Int
 
@@ -17,6 +18,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     recoveryCandidates: [RecoveryCandidate] = [],
     egressOptions: [EgressOption] = [],
     nextSign: SignGuidance = SignGuidance(),
+    guidanceAnchors: [GuidanceAnchorDefinition] = [],
     signalReacquisitionMinimumObservations: Int = 2,
     signalReacquisitionMaximumGapMilliseconds: Int = 5_000
   ) {
@@ -25,6 +27,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     self.recoveryCandidates = recoveryCandidates
     self.egressOptions = egressOptions
     self.nextSign = nextSign
+    self.guidanceAnchors = guidanceAnchors
     self.signalReacquisitionMinimumObservations = max(
       2,
       signalReacquisitionMinimumObservations
@@ -46,6 +49,7 @@ public struct NavigationEngine: Sendable {
   private var reacquisitionObservationCount = 0
   private var lastReacquisitionObservationAtMilliseconds: Int?
   private var entryTransitionProgress = -1
+  private var emittedGuidanceAnchorKeys: Set<GuidanceAnchorKey> = []
 
   public init(
     configuration: NavigationConfiguration,
@@ -57,6 +61,17 @@ public struct NavigationEngine: Sendable {
       configuration.routePlan?.id
       ?? initialSnapshot.activeRoutePlanID
     self.snapshot.signGuidance = configuration.nextSign
+    self.emittedGuidanceAnchorKeys = Set(
+      configuration.guidanceAnchors.compactMap { definition in
+        guard self.snapshot.emittedGuidancePromptIDs.contains(definition.promptID) else {
+          return nil
+        }
+        return GuidanceAnchorKey(
+          occurrenceID: definition.occurrenceID,
+          anchorID: definition.anchorID
+        )
+      }
+    )
     synchronizeOccurrenceIndex()
   }
 
@@ -71,6 +86,33 @@ public struct NavigationEngine: Sendable {
     }
     synchronizeOccurrenceIndex()
     refreshPendingOccurrences()
+  }
+
+  public mutating func reachGuidanceAnchor(
+    occurrenceID: String,
+    anchorID: String
+  ) {
+    let matches = configuration.guidanceAnchors.filter {
+      $0.occurrenceID == occurrenceID && $0.anchorID == anchorID
+    }
+    guard matches.count == 1, let definition = matches.first else {
+      snapshot.guidanceAnchorStatus = matches.isEmpty ? .unknownAnchor : .invalidDefinition
+      return
+    }
+    guard snapshot.currentOccurrenceID == occurrenceID else {
+      snapshot.guidanceAnchorStatus = .notCurrentOccurrence
+      return
+    }
+
+    let key = GuidanceAnchorKey(occurrenceID: occurrenceID, anchorID: anchorID)
+    guard emittedGuidanceAnchorKeys.insert(key).inserted else {
+      snapshot.guidanceAnchorStatus = .duplicateSuppressed
+      return
+    }
+
+    snapshot.guidanceAnchorStatus = .emitted
+    snapshot.emittedGuidancePromptIDs.append(definition.promptID)
+    snapshot.lastGuidancePromptID = definition.promptID
   }
 
   public mutating func enterTunnel() {
@@ -488,4 +530,9 @@ public struct NavigationEngine: Sendable {
   private func appendUnique(_ value: String, to array: inout [String]) {
     if !array.contains(value) { array.append(value) }
   }
+}
+
+private struct GuidanceAnchorKey: Hashable, Sendable {
+  let occurrenceID: String
+  let anchorID: String
 }

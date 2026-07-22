@@ -333,6 +333,20 @@ codes, named facilities, and Japanese terms. Missing text, missing spoken forms,
 or an unavailable matching device voice must be surfaced before departure; the
 runtime cannot silently fall back to a wrong-language pronunciation.
 
+`GuidanceAnchorDefinition` is versioned with the route snapshot:
+
+```text
+occurrence_id
+anchor_id
+prompt_id
+```
+
+The `(occurrence_id, anchor_id)` key and `prompt_id` are unique within a compiled
+route. A prompt ledger records emissions for the whole active drive. Duplicate
+sensor triggers for one key are suppressed, while the same anchor stage on a
+later occurrence is a new key and may emit normally. A delayed anchor from an
+older occurrence cannot become current guidance.
+
 ## Evidence lifecycle
 
 Suggested movement lifecycle:

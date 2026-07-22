@@ -42,6 +42,7 @@ EVENT_TYPES = {
     "USER_ACTION",
     "TARIFF_QUOTED",
     "TARIFF_SELECTION_REQUESTED",
+    "GUIDANCE_ANCHOR_REACHED",
 }
 ASSERTION_CATEGORIES = {"DOMAIN", "NAVIGATION", "UI", "SAFETY", "TOLL", "EVIDENCE"}
 MATCHERS = {
@@ -298,6 +299,47 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
             v.add(f"{context}.estimated_amount_yen must be a non-negative integer")
 
 
+def validate_guidance_anchors(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "guidance_anchors" not in inputs:
+        return
+    anchors = inputs["guidance_anchors"]
+    if not isinstance(anchors, list) or not anchors:
+        v.add("given.inputs.guidance_anchors must be a non-empty array")
+        return
+    route_plan = given.get("route_plan")
+    if not isinstance(route_plan, dict):
+        v.add("given.inputs.guidance_anchors requires given.route_plan")
+        return
+    occurrences = route_plan.get("occurrences", [])
+    occurrence_ids = {
+        occurrence.get("occurrence_id")
+        for occurrence in occurrences
+        if isinstance(occurrence, dict)
+    }
+
+    keys: set[tuple[str, str]] = set()
+    prompt_ids: set[str] = set()
+    for index, anchor in enumerate(anchors):
+        context = f"given.inputs.guidance_anchors[{index}]"
+        if not v.require_keys(anchor, {"occurrence_id", "anchor_id", "prompt_id"}, context):
+            continue
+        values = [anchor["occurrence_id"], anchor["anchor_id"], anchor["prompt_id"]]
+        if not all(isinstance(value, str) and value.strip() for value in values):
+            v.add(f"{context} identifiers must be non-empty strings")
+            continue
+        occurrence_id, anchor_id, prompt_id = values
+        if occurrence_id not in occurrence_ids:
+            v.add(f"{context}.occurrence_id references an unknown route occurrence")
+        key = (occurrence_id, anchor_id)
+        if key in keys:
+            v.add(f"duplicate guidance anchor key: {occurrence_id} + {anchor_id}")
+        keys.add(key)
+        if prompt_id in prompt_ids:
+            v.add(f"duplicate guidance prompt_id: {prompt_id}")
+        prompt_ids.add(prompt_id)
+
+
 def validate_timeline(v: Validation, events: Any) -> set[str]:
     if not isinstance(events, list) or not events:
         v.add("when must be a non-empty array")
@@ -408,6 +450,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
             validate_route_plan(v, given["route_plan"])
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
+        validate_guidance_anchors(v, given)
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")
         if not isinstance(given["system_state"], dict):

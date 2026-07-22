@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S10",
+  "title": "A deterministic guidance anchor emits once per route occurrence",
+  "layer": "SIMULATION",
+  "tags": ["guidance", "occurrence", "voice"],
+  "purpose": "Suppress duplicate prompt triggers on one traversal while allowing the equivalent anchor to speak again on a later occurrence of the same road entity.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic anchors test prompt scheduling only; real distances, timing, wording, and pronunciation require movement evidence and device tests."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.guidance-ledger-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.repeated-guidance",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "lap-1-shared-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared"
+        },
+        {
+          "occurrence_id": "lap-2-shared-edge",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared"
+        }
+      ]
+    },
+    "inputs": {
+      "guidance_anchors": [
+        {
+          "occurrence_id": "lap-1-shared-edge",
+          "anchor_id": "PREPARE",
+          "prompt_id": "prompt.lap-1.prepare"
+        },
+        {
+          "occurrence_id": "lap-2-shared-edge",
+          "anchor_id": "PREPARE",
+          "prompt_id": "prompt.lap-2.prepare"
+        }
+      ]
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.repeated-guidance",
+      "current_occurrence_id": "lap-1-shared-edge",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "first-anchor",
+      "at_ms": 1000,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "lap-1-shared-edge",
+        "anchor_id": "PREPARE"
+      }
+    },
+    {
+      "id": "duplicate-anchor",
+      "at_ms": 1500,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "lap-1-shared-edge",
+        "anchor_id": "PREPARE"
+      }
+    },
+    {
+      "id": "advance-second-lap",
+      "at_ms": 2000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "expected_occurrence_id": "lap-2-shared-edge",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "stale-first-lap-anchor",
+      "at_ms": 2500,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "lap-1-shared-edge",
+        "anchor_id": "PREPARE"
+      }
+    },
+    {
+      "id": "second-lap-anchor",
+      "at_ms": 3000,
+      "type": "GUIDANCE_ANCHOR_REACHED",
+      "payload": {
+        "occurrence_id": "lap-2-shared-edge",
+        "anchor_id": "PREPARE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "first-anchor-emitted",
+      "after": "first-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.anchor_status",
+      "matcher": "EQUALS",
+      "expected": "EMITTED",
+      "rationale": "The configured anchor for the current occurrence emits its prompt."
+    },
+    {
+      "id": "first-prompt-recorded",
+      "after": "first-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["prompt.lap-1.prepare"],
+      "rationale": "The prompt ledger records the exact occurrence-scoped prompt ID."
+    },
+    {
+      "id": "duplicate-suppressed",
+      "after": "duplicate-anchor",
+      "category": "SAFETY",
+      "subject": "guidance.anchor_status",
+      "matcher": "EQUALS",
+      "expected": "DUPLICATE_SUPPRESSED",
+      "rationale": "Repeated position updates cannot make the same anchor speak twice."
+    },
+    {
+      "id": "duplicate-does-not-increment",
+      "after": "duplicate-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_count",
+      "matcher": "EQUALS",
+      "expected": 1,
+      "rationale": "Suppression is observable as an unchanged emission count."
+    },
+    {
+      "id": "old-occurrence-cannot-speak",
+      "after": "stale-first-lap-anchor",
+      "category": "SAFETY",
+      "subject": "guidance.anchor_status",
+      "matcher": "EQUALS",
+      "expected": "NOT_CURRENT_OCCURRENCE",
+      "rationale": "A delayed trigger from the previous lap cannot interrupt current guidance."
+    },
+    {
+      "id": "stale-anchor-does-not-increment",
+      "after": "stale-first-lap-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_count",
+      "matcher": "EQUALS",
+      "expected": 1,
+      "rationale": "Rejecting an old occurrence leaves the ledger unchanged."
+    },
+    {
+      "id": "second-occurrence-emits",
+      "after": "second-lap-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.anchor_status",
+      "matcher": "EQUALS",
+      "expected": "EMITTED",
+      "rationale": "The same semantic road may speak again for its distinct second occurrence."
+    },
+    {
+      "id": "both-occurrence-prompts-retained",
+      "after": "second-lap-anchor",
+      "category": "NAVIGATION",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": ["prompt.lap-1.prepare", "prompt.lap-2.prepare"],
+      "rationale": "Prompt identity follows route occurrence identity across laps."
+    }
+  ]
+}

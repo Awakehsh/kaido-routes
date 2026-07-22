@@ -113,6 +113,8 @@ egress_plan.exit_facility_id
 localization.release_gate
 guidance.active_voice_locale
 guidance.visible_sign_text_ja
+guidance.anchor_status
+guidance.emitted_prompt_ids
 tariff_selection.selected_tariff_version_id
 tariff_selection.selected_tariff_version_status
 tariff_selection.ignored_non_active_quote_ids

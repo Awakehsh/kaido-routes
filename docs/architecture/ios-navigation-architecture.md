@@ -305,6 +305,17 @@ matched occurrence and progress
 explanation, lane preparation, maneuver, distance, confidence, and prompt ID.
 Adapters may shorten layout-specific copy but cannot change the target movement.
 
+Prompt scheduling is occurrence-scoped. Each released
+`GuidanceAnchorDefinition` binds one `occurrence_id + anchor_id` pair to one
+unique prompt ID. The navigation engine emits that pair once, suppresses repeated
+location triggers, and rejects delayed anchors that no longer belong to the
+current occurrence. An equivalent anchor on a later lap remains eligible because
+its occurrence ID is different. The ledger belongs to the shared navigation
+core; phone, CarPlay, and speech adapters consume emissions but cannot retrigger
+them independently. Restoring a navigation snapshot also restores emitted keys
+from prompt IDs, so an adapter or process lifecycle transition does not replay a
+prompt merely because the engine value was reconstructed.
+
 ## Snapshot storage direction
 
 For the first small graph:

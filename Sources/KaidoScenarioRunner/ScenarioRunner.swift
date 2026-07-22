@@ -105,6 +105,11 @@ private struct ScenarioHarness {
       try projectTariffQuote(event.payload)
     case "TARIFF_SELECTION_REQUESTED":
       try selectTariff(event.payload)
+    case "GUIDANCE_ANCHOR_REACHED":
+      engine.reachGuidanceAnchor(
+        occurrenceID: try event.payload.requiredString("occurrence_id"),
+        anchorID: try event.payload.requiredString("anchor_id")
+      )
     default:
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
@@ -540,7 +545,8 @@ private struct ScenarioHarness {
       entryTransition: try entryTransition(from: given.inputs),
       recoveryCandidates: try recoveryCandidates(from: given.inputs),
       egressOptions: try egressOptions(from: given.inputs),
-      nextSign: signGuidance(from: given.inputs)
+      nextSign: signGuidance(from: given.inputs),
+      guidanceAnchors: try guidanceAnchors(from: given.inputs)
     )
   }
 
@@ -616,6 +622,21 @@ private struct ScenarioHarness {
       destinationsJapanese: (sign.array("destinations_ja") ?? []).compactMap(\.stringValue),
       destinationsEnglish: (sign.array("destinations_en") ?? []).compactMap(\.stringValue)
     )
+  }
+
+  private static func guidanceAnchors(
+    from inputs: [String: JSONValue]
+  ) throws -> [GuidanceAnchorDefinition] {
+    try (inputs.array("guidance_anchors") ?? []).map { value in
+      guard let anchor = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("guidance_anchors")
+      }
+      return GuidanceAnchorDefinition(
+        occurrenceID: try anchor.requiredString("occurrence_id"),
+        anchorID: try anchor.requiredString("anchor_id"),
+        promptID: try anchor.requiredString("prompt_id")
+      )
+    }
   }
 
   private static func languageCode(_ locale: String) -> String {
@@ -726,6 +747,9 @@ extension NavigationSnapshot {
       "egress_plan.status": .string(egress.status.rawValue),
       "egress_plan.prohibited_actions": .strings(egress.prohibitedActions),
       "guidance.next.route_shields": .strings(signGuidance.routeShields),
+      "guidance.anchor_status": .string(guidanceAnchorStatus.rawValue),
+      "guidance.emitted_prompt_ids": .strings(emittedGuidancePromptIDs),
+      "guidance.emitted_prompt_count": .integer(emittedGuidancePromptIDs.count),
       "guidance.prohibited_actions": .strings(prohibitedGuidanceActions),
       "ui.requires_route_editing_while_moving": .bool(requiresRouteEditingWhileMoving),
       "ui.requires_phone_touch_while_moving": .bool(requiresPhoneTouchWhileMoving),
@@ -771,6 +795,9 @@ extension NavigationSnapshot {
       values["guidance.finish_confirmation.exit_facility_id"] = .string(
         finishConfirmationExitFacilityID
       )
+    }
+    if let lastGuidancePromptID {
+      values["guidance.last_prompt_id"] = .string(lastGuidancePromptID)
     }
     return values
   }

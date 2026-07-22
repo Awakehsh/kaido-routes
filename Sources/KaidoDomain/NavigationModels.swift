@@ -153,6 +153,27 @@ public struct SignGuidance: Equatable, Sendable {
   }
 }
 
+public struct GuidanceAnchorDefinition: Equatable, Sendable {
+  public let occurrenceID: String
+  public let anchorID: String
+  public let promptID: String
+
+  public init(occurrenceID: String, anchorID: String, promptID: String) {
+    self.occurrenceID = occurrenceID
+    self.anchorID = anchorID
+    self.promptID = promptID
+  }
+}
+
+public enum GuidanceAnchorStatus: String, Codable, Sendable {
+  case inactive = "INACTIVE"
+  case emitted = "EMITTED"
+  case duplicateSuppressed = "DUPLICATE_SUPPRESSED"
+  case notCurrentOccurrence = "NOT_CURRENT_OCCURRENCE"
+  case unknownAnchor = "UNKNOWN_ANCHOR"
+  case invalidDefinition = "INVALID_DEFINITION"
+}
+
 public struct RecoveryState: Equatable, Sendable {
   public enum Status: String, Sendable {
     case inactive = "INACTIVE"
@@ -207,6 +228,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
   public var recovery: RecoveryState
   public var egress: EgressState
   public var signGuidance: SignGuidance
+  public var guidanceAnchorStatus: GuidanceAnchorStatus
+  public var emittedGuidancePromptIDs: [String]
+  public var lastGuidancePromptID: String?
   public var prohibitedGuidanceActions: [String]
   public var requiresRouteEditingWhileMoving: Bool
   public var requiresPhoneTouchWhileMoving: Bool
@@ -241,6 +265,9 @@ public struct NavigationSnapshot: Equatable, Sendable {
     self.recovery = RecoveryState()
     self.egress = EgressState()
     self.signGuidance = SignGuidance()
+    self.guidanceAnchorStatus = .inactive
+    self.emittedGuidancePromptIDs = []
+    self.lastGuidancePromptID = nil
     self.prohibitedGuidanceActions = []
     self.requiresRouteEditingWhileMoving = false
     self.requiresPhoneTouchWhileMoving = false

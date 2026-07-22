@@ -317,7 +317,8 @@
             "CARPLAY_DISCONNECTED",
             "USER_ACTION",
             "TARIFF_QUOTED",
-            "TARIFF_SELECTION_REQUESTED"
+            "TARIFF_SELECTION_REQUESTED",
+            "GUIDANCE_ANCHOR_REACHED"
           ]
         },
         "payload": {

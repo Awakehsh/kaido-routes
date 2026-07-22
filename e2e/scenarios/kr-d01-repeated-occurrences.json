@@ -21,6 +21,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.two-laps",
+      "network_snapshot_id": "test.snapshot.loop-v1",
       "entry_facility_id": "test.access.entry",
       "exit_facility_id": "test.access.exit",
       "recovery_policy": "STRICT",
@@ -132,4 +133,3 @@
     }
   ]
 }
-

@@ -178,6 +178,11 @@ Primary references:
 A shared route contains occurrence intent, template parameters, network snapshot,
 and evidence state. It is not only a polyline or GPX track.
 
+The v1 shared document is deterministic JSON. Its RoutePlan carries the exact
+`network_snapshot_id`, ordered occurrences, directional PA bindings, optionality,
+and toll domains. Import rejects unsupported schema versions and malformed
+occurrence identity or order; it does not silently repair or migrate them.
+
 Community routes should initially import as `COMMUNITY_CANDIDATE`. They remain
 non-navigable until the compiler validates current topology and a reviewer checks
 the safety-critical movements and signs. Popularity never upgrades evidence.

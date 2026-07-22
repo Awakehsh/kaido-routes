@@ -21,6 +21,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.repeated-loop",
+      "network_snapshot_id": "test.snapshot.finish-egress-v1",
       "entry_facility_id": "test.entry.loop",
       "exit_facility_id": "test.exit.default",
       "recovery_policy": "SAFE_REJOIN",

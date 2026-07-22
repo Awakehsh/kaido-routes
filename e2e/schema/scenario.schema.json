@@ -183,6 +183,7 @@
       "additionalProperties": false,
       "required": [
         "plan_id",
+        "network_snapshot_id",
         "entry_facility_id",
         "exit_facility_id",
         "recovery_policy",
@@ -190,6 +191,10 @@
       ],
       "properties": {
         "plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "network_snapshot_id": {
           "type": "string",
           "minLength": 1
         },

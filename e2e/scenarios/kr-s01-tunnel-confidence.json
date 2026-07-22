@@ -22,6 +22,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.tunnel-branch",
+      "network_snapshot_id": "test.snapshot.tunnel-v1",
       "entry_facility_id": "test.access.tunnel-entry",
       "exit_facility_id": "test.access.after-tunnel",
       "recovery_policy": "SAFE_REJOIN",
@@ -144,4 +145,3 @@
     }
   ]
 }
-

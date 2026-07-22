@@ -233,6 +233,7 @@ func guidancePromptsEmitOncePerOccurrenceAnchor() {
 func runtimeClosureActivatesReleasedRecovery() {
   let routePlan = RoutePlan(
     id: "test.plan.runtime-closure",
+    networkSnapshotID: "test.snapshot.navigation",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .safeRejoin,
@@ -288,6 +289,7 @@ func runtimeClosureActivatesReleasedRecovery() {
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(
     id: "test.plan.carplay-handoff",
+    networkSnapshotID: "test.snapshot.navigation",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .safeRejoin,
@@ -346,6 +348,7 @@ func carPlayDisconnectPreservesSharedNavigationState() {
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",
+    networkSnapshotID: "test.snapshot.navigation",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .safeRejoin,

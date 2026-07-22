@@ -22,6 +22,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.stacked-road",
+      "network_snapshot_id": "test.snapshot.stacked-road-v1",
       "entry_facility_id": "test.access.entry",
       "exit_facility_id": "test.access.exit",
       "recovery_policy": "SAFE_REJOIN",

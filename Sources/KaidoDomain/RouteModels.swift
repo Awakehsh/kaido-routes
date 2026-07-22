@@ -89,6 +89,7 @@ public struct RoutePlan: Codable, Equatable, Sendable {
   }
 
   public let id: String
+  public let networkSnapshotID: String
   public let entryFacilityID: String
   public let exitFacilityID: String
   public let recoveryPolicy: RecoveryPolicy
@@ -97,6 +98,7 @@ public struct RoutePlan: Codable, Equatable, Sendable {
 
   public init(
     id: String,
+    networkSnapshotID: String,
     entryFacilityID: String,
     exitFacilityID: String,
     recoveryPolicy: RecoveryPolicy,
@@ -104,6 +106,7 @@ public struct RoutePlan: Codable, Equatable, Sendable {
     occurrences: [RouteOccurrence]
   ) {
     self.id = id
+    self.networkSnapshotID = networkSnapshotID
     self.entryFacilityID = entryFacilityID
     self.exitFacilityID = exitFacilityID
     self.recoveryPolicy = recoveryPolicy
@@ -121,6 +124,7 @@ public struct RoutePlan: Codable, Equatable, Sendable {
 
   private enum CodingKeys: String, CodingKey {
     case id = "plan_id"
+    case networkSnapshotID = "network_snapshot_id"
     case entryFacilityID = "entry_facility_id"
     case exitFacilityID = "exit_facility_id"
     case recoveryPolicy = "recovery_policy"

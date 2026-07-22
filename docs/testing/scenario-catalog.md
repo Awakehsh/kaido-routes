@@ -20,7 +20,7 @@ should become scenarios when their layer is built.
 | KR-D10 | Actual route distance and tariff distance remain separate | P0 | Seeded |
 | KR-D11 | An active tariff is never replaced by a proposed version | P0 | Seeded |
 | KR-D12 | No known planned conflict never becomes live-open confirmation | P0 | Seeded |
-| KR-D13 | Import/export preserves every repeated occurrence and index | P1 | Planned |
+| KR-D13 | Import/export preserves every repeated occurrence and index | P1 | Seeded |
 | KR-D14 | Route-template parameters compile only to approved movement variants | P1 | Planned |
 | KR-D15 | Text, voice, and reviewed spoken forms are complete in Japanese, Simplified Chinese, and English | P0 | Seeded |
 | KR-D16 | Current-location access chooses a compatible directional entrance rather than the nearest IC | P0 | Seeded |

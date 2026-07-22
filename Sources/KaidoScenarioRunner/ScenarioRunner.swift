@@ -122,6 +122,31 @@ private struct ScenarioHarness {
   private mutating func compileRoute() throws {
     let inputs = scenario.given.inputs
 
+    if let roundTrip = inputs.object("shared_route_round_trip"),
+      let routePlan = scenario.given.routePlan
+    {
+      let parameterValues = roundTrip.object("template_parameters") ?? [:]
+      guard parameterValues.values.allSatisfy({ $0.stringValue != nil }) else {
+        throw ScenarioExecutionError.invalidInput("template_parameters")
+      }
+      guard
+        let evidenceState = SharedRouteEvidenceState(
+          rawValue: try roundTrip.requiredString("evidence_state")
+        )
+      else {
+        throw ScenarioExecutionError.invalidInput("evidence_state")
+      }
+      let document = SharedRouteDocument(
+        schemaVersion: try roundTrip.requiredString("schema_version"),
+        evidenceState: evidenceState,
+        templateParameters: parameterValues.compactMapValues(\.stringValue),
+        routePlan: routePlan
+      )
+      let exported = try SharedRouteCodec.encode(document)
+      publish(try SharedRouteCodec.decode(exported))
+      return
+    }
+
     if let candidate = inputs.object("candidate_route"),
       let legalValues = inputs.array("legal_movements")
     {
@@ -347,6 +372,42 @@ private struct ScenarioHarness {
     )
     adapterObservations["compiler.expanded_occurrence_indexes"] = .array(
       routePlan.occurrences.map { .integer($0.index) }
+    )
+  }
+
+  private mutating func publish(_ document: SharedRouteDocument) {
+    let routePlan = document.routePlan
+    adapterObservations["shared_route.round_trip_status"] = .string("PASS")
+    adapterObservations["shared_route.schema_version"] = .string(document.schemaVersion)
+    adapterObservations["shared_route.evidence_state"] = .string(document.evidenceState.rawValue)
+    adapterObservations["shared_route.network_snapshot_id"] = .string(
+      routePlan.networkSnapshotID
+    )
+    adapterObservations["shared_route.plan_id"] = .string(routePlan.id)
+    adapterObservations["shared_route.occurrence_ids"] = .strings(
+      routePlan.occurrences.map(\.id)
+    )
+    adapterObservations["shared_route.occurrence_indexes"] = .array(
+      routePlan.occurrences.map { .integer($0.index) }
+    )
+    adapterObservations["shared_route.entity_ids"] = .strings(
+      routePlan.occurrences.map(\.entityID)
+    )
+    adapterObservations["shared_route.parking_area_bindings"] = .strings(
+      routePlan.occurrences.compactMap { occurrence in
+        occurrence.parkingAreaID.map { "\(occurrence.id)=\($0)" }
+      }
+    )
+    adapterObservations["shared_route.toll_domain_bindings"] = .strings(
+      routePlan.occurrences.compactMap { occurrence in
+        occurrence.tollDomainID.map { "\(occurrence.id)=\($0)" }
+      }
+    )
+    adapterObservations["shared_route.optional_occurrence_ids"] = .strings(
+      routePlan.occurrences.filter(\.isOptional).map(\.id)
+    )
+    adapterObservations["shared_route.template_parameters"] = .strings(
+      document.templateParameters.map { "\($0.key)=\($0.value)" }.sorted()
     )
   }
 

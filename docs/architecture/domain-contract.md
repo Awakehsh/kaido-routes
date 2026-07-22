@@ -130,6 +130,24 @@ IDs. Compilation rejects an absent source sequence, count mismatch, empty ID,
 collision, or duplicate. The resulting route preserves entity, PA, optionality,
 and toll-domain fields while assigning contiguous new indexes.
 
+Export and import use a versioned `SharedRouteDocument`:
+
+```text
+SharedRouteDocument
+  schema_version
+  evidence_state
+  template_parameters
+  route_plan
+```
+
+The codec accepts only its current schema version and a non-empty RoutePlan with
+one network snapshot, stable plan/facility IDs, unique occurrence IDs, and
+contiguous indexes matching array order. JSON keys are sorted for deterministic
+exports. Import never deduplicates repeated entities, removes optional PA
+occurrences, drops toll-domain bindings, changes evidence state, or migrates the
+plan to a newer snapshot. Snapshot migration remains a separate reviewed compile
+operation.
+
 ## Reviewed route-component requirements
 
 A friendly route template may span multiple official route names. Its

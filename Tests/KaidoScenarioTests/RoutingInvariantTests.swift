@@ -69,6 +69,7 @@ func parkingAreaPathRequiresExactDirections() {
 func addingReviewedLapCreatesFreshOccurrences() {
   let routePlan = RoutePlan(
     id: "test.plan.one-lap",
+    networkSnapshotID: "test.snapshot.routing",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .strict,
@@ -112,6 +113,7 @@ func addingReviewedLapCreatesFreshOccurrences() {
   )
   let malformedPlan = RoutePlan(
     id: routePlan.id,
+    networkSnapshotID: routePlan.networkSnapshotID,
     entryFacilityID: routePlan.entryFacilityID,
     exitFacilityID: routePlan.exitFacilityID,
     recoveryPolicy: routePlan.recoveryPolicy,
@@ -197,6 +199,7 @@ func circuitTemplateRequiresEveryComponentInOrder() {
 func routeCannotHideTollDomainBoundaries() {
   let routePlan = RoutePlan(
     id: "test.plan.toll-boundary",
+    networkSnapshotID: "test.snapshot.routing",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .strict,
@@ -240,9 +243,65 @@ func routeCannotHideTollDomainBoundaries() {
   #expect(result.boundaryOccurrenceIDs == ["external-edge", "unknown-edge"])
 }
 
+@Test("Shared route documents preserve every occurrence and snapshot binding")
+func sharedRouteDocumentRoundTripPreservesOccurrences() throws {
+  let routePlan = RoutePlan(
+    id: "test.plan.shared",
+    networkSnapshotID: "test.snapshot.shared-v1",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    actualDistanceKM: 12.4,
+    occurrences: [
+      RouteOccurrence(
+        id: "lap-1",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.shared",
+        tollDomainID: "test.toll.shuto"
+      ),
+      RouteOccurrence(
+        id: "optional-pa",
+        index: 1,
+        kind: .paVisit,
+        entityID: "test.pa.visit",
+        parkingAreaID: "test.pa",
+        tollDomainID: "test.toll.shuto",
+        isOptional: true
+      ),
+      RouteOccurrence(
+        id: "lap-2",
+        index: 2,
+        kind: .edge,
+        entityID: "test.edge.shared",
+        tollDomainID: "test.toll.shuto"
+      ),
+    ]
+  )
+  let document = SharedRouteDocument(
+    evidenceState: .communityCandidate,
+    templateParameters: ["lap_count": "2"],
+    routePlan: routePlan
+  )
+
+  let firstExport = try SharedRouteCodec.encode(document)
+  let imported = try SharedRouteCodec.decode(firstExport)
+  let secondExport = try SharedRouteCodec.encode(imported)
+
+  #expect(imported == document)
+  #expect(imported.routePlan.occurrences.map(\.id) == ["lap-1", "optional-pa", "lap-2"])
+  #expect(imported.routePlan.occurrences.map(\.index) == [0, 1, 2])
+  #expect(
+    imported.routePlan.occurrences.map(\.entityID) == [
+      "test.edge.shared", "test.pa.visit", "test.edge.shared",
+    ])
+  #expect(firstExport == secondExport)
+}
+
 private func routePlan(entityIDs: [String]) -> RoutePlan {
   RoutePlan(
     id: "test.plan.components",
+    networkSnapshotID: "test.snapshot.routing",
     entryFacilityID: "test.entry",
     exitFacilityID: "test.exit",
     recoveryPolicy: .strict,

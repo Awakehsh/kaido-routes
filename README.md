@@ -19,7 +19,7 @@ bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, and an explicit local live-probe command; no live
 MapKit call runs in deterministic tests.
 
-The feasibility core currently executes portable scenarios for fourteen hard
+The feasibility core currently executes portable scenarios for fifteen hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -51,6 +51,8 @@ properties that must remain proven as the product expands:
     rejoin to the existing RoutePlan without abrupt guidance or moving-time edits.
 14. a CarPlay disconnect returns presentation to iPhone while the shared route
     occurrence and occurrence-scoped prompt ledger continue unchanged.
+15. a versioned shared-route document preserves its network snapshot, evidence
+    state, template intent, and every repeated or optional occurrence on import.
 
 ## Repository map
 

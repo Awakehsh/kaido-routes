@@ -105,6 +105,8 @@ navigation.signal_reacquisition_status
 navigation.route_candidate_resolution
 presentation.active_surface
 presentation.carplay_connection_state
+shared_route.network_snapshot_id
+shared_route.occurrence_ids
 route.executable
 route.blocking_reasons
 route.blocking_occurrence_ids

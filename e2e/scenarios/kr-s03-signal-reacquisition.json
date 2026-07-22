@@ -22,6 +22,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.repeated-tunnel-edge",
+      "network_snapshot_id": "test.snapshot.reacquisition-v1",
       "entry_facility_id": "test.access.before-tunnel",
       "exit_facility_id": "test.access.after-loop",
       "recovery_policy": "SAFE_REJOIN",

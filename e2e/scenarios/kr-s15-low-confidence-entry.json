@@ -21,6 +21,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.entry-fallback",
+      "network_snapshot_id": "test.snapshot.low-confidence-entry-v1",
       "entry_facility_id": "test.entry.tunnel-adjacent",
       "exit_facility_id": "test.exit.after-loop",
       "recovery_policy": "SAFE_REJOIN",

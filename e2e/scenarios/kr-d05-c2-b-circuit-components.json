@@ -21,6 +21,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.reviewed-c2-b-circuit",
+      "network_snapshot_id": "test.snapshot.c2-b-template-v1",
       "entry_facility_id": "test.access.entry",
       "exit_facility_id": "test.access.exit",
       "recovery_policy": "STRICT",

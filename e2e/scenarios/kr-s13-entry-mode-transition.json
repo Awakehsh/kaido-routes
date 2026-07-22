@@ -21,6 +21,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.after-entry",
+      "network_snapshot_id": "test.snapshot.entry-transition-v1",
       "entry_facility_id": "test.entry.inner",
       "exit_facility_id": "test.exit.inner",
       "recovery_policy": "SAFE_REJOIN",

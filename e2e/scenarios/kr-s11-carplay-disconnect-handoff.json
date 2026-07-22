@@ -23,6 +23,7 @@
     },
     "route_plan": {
       "plan_id": "test.plan.carplay-handoff",
+      "network_snapshot_id": "test.snapshot.carplay-handoff-v1",
       "entry_facility_id": "test.access.entry",
       "exit_facility_id": "test.access.exit",
       "recovery_policy": "SAFE_REJOIN",

@@ -156,9 +156,10 @@ def validate_snapshot(v: Validation, snapshot: Any) -> None:
         v.add("given.network_snapshot.effective_at must be an ISO date-time")
 
 
-def validate_route_plan(v: Validation, route_plan: Any) -> None:
+def validate_route_plan(v: Validation, route_plan: Any, network_snapshot_id: Any) -> None:
     required = {
         "plan_id",
+        "network_snapshot_id",
         "entry_facility_id",
         "exit_facility_id",
         "recovery_policy",
@@ -166,6 +167,8 @@ def validate_route_plan(v: Validation, route_plan: Any) -> None:
     }
     if not v.require_keys(route_plan, required, "given.route_plan"):
         return
+    if route_plan["network_snapshot_id"] != network_snapshot_id:
+        v.add("given.route_plan.network_snapshot_id must match given.network_snapshot.id")
     if route_plan["recovery_policy"] not in RECOVERY_POLICIES:
         v.add(f"unknown recovery policy: {route_plan['recovery_policy']!r}")
 
@@ -447,7 +450,13 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
     if v.require_keys(given, {"network_snapshot", "inputs", "system_state"}, "given"):
         validate_snapshot(v, given["network_snapshot"])
         if "route_plan" in given:
-            validate_route_plan(v, given["route_plan"])
+            validate_route_plan(
+                v,
+                given["route_plan"],
+                given["network_snapshot"].get("id")
+                if isinstance(given["network_snapshot"], dict)
+                else None,
+            )
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_guidance_anchors(v, given)

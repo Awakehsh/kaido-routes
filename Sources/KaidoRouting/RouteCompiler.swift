@@ -279,6 +279,7 @@ public enum StrictRouteCompiler {
     }
     let expandedPlan = RoutePlan(
       id: routePlan.id,
+      networkSnapshotID: routePlan.networkSnapshotID,
       entryFacilityID: routePlan.entryFacilityID,
       exitFacilityID: routePlan.exitFacilityID,
       recoveryPolicy: routePlan.recoveryPolicy,

@@ -1,0 +1,227 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D13",
+  "title": "Shared-route export and import preserve every route occurrence",
+  "layer": "DOMAIN",
+  "tags": ["sharing", "import", "export", "occurrence"],
+  "purpose": "Round-trip a versioned shared route without collapsing repeated entities or losing occurrence indexes, PA bindings, toll domains, optionality, template intent, or its network snapshot.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This proves the local document contract only; it does not make a community route navigable or migrate it to another network snapshot."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.shared-route-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.shared-route",
+      "network_snapshot_id": "test.snapshot.shared-route-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "actual_distance_km": 24.8,
+      "occurrences": [
+        {
+          "occurrence_id": "lap-1-shared-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "optional-pa-access",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.pa-access",
+          "parking_area_id": "test.pa",
+          "toll_domain_id": "test.toll.shuto",
+          "optional": true
+        },
+        {
+          "occurrence_id": "optional-pa-visit",
+          "index": 2,
+          "kind": "PA_VISIT",
+          "entity_id": "test.pa.visit",
+          "parking_area_id": "test.pa",
+          "toll_domain_id": "test.toll.shuto",
+          "optional": true
+        },
+        {
+          "occurrence_id": "optional-pa-return",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.pa-return",
+          "parking_area_id": "test.pa",
+          "toll_domain_id": "test.toll.shuto",
+          "optional": true
+        },
+        {
+          "occurrence_id": "lap-2-shared-edge",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "shared_route_round_trip": {
+        "schema_version": "1.0",
+        "evidence_state": "COMMUNITY_CANDIDATE",
+        "template_parameters": {
+          "lap_count": "2",
+          "pa_policy": "OPTIONAL"
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "round-trip-shared-route",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "round-trip-passes",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.round_trip_status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "The document is valid under the current schema and survives decoding."
+    },
+    {
+      "id": "schema-version-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "Import behavior remains explicitly versioned."
+    },
+    {
+      "id": "community-evidence-preserved",
+      "after": "round-trip-shared-route",
+      "category": "EVIDENCE",
+      "subject": "shared_route.evidence_state",
+      "matcher": "EQUALS",
+      "expected": "COMMUNITY_CANDIDATE",
+      "rationale": "Sharing cannot silently upgrade community content to released evidence."
+    },
+    {
+      "id": "snapshot-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.network_snapshot_id",
+      "matcher": "EQUALS",
+      "expected": "test.snapshot.shared-route-v1",
+      "rationale": "The route remains bound to the topology against which its occurrences were authored."
+    },
+    {
+      "id": "plan-id-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.shared-route",
+      "rationale": "The route document retains stable plan identity."
+    },
+    {
+      "id": "occurrence-ids-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "lap-1-shared-edge",
+        "optional-pa-access",
+        "optional-pa-visit",
+        "optional-pa-return",
+        "lap-2-shared-edge"
+      ],
+      "rationale": "Repeated traversals and PA steps keep their distinct runtime identities."
+    },
+    {
+      "id": "occurrence-indexes-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.occurrence_indexes",
+      "matcher": "EQUALS",
+      "expected": [0, 1, 2, 3, 4],
+      "rationale": "Import and export cannot reorder a route."
+    },
+    {
+      "id": "repeated-entities-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.edge.shared",
+        "test.movement.pa-access",
+        "test.pa.visit",
+        "test.movement.pa-return",
+        "test.edge.shared"
+      ],
+      "rationale": "The repeated entity survives twice rather than being deduplicated."
+    },
+    {
+      "id": "parking-area-bindings-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.parking_area_bindings",
+      "matcher": "EQUALS",
+      "expected": [
+        "optional-pa-access=test.pa",
+        "optional-pa-visit=test.pa",
+        "optional-pa-return=test.pa"
+      ],
+      "rationale": "The directional PA access, visit, and return subgraph remains one bound unit."
+    },
+    {
+      "id": "toll-domain-bindings-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.toll_domain_bindings",
+      "matcher": "EQUALS",
+      "expected": [
+        "lap-1-shared-edge=test.toll.shuto",
+        "optional-pa-access=test.toll.shuto",
+        "optional-pa-visit=test.toll.shuto",
+        "optional-pa-return=test.toll.shuto",
+        "lap-2-shared-edge=test.toll.shuto"
+      ],
+      "rationale": "A shared route cannot erase charging-domain boundaries."
+    },
+    {
+      "id": "optionality-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.optional_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["optional-pa-access", "optional-pa-visit", "optional-pa-return"],
+      "rationale": "The complete PA subgraph remains optional after import."
+    },
+    {
+      "id": "template-intent-preserved",
+      "after": "round-trip-shared-route",
+      "category": "DOMAIN",
+      "subject": "shared_route.template_parameters",
+      "matcher": "EQUALS",
+      "expected": ["lap_count=2", "pa_policy=OPTIONAL"],
+      "rationale": "Sharing retains authoring intent instead of reducing the route to geometry."
+    }
+  ]
+}

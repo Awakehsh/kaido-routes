@@ -79,11 +79,11 @@ including the stacked Route 20/Route 4 case. It does not release the entrance or
 approve production operations.
 
 `SurfaceRoutingBuildManifest` records the engine image digest, provider dataset
-ID, source and artifact checksums, admin/time-zone capabilities, retained OSM
-node identity, and checksummed admin observations. Structural validation binds
+ID, source and artifact checksums, admin/time-zone capabilities, the selected
+path identity protocol, and checksummed admin observations. Structural validation binds
 the manifest to Kaido graph provenance. The stricter release profile additionally
-requires every source/artifact role, a Tokyo left-driving observation, and zero
-release blockers. The private build intentionally remains `LAB_ONLY` because its
+requires every mandatory source/artifact role, a Tokyo left-driving observation,
+and zero release blockers. The private build intentionally remains `LAB_ONLY` because its
 road coverage is bounded and operational, distribution, sign, lane, and field
 review are incomplete.
 
@@ -123,6 +123,26 @@ and the public probe CLI with one path variant and no unmatched, ambiguous, or
 disconnected selected edges. The synthetic bounded driving-side polygon proves
 the mechanism only; a release boundary source, broader coverage, operations,
 distribution review, and field evidence remain blockers.
+
+The independent GraphHopper 11.0 baseline uses a different exact identity
+protocol rather than pretending it retains a complete OSM node path. The build
+disables route-point simplification at import and request time and exposes
+directional `edge_key`, `osm_way_id`, and `country` path details. Every detail
+array must exactly partition all route point-pairs. `OSMWayPointPathTranslator`
+then requires each pair to progress in the reported direction on exactly one
+same-way Kaido edge from the same dataset. Provider edge keys are provider-local
+and never become Kaido IDs. Missing points, gaps, parallel ambiguity, changed way
+identity, disconnected edges, and repeated edges fail closed.
+
+`GraphHopperSurfaceRouteProvider` verifies `/info` before every `/route`: engine
+version, profile, required encoded values, and a non-epoch road timestamp must
+match the checksummed manifest. Its URLSession transport exposes only these two
+GET endpoints with the same 15-second and 8 MiB limits as the other self-hosted
+adapters. A private Shinjuku 3x3 run passed all six gates with 1, 8, and 44
+translated Kaido edges and no unmatched, ambiguous, or disconnected result.
+GraphHopper 11.0's navigation response conversion hard-codes a right-driving
+field, so its prose remains diagnostic; Kaido retains Japanese driving-side and
+Japanese, Chinese, and English `GuidanceFrame` ownership.
 
 Valhalla route narration is provider prose, not product guidance. The adapter
 requests only an explicitly supported Japanese or English locale and currently
@@ -436,7 +456,7 @@ loading rather than UI-oriented object persistence.
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
 | Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; bounded private tiles and HTTP adapter still need live-service, distribution, broader-coverage, and field review | **Manifest/admin/path protocol and bounded adapter proven; operations pending** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, BSD-2-Clause; complete route node annotations can bind to the Kaido graph | node-pair identity fails on parallel pairs; build must add dataset and left-driving context; generic fastest-path semantics | **Bounded surface baseline proven; release inputs and operations pending** |
-| GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
+| GraphHopper | independent configurable surface baseline | Apache 2.0, turn restrictions, custom models, directional edge keys, and OSM way path details | Java/server footprint; no full OSM node path; import/request simplification must stay disabled; navigation driving-side output is not trustworthy | **Manifest/path protocol and bounded adapter proven; release inputs and operations pending** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |
 
 No provider passes by feature count. Each provider is evaluated only for the
@@ -452,7 +472,7 @@ bounded role it may own.
 - Commercial SDK evaluation requires a separate cost, data-use, and licence
   review before code integration.
 
-## Sources checked 2026-07-22
+## Sources checked 2026-07-23
 
 - [Apple MapKit for SwiftUI](https://developer.apple.com/documentation/mapkit/mapkit-for-swiftui)
 - [Apple `MKDirections.Request`](https://developer.apple.com/documentation/mapkit/mkdirections/request)
@@ -475,6 +495,11 @@ bounded role it may own.
 - [OSRM car-profile driving-side handler](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/profiles/lib/way_handlers.lua)
 - [OSRM location-dependent left-driving test](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/features/car/side_bias.feature)
 - [OSRM licence](https://raw.githubusercontent.com/Project-OSRM/osrm-backend/master/LICENSE.TXT)
-- [GraphHopper open-source engine](https://github.com/graphhopper/graphhopper)
+- [GraphHopper 11.0 release](https://github.com/graphhopper/graphhopper/releases/tag/11.0)
+- [GraphHopper 11.0 local HTTP API](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/docs/web/api-doc.md)
+- [GraphHopper directional `edge_key` detail](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/core/src/main/java/com/graphhopper/util/details/EdgeKeyDetails.java)
+- [GraphHopper `osm_way_id` encoded value](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/core/src/main/java/com/graphhopper/routing/ev/OSMWayID.java)
+- [GraphHopper 11.0 navigation driving-side conversion](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/navigation/src/main/java/com/graphhopper/navigation/NavigateResponseConverter.java#L417)
+- [Osmium output header options](https://docs.osmcode.org/osmium/latest/osmium-output-headers.html)
 - [Newson and Krumm, HMM map matching](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)
 - [Mapbox navigation pricing reference](https://www.mapbox.com/pricing)

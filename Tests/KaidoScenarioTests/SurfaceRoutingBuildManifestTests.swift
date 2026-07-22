@@ -107,6 +107,34 @@ func buildManifestRejectsInvalidIdentityAndRecords() {
   #expect(codes.contains(.missingCapability))
 }
 
+@Test("A way point-pair identity build need not claim retained OSM nodes")
+func wayPointIdentityBuildPassesStructuralValidation() {
+  let manifest = makeBuildManifest(
+    intendedUse: .labOnly,
+    sources: [makeBuildSource(id: "road", roles: [.roadNetwork])],
+    artifacts: [
+      makeBuildArtifact(id: "tiles", role: .routingTiles),
+      makeBuildArtifact(id: "graph", role: .kaidoDirectedGraph),
+    ],
+    capabilities: SurfaceRoutingBuildCapabilities(
+      includesAdministrativeData: false,
+      includesTimeZoneData: false,
+      keepsAllOSMNodeIDs: false,
+      selectedPathIdentity: .osmWayPointPairs
+    ),
+    adminVerifications: [],
+    releaseBlockers: ["Synthetic point-pair identity build."]
+  )
+
+  let report = SurfaceRoutingBuildManifestValidator.validate(
+    manifest,
+    graph: makeBuildManifestGraph(),
+    profile: .structural
+  )
+
+  #expect(report.isValid)
+}
+
 private let buildManifestSnapshotID = "test.snapshot.surface-build-v1"
 private let buildManifestDatasetID = "2026072101"
 private let validSHA256 = String(repeating: "a", count: 64)

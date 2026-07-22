@@ -112,6 +112,44 @@
               "service_origin": baseURL.originDescription,
             ]
           )
+
+        case .graphHopper:
+          guard #available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *) else {
+            throw LiveProbeCommandError.unsupportedURLSessionPlatform
+          }
+          let manifest: SurfaceRoutingBuildManifest = try decodeJSON(
+            at: try arguments.required(arguments.manifestPath, flag: "--manifest")
+          )
+          let baseURLValue = try arguments.required(arguments.baseURL, flag: "--base-url")
+          guard let baseURL = URL(string: baseURLValue) else {
+            throw LiveProbeCommandError.invalidBaseURL(baseURLValue)
+          }
+          let binding = try makeGraphHopperBinding(fixture: fixture, graph: graph)
+          let transport = try URLSessionGraphHopperHTTPTransport(baseURL: baseURL)
+          let provider = try GraphHopperSurfaceRouteProvider(
+            graph: graph,
+            manifest: manifest,
+            configuration: GraphHopperSurfaceProviderConfiguration(
+              candidateProviderID: arguments.providerID,
+              adapterVersion: "live-probe.1",
+              dataReviewStatus: .reviewRequired,
+              manifestValidationProfile: .structural,
+              approachBindings: [binding]
+            ),
+            transport: transport
+          )
+          results = try await runProbes(
+            provider: provider,
+            fixture: fixture,
+            graph: graph,
+            arguments: arguments,
+            environment: [
+              "mode": "local-live-graphhopper",
+              "manifest_id": manifest.id,
+              "provider_dataset_id": manifest.providerDatasetID,
+              "service_origin": baseURL.originDescription,
+            ]
+          )
         }
 
         if arguments.repeatCount == 1 {
@@ -133,6 +171,7 @@
     case mapKit
     case valhalla
     case osrm
+    case graphHopper
   }
 
   private struct SummaryComparisonArguments {
@@ -214,6 +253,8 @@
           provider = try select(.valhalla, current: provider)
         case "--allow-live-osrm":
           provider = try select(.osrm, current: provider)
+        case "--allow-live-graphhopper":
+          provider = try select(.graphHopper, current: provider)
         default:
           throw LiveProbeCommandError.unknownArgument(commandLine[index])
         }
@@ -227,13 +268,22 @@
         throw LiveProbeCommandError.missingRequiredArgument
       }
       let resolvedProviderID: String
-      if provider == .valhalla || provider == .osrm {
+      if provider != .mapKit {
         guard manifestPath != nil, baseURL != nil else {
           throw LiveProbeCommandError.missingSelfHostedArgument(provider.rawValue)
         }
-        resolvedProviderID =
-          providerID
-          ?? (provider == .valhalla ? "valhalla.local" : "osrm.local")
+        let defaultProviderID: String
+        switch provider {
+        case .valhalla:
+          defaultProviderID = "valhalla.local"
+        case .osrm:
+          defaultProviderID = "osrm.local"
+        case .graphHopper:
+          defaultProviderID = "graphhopper.local"
+        case .mapKit:
+          preconditionFailure("MapKit is handled by the other branch")
+        }
+        resolvedProviderID = providerID ?? defaultProviderID
         guard !resolvedProviderID.isEmpty else {
           throw LiveProbeCommandError.missingSelfHostedArgument(provider.rawValue)
         }
@@ -310,7 +360,7 @@
       case .selfHostedArgumentWithMapKit:
         "--manifest, --base-url, and --provider-id are not valid for a MapKit probe"
       case .liveProviderNotAcknowledged:
-        "one of --allow-live-mapkit, --allow-live-valhalla, or --allow-live-osrm is required"
+        "one of --allow-live-mapkit, --allow-live-valhalla, --allow-live-osrm, or --allow-live-graphhopper is required"
       case .multipleLiveProviders:
         "choose exactly one live provider"
       case .invalidRepeatCount(let value):
@@ -399,6 +449,24 @@
     )
   }
 
+  private func makeGraphHopperBinding(
+    fixture: EntranceProbeFixture,
+    graph: SurfaceRoadGraphSnapshot
+  ) throws -> GraphHopperApproachIdentityBinding {
+    let edgeID = fixture.approachAnchor.directedSurfaceEdgeID
+    guard let edge = graph.edges.first(where: { $0.id == edgeID }),
+      let terminalOSMWayID = edge.sourceOSMWayID,
+      terminalOSMWayID > 0
+    else {
+      throw LiveProbeCommandError.invalidApproachEdge(edgeID)
+    }
+    return GraphHopperApproachIdentityBinding(
+      anchorID: fixture.approachAnchor.id,
+      directedSurfaceEdgeID: edgeID,
+      terminalOSMWayID: terminalOSMWayID
+    )
+  }
+
   private let usage = """
     Usage:
       kaido-surface-probe \\
@@ -423,6 +491,15 @@
         --manifest <surface-routing-build-manifest.json> \\
         --base-url <self-hosted-osrm-origin> \\
         --allow-live-osrm [--provider-id <id>] \\
+        [--repeat <1...20>] [--pretty]
+
+      kaido-surface-probe \\
+        --fixture <entrance-fixture.json> \\
+        --graph <directed-road-graph.json> \\
+        --origin <origin-id> \\
+        --manifest <surface-routing-build-manifest.json> \\
+        --base-url <self-hosted-graphhopper-origin> \\
+        --allow-live-graphhopper [--provider-id <id>] \\
         [--repeat <1...20>] [--pretty]
 
     One request writes a normalized raw-local result. Repeated requests write a

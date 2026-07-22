@@ -15,6 +15,7 @@ benchmarks/surface-routing/
 │   ├── provider-probe-cross-window-summary.schema.json
 │   ├── osm-selected-path-translation-request.schema.json
 │   ├── osm-node-path-translation-request.schema.json
+│   ├── osm-way-point-path-translation-request.schema.json
 │   └── surface-routing-build-manifest.schema.json
 ├── fixtures/synthetic/
 └── raw/ and runs/                    # local and gitignored
@@ -94,6 +95,11 @@ provider route geometry, and rejects cross-dataset, missing, ambiguous,
 reversed, repeated, or disconnected identity. `OSMNodePathTranslator`
 independently resolves complete ordered node paths and fails whenever one node
 pair identifies zero or multiple directed edges. Its
+`OSMWayPointPathTranslator` handles providers that expose directional edge keys
+and OSM way IDs for every unsimplified route point-pair. It requires exact
+dataset identity, ordered progress on one same-way directed Kaido edge per pair,
+and a continuous nonrepeating result; missing, simplified, ambiguous, or reused
+provider-edge identity fails closed. Its
 `DirectedRoadGraphInspector` resamples candidate geometry, scores directed edges
 using distance and heading,
 uses a bounded sequence beam to preserve graph continuity, and compares the
@@ -167,6 +173,21 @@ expressway, or forbidden-toll result. The build uses a synthetic bounded
 left-driving polygon, so this is a provider-baseline pass rather than a released
 entrance or a release-quality Japan data build.
 
+The GraphHopper 11.0 baseline uses a third fail-closed identity path. Every
+request first verifies `/info` version, profile, required encoded values, and a
+non-epoch road timestamp against the manifest. `/route` must return unencoded,
+unsimplified geometry whose `edge_key`, `osm_way_id`, and `country` path details
+exactly partition every point-pair. Provider edge keys remain provider-local;
+only the aligned way identity and geometry can translate them to Kaido edges.
+
+A private `LAB_ONLY` GraphHopper build passes the same supervised Shinjuku 3x3
+run through the public URLSession adapter. The three paths contain 1, 8, and 44
+exact Kaido edges with one accepted path variant and zero unmatched, ambiguous,
+or disconnected results. Its JAR, JRE image, timestamped PBF, configuration,
+graph cache, and Kaido graph are checksum-bound. GraphHopper's navigation-layer
+driving-side field is not trusted; Japanese, Chinese, and English product
+guidance remains Kaido-owned.
+
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local
 inspection latency separately so routing-network delay is not confused with
@@ -224,8 +245,23 @@ swift run kaido-surface-probe \
   --pretty
 ```
 
-The CLI derives the retained terminal OSM node from the reviewed approach edge,
-validates the manifest structurally, records only the service origin, and marks
+Run the manifest-bound GraphHopper baseline with the same explicit boundary:
+
+```sh
+swift run kaido-surface-probe \
+  --fixture research/path/to/entrance.json \
+  --graph research/path/to/directed-road-graph.json \
+  --origin example.origin.same-side \
+  --manifest research/path/to/surface-routing-build-manifest.json \
+  --base-url http://127.0.0.1:18989 \
+  --allow-live-graphhopper \
+  --repeat 3 \
+  --pretty
+```
+
+The CLI derives the provider-specific terminal OSM node or way identity from
+the reviewed approach edge, validates the manifest structurally, records only
+the service origin, and marks
 provider data `REVIEW_REQUIRED`. The URLSession transport has a 15-second
 request timeout and an 8 MiB response limit. One-shot output is raw local data;
 repeat output is still local scalar evidence, not permission to publish it.
@@ -319,9 +355,10 @@ swift run kaido-surface-evidence validate-manifest \
 
 `structural` binds identity and checks metadata, including a road source,
 routing tiles, and the exact Kaido graph artifact, without pretending a lab
-build is releasable. `release-candidate` additionally requires all source and artifact
-roles, complete admin/time-zone/node-ID capabilities, a checksummed Tokyo
-left-driving observation, `RELEASE_CANDIDATE` intended use, and zero blockers.
+build is releasable. `release-candidate` additionally requires all mandatory
+source and artifact roles, complete admin/time-zone and selected-path identity
+capabilities, a checksummed Tokyo left-driving observation,
+`RELEASE_CANDIDATE` intended use, and zero blockers.
 The manifest is audit metadata, not permission to redistribute its referenced
 data.
 
@@ -352,6 +389,20 @@ swift run kaido-surface-evidence normalize-osrm \
   --pretty
 ```
 
+Normalize retained GraphHopper `/info` and `/route` responses through the same
+manifest and point-pair identity checks without a provider call:
+
+```sh
+swift run kaido-surface-evidence normalize-graphhopper \
+  --graph research/evidence/bounded-surface-graph.json \
+  --manifest research/evidence/surface-routing-build-manifest.json \
+  --info-response research/evidence/info.json \
+  --route-response research/evidence/route.json \
+  --candidate-id example.candidate \
+  --provider-id graphhopper.local \
+  --pretty
+```
+
 Run the offline checks with:
 
 ```sh
@@ -364,5 +415,6 @@ python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-cross-window-summary.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/osm-selected-path-translation-request.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/osm-node-path-translation-request.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/osm-way-point-path-translation-request.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/surface-routing-build-manifest.schema.json >/dev/null
 ```

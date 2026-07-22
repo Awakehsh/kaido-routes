@@ -113,6 +113,56 @@ enum KaidoSurfaceEvidenceCLI {
           normalized.translatedCandidate(graph: graph),
           pretty: arguments.pretty
         )
+      case .normalizeGraphHopper:
+        let graph: SurfaceRoadGraphSnapshot = try decodeJSON(at: arguments.graphPath)
+        let manifest: SurfaceRoutingBuildManifest = try decodeJSON(
+          at: try arguments.requiredPath(arguments.manifestPath, flag: "--manifest")
+        )
+        let report = SurfaceRoutingBuildManifestValidator.validate(
+          manifest,
+          graph: graph,
+          profile: .structural
+        )
+        guard report.isValid, manifest.engineBuild.providerID.lowercased() == "graphhopper"
+        else {
+          throw CLIError.invalidValue("--manifest", "not a valid GraphHopper build")
+        }
+        let timestamps = Set(
+          manifest.sources.filter { $0.roles.contains(.roadNetwork) }.map(\.snapshotAt)
+        )
+        guard timestamps.count == 1, let roadDataTimestamp = timestamps.first else {
+          throw CLIError.invalidValue("--manifest", "road snapshot timestamp is ambiguous")
+        }
+        let normalizer = GraphHopperSurfaceRouteNormalizer(
+          providerID: try arguments.requiredPath(arguments.providerID, flag: "--provider-id"),
+          providerDatasetID: manifest.providerDatasetID,
+          expectedProviderVersion: manifest.engineBuild.providerVersion,
+          expectedRoadDataTimestamp: roadDataTimestamp,
+          expectedProfileName: arguments.providerProfile ?? "car_surface"
+        )
+        let normalized = try normalizer.normalize(
+          infoResponseData: try Data(
+            contentsOf: URL(
+              fileURLWithPath: try arguments.requiredPath(
+                arguments.infoResponsePath,
+                flag: "--info-response"
+              )
+            )
+          ),
+          routeResponseData: try Data(
+            contentsOf: URL(
+              fileURLWithPath: try arguments.requiredPath(
+                arguments.routeResponsePath,
+                flag: "--route-response"
+              )
+            )
+          ),
+          candidateID: try arguments.requiredPath(arguments.candidateID, flag: "--candidate-id")
+        )
+        try writeJSON(
+          normalized.translatedCandidate(graph: graph),
+          pretty: arguments.pretty
+        )
       }
     } catch {
       writeStandardError("kaido-surface-evidence: \(error)\n\n\(usage)")
@@ -128,6 +178,7 @@ private struct Arguments {
     case validateManifest = "validate-manifest"
     case normalizeValhalla = "normalize-valhalla"
     case normalizeOSRM = "normalize-osrm"
+    case normalizeGraphHopper = "normalize-graphhopper"
   }
 
   let command: Command
@@ -140,11 +191,13 @@ private struct Arguments {
   let manifestPath: String?
   let profile: String?
   let routeResponsePath: String?
+  let infoResponsePath: String?
   let traceResponsePath: String?
   let candidateID: String?
   let providerID: String?
   let providerDatasetID: String?
   let terminalOSMNodeID: String?
+  let providerProfile: String?
   let pretty: Bool
 
   static func parse(_ commandLine: [String]) throws -> Arguments {
@@ -181,11 +234,13 @@ private struct Arguments {
       manifestPath: values["--manifest"],
       profile: values["--profile"],
       routeResponsePath: values["--route-response"],
+      infoResponsePath: values["--info-response"],
       traceResponsePath: values["--trace-response"],
       candidateID: values["--candidate-id"],
       providerID: values["--provider-id"],
       providerDatasetID: values["--provider-dataset-id"],
       terminalOSMNodeID: values["--terminal-osm-node-id"],
+      providerProfile: values["--provider-profile"],
       pretty: pretty
     )
   }
@@ -220,7 +275,7 @@ private enum CLIError: Error, CustomStringConvertible {
   var description: String {
     switch self {
     case .missingCommand:
-      "expected translate, evaluate, validate-manifest, normalize-valhalla, or normalize-osrm"
+      "expected translate, evaluate, validate-manifest, normalize-valhalla, normalize-osrm, or normalize-graphhopper"
     case .missingValue(let flag):
       "missing value for \(flag)"
     case .invalidValue(let flag, let value):
@@ -262,6 +317,15 @@ private let usage = """
       --candidate-id <candidate-id> \\
       --provider-id <provider-id> \\
       --provider-dataset-id <dataset-id> [--pretty]
+
+    kaido-surface-evidence normalize-graphhopper \\
+      --graph <directed-road-graph.json> \\
+      --manifest <surface-routing-build-manifest.json> \\
+      --info-response <info-response.json> \\
+      --route-response <route-response.json> \\
+      --candidate-id <candidate-id> \\
+      --provider-id <provider-id> \\
+      [--provider-profile <profile-name>] [--pretty]
   """
 
 private func decodeJSON<Value: Decodable>(at path: String) throws -> Value {

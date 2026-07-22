@@ -5,11 +5,11 @@ three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
 pure Swift directed-road graph inspector plus an explicit local live-probe
 command. Four private directional pilots have been attempted; one stacked-road
 origin produces a repeatable geometry-only hard-gate failure. Manifest-bound
-Valhalla and OSRM selected-path baselines now pass that same origin without
+Valhalla, OSRM, and GraphHopper selected-path baselines now pass that same origin without
 weakening the gate. No real entrance fixture is released; private provider
 output remains outside the repository.
 
-**Checked:** 2026-07-22
+**Checked:** 2026-07-23
 
 ## Decision to make
 
@@ -206,6 +206,18 @@ accepted with no unmatched, ambiguous, or disconnected edge. This establishes
 OSRM as an independent surface baseline, not a route-plan owner or released
 Japan data build.
 
+The GraphHopper 11.0 comparator now passes the same boundary through a third
+public Swift adapter. The first bounded import correctly failed build identity
+because `/info.data_date` was the Unix epoch after extraction had removed the
+source PBF replication timestamp. The accepted manifest restores the known
+source header timestamp and binds it with the JAR, JRE digest, profile, graph
+cache, and Kaido graph checksums. Import-time and response-time simplification
+are disabled. Aligned `edge_key`, `osm_way_id`, and `country` path details cover
+every point-pair and translate into complete 1-, 8-, and 44-edge Kaido paths.
+Across three public-CLI runs per origin, all nine were accepted with one path
+variant and no unmatched, ambiguous, or disconnected edge. GraphHopper
+navigation driving-side output remains excluded from product guidance.
+
 ## Matcher test
 
 ### Hard gates
@@ -392,7 +404,12 @@ gate.
    cross-dataset paths. A supervised Shinjuku 3x3 window passed through the
    public URLSession adapter. Release-quality administration, broader coverage,
    operations, distribution review, and field evidence remain open.
-6. Run GraphHopper against the same surface fixtures.
+6. **Complete for the bounded GraphHopper baseline:** `/info` and `/route` are
+   manifest-gated; unencoded unsimplified point-pairs carry aligned directional
+   edge-key, OSM-way, and country detail; every pair translates to one exact
+   Kaido edge. A supervised Shinjuku 3x3 window passed through the public
+   URLSession adapter. Timestamp-build scripting, broader coverage, operations,
+   distribution review, and field evidence remain open.
 7. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
    matcher oracle.
 8. Implement the route-aware Swift HMM and compare calibration.
@@ -400,12 +417,12 @@ gate.
 10. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next provider tasks are to extend the manifest-bound Valhalla and OSRM runs
-to the remaining directional entrance corpus, then add the independent
-GraphHopper baseline. This is not an iPhone screen and not a rewrite of the Swift
-route-first core.
+The next provider task is to extend all three manifest-bound baselines to the
+remaining directional entrance corpus. The next matcher task is the nearest-edge
+replay corpus and Valhalla Meili oracle. This is not an iPhone screen and not a
+rewrite of the Swift route-first core.
 
-## Sources checked 2026-07-22
+## Sources checked 2026-07-23
 
 - [Swift Testing](https://developer.apple.com/xcode/swift-testing/)
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
@@ -419,5 +436,9 @@ route-first core.
 - [OSRM route and match services](https://github.com/Project-OSRM/osrm-backend)
 - [OSRM HTTP API and node annotations](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/docs/http.md)
 - [OSRM location-dependent left-driving test](https://github.com/Project-OSRM/osrm-backend/blob/0844e3af77896d11998ef6db356a553056652c8e/features/car/side_bias.feature)
-- [GraphHopper routing and map matching](https://github.com/graphhopper/graphhopper)
+- [GraphHopper 11.0 release](https://github.com/graphhopper/graphhopper/releases/tag/11.0)
+- [GraphHopper 11.0 local HTTP API](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/docs/web/api-doc.md)
+- [GraphHopper directional `edge_key` detail](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/core/src/main/java/com/graphhopper/util/details/EdgeKeyDetails.java)
+- [GraphHopper `osm_way_id` encoded value](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/core/src/main/java/com/graphhopper/routing/ev/OSMWayID.java)
+- [Osmium output header options](https://docs.osmcode.org/osmium/latest/osmium-output-headers.html)
 - [Newson and Krumm HMM map-matching paper and public test data](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)

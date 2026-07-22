@@ -50,10 +50,16 @@ public struct SurfaceRoutingBuildSource: Codable, Equatable, Sendable {
 
 public enum SurfaceRoutingBuildArtifactRole: String, Codable, Sendable {
   case providerConfiguration = "PROVIDER_CONFIGURATION"
+  case engineBinary = "ENGINE_BINARY"
   case routingTiles = "ROUTING_TILES"
   case administrationDatabase = "ADMINISTRATION_DATABASE"
   case timeZoneDatabase = "TIME_ZONE_DATABASE"
   case kaidoDirectedGraph = "KAIDO_DIRECTED_GRAPH"
+}
+
+public enum SurfaceRoutingSelectedPathIdentity: String, Codable, Sendable {
+  case osmNodePath = "OSM_NODE_PATH"
+  case osmWayPointPairs = "OSM_WAY_POINT_PAIRS"
 }
 
 public struct SurfaceRoutingBuildArtifact: Codable, Equatable, Sendable {
@@ -124,21 +130,25 @@ public struct SurfaceRoutingBuildCapabilities: Codable, Equatable, Sendable {
   public let includesAdministrativeData: Bool
   public let includesTimeZoneData: Bool
   public let keepsAllOSMNodeIDs: Bool
+  public let selectedPathIdentity: SurfaceRoutingSelectedPathIdentity?
 
   public init(
     includesAdministrativeData: Bool,
     includesTimeZoneData: Bool,
-    keepsAllOSMNodeIDs: Bool
+    keepsAllOSMNodeIDs: Bool,
+    selectedPathIdentity: SurfaceRoutingSelectedPathIdentity? = nil
   ) {
     self.includesAdministrativeData = includesAdministrativeData
     self.includesTimeZoneData = includesTimeZoneData
     self.keepsAllOSMNodeIDs = keepsAllOSMNodeIDs
+    self.selectedPathIdentity = selectedPathIdentity
   }
 
   private enum CodingKeys: String, CodingKey {
     case includesAdministrativeData = "includes_administrative_data"
     case includesTimeZoneData = "includes_time_zone_data"
     case keepsAllOSMNodeIDs = "keeps_all_osm_node_ids"
+    case selectedPathIdentity = "selected_path_identity"
   }
 }
 
@@ -412,11 +422,13 @@ public enum SurfaceRoutingBuildManifestValidator {
         "every manifest requires artifact role \(role.rawValue)"
       )
     }
-    if !manifest.capabilities.keepsAllOSMNodeIDs {
+    if !manifest.capabilities.keepsAllOSMNodeIDs
+      && manifest.capabilities.selectedPathIdentity != .osmWayPointPairs
+    {
       issue(
         .missingCapability,
-        "capabilities.keeps_all_osm_node_ids",
-        "selected-path translation requires retained OSM node identity"
+        "capabilities.selected_path_identity",
+        "selected-path translation requires OSM nodes or OSM way point-pair identity"
       )
     }
 
@@ -441,10 +453,12 @@ public enum SurfaceRoutingBuildManifestValidator {
         "release manifest lacks source role \(role.rawValue)"
       )
     }
-    for role in SurfaceRoutingBuildArtifactRole.allCases
-    where ![.routingTiles, .kaidoDirectedGraph].contains(role)
-      && !manifest.artifacts.contains(where: { $0.role == role })
-    {
+    for role in [
+      SurfaceRoutingBuildArtifactRole.providerConfiguration,
+      .administrationDatabase,
+      .timeZoneDatabase,
+    ]
+    where !manifest.artifacts.contains(where: { $0.role == role }) {
       issue(
         .missingArtifactRole,
         "artifacts",

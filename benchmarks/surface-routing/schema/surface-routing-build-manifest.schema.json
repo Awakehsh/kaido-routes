@@ -186,6 +186,7 @@
         "role": {
           "enum": [
             "PROVIDER_CONFIGURATION",
+            "ENGINE_BINARY",
             "ROUTING_TILES",
             "ADMINISTRATION_DATABASE",
             "TIME_ZONE_DATABASE",
@@ -225,8 +226,31 @@
         },
         "keeps_all_osm_node_ids": {
           "type": "boolean"
+        },
+        "selected_path_identity": {
+          "enum": ["OSM_NODE_PATH", "OSM_WAY_POINT_PAIRS"]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "keeps_all_osm_node_ids": {
+                "const": false
+              }
+            },
+            "required": ["keeps_all_osm_node_ids"]
+          },
+          "then": {
+            "required": ["selected_path_identity"],
+            "properties": {
+              "selected_path_identity": {
+                "const": "OSM_WAY_POINT_PAIRS"
+              }
+            }
+          }
+        }
+      ]
     },
     "adminVerification": {
       "type": "object",

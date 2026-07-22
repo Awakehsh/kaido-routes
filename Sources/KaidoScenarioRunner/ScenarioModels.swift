@@ -50,12 +50,16 @@ public struct ScenarioGiven: Decodable, Sendable {
 public struct ScenarioTariffQuote: Decodable, Equatable, Sendable {
   public let id: String
   public let status: String
+  public let tariffVersionID: String
+  public let tariffVersionStatus: TariffVersionStatus
   public let tariffDistanceKM: Double?
   public let estimatedAmountYen: Int?
 
   private enum CodingKeys: String, CodingKey {
     case id = "quote_id"
     case status
+    case tariffVersionID = "tariff_version_id"
+    case tariffVersionStatus = "tariff_version_status"
     case tariffDistanceKM = "tariff_distance_km"
     case estimatedAmountYen = "estimated_amount_yen"
   }

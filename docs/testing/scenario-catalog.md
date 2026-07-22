@@ -18,7 +18,7 @@ should become scenarios when their layer is built.
 | KR-D08 | A route cannot silently migrate to an incompatible network snapshot | P0 | Seeded |
 | KR-D09 | Japanese sign text survives localization and serialization | P0 | Seeded |
 | KR-D10 | Actual route distance and tariff distance remain separate | P0 | Seeded |
-| KR-D11 | An active tariff is never replaced by a proposed version | P0 | Planned |
+| KR-D11 | An active tariff is never replaced by a proposed version | P0 | Seeded |
 | KR-D12 | No known planned conflict never becomes live-open confirmation | P0 | Seeded |
 | KR-D13 | Import/export preserves every repeated occurrence and index | P1 | Planned |
 | KR-D14 | Route-template parameters compile only to approved movement variants | P1 | Planned |

@@ -257,3 +257,29 @@ private func routePlan(entityIDs: [String]) -> RoutePlan {
     }
   )
 }
+
+@Test("Tariff selection requires exactly one active version")
+func tariffSelectionRequiresUniqueActiveVersion() {
+  let proposed = TariffCandidate(
+    quoteID: "test.quote.proposed",
+    tariffVersionID: "test.tariff.proposed",
+    versionStatus: .proposed
+  )
+  let active = TariffCandidate(
+    quoteID: "test.quote.active",
+    tariffVersionID: "test.tariff.active",
+    versionStatus: .active
+  )
+
+  let selected = TariffSelector.selectCurrent(from: [proposed, active])
+  let ambiguous = TariffSelector.selectCurrent(from: [active, active])
+  let noActive = TariffSelector.selectCurrent(from: [proposed])
+
+  #expect(selected.status == .selected)
+  #expect(selected.selectedCandidate == active)
+  #expect(selected.ignoredNonActiveQuoteIDs == [proposed.quoteID])
+  #expect(ambiguous.status == .rejected)
+  #expect(ambiguous.errorCodes == ["NO_UNIQUE_ACTIVE_TARIFF"])
+  #expect(noActive.status == .rejected)
+  #expect(noActive.errorCodes == ["NO_UNIQUE_ACTIVE_TARIFF"])
+}

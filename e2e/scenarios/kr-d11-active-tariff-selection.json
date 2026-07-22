@@ -1,0 +1,115 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D11",
+  "title": "A proposed tariff never replaces the unique active tariff",
+  "layer": "DOMAIN",
+  "tags": ["evidence", "tariff", "versioning"],
+  "purpose": "Prevent a later or more prominent proposed price from being displayed as the current payable tariff before primary evidence activates that version.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic amounts and versions prove selection semantics only; they make no claim about a real proposed Shuto tariff."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.tariff-selection-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "tariff_quotes": [
+      {
+        "quote_id": "test.quote.proposed-first",
+        "status": "ESTIMATED",
+        "vehicle_class": "STANDARD_CAR_ETC",
+        "tariff_version_id": "test.tariff.proposed",
+        "tariff_version_status": "PROPOSED",
+        "tariff_distance_km": 1.6,
+        "estimated_amount_yen": 400,
+        "checked_at": "2026-07-22T13:00:00+09:00",
+        "official_query_reference": "https://example.invalid/proposed"
+      },
+      {
+        "quote_id": "test.quote.active",
+        "status": "VERIFIED_QUERY",
+        "vehicle_class": "STANDARD_CAR_ETC",
+        "tariff_version_id": "test.tariff.active",
+        "tariff_version_status": "ACTIVE",
+        "tariff_distance_km": 1.6,
+        "estimated_amount_yen": 300,
+        "checked_at": "2026-07-22T12:00:00+09:00",
+        "official_query_reference": "https://example.invalid/active"
+      }
+    ],
+    "inputs": {},
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "select-tariff",
+      "at_ms": 0,
+      "type": "TARIFF_SELECTION_REQUESTED",
+      "payload": {
+        "candidate_quote_ids": ["test.quote.proposed-first", "test.quote.active"]
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "unique-active-selected",
+      "after": "select-tariff",
+      "category": "TOLL",
+      "subject": "tariff_selection.status",
+      "matcher": "EQUALS",
+      "expected": "SELECTED",
+      "rationale": "Exactly one active version is safe to select."
+    },
+    {
+      "id": "active-quote-selected",
+      "after": "select-tariff",
+      "category": "TOLL",
+      "subject": "tariff_selection.selected_quote_id",
+      "matcher": "EQUALS",
+      "expected": "test.quote.active",
+      "rationale": "Candidate order cannot make the proposed quote win."
+    },
+    {
+      "id": "active-version-selected",
+      "after": "select-tariff",
+      "category": "EVIDENCE",
+      "subject": "tariff_selection.selected_tariff_version_id",
+      "matcher": "EQUALS",
+      "expected": "test.tariff.active",
+      "rationale": "The selected quote retains its exact active version identity."
+    },
+    {
+      "id": "active-status-visible",
+      "after": "select-tariff",
+      "category": "EVIDENCE",
+      "subject": "tariff_selection.selected_tariff_version_status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "Pre-drive review can distinguish current and merely proposed rules."
+    },
+    {
+      "id": "active-amount-retained",
+      "after": "select-tariff",
+      "category": "TOLL",
+      "subject": "tariff_selection.selected_amount_yen",
+      "matcher": "EQUALS",
+      "expected": 300,
+      "rationale": "No value from the proposed quote leaks into the active selection."
+    },
+    {
+      "id": "proposed-quote-ignored",
+      "after": "select-tariff",
+      "category": "EVIDENCE",
+      "subject": "tariff_selection.ignored_non_active_quote_ids",
+      "matcher": "CONTAINS",
+      "expected": "test.quote.proposed-first",
+      "rationale": "The rejected proposed candidate remains explicit for audit."
+    }
+  ]
+}

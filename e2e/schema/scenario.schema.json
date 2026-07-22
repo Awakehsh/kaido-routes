@@ -225,6 +225,7 @@
         "status",
         "vehicle_class",
         "tariff_version_id",
+        "tariff_version_status",
         "checked_at",
         "official_query_reference"
       ],
@@ -243,6 +244,9 @@
         "tariff_version_id": {
           "type": "string",
           "minLength": 1
+        },
+        "tariff_version_status": {
+          "enum": ["ACTIVE", "PROPOSED", "RETIRED"]
         },
         "tariff_distance_km": {
           "type": "number",
@@ -312,7 +316,8 @@
             "CARPLAY_CONNECTED",
             "CARPLAY_DISCONNECTED",
             "USER_ACTION",
-            "TARIFF_QUOTED"
+            "TARIFF_QUOTED",
+            "TARIFF_SELECTION_REQUESTED"
           ]
         },
         "payload": {

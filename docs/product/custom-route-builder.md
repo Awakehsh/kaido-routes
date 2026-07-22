@@ -139,6 +139,29 @@ Warnings include:
 - toll is estimated rather than reproduced from an official query;
 - route or sign evidence is approaching its review deadline.
 
+### Low-price circuit evidence
+
+Current official pages checked 2026-07-22 state that standard-car ETC basic
+charges range from JPY 300 to JPY 1,950, that tariff distance can differ from
+actual distance, and that the shortest Shuto-only path is used when multiple
+paths connect the same entrance and exit. The D10 fixture separately preserves
+one reproduced official query: Iikura to Shibakoen via Takaracho returned JPY
+300 for the recorded inputs and check time.
+
+This supports a dated route-detail estimate, not a product promise that any lap
+count, all-night drive, entry/exit pair, vehicle, or future tariff will cost JPY
+300. A [2026 community article](https://www.4g15maimai.com/entry/2026/05/17/005449)
+is useful demand and route-pattern research, but its broader “unlimited laps”
+interpretation remains non-authoritative. The app should link the current
+official query, retain `tariff_version_status`, and tell the user that the ETC
+statement is final.
+
+Primary references:
+
+- [ETC basic charges](https://www.shutoko.jp/fee/fee-info/pay_etc/)
+- [Tariff-distance and route-selection rule](https://www.shutoko.jp/fee/fee-info/pay_etc/distance/)
+- [Official route and toll query](https://search.shutoko.jp/)
+
 ## Safe customization boundaries
 
 - Never optimize away an explicit road, direction, movement, or lap.

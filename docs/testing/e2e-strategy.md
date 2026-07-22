@@ -113,6 +113,9 @@ egress_plan.exit_facility_id
 localization.release_gate
 guidance.active_voice_locale
 guidance.visible_sign_text_ja
+tariff_selection.selected_tariff_version_id
+tariff_selection.selected_tariff_version_status
+tariff_selection.ignored_non_active_quote_ids
 ```
 
 This split lets coding agents implement MapKit, Core Location, iPhone UI, and

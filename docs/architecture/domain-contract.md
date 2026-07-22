@@ -291,6 +291,7 @@ TariffQuote
   entry_facility_id
   exit_facility_id
   tariff_version_id
+  tariff_version_status: ACTIVE | PROPOSED | RETIRED
   tariff_distance_km
   vehicle_class
   estimated_amount_yen
@@ -301,6 +302,10 @@ TariffQuote
 
 Never calculate a final toll from actual route distance. Proposed tariff
 versions are non-active until primary evidence establishes an effective rule.
+`TariffSelector` accepts a candidate set only when exactly one version is
+`ACTIVE`; zero or multiple active versions return `NO_UNIQUE_ACTIVE_TARIFF`.
+Input order, a newer check timestamp, or a proposed amount cannot make a
+non-active version win.
 
 ## Signs and localization
 

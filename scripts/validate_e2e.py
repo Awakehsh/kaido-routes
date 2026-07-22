@@ -27,6 +27,8 @@ EVIDENCE_CLASSES = {
 SNAPSHOT_STATES = {"ACTIVE", "PROPOSED", "RETIRED", "TEST"}
 OCCURRENCE_KINDS = {"EDGE", "JUNCTION_MOVEMENT", "PA_VISIT"}
 RECOVERY_POLICIES = {"STRICT", "SAFE_REJOIN", "SAFE_EXIT", "MANUAL_WHEN_PARKED"}
+TARIFF_QUOTE_STATUSES = {"VERIFIED_QUERY", "ESTIMATED", "UNKNOWN"}
+TARIFF_VERSION_STATUSES = {"ACTIVE", "PROPOSED", "RETIRED"}
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
     "NAVIGATION_STARTED",
@@ -39,6 +41,7 @@ EVENT_TYPES = {
     "CARPLAY_DISCONNECTED",
     "USER_ACTION",
     "TARIFF_QUOTED",
+    "TARIFF_SELECTION_REQUESTED",
 }
 ASSERTION_CATEGORIES = {"DOMAIN", "NAVIGATION", "UI", "SAFETY", "TOLL", "EVIDENCE"}
 MATCHERS = {
@@ -241,6 +244,60 @@ def validate_route_plan(v: Validation, route_plan: Any) -> None:
             v.add(f"parking area {parking_area_id!r} has inconsistent optional flags")
 
 
+def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
+    if not isinstance(quotes, list):
+        v.add("given.tariff_quotes must be an array")
+        return
+
+    quote_ids: set[str] = set()
+    required = {
+        "quote_id",
+        "status",
+        "vehicle_class",
+        "tariff_version_id",
+        "tariff_version_status",
+        "checked_at",
+        "official_query_reference",
+    }
+    for index, quote in enumerate(quotes):
+        context = f"given.tariff_quotes[{index}]"
+        if not v.require_keys(quote, required, context):
+            continue
+        quote_id = quote["quote_id"]
+        if not isinstance(quote_id, str) or not quote_id.strip():
+            v.add(f"{context}.quote_id must be non-empty")
+        elif quote_id in quote_ids:
+            v.add(f"duplicate tariff quote_id: {quote_id}")
+        quote_ids.add(quote_id)
+        if quote["status"] not in TARIFF_QUOTE_STATUSES:
+            v.add(f"{context}.status is unknown: {quote['status']!r}")
+        if quote["tariff_version_status"] not in TARIFF_VERSION_STATUSES:
+            v.add(
+                f"{context}.tariff_version_status is unknown: "
+                f"{quote['tariff_version_status']!r}"
+            )
+        for field in ("vehicle_class", "tariff_version_id"):
+            if not isinstance(quote[field], str) or not quote[field].strip():
+                v.add(f"{context}.{field} must be non-empty")
+        if not is_datetime(quote["checked_at"]):
+            v.add(f"{context}.checked_at must be an ISO date-time")
+        reference = quote["official_query_reference"]
+        if not isinstance(reference, str) or ":" not in reference:
+            v.add(f"{context}.official_query_reference must be an absolute URI")
+        distance = quote.get("tariff_distance_km")
+        if distance is not None and (
+            not isinstance(distance, (int, float))
+            or isinstance(distance, bool)
+            or distance < 0
+        ):
+            v.add(f"{context}.tariff_distance_km must be non-negative")
+        amount = quote.get("estimated_amount_yen")
+        if amount is not None and (
+            not isinstance(amount, int) or isinstance(amount, bool) or amount < 0
+        ):
+            v.add(f"{context}.estimated_amount_yen must be a non-negative integer")
+
+
 def validate_timeline(v: Validation, events: Any) -> set[str]:
     if not isinstance(events, list) or not events:
         v.add("when must be a non-empty array")
@@ -349,6 +406,8 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_snapshot(v, given["network_snapshot"])
         if "route_plan" in given:
             validate_route_plan(v, given["route_plan"])
+        if "tariff_quotes" in given:
+            validate_tariff_quotes(v, given["tariff_quotes"])
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")
         if not isinstance(given["system_state"], dict):

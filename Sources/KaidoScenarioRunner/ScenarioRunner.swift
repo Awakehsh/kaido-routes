@@ -103,6 +103,8 @@ private struct ScenarioHarness {
       try applyUserAction(event.payload)
     case "TARIFF_QUOTED":
       try projectTariffQuote(event.payload)
+    case "TARIFF_SELECTION_REQUESTED":
+      try selectTariff(event.payload)
     default:
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
@@ -450,6 +452,44 @@ private struct ScenarioHarness {
     adapterObservations["route_summary.toll.status"] = .string(quote.status)
     if let amount = quote.estimatedAmountYen {
       adapterObservations["route_summary.toll.estimated_amount_yen"] = .integer(amount)
+    }
+  }
+
+  private mutating func selectTariff(_ payload: [String: JSONValue]) throws {
+    let quoteIDs = try requiredStrings(payload, key: "candidate_quote_ids")
+    let quotes = try quoteIDs.map { quoteID in
+      guard let quote = scenario.given.tariffQuotes.first(where: { $0.id == quoteID }) else {
+        throw ScenarioExecutionError.invalidInput("candidate_quote_ids")
+      }
+      return quote
+    }
+    let selection = TariffSelector.selectCurrent(
+      from: quotes.map { quote in
+        TariffCandidate(
+          quoteID: quote.id,
+          tariffVersionID: quote.tariffVersionID,
+          versionStatus: quote.tariffVersionStatus
+        )
+      }
+    )
+
+    adapterObservations["tariff_selection.status"] = .string(selection.status.rawValue)
+    adapterObservations["tariff_selection.ignored_non_active_quote_ids"] = .strings(
+      selection.ignoredNonActiveQuoteIDs
+    )
+    adapterObservations["tariff_selection.error_codes"] = .strings(selection.errorCodes)
+    guard let selected = selection.selectedCandidate,
+      let quote = quotes.first(where: { $0.id == selected.quoteID })
+    else { return }
+    adapterObservations["tariff_selection.selected_quote_id"] = .string(selected.quoteID)
+    adapterObservations["tariff_selection.selected_tariff_version_id"] = .string(
+      selected.tariffVersionID
+    )
+    adapterObservations["tariff_selection.selected_tariff_version_status"] = .string(
+      selected.versionStatus.rawValue
+    )
+    if let amount = quote.estimatedAmountYen {
+      adapterObservations["tariff_selection.selected_amount_yen"] = .integer(amount)
     }
   }
 

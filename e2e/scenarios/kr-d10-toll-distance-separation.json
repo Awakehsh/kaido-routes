@@ -40,6 +40,7 @@
         "status": "VERIFIED_QUERY",
         "vehicle_class": "STANDARD_CAR_ETC",
         "tariff_version_id": "shutoko.tariff.2026-07-22-active",
+        "tariff_version_status": "ACTIVE",
         "tariff_distance_km": 1.6,
         "estimated_amount_yen": 300,
         "checked_at": "2026-07-22T12:00:00+09:00",
@@ -115,4 +116,3 @@
     }
   ]
 }
-

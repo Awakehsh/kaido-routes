@@ -134,13 +134,26 @@ OSM way, begin/end OSM nodes, digitized direction, and the one-to-one
 edges; repeat traversal is preserved and an observation at a translated segment
 boundary stays ambiguous.
 
+For the pinned Valhalla 3.8.2 serializer, `edge.end_osm_node_id` alone does not
+materialize the `end_node` JSON object. The request also includes `node.type` to
+activate the node category; the end OSM node ID remains the identity field and
+the diagnostic node type is not used for matching.
+
 Meili exposes `matched`, `interpolated`, or `unmatched` plus distance, but no
 calibrated confidence and no RoutePlan occurrence. The bridge therefore emits
 at most `LOW`, and the shared evaluator correctly reports occurrence identity as
 unavailable. Reordered observed time is rejected instead of silently sorted,
 because the official API requires an increasing time sequence. The adapter is a
-batch oracle, not an online safety matcher. A private same-snapshot replay is
-still required before reporting real edge accuracy.
+batch oracle, not an online safety matcher.
+
+The first ignored same-snapshot window ran five reviewed entrance chains across
+three controlled graph-derived accuracy bands. The 15 fixtures contain 195
+observations per repeat; three repeats made 45 provider requests. Reports were
+value-identical. Edge top-1 was 65/65 for exact points, 65/65 for 5-meter
+displacement with 10-meter declared accuracy, and 62/65 for 10-meter displacement
+with 20-meter declared accuracy. All three LOW misses occurred at the Tomigaya
+entrance mouth and occurrence remained 0/195. These are protocol and identity
+metrics, not phone, CarPlay, tunnel, or production calibration claims.
 
 ### B3: guidance fixtures
 
@@ -473,12 +486,13 @@ gate.
    45/45 final requests on one shared snapshot. Valhalla route destinations now
    bind reviewed heading/tolerance and disable node snapping; provider route
    differences remain a field-review task, not a reason to weaken hard gates.
-8. **Partial complete:** the schema, six-fixture synthetic replay corpus,
+8. **Complete for the external oracle boundary:** the schema, six-fixture synthetic replay corpus,
    23-observation ground truth, shared evaluator, CLI, and deterministic
    nearest-edge negative control are executable. The manifest-bound Meili
    request/normalization/translation bridge is deterministic and deliberately
-   LOW-confidence. Run the first private same-snapshot Meili replay window and
-   record its compatibility gaps and edge metrics.
+   LOW-confidence. Its first private same-snapshot controlled window made 45
+   requests and recorded repeat-identical 192/195 edge top-1, three Tomigaya
+   entrance-mouth misses, and the expected 0/195 occurrence result.
 9. Implement the route-aware Swift HMM and compare calibration.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
@@ -486,9 +500,10 @@ gate.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is a private
-same-snapshot Meili replay window, followed by the route-aware Swift HMM. This is
-not yet an iPhone screen and not a rewrite of the Swift route-first core.
+the released facility corpus. The next implementation task is the route-aware
+Swift HMM, starting with the three Tomigaya entrance-mouth failures and tracked
+repeated-occurrence/tunnel/stale cases. This is not yet an iPhone screen and not
+a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-23
 
@@ -496,6 +511,7 @@ not yet an iPhone screen and not a rewrite of the Swift route-first core.
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
 - [Valhalla Meili](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
+- [Valhalla 3.8.2 trace-attribute JSON serializer](https://github.com/valhalla/valhalla/blob/3.8.2/src/tyr/trace_serializer.cc)
 - [Valhalla route locations, heading, and heading tolerance](https://valhalla.github.io/valhalla/api/turn-by-turn/api-reference/)
 - [Valhalla 3.8.2 node-snap configuration](https://github.com/valhalla/valhalla/blob/3.8.2/scripts/valhalla_build_config)
 - [Valhalla status API](https://valhalla.github.io/valhalla/api/status/)

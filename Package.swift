@@ -49,7 +49,7 @@ let package = Package(
     ),
     .executableTarget(
       name: "KaidoMatcherReplayCLI",
-      dependencies: ["KaidoNavigation"]
+      dependencies: ["KaidoNavigation", "KaidoSurfaceRouting", "KaidoAppleAdapters"]
     ),
     .testTarget(
       name: "KaidoScenarioTests",

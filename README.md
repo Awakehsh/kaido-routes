@@ -60,8 +60,15 @@ Kaido edge. Repeated traversals remain repeated and a point on a translated
 segment boundary remains ambiguous. Valhalla exposes match type and distance,
 not calibrated confidence or RoutePlan occurrence identity, so the adapter emits
 only `LOW` confidence and cannot authorize a branch commit. A real shared-snapshot
-replay window is still pending; deterministic tests use synthetic responses and
-make no live provider call.
+controlled replay window now exercises the public CLI against the pinned 3.8.2
+service: five reviewed entrance chains, three graph-derived accuracy bands, 15
+fixtures, 195 observations per repeat, and 45 provider requests. The reports
+were repeat-identical and returned 192/195 edge top-1 overall: 65/65 for exact
+points, 65/65 for 5-meter displacement with 10-meter declared accuracy, and
+62/65 for 10-meter displacement with 20-meter declared accuracy. All three
+misses were LOW-confidence points at the Tomigaya entrance mouth; occurrence
+identity remained 0/195 by design. This validates the real protocol and identity
+bridge, not phone accuracy, tunnel behavior, or a live production dependency.
 
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:

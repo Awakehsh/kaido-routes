@@ -34,6 +34,7 @@ func valhallaMatcherReplayOracleExecutesBoundedProtocol() async throws {
   let attributes = try #require(filters["attributes"] as? [String])
   #expect(attributes.contains("edge.begin_osm_node_id"))
   #expect(attributes.contains("edge.end_osm_node_id"))
+  #expect(attributes.contains("node.type"))
   #expect(attributes.contains("matched.distance_from_trace_point"))
 
   #expect(report.algorithmID == "valhalla-meili-map-snap-v1")

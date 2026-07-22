@@ -222,6 +222,9 @@ private struct RequestFilters: Encodable {
     "edge.forward",
     "edge.begin_osm_node_id",
     "edge.end_osm_node_id",
+    // Valhalla 3.8.2 serializes `end_node` only when the node category is active.
+    // Requesting one harmless node field materializes the requested end OSM node ID.
+    "node.type",
     "matched.point",
     "matched.type",
     "matched.edge_index",

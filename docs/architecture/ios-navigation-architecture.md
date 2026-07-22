@@ -416,6 +416,11 @@ repeated traversal. A matched point's along-edge fraction selects one translated
 segment only when it is not within the declared boundary tolerance; otherwise
 the result stays ambiguous.
 
+Valhalla 3.8.2's JSON serializer emits `end_node` only when at least one node
+category attribute is active. The bounded request therefore includes `node.type`
+alongside `edge.end_osm_node_id`; omitting that activation field produces no end
+node identity even though the edge filter itself is present.
+
 The batch request preserves increasing observation time and disables Meili point
 interpolation. Because Meili accepts one trace-level GPS accuracy and search
 radius rather than Kaido's per-observation accuracy values, the adapter records
@@ -426,7 +431,17 @@ batch oracle cannot claim to model that online case.
 Most importantly, `matched` is not treated as `HIGH`. The documented response
 contains match type and distance but no calibrated confidence and no RoutePlan
 occurrence. The adapter emits `LOW`, leaves occurrence absent, and cannot advance
-the journey reducer. Real shared-snapshot replay metrics remain pending.
+the journey reducer.
+
+The first private same-snapshot controlled window used five reviewed entrance
+chains at exact geometry, 5-meter displacement with 10-meter declared accuracy,
+and 10-meter displacement with 20-meter declared accuracy. Across 15 fixtures,
+195 observations per repeat, and 45 provider requests, every repeated report was
+value-identical and edge top-1 was 192/195. All three LOW-confidence misses were
+at the first Tomigaya entrance-mouth observations; later ramp and merge points
+recovered. Occurrence remained 0/195 by design. This is protocol and identity
+evidence from synthetic graph-derived observations, not device calibration or a
+reason to give Meili live navigation authority.
 
 ## Tunnel behavior
 

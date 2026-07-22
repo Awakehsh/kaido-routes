@@ -51,6 +51,21 @@ value-identical deterministic reports, and compares actual failures with each
 fixture's declared expectation. It exits nonzero for invalid fixtures,
 nondeterminism, missing expected weaknesses, or new unexpected weaknesses.
 
+An ignored same-snapshot fixture can exercise a self-hosted Valhalla explicitly:
+
+```sh
+swift run kaido-matcher-replay \
+  --fixture research/private-matcher-fixture.json \
+  --graph research/private-directed-graph.json \
+  --manifest research/private-valhalla-manifest.json \
+  --base-url http://127.0.0.1:18002 \
+  --allow-live-valhalla --repeat 3 --pretty
+```
+
+Live mode emits a scalar-only local summary by default. `--raw-local` includes
+normalized estimates for diagnosis; its output, provider responses, fixture,
+and private graph must remain outside Git pending provenance and licence review.
+
 `NearestEdgeNegativeControl` intentionally ignores course, graph transition,
 route occurrence, observation age, and location source. It is not production
 navigation code. Its result establishes the minimum comparison floor for
@@ -64,7 +79,17 @@ ambiguous. A Valhalla `matched` result becomes LOW confidence because Meili does
 not provide Kaido's calibrated live confidence or `RoutePlan` occurrence.
 Non-increasing observation times are rejected rather than silently reordered.
 
-The next evidence step is a private same-snapshot Meili replay window. Until
-that window exists, this adapter proves request and identity semantics only; it
-does not establish real-road matching accuracy or justify a live provider in
-the production navigation authority.
+The first ignored same-snapshot window now exercises that adapter through the
+opt-in live CLI. Five reviewed entrance chains at three controlled graph-derived
+accuracy bands produced 15 fixtures, 195 observations per repeat, and 45
+provider requests. Reports were repeat-identical and edge top-1 was 192/195:
+65/65 exact, 65/65 at 5-meter displacement with 10-meter declared accuracy, and
+62/65 at 10-meter displacement with 20-meter declared accuracy. The three LOW
+misses were all at the Tomigaya entrance mouth; occurrence stayed 0/195 because
+Meili does not know the active `RoutePlan`.
+
+The window validates the real protocol and same-snapshot translation boundary.
+Its observations were synthesized from private OSM graph geometry, so it does
+not establish phone or CarPlay accuracy, tunnel performance, calibration, or a
+live production-provider decision. Raw fixtures, responses, and reports remain
+ignored.

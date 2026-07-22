@@ -138,6 +138,16 @@ code cannot submit a future decision's choice or edit while moving. KR-U01
 executes this stateful boundary; real released editor catalogs, labels, topology
 rendering, accessibility, and the iPhone scene remain pending.
 
+The live pure-Swift composition boundary is also concrete. A `NavigationSession`
+actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts
+each accepted matcher estimate into the conservative location observation,
+selects the released DecisionZone for the current anchor occurrence, runs the
+distance bridge, and returns one atomic snapshot plus optional prompt emission.
+Initialization rejects mismatched route, snapshot, corridor, zone, or guidance
+identities. Matcher reset/restart clears temporal evidence without rewinding
+navigation progress. Core Location callbacks, lifecycle persistence, background
+execution, audio, and app-scene wiring remain Apple-adapter work.
+
 The feasibility core currently executes portable scenarios for twenty-four hard
 properties that must remain proven as the product expands:
 

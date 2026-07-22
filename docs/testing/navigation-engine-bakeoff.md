@@ -548,7 +548,9 @@ gate.
    version-bound corridor, spatial index, bounded state beam, vertical KR-S16
    scenario, Core Location observation/provenance adapter, private trace recorder,
    scoped reliability evaluator, timed calibration session, and occurrence-bound
-   distance bridge are executable. KR-S18 proves that only HIGH along-edge
+   distance bridge are executable. The `NavigationSession` actor now serializes
+   that matcher, engine, bridge, and one-shot emission into atomic updates and
+   rejects mismatched runtime composition. KR-S18 proves that only HIGH along-edge
    progress on the exact RoutePlan corridor becomes DecisionZone distance; the
    lateral matcher residual is never route progress.
    Run the target device matrix and collect independently annotated held-out

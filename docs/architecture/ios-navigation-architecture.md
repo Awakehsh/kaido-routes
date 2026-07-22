@@ -227,10 +227,15 @@ when measurements or independent release needs justify it.
 | app targets | iPhone scene, CarPlay scene, dependency composition | duplicated domain rules |
 | test support | portable E2E adapter, replay clock, provider probes, benchmark reporting | live services in deterministic suites |
 
-Use Swift value types at module boundaries. A `NavigationSession` actor serializes
-location, provider, restriction, and user events. Its internal state transitions
-remain pure reducer functions so that deterministic simulation does not need an
-actor, clock, device, or main thread.
+Use Swift value types at module boundaries. The implemented `NavigationSession`
+actor serializes the route-bound matcher, conservative matcher-to-location
+projection, navigation reducer, DecisionZone distance bridge, prompt emission,
+restriction, tunnel, CarPlay-ownership, and Finish drive events. Its internal
+state transitions remain pure reducer functions so deterministic simulation does
+not need an actor, clock, device, or main thread. Matcher reset/restart never
+rewinds engine progress. The actor does not fabricate entry-transition forward
+continuity from one matcher estimate; that stronger evidence remains a separate
+adapter input before automatic strict-route entry.
 
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
@@ -272,6 +277,15 @@ through planning, ledger, and projection. Production corridor construction and
 zone calibration remain data/field gates. Dynamic layout, accessibility,
 installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`, audio routing,
 and physical display timing remain adapter work and device gates.
+
+`NavigationSession` now owns the executable runtime ordering of these pieces.
+One matcher observation produces one atomic update containing matcher diagnostics,
+the resulting `NavigationSnapshot`, bridge status, resolved progress when safe,
+and at most one matching prompt emission. Initialization validates exact
+RoutePlan, snapshot, occurrence corridor, DecisionZone, and released-guidance
+bindings before accepting observations. Core Location callback ownership,
+background lifecycle, persistence/restoration, audio scheduling, and app-scene
+composition are still unimplemented Apple boundaries.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.

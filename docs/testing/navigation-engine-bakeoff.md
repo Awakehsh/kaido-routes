@@ -168,6 +168,15 @@ two of its three Tomigaya misses selected a wrong ordinary-road edge at LOW and
 one stayed ambiguous. Track edge coverage, wrong selections, abstentions, and
 occurrence accuracy separately; top-1 alone would hide the safer tradeoff.
 
+The same algorithm now runs only through the public incremental
+`RouteMatcherSession`; the replay path is an adapter over that session rather
+than a second batch implementation. Six lifecycle/complexity tests prove
+stream/batch parity, stale-state immutability, reset/restart behavior, invalid
+receive-order rejection, spatial exclusion of 100 distant edges, and a
+configurable seven-state cap over 200 repeated occurrences. KR-S16 additionally
+projects matcher confidence and occurrence output into `NavigationEngine`.
+These are deterministic architecture gates, not latency or battery evidence.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -212,10 +221,12 @@ continuous inspected path.
 - result stability across repeated requests and departure times;
 - online, offline, rate-limit, licence, and retention constraints.
 
-The current feasibility inspector searches the bounded graph directly. Its
-latency is evidence-tool telemetry, not a production matcher budget. Before any
-reuse in live navigation, benchmark a spatial candidate index on the eventual
-device matrix and retain the same fail-closed topology semantics.
+The surface feasibility inspector still searches its bounded graph directly;
+its latency is evidence-tool telemetry, not a production matcher budget. The
+separate live matcher session now has a fixed-grid corridor index and synthetic
+tests proving that distant roads are excluded from an observation query and
+active occurrence states are capped. Benchmark that implementation on the
+eventual device matrix while retaining the same fail-closed topology semantics.
 
 ### Accepted implementation direction
 
@@ -441,7 +452,8 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 31 scenarios with 168 semantic assertions executable at L1/L2.
+   current 32 scenarios with 181 semantic assertions executable at L1/L2. KR-S16
+   crosses the incremental matcher-to-navigation boundary.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
@@ -506,19 +518,22 @@ gate.
    and deliberately LOW-confidence. Its first private same-snapshot controlled
    window made 45 requests and recorded repeat-identical 192/195 edge top-1,
    three Tomigaya entrance-mouth misses, and the expected 0/195 occurrence result.
-9. **Partial complete:** the route-aware Swift online Viterbi prototype and both
-   tracked/private comparisons are executable. Extract a fixture-independent
-   matcher session and corridor spatial index, then calibrate confidence with
-   device traces and reliability bins.
+9. **Partial complete:** the route-aware Swift online Viterbi prototype, both
+   tracked/private comparisons, a fixture-independent incremental session,
+   version-bound corridor, spatial index, bounded state beam, and vertical KR-S16
+   scenario are executable. Add the Core Location adapter, profile the target
+   device matrix, and calibrate confidence with device traces and reliability
+   bins.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is the production
-Swift matcher boundary: a RoutePlan corridor index, incremental session state,
-and device-trace calibration around entrance mouths, stacked roads, and tunnel
+the released facility corpus. The next implementation task is the Apple location
+boundary: translate timestamped `CLLocation` updates into receive-ordered session
+observations, preserve source provenance, profile device cost, and collect
+calibration traces around entrance mouths, stacked roads, and tunnel
 reacquisition. This is not yet an iPhone screen and not a C++ or Rust rewrite.
 
 ## Sources checked 2026-07-23

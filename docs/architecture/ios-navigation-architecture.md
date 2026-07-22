@@ -3,8 +3,8 @@
 **Status:** accepted and implemented for the platform-light feasibility core;
 the current bake-off selects Valhalla as the leading shared implementation
 behind the bounded surface-routing/oracle boundary and pure Swift for live
-RoutePlan matching, subject to production-session, operations, and field evidence
-in `docs/testing/navigation-engine-bakeoff.md`.
+RoutePlan matching, subject to Apple-adapter, operations, and field evidence in
+`docs/testing/navigation-engine-bakeoff.md`.
 
 **Checked:** 2026-07-23
 
@@ -23,7 +23,8 @@ Use a hybrid architecture:
    OSRM, and GraphHopper on the same entrance fixtures.
 6. Keep Valhalla Meili as the first open-source offline map-matching oracle and
    use the small route-aware Swift online Viterbi prototype as the live matcher
-   direction, pending a production session API and field calibration.
+   direction, pending a Core Location adapter, device profiling, and field
+   calibration.
 7. Do not make a commercial full-stack navigation SDK or a generic shortest-path
    engine the source of truth for route occurrences, junction movements, recovery,
    signs, toll boundaries, or egress.
@@ -462,13 +463,30 @@ occurrence hypotheses. All five non-top-1 results were LOW abstentions with no
 selected edge. Meili produced 192/195 edge top-1 and 0/195 occurrence, with two
 LOW wrong-edge selections and one ambiguity at Tomigaya.
 
-This selects pure Swift for the live matcher boundary; it does not make the
-prototype production-ready. The current benchmark adapter is fixture-shaped,
-candidate search is linear over the supplied edge set, and score thresholds are
-uncalibrated. The next core step is a fixture-independent matcher session fed by
-a RoutePlan corridor index, followed by device trace calibration. C++ or Rust is
-not justified unless profiling that bounded implementation exposes a measured
-CPU, memory, or battery failure.
+This selects pure Swift for the live matcher boundary. `RouteMatcherSession` now
+turns the algorithm into a fixture-independent incremental API: the session is
+bound to a versioned `RouteMatcherCorridor`, accepts observations in receive
+order, retains temporal path state, rejects invalid receive ordering, and
+supports explicit reset or restart at a reviewed occurrence. A fixed-grid
+spatial index measures only nearby corridor edges before expanding their route
+occurrence states. A score beam and configurable active-state cap bound growth
+when the same edge appears across many laps. Diagnostics expose indexed/query
+edge counts, active states, and accepted observations without making those
+values navigation authority.
+
+The replay adapter now uses this same session rather than a separate batch
+implementation, and streamed output is value-identical to batch output on
+all tracked fixtures. KR-S16 drives the public session through the scenario
+adapter and `NavigationEngine`: stale evidence does not mutate the session, the
+first post-gap occurrence hypothesis remains LOW, a fresh second observation
+may commit HIGH, and restarting the matcher cannot move navigation backward.
+
+This is still not a calibrated production engine. The current grid has only
+synthetic complexity coverage, confidence thresholds lack device reliability
+bins, and no `CLLocation` source adapter or on-device CPU, memory, thermal, and
+battery profile exists. Those are the next core gates. C++ or Rust is not
+justified unless profiling this bounded implementation exposes a measured
+failure that cannot be fixed within the Swift boundary.
 
 ## Tunnel behavior
 

@@ -1,0 +1,307 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S16",
+  "title": "Incremental matcher evidence advances only after a fresh confirmation",
+  "layer": "SIMULATION",
+  "tags": ["map-matching", "occurrence", "stale", "observation-gap", "reset"],
+  "purpose": "Exercise the production-shaped matcher session through the navigation boundary so stale and first post-gap evidence cannot advance the active RoutePlan.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Coordinates and timing are deterministic synthetic inputs, not device or Yamate Tunnel calibration.",
+      "The scenario verifies matcher-to-navigation semantics, not Core Location adapter behavior."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.matcher-session-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.matcher-session",
+      "network_snapshot_id": "test.snapshot.matcher-session-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "matcher-occurrence-a",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.matcher-a"
+        },
+        {
+          "occurrence_id": "matcher-occurrence-b",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.matcher-b"
+        }
+      ]
+    },
+    "inputs": {
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.matcher-session",
+        "network_snapshot_id": "test.snapshot.matcher-session-v1",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.matcher-a",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.76},
+              {"latitude": 35.68, "longitude": 139.7606}
+            ],
+            "successor_edge_ids": ["test.edge.matcher-b"]
+          },
+          {
+            "directed_edge_id": "test.edge.matcher-b",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.7606},
+              {"latitude": 35.68, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "matcher-occurrence-a",
+            "index": 0,
+            "directed_edge_id": "test.edge.matcher-a"
+          },
+          {
+            "occurrence_id": "matcher-occurrence-b",
+            "index": 1,
+            "directed_edge_id": "test.edge.matcher-b"
+          }
+        ]
+      },
+      "matcher_session_configuration": {
+        "ambiguity_margin_meters": 3,
+        "stale_observation_threshold_ms": 10000,
+        "observation_gap_threshold_ms": 10000,
+        "spatial_cell_size_meters": 100,
+        "maximum_active_states": 16,
+        "score_beam_width": 30
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH",
+      "current_occurrence_id": "matcher-occurrence-a"
+    }
+  },
+  "when": [
+    {
+      "id": "start-navigation",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "start-matcher",
+      "at_ms": 0,
+      "type": "MATCHER_SESSION_STARTED",
+      "payload": {"initial_occurrence_id": "matcher-occurrence-a"}
+    },
+    {
+      "id": "fresh-edge-a",
+      "at_ms": 1000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "fresh-edge-a",
+        "observed_at_ms": 1000,
+        "received_at_ms": 1000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7603},
+        "horizontal_accuracy_meters": 5,
+        "course_degrees": 90,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "stale-edge-b",
+      "at_ms": 12000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "stale-edge-b",
+        "observed_at_ms": 2000,
+        "received_at_ms": 12000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7609},
+        "horizontal_accuracy_meters": 5,
+        "course_degrees": 90,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "first-post-gap-edge-b",
+      "at_ms": 13000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "first-post-gap-edge-b",
+        "observed_at_ms": 13000,
+        "received_at_ms": 13000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7609},
+        "horizontal_accuracy_meters": 5,
+        "course_degrees": 90,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "confirmed-edge-b",
+      "at_ms": 14000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "confirmed-edge-b",
+        "observed_at_ms": 14000,
+        "received_at_ms": 14000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.761},
+        "horizontal_accuracy_meters": 5,
+        "course_degrees": 90,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "restart-matcher-at-a",
+      "at_ms": 15000,
+      "type": "MATCHER_SESSION_RESET",
+      "payload": {"initial_occurrence_id": "matcher-occurrence-a"}
+    },
+    {
+      "id": "fresh-a-after-restart",
+      "at_ms": 16000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "fresh-a-after-restart",
+        "observed_at_ms": 16000,
+        "received_at_ms": 16000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7603},
+        "horizontal_accuracy_meters": 5,
+        "course_degrees": 90,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "session-starts-active",
+      "after": "start-matcher",
+      "category": "NAVIGATION",
+      "subject": "matcher.session_status",
+      "matcher": "EQUALS",
+      "expected": "ACTIVE",
+      "rationale": "The matcher session is explicit and bound before observations arrive."
+    },
+    {
+      "id": "first-fix-resolves-a",
+      "after": "fresh-edge-a",
+      "category": "NAVIGATION",
+      "subject": "matcher.occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-a",
+      "rationale": "Fresh singleton evidence resolves the initial RoutePlan occurrence."
+    },
+    {
+      "id": "stale-fix-is-not-accepted",
+      "after": "stale-edge-b",
+      "category": "SAFETY",
+      "subject": "matcher.accepted_observation_count",
+      "matcher": "EQUALS",
+      "expected": 1,
+      "rationale": "A stale observation cannot mutate the accepted Viterbi path."
+    },
+    {
+      "id": "stale-fix-does-not-advance-navigation",
+      "after": "stale-edge-b",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-a",
+      "rationale": "Navigation cannot advance from stale matcher evidence."
+    },
+    {
+      "id": "first-post-gap-fix-is-low",
+      "after": "first-post-gap-edge-b",
+      "category": "SAFETY",
+      "subject": "matcher.confidence",
+      "matcher": "EQUALS",
+      "expected": "LOW",
+      "rationale": "The first observation after a long evidence gap may form a hypothesis but cannot commit HIGH."
+    },
+    {
+      "id": "post-gap-hypothesis-keeps-occurrence",
+      "after": "first-post-gap-edge-b",
+      "category": "NAVIGATION",
+      "subject": "matcher.occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-b",
+      "rationale": "LOW confidence retains a route occurrence hypothesis for the next observation."
+    },
+    {
+      "id": "first-post-gap-fix-does-not-advance-navigation",
+      "after": "first-post-gap-edge-b",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-a",
+      "rationale": "A LOW hypothesis cannot advance the shared navigation state."
+    },
+    {
+      "id": "confirmation-is-high",
+      "after": "confirmed-edge-b",
+      "category": "NAVIGATION",
+      "subject": "matcher.confidence",
+      "matcher": "EQUALS",
+      "expected": "HIGH",
+      "rationale": "A timely consistent second observation can promote the singleton edge."
+    },
+    {
+      "id": "confirmation-advances-navigation",
+      "after": "confirmed-edge-b",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-b",
+      "rationale": "Only fresh HIGH evidence commits the exact later occurrence."
+    },
+    {
+      "id": "reset-clears-last-edge",
+      "after": "restart-matcher-at-a",
+      "category": "SAFETY",
+      "subject": "matcher.directed_edge_id",
+      "matcher": "ABSENT",
+      "rationale": "Restart does not leak a previous edge estimate into the new matcher session."
+    },
+    {
+      "id": "reset-status-is-visible",
+      "after": "restart-matcher-at-a",
+      "category": "NAVIGATION",
+      "subject": "matcher.session_status",
+      "matcher": "EQUALS",
+      "expected": "RESET",
+      "rationale": "Lifecycle state is observable to adapters and tests."
+    },
+    {
+      "id": "matcher-can-restart-at-a",
+      "after": "fresh-a-after-restart",
+      "category": "NAVIGATION",
+      "subject": "matcher.occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-a",
+      "rationale": "Explicit restart discards the old temporal path and honors its new initial occurrence."
+    },
+    {
+      "id": "navigation-never-jumps-backward-after-matcher-restart",
+      "after": "fresh-a-after-restart",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "matcher-occurrence-b",
+      "rationale": "Matcher lifecycle changes cannot violate NavigationEngine's forward occurrence invariant."
+    }
+  ]
+}

@@ -79,6 +79,13 @@ three indistinguishable stacked points have no directed top-1, one parallel-road
 point stays ambiguous, and the first noisy wrong-branch point is not promoted.
 `--raw-local` can expose normalized estimates for an ignored diagnostic run.
 
+Replay is now a thin adapter over the fixture-independent incremental
+`RouteMatcherSession`, so batch and streamed output share one algorithm. The
+session binds a network snapshot and RoutePlan corridor, validates receive
+ordering, uses a fixed-grid edge index, caps active Viterbi states, and supports
+explicit reset/restart. Unit tests cover stream/batch parity and lifecycle
+safety; KR-S16 covers the matcher-to-`NavigationEngine` commit boundary.
+
 `NearestEdgeNegativeControl` intentionally ignores course, graph transition,
 route occurrence, observation age, and location source. It is not production
 navigation code. Its result establishes the minimum comparison floor for

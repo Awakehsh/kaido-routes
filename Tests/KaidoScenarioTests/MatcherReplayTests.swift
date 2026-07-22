@@ -265,6 +265,200 @@ func routeAwareSwiftMatcherDefersNoisyBranchCommit() throws {
   #expect(report.safetyFailures.isEmpty)
 }
 
+@Test("Incremental matcher session is identical to batch replay")
+func routeMatcherSessionMatchesBatchReplay() throws {
+  let matcher = try RouteAwareSwiftMatcher()
+  for fixture in try loadMatcherFixtures() {
+    let batch = try matcher.estimates(fixture: fixture)
+    var session = try matcher.makeSession(
+      corridor: routeMatcherCorridor(fixture),
+      sessionConfiguration: RouteMatcherSessionConfiguration(
+        ambiguityMarginMeters: fixture.configuration.ambiguityMarginMeters,
+        staleObservationThresholdMilliseconds: fixture.configuration
+          .staleObservationThresholdMilliseconds,
+        observationGapThresholdMilliseconds: fixture.configuration
+          .observationGapThresholdMilliseconds
+      ),
+      initialOccurrenceID: fixture.initialOccurrenceID
+    )
+    let streamed = try fixture.observations.map {
+      try session.observe(routeMatcherObservation($0))
+    }
+
+    #expect(streamed == batch)
+  }
+}
+
+@Test("Stale fixes do not mutate accepted incremental session state")
+func routeMatcherSessionRejectsStaleStateMutation() throws {
+  let fixture = try loadMatcherFixture(named: "stale-reordered-sources")
+  let matcher = try RouteAwareSwiftMatcher()
+  var session = try matcher.makeSession(
+    corridor: routeMatcherCorridor(fixture),
+    initialOccurrenceID: fixture.initialOccurrenceID
+  )
+
+  _ = try session.observe(routeMatcherObservation(fixture.observations[0]))
+  let beforeStale = session.diagnostics
+  let staleEstimate = try session.observe(routeMatcherObservation(fixture.observations[2]))
+
+  #expect(staleEstimate.confidence == .low)
+  #expect(session.diagnostics.acceptedObservationCount == beforeStale.acceptedObservationCount)
+  #expect(session.diagnostics.activeStateCount == beforeStale.activeStateCount)
+}
+
+@Test("Matcher session reset and restart discard prior temporal evidence")
+func routeMatcherSessionResetsAndRestarts() throws {
+  let fixture = try loadMatcherFixture(named: "repeated-edge-gaps")
+  let matcher = try RouteAwareSwiftMatcher()
+  var session = try matcher.makeSession(
+    corridor: routeMatcherCorridor(fixture),
+    initialOccurrenceID: "test.occurrence.lap-1"
+  )
+  for observation in fixture.observations {
+    _ = try session.observe(routeMatcherObservation(observation))
+  }
+  #expect(session.diagnostics.acceptedObservationCount == fixture.observations.count)
+
+  session.reset()
+  #expect(session.diagnostics.acceptedObservationCount == 0)
+  #expect(session.diagnostics.activeStateCount == 0)
+  let firstAfterReset = try session.observe(routeMatcherObservation(fixture.observations[0]))
+  #expect(firstAfterReset.occurrenceID == "test.occurrence.lap-1")
+
+  try session.restart(at: "test.occurrence.lap-3")
+  let firstAfterRestart = try session.observe(routeMatcherObservation(fixture.observations[0]))
+  #expect(firstAfterRestart.occurrenceID == "test.occurrence.lap-3")
+}
+
+@Test("Corridor spatial index excludes distant roads from an observation query")
+func routeMatcherSessionUsesCorridorSpatialIndex() throws {
+  let localCoordinates = [
+    MatcherCoordinate(latitude: 35.6800, longitude: 139.7600),
+    MatcherCoordinate(latitude: 35.6800, longitude: 139.7610),
+  ]
+  let distantEdges = (0..<100).map { index in
+    let latitude = 34.0 + Double(index) * 0.001
+    return RouteMatcherDirectedEdge(
+      id: "distant-\(index)",
+      coordinates: [
+        MatcherCoordinate(latitude: latitude, longitude: 135.0),
+        MatcherCoordinate(latitude: latitude, longitude: 135.001),
+      ]
+    )
+  }
+  let corridor = RouteMatcherCorridor(
+    id: "test.corridor.indexed",
+    networkSnapshotID: "test.snapshot",
+    edges: [RouteMatcherDirectedEdge(id: "local", coordinates: localCoordinates)]
+      + distantEdges,
+    occurrences: [RouteMatcherOccurrence(id: "local-occurrence", index: 0, directedEdgeID: "local")]
+  )
+  var session = try RouteAwareSwiftMatcher().makeSession(
+    corridor: corridor,
+    initialOccurrenceID: "local-occurrence"
+  )
+  let estimate = try session.observe(
+    RouteMatcherObservation(
+      id: "near-local",
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: MatcherCoordinate(latitude: 35.6800, longitude: 139.7605),
+      horizontalAccuracyMeters: 5,
+      courseDegrees: 90,
+      speedMetersPerSecond: 10,
+      source: .phone
+    )
+  )
+
+  #expect(estimate.directedEdgeID == "local")
+  #expect(session.diagnostics.indexedEdgeCount == 101)
+  #expect(session.diagnostics.lastQueriedEdgeCount == 1)
+}
+
+@Test("Matcher session bounds repeated-occurrence active state growth")
+func routeMatcherSessionBoundsActiveStates() throws {
+  let edge = RouteMatcherDirectedEdge(
+    id: "loop-edge",
+    coordinates: [
+      MatcherCoordinate(latitude: 35.6800, longitude: 139.7600),
+      MatcherCoordinate(latitude: 35.6800, longitude: 139.7610),
+    ]
+  )
+  let corridor = RouteMatcherCorridor(
+    id: "test.corridor.repeated-state-bound",
+    networkSnapshotID: "test.snapshot",
+    edges: [edge],
+    occurrences: (0..<200).map {
+      RouteMatcherOccurrence(id: "loop-\($0)", index: $0, directedEdgeID: edge.id)
+    }
+  )
+  var session = try RouteAwareSwiftMatcher().makeSession(
+    corridor: corridor,
+    sessionConfiguration: RouteMatcherSessionConfiguration(maximumActiveStates: 7)
+  )
+  _ = try session.observe(
+    RouteMatcherObservation(
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: MatcherCoordinate(latitude: 35.6800, longitude: 139.7605),
+      horizontalAccuracyMeters: 5,
+      courseDegrees: 90,
+      speedMetersPerSecond: 10,
+      source: .phone
+    )
+  )
+
+  #expect(session.diagnostics.activeStateCount == 7)
+}
+
+@Test("Invalid live observation fails without changing matcher state")
+func routeMatcherSessionRejectsInvalidObservation() throws {
+  let fixture = try loadMatcherFixture(named: "parallel-surface-expressway")
+  var session = try RouteAwareSwiftMatcher().makeSession(
+    corridor: routeMatcherCorridor(fixture),
+    initialOccurrenceID: fixture.initialOccurrenceID
+  )
+  let invalid = RouteMatcherObservation(
+    observedAtMilliseconds: 2_000,
+    receivedAtMilliseconds: 1_000,
+    coordinate: fixture.observations[0].coordinate,
+    horizontalAccuracyMeters: 5,
+    source: .phone
+  )
+
+  #expect(throws: RouteAwareSwiftMatcherError.invalidObservation) {
+    try session.observe(invalid)
+  }
+  #expect(session.diagnostics.acceptedObservationCount == 0)
+  #expect(session.diagnostics.activeStateCount == 0)
+
+  let first = fixture.observations[0]
+  _ = try session.observe(
+    RouteMatcherObservation(
+      id: first.id,
+      observedAtMilliseconds: 2_000,
+      receivedAtMilliseconds: 2_000,
+      coordinate: first.coordinate,
+      horizontalAccuracyMeters: first.horizontalAccuracyMeters,
+      courseDegrees: first.courseDegrees,
+      speedMetersPerSecond: first.speedMetersPerSecond,
+      source: first.source
+    )
+  )
+  let outOfReceiveOrder = RouteMatcherObservation(
+    observedAtMilliseconds: 1_500,
+    receivedAtMilliseconds: 1_500,
+    coordinate: first.coordinate,
+    horizontalAccuracyMeters: 5,
+    source: .phone
+  )
+  #expect(throws: RouteAwareSwiftMatcherError.invalidObservation) {
+    try session.observe(outOfReceiveOrder)
+  }
+  #expect(session.diagnostics.acceptedObservationCount == 1)
+}
+
 private func loadMatcherFixtures() throws -> [MatcherReplayFixture] {
   let directory = matcherFixtureDirectory()
   return try FileManager.default.contentsOfDirectory(
@@ -274,6 +468,47 @@ private func loadMatcherFixtures() throws -> [MatcherReplayFixture] {
   .filter { $0.pathExtension == "json" }
   .sorted { $0.lastPathComponent < $1.lastPathComponent }
   .map { try JSONDecoder().decode(MatcherReplayFixture.self, from: Data(contentsOf: $0)) }
+}
+
+private func routeMatcherCorridor(_ fixture: MatcherReplayFixture) -> RouteMatcherCorridor {
+  let edges = fixture.edges.map { edge in
+    RouteMatcherDirectedEdge(
+      id: edge.id,
+      coordinates: edge.coordinates,
+      successorEdgeIDs: Set(
+        fixture.edges.compactMap { candidate in
+          edge.coordinates.last == candidate.coordinates.first ? candidate.id : nil
+        }
+      )
+    )
+  }
+  return RouteMatcherCorridor(
+    id: fixture.fixtureID,
+    networkSnapshotID: fixture.networkSnapshotID,
+    edges: edges,
+    occurrences: fixture.routeOccurrences.map {
+      RouteMatcherOccurrence(
+        id: $0.occurrenceID,
+        index: $0.index,
+        directedEdgeID: $0.directedEdgeID
+      )
+    }
+  )
+}
+
+private func routeMatcherObservation(
+  _ observation: MatcherReplayObservation
+) -> RouteMatcherObservation {
+  RouteMatcherObservation(
+    id: observation.id,
+    observedAtMilliseconds: observation.observedAtMilliseconds,
+    receivedAtMilliseconds: observation.receivedAtMilliseconds,
+    coordinate: observation.coordinate,
+    horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
+    courseDegrees: observation.courseDegrees,
+    speedMetersPerSecond: observation.speedMetersPerSecond,
+    source: observation.source
+  )
 }
 
 private func loadMatcherFixture(named name: String) throws -> MatcherReplayFixture {

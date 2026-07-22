@@ -28,6 +28,15 @@ Swift CLI executes the events against `KaidoDomain`, `KaidoRouting`, and
 `KaidoNavigation`, then evaluates every semantic assertion. `swift test` runs
 the same corpus through Swift Testing without a simulator or live service.
 
+Matcher lifecycle scenarios use `MATCHER_SESSION_STARTED`,
+`MATCHER_OBSERVATION_RECEIVED`, and `MATCHER_SESSION_RESET`. Their
+`matcher_corridor` input is a synthetic, snapshot-bound set of directed edges,
+legal successors, and RoutePlan occurrence bindings. The runner streams each
+observation through the same public `RouteMatcherSession` used by the replay
+CLI, then projects its confidence and occurrence into `NavigationEngine`. This
+keeps matcher-to-navigation commit policy executable without importing Core
+Location or a UI framework into the portable core.
+
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.
 

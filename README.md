@@ -81,7 +81,18 @@ wrong-edge selections and one ambiguity. This establishes Swift as the live
 RoutePlan matcher direction and Meili as an offline edge oracle, not calibrated
 field accuracy or a production-ready confidence model.
 
-The feasibility core currently executes portable scenarios for sixteen hard
+The matcher now also exposes a fixture-independent incremental
+`RouteMatcherSession`. A version-bound RoutePlan corridor supplies directed
+edges, explicit legal successors, and occurrence bindings; a fixed-grid spatial
+index limits each observation to nearby edges, while a score beam and active
+state cap bound repeated-lap growth. Batch and streamed results are identical on
+all tracked fixtures. KR-S16 sends stale, post-gap, confirmed, and reset session
+updates through `NavigationEngine`, proving that only fresh HIGH evidence can
+advance an occurrence and that a matcher restart cannot move navigation
+backward. A Core Location adapter, device profiling, and confidence calibration
+remain intentionally outside this checkpoint.
+
+The feasibility core currently executes portable scenarios for seventeen hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -117,6 +128,9 @@ properties that must remain proven as the product expands:
     state, template intent, and every repeated or optional occurrence on import.
 16. guided template parameters compile only through one exact approved,
     snapshot-bound variant whose required route components still validate.
+17. an incremental matcher session cannot advance navigation on stale or first
+    post-gap evidence, and resetting matcher evidence cannot move RoutePlan
+    progress backward.
 
 ## Repository map
 

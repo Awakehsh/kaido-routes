@@ -56,6 +56,7 @@ public struct ScenarioRunner {
 private struct ScenarioHarness {
   let scenario: PortableScenario
   var engine: NavigationEngine
+  var matcherSession: RouteMatcherSession?
   var adapterObservations: [String: JSONValue] = [:]
 
   init(scenario: PortableScenario) throws {
@@ -66,6 +67,7 @@ private struct ScenarioHarness {
       configuration: configuration,
       initialSnapshot: initialSnapshot
     )
+    matcherSession = nil
   }
 
   var observations: [String: JSONValue] {
@@ -88,6 +90,12 @@ private struct ScenarioHarness {
           from: event.payload,
           observedAtMilliseconds: event.atMilliseconds
         ))
+    case "MATCHER_SESSION_STARTED":
+      try startMatcherSession(event.payload)
+    case "MATCHER_OBSERVATION_RECEIVED":
+      try receiveMatcherObservation(event.payload)
+    case "MATCHER_SESSION_RESET":
+      try resetMatcherSession(event.payload)
     case "TUNNEL_ENTERED":
       engine.enterTunnel()
     case "TUNNEL_EXITED":
@@ -546,6 +554,122 @@ private struct ScenarioHarness {
     adapterObservations["guidance.used_implicit_wrong_language_voice"] = .bool(false)
   }
 
+  private mutating func startMatcherSession(_ payload: [String: JSONValue]) throws {
+    guard let corridorValue = scenario.given.inputs.object("matcher_corridor") else {
+      throw ScenarioExecutionError.missingInput("matcher_corridor")
+    }
+    let corridor = try routeMatcherCorridor(corridorValue)
+    guard corridor.networkSnapshotID == scenario.given.networkSnapshot.id,
+      scenario.given.routePlan?.networkSnapshotID == corridor.networkSnapshotID
+    else {
+      throw ScenarioExecutionError.invalidInput("matcher_corridor.network_snapshot_id")
+    }
+    let configurationValue = scenario.given.inputs.object("matcher_session_configuration") ?? [:]
+    let sessionConfiguration = RouteMatcherSessionConfiguration(
+      ambiguityMarginMeters: configurationValue.double("ambiguity_margin_meters") ?? 3,
+      staleObservationThresholdMilliseconds: configurationValue.int(
+        "stale_observation_threshold_ms"
+      ) ?? 10_000,
+      observationGapThresholdMilliseconds: configurationValue.int(
+        "observation_gap_threshold_ms"
+      ) ?? 10_000,
+      spatialCellSizeMeters: configurationValue.double("spatial_cell_size_meters") ?? 100,
+      maximumActiveStates: configurationValue.int("maximum_active_states") ?? 64,
+      scoreBeamWidth: configurationValue.double("score_beam_width") ?? 30
+    )
+    matcherSession = try RouteAwareSwiftMatcher().makeSession(
+      corridor: corridor,
+      sessionConfiguration: sessionConfiguration,
+      initialOccurrenceID: payload.string("initial_occurrence_id")
+    )
+    publishMatcherSessionStatus("ACTIVE")
+  }
+
+  private mutating func receiveMatcherObservation(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard var session = matcherSession else {
+      throw ScenarioExecutionError.invalidInput("matcher_session")
+    }
+    let observation = try routeMatcherObservation(payload)
+    let estimate = try session.observe(observation)
+    matcherSession = session
+    publish(estimate, diagnostics: session.diagnostics)
+
+    let candidateResolution: RouteCandidateResolution
+    if estimate.directedEdgeID != nil, estimate.candidateEdgeIDs.count == 1 {
+      candidateResolution = .resolved
+    } else if estimate.candidateEdgeIDs.count > 1 {
+      candidateResolution = .ambiguous
+    } else {
+      candidateResolution = .unknown
+    }
+    engine.observeLocation(
+      LocationObservation(
+        directedEdgeID: estimate.directedEdgeID,
+        matchedEntityID: estimate.directedEdgeID,
+        matchedOccurrenceID: estimate.occurrenceID,
+        candidateOccurrenceIDs: Set([estimate.occurrenceID].compactMap { $0 }),
+        candidateResolution: candidateResolution,
+        observedAtMilliseconds: observation.observedAtMilliseconds,
+        reportedConfidence: LocationConfidence(rawValue: estimate.confidence.rawValue),
+        horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
+        ageMilliseconds: observation.receivedAtMilliseconds
+          - observation.observedAtMilliseconds
+      )
+    )
+  }
+
+  private mutating func resetMatcherSession(_ payload: [String: JSONValue]) throws {
+    guard var session = matcherSession else {
+      throw ScenarioExecutionError.invalidInput("matcher_session")
+    }
+    if payload["initial_occurrence_id"] != nil {
+      try session.restart(at: payload.string("initial_occurrence_id"))
+    } else {
+      session.reset()
+    }
+    matcherSession = session
+    clearMatcherEstimateObservations()
+    publishMatcherSessionStatus("RESET")
+  }
+
+  private mutating func publish(
+    _ estimate: MatcherEstimate,
+    diagnostics: RouteMatcherSessionDiagnostics
+  ) {
+    clearMatcherEstimateObservations()
+    adapterObservations["matcher.confidence"] = .string(estimate.confidence.rawValue)
+    adapterObservations["matcher.candidate_edge_ids"] = .strings(estimate.candidateEdgeIDs)
+    adapterObservations["matcher.indexed_edge_count"] = .integer(diagnostics.indexedEdgeCount)
+    adapterObservations["matcher.last_queried_edge_count"] = .integer(
+      diagnostics.lastQueriedEdgeCount
+    )
+    adapterObservations["matcher.active_state_count"] = .integer(diagnostics.activeStateCount)
+    adapterObservations["matcher.accepted_observation_count"] = .integer(
+      diagnostics.acceptedObservationCount
+    )
+    if let edgeID = estimate.directedEdgeID {
+      adapterObservations["matcher.directed_edge_id"] = .string(edgeID)
+    }
+    if let occurrenceID = estimate.occurrenceID {
+      adapterObservations["matcher.occurrence_id"] = .string(occurrenceID)
+    }
+    publishMatcherSessionStatus("ACTIVE")
+  }
+
+  private mutating func clearMatcherEstimateObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("matcher.") && $0 != "matcher.session_status"
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func publishMatcherSessionStatus(_ status: String) {
+    adapterObservations["matcher.session_status"] = .string(status)
+  }
+
   private mutating func applyUserAction(_ payload: [String: JSONValue]) throws {
     switch try payload.requiredString("action") {
     case "FINISH_DRIVE":
@@ -765,6 +889,80 @@ private struct ScenarioHarness {
 
   private static func languageCode(_ locale: String) -> String {
     locale.split(separator: "-").first.map(String.init) ?? locale
+  }
+
+  private func routeMatcherCorridor(
+    _ value: [String: JSONValue]
+  ) throws -> RouteMatcherCorridor {
+    guard let edgeValues = value.array("edges"), let occurrenceValues = value.array("occurrences")
+    else {
+      throw ScenarioExecutionError.invalidInput("matcher_corridor")
+    }
+    let edges = try edgeValues.map { value in
+      guard let edge = value.objectValue, let coordinateValues = edge.array("coordinates") else {
+        throw ScenarioExecutionError.invalidInput("matcher_corridor.edges")
+      }
+      let coordinates = try coordinateValues.map { value in
+        guard let coordinate = value.objectValue,
+          let latitude = coordinate.double("latitude"),
+          let longitude = coordinate.double("longitude")
+        else {
+          throw ScenarioExecutionError.invalidInput("matcher_corridor.coordinates")
+        }
+        return MatcherCoordinate(latitude: latitude, longitude: longitude)
+      }
+      return RouteMatcherDirectedEdge(
+        id: try edge.requiredString("directed_edge_id"),
+        coordinates: coordinates,
+        successorEdgeIDs: Set(
+          (edge.array("successor_edge_ids") ?? []).compactMap(\.stringValue)
+        )
+      )
+    }
+    let occurrences = try occurrenceValues.map { value in
+      guard let occurrence = value.objectValue, let index = occurrence.int("index") else {
+        throw ScenarioExecutionError.invalidInput("matcher_corridor.occurrences")
+      }
+      return RouteMatcherOccurrence(
+        id: try occurrence.requiredString("occurrence_id"),
+        index: index,
+        directedEdgeID: try occurrence.requiredString("directed_edge_id")
+      )
+    }
+    return RouteMatcherCorridor(
+      id: try value.requiredString("corridor_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      edges: edges,
+      occurrences: occurrences
+    )
+  }
+
+  private func routeMatcherObservation(
+    _ payload: [String: JSONValue]
+  ) throws -> RouteMatcherObservation {
+    guard let coordinate = payload.object("coordinate"),
+      let latitude = coordinate.double("latitude"),
+      let longitude = coordinate.double("longitude"),
+      let observedAtMilliseconds = payload.int("observed_at_ms"),
+      let receivedAtMilliseconds = payload.int("received_at_ms"),
+      let horizontalAccuracyMeters = payload.double("horizontal_accuracy_meters")
+    else {
+      throw ScenarioExecutionError.invalidInput("matcher_observation")
+    }
+    let sourceValue = payload.string("source") ?? MatcherLocationSource.phone.rawValue
+    guard let source = MatcherLocationSource(rawValue: sourceValue) else {
+      throw ScenarioExecutionError.invalidInput("matcher_observation.source")
+    }
+    return RouteMatcherObservation(
+      id: payload.string("observation_id"),
+      observedAtMilliseconds: observedAtMilliseconds,
+      receivedAtMilliseconds: receivedAtMilliseconds,
+      coordinate: MatcherCoordinate(latitude: latitude, longitude: longitude),
+      horizontalAccuracyMeters: horizontalAccuracyMeters,
+      courseDegrees: payload.double("course_degrees"),
+      speedMetersPerSecond: payload.double("speed_meters_per_second"),
+      source: source
+    )
   }
 
   private func facilityKind(_ value: String) throws -> FacilityKind {

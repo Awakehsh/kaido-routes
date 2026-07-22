@@ -230,6 +230,64 @@ func repeatedSurfaceProbesClassifyVariabilityAndFailure() throws {
   #expect(failedSummary.hardGateFailureCounts[SurfaceHardGate.geometryBindable.rawValue] == 1)
 }
 
+@Test("Cross-window scalar summaries reveal non-overlapping route distances")
+func crossWindowSummariesRevealDistanceVariation() throws {
+  let earlier = try SurfaceProbeStabilitySummarizer.summarize([
+    makeStabilityResult(
+      runID: "test.window.earlier.1",
+      requestedAt: "2026-07-22T08:00:00+09:00",
+      pathEdgeIDs: ["private.path.long"],
+      distanceMeters: 468,
+      providerLatencyMilliseconds: 50,
+      inspectionLatencyMilliseconds: 108
+    ),
+    makeStabilityResult(
+      runID: "test.window.earlier.2",
+      requestedAt: "2026-07-22T08:01:00+09:00",
+      pathEdgeIDs: ["private.path.long"],
+      distanceMeters: 468,
+      providerLatencyMilliseconds: 55,
+      inspectionLatencyMilliseconds: 109
+    ),
+  ])
+  let later = try SurfaceProbeStabilitySummarizer.summarize([
+    makeStabilityResult(
+      runID: "test.window.later.1",
+      requestedAt: "2026-07-22T22:00:00+09:00",
+      pathEdgeIDs: ["private.path.short"],
+      distanceMeters: 143,
+      providerLatencyMilliseconds: 58,
+      inspectionLatencyMilliseconds: 44
+    ),
+    makeStabilityResult(
+      runID: "test.window.later.2",
+      requestedAt: "2026-07-22T22:01:00+09:00",
+      pathEdgeIDs: ["private.path.short"],
+      distanceMeters: 143,
+      providerLatencyMilliseconds: 60,
+      inspectionLatencyMilliseconds: 44
+    ),
+  ])
+
+  #expect(earlier.assessment == .stablePass)
+  #expect(later.assessment == .stablePass)
+  #expect(throws: SurfaceProbeStabilityError.insufficientWindows) {
+    try SurfaceProbeStabilitySummarizer.summarizeWindows([earlier])
+  }
+
+  let crossWindow = try SurfaceProbeStabilitySummarizer.summarizeWindows([earlier, later])
+  let encoded = String(decoding: try JSONEncoder().encode(crossWindow), as: UTF8.self)
+
+  #expect(crossWindow.assessment == .variablePass)
+  #expect(crossWindow.windowCount == 2)
+  #expect(crossWindow.runCount == 4)
+  #expect(crossWindow.acceptedDistanceMeters == SurfaceProbeDoubleRange(minimum: 143, maximum: 468))
+  #expect(
+    crossWindow.scalarVariationReasons == ["NON_OVERLAPPING_ACCEPTED_DISTANCE_RANGES"])
+  #expect(crossWindow.routeIdentityComparableAcrossWindows == false)
+  #expect(!encoded.contains("private.path"))
+}
+
 @Test("A disclosed provider failure is honest but does not pass the entrance run")
 func disclosedProviderFailureStillFailsRun() async throws {
   let fixture = try loadSyntheticEntranceFixture()

@@ -11,7 +11,8 @@ benchmarks/surface-routing/
 ├── schema/
 │   ├── entrance-probe-fixture.schema.json
 │   ├── provider-probe-result.schema.json
-│   └── provider-probe-stability-summary.schema.json
+│   ├── provider-probe-stability-summary.schema.json
+│   └── provider-probe-cross-window-summary.schema.json
 ├── fixtures/synthetic/
 └── raw/ and runs/                    # local and gitignored
 ```
@@ -120,6 +121,23 @@ and path hashes. It distinguishes `STABLE_PASS`, `VARIABLE_PASS`, and `FAIL`, bu
 never overrides a failed hard gate. `SCALAR_LOCAL_ONLY` describes reduced local
 retention; it does not mean the provider's terms have been reviewed.
 
+A short repeat batch can be internally stable while a later window returns a
+different route. Compare two or more retained scalar summaries with:
+
+```sh
+swift run kaido-surface-probe \
+  --compare-summary research/path/window-a.json \
+  --compare-summary research/path/window-b.json \
+  --pretty
+```
+
+The cross-window result is `FAIL` if any batch failed and `VARIABLE_PASS` when a
+batch already reported variation, a passing batch lacks an accepted-distance
+range, or the accepted-distance ranges have no common value. Because scalar
+summaries intentionally omit path identity, the result always declares
+`route_identity_comparable_across_windows=false`; `STABLE_PASS` means only that
+the retained scalar evidence did not expose variation.
+
 Both real inputs remain under ignored `research/`; raw output remains under
 ignored `runs/`. One-shot results record `RAW_LOCAL_ONLY`, and the MapKit adapter
 still reports `REVIEW_REQUIRED`. Do not commit or redistribute provider geometry,
@@ -141,4 +159,5 @@ xcrun swift-format lint --strict --recursive Package.swift Sources Tests
 python3 -m json.tool benchmarks/surface-routing/schema/entrance-probe-fixture.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-result.schema.json >/dev/null
 python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-stability-summary.schema.json >/dev/null
+python3 -m json.tool benchmarks/surface-routing/schema/provider-probe-cross-window-summary.schema.json >/dev/null
 ```

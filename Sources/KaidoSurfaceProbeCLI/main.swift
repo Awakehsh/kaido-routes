@@ -7,6 +7,17 @@
   struct KaidoSurfaceProbeCommand {
     static func main() async {
       do {
+        if CommandLine.arguments.contains("--compare-summary") {
+          let comparison = try SummaryComparisonArguments.parse(CommandLine.arguments)
+          let summaries: [SurfaceProbeStabilitySummary] = try comparison.summaryPaths.map {
+            try decodeJSON(at: $0)
+          }
+          try writeJSON(
+            SurfaceProbeStabilitySummarizer.summarizeWindows(summaries),
+            pretty: comparison.pretty
+          )
+          return
+        }
         guard let arguments = try LiveProbeArguments.parse(CommandLine.arguments) else {
           writeStandardOutput(usage)
           return
@@ -52,6 +63,32 @@
         writeStandardError("kaido-surface-probe: \(error)\n\n\(usage)")
         Foundation.exit(EXIT_FAILURE)
       }
+    }
+  }
+
+  private struct SummaryComparisonArguments {
+    let summaryPaths: [String]
+    let pretty: Bool
+
+    static func parse(_ commandLine: [String]) throws -> SummaryComparisonArguments {
+      var summaryPaths: [String] = []
+      var pretty = false
+      var index = 1
+      while index < commandLine.count {
+        switch commandLine[index] {
+        case "--compare-summary":
+          summaryPaths.append(try LiveProbeArguments.value(after: &index, in: commandLine))
+        case "--pretty":
+          pretty = true
+        default:
+          throw LiveProbeCommandError.unknownArgument(commandLine[index])
+        }
+        index += 1
+      }
+      guard summaryPaths.count >= 2 else {
+        throw LiveProbeCommandError.atLeastTwoSummariesRequired
+      }
+      return SummaryComparisonArguments(summaryPaths: summaryPaths, pretty: pretty)
     }
   }
 
@@ -112,7 +149,10 @@
       )
     }
 
-    private static func value(after index: inout Int, in arguments: [String]) throws -> String {
+    fileprivate static func value(
+      after index: inout Int,
+      in arguments: [String]
+    ) throws -> String {
       index += 1
       guard index < arguments.count else {
         throw LiveProbeCommandError.missingValue(arguments[index - 1])
@@ -127,6 +167,7 @@
     case missingRequiredArgument
     case liveProviderNotAcknowledged
     case invalidRepeatCount(String)
+    case atLeastTwoSummariesRequired
 
     var description: String {
       switch self {
@@ -140,6 +181,8 @@
         "--allow-live-mapkit is required because this command performs a live provider request"
       case .invalidRepeatCount(let value):
         "--repeat must be an integer from 1 through 20, received: \(value)"
+      case .atLeastTwoSummariesRequired:
+        "at least two --compare-summary files are required"
       }
     }
   }
@@ -156,6 +199,11 @@
     scalar-only stability summary without coordinates, instructions, edge IDs,
     path hashes, or candidate IDs. Provider data review remains REVIEW_REQUIRED;
     do not commit either output without review.
+
+    Compare scalar summaries from separate windows without calling MapKit:
+      kaido-surface-probe \\
+        --compare-summary <summary-a.json> \\
+        --compare-summary <summary-b.json> [--pretty]
     """
 
   private func decodeJSON<Value: Decodable>(at path: String) throws -> Value {

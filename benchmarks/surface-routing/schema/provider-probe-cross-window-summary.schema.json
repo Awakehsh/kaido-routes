@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaido-routes.example/schema/provider-probe-cross-window-summary-v1.json",
+  "title": "Kaido Routes scalar-only cross-window surface-probe summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "origin_id",
+    "provider",
+    "observed_from",
+    "observed_through",
+    "retention_classification",
+    "window_count",
+    "run_count",
+    "passing_run_count",
+    "failing_run_count",
+    "assessment",
+    "batch_assessment_counts",
+    "scalar_variation_reasons",
+    "route_identity_comparable_across_windows"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "origin_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "observed_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observed_through": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "retention_classification": {
+      "const": "SCALAR_LOCAL_ONLY"
+    },
+    "window_count": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "run_count": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "passing_run_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failing_run_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "assessment": {
+      "enum": ["STABLE_PASS", "VARIABLE_PASS", "FAIL"]
+    },
+    "batch_assessment_counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "accepted_distance_meters": {
+      "$ref": "#/$defs/double_range"
+    },
+    "scalar_variation_reasons": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "BATCH_REPORTED_VARIABILITY",
+          "MISSING_ACCEPTED_DISTANCE_RANGE",
+          "NON_OVERLAPPING_ACCEPTED_DISTANCE_RANGES"
+        ]
+      }
+    },
+    "route_identity_comparable_across_windows": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "adapter_version", "data_review_status"],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adapter_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_review_status": {
+          "enum": [
+            "REVIEW_REQUIRED",
+            "SCALAR_RETENTION_REVIEWED",
+            "DERIVED_FIXTURE_REVIEWED"
+          ]
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "double_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

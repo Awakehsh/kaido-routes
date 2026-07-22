@@ -297,7 +297,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   existing 16 scenarios executable at L1/L2.
+   current 31 scenarios with 168 semantic assertions executable at L1/L2.
 2. **In progress:** the fixture format, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
    inspector plus local live-probe command are complete. The private Iikura
@@ -308,8 +308,12 @@ gate.
    outer pilot then passed all three same-day origin batches without loosening
    its ambiguity gate, but it exposed a temporal-movement data gap and still
    remains `RETEST`. Build the reviewed ten-entrance corpus, repeat all three
-   origins for cross-time stability, profile longer inspections, and promote
-   only evidence whose licence, temporal-rule, and field-review gates pass.
+   origins for cross-time stability, aggregate separate scalar windows, profile
+   longer inspections, and promote only evidence whose licence, temporal-rule,
+   and field-review gates pass. A later same-day window kept all six Iikura and
+   Shibakoen origin batches hard-gate clean, but Shibakoen cross-direction changed
+   from a 468 m accepted route to 143 m, proving that one internally stable batch
+   cannot establish cross-window stability.
 3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.

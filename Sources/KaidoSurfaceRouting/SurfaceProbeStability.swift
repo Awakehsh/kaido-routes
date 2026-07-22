@@ -167,8 +167,82 @@ public struct SurfaceProbeStabilitySummary: Codable, Equatable, Sendable {
   }
 }
 
+/// A conservative scalar-only comparison of stability summaries from separate
+/// observation windows. Provider path identity remains intentionally absent.
+public struct SurfaceProbeCrossWindowSummary: Codable, Equatable, Sendable {
+  public let schemaVersion: String
+  public let fixtureID: String
+  public let originID: String
+  public let provider: SurfaceRouteProviderMetadata
+  public let observedFrom: String
+  public let observedThrough: String
+  public let retentionClassification: ProbeRetentionClassification
+  public let windowCount: Int
+  public let runCount: Int
+  public let passingRunCount: Int
+  public let failingRunCount: Int
+  public let assessment: SurfaceProbeStabilityAssessment
+  public let batchAssessmentCounts: [String: Int]
+  public let acceptedDistanceMeters: SurfaceProbeDoubleRange?
+  public let scalarVariationReasons: [String]
+  public let routeIdentityComparableAcrossWindows: Bool
+
+  fileprivate init(
+    fixtureID: String,
+    originID: String,
+    provider: SurfaceRouteProviderMetadata,
+    observedFrom: String,
+    observedThrough: String,
+    windowCount: Int,
+    runCount: Int,
+    passingRunCount: Int,
+    failingRunCount: Int,
+    assessment: SurfaceProbeStabilityAssessment,
+    batchAssessmentCounts: [String: Int],
+    acceptedDistanceMeters: SurfaceProbeDoubleRange?,
+    scalarVariationReasons: [String]
+  ) {
+    schemaVersion = "1.0"
+    self.fixtureID = fixtureID
+    self.originID = originID
+    self.provider = provider
+    self.observedFrom = observedFrom
+    self.observedThrough = observedThrough
+    retentionClassification = .scalarLocalOnly
+    self.windowCount = windowCount
+    self.runCount = runCount
+    self.passingRunCount = passingRunCount
+    self.failingRunCount = failingRunCount
+    self.assessment = assessment
+    self.batchAssessmentCounts = batchAssessmentCounts
+    self.acceptedDistanceMeters = acceptedDistanceMeters
+    self.scalarVariationReasons = scalarVariationReasons
+    routeIdentityComparableAcrossWindows = false
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case fixtureID = "fixture_id"
+    case originID = "origin_id"
+    case provider
+    case observedFrom = "observed_from"
+    case observedThrough = "observed_through"
+    case retentionClassification = "retention_classification"
+    case windowCount = "window_count"
+    case runCount = "run_count"
+    case passingRunCount = "passing_run_count"
+    case failingRunCount = "failing_run_count"
+    case assessment
+    case batchAssessmentCounts = "batch_assessment_counts"
+    case acceptedDistanceMeters = "accepted_distance_meters"
+    case scalarVariationReasons = "scalar_variation_reasons"
+    case routeIdentityComparableAcrossWindows = "route_identity_comparable_across_windows"
+  }
+}
+
 public enum SurfaceProbeStabilityError: Error, Equatable, Sendable {
   case noResults
+  case insufficientWindows
   case inconsistentFixture
   case inconsistentOrigin
   case inconsistentProvider
@@ -276,6 +350,74 @@ public enum SurfaceProbeStabilitySummarizer {
       maximumDisconnectedEdgeCount: inspections.compactMap {
         $0.disconnectedDirectedEdgeIDs?.count
       }.max() ?? 0
+    )
+  }
+
+  public static func summarizeWindows(
+    _ summaries: [SurfaceProbeStabilitySummary]
+  ) throws -> SurfaceProbeCrossWindowSummary {
+    guard let first = summaries.first else { throw SurfaceProbeStabilityError.noResults }
+    guard summaries.count >= 2 else { throw SurfaceProbeStabilityError.insufficientWindows }
+    guard summaries.allSatisfy({ $0.fixtureID == first.fixtureID }) else {
+      throw SurfaceProbeStabilityError.inconsistentFixture
+    }
+    guard summaries.allSatisfy({ $0.originID == first.originID }) else {
+      throw SurfaceProbeStabilityError.inconsistentOrigin
+    }
+    guard summaries.allSatisfy({ $0.provider == first.provider }) else {
+      throw SurfaceProbeStabilityError.inconsistentProvider
+    }
+
+    let distanceRanges = summaries.compactMap(\.acceptedDistanceMeters)
+    let missingPassingDistance = summaries.contains {
+      $0.passingRunCount > 0 && $0.acceptedDistanceMeters == nil
+    }
+    let rangesHaveNoCommonValue: Bool
+    if let maximumMinimum = distanceRanges.map(\.minimum).max(),
+      let minimumMaximum = distanceRanges.map(\.maximum).min()
+    {
+      rangesHaveNoCommonValue = maximumMinimum > minimumMaximum
+    } else {
+      rangesHaveNoCommonValue = false
+    }
+
+    var reasons: [String] = []
+    if summaries.contains(where: { $0.assessment == .variablePass }) {
+      reasons.append("BATCH_REPORTED_VARIABILITY")
+    }
+    if missingPassingDistance {
+      reasons.append("MISSING_ACCEPTED_DISTANCE_RANGE")
+    }
+    if rangesHaveNoCommonValue {
+      reasons.append("NON_OVERLAPPING_ACCEPTED_DISTANCE_RANGES")
+    }
+
+    let assessment: SurfaceProbeStabilityAssessment
+    if summaries.contains(where: { $0.assessment == .fail }) {
+      assessment = .fail
+    } else if !reasons.isEmpty {
+      assessment = .variablePass
+    } else {
+      assessment = .stablePass
+    }
+
+    let observations = summaries.flatMap { [$0.observedFrom, $0.observedThrough] }.sorted()
+    return SurfaceProbeCrossWindowSummary(
+      fixtureID: first.fixtureID,
+      originID: first.originID,
+      provider: first.provider,
+      observedFrom: observations.first ?? first.observedFrom,
+      observedThrough: observations.last ?? first.observedThrough,
+      windowCount: summaries.count,
+      runCount: summaries.map(\.runCount).reduce(0, +),
+      passingRunCount: summaries.map(\.passingRunCount).reduce(0, +),
+      failingRunCount: summaries.map(\.failingRunCount).reduce(0, +),
+      assessment: assessment,
+      batchAssessmentCounts: counts(summaries.map { $0.assessment.rawValue }),
+      acceptedDistanceMeters: doubleRange(
+        distanceRanges.flatMap { [$0.minimum, $0.maximum] }
+      ),
+      scalarVariationReasons: reasons
     )
   }
 

@@ -1,10 +1,11 @@
 # iOS navigation architecture direction
 
 **Status:** accepted and implemented for the platform-light feasibility core;
-provider selection remains subject to the bake-off in
-`docs/testing/navigation-engine-bakeoff.md`.
+the current bake-off selects Valhalla as the leading shared implementation
+behind a provider boundary, subject to broader matcher, operations, and field
+evidence in `docs/testing/navigation-engine-bakeoff.md`.
 
-**Checked:** 2026-07-22
+**Checked:** 2026-07-23
 
 ## Decision summary
 
@@ -15,8 +16,8 @@ Use a hybrid architecture:
    the in-car surface.
 3. Keep the route-first domain, strict route compiler, journey state machine,
    recovery, guidance, and route-aware matcher in platform-light Swift modules.
-4. Keep MapKit as the first surface-access and surface-egress adapter, not as
-   the authority for the Shuto route or as sufficient evidence on stacked roads.
+4. Keep MapKit as a bounded surface-access, egress, and geographic-presentation
+   adapter, not as the default path-identity source and never as Shuto authority.
 5. Maintain replaceable provider adapters and compare MapKit with Valhalla,
    OSRM, and GraphHopper on the same entrance fixtures.
 6. Use Valhalla Meili as the first open-source map-matching oracle while a small
@@ -24,6 +25,9 @@ Use a hybrid architecture:
 7. Do not make a commercial full-stack navigation SDK or a generic shortest-path
    engine the source of truth for route occurrences, junction movements, recovery,
    signs, toll boundaries, or egress.
+8. Use Valhalla as the first shared open-source implementation candidate for
+   bounded surface routing and the external HMM oracle, while retaining OSRM and
+   GraphHopper as independent executable baselines.
 
 This is not a plan to recreate nationwide navigation. Kaido owns the small,
 safety-relevant Shuto subgraph and delegates bounded ordinary-road access and
@@ -98,6 +102,14 @@ terminal OSM node from the reviewed approach edge, and uses bounded timeout and
 response-size policies. A supervised private local 3x3 window passed through
 this exact URLSession boundary; long-running service operations remain open.
 
+The provider route request also binds the destination to the fixture's reviewed
+heading and heading tolerance and sets destination `node_snap_tolerance=0`.
+Without those fields, the expanded five-entrance corpus showed two fail-closed
+errors: a stacked destination could terminate on the edge before the reviewed
+approach, and a short final fractional edge could disappear into Valhalla's
+default node snap. The constrained request restored one exact selected path
+without weakening any inspector gate.
+
 The independent OSRM baseline uses a deliberately weaker but still exact
 identity contract. The adapter requests `annotations=nodes`, a full GeoJSON
 shape, steps, one route, and the reviewed destination bearing. Its build must set
@@ -129,10 +141,12 @@ protocol rather than pretending it retains a complete OSM node path. The build
 disables route-point simplification at import and request time and exposes
 directional `edge_key`, `osm_way_id`, and `country` path details. Every detail
 array must exactly partition all route point-pairs. `OSMWayPointPathTranslator`
-then requires each pair to progress in the reported direction on exactly one
-same-way Kaido edge from the same dataset. Provider edge keys are provider-local
-and never become Kaido IDs. Missing points, gaps, parallel ambiguity, changed way
-identity, disconnected edges, and repeated edges fail closed.
+then requires the complete path to resolve to exactly one same-way, continuous
+Kaido directed-edge sequence from the same dataset. Short rounded point pairs
+may have more than one local candidate only when whole-path continuity collapses
+them to the same unique sequence. Provider edge keys are provider-local and
+never become Kaido IDs. Missing points, gaps, unresolved parallel ambiguity,
+changed way identity, disconnected edges, and repeated edges fail closed.
 
 `GraphHopperSurfaceRouteProvider` verifies `/info` before every `/route`: engine
 version, profile, required encoded values, and a non-epoch road timestamp must
@@ -143,6 +157,15 @@ translated Kaido edges and no unmatched, ambiguous, or disconnected result.
 GraphHopper 11.0's navigation response conversion hard-codes a right-driving
 field, so its prose remains diagnostic; Kaido retains Japanese driving-side and
 Japanese, Chinese, and English `GuidanceFrame` ownership.
+
+A shared-snapshot expansion then bound five directional entrances and three
+origin classes per entrance. Every final GraphHopper, OSRM, and Valhalla window
+passed 45/45 requests, or 135/135 total. GraphHopper and OSRM chose almost the
+same distances; Valhalla chose longer legal surface paths for several difficult
+origins. The result selects an architecture, not a universal shortest-path
+winner: Valhalla leads because it covers both routing and HMM comparison, while
+Swift hard gates and occurrence semantics remain authoritative and the other
+two engines remain executable controls.
 
 Valhalla route narration is provider prose, not product guidance. The adapter
 requests only an explicitly supported Japanese or English locale and currently
@@ -454,7 +477,7 @@ loading rather than UI-oriented object persistence.
 |---|---|---|---|---|
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
 | Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
-| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | integration/data build weight; bounded private tiles and HTTP adapter still need live-service, distribution, broader-coverage, and field review | **Manifest/admin/path protocol and bounded adapter proven; operations pending** |
+| Valhalla | first shared open-source surface router and HMM matching oracle | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into exact OSM identity | route ranking differs from the other engines; integration/data build weight, operations, distribution, broader coverage, and field review remain | **Leading implementation candidate behind the provider boundary; not RoutePlan authority** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, BSD-2-Clause; complete route node annotations can bind to the Kaido graph | node-pair identity fails on parallel pairs; build must add dataset and left-driving context; generic fastest-path semantics | **Bounded surface baseline proven; release inputs and operations pending** |
 | GraphHopper | independent configurable surface baseline | Apache 2.0, turn restrictions, custom models, directional edge keys, and OSM way path details | Java/server footprint; no full OSM node path; import/request simplification must stay disabled; navigation driving-side output is not trustworthy | **Manifest/path protocol and bounded adapter proven; release inputs and operations pending** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |
@@ -487,6 +510,8 @@ bounded role it may own.
 - [Valhalla official Docker images](https://github.com/valhalla/valhalla/blob/master/docker/README.md)
 - [Valhalla Mjolnir tile build guide](https://valhalla.github.io/valhalla/mjolnir/getting_started_guide/)
 - [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)
+- [Valhalla route location heading and tolerance](https://valhalla.github.io/valhalla/api/turn-by-turn/api-reference/)
+- [Valhalla 3.8.2 node-snap configuration](https://github.com/valhalla/valhalla/blob/3.8.2/scripts/valhalla_build_config)
 - [Valhalla Meili map matching](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [Valhalla `trace_attributes` and `edge_walk`](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)

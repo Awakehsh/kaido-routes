@@ -1,13 +1,14 @@
 # Navigation engine bake-off
 
-**Status:** B0 is executable. B1 has a versioned fixture schema, synthetic
-three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
-pure Swift directed-road graph inspector plus an explicit local live-probe
-command. Four private directional pilots have been attempted; one stacked-road
-origin produces a repeatable geometry-only hard-gate failure. Manifest-bound
-Valhalla, OSRM, and GraphHopper selected-path baselines now pass that same origin without
-weakening the gate. No real entrance fixture is released; private provider
-output remains outside the repository.
+**Status:** B0 is executable. B1 has a versioned fixture schema, graph-binding
+validator, provider-neutral hard-gate runner, MapKit adapter, and a pure Swift
+directed-road graph inspector plus an explicit local live-probe command. Five
+private directional entrance fixtures now bind one reviewed surface approach,
+entry transition, and target expressway edge. Manifest-bound Valhalla, OSRM, and
+GraphHopper each passed the five fixtures x three origins x three-repeat final
+window. MapKit retains one repeatable stacked-road geometry-only failure. No real
+entrance fixture is released; private provider output remains outside the
+repository.
 
 **Checked:** 2026-07-23
 
@@ -162,13 +163,16 @@ latency is evidence-tool telemetry, not a production matcher budget. Before any
 reuse in live navigation, benchmark a spatial candidate index on the eventual
 device matrix and retain the same fail-closed topology semantics.
 
-### Initial decision rule
+### Accepted implementation direction
 
-Use MapKit for the first app spike if all released entrance fixtures pass. Keep
-Valhalla as the first fallback candidate because it provides open routing,
-runtime costing, and map matching in one portable engine. OSRM and GraphHopper
-remain independent baselines so the decision does not overfit one open-source
-implementation.
+Keep the provider boundary and use Valhalla as the first shared open-source
+surface-routing and map-matching oracle. It provides runtime costing, exact
+provider-selected OSM identity, Japan administration context, and HMM matching
+in one portable engine. Swift remains the authority for the RoutePlan, entrance
+compatibility, recovery, tunnel progress, and guidance. OSRM and GraphHopper
+remain independent baselines so the decision does not overfit Valhalla. MapKit
+remains useful for geographic presentation and any bounded entrance whose opaque
+path independently passes every gate; it is not the default path-identity source.
 
 The current private evidence does not satisfy the MapKit condition. A Route 4
 up pilot passed its same-side and cross-direction batches, but its approach from
@@ -217,6 +221,29 @@ every point-pair and translate into complete 1-, 8-, and 44-edge Kaido paths.
 Across three public-CLI runs per origin, all nine were accepted with one path
 variant and no unmatched, ambiguous, or disconnected edge. GraphHopper
 navigation driving-side output remains excluded from product guidance.
+
+The next private expansion used one source PBF and Kaido graph for Hatsudai-
+minami -> C2 inner, Tomigaya -> C2 outer, Ariake -> Bayshore east, Rinkai-
+fukutoshin -> Bayshore west, and Ooi -> Bayshore east. Each final engine window
+passed 45/45 requests, for 135/135 across the three engines. GraphHopper and OSRM
+selected nearly identical distances. Valhalla selected materially longer but
+still hard-gate-valid ordinary-road routes for several nearest-incompatible
+origins. Those differences require path and field review; shortest is not a
+safety verdict.
+
+This expansion also found two adapter-level requirements. GraphHopper six-digit
+geometry may locally fit multiple very short same-way segments, so translation
+now accepts it only when whole-path continuity leaves one unique directed-edge
+sequence. Valhalla destinations now carry the reviewed heading and tolerance and
+set `node_snap_tolerance=0`; otherwise a stacked-road anchor can correlate to the
+wrong direction or lose the final fractional edge at a nearby intersection. True
+parallel ambiguity still fails closed.
+
+Daikoku-futo Bayshore east remains outside the fixture set. The operator page
+confirms directional access at the named complex, but a page center is not a
+directional entrance mouth and the current OSM near-center chain does not yield
+one reviewed Bayshore-east transition. Product data must identify the exact
+mouth; it cannot manufacture a connection to complete a target count.
 
 ## Matcher test
 
@@ -361,7 +388,8 @@ gate.
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
    current 31 scenarios with 168 semantic assertions executable at L1/L2.
-2. **In progress:** the fixture format, normalized result, offline hard-gate
+2. **Complete for the first five graph-bound fixtures:** the fixture format,
+   graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
    inspector plus local live-probe command are complete. The private Iikura
    vertical slice has passed a three-run scalar batch per origin but remains
@@ -381,7 +409,10 @@ gate.
    pilot passed its short same-side and cross-direction batches, while its
    Hatsudai nearest-incompatible batch failed 0/3 with 19 stacked-road ambiguous
    edges per run. Keep the failure; it is the first evidence that geometry-only
-   provider output cannot satisfy the whole corpus.
+   provider output cannot satisfy the whole corpus. The next expansion binds
+   Hatsudai-minami, Tomigaya, Ariake, Rinkai-fukutoshin, and Ooi to one exact
+   surface/transition/expressway chain. Daikoku-futo remains blocked on exact
+   directional-mouth evidence rather than being inferred from the named complex.
 3. **Complete for the bounded path protocol:** shared-snapshot Valhalla tiles, exact
    OSM way/node/direction translation, partial-edge trimming, and the actual
    Shinjuku three-by-three hard-gate comparison are executable. The Swift core
@@ -406,21 +437,26 @@ gate.
    operations, distribution review, and field evidence remain open.
 6. **Complete for the bounded GraphHopper baseline:** `/info` and `/route` are
    manifest-gated; unencoded unsimplified point-pairs carry aligned directional
-   edge-key, OSM-way, and country detail; every pair translates to one exact
-   Kaido edge. A supervised Shinjuku 3x3 window passed through the public
+   edge-key, OSM-way, and country detail; the complete point path must resolve
+   to one unique Kaido directed-edge sequence. A supervised Shinjuku 3x3 window passed through the public
    URLSession adapter. Timestamp-build scripting, broader coverage, operations,
    distribution review, and field evidence remain open.
-7. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
+7. **Complete for the five-entrance three-engine window:** each engine passed
+   45/45 final requests on one shared snapshot. Valhalla route destinations now
+   bind reviewed heading/tolerance and disable node snapping; provider route
+   differences remain a field-review task, not a reason to weaken hard gates.
+8. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
    matcher oracle.
-8. Implement the route-aware Swift HMM and compare calibration.
-9. Add SwiftUI phone presentation, then the CarPlay adapter.
-10. Perform passenger-observed tunnel and entry tests only after synthetic and
+9. Implement the route-aware Swift HMM and compare calibration.
+10. Add SwiftUI phone presentation, then the CarPlay adapter.
+11. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next provider task is to extend all three manifest-bound baselines to the
-remaining directional entrance corpus. The next matcher task is the nearest-edge
-replay corpus and Valhalla Meili oracle. This is not an iPhone screen and not a
-rewrite of the Swift route-first core.
+The next provider tasks are exact cross-engine route-difference review, a
+directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
+the released facility corpus. The next implementation task is the nearest-edge
+replay corpus and Valhalla Meili oracle. This is not yet an iPhone screen and not
+a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-23
 
@@ -428,7 +464,8 @@ rewrite of the Swift route-first core.
 - [XCTest and XCUIAutomation](https://developer.apple.com/documentation/xctest)
 - [Valhalla Meili](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
-- [Valhalla route API and response codes](https://valhalla.github.io/valhalla/api/route/api-reference/)
+- [Valhalla route locations, heading, and heading tolerance](https://valhalla.github.io/valhalla/api/turn-by-turn/api-reference/)
+- [Valhalla 3.8.2 node-snap configuration](https://github.com/valhalla/valhalla/blob/3.8.2/scripts/valhalla_build_config)
 - [Valhalla status API](https://valhalla.github.io/valhalla/api/status/)
 - [Valhalla Mjolnir tile build guide](https://valhalla.github.io/valhalla/mjolnir/getting_started_guide/)
 - [Valhalla dataset and build identification](https://valhalla.github.io/valhalla/concepts/change-identification/)

@@ -20,19 +20,25 @@ surface-routing hard gates, an OSM selected-path translator, an offline evidence
 CLI, an explicit local live-probe command, a scalar-only cross-window stability
 comparator, a checksummed routing-build manifest, and a bounded Valhalla
 provider/HTTP boundary plus independent bounded OSRM and GraphHopper providers;
-no live provider call runs in deterministic tests. A private same-source
-Valhalla build with complete Japan/Tokyo administrative
-context has passed the three-origin Shinjuku selected-path identity gates and
-reports left-side driving. A supervised private 3x3 run also passes through the
-public URLSession adapter and probe CLI. A separate manifest-bound OSRM baseline
-passes the same 3x3 gates after response-gating `data_version`, left-side
-driving, and a complete unambiguous ordered OSM-node path. A third manifest-bound
-GraphHopper 11.0 baseline passes the same 3x3 gates by aligning an unsimplified
-route's directional `edge_key` and `osm_way_id` details to every Kaido graph
-point-pair; it explicitly rejects epoch-valued or drifting road timestamps.
-Deterministic tests still make no live provider call. Long-running service
-operations, ODbL distribution review, broader road coverage, field evidence,
-and entrance release remain pending.
+no live provider call runs in deterministic tests. Five private directional
+entrance fixtures are bound to exact surface, transition, and expressway edge
+chains on one shared OSM snapshot. Valhalla, OSRM, and GraphHopper each passed
+45/45 repeated live requests across those fixtures and three origin classes,
+for 135/135 final requests. Valhalla is therefore the leading shared open-source
+implementation candidate for bounded surface routing and the first external HMM
+comparison oracle. It remains behind a provider boundary: Swift owns route
+occurrences, strict execution, recovery, egress, confidence, and multilingual
+guidance. OSRM and GraphHopper remain executable independent controls.
+
+Valhalla destinations are constrained by the reviewed approach heading and
+tolerance with node snapping disabled. OSRM requires a manifest-bound
+`data_version`, left-side-driving steps, and a complete unambiguous ordered
+OSM-node path. GraphHopper aligns unsimplified directional `edge_key` and
+`osm_way_id` details to one unique whole-path Kaido edge sequence and rejects
+epoch-valued or drifting road timestamps. Deterministic tests still make no live
+provider call. Long-running service operations, ODbL distribution review,
+broader road coverage, field evidence, exact Daikoku-futo directional-mouth
+evidence, and entrance release remain pending.
 
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:

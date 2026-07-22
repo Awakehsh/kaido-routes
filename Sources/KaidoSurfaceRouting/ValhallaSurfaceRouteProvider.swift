@@ -248,7 +248,12 @@ public struct ValhallaSurfaceRouteProvider: SurfaceRouteProvider {
     let payload = RouteRequestPayload(
       locations: [
         .init(coordinate: request.origin),
-        .init(coordinate: request.destinationAnchor.coordinate),
+        .init(
+          coordinate: request.destinationAnchor.coordinate,
+          heading: Int(request.destinationAnchor.expectedBearingDegrees.rounded()) % 360,
+          headingTolerance: Int(request.destinationAnchor.bearingToleranceDegrees.rounded()),
+          nodeSnapTolerance: 0
+        ),
       ],
       costingOptions: .init(
         auto: .init(
@@ -360,10 +365,30 @@ private struct RouteRequestPayload: Encodable {
     let lat: Double
     let lon: Double
     let type = "break"
+    let heading: Int?
+    let headingTolerance: Int?
+    let nodeSnapTolerance: Double?
 
-    init(coordinate: SurfaceCoordinate) {
+    init(
+      coordinate: SurfaceCoordinate,
+      heading: Int? = nil,
+      headingTolerance: Int? = nil,
+      nodeSnapTolerance: Double? = nil
+    ) {
       self.lat = coordinate.latitude
       self.lon = coordinate.longitude
+      self.heading = heading
+      self.headingTolerance = headingTolerance
+      self.nodeSnapTolerance = nodeSnapTolerance
+    }
+
+    private enum CodingKeys: String, CodingKey {
+      case lat
+      case lon
+      case type
+      case heading
+      case headingTolerance = "heading_tolerance"
+      case nodeSnapTolerance = "node_snap_tolerance"
     }
   }
 

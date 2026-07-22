@@ -119,13 +119,12 @@ The ordinary-road data is available through platform routing services or an
 open road graph; the missing product asset is the verified binding between that
 route and Kaido's exact directional facility.
 
-The first spike should request an automobile route from the current location to
-a directed `EntryApproachAnchor` using MapKit. `MKDirections` can calculate
-routes and `MKRoute.steps` exposes the step sequence. Kaido should validate the
-result, convert accepted steps into its own maneuver pipeline, and remain the
-active navigation experience. MapKit routing is server-backed and opaque, so an
+The first implementation keeps a provider-neutral request from the current
+location to a directed `EntryApproachAnchor`. Valhalla is the leading shared
+open-source candidate after the manifest-bound five-entrance bake-off; MapKit,
+OSRM, and GraphHopper remain bounded adapters and executable controls. Every
 answer is only a candidate: reject it if it enters an expressway early, reaches
-the wrong side of the facility, or cannot be bound to the verified transition.
+the wrong side of the facility, or cannot be bound to one verified transition.
 
 Opening Apple Maps is a useful fallback, not the seamless target. The documented
 `openInMaps` flow launches Maps and suspends interaction with the calling app.

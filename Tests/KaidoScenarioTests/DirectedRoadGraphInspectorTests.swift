@@ -324,6 +324,71 @@ func directedGraphInspectorReportsSkippedConnector() async throws {
   #expect(inspection.disconnectedDirectedEdgeIDs == [])
 }
 
+@Test("Unresolved graph topology does not assert an early expressway crossing")
+func directedGraphInspectorDoesNotMisclassifyUnresolvedTopology() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  let coverageBoundary = SurfaceCoordinate(latitude: 35, longitude: 139.00025)
+  let candidate = SurfaceRouteCandidate(
+    id: "test.candidate.incomplete-coverage",
+    providerID: "test.provider",
+    coordinates: [inspectorOrigin, coverageBoundary, inspectorMiddle, inspectorAnchor],
+    steps: [],
+    distanceMeters: 92,
+    expectedTravelTimeSeconds: 20,
+    hasHighways: false,
+    hasTolls: false
+  )
+  let graph = SurfaceRoadGraphSnapshot(
+    networkSnapshotID: fixture.networkSnapshotID,
+    edges: [
+      SurfaceRoadEdge(
+        id: "test.edge.surface-initial",
+        fromNodeID: "test.node.origin",
+        toNodeID: "test.node.coverage-boundary",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorOrigin, coverageBoundary]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.expressway-decoy",
+        fromNodeID: "test.node.disconnected-expressway",
+        toNodeID: "test.node.middle",
+        kind: .expressway,
+        coordinates: [coverageBoundary, inspectorMiddle],
+        tollDomainID: "test.toll.external"
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.approach",
+        fromNodeID: "test.node.middle",
+        toNodeID: "test.node.anchor",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorMiddle, inspectorAnchor]
+      ),
+    ]
+  )
+
+  let inspection = await DirectedRoadGraphInspector(graph: graph).inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+  let result = SurfaceHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    fixture: fixture,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+  let earlyGate = result.hardGates.first { $0.gate == .noEarlyExpressway }
+
+  #expect(inspection.geometryBindingIsUnambiguous == false)
+  #expect(inspection.expresswayEdgeIDsBeforeEntry == nil)
+  #expect(inspection.crossedTollDomainIDs == nil)
+  #expect(earlyGate?.status == .fail)
+  #expect(earlyGate?.reasonCodes == ["EARLY_EXPRESSWAY_INSPECTION_MISSING"])
+  #expect(result.disposition == .rejected)
+}
+
 @Test("Inspector fails closed when fixture and graph snapshots differ")
 func directedGraphInspectorRejectsSnapshotMismatch() async throws {
   let fixture = makeInspectorFixture()

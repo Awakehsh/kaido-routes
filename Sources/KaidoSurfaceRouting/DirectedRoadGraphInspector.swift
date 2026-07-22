@@ -266,10 +266,12 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
     return SurfaceCandidateInspection(
       anchorBinding: anchorBinding,
       geometryBindingIsUnambiguous: geometryIsUnambiguous && anchorBinding != nil,
-      expresswayEdgeIDsBeforeEntry: uniqueIDs(
-        inspectedEdges.filter { $0.kind != .ordinaryRoad }.map(\.id)
-      ),
-      crossedTollDomainIDs: uniqueIDs(inspectedEdges.compactMap(\.tollDomainID)),
+      expresswayEdgeIDsBeforeEntry: geometryIsUnambiguous
+        ? uniqueIDs(inspectedEdges.filter { $0.kind != .ordinaryRoad }.map(\.id))
+        : nil,
+      crossedTollDomainIDs: geometryIsUnambiguous
+        ? uniqueIDs(inspectedEdges.compactMap(\.tollDomainID))
+        : nil,
       unmatchedSampleCount: unmatchedSampleCount,
       ambiguousDirectedEdgeIDs: uniqueIDs(ambiguousEdgeIDs),
       disconnectedDirectedEdgeIDs: disconnectedEdgeIDs,

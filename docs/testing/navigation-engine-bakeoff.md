@@ -135,6 +135,13 @@ A candidate fails a supported entrance if any of these occurs:
 The supported entrance set requires a 100% hard-gate pass. Failure may shrink the
 released set or trigger a provider change; it cannot be averaged away by good ETA.
 
+Graph coverage is part of fixture validity. If route samples fall outside the
+reviewed directed graph, or the graph cannot resolve one continuous topology,
+the inspection fails closed. Diagnostic fallback matches may still be retained
+for local analysis, but they cannot assert that an expressway or toll boundary
+was actually crossed. A conclusive crossing claim requires one unambiguous,
+continuous inspected path.
+
 ### Recorded metrics
 
 - request success and error class;
@@ -146,6 +153,11 @@ released set or trigger a provider change; it cannot be averaged away by good ET
 - unintended expressway-edge count;
 - result stability across repeated requests and departure times;
 - online, offline, rate-limit, licence, and retention constraints.
+
+The current feasibility inspector searches the bounded graph directly. Its
+latency is evidence-tool telemetry, not a production matcher budget. Before any
+reuse in live navigation, benchmark a spatial candidate index on the eventual
+device matrix and retain the same fail-closed topology semantics.
 
 ### Initial decision rule
 

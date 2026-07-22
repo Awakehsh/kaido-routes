@@ -15,8 +15,8 @@ Use a hybrid architecture:
    the in-car surface.
 3. Keep the route-first domain, strict route compiler, journey state machine,
    recovery, guidance, and route-aware matcher in platform-light Swift modules.
-4. Treat MapKit as the first surface-access and surface-egress route provider,
-   not as the authority for the Shuto route.
+4. Keep MapKit as the first surface-access and surface-egress adapter, not as
+   the authority for the Shuto route or as sufficient evidence on stacked roads.
 5. Maintain replaceable provider adapters and compare MapKit with Valhalla,
    OSRM, and GraphHopper on the same entrance fixtures.
 6. Use Valhalla Meili as the first open-source map-matching oracle while a small
@@ -37,11 +37,26 @@ graph or an ordered list of junction movements and repeated edge occurrences.
 It is therefore suitable for a candidate surface leg, but not for compiling the
 saved Kaido route.
 
+A private B1 probe now gives this limitation a concrete gate: MapKit produced a
+nominally successful ordinary-road candidate along Route 20, but the geometry
+was vertically coincident with Route 4. The directed inspector could retain both
+a continuous surface interpretation and a continuous expressway interpretation.
+Provider avoid-highway metadata and maneuver text did not supply independent
+path identity, so the candidate correctly failed closed. MapKit remains useful
+for presentation and for candidates that bind unambiguously; it is `RETEST`, not
+the sole surface-routing authority for the supported entrance set.
+
 Valhalla, OSRM, and GraphHopper expose more graph and map-matching capability,
 but their normal route services still solve a weighted path problem. Kaido must
 preserve explicit roads, movements, and repetitions even when they are not the
 shortest or fastest path. A generic provider may support that process, but cannot
 own its semantics.
+
+The next Valhalla comparison must preserve the path selected by Valhalla itself.
+Its route shape can be passed to `trace_attributes` with `shape_match=edge_walk`
+to recover ordered edge attributes and OSM way IDs. Rematching a MapKit polyline
+with another engine would only create a second inference and must not be treated
+as proof of MapKit's chosen road level.
 
 ## System boundary
 
@@ -346,8 +361,8 @@ loading rather than UI-oriented object persistence.
 | Candidate | Best role | Strength | Product mismatch | Direction |
 |---|---|---|---|---|
 | Custom Swift core | strict Shuto route, recovery, occurrence-aware matching | exact semantics, on-device, deterministic | highest implementation and calibration work | **Required** |
-| Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; no custom graph or documented occurrence sequence | **First surface adapter** |
-| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support | integration/data build weight; generic graph IDs and routing objectives | **First open-source comparator** |
+| Apple MapKit | surface access/egress and geographic presentation | native Swift integration, route geometry and steps, CarPlay-compatible platform | server route is opaque; stacked-road path identity is unavailable | **Keep as bounded adapter; RETEST for full B1** |
+| Valhalla | open-source routing and HMM matching oracle; possible fallback | MIT, dynamic costing, map matching, portable C++ and offline support; own route shape can be edge-walked into way IDs | integration/data build weight; generic graph IDs and routing objectives | **Next executable comparator** |
 | OSRM | performance and generic match baseline | fast C++ route/match services, MLD/CH, permissive licence | optimized fastest-path service; weaker runtime policy customization | **Secondary comparator** |
 | GraphHopper | configurable server baseline | Apache 2.0, turn restrictions, custom models, map matching | Java/server footprint; generic route semantics | **Secondary comparator** |
 | Commercial full-stack SDK | later build-versus-buy reference | mature maps, traffic, guidance, CarPlay in some products | metered cost, service terms, rerouting authority and data control | **Deferred** |
@@ -379,6 +394,7 @@ bounded role it may own.
 - [Valhalla project and licence](https://github.com/valhalla/valhalla)
 - [Valhalla Meili map matching](https://valhalla.github.io/valhalla/meili/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
+- [Valhalla `trace_attributes` and `edge_walk`](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [OSRM backend and services](https://github.com/Project-OSRM/osrm-backend)
 - [OSRM licence](https://raw.githubusercontent.com/Project-OSRM/osrm-backend/master/LICENSE.TXT)
 - [GraphHopper open-source engine](https://github.com/graphhopper/graphhopper)

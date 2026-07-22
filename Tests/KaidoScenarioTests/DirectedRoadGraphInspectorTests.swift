@@ -138,6 +138,44 @@ func directedGraphInspectorUsesSequenceContinuity() async throws {
   )
 }
 
+@Test("Two continuous stacked levels remain unresolved despite provider hints")
+func directedGraphInspectorRejectsContinuousStackedLevels() async throws {
+  let fixture = makeInspectorFixture()
+  let request = try fixture.makeRequest(originID: "test.origin.same-side")
+  let candidate = makeInspectorCandidate(request: request)
+  var edges = makeInspectorGraph().edges
+  edges.append(
+    SurfaceRoadEdge(
+      id: "test.edge.stacked-expressway",
+      fromNodeID: "test.node.stacked-origin",
+      toNodeID: "test.node.middle",
+      kind: .expressway,
+      coordinates: [inspectorOrigin, inspectorMiddle],
+      tollDomainID: "test.toll.external"
+    )
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: SurfaceRoadGraphSnapshot(
+      networkSnapshotID: fixture.networkSnapshotID,
+      edges: edges
+    )
+  ).inspect(
+    candidate: candidate,
+    request: request,
+    fixture: fixture
+  )
+
+  #expect(candidate.hasHighways == false)
+  #expect(candidate.hasTolls == false)
+  #expect(inspection.geometryBindingIsUnambiguous == false)
+  #expect(inspection.ambiguousDirectedEdgeIDs?.contains("test.edge.surface-initial") == true)
+  #expect(inspection.ambiguousDirectedEdgeIDs?.contains("test.edge.stacked-expressway") == true)
+  #expect(inspection.expresswayEdgeIDsBeforeEntry == nil)
+  #expect(inspection.crossedTollDomainIDs == nil)
+  #expect(inspection.disconnectedDirectedEdgeIDs == [])
+}
+
 @Test("Graph travel distance resolves a longer connected detour")
 func directedGraphInspectorUsesGraphTravelDistance() async throws {
   let fixture = makeInspectorFixture()

@@ -3,8 +3,9 @@
 **Status:** B0 is executable. B1 has a versioned fixture schema, synthetic
 three-origin fixture, provider-neutral hard-gate runner, MapKit adapter, and a
 pure Swift directed-road graph inspector plus an explicit local live-probe
-command. No real entrance fixture is released; private provider output remains
-outside the repository.
+command. Four private directional pilots have been attempted; one stacked-road
+origin produces a repeatable hard-gate failure. No real entrance fixture is
+released; private provider output remains outside the repository.
 
 **Checked:** 2026-07-22
 
@@ -167,6 +168,15 @@ runtime costing, and map matching in one portable engine. OSRM and GraphHopper
 remain independent baselines so the decision does not overfit one open-source
 implementation.
 
+The current private evidence does not satisfy the MapKit condition. A Route 4
+up pilot passed its same-side and cross-direction batches, but its approach from
+a nearby incompatible down entrance failed all three runs: Route 20 and Route 4
+are vertically stacked, and the MapKit geometry did not identify which level it
+used. This is `RETEST` for MapKit's surface role, not evidence that the provider
+actually took the expressway. The next Valhalla probe must retain its own
+selected edge sequence, using `trace_attributes` plus `shape_match=edge_walk`
+where practical; rematching MapKit output is not a substitute.
+
 ## Matcher test
 
 ### Hard gates
@@ -325,8 +335,15 @@ gate.
    and field-review gates pass. A later same-day window kept all six Iikura and
    Shibakoen origin batches hard-gate clean, but Shibakoen cross-direction changed
    from a 468 m accepted route to 143 m, proving that one internally stable batch
-   cannot establish cross-window stability.
-3. Run Valhalla, OSRM, and GraphHopper against the same surface fixtures.
+   cannot establish cross-window stability. The private Shibuya pilot then
+   passed all three origin batches on a complete graph. The private Shinjuku up
+   pilot passed its short same-side and cross-direction batches, while its
+   Hatsudai nearest-incompatible batch failed 0/3 with 19 stacked-road ambiguous
+   edges per run. Keep the failure; it is the first evidence that geometry-only
+   provider output cannot satisfy the whole corpus.
+3. Run Valhalla first against the Shinjuku failure and the accepted controls,
+   preserving the engine-selected edge/way sequence. Then run OSRM and
+   GraphHopper against the same surface fixtures.
 4. Implement the nearest-edge negative control and replay harness.
 5. Add Valhalla Meili as the first matcher oracle.
 6. Implement the route-aware Swift HMM and compare calibration.
@@ -334,8 +351,8 @@ gate.
 8. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 
-The next coding task is the evidence-backed remainder of step 2, not an iPhone
-screen.
+The next coding task is the path-identity-preserving Valhalla comparator in step
+3, not an iPhone screen.
 
 ## Sources checked 2026-07-22
 

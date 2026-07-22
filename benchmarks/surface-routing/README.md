@@ -32,6 +32,11 @@ retained field. Raw provider responses and live run output remain under the
 ignored `raw/` and `runs/` paths until retention and redistribution rights are
 reviewed.
 
+Place probe origins inside the reviewed directed surface edge rather than
+exactly on an OSM junction node. Keep the source node in the evidence record,
+but avoid introducing an artificial first-sample tie between otherwise distinct
+outgoing edges.
+
 ## Two-stage probe
 
 The provider adapter returns only a normalized `SurfaceRouteCandidate`:
@@ -87,6 +92,15 @@ the bounded surface leg, but those options are hints rather than proof.
 No real entrance is released yet. The local live-probe command is implemented;
 the reviewed ten-entrance corpus, licensed road-graph snapshots, repeated runs,
 and field checks remain evidence tasks. Deterministic CI does not call MapKit.
+
+A private stacked-road pilot now establishes a provider boundary: a MapKit
+candidate can have ordinary-road instructions and `has_highways=false` while its
+polyline still admits continuous surface and expressway interpretations. The
+inspector fails that candidate closed and withholds conclusive crossing arrays.
+MapKit remains a bounded adapter under test, but it cannot satisfy the entire B1
+role with geometry-only evidence. The next Valhalla comparator must preserve its
+own selected path identity, rather than rematching MapKit geometry and treating
+the second engine's inference as proof.
 
 The local command requires an explicit live-provider acknowledgement and writes
 one normalized JSON result to stdout. The result records provider and local

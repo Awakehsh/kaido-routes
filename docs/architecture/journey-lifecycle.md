@@ -140,6 +140,15 @@ graph. OSM commonly models ramps as directional `motorway_link` ways and can
 store signed destinations, but those tags still require snapshot validation and
 facility binding before release.
 
+The private B1 corpus has now reached that fallback trigger for at least one
+origin. A MapKit candidate along Route 20 could not be distinguished from the
+vertically stacked Route 4 using geometry and directed continuity alone. This
+does not prove that MapKit entered the expressway; it proves that the candidate
+lacked enough path identity to pass the hard gates. The lifecycle remains the
+same, but the next provider comparison must return an inspectable selected edge
+sequence tied to a dated graph snapshot. A second engine rematching MapKit
+geometry is not equivalent evidence.
+
 ## Entry transition and mode switching
 
 Kaido owns the transition from the ordinary-road approach anchor through the

@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "synthetic.matcher.tunnel-branch-reacquisition",
+  "network_snapshot_id": "test.snapshot.matcher-v1",
+  "evidence_classification": "SYNTHETIC",
+  "configuration": {
+    "ambiguity_margin_meters": 3,
+    "stale_observation_threshold_ms": 10000,
+    "observation_gap_threshold_ms": 10000
+  },
+  "edges": [
+    { "directed_edge_id": "test.edge.tunnel-approach", "coordinates": [{ "latitude": 35.03, "longitude": 139.0 }, { "latitude": 35.03, "longitude": 139.001 }] },
+    { "directed_edge_id": "test.edge.tunnel-planned", "coordinates": [{ "latitude": 35.03, "longitude": 139.001 }, { "latitude": 35.0305, "longitude": 139.002 }] },
+    { "directed_edge_id": "test.edge.tunnel-alternate", "coordinates": [{ "latitude": 35.03, "longitude": 139.001 }, { "latitude": 35.0295, "longitude": 139.002 }] }
+  ],
+  "route_occurrences": [
+    { "occurrence_id": "test.occurrence.tunnel-approach", "index": 0, "directed_edge_id": "test.edge.tunnel-approach" },
+    { "occurrence_id": "test.occurrence.tunnel-planned", "index": 1, "directed_edge_id": "test.edge.tunnel-planned" }
+  ],
+  "initial_occurrence_id": "test.occurrence.tunnel-approach",
+  "observations": [
+    { "observation_id": "before-tunnel-0", "observed_at_ms": 0, "received_at_ms": 0, "coordinate": { "latitude": 35.03, "longitude": 139.0002 }, "horizontal_accuracy_meters": 5, "course_degrees": 90, "speed_meters_per_second": 15, "source": "PHONE" },
+    { "observation_id": "before-tunnel-1", "observed_at_ms": 1000, "received_at_ms": 1000, "coordinate": { "latitude": 35.03, "longitude": 139.0008 }, "horizontal_accuracy_meters": 5, "course_degrees": 90, "speed_meters_per_second": 15, "source": "PHONE" },
+    { "observation_id": "after-tunnel", "observed_at_ms": 32000, "received_at_ms": 32000, "coordinate": { "latitude": 35.0304, "longitude": 139.0018 }, "horizontal_accuracy_meters": 7, "course_degrees": 60, "speed_meters_per_second": 14, "source": "WIRELESS_CARPLAY" }
+  ],
+  "ground_truth_intervals": [
+    { "start_ms": 0, "end_ms": 1000, "directed_edge_id": "test.edge.tunnel-approach", "occurrence_id": "test.occurrence.tunnel-approach", "classification": "ON_ROUTE" },
+    { "start_ms": 32000, "end_ms": 32000, "directed_edge_id": "test.edge.tunnel-planned", "occurrence_id": "test.occurrence.tunnel-planned", "classification": "ON_ROUTE" }
+  ],
+  "branch_decisions": [
+    { "decision_id": "test.decision.in-tunnel", "at_ms": 15000, "planned_outgoing_edge_id": "test.edge.tunnel-planned", "actual_outgoing_edge_id": "test.edge.tunnel-planned", "actual_occurrence_id": "test.occurrence.tunnel-planned" }
+  ],
+  "expected_negative_control_failures": ["ROUTE_OCCURRENCE_UNAVAILABLE"]
+}

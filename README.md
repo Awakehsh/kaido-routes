@@ -40,6 +40,17 @@ provider call. Long-running service operations, ODbL distribution review,
 broader road coverage, field evidence, exact Daikoku-futo directional-mouth
 evidence, and entrance release remain pending.
 
+The first deterministic map-matching replay floor is also executable. Six
+tracked synthetic fixtures contain 23 receive-ordered observations with exact
+ground-truth edge and occurrence intervals, branch decisions, stacked geometry,
+parallel roads at multiple accuracy bands, repeated occurrences,
+15/30/60-second gaps, tunnel reacquisition, stale reordered timestamps, and four
+source labels. A deliberately weak nearest-edge control
+reproduces its declared safety failures twice per fixture. This does not make
+nearest-edge matching viable; it establishes the comparison contract that
+Valhalla Meili and the route-aware Swift HMM must beat without any false
+high-confidence safety commit.
+
 The feasibility core currently executes portable scenarios for sixteen hard
 properties that must remain proven as the product expands:
 
@@ -92,6 +103,7 @@ properties that must remain proven as the product expands:
 - [`docs/contributing/licensing.md`](docs/contributing/licensing.md): Apache-2.0 and third-party material boundaries.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`benchmarks/surface-routing/`](benchmarks/surface-routing/README.md): directional entrance fixtures and provider hard gates.
+- [`benchmarks/map-matching/`](benchmarks/map-matching/README.md): deterministic matcher replay fixtures, evaluator, and negative control.
 - [`Sources/`](Sources): platform-light Swift domain, routing, navigation, and scenario-adapter modules.
 - [`Tests/`](Tests): Swift Testing suites that execute the portable scenarios.
 
@@ -116,6 +128,7 @@ scenario suite and the independent schema validator:
 ```sh
 swift test
 swift run kaido-scenarios e2e/scenarios
+swift run kaido-matcher-replay benchmarks/map-matching/fixtures/synthetic
 python3 scripts/validate_e2e.py
 ```
 

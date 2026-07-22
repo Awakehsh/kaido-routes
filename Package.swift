@@ -14,6 +14,7 @@ let package = Package(
     .executable(name: "kaido-scenarios", targets: ["KaidoScenariosCLI"]),
     .executable(name: "kaido-surface-probe", targets: ["KaidoSurfaceProbeCLI"]),
     .executable(name: "kaido-surface-evidence", targets: ["KaidoSurfaceEvidenceCLI"]),
+    .executable(name: "kaido-matcher-replay", targets: ["KaidoMatcherReplayCLI"]),
   ],
   targets: [
     .target(name: "KaidoDomain"),
@@ -45,6 +46,10 @@ let package = Package(
     .executableTarget(
       name: "KaidoSurfaceEvidenceCLI",
       dependencies: ["KaidoSurfaceRouting"]
+    ),
+    .executableTarget(
+      name: "KaidoMatcherReplayCLI",
+      dependencies: ["KaidoNavigation"]
     ),
     .testTarget(
       name: "KaidoScenarioTests",

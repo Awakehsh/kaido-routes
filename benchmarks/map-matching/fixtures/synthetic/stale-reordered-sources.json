@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "synthetic.matcher.stale-reordered-sources",
+  "network_snapshot_id": "test.snapshot.matcher-v1",
+  "evidence_classification": "SYNTHETIC",
+  "configuration": {
+    "ambiguity_margin_meters": 3,
+    "stale_observation_threshold_ms": 10000,
+    "observation_gap_threshold_ms": 10000
+  },
+  "edges": [
+    { "directed_edge_id": "test.edge.source-comparison", "coordinates": [{ "latitude": 35.04, "longitude": 139.0 }, { "latitude": 35.04, "longitude": 139.001 }] }
+  ],
+  "route_occurrences": [
+    { "occurrence_id": "test.occurrence.source-comparison", "index": 0, "directed_edge_id": "test.edge.source-comparison" }
+  ],
+  "initial_occurrence_id": "test.occurrence.source-comparison",
+  "observations": [
+    { "observation_id": "phone-fix", "observed_at_ms": 0, "received_at_ms": 0, "coordinate": { "latitude": 35.04, "longitude": 139.0001 }, "horizontal_accuracy_meters": 8, "course_degrees": 90, "speed_meters_per_second": 12, "source": "PHONE" },
+    { "observation_id": "wired-fix", "observed_at_ms": 2000, "received_at_ms": 2000, "coordinate": { "latitude": 35.04, "longitude": 139.0003 }, "horizontal_accuracy_meters": 6, "course_degrees": 90, "speed_meters_per_second": 12, "source": "WIRED_CARPLAY" },
+    { "observation_id": "late-wireless-fix", "observed_at_ms": 1000, "received_at_ms": 12000, "coordinate": { "latitude": 35.04, "longitude": 139.0002 }, "horizontal_accuracy_meters": 5, "course_degrees": 90, "speed_meters_per_second": 12, "source": "WIRELESS_CARPLAY" },
+    { "observation_id": "accessory-fix", "observed_at_ms": 13000, "received_at_ms": 13000, "coordinate": { "latitude": 35.04, "longitude": 139.0008 }, "horizontal_accuracy_meters": 4, "course_degrees": 90, "speed_meters_per_second": 12, "source": "ACCESSORY" }
+  ],
+  "ground_truth_intervals": [
+    { "start_ms": 0, "end_ms": 13000, "directed_edge_id": "test.edge.source-comparison", "occurrence_id": "test.occurrence.source-comparison", "classification": "ON_ROUTE" }
+  ],
+  "branch_decisions": [],
+  "expected_negative_control_failures": [
+    "HIGH_CONFIDENCE_STALE_OBSERVATION",
+    "ROUTE_OCCURRENCE_UNAVAILABLE"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "synthetic.matcher.stacked-carriageway",
+  "network_snapshot_id": "test.snapshot.matcher-v1",
+  "evidence_classification": "SYNTHETIC",
+  "configuration": {
+    "ambiguity_margin_meters": 3,
+    "stale_observation_threshold_ms": 10000,
+    "observation_gap_threshold_ms": 10000
+  },
+  "edges": [
+    {
+      "directed_edge_id": "test.edge.lower-level",
+      "coordinates": [
+        { "latitude": 35.0, "longitude": 139.0 },
+        { "latitude": 35.0, "longitude": 139.001 }
+      ]
+    },
+    {
+      "directed_edge_id": "test.edge.upper-level",
+      "coordinates": [
+        { "latitude": 35.0, "longitude": 139.0 },
+        { "latitude": 35.0, "longitude": 139.001 }
+      ]
+    }
+  ],
+  "route_occurrences": [
+    {
+      "occurrence_id": "test.occurrence.upper-level",
+      "index": 0,
+      "directed_edge_id": "test.edge.upper-level"
+    }
+  ],
+  "initial_occurrence_id": "test.occurrence.upper-level",
+  "observations": [
+    {
+      "observation_id": "stacked-0",
+      "observed_at_ms": 0,
+      "received_at_ms": 0,
+      "coordinate": { "latitude": 35.0, "longitude": 139.0002 },
+      "horizontal_accuracy_meters": 5,
+      "course_degrees": 90,
+      "speed_meters_per_second": 14,
+      "source": "PHONE"
+    },
+    {
+      "observation_id": "stacked-1",
+      "observed_at_ms": 1000,
+      "received_at_ms": 1000,
+      "coordinate": { "latitude": 35.0, "longitude": 139.0005 },
+      "horizontal_accuracy_meters": 5,
+      "course_degrees": 90,
+      "speed_meters_per_second": 14,
+      "source": "PHONE"
+    },
+    {
+      "observation_id": "stacked-2",
+      "observed_at_ms": 2000,
+      "received_at_ms": 2000,
+      "coordinate": { "latitude": 35.0, "longitude": 139.0008 },
+      "horizontal_accuracy_meters": 5,
+      "course_degrees": 90,
+      "speed_meters_per_second": 14,
+      "source": "PHONE"
+    }
+  ],
+  "ground_truth_intervals": [
+    {
+      "start_ms": 0,
+      "end_ms": 2000,
+      "directed_edge_id": "test.edge.upper-level",
+      "occurrence_id": "test.occurrence.upper-level",
+      "classification": "ON_ROUTE"
+    }
+  ],
+  "branch_decisions": [],
+  "expected_negative_control_failures": [
+    "FALSE_HIGH_CONFIDENCE_EDGE_MATCH",
+    "HIGH_CONFIDENCE_AMBIGUITY",
+    "ROUTE_OCCURRENCE_UNAVAILABLE"
+  ]
+}

@@ -114,6 +114,17 @@ Every trace has ground-truth occurrence intervals and branch decisions. Raw fiel
 traces remain ignored and private; tracked derivatives must be deliberately
 redacted and licensed.
 
+The first tracked B2 floor is executable under
+[`benchmarks/map-matching/`](../../benchmarks/map-matching/README.md). Six
+synthetic fixtures contain 23 observations and cover the listed gap bands,
+stacked geometry, a parallel surface/expressway pair at multiple accuracy bands,
+repeated occurrences, a noisy wrong branch, tunnel reacquisition, reordered
+stale timestamps, and all four source labels. The
+shared Swift evaluator reports edge and occurrence correctness, gap durations,
+and named safety failures. Its nearest-edge negative control intentionally
+ignores heading, transitions, occurrences, age, and source; a passing replay
+means it reproduced the fixture's expected failures deterministically.
+
 ### B3: guidance fixtures
 
 For each critical movement, record deterministic prompt anchors and the same
@@ -445,8 +456,10 @@ gate.
    45/45 final requests on one shared snapshot. Valhalla route destinations now
    bind reviewed heading/tolerance and disable node snapping; provider route
    differences remain a field-review task, not a reason to weaken hard gates.
-8. Implement the nearest-edge replay corpus and add Valhalla Meili as the first
-   matcher oracle.
+8. **Partial complete:** the schema, six-fixture synthetic replay corpus,
+   23-observation ground truth, shared evaluator, CLI, and deterministic
+   nearest-edge negative control are executable. Add Valhalla Meili as the first
+   external matcher oracle using provider-to-Kaido identity translation.
 9. Implement the route-aware Swift HMM and compare calibration.
 10. Add SwiftUI phone presentation, then the CarPlay adapter.
 11. Perform passenger-observed tunnel and entry tests only after synthetic and
@@ -454,9 +467,9 @@ gate.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation task is the nearest-edge
-replay corpus and Valhalla Meili oracle. This is not yet an iPhone screen and not
-a rewrite of the Swift route-first core.
+the released facility corpus. The next implementation task is the Valhalla Meili
+replay adapter and identity translation, followed by the route-aware Swift HMM.
+This is not yet an iPhone screen and not a rewrite of the Swift route-first core.
 
 ## Sources checked 2026-07-23
 

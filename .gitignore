@@ -20,3 +20,5 @@ __pycache__/
 /test-results/
 /benchmarks/surface-routing/raw/
 /benchmarks/surface-routing/runs/
+/benchmarks/map-matching/raw/
+/benchmarks/map-matching/runs/

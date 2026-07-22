@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "synthetic.matcher.wrong-branch-noisy-fix",
+  "network_snapshot_id": "test.snapshot.matcher-v1",
+  "evidence_classification": "SYNTHETIC",
+  "configuration": {
+    "ambiguity_margin_meters": 3,
+    "stale_observation_threshold_ms": 10000,
+    "observation_gap_threshold_ms": 10000
+  },
+  "edges": [
+    {
+      "directed_edge_id": "test.edge.approach",
+      "coordinates": [
+        { "latitude": 35.02, "longitude": 139.0 },
+        { "latitude": 35.02, "longitude": 139.001 }
+      ]
+    },
+    {
+      "directed_edge_id": "test.edge.planned-branch",
+      "coordinates": [
+        { "latitude": 35.02, "longitude": 139.001 },
+        { "latitude": 35.0204, "longitude": 139.002 }
+      ]
+    },
+    {
+      "directed_edge_id": "test.edge.wrong-branch",
+      "coordinates": [
+        { "latitude": 35.02, "longitude": 139.001 },
+        { "latitude": 35.02, "longitude": 139.002 }
+      ]
+    }
+  ],
+  "route_occurrences": [
+    { "occurrence_id": "test.occurrence.approach", "index": 0, "directed_edge_id": "test.edge.approach" },
+    { "occurrence_id": "test.occurrence.planned-branch", "index": 1, "directed_edge_id": "test.edge.planned-branch" }
+  ],
+  "initial_occurrence_id": "test.occurrence.approach",
+  "observations": [
+    { "observation_id": "before-branch", "observed_at_ms": 500, "received_at_ms": 500, "coordinate": { "latitude": 35.02, "longitude": 139.0007 }, "horizontal_accuracy_meters": 6, "course_degrees": 90, "speed_meters_per_second": 13, "source": "PHONE" },
+    { "observation_id": "first-noisy-after-branch", "observed_at_ms": 2500, "received_at_ms": 2500, "coordinate": { "latitude": 35.02018, "longitude": 139.0015 }, "horizontal_accuracy_meters": 25, "course_degrees": 90, "speed_meters_per_second": 13, "source": "PHONE" },
+    { "observation_id": "later-after-branch", "observed_at_ms": 4000, "received_at_ms": 4000, "coordinate": { "latitude": 35.02, "longitude": 139.0019 }, "horizontal_accuracy_meters": 8, "course_degrees": 90, "speed_meters_per_second": 13, "source": "PHONE" }
+  ],
+  "ground_truth_intervals": [
+    { "start_ms": 0, "end_ms": 1000, "directed_edge_id": "test.edge.approach", "occurrence_id": "test.occurrence.approach", "classification": "ON_ROUTE" },
+    { "start_ms": 2000, "end_ms": 4000, "directed_edge_id": "test.edge.wrong-branch", "occurrence_id": null, "classification": "DEVIATION" }
+  ],
+  "branch_decisions": [
+    {
+      "decision_id": "test.decision.branch",
+      "at_ms": 1500,
+      "planned_outgoing_edge_id": "test.edge.planned-branch",
+      "actual_outgoing_edge_id": "test.edge.wrong-branch",
+      "actual_occurrence_id": null
+    }
+  ],
+  "expected_negative_control_failures": [
+    "FALSE_HIGH_CONFIDENCE_BRANCH_COMMIT",
+    "FALSE_HIGH_CONFIDENCE_EDGE_MATCH",
+    "ROUTE_OCCURRENCE_UNAVAILABLE"
+  ]
+}

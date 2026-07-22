@@ -354,6 +354,16 @@ Nearest-road snapping is unsafe on stacked carriageways, parallel ramps, tunnels
 and repeated route geometry. Use a hidden Markov model with an online Viterbi or
 bounded beam decoder.
 
+The executable comparison floor lives under `benchmarks/map-matching/`. Its six
+synthetic fixtures contain receive-ordered observations, explicit ground-truth
+occurrence intervals, branch decisions, source labels, and expected failures for
+a deliberately weak `NearestEdgeNegativeControl`. The shared evaluator detects
+false high-confidence edge and branch choices, unresolved high-confidence ties,
+stale high-confidence fixes, missing occurrence identity, backward occurrence
+jumps, and branch commits made inside an observation gap. The negative control
+does not become a fallback matcher merely because its expected failures are
+reproducible.
+
 ### Candidate generation
 
 - Query directed edges from an R-tree or equivalent spatial index using the

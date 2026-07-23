@@ -9,7 +9,7 @@
   "marks": [
     {"mark_id":"mark.c1","route_id":"shutoko.c1","anchor_hint":{"x":0.487,"y":0.445},"label_offset":{"x":-12,"y":14},"density":"PRIMARY"},
     {"mark_id":"mark.c2.west","route_id":"shutoko.c2","anchor_hint":{"x":0.401,"y":0.411},"density":"PRIMARY"},
-    {"mark_id":"mark.c2.east","route_id":"shutoko.c2","anchor_hint":{"x":0.610,"y":0.400},"density":"SECONDARY"},
+    {"mark_id":"mark.c2.east","route_id":"shutoko.c2","anchor_hint":{"x":0.610,"y":0.400},"label_offset":{"x":30,"y":-45},"density":"SECONDARY"},
     {"mark_id":"mark.1.ueno","route_id":"shutoko.1.ueno","anchor_hint":{"x":0.526,"y":0.350},"density":"PRIMARY"},
     {"mark_id":"mark.1.haneda","route_id":"shutoko.1.haneda","anchor_hint":{"x":0.480,"y":0.600},"density":"PRIMARY"},
     {"mark_id":"mark.2","route_id":"shutoko.2.meguro","anchor_hint":{"x":0.440,"y":0.515},"density":"PRIMARY"},

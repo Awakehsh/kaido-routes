@@ -34,6 +34,11 @@ LAYOUT_PATH = (
     REPOSITORY_ROOT
     / "data/route-atlas/design/route-mark-layout-prototype.json"
 )
+TRACKED_SVG_PATH = (
+    REPOSITORY_ROOT
+    / "data/route-atlas/design/"
+    "shuto-route-atlas-recognition-reference.svg"
+)
 
 
 def load(path: Path) -> dict:
@@ -72,6 +77,12 @@ class RouteAtlasDesignRendererTests(unittest.TestCase):
         self.assertIn("26 / 26 ROUTES PLACED", first)
         self.assertIn("shutoko.k7.yokohama-northwest", route_ids)
         self.assertIn('data-navigation-authority="false"', first)
+        self.assertIn('data-design-status="REVIEW_ONLY"', first)
+        self.assertIn("SOURCE: MLIT NLNI N06-2025", first)
+        self.assertEqual(
+            first,
+            TRACKED_SVG_PATH.read_text(encoding="utf-8"),
+        )
 
     def test_catalog_name_drift_fails_closed(self) -> None:
         catalog = copy.deepcopy(self.catalog)

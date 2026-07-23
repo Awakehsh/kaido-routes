@@ -200,9 +200,11 @@ not copied data or proof that a navigable topology is released.
 A renderer-neutral recognition design now places Kaido-owned route-code
 capsules only on source vertices whose MLIT route name has a direct or explicitly
 reconciled match in the operator's current 26-route table. All 26 operator names
-are represented. The recognition layout is `REVIEW_ONLY`, non-selectable, and
-non-navigable; it improves familiar network recognition without pretending that
-route direction or connectivity has been released.
+are represented with 28 marks. The deterministic standalone SVG is tracked with
+visible MLIT / CC BY 4.0 attribution and explicit `REVIEW_ONLY` and
+`navigation_authority=false` metadata. The recognition layout is non-selectable
+and non-navigable; it improves familiar network recognition without pretending
+that route direction or connectivity has been released.
 
 The first real-source directed atlas candidate is also tracked without promoting
 it to release data. It binds the K7 Northwest up direction from the exact

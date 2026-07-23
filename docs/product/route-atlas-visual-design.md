@@ -41,6 +41,15 @@ corridor `高速神奈川7号横浜北西線`. The catalog records this one expl
 dated, checksummed reconciliation, allowing all 26 route names to appear
 without inferring geometry from visual proximity.
 
+The deterministic standalone output is
+`data/route-atlas/design/shuto-route-atlas-recognition-reference.svg`. It is the
+formal full-network recognition asset used by product concept and evidence
+views: 86 retained source paths, 26 matched route identities, and 28 snapped
+route-code marks in one fixed north-up frame. The file carries visible MLIT /
+CC BY 4.0 attribution and explicit `REVIEW_ONLY` and
+`navigation_authority=false` metadata. Tracking this artifact makes visual
+drift reviewable; it does not promote context geometry into directed topology.
+
 ## Density
 
 Phone and CarPlay overview states show route codes, not full road names. Japanese
@@ -117,5 +126,6 @@ realtime state, or navigation authority.
 - [Yokohama Kawamuko Minamikochi current project status](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/jokyo/kukakuseiri/kawamukou/kawamukou.html)
 - [Yokohama Kawamuko Minamikochi final replotting map](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/kukappi-/kubetsu/14-tsuzuki.files/0009_20230112.pdf)
 - [Route Atlas geographic context provenance](../../data/route-atlas/context/README.md)
+- [Full-network recognition reference](../../data/route-atlas/design/shuto-route-atlas-recognition-reference.svg)
 - [OSM-derived K7 candidate provenance](../../data/route-atlas/osm-derived/README.md)
 - [K7 schematic layout candidate](../../data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg)

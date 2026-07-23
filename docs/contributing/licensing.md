@@ -96,6 +96,13 @@ state that Kaido Routes filtered and projected the source. The tracked data is
 geographic context only; its licence and provenance do not make it a directed
 routing graph or operator-reviewed navigation product.
 
+The standalone full-network recognition SVG under `data/route-atlas/design/`
+is a modified rendering of that context artifact. It keeps a visible MLIT
+N06-2025 source line, modification disclosure, and CC BY 4.0 notice, plus full
+attribution in SVG metadata. Its Kaido-owned route-code capsules do not
+reproduce operator route-mark artwork. The SVG remains `REVIEW_ONLY` and has no
+navigation authority.
+
 Primary references:
 
 - [MLIT N06-2025 dataset page](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html)

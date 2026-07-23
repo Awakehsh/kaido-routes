@@ -453,15 +453,19 @@ def render(
 <svg xmlns="http://www.w3.org/2000/svg"
      viewBox="0 0 420 620"
      role="img"
-     aria-labelledby="title description">
+     aria-labelledby="title description"
+     data-design-status="REVIEW_ONLY"
+     data-navigation-authority="false">
   <title id="title">Kaido Routes Shuto Route Atlas recognition design</title>
   <desc id="description">North-up non-navigable design reference. {html.escape(attribution)}. {html.escape(transformation)}</desc>
+  <metadata>{html.escape(attribution)}. Modified by Kaido Routes. Source data licensed CC BY 4.0. Display reference only; no navigation authority.</metadata>
   <rect width="420" height="620" rx="28" fill="#162329"/>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
 {paths}
   </g>
 {marks}
   <text class="atlas-context-caption" x="20" y="586">RECOGNITION REFERENCE · 26 / 26 ROUTES PLACED · NAVIGATION BLOCKED</text>
+  <text class="atlas-context-attribution" x="20" y="601">SOURCE: MLIT NLNI N06-2025 · MODIFIED BY KAIDO ROUTES · CC BY 4.0</text>
   <style>
     .atlas-context-path {{
       fill: none;
@@ -503,6 +507,13 @@ def render(
       font-size: 7px;
       font-weight: 800;
       letter-spacing: .04em;
+    }}
+    .atlas-context-attribution {{
+      fill: rgba(172, 193, 200, .55);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 5.4px;
+      font-weight: 700;
+      letter-spacing: .03em;
     }}
   </style>
 </svg>

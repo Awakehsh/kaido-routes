@@ -89,5 +89,12 @@ python3 scripts/render_route_atlas_design_svg.py \
   --source data/route-atlas/context/mlit-n06-2025-current-source.json \
   --route-catalog data/route-atlas/context/operator-route-mark-catalog-2026-07-23.json \
   --route-mark-layout data/route-atlas/design/route-mark-layout-prototype.json \
-  --output /tmp/kaido-route-atlas-design.svg
+  --output data/route-atlas/design/shuto-route-atlas-recognition-reference.svg
 ```
+
+The tracked SVG is the deterministic standalone output of this command. It
+keeps the full north-up geographic silhouette, all 26 matched route identities,
+28 snapped route-code marks, explicit `REVIEW_ONLY` and
+`navigation_authority=false` metadata, and visible MLIT / CC BY 4.0 attribution.
+It is the formal full-network recognition asset for concept and evidence views,
+not a released directed topology or navigation map.

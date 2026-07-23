@@ -2,35 +2,24 @@
   "evidence": {
     "classification": "COMMUNITY_CANDIDATE",
     "limitations": [
-      "The OSM-derived graph is a community-data candidate, not independent field approval.",
-      "The operator diagrams support factual movement review but are not redistributed layout assets."
+      "OSM way 776884422 is source-adjacent and bidirectional by missing-oneway semantics, but lacks an independent road-level movement classification."
     ],
     "release_blockers": [
-      "The directed database is OSM-derived community data and has not passed an independent lawful field review.",
-      "The fourteen-checkpoint source-adjacency audit is exact, but OSM way 776884422 at the Kohoku exit has no independent road-level direction or movement review.",
-      "The two expressway divergence alternatives are source-bound candidates, not a complete released graph beyond the bounded slice.",
-      "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
-      "In-app OSM attribution and derivative-database distribution integration are not implemented.",
-      "Realtime operating state remains unconfirmed."
+      "OSM way 776884422 is physically source-adjacent and bidirectional by missing-oneway semantics, but its exact road identity, permitted exit movement, and current direction have no independent road-level review.",
+      "Source adjacency completeness does not establish complete legal successor coverage."
     ],
     "sources": [
       {
         "checked_at": "2026-07-23",
         "id": "osm-geofabrik-kanto-260721",
-        "supports": "The pinned ODbL Kanto PBF supplies exact OSM node, way, tag, and digitized-direction lineage for the bounded candidate.",
+        "supports": "The pinned ODbL extract enumerates every motor-road successor at fourteen route and facility checkpoints.",
         "uri": "https://download.geofabrik.de/asia/japan/kanto-260721.osm.pbf"
       },
       {
         "checked_at": "2026-07-23",
-        "id": "shutoko-k7-aoba-guide",
-        "supports": "The operator guide documents the Yokohama Aoba entrance movement onto K7 Northwest.",
-        "uri": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_aoba_200421.pdf"
-      },
-      {
-        "checked_at": "2026-07-23",
-        "id": "shutoko-k7-kohoku-guide",
-        "supports": "The operator guide documents the K7 Northwest up-direction branch toward Daisan-Keihin and Yokohama Kohoku exit, followed by the exit split.",
-        "uri": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_kohoku_200421.pdf"
+        "id": "yokohama-k7-northwest-brochure",
+        "supports": "The municipal brochure confirms that Yokohama Kohoku exit connects K7 to Kawamuki Line.",
+        "uri": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/kousokudoro/kanjodouro.files/0006_20220315.pdf"
       }
     ]
   },
@@ -1827,19 +1816,20 @@
       "recovery_policy": "STRICT"
     },
     "system_state": {
-      "directed_route_way_count": 13,
-      "reviewed_alternative_count": 2
+      "legal_review_complete": false,
+      "source_adjacency_exact": true,
+      "successor_checkpoint_count": 14,
+      "unresolved_legal_successor_count": 1
     }
   },
-  "id": "KR-D22",
+  "id": "KR-D23",
   "layer": "DOMAIN",
-  "purpose": "Prove that one exact ODbL-isolated K7 one-way chain and its two reviewed alternatives pass atlas structural integrity while remaining non-navigable.",
+  "purpose": "Prove that exact source adjacency, including all three Kohoku surface successors, cannot substitute for independent legal movement and production-layout review.",
   "schema_version": "1.0",
   "tags": [
     "route-atlas",
-    "real-evidence",
     "k7",
-    "odbl",
+    "successor-audit",
     "release-gate"
   ],
   "then": [
@@ -1847,31 +1837,31 @@
       "after": "attempt-release",
       "category": "SAFETY",
       "expected": "BLOCKED",
-      "id": "directed-candidate-remains-blocked",
+      "id": "legal-review-gap-remains-blocking",
       "matcher": "EQUALS",
-      "rationale": "A structurally coherent directed graph does not silently become released navigation data.",
+      "rationale": "Complete source adjacency does not prove that every movement is independently reviewed and releasable.",
       "subject": "route_atlas.status"
     },
     {
       "after": "attempt-release",
       "category": "EVIDENCE",
       "expected": "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
-      "id": "topology-review-remains-required",
+      "id": "topology-release-remains-required",
       "matcher": "CONTAINS",
-      "rationale": "The OSM-derived candidate still requires release review and independent corroboration.",
+      "rationale": "The source-complete audit remains a candidate until legal movement review is complete.",
       "subject": "route_atlas.error_codes"
     },
     {
       "after": "attempt-release",
       "category": "EVIDENCE",
       "expected": "UNRELEASED_ATLAS_EVIDENCE",
-      "id": "layout-review-remains-required",
+      "id": "production-layout-remains-required",
       "matcher": "CONTAINS",
-      "rationale": "Raw OSM-derived geometry is not a released Kaido production atlas layout.",
+      "rationale": "No official or raw source geometry becomes a released Kaido production schematic.",
       "subject": "route_atlas.error_codes"
     }
   ],
-  "title": "OSM-directed K7 candidate preserves two divergences without gaining release authority",
+  "title": "Source-complete K7 successors remain blocked when legal review is incomplete",
   "when": [
     {
       "at_ms": 0,

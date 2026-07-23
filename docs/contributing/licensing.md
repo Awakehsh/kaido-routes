@@ -68,8 +68,9 @@ The bounded K7 Northwest candidate database under
 rule. That directory identifies ODbL-1.0 as its data licence, carries the
 required OpenStreetMap contributor attribution, pins the parent PBF and bounded
 extract hashes, retains exact OSM node/way lineage, and provides machine-readable
-reconstruction commands. The Apache-2.0 repository licence still applies to the
-extractor and candidate builders, not to their OSM-derived database output.
+reconstruction commands. The directed database and successor-audit report are
+both explicitly marked ODbL-1.0. The Apache-2.0 repository licence still applies
+to the extractor and candidate builders, not to their OSM-derived data output.
 Interactive-map attribution integration remains a release blocker.
 
 ## MLIT Route Atlas context boundary

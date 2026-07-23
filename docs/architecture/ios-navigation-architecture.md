@@ -395,15 +395,23 @@ Kohoku exit terminal. The topology also retains one immediate alternative at
 each operator-reviewed decision: continue onto K7 Yokohama North instead of the
 first exit branch, or continue to Daisan-Keihin instead of Yokohama Kohoku exit.
 The source-bound facility checks also retain the Aoba incoming/non-route split
-and two one-way `川向線` surface successors at the Kohoku terminal. The
-derivative database preserves 257 route and alternative nodes, complete
+and all three motor-road successors at the Kohoku terminal. Two are named
+one-way `川向線` ways; OSM way `776884422` is an unnamed `tertiary` way
+without an explicit `oneway` tag. The derivative database preserves 257 route
+and alternative nodes, complete
 selected-way tags, parent PBF and bounded-extract hashes, extraction bounds, OSM
 timestamp, and reconstruction tooling. Its 13 route occurrences, 15 topology
 edges, and 15 layout segments pass internal identity and successor validation.
+A separate deterministic audit compares the complete source adjacency at 14
+entry, route, divergence, and exit checkpoints. The pinned extract yields 19
+outgoing successors and no applicable turn-restriction relation. This proves
+source translation completeness, not road legality: the third surface way has
+no independent road-level direction or permitted-movement review.
 Both evidence states remain `CANDIDATE`; OSM community directionality plus
 current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime
-review. KR-D22 preserves that fail-closed boundary.
+review. KR-D22 preserves the directed-candidate boundary; KR-D23 preserves the
+separate source-complete versus legal-review boundary.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.

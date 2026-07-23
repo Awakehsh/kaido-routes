@@ -1,0 +1,466 @@
+{
+  "attribution": "© OpenStreetMap contributors",
+  "audit_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.successor-audit.2026-07-23",
+  "checkpoints": [
+    {
+      "checkpoint_id": "entry-choice",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 574920138
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "ENTRY_NONROUTE_ALTERNATIVE",
+          "way_id": 44421530
+        }
+      ],
+      "incoming_way_id": 1462532752,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 44421530
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 574920138
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 5517714075
+    },
+    {
+      "checkpoint_id": "after-osm-way-574920138",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 692426107
+        }
+      ],
+      "incoming_way_id": 574920138,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 692426107
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6499778544
+    },
+    {
+      "checkpoint_id": "after-osm-way-692426107",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 692426101
+        }
+      ],
+      "incoming_way_id": 692426107,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 692426101
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6441357525
+    },
+    {
+      "checkpoint_id": "after-osm-way-692426101",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "role": "SELECTED_ROUTE",
+          "way_id": 850400096
+        }
+      ],
+      "incoming_way_id": 692426101,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "way_id": 850400096
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 7301269901
+    },
+    {
+      "checkpoint_id": "after-osm-way-850400096",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "role": "SELECTED_ROUTE",
+          "way_id": 692755609
+        }
+      ],
+      "incoming_way_id": 850400096,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "way_id": 692755609
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6503843909
+    },
+    {
+      "checkpoint_id": "after-osm-way-692755609",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "role": "SELECTED_ROUTE",
+          "way_id": 692798735
+        }
+      ],
+      "incoming_way_id": 692755609,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "way_id": 692798735
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 5517714083
+    },
+    {
+      "checkpoint_id": "after-osm-way-692798735",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 686983570
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "role": "CONTINUE_K7_YOKOHAMA_NORTH",
+          "way_id": 686983567
+        }
+      ],
+      "incoming_way_id": 692798735,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway",
+          "name": "首都高速神奈川7号横浜北西線",
+          "oneway": "yes",
+          "ref": "K7",
+          "way_id": 686983567
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 686983570
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6988179578
+    },
+    {
+      "checkpoint_id": "after-osm-way-686983570",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 782596968
+        }
+      ],
+      "incoming_way_id": 686983570,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 782596968
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 7299284526
+    },
+    {
+      "checkpoint_id": "after-osm-way-782596968",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "name": "首都高速神奈川7号横浜北線",
+          "oneway": "yes",
+          "ref": "K7",
+          "role": "SELECTED_ROUTE",
+          "way_id": 915062290
+        }
+      ],
+      "incoming_way_id": 782596968,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "name": "首都高速神奈川7号横浜北線",
+          "oneway": "yes",
+          "ref": "K7",
+          "way_id": 915062290
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6439841411
+    },
+    {
+      "checkpoint_id": "after-osm-way-915062290",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 686983572
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "name": "首都高速神奈川7号横浜北線",
+          "oneway": "yes",
+          "role": "CONTINUE_E83_DAISAN_KEIHIN",
+          "way_id": 367046943
+        }
+      ],
+      "incoming_way_id": 915062290,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "name": "首都高速神奈川7号横浜北線",
+          "oneway": "yes",
+          "way_id": 367046943
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 686983572
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 4435202077
+    },
+    {
+      "checkpoint_id": "after-osm-way-686983572",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 783581372
+        }
+      ],
+      "incoming_way_id": 686983572,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 783581372
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 7308295746
+    },
+    {
+      "checkpoint_id": "after-osm-way-783581372",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 734299101
+        }
+      ],
+      "incoming_way_id": 783581372,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 734299101
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6876530502
+    },
+    {
+      "checkpoint_id": "after-osm-way-734299101",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "role": "SELECTED_ROUTE",
+          "way_id": 734299106
+        }
+      ],
+      "incoming_way_id": 734299101,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "motorway_link",
+          "oneway": "yes",
+          "way_id": 734299106
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 6876530524
+    },
+    {
+      "checkpoint_id": "after-osm-way-734299106",
+      "declared_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "name": "川向線",
+          "oneway": "yes",
+          "role": "SURFACE_EGRESS_CANDIDATE",
+          "way_id": 734299108
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "name": "川向線",
+          "oneway": "yes",
+          "role": "SURFACE_EGRESS_CANDIDATE",
+          "way_id": 734299111
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "oneway": "UNSPECIFIED",
+          "role": "SURFACE_EGRESS_CANDIDATE",
+          "way_id": 776884422
+        }
+      ],
+      "incoming_way_id": 734299106,
+      "observed_successors": [
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "name": "川向線",
+          "oneway": "yes",
+          "way_id": 734299108
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "name": "川向線",
+          "oneway": "yes",
+          "way_id": 734299111
+        },
+        {
+          "direction": "FORWARD",
+          "highway": "tertiary",
+          "oneway": "UNSPECIFIED",
+          "way_id": 776884422
+        }
+      ],
+      "restriction_relation_ids": [],
+      "source_adjacency_exact": true,
+      "via_node_id": 7473451738
+    }
+  ],
+  "licence": "ODbL-1.0",
+  "navigation_authority": false,
+  "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+  "release_blockers": [
+    "OSM way 776884422 is physically source-adjacent and bidirectional by missing-oneway semantics, but its exact road identity, permitted exit movement, and current direction have no independent road-level review.",
+    "Source adjacency completeness does not establish complete legal successor coverage."
+  ],
+  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.osm-directed.2026-07-23",
+  "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+  "schema_version": "1.0",
+  "source": {
+    "bounded_extract_sha256": "36bd95c1987842099dc7b3953c38e623951a1a5eb6c9a38400786c47c6ddc0f3",
+    "parent_pbf_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
+    "source_snapshot_at": "2026-07-21T20:21:50Z"
+  },
+  "state": "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE",
+  "summary": {
+    "checkpoint_count": 14,
+    "legal_review_complete": false,
+    "observed_successor_count": 19,
+    "restriction_relation_count": 0,
+    "source_adjacency_exact": true,
+    "unresolved_legal_successor_count": 1
+  },
+  "unresolved_legal_successors": [
+    {
+      "direction": "FORWARD",
+      "incoming_way_id": 734299106,
+      "reason_code": "NO_INDEPENDENT_ROAD_LEVEL_DIRECTION_OR_MOVEMENT_REVIEW",
+      "via_node_id": 7473451738,
+      "way_id": 776884422
+    }
+  ]
+}

@@ -62,12 +62,23 @@
     "entry_nonroute_successor_way_id": 44421530,
     "exit_surface_successor_way_ids": [
       734299108,
-      734299111
+      734299111,
+      776884422
     ],
-    "required_exit_surface_tags": {
-      "highway": "tertiary",
-      "name": "川向線",
-      "oneway": "yes"
+    "required_exit_surface_tags_by_way": {
+      "734299108": {
+        "highway": "tertiary",
+        "name": "川向線",
+        "oneway": "yes"
+      },
+      "734299111": {
+        "highway": "tertiary",
+        "name": "川向線",
+        "oneway": "yes"
+      },
+      "776884422": {
+        "highway": "tertiary"
+      }
     }
   },
   "required_way_tags": {
@@ -152,13 +163,25 @@
       "content_sha256": "64d845c613d32280cb5a230cef7e768284460b86db3043d861b90df9a66c09b1",
       "checked_at": "2026-07-23",
       "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.k7-northwest.brochure.2026-07-23",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/kousokudoro/kanjodouro.files/0006_20220315.pdf",
+      "content_sha256": "ff4e905661ab7006464fc867ab48b3b3de311bfae438db8af41817633f550d01",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
     }
   ],
   "topology_evidence_source_ids": [
     "osm.geofabrik.kanto-260721.k7-directed",
     "shutoko.route.k7-northwest.2026-07-23",
     "shutoko.guide.k7-aoba.2026-07-23",
-    "shutoko.guide.k7-kohoku.2026-07-23"
+    "shutoko.guide.k7-kohoku.2026-07-23",
+    "yokohama.k7-northwest.brochure.2026-07-23"
   ],
   "layout_evidence_source_ids": [
     "osm.geofabrik.kanto-260721.k7-directed"
@@ -208,11 +231,44 @@
         "osm.geofabrik.kanto-260721.k7-directed",
         "shutoko.guide.k7-kohoku.2026-07-23"
       ]
+    },
+    {
+      "claim_id": "kohoku-exit-source-adjacency",
+      "value": "The pinned OSM extract contains three motor-road successors from the Yokohama Kohoku exit terminal: two named one-way Kawamuki Line carriageways and one unnamed tertiary way without an explicit oneway tag. The municipal brochure confirms the facility-to-Kawamuki-Line connection but does not independently classify each source way.",
+      "osm_way_ids": [
+        734299106,
+        734299108,
+        734299111,
+        776884422
+      ],
+      "source_reference_ids": [
+        "osm.geofabrik.kanto-260721.k7-directed",
+        "yokohama.k7-northwest.brochure.2026-07-23"
+      ]
     }
   ],
+  "successor_audit": {
+    "audit_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.successor-audit.2026-07-23",
+    "state": "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE",
+    "navigation_authority": false,
+    "unresolved_legal_successors": [
+      {
+        "incoming_way_id": 734299106,
+        "via_node_id": 7473451738,
+        "way_id": 776884422,
+        "direction": "FORWARD",
+        "reason_code": "NO_INDEPENDENT_ROAD_LEVEL_DIRECTION_OR_MOVEMENT_REVIEW"
+      }
+    ],
+    "release_blockers": [
+      "OSM way 776884422 is physically source-adjacent and bidirectional by missing-oneway semantics, but its exact road identity, permitted exit movement, and current direction have no independent road-level review.",
+      "Source adjacency completeness does not establish complete legal successor coverage."
+    ]
+  },
   "release_blockers": [
     "The directed database is OSM-derived community data and has not passed an independent lawful field review.",
-    "The two divergence alternatives are source-bound candidates, not a complete released graph of every legal successor beyond the bounded slice.",
+    "The fourteen-checkpoint source-adjacency audit is exact, but OSM way 776884422 at the Kohoku exit has no independent road-level direction or movement review.",
+    "The two expressway divergence alternatives are source-bound candidates, not a complete released graph beyond the bounded slice.",
     "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
     "In-app OSM attribution and derivative-database distribution integration are not implemented.",
     "Realtime operating state remains unconfirmed."

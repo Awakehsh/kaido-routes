@@ -78,6 +78,13 @@ auditability, but its `CANDIDATE` state cannot create active-route highlighting,
 position, progress, recovery, or guidance. Raw source geometry is not the
 released Kaido schematic.
 
+The evidence view may report that all 14 source-adjacency checkpoints match, but
+must separately show `LEGAL REVIEW INCOMPLETE`. At the Yokohama Kohoku surface
+terminal it must disclose three source-adjacent motor-road ways, including the
+unnamed OSM way `776884422` whose direction and permitted movement have no
+independent road-level review. It must not simplify this into two reviewed exits
+or display a production route through the unresolved way.
+
 ## Current sources
 
 - [Shuto Navi Map, current on 2026-07-01](https://www.shutoko.jp/use/network/navimap/)

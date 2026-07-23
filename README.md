@@ -219,15 +219,22 @@ pinned Geofabrik Kanto 2026-07-21 PBF. It preserves 13 exact one-way OSM ways
 from the Yokohama Aoba toll-plaza split through the K7 Northwest up carriageway
 to the Yokohama Kohoku exit terminal, plus the immediate K7 Yokohama North and
 Daisan-Keihin alternatives at the two operator-reviewed divergences. All 257
-retained nodes, the Aoba incoming/non-route split, two outgoing one-way Kawamuki
-Line surface connections at the Kohoku terminal, way tags, direction,
+retained nodes, the Aoba incoming/non-route split, and all three source-adjacent
+motor-road connections at the Kohoku terminal remain explicit. Two are named
+one-way Kawamuki Line carriageways; the third is an unnamed `tertiary` way
+without an explicit `oneway` tag. Way tags, direction,
 extraction bounds, source hashes, OSM timestamp, and reconstruction commands
-remain explicit. This closes the
-structured directed-candidate gap, not release: topology and layout stay
+remain explicit. A deterministic audit now proves exact source adjacency at 14
+entry, route, divergence, and exit checkpoints with 19 outgoing successors and
+no applicable turn-restriction relation. It deliberately reports legal review
+as incomplete because the third surface way lacks independent road-level
+direction and movement evidence. This closes the structured directed-candidate
+gap, not release: topology and layout stay
 `CANDIDATE` until independent lawful field/topology review, production layout,
 attribution integration, and realtime review are complete. KR-D22 proves that
 the internally coherent 13-occurrence, 15-edge artifact still fails release
-with only the two unreleased-evidence issues.
+with only the two unreleased-evidence issues. KR-D23 proves that source-complete
+successor enumeration cannot substitute for legal review.
 
 The feasibility core currently executes portable scenarios for twenty-nine hard
 properties that must remain proven as the product expands:

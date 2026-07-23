@@ -26,9 +26,11 @@ tag, and coordinate lineage needed to review:
 - the later Yokohama Kohoku exit versus Daisan-Keihin divergence; and
 - one immediate alternative at each of those two decisions.
 
-It also retains the Aoba incoming/non-route split and the two one-way
-`川向線` ways connected to the Kohoku exit terminal as facility-boundary
-evidence. Those surface ways are not silently appended to the Shuto RoutePlan.
+It also retains the Aoba incoming/non-route split and all three motor-road ways
+leaving the Kohoku exit terminal as facility-boundary evidence. Two are named
+one-way `川向線` carriageways. OSM way `776884422` is an unnamed `tertiary`
+way without an explicit `oneway` tag. None of those surface ways is silently
+appended to the Shuto RoutePlan.
 
 It has no navigation authority and is not a complete interchange database.
 
@@ -67,8 +69,16 @@ python3 scripts/build_k7_osm_route_atlas_candidate.py \
   --review data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-review.json \
   --database-output data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json \
   --candidate-output data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json \
-  --scenario-output e2e/scenarios/kr-d22-osm-directed-k7-candidate-remains-blocked.json
+  --scenario-output e2e/scenarios/kr-d22-osm-directed-k7-candidate-remains-blocked.json \
+  --successor-audit-output data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json \
+  --successor-scenario-output e2e/scenarios/kr-d23-k7-source-successors-legal-review-blocked.json
 ```
+
+The successor audit must find exactly 14 checkpoints and 19 outgoing
+motor-road successors. It fails on an omitted or unexpected way, direction
+drift, or an unreviewed applicable turn restriction. A passing source audit
+does not release legal movement evidence: the current report intentionally
+keeps OSM way `776884422` unresolved.
 
 The source extract and parent PBF are not part of the Apache-licensed source
 tree. Any redistributed derivative database must retain ODbL terms,

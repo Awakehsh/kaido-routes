@@ -44,6 +44,14 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
             "e2e/scenarios/"
             "kr-d22-osm-directed-k7-candidate-remains-blocked.json"
         )
+        self.successor_audit = load(
+            "data/route-atlas/osm-derived/"
+            "k7-northwest-260721-successor-audit.json"
+        )
+        self.successor_scenario = load(
+            "e2e/scenarios/"
+            "kr-d23-k7-source-successors-legal-review-blocked.json"
+        )
 
     def test_candidate_rebuild_is_deterministic_and_non_authoritative(
         self,
@@ -128,7 +136,44 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
                 way["id"]
                 for way in boundary["exit_surface_successor_ways"]
             ],
-            [734299108, 734299111],
+            [734299108, 734299111, 776884422],
+        )
+
+    def test_successor_audit_records_complete_source_adjacency_without_release(
+        self,
+    ) -> None:
+        summary = self.successor_audit["summary"]
+        self.assertEqual(summary["checkpoint_count"], 14)
+        self.assertEqual(summary["observed_successor_count"], 19)
+        self.assertTrue(summary["source_adjacency_exact"])
+        self.assertFalse(summary["legal_review_complete"])
+        self.assertEqual(summary["unresolved_legal_successor_count"], 1)
+        self.assertEqual(
+            self.successor_audit["source"]["bounded_extract_sha256"],
+            self.database["source"]["bounded_extract_sha256"],
+        )
+        self.assertEqual(self.successor_audit["licence"], "ODbL-1.0")
+        self.assertEqual(
+            self.successor_audit["attribution"],
+            "© OpenStreetMap contributors",
+        )
+        exit_checkpoint = next(
+            checkpoint
+            for checkpoint in self.successor_audit["checkpoints"]
+            if checkpoint["checkpoint_id"] == "after-osm-way-734299106"
+        )
+        self.assertEqual(
+            [
+                successor["way_id"]
+                for successor in exit_checkpoint["observed_successors"]
+            ],
+            [734299108, 734299111, 776884422],
+        )
+        self.assertEqual(self.successor_scenario["id"], "KR-D23")
+        self.assertFalse(
+            self.successor_scenario["given"]["system_state"][
+                "legal_review_complete"
+            ]
         )
 
 

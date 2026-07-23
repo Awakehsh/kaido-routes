@@ -12,6 +12,12 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
+from audit_osm_directed_successors import (
+    SuccessorAuditError,
+    build_audit,
+    build_scenario as build_successor_scenario,
+)
+
 
 EXPECTED_SCHEMA_VERSION = "1.0"
 EXPECTED_CANDIDATE_STATE = "CANDIDATE"
@@ -31,6 +37,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--database-output", required=True, type=Path)
     parser.add_argument("--candidate-output", required=True, type=Path)
     parser.add_argument("--scenario-output", type=Path)
+    parser.add_argument("--successor-audit-output", type=Path)
+    parser.add_argument("--successor-scenario-output", type=Path)
     return parser.parse_args()
 
 
@@ -367,12 +375,24 @@ def build_database(
         raise DirectedCandidateBuildError(
             "facility boundary connection has drifted"
         )
-    expected_surface_tags = boundary_checks.get(
-        "required_exit_surface_tags",
-        {},
+    expected_surface_tags_by_way = boundary_checks.get(
+        "required_exit_surface_tags_by_way",
     )
+    if (
+        not isinstance(expected_surface_tags_by_way, dict)
+        or set(expected_surface_tags_by_way)
+        != {str(way_id) for way_id in exit_surface_successor_ids}
+    ):
+        raise DirectedCandidateBuildError(
+            "exit surface tag requirements have drifted"
+        )
     for way_id in exit_surface_successor_ids:
         tags = boundary_ways[way_id]["tags"]
+        expected_surface_tags = expected_surface_tags_by_way[str(way_id)]
+        if not isinstance(expected_surface_tags, dict):
+            raise DirectedCandidateBuildError(
+                f"exit surface tag requirements are invalid for OSM way {way_id}"
+            )
         if any(
             tags.get(key) != value
             for key, value in expected_surface_tags.items()
@@ -524,6 +544,9 @@ def build_candidate(
     exit_surface_successors = facility_boundary.get(
         "exit_surface_successor_ways"
     )
+    required_exit_tags_by_way = boundary_checks.get(
+        "required_exit_surface_tags_by_way"
+    )
     if (
         not isinstance(entry_predecessor, dict)
         or entry_predecessor.get("id")
@@ -536,6 +559,12 @@ def build_candidate(
         or entry_nonroute_successor.get("nodes", [])[:1]
         != [review["route"]["entry_node_id"]]
         or not isinstance(exit_surface_successors, list)
+        or not isinstance(required_exit_tags_by_way, dict)
+        or set(required_exit_tags_by_way)
+        != {
+            str(way_id)
+            for way_id in boundary_checks["exit_surface_successor_way_ids"]
+        }
         or [
             way.get("id")
             for way in exit_surface_successors
@@ -547,9 +576,10 @@ def build_candidate(
             != [review["route"]["exit_node_id"]]
             or any(
                 way.get("tags", {}).get(key) != value
-                for key, value in boundary_checks[
-                    "required_exit_surface_tags"
-                ].items()
+                for key, value in required_exit_tags_by_way.get(
+                    str(way.get("id")),
+                    {},
+                ).items()
             )
             for way in exit_surface_successors
         )
@@ -945,10 +975,16 @@ def main() -> int:
     try:
         source_extract = load_object(arguments.source_extract)
         review = load_object(arguments.review)
+        source_extract_sha256 = sha256(arguments.source_extract)
+        successor_audit = build_audit(
+            source_extract,
+            review,
+            source_extract_sha256,
+        )
         database = build_database(
             source_extract,
             review,
-            sha256(arguments.source_extract),
+            source_extract_sha256,
         )
         candidate = build_candidate(database, review)
         write_json(database, arguments.database_output)
@@ -958,14 +994,34 @@ def main() -> int:
                 build_scenario(candidate, database, review),
                 arguments.scenario_output,
             )
-    except (DirectedCandidateBuildError, OSError) as error:
+        if arguments.successor_audit_output is not None:
+            write_json(
+                successor_audit,
+                arguments.successor_audit_output,
+            )
+        if arguments.successor_scenario_output is not None:
+            write_json(
+                build_successor_scenario(
+                    candidate,
+                    successor_audit,
+                    review,
+                ),
+                arguments.successor_scenario_output,
+            )
+    except (
+        DirectedCandidateBuildError,
+        OSError,
+        SuccessorAuditError,
+    ) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print(
         "PASS: built ODbL-isolated K7 directed candidate with "
         f"{len(database['route']['way_ids'])} route ways, "
         f"{len(database['divergence_alternatives'])} alternatives, and "
-        f"{len(database['nodes'])} retained nodes; navigation remains blocked"
+        f"{len(database['nodes'])} retained nodes; audited "
+        f"{successor_audit['summary']['checkpoint_count']} successor "
+        "checkpoints; navigation remains blocked"
     )
     return 0
 

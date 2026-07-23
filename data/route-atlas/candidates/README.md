@@ -59,20 +59,29 @@ candidate from one undirected MLIT centerline occurrence to:
 - one explicit immediate alternative at each of the two divergences.
 
 The source-bound facility checks additionally retain the Aoba incoming and
-non-route split ways plus two one-way `川向線` successors at the Kohoku surface
-terminal. Surface egress remains a separate bounded leg; these records prove
-the candidate does not end at an unconnected coordinate.
+non-route split ways plus all three source-adjacent motor-road successors at the
+Kohoku surface terminal. Two are named one-way `川向線` ways. OSM way
+`776884422` is an unnamed `tertiary` way without an explicit `oneway` tag.
+Surface egress remains a separate bounded leg; these records prove the candidate
+does not end at an unconnected coordinate without claiming that every surface
+movement has completed legal review.
 
 The underlying database is isolated under
 `data/route-atlas/osm-derived/` and remains ODbL-1.0 data with OpenStreetMap
 contributor attribution. Parent PBF and bounded-extract hashes, source
 timestamp, extraction bounds, pyosmium version, exact way IDs, and
-reconstruction commands are retained.
+reconstruction commands are retained. The generated ODbL audit under
+`data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json`
+compares every declared successor with every motor-road way leaving 14 exact
+checkpoint nodes. Its 19 source successors match exactly and no applicable
+turn-restriction relation is present in the pinned extract.
 
-The official Aoba and Kohoku guides corroborate the selected movement semantics
-but do not relicense the OSM database or become layout assets. Both candidate
+The official Aoba and Kohoku guides corroborate the selected expressway movement
+semantics, while the Yokohama municipal brochure confirms that the facility
+connects to Kawamuki Line. None independently classifies OSM way `776884422`;
+none relicenses the OSM database or becomes a layout asset. Both candidate
 evidence states therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful
-field/topology review, production layout review, in-product attribution, and
+road-level review, production layout review, in-product attribution, and
 realtime review remain open.
 
 KR-D22 executes the complete 13-occurrence / 15-edge artifact and requires
@@ -82,3 +91,7 @@ release validation to fail with only:
 UNRELEASED_ATLAS_EVIDENCE
 UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 ```
+
+KR-D23 separately requires the same release block after the exact source
+successor audit passes. Source adjacency completeness is not legal-successor
+release evidence.

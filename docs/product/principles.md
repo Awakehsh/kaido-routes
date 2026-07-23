@@ -65,7 +65,10 @@ traffic control.
     `RoutePlan`, current occurrence, passed and future occurrences, repeated
     traversals, and positioning uncertainty remain distinguishable. A local
     approach-aligned junction inset may clarify the next reviewed decision
-    without rotating or erasing the atlas.
+    without rotating or erasing the atlas. Simplification must preserve the
+    familiar relative placement and silhouette of the supported Shuto network
+    from current operator evidence; it must not become an arbitrary loop diagram
+    or copy the operator's map artwork.
 
 ## First product slice
 

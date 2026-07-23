@@ -332,6 +332,12 @@ That is a development fact, not yet the minimum deployment target.
   frame so the driver can retain network context. An approach-aligned
   `JunctionViewDefinition` inset may expand near a reviewed decision, but it
   does not rotate, replace, or become the authority for the atlas.
+- The schematic may simplify distance and dense junction spacing, but it
+  preserves the recognizable relative geography of the released Shuto slice:
+  central and outer route structure, radial corridors, the Bayshore axis, Tokyo
+  Bay, and the Tokyo-to-Yokohama relationship. Kaido generates this geometry
+  from its own reviewed data and styling; operator map images, labels, and
+  artwork are evidence references, not distributable presentation assets.
 - The atlas is derived from the active versioned network snapshot and
   `RoutePlan`. It distinguishes the current occurrence, passed and future
   occurrences, repeated traversals, recovery and egress paths, and

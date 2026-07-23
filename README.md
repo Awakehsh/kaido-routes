@@ -184,12 +184,12 @@ The full-network recognition layer is now data-derived instead of hand drawn.
 `RouteAtlasContextBundle` accepts only `CONTEXT_ONLY` geometry with a matching
 source record, current-state scope, CC BY 4.0 attribution and transformation
 notice, reviewed source-archive SHA-256, fixed north-up projection, and exact
-coverage counters. The pinned MLIT N06-2025 current-state archive produces 85
-Shuto source features, 85 paths, 3,546 unsimplified JGD2011 `EPSG:6668`
-vertices, and 25 route
-name strings. The operator's current route-mark table lists 26 names and
-separately identifies K7 Yokohama Northwest, so N06 naming cannot supply current
-labels or route shields. This gives the presentation a recognizable
+coverage counters. The pinned MLIT N06-2025 current-state archive produces 86
+Shuto source features, 86 paths, 3,584 unsimplified JGD2011 `EPSG:6668`
+vertices, and 26 route-name strings. Twenty-five operator names match directly.
+The remaining source record is the 38-vertex `高速横浜環状北西線`; one dated,
+checksummed operator-page reconciliation maps it to K7 Yokohama Northwest for
+recognition only. This gives the presentation a recognizable
 full-network frame but no
 direction, legal junction movement, selectable topology, RoutePlan occurrence,
 position, or realtime authority. KR-D20 proves that promotion to navigation
@@ -198,14 +198,23 @@ reviewed operator map dated 2026-07-01 remains a later currentness comparison,
 not copied data or proof that a navigable topology is released.
 
 A renderer-neutral recognition design now places Kaido-owned route-code
-capsules only on source vertices whose MLIT route name has an explicit match in
-the operator's current 26-route table. Twenty-five operator names are
-represented. `高速神奈川7号横浜北西線` remains withheld because N06 does not
-identify it separately. The recognition layout is `REVIEW_ONLY`, non-selectable,
-and non-navigable; it improves familiar network recognition without pretending
-that route direction or connectivity has been released.
+capsules only on source vertices whose MLIT route name has a direct or explicitly
+reconciled match in the operator's current 26-route table. All 26 operator names
+are represented. The recognition layout is `REVIEW_ONLY`, non-selectable, and
+non-navigable; it improves familiar network recognition without pretending that
+route direction or connectivity has been released.
 
-The feasibility core currently executes portable scenarios for twenty-eight hard
+The first real-source directed atlas candidate is also tracked without promoting
+it to release data. It binds the K7 Northwest up direction from the exact
+Yokohama Aoba entrance identity to the Yokohama Kohoku exit identity, reverses
+all 38 retained MLIT centerline vertices into RoutePlan order, and resolves four
+dated, checksummed MLIT/operator sources. The candidate remains
+`OFFICIAL_CHECKED`: the MLIT line has no carriageway, ramp, or legal-successor
+identity, operator diagrams are not distributable layout assets, and field,
+production-layout, and realtime reviews remain open. KR-D21 proves that only
+`UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE` and `UNRELEASED_ATLAS_EVIDENCE` block it.
+
+The feasibility core currently executes portable scenarios for twenty-nine hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -274,6 +283,8 @@ properties that must remain proven as the product expands:
 28. full-network geographic context remains permanently non-navigable and fails
     closed on source, licence, projection, coverage, geometry, or authority
     drift.
+29. a real official-checked directed atlas candidate remains blocked until both
+    its topology evidence and production layout are explicitly released.
 
 ## Repository map
 

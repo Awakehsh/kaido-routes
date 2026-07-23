@@ -226,13 +226,65 @@ def validated_catalog(
             "catalog-to-context coverage mismatch: "
             f"missing catalog matches {missing}; missing context geometry {extra}"
         )
-    if len(matched_context_names) != 25 or len(unmatched_ids) != 1:
+    if len(matched_context_names) != 26 or unmatched_ids:
         raise DesignRenderError(
-            "expected 25 matched context names and one unmatched operator route"
+            "expected all 26 operator routes to match context geometry"
         )
+    if context_reference.get("matched_route_count") != len(matched_context_names):
+        raise DesignRenderError("catalog matched-route summary has drifted")
     declared_unmatched = context_reference.get("unmatched_operator_route_ids")
     if not isinstance(declared_unmatched, list) or set(declared_unmatched) != unmatched_ids:
         raise DesignRenderError("catalog unmatched-route summary has drifted")
+
+    reconciliations = catalog.get("naming_reconciliations")
+    if not isinstance(reconciliations, list) or len(reconciliations) != 1:
+        raise DesignRenderError(
+            "catalog must preserve the one reviewed naming reconciliation"
+        )
+    reconciliation = reconciliations[0]
+    if not isinstance(reconciliation, dict):
+        raise DesignRenderError("catalog naming reconciliation is not an object")
+    route_id = reconciliation.get("operator_route_id")
+    context_name = reconciliation.get("context_route_name_ja")
+    feature_id = reconciliation.get("context_source_feature_id")
+    record_id = reconciliation.get("context_source_record_id")
+    source_url = reconciliation.get("operator_source_url")
+    checksum = reconciliation.get("operator_content_sha256")
+    checked_at = reconciliation.get("checked_at")
+    joint_names = (
+        reconciliation.get("context_start_joint_ja"),
+        reconciliation.get("context_end_joint_ja"),
+    )
+    reconciled_route = route_by_id.get(route_id)
+    matching_paths = [
+        path
+        for path in context.get("paths", [])
+        if isinstance(path, dict)
+        and path.get("route_name_ja") == context_name
+        and path.get("source_feature_id") == feature_id
+        and path.get("source_record_id") == record_id
+    ]
+    if (
+        route_id != "shutoko.k7.yokohama-northwest"
+        or reconciled_route is None
+        or reconciled_route.get("context_match") != "MATCHED"
+        or reconciled_route.get("context_route_name_ja") != context_name
+        or context_name != "高速横浜環状北西線"
+        or len(matching_paths) != 1
+        or not isinstance(source_url, str)
+        or not source_url.startswith("https://www.shutoko.jp/")
+        or not isinstance(checksum, str)
+        or len(checksum) != 64
+        or any(character not in "0123456789abcdef" for character in checksum)
+        or not all(isinstance(value, str) and value for value in joint_names)
+    ):
+        raise DesignRenderError("K7 Northwest naming reconciliation has drifted")
+    try:
+        date.fromisoformat(checked_at)
+    except (TypeError, ValueError) as error:
+        raise DesignRenderError(
+            "K7 Northwest reconciliation has an invalid checked date"
+        ) from error
     return route_by_id
 
 
@@ -376,7 +428,7 @@ def build_mark_group(
          data-catalog-id="{html.escape(str(catalog["catalog_id"]))}"
          data-layout-id="{html.escape(str(layout["layout_id"]))}">
         <title>Current Shuto route-code recognition reference</title>
-        <desc>Kaido-owned route-code capsules snapped to matched MLIT context vertices. Twenty-five of twenty-six current operator route names are represented. Yokohama Northwest Route K7 is withheld because the context source does not identify it separately. This layer is not selectable or navigable.</desc>
+        <desc>Kaido-owned route-code capsules snapped to matched MLIT context vertices. All twenty-six current operator route names are represented. Yokohama Northwest Route K7 is reconciled to the MLIT source record named 高速横浜環状北西線. This layer is not selectable or navigable.</desc>
 {mark_content}
       </g>"""
 
@@ -409,7 +461,7 @@ def render(
 {paths}
   </g>
 {marks}
-  <text class="atlas-context-caption" x="20" y="586">RECOGNITION REFERENCE · 25 / 26 ROUTES PLACED · K7 NW WITHHELD</text>
+  <text class="atlas-context-caption" x="20" y="586">RECOGNITION REFERENCE · 26 / 26 ROUTES PLACED · NAVIGATION BLOCKED</text>
   <style>
     .atlas-context-path {{
       fill: none;
@@ -471,7 +523,7 @@ def main() -> int:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print(
-        "PASS: rendered Route Atlas recognition design with 25 matched "
+        "PASS: rendered Route Atlas recognition design with 26 matched "
         f"operator routes to {args.output}"
     )
     return 0

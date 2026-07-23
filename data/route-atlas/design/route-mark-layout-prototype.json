@@ -5,9 +5,7 @@
   "navigation_authority": false,
   "context_id": "shuto.context.mlit-n06-2025-current",
   "catalog_id": "shutoko.route-marks.operator-review.2026-07-23",
-  "unrepresented_catalog_route_ids": [
-    "shutoko.k7.yokohama-northwest"
-  ],
+  "unrepresented_catalog_route_ids": [],
   "marks": [
     {"mark_id":"mark.c1","route_id":"shutoko.c1","anchor_hint":{"x":0.487,"y":0.445},"label_offset":{"x":-12,"y":14},"density":"PRIMARY"},
     {"mark_id":"mark.c2.west","route_id":"shutoko.c2","anchor_hint":{"x":0.401,"y":0.411},"density":"PRIMARY"},
@@ -35,6 +33,7 @@
     {"mark_id":"mark.k3","route_id":"shutoko.k3.kariba","anchor_hint":{"x":0.275,"y":0.832},"density":"PRIMARY"},
     {"mark_id":"mark.k5","route_id":"shutoko.k5.daikoku","anchor_hint":{"x":0.380,"y":0.765},"density":"PRIMARY"},
     {"mark_id":"mark.k6","route_id":"shutoko.k6.kawasaki","anchor_hint":{"x":0.520,"y":0.675},"density":"PRIMARY"},
-    {"mark_id":"mark.k7","route_id":"shutoko.k7.yokohama-north","anchor_hint":{"x":0.305,"y":0.705},"density":"PRIMARY"}
+    {"mark_id":"mark.k7","route_id":"shutoko.k7.yokohama-north","anchor_hint":{"x":0.305,"y":0.705},"density":"PRIMARY"},
+    {"mark_id":"mark.k7.northwest","route_id":"shutoko.k7.yokohama-northwest","anchor_hint":{"x":0.245,"y":0.667},"label_offset":{"x":-8,"y":-13},"density":"SECONDARY"}
   ]
 }

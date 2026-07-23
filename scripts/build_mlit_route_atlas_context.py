@@ -16,16 +16,19 @@ from typing import Any
 SOURCE_REFERENCE_ID = "mlit.nlni.n06-2025.current-shuto"
 GEOJSON_MEMBER_SUFFIX = "/UTF-8/N06-25_HighwaySection.geojson"
 EXPECTED_COVERAGE = {
-    "source_feature_count": 85,
-    "path_count": 85,
-    "vertex_count": 3546,
-    "route_name_count": 25,
+    "source_feature_count": 86,
+    "path_count": 86,
+    "vertex_count": 3584,
+    "route_name_count": 26,
 }
 EXPECTED_SOURCE_CRS = "urn:ogc:def:crs:EPSG::6668"
 EXPECTED_SOURCE_CRS_ID = "EPSG:6668"
 USE_STATUS = {
     "1": "COMPLETE",
     "2": "PROVISIONAL",
+}
+ADDITIONAL_CURRENT_SHUTO_ROUTE_NAMES = {
+    "高速横浜環状北西線",
 }
 
 
@@ -119,7 +122,10 @@ def selected_features(
                 f"source feature {source_index} has no property object"
             )
         route_name = properties.get("N06_007")
-        if not isinstance(route_name, str) or not route_name.startswith("首都高速"):
+        if not isinstance(route_name, str) or not (
+            route_name.startswith("首都高速")
+            or route_name in ADDITIONAL_CURRENT_SHUTO_ROUTE_NAMES
+        ):
             continue
         if str(properties.get("N06_003")) != "9999":
             continue

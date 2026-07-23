@@ -1,0 +1,217 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D21",
+  "title": "Official-checked K7 Northwest slice remains blocked from release",
+  "layer": "DOMAIN",
+  "tags": ["route-atlas", "real-evidence", "k7", "release-gate"],
+  "purpose": "Keep a real, source-bound directed topology candidate non-navigable until its evidence and layout have passed the separate release review.",
+  "evidence": {
+    "classification": "OFFICIAL_CHECKED",
+    "sources": [
+      {
+        "id": "mlit-n06-2025-k7-northwest",
+        "uri": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html",
+        "checked_at": "2026-07-23",
+        "supports": "Current complete feature 1414 / record EA02_373001 provides 38 undirected centerline vertices from Yokohama Kohoku JCT to Yokohama Aoba under the source name 高速横浜環状北西線."
+      },
+      {
+        "id": "shutoko-k7-northwest-route",
+        "uri": "https://www.shutoko.jp/use/network/map/route-k7ho/",
+        "checked_at": "2026-07-23",
+        "supports": "The operator names the bounded corridor 高速神奈川7号横浜北西線 and lists the directional Yokohama Aoba and Yokohama Kohoku facilities."
+      },
+      {
+        "id": "shutoko-k7-aoba-guide",
+        "uri": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_aoba_200421.pdf",
+        "checked_at": "2026-07-23",
+        "supports": "The operator guide documents the movement from Yokohama Aoba entrance onto Yokohama Northwest Route."
+      },
+      {
+        "id": "shutoko-k7-kohoku-guide",
+        "uri": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_kohoku_200421.pdf",
+        "checked_at": "2026-07-23",
+        "supports": "The operator guide documents the K7 Northwest up-direction approach from the Tomei side to Yokohama Kohoku exit."
+      }
+    ],
+    "limitations": [
+      "The MLIT geometry is an undirected centerline and does not identify carriageways, ramps, or legal successors.",
+      "The operator diagrams are factual review references and are not distributable project layout assets."
+    ],
+    "release_blockers": [
+      "Exact entrance-merge and exit-divergence geometry",
+      "Independent field or licensed directed-graph review",
+      "Released production atlas layout",
+      "Realtime operating-state confirmation"
+    ]
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "shutoko.candidate.2026-07-23.k7-northwest",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.candidate",
+      "network_snapshot_id": "shutoko.candidate.2026-07-23.k7-northwest",
+      "entry_facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+      "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "shutoko.occurrence.k7-northwest.up.aoba-to-kohoku.0",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "shutoko.edge.k7-northwest.up.aoba-to-kohoku"
+        }
+      ]
+    },
+    "inputs": {
+      "route_atlas_sources": [
+        {
+          "source_reference_id": "mlit.nlni.n06-2025.current-shuto",
+          "roles": ["TOPOLOGY_EVIDENCE", "LAYOUT_EVIDENCE"],
+          "authority_name": "Ministry of Land, Infrastructure, Transport and Tourism of Japan",
+          "source_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N06/N06-25/N06-25_GML.zip",
+          "content_sha256": "742c8785dfb2f900f167972abe00d5c36103365c0f9fb11dc8a883aa358ac23e",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "CC-BY-4.0"
+        },
+        {
+          "source_reference_id": "shutoko.route.k7-northwest.2026-07-23",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Metropolitan Expressway Company Limited",
+          "source_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
+          "content_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+        },
+        {
+          "source_reference_id": "shutoko.guide.k7-aoba.2026-07-23",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Metropolitan Expressway Company Limited",
+          "source_url": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_aoba_200421.pdf",
+          "content_sha256": "247e06d15b4391181f5f24c606369e730600abb4f97d649aa12cbd30e708d2d4",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+        },
+        {
+          "source_reference_id": "shutoko.guide.k7-kohoku.2026-07-23",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Metropolitan Expressway Company Limited",
+          "source_url": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_kohoku_200421.pdf",
+          "content_sha256": "64d845c613d32280cb5a230cef7e768284460b86db3043d861b90df9a66c09b1",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+        }
+      ],
+      "route_atlas_topology": {
+        "topology_slice_id": "shutoko.topology.k7-northwest.candidate.2026-07-23",
+        "network_snapshot_id": "shutoko.candidate.2026-07-23.k7-northwest",
+        "evidence": {
+          "state": "OFFICIAL_CHECKED",
+          "checked_at": "2026-07-23",
+          "source_reference_ids": [
+            "mlit.nlni.n06-2025.current-shuto",
+            "shutoko.route.k7-northwest.2026-07-23",
+            "shutoko.guide.k7-aoba.2026-07-23",
+            "shutoko.guide.k7-kohoku.2026-07-23"
+          ]
+        },
+        "nodes": [
+          {"node_id": "shutoko.node.k7-northwest.aoba-up-entry"},
+          {"node_id": "shutoko.node.k7-northwest.kohoku-up-exit"}
+        ],
+        "edges": [
+          {
+            "edge_id": "shutoko.topology-edge.k7-northwest.up.aoba-to-kohoku",
+            "route_entity_id": "shutoko.edge.k7-northwest.up.aoba-to-kohoku",
+            "from_node_id": "shutoko.node.k7-northwest.aoba-up-entry",
+            "to_node_id": "shutoko.node.k7-northwest.kohoku-up-exit",
+            "successor_edge_ids": []
+          }
+        ]
+      },
+      "route_atlas": {
+        "atlas_id": "shutoko.atlas.k7-northwest.candidate.2026-07-23",
+        "network_snapshot_id": "shutoko.candidate.2026-07-23.k7-northwest",
+        "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.candidate",
+        "topology_slice_id": "shutoko.topology.k7-northwest.candidate.2026-07-23",
+        "nodes": [
+          {
+            "topology_node_id": "shutoko.node.k7-northwest.aoba-up-entry",
+            "point": {"x": 0.219115374, "y": 0.649587506}
+          },
+          {
+            "topology_node_id": "shutoko.node.k7-northwest.kohoku-up-exit",
+            "point": {"x": 0.294209865, "y": 0.694281587}
+          }
+        ],
+        "segments": [
+          {
+            "segment_id": "shutoko.segment.k7-northwest.up.aoba-to-kohoku",
+            "topology_edge_id": "shutoko.topology-edge.k7-northwest.up.aoba-to-kohoku",
+            "from_node_id": "shutoko.node.k7-northwest.aoba-up-entry",
+            "to_node_id": "shutoko.node.k7-northwest.kohoku-up-exit",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.219115374, "y": 0.649587506},
+              {"x": 0.294209865, "y": 0.694281587}
+            ]
+          }
+        ],
+        "occurrence_bindings": [
+          {
+            "occurrence_id": "shutoko.occurrence.k7-northwest.up.aoba-to-kohoku.0",
+            "index": 0,
+            "segment_id": "shutoko.segment.k7-northwest.up.aoba-to-kohoku"
+          }
+        ],
+        "evidence": {
+          "state": "OFFICIAL_CHECKED",
+          "checked_at": "2026-07-23",
+          "source_reference_ids": [
+            "mlit.nlni.n06-2025.current-shuto"
+          ]
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "attempt-release",
+      "at_ms": 0,
+      "type": "ROUTE_ATLAS_RELEASE_VALIDATED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "candidate-remains-blocked",
+      "after": "attempt-release",
+      "category": "SAFETY",
+      "subject": "route_atlas.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "Official source review does not silently promote a candidate to released navigation data."
+    },
+    {
+      "id": "topology-release-review-required",
+      "after": "attempt-release",
+      "category": "EVIDENCE",
+      "subject": "route_atlas.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
+      "rationale": "The directed candidate remains distinct from released topology evidence."
+    },
+    {
+      "id": "layout-release-review-required",
+      "after": "attempt-release",
+      "category": "EVIDENCE",
+      "subject": "route_atlas.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "UNRELEASED_ATLAS_EVIDENCE",
+      "rationale": "A source-derived centerline is not a released production atlas layout."
+    }
+  ]
+}

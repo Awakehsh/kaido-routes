@@ -14,11 +14,22 @@
   "context_reference": {
     "context_id": "shuto.context.mlit-n06-2025-current",
     "source_reference_id": "mlit.nlni.n06-2025.current-shuto",
-    "matched_route_count": 25,
-    "unmatched_operator_route_ids": [
-      "shutoko.k7.yokohama-northwest"
-    ]
+    "matched_route_count": 26,
+    "unmatched_operator_route_ids": []
   },
+  "naming_reconciliations": [
+    {
+      "operator_route_id": "shutoko.k7.yokohama-northwest",
+      "context_route_name_ja": "高速横浜環状北西線",
+      "context_source_feature_id": "mlit.n06-2025.feature.1414",
+      "context_source_record_id": "EA02_373001",
+      "context_start_joint_ja": "横浜港北JCT",
+      "context_end_joint_ja": "横浜青葉",
+      "operator_source_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
+      "operator_content_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
+      "checked_at": "2026-07-23"
+    }
+  ],
   "routes": [
     {
       "route_id": "shutoko.c1",
@@ -205,8 +216,8 @@
       "route_id": "shutoko.k7.yokohama-northwest",
       "route_code": "K7",
       "route_name_ja": "高速神奈川7号横浜北西線",
-      "context_route_name_ja": null,
-      "context_match": "UNMATCHED"
+      "context_route_name_ja": "高速横浜環状北西線",
+      "context_match": "MATCHED"
     }
   ]
 }

@@ -359,21 +359,33 @@ authority boundary with synthetic data.
 The first tracked context artifact is reconstructed directly from the checksummed
 MLIT National Land Numerical Information N06-2025 archive. It uses only
 current-state records (`N06_003 == 9999`), designated urban expressways
-(`N06_008 == 5`), and route names beginning with `首都高速`; all selected
-multiline parts and vertices are retained without simplification. The importer
+(`N06_008 == 5`), and route names beginning with `首都高速` plus the separately
+operator-reconciled `高速横浜環状北西線`; all selected multiline parts and
+vertices are retained without simplification. The importer
 requires the source-declared JGD2011 `EPSG:6668` CRS before projection. The pinned
-archive produces 85 source features, 85 paths, 3,546 vertices, and 25 route
+archive produces 86 source features, 86 paths, 3,584 vertices, and 26 route
 names, with one provisional-use path retained and visibly distinguishable.
-Those 25 names are source metadata, not released display labels. The operator's
-current route-mark table lists 26 names and separately identifies K7 Yokohama
-Northwest, which N06-2025 does not expose as a separate selected route-name
-value. This mismatch blocks route shields and label release; it does not by
-itself prove whether the corresponding source geometry is present or absent.
+Those 26 names are source metadata, not released display labels. Twenty-five
+operator route names match directly. Feature 1414 / record `EA02_373001` names
+its Yokohama Kohoku-to-Aoba geometry `高速横浜環状北西線`; one current,
+checksummed operator-page reconciliation maps that bounded feature to K7
+Yokohama Northwest for recognition only.
 Its source reference date is 2025-12-31. The operator's 2026-07-01 Navi Map is
 a later currentness review source, not copied presentation data and not proof of
 directed topology. `kaido-atlas validate` checks the decoded source/context
 bundle, while the Python builder verifies the raw ZIP checksum before producing
 the artifact. None of these checks releases a real Kaido topology slice.
+
+The first real-source directed candidate covers K7 Northwest up from the exact
+Yokohama Aoba entrance identity to the Yokohama Kohoku exit identity. It reverses
+the source-order MLIT feature 1414 geometry into RoutePlan order and preserves
+all 38 vertices. Four dated, checksummed MLIT/operator sources resolve the
+bounded corridor and facility movements. Both topology and layout remain
+`OFFICIAL_CHECKED`: the source geometry has no carriageway, ramp, or
+legal-successor identity, operator diagrams are not distributable Kaido layout
+assets, and production-layout, field, and realtime reviews remain open. KR-D21
+executes the requirement that this candidate fail release with only the two
+unreleased-evidence issues.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.

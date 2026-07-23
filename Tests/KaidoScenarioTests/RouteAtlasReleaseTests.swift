@@ -24,6 +24,39 @@ func routeAtlasReleaseAcceptsCoherentRepeatedOccurrences() throws {
   )
 }
 
+@Test("Real K7 candidate remains blocked only by unreleased evidence")
+func realK7RouteAtlasCandidateRemainsBlocked() throws {
+  let repositoryRoot = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let artifactURL =
+    repositoryRoot
+    .appendingPathComponent("data/route-atlas/candidates", isDirectory: true)
+    .appendingPathComponent(
+      "k7-northwest-up-aoba-to-kohoku-candidate.json"
+    )
+  let artifact = try JSONDecoder().decode(
+    RouteAtlasReleaseArtifact.self,
+    from: Data(contentsOf: artifactURL)
+  )
+
+  do {
+    _ = try RouteAtlasRelease(artifact: artifact)
+    Issue.record("Expected OFFICIAL_CHECKED real data to remain blocked")
+  } catch RouteAtlasReleaseError.invalid(let issues) {
+    #expect(
+      issues.map(\.code)
+        == [
+          "UNRELEASED_ATLAS_EVIDENCE",
+          "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
+        ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Route Atlas release rejects a schematic successor absent from topology")
 func routeAtlasReleaseRejectsInventedConnection() {
   let fixture = routeAtlasFixture()

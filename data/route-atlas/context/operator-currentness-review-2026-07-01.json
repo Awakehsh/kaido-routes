@@ -11,28 +11,32 @@
   "context_source_crs": "EPSG:6668",
   "operator_route_mark_page_url": "https://www.shutoko.jp/use/convenience/infoboard/guidance/",
   "operator_route_name_count": 26,
-  "context_source_route_name_count": 25,
+  "context_source_route_name_count": 26,
   "route_name_comparison": {
-    "status": "MISMATCH",
-    "operator_name_not_separately_identified_by_context_source": [
-      "高速神奈川7号横浜北西線"
-    ],
-    "limitation": "This proves a current naming mismatch only. It does not by itself prove that the corresponding source geometry is present or absent."
+    "status": "RECONCILED",
+    "operator_route_name_ja": "高速神奈川7号横浜北西線",
+    "context_route_name_ja": "高速横浜環状北西線",
+    "context_source_feature_id": "mlit.n06-2025.feature.1414",
+    "context_source_record_id": "EA02_373001",
+    "operator_route_page_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
+    "operator_route_page_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
+    "checked_at": "2026-07-23",
+    "limitation": "This reconciliation supplies non-navigable geometry and factual route naming only. It does not supply carriageway direction, legal movements, or realtime state."
   },
   "outcome": "NAVIGATION_RELEASE_BLOCKED",
   "observations": [
     "The operator identifies the linked full Navi Map as current on 2026-07-01.",
     "The MLIT context dataset predates the operator map and therefore cannot alone establish current navigable coverage.",
     "The operator map was reviewed as an external currentness reference only and is not copied into the repository or generated presentation.",
-    "The operator route-mark table lists 26 route names, while the context source exposes 25 unique route-name strings and does not separately identify 高速神奈川7号横浜北西線.",
-    "No automated segment-by-segment geometry, direction, entrance, exit, or legal-junction-movement reconciliation has been completed."
+    "MLIT feature 1414 / record EA02_373001 is a current complete designated-urban-expressway feature named 高速横浜環状北西線 with 38 retained vertices from 横浜港北JCT to 横浜青葉.",
+    "The operator separately names that corridor 高速神奈川7号横浜北西線, so the recognition catalog records one explicit dated and checksummed naming reconciliation.",
+    "No full-network segment-by-segment geometry, direction, entrance, exit, or legal-junction-movement reconciliation has been completed."
   ],
   "release_blockers": [
     "A released time-versioned directed Shuto topology slice",
     "Exact legal incoming-approach to outgoing-movement evidence",
     "Directional entrance and exit facility coverage",
     "Released route shield and Japanese sign metadata",
-    "Reconciliation of the K7 Yokohama North and Yokohama Northwest naming and geometry boundary",
     "A reviewed production atlas layout bound to the same network snapshot"
   ]
 }

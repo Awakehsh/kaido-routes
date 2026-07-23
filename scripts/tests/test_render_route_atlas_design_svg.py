@@ -62,14 +62,15 @@ class RouteAtlasDesignRendererTests(unittest.TestCase):
         )
 
         self.assertEqual(first, second)
-        self.assertEqual(first.count('class="atlas-route-mark '), 27)
+        self.assertEqual(first.count('class="atlas-route-mark '), 28)
         route_ids = {
             line.split('data-route-id="', 1)[1].split('"', 1)[0]
             for line in first.splitlines()
             if 'data-route-id="' in line
         }
-        self.assertEqual(len(route_ids), 25)
-        self.assertIn("K7 NW WITHHELD", first)
+        self.assertEqual(len(route_ids), 26)
+        self.assertIn("26 / 26 ROUTES PLACED", first)
+        self.assertIn("shutoko.k7.yokohama-northwest", route_ids)
         self.assertIn('data-navigation-authority="false"', first)
 
     def test_catalog_name_drift_fails_closed(self) -> None:
@@ -92,15 +93,27 @@ class RouteAtlasDesignRendererTests(unittest.TestCase):
         ):
             renderer.build_mark_group(self.context, self.catalog, layout)
 
-    def test_unmatched_operator_route_cannot_receive_a_mark(self) -> None:
-        layout = copy.deepcopy(self.layout)
-        layout["marks"][0]["route_id"] = "shutoko.k7.yokohama-northwest"
+    def test_k7_northwest_source_identity_drift_fails_closed(self) -> None:
+        catalog = copy.deepcopy(self.catalog)
+        catalog["naming_reconciliations"][0][
+            "context_source_feature_id"
+        ] = "mlit.n06-2025.feature.9999"
 
         with self.assertRaisesRegex(
             renderer.DesignRenderError,
-            "references an unmatched route",
+            "K7 Northwest naming reconciliation has drifted",
         ):
-            renderer.build_mark_group(self.context, self.catalog, layout)
+            renderer.build_mark_group(self.context, catalog, self.layout)
+
+    def test_k7_northwest_reconciliation_cannot_be_removed(self) -> None:
+        catalog = copy.deepcopy(self.catalog)
+        catalog["naming_reconciliations"] = []
+
+        with self.assertRaisesRegex(
+            renderer.DesignRenderError,
+            "one reviewed naming reconciliation",
+        ):
+            renderer.build_mark_group(self.context, catalog, self.layout)
 
     def test_navigation_authority_is_rejected(self) -> None:
         layout = copy.deepcopy(self.layout)

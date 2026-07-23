@@ -13,8 +13,9 @@ dataset. The generator:
 
 1. verifies the downloaded ZIP against the separately reviewed SHA-256 in
    `mlit-n06-2025-current-source.json`;
-2. selects records with `N06_003 == 9999`, `N06_008 == 5`, and a Japanese
-   route name beginning with `首都高速`;
+2. selects records with `N06_003 == 9999`, `N06_008 == 5`, and either a
+   Japanese route name beginning with `首都高速` or the separately reconciled
+   `高速横浜環状北西線`;
 3. accepts use status `1` (complete) and `2` (provisional);
 4. preserves every selected feature, multiline part, and source vertex;
 5. verifies the declared JGD2011 `EPSG:6668` source CRS and applies one north-up
@@ -25,14 +26,13 @@ No geometry simplification, hand redrawing, inferred connection, inferred
 direction, inferred JCT movement, route shield, or localized road label is
 introduced.
 
-The 25 unique Japanese strings in the context artifact are source properties,
-not current display-label authority. The operator's current route-mark table
-lists 26 route names and separately identifies `高速神奈川7号横浜北西線`, while
-N06-2025 does not expose that name as a separate selected value. This naming
-mismatch blocks treating the context source as a complete route-label
-authority and does not, by itself, establish whether the corresponding geometry
-is present or absent. Separately reviewed exact matches may appear only in the
-non-navigable recognition reference described below.
+The 26 unique Japanese strings in the context artifact are source properties,
+not current display-label authority. N06-2025 feature 1414 / record
+`EA02_373001` names its 38-vertex Yokohama Kohoku-to-Aoba geometry
+`高速横浜環状北西線`. The operator's current route page names that same bounded
+corridor `高速神奈川7号横浜北西線`. The recognition catalog records this one
+dated, checksummed naming reconciliation explicitly; no prefix filter or visual
+proximity may silently create the mapping.
 
 The source reference date is 2025-12-31. Operator material dated after that date
 must be reviewed separately before a navigable Kaido topology release can claim
@@ -53,12 +53,13 @@ only after:
 
 1. one operator route entry explicitly matches one N06 context route name;
 2. the mark anchor snaps to a retained vertex of that matched source route; and
-3. every matched context route is represented while every unmatched operator
-   route remains declared.
+3. every matched context route is represented; and
+4. the one K7 Northwest naming reconciliation resolves the exact MLIT feature
+   and record plus a dated, checksummed current operator page.
 
-The current result represents 25 operator route names and withholds
-`高速神奈川7号横浜北西線`. It is a `REVIEW_ONLY` recognition reference and
-cannot authorize selection, direction, connectivity, position, or navigation.
+The current result represents all 26 operator route names. It remains a
+`REVIEW_ONLY` recognition reference and cannot authorize selection, direction,
+connectivity, position, or navigation.
 
 ## Licence and attribution
 

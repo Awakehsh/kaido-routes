@@ -11,5 +11,5 @@
   "licence_identifier": "CC-BY-4.0",
   "usage_scope": "CURRENT_STATE_ONLY",
   "attribution": "National Land Numerical Information (Highway Time Series, N06-2025), Ministry of Land, Infrastructure, Transport and Tourism of Japan",
-  "transformation_disclosure": "Kaido Routes used only current-state records (end year 9999), filtered designated urban expressway features whose route name begins with 首都高速, retained complete and provisional-use geometries without vertex simplification, and projected JGD2011 EPSG:6668 coordinates into a north-up local equirectangular normalized display space. The result is geographic context only and has no direction, legal-movement, RoutePlan, or realtime authority."
+  "transformation_disclosure": "Kaido Routes used only current-state records (end year 9999), filtered designated urban expressway features whose route name begins with 首都高速 plus the separately operator-reconciled 高速横浜環状北西線 record, retained complete and provisional-use geometries without vertex simplification, and projected JGD2011 EPSG:6668 coordinates into a north-up local equirectangular normalized display space. The result is geographic context only and has no direction, legal-movement, RoutePlan, or realtime authority."
 }

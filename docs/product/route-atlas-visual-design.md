@@ -33,11 +33,13 @@ name has an explicit match to one MLIT context route and its anchor snaps to a
 vertex of that matched route. The resulting layer is a recognition reference,
 not selectable topology, direction, legal movement, or route authority.
 
-The operator table reviewed on 2026-07-23 lists 26 route names. The MLIT context
-contains 25 matched names and does not separately identify
-`高速神奈川7号横浜北西線`. The design must therefore withhold that separate
-route placement. It may not infer the missing boundary or geometry from visual
-proximity.
+The operator table reviewed on 2026-07-23 lists 26 route names. The MLIT source
+contains 25 direct route-name matches plus feature 1414 / record
+`EA02_373001`, whose 38-vertex Yokohama Kohoku-to-Aoba geometry is named
+`高速横浜環状北西線`. A separate current operator page names that bounded
+corridor `高速神奈川7号横浜北西線`. The catalog records this one explicit,
+dated, checksummed reconciliation, allowing all 26 route names to appear
+without inferring geometry from visual proximity.
 
 ## Density
 

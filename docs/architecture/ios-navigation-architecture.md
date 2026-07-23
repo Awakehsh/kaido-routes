@@ -398,9 +398,12 @@ The source-bound facility checks also retain the Aoba incoming/non-route split
 and all three motor-road successors at the Kohoku terminal. Two are named
 one-way `川向線` ways; OSM way `776884422` is an unnamed `tertiary` way
 without an explicit `oneway` tag. Yokohama's 2020 opening notice identifies
-that corridor as the temporary passage inside the land-readjustment area, but
-cannot establish its 2026 physical status, legal direction, or permitted exit
-movement. The derivative database preserves 257 route
+that corridor as the temporary passage then used inside the land-readjustment
+area. A current municipal page reports that surrounding infrastructure work
+completed in March 2022 and the project ended in July 2023, but the final
+replotting map does not map the exact OSM way to a current road identity. Those
+sources cannot establish its present physical status, legal direction, or
+permitted exit movement. The derivative database preserves 257 route
 and alternative nodes, complete
 selected-way tags, parent PBF and bounded-extract hashes, extraction bounds, OSM
 timestamp, and reconstruction tooling. Its 13 route occurrences, 15 topology
@@ -418,6 +421,16 @@ current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime
 review. KR-D22 preserves the directed-candidate boundary; KR-D23 preserves the
 separate source-complete versus legal-review boundary.
+
+The first Kaido-owned K7 schematic candidate replaces raw source geometry only
+in the layout definition. It covers the same 15 topology edges, preserves both
+expressway divergences and all 13 occurrence bindings, and carries a separate
+Apache-2.0 layout source record. The renderer visibly terminates at
+`osm.node.7473451738`; none of the three adjacent surface ways is present in
+the layout. KR-D24 proves that the resulting artifact has no structural release
+issue beyond the two intentional candidate evidence states. This advances
+production layout review without granting topology, surface-movement, or
+navigation authority.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.

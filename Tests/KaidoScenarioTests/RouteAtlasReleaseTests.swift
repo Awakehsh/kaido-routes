@@ -94,6 +94,57 @@ func osmDirectedK7RouteAtlasCandidateRemainsBlocked() throws {
   }
 }
 
+@Test("K7 schematic candidate stops at its reviewed surface boundary")
+func k7SchematicCandidateStopsAtSurfaceBoundary() throws {
+  let repositoryRoot = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let artifactURL =
+    repositoryRoot
+    .appendingPathComponent("data/route-atlas/candidates", isDirectory: true)
+    .appendingPathComponent(
+      "k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json"
+    )
+  let artifact = try JSONDecoder().decode(
+    RouteAtlasReleaseArtifact.self,
+    from: Data(contentsOf: artifactURL)
+  )
+
+  #expect(artifact.definition.segments.count == 15)
+  #expect(artifact.definition.occurrenceBindings.count == 13)
+  let terminal = try #require(
+    artifact.definition.segments.first {
+      $0.topologyEdgeID
+        == "shutoko.topology-edge.osm-way.734299106.forward"
+    }
+  )
+  #expect(terminal.toNodeID == "osm.node.7473451738")
+  #expect(terminal.successorSegmentIDs.isEmpty)
+  #expect(
+    artifact.definition.segments.allSatisfy {
+      !$0.topologyEdgeID.contains("osm-way.734299108.")
+        && !$0.topologyEdgeID.contains("osm-way.734299111.")
+        && !$0.topologyEdgeID.contains("osm-way.776884422.")
+    }
+  )
+
+  do {
+    _ = try RouteAtlasRelease(artifact: artifact)
+    Issue.record("Expected the K7 schematic candidate to remain blocked")
+  } catch RouteAtlasReleaseError.invalid(let issues) {
+    #expect(
+      issues.map(\.code)
+        == [
+          "UNRELEASED_ATLAS_EVIDENCE",
+          "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
+        ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Route Atlas release rejects a schematic successor absent from topology")
 func routeAtlasReleaseRejectsInventedConnection() {
   let fixture = routeAtlasFixture()

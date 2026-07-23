@@ -25,21 +25,21 @@
       "evidence_sha256": []
     },
     {
-      "checkpoint_id": "TEMPORARY_PASSAGE_EAST_MOUTH",
+      "checkpoint_id": "UNRESOLVED_CORRIDOR_EAST_MOUTH",
       "status": "PENDING",
       "required_view": "Both sides of the passage mouth at the exit intersection, including no-entry, one-way, motor-access, closure, and construction signs.",
       "sign_findings": [],
       "evidence_sha256": []
     },
     {
-      "checkpoint_id": "TEMPORARY_PASSAGE_WEST_MOUTH_EASTBOUND",
+      "checkpoint_id": "UNRESOLVED_CORRIDOR_WEST_MOUTH_EASTBOUND",
       "status": "PENDING",
       "required_view": "The west mouth approached toward the exit intersection, including every sign and lane marking controlling eastbound entry.",
       "sign_findings": [],
       "evidence_sha256": []
     },
     {
-      "checkpoint_id": "TEMPORARY_PASSAGE_WEST_MOUTH_WESTBOUND",
+      "checkpoint_id": "UNRESOLVED_CORRIDOR_WEST_MOUTH_WESTBOUND",
       "status": "PENDING",
       "required_view": "The west mouth viewed in the exit-to-west direction, including every sign and lane marking controlling westbound passage.",
       "sign_findings": [],

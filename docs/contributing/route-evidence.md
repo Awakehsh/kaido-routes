@@ -80,6 +80,13 @@ hash bindings, concise findings, conclusions, reviewer, and validity. Passing
 its validator closes one field-review gap; it never grants Route Atlas release
 authority by itself.
 
+Historic construction identity and current area completion must remain separate
+from current road-level identity. The K7 plan records the 2020
+temporary-passage corridor, the surrounding project's 2022 infrastructure
+completion and 2023 closure, and the still-unconfirmed exact current road
+identity as three distinct claims. None substitutes for a current legal
+direction or permitted movement.
+
 ## Contradiction handling
 
 When sources disagree:

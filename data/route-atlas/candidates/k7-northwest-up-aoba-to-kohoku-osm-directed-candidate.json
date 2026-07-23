@@ -1603,6 +1603,30 @@
         ],
         "source_reference_id": "yokohama.kawamuki-opening.2020-02-06",
         "source_url": "https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/2019/0206-kawamukousen.files/0005_20200206.pdf"
+      },
+      {
+        "authority_name": "City of Yokohama",
+        "checked_at": "2026-07-23",
+        "content_sha256": "fe60100d8a73165eaa928d104fc42f9616b9318188a4b127cf968ac6daf960d1",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+        "published_at": "2026-06-02",
+        "roles": [
+          "TOPOLOGY_EVIDENCE"
+        ],
+        "source_reference_id": "yokohama.kawamukou-completion.2026-06-02",
+        "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/jokyo/kukakuseiri/kawamukou/kawamukou.html"
+      },
+      {
+        "authority_name": "City of Yokohama",
+        "checked_at": "2026-07-23",
+        "content_sha256": "58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+        "published_at": "2023-01-12",
+        "roles": [
+          "TOPOLOGY_EVIDENCE"
+        ],
+        "source_reference_id": "yokohama.kawamukou-replotting.2023-01-12",
+        "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/kukappi-/kubetsu/14-tsuzuki.files/0009_20230112.pdf"
       }
     ]
   },
@@ -1748,7 +1772,9 @@
         "shutoko.guide.k7-aoba.2026-07-23",
         "shutoko.guide.k7-kohoku.2026-07-23",
         "yokohama.k7-northwest.brochure.2026-07-23",
-        "yokohama.kawamuki-opening.2020-02-06"
+        "yokohama.kawamuki-opening.2020-02-06",
+        "yokohama.kawamukou-completion.2026-06-02",
+        "yokohama.kawamukou-replotting.2023-01-12"
       ],
       "state": "CANDIDATE"
     },

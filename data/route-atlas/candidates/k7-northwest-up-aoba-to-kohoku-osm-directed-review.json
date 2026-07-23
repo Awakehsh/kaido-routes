@@ -187,6 +187,30 @@
       "published_at": "2020-02-06",
       "checked_at": "2026-07-23",
       "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.kawamukou-completion.2026-06-02",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/jokyo/kukakuseiri/kawamukou/kawamukou.html",
+      "content_sha256": "fe60100d8a73165eaa928d104fc42f9616b9318188a4b127cf968ac6daf960d1",
+      "published_at": "2026-06-02",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.kawamukou-replotting.2023-01-12",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/kukappi-/kubetsu/14-tsuzuki.files/0009_20230112.pdf",
+      "content_sha256": "58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9",
+      "published_at": "2023-01-12",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
     }
   ],
   "topology_evidence_source_ids": [
@@ -195,7 +219,9 @@
     "shutoko.guide.k7-aoba.2026-07-23",
     "shutoko.guide.k7-kohoku.2026-07-23",
     "yokohama.k7-northwest.brochure.2026-07-23",
-    "yokohama.kawamuki-opening.2020-02-06"
+    "yokohama.kawamuki-opening.2020-02-06",
+    "yokohama.kawamukou-completion.2026-06-02",
+    "yokohama.kawamukou-replotting.2023-01-12"
   ],
   "layout_evidence_source_ids": [
     "osm.geofabrik.kanto-260721.k7-directed"
@@ -248,7 +274,7 @@
     },
     {
       "claim_id": "kohoku-exit-source-adjacency",
-      "value": "The pinned OSM extract contains three motor-road successors from the Yokohama Kohoku exit terminal: two named one-way Kawamuki Line carriageways and one unnamed tertiary way without an explicit oneway tag. Yokohama's 2020 opening notice identifies the unnamed way's corridor as the temporary passage inside the land-readjustment area, but does not prove its current legal direction.",
+      "value": "The pinned OSM extract contains three motor-road successors from the Yokohama Kohoku exit terminal: two named one-way Kawamuki Line carriageways and one unnamed tertiary way without an explicit oneway tag. Yokohama's 2020 opening notice identifies the unnamed way's corridor as the temporary passage then used inside the land-readjustment area. The city now reports that surrounding infrastructure work completed in March 2022 and the project ended in July 2023, but the current page and final replotting map do not map that exact OSM way to a current road identity, legal direction, or permitted exit movement.",
       "osm_way_ids": [
         734299106,
         734299108,
@@ -258,7 +284,9 @@
       "source_reference_ids": [
         "osm.geofabrik.kanto-260721.k7-directed",
         "yokohama.k7-northwest.brochure.2026-07-23",
-        "yokohama.kawamuki-opening.2020-02-06"
+        "yokohama.kawamuki-opening.2020-02-06",
+        "yokohama.kawamukou-completion.2026-06-02",
+        "yokohama.kawamukou-replotting.2023-01-12"
       ]
     }
   ],
@@ -271,10 +299,29 @@
       "source_adjacency_exact": true,
       "road_identity": {
         "status": "OFFICIAL_CHECKED",
-        "classification": "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "classification": "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "scope": "CORRIDOR_AT_2020_OPENING",
         "source_published_at": "2020-02-06",
         "source_reference_ids": [
           "yokohama.kawamuki-opening.2020-02-06"
+        ]
+      },
+      "current_area_infrastructure": {
+        "status": "OFFICIAL_CHECKED",
+        "infrastructure_completed_at": "2022-03",
+        "project_closed_at": "2023-07-25",
+        "exact_way_identity_status": "UNCONFIRMED",
+        "source_reference_ids": [
+          "yokohama.kawamukou-completion.2026-06-02",
+          "yokohama.kawamukou-replotting.2023-01-12"
+        ]
+      },
+      "current_road_identity": {
+        "status": "UNCONFIRMED",
+        "classification": "UNCONFIRMED",
+        "source_reference_ids": [
+          "yokohama.kawamukou-completion.2026-06-02",
+          "yokohama.kawamukou-replotting.2023-01-12"
         ]
       },
       "historical_planned_exit_connection": {
@@ -301,17 +348,17 @@
         "via_node_id": 7473451738,
         "way_id": 776884422,
         "direction": "FORWARD",
-        "reason_code": "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED"
+        "reason_code": "CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED"
       }
     ],
     "release_blockers": [
-      "OSM way 776884422 is officially identified as a 2020 land-readjustment temporary passage, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
+      "OSM way 776884422 is historically associated with the 2020 land-readjustment temporary passage. Surrounding infrastructure completion is current-official, but the way's present road identity, physical status, legal direction, and permitted exit movement remain unconfirmed.",
       "Source adjacency completeness does not establish complete legal successor coverage."
     ]
   },
   "release_blockers": [
     "The directed database is OSM-derived community data and has not passed an independent lawful field review.",
-    "The fourteen-checkpoint source-adjacency audit is exact and the third way's 2020 temporary-passage identity is official, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
+    "The fourteen-checkpoint source-adjacency audit is exact. The third way's 2020 temporary-passage corridor and the surrounding project's later completion are official, but the exact way's current road identity, physical status, legal direction, and permitted exit movement remain unconfirmed.",
     "The two expressway divergence alternatives are source-bound candidates, not a complete released graph beyond the bounded slice.",
     "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
     "In-app OSM attribution and derivative-database distribution integration are not implemented.",

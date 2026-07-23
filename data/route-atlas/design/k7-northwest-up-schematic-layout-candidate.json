@@ -1,0 +1,248 @@
+{
+  "schema_version": "1.0",
+  "layout_id": "shutoko.layout.k7-northwest.aoba-up-to-kohoku-up.2026-07-23",
+  "expected_base_atlas_id": "shutoko.atlas.k7-northwest.osm-directed-candidate.2026-07-23",
+  "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+  "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+  "topology_slice_id": "shutoko.topology.k7-northwest.osm-directed-candidate.2026-07-23",
+  "status": "CANDIDATE",
+  "navigation_authority": false,
+  "coordinate_space": "NORMALIZED_NORTH_UP",
+  "authoring_method": "KAIDO_OWNED_SCHEMATIC",
+  "checked_at": "2026-07-23",
+  "source_reference": {
+    "source_reference_id": "kaido.layout.k7-northwest.2026-07-23",
+    "roles": [
+      "LAYOUT_EVIDENCE"
+    ],
+    "authority_name": "Kaido Routes contributors",
+    "source_url": "https://raw.githubusercontent.com/Awakehsh/kaido-routes/main/data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.json",
+    "licence_identifier": "Apache-2.0"
+  },
+  "terminal_boundary": {
+    "topology_node_id": "osm.node.7473451738",
+    "incoming_topology_edge_id": "shutoko.topology-edge.osm-way.734299106.forward",
+    "rendered_successor_topology_edge_ids": [],
+    "unrendered_surface_successor_osm_way_ids": [
+      734299108,
+      734299111,
+      776884422
+    ],
+    "reason_code": "SURFACE_EGRESS_OUTSIDE_REVIEWED_LAYOUT"
+  },
+  "nodes": [
+    {
+      "topology_node_id": "osm.node.4435202077",
+      "point": {
+        "x": 0.7,
+        "y": 0.78
+      }
+    },
+    {
+      "topology_node_id": "osm.node.4741046930",
+      "point": {
+        "x": 0.88,
+        "y": 0.52
+      }
+    },
+    {
+      "topology_node_id": "osm.node.5517714075",
+      "point": {
+        "x": 0.08,
+        "y": 0.18
+      }
+    },
+    {
+      "topology_node_id": "osm.node.5517714083",
+      "point": {
+        "x": 0.54,
+        "y": 0.52
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6439841411",
+      "point": {
+        "x": 0.74,
+        "y": 0.72
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6441357525",
+      "point": {
+        "x": 0.12,
+        "y": 0.3
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6499778544",
+      "point": {
+        "x": 0.12,
+        "y": 0.22
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6503843909",
+      "point": {
+        "x": 0.24,
+        "y": 0.44
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6876530502",
+      "point": {
+        "x": 0.66,
+        "y": 0.88
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6876530524",
+      "point": {
+        "x": 0.73,
+        "y": 0.89
+      }
+    },
+    {
+      "topology_node_id": "osm.node.6988179578",
+      "point": {
+        "x": 0.68,
+        "y": 0.6
+      }
+    },
+    {
+      "topology_node_id": "osm.node.7299284526",
+      "point": {
+        "x": 0.72,
+        "y": 0.66
+      }
+    },
+    {
+      "topology_node_id": "osm.node.7299285384",
+      "point": {
+        "x": 0.88,
+        "y": 0.72
+      }
+    },
+    {
+      "topology_node_id": "osm.node.7301269901",
+      "point": {
+        "x": 0.15,
+        "y": 0.36
+      }
+    },
+    {
+      "topology_node_id": "osm.node.7308295746",
+      "point": {
+        "x": 0.64,
+        "y": 0.82
+      }
+    },
+    {
+      "topology_node_id": "osm.node.7473451738",
+      "point": {
+        "x": 0.78,
+        "y": 0.84
+      }
+    }
+  ],
+  "segments": [
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.574920138.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.692426107.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.692426101.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.850400096.forward",
+      "control_points": [
+        {
+          "x": 0.18,
+          "y": 0.4
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.692755609.forward",
+      "control_points": [
+        {
+          "x": 0.32,
+          "y": 0.48
+        },
+        {
+          "x": 0.44,
+          "y": 0.49
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.692798735.forward",
+      "control_points": [
+        {
+          "x": 0.61,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.686983570.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.782596968.forward",
+      "control_points": [
+        {
+          "x": 0.75,
+          "y": 0.68
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.915062290.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.686983572.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.783581372.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.734299101.forward",
+      "control_points": []
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.734299106.forward",
+      "control_points": [
+        {
+          "x": 0.78,
+          "y": 0.88
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.686983567.forward",
+      "control_points": [
+        {
+          "x": 0.78,
+          "y": 0.56
+        }
+      ]
+    },
+    {
+      "topology_edge_id": "shutoko.topology-edge.osm-way.367046943.forward",
+      "control_points": [
+        {
+          "x": 0.79,
+          "y": 0.75
+        }
+      ]
+    }
+  ]
+}

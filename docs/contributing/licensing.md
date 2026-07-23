@@ -73,6 +73,13 @@ both explicitly marked ODbL-1.0. The Apache-2.0 repository licence still applies
 to the extractor and candidate builders, not to their OSM-derived data output.
 Interactive-map attribution integration remains a release blocker.
 
+The generated K7 schematic SVG is a Produced Work built from that bounded
+database plus a separately tracked Kaido-owned normalized layout. The SVG keeps
+visible OpenStreetMap contributor attribution and metadata identifying the
+underlying ODbL-1.0 topology; the project-authored layout source remains
+Apache-2.0. This separation does not relicense the underlying database or make
+the schematic released navigation evidence.
+
 ## MLIT Route Atlas context boundary
 
 The isolated artifact under `data/route-atlas/context/` is transformed from the

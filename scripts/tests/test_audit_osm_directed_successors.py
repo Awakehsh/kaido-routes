@@ -86,6 +86,9 @@ def fixture() -> tuple[dict, dict, str]:
             {
                 "source_reference_id": "official.historic-connection",
             },
+            {
+                "source_reference_id": "official.area-completion",
+            },
         ],
         "legal_successor_evidence": [
             {
@@ -96,9 +99,24 @@ def fixture() -> tuple[dict, dict, str]:
                 "source_adjacency_exact": True,
                 "road_identity": {
                     "status": "OFFICIAL_CHECKED",
-                    "classification": "SYNTHETIC_TEMPORARY_PASSAGE",
+                    "classification": (
+                        "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE"
+                    ),
+                    "scope": "CORRIDOR_AT_2020_OPENING",
                     "source_published_at": "2020-02-06",
                     "source_reference_ids": ["official.identity"],
+                },
+                "current_area_infrastructure": {
+                    "status": "OFFICIAL_CHECKED",
+                    "infrastructure_completed_at": "2022-03",
+                    "project_closed_at": "2023-07-25",
+                    "exact_way_identity_status": "UNCONFIRMED",
+                    "source_reference_ids": ["official.area-completion"],
+                },
+                "current_road_identity": {
+                    "status": "UNCONFIRMED",
+                    "classification": "UNCONFIRMED",
+                    "source_reference_ids": ["official.area-completion"],
                 },
                 "historical_planned_exit_connection": {
                     "status": "OFFICIAL_CHECKED_AT_PUBLICATION",
@@ -151,7 +169,20 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
         self.assertEqual(result["summary"]["observed_successor_count"], 5)
         self.assertTrue(result["summary"]["source_adjacency_exact"])
         self.assertFalse(result["summary"]["legal_review_complete"])
-        self.assertEqual(result["summary"]["road_identity_reviewed_count"], 1)
+        self.assertEqual(
+            result["summary"]["historical_road_identity_reviewed_count"],
+            1,
+        )
+        self.assertEqual(
+            result["summary"][
+                "current_area_infrastructure_reviewed_count"
+            ],
+            1,
+        )
+        self.assertEqual(
+            result["summary"]["current_road_identity_confirmed_count"],
+            0,
+        )
         self.assertEqual(
             result["summary"]["current_legal_direction_confirmed_count"],
             0,
@@ -201,7 +232,7 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
 
         with self.assertRaisesRegex(
             auditor.SuccessorAuditError,
-            "failing closed on current movement",
+            "unresolved road-level movement",
         ):
             auditor.build_audit(
                 source_extract,

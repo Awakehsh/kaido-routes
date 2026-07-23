@@ -432,8 +432,26 @@
   ],
   "legal_successor_evidence": [
     {
+      "current_area_infrastructure": {
+        "exact_way_identity_status": "UNCONFIRMED",
+        "infrastructure_completed_at": "2022-03",
+        "project_closed_at": "2023-07-25",
+        "source_reference_ids": [
+          "yokohama.kawamukou-completion.2026-06-02",
+          "yokohama.kawamukou-replotting.2023-01-12"
+        ],
+        "status": "OFFICIAL_CHECKED"
+      },
       "current_legal_direction": "UNCONFIRMED",
       "current_physical_status": "UNCONFIRMED",
+      "current_road_identity": {
+        "classification": "UNCONFIRMED",
+        "source_reference_ids": [
+          "yokohama.kawamukou-completion.2026-06-02",
+          "yokohama.kawamukou-replotting.2023-01-12"
+        ],
+        "status": "UNCONFIRMED"
+      },
       "direction": "FORWARD",
       "field_verification_plan_id": "k7-yokohama-kohoku-surface-field-verification",
       "historical_planned_exit_connection": {
@@ -447,7 +465,8 @@
       "permitted_exit_movement": "UNCONFIRMED",
       "release_eligible": false,
       "road_identity": {
-        "classification": "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "classification": "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "scope": "CORRIDOR_AT_2020_OPENING",
         "source_published_at": "2020-02-06",
         "source_reference_ids": [
           "yokohama.kawamuki-opening.2020-02-06"
@@ -463,7 +482,7 @@
   "navigation_authority": false,
   "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
   "release_blockers": [
-    "OSM way 776884422 is officially identified as a 2020 land-readjustment temporary passage, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
+    "OSM way 776884422 is historically associated with the 2020 land-readjustment temporary passage. Surrounding infrastructure completion is current-official, but the way's present road identity, physical status, legal direction, and permitted exit movement remain unconfirmed.",
     "Source adjacency completeness does not establish complete legal successor coverage."
   ],
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.osm-directed.2026-07-23",
@@ -477,12 +496,14 @@
   "state": "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE",
   "summary": {
     "checkpoint_count": 14,
+    "current_area_infrastructure_reviewed_count": 1,
     "current_legal_direction_confirmed_count": 0,
+    "current_road_identity_confirmed_count": 0,
     "field_verification_required": true,
+    "historical_road_identity_reviewed_count": 1,
     "legal_review_complete": false,
     "observed_successor_count": 19,
     "restriction_relation_count": 0,
-    "road_identity_reviewed_count": 1,
     "source_adjacency_exact": true,
     "unresolved_legal_successor_count": 1
   },
@@ -490,7 +511,7 @@
     {
       "direction": "FORWARD",
       "incoming_way_id": 734299106,
-      "reason_code": "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED",
+      "reason_code": "CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED",
       "via_node_id": 7473451738,
       "way_id": 776884422
     }

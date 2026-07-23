@@ -148,7 +148,18 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
         self.assertTrue(summary["source_adjacency_exact"])
         self.assertFalse(summary["legal_review_complete"])
         self.assertEqual(summary["unresolved_legal_successor_count"], 1)
-        self.assertEqual(summary["road_identity_reviewed_count"], 1)
+        self.assertEqual(
+            summary["historical_road_identity_reviewed_count"],
+            1,
+        )
+        self.assertEqual(
+            summary["current_area_infrastructure_reviewed_count"],
+            1,
+        )
+        self.assertEqual(
+            summary["current_road_identity_confirmed_count"],
+            0,
+        )
         self.assertEqual(
             summary["current_legal_direction_confirmed_count"],
             0,
@@ -180,14 +191,14 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
             self.successor_audit["unresolved_legal_successors"][0][
                 "reason_code"
             ],
-            "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED",
+            "CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED",
         )
         passage_evidence = self.successor_audit[
             "legal_successor_evidence"
         ][0]
         self.assertEqual(
             passage_evidence["road_identity"]["classification"],
-            "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+            "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE",
         )
         self.assertEqual(
             passage_evidence["current_legal_direction"],

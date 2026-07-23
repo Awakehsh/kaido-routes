@@ -340,6 +340,10 @@ def legal_successor_evidence(
                 "legal successor evidence identity has drifted"
             )
         road_identity = item.get("road_identity")
+        current_area_infrastructure = item.get(
+            "current_area_infrastructure"
+        )
+        current_road_identity = item.get("current_road_identity")
         historical_connection = item.get(
             "historical_planned_exit_connection"
         )
@@ -353,8 +357,9 @@ def legal_successor_evidence(
             or not item["field_verification_plan_id"]
             or not isinstance(road_identity, dict)
             or road_identity.get("status") != "OFFICIAL_CHECKED"
-            or not isinstance(road_identity.get("classification"), str)
-            or not road_identity["classification"]
+            or road_identity.get("classification")
+            != "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE"
+            or road_identity.get("scope") != "CORRIDOR_AT_2020_OPENING"
             or not isinstance(
                 road_identity.get("source_published_at"),
                 str,
@@ -367,6 +372,34 @@ def legal_successor_evidence(
             or not set(road_identity["source_reference_ids"]).issubset(
                 source_reference_ids
             )
+            or not isinstance(current_area_infrastructure, dict)
+            or current_area_infrastructure.get("status")
+            != "OFFICIAL_CHECKED"
+            or current_area_infrastructure.get("infrastructure_completed_at")
+            != "2022-03"
+            or current_area_infrastructure.get("project_closed_at")
+            != "2023-07-25"
+            or current_area_infrastructure.get("exact_way_identity_status")
+            != "UNCONFIRMED"
+            or not isinstance(
+                current_area_infrastructure.get("source_reference_ids"),
+                list,
+            )
+            or not current_area_infrastructure["source_reference_ids"]
+            or not set(
+                current_area_infrastructure["source_reference_ids"]
+            ).issubset(source_reference_ids)
+            or not isinstance(current_road_identity, dict)
+            or current_road_identity.get("status") != "UNCONFIRMED"
+            or current_road_identity.get("classification") != "UNCONFIRMED"
+            or not isinstance(
+                current_road_identity.get("source_reference_ids"),
+                list,
+            )
+            or not current_road_identity["source_reference_ids"]
+            or not set(
+                current_road_identity["source_reference_ids"]
+            ).issubset(source_reference_ids)
             or not isinstance(historical_connection, dict)
             or historical_connection.get("status")
             != "OFFICIAL_CHECKED_AT_PUBLICATION"
@@ -384,8 +417,9 @@ def legal_successor_evidence(
             ).issubset(source_reference_ids)
         ):
             raise SuccessorAuditError(
-                "legal successor evidence must preserve official identity "
-                "while failing closed on current movement"
+                "legal successor evidence must separate historic corridor "
+                "identity, current area completion, and unresolved road-level "
+                "movement"
             )
         evidence_keys.add(key)
     if evidence_keys != unresolved_keys:
@@ -567,8 +601,17 @@ def build_audit(
             "source_adjacency_exact": True,
             "legal_review_complete": False,
             "unresolved_legal_successor_count": len(unresolved),
-            "road_identity_reviewed_count": sum(
+            "historical_road_identity_reviewed_count": sum(
                 item["road_identity"]["status"] == "OFFICIAL_CHECKED"
+                for item in successor_evidence
+            ),
+            "current_area_infrastructure_reviewed_count": sum(
+                item["current_area_infrastructure"]["status"]
+                == "OFFICIAL_CHECKED"
+                for item in successor_evidence
+            ),
+            "current_road_identity_confirmed_count": sum(
+                item["current_road_identity"]["status"] != "UNCONFIRMED"
                 for item in successor_evidence
             ),
             "current_legal_direction_confirmed_count": sum(
@@ -596,8 +639,7 @@ def build_scenario(
         "schema_version": "1.0",
         "id": "KR-D23",
         "title": (
-            "Historic K7 passage identity does not prove current legal "
-            "movement"
+            "Completed K7 exit-area works do not prove current legal movement"
         ),
         "layer": "DOMAIN",
         "tags": [
@@ -607,9 +649,10 @@ def build_scenario(
             "release-gate",
         ],
         "purpose": (
-            "Prove that exact source adjacency and an official historic road "
-            "identity cannot substitute for current legal direction, "
-            "permitted movement, and production-layout review."
+            "Prove that exact source adjacency, an official historic corridor "
+            "identity, and later area-infrastructure completion cannot "
+            "substitute for the exact road's current identity, legal "
+            "direction, permitted movement, and production-layout review."
         ),
         "evidence": {
             "classification": "OFFICIAL_CHECKED",
@@ -637,16 +680,47 @@ def build_scenario(
                     "checked_at": review["checked_at"],
                     "supports": (
                         "The municipal opening notice identifies the third "
-                        "way's corridor as a temporary passage inside the "
-                        "land-readjustment area."
+                        "way's corridor as the temporary passage then used "
+                        "inside the land-readjustment area."
+                    ),
+                },
+                {
+                    "id": "yokohama-kawamukou-completion-2026",
+                    "uri": next(
+                        reference["source_url"]
+                        for reference in review["source_references"]
+                        if reference["source_reference_id"]
+                        == "yokohama.kawamukou-completion.2026-06-02"
+                    ),
+                    "checked_at": review["checked_at"],
+                    "supports": (
+                        "The current municipal project page reports that "
+                        "surrounding infrastructure work completed in March "
+                        "2022 and the project ended in July 2023."
+                    ),
+                },
+                {
+                    "id": "yokohama-kawamukou-replotting-2023",
+                    "uri": next(
+                        reference["source_url"]
+                        for reference in review["source_references"]
+                        if reference["source_reference_id"]
+                        == "yokohama.kawamukou-replotting.2023-01-12"
+                    ),
+                    "checked_at": review["checked_at"],
+                    "supports": (
+                        "The final municipal replotting map records the "
+                        "completed land parcels but publishes no mapping to "
+                        "the exact OSM way or current traffic direction."
                     ),
                 },
             ],
             "limitations": [
                 (
-                    "The 2020 official identity and planned connection do not "
-                    "prove the temporary passage's 2026 physical status, "
-                    "legal direction, or permitted exit movement."
+                    "The 2020 corridor identity and later area completion do "
+                    "not map the exact OSM way to a current road identity or "
+                    "prove its physical status, legal direction, or permitted "
+                    "exit movement."
                 )
             ],
             "release_blockers": audit["release_blockers"],
@@ -674,8 +748,16 @@ def build_scenario(
                 "unresolved_legal_successor_count": audit["summary"][
                     "unresolved_legal_successor_count"
                 ],
-                "road_identity_reviewed_count": audit["summary"][
-                    "road_identity_reviewed_count"
+                "historical_road_identity_reviewed_count": audit["summary"][
+                    "historical_road_identity_reviewed_count"
+                ],
+                "current_area_infrastructure_reviewed_count": audit[
+                    "summary"
+                ][
+                    "current_area_infrastructure_reviewed_count"
+                ],
+                "current_road_identity_confirmed_count": audit["summary"][
+                    "current_road_identity_confirmed_count"
                 ],
                 "current_legal_direction_confirmed_count": audit["summary"][
                     "current_legal_direction_confirmed_count"
@@ -702,8 +784,9 @@ def build_scenario(
                 "matcher": "EQUALS",
                 "expected": "BLOCKED",
                 "rationale": (
-                    "A historic official road identity does not establish "
-                    "the movement's current lawful state."
+                    "A historic corridor identity and completed surrounding "
+                    "works do not establish the exact road's current lawful "
+                    "state."
                 ),
             },
             {

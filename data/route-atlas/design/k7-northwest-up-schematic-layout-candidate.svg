@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" role="img" aria-labelledby="title description" data-layout-id="shutoko.layout.k7-northwest.aoba-up-to-kohoku-up.2026-07-23" data-navigation-authority="false">
+  <title id="title">K7 Northwest up schematic layout candidate</title>
+  <desc id="description">Kaido-owned fixed north-up schematic from Yokohama Aoba entrance to Yokohama Kohoku exit. It expands two reviewed expressway divergences and stops before all three unreviewed surface successors. Candidate only; not for navigation.</desc>
+  <metadata>© OpenStreetMap contributors; underlying topology ODbL-1.0. Kaido schematic layout Apache-2.0. Candidate checked 2026-07-23.</metadata>
+  <style>
+    .background { fill: #10191e; }
+    .grid { stroke: #26363d; stroke-width: 1; }
+    .schematic-edge { fill: none; stroke: #51636a; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+    .schematic-edge.selected { stroke: #e9edef; }
+    .schematic-edge.alternative { stroke: #74858b; stroke-width: 11; stroke-dasharray: 13 10; }
+    .route-core { fill: none; stroke: #efb640; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .node { fill: #10191e; stroke: #b8c5c9; stroke-width: 3; }
+    .decision { fill: #efb640; stroke: #fff0bc; }
+    .terminal { fill: #f28070; stroke: #ffe3de; }
+    .terminal-bar { stroke: #f28070; stroke-width: 7; stroke-linecap: round; }
+    .label { fill: #e9edef; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 21px; font-weight: 700; }
+    .secondary { fill: #9babb0; font-size: 16px; font-weight: 600; }
+    .status { fill: #f7c0b8; font-size: 15px; font-weight: 800; letter-spacing: 1.2px; }
+    .shield { fill: #10191e; stroke: #efb640; stroke-width: 2; }
+    .shield-text { fill: #efb640; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 22px; font-weight: 900; text-anchor: middle; dominant-baseline: central; }
+    .attribution { fill: #788a91; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; }
+  </style>
+  <rect class="background" width="1000" height="680" rx="28"/>
+  <g opacity=".7">
+    <path class="grid" d="M70 120H930M70 240H930M70 360H930M70 480H930M180 55V625M360 55V625M540 55V625M720 55V625M900 55V625"/>
+  </g>
+  <g id="schematic-segments">
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.574920138.forward" points="138.8,152.2 173.2,173.8"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.692426107.forward" points="173.2,173.8 173.2,217.0"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.692426101.forward" points="173.2,217.0 199.0,249.4"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.850400096.forward" points="199.0,249.4 224.8,271.0 276.4,292.6"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.692755609.forward" points="276.4,292.6 345.2,314.2 448.4,319.6 534.4,335.8"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.692798735.forward" points="534.4,335.8 594.6,352.0 654.8,379.0"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.686983570.forward" points="654.8,379.0 689.2,411.4"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.782596968.forward" points="689.2,411.4 715.0,422.2 706.4,443.8"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.915062290.forward" points="706.4,443.8 672.0,476.2"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.686983572.forward" points="672.0,476.2 620.4,497.8"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.783581372.forward" points="620.4,497.8 637.6,530.2"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.734299101.forward" points="637.6,530.2 697.8,535.6"/>
+    <polyline class="schematic-edge selected" data-topology-edge-id="shutoko.topology-edge.osm-way.734299106.forward" points="697.8,535.6 740.8,530.2 740.8,508.6"/>
+    <polyline class="schematic-edge alternative" data-topology-edge-id="shutoko.topology-edge.osm-way.686983567.forward" points="654.8,379.0 740.8,357.4 826.8,335.8"/>
+    <polyline class="schematic-edge alternative" data-topology-edge-id="shutoko.topology-edge.osm-way.367046943.forward" points="672.0,476.2 749.4,460.0 826.8,443.8"/>
+  </g>
+  <g id="route-core">
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.574920138.forward" points="138.8,152.2 173.2,173.8"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.692426107.forward" points="173.2,173.8 173.2,217.0"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.692426101.forward" points="173.2,217.0 199.0,249.4"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.850400096.forward" points="199.0,249.4 224.8,271.0 276.4,292.6"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.692755609.forward" points="276.4,292.6 345.2,314.2 448.4,319.6 534.4,335.8"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.692798735.forward" points="534.4,335.8 594.6,352.0 654.8,379.0"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.686983570.forward" points="654.8,379.0 689.2,411.4"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.782596968.forward" points="689.2,411.4 715.0,422.2 706.4,443.8"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.915062290.forward" points="706.4,443.8 672.0,476.2"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.686983572.forward" points="672.0,476.2 620.4,497.8"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.783581372.forward" points="620.4,497.8 637.6,530.2"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.734299101.forward" points="637.6,530.2 697.8,535.6"/>
+    <polyline class="route-core" data-topology-edge-id="shutoko.topology-edge.osm-way.734299106.forward" points="697.8,535.6 740.8,530.2 740.8,508.6"/>
+  </g>
+  <circle class="node" cx="138.8" cy="152.2" r="9"/>
+  <circle class="decision" cx="654.8" cy="379.0" r="10"/>
+  <circle class="decision" cx="672.0" cy="476.2" r="10"/>
+  <circle class="terminal" cx="740.8" cy="508.6" r="11"/>
+  <path class="terminal-bar" d="M726.8 494.6L754.8 522.6"/>
+  <rect class="shield" x="304" y="254" width="54" height="38" rx="10"/>
+  <text class="shield-text" x="331" y="273">K7</text>
+  <text class="label" x="156.8" y="134.2">横浜青葉入口</text>
+  <text class="label" x="762.8" y="516.6">横浜港北出口</text>
+  <text class="secondary" x="781.8" y="317.8">K7 横浜北線</text>
+  <text class="secondary" x="792.8" y="425.8">E83 第三京浜</text>
+  <text class="status" x="615.8" y="560.6">地表后继未审核 · 图在此停止</text>
+  <text class="label" x="70" y="52">K7 横浜北西線 · 上り示意布局候选</text>
+  <text class="status" x="70" y="646">CANDIDATE · NAVIGATION BLOCKED</text>
+  <text class="attribution" x="930" y="646" text-anchor="end">© OpenStreetMap contributors</text>
+</svg>

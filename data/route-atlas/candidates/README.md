@@ -78,11 +78,15 @@ turn-restriction relation is present in the pinned extract.
 
 The official Aoba and Kohoku guides corroborate the selected expressway movement
 semantics, while the Yokohama municipal brochure confirms that the facility
-connects to Kawamuki Line. None independently classifies OSM way `776884422`;
-none relicenses the OSM database or becomes a layout asset. Both candidate
-evidence states therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful
-road-level review, production layout review, in-product attribution, and
-realtime review remain open.
+connects to Kawamuki Line. The 2020 municipal opening notice gives the third
+corridor a historic temporary-passage identity. A current municipal page
+reports that surrounding infrastructure work completed in March 2022 and the
+project ended in July 2023; the final replotting map still does not map OSM way
+`776884422` to a current road identity or traffic direction. None relicenses the
+OSM database or becomes a layout asset. Both candidate evidence states
+therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful road-level
+review, production layout release review, in-product attribution, and realtime
+review remain open.
 
 KR-D22 executes the complete 13-occurrence / 15-edge artifact and requires
 release validation to fail with only:
@@ -95,3 +99,29 @@ UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 KR-D23 separately requires the same release block after the exact source
 successor audit passes. Source adjacency completeness is not legal-successor
 release evidence.
+
+## K7 schematic layout candidate
+
+`k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json` replaces raw
+source geometry only at the presentation layer. Its Kaido-owned normalized
+layout remains bound to the same 15 candidate topology edges, preserves both
+reviewed expressway divergences and all 13 occurrence bindings, and has a
+separate Apache-2.0 layout source record with a pinned SHA-256 value.
+
+The corresponding generated SVG is
+`../design/k7-northwest-up-schematic-layout-candidate.svg`. It visibly stops at
+the Yokohama Kohoku exit terminal and renders none of the three adjacent surface
+ways. OpenStreetMap attribution remains present. KR-D24 requires the artifact
+to fail release with only `UNRELEASED_ATLAS_EVIDENCE` and
+`UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE`.
+
+Rebuild the layout artifact, scenario, and SVG:
+
+```sh
+python3 scripts/build_k7_schematic_layout_candidate.py \
+  --base-candidate data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json \
+  --layout data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.json \
+  --candidate-output data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json \
+  --scenario-output e2e/scenarios/kr-d24-k7-schematic-stops-at-surface-boundary.json \
+  --svg-output data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg
+```

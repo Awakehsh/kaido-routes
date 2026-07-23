@@ -81,16 +81,41 @@ released Kaido schematic.
 The evidence view may report that all 14 source-adjacency checkpoints match, but
 must separately show `LEGAL REVIEW INCOMPLETE`. At the Yokohama Kohoku surface
 terminal it must disclose three source-adjacent motor-road ways, including the
-unnamed OSM way `776884422`. Its corridor is officially identified as a 2020
-land-readjustment temporary passage, while its 2026 physical status, legal
-direction, and permitted movement remain unconfirmed. The UI must not simplify
-this into two reviewed exits or display a production route through the
-unresolved way.
+unnamed OSM way `776884422`. Its corridor was officially identified as the
+temporary passage at the 2020 opening. Yokohama now reports that surrounding
+infrastructure work completed in March 2022 and the project ended in July 2023,
+but the checked current page and final replotting map do not map the exact OSM
+way to a current road identity, legal direction, or permitted movement. The UI
+must not simplify this into two reviewed exits or display a production route
+through the unresolved way.
+
+## First schematic layout candidate
+
+The first Kaido-owned normalized layout covers the complete bounded K7
+expressway candidate from the Yokohama Aoba entrance through the Yokohama
+Kohoku exit terminal. It expands both reviewed expressway divergences instead
+of using the cramped raw source geometry. Every one of its 15 visible segments
+binds one-to-one to one candidate topology edge; every successor set is copied
+from that topology; and all 13 RoutePlan occurrences remain separately bound.
+
+The layout stops at topology node `osm.node.7473451738`. It renders none of the
+three adjacent surface ways `734299108`, `734299111`, or `776884422`. A terminal
+bar communicates the evidence boundary without inventing a disconnected road
+or implying that the drive must stop there. The generated SVG carries OpenStreetMap
+attribution and remains `CANDIDATE`, non-selectable, and non-navigable.
+
+KR-D24 proves that the schematic has no structural release issue beyond the
+expected unreleased topology and layout evidence states. It advances production
+layout review; it does not release the current surface movement, field evidence,
+realtime state, or navigation authority.
 
 ## Current sources
 
 - [Shuto Navi Map, current on 2026-07-01](https://www.shutoko.jp/use/network/navimap/)
 - [Shuto route marks](https://www.shutoko.jp/use/convenience/infoboard/guidance/)
 - [MLIT N06-2025 Highway Time Series](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html)
+- [Yokohama Kawamuko Minamikochi current project status](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/jokyo/kukakuseiri/kawamukou/kawamukou.html)
+- [Yokohama Kawamuko Minamikochi final replotting map](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/kukappi-/kubetsu/14-tsuzuki.files/0009_20230112.pdf)
 - [Route Atlas geographic context provenance](../../data/route-atlas/context/README.md)
 - [OSM-derived K7 candidate provenance](../../data/route-atlas/osm-derived/README.md)
+- [K7 schematic layout candidate](../../data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg)

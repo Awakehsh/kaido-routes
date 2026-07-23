@@ -5,14 +5,17 @@
 Do not publish a navigable Yokohama Kohoku surface schematic yet.
 
 The pinned OSM extract is source-complete at the exit terminal. Yokohama's
-2020 opening notice also identifies the corridor represented by OSM way
-`776884422` as the temporary passage inside the land-readjustment area. That
-historic identity does not establish the passage's current physical status,
-legal direction, or permitted movement from the K7 exit in 2026.
+2020 opening notice identifies the corridor represented by OSM way `776884422`
+as the temporary passage then used inside the land-readjustment area. The
+current municipal project page reports that surrounding infrastructure work
+completed in March 2022 and the project ended on 2023-07-25. The final
+replotting map does not map this exact OSM way to a current road identity.
+Neither source establishes the way's current physical status, legal direction,
+or permitted movement from the K7 exit.
 
 The unresolved release code is:
 
-`CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED`
+`CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED`
 
 Field scenario: `KR-F08`.
 
@@ -43,7 +46,21 @@ signal. It is not a legal-direction claim.
   era cannot establish the 2026 traffic regulation.
 - [Current Shuto Yokohama Kohoku facility page](https://www.shutoko.jp/use/network/map/route-k7ho/yokohamakohoku/)
   confirms that the facility still serves both K7 directions. It does not
-  publish the temporary passage's current legal direction.
+  publish the unresolved corridor's current legal direction.
+- [Yokohama City, current Kawamuko Minamikochi project page](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/jokyo/kukakuseiri/kawamukou/kawamukou.html),
+  last updated 2026-06-02, reports March 2022 infrastructure completion,
+  January 2023 replotting disposition, and project closure on 2023-07-25. The
+  checked HTML has SHA-256
+  `fe60100d8a73165eaa928d104fc42f9616b9318188a4b127cf968ac6daf960d1`.
+- [Yokohama City, final replotting map, published 2023-01-12](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/toshiseibi/kukappi-/kubetsu/14-tsuzuki.files/0009_20230112.pdf)
+  records the completed land parcels. It does not identify OSM way
+  `776884422`, publish a current municipal road route number, or state the
+  traffic direction. The checked PDF has SHA-256
+  `58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9`.
+- [Yokohama City road-register access page](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
+  directs road-identity review to the official road-register system and warns
+  that online data can lag; legal road-register drawings remain a counter
+  review. No exact current route record was obtained for this way.
 - [Kanagawa Prefectural Police traffic-regulation index](https://www.police.pref.kanagawa.jp/kotsu/kotsu_kisei/list/)
   does not expose a complete point-level public regulation register for this
   movement. The 2026 bicycle one-way exemption candidate list is not a complete
@@ -67,12 +84,12 @@ Collect current, readable evidence for all four checkpoint IDs:
 1. `EXIT_RAMP_SIGNAL_APPROACH`: lane arrows and every no-entry, one-way,
    mandatory-direction, turn-restriction, closure, or construction sign
    controlling the exit movement.
-2. `TEMPORARY_PASSAGE_EAST_MOUTH`: both sides of the passage mouth at the exit
-   signal, including motor-access and closure signs.
-3. `TEMPORARY_PASSAGE_WEST_MOUTH_EASTBOUND`: signs and lane markings controlling
-   travel toward the exit signal.
-4. `TEMPORARY_PASSAGE_WEST_MOUTH_WESTBOUND`: signs and lane markings controlling
-   travel away from the exit signal.
+2. `UNRESOLVED_CORRIDOR_EAST_MOUTH`: both sides of the corridor mouth at the
+   exit signal, including motor-access and closure signs.
+3. `UNRESOLVED_CORRIDOR_WEST_MOUTH_EASTBOUND`: signs and lane markings
+   controlling travel toward the exit signal.
+4. `UNRESOLVED_CORRIDOR_WEST_MOUTH_WESTBOUND`: signs and lane markings
+   controlling travel away from the exit signal.
 
 An absent sign in one image is not evidence that no restriction exists. Retain
 enough consecutive views to show the whole controlled approach.

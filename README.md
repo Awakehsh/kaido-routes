@@ -222,10 +222,13 @@ Daisan-Keihin alternatives at the two operator-reviewed divergences. All 257
 retained nodes, the Aoba incoming/non-route split, and all three source-adjacent
 motor-road connections at the Kohoku terminal remain explicit. Two are named
 one-way Kawamuki Line carriageways; the third is an unnamed `tertiary` way
-without an explicit `oneway` tag. A dated Yokohama City opening notice now
-identifies that third corridor as the temporary passage inside the
-land-readjustment area. It does not establish the passage's 2026 physical
-status, legal direction, or permitted exit movement. Way tags, direction,
+without an explicit `oneway` tag. A dated Yokohama City opening notice
+identifies that third corridor as the temporary passage used at the 2020
+opening. A current municipal page reports that surrounding infrastructure work
+completed in March 2022 and the land-readjustment project ended in July 2023;
+the final replotting map does not map that exact OSM way to a current road
+identity. Its present physical status, legal direction, and permitted exit
+movement therefore remain unconfirmed. Way tags, direction,
 extraction bounds, source hashes, OSM timestamp, and reconstruction commands
 remain explicit. A deterministic audit now proves exact source adjacency at 14
 entry, route, divergence, and exit checkpoints with 19 outgoing successors and
@@ -240,11 +243,21 @@ not release: topology and layout stay
 attribution integration, and realtime review are complete. KR-D22 proves that
 the internally coherent 13-occurrence, 15-edge artifact still fails release
 with only the two unreleased-evidence issues. KR-D23 proves that source-complete
-successor enumeration plus a historic official identity cannot substitute for
-current legal review.
+successor enumeration, a historic official identity, and later area completion
+cannot substitute for current road-level legal review.
 
-The feasibility core currently executes portable scenarios for twenty-nine hard
-properties that must remain proven as the product expands:
+A Kaido-owned fixed-north-up schematic now replaces raw source geometry for a
+second K7 candidate artifact. Its 15 visible segments bind one-to-one to the
+same candidate topology edges, both expressway divergences are expanded, and
+all 13 occurrence bindings remain exact. The layout visibly stops at the
+Yokohama Kohoku exit terminal and renders none of the three source-adjacent
+surface ways. Its generated SVG carries OpenStreetMap attribution. This is a
+production-layout candidate, not released navigation evidence: KR-D24 requires
+release validation to fail with only the two expected unreleased topology and
+layout evidence issues.
+
+The feasibility core currently executes portable scenarios for the following
+hard properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
 2. only legal directional junction movements can be authored and executed;

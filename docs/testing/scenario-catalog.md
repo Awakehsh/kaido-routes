@@ -30,7 +30,8 @@ should become scenarios when their layer is built.
 | KR-D20 | Full-network Route Atlas context geometry can never become navigation authority | P0 | Seeded |
 | KR-D21 | An official-checked real K7 Northwest slice remains blocked until topology and layout are released | P0 | Seeded |
 | KR-D22 | An ODbL-isolated K7 one-way candidate preserves two reviewed divergences without gaining release authority | P0 | Seeded |
-| KR-D23 | Historic official K7 passage identity does not prove the current legal movement | P0 | Seeded |
+| KR-D23 | Historic K7 corridor identity and completed surrounding works do not prove the current legal movement | P0 | Seeded |
+| KR-D24 | A Kaido-owned K7 schematic covers the reviewed expressway slice and stops before every unreviewed surface successor | P0 | Seeded |
 
 ## Navigation simulation
 

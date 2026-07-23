@@ -315,6 +315,26 @@ orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
 real-road eligibility.
 
+`RouteAtlasRelease` is the separate renderer-neutral map-integrity gate. Its
+`RouteAtlasTopologySlice` is the separately released, dated graph truth for
+exactly the network coverage that may be visible. `RouteAtlasDefinition`
+contains normalized
+north-up layout nodes and paths, but every layout node and topology edge must be
+covered exactly once, every path endpoint must agree with the bound topology
+nodes, and every rendered successor set must be an exact translation of the
+reviewed graph, with one unique route-entity identity per topology edge.
+Geometry contact never creates a connection. The definition contains no
+independently authored display labels; future route shields and names must
+resolve from separately released metadata bound to the same snapshot.
+Every RoutePlan occurrence has its own binding in exact RoutePlan order, while
+repeated occurrences may intentionally reference the same schematic segment.
+Snapshot drift, missing or extra coverage, an invented connection, incomplete
+occurrence binding, or anything short of released dated topology and layout
+evidence fails closed. KR-D19 executes
+an invented-connection rejection with synthetic data. This gate proves internal
+consistency only; the repository still has no released real Shuto topology slice
+or reviewed production atlas layout.
+
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
 
@@ -343,6 +363,11 @@ That is a development fact, not yet the minimum deployment target.
   occurrences, repeated traversals, recovery and egress paths, and
   released-versus-context-only topology. Unsupported or unreleased corridors
   cannot appear selectable or look equivalent to released navigable coverage.
+- Phone and CarPlay receive an already validated `RouteAtlasRelease`; renderers
+  never infer connectivity from line intersections or author an alternate
+  successor graph. Before real released topology and layout evidence exist,
+  concept compositions must be marked topology-unverified and not for
+  navigation.
 - A precise vehicle bead requires fresh route-resolved evidence. Degraded,
   ambiguous, tunnel, or stacked-road positioning renders an honest segment or
   uncertainty halo rather than a falsely precise point.

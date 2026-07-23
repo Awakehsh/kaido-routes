@@ -165,7 +165,19 @@ entry exactly, and registry orphans fail closed. Repeated graph entities remain
 distinct because coverage is keyed by occurrence ID. KR-D18 executes this
 boundary with synthetic data; it does not release a real route or dataset.
 
-The feasibility core currently executes portable scenarios for twenty-six hard
+The renderer-neutral Route Atlas integrity boundary is executable too.
+`RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
+topology slice, and separately released normalized layout. Layout nodes and topology edges
+must have exact coverage; path endpoints and legal successor sets must match the
+reviewed graph; topology route-entity identity is unique; and every RoutePlan
+occurrence remains separately bound in exact order even when repeated
+occurrences share one schematic segment. Coordinate crossings never author graph
+connectivity, and the layout type contains no arbitrary display labels. KR-D19
+proves that one visually invented connection blocks release. This verifies
+internal consistency only: the repository still has no released real Shuto
+topology slice or production atlas layout.
+
+The feasibility core currently executes portable scenarios for twenty-seven hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -229,6 +241,8 @@ properties that must remain proven as the product expands:
 26. a navigation release bundle binds the active snapshot, RoutePlan, reviewed
     editor catalog, matcher corridor, every movement occurrence's DecisionZone
     and guidance, and any junction-view registry before runtime composition.
+27. a Route Atlas exactly covers one reviewed topology slice, preserves every
+    route occurrence, and rejects any visual connection absent from the graph.
 
 ## Repository map
 

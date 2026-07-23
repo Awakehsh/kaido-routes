@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D19",
+  "title": "Route Atlas rejects a visual connection absent from reviewed topology",
+  "layer": "DOMAIN",
+  "tags": ["route-atlas", "topology", "network-snapshot", "fail-closed"],
+  "purpose": "Prevent a schematic renderer from inventing a selectable or highlighted road connection that is absent from the exact reviewed network slice.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "RELEASED inside this synthetic fixture exercises the integrity gate only.",
+      "This scenario does not establish real Shuto topology, geography, labels, route shields, or navigable coverage."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.route-atlas-v1",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.route-atlas",
+      "network_snapshot_id": "test.snapshot.route-atlas-v1",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.selected",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.selected"
+        }
+      ]
+    },
+    "inputs": {
+      "route_atlas_topology": {
+        "topology_slice_id": "test.atlas-topology.supported-slice",
+        "network_snapshot_id": "test.snapshot.route-atlas-v1",
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-23",
+          "source_reference_ids": ["test.source.reviewed-topology"]
+        },
+        "nodes": [
+          {"node_id": "test.node.entry"},
+          {"node_id": "test.node.decision"},
+          {"node_id": "test.node.selected-end"},
+          {"node_id": "test.node.context-end"}
+        ],
+        "edges": [
+          {
+            "edge_id": "test.topology-edge.approach",
+            "route_entity_id": "test.edge.approach",
+            "from_node_id": "test.node.entry",
+            "to_node_id": "test.node.decision",
+            "successor_edge_ids": ["test.topology-edge.selected"]
+          },
+          {
+            "edge_id": "test.topology-edge.selected",
+            "route_entity_id": "test.edge.selected",
+            "from_node_id": "test.node.decision",
+            "to_node_id": "test.node.selected-end",
+            "successor_edge_ids": []
+          },
+          {
+            "edge_id": "test.topology-edge.context",
+            "route_entity_id": "test.edge.context-only",
+            "from_node_id": "test.node.decision",
+            "to_node_id": "test.node.context-end",
+            "successor_edge_ids": []
+          }
+        ]
+      },
+      "route_atlas": {
+        "atlas_id": "test.route-atlas.supported-slice",
+        "network_snapshot_id": "test.snapshot.route-atlas-v1",
+        "route_plan_id": "test.plan.route-atlas",
+        "topology_slice_id": "test.atlas-topology.supported-slice",
+        "nodes": [
+          {
+            "topology_node_id": "test.node.entry",
+            "point": {"x": 0.1, "y": 0.8}
+          },
+          {
+            "topology_node_id": "test.node.decision",
+            "point": {"x": 0.45, "y": 0.5}
+          },
+          {
+            "topology_node_id": "test.node.selected-end",
+            "point": {"x": 0.85, "y": 0.2}
+          },
+          {
+            "topology_node_id": "test.node.context-end",
+            "point": {"x": 0.85, "y": 0.75}
+          }
+        ],
+        "segments": [
+          {
+            "segment_id": "test.segment.approach",
+            "topology_edge_id": "test.topology-edge.approach",
+            "from_node_id": "test.node.entry",
+            "to_node_id": "test.node.decision",
+            "successor_segment_ids": [
+              "test.segment.selected",
+              "test.segment.context"
+            ],
+            "points": [
+              {"x": 0.1, "y": 0.8},
+              {"x": 0.3, "y": 0.65},
+              {"x": 0.45, "y": 0.5}
+            ]
+          },
+          {
+            "segment_id": "test.segment.selected",
+            "topology_edge_id": "test.topology-edge.selected",
+            "from_node_id": "test.node.decision",
+            "to_node_id": "test.node.selected-end",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.45, "y": 0.5},
+              {"x": 0.65, "y": 0.35},
+              {"x": 0.85, "y": 0.2}
+            ]
+          },
+          {
+            "segment_id": "test.segment.context",
+            "topology_edge_id": "test.topology-edge.context",
+            "from_node_id": "test.node.decision",
+            "to_node_id": "test.node.context-end",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.45, "y": 0.5},
+              {"x": 0.65, "y": 0.62},
+              {"x": 0.85, "y": 0.75}
+            ]
+          }
+        ],
+        "occurrence_bindings": [
+          {
+            "occurrence_id": "test.occurrence.approach",
+            "index": 0,
+            "segment_id": "test.segment.approach"
+          },
+          {
+            "occurrence_id": "test.occurrence.selected",
+            "index": 1,
+            "segment_id": "test.segment.selected"
+          }
+        ],
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-23",
+          "source_reference_ids": ["test.source.reviewed-atlas-layout"]
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "validate-route-atlas",
+      "at_ms": 0,
+      "type": "ROUTE_ATLAS_RELEASE_VALIDATED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "invented-connection-blocks-atlas",
+      "after": "validate-route-atlas",
+      "category": "SAFETY",
+      "subject": "route_atlas.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A schematic with any connection absent from the reviewed topology cannot become a released atlas."
+    },
+    {
+      "id": "successor-drift-is-explicit",
+      "after": "validate-route-atlas",
+      "category": "DOMAIN",
+      "subject": "route_atlas.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "ATLAS_SUCCESSOR_MISMATCH",
+      "rationale": "The failure identifies the exact graph-to-layout invariant instead of treating coordinate contact as legal topology."
+    }
+  ]
+}

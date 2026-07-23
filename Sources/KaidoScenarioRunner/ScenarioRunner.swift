@@ -98,6 +98,8 @@ private struct ScenarioHarness {
       try compileRouteEditor(event.payload)
     case "NAVIGATION_RELEASE_BUNDLE_VALIDATED":
       try validateNavigationReleaseBundle()
+    case "ROUTE_ATLAS_RELEASE_VALIDATED":
+      try validateRouteAtlasRelease()
     case "NAVIGATION_STARTED":
       projectSignGuidance()
       projectLocalization()
@@ -555,6 +557,56 @@ private struct ScenarioHarness {
       adapterObservations["release_bundle.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
       )
+    }
+  }
+
+  private mutating func validateRouteAtlasRelease() throws {
+    guard let routePlan = scenario.given.routePlan,
+      let topologyValue = scenario.given.inputs.object("route_atlas_topology"),
+      let definitionValue = scenario.given.inputs.object("route_atlas")
+    else {
+      throw ScenarioExecutionError.invalidInput("route_atlas_release")
+    }
+    let topology = try routeAtlasTopologySlice(topologyValue)
+    let definition = try routeAtlasDefinition(definitionValue)
+
+    clearRouteAtlasObservations()
+    do {
+      let release = try RouteAtlasRelease(
+        networkSnapshot: scenario.given.networkSnapshot,
+        routePlan: routePlan,
+        topologySlice: topology,
+        definition: definition
+      )
+      publish(release)
+    } catch RouteAtlasReleaseError.invalid(let issues) {
+      adapterObservations["route_atlas.status"] = .string("BLOCKED")
+      adapterObservations["route_atlas.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private mutating func publish(_ release: RouteAtlasRelease) {
+    adapterObservations["route_atlas.status"] = .string("PASS")
+    adapterObservations["route_atlas.error_codes"] = .strings([])
+    adapterObservations["route_atlas.network_snapshot_id"] = .string(
+      release.networkSnapshot.id
+    )
+    adapterObservations["route_atlas.route_plan_id"] = .string(
+      release.routePlan.id
+    )
+    adapterObservations["route_atlas.topology_edge_ids"] = .strings(
+      release.topologySlice.edges.map(\.id)
+    )
+    adapterObservations["route_atlas.occurrence_ids"] = .strings(
+      release.definition.occurrenceBindings.map(\.occurrenceID)
+    )
+  }
+
+  private mutating func clearRouteAtlasObservations() {
+    for key in adapterObservations.keys.filter({ $0.hasPrefix("route_atlas.") }) {
+      adapterObservations.removeValue(forKey: key)
     }
   }
 
@@ -1710,6 +1762,143 @@ private struct ScenarioHarness {
       routePlanID: try value.requiredString("route_plan_id"),
       edges: edges,
       occurrences: occurrences
+    )
+  }
+
+  private func routeAtlasTopologySlice(
+    _ value: [String: JSONValue]
+  ) throws -> RouteAtlasTopologySlice {
+    guard let nodeValues = value.array("nodes"),
+      let edgeValues = value.array("edges"),
+      let evidenceValue = value.object("evidence")
+    else {
+      throw ScenarioExecutionError.invalidInput("route_atlas_topology")
+    }
+    let nodes = try nodeValues.map { value in
+      guard let node = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("route_atlas_topology.nodes")
+      }
+      return RouteAtlasTopologyNode(id: try node.requiredString("node_id"))
+    }
+    let edges = try edgeValues.map { value in
+      guard let edge = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("route_atlas_topology.edges")
+      }
+      return RouteAtlasTopologyEdge(
+        id: try edge.requiredString("edge_id"),
+        routeEntityID: try edge.requiredString("route_entity_id"),
+        fromNodeID: try edge.requiredString("from_node_id"),
+        toNodeID: try edge.requiredString("to_node_id"),
+        successorEdgeIDs: Set(
+          (edge.array("successor_edge_ids") ?? []).compactMap(\.stringValue)
+        )
+      )
+    }
+    return RouteAtlasTopologySlice(
+      id: try value.requiredString("topology_slice_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      nodes: nodes,
+      edges: edges,
+      evidence: try routeAtlasEvidence(evidenceValue)
+    )
+  }
+
+  private func routeAtlasDefinition(
+    _ value: [String: JSONValue]
+  ) throws -> RouteAtlasDefinition {
+    guard let nodeValues = value.array("nodes"),
+      let segmentValues = value.array("segments"),
+      let occurrenceValues = value.array("occurrence_bindings"),
+      let evidenceValue = value.object("evidence")
+    else {
+      throw ScenarioExecutionError.invalidInput("route_atlas")
+    }
+    let nodes = try nodeValues.map { value in
+      guard let node = value.objectValue,
+        let point = node.object("point"),
+        let x = point.double("x"),
+        let y = point.double("y")
+      else {
+        throw ScenarioExecutionError.invalidInput("route_atlas.nodes")
+      }
+      return RouteAtlasLayoutNode(
+        topologyNodeID: try node.requiredString("topology_node_id"),
+        point: RouteAtlasPoint(x: x, y: y)
+      )
+    }
+    let segments = try segmentValues.map { value in
+      guard let segment = value.objectValue,
+        let pointValues = segment.array("points")
+      else {
+        throw ScenarioExecutionError.invalidInput("route_atlas.segments")
+      }
+      let points = try pointValues.map { value in
+        guard let point = value.objectValue,
+          let x = point.double("x"),
+          let y = point.double("y")
+        else {
+          throw ScenarioExecutionError.invalidInput("route_atlas.segments.points")
+        }
+        return RouteAtlasPoint(x: x, y: y)
+      }
+      return RouteAtlasSegment(
+        id: try segment.requiredString("segment_id"),
+        topologyEdgeID: try segment.requiredString("topology_edge_id"),
+        fromNodeID: try segment.requiredString("from_node_id"),
+        toNodeID: try segment.requiredString("to_node_id"),
+        successorSegmentIDs: Set(
+          (segment.array("successor_segment_ids") ?? []).compactMap(\.stringValue)
+        ),
+        points: points
+      )
+    }
+    let occurrenceBindings = try occurrenceValues.map { value in
+      guard let occurrence = value.objectValue,
+        let index = occurrence.int("index")
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "route_atlas.occurrence_bindings"
+        )
+      }
+      return RouteAtlasOccurrenceBinding(
+        occurrenceID: try occurrence.requiredString("occurrence_id"),
+        occurrenceIndex: index,
+        segmentID: try occurrence.requiredString("segment_id")
+      )
+    }
+    return RouteAtlasDefinition(
+      id: try value.requiredString("atlas_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      routePlanID: try value.requiredString("route_plan_id"),
+      topologySliceID: try value.requiredString("topology_slice_id"),
+      nodes: nodes,
+      segments: segments,
+      occurrenceBindings: occurrenceBindings,
+      evidence: try routeAtlasEvidence(evidenceValue)
+    )
+  }
+
+  private func routeAtlasEvidence(
+    _ value: [String: JSONValue]
+  ) throws -> RouteAtlasEvidence {
+    guard let state = RouteAtlasEvidenceState(
+      rawValue: try value.requiredString("state")
+    ) else {
+      throw ScenarioExecutionError.invalidInput("route_atlas.evidence.state")
+    }
+    return RouteAtlasEvidence(
+      state: state,
+      checkedAt: try value.requiredString("checked_at"),
+      sourceReferenceIDs: try (
+        value.array("source_reference_ids") ?? []
+      ).map { value in
+        guard let sourceID = value.stringValue else {
+          throw ScenarioExecutionError.invalidInput(
+            "route_atlas.evidence.source_reference_ids"
+          )
+        }
+        return sourceID
+      }
     )
   }
 

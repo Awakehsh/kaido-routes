@@ -63,6 +63,27 @@ Primary references:
 - [OSMF Produced Work guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Produced_Work_-_Guideline)
 - [OSMF Collective Database guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Collective_Database_Guideline_Guideline)
 
+## MLIT Route Atlas context boundary
+
+The isolated artifact under `data/route-atlas/context/` is transformed from the
+current-state slice of MLIT National Land Numerical Information N06-2025 and is
+identified as CC BY 4.0 data. Its source record pins the authority, source and
+download URLs, dataset reference date, retrieval and review dates, raw-archive
+SHA-256, attribution, permitted current-state scope, and transformation
+disclosure. The raw archive is not redistributed.
+
+The generated artifact retains selected source geometry and Japanese route-name
+properties, so the root Apache-2.0 licence does not replace its CC BY 4.0 terms.
+Any distribution or rendered use must retain an appropriate MLIT attribution and
+state that Kaido Routes filtered and projected the source. The tracked data is
+geographic context only; its licence and provenance do not make it a directed
+routing graph or operator-reviewed navigation product.
+
+Primary references:
+
+- [MLIT N06-2025 dataset page](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html)
+- [MLIT National Land Numerical Information terms](https://nlftp.mlit.go.jp/ksj/other/agreement_01.html)
+
 ## Names and marks
 
 The software licence grants copyright and patent permissions only as stated in

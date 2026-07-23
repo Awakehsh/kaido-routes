@@ -1,0 +1,38 @@
+{
+  "review_id": "shutoko.navimap.currentness.2026-07-01",
+  "reviewed_at": "2026-07-23",
+  "role": "CURRENTNESS_COMPARISON_ONLY",
+  "operator_page_url": "https://www.shutoko.jp/use/network/navimap/",
+  "operator_stated_map_date": "2026-07-01",
+  "operator_map_asset_url": "https://www.shutoko.jp/-/media/Images/responsive/customer/use/network/navimap/260701/map_all.jpg",
+  "operator_map_asset_sha256": "3e6436b09e738705b1c7d5a7ce7754b44dc759d4f1e75e4fedbf21ffd8299df9",
+  "context_source_reference_id": "mlit.nlni.n06-2025.current-shuto",
+  "context_dataset_reference_date": "2025-12-31",
+  "context_source_crs": "EPSG:6668",
+  "operator_route_mark_page_url": "https://www.shutoko.jp/use/convenience/infoboard/guidance/",
+  "operator_route_name_count": 26,
+  "context_source_route_name_count": 25,
+  "route_name_comparison": {
+    "status": "MISMATCH",
+    "operator_name_not_separately_identified_by_context_source": [
+      "高速神奈川7号横浜北西線"
+    ],
+    "limitation": "This proves a current naming mismatch only. It does not by itself prove that the corresponding source geometry is present or absent."
+  },
+  "outcome": "NAVIGATION_RELEASE_BLOCKED",
+  "observations": [
+    "The operator identifies the linked full Navi Map as current on 2026-07-01.",
+    "The MLIT context dataset predates the operator map and therefore cannot alone establish current navigable coverage.",
+    "The operator map was reviewed as an external currentness reference only and is not copied into the repository or generated presentation.",
+    "The operator route-mark table lists 26 route names, while the context source exposes 25 unique route-name strings and does not separately identify 高速神奈川7号横浜北西線.",
+    "No automated segment-by-segment geometry, direction, entrance, exit, or legal-junction-movement reconciliation has been completed."
+  ],
+  "release_blockers": [
+    "A released time-versioned directed Shuto topology slice",
+    "Exact legal incoming-approach to outgoing-movement evidence",
+    "Directional entrance and exit facility coverage",
+    "Released route shield and Japanese sign metadata",
+    "Reconciliation of the K7 Yokohama North and Yokohama Northwest naming and geometry boundary",
+    "A reviewed production atlas layout bound to the same network snapshot"
+  ]
+}

@@ -100,6 +100,8 @@ private struct ScenarioHarness {
       try validateNavigationReleaseBundle()
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
       try validateRouteAtlasRelease()
+    case "ROUTE_ATLAS_CONTEXT_VALIDATED":
+      try validateRouteAtlasContext()
     case "NAVIGATION_STARTED":
       projectSignGuidance()
       projectLocalization()
@@ -562,11 +564,13 @@ private struct ScenarioHarness {
 
   private mutating func validateRouteAtlasRelease() throws {
     guard let routePlan = scenario.given.routePlan,
+      let sourceValues = scenario.given.inputs.array("route_atlas_sources"),
       let topologyValue = scenario.given.inputs.object("route_atlas_topology"),
       let definitionValue = scenario.given.inputs.object("route_atlas")
     else {
       throw ScenarioExecutionError.invalidInput("route_atlas_release")
     }
+    let sourceRegistry = try routeAtlasSourceRegistry(sourceValues)
     let topology = try routeAtlasTopologySlice(topologyValue)
     let definition = try routeAtlasDefinition(definitionValue)
 
@@ -575,6 +579,7 @@ private struct ScenarioHarness {
       let release = try RouteAtlasRelease(
         networkSnapshot: scenario.given.networkSnapshot,
         routePlan: routePlan,
+        sourceRegistry: sourceRegistry,
         topologySlice: topology,
         definition: definition
       )
@@ -584,6 +589,48 @@ private struct ScenarioHarness {
       adapterObservations["route_atlas.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
       )
+    }
+  }
+
+  private mutating func validateRouteAtlasContext() throws {
+    guard
+      let sourceValue = scenario.given.inputs.object(
+        "route_atlas_context_source"
+      ),
+      let definitionValue = scenario.given.inputs.object("route_atlas_context")
+    else {
+      throw ScenarioExecutionError.invalidInput("route_atlas_context")
+    }
+    let source = try routeAtlasContextSource(sourceValue)
+    let definition = try routeAtlasContextDefinition(definitionValue)
+
+    clearRouteAtlasContextObservations()
+    do {
+      let bundle = try RouteAtlasContextBundle(
+        source: source,
+        definition: definition
+      )
+      adapterObservations["route_atlas_context.status"] = .string("PASS")
+      adapterObservations["route_atlas_context.error_codes"] = .strings([])
+      adapterObservations["route_atlas_context.context_id"] = .string(
+        bundle.definition.id
+      )
+      adapterObservations["route_atlas_context.navigation_role"] = .string(
+        bundle.definition.navigationRole.rawValue
+      )
+    } catch RouteAtlasContextError.invalid(let issues) {
+      adapterObservations["route_atlas_context.status"] = .string("BLOCKED")
+      adapterObservations["route_atlas_context.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private mutating func clearRouteAtlasContextObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("route_atlas_context.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
     }
   }
 
@@ -1803,6 +1850,40 @@ private struct ScenarioHarness {
     )
   }
 
+  private func routeAtlasSourceRegistry(
+    _ values: [JSONValue]
+  ) throws -> RouteAtlasSourceRegistry {
+    let references = try values.map { value in
+      guard
+        let source = value.objectValue,
+        let roleValues = source.array("roles")
+      else {
+        throw ScenarioExecutionError.invalidInput("route_atlas_sources")
+      }
+      let roles = try roleValues.map { value in
+        guard
+          let rawValue = value.stringValue,
+          let role = RouteAtlasSourceRole(rawValue: rawValue)
+        else {
+          throw ScenarioExecutionError.invalidInput(
+            "route_atlas_sources.roles"
+          )
+        }
+        return role
+      }
+      return RouteAtlasSourceReference(
+        id: try source.requiredString("source_reference_id"),
+        roles: Set(roles),
+        authorityName: try source.requiredString("authority_name"),
+        sourceURL: try source.requiredString("source_url"),
+        contentSHA256: try source.requiredString("content_sha256"),
+        checkedAt: try source.requiredString("checked_at"),
+        licenceIdentifier: try source.requiredString("licence_identifier")
+      )
+    }
+    return RouteAtlasSourceRegistry(references: references)
+  }
+
   private func routeAtlasDefinition(
     _ value: [String: JSONValue]
   ) throws -> RouteAtlasDefinition {
@@ -1881,17 +1962,17 @@ private struct ScenarioHarness {
   private func routeAtlasEvidence(
     _ value: [String: JSONValue]
   ) throws -> RouteAtlasEvidence {
-    guard let state = RouteAtlasEvidenceState(
-      rawValue: try value.requiredString("state")
-    ) else {
+    guard
+      let state = RouteAtlasEvidenceState(
+        rawValue: try value.requiredString("state")
+      )
+    else {
       throw ScenarioExecutionError.invalidInput("route_atlas.evidence.state")
     }
     return RouteAtlasEvidence(
       state: state,
       checkedAt: try value.requiredString("checked_at"),
-      sourceReferenceIDs: try (
-        value.array("source_reference_ids") ?? []
-      ).map { value in
+      sourceReferenceIDs: try (value.array("source_reference_ids") ?? []).map { value in
         guard let sourceID = value.stringValue else {
           throw ScenarioExecutionError.invalidInput(
             "route_atlas.evidence.source_reference_ids"
@@ -1899,6 +1980,131 @@ private struct ScenarioHarness {
         }
         return sourceID
       }
+    )
+  }
+
+  private func routeAtlasContextSource(
+    _ value: [String: JSONValue]
+  ) throws -> RouteAtlasContextSource {
+    guard
+      let usageScope = RouteAtlasContextUsageScope(
+        rawValue: try value.requiredString("usage_scope")
+      ),
+      let sourceCRS = RouteAtlasContextSourceCRS(
+        rawValue: try value.requiredString("source_crs")
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "route_atlas_context_source.usage_scope"
+      )
+    }
+    return RouteAtlasContextSource(
+      sourceReferenceID: try value.requiredString("source_reference_id"),
+      authorityName: try value.requiredString("authority_name"),
+      sourcePageURL: try value.requiredString("source_page_url"),
+      downloadURL: try value.requiredString("download_url"),
+      archiveSHA256: try value.requiredString("archive_sha256"),
+      sourceCRS: sourceCRS,
+      datasetReferenceDate: try value.requiredString("dataset_reference_date"),
+      retrievedAt: try value.requiredString("retrieved_at"),
+      checkedAt: try value.requiredString("checked_at"),
+      licenceIdentifier: try value.requiredString("licence_identifier"),
+      usageScope: usageScope,
+      attribution: try value.requiredString("attribution"),
+      transformationDisclosure: try value.requiredString(
+        "transformation_disclosure"
+      )
+    )
+  }
+
+  private func routeAtlasContextDefinition(
+    _ value: [String: JSONValue]
+  ) throws -> RouteAtlasContextDefinition {
+    guard
+      let navigationRole = RouteAtlasContextNavigationRole(
+        rawValue: try value.requiredString("navigation_role")
+      ),
+      let projectionValue = value.object("projection"),
+      let projectionKind = RouteAtlasContextProjectionKind(
+        rawValue: try projectionValue.requiredString("kind")
+      ),
+      let northUp = projectionValue.bool("north_up"),
+      let sourceCRS = RouteAtlasContextSourceCRS(
+        rawValue: try projectionValue.requiredString("source_crs")
+      ),
+      let coordinateSpace = RouteAtlasContextCoordinateSpace(
+        rawValue: try projectionValue.requiredString("coordinate_space")
+      ),
+      let minimumLongitude = projectionValue.double("minimum_longitude"),
+      let maximumLongitude = projectionValue.double("maximum_longitude"),
+      let minimumLatitude = projectionValue.double("minimum_latitude"),
+      let maximumLatitude = projectionValue.double("maximum_latitude"),
+      let coverageValue = value.object("coverage"),
+      let sourceFeatureCount = coverageValue.int("source_feature_count"),
+      let pathCount = coverageValue.int("path_count"),
+      let vertexCount = coverageValue.int("vertex_count"),
+      let routeNameCount = coverageValue.int("route_name_count"),
+      let pathValues = value.array("paths")
+    else {
+      throw ScenarioExecutionError.invalidInput("route_atlas_context")
+    }
+
+    let paths = try pathValues.map { value in
+      guard
+        let path = value.objectValue,
+        let sourcePartIndex = path.int("source_part_index"),
+        let useStatus = RouteAtlasContextUseStatus(
+          rawValue: try path.requiredString("use_status")
+        ),
+        let pointValues = path.array("points")
+      else {
+        throw ScenarioExecutionError.invalidInput("route_atlas_context.paths")
+      }
+      let points = try pointValues.map { value in
+        guard
+          let point = value.objectValue,
+          let x = point.double("x"),
+          let y = point.double("y")
+        else {
+          throw ScenarioExecutionError.invalidInput(
+            "route_atlas_context.paths.points"
+          )
+        }
+        return RouteAtlasContextPoint(x: x, y: y)
+      }
+      return RouteAtlasContextPath(
+        id: try path.requiredString("path_id"),
+        sourceFeatureID: try path.requiredString("source_feature_id"),
+        sourceRecordID: try path.requiredString("source_record_id"),
+        sourcePartIndex: sourcePartIndex,
+        routeNameJA: try path.requiredString("route_name_ja"),
+        useStatus: useStatus,
+        points: points
+      )
+    }
+
+    return RouteAtlasContextDefinition(
+      schemaVersion: try value.requiredString("schema_version"),
+      id: try value.requiredString("context_id"),
+      navigationRole: navigationRole,
+      sourceReferenceID: try value.requiredString("source_reference_id"),
+      projection: RouteAtlasContextProjection(
+        kind: projectionKind,
+        northUp: northUp,
+        sourceCRS: sourceCRS,
+        coordinateSpace: coordinateSpace,
+        minimumLongitude: minimumLongitude,
+        maximumLongitude: maximumLongitude,
+        minimumLatitude: minimumLatitude,
+        maximumLatitude: maximumLatitude
+      ),
+      coverage: RouteAtlasContextCoverage(
+        sourceFeatureCount: sourceFeatureCount,
+        pathCount: pathCount,
+        vertexCount: vertexCount,
+        routeNameCount: routeNameCount
+      ),
+      paths: paths
     )
   }
 

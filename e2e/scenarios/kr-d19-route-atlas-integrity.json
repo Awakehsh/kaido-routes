@@ -42,6 +42,26 @@
       ]
     },
     "inputs": {
+      "route_atlas_sources": [
+        {
+          "source_reference_id": "test.source.reviewed-topology",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Synthetic topology review authority",
+          "source_url": "https://example.test/reviewed-topology",
+          "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "SYNTHETIC"
+        },
+        {
+          "source_reference_id": "test.source.reviewed-atlas-layout",
+          "roles": ["LAYOUT_EVIDENCE"],
+          "authority_name": "Synthetic layout review authority",
+          "source_url": "https://example.test/reviewed-layout",
+          "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "checked_at": "2026-07-23",
+          "licence_identifier": "SYNTHETIC"
+        }
+      ],
       "route_atlas_topology": {
         "topology_slice_id": "test.atlas-topology.supported-slice",
         "network_snapshot_id": "test.snapshot.route-atlas-v1",

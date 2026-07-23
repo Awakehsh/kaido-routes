@@ -1,14 +1,14 @@
 import Foundation
 import KaidoDomain
 
-public enum RouteAtlasEvidenceState: String, Sendable {
+public enum RouteAtlasEvidenceState: String, Codable, Sendable {
   case candidate = "CANDIDATE"
   case officialChecked = "OFFICIAL_CHECKED"
   case fieldChecked = "FIELD_CHECKED"
   case released = "RELEASED"
 }
 
-public struct RouteAtlasEvidence: Equatable, Sendable {
+public struct RouteAtlasEvidence: Codable, Equatable, Sendable {
   public let state: RouteAtlasEvidenceState
   public let checkedAt: String
   public let sourceReferenceIDs: [String]
@@ -22,13 +22,78 @@ public struct RouteAtlasEvidence: Equatable, Sendable {
     self.checkedAt = checkedAt
     self.sourceReferenceIDs = sourceReferenceIDs
   }
+
+  enum CodingKeys: String, CodingKey {
+    case state
+    case checkedAt = "checked_at"
+    case sourceReferenceIDs = "source_reference_ids"
+  }
 }
 
-public struct RouteAtlasTopologyNode: Equatable, Sendable {
+public enum RouteAtlasSourceRole: String, Codable, Sendable {
+  case topologyEvidence = "TOPOLOGY_EVIDENCE"
+  case layoutEvidence = "LAYOUT_EVIDENCE"
+}
+
+/// One reviewable evidence record referenced by topology or layout evidence.
+///
+/// A registry proves that an evidence ID resolves to explicit provenance; it
+/// does not promote the referenced material to RELEASED on its own.
+public struct RouteAtlasSourceReference: Codable, Equatable, Sendable {
+  public let id: String
+  public let roles: Set<RouteAtlasSourceRole>
+  public let authorityName: String
+  public let sourceURL: String
+  public let contentSHA256: String
+  public let checkedAt: String
+  public let licenceIdentifier: String
+
+  public init(
+    id: String,
+    roles: Set<RouteAtlasSourceRole>,
+    authorityName: String,
+    sourceURL: String,
+    contentSHA256: String,
+    checkedAt: String,
+    licenceIdentifier: String
+  ) {
+    self.id = id
+    self.roles = roles
+    self.authorityName = authorityName
+    self.sourceURL = sourceURL
+    self.contentSHA256 = contentSHA256
+    self.checkedAt = checkedAt
+    self.licenceIdentifier = licenceIdentifier
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "source_reference_id"
+    case roles
+    case authorityName = "authority_name"
+    case sourceURL = "source_url"
+    case contentSHA256 = "content_sha256"
+    case checkedAt = "checked_at"
+    case licenceIdentifier = "licence_identifier"
+  }
+}
+
+public struct RouteAtlasSourceRegistry: Codable, Equatable, Sendable {
+  public let references: [RouteAtlasSourceReference]
+
+  public init(references: [RouteAtlasSourceReference]) {
+    self.references = references
+  }
+}
+
+public struct RouteAtlasTopologyNode: Codable, Equatable, Sendable {
   public let id: String
 
   public init(id: String) {
     self.id = id
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "node_id"
   }
 }
 
@@ -37,7 +102,7 @@ public struct RouteAtlasTopologyNode: Equatable, Sendable {
 /// `routeEntityID` binds the topology back to the exact entity used by a
 /// RoutePlan occurrence. Successors are authored by the reviewed graph and are
 /// never inferred from schematic geometry.
-public struct RouteAtlasTopologyEdge: Equatable, Sendable {
+public struct RouteAtlasTopologyEdge: Codable, Equatable, Sendable {
   public let id: String
   public let routeEntityID: String
   public let fromNodeID: String
@@ -57,10 +122,18 @@ public struct RouteAtlasTopologyEdge: Equatable, Sendable {
     self.toNodeID = toNodeID
     self.successorEdgeIDs = successorEdgeIDs
   }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "edge_id"
+    case routeEntityID = "route_entity_id"
+    case fromNodeID = "from_node_id"
+    case toNodeID = "to_node_id"
+    case successorEdgeIDs = "successor_edge_ids"
+  }
 }
 
 /// The reviewed graph truth for the exact network coverage visible in an atlas.
-public struct RouteAtlasTopologySlice: Equatable, Sendable {
+public struct RouteAtlasTopologySlice: Codable, Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
   public let nodes: [RouteAtlasTopologyNode]
@@ -80,10 +153,18 @@ public struct RouteAtlasTopologySlice: Equatable, Sendable {
     self.edges = edges
     self.evidence = evidence
   }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "topology_slice_id"
+    case networkSnapshotID = "network_snapshot_id"
+    case nodes
+    case edges
+    case evidence
+  }
 }
 
 /// A renderer-neutral point in a normalized north-up atlas coordinate space.
-public struct RouteAtlasPoint: Equatable, Sendable {
+public struct RouteAtlasPoint: Codable, Equatable, Sendable {
   public let x: Double
   public let y: Double
 
@@ -93,13 +174,18 @@ public struct RouteAtlasPoint: Equatable, Sendable {
   }
 }
 
-public struct RouteAtlasLayoutNode: Equatable, Sendable {
+public struct RouteAtlasLayoutNode: Codable, Equatable, Sendable {
   public let topologyNodeID: String
   public let point: RouteAtlasPoint
 
   public init(topologyNodeID: String, point: RouteAtlasPoint) {
     self.topologyNodeID = topologyNodeID
     self.point = point
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case topologyNodeID = "topology_node_id"
+    case point
   }
 }
 
@@ -108,7 +194,7 @@ public struct RouteAtlasLayoutNode: Equatable, Sendable {
 /// A renderer may simplify these points visually, but it must use
 /// `successorSegmentIDs` for interaction and highlighting. Coordinate crossings
 /// never create a graph connection.
-public struct RouteAtlasSegment: Equatable, Sendable {
+public struct RouteAtlasSegment: Codable, Equatable, Sendable {
   public let id: String
   public let topologyEdgeID: String
   public let fromNodeID: String
@@ -131,11 +217,20 @@ public struct RouteAtlasSegment: Equatable, Sendable {
     self.successorSegmentIDs = successorSegmentIDs
     self.points = points
   }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "segment_id"
+    case topologyEdgeID = "topology_edge_id"
+    case fromNodeID = "from_node_id"
+    case toNodeID = "to_node_id"
+    case successorSegmentIDs = "successor_segment_ids"
+    case points
+  }
 }
 
 /// A route occurrence remains distinct even when another occurrence uses the
 /// same topology edge and schematic segment.
-public struct RouteAtlasOccurrenceBinding: Equatable, Sendable {
+public struct RouteAtlasOccurrenceBinding: Codable, Equatable, Sendable {
   public let occurrenceID: String
   public let occurrenceIndex: Int
   public let segmentID: String
@@ -145,13 +240,19 @@ public struct RouteAtlasOccurrenceBinding: Equatable, Sendable {
     self.occurrenceIndex = occurrenceIndex
     self.segmentID = segmentID
   }
+
+  enum CodingKeys: String, CodingKey {
+    case occurrenceID = "occurrence_id"
+    case occurrenceIndex = "occurrence_index"
+    case segmentID = "segment_id"
+  }
 }
 
 /// Reviewed schematic geometry without independently authored road labels.
 ///
 /// Route shields and displayed names must be resolved from snapshot-bound
 /// released metadata; this value intentionally exposes no arbitrary label text.
-public struct RouteAtlasDefinition: Equatable, Sendable {
+public struct RouteAtlasDefinition: Codable, Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
   public let routePlanID: String
@@ -180,9 +281,55 @@ public struct RouteAtlasDefinition: Equatable, Sendable {
     self.occurrenceBindings = occurrenceBindings
     self.evidence = evidence
   }
+
+  enum CodingKeys: String, CodingKey {
+    case id = "atlas_id"
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case topologySliceID = "topology_slice_id"
+    case nodes
+    case segments
+    case occurrenceBindings = "occurrence_bindings"
+    case evidence
+  }
+}
+
+public struct RouteAtlasReleaseArtifact: Codable, Equatable, Sendable {
+  public let schemaVersion: String
+  public let networkSnapshot: NetworkSnapshot
+  public let routePlan: RoutePlan
+  public let sourceRegistry: RouteAtlasSourceRegistry
+  public let topologySlice: RouteAtlasTopologySlice
+  public let definition: RouteAtlasDefinition
+
+  public init(
+    schemaVersion: String = "1.0",
+    networkSnapshot: NetworkSnapshot,
+    routePlan: RoutePlan,
+    sourceRegistry: RouteAtlasSourceRegistry,
+    topologySlice: RouteAtlasTopologySlice,
+    definition: RouteAtlasDefinition
+  ) {
+    self.schemaVersion = schemaVersion
+    self.networkSnapshot = networkSnapshot
+    self.routePlan = routePlan
+    self.sourceRegistry = sourceRegistry
+    self.topologySlice = topologySlice
+    self.definition = definition
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case networkSnapshot = "network_snapshot"
+    case routePlan = "route_plan"
+    case sourceRegistry = "source_registry"
+    case topologySlice = "topology_slice"
+    case definition
+  }
 }
 
 public enum RouteAtlasReleaseIssue: Equatable, Sendable {
+  case invalidArtifactSchemaVersion
   case invalidNetworkSnapshot
   case routePlanSnapshotMismatch
   case invalidRoutePlan
@@ -190,6 +337,13 @@ public enum RouteAtlasReleaseIssue: Equatable, Sendable {
   case topologySnapshotMismatch
   case unreleasedTopologyEvidence
   case invalidTopologyEvidence
+  case invalidSourceRegistry
+  case duplicateSourceReference(String)
+  case orphanSourceReference(String)
+  case unresolvedTopologySource(String)
+  case invalidTopologySourceRole(String)
+  case unresolvedLayoutSource(String)
+  case invalidLayoutSourceRole(String)
   case invalidAtlasIdentity
   case atlasSnapshotMismatch
   case atlasRoutePlanMismatch
@@ -216,6 +370,8 @@ public enum RouteAtlasReleaseIssue: Equatable, Sendable {
 
   public var code: String {
     switch self {
+    case .invalidArtifactSchemaVersion:
+      "INVALID_ATLAS_ARTIFACT_SCHEMA_VERSION"
     case .invalidNetworkSnapshot:
       "INVALID_NETWORK_SNAPSHOT"
     case .routePlanSnapshotMismatch:
@@ -230,6 +386,20 @@ public enum RouteAtlasReleaseIssue: Equatable, Sendable {
       "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE"
     case .invalidTopologyEvidence:
       "INVALID_ATLAS_TOPOLOGY_EVIDENCE"
+    case .invalidSourceRegistry:
+      "INVALID_ATLAS_SOURCE_REGISTRY"
+    case .duplicateSourceReference:
+      "DUPLICATE_ATLAS_SOURCE_REFERENCE"
+    case .orphanSourceReference:
+      "ORPHAN_ATLAS_SOURCE_REFERENCE"
+    case .unresolvedTopologySource:
+      "UNRESOLVED_ATLAS_TOPOLOGY_SOURCE"
+    case .invalidTopologySourceRole:
+      "INVALID_ATLAS_TOPOLOGY_SOURCE_ROLE"
+    case .unresolvedLayoutSource:
+      "UNRESOLVED_ATLAS_LAYOUT_SOURCE"
+    case .invalidLayoutSourceRole:
+      "INVALID_ATLAS_LAYOUT_SOURCE_ROLE"
     case .invalidAtlasIdentity:
       "INVALID_ATLAS_IDENTITY"
     case .atlasSnapshotMismatch:
@@ -281,7 +451,13 @@ public enum RouteAtlasReleaseIssue: Equatable, Sendable {
 
   fileprivate var sortKey: String {
     switch self {
-    case .duplicateLayoutNodeID(let id),
+    case .duplicateSourceReference(let id),
+      .orphanSourceReference(let id),
+      .unresolvedTopologySource(let id),
+      .invalidTopologySourceRole(let id),
+      .unresolvedLayoutSource(let id),
+      .invalidLayoutSourceRole(let id),
+      .duplicateLayoutNodeID(let id),
       .missingLayoutNode(let id),
       .unknownLayoutNode(let id),
       .invalidLayoutNode(let id),
@@ -317,18 +493,21 @@ public enum RouteAtlasReleaseError: Error, Equatable, Sendable {
 public struct RouteAtlasRelease: Equatable, Sendable {
   public let networkSnapshot: NetworkSnapshot
   public let routePlan: RoutePlan
+  public let sourceRegistry: RouteAtlasSourceRegistry
   public let topologySlice: RouteAtlasTopologySlice
   public let definition: RouteAtlasDefinition
 
   public init(
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
+    sourceRegistry: RouteAtlasSourceRegistry,
     topologySlice: RouteAtlasTopologySlice,
     definition: RouteAtlasDefinition
   ) throws {
     let issues = Self.validationIssues(
       networkSnapshot: networkSnapshot,
       routePlan: routePlan,
+      sourceRegistry: sourceRegistry,
       topologySlice: topologySlice,
       definition: definition
     )
@@ -337,17 +516,63 @@ public struct RouteAtlasRelease: Equatable, Sendable {
     }
     self.networkSnapshot = networkSnapshot
     self.routePlan = routePlan
+    self.sourceRegistry = sourceRegistry
     self.topologySlice = topologySlice
     self.definition = definition
+  }
+
+  public init(artifact: RouteAtlasReleaseArtifact) throws {
+    var issues = Self.validationIssues(
+      networkSnapshot: artifact.networkSnapshot,
+      routePlan: artifact.routePlan,
+      sourceRegistry: artifact.sourceRegistry,
+      topologySlice: artifact.topologySlice,
+      definition: artifact.definition
+    )
+    if artifact.schemaVersion != "1.0" {
+      issues.append(.invalidArtifactSchemaVersion)
+    }
+    issues = Self.sortedUnique(issues)
+    guard issues.isEmpty else {
+      throw RouteAtlasReleaseError.invalid(issues)
+    }
+    self.networkSnapshot = artifact.networkSnapshot
+    self.routePlan = artifact.routePlan
+    self.sourceRegistry = artifact.sourceRegistry
+    self.topologySlice = artifact.topologySlice
+    self.definition = artifact.definition
   }
 
   private static func validationIssues(
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
+    sourceRegistry: RouteAtlasSourceRegistry,
     topologySlice: RouteAtlasTopologySlice,
     definition: RouteAtlasDefinition
   ) -> [RouteAtlasReleaseIssue] {
     var issues: [RouteAtlasReleaseIssue] = []
+
+    var sourcesByID: [String: RouteAtlasSourceReference] = [:]
+    for source in sourceRegistry.references {
+      if sourcesByID[source.id] != nil {
+        issues.append(.duplicateSourceReference(source.id))
+      } else {
+        sourcesByID[source.id] = source
+      }
+    }
+    if sourceRegistry.references.isEmpty
+      || sourceRegistry.references.contains(where: {
+        normalized($0.id).isEmpty
+          || normalized($0.authorityName).isEmpty
+          || !isHTTPSURL($0.sourceURL)
+          || !isSHA256($0.contentSHA256)
+          || !isISODate($0.checkedAt)
+          || normalized($0.licenceIdentifier).isEmpty
+          || $0.roles.isEmpty
+      })
+    {
+      issues.append(.invalidSourceRegistry)
+    }
 
     if normalized(networkSnapshot.id).isEmpty
       || networkSnapshot.status != .active
@@ -369,6 +594,18 @@ public struct RouteAtlasRelease: Equatable, Sendable {
     }
     if !evidenceIsValid(topologySlice.evidence) {
       issues.append(.invalidTopologyEvidence)
+    }
+    for sourceID in topologySlice.evidence.sourceReferenceIDs {
+      guard let source = sourcesByID[sourceID] else {
+        issues.append(.unresolvedTopologySource(sourceID))
+        continue
+      }
+      if !source.roles.contains(.topologyEvidence) {
+        issues.append(.invalidTopologySourceRole(sourceID))
+      }
+      if source.checkedAt > topologySlice.evidence.checkedAt {
+        issues.append(.invalidTopologyEvidence)
+      }
     }
 
     let topologyNodeIDs = topologySlice.nodes.map(\.id)
@@ -428,6 +665,25 @@ public struct RouteAtlasRelease: Equatable, Sendable {
     if !evidenceIsValid(definition.evidence) {
       issues.append(.invalidAtlasEvidence)
     }
+    for sourceID in definition.evidence.sourceReferenceIDs {
+      guard let source = sourcesByID[sourceID] else {
+        issues.append(.unresolvedLayoutSource(sourceID))
+        continue
+      }
+      if !source.roles.contains(.layoutEvidence) {
+        issues.append(.invalidLayoutSourceRole(sourceID))
+      }
+      if source.checkedAt > definition.evidence.checkedAt {
+        issues.append(.invalidAtlasEvidence)
+      }
+    }
+    let referencedSourceIDs = Set(
+      topologySlice.evidence.sourceReferenceIDs
+        + definition.evidence.sourceReferenceIDs
+    )
+    for sourceID in sourcesByID.keys where !referencedSourceIDs.contains(sourceID) {
+      issues.append(.orphanSourceReference(sourceID))
+    }
 
     var layoutNodesByID: [String: RouteAtlasLayoutNode] = [:]
     for node in definition.nodes {
@@ -463,9 +719,11 @@ public struct RouteAtlasRelease: Equatable, Sendable {
       if !topologyEdgeIDSet.contains(segment.topologyEdgeID) {
         issues.append(.unknownTopologyEdge(segment.topologyEdgeID))
       }
-      guard let topologyEdge = topologySlice.edges.first(where: {
-        $0.id == segment.topologyEdgeID
-      }) else {
+      guard
+        let topologyEdge = topologySlice.edges.first(where: {
+          $0.id == segment.topologyEdgeID
+        })
+      else {
         continue
       }
       if segment.fromNodeID != topologyEdge.fromNodeID
@@ -563,6 +821,8 @@ public struct RouteAtlasRelease: Equatable, Sendable {
   private static func evidenceIsValid(_ evidence: RouteAtlasEvidence) -> Bool {
     isISODate(evidence.checkedAt)
       && !evidence.sourceReferenceIDs.isEmpty
+      && Set(evidence.sourceReferenceIDs).count
+        == evidence.sourceReferenceIDs.count
       && evidence.sourceReferenceIDs.allSatisfy { !normalized($0).isEmpty }
   }
 
@@ -578,6 +838,22 @@ public struct RouteAtlasRelease: Equatable, Sendable {
     let fractional = ISO8601DateFormatter()
     fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return fractional.date(from: value) != nil
+  }
+
+  private static func isHTTPSURL(_ value: String) -> Bool {
+    guard let components = URLComponents(string: value) else {
+      return false
+    }
+    return components.scheme == "https" && !(components.host ?? "").isEmpty
+  }
+
+  private static func isSHA256(_ value: String) -> Bool {
+    value.count == 64
+      && value.utf8.allSatisfy { byte in
+        (48...57).contains(byte)
+          || (65...70).contains(byte)
+          || (97...102).contains(byte)
+      }
   }
 
   private static func isISODate(_ value: String) -> Bool {

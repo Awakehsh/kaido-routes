@@ -1,0 +1,15 @@
+{
+  "source_reference_id": "mlit.nlni.n06-2025.current-shuto",
+  "authority_name": "Ministry of Land, Infrastructure, Transport and Tourism of Japan",
+  "source_page_url": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html",
+  "download_url": "https://nlftp.mlit.go.jp/ksj/gml/data/N06/N06-25/N06-25_GML.zip",
+  "archive_sha256": "742c8785dfb2f900f167972abe00d5c36103365c0f9fb11dc8a883aa358ac23e",
+  "source_crs": "EPSG:6668",
+  "dataset_reference_date": "2025-12-31",
+  "retrieved_at": "2026-07-23",
+  "checked_at": "2026-07-23",
+  "licence_identifier": "CC-BY-4.0",
+  "usage_scope": "CURRENT_STATE_ONLY",
+  "attribution": "National Land Numerical Information (Highway Time Series, N06-2025), Ministry of Land, Infrastructure, Transport and Tourism of Japan",
+  "transformation_disclosure": "Kaido Routes used only current-state records (end year 9999), filtered designated urban expressway features whose route name begins with 首都高速, retained complete and provisional-use geometries without vertex simplification, and projected JGD2011 EPSG:6668 coordinates into a north-up local equirectangular normalized display space. The result is geographic context only and has no direction, legal-movement, RoutePlan, or realtime authority."
+}

@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoNavigation
 import Testing
@@ -8,6 +9,7 @@ func routeAtlasReleaseAcceptsCoherentRepeatedOccurrences() throws {
   let release = try RouteAtlasRelease(
     networkSnapshot: fixture.networkSnapshot,
     routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
     topologySlice: fixture.topologySlice,
     definition: fixture.definition
   )
@@ -48,6 +50,7 @@ func routeAtlasReleaseRejectsInventedConnection() {
     _ = try RouteAtlasRelease(
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
+      sourceRegistry: fixture.sourceRegistry,
       topologySlice: fixture.topologySlice,
       definition: definition
     )
@@ -76,6 +79,7 @@ func routeAtlasReleaseRejectsMissingCoverage() {
     _ = try RouteAtlasRelease(
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
+      sourceRegistry: fixture.sourceRegistry,
       topologySlice: fixture.topologySlice,
       definition: definition
     )
@@ -111,6 +115,7 @@ func routeAtlasReleaseRejectsSnapshotAndEvidenceDrift() {
     _ = try RouteAtlasRelease(
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
+      sourceRegistry: fixture.sourceRegistry,
       topologySlice: fixture.topologySlice,
       definition: definition
     )
@@ -135,6 +140,7 @@ func routeAtlasReleaseRejectsReorderedOccurrences() {
     _ = try RouteAtlasRelease(
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
+      sourceRegistry: fixture.sourceRegistry,
       topologySlice: fixture.topologySlice,
       definition: definition
     )
@@ -165,6 +171,7 @@ func routeAtlasReleaseRejectsUnreleasedTopology() {
     _ = try RouteAtlasRelease(
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
+      sourceRegistry: fixture.sourceRegistry,
       topologySlice: topology,
       definition: fixture.definition
     )
@@ -176,9 +183,96 @@ func routeAtlasReleaseRejectsUnreleasedTopology() {
   }
 }
 
+@Test("Route Atlas release requires every evidence ID to resolve to the correct source role")
+func routeAtlasReleaseRejectsUnresolvedAndMisclassifiedSources() {
+  let fixture = routeAtlasFixture()
+  let driftedRegistry = RouteAtlasSourceRegistry(
+    references: [
+      RouteAtlasSourceReference(
+        id: "test.source.reviewed-atlas",
+        roles: [.topologyEvidence],
+        authorityName: "Synthetic misclassified review authority",
+        sourceURL: "https://example.test/misclassified-layout",
+        contentSHA256:
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        checkedAt: "2026-07-23",
+        licenceIdentifier: "SYNTHETIC"
+      )
+    ]
+  )
+
+  do {
+    _ = try RouteAtlasRelease(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      sourceRegistry: driftedRegistry,
+      topologySlice: fixture.topologySlice,
+      definition: fixture.definition
+    )
+    Issue.record("Expected unresolved and misclassified sources to block release")
+  } catch RouteAtlasReleaseError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .unresolvedTopologySource("test.source.reviewed-topology")
+      )
+    )
+    #expect(
+      issues.contains(.invalidLayoutSourceRole("test.source.reviewed-atlas"))
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Route Atlas release artifact round-trips before validation")
+func routeAtlasReleaseArtifactRoundTrips() throws {
+  let fixture = routeAtlasFixture()
+  let artifact = RouteAtlasReleaseArtifact(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.sortedKeys]
+  let encoded = try encoder.encode(artifact)
+  let decoded = try JSONDecoder().decode(
+    RouteAtlasReleaseArtifact.self,
+    from: encoded
+  )
+  let release = try RouteAtlasRelease(artifact: decoded)
+
+  #expect(decoded == artifact)
+  #expect(release.sourceRegistry == fixture.sourceRegistry)
+}
+
+@Test("Route Atlas release artifact rejects schema drift")
+func routeAtlasReleaseArtifactRejectsSchemaDrift() {
+  let fixture = routeAtlasFixture()
+  let artifact = RouteAtlasReleaseArtifact(
+    schemaVersion: "2.0",
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+
+  do {
+    _ = try RouteAtlasRelease(artifact: artifact)
+    Issue.record("Expected release artifact schema drift to block validation")
+  } catch RouteAtlasReleaseError.invalid(let issues) {
+    #expect(issues.contains(.invalidArtifactSchemaVersion))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 private struct RouteAtlasFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
+  let sourceRegistry: RouteAtlasSourceRegistry
   let topologySlice: RouteAtlasTopologySlice
   let definition: RouteAtlasDefinition
 }
@@ -213,6 +307,30 @@ private func routeAtlasFixture() -> RouteAtlasFixture {
         index: 2,
         kind: .edge,
         entityID: "test.edge.loop"
+      ),
+    ]
+  )
+  let sourceRegistry = RouteAtlasSourceRegistry(
+    references: [
+      RouteAtlasSourceReference(
+        id: "test.source.reviewed-topology",
+        roles: [.topologyEvidence],
+        authorityName: "Synthetic topology review authority",
+        sourceURL: "https://example.test/reviewed-topology",
+        contentSHA256:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        checkedAt: "2026-07-23",
+        licenceIdentifier: "SYNTHETIC"
+      ),
+      RouteAtlasSourceReference(
+        id: "test.source.reviewed-atlas",
+        roles: [.layoutEvidence],
+        authorityName: "Synthetic layout review authority",
+        sourceURL: "https://example.test/reviewed-layout",
+        contentSHA256:
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        checkedAt: "2026-07-23",
+        licenceIdentifier: "SYNTHETIC"
       ),
     ]
   )
@@ -312,6 +430,7 @@ private func routeAtlasFixture() -> RouteAtlasFixture {
   return RouteAtlasFixture(
     networkSnapshot: networkSnapshot,
     routePlan: routePlan,
+    sourceRegistry: sourceRegistry,
     topologySlice: topologySlice,
     definition: definition
   )

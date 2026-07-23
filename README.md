@@ -172,12 +172,32 @@ must have exact coverage; path endpoints and legal successor sets must match the
 reviewed graph; topology route-entity identity is unique; and every RoutePlan
 occurrence remains separately bound in exact order even when repeated
 occurrences share one schematic segment. Coordinate crossings never author graph
-connectivity, and the layout type contains no arbitrary display labels. KR-D19
-proves that one visually invented connection blocks release. This verifies
+connectivity, and the layout type contains no arbitrary display labels. Topology
+and layout evidence IDs must resolve to explicit dated, licensed, role-matched
+source records with pinned content SHA-256 values in the versioned Codable
+release artifact. KR-D19 proves that one
+visually invented connection blocks release. This verifies
 internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
-The feasibility core currently executes portable scenarios for twenty-seven hard
+The full-network recognition layer is now data-derived instead of hand drawn.
+`RouteAtlasContextBundle` accepts only `CONTEXT_ONLY` geometry with a matching
+source record, current-state scope, CC BY 4.0 attribution and transformation
+notice, reviewed source-archive SHA-256, fixed north-up projection, and exact
+coverage counters. The pinned MLIT N06-2025 current-state archive produces 85
+Shuto source features, 85 paths, 3,546 unsimplified JGD2011 `EPSG:6668`
+vertices, and 25 route
+name strings. The operator's current route-mark table lists 26 names and
+separately identifies K7 Yokohama Northwest, so N06 naming cannot supply current
+labels or route shields. This gives the presentation a recognizable
+full-network frame but no
+direction, legal junction movement, selectable topology, RoutePlan occurrence,
+position, or realtime authority. KR-D20 proves that promotion to navigation
+authority fails closed. The source date is 2025-12-31, so the separately
+reviewed operator map dated 2026-07-01 remains a later currentness comparison,
+not copied data or proof that a navigable topology is released.
+
+The feasibility core currently executes portable scenarios for twenty-eight hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -243,6 +263,9 @@ properties that must remain proven as the product expands:
     and guidance, and any junction-view registry before runtime composition.
 27. a Route Atlas exactly covers one reviewed topology slice, preserves every
     route occurrence, and rejects any visual connection absent from the graph.
+28. full-network geographic context remains permanently non-navigable and fails
+    closed on source, licence, projection, coverage, geometry, or authority
+    drift.
 
 ## Repository map
 
@@ -286,6 +309,9 @@ scenario suite and the independent schema validator:
 swift test
 swift run kaido-scenarios e2e/scenarios
 swift run kaido-matcher-replay benchmarks/map-matching/fixtures/synthetic
+swift run kaido-atlas validate \
+  --source data/route-atlas/context/mlit-n06-2025-current-source.json \
+  --context data/route-atlas/context/mlit-n06-2025-current-shuto-context.json
 python3 scripts/validate_e2e.py
 ```
 
@@ -293,6 +319,9 @@ python3 scripts/validate_e2e.py
 prints a result for every scenario and assertion. The Python validator remains
 an independent L0 check for the portable envelope, route-occurrence identity,
 event ordering, evidence references, and assertion references.
+`kaido-atlas validate-release --artifact <file>` decodes and validates a future
+versioned topology/layout release artifact through the same source-registry and
+graph-integrity gate; no real Shuto release artifact exists yet.
 
 ## Safety
 

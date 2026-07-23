@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D20",
+  "title": "Route Atlas context geometry cannot become navigation authority",
+  "layer": "DOMAIN",
+  "tags": ["route-atlas", "context", "evidence", "fail-closed"],
+  "purpose": "Keep recognizable full-network geography separate from the reviewed directed topology that alone may authorize route interaction and navigation.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This fixture exercises the context-role boundary only.",
+      "It does not establish real Shuto geography, topology, route names, legal movements, or navigable coverage."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.route-atlas-context-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "inputs": {
+      "route_atlas_context_source": {
+        "source_reference_id": "test.source.route-atlas-context",
+        "authority_name": "Synthetic transport authority",
+        "source_page_url": "https://example.test/context-source",
+        "download_url": "https://example.test/context-source.zip",
+        "archive_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_crs": "EPSG:4326",
+        "dataset_reference_date": "2026-07-23",
+        "retrieved_at": "2026-07-23",
+        "checked_at": "2026-07-23",
+        "licence_identifier": "CC-BY-4.0",
+        "usage_scope": "CURRENT_STATE_ONLY",
+        "attribution": "Synthetic transport authority data",
+        "transformation_disclosure": "Filtered to current synthetic expressway features and projected north-up without geometry simplification."
+      },
+      "route_atlas_context": {
+        "schema_version": "1.0",
+        "context_id": "test.route-atlas-context",
+        "navigation_role": "NAVIGATION_AUTHORITY",
+        "source_reference_id": "test.source.route-atlas-context",
+        "projection": {
+          "kind": "LOCAL_EQUIRECTANGULAR",
+          "north_up": true,
+          "source_crs": "EPSG:4326",
+          "coordinate_space": "NORMALIZED_UNIT_SQUARE",
+          "minimum_longitude": 139.70,
+          "maximum_longitude": 139.80,
+          "minimum_latitude": 35.60,
+          "maximum_latitude": 35.70
+        },
+        "coverage": {
+          "source_feature_count": 1,
+          "path_count": 1,
+          "vertex_count": 2,
+          "route_name_count": 1
+        },
+        "paths": [
+          {
+            "path_id": "test.context-path.001.0",
+            "source_feature_id": "test.source-feature.001",
+            "source_record_id": "test.source-record.001",
+            "source_part_index": 0,
+            "route_name_ja": "テスト高速道路",
+            "use_status": "COMPLETE",
+            "points": [
+              {"x": 0.25, "y": 0.75},
+              {"x": 0.75, "y": 0.25}
+            ]
+          }
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "validate-route-atlas-context",
+      "at_ms": 0,
+      "type": "ROUTE_ATLAS_CONTEXT_VALIDATED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "context-authority-is-blocked",
+      "after": "validate-route-atlas-context",
+      "category": "SAFETY",
+      "subject": "route_atlas_context.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A geographic context layer cannot become selectable or navigable even when its source and geometry are otherwise valid."
+    },
+    {
+      "id": "role-failure-is-explicit",
+      "after": "validate-route-atlas-context",
+      "category": "EVIDENCE",
+      "subject": "route_atlas_context.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "CONTEXT_ROLE_MISMATCH",
+      "rationale": "The failure must identify the authority boundary instead of silently treating contextual lines as reviewed directed topology."
+    }
+  ]
+}

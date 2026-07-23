@@ -326,6 +326,13 @@ reviewed graph, with one unique route-entity identity per topology edge.
 Geometry contact never creates a connection. The definition contains no
 independently authored display labels; future route shields and names must
 resolve from separately released metadata bound to the same snapshot.
+Every topology and layout evidence ID must resolve through a decoded
+`RouteAtlasSourceRegistry` record with an explicit topology/layout role,
+authority, HTTPS source, content SHA-256, checked date, and licence identifier. Unresolved,
+duplicate, invalid, or role-mismatched source records fail closed. The complete
+network snapshot, RoutePlan, source registry, topology slice, and definition are
+Codable as a versioned `RouteAtlasReleaseArtifact`; decoding never bypasses the
+same release validator.
 Every RoutePlan occurrence has its own binding in exact RoutePlan order, while
 repeated occurrences may intentionally reference the same schematic segment.
 Snapshot drift, missing or extra coverage, an invented connection, incomplete
@@ -334,6 +341,39 @@ evidence fails closed. KR-D19 executes
 an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
+
+`RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
+full-network geographic recognition. Its only accepted navigation role is
+`CONTEXT_ONLY`; it exposes source-derived display paths but no directed edge,
+successor, occurrence, junction movement, route selection, current-position, or
+realtime semantics. A separately decoded source record must resolve the exact
+source-reference ID, HTTPS locations, archive SHA-256, ISO dates, current-state
+usage scope, CC BY 4.0 identifier, attribution, and transformation disclosure.
+The context definition also fixes one north-up local equirectangular projection,
+normalized unit-square coordinates, exact selected-feature/path/vertex/route-name
+counts, unique source-feature/part identity, and finite in-bounds points.
+Promotion to navigation authority, source drift, missing attribution, projection
+drift, coverage drift, or geometry drift fails closed. KR-D20 executes the
+authority boundary with synthetic data.
+
+The first tracked context artifact is reconstructed directly from the checksummed
+MLIT National Land Numerical Information N06-2025 archive. It uses only
+current-state records (`N06_003 == 9999`), designated urban expressways
+(`N06_008 == 5`), and route names beginning with `首都高速`; all selected
+multiline parts and vertices are retained without simplification. The importer
+requires the source-declared JGD2011 `EPSG:6668` CRS before projection. The pinned
+archive produces 85 source features, 85 paths, 3,546 vertices, and 25 route
+names, with one provisional-use path retained and visibly distinguishable.
+Those 25 names are source metadata, not released display labels. The operator's
+current route-mark table lists 26 names and separately identifies K7 Yokohama
+Northwest, which N06-2025 does not expose as a separate selected route-name
+value. This mismatch blocks route shields and label release; it does not by
+itself prove whether the corresponding source geometry is present or absent.
+Its source reference date is 2025-12-31. The operator's 2026-07-01 Navi Map is
+a later currentness review source, not copied presentation data and not proof of
+directed topology. `kaido-atlas validate` checks the decoded source/context
+bundle, while the Python builder verifies the raw ZIP checksum before producing
+the artifact. None of these checks releases a real Kaido topology slice.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
@@ -344,9 +384,13 @@ That is a development fact, not yet the minimum deployment target.
 
 - SwiftUI owns route discovery, pre-drive review, guided customization, settings,
   evidence status, and the driving shell.
-- The Shuto overview is a custom schematic renderer, initially implemented with
+- The Shuto overview is a custom renderer, initially implemented with
   SwiftUI `Canvas`/`Path` or a shared Core Graphics renderer. It is not a MapKit
   geographic map.
+- The persistent frame is deliberately dual-layer: source-derived geographic
+  context establishes the recognizable full-network shape, while an independently
+  released `RouteAtlasRelease` alone may add selectable topology, RoutePlan
+  occurrence state, direction, legal movement, and position.
 - This renderer is the persistent `Route Atlas` for the supported Shuto slice,
   not a decorative preview. Its system and route views keep a stable north-up
   frame so the driver can retain network context. An approach-aligned

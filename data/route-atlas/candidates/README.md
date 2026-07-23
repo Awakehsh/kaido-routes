@@ -44,3 +44,41 @@ UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 ```
 
 KR-D21 preserves this boundary in the portable scenario suite.
+
+## OSM-directed K7 Northwest candidate
+
+`k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json` advances the
+candidate from one undirected MLIT centerline occurrence to:
+
+- 13 exact one-way OSM route occurrences;
+- 257 retained OSM nodes;
+- the Yokohama Aoba entrance-to-K7 chain;
+- the K7 Northwest up carriageway;
+- the first branch toward Daisan-Keihin / Yokohama Kohoku exit;
+- the later Yokohama Kohoku exit versus Daisan-Keihin branch; and
+- one explicit immediate alternative at each of the two divergences.
+
+The source-bound facility checks additionally retain the Aoba incoming and
+non-route split ways plus two one-way `川向線` successors at the Kohoku surface
+terminal. Surface egress remains a separate bounded leg; these records prove
+the candidate does not end at an unconnected coordinate.
+
+The underlying database is isolated under
+`data/route-atlas/osm-derived/` and remains ODbL-1.0 data with OpenStreetMap
+contributor attribution. Parent PBF and bounded-extract hashes, source
+timestamp, extraction bounds, pyosmium version, exact way IDs, and
+reconstruction commands are retained.
+
+The official Aoba and Kohoku guides corroborate the selected movement semantics
+but do not relicense the OSM database or become layout assets. Both candidate
+evidence states therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful
+field/topology review, production layout review, in-product attribution, and
+realtime review remain open.
+
+KR-D22 executes the complete 13-occurrence / 15-edge artifact and requires
+release validation to fail with only:
+
+```text
+UNRELEASED_ATLAS_EVIDENCE
+UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
+```

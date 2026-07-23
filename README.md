@@ -214,6 +214,21 @@ identity, operator diagrams are not distributable layout assets, and field,
 production-layout, and realtime reviews remain open. KR-D21 proves that only
 `UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE` and `UNRELEASED_ATLAS_EVIDENCE` block it.
 
+The next K7 candidate adds an isolated ODbL-derived directed database from the
+pinned Geofabrik Kanto 2026-07-21 PBF. It preserves 13 exact one-way OSM ways
+from the Yokohama Aoba toll-plaza split through the K7 Northwest up carriageway
+to the Yokohama Kohoku exit terminal, plus the immediate K7 Yokohama North and
+Daisan-Keihin alternatives at the two operator-reviewed divergences. All 257
+retained nodes, the Aoba incoming/non-route split, two outgoing one-way Kawamuki
+Line surface connections at the Kohoku terminal, way tags, direction,
+extraction bounds, source hashes, OSM timestamp, and reconstruction commands
+remain explicit. This closes the
+structured directed-candidate gap, not release: topology and layout stay
+`CANDIDATE` until independent lawful field/topology review, production layout,
+attribution integration, and realtime review are complete. KR-D22 proves that
+the internally coherent 13-occurrence, 15-edge artifact still fails release
+with only the two unreleased-evidence issues.
+
 The feasibility core currently executes portable scenarios for twenty-nine hard
 properties that must remain proven as the product expands:
 

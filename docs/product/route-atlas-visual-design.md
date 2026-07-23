@@ -72,9 +72,16 @@ Those states still require one accepted `RouteAtlasRelease` bound to the exact
 active network snapshot, directed topology, legal successors, reviewed layout,
 and occurrence bindings. A coordinate crossing never establishes a connection.
 
+The ODbL-isolated K7 directed candidate may appear only in an evidence view. Its
+13 one-way route occurrences and two immediate divergence alternatives improve
+auditability, but its `CANDIDATE` state cannot create active-route highlighting,
+position, progress, recovery, or guidance. Raw source geometry is not the
+released Kaido schematic.
+
 ## Current sources
 
 - [Shuto Navi Map, current on 2026-07-01](https://www.shutoko.jp/use/network/navimap/)
 - [Shuto route marks](https://www.shutoko.jp/use/convenience/infoboard/guidance/)
 - [MLIT N06-2025 Highway Time Series](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html)
 - [Route Atlas geographic context provenance](../../data/route-atlas/context/README.md)
+- [OSM-derived K7 candidate provenance](../../data/route-atlas/osm-derived/README.md)

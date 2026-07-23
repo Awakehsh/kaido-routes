@@ -1,0 +1,220 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.osm-directed.2026-07-23",
+  "checked_at": "2026-07-23",
+  "database_id": "osm.geofabrik.kanto-260721.k7-northwest-directed",
+  "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+  "network_effective_at": "2026-07-21T20:21:50Z",
+  "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+  "candidate_state": "CANDIDATE",
+  "navigation_authority": false,
+  "source_extract": {
+    "source_url": "https://download.geofabrik.de/asia/japan/kanto-260721.osm.pbf",
+    "parent_pbf_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
+    "published_md5": "3f4b13cb01f16caad29212e94392aeaa",
+    "source_snapshot_at": "2026-07-21T20:21:50Z",
+    "expected_extract_sha256": "36bd95c1987842099dc7b3953c38e623951a1a5eb6c9a38400786c47c6ddc0f3",
+    "extraction_tool_version": "4.3.1",
+    "licence": "ODbL-1.0",
+    "attribution": "© OpenStreetMap contributors",
+    "bounds": {
+      "minimum_latitude": 35.5,
+      "maximum_latitude": 35.56,
+      "minimum_longitude": 139.52,
+      "maximum_longitude": 139.61
+    }
+  },
+  "route": {
+    "entry_facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "entry_node_id": 5517714075,
+    "exit_node_id": 7473451738,
+    "way_ids": [
+      574920138,
+      692426107,
+      692426101,
+      850400096,
+      692755609,
+      692798735,
+      686983570,
+      782596968,
+      915062290,
+      686983572,
+      783581372,
+      734299101,
+      734299106
+    ]
+  },
+  "divergence_alternatives": [
+    {
+      "after_way_id": 692798735,
+      "way_id": 686983567,
+      "role": "CONTINUE_K7_YOKOHAMA_NORTH"
+    },
+    {
+      "after_way_id": 915062290,
+      "way_id": 367046943,
+      "role": "CONTINUE_E83_DAISAN_KEIHIN"
+    }
+  ],
+  "facility_boundary_checks": {
+    "entry_predecessor_way_id": 1462532752,
+    "entry_nonroute_successor_way_id": 44421530,
+    "exit_surface_successor_way_ids": [
+      734299108,
+      734299111
+    ],
+    "required_exit_surface_tags": {
+      "highway": "tertiary",
+      "name": "川向線",
+      "oneway": "yes"
+    }
+  },
+  "required_way_tags": {
+    "574920138": {
+      "highway": "motorway_link",
+      "oneway": "yes",
+      "destination:ref": "K7;E83"
+    },
+    "850400096": {
+      "highway": "motorway",
+      "oneway": "yes",
+      "ref": "K7",
+      "name": "首都高速神奈川7号横浜北西線"
+    },
+    "692755609": {
+      "highway": "motorway",
+      "oneway": "yes",
+      "ref": "K7",
+      "name": "首都高速神奈川7号横浜北西線",
+      "tunnel": "yes"
+    },
+    "692798735": {
+      "highway": "motorway",
+      "oneway": "yes",
+      "ref": "K7",
+      "name": "首都高速神奈川7号横浜北西線"
+    },
+    "915062290": {
+      "highway": "motorway_link",
+      "oneway": "yes",
+      "turn:lanes": "left;through|through"
+    },
+    "686983567": {
+      "highway": "motorway",
+      "oneway": "yes",
+      "ref": "K7",
+      "name": "首都高速神奈川7号横浜北西線"
+    }
+  },
+  "source_references": [
+    {
+      "source_reference_id": "osm.geofabrik.kanto-260721.k7-directed",
+      "roles": [
+        "TOPOLOGY_EVIDENCE",
+        "LAYOUT_EVIDENCE"
+      ],
+      "authority_name": "OpenStreetMap contributors via Geofabrik",
+      "source_url": "https://download.geofabrik.de/asia/japan/kanto-260721.osm.pbf",
+      "content_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "ODbL-1.0"
+    },
+    {
+      "source_reference_id": "shutoko.route.k7-northwest.2026-07-23",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "Metropolitan Expressway Company Limited",
+      "source_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
+      "content_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "shutoko.guide.k7-aoba.2026-07-23",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "Metropolitan Expressway Company Limited",
+      "source_url": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_aoba_200421.pdf",
+      "content_sha256": "247e06d15b4391181f5f24c606369e730600abb4f97d649aa12cbd30e708d2d4",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "shutoko.guide.k7-kohoku.2026-07-23",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "Metropolitan Expressway Company Limited",
+      "source_url": "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_kohoku_200421.pdf",
+      "content_sha256": "64d845c613d32280cb5a230cef7e768284460b86db3043d861b90df9a66c09b1",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+    }
+  ],
+  "topology_evidence_source_ids": [
+    "osm.geofabrik.kanto-260721.k7-directed",
+    "shutoko.route.k7-northwest.2026-07-23",
+    "shutoko.guide.k7-aoba.2026-07-23",
+    "shutoko.guide.k7-kohoku.2026-07-23"
+  ],
+  "layout_evidence_source_ids": [
+    "osm.geofabrik.kanto-260721.k7-directed"
+  ],
+  "reviewed_claims": [
+    {
+      "claim_id": "aoba-entry-to-k7-northwest-up",
+      "value": "The exact OSM one-way chain begins at the Yokohama Aoba toll-plaza split and joins K7 Northwest in the direction shown by the current operator entrance guide.",
+      "osm_way_ids": [
+        574920138,
+        692426107,
+        692426101,
+        850400096
+      ],
+      "source_reference_ids": [
+        "osm.geofabrik.kanto-260721.k7-directed",
+        "shutoko.guide.k7-aoba.2026-07-23"
+      ]
+    },
+    {
+      "claim_id": "k7-northwest-up-carriageway",
+      "value": "The selected K7 Northwest up carriageway is a continuous one-way OSM chain through the Yokohama Northwest Tunnel.",
+      "osm_way_ids": [
+        850400096,
+        692755609,
+        692798735
+      ],
+      "source_reference_ids": [
+        "osm.geofabrik.kanto-260721.k7-directed",
+        "shutoko.route.k7-northwest.2026-07-23"
+      ]
+    },
+    {
+      "claim_id": "kohoku-exit-two-stage-divergence",
+      "value": "The selected chain first leaves K7 Northwest toward Daisan-Keihin and Yokohama Kohoku exit, then selects the Yokohama Kohoku exit branch instead of continuing to Daisan-Keihin, matching the operator guide.",
+      "osm_way_ids": [
+        692798735,
+        686983570,
+        782596968,
+        915062290,
+        686983572,
+        783581372,
+        734299101,
+        734299106
+      ],
+      "source_reference_ids": [
+        "osm.geofabrik.kanto-260721.k7-directed",
+        "shutoko.guide.k7-kohoku.2026-07-23"
+      ]
+    }
+  ],
+  "release_blockers": [
+    "The directed database is OSM-derived community data and has not passed an independent lawful field review.",
+    "The two divergence alternatives are source-bound candidates, not a complete released graph of every legal successor beyond the bounded slice.",
+    "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
+    "In-app OSM attribution and derivative-database distribution integration are not implemented.",
+    "Realtime operating state remains unconfirmed."
+  ]
+}

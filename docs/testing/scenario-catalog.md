@@ -29,6 +29,7 @@ should become scenarios when their layer is built.
 | KR-D19 | A Route Atlas cannot add, omit, or rewire topology outside its reviewed snapshot-bound network slice | P0 | Seeded |
 | KR-D20 | Full-network Route Atlas context geometry can never become navigation authority | P0 | Seeded |
 | KR-D21 | An official-checked real K7 Northwest slice remains blocked until topology and layout are released | P0 | Seeded |
+| KR-D22 | An ODbL-isolated K7 one-way candidate preserves two reviewed divergences without gaining release authority | P0 | Seeded |
 
 ## Navigation simulation
 

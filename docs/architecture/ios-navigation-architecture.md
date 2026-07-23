@@ -387,6 +387,24 @@ assets, and production-layout, field, and realtime reviews remain open. KR-D21
 executes the requirement that this candidate fail release with only the two
 unreleased-evidence issues.
 
+The next candidate introduces an ODbL-isolated, snapshot-bound directed data
+slice rather than promoting the MLIT centerline. The pinned Geofabrik Kanto
+2026-07-21 PBF yields a continuous 13-way one-way chain from the Yokohama Aoba
+toll-plaza split, through the K7 Northwest up carriageway, to the Yokohama
+Kohoku exit terminal. The topology also retains one immediate alternative at
+each operator-reviewed decision: continue onto K7 Yokohama North instead of the
+first exit branch, or continue to Daisan-Keihin instead of Yokohama Kohoku exit.
+The source-bound facility checks also retain the Aoba incoming/non-route split
+and two one-way `川向線` surface successors at the Kohoku terminal. The
+derivative database preserves 257 route and alternative nodes, complete
+selected-way tags, parent PBF and bounded-extract hashes, extraction bounds, OSM
+timestamp, and reconstruction tooling. Its 13 route occurrences, 15 topology
+edges, and 15 layout segments pass internal identity and successor validation.
+Both evidence states remain `CANDIDATE`; OSM community directionality plus
+current operator diagram agreement does not replace independent field/topology
+review, a released production layout, OSM attribution integration, or realtime
+review. KR-D22 preserves that fail-closed boundary.
+
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
 

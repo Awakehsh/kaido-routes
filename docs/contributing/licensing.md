@@ -63,6 +63,15 @@ Primary references:
 - [OSMF Produced Work guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Produced_Work_-_Guideline)
 - [OSMF Collective Database guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Collective_Database_Guideline_Guideline)
 
+The bounded K7 Northwest candidate database under
+`data/route-atlas/osm-derived/` is the first implementation of this isolation
+rule. That directory identifies ODbL-1.0 as its data licence, carries the
+required OpenStreetMap contributor attribution, pins the parent PBF and bounded
+extract hashes, retains exact OSM node/way lineage, and provides machine-readable
+reconstruction commands. The Apache-2.0 repository licence still applies to the
+extractor and candidate builders, not to their OSM-derived database output.
+Interactive-map attribution integration remains a release blocker.
+
 ## MLIT Route Atlas context boundary
 
 The isolated artifact under `data/route-atlas/context/` is transformed from the

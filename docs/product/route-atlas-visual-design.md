@@ -76,4 +76,3 @@ and occurrence bindings. A coordinate crossing never establishes a connection.
 - [Shuto route marks](https://www.shutoko.jp/use/convenience/infoboard/guidance/)
 - [MLIT N06-2025 Highway Time Series](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-2025.html)
 - [Route Atlas geographic context provenance](../../data/route-atlas/context/README.md)
-

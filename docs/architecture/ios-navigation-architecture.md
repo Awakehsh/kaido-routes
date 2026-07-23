@@ -327,6 +327,19 @@ That is a development fact, not yet the minimum deployment target.
 - The Shuto overview is a custom schematic renderer, initially implemented with
   SwiftUI `Canvas`/`Path` or a shared Core Graphics renderer. It is not a MapKit
   geographic map.
+- This renderer is the persistent `Route Atlas` for the supported Shuto slice,
+  not a decorative preview. Its system and route views keep a stable north-up
+  frame so the driver can retain network context. An approach-aligned
+  `JunctionViewDefinition` inset may expand near a reviewed decision, but it
+  does not rotate, replace, or become the authority for the atlas.
+- The atlas is derived from the active versioned network snapshot and
+  `RoutePlan`. It distinguishes the current occurrence, passed and future
+  occurrences, repeated traversals, recovery and egress paths, and
+  released-versus-context-only topology. Unsupported or unreleased corridors
+  cannot appear selectable or look equivalent to released navigable coverage.
+- A precise vehicle bead requires fresh route-resolved evidence. Degraded,
+  ambiguous, tunnel, or stacked-road positioning renders an honest segment or
+  uncertainty halo rather than a falsely precise point.
 - The bounded surface access and egress screens may use MapKit for geographic
   context and render accepted provider geometry as overlays.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
@@ -343,6 +356,9 @@ That is a development fact, not yet the minimum deployment target.
 - Use the navigation entitlement and a `CPMapTemplate` root.
 - Draw the base map or schematic in the CarPlay window; use CarPlay templates for
   interaction, route preview, maneuvers, lane guidance, and alerts.
+- CarPlay keeps the same north-up `Route Atlas` state as the phone, with more
+  space assigned to the map and the next-decision overlay. It does not create an
+  independently rotating map, occurrence cursor, or recovery path.
 - A dedicated CarPlay adapter consumes the same `GuidanceFrame` as the phone. It
   cannot contain its own progress, recovery, or route-selection logic.
 - On supported system versions, the adapter renders the shared normalized

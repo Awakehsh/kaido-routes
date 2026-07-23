@@ -59,6 +59,13 @@ traffic control.
 9. **Entry and exit are explicit.** Current-location recommendations target an
    exact directional entrance. A cruise ends only through a legal planned exit
    sequence, never by reversing or accidentally leaving the expressway.
+10. **The route network stays visible.** On the supported Shuto network, the
+    primary driving surface keeps a stable schematic route atlas visible instead
+    of replacing route context with a rotating street basemap. The active
+    `RoutePlan`, current occurrence, passed and future occurrences, repeated
+    traversals, and positioning uncertainty remain distinguishable. A local
+    approach-aligned junction inset may clarify the next reviewed decision
+    without rotating or erasing the atlas.
 
 ## First product slice
 
@@ -67,6 +74,8 @@ The smallest useful product is not the whole Shuto network. It is:
 - a small dated network snapshot;
 - a few fully checked entrance, movement, PA, and exit combinations;
 - one short central route and one tunnel-heavy outer route;
+- a persistent schematic atlas of the released network slice, without implying
+  that unsupported Shuto corridors are navigable or verified;
 - pre-drive route review;
 - deterministic route execution with repeated occurrences;
 - current-location access to a small set of verified directional entrances;

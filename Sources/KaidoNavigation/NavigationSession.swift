@@ -43,16 +43,6 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
 /// Serializes the live matcher and navigation reducer for one compiled RoutePlan.
 /// Apple adapters submit typed observations; they do not reproduce progress policy.
 public actor NavigationSession {
-  private struct GuidanceTargetKey: Hashable {
-    let movementOccurrenceID: String
-    let decisionZoneID: String
-  }
-
-  private struct AnchorKey: Hashable {
-    let occurrenceID: String
-    let anchorID: String
-  }
-
   private var engine: NavigationEngine
   private var matcherSession: RouteMatcherSession
   private let routePlan: RoutePlan
@@ -71,7 +61,7 @@ public actor NavigationSession {
     guard let routePlan = navigationConfiguration.routePlan else {
       throw NavigationSessionConfigurationError.invalid(["route plan is missing"])
     }
-    let issues = Self.configurationIssues(
+    let issues = NavigationRuntimeConfigurationValidator.issues(
       routePlan: routePlan,
       matcherCorridor: matcherCorridor,
       decisionZones: decisionZones,
@@ -253,140 +243,6 @@ public actor NavigationSession {
         - observation.observedAtMilliseconds,
       forwardContinuity: false
     )
-  }
-
-  private static func configurationIssues(
-    routePlan: RoutePlan,
-    matcherCorridor: RouteMatcherCorridor,
-    decisionZones: [DecisionZoneProgressDefinition],
-    releasedGuidance: [ReleasedGuidanceDefinition]
-  ) -> [String] {
-    var issues = matcherCorridor.validationIssues
-    if routePlan.id != matcherCorridor.routePlanID {
-      issues.append("matcher corridor RoutePlan ID does not match")
-    }
-    if routePlan.networkSnapshotID != matcherCorridor.networkSnapshotID {
-      issues.append("matcher corridor network snapshot does not match")
-    }
-
-    let routeOccurrenceIDs = routePlan.occurrences.map(\.id)
-    let routeOccurrenceIndexes = routePlan.occurrences.map(\.index)
-    if Set(routeOccurrenceIDs).count != routeOccurrenceIDs.count
-      || routeOccurrenceIndexes != Array(0..<routePlan.occurrences.count)
-    {
-      issues.append("RoutePlan occurrence sequence is invalid")
-    }
-    var corridorOccurrencesByIndex: [Int: RouteMatcherOccurrence] = [:]
-    for occurrence in matcherCorridor.occurrences
-    where corridorOccurrencesByIndex[occurrence.index] == nil {
-      corridorOccurrencesByIndex[occurrence.index] = occurrence
-    }
-    if matcherCorridor.occurrences.count != routePlan.occurrences.count {
-      issues.append("matcher corridor does not cover every RoutePlan occurrence")
-    }
-    for occurrence in routePlan.occurrences {
-      guard let binding = corridorOccurrencesByIndex[occurrence.index],
-        binding.id == occurrence.id
-      else {
-        issues.append("matcher corridor occurrence binding does not match RoutePlan")
-        continue
-      }
-      if occurrence.kind == .edge, occurrence.entityID != binding.directedEdgeID {
-        issues.append("matcher corridor edge binding does not match RoutePlan entity")
-      }
-    }
-
-    var decisionZonesByID: [String: DecisionZoneProgressDefinition] = [:]
-    var corridorOccurrencesByID: [String: RouteMatcherOccurrence] = [:]
-    for occurrence in matcherCorridor.occurrences
-    where corridorOccurrencesByID[occurrence.id] == nil {
-      corridorOccurrencesByID[occurrence.id] = occurrence
-    }
-    var edgesByID: [String: RouteMatcherDirectedEdge] = [:]
-    for edge in matcherCorridor.edges where edgesByID[edge.id] == nil {
-      edgesByID[edge.id] = edge
-    }
-    for zone in decisionZones {
-      if decisionZonesByID[zone.id] != nil {
-        issues.append("DecisionZone progress IDs are not unique")
-      } else {
-        decisionZonesByID[zone.id] = zone
-      }
-      guard !zone.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        zone.routePlanID == routePlan.id,
-        zone.networkSnapshotID == routePlan.networkSnapshotID,
-        zone.entryOffsetMeters.isFinite,
-        zone.entryOffsetMeters >= 0,
-        let movement = routePlan.occurrence(id: zone.movementOccurrenceID),
-        movement.kind == .junctionMovement,
-        let binding = corridorOccurrencesByID[movement.id],
-        let edge = edgesByID[binding.directedEdgeID],
-        edge.lengthMeters.isFinite,
-        edge.lengthMeters > 0,
-        zone.entryOffsetMeters <= edge.lengthMeters
-      else {
-        issues.append("DecisionZone progress binding is invalid")
-        continue
-      }
-    }
-
-    var anchorKeys: Set<AnchorKey> = []
-    var promptIDs: Set<String> = []
-    var targetByAnchorOccurrence: [String: GuidanceTargetKey] = [:]
-    var triggerDistancesByAnchorOccurrence: [String: Set<Double>] = [:]
-    for definition in releasedGuidance {
-      let anchor = definition.anchor
-      let template = definition.frameTemplate
-      let target = GuidanceTargetKey(
-        movementOccurrenceID: template.movementOccurrenceID,
-        decisionZoneID: template.decisionZoneID
-      )
-      let anchorKey = AnchorKey(
-        occurrenceID: anchor.occurrenceID,
-        anchorID: anchor.anchorID
-      )
-      guard !anchor.occurrenceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        !anchor.anchorID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        !anchor.promptID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        definition.triggerDistanceMeters.isFinite,
-        definition.triggerDistanceMeters >= 0,
-        let anchorOccurrence = routePlan.occurrence(id: anchor.occurrenceID),
-        let movement = routePlan.occurrence(id: template.movementOccurrenceID),
-        movement.kind == .junctionMovement,
-        movement.index >= anchorOccurrence.index,
-        let zone = decisionZonesByID[template.decisionZoneID],
-        zone.movementOccurrenceID == movement.id
-      else {
-        issues.append("released guidance route or DecisionZone binding is invalid")
-        continue
-      }
-      if !anchorKeys.insert(anchorKey).inserted {
-        issues.append("released guidance anchor keys are not unique")
-      }
-      if !promptIDs.insert(anchor.promptID).inserted {
-        issues.append("released guidance prompt IDs are not unique")
-      }
-      if !triggerDistancesByAnchorOccurrence[anchor.occurrenceID, default: []]
-        .insert(definition.triggerDistanceMeters).inserted
-      {
-        issues.append("released guidance trigger distances are not unique")
-      }
-      if let existing = targetByAnchorOccurrence[anchor.occurrenceID],
-        existing != target
-      {
-        issues.append("one anchor occurrence targets multiple DecisionZones")
-      } else {
-        targetByAnchorOccurrence[anchor.occurrenceID] = target
-      }
-      do {
-        try GuidanceFrameValidator.validate(
-          template.makeFrame(anchor: anchor, distanceMeters: 0)
-        )
-      } catch {
-        issues.append("released guidance frame is invalid")
-      }
-    }
-    return Array(Set(issues)).sorted()
   }
 
   private static func guidanceTargets(

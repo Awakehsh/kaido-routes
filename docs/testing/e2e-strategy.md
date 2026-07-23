@@ -175,6 +175,13 @@ guidance.emitted_prompt_ids
 tariff_selection.selected_tariff_version_id
 tariff_selection.selected_tariff_version_status
 tariff_selection.ignored_non_active_quote_ids
+release_bundle.status
+release_bundle.network_snapshot_id
+release_bundle.route_plan_id
+release_bundle.decision_zone_movement_occurrence_ids
+release_bundle.guidance_movement_occurrence_ids
+release_bundle.junction_view_ids
+release_bundle.error_codes
 ```
 
 This split lets coding agents implement MapKit, Core Location, iPhone UI, and
@@ -207,6 +214,15 @@ entrance, observes the incoming-approach/JCT choice set, rejects a future choice
 and a moving-time edit, advances through reviewed choices, and compares the final
 RoutePlan occurrence sequence. A later SwiftUI test must bind these semantic
 values to accessible controls without recreating movement legality in the view.
+
+KR-D18 executes `NavigationReleaseBundle` at L1/L2 before any Apple adapter or
+live service exists. Its synthetic asset set proves that one active snapshot,
+RoutePlan, editor catalog, matcher corridor, DecisionZone set, released-guidance
+set, and optional junction-view registry can pass as one coherent unit. Unit
+tests supply the fail-closed matrix for missing repeated-occurrence assets,
+duplicate movement zones, and unregistered or orphaned junction views. Neither
+the portable scenario nor those tests promote their synthetic `ACTIVE` or
+`RELEASED` flags into real release evidence.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

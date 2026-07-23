@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D18",
+  "title": "Navigation release assets form one coherent bundle",
+  "layer": "DOMAIN",
+  "tags": ["release-bundle", "network-snapshot", "route-plan", "guidance"],
+  "purpose": "Reject partial runtime composition by validating the editor catalog, matcher corridor, DecisionZone, released guidance, and optional junction view against one active network snapshot and one exact RoutePlan.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "ACTIVE and RELEASED values inside this synthetic fixture exercise the integrity gate only.",
+      "This scenario does not release a real route, movement, sign, lane layout, or provider dataset."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.release-bundle-v1",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.release-bundle",
+      "network_snapshot_id": "test.snapshot.release-bundle-v1",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.exit"
+        },
+        {
+          "occurrence_id": "test.occurrence.exit",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.exit"
+        }
+      ]
+    },
+    "inputs": {
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.release-bundle-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.directional",
+            "initial_edge_id": "test.edge.approach",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.exit"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.exit",
+            "incoming_approach_id": "test.approach.exit",
+            "junction_complex_id": "test.junction.exit",
+            "choices": [
+              {
+                "choice_id": "test.choice.exit",
+                "movement_id": "test.movement.exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.exit",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.directional"
+              }
+            ]
+          }
+        ]
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.release-bundle",
+        "network_snapshot_id": "test.snapshot.release-bundle-v1",
+        "route_plan_id": "test.plan.release-bundle",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.approach",
+            "coordinates": [
+              {"latitude": 35.6800, "longitude": 139.7600},
+              {"latitude": 35.6800, "longitude": 139.7610}
+            ],
+            "successor_edge_ids": ["test.edge.movement-geometry"]
+          },
+          {
+            "directed_edge_id": "test.edge.movement-geometry",
+            "coordinates": [
+              {"latitude": 35.6800, "longitude": 139.7610},
+              {"latitude": 35.6801, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.exit"]
+          },
+          {
+            "directed_edge_id": "test.edge.exit",
+            "coordinates": [
+              {"latitude": 35.6801, "longitude": 139.7612},
+              {"latitude": 35.6802, "longitude": 139.7620}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.approach",
+            "index": 0,
+            "directed_edge_id": "test.edge.approach"
+          },
+          {
+            "occurrence_id": "test.occurrence.movement",
+            "index": 1,
+            "directed_edge_id": "test.edge.movement-geometry"
+          },
+          {
+            "occurrence_id": "test.occurrence.exit",
+            "index": 2,
+            "directed_edge_id": "test.edge.exit"
+          }
+        ]
+      },
+      "decision_zones": [
+        {
+          "decision_zone_id": "test.zone.exit",
+          "network_snapshot_id": "test.snapshot.release-bundle-v1",
+          "route_plan_id": "test.plan.release-bundle",
+          "movement_occurrence_id": "test.occurrence.movement",
+          "entry_offset_meters": 5
+        }
+      ],
+      "junction_views": [
+        {
+          "view_id": "test.junction-view.exit",
+          "network_snapshot_id": "test.snapshot.release-bundle-v1",
+          "movement_occurrence_id": "test.occurrence.movement",
+          "paths": [
+            {
+              "path_id": "test.path.approach",
+              "role": "APPROACH",
+              "points": [
+                {"x": 0.5, "y": 1.0},
+                {"x": 0.5, "y": 0.55}
+              ]
+            },
+            {
+              "path_id": "test.path.selected",
+              "role": "SELECTED",
+              "points": [
+                {"x": 0.5, "y": 0.55},
+                {"x": 0.35, "y": 0.3},
+                {"x": 0.15, "y": 0.05}
+              ]
+            },
+            {
+              "path_id": "test.path.alternative",
+              "role": "ALTERNATIVE",
+              "points": [
+                {"x": 0.5, "y": 0.55},
+                {"x": 0.65, "y": 0.3},
+                {"x": 0.85, "y": 0.05}
+              ]
+            }
+          ],
+          "lane_layout": {
+            "lane_count": 3,
+            "allowed_lane_indices": [0, 1],
+            "preferred_lane_indices": [0]
+          },
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "route_shields": ["B"],
+          "evidence": {
+            "state": "RELEASED",
+            "checked_at": "2026-07-23",
+            "source_reference_ids": ["test.source.reviewed-junction"]
+          }
+        }
+      ],
+      "released_guidance": [
+        {
+          "occurrence_id": "test.occurrence.approach",
+          "anchor_id": "PREPARE",
+          "prompt_id": "test.prompt.exit.prepare",
+          "trigger_distance_meters": 500,
+          "frame": {
+            "movement_occurrence_id": "test.occurrence.movement",
+            "decision_zone_id": "test.zone.exit",
+            "stage": "PREPARE",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+                "spoken_text": "左側を進み、B 湾岸線、横浜方面へ",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+                "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B toward Yokohama",
+                "spoken_text": "Keep left for Route B toward Yokohama",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            },
+            "junction_view": {
+              "view_id": "test.junction-view.exit",
+              "network_snapshot_id": "test.snapshot.release-bundle-v1",
+              "movement_occurrence_id": "test.occurrence.movement",
+              "paths": [
+                {
+                  "path_id": "test.path.approach",
+                  "role": "APPROACH",
+                  "points": [
+                    {"x": 0.5, "y": 1.0},
+                    {"x": 0.5, "y": 0.55}
+                  ]
+                },
+                {
+                  "path_id": "test.path.selected",
+                  "role": "SELECTED",
+                  "points": [
+                    {"x": 0.5, "y": 0.55},
+                    {"x": 0.35, "y": 0.3},
+                    {"x": 0.15, "y": 0.05}
+                  ]
+                },
+                {
+                  "path_id": "test.path.alternative",
+                  "role": "ALTERNATIVE",
+                  "points": [
+                    {"x": 0.5, "y": 0.55},
+                    {"x": 0.65, "y": 0.3},
+                    {"x": 0.85, "y": 0.05}
+                  ]
+                }
+              ],
+              "lane_layout": {
+                "lane_count": 3,
+                "allowed_lane_indices": [0, 1],
+                "preferred_lane_indices": [0]
+              },
+              "japanese_sign_text": "B 湾岸線・横浜方面",
+              "route_shields": ["B"],
+              "evidence": {
+                "state": "RELEASED",
+                "checked_at": "2026-07-23",
+                "source_reference_ids": ["test.source.reviewed-junction"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "validate-release-bundle",
+      "at_ms": 0,
+      "type": "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "coherent-bundle-passes",
+      "after": "validate-release-bundle",
+      "category": "SAFETY",
+      "subject": "release_bundle.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Runtime assets become eligible only after one whole-bundle validation succeeds."
+    },
+    {
+      "id": "snapshot-remains-exact",
+      "after": "validate-release-bundle",
+      "category": "EVIDENCE",
+      "subject": "release_bundle.network_snapshot_id",
+      "matcher": "EQUALS",
+      "expected": "test.snapshot.release-bundle-v1",
+      "rationale": "No component may silently migrate to another graph snapshot."
+    },
+    {
+      "id": "route-plan-remains-exact",
+      "after": "validate-release-bundle",
+      "category": "DOMAIN",
+      "subject": "release_bundle.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.release-bundle",
+      "rationale": "Corridor, DecisionZone, and guidance validation all bind to one RoutePlan."
+    },
+    {
+      "id": "movement-has-one-zone",
+      "after": "validate-release-bundle",
+      "category": "SAFETY",
+      "subject": "release_bundle.decision_zone_movement_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.movement"],
+      "rationale": "Every planned junction movement has one occurrence-scoped DecisionZone."
+    },
+    {
+      "id": "movement-has-released-guidance",
+      "after": "validate-release-bundle",
+      "category": "SAFETY",
+      "subject": "release_bundle.guidance_movement_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.movement"],
+      "rationale": "The release cannot omit guidance for a planned forward movement."
+    },
+    {
+      "id": "junction-view-is-registered",
+      "after": "validate-release-bundle",
+      "category": "EVIDENCE",
+      "subject": "release_bundle.junction_view_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.junction-view.exit"],
+      "rationale": "An embedded renderer-neutral junction view must match one registered released definition."
+    },
+    {
+      "id": "no-integrity-errors",
+      "after": "validate-release-bundle",
+      "category": "SAFETY",
+      "subject": "release_bundle.error_codes",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A passing bundle carries no hidden partial-composition failure."
+    }
+  ]
+}

@@ -25,6 +25,7 @@ should become scenarios when their layer is built.
 | KR-D15 | Text, voice, and reviewed spoken forms are complete in Japanese, Simplified Chinese, and English | P0 | Seeded |
 | KR-D16 | Current-location access chooses a compatible directional entrance rather than the nearest IC | P0 | Seeded |
 | KR-D17 | Entrance recommendation rejects unavailable or unknown timed approaches | P0 | Seeded |
+| KR-D18 | A navigation release bundle accepts only one coherent snapshot- and RoutePlan-bound asset set | P0 | Seeded |
 
 ## Navigation simulation
 

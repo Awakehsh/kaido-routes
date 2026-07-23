@@ -96,6 +96,8 @@ private struct ScenarioHarness {
       try undoRouteEditorChoice(event.payload)
     case "ROUTE_EDITOR_COMPILE_REQUESTED":
       try compileRouteEditor(event.payload)
+    case "NAVIGATION_RELEASE_BUNDLE_VALIDATED":
+      try validateNavigationReleaseBundle()
     case "NAVIGATION_STARTED":
       projectSignGuidance()
       projectLocalization()
@@ -507,6 +509,82 @@ private struct ScenarioHarness {
       publish(session.snapshot)
       adapterObservations["editor.last_error"] = .string(error.code)
     }
+  }
+
+  private mutating func validateNavigationReleaseBundle() throws {
+    guard let routePlan = scenario.given.routePlan,
+      let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let corridorValue = scenario.given.inputs.object("matcher_corridor"),
+      let decisionZoneValues = scenario.given.inputs.array("decision_zones")
+    else {
+      throw ScenarioExecutionError.invalidInput("navigation_release_bundle")
+    }
+    let junctionViewValues = scenario.given.inputs.array("junction_views") ?? []
+    let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let corridor = try routeMatcherCorridor(corridorValue)
+    let decisionZones = try decisionZoneValues.map { value in
+      guard let definition = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("decision_zones")
+      }
+      return try Self.decisionZoneProgressDefinition(definition)
+    }
+    let junctionViews = try junctionViewValues.map { value in
+      guard let definition = value.objectValue,
+        let junctionView = try Self.junctionViewDefinition(definition)
+      else {
+        throw ScenarioExecutionError.invalidInput("junction_views")
+      }
+      return junctionView
+    }
+    let releasedGuidance = try Self.releasedGuidance(from: scenario.given.inputs)
+
+    clearReleaseBundleObservations()
+    do {
+      let bundle = try NavigationReleaseBundle(
+        networkSnapshot: scenario.given.networkSnapshot,
+        routePlan: routePlan,
+        editorCatalog: catalog,
+        matcherCorridor: corridor,
+        decisionZones: decisionZones,
+        releasedGuidance: releasedGuidance,
+        junctionViews: junctionViews
+      )
+      publish(bundle)
+    } catch NavigationReleaseBundleError.invalid(let issues) {
+      adapterObservations["release_bundle.status"] = .string("BLOCKED")
+      adapterObservations["release_bundle.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private mutating func publish(_ bundle: NavigationReleaseBundle) {
+    adapterObservations["release_bundle.status"] = .string("PASS")
+    adapterObservations["release_bundle.error_codes"] = .strings([])
+    adapterObservations["release_bundle.network_snapshot_id"] = .string(
+      bundle.networkSnapshot.id
+    )
+    adapterObservations["release_bundle.route_plan_id"] = .string(bundle.routePlan.id)
+    adapterObservations["release_bundle.decision_zone_movement_occurrence_ids"] =
+      .strings(bundle.decisionZones.map(\.movementOccurrenceID))
+    adapterObservations["release_bundle.guidance_movement_occurrence_ids"] =
+      .strings(
+        orderedUnique(bundle.releasedGuidance.map(\.frameTemplate.movementOccurrenceID))
+      )
+    adapterObservations["release_bundle.junction_view_ids"] = .strings(
+      bundle.junctionViews.map(\.id)
+    )
+  }
+
+  private mutating func clearReleaseBundleObservations() {
+    for key in adapterObservations.keys.filter({ $0.hasPrefix("release_bundle.") }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private func orderedUnique(_ values: [String]) -> [String] {
+    var seen: Set<String> = []
+    return values.filter { seen.insert($0).inserted }
   }
 
   private mutating func publish(_ snapshot: ExpertRouteEditorSnapshot) {

@@ -300,6 +300,21 @@ bindings before accepting observations. Core Location callback ownership,
 background lifecycle, persistence/restoration, audio scheduling, and app-scene
 composition are still unimplemented Apple boundaries.
 
+`NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
+It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor
+catalog, `RouteMatcherCorridor`, DecisionZone definitions, released guidance,
+and optional junction-view registry in one value. The bundle reuses
+`NavigationSession`'s route/corridor/zone/guidance validator rather than defining
+a second runtime identity policy. It additionally requires the catalog to use
+the same snapshot and contain the route's directional entrance, initial edge,
+and exit; requires exactly one DecisionZone and at least one released guidance
+definition for every planned junction-movement occurrence; and requires every
+embedded junction view to match one released registry value exactly. Duplicate
+movement zones, missing repeated-occurrence assets, unregistered views, and
+orphaned views fail closed. This is release-asset integrity, not evidence
+promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
+real-road eligibility.
+
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.
 That is a development fact, not yet the minimum deployment target.
 

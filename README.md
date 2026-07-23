@@ -153,7 +153,19 @@ identities. Matcher reset/restart clears temporal evidence without rewinding
 navigation progress. Core Location callbacks, lifecycle persistence, background
 execution, audio, and app-scene wiring remain Apple-adapter work.
 
-The feasibility core currently executes portable scenarios for twenty-five hard
+The pre-runtime release boundary is now explicit as well.
+`NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
+`RoutePlan`, one locally valid reviewed editor catalog, one complete matcher
+corridor, occurrence-scoped DecisionZones and released guidance, and an optional
+registry of released junction views. It reuses the same runtime-composition
+validation as `NavigationSession`, then adds whole-bundle coverage: every planned
+junction-movement occurrence needs exactly one DecisionZone and at least one
+released guidance definition. Embedded junction views must match one registry
+entry exactly, and registry orphans fail closed. Repeated graph entities remain
+distinct because coverage is keyed by occurrence ID. KR-D18 executes this
+boundary with synthetic data; it does not release a real route or dataset.
+
+The feasibility core currently executes portable scenarios for twenty-six hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -214,6 +226,9 @@ properties that must remain proven as the product expands:
 25. phone and CarPlay consume one released, normalized junction-view definition;
     snapshot, movement occurrence, lane, route-shield, Japanese-sign, and evidence
     drift fail closed before any adapter renders an inset.
+26. a navigation release bundle binds the active snapshot, RoutePlan, reviewed
+    editor catalog, matcher corridor, every movement occurrence's DecisionZone
+    and guidance, and any junction-view registry before runtime composition.
 
 ## Repository map
 

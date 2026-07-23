@@ -69,6 +69,12 @@ traffic control.
     familiar relative placement and silhouette of the supported Shuto network
     from current operator evidence; it must not become an arbitrary loop diagram
     or copy the operator's map artwork.
+11. **Say only what helps now.** Interface copy is short, literal, and
+    action-first. Driving surfaces state the current road, next legal movement,
+    distance, and uncertainty without slogans, repeated reassurance, or internal
+    implementation jargon. Provenance and technical detail remain available in
+    pre-drive and evidence views instead of competing with the next driving
+    decision.
 
 ## First product slice
 

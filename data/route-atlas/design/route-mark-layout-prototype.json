@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "layout_id": "shuto.route-mark-layout.prototype.2026-07-23",
+  "status": "REVIEW_ONLY",
+  "navigation_authority": false,
+  "context_id": "shuto.context.mlit-n06-2025-current",
+  "catalog_id": "shutoko.route-marks.operator-review.2026-07-23",
+  "unrepresented_catalog_route_ids": [
+    "shutoko.k7.yokohama-northwest"
+  ],
+  "marks": [
+    {"mark_id":"mark.c1","route_id":"shutoko.c1","anchor_hint":{"x":0.487,"y":0.445},"label_offset":{"x":-12,"y":14},"density":"PRIMARY"},
+    {"mark_id":"mark.c2.west","route_id":"shutoko.c2","anchor_hint":{"x":0.401,"y":0.411},"density":"PRIMARY"},
+    {"mark_id":"mark.c2.east","route_id":"shutoko.c2","anchor_hint":{"x":0.610,"y":0.400},"density":"SECONDARY"},
+    {"mark_id":"mark.1.ueno","route_id":"shutoko.1.ueno","anchor_hint":{"x":0.526,"y":0.350},"density":"PRIMARY"},
+    {"mark_id":"mark.1.haneda","route_id":"shutoko.1.haneda","anchor_hint":{"x":0.480,"y":0.600},"density":"PRIMARY"},
+    {"mark_id":"mark.2","route_id":"shutoko.2.meguro","anchor_hint":{"x":0.440,"y":0.515},"density":"PRIMARY"},
+    {"mark_id":"mark.3","route_id":"shutoko.3.shibuya","anchor_hint":{"x":0.330,"y":0.490},"density":"PRIMARY"},
+    {"mark_id":"mark.4","route_id":"shutoko.4.shinjuku","anchor_hint":{"x":0.305,"y":0.430},"density":"PRIMARY"},
+    {"mark_id":"mark.5","route_id":"shutoko.5.ikebukuro","anchor_hint":{"x":0.350,"y":0.235},"density":"PRIMARY"},
+    {"mark_id":"mark.6.mukojima","route_id":"shutoko.6.mukojima","anchor_hint":{"x":0.575,"y":0.335},"density":"PRIMARY"},
+    {"mark_id":"mark.6.misato","route_id":"shutoko.6.misato","anchor_hint":{"x":0.630,"y":0.175},"density":"PRIMARY"},
+    {"mark_id":"mark.7","route_id":"shutoko.7.komatsugawa","anchor_hint":{"x":0.680,"y":0.388},"density":"PRIMARY"},
+    {"mark_id":"mark.9","route_id":"shutoko.9.fukagawa","anchor_hint":{"x":0.570,"y":0.455},"label_offset":{"x":27,"y":-10},"density":"SECONDARY"},
+    {"mark_id":"mark.10","route_id":"shutoko.10.harumi","anchor_hint":{"x":0.545,"y":0.480},"label_offset":{"x":36,"y":5},"density":"SECONDARY"},
+    {"mark_id":"mark.11","route_id":"shutoko.11.daiba","anchor_hint":{"x":0.515,"y":0.495},"label_offset":{"x":15,"y":24},"density":"SECONDARY"},
+    {"mark_id":"mark.b.east","route_id":"shutoko.b.bayshore","anchor_hint":{"x":0.700,"y":0.470},"density":"PRIMARY"},
+    {"mark_id":"mark.b.south","route_id":"shutoko.b.bayshore","anchor_hint":{"x":0.350,"y":0.850},"density":"SECONDARY"},
+    {"mark_id":"mark.y","route_id":"shutoko.y.yaesu","anchor_hint":{"x":0.510,"y":0.410},"label_offset":{"x":-24,"y":-13},"density":"SECONDARY"},
+    {"mark_id":"mark.s1","route_id":"shutoko.s1.kawaguchi","anchor_hint":{"x":0.495,"y":0.140},"density":"PRIMARY"},
+    {"mark_id":"mark.s2","route_id":"shutoko.s2.saitama-shintoshin","anchor_hint":{"x":0.345,"y":0.045},"density":"PRIMARY"},
+    {"mark_id":"mark.s5","route_id":"shutoko.s5.saitama-omiya","anchor_hint":{"x":0.305,"y":0.095},"density":"PRIMARY"},
+    {"mark_id":"mark.k1","route_id":"shutoko.k1.yokohane","anchor_hint":{"x":0.420,"y":0.700},"density":"PRIMARY"},
+    {"mark_id":"mark.k2","route_id":"shutoko.k2.mitsuzawa","anchor_hint":{"x":0.285,"y":0.772},"density":"PRIMARY"},
+    {"mark_id":"mark.k3","route_id":"shutoko.k3.kariba","anchor_hint":{"x":0.275,"y":0.832},"density":"PRIMARY"},
+    {"mark_id":"mark.k5","route_id":"shutoko.k5.daikoku","anchor_hint":{"x":0.380,"y":0.765},"density":"PRIMARY"},
+    {"mark_id":"mark.k6","route_id":"shutoko.k6.kawasaki","anchor_hint":{"x":0.520,"y":0.675},"density":"PRIMARY"},
+    {"mark_id":"mark.k7","route_id":"shutoko.k7.yokohama-north","anchor_hint":{"x":0.305,"y":0.705},"density":"PRIMARY"}
+  ]
+}

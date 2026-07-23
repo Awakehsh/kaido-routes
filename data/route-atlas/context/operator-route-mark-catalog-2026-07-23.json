@@ -1,0 +1,212 @@
+{
+  "schema_version": "1.0",
+  "catalog_id": "shutoko.route-marks.operator-review.2026-07-23",
+  "reference_role": "DISPLAY_REFERENCE_ONLY",
+  "navigation_authority": false,
+  "rights_notice": "Operator material is used as a current factual reference only. No operator map or route-mark artwork is retained or redistributed, and this catalog does not assert that operator material is covered by the repository Apache-2.0 licence.",
+  "operator_source": {
+    "authority_name": "Metropolitan Expressway Company Limited",
+    "source_url": "https://www.shutoko.jp/use/convenience/infoboard/guidance/",
+    "content_sha256": "a2735d348c06c144dd52ea94ba469ae8bdefc1546844b411f92f8a1fba5f6cfe",
+    "checked_at": "2026-07-23",
+    "operator_route_count": 26
+  },
+  "context_reference": {
+    "context_id": "shuto.context.mlit-n06-2025-current",
+    "source_reference_id": "mlit.nlni.n06-2025.current-shuto",
+    "matched_route_count": 25,
+    "unmatched_operator_route_ids": [
+      "shutoko.k7.yokohama-northwest"
+    ]
+  },
+  "routes": [
+    {
+      "route_id": "shutoko.c1",
+      "route_code": "C1",
+      "route_name_ja": "高速都心環状線",
+      "context_route_name_ja": "首都高速都心環状線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.c2",
+      "route_code": "C2",
+      "route_name_ja": "高速中央環状線",
+      "context_route_name_ja": "首都高速中央環状線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.1.ueno",
+      "route_code": "1",
+      "route_name_ja": "高速1号上野線",
+      "context_route_name_ja": "首都高速1号上野線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.1.haneda",
+      "route_code": "1",
+      "route_name_ja": "高速1号羽田線",
+      "context_route_name_ja": "首都高速1号羽田線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.2.meguro",
+      "route_code": "2",
+      "route_name_ja": "高速2号目黒線",
+      "context_route_name_ja": "首都高速2号目黒線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.3.shibuya",
+      "route_code": "3",
+      "route_name_ja": "高速3号渋谷線",
+      "context_route_name_ja": "首都高速3号渋谷線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.4.shinjuku",
+      "route_code": "4",
+      "route_name_ja": "高速4号新宿線",
+      "context_route_name_ja": "首都高速4号新宿線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.5.ikebukuro",
+      "route_code": "5",
+      "route_name_ja": "高速5号池袋線",
+      "context_route_name_ja": "首都高速5号池袋線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.6.mukojima",
+      "route_code": "6",
+      "route_name_ja": "高速6号向島線",
+      "context_route_name_ja": "首都高速6号向島線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.6.misato",
+      "route_code": "6",
+      "route_name_ja": "高速6号三郷線",
+      "context_route_name_ja": "首都高速6号三郷線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.7.komatsugawa",
+      "route_code": "7",
+      "route_name_ja": "高速7号小松川線",
+      "context_route_name_ja": "首都高速7号小松川線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.9.fukagawa",
+      "route_code": "9",
+      "route_name_ja": "高速9号深川線",
+      "context_route_name_ja": "首都高速9号深川線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.10.harumi",
+      "route_code": "10",
+      "route_name_ja": "高速10号晴海線",
+      "context_route_name_ja": "首都高速10号晴海線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.11.daiba",
+      "route_code": "11",
+      "route_name_ja": "高速11号台場線",
+      "context_route_name_ja": "首都高速11号台場線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.b.bayshore",
+      "route_code": "B",
+      "route_name_ja": "高速湾岸線",
+      "context_route_name_ja": "首都高速湾岸線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.y.yaesu",
+      "route_code": "Y",
+      "route_name_ja": "高速八重洲線",
+      "context_route_name_ja": "首都高速八重洲線",
+      "context_match": "MATCHED",
+      "operator_display_status": "LONG_TERM_CLOSED",
+      "status_source": {
+        "source_url": "https://www.shutoko.jp/use/network/map/route-y/",
+        "content_sha256": "7e3e26f8bfcf708fd86860e240b85973b9b69817b263d63dbe940f1d5fda7fa6",
+        "checked_at": "2026-07-23"
+      }
+    },
+    {
+      "route_id": "shutoko.s1.kawaguchi",
+      "route_code": "S1",
+      "route_name_ja": "高速川口線",
+      "context_route_name_ja": "首都高速川口線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.s2.saitama-shintoshin",
+      "route_code": "S2",
+      "route_name_ja": "高速埼玉新都心線",
+      "context_route_name_ja": "首都高速埼玉新都心線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.s5.saitama-omiya",
+      "route_code": "S5",
+      "route_name_ja": "高速埼玉大宮線",
+      "context_route_name_ja": "首都高速埼玉大宮線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k1.yokohane",
+      "route_code": "K1",
+      "route_name_ja": "高速神奈川1号横羽線",
+      "context_route_name_ja": "首都高速神奈川1号横羽線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k2.mitsuzawa",
+      "route_code": "K2",
+      "route_name_ja": "高速神奈川2号三ツ沢線",
+      "context_route_name_ja": "首都高速神奈川2号三ツ沢線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k3.kariba",
+      "route_code": "K3",
+      "route_name_ja": "高速神奈川3号狩場線",
+      "context_route_name_ja": "首都高速神奈川3号狩場線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k5.daikoku",
+      "route_code": "K5",
+      "route_name_ja": "高速神奈川5号大黒線",
+      "context_route_name_ja": "首都高速神奈川5号大黒線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k6.kawasaki",
+      "route_code": "K6",
+      "route_name_ja": "高速神奈川6号川崎線",
+      "context_route_name_ja": "首都高速神奈川6号川崎線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k7.yokohama-north",
+      "route_code": "K7",
+      "route_name_ja": "高速神奈川7号横浜北線",
+      "context_route_name_ja": "首都高速神奈川7号横浜北線",
+      "context_match": "MATCHED"
+    },
+    {
+      "route_id": "shutoko.k7.yokohama-northwest",
+      "route_code": "K7",
+      "route_name_ja": "高速神奈川7号横浜北西線",
+      "context_route_name_ja": null,
+      "context_match": "UNMATCHED"
+    }
+  ]
+}

@@ -11,6 +11,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from render_route_atlas_design_svg import (
+    DesignRenderError,
+    build_mark_group,
+)
 from render_route_atlas_context_svg import RenderError, render_paths
 
 
@@ -33,6 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--context", required=True, type=Path)
     parser.add_argument("--source", required=True, type=Path)
+    parser.add_argument("--route-catalog", required=True, type=Path)
+    parser.add_argument("--route-mark-layout", required=True, type=Path)
     parser.add_argument("--html", required=True, type=Path)
     return parser.parse_args()
 
@@ -50,6 +56,8 @@ def load_object(path: Path) -> dict[str, Any]:
 def build_group(
     context: dict[str, Any],
     source: dict[str, Any],
+    catalog: dict[str, Any],
+    layout: dict[str, Any],
 ) -> str:
     if context.get("navigation_role") != "CONTEXT_ONLY":
         raise EmbedError("only CONTEXT_ONLY artifacts may be embedded")
@@ -70,6 +78,7 @@ def build_group(
         raise EmbedError("context and source CRS values do not match")
     escaped_source_crs = html.escape(source_crs)
     rendered_paths = "\n".join(render_paths(context))
+    rendered_marks = build_mark_group(context, catalog, layout)
     return f"""      <g id="shutoAtlasBase"
          class="atlas-context-base"
          data-navigation-role="CONTEXT_ONLY"
@@ -82,6 +91,7 @@ def build_group(
 {rendered_paths}
         <text class="atlas-context-caption" x="20" y="586">CONTEXT ONLY · MLIT N06-2025 · 2025-12-31</text>
       </g>
+{rendered_marks}
     </defs>"""
 
 
@@ -90,8 +100,10 @@ def main() -> int:
     try:
         context = load_object(args.context)
         source = load_object(args.source)
+        catalog = load_object(args.route_catalog)
+        layout = load_object(args.route_mark_layout)
         original = args.html.read_text(encoding="utf-8")
-        replacement = build_group(context, source)
+        replacement = build_group(context, source, catalog, layout)
         updated, count = GROUP_PATTERN.subn(replacement, original, count=1)
         if count != 1:
             raise EmbedError(
@@ -101,14 +113,26 @@ def main() -> int:
             "",
             updated,
         )
+        updated = re.sub(
+            r'\n[ \t]*<use href="#shutoAtlasRouteMarks"/>',
+            "",
+            updated,
+        )
+        updated, use_count = re.subn(
+            r'(<use href="#shutoAtlasBase"/>)',
+            r'\1\n                  <use href="#shutoAtlasRouteMarks"/>',
+            updated,
+        )
+        if use_count < 1:
+            raise EmbedError("expected at least one shutoAtlasBase use element")
         args.html.write_text(updated, encoding="utf-8")
-    except (EmbedError, OSError, RenderError) as error:
+    except (DesignRenderError, EmbedError, OSError, RenderError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print(
         "PASS: embedded source-derived CONTEXT_ONLY Route Atlas geometry into "
-        f"{args.html}; removed {removed_overlay_count} hand-authored map "
-        "overlay elements"
+        f"{args.html}; added {use_count} route-recognition layers and removed "
+        f"{removed_overlay_count} hand-authored map overlay elements"
     )
     return 0
 

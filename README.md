@@ -197,6 +197,14 @@ authority fails closed. The source date is 2025-12-31, so the separately
 reviewed operator map dated 2026-07-01 remains a later currentness comparison,
 not copied data or proof that a navigable topology is released.
 
+A renderer-neutral recognition design now places Kaido-owned route-code
+capsules only on source vertices whose MLIT route name has an explicit match in
+the operator's current 26-route table. Twenty-five operator names are
+represented. `高速神奈川7号横浜北西線` remains withheld because N06 does not
+identify it separately. The recognition layout is `REVIEW_ONLY`, non-selectable,
+and non-navigable; it improves familiar network recognition without pretending
+that route direction or connectivity has been released.
+
 The feasibility core currently executes portable scenarios for twenty-eight hard
 properties that must remain proven as the product expands:
 

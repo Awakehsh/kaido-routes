@@ -79,6 +79,41 @@ def fixture() -> tuple[dict, dict, str]:
             "entry_nonroute_successor_way_id": 12,
             "exit_surface_successor_way_ids": [13, 14],
         },
+        "source_references": [
+            {
+                "source_reference_id": "official.identity",
+            },
+            {
+                "source_reference_id": "official.historic-connection",
+            },
+        ],
+        "legal_successor_evidence": [
+            {
+                "incoming_way_id": 11,
+                "via_node_id": 4,
+                "way_id": 14,
+                "direction": "FORWARD",
+                "source_adjacency_exact": True,
+                "road_identity": {
+                    "status": "OFFICIAL_CHECKED",
+                    "classification": "SYNTHETIC_TEMPORARY_PASSAGE",
+                    "source_published_at": "2020-02-06",
+                    "source_reference_ids": ["official.identity"],
+                },
+                "historical_planned_exit_connection": {
+                    "status": "OFFICIAL_CHECKED_AT_PUBLICATION",
+                    "source_published_at": "2020-04-21",
+                    "source_reference_ids": [
+                        "official.historic-connection"
+                    ],
+                },
+                "current_physical_status": "UNCONFIRMED",
+                "current_legal_direction": "UNCONFIRMED",
+                "permitted_exit_movement": "UNCONFIRMED",
+                "field_verification_plan_id": "synthetic-field-plan",
+                "release_eligible": False,
+            }
+        ],
         "successor_audit": {
             "audit_id": "audit.synthetic",
             "state": (
@@ -116,6 +151,12 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
         self.assertEqual(result["summary"]["observed_successor_count"], 5)
         self.assertTrue(result["summary"]["source_adjacency_exact"])
         self.assertFalse(result["summary"]["legal_review_complete"])
+        self.assertEqual(result["summary"]["road_identity_reviewed_count"], 1)
+        self.assertEqual(
+            result["summary"]["current_legal_direction_confirmed_count"],
+            0,
+        )
+        self.assertTrue(result["summary"]["field_verification_required"])
         exit_checkpoint = result["checkpoints"][-1]
         self.assertEqual(
             [
@@ -131,6 +172,10 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
                 (14, "FORWARD", "UNSPECIFIED"),
             ],
         )
+        self.assertEqual(
+            result["legal_successor_evidence"][0]["road_identity"]["status"],
+            "OFFICIAL_CHECKED",
+        )
 
     def test_unexpected_source_successor_fails_closed(self) -> None:
         source_extract, review, extract_sha256 = fixture()
@@ -141,6 +186,37 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
         with self.assertRaisesRegex(
             auditor.SuccessorAuditError,
             "unexpected=.*15",
+        ):
+            auditor.build_audit(
+                source_extract,
+                review,
+                extract_sha256,
+            )
+
+    def test_historic_identity_cannot_claim_current_direction(self) -> None:
+        source_extract, review, extract_sha256 = fixture()
+        review = copy.deepcopy(review)
+        evidence = review["legal_successor_evidence"][0]
+        evidence["current_legal_direction"] = "FORWARD_ONLY"
+
+        with self.assertRaisesRegex(
+            auditor.SuccessorAuditError,
+            "failing closed on current movement",
+        ):
+            auditor.build_audit(
+                source_extract,
+                review,
+                extract_sha256,
+            )
+
+    def test_unresolved_successor_requires_matching_evidence(self) -> None:
+        source_extract, review, extract_sha256 = fixture()
+        review = copy.deepcopy(review)
+        review["legal_successor_evidence"] = []
+
+        with self.assertRaisesRegex(
+            auditor.SuccessorAuditError,
+            "every unresolved legal successor",
         ):
             auditor.build_audit(
                 source_extract,

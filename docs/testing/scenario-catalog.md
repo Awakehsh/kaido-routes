@@ -30,7 +30,7 @@ should become scenarios when their layer is built.
 | KR-D20 | Full-network Route Atlas context geometry can never become navigation authority | P0 | Seeded |
 | KR-D21 | An official-checked real K7 Northwest slice remains blocked until topology and layout are released | P0 | Seeded |
 | KR-D22 | An ODbL-isolated K7 one-way candidate preserves two reviewed divergences without gaining release authority | P0 | Seeded |
-| KR-D23 | Exact source-adjacent K7 successors remain blocked when independent legal movement review is incomplete | P0 | Seeded |
+| KR-D23 | Historic official K7 passage identity does not prove the current legal movement | P0 | Seeded |
 
 ## Navigation simulation
 
@@ -85,6 +85,7 @@ should become scenarios when their layer is built.
 | KR-F05 | Critical movement prompt matches current route shield and Japanese sign | P0 |
 | KR-F06 | Optional PA restriction leaves a safe mainline experience | P1 |
 | KR-F07 | A route review detects a facility removed after an old recommendation | P0 |
+| KR-F08 | Passenger evidence resolves the current Yokohama Kohoku temporary-passage direction without driver interaction | P0 |
 
 ## Safety regressions
 

@@ -29,8 +29,11 @@ tag, and coordinate lineage needed to review:
 It also retains the Aoba incoming/non-route split and all three motor-road ways
 leaving the Kohoku exit terminal as facility-boundary evidence. Two are named
 one-way `川向線` carriageways. OSM way `776884422` is an unnamed `tertiary`
-way without an explicit `oneway` tag. None of those surface ways is silently
-appended to the Shuto RoutePlan.
+way without an explicit `oneway` tag. Yokohama's dated 2020 opening notice
+identifies its corridor as the temporary passage inside the land-readjustment
+area, but does not prove its current physical status, legal direction, or
+permitted exit movement. None of those surface ways is silently appended to
+the Shuto RoutePlan.
 
 It has no navigation authority and is not a complete interchange database.
 
@@ -78,7 +81,9 @@ The successor audit must find exactly 14 checkpoints and 19 outgoing
 motor-road successors. It fails on an omitted or unexpected way, direction
 drift, or an unreviewed applicable turn restriction. A passing source audit
 does not release legal movement evidence: the current report intentionally
-keeps OSM way `776884422` unresolved.
+keeps OSM way `776884422` unresolved under
+`CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED`. See the
+[coordinate-free field-verification plan](../../../docs/testing/k7-yokohama-kohoku-surface-field-verification.md).
 
 The source extract and parent PBF are not part of the Apache-licensed source
 tree. Any redistributed derivative database must retain ODbL terms,

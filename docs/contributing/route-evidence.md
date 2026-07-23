@@ -72,6 +72,14 @@ statistical-floor status is matcher evidence, not `FIELD_CHECKED` route approval
 the underlying lawful run and independent annotation still require privacy and
 source review.
 
+Surface-road field review follows the same private-raw/public-claim boundary.
+The [K7 Yokohama Kohoku plan](../testing/k7-yokohama-kohoku-surface-field-verification.md)
+is the reference implementation: raw media and coordinates stay ignored,
+tracked manifests contain only exact target identity, safe collection context,
+hash bindings, concise findings, conclusions, reviewer, and validity. Passing
+its validator closes one field-review gap; it never grants Route Atlas release
+authority by itself.
+
 ## Contradiction handling
 
 When sources disagree:

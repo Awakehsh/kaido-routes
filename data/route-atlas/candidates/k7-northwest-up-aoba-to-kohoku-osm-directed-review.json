@@ -174,6 +174,19 @@
       "content_sha256": "ff4e905661ab7006464fc867ab48b3b3de311bfae438db8af41817633f550d01",
       "checked_at": "2026-07-23",
       "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.kawamuki-opening.2020-02-06",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/2019/0206-kawamukousen.files/0005_20200206.pdf",
+      "archive_url": "https://web.archive.org/web/20200327180920id_/https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/2019/0206-kawamukousen.files/0005_20200206.pdf",
+      "content_sha256": "bca0774b5e80dd4bb1ed3ce3960d053e953b8cd376f2864c10f7df47eb9a7c35",
+      "published_at": "2020-02-06",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
     }
   ],
   "topology_evidence_source_ids": [
@@ -181,7 +194,8 @@
     "shutoko.route.k7-northwest.2026-07-23",
     "shutoko.guide.k7-aoba.2026-07-23",
     "shutoko.guide.k7-kohoku.2026-07-23",
-    "yokohama.k7-northwest.brochure.2026-07-23"
+    "yokohama.k7-northwest.brochure.2026-07-23",
+    "yokohama.kawamuki-opening.2020-02-06"
   ],
   "layout_evidence_source_ids": [
     "osm.geofabrik.kanto-260721.k7-directed"
@@ -234,7 +248,7 @@
     },
     {
       "claim_id": "kohoku-exit-source-adjacency",
-      "value": "The pinned OSM extract contains three motor-road successors from the Yokohama Kohoku exit terminal: two named one-way Kawamuki Line carriageways and one unnamed tertiary way without an explicit oneway tag. The municipal brochure confirms the facility-to-Kawamuki-Line connection but does not independently classify each source way.",
+      "value": "The pinned OSM extract contains three motor-road successors from the Yokohama Kohoku exit terminal: two named one-way Kawamuki Line carriageways and one unnamed tertiary way without an explicit oneway tag. Yokohama's 2020 opening notice identifies the unnamed way's corridor as the temporary passage inside the land-readjustment area, but does not prove its current legal direction.",
       "osm_way_ids": [
         734299106,
         734299108,
@@ -243,8 +257,38 @@
       ],
       "source_reference_ids": [
         "osm.geofabrik.kanto-260721.k7-directed",
-        "yokohama.k7-northwest.brochure.2026-07-23"
+        "yokohama.k7-northwest.brochure.2026-07-23",
+        "yokohama.kawamuki-opening.2020-02-06"
       ]
+    }
+  ],
+  "legal_successor_evidence": [
+    {
+      "incoming_way_id": 734299106,
+      "via_node_id": 7473451738,
+      "way_id": 776884422,
+      "direction": "FORWARD",
+      "source_adjacency_exact": true,
+      "road_identity": {
+        "status": "OFFICIAL_CHECKED",
+        "classification": "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "source_published_at": "2020-02-06",
+        "source_reference_ids": [
+          "yokohama.kawamuki-opening.2020-02-06"
+        ]
+      },
+      "historical_planned_exit_connection": {
+        "status": "OFFICIAL_CHECKED_AT_PUBLICATION",
+        "source_published_at": "2020-04-21",
+        "source_reference_ids": [
+          "shutoko.guide.k7-kohoku.2026-07-23"
+        ]
+      },
+      "current_physical_status": "UNCONFIRMED",
+      "current_legal_direction": "UNCONFIRMED",
+      "permitted_exit_movement": "UNCONFIRMED",
+      "field_verification_plan_id": "k7-yokohama-kohoku-surface-field-verification",
+      "release_eligible": false
     }
   ],
   "successor_audit": {
@@ -257,17 +301,17 @@
         "via_node_id": 7473451738,
         "way_id": 776884422,
         "direction": "FORWARD",
-        "reason_code": "NO_INDEPENDENT_ROAD_LEVEL_DIRECTION_OR_MOVEMENT_REVIEW"
+        "reason_code": "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED"
       }
     ],
     "release_blockers": [
-      "OSM way 776884422 is physically source-adjacent and bidirectional by missing-oneway semantics, but its exact road identity, permitted exit movement, and current direction have no independent road-level review.",
+      "OSM way 776884422 is officially identified as a 2020 land-readjustment temporary passage, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
       "Source adjacency completeness does not establish complete legal successor coverage."
     ]
   },
   "release_blockers": [
     "The directed database is OSM-derived community data and has not passed an independent lawful field review.",
-    "The fourteen-checkpoint source-adjacency audit is exact, but OSM way 776884422 at the Kohoku exit has no independent road-level direction or movement review.",
+    "The fourteen-checkpoint source-adjacency audit is exact and the third way's 2020 temporary-passage identity is official, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
     "The two expressway divergence alternatives are source-bound candidates, not a complete released graph beyond the bounded slice.",
     "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
     "In-app OSM attribution and derivative-database distribution integration are not implemented.",

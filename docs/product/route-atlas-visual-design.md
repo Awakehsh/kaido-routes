@@ -81,9 +81,11 @@ released Kaido schematic.
 The evidence view may report that all 14 source-adjacency checkpoints match, but
 must separately show `LEGAL REVIEW INCOMPLETE`. At the Yokohama Kohoku surface
 terminal it must disclose three source-adjacent motor-road ways, including the
-unnamed OSM way `776884422` whose direction and permitted movement have no
-independent road-level review. It must not simplify this into two reviewed exits
-or display a production route through the unresolved way.
+unnamed OSM way `776884422`. Its corridor is officially identified as a 2020
+land-readjustment temporary passage, while its 2026 physical status, legal
+direction, and permitted movement remain unconfirmed. The UI must not simplify
+this into two reviewed exits or display a production route through the
+unresolved way.
 
 ## Current sources
 

@@ -148,6 +148,12 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
         self.assertTrue(summary["source_adjacency_exact"])
         self.assertFalse(summary["legal_review_complete"])
         self.assertEqual(summary["unresolved_legal_successor_count"], 1)
+        self.assertEqual(summary["road_identity_reviewed_count"], 1)
+        self.assertEqual(
+            summary["current_legal_direction_confirmed_count"],
+            0,
+        )
+        self.assertTrue(summary["field_verification_required"])
         self.assertEqual(
             self.successor_audit["source"]["bounded_extract_sha256"],
             self.database["source"]["bounded_extract_sha256"],
@@ -170,6 +176,24 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
             [734299108, 734299111, 776884422],
         )
         self.assertEqual(self.successor_scenario["id"], "KR-D23")
+        self.assertEqual(
+            self.successor_audit["unresolved_legal_successors"][0][
+                "reason_code"
+            ],
+            "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED",
+        )
+        passage_evidence = self.successor_audit[
+            "legal_successor_evidence"
+        ][0]
+        self.assertEqual(
+            passage_evidence["road_identity"]["classification"],
+            "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        )
+        self.assertEqual(
+            passage_evidence["current_legal_direction"],
+            "UNCONFIRMED",
+        )
+        self.assertFalse(passage_evidence["release_eligible"])
         self.assertFalse(
             self.successor_scenario["given"]["system_state"][
                 "legal_review_complete"

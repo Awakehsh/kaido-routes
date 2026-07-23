@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "k7-yokohama-kohoku-surface-field-verification",
+  "target": {
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "incoming_osm_way_id": 734299106,
+    "via_osm_node_id": 7473451738,
+    "surface_osm_way_id": 776884422,
+    "source_direction": "FORWARD"
+  },
+  "collection": {
+    "captured_at": null,
+    "observer_role": "UNASSIGNED",
+    "driver_interaction": false,
+    "expressway_stop_required": false,
+    "raw_evidence_sha256": []
+  },
+  "observations": [
+    {
+      "checkpoint_id": "EXIT_RAMP_SIGNAL_APPROACH",
+      "status": "PENDING",
+      "required_view": "The lawful passenger view approaching the surface signal, including lane arrows and every direction or turn restriction controlling the exit movement.",
+      "sign_findings": [],
+      "evidence_sha256": []
+    },
+    {
+      "checkpoint_id": "TEMPORARY_PASSAGE_EAST_MOUTH",
+      "status": "PENDING",
+      "required_view": "Both sides of the passage mouth at the exit intersection, including no-entry, one-way, motor-access, closure, and construction signs.",
+      "sign_findings": [],
+      "evidence_sha256": []
+    },
+    {
+      "checkpoint_id": "TEMPORARY_PASSAGE_WEST_MOUTH_EASTBOUND",
+      "status": "PENDING",
+      "required_view": "The west mouth approached toward the exit intersection, including every sign and lane marking controlling eastbound entry.",
+      "sign_findings": [],
+      "evidence_sha256": []
+    },
+    {
+      "checkpoint_id": "TEMPORARY_PASSAGE_WEST_MOUTH_WESTBOUND",
+      "status": "PENDING",
+      "required_view": "The west mouth viewed in the exit-to-west direction, including every sign and lane marking controlling westbound passage.",
+      "sign_findings": [],
+      "evidence_sha256": []
+    }
+  ],
+  "conclusions": {
+    "current_physical_status": "UNCONFIRMED",
+    "current_legal_direction": "UNCONFIRMED",
+    "permitted_exit_movement": "UNCONFIRMED",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "valid_through": null
+  }
+}

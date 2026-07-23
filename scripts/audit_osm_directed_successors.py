@@ -295,6 +295,106 @@ def successor_record(
     return record
 
 
+def legal_successor_evidence(
+    review: dict[str, Any],
+    unresolved: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    evidence = review.get("legal_successor_evidence")
+    source_references = review.get("source_references")
+    if not isinstance(evidence, list) or not isinstance(
+        source_references,
+        list,
+    ):
+        raise SuccessorAuditError(
+            "legal successor evidence registry is incomplete"
+        )
+    source_reference_ids = {
+        reference.get("source_reference_id")
+        for reference in source_references
+        if isinstance(reference, dict)
+        and isinstance(reference.get("source_reference_id"), str)
+    }
+    unresolved_keys = {
+        (
+            item["incoming_way_id"],
+            item["via_node_id"],
+            item["way_id"],
+            item["direction"],
+        )
+        for item in unresolved
+    }
+    evidence_keys: set[tuple[int, int, int, str]] = set()
+    for item in evidence:
+        if not isinstance(item, dict):
+            raise SuccessorAuditError(
+                "legal successor evidence contains an invalid record"
+            )
+        key = (
+            item.get("incoming_way_id"),
+            item.get("via_node_id"),
+            item.get("way_id"),
+            item.get("direction"),
+        )
+        if key in evidence_keys or key not in unresolved_keys:
+            raise SuccessorAuditError(
+                "legal successor evidence identity has drifted"
+            )
+        road_identity = item.get("road_identity")
+        historical_connection = item.get(
+            "historical_planned_exit_connection"
+        )
+        if (
+            item.get("source_adjacency_exact") is not True
+            or item.get("current_physical_status") != "UNCONFIRMED"
+            or item.get("current_legal_direction") != "UNCONFIRMED"
+            or item.get("permitted_exit_movement") != "UNCONFIRMED"
+            or item.get("release_eligible") is not False
+            or not isinstance(item.get("field_verification_plan_id"), str)
+            or not item["field_verification_plan_id"]
+            or not isinstance(road_identity, dict)
+            or road_identity.get("status") != "OFFICIAL_CHECKED"
+            or not isinstance(road_identity.get("classification"), str)
+            or not road_identity["classification"]
+            or not isinstance(
+                road_identity.get("source_published_at"),
+                str,
+            )
+            or not isinstance(
+                road_identity.get("source_reference_ids"),
+                list,
+            )
+            or not road_identity["source_reference_ids"]
+            or not set(road_identity["source_reference_ids"]).issubset(
+                source_reference_ids
+            )
+            or not isinstance(historical_connection, dict)
+            or historical_connection.get("status")
+            != "OFFICIAL_CHECKED_AT_PUBLICATION"
+            or not isinstance(
+                historical_connection.get("source_published_at"),
+                str,
+            )
+            or not isinstance(
+                historical_connection.get("source_reference_ids"),
+                list,
+            )
+            or not historical_connection["source_reference_ids"]
+            or not set(
+                historical_connection["source_reference_ids"]
+            ).issubset(source_reference_ids)
+        ):
+            raise SuccessorAuditError(
+                "legal successor evidence must preserve official identity "
+                "while failing closed on current movement"
+            )
+        evidence_keys.add(key)
+    if evidence_keys != unresolved_keys:
+        raise SuccessorAuditError(
+            "every unresolved legal successor needs one evidence record"
+        )
+    return evidence
+
+
 def build_audit(
     source_extract: dict[str, Any],
     review: dict[str, Any],
@@ -440,6 +540,7 @@ def build_audit(
             raise SuccessorAuditError(
                 "unresolved legal successor declaration has drifted"
             )
+    successor_evidence = legal_successor_evidence(review, unresolved)
 
     total_successors = sum(
         len(result["observed_successors"]) for result in results
@@ -466,9 +567,19 @@ def build_audit(
             "source_adjacency_exact": True,
             "legal_review_complete": False,
             "unresolved_legal_successor_count": len(unresolved),
+            "road_identity_reviewed_count": sum(
+                item["road_identity"]["status"] == "OFFICIAL_CHECKED"
+                for item in successor_evidence
+            ),
+            "current_legal_direction_confirmed_count": sum(
+                item["current_legal_direction"] != "UNCONFIRMED"
+                for item in successor_evidence
+            ),
+            "field_verification_required": True,
         },
         "checkpoints": results,
         "unresolved_legal_successors": unresolved,
+        "legal_successor_evidence": successor_evidence,
         "release_blockers": audit_review["release_blockers"],
     }
 
@@ -485,8 +596,8 @@ def build_scenario(
         "schema_version": "1.0",
         "id": "KR-D23",
         "title": (
-            "Source-complete K7 successors remain blocked when legal review "
-            "is incomplete"
+            "Historic K7 passage identity does not prove current legal "
+            "movement"
         ),
         "layer": "DOMAIN",
         "tags": [
@@ -496,12 +607,12 @@ def build_scenario(
             "release-gate",
         ],
         "purpose": (
-            "Prove that exact source adjacency, including all three Kohoku "
-            "surface successors, cannot substitute for independent legal "
-            "movement and production-layout review."
+            "Prove that exact source adjacency and an official historic road "
+            "identity cannot substitute for current legal direction, "
+            "permitted movement, and production-layout review."
         ),
         "evidence": {
-            "classification": "COMMUNITY_CANDIDATE",
+            "classification": "OFFICIAL_CHECKED",
             "sources": [
                 {
                     "id": "osm-geofabrik-kanto-260721",
@@ -513,25 +624,29 @@ def build_scenario(
                     ),
                 },
                 {
-                    "id": "yokohama-k7-northwest-brochure",
+                    "id": "yokohama-kawamuki-opening-2020",
                     "uri": next(
-                        reference["source_url"]
+                        reference.get(
+                            "archive_url",
+                            reference["source_url"],
+                        )
                         for reference in review["source_references"]
                         if reference["source_reference_id"]
-                        == "yokohama.k7-northwest.brochure.2026-07-23"
+                        == "yokohama.kawamuki-opening.2020-02-06"
                     ),
                     "checked_at": review["checked_at"],
                     "supports": (
-                        "The municipal brochure confirms that Yokohama "
-                        "Kohoku exit connects K7 to Kawamuki Line."
+                        "The municipal opening notice identifies the third "
+                        "way's corridor as a temporary passage inside the "
+                        "land-readjustment area."
                     ),
                 },
             ],
             "limitations": [
                 (
-                    "OSM way 776884422 is source-adjacent and bidirectional "
-                    "by missing-oneway semantics, but lacks an independent "
-                    "road-level movement classification."
+                    "The 2020 official identity and planned connection do not "
+                    "prove the temporary passage's 2026 physical status, "
+                    "legal direction, or permitted exit movement."
                 )
             ],
             "release_blockers": audit["release_blockers"],
@@ -559,6 +674,15 @@ def build_scenario(
                 "unresolved_legal_successor_count": audit["summary"][
                     "unresolved_legal_successor_count"
                 ],
+                "road_identity_reviewed_count": audit["summary"][
+                    "road_identity_reviewed_count"
+                ],
+                "current_legal_direction_confirmed_count": audit["summary"][
+                    "current_legal_direction_confirmed_count"
+                ],
+                "field_verification_required": audit["summary"][
+                    "field_verification_required"
+                ],
             },
         },
         "when": [
@@ -578,8 +702,8 @@ def build_scenario(
                 "matcher": "EQUALS",
                 "expected": "BLOCKED",
                 "rationale": (
-                    "Complete source adjacency does not prove that every "
-                    "movement is independently reviewed and releasable."
+                    "A historic official road identity does not establish "
+                    "the movement's current lawful state."
                 ),
             },
             {
@@ -591,7 +715,7 @@ def build_scenario(
                 "expected": "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
                 "rationale": (
                     "The source-complete audit remains a candidate until "
-                    "legal movement review is complete."
+                    "current legal direction and exit movement are reviewed."
                 ),
             },
             {

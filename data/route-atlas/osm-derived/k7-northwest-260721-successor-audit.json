@@ -430,11 +430,40 @@
       "via_node_id": 7473451738
     }
   ],
+  "legal_successor_evidence": [
+    {
+      "current_legal_direction": "UNCONFIRMED",
+      "current_physical_status": "UNCONFIRMED",
+      "direction": "FORWARD",
+      "field_verification_plan_id": "k7-yokohama-kohoku-surface-field-verification",
+      "historical_planned_exit_connection": {
+        "source_published_at": "2020-04-21",
+        "source_reference_ids": [
+          "shutoko.guide.k7-kohoku.2026-07-23"
+        ],
+        "status": "OFFICIAL_CHECKED_AT_PUBLICATION"
+      },
+      "incoming_way_id": 734299106,
+      "permitted_exit_movement": "UNCONFIRMED",
+      "release_eligible": false,
+      "road_identity": {
+        "classification": "LAND_READJUSTMENT_TEMPORARY_PASSAGE",
+        "source_published_at": "2020-02-06",
+        "source_reference_ids": [
+          "yokohama.kawamuki-opening.2020-02-06"
+        ],
+        "status": "OFFICIAL_CHECKED"
+      },
+      "source_adjacency_exact": true,
+      "via_node_id": 7473451738,
+      "way_id": 776884422
+    }
+  ],
   "licence": "ODbL-1.0",
   "navigation_authority": false,
   "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
   "release_blockers": [
-    "OSM way 776884422 is physically source-adjacent and bidirectional by missing-oneway semantics, but its exact road identity, permitted exit movement, and current direction have no independent road-level review.",
+    "OSM way 776884422 is officially identified as a 2020 land-readjustment temporary passage, but its 2026 physical status, legal direction, and permitted exit movement remain unconfirmed.",
     "Source adjacency completeness does not establish complete legal successor coverage."
   ],
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.osm-directed.2026-07-23",
@@ -448,9 +477,12 @@
   "state": "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE",
   "summary": {
     "checkpoint_count": 14,
+    "current_legal_direction_confirmed_count": 0,
+    "field_verification_required": true,
     "legal_review_complete": false,
     "observed_successor_count": 19,
     "restriction_relation_count": 0,
+    "road_identity_reviewed_count": 1,
     "source_adjacency_exact": true,
     "unresolved_legal_successor_count": 1
   },
@@ -458,7 +490,7 @@
     {
       "direction": "FORWARD",
       "incoming_way_id": 734299106,
-      "reason_code": "NO_INDEPENDENT_ROAD_LEVEL_DIRECTION_OR_MOVEMENT_REVIEW",
+      "reason_code": "CURRENT_TEMPORARY_PASSAGE_DIRECTION_UNCONFIRMED",
       "via_node_id": 7473451738,
       "way_id": 776884422
     }

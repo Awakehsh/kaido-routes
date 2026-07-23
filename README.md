@@ -222,19 +222,26 @@ Daisan-Keihin alternatives at the two operator-reviewed divergences. All 257
 retained nodes, the Aoba incoming/non-route split, and all three source-adjacent
 motor-road connections at the Kohoku terminal remain explicit. Two are named
 one-way Kawamuki Line carriageways; the third is an unnamed `tertiary` way
-without an explicit `oneway` tag. Way tags, direction,
+without an explicit `oneway` tag. A dated Yokohama City opening notice now
+identifies that third corridor as the temporary passage inside the
+land-readjustment area. It does not establish the passage's 2026 physical
+status, legal direction, or permitted exit movement. Way tags, direction,
 extraction bounds, source hashes, OSM timestamp, and reconstruction commands
 remain explicit. A deterministic audit now proves exact source adjacency at 14
 entry, route, divergence, and exit checkpoints with 19 outgoing successors and
 no applicable turn-restriction relation. It deliberately reports legal review
-as incomplete because the third surface way lacks independent road-level
-direction and movement evidence. This closes the structured directed-candidate
-gap, not release: topology and layout stay
+as incomplete because the third surface way's current road-level direction and
+movement remain unconfirmed. The tracked
+[field-verification plan](docs/testing/k7-yokohama-kohoku-surface-field-verification.md)
+and coordinate-free manifest validator make that gap executable without
+committing raw field media. This closes the structured directed-candidate gap,
+not release: topology and layout stay
 `CANDIDATE` until independent lawful field/topology review, production layout,
 attribution integration, and realtime review are complete. KR-D22 proves that
 the internally coherent 13-occurrence, 15-edge artifact still fails release
 with only the two unreleased-evidence issues. KR-D23 proves that source-complete
-successor enumeration cannot substitute for legal review.
+successor enumeration plus a historic official identity cannot substitute for
+current legal review.
 
 The feasibility core currently executes portable scenarios for twenty-nine hard
 properties that must remain proven as the product expands:

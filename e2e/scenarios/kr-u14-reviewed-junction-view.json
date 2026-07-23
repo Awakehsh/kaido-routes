@@ -1,0 +1,245 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U14",
+  "title": "Phone and CarPlay consume one reviewed junction-view definition",
+  "layer": "CARPLAY",
+  "tags": ["carplay", "junction-view", "lane-guidance", "signs"],
+  "purpose": "Keep junction geometry, lane selection, and the Japanese sign target in one snapshot- and occurrence-bound definition instead of letting UI adapters invent a branch diagram.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "All identifiers and geometry are synthetic; RELEASED inside the fixture exercises the release gate only.",
+      "This does not render a UIImage, exercise CPManeuver.junctionImage, or validate a physical head unit."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.junction-view-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.junction-view",
+      "network_snapshot_id": "test.snapshot.junction-view-v1",
+      "entry_facility_id": "test.entry",
+      "exit_facility_id": "test.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.selected-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.selected"
+        }
+      ]
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "ja-JP"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": true
+        },
+        "guidance": {
+          "prompt_id": "test.prompt.u14.prepare",
+          "anchor_id": "PREPARE",
+          "anchor_occurrence_id": "test.occurrence.approach",
+          "movement_occurrence_id": "test.occurrence.selected-movement",
+          "decision_zone_id": "test.zone.synthetic-junction",
+          "stage": "PREPARE",
+          "distance_meters": 600,
+          "decision_point_name_ja": "テストJCT",
+          "localized_decision_point_names": {
+            "ja-JP": "テストJCT",
+            "zh-Hans": "测试 JCT",
+            "en": "Test JCT"
+          },
+          "maneuver": "KEEP_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "左側を進み、B 湾岸線、横浜方面へ",
+              "spoken_forms": {"B": "ビー"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {"B": "B 路线"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {"B": "Route B"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          },
+          "junction_view": {
+            "view_id": "test.junction-view.selected-movement",
+            "network_snapshot_id": "test.snapshot.junction-view-v1",
+            "movement_occurrence_id": "test.occurrence.selected-movement",
+            "paths": [
+              {
+                "path_id": "test.path.approach",
+                "role": "APPROACH",
+                "points": [
+                  {"x": 0.5, "y": 1.0},
+                  {"x": 0.5, "y": 0.55}
+                ]
+              },
+              {
+                "path_id": "test.path.selected",
+                "role": "SELECTED",
+                "points": [
+                  {"x": 0.5, "y": 0.55},
+                  {"x": 0.35, "y": 0.3},
+                  {"x": 0.15, "y": 0.05}
+                ]
+              },
+              {
+                "path_id": "test.path.alternative",
+                "role": "ALTERNATIVE",
+                "points": [
+                  {"x": 0.5, "y": 0.55},
+                  {"x": 0.65, "y": 0.3},
+                  {"x": 0.85, "y": 0.05}
+                ]
+              }
+            ],
+            "lane_layout": {
+              "lane_count": 3,
+              "allowed_lane_indices": [0, 1],
+              "preferred_lane_indices": [0]
+            },
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "route_shields": ["B"],
+            "evidence": {
+              "state": "RELEASED",
+              "checked_at": "2026-07-23",
+              "source_reference_ids": ["test.source.reviewed-junction"]
+            }
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.junction-view",
+      "current_occurrence_id": "test.occurrence.approach",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "connect",
+      "at_ms": 1000,
+      "type": "CARPLAY_CONNECTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "phone-view-id",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.junction_view.id",
+      "matcher": "EQUALS",
+      "expected": "test.junction-view.selected-movement",
+      "rationale": "The phone consumes the released structured view."
+    },
+    {
+      "id": "carplay-view-id",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.junction_view.id",
+      "matcher": "EQUALS",
+      "expected": "test.junction-view.selected-movement",
+      "rationale": "CarPlay consumes the same structured view instead of authoring a diagram."
+    },
+    {
+      "id": "view-snapshot-bound",
+      "after": "connect",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.junction_view.network_snapshot_id",
+      "matcher": "EQUALS",
+      "expected": "test.snapshot.junction-view-v1",
+      "rationale": "A diagram from another topology version cannot be shown."
+    },
+    {
+      "id": "view-occurrence-bound",
+      "after": "connect",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.junction_view.movement_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.selected-movement",
+      "rationale": "A repeated traversal must retain its own movement occurrence identity."
+    },
+    {
+      "id": "selected-path-shared",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.junction_view.selected_path_id",
+      "matcher": "EQUALS",
+      "expected": "test.path.selected",
+      "rationale": "The highlighted branch comes from reviewed data."
+    },
+    {
+      "id": "lane-count-shared",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.phone.junction_view.lane_count",
+      "matcher": "EQUALS",
+      "expected": 3,
+      "rationale": "The phone does not derive lane count from route prose."
+    },
+    {
+      "id": "preferred-lane-shared",
+      "after": "connect",
+      "category": "UI",
+      "subject": "presentation.kernel.carplay.junction_view.preferred_lane_indices",
+      "matcher": "EQUALS",
+      "expected": [0],
+      "rationale": "Lane index zero is the reviewed leftmost preferred lane."
+    },
+    {
+      "id": "japanese-sign-preserved",
+      "after": "connect",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.carplay.junction_view.japanese_sign_text",
+      "matcher": "EQUALS",
+      "expected": "B 湾岸線・横浜方面",
+      "rationale": "The inset preserves the same physical Japanese sign target as the guidance frame."
+    },
+    {
+      "id": "release-gate-visible",
+      "after": "connect",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.junction_view.evidence_state",
+      "matcher": "EQUALS",
+      "expected": "RELEASED",
+      "rationale": "Unreleased junction-view evidence is rejected before projection."
+    }
+  ]
+}

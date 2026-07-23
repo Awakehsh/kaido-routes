@@ -29,6 +29,8 @@ A release candidate records:
 - exact directional entrance and exit facilities;
 - ordered edge, movement, and PA occurrences;
 - Japanese sign targets and prompt anchors for critical movements;
+- independently rendered junction-view path roles and left-indexed lane semantics,
+  when a critical movement ships with an inset;
 - external-network boundaries;
 - actual-distance provenance;
 - toll quote status, parameters, source, and checked date;
@@ -43,14 +45,17 @@ A release candidate records:
    primary or independently reviewed evidence.
 3. **Sign guidance:** critical route shield and Japanese destination text are
    checked without copying protected artwork.
-4. **PA semantics:** access and return direction are explicit; optional and
+4. **Junction view:** normalized approach, selected, and alternative paths bind
+   to the exact movement occurrence and snapshot; lane indices, route shields,
+   Japanese sign text, checked date, and source references pass validation.
+5. **PA semantics:** access and return direction are explicit; optional and
    required behavior are tested.
-5. **Boundary:** accidental NEXCO or other toll-domain exits are flagged.
-6. **Operations:** planned conflicts and lack of live confirmation are separate.
-7. **Toll:** the product labels estimates and dated official-query results
+6. **Boundary:** accidental NEXCO or other toll-domain exits are flagged.
+7. **Operations:** planned conflicts and lack of live confirmation are separate.
+8. **Toll:** the product labels estimates and dated official-query results
    accurately; actual route distance remains separate.
-8. **Safety:** difficulty and degraded-positioning behavior are reviewed.
-9. **Freshness:** no relevant topology or access change occurred after review.
+9. **Safety:** difficulty and degraded-positioning behavior are reviewed.
+10. **Freshness:** no relevant topology or access change occurred after review.
 
 ## Source retention
 

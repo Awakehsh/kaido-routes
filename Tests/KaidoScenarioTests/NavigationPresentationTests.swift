@@ -286,6 +286,85 @@ func presentationRejectsInconsistentSurfaceState() {
   }
 }
 
+@Test("A released junction view projects identically to phone and CarPlay")
+func presentationProjectsReviewedJunctionView() throws {
+  let junctionView = validJunctionView()
+  let projection = try NavigationPresentationProjector.project(
+    makePresentationRequest(
+      snapshot: NavigationSnapshot(),
+      networkSnapshotID: junctionView.networkSnapshotID,
+      guidanceFrame: validGuidanceFrame(junctionView: junctionView)
+    )
+  )
+
+  #expect(projection.iPhone.junctionView == junctionView)
+  #expect(projection.carPlay.junctionView == junctionView)
+  #expect(projection.carPlay.junctionView?.laneLayout.preferredLaneIndices == [0])
+  #expect(
+    projection.carPlay.junctionView?.paths.first(where: { $0.role == .selected })?.id
+      == "test.path.selected"
+  )
+}
+
+@Test("Junction views fail closed on snapshot, evidence, and sign drift")
+func presentationRejectsInvalidJunctionView() {
+  let valid = validJunctionView()
+  #expect(
+    throws: NavigationPresentationProjectionError.junctionViewNetworkSnapshotMismatch
+  ) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: NavigationSnapshot(),
+        networkSnapshotID: "test.snapshot.other",
+        guidanceFrame: validGuidanceFrame(junctionView: valid)
+      )
+    )
+  }
+
+  let unreleased = validJunctionView(evidenceState: .officialChecked)
+  #expect(
+    throws: NavigationPresentationProjectionError.invalidJunctionView(
+      .unreleasedEvidence
+    )
+  ) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: NavigationSnapshot(),
+        networkSnapshotID: unreleased.networkSnapshotID,
+        guidanceFrame: validGuidanceFrame(junctionView: unreleased)
+      )
+    )
+  }
+
+  let changedSign = validJunctionView(japaneseSignText: "translated replacement")
+  #expect(
+    throws: NavigationPresentationProjectionError.junctionViewJapaneseSignMismatch
+  ) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: NavigationSnapshot(),
+        networkSnapshotID: changedSign.networkSnapshotID,
+        guidanceFrame: validGuidanceFrame(junctionView: changedSign)
+      )
+    )
+  }
+
+  let disconnected = validJunctionView(selectedPathStartX: 0.4)
+  #expect(
+    throws: NavigationPresentationProjectionError.invalidJunctionView(
+      .disconnectedPathGeometry("test.path.selected")
+    )
+  ) {
+    try NavigationPresentationProjector.project(
+      makePresentationRequest(
+        snapshot: NavigationSnapshot(),
+        networkSnapshotID: disconnected.networkSnapshotID,
+        guidanceFrame: validGuidanceFrame(junctionView: disconnected)
+      )
+    )
+  }
+}
+
 @Test("Pre-drive review keeps actual distance, tariff distance, toll, and road evidence separate")
 func preDriveReviewKeepsMetricsSeparate() throws {
   let review = try PreDriveReviewProjector.project(
@@ -334,6 +413,7 @@ func preDriveReviewRejectsInvalidScalars() {
 
 private func makePresentationRequest(
   snapshot: NavigationSnapshot,
+  networkSnapshotID: String? = nil,
   nextMovementOccurrenceID: String? = nil,
   interfaceLocale: KaidoReleaseLocale = .simplifiedChinese,
   voiceLocale: KaidoReleaseLocale = .japanese,
@@ -349,6 +429,7 @@ private func makePresentationRequest(
 ) -> NavigationPresentationRequest {
   NavigationPresentationRequest(
     snapshot: snapshot,
+    networkSnapshotID: networkSnapshotID,
     guidanceFrame: guidanceFrame
       ?? validGuidanceFrame(
         anchorOccurrenceID: snapshot.currentOccurrenceID ?? "test.occurrence.anchor",
@@ -377,7 +458,8 @@ private func validGuidanceFrame(
     .english: "Tatsumi JCT",
   ],
   localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent] =
-    validLocalizedContent()
+    validLocalizedContent(),
+  junctionView: JunctionViewDefinition? = nil
 ) -> GuidanceFrame {
   GuidanceFrame(
     promptID: promptID,
@@ -394,7 +476,58 @@ private func validGuidanceFrame(
     presentationSource: GuidancePresentationSource(
       routeShields: ["B"],
       japaneseSignText: "B 湾岸線・横浜方面",
-      localizedContent: localizedContent
+      localizedContent: localizedContent,
+      junctionView: junctionView
+    )
+  )
+}
+
+private func validJunctionView(
+  evidenceState: JunctionViewEvidenceState = .released,
+  japaneseSignText: String = "B 湾岸線・横浜方面",
+  selectedPathStartX: Double = 0.5
+) -> JunctionViewDefinition {
+  JunctionViewDefinition(
+    id: "test.junction-view",
+    networkSnapshotID: "test.snapshot.junction-view",
+    movementOccurrenceID: "test.occurrence.next",
+    paths: [
+      JunctionViewPath(
+        id: "test.path.approach",
+        role: .approach,
+        points: [
+          JunctionViewPoint(x: 0.5, y: 1),
+          JunctionViewPoint(x: 0.5, y: 0.5),
+        ]
+      ),
+      JunctionViewPath(
+        id: "test.path.selected",
+        role: .selected,
+        points: [
+          JunctionViewPoint(x: selectedPathStartX, y: 0.5),
+          JunctionViewPoint(x: 0.2, y: 0),
+        ]
+      ),
+      JunctionViewPath(
+        id: "test.path.alternative",
+        role: .alternative,
+        points: [
+          JunctionViewPoint(x: 0.5, y: 0.5),
+          JunctionViewPoint(x: 0.8, y: 0),
+        ]
+      ),
+    ],
+    laneLayout: JunctionViewLaneLayout(
+      laneCount: 3,
+      allowedLaneIndices: [0, 1],
+      preferredLaneIndices: [0]
+    ),
+    japaneseSignText: japaneseSignText,
+    routeShields: ["B"],
+    evidence: JunctionViewEvidence(
+      state: evidenceState,
+      checkedAt: "2026-07-23",
+      sourceReferenceIDs: ["test.source.junction"]
     )
   )
 }

@@ -29,15 +29,18 @@ public struct GuidancePresentationSource: Equatable, Sendable {
   public let routeShields: [String]
   public let japaneseSignText: String
   public let localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent]
+  public let junctionView: JunctionViewDefinition?
 
   public init(
     routeShields: [String],
     japaneseSignText: String,
-    localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent]
+    localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent],
+    junctionView: JunctionViewDefinition? = nil
   ) {
     self.routeShields = routeShields
     self.japaneseSignText = japaneseSignText
     self.localizedContent = localizedContent
+    self.junctionView = junctionView
   }
 }
 
@@ -258,6 +261,10 @@ public enum GuidanceFrameValidationError: Error, Equatable, Sendable {
   case missingLocale(KaidoReleaseLocale)
   case incompleteLocale(KaidoReleaseLocale)
   case japaneseSignTextMismatch(KaidoReleaseLocale)
+  case invalidJunctionView(JunctionViewValidationError)
+  case junctionViewMovementMismatch
+  case junctionViewJapaneseSignMismatch
+  case junctionViewRouteShieldMismatch
 }
 
 public enum GuidanceFrameValidator {
@@ -321,6 +328,22 @@ public enum GuidanceFrameValidator {
       }
       guard content.preservedJapaneseSignText == source.japaneseSignText else {
         throw GuidanceFrameValidationError.japaneseSignTextMismatch(locale)
+      }
+    }
+    if let junctionView = source.junctionView {
+      do {
+        try JunctionViewValidator.validate(junctionView)
+      } catch let error as JunctionViewValidationError {
+        throw GuidanceFrameValidationError.invalidJunctionView(error)
+      }
+      guard junctionView.movementOccurrenceID == frame.movementOccurrenceID else {
+        throw GuidanceFrameValidationError.junctionViewMovementMismatch
+      }
+      guard junctionView.japaneseSignText == source.japaneseSignText else {
+        throw GuidanceFrameValidationError.junctionViewJapaneseSignMismatch
+      }
+      guard junctionView.routeShields == source.routeShields else {
+        throw GuidanceFrameValidationError.junctionViewRouteShieldMismatch
       }
     }
   }

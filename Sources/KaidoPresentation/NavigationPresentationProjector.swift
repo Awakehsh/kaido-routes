@@ -16,6 +16,12 @@ public enum NavigationPresentationProjectionError: Error, Equatable, Sendable {
   case missingLocale(KaidoReleaseLocale)
   case incompleteLocale(KaidoReleaseLocale)
   case japaneseSignTextMismatch(KaidoReleaseLocale)
+  case invalidJunctionView(JunctionViewValidationError)
+  case junctionViewMovementMismatch
+  case junctionViewJapaneseSignMismatch
+  case junctionViewRouteShieldMismatch
+  case missingNetworkSnapshotIDForJunctionView
+  case junctionViewNetworkSnapshotMismatch
   case promptEmissionMismatch
   case guidanceFrameNotCurrentOccurrence
   case inconsistentSurfaceState
@@ -158,6 +164,16 @@ public enum NavigationPresentationProjector {
     case (.iPhone, .connected), (.carPlay, .disconnected):
       throw NavigationPresentationProjectionError.inconsistentSurfaceState
     }
+    if let junctionView = request.guidanceFrame.presentationSource.junctionView {
+      guard let networkSnapshotID = request.networkSnapshotID,
+        !networkSnapshotID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      else {
+        throw NavigationPresentationProjectionError.missingNetworkSnapshotIDForJunctionView
+      }
+      guard junctionView.networkSnapshotID == networkSnapshotID else {
+        throw NavigationPresentationProjectionError.junctionViewNetworkSnapshotMismatch
+      }
+    }
   }
 
   private static func projectionError(
@@ -178,6 +194,10 @@ public enum NavigationPresentationProjector {
     case .missingLocale(let locale): .missingLocale(locale)
     case .incompleteLocale(let locale): .incompleteLocale(locale)
     case .japaneseSignTextMismatch(let locale): .japaneseSignTextMismatch(locale)
+    case .invalidJunctionView(let error): .invalidJunctionView(error)
+    case .junctionViewMovementMismatch: .junctionViewMovementMismatch
+    case .junctionViewJapaneseSignMismatch: .junctionViewJapaneseSignMismatch
+    case .junctionViewRouteShieldMismatch: .junctionViewRouteShieldMismatch
     }
   }
 
@@ -273,6 +293,7 @@ public enum NavigationPresentationProjector {
       marker: marker,
       routeShields: request.guidanceFrame.presentationSource.routeShields,
       japaneseSignText: request.guidanceFrame.presentationSource.japaneseSignText,
+      junctionView: request.guidanceFrame.presentationSource.junctionView,
       localizedDisplayText: displayText,
       passage: passage,
       routeEditingAvailability: routeEditingAvailability,

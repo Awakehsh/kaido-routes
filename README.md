@@ -119,12 +119,17 @@ never interpreted as route progress.
 regression, updates its prompt ledger, and emits a one-shot voice command.
 `KaidoPresentation` then projects the same occurrence-scoped `GuidanceFrame` into
 phone, CarPlay, and independently localized voice values. Japanese sign text and
-route shields remain visible in every locale, estimated positions cannot render
-as measured, unconfirmed passage cannot use a positive open-road state, moving
-decision zones expose no route editing, and Finish drive names its compiled exit
-first. KR-S17 proves planning from resolved progress, and KR-S18 proves the
+route shields remain visible in every locale. An optional released
+`JunctionViewDefinition` carries independently rendered normalized branch paths,
+left-indexed lane semantics, and evidence metadata; it must match the frame's
+snapshot, movement occurrence, route shields, and Japanese sign target before
+phone or CarPlay can consume it. Estimated positions cannot render as measured,
+unconfirmed passage cannot use a positive open-road state, moving decision zones
+expose no route editing, and Finish drive names its compiled exit first. KR-S17
+proves planning from resolved progress, KR-S18 proves the
 occurrence-scoped Swift matcher distance bridge through the same planner,
-ledger, and presentation projection. Production corridor construction,
+ledger, and presentation projection, and KR-U14 proves the junction-view
+ownership boundary. Production corridor construction,
 DecisionZone calibration, SwiftUI, CarPlay entitlement, accessibility, audio,
 and physical head-unit behavior remain unimplemented or unproven.
 
@@ -148,7 +153,7 @@ identities. Matcher reset/restart clears temporal evidence without rewinding
 navigation progress. Core Location callbacks, lifecycle persistence, background
 execution, audio, and app-scene wiring remain Apple-adapter work.
 
-The feasibility core currently executes portable scenarios for twenty-four hard
+The feasibility core currently executes portable scenarios for twenty-five hard
 properties that must remain proven as the product expands:
 
 1. repeated road segments remain distinct ordered occurrences;
@@ -206,6 +211,9 @@ properties that must remain proven as the product expands:
     only the current incoming approach's reviewed choices, preserves cycles as
     fresh occurrences, rejects moving-time edits, and finishes only through an
     explicit directional exit.
+25. phone and CarPlay consume one released, normalized junction-view definition;
+    snapshot, movement occurrence, lane, route-shield, Japanese-sign, and evidence
+    drift fail closed before any adapter renders an inset.
 
 ## Repository map
 

@@ -182,14 +182,17 @@ CarPlay adapters independently without changing route semantics. CI injects
 surface candidates and sensor observations; it never calls live MapKit or waits
 for a real geofence.
 
-The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08
-and KR-U10 through U12. These scenarios verify semantic view values shared by
-phone, CarPlay, and voice, including a structured occurrence-scoped guidance
-frame with prompt and anchor identity, stage, distance, decision point, maneuver,
-and lane preparation. KR-S17 additionally injects a fresh route-resolved
-distance-to-DecisionZone observation through the pure guidance planner, engine
-ledger, and the same projector. It distinguishes a persistent active frame from
-the transient matching emission that alone sets `voice.should_speak`. KR-S18
+The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08,
+KR-U10 through U12, and KR-U14. These scenarios verify semantic view values
+shared by phone, CarPlay, and voice, including a structured occurrence-scoped
+guidance frame with prompt and anchor identity, stage, distance, decision point,
+maneuver, lane preparation, and an optional snapshot-bound junction inset.
+KR-U14 requires both visual surfaces to consume one released normalized
+path/lane/sign definition and rejects UI-authored junction semantics. KR-S17
+additionally injects a fresh route-resolved distance-to-DecisionZone observation
+through the pure guidance planner, engine ledger, and the same projector. It
+distinguishes a persistent active frame from the transient matching emission that
+alone sets `voice.should_speak`. KR-S18
 starts with actual Swift matcher observations and proves that occurrence-bound
 along-edge progress, not lateral map-match residual or straight-line distance,
 becomes the DecisionZone scalar. These remain L1/L2 contract executions until

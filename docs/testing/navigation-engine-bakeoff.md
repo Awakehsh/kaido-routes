@@ -471,14 +471,15 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 43 scenarios with 274 semantic assertions executable at L1/L2. KR-S16
+   current 44 scenarios with 283 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
    geometry to that same guidance path without using lateral residual;
    KR-U01 crosses the parked expert-editor cursor and exact RoutePlan compilation
-   boundary; KR-U04 through U08 and KR-U10 through U12 cross the shared
-   presentation projection boundary.
+   boundary; KR-U04 through U08, KR-U10 through U12, and KR-U14 cross the shared
+   presentation projection boundary, including one released junction-view
+   definition shared by phone and CarPlay.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph

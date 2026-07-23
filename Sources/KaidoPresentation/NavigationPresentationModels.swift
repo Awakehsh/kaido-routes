@@ -97,6 +97,7 @@ public struct FinishDrivePresentation: Equatable, Sendable {
 
 public struct NavigationPresentationRequest: Equatable, Sendable {
   public let snapshot: NavigationSnapshot
+  public let networkSnapshotID: String?
   public let guidanceFrame: GuidanceFrame
   public let promptEmission: GuidancePromptEmission?
   public let languages: NavigationLanguageSelection
@@ -106,6 +107,7 @@ public struct NavigationPresentationRequest: Equatable, Sendable {
 
   public init(
     snapshot: NavigationSnapshot,
+    networkSnapshotID: String? = nil,
     guidanceFrame: GuidanceFrame,
     promptEmission: GuidancePromptEmission? = nil,
     languages: NavigationLanguageSelection,
@@ -114,6 +116,7 @@ public struct NavigationPresentationRequest: Equatable, Sendable {
     facilityNames: [String: LocalizedFacilityName] = [:]
   ) {
     self.snapshot = snapshot
+    self.networkSnapshotID = networkSnapshotID
     self.guidanceFrame = guidanceFrame
     self.promptEmission = promptEmission
     self.languages = languages
@@ -142,6 +145,7 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
   public let marker: NavigationMarkerPresentation
   public let routeShields: [String]
   public let japaneseSignText: String
+  public let junctionView: JunctionViewDefinition?
   public let localizedDisplayText: String
   public let passage: RoutePassagePresentation
   public let routeEditingAvailability: RouteEditingAvailability
@@ -167,6 +171,7 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
     marker: NavigationMarkerPresentation,
     routeShields: [String],
     japaneseSignText: String,
+    junctionView: JunctionViewDefinition?,
     localizedDisplayText: String,
     passage: RoutePassagePresentation,
     routeEditingAvailability: RouteEditingAvailability,
@@ -191,6 +196,7 @@ public struct NavigationSurfacePresentation: Equatable, Sendable {
     self.marker = marker
     self.routeShields = routeShields
     self.japaneseSignText = japaneseSignText
+    self.junctionView = junctionView
     self.localizedDisplayText = localizedDisplayText
     self.passage = passage
     self.routeEditingAvailability = routeEditingAvailability

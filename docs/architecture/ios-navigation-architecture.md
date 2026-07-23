@@ -250,10 +250,20 @@ values. Both visual surfaces carry the same route-plan ID, current occurrence,
 anchor occurrence, next movement, DecisionZone, prompt and anchor IDs, prompt
 stage, distance, Japanese and localized decision-point names, maneuver, lane
 preparation, marker certainty, route shield, Japanese sign target, passage
-evidence, interaction policy, and optional Finish drive exit; only
+evidence, interaction policy, an optional released `JunctionViewDefinition`, and
+an optional Finish drive exit; only
 `isPrimarySurface` differs across a CarPlay handoff. The voice locale is selected
 separately from the interface locale. `voice.shouldSpeak` is true only when the
 request carries an emission matching the frame and persisted engine ledger.
+
+`JunctionViewDefinition` is renderer-neutral data, not a retained provider image.
+It contains normalized approach, selected, and alternative paths; zero-based
+left-to-right allowed and preferred lane indices; route shields; the Japanese
+sign target; a checked date; and source-reference IDs. It is bound to one network
+snapshot and movement occurrence. Only `RELEASED` evidence projects. Phone and
+CarPlay receive the same immutable value; the later Apple adapter may rasterize
+it for `CPManeuver.junctionImage` and map its lanes to supported CarPlay lane
+guidance APIs without owning or inferring road semantics.
 
 The projector fails closed when prompt, anchor occurrence, movement occurrence,
 or DecisionZone identity is absent; the frame does not belong to the current
@@ -261,7 +271,10 @@ occurrence; distance is invalid; a voice emission disagrees with the frame or
 ledger; the Japanese decision-point name is absent or drifts from its Japanese
 localized value; any release locale is incomplete; a locale replaces the
 Japanese sign target; CarPlay ownership contradicts connection state; or the
-selected Finish drive exit lacks a name in the interface locale.
+selected Finish drive exit lacks a name in the interface locale. A junction inset
+also fails closed when its evidence is not released, normalized geometry or lane
+indices are invalid, or its snapshot, movement occurrence, route shields, or
+Japanese sign target drift from the active guidance request.
 Only `REALTIME_CONFIRMED_PASSABLE` may authorize a positive open-road color;
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` remains explicitly unconfirmed.
 LOW/projected or ambiguous positions become `ESTIMATED` or `UNRESOLVED`, and a
@@ -301,6 +314,9 @@ That is a development fact, not yet the minimum deployment target.
   geographic map.
 - The bounded surface access and egress screens may use MapKit for geographic
   context and render accepted provider geometry as overlays.
+- A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
+  vector renderer. SwiftUI must not retain or reproduce third-party junction
+  artwork.
 - Complex authoring is disabled while moving.
 - SwiftUI renders `ExpertRouteEditorSnapshot` and submits stable reviewed choice
   IDs. `KaidoRouting`, not the view tree, owns the current incoming approach,
@@ -314,6 +330,11 @@ That is a development fact, not yet the minimum deployment target.
   interaction, route preview, maneuvers, lane guidance, and alerts.
 - A dedicated CarPlay adapter consumes the same `GuidanceFrame` as the phone. It
   cannot contain its own progress, recovery, or route-selection logic.
+- On supported system versions, the adapter renders the shared normalized
+  junction definition into `CPManeuver.junctionImage` and CarPlay lane guidance.
+  It must fall back to the same maneuver, sign, and route-shield text when those
+  presentation APIs are unavailable; it cannot source missing lane data from
+  MapKit narration.
 - Connecting or disconnecting CarPlay changes only the active presentation
   surface. The shared `NavigationSession` retains the RoutePlan, current
   occurrence, confidence, recovery state, and emitted-prompt ledger. Disconnect
@@ -673,7 +694,8 @@ The executable `GuidanceFrame` is a `KaidoDomain` value containing prompt, ancho
 anchor occurrence, movement occurrence, and DecisionZone identity; prompt stage;
 distance; Japanese and localized decision-point names; maneuver; lane
 preparation; Japanese sign target; route shields; and localized display and
-spoken content. Position confidence remains part of the paired
+spoken content. It may also contain one validated `JunctionViewDefinition` for
+the same movement occurrence. Position confidence remains part of the paired
 `NavigationSnapshot`. Adapters may shorten layout-specific copy but cannot
 change the target movement or reconstruct missing guidance semantics.
 
@@ -744,6 +766,8 @@ bounded role it may own.
 - [Apple `MKDirections.Request`](https://developer.apple.com/documentation/mapkit/mkdirections/request)
 - [Apple `MKRoute` geometry](https://developer.apple.com/documentation/mapkit/mkroute/polyline)
 - [Apple CarPlay navigation integration](https://developer.apple.com/documentation/carplay/integrating-carplay-with-your-navigation-app)
+- [Apple `CPManeuver` junction images and maneuver metadata](https://developer.apple.com/documentation/carplay/cpmaneuver)
+- [Apple `CPLaneGuidance`](https://developer.apple.com/documentation/carplay/cplaneguidance)
 - [Apple background location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
 - [Apple `CLLocation` source information](https://developer.apple.com/documentation/corelocation/cllocation/sourceinformation)
 - [Apple external-accessory location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory)

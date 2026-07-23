@@ -66,6 +66,7 @@ should become scenarios when their layer is built.
 | KR-U11 | UI and guidance-voice languages can be selected independently | P0 | Seeded |
 | KR-U12 | Finish drive names the planned exit before changing branch guidance | P0 | Seeded |
 | KR-U13 | Entrance recommendations explain directional compatibility, not only proximity | P0 | Planned |
+| KR-U14 | Phone and CarPlay consume one released snapshot- and occurrence-bound junction view | P0 | Seeded |
 
 ## Evidence and field verification
 

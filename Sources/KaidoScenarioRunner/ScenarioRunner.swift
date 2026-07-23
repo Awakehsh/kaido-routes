@@ -997,6 +997,7 @@ private struct ScenarioHarness {
     }
     return NavigationPresentationRequest(
       snapshot: engine.snapshot,
+      networkSnapshotID: scenario.given.networkSnapshot.id,
       guidanceFrame: frame,
       promptEmission: lastGuidancePromptEmission,
       languages: NavigationLanguageSelection(
@@ -1092,7 +1093,87 @@ private struct ScenarioHarness {
     return GuidancePresentationSource(
       routeShields: (value.array("route_shields") ?? []).compactMap(\.stringValue),
       japaneseSignText: try value.requiredString("japanese_sign_text"),
-      localizedContent: localizedContent
+      localizedContent: localizedContent,
+      junctionView: try junctionViewDefinition(value.object("junction_view"))
+    )
+  }
+
+  private static func junctionViewDefinition(
+    _ value: [String: JSONValue]?
+  ) throws -> JunctionViewDefinition? {
+    guard let value else { return nil }
+    guard let pathValues = value.array("paths"),
+      let laneValue = value.object("lane_layout"),
+      let evidenceValue = value.object("evidence"),
+      let evidenceState = evidenceValue.string("state")
+        .flatMap(JunctionViewEvidenceState.init(rawValue:)),
+      let sourceValues = evidenceValue.array("source_reference_ids")
+    else {
+      throw ScenarioExecutionError.invalidInput("presentation.guidance.junction_view")
+    }
+
+    let paths = try pathValues.map { pathValue -> JunctionViewPath in
+      guard let path = pathValue.objectValue,
+        let role = path.string("role").flatMap(JunctionViewPathRole.init(rawValue:)),
+        let pointValues = path.array("points")
+      else {
+        throw ScenarioExecutionError.invalidInput("presentation.guidance.junction_view.paths")
+      }
+      let points = try pointValues.map { pointValue -> JunctionViewPoint in
+        guard let point = pointValue.objectValue,
+          let x = point.double("x"),
+          let y = point.double("y")
+        else {
+          throw ScenarioExecutionError.invalidInput(
+            "presentation.guidance.junction_view.paths.points"
+          )
+        }
+        return JunctionViewPoint(x: x, y: y)
+      }
+      return JunctionViewPath(
+        id: try path.requiredString("path_id"),
+        role: role,
+        points: points
+      )
+    }
+    let sourceReferenceIDs = sourceValues.compactMap(\.stringValue)
+    guard sourceReferenceIDs.count == sourceValues.count else {
+      throw ScenarioExecutionError.invalidInput(
+        "presentation.guidance.junction_view.evidence.source_reference_ids"
+      )
+    }
+    let allowedLaneValues = laneValue.array("allowed_lane_indices") ?? []
+    let allowedLaneIndices = allowedLaneValues.compactMap(\.intValue)
+    let preferredLaneValues = laneValue.array("preferred_lane_indices") ?? []
+    let preferredLaneIndices = preferredLaneValues.compactMap(\.intValue)
+    let routeShieldValues = value.array("route_shields") ?? []
+    let routeShields = routeShieldValues.compactMap(\.stringValue)
+    guard allowedLaneIndices.count == allowedLaneValues.count,
+      preferredLaneIndices.count == preferredLaneValues.count,
+      routeShields.count == routeShieldValues.count
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "presentation.guidance.junction_view.lane_or_shield_values"
+      )
+    }
+
+    return JunctionViewDefinition(
+      id: try value.requiredString("view_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      movementOccurrenceID: try value.requiredString("movement_occurrence_id"),
+      paths: paths,
+      laneLayout: JunctionViewLaneLayout(
+        laneCount: laneValue.int("lane_count") ?? 0,
+        allowedLaneIndices: allowedLaneIndices,
+        preferredLaneIndices: preferredLaneIndices
+      ),
+      japaneseSignText: try value.requiredString("japanese_sign_text"),
+      routeShields: routeShields,
+      evidence: JunctionViewEvidence(
+        state: evidenceState,
+        checkedAt: try evidenceValue.requiredString("checked_at"),
+        sourceReferenceIDs: sourceReferenceIDs
+      )
     )
   }
 
@@ -1252,6 +1333,35 @@ private struct ScenarioHarness {
       adapterObservations["\(prefix).finish.announcement_priority"] = .string(
         finishDrive.announcementPriority.rawValue
       )
+    }
+    if let junctionView = presentation.junctionView {
+      adapterObservations["\(prefix).junction_view.id"] = .string(junctionView.id)
+      adapterObservations["\(prefix).junction_view.network_snapshot_id"] = .string(
+        junctionView.networkSnapshotID
+      )
+      adapterObservations["\(prefix).junction_view.movement_occurrence_id"] = .string(
+        junctionView.movementOccurrenceID
+      )
+      adapterObservations["\(prefix).junction_view.path_count"] = .integer(
+        junctionView.paths.count
+      )
+      adapterObservations["\(prefix).junction_view.lane_count"] = .integer(
+        junctionView.laneLayout.laneCount
+      )
+      adapterObservations["\(prefix).junction_view.preferred_lane_indices"] = .array(
+        junctionView.laneLayout.preferredLaneIndices.map(JSONValue.integer)
+      )
+      adapterObservations["\(prefix).junction_view.japanese_sign_text"] = .string(
+        junctionView.japaneseSignText
+      )
+      adapterObservations["\(prefix).junction_view.evidence_state"] = .string(
+        junctionView.evidence.state.rawValue
+      )
+      if let selectedPath = junctionView.paths.first(where: { $0.role == .selected }) {
+        adapterObservations["\(prefix).junction_view.selected_path_id"] = .string(
+          selectedPath.id
+        )
+      }
     }
   }
 

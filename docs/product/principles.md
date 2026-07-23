@@ -7,6 +7,11 @@ movements because the drive itself is the destination. It then helps the driver
 execute that sequence using the route numbers, directions, destinations, and
 lane preparation visible on real signs.
 
+For reviewed critical movements, Kaido may show a compact junction inset generated
+from its own structured geometry, lane, and sign semantics. It does not copy an
+operator or navigation provider's junction artwork, and an adapter cannot invent
+the diagram from prose.
+
 This differs from adding many waypoints to a fastest-route navigator. A waypoint
 describes a place to pass near; a Kaido route describes the exact directional
 movement to take and preserves repeated traversals.

@@ -36,6 +36,11 @@ bundle and device evidence. When that evidence exists, the app must construct
 raw session initializer is not an adapter escape hatch. The navigation artifact
 must include one evidenced `ReleasedNavigationRuntimePolicy`; the app cannot
 supply or replace its entry transition, recovery candidates, or Finish egress.
+The validated runtime supplies the only `EntryTransitionAdmissionContext`.
+`CoreLocationEntryTransitionAdapter` may convert accepted callbacks into typed
+entry evidence against that exact corridor, but the actor alone owns ordered
+continuity and strict-route admission. The current preview does not yet compose
+that live path.
 No real product release artifact exists in the app today.
 
 ## Entrance recommendation

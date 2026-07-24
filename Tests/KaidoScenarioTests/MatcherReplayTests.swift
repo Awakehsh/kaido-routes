@@ -435,6 +435,18 @@ func routeMatcherSessionRejectsInvalidObservation() throws {
   #expect(session.diagnostics.acceptedObservationCount == 0)
   #expect(session.diagnostics.activeStateCount == 0)
 
+  let overflowingAge = RouteMatcherObservation(
+    observedAtMilliseconds: Int.min,
+    receivedAtMilliseconds: Int.max,
+    coordinate: fixture.observations[0].coordinate,
+    horizontalAccuracyMeters: 5,
+    source: .phone
+  )
+  #expect(throws: RouteAwareSwiftMatcherError.invalidObservation) {
+    try session.observe(overflowingAge)
+  }
+  #expect(session.diagnostics.acceptedObservationCount == 0)
+
   let first = fixture.observations[0]
   _ = try session.observe(
     RouteMatcherObservation(

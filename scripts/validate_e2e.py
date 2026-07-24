@@ -73,6 +73,7 @@ EVENT_TYPES = {
     "ROUTE_ATLAS_CONTEXT_VALIDATED",
     "NAVIGATION_STARTED",
     "LOCATION_UPDATED",
+    "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
     "MATCHER_SESSION_STARTED",
     "MATCHER_OBSERVATION_RECEIVED",
     "MATCHER_SESSION_RESET",
@@ -1024,6 +1025,70 @@ def validate_navigation_runtime_policy(
                 f"{context}.entry_transition.first_route_occurrence_id must "
                 "name the first RoutePlan occurrence"
             )
+        corridor = inputs.get("matcher_corridor")
+        if not isinstance(corridor, dict):
+            v.add(f"{context}.entry_transition requires given.inputs.matcher_corridor")
+        elif isinstance(edge_ids, list) and all(
+            isinstance(edge_id, str) and edge_id.strip() for edge_id in edge_ids
+        ):
+            corridor_edges = corridor.get("edges")
+            edge_by_id = {
+                edge.get("directed_edge_id"): edge
+                for edge in corridor_edges
+                if isinstance(edge, dict)
+                and isinstance(edge.get("directed_edge_id"), str)
+            } if isinstance(corridor_edges, list) else {}
+            if len(edge_ids) < 2:
+                v.add(
+                    f"{context}.entry_transition requires at least two "
+                    "reviewed directed edges"
+                )
+            for edge_id in edge_ids:
+                if edge_id not in edge_by_id:
+                    v.add(
+                        f"{context}.entry_transition edge {edge_id!r} "
+                        "is missing from matcher_corridor"
+                    )
+            for current_id, next_id in zip(edge_ids, edge_ids[1:]):
+                successors = edge_by_id.get(current_id, {}).get("successor_edge_ids")
+                if not isinstance(successors, list) or next_id not in successors:
+                    v.add(
+                        f"{context}.entry_transition edge {current_id!r} "
+                        f"does not lead to {next_id!r}"
+                    )
+            corridor_occurrences = corridor.get("occurrences")
+            first_binding = next(
+                (
+                    occurrence
+                    for occurrence in corridor_occurrences
+                    if isinstance(occurrence, dict)
+                    and occurrence.get("occurrence_id") == first_occurrence_id
+                ),
+                None,
+            ) if isinstance(corridor_occurrences, list) else None
+            first_edge_id = (
+                first_binding.get("directed_edge_id")
+                if isinstance(first_binding, dict)
+                else None
+            )
+            final_edge_id = edge_ids[-1] if edge_ids else None
+            final_successors = edge_by_id.get(final_edge_id, {}).get(
+                "successor_edge_ids"
+            )
+            if (
+                not isinstance(first_edge_id, str)
+                or (
+                    final_edge_id != first_edge_id
+                    and (
+                        not isinstance(final_successors, list)
+                        or first_edge_id not in final_successors
+                    )
+                )
+            ):
+                v.add(
+                    f"{context}.entry_transition final edge must lead to "
+                    "the first RoutePlan occurrence binding"
+                )
 
     recovery_candidates = policy["recovery_candidates"]
     if not isinstance(recovery_candidates, list):
@@ -1149,6 +1214,94 @@ def validate_navigation_runtime_policy(
             )
         if option["released"] is not True:
             v.add(f"{option_context}.released must be true")
+
+
+def validate_entry_transition_admission(
+    v: Validation, given: dict[str, Any], events: Any
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "entry_transition_admission" not in inputs:
+        return
+    admission = inputs["entry_transition_admission"]
+    context = "given.inputs.entry_transition_admission"
+    required = {"product_release_id", "navigation_release_id", "runtime_policy_id"}
+    if not v.require_keys(admission, required, context):
+        return
+    for field in required:
+        if not isinstance(admission[field], str) or not admission[field].strip():
+            v.add(f"{context}.{field} must be non-empty")
+
+    entry = inputs.get("entry_transition")
+    corridor = inputs.get("matcher_corridor")
+    route_plan = given.get("route_plan")
+    if not isinstance(entry, dict) or not isinstance(corridor, dict) or not isinstance(
+        route_plan, dict
+    ):
+        v.add(
+            f"{context} requires entry_transition, matcher_corridor, and route_plan"
+        )
+        return
+    edge_ids = entry.get("directed_edge_ids")
+    corridor_edges = corridor.get("edges")
+    edge_by_id = {
+        edge.get("directed_edge_id"): edge
+        for edge in corridor_edges
+        if isinstance(edge, dict) and isinstance(edge.get("directed_edge_id"), str)
+    } if isinstance(corridor_edges, list) else {}
+    if not isinstance(edge_ids, list) or len(edge_ids) < 2:
+        v.add(f"{context} requires at least two entry transition edges")
+    else:
+        for edge_id in edge_ids:
+            if edge_id not in edge_by_id:
+                v.add(f"{context} entry edge {edge_id!r} is missing from matcher_corridor")
+        for current_id, next_id in zip(edge_ids, edge_ids[1:]):
+            successors = edge_by_id.get(current_id, {}).get("successor_edge_ids")
+            if not isinstance(successors, list) or next_id not in successors:
+                v.add(f"{context} entry edge {current_id!r} does not lead to {next_id!r}")
+
+    if not isinstance(events, list):
+        return
+    for index, event in enumerate(events):
+        if not isinstance(event, dict) or event.get("type") != (
+            "ENTRY_TRANSITION_EVIDENCE_OBSERVED"
+        ):
+            continue
+        payload = event.get("payload")
+        event_context = f"when[{index}].payload"
+        required_payload = {
+            "observation_id",
+            "directed_edge_id",
+            "candidate_edge_ids",
+            "confidence",
+            "heading_error_degrees",
+            "source",
+        }
+        if not v.require_keys(payload, required_payload, event_context):
+            continue
+        if not isinstance(payload["observation_id"], str) or not payload[
+            "observation_id"
+        ].strip():
+            v.add(f"{event_context}.observation_id must be non-empty")
+        if payload["confidence"] not in {"LOST", "LOW", "MEDIUM", "HIGH"}:
+            v.add(f"{event_context}.confidence is unknown")
+        if payload["source"] != "CORE_LOCATION_ROUTE_AWARE_MATCHER":
+            v.add(f"{event_context}.source is unknown")
+        candidates = payload["candidate_edge_ids"]
+        if not isinstance(candidates, list) or not all(
+            isinstance(edge_id, str) and edge_id.strip() for edge_id in candidates
+        ):
+            v.add(f"{event_context}.candidate_edge_ids must be a string array")
+        heading_error = payload["heading_error_degrees"]
+        if (
+            not isinstance(heading_error, (int, float))
+            or isinstance(heading_error, bool)
+            or not math.isfinite(heading_error)
+            or heading_error < 0
+            or heading_error > 180
+        ):
+            v.add(
+                f"{event_context}.heading_error_degrees must be finite from 0 through 180"
+            )
 
 
 def validate_navigation_release_artifact(
@@ -1748,6 +1901,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)
         validate_navigation_runtime_policy(v, given)
+        validate_entry_transition_admission(v, given, scenario["when"])
         validate_navigation_release_artifact(v, given)
         validate_product_release_artifact(v, given)
         if not isinstance(given["inputs"], dict):

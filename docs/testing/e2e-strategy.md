@@ -215,6 +215,14 @@ standard and AXXXL Simulator content sizes. This narrow panel evidence does not
 qualify full-app focus order, Switch Control, physical devices,
 `CPMapTemplate`, or a head unit.
 
+KR-S19 executes the release-bound entrance admission reducer separately from
+ordinary matcher progress. A later transition edge cannot seed the sequence;
+software-simulated evidence and a product-release identity mismatch remain
+rejected; and only fresh HIGH single-edge evidence with compatible heading in
+the exact reviewed order reaches `STRICT_ROUTE`. The fixture uses typed
+synthetic evidence and proves no Core Location device accuracy or production
+threshold.
+
 KR-U01 and KR-U02 execute the parked `ExpertRouteEditorSession` at L1/L2 even
 though their declared final surface is iPhone UI. The runner starts from an exact
 directional entrance, observes the incoming-approach/JCT choice set, rejects a

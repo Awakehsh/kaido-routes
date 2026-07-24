@@ -196,9 +196,12 @@ public struct RouteMatcherObservation: Equatable, Sendable {
   }
 
   fileprivate var isValid: Bool {
-    coordinate.isValid && horizontalAccuracyMeters.isFinite
+    let (_, ageOverflow) =
+      receivedAtMilliseconds.subtractingReportingOverflow(observedAtMilliseconds)
+    return coordinate.isValid && horizontalAccuracyMeters.isFinite
       && horizontalAccuracyMeters > 0
       && receivedAtMilliseconds >= observedAtMilliseconds
+      && !ageOverflow
       && courseDegrees.map { $0.isFinite && (0..<360).contains($0) } != false
       && speedMetersPerSecond.map { $0.isFinite && $0 >= 0 } != false
   }

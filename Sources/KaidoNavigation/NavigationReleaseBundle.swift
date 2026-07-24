@@ -12,6 +12,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case routeEntranceEdgeMismatch
   case unknownRouteExit
   case invalidRuntimePolicy(NavigationRuntimePolicyIssue)
+  case invalidEntryTransitionCorridor(String)
   case invalidRuntimeConfiguration(String)
   case duplicateDecisionZoneForMovement(String)
   case missingDecisionZoneForMovement(String)
@@ -44,6 +45,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "UNKNOWN_ROUTE_EXIT"
     case .invalidRuntimePolicy(let issue):
       issue.code
+    case .invalidEntryTransitionCorridor:
+      "INVALID_ENTRY_TRANSITION_CORRIDOR"
     case .invalidRuntimeConfiguration:
       "INVALID_RUNTIME_CONFIGURATION"
     case .duplicateDecisionZoneForMovement:
@@ -73,6 +76,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
     switch self {
     case .invalidRuntimePolicy(let issue):
       "RUNTIME_POLICY:\(issue.sortKey)"
+    case .invalidEntryTransitionCorridor(let detail):
+      "\(code):\(detail)"
     case .invalidEditorCatalog(let details):
       "\(code):\(details.joined(separator: ","))"
     case .invalidRuntimeConfiguration(let detail):
@@ -213,6 +218,13 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
         decisionZones: decisionZones,
         releasedGuidance: releasedGuidance
       ).map(NavigationReleaseBundleIssue.invalidRuntimeConfiguration)
+    )
+    issues.append(
+      contentsOf: EntryTransitionCorridorValidator.issues(
+        transition: runtimePolicy.entryTransition,
+        routePlan: routePlan,
+        matcherCorridor: matcherCorridor
+      ).map(NavigationReleaseBundleIssue.invalidEntryTransitionCorridor)
     )
 
     let movementOccurrenceIDs = routePlan.occurrences

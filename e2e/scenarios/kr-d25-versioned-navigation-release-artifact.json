@@ -175,6 +175,38 @@
         "route_plan_id": "test.plan.navigation-artifact",
         "edges": [
           {
+            "directed_edge_id": "test.entry-transition.navigation-artifact.surface",
+            "coordinates": [
+              {
+                "latitude": 35.68,
+                "longitude": 139.759
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.7595
+              }
+            ],
+            "successor_edge_ids": [
+              "test.entry-transition.navigation-artifact.ramp"
+            ]
+          },
+          {
+            "directed_edge_id": "test.entry-transition.navigation-artifact.ramp",
+            "coordinates": [
+              {
+                "latitude": 35.68,
+                "longitude": 139.7595
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.76
+              }
+            ],
+            "successor_edge_ids": [
+              "test.edge.navigation-artifact.approach"
+            ]
+          },
+          {
             "directed_edge_id": "test.edge.navigation-artifact.approach",
             "coordinates": [
               {"latitude": 35.68, "longitude": 139.76},

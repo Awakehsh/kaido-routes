@@ -59,6 +59,7 @@ private struct ScenarioHarness {
   var engine: NavigationEngine
   var matcherSession: RouteMatcherSession?
   var matcherCorridor: RouteMatcherCorridor?
+  var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
   var routeEditorSession: ExpertRouteEditorSession?
   var routeEditorCorridorResolutionSession: ParkedCorridorResolutionSession?
   var lastGuidancePromptEmission: GuidancePromptEmission?
@@ -74,9 +75,50 @@ private struct ScenarioHarness {
     )
     matcherSession = nil
     matcherCorridor = nil
+    entryTransitionAdmission = nil
     routeEditorSession = nil
     routeEditorCorridorResolutionSession = nil
     lastGuidancePromptEmission = nil
+    if let admissionValue = scenario.given.inputs.object("entry_transition_admission") {
+      guard let routePlan = scenario.given.routePlan,
+        let transition = configuration.entryTransition,
+        let corridorValue = scenario.given.inputs.object("matcher_corridor")
+      else {
+        throw ScenarioExecutionError.invalidInput("entry_transition_admission")
+      }
+      let corridor = try routeMatcherCorridor(corridorValue)
+      guard let firstOccurrence = routePlan.occurrences.first,
+        let firstBinding = corridor.occurrences.first(where: {
+          $0.id == firstOccurrence.id && $0.index == firstOccurrence.index
+        })
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "entry_transition_admission.first_route_occurrence"
+        )
+      }
+      let context = EntryTransitionAdmissionContext(
+        productReleaseID: try admissionValue.requiredString("product_release_id"),
+        navigationReleaseID: try admissionValue.requiredString("navigation_release_id"),
+        runtimePolicyID: try admissionValue.requiredString("runtime_policy_id"),
+        networkSnapshotID: scenario.given.networkSnapshot.id,
+        routePlanID: routePlan.id,
+        matcherCorridorID: corridor.id,
+        entryTransition: transition,
+        matcherCorridor: corridor,
+        firstRouteDirectedEdgeID: firstBinding.directedEdgeID
+      )
+      let issues = EntryTransitionCorridorValidator.issues(
+        transition: transition,
+        routePlan: routePlan,
+        matcherCorridor: corridor
+      )
+      guard issues.isEmpty else {
+        throw ScenarioExecutionError.invalidInput(
+          "entry_transition_admission.\(issues.joined(separator: ","))"
+        )
+      }
+      entryTransitionAdmission = EntryTransitionEvidenceAdmission(context: context)
+    }
   }
 
   var observations: [String: JSONValue] {
@@ -127,6 +169,8 @@ private struct ScenarioHarness {
           observedAtMilliseconds: event.payload.int("observed_at_ms")
             ?? event.atMilliseconds
         ))
+    case "ENTRY_TRANSITION_EVIDENCE_OBSERVED":
+      try observeEntryTransitionEvidence(event)
     case "MATCHER_SESSION_STARTED":
       try startMatcherSession(event.payload)
     case "MATCHER_OBSERVATION_RECEIVED":
@@ -175,6 +219,71 @@ private struct ScenarioHarness {
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
     try refreshPresentation()
+  }
+
+  private mutating func observeEntryTransitionEvidence(
+    _ event: ScenarioEvent
+  ) throws {
+    guard var admission = entryTransitionAdmission else {
+      throw ScenarioExecutionError.missingInput("entry_transition_admission")
+    }
+    let payload = event.payload
+    let context = admission.context
+    guard
+      let evidenceSource = EntryTransitionEvidenceSource(
+        rawValue: try payload.requiredString("source")
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput("entry_transition_evidence.source")
+    }
+    let evidence = EntryTransitionEvidence(
+      productReleaseID: payload.string("product_release_id") ?? context.productReleaseID,
+      navigationReleaseID: payload.string("navigation_release_id")
+        ?? context.navigationReleaseID,
+      runtimePolicyID: payload.string("runtime_policy_id") ?? context.runtimePolicyID,
+      networkSnapshotID: payload.string("network_snapshot_id")
+        ?? context.networkSnapshotID,
+      routePlanID: payload.string("route_plan_id") ?? context.routePlanID,
+      matcherCorridorID: payload.string("matcher_corridor_id")
+        ?? context.matcherCorridorID,
+      observationID: try payload.requiredString("observation_id"),
+      observedAtMilliseconds: payload.int("observed_at_ms") ?? event.atMilliseconds,
+      receivedAtMilliseconds: payload.int("received_at_ms") ?? event.atMilliseconds,
+      directedEdgeID: payload.string("directed_edge_id"),
+      candidateEdgeIDs: (payload.array("candidate_edge_ids") ?? []).compactMap(
+        \.stringValue
+      ),
+      confidence: payload.string("confidence").flatMap(MatcherConfidence.init(rawValue:))
+        ?? .lost,
+      headingErrorDegrees: payload.double("heading_error_degrees"),
+      source: evidenceSource,
+      isSimulatedBySoftware: payload.bool("is_simulated_by_software") ?? false
+    )
+    let decision = admission.admit(
+      evidence,
+      journeyPhase: engine.snapshot.journeyPhase
+    )
+    entryTransitionAdmission = admission
+    if let observation = decision.engineObservation {
+      engine.observeLocation(observation)
+    }
+    adapterObservations["entry_transition.admission.status"] = .string(
+      decision.status.rawValue
+    )
+    if let reason = decision.rejectionReason {
+      adapterObservations["entry_transition.admission.rejection_reason"] = .string(
+        reason.rawValue
+      )
+    } else {
+      adapterObservations.removeValue(
+        forKey: "entry_transition.admission.rejection_reason"
+      )
+    }
+    if let index = decision.acceptedTransitionEdgeIndex {
+      adapterObservations["entry_transition.admission.accepted_edge_index"] = .integer(
+        index
+      )
+    }
   }
 
   private mutating func compileRoute(_ payload: [String: JSONValue]) throws {

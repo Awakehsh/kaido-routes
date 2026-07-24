@@ -247,15 +247,24 @@ selects the released DecisionZone for the current anchor occurrence, runs the
 distance bridge, and returns one atomic snapshot plus optional prompt emission.
 Initialization rejects mismatched route, snapshot, corridor, zone, or guidance
 identities. Matcher reset/restart clears temporal evidence without rewinding
-navigation progress. Its raw initializer is package-only.
+navigation progress. Before strict-route entry, ordinary matcher output may
+update confidence diagnostics but cannot advance a RoutePlan occurrence or
+schedule guidance. Its raw initializer is package-only.
 `KaidoProductNavigationRuntime` is the public admission path: it accepts one
 validated `KaidoProductRelease` and constructs the session from that release's
 exact RoutePlan, released entry/recovery/egress runtime policy, corridor,
 DecisionZones, and guidance while retaining the same released Route Atlas. It
-accepts no independent asset overrides. The first app scene is now present, but Core Location callbacks
-currently feed only the internal calibration harness. App composition,
-lifecycle persistence, background execution, and audio remain Apple-adapter
-work.
+accepts no independent asset overrides. The runtime also exposes one immutable
+`EntryTransitionAdmissionContext`. `CoreLocationEntryTransitionAdapter` matches
+fixes against that exact corridor and can construct package-only typed evidence,
+but only the actor can accept a non-simulated, fresh, HIGH, single-edge,
+heading-compatible, release-identity-matched sequence. It computes continuity
+from the exact ordered edge history instead of accepting a caller boolean, and
+restarts route matching at the first occurrence only after strict-route entry.
+KR-S19 covers skipped edges, simulation, identity drift, and the valid sequence.
+The first app scene is now present, but Core Location callbacks currently feed
+only the internal calibration harness. Live app composition, lifecycle
+persistence, background execution, and audio remain Apple-adapter work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
@@ -266,7 +275,10 @@ of released junction views. The runtime policy binds the directional entry
 transition, released in-domain recovery candidates targeting later RoutePlan
 occurrences only for `SAFE_REJOIN`, and released legal egress to the exact
 RoutePlan. Other recovery policies cannot carry rejoin candidates, and egress
-cannot replace the compiled exit. It reuses the same runtime-composition
+cannot replace the compiled exit. Every entry-transition edge must have geometry
+in the same released matcher corridor, consecutive edges must be explicit legal
+successors, and the final edge must lead to the first RoutePlan occurrence
+binding. It reuses the same runtime-composition
 validation as `NavigationSession`, then adds whole-bundle coverage: every planned
 junction-movement occurrence needs exactly one DecisionZone and at least one
 released guidance definition. Embedded junction views must match one registry

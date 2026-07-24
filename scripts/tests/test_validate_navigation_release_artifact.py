@@ -130,6 +130,46 @@ class ValidateNavigationReleaseArtifactTests(unittest.TestCase):
             )
         )
 
+    def test_runtime_entry_edges_require_released_corridor_geometry(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        inputs = scenario["given"]["inputs"]
+        entry_edge_id = inputs["navigation_runtime_policy"]["entry_transition"][
+            "directed_edge_ids"
+        ][0]
+        inputs["matcher_corridor"]["edges"] = [
+            edge
+            for edge in inputs["matcher_corridor"]["edges"]
+            if edge["directed_edge_id"] != entry_edge_id
+        ]
+
+        errors = self.validate_runtime_policy(scenario)
+
+        self.assertTrue(
+            any(
+                f"entry_transition edge {entry_edge_id!r} is missing" in error
+                for error in errors
+            )
+        )
+
+    def test_runtime_entry_sequence_requires_legal_successors(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        inputs = scenario["given"]["inputs"]
+        first_entry_id = inputs["navigation_runtime_policy"]["entry_transition"][
+            "directed_edge_ids"
+        ][0]
+        first_entry_edge = next(
+            edge
+            for edge in inputs["matcher_corridor"]["edges"]
+            if edge["directed_edge_id"] == first_entry_id
+        )
+        first_entry_edge["successor_edge_ids"] = []
+
+        errors = self.validate_runtime_policy(scenario)
+
+        self.assertTrue(
+            any("entry_transition edge" in error and "does not lead to" in error for error in errors)
+        )
+
     def test_safe_rejoin_requires_a_released_candidate(self) -> None:
         scenario = copy.deepcopy(self.scenario)
         policy = scenario["given"]["inputs"]["navigation_runtime_policy"]

@@ -1,0 +1,272 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S19",
+  "title": "Only ordered release-bound entry evidence enters strict-route mode",
+  "layer": "SIMULATION",
+  "tags": [
+    "entry",
+    "release-identity",
+    "core-location",
+    "fail-closed"
+  ],
+  "purpose": "Keep ordinary or malformed location evidence from entering the RoutePlan until a non-simulated, exact-identity, ordered transition sequence reaches its first occurrence.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Coordinates and evidence values are synthetic; the 45-degree heading and ten-second age gates are conservative implementation thresholds pending device and field calibration."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.entry-admission-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.entry-admission",
+      "network_snapshot_id": "test.snapshot.entry-admission-v1",
+      "entry_facility_id": "test.entrance.entry-admission",
+      "exit_facility_id": "test.exit.entry-admission",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.entry-admission.first",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.entry-admission.mainline"
+        }
+      ]
+    },
+    "inputs": {
+      "entry_transition": {
+        "facility_id": "test.entrance.entry-admission",
+        "directed_edge_ids": [
+          "test.edge.entry-admission.surface",
+          "test.edge.entry-admission.ramp"
+        ],
+        "first_route_occurrence_id": "test.occurrence.entry-admission.first"
+      },
+      "entry_transition_admission": {
+        "product_release_id": "test.product-release.entry-admission",
+        "navigation_release_id": "test.navigation-release.entry-admission",
+        "runtime_policy_id": "test.runtime-policy.entry-admission"
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.entry-admission",
+        "network_snapshot_id": "test.snapshot.entry-admission-v1",
+        "route_plan_id": "test.plan.entry-admission",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.entry-admission.surface",
+            "coordinates": [
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7590
+              },
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7595
+              }
+            ],
+            "successor_edge_ids": [
+              "test.edge.entry-admission.ramp"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.entry-admission.ramp",
+            "coordinates": [
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7595
+              },
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7600
+              }
+            ],
+            "successor_edge_ids": [
+              "test.edge.entry-admission.mainline"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.entry-admission.mainline",
+            "coordinates": [
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7600
+              },
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7610
+              }
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.entry-admission.first",
+            "index": 0,
+            "directed_edge_id": "test.edge.entry-admission.mainline"
+          }
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "APPROACH_TO_ENTRY",
+      "active_route_plan_id": "test.plan.entry-admission"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "final-edge-skipped-to",
+      "at_ms": 1000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.0",
+        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.ramp"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "surface-edge-observed",
+      "at_ms": 2000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.1",
+        "directed_edge_id": "test.edge.entry-admission.surface",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.surface"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "simulated-ramp-observed",
+      "at_ms": 3000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.2",
+        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.ramp"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER",
+        "is_simulated_by_software": true
+      }
+    },
+    {
+      "id": "identity-drifted-ramp-observed",
+      "at_ms": 4000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "product_release_id": "test.product-release.other",
+        "observation_id": "entry.3",
+        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.ramp"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "released-ramp-observed",
+      "at_ms": 5000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.4",
+        "directed_edge_id": "test.edge.entry-admission.ramp",
+        "candidate_edge_ids": [
+          "test.edge.entry-admission.ramp"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 1,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "skipped-edge-rejected",
+      "after": "final-edge-skipped-to",
+      "category": "SAFETY",
+      "subject": "entry_transition.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "OUT_OF_ORDER_ENTRY_EDGE",
+      "rationale": "A later transition edge cannot seed continuity."
+    },
+    {
+      "id": "first-edge-remains-transition",
+      "after": "surface-edge-observed",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "The first reviewed edge starts evidence collection but cannot enter strict mode."
+    },
+    {
+      "id": "simulated-evidence-rejected",
+      "after": "simulated-ramp-observed",
+      "category": "SAFETY",
+      "subject": "entry_transition.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "SIMULATED_LOCATION",
+      "rationale": "Software simulation cannot satisfy the production entry gate."
+    },
+    {
+      "id": "release-drift-rejected",
+      "after": "identity-drifted-ramp-observed",
+      "category": "SAFETY",
+      "subject": "entry_transition.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "RELEASE_IDENTITY_MISMATCH",
+      "rationale": "Evidence from another product release cannot enter this RoutePlan."
+    },
+    {
+      "id": "exact-sequence-enters-strict-route",
+      "after": "released-ramp-observed",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "STRICT_ROUTE",
+      "rationale": "Only the complete exact-identity, non-simulated, ordered sequence authorizes entry."
+    },
+    {
+      "id": "entry-trigger-is-auditable",
+      "after": "released-ramp-observed",
+      "category": "NAVIGATION",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "VERIFIED_ENTRY_CONTINUITY",
+      "rationale": "The existing engine transition trigger remains the final audit value."
+    },
+    {
+      "id": "first-occurrence-selected",
+      "after": "released-ramp-observed",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.entry-admission.first",
+      "rationale": "Entry commits only to the exact first occurrence in the released RoutePlan."
+    }
+  ]
+}

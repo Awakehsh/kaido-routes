@@ -285,6 +285,85 @@
   }
 
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  @Test("Apple entry adapter binds Core Location evidence to the product release corridor")
+  func coreLocationEntryAdapterBindsReleaseEvidence() async throws {
+    let fixture = navigationReleaseBundleFixture()
+    let release = try KaidoProductRelease(
+      artifact: KaidoProductReleaseArtifact(
+        releaseID: "test.product-release.apple-entry",
+        releasedAt: "2026-07-24T12:00:00+09:00",
+        navigationRelease: navigationReleaseArtifact(fixture),
+        routeAtlasRelease: productRouteAtlasArtifact(
+          fixture,
+          includeIncomingApproach: true
+        )
+      )
+    )
+    let runtime = try KaidoProductNavigationRuntime(release: release)
+    let sourceProvider = FixedCoreLocationSourceEvidenceProvider(
+      evidence: CoreLocationSourceEvidence(
+        deliverySource: .deviceOrUndisclosed,
+        sourceInformationAvailable: true,
+        isSimulatedBySoftware: false
+      )
+    )
+    var locationAdapter = try CoreLocationObservationAdapter(
+      sessionID: "entry",
+      sourceEvidenceProvider: sourceProvider
+    )
+    var entryAdapter = try CoreLocationEntryTransitionAdapter(
+      context: runtime.entryTransitionAdmissionContext
+    )
+    _ = await runtime.session.start()
+
+    let envelope = try accepted(
+      locationAdapter.adapt(
+        [
+          makeLocation(
+            longitude: 139.75925,
+            timestamp: Date(timeIntervalSince1970: 1_000)
+          )
+        ],
+        receivedAt: Date(timeIntervalSince1970: 1_000)
+      )[0]
+    )
+    let evidence = try entryAdapter.adapt(envelope)
+
+    #expect(
+      evidence.productReleaseID
+        == runtime.entryTransitionAdmissionContext.productReleaseID
+    )
+    #expect(
+      evidence.directedEdgeID
+        == runtime.entryTransitionAdmissionContext.entryTransition.directedEdgeIDs[0]
+    )
+    #expect(evidence.candidateEdgeIDs == [evidence.directedEdgeID].compactMap { $0 })
+    #expect(evidence.confidence == .high)
+    #expect(evidence.headingErrorDegrees.map { $0 < 1 } == true)
+    #expect(evidence.isSimulatedBySoftware == false)
+    let firstUpdate = try await runtime.session.observeEntryTransitionEvidence(evidence)
+    #expect(firstUpdate.navigationSnapshot.journeyPhase == .entryTransition)
+
+    let rampEnvelope = try accepted(
+      locationAdapter.adapt(
+        [
+          makeLocation(
+            longitude: 139.75975,
+            timestamp: Date(timeIntervalSince1970: 1_001)
+          )
+        ],
+        receivedAt: Date(timeIntervalSince1970: 1_001)
+      )[0]
+    )
+    let rampEvidence = try entryAdapter.adapt(rampEnvelope)
+    let rampUpdate = try await runtime.session.observeEntryTransitionEvidence(
+      rampEvidence
+    )
+    #expect(rampUpdate.status == .strictRouteEntered)
+    #expect(rampUpdate.navigationSnapshot.journeyPhase == .strictRoute)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   private func makeLocation(
     latitude: Double = 35.6800,
     longitude: Double = 139.7605,

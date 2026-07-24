@@ -118,6 +118,38 @@
         "route_plan_id": "test.plan.release-bundle",
         "edges": [
           {
+            "directed_edge_id": "test.entry-transition.release-bundle.surface",
+            "coordinates": [
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7590
+              },
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7595
+              }
+            ],
+            "successor_edge_ids": [
+              "test.entry-transition.release-bundle.ramp"
+            ]
+          },
+          {
+            "directed_edge_id": "test.entry-transition.release-bundle.ramp",
+            "coordinates": [
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7595
+              },
+              {
+                "latitude": 35.6800,
+                "longitude": 139.7600
+              }
+            ],
+            "successor_edge_ids": [
+              "test.edge.approach"
+            ]
+          },
+          {
             "directed_edge_id": "test.edge.approach",
             "coordinates": [
               {"latitude": 35.6800, "longitude": 139.7600},

@@ -238,8 +238,19 @@ restriction, tunnel, CarPlay-ownership, and Finish drive events. Its internal
 state transitions remain pure reducer functions so deterministic simulation does
 not need an actor, clock, device, or main thread. Matcher reset/restart never
 rewinds engine progress. The actor does not fabricate entry-transition forward
-continuity from one matcher estimate; that stronger evidence remains a separate
-adapter input before automatic strict-route entry.
+continuity from one matcher estimate. Before strict-route entry, the ordinary
+matcher path may update confidence diagnostics but cannot advance an occurrence
+or schedule guidance. `CoreLocationEntryTransitionAdapter` instead consumes the
+immutable admission context supplied by `KaidoProductNavigationRuntime`, matches
+against the exact release-bound corridor, and emits a package-only
+`EntryTransitionEvidence`. The actor rejects simulation, stale/replayed or
+receive-reversed observations, release identity drift, non-HIGH or ambiguous
+matches, missing/mismatched heading, and skipped transition edges. It derives
+forward continuity from the accepted edge history and restarts route matching at
+the exact first occurrence only after strict-route entry. The current 45-degree
+heading and ten-second age gates are conservative implementation thresholds, not
+field-calibrated release values. KR-S19 executes the positive and fail-closed
+paths.
 
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
@@ -311,7 +322,10 @@ creates the session from the exact released RoutePlan,
 `ReleasedNavigationRuntimePolicy`, corridor, DecisionZones, and guidance without
 accepting independent replacements. The policy supplies the only eligible
 directional entry transition, released in-domain recovery candidates, and legal
-egress options. Core Location callback ownership,
+egress options. The release gate additionally requires every transition edge to
+exist in the same matcher corridor, every consecutive pair to be an explicit
+successor, and the final transition edge to lead to the first RoutePlan
+occurrence binding. Core Location callback ownership,
 background lifecycle, persistence/restoration, audio scheduling, and app-scene
 composition are still unimplemented Apple boundaries.
 
@@ -742,7 +756,11 @@ The system source-evidence reader is replaceable for deterministic tests, but
 production uses Core Location's values unchanged. Nine focused tests cover
 source separation, simulation policy, invalid/future fixes, motion-field
 sanitization, callback order, stale no-signal delivery, receive-time reversal,
-and the live matcher handoff. They do not replace iPhone/head-unit field tests.
+and the live matcher handoff. A separate entry adapter uses the same preserved
+provenance and the product-release admission context; it does not infer wired or
+wireless transport and cannot grant navigation progress itself. Its typed output
+is accepted only by the actor's ordered entry-evidence gate. These tests do not
+replace iPhone/head-unit field tests.
 
 ### Private trace and calibration boundary
 

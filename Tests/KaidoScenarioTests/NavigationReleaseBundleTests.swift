@@ -846,6 +846,18 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     routePlanID: routePlan.id,
     edges: [
       matcherEdge(
+        "test.entry-transition.surface",
+        139.7590,
+        139.7595,
+        successors: ["test.entry-transition.ramp"]
+      ),
+      matcherEdge(
+        "test.entry-transition.ramp",
+        139.7595,
+        139.7600,
+        successors: ["test.edge.loop"]
+      ),
+      matcherEdge(
         "test.edge.loop",
         139.7600,
         139.7610,

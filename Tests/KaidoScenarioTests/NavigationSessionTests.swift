@@ -82,14 +82,14 @@ func navigationSessionRestartDoesNotRewind() async throws {
   #expect(phone.currentOccurrenceID == "test.occurrence.movement")
 }
 
-private struct NavigationSessionFixture {
+struct NavigationSessionFixture {
   let configuration: NavigationConfiguration
   let corridor: RouteMatcherCorridor
   let decisionZone: DecisionZoneProgressDefinition
   let initialSnapshot: NavigationSnapshot
 }
 
-private func navigationSessionFixture(
+func navigationSessionFixture(
   corridorRoutePlanID: String = "test.plan.session"
 ) -> NavigationSessionFixture {
   let routePlan = RoutePlan(

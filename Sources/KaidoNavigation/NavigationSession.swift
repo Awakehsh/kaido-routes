@@ -45,6 +45,7 @@ public struct NavigationSessionUpdate: Equatable, Sendable {
 public actor NavigationSession {
   private var engine: NavigationEngine
   private var matcherSession: RouteMatcherSession
+  private var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
@@ -56,7 +57,8 @@ public actor NavigationSession {
     initialNavigationSnapshot: NavigationSnapshot = NavigationSnapshot(),
     matcherConfiguration: RouteAwareSwiftMatcherConfiguration = .init(),
     matcherSessionConfiguration: RouteMatcherSessionConfiguration = .init(),
-    initialMatcherOccurrenceID: String? = nil
+    initialMatcherOccurrenceID: String? = nil,
+    entryTransitionAdmissionContext: EntryTransitionAdmissionContext? = nil
   ) throws {
     guard let routePlan = navigationConfiguration.routePlan else {
       throw NavigationSessionConfigurationError.invalid(["route plan is missing"])
@@ -67,8 +69,39 @@ public actor NavigationSession {
       decisionZones: decisionZones,
       releasedGuidance: navigationConfiguration.releasedGuidance
     )
-    guard issues.isEmpty else {
-      throw NavigationSessionConfigurationError.invalid(issues)
+    var allIssues = issues
+    if let context = entryTransitionAdmissionContext {
+      if context.networkSnapshotID != routePlan.networkSnapshotID
+        || context.routePlanID != routePlan.id
+        || context.matcherCorridorID != matcherCorridor.id
+        || context.matcherCorridor != matcherCorridor
+        || context.entryTransition != navigationConfiguration.entryTransition
+      {
+        allIssues.append("entry transition admission identity does not match runtime")
+      }
+      if context.productReleaseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        || context.navigationReleaseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        || context.runtimePolicyID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      {
+        allIssues.append("entry transition admission release identity is invalid")
+      }
+      allIssues.append(
+        contentsOf: EntryTransitionCorridorValidator.issues(
+          transition: context.entryTransition,
+          routePlan: routePlan,
+          matcherCorridor: matcherCorridor
+        )
+      )
+      let firstRouteDirectedEdgeID = matcherCorridor.occurrences.first(where: {
+        $0.id == routePlan.occurrences.first?.id
+      })?.directedEdgeID
+      if context.firstRouteDirectedEdgeID != firstRouteDirectedEdgeID {
+        allIssues.append("entry transition first RoutePlan edge binding does not match")
+      }
+    }
+    allIssues = Array(Set(allIssues)).sorted()
+    guard allIssues.isEmpty else {
+      throw NavigationSessionConfigurationError.invalid(allIssues)
     }
 
     self.routePlan = routePlan
@@ -81,6 +114,9 @@ public actor NavigationSession {
       configuration: navigationConfiguration,
       initialSnapshot: initialNavigationSnapshot
     )
+    entryTransitionAdmission = entryTransitionAdmissionContext.map {
+      EntryTransitionEvidenceAdmission(context: $0)
+    }
     matcherSession = try RouteAwareSwiftMatcher(
       configuration: matcherConfiguration
     ).makeSession(
@@ -104,9 +140,25 @@ public actor NavigationSession {
     _ observation: RouteMatcherObservation
   ) throws -> NavigationSessionUpdate {
     let estimate = try matcherSession.observe(observation)
+    let admitsOccurrenceProgress =
+      engine.snapshot.journeyPhase == .strictRoute
+      || engine.snapshot.journeyPhase == .routeRecovery
+      || engine.snapshot.journeyPhase == .exitTransition
+      || engine.snapshot.journeyPhase == .surfaceEgress
     engine.observeLocation(
-      Self.locationObservation(from: estimate, source: observation)
+      Self.locationObservation(
+        from: estimate,
+        source: observation,
+        admitsOccurrenceProgress: admitsOccurrenceProgress
+      )
     )
+
+    guard admitsOccurrenceProgress else {
+      return update(
+        estimate: estimate,
+        guidanceProgressState: .notApplicable
+      )
+    }
 
     let anchorOccurrenceID = estimate.occurrenceID ?? engine.snapshot.currentOccurrenceID
     guard let anchorOccurrenceID,
@@ -144,6 +196,45 @@ public actor NavigationSession {
         guidanceBridgeError: error
       )
     }
+  }
+
+  /// Applies release-bound, multi-observation entrance evidence.
+  ///
+  /// The ordinary route matcher cannot call this path or manufacture forward
+  /// continuity. The actor serializes admission with every other navigation
+  /// event and restarts route matching at the exact first occurrence only after
+  /// strict-route entry succeeds.
+  public func observeEntryTransitionEvidence(
+    _ evidence: EntryTransitionEvidence
+  ) throws -> EntryTransitionSessionUpdate {
+    guard var admission = entryTransitionAdmission else {
+      return EntryTransitionSessionUpdate(
+        status: .rejected,
+        rejectionReason: .runtimeNotReleaseAdmitted,
+        navigationSnapshot: engine.snapshot
+      )
+    }
+
+    let decision = admission.admit(
+      evidence,
+      journeyPhase: engine.snapshot.journeyPhase
+    )
+    entryTransitionAdmission = admission
+    if let observation = decision.engineObservation {
+      engine.observeLocation(observation)
+    }
+    if decision.status == .strictRouteEntered,
+      engine.snapshot.journeyPhase == .strictRoute,
+      let firstOccurrenceID = admission.context.entryTransition.firstRouteOccurrenceID
+    {
+      try matcherSession.restart(at: firstOccurrenceID)
+    }
+    return EntryTransitionSessionUpdate(
+      status: decision.status,
+      rejectionReason: decision.rejectionReason,
+      acceptedTransitionEdgeIndex: decision.acceptedTransitionEdgeIndex,
+      navigationSnapshot: engine.snapshot
+    )
   }
 
   @discardableResult
@@ -220,8 +311,18 @@ public actor NavigationSession {
 
   private static func locationObservation(
     from estimate: MatcherEstimate,
-    source observation: RouteMatcherObservation
+    source observation: RouteMatcherObservation,
+    admitsOccurrenceProgress: Bool
   ) -> LocationObservation {
+    guard admitsOccurrenceProgress else {
+      return LocationObservation(
+        observedAtMilliseconds: observation.observedAtMilliseconds,
+        reportedConfidence: LocationConfidence(rawValue: estimate.confidence.rawValue) ?? .lost,
+        horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
+        ageMilliseconds: observation.receivedAtMilliseconds
+          - observation.observedAtMilliseconds
+      )
+    }
     let candidateResolution: RouteCandidateResolution
     if estimate.directedEdgeID != nil, estimate.candidateEdgeIDs.count == 1 {
       candidateResolution = .resolved

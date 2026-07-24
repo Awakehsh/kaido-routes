@@ -476,7 +476,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 57 scenarios with 380 semantic assertions executable at L1/L2. KR-S16
+   current 58 scenarios with 387 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
@@ -569,7 +569,13 @@ gate.
    that matcher, engine, bridge, and one-shot emission into atomic updates and
    rejects mismatched runtime composition. KR-S18 proves that only HIGH along-edge
    progress on the exact RoutePlan corridor becomes DecisionZone distance; the
-   lateral matcher residual is never route progress.
+   lateral matcher residual is never route progress. The product runtime now also
+   supplies one immutable entry-admission context. A separate Core Location entry
+   adapter emits package-only matches against the release-bound transition
+   corridor, while the actor owns identity, simulation, time, heading, ambiguity,
+   and ordered-continuity admission. Ordinary matcher estimates cannot advance
+   occurrences or guidance before that gate. KR-S19 covers skipped-edge,
+   simulated, identity-drift, and accepted sequences.
    The foreground-only internal iPhone capture harness now executes the real
    delegate-to-adapter-to-matcher path against the exact review-only K7 candidate
    corridor without persisting raw coordinates or claiming navigation authority.

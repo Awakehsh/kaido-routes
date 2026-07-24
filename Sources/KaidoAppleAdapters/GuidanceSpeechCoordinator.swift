@@ -39,9 +39,16 @@ public enum GuidanceSpeechOutputEvent: Equatable, Sendable {
 @MainActor
 public protocol GuidanceSpeechOutput: AnyObject {
   var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)? { get set }
+  var selectedVoiceProfile: GuidanceSpeechVoiceProfile? { get }
 
   func speak(_ command: GuidanceSpeechCommand) throws
   func stop()
+}
+
+extension GuidanceSpeechOutput {
+  public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
+    nil
+  }
 }
 
 public enum GuidanceSpeechCoordinatorStatus: Equatable, Sendable {
@@ -70,6 +77,9 @@ public final class GuidanceSpeechCoordinator {
     }
   }
   public var statusDidChange: ((GuidanceSpeechCoordinatorStatus) -> Void)?
+  public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
+    output.selectedVoiceProfile
+  }
 
   private let output: any GuidanceSpeechOutput
 
@@ -160,6 +170,7 @@ public final class GuidanceSpeechCoordinator {
   @MainActor
   public final class AVSpeechGuidanceOutput: NSObject, GuidanceSpeechOutput {
     public var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
+    public private(set) var selectedVoiceProfile: GuidanceSpeechVoiceProfile?
 
     private let synthesizer: AVSpeechSynthesizer
     private let audioSession: AVAudioSession
@@ -190,12 +201,18 @@ public final class GuidanceSpeechCoordinator {
       cancelActiveUtterance()
 
       guard
-        let voice = AVSpeechSynthesisVoice(language: command.languageCode)
+        let profile = Self.preferredInstalledVoiceProfile(
+          for: command.languageCode
+        ),
+        let voice = AVSpeechSynthesisVoice(
+          identifier: profile.identifier
+        )
       else {
         throw GuidanceSpeechOutputError.voiceUnavailable(
           command.languageCode
         )
       }
+      selectedVoiceProfile = profile
 
       do {
         try audioSession.setCategory(
@@ -217,10 +234,40 @@ public final class GuidanceSpeechCoordinator {
 
       let utterance = AVSpeechUtterance(string: command.spokenText)
       utterance.voice = voice
+      let prosody = GuidanceSpeechProsody.navigation(
+        languageCode: command.languageCode
+      )
+      utterance.rate = prosody.rate
+      utterance.pitchMultiplier = prosody.pitchMultiplier
+      utterance.preUtteranceDelay = prosody.preUtteranceDelay
+      utterance.postUtteranceDelay = prosody.postUtteranceDelay
       let utteranceID = ObjectIdentifier(utterance)
       identityByUtterance[utteranceID] = command.identity
       activeUtteranceID = utteranceID
       synthesizer.speak(utterance)
+    }
+
+    public static func preferredInstalledVoiceProfile(
+      for languageCode: String
+    ) -> GuidanceSpeechVoiceProfile? {
+      let defaultIdentifier =
+        AVSpeechSynthesisVoice(language: languageCode)?.identifier
+      let candidates = AVSpeechSynthesisVoice.speechVoices().map { voice in
+        let traits = traits(voice)
+        return GuidanceSpeechVoiceCandidate(
+          identifier: voice.identifier,
+          name: voice.name,
+          languageCode: voice.language,
+          quality: quality(voice.quality),
+          isNoveltyVoice: traits.isNoveltyVoice,
+          isPersonalVoice: traits.isPersonalVoice
+        )
+      }
+      return GuidanceSpeechVoiceSelector.select(
+        languageCode: languageCode,
+        candidates: candidates,
+        systemDefaultIdentifier: defaultIdentifier
+      )
     }
 
     public func stop() {
@@ -295,6 +342,33 @@ public final class GuidanceSpeechCoordinator {
         false,
         options: .notifyOthersOnDeactivation
       )
+    }
+
+    private static func quality(
+      _ quality: AVSpeechSynthesisVoiceQuality
+    ) -> GuidanceSpeechVoiceQuality {
+      switch quality {
+      case .premium:
+        .premium
+      case .enhanced:
+        .enhanced
+      case .default:
+        .defaultQuality
+      @unknown default:
+        .defaultQuality
+      }
+    }
+
+    private static func traits(
+      _ voice: AVSpeechSynthesisVoice
+    ) -> (isNoveltyVoice: Bool, isPersonalVoice: Bool) {
+      if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
+        return (
+          voice.voiceTraits.contains(.isNoveltyVoice),
+          voice.voiceTraits.contains(.isPersonalVoice)
+        )
+      }
+      return (false, false)
     }
   }
 

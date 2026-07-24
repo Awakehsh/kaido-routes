@@ -100,6 +100,15 @@ final class ProductRuntimePreviewUITests: XCTestCase {
       "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED"
     )
 
+    let speech = reveal("product-runtime-speech", in: app)
+    let speechValue = speech.value as? String ?? ""
+    XCTAssertTrue(speechValue.contains("ja-JP"))
+    XCTAssertTrue(
+      ["DEFAULT", "ENHANCED", "PREMIUM"].contains {
+        speechValue.contains($0)
+      }
+    )
+
     _ = reveal("product-runtime-driving-guidance", in: app)
     let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
     screenshot.name = "Actor-owned product runtime driving surface"

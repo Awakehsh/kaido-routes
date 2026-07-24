@@ -168,8 +168,14 @@ prompt/anchor/occurrence projection, suppresses duplicate SwiftUI delivery,
 preempts stale speech for a newer prompt, and drops interrupted prompts without
 catch-up replay. The Apple adapter uses `AVSpeechSynthesizer` with the
 turn-by-turn `voicePrompt` audio-session mode, temporary ducking, explicit
-interruption handling, and typed unavailable-voice/audio-session failures. The
-synthetic runtime panel exercises this boundary with injected output, retains the
+interruption handling, and typed unavailable-voice/audio-session failures. It
+selects only an exact-locale installed voice, excludes novelty and personal
+voices, prefers premium over enhanced over default quality, and applies a
+conservative locale-specific navigation rate. The runtime panel exposes the
+actual selected voice and quality; the checked Simulator currently has only
+default-quality Japanese `Kyoko`, so enhanced/premium acoustic quality still
+requires the corresponding voice asset on a physical device. The synthetic
+runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves
 that visual refresh and one-shot voice authority stay separate without creating

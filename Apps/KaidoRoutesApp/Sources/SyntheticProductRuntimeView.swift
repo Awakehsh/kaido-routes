@@ -1,3 +1,4 @@
+import KaidoAppleAdapters
 import SwiftUI
 
 struct SyntheticProductRuntimePanel: View {
@@ -350,6 +351,23 @@ struct SyntheticProductRuntimePanel: View {
           .font(.system(size: 10, weight: .medium))
           .foregroundStyle(KaidoTheme.muted)
 
+        if let voice = model.speechVoiceProfile {
+          Text(
+            "VOICE · \(voice.name) · \(voice.languageCode) · "
+              + voice.quality.label
+          )
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(
+            voice.quality == .defaultQuality
+              ? KaidoTheme.signalAmber
+              : KaidoTheme.positionCyan
+          )
+
+          Text(voiceQualityDetail(voice.quality))
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(KaidoTheme.muted.opacity(0.82))
+        }
+
         Text("一次性提示才可发声；中断结束不补播旧提示。")
           .font(.system(size: 9, weight: .semibold))
           .foregroundStyle(KaidoTheme.muted.opacity(0.82))
@@ -360,7 +378,7 @@ struct SyntheticProductRuntimePanel: View {
     .clipShape(RoundedRectangle(cornerRadius: 12))
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("product-runtime-speech")
-    .accessibilityValue(model.speechStatusLabel)
+    .accessibilityValue(speechAccessibilityValue)
   }
 
   private var safetyNotice: some View {
@@ -471,6 +489,28 @@ struct SyntheticProductRuntimePanel: View {
       "speaker.slash"
     case .idle:
       "speaker"
+    }
+  }
+
+  private var speechAccessibilityValue: String {
+    guard let voice = model.speechVoiceProfile else {
+      return model.speechStatusLabel
+    }
+    return
+      "\(model.speechStatusLabel) · \(voice.name) · "
+      + "\(voice.languageCode) · \(voice.quality.label)"
+  }
+
+  private func voiceQualityDetail(
+    _ quality: GuidanceSpeechVoiceQuality
+  ) -> String {
+    switch quality {
+    case .premium:
+      "已使用设备上可用的 Premium voice。"
+    case .enhanced:
+      "已使用设备上可用的 Enhanced voice。"
+    case .defaultQuality:
+      "当前设备仅提供 Default voice；安装增强声音后会自动升级。"
     }
   }
 

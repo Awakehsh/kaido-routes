@@ -283,6 +283,14 @@ any prompt that arrived while audio was unavailable.
 
 `GuidanceSpeechCoordinator` connects that scheduler to an injected output.
 The iOS `AVSpeechGuidanceOutput` resolves only the requested reviewed locale,
+enumerates only voices already installed on the device, excludes novelty and
+personal voices, and ranks premium, enhanced, then default quality. The locale's
+system default is only an equal-quality tie-break, so a generic accessibility
+character cannot displace a higher-quality normal voice. The chosen identifier,
+name, locale, and quality remain observable without granting speech authority.
+Short guidance uses conservative locale-specific rate and pitch values; these
+values do not rewrite reviewed spoken content.
+The output
 uses `AVAudioSession.Mode.voicePrompt` with temporary `duckOthers` and
 `interruptSpokenAudioAndMixWithOthers`, activates audio only for an admitted
 prompt, and deactivates with `notifyOthersOnDeactivation`. It observes Apple
@@ -291,7 +299,9 @@ resume stale navigation speech. Missing installed voices and audio-session
 configuration or activation failures remain typed, observable blocked states.
 This implements scheduling and lifecycle ownership; pronunciation, output-route
 timing, interruption behavior on real phone/CarPlay hardware, and driver
-comprehension remain device evidence gates.
+comprehension remain device evidence gates. The app cannot download an Apple
+voice asset; when a device has only default quality, the preview says so rather
+than claiming neural or enhanced synthesis.
 
 `JunctionViewDefinition` is renderer-neutral data, not a retained provider image.
 It contains normalized approach, selected, and alternative paths; zero-based

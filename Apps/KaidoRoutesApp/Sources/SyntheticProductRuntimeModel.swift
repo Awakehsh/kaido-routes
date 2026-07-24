@@ -121,6 +121,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     .disconnected
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus =
     .idle
+  @Published private(set) var speechVoiceProfile: GuidanceSpeechVoiceProfile?
   @Published private(set) var lifecycleState: SyntheticProductRuntimeLifecycleState = .foreground
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var presentationState: SyntheticProductRuntimePresentationState =
@@ -191,12 +192,15 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     entryTransitionAdapter = try CoreLocationEntryTransitionAdapter(
       context: runtime.entryTransitionAdmissionContext
     )
+    let resolvedSpeechOutput = speechOutput ?? AVSpeechGuidanceOutput()
     speechCoordinator = try GuidanceSpeechCoordinator(
       expectedRoutePlanID: runtime.routePlanID,
-      output: speechOutput ?? AVSpeechGuidanceOutput()
+      output: resolvedSpeechOutput
     )
+    speechVoiceProfile = resolvedSpeechOutput.selectedVoiceProfile
     speechCoordinator.statusDidChange = { [weak self] status in
       self?.speechStatus = status
+      self?.speechVoiceProfile = self?.speechCoordinator.selectedVoiceProfile
     }
     if let checkpointFailureCode {
       activation = .failed("CHECKPOINT_REJECTED")
@@ -588,6 +592,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       presentationState = .ready
       if update.guidancePromptEmission != nil {
         speechStatus = speechCoordinator.submit(projection)
+        speechVoiceProfile = speechCoordinator.selectedVoiceProfile
       }
     } catch {
       presentationProjection = nil

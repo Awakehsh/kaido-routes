@@ -1,5 +1,7 @@
+import Foundation
 import KaidoDomain
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SavedRouteLibraryPanel: View {
   @ObservedObject var model: SavedRouteLibraryModel
@@ -7,9 +9,19 @@ struct SavedRouteLibraryPanel: View {
 
   let openRecord: (String) -> Void
 
+  @State private var isImporting = false
+  @State private var isExporting = false
+  @State private var exportDocument: SharedRouteFileDocument?
+  @State private var exportFileName = "kaido-route"
+  @State private var renameRecordID: String?
+  @State private var renameName = ""
+  @State private var deleteRecordID: String?
+  @State private var transferErrorCode: String?
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       header
+      transferControls
 
       if model.records.isEmpty {
         emptyState
@@ -17,6 +29,13 @@ struct SavedRouteLibraryPanel: View {
         ForEach(model.records, id: \.id) { record in
           recordCard(record)
         }
+      }
+
+      if let transferErrorCode {
+        Text(transferErrorCode)
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+          .accessibilityIdentifier("saved-route-transfer-error")
       }
     }
     .padding(14)
@@ -32,6 +51,126 @@ struct SavedRouteLibraryPanel: View {
       "\(model.records.count) RECORDS · "
         + "\(model.lastErrorCode ?? "READY")"
     )
+    .fileImporter(
+      isPresented: $isImporting,
+      allowedContentTypes: [.json],
+      allowsMultipleSelection: false,
+      onCompletion: importSharedRoute
+    )
+    .fileExporter(
+      isPresented: $isExporting,
+      document: exportDocument,
+      contentType: .json,
+      defaultFilename: exportFileName
+    ) { result in
+      if case .failure = result {
+        transferErrorCode =
+          "SAVED_ROUTE_EXPORT_PRESENTATION_FAILED"
+      } else {
+        transferErrorCode = nil
+      }
+      exportDocument = nil
+    }
+    .alert(
+      copy.resolve(
+        japanese: "ルート名を変更",
+        simplifiedChinese: "重命名路线",
+        english: "Rename route"
+      ),
+      isPresented: renamePresentation
+    ) {
+      TextField(
+        copy.resolve(
+          japanese: "ルート名",
+          simplifiedChinese: "路线名称",
+          english: "Route name"
+        ),
+        text: $renameName
+      )
+      Button(
+        copy.resolve(
+          japanese: "キャンセル",
+          simplifiedChinese: "取消",
+          english: "Cancel"
+        ),
+        role: .cancel
+      ) {
+        renameRecordID = nil
+      }
+      Button(
+        copy.resolve(
+          japanese: "保存",
+          simplifiedChinese: "保存",
+          english: "Save"
+        )
+      ) {
+        guard let renameRecordID else { return }
+        model.rename(
+          recordID: renameRecordID,
+          displayName: renameName
+        )
+        self.renameRecordID = nil
+      }
+      .disabled(
+        renameName.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty
+      )
+    } message: {
+      Text(
+        copy.resolve(
+          japanese:
+            "表示名だけを変更します。RoutePlan、snapshot、証拠、occurrence は変更しません。",
+          simplifiedChinese:
+            "只修改显示名称；RoutePlan、snapshot、证据和 occurrence 保持不变。",
+          english:
+            "Only the display name changes. RoutePlan, snapshot, evidence, and occurrences remain unchanged."
+        )
+      )
+    }
+    .confirmationDialog(
+      copy.resolve(
+        japanese: "保存ルートを削除しますか？",
+        simplifiedChinese: "删除已保存路线？",
+        english: "Delete saved route?"
+      ),
+      isPresented: deletePresentation,
+      titleVisibility: .visible
+    ) {
+      Button(
+        copy.resolve(
+          japanese: "削除",
+          simplifiedChinese: "删除",
+          english: "Delete"
+        ),
+        role: .destructive
+      ) {
+        guard let deleteRecordID else { return }
+        model.delete(recordID: deleteRecordID)
+        self.deleteRecordID = nil
+      }
+      Button(
+        copy.resolve(
+          japanese: "キャンセル",
+          simplifiedChinese: "取消",
+          english: "Cancel"
+        ),
+        role: .cancel
+      ) {
+        deleteRecordID = nil
+      }
+    } message: {
+      Text(
+        copy.resolve(
+          japanese:
+            "この端末の保存記録だけを削除します。元の共有ファイルやリリースは変更しません。",
+          simplifiedChinese:
+            "只删除本机保存记录，不修改原始共享文件或发布包。",
+          english:
+            "This removes only the local saved record. It does not change an exported file or product release."
+        )
+      )
+    }
   }
 
   private var header: some View {
@@ -121,6 +260,40 @@ struct SavedRouteLibraryPanel: View {
     .accessibilityIdentifier("saved-route-library-empty")
   }
 
+  private var transferControls: some View {
+    Button {
+      transferErrorCode = nil
+      isImporting = true
+    } label: {
+      HStack(spacing: 8) {
+        Image(systemName: "square.and.arrow.down")
+        Text(
+          copy.resolve(
+            japanese: "共有ルートを読み込む",
+            simplifiedChinese: "导入共享路线",
+            english: "Import shared route"
+          )
+        )
+        Spacer()
+        Text("JSON")
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+      }
+      .font(.system(size: 10, weight: .black))
+      .foregroundStyle(
+        model.storageAvailable
+          ? KaidoTheme.positionCyan
+          : KaidoTheme.muted
+      )
+      .padding(.horizontal, 11)
+      .frame(height: 38)
+      .background(KaidoTheme.asphalt.opacity(0.72))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+    .buttonStyle(.plain)
+    .disabled(!model.storageAvailable)
+    .accessibilityIdentifier("saved-route-import")
+  }
+
   private func recordCard(_ record: SavedRouteRecord) -> some View {
     let availability = model.availability(for: record)
     return VStack(alignment: .leading, spacing: 9) {
@@ -190,12 +363,159 @@ struct SavedRouteLibraryPanel: View {
       .disabled(!canOpen(availability))
       .accessibilityIdentifier("saved-route-open-\(record.id)")
       .accessibilityValue(availabilityTitle(availability))
+
+      lifecycleControls(record)
     }
     .padding(12)
     .background(KaidoTheme.asphalt.opacity(0.72))
     .clipShape(RoundedRectangle(cornerRadius: 14))
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("saved-route-record-\(record.id)")
+  }
+
+  private func lifecycleControls(
+    _ record: SavedRouteRecord
+  ) -> some View {
+    HStack(spacing: 7) {
+      lifecycleButton(
+        title: copy.resolve(
+          japanese: "名前",
+          simplifiedChinese: "重命名",
+          english: "Rename"
+        ),
+        symbol: "pencil",
+        identifier: "saved-route-rename-\(record.id)"
+      ) {
+        renameName = record.displayName
+        renameRecordID = record.id
+      }
+      lifecycleButton(
+        title: copy.resolve(
+          japanese: "書き出す",
+          simplifiedChinese: "导出",
+          english: "Export"
+        ),
+        symbol: "square.and.arrow.up",
+        identifier: "saved-route-export-\(record.id)"
+      ) {
+        prepareExport(record)
+      }
+      lifecycleButton(
+        title: copy.resolve(
+          japanese: "削除",
+          simplifiedChinese: "删除",
+          english: "Delete"
+        ),
+        symbol: "trash",
+        color: KaidoTheme.evidenceCoral,
+        identifier: "saved-route-delete-\(record.id)"
+      ) {
+        deleteRecordID = record.id
+      }
+    }
+  }
+
+  private func lifecycleButton(
+    title: String,
+    symbol: String,
+    color: Color = KaidoTheme.muted,
+    identifier: String,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      VStack(spacing: 3) {
+        Image(systemName: symbol)
+        Text(title)
+      }
+      .font(.system(size: 8, weight: .black))
+      .foregroundStyle(color)
+      .frame(maxWidth: .infinity)
+      .frame(height: 38)
+      .background(KaidoTheme.steel.opacity(0.22))
+      .clipShape(RoundedRectangle(cornerRadius: 9))
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(identifier)
+  }
+
+  private func prepareExport(_ record: SavedRouteRecord) {
+    guard
+      let data = model.exportSharedRoute(recordID: record.id)
+    else {
+      return
+    }
+    do {
+      exportDocument = try SharedRouteFileDocument(data: data)
+      exportFileName = safeExportFileName(record.displayName)
+      transferErrorCode = nil
+      isExporting = true
+    } catch {
+      exportDocument = nil
+      transferErrorCode = "SAVED_ROUTE_EXPORT_DOCUMENT_INVALID"
+    }
+  }
+
+  private func importSharedRoute(
+    _ result: Result<[URL], Error>
+  ) {
+    do {
+      guard let url = try result.get().first else {
+        transferErrorCode = "SAVED_ROUTE_IMPORT_SELECTION_EMPTY"
+        return
+      }
+      let accessed = url.startAccessingSecurityScopedResource()
+      defer {
+        if accessed {
+          url.stopAccessingSecurityScopedResource()
+        }
+      }
+      let data = try Data(contentsOf: url, options: .mappedIfSafe)
+      let suggestedName = url.deletingPathExtension().lastPathComponent
+      model.importSharedRoute(
+        data,
+        suggestedName:
+          suggestedName.isEmpty
+          ? "Imported route"
+          : suggestedName
+      )
+      transferErrorCode = nil
+    } catch {
+      transferErrorCode = "SAVED_ROUTE_IMPORT_READ_FAILED"
+    }
+  }
+
+  private func safeExportFileName(_ displayName: String) -> String {
+    let disallowed = CharacterSet.alphanumerics
+      .union(.whitespaces)
+      .union(CharacterSet(charactersIn: "-_"))
+      .inverted
+    let cleaned = displayName.components(
+      separatedBy: disallowed
+    ).joined(separator: "-")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return cleaned.isEmpty ? "kaido-route" : cleaned
+  }
+
+  private var renamePresentation: Binding<Bool> {
+    Binding(
+      get: { renameRecordID != nil },
+      set: {
+        if !$0 {
+          renameRecordID = nil
+        }
+      }
+    )
+  }
+
+  private var deletePresentation: Binding<Bool> {
+    Binding(
+      get: { deleteRecordID != nil },
+      set: {
+        if !$0 {
+          deleteRecordID = nil
+        }
+      }
+    )
   }
 
   private func canOpen(

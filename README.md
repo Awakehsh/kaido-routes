@@ -73,13 +73,16 @@ progress drift blocks the overlay instead of drawing a best-effort route.
 The parked journey now also persists named routes as schema-1.0 saved-route
 library records in Application Support. Each record embeds the complete
 `SharedRouteDocument`, including snapshot, evidence state, template parameters,
-and every ordered occurrence. Storage never grants navigation authority. A
-saved record may reopen only when its whole `RoutePlan` equals exactly one
-current foreground product release; zero, multiple, invalid, or
-snapshot-drifted matches remain visible but cannot leave the Route Atlas stage.
-Reopening selects that release's parked editor and still requires every
-release-owned choice, compilation, current pre-drive evidence, and explicit
-navigation start.
+and every ordered occurrence. The parked library can import or export that
+validated JSON document, rename local display metadata, and delete one exact
+record after confirmation. Import records `SHARED_IMPORT`, and unsupported
+schemas are rejected rather than migrated. Storage and file operations never
+grant navigation authority. A saved record may reopen only when its whole
+`RoutePlan` equals exactly one current foreground product release; zero,
+multiple, invalid, or snapshot-drifted matches remain visible but cannot leave
+the Route Atlas stage. Reopening selects that release's parked editor and still
+requires every release-owned choice, compilation, current pre-drive evidence,
+and explicit navigation start.
 The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,

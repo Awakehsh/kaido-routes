@@ -17,6 +17,8 @@ enum SavedRouteLibraryModelError: String, Error, Equatable {
   case invalidName = "SAVED_ROUTE_NAME_INVALID"
   case routeUnavailable = "SAVED_ROUTE_PLAN_UNAVAILABLE"
   case recordUnavailable = "SAVED_ROUTE_RECORD_UNAVAILABLE"
+  case importFailed = "SAVED_ROUTE_IMPORT_FAILED"
+  case exportFailed = "SAVED_ROUTE_EXPORT_FAILED"
 }
 
 /// Parked-only saved-route persistence and current-release selection.
@@ -101,17 +103,102 @@ final class SavedRouteLibraryModel: ObservableObject {
     let candidate = SavedRouteLibraryDocument(
       records: [record] + records
     )
+    persist(
+      candidate,
+      store: store,
+      successRecordID: record.id
+    )
+  }
+
+  func importSharedRoute(
+    _ data: Data,
+    suggestedName: String
+  ) {
+    guard let store else {
+      fail(.storeUnavailable)
+      return
+    }
+    let recordID = recordIDProvider()
     do {
-      try store.save(candidate)
-      records = candidate.records
-      lastSavedRecordID = record.id
-      lastErrorCode = nil
+      let candidate = try SavedRouteLibraryEditor.importing(
+        sharedRouteData: data,
+        recordID: recordID,
+        displayName: suggestedName,
+        savedAt: savedAtProvider(),
+        into: currentLibrary
+      )
+      persist(
+        candidate,
+        store: store,
+        successRecordID: recordID
+      )
+    } catch {
+      lastSavedRecordID = nil
+      lastErrorCode = Self.errorCode(
+        error,
+        fallback: .importFailed
+      )
+    }
+  }
+
+  func rename(
+    recordID: String,
+    displayName: String
+  ) {
+    guard let store else {
+      fail(.storeUnavailable)
+      return
+    }
+    do {
+      let candidate = try SavedRouteLibraryEditor.renaming(
+        recordID: recordID,
+        displayName: displayName,
+        in: currentLibrary
+      )
+      persist(candidate, store: store)
     } catch {
       lastSavedRecordID = nil
       lastErrorCode = Self.errorCode(
         error,
         fallback: .writeFailed
       )
+    }
+  }
+
+  func delete(recordID: String) {
+    guard let store else {
+      fail(.storeUnavailable)
+      return
+    }
+    do {
+      let candidate = try SavedRouteLibraryEditor.removing(
+        recordID: recordID,
+        from: currentLibrary
+      )
+      persist(candidate, store: store)
+    } catch {
+      lastSavedRecordID = nil
+      lastErrorCode = Self.errorCode(
+        error,
+        fallback: .writeFailed
+      )
+    }
+  }
+
+  func exportSharedRoute(recordID: String) -> Data? {
+    do {
+      let data = try SavedRouteLibraryEditor.exportData(
+        recordID: recordID,
+        from: currentLibrary
+      )
+      lastErrorCode = nil
+      return data
+    } catch {
+      lastErrorCode = Self.errorCode(
+        error,
+        fallback: .exportFailed
+      )
+      return nil
     }
   }
 
@@ -156,6 +243,29 @@ final class SavedRouteLibraryModel: ObservableObject {
     }
   }
 
+  private var currentLibrary: SavedRouteLibraryDocument {
+    SavedRouteLibraryDocument(records: records)
+  }
+
+  private func persist(
+    _ candidate: SavedRouteLibraryDocument,
+    store: any SavedRouteLibraryStoring,
+    successRecordID: String? = nil
+  ) {
+    do {
+      try store.save(candidate)
+      records = candidate.records
+      lastSavedRecordID = successRecordID
+      lastErrorCode = nil
+    } catch {
+      lastSavedRecordID = nil
+      lastErrorCode = Self.errorCode(
+        error,
+        fallback: .writeFailed
+      )
+    }
+  }
+
   private func fail(_ error: SavedRouteLibraryModelError) {
     lastSavedRecordID = nil
     lastErrorCode = error.rawValue
@@ -175,6 +285,17 @@ final class SavedRouteLibraryModel: ObservableObject {
       case .invalid(let issues):
         return Array(Set(issues.map(\.code))).sorted()
           .joined(separator: "+")
+      }
+    }
+    if let error = error as? SavedRouteLibraryMutationError {
+      return error.code
+    }
+    if let error = error as? SharedRouteCodecError {
+      switch error {
+      case .unsupportedSchemaVersion:
+        return "SHARED_ROUTE_SCHEMA_UNSUPPORTED"
+      case .invalidDocument(let issues):
+        return issues.sorted().joined(separator: "+")
       }
     }
     if let error = error as? SavedRouteReleaseMatcherError {

@@ -105,8 +105,10 @@ The current app deliberately composes only:
   state, snapshot, and ordered occurrences; only one whole-RoutePlan-equal
   foreground release can reopen a record in the parked release-owned editor,
   with no automatic choices, compilation, evidence admission, or navigation;
-- local rename, delete, export, and shared-document import controls are not yet
-  implemented; the current App surface saves and reopens only;
+- parked local rename, confirmation-gated deletion, deterministic JSON export,
+  and validated JSON import controls; import records `SHARED_IMPORT`, unknown
+  schemas fail closed without migration, and every mutation persists before the
+  published library changes;
 - a dormant released-road navigation surface that can be constructed only from
   one exact foreground catalog selection, separates the bound release key from
   user-started live input, renders only actor-owned projections, and preserves

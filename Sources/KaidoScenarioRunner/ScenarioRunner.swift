@@ -63,6 +63,7 @@ private struct ScenarioHarness {
   var routeEditorSession: ExpertRouteEditorSession?
   var routeEditorCorridorResolutionSession: ParkedCorridorResolutionSession?
   var routeAtlasRelease: RouteAtlasRelease?
+  var savedRouteLibrary: SavedRouteLibraryDocument?
   var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
@@ -80,6 +81,7 @@ private struct ScenarioHarness {
     routeEditorSession = nil
     routeEditorCorridorResolutionSession = nil
     routeAtlasRelease = nil
+    savedRouteLibrary = nil
     lastGuidancePromptEmission = nil
     if let admissionValue = scenario.given.inputs.object("entry_transition_admission") {
       guard let routePlan = scenario.given.routePlan,
@@ -134,6 +136,8 @@ private struct ScenarioHarness {
     switch event.type {
     case "ROUTE_COMPILE_REQUESTED":
       try compileRoute(event.payload)
+    case "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED":
+      try executeSavedRouteLibraryLifecycle()
     case "ROUTE_EDITOR_STARTED":
       try startRouteEditor(event.payload)
     case "ROUTE_EDITOR_CHOICE_SELECTED":
@@ -335,6 +339,7 @@ private struct ScenarioHarness {
           )
         )
       )
+      savedRouteLibrary = library
       let candidates = try (libraryValue.array("release_candidates") ?? []).map {
         value -> SavedRouteReleaseCandidate in
         guard let candidate = value.objectValue else {
@@ -644,6 +649,87 @@ private struct ScenarioHarness {
     }
 
     throw ScenarioExecutionError.unsupportedCompileShape
+  }
+
+  private mutating func executeSavedRouteLibraryLifecycle()
+    throws
+  {
+    guard
+      let original = savedRouteLibrary,
+      let sourceRecord = original.records.first,
+      let lifecycle = scenario.given.inputs.object(
+        "saved_route_library"
+      )?.object("lifecycle")
+    else {
+      throw ScenarioExecutionError.missingInput(
+        "saved_route_library.lifecycle"
+      )
+    }
+
+    let sharedData = try SavedRouteLibraryEditor.exportData(
+      recordID: sourceRecord.id,
+      from: original
+    )
+    let imported = try SavedRouteLibraryEditor.importing(
+      sharedRouteData: sharedData,
+      recordID: try lifecycle.requiredString(
+        "imported_record_id"
+      ),
+      displayName: try lifecycle.requiredString(
+        "imported_display_name"
+      ),
+      savedAt: try lifecycle.requiredString("imported_saved_at"),
+      into: original
+    )
+    guard let importedRecord = imported.records.first else {
+      throw ScenarioExecutionError.invalidInput(
+        "saved_route_library.lifecycle.import"
+      )
+    }
+    let renamed = try SavedRouteLibraryEditor.renaming(
+      recordID: importedRecord.id,
+      displayName: try lifecycle.requiredString(
+        "renamed_display_name"
+      ),
+      in: imported
+    )
+    guard let renamedRecord = renamed.records.first else {
+      throw ScenarioExecutionError.invalidInput(
+        "saved_route_library.lifecycle.rename"
+      )
+    }
+    let exportedData = try SavedRouteLibraryEditor.exportData(
+      recordID: renamedRecord.id,
+      from: renamed
+    )
+    let removed = try SavedRouteLibraryEditor.removing(
+      recordID: renamedRecord.id,
+      from: renamed
+    )
+
+    adapterObservations["saved_route.lifecycle.import_origin"] =
+      .string(importedRecord.origin.rawValue)
+    adapterObservations[
+      "saved_route.lifecycle.import_evidence_state"
+    ] = .string(importedRecord.document.evidenceState.rawValue)
+    adapterObservations[
+      "saved_route.lifecycle.import_occurrence_ids"
+    ] = .strings(
+      importedRecord.document.routePlan.occurrences.map(\.id)
+    )
+    adapterObservations[
+      "saved_route.lifecycle.renamed_display_name"
+    ] = .string(renamedRecord.displayName)
+    adapterObservations[
+      "saved_route.lifecycle.rename_preserved_document"
+    ] = .bool(renamedRecord.document == importedRecord.document)
+    adapterObservations[
+      "saved_route.lifecycle.export_preserved_document"
+    ] = .bool(exportedData == sharedData)
+    adapterObservations[
+      "saved_route.lifecycle.remaining_record_ids"
+    ] = .strings(removed.records.map(\.id))
+    savedRouteLibrary = removed
   }
 
   private mutating func startRouteEditor(_ payload: [String: JSONValue]) throws {

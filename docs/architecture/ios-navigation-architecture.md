@@ -1357,6 +1357,13 @@ The first saved-route implementation follows that direction without adopting a
 UI object graph. `FileSavedRouteLibraryStore` atomically replaces one validated
 schema-1.0 library under Application Support. Every record contains a complete
 `SharedRouteDocument`; storage origin remains separate from its evidence state.
+The App's `SavedRouteLibraryModel` uses the pure
+`SavedRouteLibraryEditor` to validate current-schema JSON imports, assign
+`SHARED_IMPORT` provenance, rename local display metadata, export the exact
+shared document, or delete one stable record. It persists each complete result
+before publishing it to SwiftUI; failed I/O cannot expose an uncommitted
+library. Unsupported schemas are rejected rather than implicitly migrated.
+
 The App can reopen a record only after `SavedRouteReleaseMatcher` finds exactly
 one whole-RoutePlan-equal current foreground release. Reopening selects that
 release's parked `ReleasedRouteEditorAdapter`; it does not replay choices,

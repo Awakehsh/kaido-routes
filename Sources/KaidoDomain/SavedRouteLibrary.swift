@@ -190,6 +190,131 @@ public enum SavedRouteLibraryCodec {
   }
 }
 
+public enum SavedRouteLibraryMutationError:
+  Error, Equatable, Sendable
+{
+  case invalidDisplayName
+  case recordNotFound(String)
+
+  public var code: String {
+    switch self {
+    case .invalidDisplayName:
+      "SAVED_ROUTE_NAME_INVALID"
+    case .recordNotFound:
+      "SAVED_ROUTE_RECORD_UNAVAILABLE"
+    }
+  }
+}
+
+/// Pure saved-route lifecycle operations.
+///
+/// Import and export always cross the versioned SharedRouteDocument boundary.
+/// Rename changes metadata only. Remove targets one exact record identity.
+/// Every returned library is validated before the caller may persist it.
+public enum SavedRouteLibraryEditor {
+  public static func importing(
+    sharedRouteData: Data,
+    recordID: String,
+    displayName: String,
+    savedAt: String,
+    into library: SavedRouteLibraryDocument
+  ) throws -> SavedRouteLibraryDocument {
+    try SavedRouteLibraryCodec.validate(library)
+    let name = displayName.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    guard !name.isEmpty else {
+      throw SavedRouteLibraryMutationError.invalidDisplayName
+    }
+    let record = SavedRouteRecord(
+      id: recordID,
+      displayName: name,
+      savedAt: savedAt,
+      origin: .sharedImport,
+      document: try SharedRouteCodec.decode(sharedRouteData)
+    )
+    let candidate = SavedRouteLibraryDocument(
+      schemaVersion: library.schemaVersion,
+      records: [record] + library.records
+    )
+    try SavedRouteLibraryCodec.validate(candidate)
+    return candidate
+  }
+
+  public static func renaming(
+    recordID: String,
+    displayName: String,
+    in library: SavedRouteLibraryDocument
+  ) throws -> SavedRouteLibraryDocument {
+    try SavedRouteLibraryCodec.validate(library)
+    let name = displayName.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    guard !name.isEmpty else {
+      throw SavedRouteLibraryMutationError.invalidDisplayName
+    }
+    guard
+      let index = library.records.firstIndex(
+        where: { $0.id == recordID }
+      )
+    else {
+      throw SavedRouteLibraryMutationError.recordNotFound(recordID)
+    }
+    let current = library.records[index]
+    var records = library.records
+    records[index] = SavedRouteRecord(
+      id: current.id,
+      displayName: name,
+      savedAt: current.savedAt,
+      origin: current.origin,
+      document: current.document
+    )
+    let candidate = SavedRouteLibraryDocument(
+      schemaVersion: library.schemaVersion,
+      records: records
+    )
+    try SavedRouteLibraryCodec.validate(candidate)
+    return candidate
+  }
+
+  public static func removing(
+    recordID: String,
+    from library: SavedRouteLibraryDocument
+  ) throws -> SavedRouteLibraryDocument {
+    try SavedRouteLibraryCodec.validate(library)
+    guard
+      let index = library.records.firstIndex(
+        where: { $0.id == recordID }
+      )
+    else {
+      throw SavedRouteLibraryMutationError.recordNotFound(recordID)
+    }
+    var records = library.records
+    records.remove(at: index)
+    let candidate = SavedRouteLibraryDocument(
+      schemaVersion: library.schemaVersion,
+      records: records
+    )
+    try SavedRouteLibraryCodec.validate(candidate)
+    return candidate
+  }
+
+  public static func exportData(
+    recordID: String,
+    from library: SavedRouteLibraryDocument
+  ) throws -> Data {
+    try SavedRouteLibraryCodec.validate(library)
+    guard
+      let record = library.records.first(
+        where: { $0.id == recordID }
+      )
+    else {
+      throw SavedRouteLibraryMutationError.recordNotFound(recordID)
+    }
+    return try SharedRouteCodec.encode(record.document)
+  }
+}
+
 /// One current, independently validated product release candidate.
 ///
 /// Matching may use only full RoutePlan value equality. A plan ID, snapshot ID,

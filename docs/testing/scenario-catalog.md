@@ -82,6 +82,7 @@ should become scenarios when their layer is built.
 | KR-U16 | Process restoration retains forward route/prompt state but clears transient position, CarPlay, entry, and speech authority | P0 | Covered by KR-S03/KR-S10/KR-S16/KR-S19 plus L2/L3 |
 | KR-U17 | A released Route Atlas overlay preserves actor-owned progress, context-only topology, and repeated route occurrences | P0 | Seeded |
 | KR-U18 | A saved occurrence-based route reopens only through one whole-RoutePlan-equal current release | P0 | Seeded |
+| KR-U19 | Import, rename, export, and exact-record deletion preserve shared route intent without granting release authority | P0 | Seeded |
 
 ## Evidence and field verification
 

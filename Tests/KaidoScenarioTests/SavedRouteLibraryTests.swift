@@ -28,6 +28,118 @@ func savedRouteLibraryRoundTripPreservesOccurrences() throws {
     ])
 }
 
+@Test("Saved-route lifecycle preserves shared authority and provenance")
+func savedRouteLifecyclePreservesSharedDocument() throws {
+  let localRecord = makeSavedRouteRecord()
+  let original = SavedRouteLibraryDocument(
+    records: [localRecord]
+  )
+  let sharedData = try SavedRouteLibraryEditor.exportData(
+    recordID: localRecord.id,
+    from: original
+  )
+
+  let imported = try SavedRouteLibraryEditor.importing(
+    sharedRouteData: sharedData,
+    recordID: "test.saved-route.imported",
+    displayName: "  Imported loop  ",
+    savedAt: "2026-07-25T06:00:00+09:00",
+    into: original
+  )
+  let importedRecord = imported.records[0]
+  #expect(
+    imported.records.map(\.id) == [
+      "test.saved-route.imported",
+      localRecord.id,
+    ])
+  #expect(importedRecord.displayName == "Imported loop")
+  #expect(importedRecord.origin == .sharedImport)
+  #expect(importedRecord.document == localRecord.document)
+  #expect(
+    importedRecord.document.routePlan.occurrences.map(\.entityID) == [
+      "test.edge.loop",
+      "test.movement.turn",
+      "test.edge.loop",
+    ])
+
+  let renamed = try SavedRouteLibraryEditor.renaming(
+    recordID: importedRecord.id,
+    displayName: "  Renamed import  ",
+    in: imported
+  )
+  #expect(renamed.records[0].displayName == "Renamed import")
+  #expect(renamed.records[0].savedAt == importedRecord.savedAt)
+  #expect(renamed.records[0].origin == .sharedImport)
+  #expect(renamed.records[0].document == importedRecord.document)
+  #expect(
+    try SavedRouteLibraryEditor.exportData(
+      recordID: importedRecord.id,
+      from: renamed
+    ) == sharedData
+  )
+
+  let removed = try SavedRouteLibraryEditor.removing(
+    recordID: importedRecord.id,
+    from: renamed
+  )
+  #expect(removed == original)
+}
+
+@Test("Saved-route lifecycle fails closed without implicit migration")
+func savedRouteLifecycleRejectsInvalidMutation() throws {
+  let record = makeSavedRouteRecord()
+  let library = SavedRouteLibraryDocument(records: [record])
+
+  #expect(
+    throws: SavedRouteLibraryMutationError.invalidDisplayName
+  ) {
+    _ = try SavedRouteLibraryEditor.renaming(
+      recordID: record.id,
+      displayName: " ",
+      in: library
+    )
+  }
+  #expect(
+    throws:
+      SavedRouteLibraryMutationError
+      .recordNotFound("test.saved-route.unknown")
+  ) {
+    _ = try SavedRouteLibraryEditor.removing(
+      recordID: "test.saved-route.unknown",
+      from: library
+    )
+  }
+  #expect(
+    throws:
+      SavedRouteLibraryMutationError
+      .recordNotFound("test.saved-route.unknown")
+  ) {
+    _ = try SavedRouteLibraryEditor.exportData(
+      recordID: "test.saved-route.unknown",
+      from: library
+    )
+  }
+
+  let unsupported = SharedRouteDocument(
+    schemaVersion: "999",
+    evidenceState: record.document.evidenceState,
+    templateParameters: record.document.templateParameters,
+    routePlan: record.document.routePlan
+  )
+  let unsupportedData = try JSONEncoder().encode(unsupported)
+  #expect(
+    throws: SharedRouteCodecError.unsupportedSchemaVersion("999")
+  ) {
+    _ = try SavedRouteLibraryEditor.importing(
+      sharedRouteData: unsupportedData,
+      recordID: "test.saved-route.imported",
+      displayName: "Unsupported",
+      savedAt: "2026-07-25T06:00:00+09:00",
+      into: library
+    )
+  }
+}
+
 @Test("Saved-route library rejects metadata and embedded document drift")
 func savedRouteLibraryRejectsInvalidRecords() throws {
   let valid = makeSavedRouteRecord()

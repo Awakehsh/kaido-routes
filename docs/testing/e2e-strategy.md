@@ -464,6 +464,16 @@ only selects the release-owned parked editor with no automatic choice or
 compilation; the UI test saves a synthetic route, returns to the library, and
 keeps its open action disabled as `REVIEW REQUIRED`.
 
+KR-U19 adds the parked shared-route lifecycle without broadening authority. The
+portable runner exports one complete document, imports it under a fresh record
+with `SHARED_IMPORT`, renames only local metadata, re-exports byte-identical
+route intent, and deletes only the imported record while release selection
+remains unavailable. Package tests reject unknown schemas and missing
+identities; App model tests prove persist-before-publish behavior on every
+mutation. XCUITest exercises rename and confirmation-gated delete and exposes
+system JSON import/export controls. Physical Files-provider interaction and
+schema migration remain unproven and intentionally absent.
+
 KR-U16 adds package and L3 process-lifecycle evidence without inventing a
 portable Apple scene event. A schema-1.0 checkpoint round-trips deterministic
 coordinate-free state, fails on release identity or schema drift, clears partial

@@ -271,7 +271,10 @@ user must still submit every release-owned choice, compile the exact route,
 select the tariff profile, obtain current pre-drive evidence, and explicitly
 start navigation. A save or import cannot bypass those steps.
 
-The first App surface supports local save, listing, and exact-release reopening.
-Rename, delete, export, and shared-document import controls remain pending; the
-`SHARED_IMPORT` origin is already part of the storage contract so a later import
-adapter cannot erase provenance.
+The App surface supports local save, listing, rename, confirmation-gated delete,
+deterministic JSON export, validated JSON import, and exact-release reopening.
+Import decodes the complete shared document before adding a fresh local record
+with `SHARED_IMPORT` origin. Rename changes only local display metadata; export
+emits the unchanged shared document; delete targets one stable record ID. Every
+mutation persists before the visible library changes. Unsupported schemas and
+malformed route intent fail closed without an invented migration.

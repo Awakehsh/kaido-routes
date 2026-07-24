@@ -24,6 +24,12 @@ PRE_DRIVE_SCENARIO_PATH = (
     / "scenarios"
     / "kr-u04-pre-drive-review.json"
 )
+SAVED_ROUTE_LIFECYCLE_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-u19-saved-route-lifecycle.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -193,6 +199,72 @@ class ValidatePreDriveEvidenceTests(unittest.TestCase):
         self.assertTrue(
             any("requires given.inputs.pre_drive_session" in error for error in errors)
         )
+
+
+class ValidateSavedRouteLifecycleTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            SAVED_ROUTE_LIFECYCLE_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_lifecycle(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(SAVED_ROUTE_LIFECYCLE_SCENARIO_PATH)
+        validator.validate_saved_route_library(validation, scenario["given"])
+        validator.validate_saved_route_lifecycle_events(
+            validation,
+            scenario["given"],
+            scenario["when"],
+        )
+        return validation.errors
+
+    def test_exact_saved_route_lifecycle_is_valid(self) -> None:
+        self.assertEqual(self.validate_lifecycle(self.scenario), [])
+
+    def test_lifecycle_input_requires_one_event(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"] = [
+            event
+            for event in scenario["when"]
+            if event["type"] != "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED"
+        ]
+
+        errors = self.validate_lifecycle(scenario)
+
+        self.assertTrue(any("requires exactly one" in error for error in errors))
+
+    def test_lifecycle_event_requires_input(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        del scenario["given"]["inputs"]["saved_route_library"]["lifecycle"]
+
+        errors = self.validate_lifecycle(scenario)
+
+        self.assertTrue(
+            any(
+                "requires given.inputs.saved_route_library.lifecycle" in error
+                for error in errors
+            )
+        )
+
+    def test_lifecycle_event_requires_earlier_compile(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"].reverse()
+
+        errors = self.validate_lifecycle(scenario)
+
+        self.assertTrue(
+            any(
+                "requires an earlier ROUTE_COMPILE_REQUESTED" in error
+                for error in errors
+            )
+        )
+
+    def test_lifecycle_event_rejects_payload_authority(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][1]["payload"] = {"record_id": "test.override"}
+
+        errors = self.validate_lifecycle(scenario)
+
+        self.assertTrue(any("payload must be empty" in error for error in errors))
 
 
 if __name__ == "__main__":

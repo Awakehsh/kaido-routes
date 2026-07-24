@@ -79,6 +79,7 @@ SAVED_ROUTE_ORIGINS = {"AUTHORED_HERE", "SHARED_IMPORT"}
 SAVED_ROUTE_PLAN_RELATIONS = {"EXACT", "SNAPSHOT_DRIFT"}
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
+    "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED",
     "ROUTE_EDITOR_STARTED",
     "ROUTE_EDITOR_CHOICE_SELECTED",
     "ROUTE_EDITOR_CORRIDOR_MATCH_SUBMITTED",
@@ -575,6 +576,82 @@ def validate_saved_route_library(v: Validation, given: dict[str, Any]) -> None:
                     f"{candidate_context}.network_snapshot_id must differ "
                     "from given.route_plan"
                 )
+    lifecycle = value.get("lifecycle")
+    if lifecycle is not None:
+        lifecycle_context = f"{context}.lifecycle"
+        required_lifecycle = {
+            "imported_record_id",
+            "imported_display_name",
+            "imported_saved_at",
+            "renamed_display_name",
+        }
+        if v.require_keys(lifecycle, required_lifecycle, lifecycle_context):
+            for field in (
+                "imported_record_id",
+                "imported_display_name",
+                "renamed_display_name",
+            ):
+                if not isinstance(lifecycle[field], str) or not lifecycle[field].strip():
+                    v.add(f"{lifecycle_context}.{field} must be non-empty")
+            if not is_datetime(lifecycle["imported_saved_at"]):
+                v.add(f"{lifecycle_context}.imported_saved_at must be an ISO date-time")
+            if lifecycle["imported_record_id"] == value["saved_route_id"]:
+                v.add(
+                    f"{lifecycle_context}.imported_record_id must differ "
+                    "from saved_route_id"
+                )
+
+
+def validate_saved_route_lifecycle_events(
+    v: Validation,
+    given: dict[str, Any],
+    events: Any,
+) -> None:
+    inputs = given.get("inputs")
+    library = (
+        inputs.get("saved_route_library")
+        if isinstance(inputs, dict)
+        else None
+    )
+    lifecycle = library.get("lifecycle") if isinstance(library, dict) else None
+    lifecycle_events = (
+        [
+            (index, event)
+            for index, event in enumerate(events)
+            if isinstance(event, dict)
+            and event.get("type") == "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED"
+        ]
+        if isinstance(events, list)
+        else []
+    )
+    if lifecycle is None:
+        for index, _ in lifecycle_events:
+            v.add(
+                f"when[{index}] SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED "
+                "requires given.inputs.saved_route_library.lifecycle"
+            )
+        return
+    if len(lifecycle_events) != 1:
+        v.add(
+            "given.inputs.saved_route_library.lifecycle requires exactly one "
+            "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED event"
+        )
+    for index, event in lifecycle_events:
+        has_prior_compile = any(
+            isinstance(prior, dict)
+            and prior.get("type") == "ROUTE_COMPILE_REQUESTED"
+            for prior in events[:index]
+        )
+        if not has_prior_compile:
+            v.add(
+                f"when[{index}] SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED "
+                "requires an earlier ROUTE_COMPILE_REQUESTED event"
+            )
+        if event.get("payload") != {}:
+            v.add(
+                f"when[{index}] SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED "
+                "payload must be empty"
+            )
 
 
 def validate_guidance_anchors(v: Validation, given: dict[str, Any]) -> None:
@@ -2410,6 +2487,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_pre_drive_evidence(v, given)
         validate_saved_route_library(v, given)
+        validate_saved_route_lifecycle_events(v, given, scenario["when"])
         validate_guidance_anchors(v, given)
         validate_entrance_recommendation(v, given)
         validate_matcher_guidance_inputs(v, given)

@@ -68,6 +68,130 @@ final class SavedRouteLibraryModelTests: XCTestCase {
     )
   }
 
+  func testImportRenameExportAndDeleteRemainAtomic() throws {
+    let sourceDocument = SharedRouteDocument(
+      evidenceState: .staleReviewRequired,
+      templateParameters: ["lap_count": "2"],
+      routePlan: makeRepeatedSavedRoutePlan()
+    )
+    let sourceData = try SharedRouteCodec.encode(sourceDocument)
+    let store = MemorySavedRouteLibraryStore()
+    let model = SavedRouteLibraryModel(
+      store: store,
+      foregroundEntries: [],
+      recordIDProvider: { "test.saved.imported" },
+      savedAtProvider: { "2026-07-25T06:30:00+09:00" }
+    )
+
+    model.importSharedRoute(
+      sourceData,
+      suggestedName: "  Shared night loop.json  "
+    )
+
+    let imported = try XCTUnwrap(model.records.first)
+    XCTAssertEqual(imported.id, "test.saved.imported")
+    XCTAssertEqual(imported.displayName, "Shared night loop.json")
+    XCTAssertEqual(imported.origin, .sharedImport)
+    XCTAssertEqual(imported.document, sourceDocument)
+    XCTAssertEqual(store.library?.records, [imported])
+    XCTAssertEqual(model.lastSavedRecordID, imported.id)
+    XCTAssertNil(model.lastErrorCode)
+
+    model.rename(
+      recordID: imported.id,
+      displayName: "  Renamed loop  "
+    )
+
+    let renamed = try XCTUnwrap(model.records.first)
+    XCTAssertEqual(renamed.displayName, "Renamed loop")
+    XCTAssertEqual(renamed.savedAt, imported.savedAt)
+    XCTAssertEqual(renamed.origin, imported.origin)
+    XCTAssertEqual(renamed.document, imported.document)
+    XCTAssertNil(model.lastSavedRecordID)
+    XCTAssertEqual(
+      model.exportSharedRoute(recordID: imported.id),
+      sourceData
+    )
+    XCTAssertNil(model.lastErrorCode)
+
+    model.delete(recordID: imported.id)
+
+    XCTAssertTrue(model.records.isEmpty)
+    XCTAssertEqual(store.library?.records, [])
+    XCTAssertNil(model.lastErrorCode)
+  }
+
+  func testLifecycleWriteFailureKeepsPublishedLibraryUnchanged()
+    throws
+  {
+    let record = SavedRouteRecord(
+      id: "test.saved.existing",
+      displayName: "Existing",
+      savedAt: "2026-07-25T06:30:00+09:00",
+      origin: .authoredHere,
+      document: SharedRouteDocument(
+        evidenceState: .communityCandidate,
+        routePlan: makeRepeatedSavedRoutePlan()
+      )
+    )
+    let library = SavedRouteLibraryDocument(records: [record])
+    let store = MemorySavedRouteLibraryStore(library: library)
+    let model = SavedRouteLibraryModel(
+      store: store,
+      foregroundEntries: []
+    )
+    store.saveError = SavedRouteLibraryStoreError.writeFailed
+
+    model.rename(
+      recordID: record.id,
+      displayName: "Must not publish"
+    )
+
+    XCTAssertEqual(model.records, [record])
+    XCTAssertEqual(store.library, library)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      SavedRouteLibraryStoreError.writeFailed.code
+    )
+
+    model.delete(recordID: record.id)
+
+    XCTAssertEqual(model.records, [record])
+    XCTAssertEqual(store.library, library)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      SavedRouteLibraryStoreError.writeFailed.code
+    )
+  }
+
+  func testInvalidImportAndUnknownRecordFailClosed() {
+    let store = MemorySavedRouteLibraryStore()
+    let model = SavedRouteLibraryModel(
+      store: store,
+      foregroundEntries: []
+    )
+
+    model.importSharedRoute(
+      Data("{\"schema_version\":\"999\"}".utf8),
+      suggestedName: "Invalid"
+    )
+
+    XCTAssertTrue(model.records.isEmpty)
+    XCTAssertNil(store.library)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      SavedRouteLibraryModelError.importFailed.rawValue
+    )
+
+    XCTAssertNil(
+      model.exportSharedRoute(recordID: "test.saved.unknown")
+    )
+    XCTAssertEqual(
+      model.lastErrorCode,
+      SavedRouteLibraryModelError.recordUnavailable.rawValue
+    )
+  }
+
   func testExactSavedRouteReopensReleaseOwnedEditorWithoutCompiling()
     throws
   {

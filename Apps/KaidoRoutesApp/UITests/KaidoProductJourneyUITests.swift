@@ -171,7 +171,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
-  func testSavedRoutePersistsAndReturnsToLibraryWithoutAuthority() {
+  func testSavedRouteLifecycleRemainsLocalAndReleaseGated() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -225,6 +225,56 @@ final class KaidoProductJourneyUITests: XCTestCase {
     screenshot.name = "Saved route remains release-gated"
     screenshot.lifetime = .keepAlways
     add(screenshot)
+
+    XCTAssertTrue(
+      element("saved-route-import", in: app).exists
+    )
+    XCTAssertTrue(app.buttons["Export"].exists)
+    let rename = app.buttons["Rename"]
+    XCTAssertTrue(rename.exists)
+    rename.tap()
+
+    let renameAlert = app.alerts["Rename route"]
+    XCTAssertTrue(renameAlert.waitForExistence(timeout: 2))
+    let renameField = renameAlert.textFields.firstMatch
+    XCTAssertTrue(renameField.exists)
+    renameField.tap()
+    renameField.typeText(
+      String(
+        repeating: XCUIKeyboardKey.delete.rawValue,
+        count: 32
+      )
+    )
+    renameField.typeText("Renamed night loop")
+    renameAlert.buttons["Save"].tap()
+
+    let renamed = app.staticTexts["Renamed night loop"]
+    XCTAssertTrue(renamed.waitForExistence(timeout: 2))
+    XCTAssertFalse(app.staticTexts["Night loop"].exists)
+    XCTAssertTrue(app.staticTexts["REVIEW REQUIRED"].exists)
+
+    let renamedScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    renamedScreenshot.name =
+      "Renamed route preserves release gate"
+    renamedScreenshot.lifetime = .keepAlways
+    add(renamedScreenshot)
+
+    app.buttons["Delete"].tap()
+    let confirmation = app.sheets.firstMatch
+    XCTAssertTrue(confirmation.waitForExistence(timeout: 2))
+    confirmation.buttons["Delete"].tap()
+
+    XCTAssertTrue(
+      element("saved-route-library-empty", in: app)
+        .waitForExistence(timeout: 2)
+    )
+    XCTAssertFalse(renamed.exists)
+    XCTAssertTrue(
+      (library.value as? String)?.hasPrefix("0 RECORDS")
+        == true
+    )
   }
 
   private func element(

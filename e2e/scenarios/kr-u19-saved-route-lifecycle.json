@@ -1,0 +1,170 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U19",
+  "title": "Shared-route lifecycle preserves intent without authority",
+  "layer": "IPHONE_UI",
+  "tags": ["saved-route", "import", "export", "rename", "delete"],
+  "purpose": "Import, rename, export, and remove one complete shared route while preserving its evidence, snapshot, repeated occurrences, and fail-closed release state.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This proves deterministic lifecycle semantics and the system-file boundary only.",
+      "It does not prove a Files app provider, product release, migration, or navigation authority on physical hardware."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.saved-route-lifecycle-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-25T06:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.saved-route-lifecycle",
+      "network_snapshot_id": "test.snapshot.saved-route-lifecycle-v1",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "STRICT",
+      "actual_distance_km": 19.2,
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.lifecycle-loop-1",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.lifecycle-loop",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "test.occurrence.lifecycle-turn",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.lifecycle-turn",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "test.occurrence.lifecycle-loop-2",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.lifecycle-loop",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "saved_route_library": {
+        "schema_version": "1.0",
+        "saved_route_id": "test.saved-route.lifecycle-source",
+        "display_name": "Lifecycle source",
+        "saved_at": "2026-07-25T06:10:00+09:00",
+        "origin": "AUTHORED_HERE",
+        "evidence_state": "STALE_REVIEW_REQUIRED",
+        "template_parameters": {
+          "lap_count": "2"
+        },
+        "release_candidates": [],
+        "lifecycle": {
+          "imported_record_id": "test.saved-route.lifecycle-import",
+          "imported_display_name": "Imported lifecycle route",
+          "imported_saved_at": "2026-07-25T06:20:00+09:00",
+          "renamed_display_name": "Renamed lifecycle route"
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "construct-library",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    },
+    {
+      "id": "run-lifecycle",
+      "at_ms": 1,
+      "type": "SAVED_ROUTE_LIBRARY_LIFECYCLE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "import-provenance-is-explicit",
+      "after": "run-lifecycle",
+      "category": "EVIDENCE",
+      "subject": "saved_route.lifecycle.import_origin",
+      "matcher": "EQUALS",
+      "expected": "SHARED_IMPORT",
+      "rationale": "An external document cannot be relabelled as authored on this device."
+    },
+    {
+      "id": "import-does-not-upgrade-evidence",
+      "after": "run-lifecycle",
+      "category": "EVIDENCE",
+      "subject": "saved_route.lifecycle.import_evidence_state",
+      "matcher": "EQUALS",
+      "expected": "STALE_REVIEW_REQUIRED",
+      "rationale": "Import preserves the document evidence state instead of promoting it."
+    },
+    {
+      "id": "import-keeps-repeated-occurrences",
+      "after": "run-lifecycle",
+      "category": "DOMAIN",
+      "subject": "saved_route.lifecycle.import_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.lifecycle-loop-1",
+        "test.occurrence.lifecycle-turn",
+        "test.occurrence.lifecycle-loop-2"
+      ],
+      "rationale": "The shared file boundary preserves every occurrence in authored order."
+    },
+    {
+      "id": "rename-changes-display-name",
+      "after": "run-lifecycle",
+      "category": "UI",
+      "subject": "saved_route.lifecycle.renamed_display_name",
+      "matcher": "EQUALS",
+      "expected": "Renamed lifecycle route",
+      "rationale": "The user can rename the local library record."
+    },
+    {
+      "id": "rename-preserves-shared-document",
+      "after": "run-lifecycle",
+      "category": "SAFETY",
+      "subject": "saved_route.lifecycle.rename_preserved_document",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "Rename cannot mutate RoutePlan, snapshot, evidence, or occurrences."
+    },
+    {
+      "id": "export-preserves-shared-document",
+      "after": "run-lifecycle",
+      "category": "SAFETY",
+      "subject": "saved_route.lifecycle.export_preserved_document",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "Export emits the same validated shared document after metadata changes."
+    },
+    {
+      "id": "delete-removes-only-imported-record",
+      "after": "run-lifecycle",
+      "category": "DOMAIN",
+      "subject": "saved_route.lifecycle.remaining_record_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.saved-route.lifecycle-source"],
+      "rationale": "Removal targets one exact local record identity."
+    },
+    {
+      "id": "lifecycle-does-not-create-release-authority",
+      "after": "run-lifecycle",
+      "category": "SAFETY",
+      "subject": "saved_route.release_selection.status",
+      "matcher": "EQUALS",
+      "expected": "UNAVAILABLE",
+      "rationale": "Import, rename, export, and delete cannot mint a current product release."
+    }
+  ]
+}

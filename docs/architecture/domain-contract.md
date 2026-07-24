@@ -155,6 +155,15 @@ storage origin. The codec validates every embedded shared document and unique
 record identity before an atomic write. Library metadata cannot upgrade
 evidence, rewrite the snapshot, or reorder occurrences.
 
+`SavedRouteLibraryEditor` is a pure value boundary for parked lifecycle
+operations. Import first decodes a complete current-schema
+`SharedRouteDocument`, assigns a fresh record identity, and records
+`SHARED_IMPORT`; rename replaces only the display name; export returns the
+deterministic shared-document bytes; delete removes one exact record ID. Every
+result is revalidated. Unknown schemas, duplicate IDs, missing records, and
+empty names fail closed, and no operation performs snapshot migration or mints
+release authority.
+
 `SavedRouteReleaseMatcher` is selection-only. It compares the complete saved
 `RoutePlan` value against independently validated current release candidates.
 Zero matches are unavailable, multiple matches are ambiguous, and only one

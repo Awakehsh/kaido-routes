@@ -17,6 +17,8 @@ The current app deliberately exposes only:
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
+- an independent interface-language and guidance-voice text preview that keeps
+  the Japanese sign target and route shield fixed;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
@@ -79,6 +81,21 @@ from route distance and never presents
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open. The tracked fixture
 is synthetic, and the navigation control remains locked because the app has no
 released `NavigationReleaseBundle`.
+
+## Guidance language preview
+
+The KR-U05/KR-U11 panel projects one synthetic `GuidanceFrame` through
+`NavigationPresentationProjector`. Japanese, Simplified Chinese, and English
+buttons select the navigation explanation, while a separate set selects the
+reviewed spoken text. Changing one does not mutate the other. Every combination
+keeps the exact Japanese sign target and route shield visible.
+
+This is a text-only adapter proof. The model passes no
+`GuidancePromptEmission`, rejects any projection that would claim
+`voice.shouldSpeak`, and labels the preview `AUDIO NOT CONNECTED`. A missing
+locale or mismatched preserved Japanese sign fails initialization. It does not
+localize the complete internal app, verify installed voices or pronunciation,
+or implement audio focus and lifecycle.
 
 ## Internal location calibration
 
@@ -169,7 +186,9 @@ explicit-exit compilation with reviewed actual-distance resolution, and
 moving-time lockout. `PreDriveReviewModelTests` proves exact RoutePlan identity,
 unique active-tariff selection, repeated-occurrence distance, independent
 tariff distance, conservative passage presentation, undo invalidation, and
-fail-closed quote evidence.
+fail-closed quote evidence. `GuidanceLanguagePreviewModelTests` proves
+independent interface/voice changes, three-locale Japanese-sign and route-shield
+preservation, no speech authority, and fail-closed localized-content drift.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
 coordinate-free non-release reporting. The platform-light Swift package tests

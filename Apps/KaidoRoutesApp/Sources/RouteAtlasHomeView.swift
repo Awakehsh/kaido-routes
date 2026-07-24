@@ -24,6 +24,10 @@ struct RouteAtlasHomeView: View {
 
           PreDriveReviewPanel(model: model.preDriveReview)
 
+          GuidanceLanguagePreviewPanel(
+            model: model.guidanceLanguagePreview
+          )
+
           InternalLocationCalibrationPanel(model: model.locationCalibration)
 
           if model.atlasMode == .k7Evidence {

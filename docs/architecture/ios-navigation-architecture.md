@@ -495,6 +495,12 @@ That is a development fact, not yet the minimum deployment target.
   projection and cannot derive one distance from the other. The internal
   synthetic review keeps navigation start locked until a coherent released
   bundle exists.
+- A synthetic language-preview adapter independently selects the interface and
+  guidance-voice locales from one validated `GuidanceFrame`. It renders the
+  Japanese sign target and route shield unchanged beside localized explanatory
+  text. It supplies no prompt emission and therefore has no speech authority.
+  KR-U05 and KR-U11 cover this adapter boundary; complete app localization,
+  pronunciation review, and the audio lifecycle remain pending.
 
 ### CarPlay
 

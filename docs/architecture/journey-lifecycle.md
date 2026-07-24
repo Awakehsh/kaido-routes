@@ -262,6 +262,15 @@ English:  In 800 meters, at Tatsumi JCT, keep left for Route B, Bayshore Route, 
 Sign line shown in every locale: B 湾岸線・横浜方面
 ```
 
+The internal iPhone preview now executes this selection boundary without
+pretending that audio is implemented. Its interface and voice controls
+independently reproject one synthetic `GuidanceFrame`; the Japanese sign target
+and route shield remain unchanged. Missing locale content or a localized bundle
+whose preserved sign differs from the frame fails closed. The model supplies no
+prompt emission, so the voice result is text-only and cannot speak. This is
+KR-U05/KR-U11 adapter evidence, not complete app localization, voice
+installation, pronunciation, or audio-lifecycle evidence.
+
 ```text
 LocalizedGuidanceBundle
   locale

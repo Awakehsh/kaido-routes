@@ -233,6 +233,15 @@ accessibility-visible review. App tests verify that actual distance changes with
 a duplicated lap while tariff distance does not, unconfirmed passage is not
 positive-open, invalid evidence fails closed, and undo removes the review.
 
+The internal iPhone language preview adds local L3 adapter evidence for KR-U05
+and KR-U11. It projects one synthetic `GuidanceFrame` through
+`KaidoPresentation`, lets interface and guidance-voice locales vary
+independently, and verifies that Japanese, Simplified Chinese, and English all
+retain the same Japanese sign target and route shield. It deliberately supplies
+no one-shot prompt emission, so `voice.should_speak` remains false and the panel
+cannot play audio. This does not verify full-app localization, pronunciation,
+the audio lifecycle, or released road guidance.
+
 KR-U13 reuses `ROUTE_COMPILE_REQUESTED` to cross the direction-first entrance
 recommendation into an iPhone-intended explanation contract. The runner exposes
 the exact target carriageway, legal join occurrence, ETA, distance rank,

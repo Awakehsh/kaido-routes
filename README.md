@@ -17,8 +17,10 @@ pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
 links the local domain, routing, navigation, and presentation modules and renders
 the tracked full-network and K7 Route Atlas assets. It presents a synthetic
 directional-entrance recommendation, parked route authoring, and RoutePlan-bound
-pre-drive review without calling live location or surface routing. It also
-exposes an opt-in,
+pre-drive review without calling live location or surface routing. A separate
+synthetic guidance panel lets interface and voice locales vary independently
+while retaining one Japanese sign target and route shield; it previews text only
+and has no audio authority. The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
 emits only a coordinate-free non-release report, and rejects simulated locations
@@ -187,6 +189,16 @@ toll evidence, and passage evidence visibly separate. A repeated lap increases
 actual distance without changing the independent tariff record. The fixture is
 synthetic, realtime passage remains unconfirmed, and navigation start stays
 locked because no released navigation bundle exists.
+
+The internal iPhone shell now also binds KR-U05 and KR-U11 through a synthetic
+guidance-language preview. Japanese, Simplified Chinese, and English interface
+choices select only reviewed display content, while the voice locale selects its
+own reviewed spoken text. The Japanese sign target and route shield remain
+unchanged for every combination. A missing locale or translated replacement for
+the Japanese sign fails projection. The preview deliberately supplies no
+`GuidancePromptEmission`, labels audio as unconnected, and cannot speak; it is
+not full-app localization, pronunciation evidence, or an audio-lifecycle
+implementation.
 
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts

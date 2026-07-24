@@ -99,6 +99,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let syntheticProductRuntime: SyntheticProductRuntimeModel
   let locationCalibration: InternalLocationCalibrationModel
 
+  private let guidanceVoicePreferenceStore: any GuidanceVoicePreferenceStoring
   private var languageSettingsSubscription: AnyCancellable?
 
   init() {
@@ -116,6 +117,8 @@ final class KaidoRoutesAppModel: ObservableObject {
       self.languageSettings = languageSettings
       let guidanceVoicePreferenceStore =
         UserDefaultsGuidanceVoicePreferenceStore()
+      self.guidanceVoicePreferenceStore =
+        guidanceVoicePreferenceStore
       guidanceVoiceSetup = GuidanceVoiceSetupModel(
         guidanceLocale: languageSettings.guidanceVoiceLocale,
         preferenceStore: guidanceVoicePreferenceStore,
@@ -155,5 +158,28 @@ final class KaidoRoutesAppModel: ObservableObject {
 
   func attribution(for mode: RouteAtlasMode) -> RouteAtlasAttribution {
     routeAtlasAttributions.attribution(for: mode)
+  }
+
+  func makeForegroundNavigationRuntime(
+    for entry: BundledProductReleaseEntry
+  ) throws -> ProductNavigationRuntimeModel {
+    try ProductNavigationRuntimeModel(
+      releasedEntry: entry,
+      speechOutput: AVSpeechGuidanceOutput(
+        preferredVoiceIdentifierProvider: {
+          [guidanceVoicePreferenceStore] languageCode in
+          guidanceVoicePreferenceStore.identifier(for: languageCode)
+        }
+      ),
+      languageSelectionProvider: {
+        [languageSettings] in
+        NavigationLanguageSelection(
+          interfaceLocale: languageSettings.interfaceLocale,
+          guidanceVoiceLocale: languageSettings.guidanceVoiceLocale
+        )
+      },
+      checkpointStore:
+        FileNavigationSessionCheckpointStore.applicationSupport()
+    )
   }
 }

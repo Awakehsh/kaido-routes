@@ -1,3 +1,5 @@
+import KaidoDomain
+import KaidoPresentation
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -88,4 +90,125 @@ final class KaidoProductJourneyModelTests: XCTestCase {
       .routeReleaseAuthorityUnavailable
     )
   }
+
+  func testExactSelectedReleaseCreatesUserStartedRuntimeAndEndsCleanly()
+    async throws
+  {
+    let composition = KaidoRoutesAppModel()
+    let entry = try makeReleasedProductTestEntry()
+    let model = KaidoProductJourneyModel(
+      composition: composition,
+      productReleaseSelectionProvider: { _ in
+        .selected(entry)
+      },
+      navigationRuntimeFactory: {
+        try ProductNavigationRuntimeModel(
+          releasedEntry: $0,
+          languageSelectionProvider: {
+            NavigationLanguageSelection(
+              interfaceLocale: .simplifiedChinese,
+              guidanceVoiceLocale: .japanese
+            )
+          }
+        )
+      }
+    )
+    composition.routeEditor.select(
+      choiceID: "preview.synthetic.choice.early-exit"
+    )
+    composition.routeEditor.compile()
+    model.go(to: .review)
+
+    XCTAssertTrue(model.canStartNavigation)
+    XCTAssertNil(model.navigationBlocker)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .navigation)
+    XCTAssertNil(model.lastBlocker)
+    let runtime = try XCTUnwrap(model.navigationRuntime)
+    XCTAssertTrue(runtime.isRealRoadAuthority)
+    await runtime.activate()
+    XCTAssertEqual(runtime.activation, .ready)
+
+    await model.endNavigation()
+
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertNil(model.navigationRuntime)
+    XCTAssertNil(model.lastBlocker)
+  }
+
+  func testRuntimeConstructionFailureKeepsReviewFailClosed() throws {
+    let composition = KaidoRoutesAppModel()
+    let entry = try makeReleasedProductTestEntry()
+    let model = KaidoProductJourneyModel(
+      composition: composition,
+      productReleaseSelectionProvider: { _ in
+        .selected(entry)
+      },
+      navigationRuntimeFactory: { _ in
+        throw JourneyRuntimeTestError.constructionFailed
+      }
+    )
+    composition.routeEditor.select(
+      choiceID: "preview.synthetic.choice.early-exit"
+    )
+    composition.routeEditor.compile()
+    model.go(to: .review)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertNil(model.navigationRuntime)
+    XCTAssertEqual(
+      model.lastBlocker,
+      .navigationRuntimeUnavailable
+    )
+  }
+
+  func testRouteInvalidationTerminatesAnActiveReleasedRuntime()
+    async throws
+  {
+    let composition = KaidoRoutesAppModel()
+    let entry = try makeReleasedProductTestEntry()
+    let model = KaidoProductJourneyModel(
+      composition: composition,
+      productReleaseSelectionProvider: { _ in
+        .selected(entry)
+      },
+      navigationRuntimeFactory: {
+        try ProductNavigationRuntimeModel(
+          releasedEntry: $0,
+          languageSelectionProvider: {
+            NavigationLanguageSelection(
+              interfaceLocale: .simplifiedChinese,
+              guidanceVoiceLocale: .japanese
+            )
+          }
+        )
+      }
+    )
+    composition.routeEditor.select(
+      choiceID: "preview.synthetic.choice.early-exit"
+    )
+    composition.routeEditor.compile()
+    model.go(to: .review)
+    model.requestNavigationStart()
+    let runtime = try XCTUnwrap(model.navigationRuntime)
+    await runtime.activate()
+
+    composition.routeEditor.undo()
+
+    for _ in 0..<20 where model.navigationRuntime != nil {
+      await Task.yield()
+    }
+    XCTAssertEqual(model.stage, .authoring)
+    XCTAssertEqual(model.lastBlocker, .routeReviewNotReady)
+    XCTAssertNil(model.navigationRuntime)
+    XCTAssertEqual(runtime.activation, .ended)
+  }
+}
+
+private enum JourneyRuntimeTestError: Error {
+  case constructionFailed
 }

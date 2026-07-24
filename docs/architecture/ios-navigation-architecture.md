@@ -536,10 +536,15 @@ construction.
 The default product journey queries only foreground releases by exact
 `RoutePlan` equality. Zero matches remain unavailable, and multiple matches
 remain ambiguous even when both artifacts independently validate. One exact
-match is necessary but not sufficient: the app still requires the separate
-user-started navigation runtime composition before enabling the navigation
-stage. The current build intentionally carries zero foreground releases and one
-synthetic demo. It never substitutes that demo for a user route.
+match enables only an explicit user-start action. That action constructs
+`ProductNavigationRuntimeModel` from the selected entry, reuses the
+codec-minted live-input authority, and enters the navigation stage without
+starting Core Location. A second explicit action starts foreground location
+only after actor activation and When In Use authorization. Runtime construction
+failure stays in pre-drive review; ending navigation stops input and speech,
+removes the active checkpoint, and returns to review. The current build
+intentionally carries zero foreground releases and one synthetic demo, so this
+path remains dormant and never substitutes that demo for a user route.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is

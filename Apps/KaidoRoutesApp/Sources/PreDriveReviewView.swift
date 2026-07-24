@@ -3,6 +3,15 @@ import SwiftUI
 
 struct PreDriveReviewPanel: View {
   @ObservedObject var model: PreDriveReviewModel
+  let navigationStartAvailable: Bool
+
+  init(
+    model: PreDriveReviewModel,
+    navigationStartAvailable: Bool = false
+  ) {
+    self.model = model
+    self.navigationStartAvailable = navigationStartAvailable
+  }
 
   @ViewBuilder
   var body: some View {
@@ -20,7 +29,7 @@ struct PreDriveReviewPanel: View {
       distanceLedger(snapshot)
       tollEvidence(snapshot)
       passageEvidence(snapshot, style: passage)
-      navigationGate(snapshot)
+      navigationGate
     }
     .padding(16)
     .background(KaidoTheme.instrument)
@@ -179,26 +188,47 @@ struct PreDriveReviewPanel: View {
     .accessibilityLabel("\(style.primary)；\(style.secondary)")
   }
 
-  private func navigationGate(_ snapshot: PreDriveReviewSnapshot) -> some View {
-    Button {
-    } label: {
-      HStack {
-        Image(systemName: "lock.fill")
-        Text("导航发布包尚未具备")
-        Spacer()
-        Text(snapshot.navigationStartAllowed ? "READY" : "BLOCKED")
-          .font(.system(size: 9, weight: .black, design: .monospaced))
-      }
-      .font(.system(size: 13, weight: .bold))
-      .foregroundStyle(KaidoTheme.muted)
-      .padding(.horizontal, 13)
-      .frame(height: 44)
-      .background(KaidoTheme.steel.opacity(0.34))
-      .clipShape(RoundedRectangle(cornerRadius: 11))
+  private var navigationGate: some View {
+    HStack {
+      Image(
+        systemName:
+          navigationStartAvailable
+          ? "key.horizontal.fill"
+          : "lock.fill"
+      )
+      Text(
+        navigationStartAvailable
+          ? "联合发布包已绑定"
+          : "导航发布包尚未具备"
+      )
+      Spacer()
+      Text(navigationStartAvailable ? "READY" : "BLOCKED")
+        .font(.system(size: 9, weight: .black, design: .monospaced))
     }
-    .buttonStyle(.plain)
-    .disabled(!snapshot.navigationStartAllowed)
-    .accessibilityLabel("导航发布包尚未具备，无法开始导航")
+    .font(.system(size: 13, weight: .bold))
+    .foregroundStyle(
+      navigationStartAvailable
+        ? KaidoTheme.positionCyan
+        : KaidoTheme.muted
+    )
+    .padding(.horizontal, 13)
+    .frame(height: 44)
+    .background(
+      navigationStartAvailable
+        ? KaidoTheme.positionCyan.opacity(0.1)
+        : KaidoTheme.steel.opacity(0.34)
+    )
+    .clipShape(RoundedRectangle(cornerRadius: 11))
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(
+      navigationStartAvailable
+        ? "联合发布包已绑定，可以由用户开始导航"
+        : "导航发布包尚未具备，无法开始导航"
+    )
+    .accessibilityIdentifier("pre-drive-navigation-gate")
+    .accessibilityValue(
+      navigationStartAvailable ? "READY" : "BLOCKED"
+    )
   }
 
   private func blocked(_ errorCode: String) -> some View {

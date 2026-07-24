@@ -63,7 +63,7 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_KEY_CFBundleDisplayName: Kaido Routes
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.navigation
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Kaido Routes uses location only for explicit internal route-matching calibration and reviewed-route progress.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Kaido Routes uses your location only after you explicitly start reviewed-route navigation or an internal calibration run.
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait

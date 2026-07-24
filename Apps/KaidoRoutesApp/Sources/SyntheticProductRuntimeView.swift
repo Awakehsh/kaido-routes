@@ -418,6 +418,8 @@ struct SyntheticProductRuntimePanel: View {
       KaidoTheme.signalAmber
     case .ready:
       KaidoTheme.positionCyan
+    case .ended:
+      KaidoTheme.muted
     case .failed:
       KaidoTheme.evidenceCoral
     }
@@ -524,7 +526,7 @@ struct SyntheticProductRuntimePanel: View {
   }
 
   private func handleScenePhase(
-    _ phase: SyntheticProductRuntimeScenePhase
+    _ phase: ProductNavigationRuntimeScenePhase
   ) async {
     switch phase {
     case .active:

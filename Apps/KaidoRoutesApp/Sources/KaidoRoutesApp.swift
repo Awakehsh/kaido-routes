@@ -110,7 +110,7 @@ private struct KR_U09AccessibilityPreviewHost: View {
 }
 
 extension ScenePhase {
-  var productRuntimePhase: SyntheticProductRuntimeScenePhase {
+  var productRuntimePhase: ProductNavigationRuntimeScenePhase {
     switch self {
     case .active:
       .active

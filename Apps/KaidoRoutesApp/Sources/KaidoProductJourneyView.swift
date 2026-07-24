@@ -27,7 +27,9 @@ struct KaidoProductJourneyView: View {
       .accessibilityIdentifier("product-journey-scroll")
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
-      actionDock
+      if model.stage != .navigation {
+        actionDock
+      }
     }
     .preferredColorScheme(.dark)
   }
@@ -129,7 +131,7 @@ struct KaidoProductJourneyView: View {
       reviewStage
         .transition(stageTransition)
     case .navigation:
-      navigationUnavailable
+      navigationStage
         .transition(stageTransition)
     }
   }
@@ -206,36 +208,64 @@ struct KaidoProductJourneyView: View {
         detail: "实际规划距离与计费距离分开；未确认实时状态不会显示为畅通。"
       )
 
-      PreDriveReviewPanel(model: model.composition.preDriveReview)
+      PreDriveReviewPanel(
+        model: model.composition.preDriveReview,
+        navigationStartAvailable: model.canStartNavigation
+      )
 
       GuidanceVoiceSetupPanel(
         model: model.composition.guidanceVoiceSetup,
         isParked: model.composition.safety.isParkedInteractionContext
       )
 
-      ReviewBoundaryCard(
-        symbol: "lock.shield.fill",
-        title: "真实导航仍被发布门阻止",
-        detail:
-          "这条演示路线没有 RELEASED_ROAD 权限、前台实时输入令牌和现场资格证据。",
-        code: model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED",
-        color: KaidoTheme.evidenceCoral
-      )
+      Group {
+        if model.canStartNavigation {
+          ReviewBoundaryCard(
+            symbol: "key.horizontal.fill",
+            title: "发布身份已绑定，等待用户启动",
+            detail:
+              "下一步只从这份联合发布包创建 actor；实时定位仍需进入导航页后单独启动。",
+            code: "RELEASE KEY · READY",
+            color: KaidoTheme.positionCyan
+          )
+        } else {
+          ReviewBoundaryCard(
+            symbol: "lock.shield.fill",
+            title: "真实导航仍被发布门阻止",
+            detail:
+              "这条演示路线没有 RELEASED_ROAD 权限、前台实时输入令牌和现场资格证据。",
+            code: model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED",
+            color: KaidoTheme.evidenceCoral
+          )
+        }
+      }
       .accessibilityIdentifier("product-journey-navigation-blocker")
       .accessibilityValue(
-        model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED"
+        model.canStartNavigation
+          ? "RELEASE_KEY_READY"
+          : model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED"
       )
     }
   }
 
-  private var navigationUnavailable: some View {
-    ReviewBoundaryCard(
-      symbol: "exclamationmark.shield.fill",
-      title: "导航运行时不可用",
-      detail: "没有真实联合发布包时，App 不会用合成 actor trace 代替用户导航。",
-      code: KaidoProductJourneyBlocker.navigationRuntimeUnavailable.rawValue,
-      color: KaidoTheme.evidenceCoral
-    )
+  @ViewBuilder
+  private var navigationStage: some View {
+    if let navigationRuntime = model.navigationRuntime {
+      ReleasedProductNavigationPanel(
+        model: navigationRuntime,
+        endNavigation: {
+          await model.endNavigation()
+        }
+      )
+    } else {
+      ReviewBoundaryCard(
+        symbol: "exclamationmark.shield.fill",
+        title: "导航运行时不可用",
+        detail: "缺少当前联合发布包的 actor，导航页保持关闭。",
+        code: KaidoProductJourneyBlocker.navigationRuntimeUnavailable.rawValue,
+        color: KaidoTheme.evidenceCoral
+      )
+    }
   }
 
   private var atlasModePicker: some View {
@@ -389,7 +419,7 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "进入行前确认"
     case .review:
-      "导航尚未发布"
+      model.canStartNavigation ? "开始路线导航" : "导航尚未发布"
     case .navigation:
       "导航运行中"
     }
@@ -402,7 +432,7 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "checklist.checked"
     case .review:
-      "lock.fill"
+      model.canStartNavigation ? "key.horizontal.fill" : "lock.fill"
     case .navigation:
       "location.fill"
     }
@@ -415,7 +445,7 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "REVIEW"
     case .review:
-      "BLOCKED"
+      model.canStartNavigation ? "START" : "BLOCKED"
     case .navigation:
       "ACTIVE"
     }
@@ -430,7 +460,9 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "路线已编译，可以核对距离、费用与通行证据。"
     case .review:
-      "需要真实联合发布包和现场资格证据后才能开始导航。"
+      model.canStartNavigation
+        ? "发布包已绑定；启动 actor 后仍需单独开启前台定位。"
+        : "需要真实联合发布包和现场资格证据后才能开始导航。"
     case .navigation:
       nil
     }
@@ -488,6 +520,9 @@ struct KaidoProductJourneyView: View {
       return .completed
     }
     if stage == .review, model.routeReviewReady {
+      return .available
+    }
+    if stage == .navigation, model.canStartNavigation {
       return .available
     }
     return .locked
@@ -636,7 +671,7 @@ private struct JourneyStageButton: View {
   }
 }
 
-private struct ReviewBoundaryCard: View {
+struct ReviewBoundaryCard: View {
   let symbol: String
   let title: String
   let detail: String

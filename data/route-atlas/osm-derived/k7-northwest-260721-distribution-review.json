@@ -76,7 +76,7 @@
     {
       "role": "APP_PROJECT_MANIFEST",
       "repository_path": "project.yml",
-      "content_sha256": "8c6fddd8f4f90e8f4898db7184d53df425d16c6fc81fe1518ce155bb94e57bbc"
+      "content_sha256": "ee54f3a06528b2c3ce9c74a0f1d8ab2a3938fe5eadd5676e56890e25ec49f0ec"
     }
   ],
   "database_distribution": {

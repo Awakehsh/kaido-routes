@@ -33,6 +33,16 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   let descriptor: BundledProductReleaseDescriptor
   let release: KaidoProductRelease
   let encodedByteCount: Int
+
+  fileprivate init(
+    descriptor: BundledProductReleaseDescriptor,
+    release: KaidoProductRelease,
+    encodedByteCount: Int
+  ) {
+    self.descriptor = descriptor
+    self.release = release
+    self.encodedByteCount = encodedByteCount
+  }
 }
 
 enum BundledProductReleaseSelection: Equatable, Sendable {

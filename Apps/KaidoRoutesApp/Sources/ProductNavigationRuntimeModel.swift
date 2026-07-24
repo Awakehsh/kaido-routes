@@ -6,9 +6,11 @@ import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
 
-enum SyntheticProductRuntimeActivation: Equatable, Sendable {
+/// Activation and input state shared by synthetic proof and released-road use.
+enum ProductNavigationRuntimeActivation: Equatable, Sendable {
   case validating
   case ready
+  case ended
   case failed(String)
 
   var label: String {
@@ -17,13 +19,15 @@ enum SyntheticProductRuntimeActivation: Equatable, Sendable {
       "VALIDATING"
     case .ready:
       "RUNTIME READY"
+    case .ended:
+      "RUNTIME ENDED"
     case .failed:
       "BLOCKED"
     }
   }
 }
 
-enum SyntheticProductRuntimeInputState: Equatable, Sendable {
+enum ProductNavigationRuntimeInputState: Equatable, Sendable {
   case disconnected
   case adapterRejected(String)
   case entryUpdated(
@@ -67,13 +71,13 @@ enum SyntheticProductRuntimeInputState: Equatable, Sendable {
   }
 }
 
-enum SyntheticProductRuntimeScenePhase: Equatable, Sendable {
+enum ProductNavigationRuntimeScenePhase: Equatable, Sendable {
   case active
   case inactive
   case background
 }
 
-enum SyntheticProductRuntimeLifecycleState: Equatable, Sendable {
+enum ProductNavigationRuntimeLifecycleState: Equatable, Sendable {
   case foreground
   case restoredReacquisitionRequired
   case inactiveCheckpointed
@@ -84,7 +88,7 @@ enum SyntheticProductRuntimeLifecycleState: Equatable, Sendable {
   case checkpointRejected(String)
 }
 
-enum SyntheticProductRuntimePresentationState: Equatable, Sendable {
+enum ProductNavigationRuntimePresentationState: Equatable, Sendable {
   case awaitingGuidanceFrame
   case ready
   case blocked(String)
@@ -112,23 +116,28 @@ enum SyntheticProductRuntimePresentationState: Equatable, Sendable {
   }
 }
 
+enum ProductNavigationRuntimeModelError: Error, Equatable, Sendable {
+  case invalidReleasedEntryRole
+  case releasedAuthorityMissing
+}
+
 @MainActor
-final class SyntheticProductRuntimeModel: ObservableObject {
-  @Published private(set) var activation: SyntheticProductRuntimeActivation =
+final class ProductNavigationRuntimeModel: ObservableObject {
+  @Published private(set) var activation: ProductNavigationRuntimeActivation =
     .validating
   @Published private(set) var snapshot: NavigationSnapshot?
-  @Published private(set) var inputState: SyntheticProductRuntimeInputState =
+  @Published private(set) var inputState: ProductNavigationRuntimeInputState =
     .disconnected
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus =
     .idle
   @Published private(set) var speechVoiceProfile: GuidanceSpeechVoiceProfile?
-  @Published private(set) var lifecycleState: SyntheticProductRuntimeLifecycleState = .foreground
+  @Published private(set) var lifecycleState: ProductNavigationRuntimeLifecycleState = .foreground
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
-  @Published private(set) var presentationState: SyntheticProductRuntimePresentationState =
+  @Published private(set) var presentationState: ProductNavigationRuntimePresentationState =
     .awaitingGuidanceFrame
   @Published private(set) var isDeterministicPreviewTraceRunning = false
 
-  let fixture: SyntheticProductRuntimeFixture
+  let syntheticFixture: SyntheticProductRuntimeFixture?
   lazy var foregroundNavigationLocationController: ForegroundNavigationLocationController = {
     do {
       return try ForegroundNavigationLocationController(
@@ -143,15 +152,17 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }()
 
   private let runtime: KaidoProductNavigationRuntime
+  private let release: KaidoProductRelease
+  private let admittedLiveInputAuthority: KaidoForegroundLiveInputAuthority?
   private var observationAdapter: CoreLocationObservationAdapter
   private var entryTransitionAdapter: CoreLocationEntryTransitionAdapter
   private let speechCoordinator: GuidanceSpeechCoordinator
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let checkpointStore: (any NavigationSessionCheckpointStoring)?
-  private var scenePhase: SyntheticProductRuntimeScenePhase = .active
+  private var scenePhase: ProductNavigationRuntimeScenePhase = .active
   private var lifecycleOperationID = 0
 
-  init(
+  convenience init(
     fixture: SyntheticProductRuntimeFixture,
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
@@ -168,7 +179,35 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     )? = nil,
     checkpointLoadFailureCode: String? = nil
   ) throws {
-    self.fixture = fixture
+    try self.init(
+      release: fixture.release,
+      syntheticFixture: fixture,
+      admittedLiveInputAuthority: nil,
+      observationSessionID: "synthetic-product-runtime-preview",
+      sourceEvidenceProvider: sourceEvidenceProvider,
+      speechOutput: speechOutput,
+      languageSelectionProvider: languageSelectionProvider,
+      checkpoint: checkpoint,
+      checkpointStore: checkpointStore,
+      checkpointLoadFailureCode: checkpointLoadFailureCode
+    )
+  }
+
+  private init(
+    release: KaidoProductRelease,
+    syntheticFixture: SyntheticProductRuntimeFixture?,
+    admittedLiveInputAuthority: KaidoForegroundLiveInputAuthority?,
+    observationSessionID: String,
+    sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding,
+    speechOutput: (any GuidanceSpeechOutput)?,
+    languageSelectionProvider: @escaping () -> NavigationLanguageSelection,
+    checkpoint: NavigationSessionCheckpoint?,
+    checkpointStore: (any NavigationSessionCheckpointStoring)?,
+    checkpointLoadFailureCode: String?
+  ) throws {
+    self.release = release
+    self.syntheticFixture = syntheticFixture
+    self.admittedLiveInputAuthority = admittedLiveInputAuthority
     self.checkpointStore = checkpointStore
     self.languageSelectionProvider = languageSelectionProvider
     let restoredRuntime: KaidoProductNavigationRuntime
@@ -176,23 +215,23 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     if let checkpoint {
       do {
         restoredRuntime = try KaidoProductNavigationRuntime(
-          release: fixture.release,
+          release: release,
           checkpoint: checkpoint
         )
       } catch {
         restoredRuntime = try KaidoProductNavigationRuntime(
-          release: fixture.release
+          release: release
         )
         checkpointFailureCode = Self.checkpointErrorCode(error)
       }
     } else {
       restoredRuntime = try KaidoProductNavigationRuntime(
-        release: fixture.release
+        release: release
       )
     }
     runtime = restoredRuntime
     observationAdapter = try CoreLocationObservationAdapter(
-      sessionID: "synthetic-product-runtime-preview",
+      sessionID: observationSessionID,
       simulatedLocationPolicy: .reject,
       carPlayConnectionContext: .disconnected,
       sourceEvidenceProvider: sourceEvidenceProvider
@@ -252,6 +291,45 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     )
   }
 
+  convenience init(
+    releasedEntry: BundledProductReleaseEntry,
+    sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
+      SystemCoreLocationSourceEvidenceProvider(),
+    speechOutput: (any GuidanceSpeechOutput)? = nil,
+    languageSelectionProvider: @escaping () -> NavigationLanguageSelection,
+    checkpointStore: (any NavigationSessionCheckpointStoring)? = nil
+  ) throws {
+    guard releasedEntry.descriptor.role == .foregroundNavigation else {
+      throw ProductNavigationRuntimeModelError.invalidReleasedEntryRole
+    }
+    guard
+      let authority = releasedEntry.release.foregroundLiveInputAuthority
+    else {
+      throw ProductNavigationRuntimeModelError.releasedAuthorityMissing
+    }
+    let checkpoint: NavigationSessionCheckpoint?
+    let checkpointLoadFailureCode: String?
+    do {
+      checkpoint = try checkpointStore?.load()
+      checkpointLoadFailureCode = nil
+    } catch {
+      checkpoint = nil
+      checkpointLoadFailureCode = Self.checkpointErrorCode(error)
+    }
+    try self.init(
+      release: releasedEntry.release,
+      syntheticFixture: nil,
+      admittedLiveInputAuthority: authority,
+      observationSessionID: releasedEntry.release.releaseID,
+      sourceEvidenceProvider: sourceEvidenceProvider,
+      speechOutput: speechOutput,
+      languageSelectionProvider: languageSelectionProvider,
+      checkpoint: checkpoint,
+      checkpointStore: checkpointStore,
+      checkpointLoadFailureCode: checkpointLoadFailureCode
+    )
+  }
+
   var productReleaseID: String {
     runtime.productReleaseID
   }
@@ -269,7 +347,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }
 
   var routeOccurrenceCount: Int {
-    fixture.release.navigation.bundle.routePlan.occurrences.count
+    release.navigation.bundle.routePlan.occurrences.count
   }
 
   var corridorEdgeCount: Int {
@@ -281,18 +359,22 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }
 
   var isRealRoadAuthority: Bool {
-    false
+    admittedLiveInputAuthority != nil
   }
 
   var foregroundNavigationLocationAuthority: ForegroundNavigationLocationAuthority {
-    .blocked(
+    if let admittedLiveInputAuthority {
+      return .releasedProduct(admittedLiveInputAuthority)
+    }
+    return .blocked(
       identity: foregroundNavigationRuntimeIdentity,
       reason: .syntheticTestOnly
     )
   }
 
   var canRunDeterministicPreviewTrace: Bool {
-    activation == .ready
+    syntheticFixture != nil
+      && activation == .ready
       && snapshot?.journeyPhase == .planning
       && acceptsLiveInput
       && !isDeterministicPreviewTraceRunning
@@ -394,7 +476,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     if runtime.origin == .fresh {
       guard
         started.currentOccurrenceID
-          == fixture.release.navigation.bundle.routePlan.occurrences.first?.id,
+          == release.navigation.bundle.routePlan.occurrences.first?.id,
         started.journeyPhase == .planning,
         !started.strictRouteAutoCommitAllowed
       else {
@@ -428,7 +510,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }
 
   func handleScenePhase(
-    _ phase: SyntheticProductRuntimeScenePhase
+    _ phase: ProductNavigationRuntimeScenePhase
   ) async {
     await handleScenePhase(
       phase,
@@ -437,7 +519,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }
 
   func handleScenePhase(
-    _ phase: SyntheticProductRuntimeScenePhase,
+    _ phase: ProductNavigationRuntimeScenePhase,
     atMilliseconds: Int
   ) async {
     scenePhase = phase
@@ -486,6 +568,26 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     }
   }
 
+  func terminate() async -> Bool {
+    await foregroundNavigationLocationController.stop()
+    speechCoordinator.stop()
+    do {
+      try checkpointStore?.remove()
+    } catch {
+      activation = .failed(Self.checkpointErrorCode(error))
+      lifecycleState = .checkpointFailed(
+        Self.checkpointErrorCode(error)
+      )
+      return false
+    }
+    activation = .ended
+    snapshot = nil
+    inputState = .disconnected
+    presentationProjection = nil
+    presentationState = .awaitingGuidanceFrame
+    return true
+  }
+
   /// Connects an explicit foreground Core Location callback to the admitted
   /// product runtime. The model stores only actor output, never the locations.
   func process(
@@ -518,7 +620,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   /// coordinates. This is an internal preview action and never attaches a
   /// CLLocationManager or grants real-road authority.
   func runDeterministicPreviewTrace() async {
-    guard canRunDeterministicPreviewTrace else {
+    guard syntheticFixture != nil, canRunDeterministicPreviewTrace else {
       inputState = .pipelineRejected("SYNTHETIC_TRACE_REQUIRES_FRESH_PLANNING")
       return
     }
@@ -668,7 +770,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   }
 }
 
-extension SyntheticProductRuntimeModel: ForegroundNavigationLocationConsuming {
+extension ProductNavigationRuntimeModel: ForegroundNavigationLocationConsuming {
   var foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity {
     runtime.runtimeIdentity
   }
@@ -684,3 +786,5 @@ extension SyntheticProductRuntimeModel: ForegroundNavigationLocationConsuming {
     await process(locations, receivedAt: receivedAt)
   }
 }
+
+typealias SyntheticProductRuntimeModel = ProductNavigationRuntimeModel

@@ -39,10 +39,15 @@ authority minted by production decode.
 
 The product journey searches only foreground entries and compares the whole
 compiled `RoutePlan`, including snapshot and occurrence order. No match remains
-release-blocked; multiple exact matches are an explicit ambiguity; one match
-still remains runtime-blocked until the user-started product navigation surface
-is integrated. There is no ID-only or synthetic fallback. The current manifest
-contains `0 RELEASED ROAD · 1 DEMO`, so no real road navigation is bundled.
+release-blocked and multiple exact matches are an explicit ambiguity. One exact
+match enables the primary user action to construct only that entry's
+`ProductNavigationRuntimeModel`; the App then enters a release-keyed navigation
+surface while Core Location remains idle. A second explicit action starts
+foreground input only after actor activation and When In Use authorization.
+Runtime construction failure stays in review, and ending navigation stops input
+and speech, removes the active checkpoint, and returns to review. There is no
+ID-only or synthetic fallback. The current manifest contains
+`0 RELEASED ROAD · 1 DEMO`, so no real road navigation is bundled.
 
 The current app deliberately composes only:
 
@@ -69,16 +74,24 @@ The current app deliberately composes only:
   publishes its actor-owned atomic snapshot into SwiftUI while strict entry
   remains locked, with a RoutePlan-bound exactly-once speech adapter waiting for
   a transient prompt emission;
+- a dormant released-road navigation surface that can be constructed only from
+  one exact foreground catalog selection, separates the bound release key from
+  user-started live input, renders only actor-owned projections, and preserves
+  `REALTIME_UNCONFIRMED`;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
 
 `KaidoProductJourneyModelTests` execute ordered advancement, no early review,
-compiled-route invalidation, backwards navigation, and the exact catalog-backed
-release-authority blocker. Catalog tests cover hash mutation before codec
-admission, role promotion, released-road authority, missing/corrupt assets,
-descriptor and identity drift, duplicate resources and release IDs, exact
-RoutePlan selection, and ambiguous matches. `KaidoProductJourneyUITests` prove
+compiled-route invalidation, backwards navigation, the exact catalog-backed
+release-authority blocker, user-started runtime creation and clean termination,
+and fail-closed construction errors. Product runtime tests require a foreground
+descriptor plus codec-minted authority, reject demo entries, keep synthetic
+trace input unavailable, and remove the checkpoint on termination. Catalog
+tests cover hash mutation before codec admission, role promotion, released-road
+authority, missing/corrupt assets, descriptor and identity drift, duplicate
+resources and release IDs, exact RoutePlan selection, and ambiguous matches.
+`KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
 a locked navigation step, enters parked authoring through the primary action,
 and renders the exact release blocker in pre-drive review. The review screenshot
@@ -104,8 +117,8 @@ policy, snapshot, RoutePlan, and matcher corridor. The schema-3.0 bundled
 synthetic release declares `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and
 always supplies a typed blocker, so the panel requests no permission and
 displays no live measured position. An admitted
-controller would still require an explicit user start, When In Use authorization,
-an active scene, and an actor ready to accept input; inactive or background stops
+controller requires an explicit user start, When In Use authorization, an
+active scene, and an actor ready to accept input; inactive or background stops
 the source and drains the current callback before checkpointing. It never
 enables background location or exposes a CarPlay scene. Its Apple speech output
 remains idle without an actor-owned one-shot emission; synthetic test callbacks

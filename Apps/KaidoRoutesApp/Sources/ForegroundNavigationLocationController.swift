@@ -223,7 +223,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
 
   private weak var consumer: (any ForegroundNavigationLocationConsuming)?
   private let source: (any ForegroundNavigationLocationSource)?
-  private var scenePhase: SyntheticProductRuntimeScenePhase = .active
+  private var scenePhase: ProductNavigationRuntimeScenePhase = .active
   private var startRequested = false
   private var pendingBatches: [LocationBatch] = []
   private var drainTask: Task<Void, Never>?
@@ -357,7 +357,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
   }
 
   func handleScenePhase(
-    _ phase: SyntheticProductRuntimeScenePhase
+    _ phase: ProductNavigationRuntimeScenePhase
   ) async {
     scenePhase = phase
     stateOperationID += 1

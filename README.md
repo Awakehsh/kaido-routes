@@ -206,10 +206,16 @@ runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves
 that visual refresh and one-shot voice authority stay separate without creating
-a second UI progress state. Production corridor construction, DecisionZone
-calibration, real-road live navigation-state SwiftUI composition, CarPlay
-entitlement, full-app and device accessibility validation, pronunciation and
-physical audio/CarPlay hardware behavior remain unimplemented or unproven.
+a second UI progress state. The default journey now also has a dormant
+released-road path: one exact catalog-selected `RoutePlan` can create only its
+codec-admitted product runtime after an explicit user action, then exposes a
+second explicit control for foreground location. Demo releases cannot enter
+that path, ending navigation removes the active checkpoint, and missing or
+ambiguous releases remain locked. No real release is bundled, so this
+composition is structurally tested but not real-road or device evidence.
+Production corridor construction, DecisionZone calibration, CarPlay entitlement,
+full-app and device accessibility validation, pronunciation and physical
+location/audio/CarPlay hardware behavior remain unimplemented or unproven.
 
 The entrance recommendation boundary now returns a structured selected facility,
 exact target carriageway, legal join occurrence, surface ETA, straight-line

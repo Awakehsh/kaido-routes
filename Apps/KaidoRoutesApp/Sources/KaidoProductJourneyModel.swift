@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import KaidoDomain
 
 enum KaidoProductJourneyStage: String, CaseIterable, Equatable, Sendable {
   case atlas = "ATLAS"
@@ -33,14 +34,36 @@ enum KaidoProductJourneyBlocker: String, Equatable, Sendable {
 final class KaidoProductJourneyModel: ObservableObject {
   @Published private(set) var stage: KaidoProductJourneyStage = .atlas
   @Published private(set) var lastBlocker: KaidoProductJourneyBlocker?
+  @Published private(set) var navigationRuntime: ProductNavigationRuntimeModel?
 
   let composition: KaidoRoutesAppModel
 
+  private let productReleaseSelectionProvider: (RoutePlan) -> BundledProductReleaseSelection
+  private let navigationRuntimeFactory:
+    (BundledProductReleaseEntry) throws -> ProductNavigationRuntimeModel
   private var compositionSubscription: AnyCancellable?
   private var reviewSubscription: AnyCancellable?
 
-  init(composition: KaidoRoutesAppModel = KaidoRoutesAppModel()) {
+  init(
+    composition: KaidoRoutesAppModel = KaidoRoutesAppModel(),
+    productReleaseSelectionProvider:
+      ((RoutePlan) -> BundledProductReleaseSelection)? = nil,
+    navigationRuntimeFactory:
+      ((BundledProductReleaseEntry) throws -> ProductNavigationRuntimeModel)? =
+      nil
+  ) {
     self.composition = composition
+    self.productReleaseSelectionProvider =
+      productReleaseSelectionProvider
+      ?? {
+        composition.productReleaseCatalog
+          .selectForegroundNavigationRelease(matching: $0)
+      }
+    self.navigationRuntimeFactory =
+      navigationRuntimeFactory
+      ?? {
+        try composition.makeForegroundNavigationRuntime(for: $0)
+      }
     compositionSubscription = composition.objectWillChange.sink {
       [weak self] _ in
       self?.objectWillChange.send()
@@ -51,6 +74,18 @@ final class KaidoProductJourneyModel: ObservableObject {
       if snapshot == nil, stage.order >= KaidoProductJourneyStage.review.order {
         stage = .authoring
         lastBlocker = .routeReviewNotReady
+        if let navigationRuntime {
+          Task { [weak self, navigationRuntime] in
+            _ = await navigationRuntime.terminate()
+            guard
+              let self,
+              self.navigationRuntime === navigationRuntime
+            else {
+              return
+            }
+            self.navigationRuntime = nil
+          }
+        }
       } else {
         objectWillChange.send()
       }
@@ -62,15 +97,20 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   var canStartNavigation: Bool {
-    false
+    guard routeReviewReady, navigationRuntime == nil else {
+      return false
+    }
+    if case .selected = productReleaseSelection {
+      return true
+    }
+    return false
   }
 
   var productReleaseSelection: BundledProductReleaseSelection {
     guard let routePlan = composition.routeEditor.compiledRoutePlan else {
       return .unavailable
     }
-    return composition.productReleaseCatalog
-      .selectForegroundNavigationRelease(matching: routePlan)
+    return productReleaseSelectionProvider(routePlan)
   }
 
   var navigationBlocker: KaidoProductJourneyBlocker? {
@@ -83,7 +123,7 @@ final class KaidoProductJourneyModel: ObservableObject {
     case .ambiguous:
       return .productReleaseAmbiguous
     case .selected:
-      return .navigationRuntimeUnavailable
+      return nil
     }
   }
 
@@ -130,12 +170,14 @@ final class KaidoProductJourneyModel: ObservableObject {
       stage = .authoring
       lastBlocker = nil
     case .navigation:
-      stage = .review
-      lastBlocker = nil
+      break
     }
   }
 
   func go(to requestedStage: KaidoProductJourneyStage) {
+    if stage == .navigation, requestedStage != .navigation {
+      return
+    }
     if requestedStage.order <= stage.order {
       stage = requestedStage
       lastBlocker = nil
@@ -162,15 +204,36 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   func requestNavigationStart() {
-    guard canStartNavigation else {
+    guard routeReviewReady else {
+      lastBlocker = .routeReviewNotReady
+      return
+    }
+    guard case .selected(let entry) = productReleaseSelection else {
       lastBlocker = navigationBlocker
       return
     }
+    do {
+      navigationRuntime = try navigationRuntimeFactory(entry)
+      stage = .navigation
+      lastBlocker = nil
+    } catch {
+      navigationRuntime = nil
+      lastBlocker = .navigationRuntimeUnavailable
+    }
+  }
 
-    // A future released-road composition must inject the real runtime surface
-    // before this state becomes reachable. Never substitute the bundled
-    // synthetic actor trace for a user-started navigation session.
-    lastBlocker = .navigationRuntimeUnavailable
+  func endNavigation() async {
+    guard let navigationRuntime else {
+      lastBlocker = .navigationRuntimeUnavailable
+      return
+    }
+    guard await navigationRuntime.terminate() else {
+      lastBlocker = .navigationRuntimeUnavailable
+      return
+    }
+    self.navigationRuntime = nil
+    stage = .review
+    lastBlocker = nil
   }
 
   static func reviewPreview() -> KaidoProductJourneyModel {

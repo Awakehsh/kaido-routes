@@ -1,0 +1,540 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00DC4B88CB139EA32986642F /* KaidoNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 227214DF886C6615AA725882 /* KaidoNavigation */; };
+		0403EF2F4E636F940BF4F85B /* AppSafetyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1E682A168C4207E6C5957A /* AppSafetyState.swift */; };
+		211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */ = {isa = PBXBuildFile; fileRef = 0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */; };
+		528DA7299A6F5DBC166A2EA3 /* KaidoDomain in Frameworks */ = {isa = PBXBuildFile; productRef = A616122B1AC98BF3969AA85F /* KaidoDomain */; };
+		53C1DE6A664773ADC95F198F /* KaidoRouting in Frameworks */ = {isa = PBXBuildFile; productRef = 57B9667C1D29E35970429B1A /* KaidoRouting */; };
+		56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */ = {isa = PBXBuildFile; fileRef = 7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */; };
+		6C879BB72B505D94B55290C6 /* AppSafetyStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */; };
+		783758C2CD68B21153F5EF9A /* RouteAtlasHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */; };
+		8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */; };
+		A88661D038F4E0054F18A0AA /* KaidoRoutesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */; };
+		BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */; };
+		EB9E33B1837B9E11C01BE548 /* KaidoPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 55CA08F012ED78E3B6403A9D /* KaidoPresentation */; };
+		F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6736A54DBD926E1D2965FE9 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		06290883ABEFB44CD1F05409 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BE843B139A04236275D013A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 77490D08B862452A4A0A6606;
+			remoteInfo = KaidoRoutesApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */ = {isa = PBXFileReference; name = "shuto-route-atlas-recognition-reference.svg"; path = "data/route-atlas/design/shuto-route-atlas-recognition-reference.svg"; sourceTree = "<group>"; };
+		2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoRoutesApp.swift; sourceTree = "<group>"; };
+		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
+		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
+		88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		959C69E60D902F280806BE3E /* KaidoRoutesApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6736A54DBD926E1D2965FE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVGDocumentView.swift; sourceTree = "<group>"; };
+		E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasHomeView.swift; sourceTree = "<group>"; };
+		ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoTheme.swift; sourceTree = "<group>"; };
+		F5BB38CE646AEC77C3F7218C /* kaido-routes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "kaido-routes"; path = .; sourceTree = SOURCE_ROOT; };
+		FB1E682A168C4207E6C5957A /* AppSafetyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyState.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3F998E52F0374C8112ABE4EA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				528DA7299A6F5DBC166A2EA3 /* KaidoDomain in Frameworks */,
+				53C1DE6A664773ADC95F198F /* KaidoRouting in Frameworks */,
+				00DC4B88CB139EA32986642F /* KaidoNavigation in Frameworks */,
+				EB9E33B1837B9E11C01BE548 /* KaidoPresentation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06AB1F254FA3024B6C3CDD31 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D6736A54DBD926E1D2965FE9 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		275551C685F9375EF6DB7414 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		367EDB88F8DD20EE0C314C2E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				959C69E60D902F280806BE3E /* KaidoRoutesApp.app */,
+				88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4C1AE2C64F44F0598C8760A4 /* KaidoRoutesApp */ = {
+			isa = PBXGroup;
+			children = (
+				06AB1F254FA3024B6C3CDD31 /* Resources */,
+				9E3672C30FFB59E9A57A0CF7 /* Sources */,
+				275551C685F9375EF6DB7414 /* Tests */,
+			);
+			path = KaidoRoutesApp;
+			sourceTree = "<group>";
+		};
+		54040B1BE8D3C1AB0851CE6F = {
+			isa = PBXGroup;
+			children = (
+				6D259781551C8869BE66C377 /* Apps */,
+				B8E1BD3838F91AF3F2A70CE0 /* Packages */,
+				6B3B439E1D0470243E47B602 /* Route Atlas */,
+				367EDB88F8DD20EE0C314C2E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6B3B439E1D0470243E47B602 /* Route Atlas */ = {
+			isa = PBXGroup;
+			children = (
+				7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */,
+				0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */,
+			);
+			name = "Route Atlas";
+			sourceTree = "<group>";
+		};
+		6D259781551C8869BE66C377 /* Apps */ = {
+			isa = PBXGroup;
+			children = (
+				4C1AE2C64F44F0598C8760A4 /* KaidoRoutesApp */,
+			);
+			path = Apps;
+			sourceTree = "<group>";
+		};
+		9E3672C30FFB59E9A57A0CF7 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				FB1E682A168C4207E6C5957A /* AppSafetyState.swift */,
+				2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */,
+				ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */,
+				E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */,
+				DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		B8E1BD3838F91AF3F2A70CE0 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				F5BB38CE646AEC77C3F7218C /* kaido-routes */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		77490D08B862452A4A0A6606 /* KaidoRoutesApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 086F2AE29C214768C65822B0 /* Build configuration list for PBXNativeTarget "KaidoRoutesApp" */;
+			buildPhases = (
+				EEDA490C84943D0FAACA97E3 /* Sources */,
+				A0F12C6EE37DB08EE8A372B2 /* Resources */,
+				3F998E52F0374C8112ABE4EA /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KaidoRoutesApp;
+			packageProductDependencies = (
+				A616122B1AC98BF3969AA85F /* KaidoDomain */,
+				57B9667C1D29E35970429B1A /* KaidoRouting */,
+				227214DF886C6615AA725882 /* KaidoNavigation */,
+				55CA08F012ED78E3B6403A9D /* KaidoPresentation */,
+			);
+			productName = KaidoRoutesApp;
+			productReference = 959C69E60D902F280806BE3E /* KaidoRoutesApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		8A994C962B4A54283040F521 /* KaidoRoutesAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 72F52934775974D46FB6BFC9 /* Build configuration list for PBXNativeTarget "KaidoRoutesAppTests" */;
+			buildPhases = (
+				181EF9C6B8979B4E3FE079D2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0532B306C95C70EF623F96E4 /* PBXTargetDependency */,
+			);
+			name = KaidoRoutesAppTests;
+			packageProductDependencies = (
+			);
+			productName = KaidoRoutesAppTests;
+			productReference = 88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8BE843B139A04236275D013A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 345C304314C9E8F39C672F96 /* Build configuration list for PBXProject "KaidoRoutesApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 54040B1BE8D3C1AB0851CE6F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6C0EEADBFBD1AA37328B6861 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 367EDB88F8DD20EE0C314C2E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				77490D08B862452A4A0A6606 /* KaidoRoutesApp */,
+				8A994C962B4A54283040F521 /* KaidoRoutesAppTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A0F12C6EE37DB08EE8A372B2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */,
+				56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */,
+				211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		181EF9C6B8979B4E3FE079D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6C879BB72B505D94B55290C6 /* AppSafetyStateTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EEDA490C84943D0FAACA97E3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0403EF2F4E636F940BF4F85B /* AppSafetyState.swift in Sources */,
+				A88661D038F4E0054F18A0AA /* KaidoRoutesApp.swift in Sources */,
+				BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */,
+				783758C2CD68B21153F5EF9A /* RouteAtlasHomeView.swift in Sources */,
+				8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0532B306C95C70EF623F96E4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 77490D08B862452A4A0A6606 /* KaidoRoutesApp */;
+			targetProxy = 06290883ABEFB44CD1F05409 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3594948A56084E447EFF4DC0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.kaidoroutes.preview.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaidoRoutes.app/KaidoRoutes";
+			};
+			name = Release;
+		};
+		452E43551E487958B3F9457C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.kaidoroutes.preview.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KaidoRoutes.app/KaidoRoutes";
+			};
+			name = Debug;
+		};
+		4E8F66EA02344E7BFDF2AF39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		597031F900157852B4FE4F77 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kaido Routes";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kaido Routes uses location only to resolve progress on a reviewed route.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.kaidoroutes.preview;
+				PRODUCT_MODULE_NAME = KaidoRoutesApp;
+				PRODUCT_NAME = KaidoRoutes;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BE8BD96593434A81E88A3824 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		C51E8D9E9E6361380D94592B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kaido Routes";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kaido Routes uses location only to resolve progress on a reviewed route.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.kaidoroutes.preview;
+				PRODUCT_MODULE_NAME = KaidoRoutesApp;
+				PRODUCT_NAME = KaidoRoutes;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		086F2AE29C214768C65822B0 /* Build configuration list for PBXNativeTarget "KaidoRoutesApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				597031F900157852B4FE4F77 /* Debug */,
+				C51E8D9E9E6361380D94592B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		345C304314C9E8F39C672F96 /* Build configuration list for PBXProject "KaidoRoutesApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E8F66EA02344E7BFDF2AF39 /* Debug */,
+				BE8BD96593434A81E88A3824 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		72F52934775974D46FB6BFC9 /* Build configuration list for PBXNativeTarget "KaidoRoutesAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				452E43551E487958B3F9457C /* Debug */,
+				3594948A56084E447EFF4DC0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		6C0EEADBFBD1AA37328B6861 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		227214DF886C6615AA725882 /* KaidoNavigation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KaidoNavigation;
+		};
+		55CA08F012ED78E3B6403A9D /* KaidoPresentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KaidoPresentation;
+		};
+		57B9667C1D29E35970429B1A /* KaidoRouting */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KaidoRouting;
+		};
+		A616122B1AC98BF3969AA85F /* KaidoDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KaidoDomain;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 8BE843B139A04236275D013A /* Project object */;
+}

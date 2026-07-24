@@ -1,0 +1,93 @@
+name: KaidoRoutesApp
+
+options:
+  bundleIdPrefix: app.kaidoroutes
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: en
+  groupSortPosition: top
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+
+packages:
+  KaidoRoutesCore:
+    path: .
+
+targets:
+  KaidoRoutesApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Apps/KaidoRoutesApp/Sources
+      - path: Apps/KaidoRoutesApp/Resources
+      - path: data/route-atlas/design/shuto-route-atlas-recognition-reference.svg
+        buildPhase: resources
+        group: Route Atlas
+      - path: data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg
+        buildPhase: resources
+        group: Route Atlas
+    dependencies:
+      - package: KaidoRoutesCore
+        product: KaidoDomain
+      - package: KaidoRoutesCore
+        product: KaidoRouting
+      - package: KaidoRoutesCore
+        product: KaidoNavigation
+      - package: KaidoRoutesCore
+        product: KaidoPresentation
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview
+        PRODUCT_NAME: KaidoRoutes
+        PRODUCT_MODULE_NAME: KaidoRoutesApp
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_CFBundleDisplayName: Kaido Routes
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.navigation
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Kaido Routes uses location only to resolve progress on a reviewed route.
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: false
+        CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false
+
+  KaidoRoutesAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Apps/KaidoRoutesApp/Tests
+    dependencies:
+      - target: KaidoRoutesApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview.tests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/KaidoRoutes.app/KaidoRoutes"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false
+
+schemes:
+  KaidoRoutesApp:
+    build:
+      targets:
+        KaidoRoutesApp: all
+        KaidoRoutesAppTests:
+          - test
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - KaidoRoutesAppTests
+    archive:
+      config: Release

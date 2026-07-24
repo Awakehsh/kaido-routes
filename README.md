@@ -13,8 +13,12 @@ Metropolitan Expressway Company Limited.
 ## Current status
 
 This repository defines product, domain, evidence, and test contracts plus a
-pure Swift feasibility core. It does not yet contain an iPhone/CarPlay app,
-production road database, or released provider integration. It includes a
+pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
+links the local domain, routing, navigation, and presentation modules and renders
+the tracked full-network and K7 Route Atlas assets. It remains explicitly
+review-only: it has no released route bundle, measured position, active-route
+highlight, voice, or CarPlay scene. The repository still has no production road
+database or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, an OSM selected-path translator, an offline evidence
 CLI, an explicit local live-probe command, a scalar-only cross-window stability
@@ -130,18 +134,20 @@ proves planning from resolved progress, KR-S18 proves the
 occurrence-scoped Swift matcher distance bridge through the same planner,
 ledger, and presentation projection, and KR-U14 proves the junction-view
 ownership boundary. Production corridor construction,
-DecisionZone calibration, SwiftUI, CarPlay entitlement, accessibility, audio,
-and physical head-unit behavior remain unimplemented or unproven.
+DecisionZone calibration, production navigation-state SwiftUI rendering,
+CarPlay entitlement, accessibility validation, audio, and physical head-unit
+behavior remain unimplemented or unproven.
 
-The parked expert-authoring boundary is now executable without SwiftUI.
+The parked expert-authoring boundary is executable independently of SwiftUI.
 `ExpertRouteEditorSession` starts from one exact directional entrance and a
 snapshot-bound reviewed catalog. Its cursor names the incoming approach and
 junction complex, exposes only that decision point's legal choices, appends
 fresh movement and outgoing-edge occurrences, supports reviewed cycles and
 parked undo, and compiles only after an explicit directional exit choice. UI
 code cannot submit a future decision's choice or edit while moving. KR-U01
-executes this stateful boundary; real released editor catalogs, labels, topology
-rendering, accessibility, and the iPhone scene remain pending.
+executes this stateful boundary; the internal iPhone shell does not yet compose
+the editor session, and real released editor catalogs, labels, topology
+rendering, and accessibility remain pending.
 
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts
@@ -150,8 +156,9 @@ selects the released DecisionZone for the current anchor occurrence, runs the
 distance bridge, and returns one atomic snapshot plus optional prompt emission.
 Initialization rejects mismatched route, snapshot, corridor, zone, or guidance
 identities. Matcher reset/restart clears temporal evidence without rewinding
-navigation progress. Core Location callbacks, lifecycle persistence, background
-execution, audio, and app-scene wiring remain Apple-adapter work.
+navigation progress. The first app scene is now present, but Core Location
+callbacks, `NavigationSession` composition, lifecycle persistence, background
+execution, and audio remain Apple-adapter work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
@@ -346,6 +353,8 @@ hard properties that must remain proven as the product expands:
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`benchmarks/surface-routing/`](benchmarks/surface-routing/README.md): directional entrance fixtures and provider hard gates.
 - [`benchmarks/map-matching/`](benchmarks/map-matching/README.md): deterministic matcher replay fixtures, evaluator, and negative control.
+- [`Apps/KaidoRoutesApp/`](Apps/KaidoRoutesApp/README.md): internal SwiftUI
+  iPhone shell, preview, and Simulator workflow.
 - [`Sources/`](Sources): platform-light Swift domain, routing, navigation,
   presentation, and scenario-adapter modules.
 - [`Tests/`](Tests): Swift Testing suites that execute the portable scenarios.
@@ -385,6 +394,19 @@ event ordering, evidence references, and assertion references.
 `kaido-atlas validate-release --artifact <file>` decodes and validates a future
 versioned topology/layout release artifact through the same source-registry and
 graph-integrity gate; no real Shuto release artifact exists yet.
+
+Generate or open the tracked iPhone project and run the internal preview:
+
+```sh
+xcodegen generate
+open KaidoRoutesApp.xcodeproj
+./scripts/run_ios_preview.sh
+```
+
+The Simulator app requires no device signing. It renders review-only assets and
+cannot claim released navigation authority. See
+[`Apps/KaidoRoutesApp/README.md`](Apps/KaidoRoutesApp/README.md) for Xcode,
+Preview Canvas, regeneration, and test instructions.
 
 ## Safety
 

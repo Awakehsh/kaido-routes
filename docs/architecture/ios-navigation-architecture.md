@@ -1,9 +1,13 @@
 # iOS navigation architecture direction
 
-**Status:** accepted and implemented for the platform-light feasibility core;
-the current bake-off selects Valhalla as the leading shared implementation
-behind the bounded surface-routing/oracle boundary and pure Swift for live
-RoutePlan matching, subject to Apple-adapter, operations, and field evidence in
+**Status:** accepted and implemented for the platform-light feasibility core,
+with the first internal SwiftUI iPhone composition target now present. The app
+renders review-only Route Atlas assets and links the local domain, routing,
+navigation, and presentation modules; it does not yet compose a released
+`NavigationSession`, Core Location, voice, or CarPlay. The current bake-off
+selects Valhalla as the leading shared implementation behind the bounded
+surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
+subject to Apple-adapter, operations, and field evidence in
 `docs/testing/navigation-engine-bakeoff.md`.
 
 **Checked:** 2026-07-23

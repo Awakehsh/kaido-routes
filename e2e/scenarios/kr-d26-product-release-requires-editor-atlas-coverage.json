@@ -1,16 +1,16 @@
 {
   "schema_version": "1.0",
   "id": "KR-D26",
-  "title": "Product release requires every editor entity in released atlas topology",
+  "title": "Product release and runtime require complete editor-atlas coverage",
   "layer": "DOMAIN",
   "tags": ["product-release", "route-atlas", "route-editor", "fail-closed"],
-  "purpose": "Block a product release when an independently valid navigation artifact exposes an incoming approach that an independently valid Route Atlas release does not contain.",
+  "purpose": "Block both product release and runtime admission when an independently valid navigation artifact exposes an incoming approach that an independently valid Route Atlas release does not contain.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
     "limitations": [
       "Every RELEASED value and source in this fixture is synthetic.",
-      "The fixture proves cross-artifact identity and coverage gates only; it does not release real road data."
+      "The fixture proves cross-artifact coverage and runtime-admission gates only; it does not release real road data."
     ],
     "release_blockers": []
   },
@@ -390,6 +390,12 @@
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
       "payload": {"schema_version": "1.0"}
+    },
+    {
+      "id": "create-product-runtime",
+      "at_ms": 3,
+      "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
+      "payload": {"schema_version": "1.0"}
     }
   ],
   "then": [
@@ -455,6 +461,32 @@
       "matcher": "EQUALS",
       "expected": ["test.approach.product-release.exit"],
       "rationale": "The gate names the exact reviewed incoming approach rather than a display label or JCT pin."
+    },
+    {
+      "id": "invalid-product-cannot-create-runtime",
+      "after": "create-product-runtime",
+      "category": "SAFETY",
+      "subject": "product_runtime.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A product runtime cannot be constructed by bypassing the failed joint release."
+    },
+    {
+      "id": "runtime-retains-joint-gate-error",
+      "after": "create-product-runtime",
+      "category": "EVIDENCE",
+      "subject": "product_runtime.error_codes",
+      "matcher": "EQUALS",
+      "expected": ["MISSING_PRODUCT_ATLAS_EDITOR_ENTITY"],
+      "rationale": "Runtime admission reports the same exact product-authority failure."
+    },
+    {
+      "id": "blocked-runtime-has-no-release-identity",
+      "after": "create-product-runtime",
+      "category": "SAFETY",
+      "subject": "product_runtime.release_id",
+      "matcher": "ABSENT",
+      "rationale": "A blocked admission cannot expose a partial product release identity."
     }
   ]
 }

@@ -110,6 +110,8 @@ private struct ScenarioHarness {
       try validateNavigationReleaseArtifact(event.payload)
     case "PRODUCT_RELEASE_ARTIFACT_VALIDATED":
       try validateProductReleaseArtifact(event.payload)
+    case "PRODUCT_NAVIGATION_RUNTIME_CREATED":
+      try createProductNavigationRuntime(event.payload)
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
       try validateRouteAtlasRelease()
     case "ROUTE_ATLAS_CONTEXT_VALIDATED":
@@ -800,20 +802,9 @@ private struct ScenarioHarness {
   private mutating func validateProductReleaseArtifact(
     _ payload: [String: JSONValue]
   ) throws {
-    guard let releaseID = scenario.given.inputs.string("product_release_id"),
-      let releasedAt = scenario.given.inputs.string("product_release_released_at")
-    else {
-      throw ScenarioExecutionError.invalidInput("product_release_artifact")
-    }
-    let artifact = KaidoProductReleaseArtifact(
+    let artifact = try productReleaseArtifact(
       schemaVersion: payload.string("schema_version")
-        ?? KaidoProductReleaseArtifact.currentSchemaVersion,
-      releaseID: releaseID,
-      releasedAt: releasedAt,
-      navigationRelease: try navigationReleaseArtifact(
-        schemaVersion: NavigationReleaseArtifact.currentSchemaVersion
-      ),
-      routeAtlasRelease: try routeAtlasReleaseArtifact()
+        ?? KaidoProductReleaseArtifact.currentSchemaVersion
     )
 
     clearProductReleaseArtifactObservations()
@@ -840,6 +831,67 @@ private struct ScenarioHarness {
             }
           )
         ).sorted()
+      )
+    }
+  }
+
+  private func productReleaseArtifact(
+    schemaVersion: String
+  ) throws -> KaidoProductReleaseArtifact {
+    guard let releaseID = scenario.given.inputs.string("product_release_id"),
+      let releasedAt = scenario.given.inputs.string("product_release_released_at")
+    else {
+      throw ScenarioExecutionError.invalidInput("product_release_artifact")
+    }
+    return KaidoProductReleaseArtifact(
+      schemaVersion: schemaVersion,
+      releaseID: releaseID,
+      releasedAt: releasedAt,
+      navigationRelease: try navigationReleaseArtifact(
+        schemaVersion: NavigationReleaseArtifact.currentSchemaVersion
+      ),
+      routeAtlasRelease: try routeAtlasReleaseArtifact()
+    )
+  }
+
+  private mutating func createProductNavigationRuntime(
+    _ payload: [String: JSONValue]
+  ) throws {
+    clearProductNavigationRuntimeObservations()
+    do {
+      let artifact = try productReleaseArtifact(
+        schemaVersion: payload.string("schema_version")
+          ?? KaidoProductReleaseArtifact.currentSchemaVersion
+      )
+      let data = try KaidoProductReleaseArtifactCodec.encode(artifact)
+      let release = try KaidoProductReleaseArtifactCodec.decode(data)
+      let runtime = try KaidoProductNavigationRuntime(release: release)
+      adapterObservations["product_runtime.status"] = .string("PASS")
+      adapterObservations["product_runtime.error_codes"] = .strings([])
+      adapterObservations["product_runtime.release_id"] = .string(
+        runtime.productReleaseID
+      )
+      adapterObservations["product_runtime.navigation_release_id"] = .string(
+        runtime.navigationReleaseID
+      )
+      adapterObservations["product_runtime.network_snapshot_id"] = .string(
+        runtime.networkSnapshotID
+      )
+      adapterObservations["product_runtime.route_plan_id"] = .string(
+        runtime.routePlanID
+      )
+      adapterObservations["product_runtime.route_atlas_id"] = .string(
+        runtime.routeAtlas.definition.id
+      )
+    } catch KaidoProductReleaseError.invalid(let issues) {
+      adapterObservations["product_runtime.status"] = .string("BLOCKED")
+      adapterObservations["product_runtime.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    } catch NavigationSessionConfigurationError.invalid {
+      adapterObservations["product_runtime.status"] = .string("BLOCKED")
+      adapterObservations["product_runtime.error_codes"] = .strings(
+        ["INVALID_PRODUCT_RUNTIME_CONFIGURATION"]
       )
     }
   }
@@ -1014,6 +1066,14 @@ private struct ScenarioHarness {
   private mutating func clearProductReleaseArtifactObservations() {
     for key in adapterObservations.keys.filter({
       $0.hasPrefix("product_release.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func clearProductNavigationRuntimeObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("product_runtime.")
     }) {
       adapterObservations.removeValue(forKey: key)
     }

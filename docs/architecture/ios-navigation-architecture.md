@@ -304,7 +304,13 @@ One matcher observation produces one atomic update containing matcher diagnostic
 the resulting `NavigationSnapshot`, bridge status, resolved progress when safe,
 and at most one matching prompt emission. Initialization validates exact
 RoutePlan, snapshot, occurrence corridor, DecisionZone, and released-guidance
-bindings before accepting observations. Core Location callback ownership,
+bindings before accepting observations. Its raw initializer is package-only.
+External adapters construct `KaidoProductNavigationRuntime` from one validated
+`KaidoProductRelease`; the runtime retains that release and Route Atlas and
+creates the session from the exact released RoutePlan, corridor, DecisionZones,
+and guidance without accepting independent replacements. The current artifact
+does not yet distribute entry-transition, recovery, or egress policy, so the
+runtime leaves those behaviors unavailable. Core Location callback ownership,
 background lifecycle, persistence/restoration, audio scheduling, and app-scene
 composition are still unimplemented Apple boundaries.
 
@@ -376,7 +382,11 @@ Coverage is over the whole released editor catalog, not only the occurrences in
 the active RoutePlan. `KaidoProductReleaseArtifactCodec` validates on encode and
 decode, and `kaido-release validate-product` exposes the same boundary to build
 automation. KR-D26 proves that independently valid synthetic artifacts remain
-product-blocked when this cross-artifact coverage is incomplete.
+product-blocked when this cross-artifact coverage is incomplete. The same
+scenario then attempts `PRODUCT_NAVIGATION_RUNTIME_CREATED` and proves that the
+failed release yields no partial runtime release identity. A focused positive
+unit test proves that a valid joint release supplies one exact runtime
+composition while unreleased entry/recovery/egress behavior stays unavailable.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is

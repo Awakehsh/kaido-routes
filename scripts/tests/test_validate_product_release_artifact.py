@@ -38,6 +38,10 @@ class ValidateProductReleaseArtifactTests(unittest.TestCase):
             "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
             validator.EVENT_TYPES,
         )
+        self.assertIn(
+            "PRODUCT_NAVIGATION_RUNTIME_CREATED",
+            validator.EVENT_TYPES,
+        )
 
     def test_wrong_missing_editor_declaration_fails_validation(self) -> None:
         scenario = copy.deepcopy(self.scenario)

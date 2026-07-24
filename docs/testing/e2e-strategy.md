@@ -315,7 +315,9 @@ editor-catalog-to-atlas entity coverage. Its negative fixture omits one incoming
 approach from otherwise valid atlas topology, so both nested events pass while
 the joint product event blocks with the exact missing entity ID. Python
 independently derives the required editor entity set and verifies the declared
-missing set. Every released value remains synthetic.
+missing set. A final runtime-admission event proves that the blocked release
+cannot expose a partial runtime identity. Every released value remains
+synthetic.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

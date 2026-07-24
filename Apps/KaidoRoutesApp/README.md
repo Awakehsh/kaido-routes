@@ -31,7 +31,9 @@ internal calibration run with non-empty device and mount metadata. It does not
 construct a real `NavigationSession`, display a live measured position,
 highlight an active route, speak guidance, run location in the background, or
 expose a CarPlay scene. Those behaviors require a coherent released route
-bundle and device evidence.
+bundle and device evidence. When that evidence exists, the app must construct
+`KaidoProductNavigationRuntime` from the joint product release; the package-only
+raw session initializer is not an adapter escape hatch.
 
 ## Entrance recommendation
 

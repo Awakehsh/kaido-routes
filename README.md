@@ -247,10 +247,17 @@ selects the released DecisionZone for the current anchor occurrence, runs the
 distance bridge, and returns one atomic snapshot plus optional prompt emission.
 Initialization rejects mismatched route, snapshot, corridor, zone, or guidance
 identities. Matcher reset/restart clears temporal evidence without rewinding
-navigation progress. The first app scene is now present, but Core Location
-callbacks currently feed only the internal calibration harness.
-`NavigationSession` composition, lifecycle persistence, background execution,
-and audio remain Apple-adapter work.
+navigation progress. Its raw initializer is package-only.
+`KaidoProductNavigationRuntime` is the public admission path: it accepts one
+validated `KaidoProductRelease` and constructs the session from that release's
+exact RoutePlan, corridor, DecisionZones, and guidance while retaining the same
+released Route Atlas. It accepts no independent asset overrides. Entry
+transition, recovery, and egress policy are not yet distributed by the release
+artifact and therefore remain unavailable rather than receiving runtime
+defaults. The first app scene is now present, but Core Location callbacks
+currently feed only the internal calibration harness. App composition,
+lifecycle persistence, background execution, and audio remain Apple-adapter
+work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
@@ -300,7 +307,8 @@ the reviewed editor catalog. This keeps authoring choices from naming entities
 that the product map cannot represent. The codec validates on encode and decode,
 while `kaido-release validate-product` exposes the same joint gate to release
 automation. KR-D26 proves that two separately valid synthetic artifacts still
-fail the product gate when one editor approach is absent from the atlas. No real
+fail the product gate when one editor approach is absent from the atlas, and
+that the failure cannot produce a partial product runtime identity. No real
 Kaido product release exists yet.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
@@ -460,6 +468,9 @@ hard properties that must remain proven as the product expands:
 31. a product release must bind one independently valid navigation artifact and
     Route Atlas artifact to the exact same snapshot and RoutePlan, reject future
     evidence, and cover every released editor entity in atlas topology.
+32. external adapters cannot construct a navigation session from loose runtime
+    assets; one validated product release owns the session and atlas identity,
+    while undistributed entry, recovery, or egress policy stays unavailable.
 
 ## Repository map
 

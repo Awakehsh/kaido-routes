@@ -172,7 +172,38 @@ func kaidoProductReleaseRejectsFutureAtlasEvidence() {
   }
 }
 
-private func productRouteAtlasArtifact(
+@Test("Product runtime admits only the exact joint release and keeps unreleased egress unavailable")
+func kaidoProductRuntimeUsesJointReleaseAuthority() async throws {
+  let navigationFixture = navigationReleaseBundleFixture()
+  let release = try KaidoProductRelease(
+    artifact: KaidoProductReleaseArtifact(
+      releaseID: "test.product-release.runtime",
+      releasedAt: "2026-07-24T12:00:00+09:00",
+      navigationRelease: navigationReleaseArtifact(navigationFixture),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        navigationFixture,
+        includeIncomingApproach: true
+      )
+    )
+  )
+
+  let runtime = try KaidoProductNavigationRuntime(release: release)
+  let started = await runtime.session.start()
+  let finishWithoutReleasedEgress = await runtime.session.finishDrive()
+
+  #expect(runtime.productReleaseID == release.releaseID)
+  #expect(runtime.navigationReleaseID == release.navigation.releaseID)
+  #expect(runtime.networkSnapshotID == navigationFixture.networkSnapshot.id)
+  #expect(runtime.routePlanID == navigationFixture.routePlan.id)
+  #expect(runtime.routeAtlas == release.routeAtlas)
+  #expect(started.activeRoutePlanID == navigationFixture.routePlan.id)
+  #expect(started.currentOccurrenceID == navigationFixture.routePlan.occurrences.first?.id)
+  #expect(started.journeyPhase == .planning)
+  #expect(started.strictRouteAutoCommitAllowed == false)
+  #expect(finishWithoutReleasedEgress.egress.status == .unavailable)
+}
+
+func productRouteAtlasArtifact(
   _ fixture: NavigationReleaseBundleFixture,
   includeIncomingApproach: Bool,
   checkedAt: String = "2026-07-23"

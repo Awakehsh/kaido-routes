@@ -76,6 +76,8 @@ proves that its navigation and Route Atlas artifacts pass independently, then
 blocks their combination because one editor incoming approach is absent from
 released atlas topology. It reports the exact missing entity ID; it does not
 promote either synthetic fixture into real-road authority.
+`PRODUCT_NAVIGATION_RUNTIME_CREATED` then proves the failed joint artifact
+cannot expose a partial runtime release identity.
 
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.

@@ -49,7 +49,7 @@ public actor NavigationSession {
   private let matcherCorridor: RouteMatcherCorridor
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
 
-  public init(
+  package init(
     navigationConfiguration: NavigationConfiguration,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],

@@ -271,6 +271,15 @@ prompt emission, so the voice result is text-only and cannot speak. This is
 KR-U05/KR-U11 adapter evidence, not complete app localization, voice
 installation, pronunciation, or audio-lifecycle evidence.
 
+The internal iPhone driving preview separately executes KR-U06, KR-U07,
+KR-U08, and KR-U12 using synthetic state. A stale LOW observation flows through
+`NavigationEngine` before the projector labels the position estimated; the same
+projection keeps realtime-unconfirmed passage neutral and moving DecisionZone
+editing unavailable. Finish drive runs the engine's released egress selection
+before SwiftUI receives the selected exit name and before-branch priority.
+SwiftUI never converts these preview modes into live progress, realtime
+authority, or an exit choice.
+
 ```text
 LocalizedGuidanceBundle
   locale

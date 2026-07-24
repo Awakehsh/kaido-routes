@@ -77,6 +77,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let routeEditor: ParkedRouteEditorModel
   let preDriveReview: PreDriveReviewModel
   let guidanceLanguagePreview: GuidanceLanguagePreviewModel
+  let syntheticDrivingPreview: SyntheticDrivingPreviewModel
   let locationCalibration: InternalLocationCalibrationModel
 
   init() {
@@ -88,6 +89,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       )
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
+      syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()
       )

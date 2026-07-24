@@ -501,6 +501,14 @@ That is a development fact, not yet the minimum deployment target.
   text. It supplies no prompt emission and therefore has no speech authority.
   KR-U05 and KR-U11 cover this adapter boundary; complete app localization,
   pronunciation review, and the audio lifecycle remain pending.
+- A synthetic driving-surface adapter executes stale LOW location evidence and
+  Finish drive through `NavigationEngine`, then renders only the resulting
+  `NavigationPresentationProjection`. SwiftUI maps `MEASURED`, `ESTIMATED`,
+  realtime-unconfirmed, moving DecisionZone editing lockout, and the selected
+  egress exit to explicit visual states without upgrading evidence or selecting
+  an exit. KR-U06, KR-U07, KR-U08, and KR-U12 cover this local adapter boundary.
+  It is not an active `NavigationSession`, released-route renderer, or CarPlay
+  implementation.
 
 ### CarPlay
 

@@ -19,13 +19,15 @@ The current app deliberately exposes only:
   passage evidence;
 - an independent interface-language and guidance-voice text preview that keeps
   the Japanese sign target and route shield fixed;
+- a three-state synthetic driving preview for conservative position, passage,
+  moving-time editing, and Finish-drive presentation;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
 
 It requests when-in-use location only after the operator explicitly starts an
 internal calibration run with non-empty device and mount metadata. It does not
-construct a real `NavigationSession`, display a measured position, highlight an
+construct a real `NavigationSession`, display a live measured position, highlight an
 active route, speak guidance, run location in the background, or expose a
 CarPlay scene. Those behaviors require a coherent released route bundle and
 device evidence.
@@ -96,6 +98,24 @@ This is a text-only adapter proof. The model passes no
 locale or mismatched preserved Japanese sign fails initialization. It does not
 localize the complete internal app, verify installed voices or pronunciation,
 or implement audio focus and lifecycle.
+
+## Synthetic driving preview
+
+The KR-U06/KR-U07/KR-U08/KR-U12 panel consumes only
+`NavigationPresentationProjection`. Its measured reference and degraded
+DecisionZone states make the `MEASURED` versus `ESTIMATED` marker treatment
+explicit. The degraded state comes from a stale LOW `LocationObservation`
+executed through `NavigationEngine`; the resulting projection must remain
+realtime-unconfirmed, avoid a positive open-road color, lock route editing, and
+require no phone touch.
+
+The Finish state invokes `NavigationEngine.finishDrive()` against one released
+synthetic `EgressOption`. SwiftUI then renders the exact projected exit name and
+before-branch announcement priority; it does not choose an exit. The engine
+retains `U_TURN_OR_REVERSAL` as a prohibited action. All three states omit
+`GuidancePromptEmission`, so the preview cannot speak. This is synthetic adapter
+evidence, not a live `NavigationSession`, real position, released route,
+CarPlay, or final visual/accessibility qualification.
 
 ## Internal location calibration
 
@@ -189,6 +209,10 @@ tariff distance, conservative passage presentation, undo invalidation, and
 fail-closed quote evidence. `GuidanceLanguagePreviewModelTests` proves
 independent interface/voice changes, three-locale Japanese-sign and route-shield
 preservation, no speech authority, and fail-closed localized-content drift.
+`SyntheticDrivingPreviewModelTests` proves conservative low-confidence
+presentation, measured/estimated distinction, no positive-open inference,
+DecisionZone editing lockout, engine-owned Finish exit selection, surface
+agreement, and fail-closed facility-name drift.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
 coordinate-free non-release reporting. The platform-light Swift package tests

@@ -20,12 +20,15 @@ directional-entrance recommendation, parked route authoring, and RoutePlan-bound
 pre-drive review without calling live location or surface routing. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
-and has no audio authority. The app also exposes an opt-in,
+and has no audio authority. A synthetic driving-surface panel contrasts measured
+and estimated markers, keeps realtime-unconfirmed passage neutral, locks route
+editing in a moving DecisionZone, and executes a precomputed Finish-drive exit.
+The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
 emits only a coordinate-free non-release report, and rejects simulated locations
 by default. The app remains explicitly review-only: it has no released route
-bundle, measured-position display, active-route highlight, voice, background
+bundle, live measured-position display, active-route highlight, voice, background
 navigation, or CarPlay scene. The repository still has no production road
 database or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
@@ -199,6 +202,17 @@ the Japanese sign fails projection. The preview deliberately supplies no
 `GuidancePromptEmission`, labels audio as unconnected, and cannot speak; it is
 not full-app localization, pronunciation evidence, or an audio-lifecycle
 implementation.
+
+The internal iPhone shell also executes KR-U06, KR-U07, KR-U08, and KR-U12
+through a three-state synthetic driving preview. Its degraded DecisionZone state
+feeds a stale LOW observation through `NavigationEngine`, so the shared
+projection renders an estimated marker, neutral realtime-unconfirmed status,
+unavailable route editing, and no phone-touch requirement. Its Finish state
+invokes `NavigationEngine.finishDrive()` against one released synthetic egress
+option before the projector names that exact exit ahead of branch guidance and
+retains the no-reversal prohibition. A measured reference state makes the marker
+difference explicit. This panel has no live location, active
+`NavigationSession`, released Shuto assets, audio authority, or CarPlay scene.
 
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts

@@ -577,9 +577,13 @@ gate.
     restoration replay. KR-S18 adds the deterministic Swift matcher-to-distance
     bridge. The internal iPhone shell now adds a synthetic, text-only KR-U05/KR-U11
     projection that keeps interface and voice locales independent and preserves
-    the Japanese sign and shield without acquiring speech authority. Next add
-    production corridor/DecisionZone construction and calibration, then bind
-    actual navigation state to the SwiftUI phone renderer and accessibility
+    the Japanese sign and shield without acquiring speech authority. It also
+    executes KR-U06/U07/U08/U12 through a synthetic driving surface: a stale LOW
+    engine observation remains estimated and realtime-unconfirmed, a moving
+    DecisionZone locks editing, and engine-owned Finish selection names one
+    released synthetic exit before branch guidance. Next add production
+    corridor/DecisionZone construction and calibration, then bind actual
+    `NavigationSession` state to the SwiftUI phone renderer and accessibility
     tree, followed by the `CPMapTemplate` adapter and audio lifecycle.
 11. **Partial complete:** the snapshot-bound `ExpertRouteEditorSession` exposes
     only legal choices for the exact incoming approach/JCT, creates fresh

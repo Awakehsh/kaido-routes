@@ -37,7 +37,7 @@
     {
       "role": "TOPOLOGY_RELEASE_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json",
-      "content_sha256": "fb9a18381c9e3252d146207f8b47e8576fe16fe137e41a0c7ec4f7d7bd92d969"
+      "content_sha256": "4acd41f838224a9402cef1f295200b7d1c210f1d9c899ead1ce137baf055647a"
     },
     {
       "role": "LAYOUT_RELEASE_REVIEW",
@@ -48,6 +48,11 @@
       "role": "ROAD_REGISTER_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-road-register-review.json",
       "content_sha256": "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
+    },
+    {
+      "role": "ROAD_REGISTER_REVIEW_TEMPLATE",
+      "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-road-register-review.template.json",
+      "content_sha256": "09145e2327cc43695548b7ef7eb44f363e256556f7797c72d47c13ee6435bb8f"
     },
     {
       "role": "FIELD_REVIEW_TEMPLATE",

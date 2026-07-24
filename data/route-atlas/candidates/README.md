@@ -133,23 +133,30 @@ python3 scripts/build_k7_schematic_layout_candidate.py \
 `k7-northwest-up-aoba-to-kohoku-release-readiness.json` is the dated,
 hash-bound pre-release decision for the most advanced K7 candidate. It binds
 the schematic candidate, directed source review, exact successor audit,
-project-authored layout source, official road-register review, coordinate-free
-field-review template, and separate topology and layout release-review
-templates without copying official map imagery or private field evidence.
-Field schema 1.1 rejects extra manifest fields, raw media and location keys,
-unsafe collection, non-independent review, unbound raw hashes, and validity
-beyond 31 days; completed in-repository manifests must remain under ignored
-`research/`. The topology review must bind the canonical SHA-256 of the exact
-private field manifest used by the readiness run. The layout review depends on
-a current approved topology review and must name a different reviewer. Both
-release reviews use an exact schema and a maximum 31-day validity window. The
-readiness package also binds the ODbL technical distribution review, which in
-turn binds the complete derivative database, reconstruction offer, app
-attribution catalog, native SwiftUI evidence strip, and Xcode project source.
+project-authored layout source, official road-register source review,
+coordinate-free road-register and field-review templates, and separate
+topology and layout release-review templates without copying official map
+imagery or private evidence. The road-register schema requires a current
+map-66 record obtained at the Road Survey Division counter, exact comparison of
+all three surface successors, private raw-record hashes, independent review,
+and no more than 31 days of validity. Field schema 1.1 rejects extra manifest
+fields, raw media and location keys, unsafe collection, non-independent review,
+unbound raw hashes, and validity beyond 31 days. Completed in-repository
+manifests must remain under ignored `research/`. The topology review must bind
+the canonical SHA-256 of both exact private manifests used by the readiness
+run. The layout review depends on a current approved topology review and must
+name a different reviewer. Both release reviews use an exact schema and a
+maximum 31-day validity window. The readiness package also binds the ODbL
+technical distribution review, which in turn binds the complete derivative
+database, reconstruction offer, app attribution catalog, native SwiftUI
+evidence strip, and Xcode project source.
 
-Initialize a non-overwriting private working manifest:
+Initialize non-overwriting private working manifests:
 
 ```sh
+python3 scripts/prepare_k7_road_register_review.py \
+  --output research/evidence/k7-kohoku-road-register-review.json
+
 python3 scripts/prepare_k7_surface_field_review.py \
   --output research/evidence/k7-kohoku-field-review.json
 ```
@@ -188,12 +195,13 @@ UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 The technical review clears only `ODBL_DISTRIBUTION`. It is not legal advice
 and cannot clear a road, topology, layout, realtime, or navigation gate.
 
-A private completed field manifest may be supplied with `--field-review`; it
-can clear only the field gate. Changing topology or layout evidence to
-`RELEASED` without the respective current independent approval leaves the
-corresponding gate blocked. A readiness `PASS` would mean that the candidate may
-be submitted to `kaido-atlas validate-release`. The readiness report always
-keeps `navigation_authority=false`; only the authoritative Route Atlas and joint
+Private completed road-register and field manifests may be supplied with
+`--road-register-review` and `--field-review`; each can clear only its own
+gate. Changing topology or layout evidence to `RELEASED` without the respective
+current independent approval leaves the corresponding gate blocked. A
+readiness `PASS` would mean that the candidate may be submitted to
+`kaido-atlas validate-release`. The readiness report always keeps
+`navigation_authority=false`; only the authoritative Route Atlas and joint
 product release gates can grant product authority.
 
 `REALTIME_UNCONFIRMED` is retained as a separate non-blocking context value.

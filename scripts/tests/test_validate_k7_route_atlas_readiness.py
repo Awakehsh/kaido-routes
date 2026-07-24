@@ -28,6 +28,10 @@ FIELD_TEMPLATE_PATH = (
     REPOSITORY_ROOT / "docs/testing/fixtures/"
     "k7-yokohama-kohoku-surface-field-review.template.json"
 )
+ROAD_REGISTER_TEMPLATE_PATH = (
+    REPOSITORY_ROOT / "docs/testing/fixtures/"
+    "k7-yokohama-kohoku-road-register-review.template.json"
+)
 ROAD_REVIEW_PATH = (
     REPOSITORY_ROOT / "data/route-atlas/candidates/"
     "k7-northwest-up-aoba-to-kohoku-road-register-review.json"
@@ -76,6 +80,43 @@ def completed_field_review() -> dict:
         "permitted_exit_movement": "ALLOWED",
         "reviewed_by": "synthetic-reviewer",
         "reviewer_role": "INDEPENDENT_REVIEWER",
+        "reviewed_at": "2026-07-24T12:00:00+09:00",
+        "valid_through": "2026-08-24",
+    }
+    return review
+
+
+def completed_road_register_review() -> dict:
+    review = load(ROAD_REGISTER_TEMPLATE_PATH)
+    digest = "a" * 64
+    review["record_collection"] = {
+        "status": "OBTAINED",
+        "obtained_at": "2026-07-24T10:00:00+09:00",
+        "obtained_via": "ROAD_SURVEY_DIVISION_COUNTER",
+        "official_authority": "City of Yokohama Road Survey Division",
+        "register_map_id": 66,
+        "register_map_name_ja": "認定路線図",
+        "record_current_through": "2026-07-24",
+        "official_record_reference": (
+            "Synthetic exact map-66 counter locator; not road evidence."
+        ),
+        "raw_record_sha256": [digest],
+    }
+    review["exact_mapping_review"] = {
+        "status": "CONFIRMED",
+        "recognized_route_identifier": "SYNTHETIC_CITY_ROAD_342",
+        "recognized_route_name_ja": "合成市道第342号線",
+        "compared_osm_way_ids": [734299108, 734299111, 776884422],
+        "selected_osm_way_id": 776884422,
+        "mapping_basis": (
+            "Synthetic record comparison isolates the third successor; "
+            "not road evidence."
+        ),
+        "record_evidence_sha256": [digest],
+    }
+    review["conclusions"] = {
+        "reviewed_by": "synthetic-road-reviewer",
+        "reviewer_role": "INDEPENDENT_ROAD_IDENTITY_REVIEWER",
         "reviewed_at": "2026-07-24T12:00:00+09:00",
         "valid_through": "2026-08-24",
     }
@@ -206,6 +247,39 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         )
         self.assertFalse(report["navigation_authority"])
 
+    def test_complete_private_road_review_clears_only_identity_gate(
+        self,
+    ) -> None:
+        report = validator.evaluate(
+            load(READINESS_PATH),
+            date(2026, 7, 24),
+            REPOSITORY_ROOT,
+            road_register_review_override=completed_road_register_review(),
+        )
+
+        self.assertNotIn(
+            "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+            report["blocker_codes"],
+        )
+        self.assertEqual(
+            report["gate_states"]["CURRENT_ROAD_IDENTITY"],
+            "SATISFIED",
+        )
+        self.assertIn(
+            "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+            report["blocker_codes"],
+        )
+        self.assertEqual(
+            report["road_register_review_input"],
+            "PRIVATE_OVERRIDE",
+        )
+        self.assertRegex(
+            report["road_register_review_manifest_sha256"],
+            r"^[0-9a-f]{64}$",
+        )
+        self.assertEqual(report["road_register_review_blockers"], [])
+        self.assertFalse(report["navigation_authority"])
+
     def test_pending_topology_review_blocks_a_released_state(self) -> None:
         field_review = completed_field_review()
         complete, reviewer_id, status = validator.evaluate_topology_release_review(
@@ -279,6 +353,8 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     def test_approved_reviews_require_distinct_current_reviewers(self) -> None:
         field_review = completed_field_review()
         field_digest = validator.canonical_sha256(field_review)
+        road_register_review = completed_road_register_review()
+        road_register_digest = validator.canonical_sha256(road_register_review)
         topology_review = load(TOPOLOGY_REVIEW_PATH)
         topology_review["required_checks"] = {
             "candidate_structure": "SATISFIED",
@@ -287,6 +363,9 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "current_surface_field_review": "SATISFIED",
             "exact_legal_successor_review": "SATISFIED",
         }
+        topology_review["private_road_register_review_manifest_sha256"] = (
+            road_register_digest
+        )
         topology_review["private_field_review_manifest_sha256"] = field_digest
         topology_review["decision"] = {
             "status": "APPROVED",
@@ -296,6 +375,19 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "valid_through": "2026-08-24",
             "blocker_codes": [],
         }
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "prerequisites are incomplete",
+        ):
+            validator.evaluate_topology_release_review(
+                topology_review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+                "RELEASED",
+                True,
+                True,
+                field_digest,
+            )
         topology_complete, topology_reviewer_id, _ = (
             validator.evaluate_topology_release_review(
                 topology_review,
@@ -305,6 +397,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 True,
                 True,
                 field_digest,
+                road_register_digest,
             )
         )
         self.assertTrue(topology_complete)

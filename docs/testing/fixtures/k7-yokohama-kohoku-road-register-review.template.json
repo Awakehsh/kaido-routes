@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "review_id": "k7-yokohama-kohoku-exact-road-register-review",
+  "target": {
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "incoming_osm_way_id": 734299106,
+    "via_osm_node_id": 7473451738,
+    "surface_osm_way_id": 776884422,
+    "source_direction": "FORWARD"
+  },
+  "privacy_contract": {
+    "manifest_classification": "PRIVATE_COORDINATE_FREE_OFFICIAL_RECORD_REVIEW",
+    "raw_record_storage": "IGNORED_PRIVATE_STORAGE_ONLY",
+    "raw_record_embedded": false,
+    "coordinates_embedded": false,
+    "copied_map_geometry_embedded": false
+  },
+  "record_collection": {
+    "status": "PENDING",
+    "obtained_at": null,
+    "obtained_via": "UNASSIGNED",
+    "official_authority": "City of Yokohama Road Survey Division",
+    "register_map_id": 66,
+    "register_map_name_ja": "認定路線図",
+    "record_current_through": null,
+    "official_record_reference": null,
+    "raw_record_sha256": []
+  },
+  "exact_mapping_review": {
+    "status": "PENDING",
+    "recognized_route_identifier": null,
+    "recognized_route_name_ja": null,
+    "compared_osm_way_ids": [
+      734299108,
+      734299111,
+      776884422
+    ],
+    "selected_osm_way_id": null,
+    "mapping_basis": null,
+    "record_evidence_sha256": []
+  },
+  "conclusions": {
+    "reviewed_by": null,
+    "reviewer_role": "UNASSIGNED",
+    "reviewed_at": null,
+    "valid_through": null
+  }
+}

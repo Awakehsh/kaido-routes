@@ -668,14 +668,20 @@ independent reviewer, an exact privacy allowlist, and no more than 31 days of
 validity. It refuses completed in-repository manifests outside ignored
 `research/`, exposes no raw media or location in its report, and still grants
 no Route Atlas release authority.
+The separate exact road-register validator accepts only a current map-66 record
+obtained at the City of Yokohama Road Survey Division counter. It requires a
+hash-bound private record, explicit comparison of all three exit-terminal OSM
+successors, selection of exact way `776884422`, independent review, and a
+coordinate-free report. Online map inspection, map 67, historic corridor
+identity, raw copied geometry, and a nonexact mapping cannot satisfy it.
 The dated readiness package also binds exact pending topology and layout
 release-review records. A topology approval requires the current road identity,
-the completed field findings, the canonical digest of that private manifest,
+the completed field findings, the canonical digests of both private manifests,
 and all exact legal-successor checks. A layout approval depends on that current
 topology approval and must use a different reviewer. Each approval is valid for
 at most 31 days. Evidence state and review approval are conjunctive: changing a
-candidate to `RELEASED` without the matching current approval cannot satisfy the
-readiness gate.
+candidate to `RELEASED` without the matching current approval cannot satisfy
+the readiness gate.
 Both evidence states remain `CANDIDATE`; OSM community directionality plus
 current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime

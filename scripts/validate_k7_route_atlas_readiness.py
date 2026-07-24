@@ -17,6 +17,11 @@ from validate_k7_surface_field_review import (
     evaluate as evaluate_field_review,
     validate_review_input_path,
 )
+from validate_k7_road_register_review import (
+    RoadRegisterReviewError,
+    evaluate as evaluate_private_road_register_review,
+    validate_review_input_path as validate_road_register_review_input_path,
+)
 
 
 EXPECTED_SCHEMA_VERSION = "1.0"
@@ -74,6 +79,9 @@ EXPECTED_BINDING_PATHS = {
     "ROAD_REGISTER_REVIEW": (
         "data/route-atlas/candidates/"
         "k7-northwest-up-aoba-to-kohoku-road-register-review.json"
+    ),
+    "ROAD_REGISTER_REVIEW_TEMPLATE": (
+        "docs/testing/fixtures/" "k7-yokohama-kohoku-road-register-review.template.json"
     ),
     "FIELD_REVIEW_TEMPLATE": (
         "docs/testing/fixtures/" "k7-yokohama-kohoku-surface-field-review.template.json"
@@ -161,8 +169,7 @@ EXPECTED_ROAD_SOURCE_REFERENCES = {
         "source_reference_id": "yokohama.recognized-route-terms.2026-07-24",
         "authority_name": "City of Yokohama",
         "source_url": (
-            "https://wwwm.city.yokohama.lg.jp/yokohama/"
-            "PositionSelect?mid=66"
+            "https://wwwm.city.yokohama.lg.jp/yokohama/" "PositionSelect?mid=66"
         ),
         "content_sha256": (
             "ed482c2fd7b92c88ec68e06d15c2d517339120f57acda8234aceca18c177ee83"
@@ -174,8 +181,7 @@ EXPECTED_ROAD_SOURCE_REFERENCES = {
         "source_reference_id": "yokohama.plan-drawing-terms.2026-07-24",
         "authority_name": "City of Yokohama",
         "source_url": (
-            "https://wwwm.city.yokohama.lg.jp/yokohama/"
-            "PositionSelect?mid=67"
+            "https://wwwm.city.yokohama.lg.jp/yokohama/" "PositionSelect?mid=67"
         ),
         "content_sha256": (
             "e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102"
@@ -284,6 +290,12 @@ EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
             "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
         ),
     },
+    "ROAD_REGISTER_REVIEW_TEMPLATE": {
+        "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW_TEMPLATE"],
+        "content_sha256": (
+            "09145e2327cc43695548b7ef7eb44f363e256556f7797c72d47c13ee6435bb8f"
+        ),
+    },
     "FIELD_REVIEW_TEMPLATE": {
         "repository_path": EXPECTED_BINDING_PATHS["FIELD_REVIEW_TEMPLATE"],
         "content_sha256": (
@@ -331,6 +343,7 @@ EXPECTED_TOPOLOGY_REVIEW_KEYS = {
     "target",
     "artifact_bindings",
     "required_checks",
+    "private_road_register_review_manifest_sha256",
     "private_field_review_manifest_sha256",
     "decision",
 }
@@ -383,6 +396,11 @@ def parse_arguments() -> argparse.Namespace:
         "--field-review",
         type=Path,
         help="optional ignored private field-review manifest",
+    )
+    parser.add_argument(
+        "--road-register-review",
+        type=Path,
+        help="optional ignored private exact road-register review manifest",
     )
     parser.add_argument("--report", type=Path)
     return parser.parse_args()
@@ -968,12 +986,13 @@ def evaluate_topology_release_review(
     road_identity_complete: bool,
     field_review_complete: bool,
     field_review_manifest_sha256: str,
+    road_register_review_manifest_sha256: str | None = None,
 ) -> tuple[bool, str | None, str]:
     decision = review.get("decision")
     checks = review.get("required_checks")
     if (
         set(review) != EXPECTED_TOPOLOGY_REVIEW_KEYS
-        or review.get("schema_version") != "1.0"
+        or review.get("schema_version") != "1.1"
         or review.get("review_id") != EXPECTED_TOPOLOGY_REVIEW_ID
         or review.get("review_type") != "TOPOLOGY_RELEASE_REVIEW"
         or review.get("target") != EXPECTED_TOPOLOGY_REVIEW_TARGET
@@ -1005,6 +1024,7 @@ def evaluate_topology_release_review(
                 "current_surface_field_review": "PENDING",
                 "exact_legal_successor_review": "PENDING",
             }
+            or review.get("private_road_register_review_manifest_sha256") is not None
             or review.get("private_field_review_manifest_sha256") is not None
             or decision
             != {
@@ -1036,6 +1056,9 @@ def evaluate_topology_release_review(
             "current_surface_field_review": "SATISFIED",
             "exact_legal_successor_review": "SATISFIED",
         }
+        or road_register_review_manifest_sha256 is None
+        or review.get("private_road_register_review_manifest_sha256")
+        != road_register_review_manifest_sha256
         or review.get("private_field_review_manifest_sha256")
         != field_review_manifest_sha256
     ):
@@ -1379,6 +1402,7 @@ def evaluate(
     as_of: date,
     repository_root: Path,
     field_review_override: dict[str, Any] | None = None,
+    road_register_review_override: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     repository_root = repository_root.resolve()
     if (
@@ -1408,10 +1432,39 @@ def evaluate(
         raise ReadinessError("directed review and topology evidence states disagree")
     if layout_source_state != layout_state:
         raise ReadinessError("layout source and atlas evidence states disagree")
-    road_identity_complete, road_blockers = evaluate_road_register_review(
-        documents["ROAD_REGISTER_REVIEW"],
-        as_of,
+    tracked_road_identity_complete, tracked_road_blockers = (
+        evaluate_road_register_review(
+            documents["ROAD_REGISTER_REVIEW"],
+            as_of,
+        )
     )
+    if road_register_review_override is None:
+        road_identity_complete = tracked_road_identity_complete
+        road_blockers = tracked_road_blockers
+        road_register_report_blockers = tracked_road_blockers
+        road_register_review_manifest_sha256 = None
+    else:
+        try:
+            road_register_report = evaluate_private_road_register_review(
+                road_register_review_override,
+                as_of,
+            )
+        except RoadRegisterReviewError as error:
+            raise ReadinessError(
+                f"private road-register review is invalid: {error}"
+            ) from error
+        if road_register_report.get("route_release_authority") is not False:
+            raise ReadinessError(
+                "private road-register review cannot grant release authority"
+            )
+        road_identity_complete = road_register_report["road_identity_review_complete"]
+        road_blockers = (
+            [] if road_identity_complete else ["CURRENT_ROAD_IDENTITY_UNCONFIRMED"]
+        )
+        road_register_report_blockers = road_register_report["blockers"]
+        road_register_review_manifest_sha256 = canonical_sha256(
+            road_register_review_override
+        )
 
     field_review = (
         field_review_override
@@ -1439,6 +1492,7 @@ def evaluate(
         road_identity_complete,
         field_complete,
         field_review_manifest_sha256,
+        road_register_review_manifest_sha256,
     )
     (
         layout_review_complete,
@@ -1511,6 +1565,13 @@ def evaluate(
         "satisfied_gate_ids": satisfied_gate_ids,
         "blocked_gate_ids": blocked_gate_ids,
         "blocker_codes": blockers,
+        "road_register_review_blockers": road_register_report_blockers,
+        "road_register_review_input": (
+            "PRIVATE_OVERRIDE"
+            if road_register_review_override is not None
+            else "TRACKED_PENDING_REVIEW"
+        ),
+        "road_register_review_manifest_sha256": (road_register_review_manifest_sha256),
         "field_review_blockers": field_report["blockers"],
         "field_review_input": (
             "PRIVATE_OVERRIDE"
@@ -1539,7 +1600,11 @@ def evaluate(
         "blocked_gate_ids": blocked_gate_ids,
         "blocker_codes": blockers,
     }
-    if field_review_override is None and expected != derived_expected:
+    if (
+        field_review_override is None
+        and road_register_review_override is None
+        and expected != derived_expected
+    ):
         raise ReadinessError(
             "expected_decision does not match the derived readiness result"
         )
@@ -1563,15 +1628,26 @@ def main() -> int:
             field_review = load_object(arguments.field_review)
         else:
             field_review = None
+        if arguments.road_register_review is not None:
+            validate_road_register_review_input_path(arguments.road_register_review)
+            road_register_review = load_object(arguments.road_register_review)
+        else:
+            road_register_review = None
         report = evaluate(
             readiness,
             arguments.as_of,
             arguments.repository_root,
             field_review,
+            road_register_review,
         )
         if arguments.report is not None:
             write_report(report, arguments.report)
-    except (OSError, FieldReviewError, ReadinessError) as error:
+    except (
+        OSError,
+        FieldReviewError,
+        RoadRegisterReviewError,
+        ReadinessError,
+    ) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     if report["candidate_ready_for_release_validation"]:

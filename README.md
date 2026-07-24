@@ -544,28 +544,34 @@ layout evidence issues.
 
 A dated K7 pre-release package now binds that schematic candidate, the directed
 source review, the 14-checkpoint successor audit, the Kaido-authored layout
-source, an official road-register access review, the coordinate-free field
-template, independent topology and layout review templates, and the ODbL
-technical distribution review by SHA-256. The topology review must bind the
-exact private field-manifest digest after the road and field gates pass. The
-layout review depends on that current topology review, uses a different
-reviewer, and both reviews expire after at most 31 days. A manual evidence-state
-change cannot satisfy either release gate. The distribution review in turn
-binds the derivative database, successor audit, reconstruction README,
-attribution catalog, SwiftUI implementation, and Xcode project source. Its
-independent validator derives four exact remaining blockers: current road
-identity, current field legality, and topology and layout release evidence. It
-reports the already proven structure, source adjacency, and ODbL distribution
-separately from those unresolved gates. Yokohama dates the online
+source, an official road-register access review, private coordinate-free
+road-register and field templates, independent topology and layout review
+templates, and the ODbL technical distribution review by SHA-256. The private
+road-register validator requires a current map-66 record obtained at the Road
+Survey Division counter, exact comparison of all three OSM successors,
+hash-bound private raw records, independent review, and at most 31 days of
+validity. It never embeds the record or copied map geometry. The topology
+review must bind the canonical digests of both exact private manifests after
+the road and field gates pass. The layout review depends on that current
+topology review, uses a different reviewer, and both reviews expire after at
+most 31 days. A manual evidence-state change cannot satisfy either release
+gate. The distribution review in turn binds the derivative database, successor
+audit, reconstruction README, attribution catalog, SwiftUI implementation, and
+Xcode project source. Its independent validator derives four exact remaining
+blockers: current road identity, current field legality, and topology and
+layout release evidence. It reports the already proven structure, source
+adjacency, and ODbL distribution separately from those unresolved gates.
+Yokohama dates the online
 recognized-route map to 2026-07-03 and identifies the broader Kawamuki corridor
 as municipal Higashikatacho Route 342, while its official terms state that
 online material is not proof and direct latest legal-record review to the Road
 Survey Division counter. That corridor-level identity does not uniquely
 distinguish OSM way `776884422` from the two named Kawamuki Line carriageways
 leaving the same terminal node. The tracked decision therefore remains
-`BLOCKED` and `navigation_authority=false`. A later completed private field
-review can clear only its own gate, and even a readiness `PASS` merely admits
-the candidate to the authoritative `kaido-atlas validate-release` command.
+`BLOCKED` and `navigation_authority=false`. A later completed private field or
+road-register review can clear only its own gate, and even a readiness `PASS`
+merely admits the candidate to the authoritative
+`kaido-atlas validate-release` command.
 
 The feasibility core currently executes portable scenarios for the following
 hard properties that must remain proven as the product expands:

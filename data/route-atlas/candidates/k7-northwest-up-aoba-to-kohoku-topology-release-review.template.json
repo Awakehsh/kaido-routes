@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.topology-release-review.2026-07-24",
   "review_type": "TOPOLOGY_RELEASE_REVIEW",
   "assessed_at": "2026-07-24",
@@ -31,6 +31,11 @@
       "content_sha256": "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
     },
     {
+      "role": "ROAD_REGISTER_REVIEW_TEMPLATE",
+      "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-road-register-review.template.json",
+      "content_sha256": "09145e2327cc43695548b7ef7eb44f363e256556f7797c72d47c13ee6435bb8f"
+    },
+    {
       "role": "FIELD_REVIEW_TEMPLATE",
       "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-surface-field-review.template.json",
       "content_sha256": "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
@@ -43,6 +48,7 @@
     "current_surface_field_review": "PENDING",
     "exact_legal_successor_review": "PENDING"
   },
+  "private_road_register_review_manifest_sha256": null,
   "private_field_review_manifest_sha256": null,
   "decision": {
     "status": "PENDING",

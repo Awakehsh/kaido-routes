@@ -80,6 +80,14 @@ hash bindings, concise findings, conclusions, reviewer, and validity. Passing
 its validator closes one field-review gap; it never grants Route Atlas release
 authority by itself.
 
+Exact official road-register review uses an independent private package. The
+[K7 road-register plan](../testing/k7-yokohama-kohoku-road-register-verification.md)
+binds one current map-66 counter record by SHA-256, compares all three
+exit-terminal OSM successors, and publishes only a coordinate-free scalar
+report. Online map inspection, historic corridor identity, or an unbound
+record cannot name the exact current road. A later topology review must bind
+the canonical digests of both the private road-register and field manifests.
+
 Historic construction identity and current area completion must remain separate
 from current road-level identity. The K7 plan records the 2020
 temporary-passage corridor, the surrounding project's 2022 infrastructure

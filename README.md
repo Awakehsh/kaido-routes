@@ -410,14 +410,16 @@ internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
 Neither independently valid artifact can authorize a product build by itself.
-`KaidoProductReleaseArtifact` schema 4.0 contains one complete navigation
+`KaidoProductReleaseArtifact` schema 5.0 contains one complete navigation
 artifact, one complete Route Atlas artifact, and an explicit `runtime_use`
 declaration. `KaidoProductRelease` revalidates both, requires
-exact snapshot and RoutePlan identity, rejects navigation or atlas evidence
-newer than the product release, and requires released atlas topology to contain
-every initial edge, incoming approach, movement, and outgoing edge exposed by
-the reviewed editor catalog. This keeps authoring choices from naming entities
-that the product map cannot represent. The codec validates on encode and decode,
+exact snapshot and RoutePlan identity, requires a finite positive
+`RoutePlan.actualDistanceKM`, rejects navigation or atlas evidence newer than
+the product release, and requires released atlas topology to contain every
+initial edge, incoming approach, movement, and outgoing edge exposed by the
+reviewed editor catalog. This keeps authoring choices from naming entities that
+the product map cannot represent and prevents a product release that cannot
+produce an honest pre-drive distance. The codec validates on encode and decode,
 while `kaido-release validate-product` exposes the same joint gate to release
 automation. KR-D26 proves that two separately valid synthetic artifacts still
 fail the product gate when one editor approach is absent from the atlas, and
@@ -436,7 +438,7 @@ identity-drifted, duplicate, and ambiguous assets fail closed. The default
 journey selects only an exact compiled `RoutePlan`; it does not fall back by
 route ID or substitute the bundled demo. This app-distribution gate is covered
 at L3 rather than by a new portable scenario because it depends on Apple bundle
-resources, while schema-4.0 product semantics remain portable and
+resources, while schema-5.0 product semantics remain portable and
 codec-authoritative.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
@@ -637,7 +639,7 @@ hard properties that must remain proven as the product expands:
     and its released runtime policy is the only source of entry transition,
     recovery candidates, and legal egress.
 33. structural release validity alone cannot enable live sensors; only one
-    schema-4.0 joint product release with consistent released-road sources and
+    schema-5.0 joint product release with consistent released-road sources and
     explicit foreground policy can mint the exact runtime-bound foreground
     input token, while synthetic or mixed evidence fails closed.
 

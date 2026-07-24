@@ -101,10 +101,9 @@ final class PreDriveReviewModelTests: XCTestCase {
   func testDuplicateTariffQuoteIdentityFailsClosed() throws {
     let editor = try ParkedRouteEditorModel()
     let duplicate = PreDriveReviewFixture(
+      evaluatedAt: PreDriveReviewFixture.synthetic.evaluatedAt,
       networkSnapshotID: PreDriveReviewFixture.synthetic.networkSnapshotID,
       routePlanID: PreDriveReviewFixture.synthetic.routePlanID,
-      entryFacilityID: PreDriveReviewFixture.synthetic.entryFacilityID,
-      exitFacilityID: PreDriveReviewFixture.synthetic.exitFacilityID,
       passageEvidence: PreDriveReviewFixture.synthetic.passageEvidence,
       tariffQuotes: [
         PreDriveReviewFixture.synthetic.tariffQuotes[0],
@@ -120,6 +119,27 @@ final class PreDriveReviewModelTests: XCTestCase {
     XCTAssertEqual(
       review.lastErrorCode,
       "PRE_DRIVE_INVALID_TARIFF_EVIDENCE"
+    )
+  }
+
+  func testRealtimeConfirmedPassageWithoutAuthorityFailsClosed() throws {
+    let editor = try ParkedRouteEditorModel()
+    let evidence = PreDriveReviewFixture(
+      evaluatedAt: PreDriveReviewFixture.synthetic.evaluatedAt,
+      networkSnapshotID: PreDriveReviewFixture.synthetic.networkSnapshotID,
+      routePlanID: PreDriveReviewFixture.synthetic.routePlanID,
+      passageEvidence: .realtimeConfirmedPassable,
+      tariffQuotes: PreDriveReviewFixture.synthetic.tariffQuotes
+    )
+    let review = PreDriveReviewModel(routeEditor: editor, fixture: evidence)
+
+    editor.select(choiceID: "preview.synthetic.choice.early-exit")
+    editor.compile()
+
+    XCTAssertNil(review.snapshot)
+    XCTAssertEqual(
+      review.lastErrorCode,
+      "PRE_DRIVE_REALTIME_PASSAGE_AUTHORITY_UNAVAILABLE"
     )
   }
 }

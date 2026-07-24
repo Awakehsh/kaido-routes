@@ -227,6 +227,8 @@
       "additionalProperties": false,
       "required": [
         "quote_id",
+        "entry_facility_id",
+        "exit_facility_id",
         "status",
         "vehicle_class",
         "tariff_version_id",
@@ -236,6 +238,14 @@
       ],
       "properties": {
         "quote_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entry_facility_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exit_facility_id": {
           "type": "string",
           "minLength": 1
         },

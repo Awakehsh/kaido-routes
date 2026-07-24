@@ -340,6 +340,16 @@ versions are non-active until primary evidence establishes an effective rule.
 Input order, a newer check timestamp, or a proposed amount cannot make a
 non-active version win.
 
+`PreDriveReviewEvidence` is evaluated per session and is not embedded in a
+versioned product release. `PreDriveReviewEvaluator` requires exact snapshot,
+RoutePlan, directional entrance, and directional exit identity; a finite
+positive actual route distance; a valid evaluation time; unique, dated HTTPS
+tariff evidence; and exactly one active tariff version. It validates non-active
+quotes too, so an invalid proposed or retired record cannot hide behind the
+selected result. Until a separate live-passage authority and freshness contract
+exists, `REALTIME_CONFIRMED_PASSABLE` fails closed. Missing live input remains
+`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED`, never confirmed open.
+
 ## Signs and localization
 
 Store displayed sign evidence separately from localized explanation:

@@ -10,6 +10,7 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -312,6 +313,8 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
     quote_ids: set[str] = set()
     required = {
         "quote_id",
+        "entry_facility_id",
+        "exit_facility_id",
         "status",
         "vehicle_class",
         "tariff_version_id",
@@ -336,14 +339,24 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
                 f"{context}.tariff_version_status is unknown: "
                 f"{quote['tariff_version_status']!r}"
             )
-        for field in ("vehicle_class", "tariff_version_id"):
+        for field in (
+            "entry_facility_id",
+            "exit_facility_id",
+            "vehicle_class",
+            "tariff_version_id",
+        ):
             if not isinstance(quote[field], str) or not quote[field].strip():
                 v.add(f"{context}.{field} must be non-empty")
         if not is_datetime(quote["checked_at"]):
             v.add(f"{context}.checked_at must be an ISO date-time")
         reference = quote["official_query_reference"]
-        if not isinstance(reference, str) or ":" not in reference:
-            v.add(f"{context}.official_query_reference must be an absolute URI")
+        parsed_reference = urlparse(reference) if isinstance(reference, str) else None
+        if (
+            parsed_reference is None
+            or parsed_reference.scheme.lower() != "https"
+            or not parsed_reference.netloc
+        ):
+            v.add(f"{context}.official_query_reference must be an HTTPS URI")
         distance = quote.get("tariff_distance_km")
         if distance is not None and (
             not isinstance(distance, (int, float))
@@ -356,6 +369,75 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
             not isinstance(amount, int) or isinstance(amount, bool) or amount < 0
         ):
             v.add(f"{context}.estimated_amount_yen must be a non-negative integer")
+        if quote["status"] != "UNKNOWN" and (distance is None or amount is None):
+            v.add(
+                f"{context} requires tariff distance and amount for "
+                f"{quote['status']}"
+            )
+
+
+def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "pre_drive_evidence" not in inputs:
+        return
+    evidence = inputs["pre_drive_evidence"]
+    context = "given.inputs.pre_drive_evidence"
+    required = {
+        "evaluated_at",
+        "network_snapshot_id",
+        "route_plan_id",
+        "passage_evidence",
+    }
+    if not v.require_keys(evidence, required, context):
+        return
+    route_plan = given.get("route_plan")
+    if not isinstance(route_plan, dict):
+        v.add(f"{context} requires given.route_plan")
+        return
+    if evidence["network_snapshot_id"] != route_plan.get("network_snapshot_id"):
+        v.add(f"{context}.network_snapshot_id must match given.route_plan")
+    if evidence["route_plan_id"] != route_plan.get("plan_id"):
+        v.add(f"{context}.route_plan_id must match given.route_plan")
+    if not is_datetime(evidence["evaluated_at"]):
+        v.add(f"{context}.evaluated_at must be an ISO date-time")
+    passage_states = {
+        "KNOWN_CLOSED",
+        "PLANNED_CONFLICT",
+        "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "REALTIME_CONFIRMED_PASSABLE",
+    }
+    if evidence["passage_evidence"] not in passage_states:
+        v.add(f"{context}.passage_evidence is unknown")
+    quotes = given.get("tariff_quotes")
+    if not isinstance(quotes, list) or not quotes:
+        v.add(f"{context} requires at least one tariff quote")
+        return
+    entry_id = route_plan.get("entry_facility_id")
+    exit_id = route_plan.get("exit_facility_id")
+    for index, quote in enumerate(quotes):
+        if not isinstance(quote, dict):
+            continue
+        if quote.get("entry_facility_id") != entry_id:
+            v.add(
+                f"given.tariff_quotes[{index}].entry_facility_id "
+                "must match given.route_plan"
+            )
+        if quote.get("exit_facility_id") != exit_id:
+            v.add(
+                f"given.tariff_quotes[{index}].exit_facility_id "
+                "must match given.route_plan"
+            )
+        checked_at = quote.get("checked_at")
+        if is_datetime(checked_at) and is_datetime(evidence["evaluated_at"]):
+            checked = datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
+            evaluated = datetime.fromisoformat(
+                evidence["evaluated_at"].replace("Z", "+00:00")
+            )
+            if checked > evaluated:
+                v.add(
+                    f"given.tariff_quotes[{index}].checked_at "
+                    "must not postdate pre-drive evaluation"
+                )
 
 
 def validate_guidance_anchors(v: Validation, given: dict[str, Any]) -> None:
@@ -1794,6 +1876,21 @@ def validate_product_release_artifact(
     route_plan_id = (
         route_plan.get("plan_id") if isinstance(route_plan, dict) else None
     )
+    actual_distance = (
+        route_plan.get("actual_distance_km")
+        if isinstance(route_plan, dict)
+        else None
+    )
+    if (
+        not isinstance(actual_distance, (int, float))
+        or isinstance(actual_distance, bool)
+        or not math.isfinite(actual_distance)
+        or actual_distance <= 0
+    ):
+        v.add(
+            "product release RoutePlan.actual_distance_km must be finite "
+            "and positive"
+        )
 
     catalog = inputs["expert_route_editor_catalog"]
     required_editor_entity_ids: set[str] = set()
@@ -2174,6 +2271,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
             )
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
+        validate_pre_drive_evidence(v, given)
         validate_guidance_anchors(v, given)
         validate_entrance_recommendation(v, given)
         validate_matcher_guidance_inputs(v, given)

@@ -267,12 +267,14 @@ layout binding, candidate ranking, or snapping tolerances.
 
 The internal iPhone adapter also composes KR-U04 after the exact explicit-exit
 compilation. A same-snapshot reviewed-distance catalog walks RoutePlan
-occurrences, so repeated entities contribute once per traversal. The app model
-then requires exact route, entry, and exit identity, selects one unique
-`ACTIVE` tariff record, and binds the existing presentation projection to an
-accessibility-visible review. App tests verify that actual distance changes with
-a duplicated lap while tariff distance does not, unconfirmed passage is not
-positive-open, invalid evidence fails closed, and undo removes the review.
+occurrences, so repeated entities contribute once per traversal. The shared
+pre-drive evaluator binds a dated evidence set to the exact snapshot, RoutePlan,
+entry, and exit, validates every tariff record, and selects one unique `ACTIVE`
+version before creating the presentation projection. The portable runner now
+executes that same boundary rather than projecting loose scalars. App tests
+verify that actual distance changes with a duplicated lap while tariff distance
+does not, unconfirmed passage is not positive-open, unauthorized positive live
+state and invalid evidence fail closed, and undo removes the review.
 
 The default iPhone product-journey shell has a separate app-state and XCUITest
 floor. App tests require Route Atlas → parked authoring → pre-drive review
@@ -355,7 +357,7 @@ release eligibility.
 KR-D26 crosses the two independently valid distribution boundaries without
 merging their authority. The runner builds and validates one navigation artifact
 and one Route Atlas artifact, embeds both in `KaidoProductReleaseArtifact`, and
-then requires exact snapshot, RoutePlan, chronology, and complete
+then requires exact snapshot, RoutePlan, positive actual distance, chronology, and complete
 editor-catalog-to-atlas entity coverage. Its negative fixture omits one incoming
 approach from otherwise valid atlas topology, so both nested events pass while
 the joint product event blocks with the exact missing entity ID. Python
@@ -365,7 +367,7 @@ cannot expose a partial runtime identity. Every released value remains
 synthetic.
 
 KR-D27 separates structural product validity from sensor authority. A shared
-platform-light evaluator consumes the schema-4.0 `runtime_use` declaration and
+platform-light evaluator consumes the schema-5.0 `runtime_use` declaration and
 both nested source domains. Synthetic scope is valid only with live input
 disabled; released-road scope rejects every `SYNTHETIC_TEST_ONLY` source; and a
 valid released-road product with disabled input still mints no token. Only the

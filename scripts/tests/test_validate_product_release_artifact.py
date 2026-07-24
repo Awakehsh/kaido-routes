@@ -154,6 +154,20 @@ class ValidateProductReleaseArtifactTests(unittest.TestCase):
             )
         )
 
+    def test_product_release_requires_actual_route_distance(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        del scenario["given"]["route_plan"]["actual_distance_km"]
+
+        errors = self.validate_inputs(scenario)
+
+        self.assertTrue(
+            any(
+                "RoutePlan.actual_distance_km must be finite and positive"
+                in error
+                for error in errors
+            )
+        )
+
     def test_future_navigation_or_atlas_evidence_fails_validation(self) -> None:
         scenario = copy.deepcopy(self.scenario)
         inputs = scenario["given"]["inputs"]

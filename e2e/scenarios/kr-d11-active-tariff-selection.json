@@ -22,6 +22,8 @@
     "tariff_quotes": [
       {
         "quote_id": "test.quote.proposed-first",
+        "entry_facility_id": "test.entrance.tariff-selection",
+        "exit_facility_id": "test.exit.tariff-selection",
         "status": "ESTIMATED",
         "vehicle_class": "STANDARD_CAR_ETC",
         "tariff_version_id": "test.tariff.proposed",
@@ -33,6 +35,8 @@
       },
       {
         "quote_id": "test.quote.active",
+        "entry_facility_id": "test.entrance.tariff-selection",
+        "exit_facility_id": "test.exit.tariff-selection",
         "status": "VERIFIED_QUERY",
         "vehicle_class": "STANDARD_CAR_ETC",
         "tariff_version_id": "test.tariff.active",

@@ -16,7 +16,7 @@ public enum ProductEditorAtlasEntityRole: String, Equatable, Sendable {
 /// artifact adds cross-artifact identity, authoring coverage, and an explicit
 /// runtime-use declaration.
 public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "4.0"
+  public static let currentSchemaVersion = "5.0"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -58,6 +58,7 @@ public enum KaidoProductReleaseIssue: Equatable, Sendable {
   case invalidRouteAtlasRelease(RouteAtlasReleaseIssue)
   case networkSnapshotMismatch
   case routePlanMismatch
+  case actualRouteDistanceUnavailable
   case navigationReleaseAfterProductRelease
   case atlasEvidenceAfterProductRelease(String)
   case missingAtlasEditorEntity(ProductEditorAtlasEntityRole, String)
@@ -78,6 +79,8 @@ public enum KaidoProductReleaseIssue: Equatable, Sendable {
       "PRODUCT_RELEASE_NETWORK_SNAPSHOT_MISMATCH"
     case .routePlanMismatch:
       "PRODUCT_RELEASE_ROUTE_PLAN_MISMATCH"
+    case .actualRouteDistanceUnavailable:
+      "PRODUCT_RELEASE_ACTUAL_ROUTE_DISTANCE_UNAVAILABLE"
     case .navigationReleaseAfterProductRelease:
       "NAVIGATION_RELEASE_AFTER_PRODUCT_RELEASE"
     case .atlasEvidenceAfterProductRelease:
@@ -196,6 +199,13 @@ public struct KaidoProductRelease: Equatable, Sendable {
       }
       if !routePlanMatches {
         issues.append(.routePlanMismatch)
+      }
+      if let actualDistanceKM = navigation.bundle.routePlan.actualDistanceKM {
+        if !actualDistanceKM.isFinite || actualDistanceKM <= 0 {
+          issues.append(.actualRouteDistanceUnavailable)
+        }
+      } else {
+        issues.append(.actualRouteDistanceUnavailable)
       }
       if let navigationDate = Self.parseISO8601(navigation.releasedAt),
         let productDate = Self.parseISO8601(artifact.releasedAt),

@@ -49,19 +49,48 @@ public struct ScenarioGiven: Decodable, Sendable {
 
 public struct ScenarioTariffQuote: Decodable, Equatable, Sendable {
   public let id: String
+  public let entryFacilityID: String
+  public let exitFacilityID: String
   public let status: String
+  public let vehicleClass: String
   public let tariffVersionID: String
   public let tariffVersionStatus: TariffVersionStatus
   public let tariffDistanceKM: Double?
   public let estimatedAmountYen: Int?
+  public let checkedAt: String
+  public let officialQueryReference: String
 
   private enum CodingKeys: String, CodingKey {
     case id = "quote_id"
+    case entryFacilityID = "entry_facility_id"
+    case exitFacilityID = "exit_facility_id"
     case status
+    case vehicleClass = "vehicle_class"
     case tariffVersionID = "tariff_version_id"
     case tariffVersionStatus = "tariff_version_status"
     case tariffDistanceKM = "tariff_distance_km"
     case estimatedAmountYen = "estimated_amount_yen"
+    case checkedAt = "checked_at"
+    case officialQueryReference = "official_query_reference"
+  }
+
+  public func tariffQuote() throws -> TariffQuote {
+    guard let evidenceStatus = TollEvidenceStatus(rawValue: status) else {
+      throw ScenarioExecutionError.invalidInput("tariff_quotes.status")
+    }
+    return TariffQuote(
+      id: id,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      vehicleClass: vehicleClass,
+      tariffVersionID: tariffVersionID,
+      tariffVersionStatus: tariffVersionStatus,
+      tariffDistanceKM: tariffDistanceKM,
+      estimatedAmountYen: estimatedAmountYen,
+      evidenceStatus: evidenceStatus,
+      checkedAt: checkedAt,
+      officialQueryReference: officialQueryReference
+    )
   }
 }
 

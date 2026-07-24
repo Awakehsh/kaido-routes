@@ -121,7 +121,7 @@ joint release whose identities, sources, and licences are explicitly synthetic.
 Its foreground-navigation controller does not construct a `CLLocationManager`
 unless it receives the unforgeable live-input token minted by a validated joint
 product release for the exact product release, navigation release, runtime
-policy, snapshot, RoutePlan, and matcher corridor. The schema-4.0 bundled
+policy, snapshot, RoutePlan, and matcher corridor. The schema-5.0 bundled
 synthetic release declares `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and
 always supplies a typed blocker, so the panel requests no permission and
 displays no live measured position. An admitted
@@ -248,15 +248,20 @@ same-snapshot synthetic reviewed-distance catalog. Repeated traversals therefore
 increase `RoutePlan.actualDistanceKM` again instead of being deduplicated.
 Missing distance coverage, invalid values, or snapshot drift block compilation.
 
-`PreDriveReviewModel` then requires the exact RoutePlan, entrance, and exit
-identity. It uses `TariffSelector` to require one unique `ACTIVE` tariff quote
-and sends the independent actual distance, tariff distance, amount evidence, and
-passage evidence through `PreDriveReviewProjector`. The view never derives toll
+`PreDriveReviewModel` delegates to the platform-light
+`PreDriveReviewEvaluator`. The evaluator binds a dated evidence set to the exact
+RoutePlan and network snapshot, validates every quote against the directional
+entrance and exit, and requires one unique `ACTIVE` tariff version before
+creating the presentation. It rejects a positive realtime passage state because
+no live authority and freshness token exists yet. The view never derives toll
 from route distance and never presents
-`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open. The tracked fixture
-is synthetic, and the navigation control remains locked because the app has no
-provenance-validated real `KaidoProductReleaseArtifact` binding one navigation
-release to the exact released Route Atlas and editor topology.
+`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open.
+
+`ReleasedPreDriveReviewAdapter` applies the same evaluation to the RoutePlan
+owned by one validated `KaidoProductRelease`; tariff and passage evidence remain
+per-session inputs rather than frozen release assets. The bundled fixture is
+synthetic, and the navigation control remains locked because the app has no
+real-road product release plus current authorized session evidence.
 
 ## Guidance language preview
 

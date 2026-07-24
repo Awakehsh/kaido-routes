@@ -18,6 +18,12 @@ SCENARIO_PATH = (
     / "scenarios"
     / "kr-u02-duplicate-reviewed-editor-lap.json"
 )
+PRE_DRIVE_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-u04-pre-drive-review.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -61,6 +67,58 @@ class ValidateExpertRouteEditorLapTests(unittest.TestCase):
 
         self.assertTrue(
             any("duplicate editor lap template_id" in error for error in errors)
+        )
+
+
+class ValidatePreDriveEvidenceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            PRE_DRIVE_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_evidence(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(PRE_DRIVE_SCENARIO_PATH)
+        validator.validate_tariff_quotes(
+            validation,
+            scenario["given"]["tariff_quotes"],
+        )
+        validator.validate_pre_drive_evidence(
+            validation,
+            scenario["given"],
+        )
+        return validation.errors
+
+    def test_exact_pre_drive_evidence_is_valid(self) -> None:
+        self.assertEqual(self.validate_evidence(self.scenario), [])
+
+    def test_tariff_route_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["tariff_quotes"][0][
+            "exit_facility_id"
+        ] = "test.exit.drift"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "exit_facility_id must match given.route_plan" in error
+                for error in errors
+            )
+        )
+
+    def test_future_tariff_evidence_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["tariff_quotes"][0][
+            "checked_at"
+        ] = "2026-07-23T13:00:00+09:00"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "must not postdate pre-drive evaluation" in error
+                for error in errors
+            )
         )
 
 

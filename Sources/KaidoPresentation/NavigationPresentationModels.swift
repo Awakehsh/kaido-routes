@@ -252,12 +252,6 @@ public struct NavigationPresentationProjection: Equatable, Sendable {
   }
 }
 
-public enum TollEvidenceStatus: String, Codable, Sendable {
-  case verifiedQuery = "VERIFIED_QUERY"
-  case estimated = "ESTIMATED"
-  case unknown = "UNKNOWN"
-}
-
 public struct PreDriveReviewRequest: Equatable, Sendable {
   public let actualDistanceKM: Double
   public let tariffDistanceKM: Double?

@@ -672,6 +672,7 @@
       }
     ],
     "route_plan" : {
+      "actual_distance_km" : 27.4,
       "entry_facility_id" : "test.entrance",
       "exit_facility_id" : "test.exit",
       "network_snapshot_id" : "test.snapshot.release-bundle",
@@ -990,6 +991,7 @@
       "status" : "ACTIVE"
     },
     "route_plan" : {
+      "actual_distance_km" : 27.4,
       "entry_facility_id" : "test.entrance",
       "exit_facility_id" : "test.exit",
       "network_snapshot_id" : "test.snapshot.release-bundle",
@@ -1163,5 +1165,5 @@
     "evidence_scope" : "SYNTHETIC_TEST_ONLY",
     "live_input_policy" : "DISABLED"
   },
-  "schema_version" : "4.0"
+  "schema_version" : "5.0"
 }

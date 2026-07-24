@@ -1894,12 +1894,53 @@ private struct ScenarioHarness {
 
   private mutating func projectTariffQuote(_ payload: [String: JSONValue]) throws {
     let quoteID = try payload.requiredString("quote_id")
-    guard let quote = scenario.given.tariffQuotes.first(where: { $0.id == quoteID }),
-      let routeSummary = scenario.given.inputs.object("route_summary")
-    else {
+    guard let quote = scenario.given.tariffQuotes.first(where: { $0.id == quoteID }) else {
       throw ScenarioExecutionError.invalidInput("quote_id")
     }
 
+    if let evidenceValue = scenario.given.inputs.object("pre_drive_evidence") {
+      clearPreDriveReviewObservations()
+      guard let routePlan = scenario.given.routePlan,
+        let passageEvidence = evidenceValue.string("passage_evidence")
+          .flatMap(RoutePassageEvidence.init(rawValue:))
+      else {
+        throw ScenarioExecutionError.invalidInput("pre_drive_evidence")
+      }
+      let evidence = try PreDriveReviewEvidence(
+        evaluatedAt: evidenceValue.requiredString("evaluated_at"),
+        networkSnapshotID: evidenceValue.requiredString("network_snapshot_id"),
+        routePlanID: evidenceValue.requiredString("route_plan_id"),
+        passageEvidence: passageEvidence,
+        tariffQuotes: scenario.given.tariffQuotes.map { try $0.tariffQuote() }
+      )
+      do {
+        let evaluation = try PreDriveReviewEvaluator.evaluate(
+          routePlan: routePlan,
+          evidence: evidence
+        )
+        guard evaluation.selectedTariffQuote.id == quote.id else {
+          throw ScenarioExecutionError.invalidInput(
+            "pre_drive_evidence.selected_quote_id"
+          )
+        }
+        publish(evaluation.presentation)
+        adapterObservations["pre_drive.evidence.status"] = .string("VALID")
+        adapterObservations["pre_drive.evidence.selected_quote_id"] = .string(
+          evaluation.selectedTariffQuote.id
+        )
+        adapterObservations[
+          "pre_drive.evidence.ignored_non_active_quote_ids"
+        ] = .strings(evaluation.ignoredNonActiveQuoteIDs)
+      } catch let error as PreDriveReviewEvaluationError {
+        adapterObservations["pre_drive.evidence.status"] = .string("BLOCKED")
+        adapterObservations["pre_drive.evidence.error_code"] = .string(error.code)
+      }
+      return
+    }
+
+    guard let routeSummary = scenario.given.inputs.object("route_summary") else {
+      throw ScenarioExecutionError.invalidInput("route_summary")
+    }
     guard let actualDistance = routeSummary.double("actual_distance_km"),
       let tollEvidenceStatus = TollEvidenceStatus(rawValue: quote.status),
       let passageEvidence = RoutePassageEvidence(
@@ -1919,6 +1960,15 @@ private struct ScenarioHarness {
       )
     )
     publish(review)
+  }
+
+  private mutating func clearPreDriveReviewObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("pre_drive.evidence.")
+        || $0.hasPrefix("route_summary.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
   }
 
   private mutating func refreshPresentation() throws {

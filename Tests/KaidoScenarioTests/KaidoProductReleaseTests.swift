@@ -127,7 +127,7 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     junctionViews: validNavigation.junctionViews
   )
   let artifact = KaidoProductReleaseArtifact(
-    schemaVersion: "5.0",
+    schemaVersion: "6.0",
     releaseID: "test.product-release.future-navigation",
     releasedAt: "2026-07-24T12:00:00+09:00",
     navigationRelease: futureNavigation,
@@ -143,6 +143,48 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
   } catch KaidoProductReleaseError.invalid(let issues) {
     #expect(issues.contains(.invalidArtifactSchemaVersion))
     #expect(issues.contains(.navigationReleaseAfterProductRelease))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Product release requires a finite positive actual route distance")
+func kaidoProductReleaseRequiresActualRouteDistance() {
+  let validFixture = navigationReleaseBundleFixture()
+  let routePlan = RoutePlan(
+    id: validFixture.routePlan.id,
+    networkSnapshotID: validFixture.routePlan.networkSnapshotID,
+    entryFacilityID: validFixture.routePlan.entryFacilityID,
+    exitFacilityID: validFixture.routePlan.exitFacilityID,
+    recoveryPolicy: validFixture.routePlan.recoveryPolicy,
+    occurrences: validFixture.routePlan.occurrences
+  )
+  let fixture = NavigationReleaseBundleFixture(
+    networkSnapshot: validFixture.networkSnapshot,
+    routePlan: routePlan,
+    editorCatalog: validFixture.editorCatalog,
+    editorPresentationCatalog: validFixture.editorPresentationCatalog,
+    runtimePolicy: validFixture.runtimePolicy,
+    matcherCorridor: validFixture.matcherCorridor,
+    decisionZones: validFixture.decisionZones,
+    releasedGuidance: validFixture.releasedGuidance,
+    junctionViews: validFixture.junctionViews
+  )
+  let artifact = KaidoProductReleaseArtifact(
+    releaseID: "test.product-release.missing-actual-distance",
+    releasedAt: "2026-07-24T12:00:00+09:00",
+    navigationRelease: navigationReleaseArtifact(fixture),
+    routeAtlasRelease: productRouteAtlasArtifact(
+      fixture,
+      includeIncomingApproach: true
+    )
+  )
+
+  do {
+    _ = try KaidoProductRelease(artifact: artifact)
+    Issue.record("Expected missing actual distance to block product release")
+  } catch KaidoProductReleaseError.invalid(let issues) {
+    #expect(issues == [.actualRouteDistanceUnavailable])
   } catch {
     Issue.record("Unexpected error: \(error)")
   }

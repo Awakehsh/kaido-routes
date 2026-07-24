@@ -37,6 +37,8 @@
     "tariff_quotes": [
       {
         "quote_id": "iikura-takaracho-shibakoen-day",
+        "entry_facility_id": "shutoko.entrance.iikura",
+        "exit_facility_id": "shutoko.exit.shibakoen",
         "status": "VERIFIED_QUERY",
         "vehicle_class": "STANDARD_CAR_ETC",
         "tariff_version_id": "shutoko.tariff.2026-07-22-active",

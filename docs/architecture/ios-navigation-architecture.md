@@ -505,15 +505,16 @@ an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 
-`KaidoProductReleaseArtifact` schema 4.0 is the outer distribution envelope a
+`KaidoProductReleaseArtifact` schema 5.0 is the outer distribution envelope a
 product build must consume. It embeds the complete navigation and Route Atlas
 artifacts plus an explicit `runtime_use` declaration rather than referencing two
 mutable release names. `KaidoProductRelease` first
 revalidates both nested gates, then requires exact `NetworkSnapshot` and
-`RoutePlan` equality. Its release time cannot precede the nested navigation
-release or any Route Atlas source, topology, or layout evidence. Finally, every
-editor-catalog initial edge, incoming approach, movement, and outgoing edge must
-resolve to one unique `routeEntityID` in the released atlas topology slice.
+`RoutePlan` equality and a finite positive actual route distance. Its release
+time cannot precede the nested navigation release or any Route Atlas source,
+topology, or layout evidence. Finally, every editor-catalog initial edge,
+incoming approach, movement, and outgoing edge must resolve to one unique
+`routeEntityID` in the released atlas topology slice.
 Coverage is over the whole released editor catalog, not only the occurrences in
 the active RoutePlan. `KaidoProductReleaseArtifactCodec` validates on encode and
 decode, and `kaido-release validate-product` exposes the same boundary to build
@@ -732,13 +733,18 @@ That is a development fact, not yet the minimum deployment target.
   implementing production snapping or layout matching.
 - The pre-drive adapter consumes only the compiled exact RoutePlan. A
   same-snapshot reviewed-distance catalog may populate actual distance by
-  walking ordered occurrences; a separate uniquely active tariff record supplies
-  tariff distance and toll evidence. SwiftUI renders the resulting KR-U04
-  projection and cannot derive one distance from the other. The internal
-  synthetic review keeps navigation start locked until a coherent released
-  bundle exists. The journey shell can expose review only after this projection
-  exists; undo or any new edit removes the compiled plan and demotes the shell
-  back to authoring rather than retaining stale readiness.
+  walking ordered occurrences. `PreDriveReviewEvaluator` then binds a separately
+  dated evidence set to the exact snapshot, RoutePlan, entrance, and exit,
+  validates every tariff record, and selects exactly one `ACTIVE` version.
+  Tariff and passage evidence remain session inputs rather than versioned product
+  assets. Until a live authority and freshness contract exists, the evaluator
+  rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays neutral.
+  SwiftUI renders the resulting KR-U04 projection and cannot derive one distance
+  from the other. `ReleasedPreDriveReviewAdapter` exposes the same evaluator for
+  one validated joint product release. The internal synthetic review keeps
+  navigation start locked. The journey shell can expose review only after this
+  projection exists; undo or any new edit removes the compiled plan and demotes
+  the shell back to authoring rather than retaining stale readiness.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

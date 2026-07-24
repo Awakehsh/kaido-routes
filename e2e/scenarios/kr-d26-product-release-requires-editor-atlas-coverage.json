@@ -26,6 +26,7 @@
       "entry_facility_id": "test.entrance.product-release",
       "exit_facility_id": "test.exit.product-release",
       "recovery_policy": "SAFE_REJOIN",
+      "actual_distance_km": 12.7,
       "occurrences": [
         {
           "occurrence_id": "test.occurrence.product-release.approach",
@@ -517,13 +518,13 @@
       "id": "validate-product-release",
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "4.0"}
+      "payload": {"schema_version": "5.0"}
     },
     {
       "id": "create-product-runtime",
       "at_ms": 3,
       "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
-      "payload": {"schema_version": "4.0"}
+      "payload": {"schema_version": "5.0"}
     }
   ],
   "then": [

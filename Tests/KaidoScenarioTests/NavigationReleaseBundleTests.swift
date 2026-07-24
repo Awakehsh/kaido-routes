@@ -864,6 +864,7 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     entryFacilityID: "test.entrance",
     exitFacilityID: "test.exit",
     recoveryPolicy: .safeRejoin,
+    actualDistanceKM: 27.4,
     occurrences: [
       routeOccurrence("test.occurrence.entry", 0, .edge, "test.edge.loop"),
       routeOccurrence(

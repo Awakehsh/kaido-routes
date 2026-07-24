@@ -19,9 +19,27 @@
       "status": "TEST",
       "effective_at": "2026-07-23T00:00:00+09:00"
     },
+    "route_plan": {
+      "plan_id": "test.plan.pre-drive-v1",
+      "network_snapshot_id": "test.snapshot.pre-drive-v1",
+      "entry_facility_id": "test.entrance.pre-drive",
+      "exit_facility_id": "test.exit.pre-drive",
+      "recovery_policy": "STRICT",
+      "actual_distance_km": 72.4,
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.pre-drive",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.pre-drive"
+        }
+      ]
+    },
     "tariff_quotes": [
       {
         "quote_id": "test.quote.pre-drive",
+        "entry_facility_id": "test.entrance.pre-drive",
+        "exit_facility_id": "test.exit.pre-drive",
         "status": "ESTIMATED",
         "vehicle_class": "STANDARD",
         "tariff_version_id": "test.tariff.active",
@@ -33,8 +51,10 @@
       }
     ],
     "inputs": {
-      "route_summary": {
-        "actual_distance_km": 72.4,
+      "pre_drive_evidence": {
+        "evaluated_at": "2026-07-23T12:00:00+09:00",
+        "network_snapshot_id": "test.snapshot.pre-drive-v1",
+        "route_plan_id": "test.plan.pre-drive-v1",
         "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED"
       }
     },
@@ -51,6 +71,24 @@
     }
   ],
   "then": [
+    {
+      "id": "pre-drive-evidence-is-valid",
+      "after": "review",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.evidence.status",
+      "matcher": "EQUALS",
+      "expected": "VALID",
+      "rationale": "The review is rendered only after session evidence binds to the exact RoutePlan and network snapshot."
+    },
+    {
+      "id": "active-quote-selected",
+      "after": "review",
+      "category": "TOLL",
+      "subject": "pre_drive.evidence.selected_quote_id",
+      "matcher": "EQUALS",
+      "expected": "test.quote.pre-drive",
+      "rationale": "The event quote must be the unique active result selected from the validated evidence set."
+    },
     {
       "id": "actual-distance-is-route-distance",
       "after": "review",

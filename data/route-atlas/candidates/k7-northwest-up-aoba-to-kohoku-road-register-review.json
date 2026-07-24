@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "review_id": "shutoko.k7-northwest.kohoku-surface-road-register.2026-07-24",
   "checked_at": "2026-07-24",
   "navigation_authority": false,
@@ -11,24 +11,97 @@
     "surface_osm_way_id": 776884422,
     "source_direction": "FORWARD"
   },
-  "source_reference": {
-    "source_reference_id": "yokohama.road-register-access.2026-07-24",
-    "authority_name": "City of Yokohama",
-    "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html",
-    "interactive_register_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Portal",
-    "content_sha256": "d3969d3cc62c04208abbffa2fa6c36d2f15fc6e509302f8f335697bc227fe9b6",
-    "source_last_updated_at": "2026-01-20",
-    "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
-  },
+  "source_references": [
+    {
+      "source_reference_id": "yokohama.road-register-access.2026-07-24",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html",
+      "content_sha256": "d3969d3cc62c04208abbffa2fa6c36d2f15fc6e509302f8f335697bc227fe9b6",
+      "source_last_updated_at": "2026-01-20",
+      "checked_at": "2026-07-24",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.road-name-faq.2026-07-24",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/faq/kukyoku/doro/doro-chosa/20211014144003932.html",
+      "content_sha256": "9c5e2027622f51e1682e52c4e370f3ca02d22ccfff9c839fb79c1c5d0266b06f",
+      "source_last_updated_at": "2026-03-19",
+      "checked_at": "2026-07-24",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.road-register-currentness.2026-07-24",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://wwwm.city.yokohama.lg.jp/yokohama-sp/yokohama-sp/Content/pages/up_date/5_michi/koushin.html",
+      "content_sha256": "33d94d39759fa1d5d7438c9c7b41ee412b6aa9dacd828019d25e935e415a07f9",
+      "recognized_route_data_current_through": "2026-07-03",
+      "checked_at": "2026-07-24",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.road-register-terms.2026-07-24",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?IsPost=False&MapId=67&RequestPage=%2Fyokohama%2FPositionSelect%3Fmid%3D67",
+      "content_sha256": "e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102",
+      "checked_at": "2026-07-24",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.k7-northwest.brochure.2026-07-23",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/kousokudoro/kanjodouro.files/0006_20220315.pdf",
+      "content_sha256": "ff4e905661ab7006464fc867ab48b3b3de311bfae438db8af41817633f550d01",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.kawamuki-opening.2020-02-06",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/2019/0206-kawamukousen.files/0005_20200206.pdf",
+      "archive_url": "https://web.archive.org/web/20200327180920id_/https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/2019/0206-kawamukousen.files/0005_20200206.pdf",
+      "content_sha256": "bca0774b5e80dd4bb1ed3ce3960d053e953b8cd376f2864c10f7df47eb9a7c35",
+      "published_at": "2020-02-06",
+      "checked_at": "2026-07-23",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    }
+  ],
   "review_method": {
+    "interactive_register_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Portal",
+    "recognized_route_map_id": 67,
     "available_register_layers": [
       "ROAD_LEDGER_PLAN",
       "ROAD_AREA_BOUNDARY",
       "RECOGNIZED_ROUTE"
     ],
     "online_update_lag_warning_recorded": true,
+    "online_material_is_legal_proof": false,
+    "latest_legal_record_requires_office_review": true,
     "exact_record_review_status": "PENDING",
     "exact_record_reference": null
+  },
+  "supporting_findings": {
+    "official_exit_connection": {
+      "status": "CORRIDOR_LEVEL_ONLY",
+      "finding": "Yokohama Kohoku Exit connects to Kawamuki Line.",
+      "source_reference_ids": [
+        "yokohama.k7-northwest.brochure.2026-07-23"
+      ]
+    },
+    "official_corridor_identity": {
+      "status": "HISTORICAL_CORRIDOR_IDENTITY",
+      "recognized_route_identifier": "CITY_ROAD_HIGASHIKATA_NO_342",
+      "recognized_route_name_ja": "市道東方町第342号線",
+      "urban_plan_name_ja": "都市計画道路川向線",
+      "source_reference_ids": [
+        "yokohama.kawamuki-opening.2020-02-06"
+      ]
+    },
+    "exact_osm_way_mapping": {
+      "status": "UNCONFIRMED",
+      "reason_code": "CORRIDOR_EVIDENCE_DOES_NOT_ISOLATE_EXACT_WAY",
+      "reason": "The official corridor descriptions do not uniquely distinguish OSM way 776884422 from the two named Kawamuki Line carriageways that leave the same exit-terminal node."
+    }
   },
   "current_road_identity": {
     "status": "UNCONFIRMED",
@@ -48,7 +121,7 @@
     "status": "BLOCKED",
     "blocker_codes": [
       "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-      "INTERACTIVE_ROAD_REGISTER_RECORD_NOT_REVIEWED"
+      "EXACT_RECOGNIZED_ROUTE_RECORD_NOT_OBTAINED"
     ]
   }
 }

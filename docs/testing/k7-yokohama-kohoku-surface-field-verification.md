@@ -59,8 +59,22 @@ signal. It is not a legal-direction claim.
   `58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9`.
 - [Yokohama City road-register access page](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
   directs road-identity review to the official road-register system and warns
-  that online data can lag; legal road-register drawings remain a counter
-  review. No exact current route record was obtained for this way.
+  that online data can lag.
+- [Yokohama City road-name FAQ, updated 2026-03-19](https://www.city.yokohama.lg.jp/faq/kukyoku/doro/doro-chosa/20211014144003932.html)
+  directs municipal-road identity and name checks to the recognized-route map.
+  The checked HTML has SHA-256
+  `9c5e2027622f51e1682e52c4e370f3ca02d22ccfff9c839fb79c1c5d0266b06f`.
+- [Yokohama City road-register currentness page](https://wwwm.city.yokohama.lg.jp/yokohama-sp/yokohama-sp/Content/pages/up_date/5_michi/koushin.html)
+  dates the online recognized-route map to 2026-07-03. The checked HTML has
+  SHA-256
+  `33d94d39759fa1d5d7438c9c7b41ee412b6aa9dacd828019d25e935e415a07f9`.
+- [Yokohama City road-register terms for map 67](https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?IsPost=False&MapId=67&RequestPage=%2Fyokohama%2FPositionSelect%3Fmid%3D67)
+  state that online material is not proof and direct the latest legal-record
+  review to the Road Survey Division counter. The checked HTML has SHA-256
+  `e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102`.
+  No exact recognized-route record has been obtained that uniquely maps OSM way
+  `776884422` rather than either named Kawamuki Line carriageway leaving the
+  same exit-terminal node.
 - [Kanagawa Prefectural Police traffic-regulation index](https://www.police.pref.kanagawa.jp/kotsu/kotsu_kisei/list/)
   does not expose a complete point-level public regulation register for this
   movement. The 2026 bicycle one-way exemption candidate list is not a complete

@@ -104,14 +104,120 @@ EXPECTED_AUDIT_ID = (
     "shutoko.k7-northwest.aoba-up-to-kohoku-up." "successor-audit.2026-07-23"
 )
 EXPECTED_ROAD_REVIEW_ID = "shutoko.k7-northwest.kohoku-surface-road-register.2026-07-24"
-EXPECTED_ROAD_SOURCE_URL = (
-    "https://www.city.yokohama.lg.jp/kurashi/"
-    "machizukuri-kankyo/doro/tetsuzuki/daichosys.html"
-)
 EXPECTED_REGISTER_URL = "https://wwwm.city.yokohama.lg.jp/yokohama/Portal"
-EXPECTED_ROAD_PAGE_SHA256 = (
-    "d3969d3cc62c04208abbffa2fa6c36d2f15fc6e509302f8f335697bc227fe9b6"
-)
+EXPECTED_ROAD_SOURCE_REFERENCES = {
+    "yokohama.road-register-access.2026-07-24": {
+        "source_reference_id": "yokohama.road-register-access.2026-07-24",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://www.city.yokohama.lg.jp/kurashi/"
+            "machizukuri-kankyo/doro/tetsuzuki/daichosys.html"
+        ),
+        "content_sha256": (
+            "d3969d3cc62c04208abbffa2fa6c36d2f15fc6e509302f8f335697bc227fe9b6"
+        ),
+        "source_last_updated_at": "2026-01-20",
+        "checked_at": "2026-07-24",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.road-name-faq.2026-07-24": {
+        "source_reference_id": "yokohama.road-name-faq.2026-07-24",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://www.city.yokohama.lg.jp/faq/kukyoku/"
+            "doro/doro-chosa/20211014144003932.html"
+        ),
+        "content_sha256": (
+            "9c5e2027622f51e1682e52c4e370f3ca02d22ccfff9c839fb79c1c5d0266b06f"
+        ),
+        "source_last_updated_at": "2026-03-19",
+        "checked_at": "2026-07-24",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.road-register-currentness.2026-07-24": {
+        "source_reference_id": "yokohama.road-register-currentness.2026-07-24",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://wwwm.city.yokohama.lg.jp/yokohama-sp/yokohama-sp/"
+            "Content/pages/up_date/5_michi/koushin.html"
+        ),
+        "content_sha256": (
+            "33d94d39759fa1d5d7438c9c7b41ee412b6aa9dacd828019d25e935e415a07f9"
+        ),
+        "recognized_route_data_current_through": "2026-07-03",
+        "checked_at": "2026-07-24",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.road-register-terms.2026-07-24": {
+        "source_reference_id": "yokohama.road-register-terms.2026-07-24",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?"
+            "IsPost=False&MapId=67&RequestPage=%2Fyokohama%2F"
+            "PositionSelect%3Fmid%3D67"
+        ),
+        "content_sha256": (
+            "e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102"
+        ),
+        "checked_at": "2026-07-24",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.k7-northwest.brochure.2026-07-23": {
+        "source_reference_id": "yokohama.k7-northwest.brochure.2026-07-23",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/"
+            "doro/kousokudoro/kanjodouro.files/0006_20220315.pdf"
+        ),
+        "content_sha256": (
+            "ff4e905661ab7006464fc867ab48b3b3de311bfae438db8af41817633f550d01"
+        ),
+        "checked_at": "2026-07-23",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.kawamuki-opening.2020-02-06": {
+        "source_reference_id": "yokohama.kawamuki-opening.2020-02-06",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://www.city.yokohama.lg.jp/city-info/koho-kocho/press/"
+            "doro/2019/0206-kawamukousen.files/0005_20200206.pdf"
+        ),
+        "archive_url": (
+            "https://web.archive.org/web/20200327180920id_/https://"
+            "www.city.yokohama.lg.jp/city-info/koho-kocho/press/doro/"
+            "2019/0206-kawamukousen.files/0005_20200206.pdf"
+        ),
+        "content_sha256": (
+            "bca0774b5e80dd4bb1ed3ce3960d053e953b8cd376f2864c10f7df47eb9a7c35"
+        ),
+        "published_at": "2020-02-06",
+        "checked_at": "2026-07-23",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+}
+EXPECTED_ROAD_SUPPORTING_FINDINGS = {
+    "official_exit_connection": {
+        "status": "CORRIDOR_LEVEL_ONLY",
+        "finding": "Yokohama Kohoku Exit connects to Kawamuki Line.",
+        "source_reference_ids": ["yokohama.k7-northwest.brochure.2026-07-23"],
+    },
+    "official_corridor_identity": {
+        "status": "HISTORICAL_CORRIDOR_IDENTITY",
+        "recognized_route_identifier": "CITY_ROAD_HIGASHIKATA_NO_342",
+        "recognized_route_name_ja": "市道東方町第342号線",
+        "urban_plan_name_ja": "都市計画道路川向線",
+        "source_reference_ids": ["yokohama.kawamuki-opening.2020-02-06"],
+    },
+    "exact_osm_way_mapping": {
+        "status": "UNCONFIRMED",
+        "reason_code": "CORRIDOR_EVIDENCE_DOES_NOT_ISOLATE_EXACT_WAY",
+        "reason": (
+            "The official corridor descriptions do not uniquely distinguish "
+            "OSM way 776884422 from the two named Kawamuki Line carriageways "
+            "that leave the same exit-terminal node."
+        ),
+    },
+}
 EXPECTED_UNRESOLVED_SUCCESSOR = {
     "direction": "FORWARD",
     "incoming_way_id": 734299106,
@@ -471,28 +577,62 @@ def evaluate_road_register_review(
     review: dict[str, Any],
     as_of: date,
 ) -> tuple[bool, list[str]]:
-    source = review.get("source_reference")
+    sources = review.get("source_references")
     method = review.get("review_method")
+    findings = review.get("supporting_findings")
     identity = review.get("current_road_identity")
     scope_limits = review.get("scope_limits")
     decision = review.get("decision")
+    if not isinstance(sources, list):
+        raise ReadinessError("road-register source_references must be an array")
+    sources_by_id: dict[str, dict[str, Any]] = {}
+    for source in sources:
+        if not isinstance(source, dict):
+            raise ReadinessError("road-register source reference must be an object")
+        source_id = source.get("source_reference_id")
+        if not isinstance(source_id, str):
+            raise ReadinessError("road-register source_reference_id must be a string")
+        if source_id in sources_by_id:
+            raise ReadinessError(
+                f"duplicate road-register source reference {source_id!r}"
+            )
+        digest = source.get("content_sha256")
+        if not isinstance(digest, str) or SHA256_PATTERN.fullmatch(digest) is None:
+            raise ReadinessError(
+                f"road-register source digest is invalid for {source_id!r}"
+            )
+        checked_at = parse_iso_date(
+            source.get("checked_at"),
+            f"road_register_review.source_references[{source_id}].checked_at",
+        )
+        if checked_at > as_of:
+            raise ReadinessError("road-register source check is dated in the future")
+        for field in (
+            "published_at",
+            "source_last_updated_at",
+            "recognized_route_data_current_through",
+        ):
+            if field not in source:
+                continue
+            source_date = parse_iso_date(
+                source[field],
+                f"road_register_review.source_references[{source_id}].{field}",
+            )
+            if source_date > as_of:
+                raise ReadinessError(
+                    f"road-register source {field} is dated in the future"
+                )
+        sources_by_id[source_id] = source
+    if sources_by_id != EXPECTED_ROAD_SOURCE_REFERENCES:
+        raise ReadinessError("road-register source reference contract has drifted")
     if (
-        review.get("schema_version") != "1.0"
+        review.get("schema_version") != "1.1"
         or review.get("review_id") != EXPECTED_ROAD_REVIEW_ID
         or review.get("target") != EXPECTED_ROAD_TARGET
         or review.get("navigation_authority") is not False
-        or not isinstance(source, dict)
-        or source.get("source_url") != EXPECTED_ROAD_SOURCE_URL
-        or source.get("interactive_register_url") != EXPECTED_REGISTER_URL
-        or source.get("source_reference_id")
-        != "yokohama.road-register-access.2026-07-24"
-        or source.get("authority_name") != "City of Yokohama"
-        or source.get("content_sha256") != EXPECTED_ROAD_PAGE_SHA256
-        or source.get("source_last_updated_at") != "2026-01-20"
-        or source.get("licence_identifier") != "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
-        or not isinstance(source.get("content_sha256"), str)
-        or SHA256_PATTERN.fullmatch(source["content_sha256"]) is None
         or not isinstance(method, dict)
+        or method.get("interactive_register_url") != EXPECTED_REGISTER_URL
+        or method.get("recognized_route_map_id") != 67
         or not is_exact_string_set(
             method.get("available_register_layers"),
             {
@@ -502,6 +642,9 @@ def evaluate_road_register_review(
             },
         )
         or method.get("online_update_lag_warning_recorded") is not True
+        or method.get("online_material_is_legal_proof") is not False
+        or method.get("latest_legal_record_requires_office_review") is not True
+        or findings != EXPECTED_ROAD_SUPPORTING_FINDINGS
         or not isinstance(identity, dict)
         or not isinstance(scope_limits, dict)
         or set(scope_limits)
@@ -534,7 +677,7 @@ def evaluate_road_register_review(
                 decision.get("blocker_codes"),
                 {
                     "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-                    "INTERACTIVE_ROAD_REGISTER_RECORD_NOT_REVIEWED",
+                    "EXACT_RECOGNIZED_ROUTE_RECORD_NOT_OBTAINED",
                 },
             )
         ):

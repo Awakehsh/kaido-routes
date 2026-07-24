@@ -516,15 +516,17 @@ The source-bound facility checks also retain the Aoba incoming/non-route split
 and all three motor-road successors at the Kohoku terminal. Two are named
 one-way `川向線` ways; OSM way `776884422` is an unnamed `tertiary` way
 without an explicit `oneway` tag. Yokohama's 2020 opening notice identifies
-that corridor as the temporary passage then used inside the land-readjustment
-area. A current municipal page reports that surrounding infrastructure work
-completed in March 2022 and the project ended in July 2023, but the final
-replotting map does not map the exact OSM way to a current road identity. Those
-sources cannot establish its present physical status, legal direction, or
-permitted exit movement. The derivative database preserves 257 route
-and alternative nodes, complete
-selected-way tags, parent PBF and bounded-extract hashes, extraction bounds, OSM
-timestamp, and reconstruction tooling. Its 13 route occurrences, 15 topology
+the broader Kawamuki corridor as municipal Higashikatacho Route 342 and the
+temporary passage then used inside the land-readjustment area. The online
+recognized-route map is dated 2026-07-03, but Yokohama states that online
+material is not proof and directs latest legal-record review to its counter.
+Neither those sources nor the final replotting map uniquely distinguishes the
+exact OSM way from the two named Kawamuki Line carriageways at the same terminal
+node. They therefore cannot establish its current identity, physical status,
+legal direction, or permitted exit movement. The derivative database preserves
+257 route and alternative nodes, complete selected-way tags, parent PBF and
+bounded-extract hashes, extraction bounds, OSM timestamp, and reconstruction
+tooling. Its 13 route occurrences, 15 topology
 edges, and 15 layout segments pass internal identity and successor validation.
 A separate deterministic audit compares the complete source adjacency at 14
 entry, route, divergence, and exit checkpoints. The pinned extract yields 19

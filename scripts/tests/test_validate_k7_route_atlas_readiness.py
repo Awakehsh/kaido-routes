@@ -188,8 +188,9 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     def test_pending_road_register_review_stays_identity_blocked(
         self,
     ) -> None:
+        review = load(ROAD_REVIEW_PATH)
         complete, blockers = validator.evaluate_road_register_review(
-            load(ROAD_REVIEW_PATH),
+            review,
             date(2026, 7, 24),
         )
 
@@ -198,6 +199,46 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             blockers,
             ["CURRENT_ROAD_IDENTITY_UNCONFIRMED"],
         )
+        self.assertEqual(
+            review["supporting_findings"]["official_corridor_identity"][
+                "recognized_route_name_ja"
+            ],
+            "市道東方町第342号線",
+        )
+        self.assertEqual(
+            review["supporting_findings"]["exact_osm_way_mapping"]["status"],
+            "UNCONFIRMED",
+        )
+
+    def test_corridor_identity_cannot_promote_exact_osm_way_mapping(
+        self,
+    ) -> None:
+        review = load(ROAD_REVIEW_PATH)
+        review["supporting_findings"]["exact_osm_way_mapping"]["status"] = "CONFIRMED"
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "road-register review contract",
+        ):
+            validator.evaluate_road_register_review(
+                review,
+                date(2026, 7, 24),
+            )
+
+    def test_road_register_source_reference_drift_is_rejected(
+        self,
+    ) -> None:
+        review = load(ROAD_REVIEW_PATH)
+        review["source_references"][0]["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "source reference contract",
+        ):
+            validator.evaluate_road_register_review(
+                review,
+                date(2026, 7, 24),
+            )
 
     def test_malformed_road_register_layers_fail_without_crashing(
         self,

@@ -142,9 +142,13 @@ attribution catalog, native SwiftUI evidence strip, and Xcode project source.
 The separate
 `k7-northwest-up-aoba-to-kohoku-road-register-review.json` records that
 Yokohama's official register exposes road-ledger, road-area, and recognized-
-route layers and warns that the online system can lag. No exact current register
-record has yet been reviewed for OSM way `776884422`, so the package does not
-invent a municipal road identity from the historic construction material.
+route layers. The recognized-route map is dated 2026-07-03, and the official
+terms state that online material is not proof and that the latest legal record
+must be reviewed at the Road Survey Division counter. The historic opening
+notice names the broader Kawamuki corridor as municipal Higashikatacho Route
+342, but that corridor-level fact does not uniquely distinguish OSM way
+`776884422` from the two named Kawamuki Line carriageways leaving the same
+terminal node. The package therefore keeps the exact road identity unresolved.
 
 Validate the tracked decision:
 

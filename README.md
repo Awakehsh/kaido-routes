@@ -448,14 +448,16 @@ reconstruction README, attribution catalog, SwiftUI implementation, and Xcode
 project source. Its independent validator derives four exact remaining blockers:
 current road identity, current field legality, and topology and layout release
 evidence. It reports the already proven structure, source adjacency, and ODbL
-distribution separately from those unresolved gates. The official register
-entry page confirms that
-recognized-route material belongs in Yokohama's road-register system and warns
-that online data may lag; no exact register record has been obtained for OSM way
-`776884422`. The tracked decision therefore remains `BLOCKED` and
-`navigation_authority=false`. A later completed private field review can clear
-only its own gate, and even a readiness `PASS` merely admits the candidate to
-the authoritative `kaido-atlas validate-release` command.
+distribution separately from those unresolved gates. Yokohama dates the online
+recognized-route map to 2026-07-03 and identifies the broader Kawamuki corridor
+as municipal Higashikatacho Route 342, while its official terms state that
+online material is not proof and direct latest legal-record review to the Road
+Survey Division counter. That corridor-level identity does not uniquely
+distinguish OSM way `776884422` from the two named Kawamuki Line carriageways
+leaving the same terminal node. The tracked decision therefore remains
+`BLOCKED` and `navigation_authority=false`. A later completed private field
+review can clear only its own gate, and even a readiness `PASS` merely admits
+the candidate to the authoritative `kaido-atlas validate-release` command.
 
 The feasibility core currently executes portable scenarios for the following
 hard properties that must remain proven as the product expands:

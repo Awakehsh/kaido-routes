@@ -281,7 +281,7 @@ independently, and verifies that Japanese, Simplified Chinese, and English all
 retain the same Japanese sign target and route shield. It deliberately supplies
 no one-shot prompt emission, so `voice.should_speak` remains false and the panel
 cannot play audio. This does not verify full-app localization, pronunciation,
-the audio lifecycle, or released road guidance.
+or released road guidance.
 
 The internal iPhone driving preview adds local L3 adapter evidence for KR-U06
 through KR-U10, KR-U12, and KR-U14. It executes one stale LOW observation and one
@@ -349,10 +349,17 @@ The internal iPhone target adds a local L3 composition check above KR-D26. One
 bundled `SYNTHETIC_TEST_ONLY` product artifact is decoded through the production
 codec before `KaidoProductNavigationRuntime` may exist. Unit tests exercise the
 real Apple observation adapter, ordered two-edge entry adapter, actor admission,
-and one post-entry matcher update, asserting only actor-returned snapshots. A
-launch-only XCUITest verifies that the visible preview starts in `PLANNING`,
-keeps strict entry locked, and exposes `INPUT DISCONNECTED`. This does not add a
-portable scenario event, field evidence, or real-road release authority.
+and one post-entry matcher update, asserting only actor-returned snapshots. The
+same update's matching one-shot emission passes through the RoutePlan-bound
+speech scheduler into an injected output exactly once. Focused tests execute
+replacement-safe callback identity, interruption without catch-up replay, and a
+typed missing-voice failure. The real iOS output is compile- and launch-checked
+with Apple's `voicePrompt` audio-session configuration; acoustic output remains
+a device test. A launch-only XCUITest verifies that the visible preview starts
+in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
+guidance audio `IDLE`. This selects the existing KR-S10/KR-S17/KR-S18 transient
+emission contract rather than adding a portable Apple-audio event, and grants no
+field evidence or real-road release authority.
 
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation

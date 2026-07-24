@@ -3,6 +3,7 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -104,9 +105,11 @@ final class SyntheticProductRuntimeTests: XCTestCase {
 
   @MainActor
   func testForegroundPipelinePublishesActorSnapshotsAtomically() async throws {
+    let speechOutput = RecordingGuidanceSpeechOutput()
     let model = try SyntheticProductRuntimeModel(
       fixture: SyntheticProductRuntimeFixture.bundled(),
-      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false)
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: speechOutput
     )
     await model.activate()
 
@@ -146,6 +149,53 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     }
     XCTAssertEqual(confidence, .high)
     XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
+    XCTAssertEqual(speechOutput.commands.count, 1)
+    let speech = try XCTUnwrap(speechOutput.commands.first)
+    XCTAssertEqual(speech.routePlanID, model.routePlanID)
+    XCTAssertEqual(speech.languageCode, "ja-JP")
+    XCTAssertEqual(speech.spokenText, "左側を進んでください")
+    XCTAssertEqual(speech.identity.promptID, "test.prompt.loop-1")
+    XCTAssertEqual(
+      model.speechStatus,
+      .speaking(speech.identity)
+    )
+
+    speechOutput.beginInterruption()
+    XCTAssertEqual(model.speechStatus, .interrupted)
+    speechOutput.endInterruption()
+    XCTAssertEqual(model.speechStatus, .idle)
+
+    await model.process(
+      [makeLocation(longitude: 139.76025, timestamp: 1_003)],
+      receivedAt: Date(timeIntervalSince1970: 1_003)
+    )
+    XCTAssertEqual(speechOutput.commands.count, 1)
+  }
+
+  @MainActor
+  func testUnavailableInstalledVoiceBlocksWithoutRetryingThePrompt() async throws {
+    let speechOutput = FailingGuidanceSpeechOutput()
+    let model = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: speechOutput
+    )
+    await model.activate()
+
+    for (longitude, timestamp) in [
+      (139.75925, 1_000.0),
+      (139.75975, 1_001.0),
+      (139.76025, 1_002.0),
+      (139.76025, 1_003.0),
+    ] {
+      await model.process(
+        [makeLocation(longitude: longitude, timestamp: timestamp)],
+        receivedAt: Date(timeIntervalSince1970: timestamp)
+      )
+    }
+
+    XCTAssertEqual(model.speechStatus, .failed(.voiceUnavailable))
+    XCTAssertEqual(speechOutput.attemptCount, 1)
   }
 
   @MainActor
@@ -203,5 +253,48 @@ final class SyntheticProductRuntimeTests: XCTestCase {
         isSimulatedBySoftware: isSimulated
       )
     }
+  }
+
+  @MainActor
+  private final class RecordingGuidanceSpeechOutput:
+    GuidanceSpeechOutput
+  {
+    var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
+    private(set) var commands: [GuidanceSpeechCommand] = []
+
+    func speak(_ command: GuidanceSpeechCommand) {
+      commands.append(command)
+      eventHandler?(.didStart(command.identity))
+    }
+
+    func stop() {
+      guard let identity = commands.last?.identity else { return }
+      eventHandler?(.didCancel(identity))
+    }
+
+    func beginInterruption() {
+      eventHandler?(.interruptionBegan)
+    }
+
+    func endInterruption() {
+      eventHandler?(.interruptionEnded)
+    }
+  }
+
+  @MainActor
+  private final class FailingGuidanceSpeechOutput:
+    GuidanceSpeechOutput
+  {
+    var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
+    private(set) var attemptCount = 0
+
+    func speak(_ command: GuidanceSpeechCommand) throws {
+      attemptCount += 1
+      throw GuidanceSpeechOutputError.voiceUnavailable(
+        command.languageCode
+      )
+    }
+
+    func stop() {}
   }
 }

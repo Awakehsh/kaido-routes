@@ -76,6 +76,7 @@ should become scenarios when their layer is built.
 | KR-U12 | Finish drive names the planned exit before changing branch guidance | P0 | Seeded |
 | KR-U13 | Entrance recommendations explain directional compatibility, not only proximity | P0 | Seeded |
 | KR-U14 | Phone and CarPlay consume one released snapshot- and occurrence-bound junction view | P0 | Seeded |
+| KR-U15 | One-shot guidance speech is RoutePlan-bound, duplicate-safe, and never catches up after an interruption | P0 | Covered by KR-S10/KR-S17/KR-S18 plus L3 |
 
 ## Evidence and field verification
 

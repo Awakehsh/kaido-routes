@@ -28,6 +28,13 @@ final class ProductRuntimePreviewUITests: XCTestCase {
 
     let input = app.descendants(matching: .any)["product-runtime-input"]
     XCTAssertEqual(input.value as? String, "INPUT DISCONNECTED")
+
+    let speech = app.descendants(matching: .any)[
+      "product-runtime-speech"
+    ]
+    XCTAssertTrue(speech.waitForExistence(timeout: 2))
+    XCTAssertEqual(speech.value as? String, "IDLE")
+
     XCTAssertTrue(
       app.descendants(matching: .any)["product-runtime-safety"].exists
     )

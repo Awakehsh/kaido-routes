@@ -162,10 +162,17 @@ ledger, and presentation projection, and KR-U14 proves the junction-view
 ownership boundary. KR-U09 adds localized assistive labels for the same
 projection, non-color branch and lane cues, tested theme contrast, and an
 accessibility-size single-column SwiftUI layout for the synthetic driving/JCT
-panel. Production corridor construction, DecisionZone calibration, real-road
-live navigation-state SwiftUI composition, CarPlay entitlement, full-app and device
-accessibility validation, audio, and physical head-unit behavior remain
-unimplemented or unproven.
+panel. A RoutePlan-bound speech scheduler now admits only the same transient
+prompt/anchor/occurrence projection, suppresses duplicate SwiftUI delivery,
+preempts stale speech for a newer prompt, and drops interrupted prompts without
+catch-up replay. The Apple adapter uses `AVSpeechSynthesizer` with the
+turn-by-turn `voicePrompt` audio-session mode, temporary ducking, explicit
+interruption handling, and typed unavailable-voice/audio-session failures. The
+synthetic runtime panel exercises this boundary with injected output and remains
+input-disconnected by default. Production corridor construction, DecisionZone
+calibration, real-road live navigation-state SwiftUI composition, CarPlay
+entitlement, full-app and device accessibility validation, pronunciation and
+physical audio/CarPlay hardware behavior remain unimplemented or unproven.
 
 The entrance recommendation boundary now returns a structured selected facility,
 exact target carriageway, legal join occurrence, surface ETA, straight-line

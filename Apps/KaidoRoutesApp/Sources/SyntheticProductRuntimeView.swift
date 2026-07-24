@@ -10,6 +10,7 @@ struct SyntheticProductRuntimePanel: View {
       runtimeMetrics
       actorState
       inputState
+      speechState
       safetyNotice
     }
     .padding(16)
@@ -146,6 +147,37 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityValue(model.inputState.label)
   }
 
+  private var speechState: some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: speechSymbol)
+        .font(.system(size: 13, weight: .black))
+        .foregroundStyle(speechColor)
+        .frame(width: 20)
+        .accessibilityHidden(true)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text("GUIDANCE AUDIO · \(model.speechStatusLabel)")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.35)
+          .foregroundStyle(speechColor)
+
+        Text(model.speechStatusDetail)
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(KaidoTheme.muted)
+
+        Text("一次性提示才可发声；中断结束不补播旧提示。")
+          .font(.system(size: 9, weight: .semibold))
+          .foregroundStyle(KaidoTheme.muted.opacity(0.82))
+      }
+    }
+    .padding(11)
+    .background(KaidoTheme.asphalt.opacity(0.42))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-runtime-speech")
+    .accessibilityValue(model.speechStatusLabel)
+  }
+
   private var safetyNotice: some View {
     HStack(alignment: .top, spacing: 9) {
       Image(systemName: "exclamationmark.shield.fill")
@@ -154,7 +186,8 @@ struct SyntheticProductRuntimePanel: View {
 
       Text(
         "该文件完整通过产品发布门，但所有来源均为 SYNTHETIC_TEST_ONLY。"
-          + "当前 scene 未连接 CLLocationManager、后台定位、语音或 CarPlay，"
+          + "当前 scene 未连接 CLLocationManager、后台定位或 CarPlay，"
+          + "语音适配器也不会在没有一次性 prompt emission 时激活，"
           + "不可作为真实道路导航。"
       )
       .font(.system(size: 10, weight: .semibold))
@@ -174,6 +207,34 @@ struct SyntheticProductRuntimePanel: View {
       KaidoTheme.positionCyan
     case .failed:
       KaidoTheme.evidenceCoral
+    }
+  }
+
+  private var speechColor: Color {
+    switch model.speechStatus {
+    case .scheduled, .speaking:
+      KaidoTheme.positionCyan
+    case .failed, .invalidProjection:
+      KaidoTheme.evidenceCoral
+    case .interrupted, .suppressed:
+      KaidoTheme.signalAmber
+    case .idle, .stopped:
+      KaidoTheme.muted
+    }
+  }
+
+  private var speechSymbol: String {
+    switch model.speechStatus {
+    case .scheduled, .speaking:
+      "speaker.wave.2.fill"
+    case .failed, .invalidProjection:
+      "speaker.slash.fill"
+    case .interrupted:
+      "phone.down.fill"
+    case .suppressed, .stopped:
+      "speaker.slash"
+    case .idle:
+      "speaker"
     }
   }
 }

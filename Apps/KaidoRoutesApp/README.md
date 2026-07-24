@@ -27,7 +27,8 @@ The current app deliberately exposes only:
 - a complete `SYNTHETIC_TEST_ONLY` joint product-release fixture that is decoded
   through the production codec, constructs `KaidoProductNavigationRuntime`, and
   publishes its actor-owned atomic snapshot into SwiftUI while strict entry
-  remains locked;
+  remains locked, with a RoutePlan-bound exactly-once speech adapter waiting for
+  a transient prompt emission;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
@@ -44,9 +45,12 @@ internal calibration run with non-empty device and mount metadata. The product
 runtime panel constructs a real `NavigationSession`, but only from a complete
 joint release whose identities, sources, and licences are explicitly synthetic.
 The panel does not attach a `CLLocationManager`, display a live measured
-position, highlight an active route, speak guidance, run location in the
-background, or expose a CarPlay scene. Those behaviors still require a coherent
-real released route bundle and device evidence.
+position, highlight an active route, run location in the background, or expose
+a CarPlay scene. Its Apple speech output remains idle without an actor-owned
+one-shot emission; synthetic test callbacks use an injected recording output
+rather than device audio. Real-road guidance still requires a coherent released
+route bundle, installed-voice and pronunciation review, and physical audio-route
+evidence.
 
 The app constructs `KaidoProductNavigationRuntime` from the joint product
 release; the package-only raw session initializer is not an adapter escape
@@ -76,8 +80,12 @@ The foreground model starts the actor in `PLANNING` with strict-route
 auto-commit locked. It retains neither `CLLocation` nor matcher input; it
 publishes only the latest actor snapshot and a coordinate-free pipeline status.
 Unit tests execute the real two-edge entry adapter and then one route matcher
-update, while a launch-only UI test verifies that the default scene remains
-input-disconnected and entry-locked.
+update through the actor. When that update returns one matching
+`GuidancePromptEmission`, the app reprojects the active frame and submits it to
+`GuidanceSpeechCoordinator`. Tests require one Japanese command, duplicate
+suppression, interruption without replay, and a typed installed-voice failure.
+A launch-only UI test verifies that the default scene remains input-disconnected,
+entry-locked, and audio-idle.
 
 ## Entrance recommendation
 
@@ -157,8 +165,10 @@ This is a text-only adapter proof. The model passes no
 `GuidancePromptEmission`, rejects any projection that would claim
 `voice.shouldSpeak`, and labels the preview `AUDIO NOT CONNECTED`. A missing
 locale or mismatched preserved Japanese sign fails initialization. It does not
-localize the complete internal app, verify installed voices or pronunciation,
-or implement audio focus and lifecycle.
+localize the complete internal app or verify installed voices or pronunciation.
+The separate product-runtime composition owns the implemented speech lifecycle;
+this language-selection panel intentionally remains unable to create speech
+authority.
 
 ## Synthetic driving preview
 
@@ -299,5 +309,8 @@ agreement, shared junction geometry/lane identity, CarPlay ownership-only
 handoff, and fail-closed facility-name or unreleased-junction drift.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
-coordinate-free non-release reporting. The platform-light Swift package tests
-remain the authoritative domain and navigation verification.
+coordinate-free non-release reporting. `SyntheticProductRuntimeTests` additionally
+prove that actor output schedules one occurrence-scoped Japanese prompt, a
+duplicate callback does not schedule it again, an interruption never replays it,
+and a missing installed voice remains a typed blocked state. The platform-light
+Swift package tests remain the authoritative domain and navigation verification.

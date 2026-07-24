@@ -4,6 +4,7 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 
 enum SyntheticProductRuntimeActivation: Equatable, Sendable {
   case validating
@@ -73,17 +74,21 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   @Published private(set) var snapshot: NavigationSnapshot?
   @Published private(set) var inputState: SyntheticProductRuntimeInputState =
     .disconnected
+  @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus =
+    .idle
 
   let fixture: SyntheticProductRuntimeFixture
 
   private let runtime: KaidoProductNavigationRuntime
   private var observationAdapter: CoreLocationObservationAdapter
   private var entryTransitionAdapter: CoreLocationEntryTransitionAdapter
+  private let speechCoordinator: GuidanceSpeechCoordinator
 
   init(
     fixture: SyntheticProductRuntimeFixture,
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
-      SystemCoreLocationSourceEvidenceProvider()
+      SystemCoreLocationSourceEvidenceProvider(),
+    speechOutput: (any GuidanceSpeechOutput)? = nil
   ) throws {
     self.fixture = fixture
     runtime = try KaidoProductNavigationRuntime(release: fixture.release)
@@ -96,16 +101,25 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     entryTransitionAdapter = try CoreLocationEntryTransitionAdapter(
       context: runtime.entryTransitionAdmissionContext
     )
+    speechCoordinator = try GuidanceSpeechCoordinator(
+      expectedRoutePlanID: runtime.routePlanID,
+      output: speechOutput ?? AVSpeechGuidanceOutput()
+    )
+    speechCoordinator.statusDidChange = { [weak self] status in
+      self?.speechStatus = status
+    }
   }
 
   convenience init(
     bundle: Bundle = .main,
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
-      SystemCoreLocationSourceEvidenceProvider()
+      SystemCoreLocationSourceEvidenceProvider(),
+    speechOutput: (any GuidanceSpeechOutput)? = nil
   ) throws {
     try self.init(
       fixture: SyntheticProductRuntimeFixture.bundled(in: bundle),
-      sourceEvidenceProvider: sourceEvidenceProvider
+      sourceEvidenceProvider: sourceEvidenceProvider,
+      speechOutput: speechOutput
     )
   }
 
@@ -139,6 +153,50 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 
   var isRealRoadAuthority: Bool {
     false
+  }
+
+  var speechStatusLabel: String {
+    switch speechStatus {
+    case .idle:
+      "IDLE"
+    case .scheduled:
+      "SCHEDULED"
+    case .speaking:
+      "SPEAKING"
+    case .suppressed(let reason):
+      "SUPPRESSED · \(reason.rawValue)"
+    case .interrupted:
+      "INTERRUPTED"
+    case .stopped:
+      "STOPPED"
+    case .failed(let code):
+      "BLOCKED · \(code.rawValue)"
+    case .invalidProjection:
+      "BLOCKED · INVALID PROJECTION"
+    }
+  }
+
+  var speechStatusDetail: String {
+    switch speechStatus {
+    case .idle:
+      "No transient guidance emission is active."
+    case .scheduled(let identity), .speaking(let identity):
+      "\(identity.promptID) · \(identity.anchorOccurrenceID)"
+    case .suppressed(.notAuthorized):
+      "A persistent guidance frame cannot authorize speech."
+    case .suppressed(.duplicate):
+      "The occurrence-scoped prompt was already consumed."
+    case .suppressed(.interrupted):
+      "The interrupted prompt was dropped without catch-up replay."
+    case .suppressed(.stopped), .stopped:
+      "The route speech lifecycle is stopped."
+    case .interrupted:
+      "Current speech was cancelled; interruption end will not replay it."
+    case .failed(let code):
+      code.rawValue
+    case .invalidProjection:
+      "Prompt, anchor, occurrence, or RoutePlan identity did not match."
+    }
   }
 
   func activate() async {
@@ -208,11 +266,43 @@ final class SyntheticProductRuntimeModel: ObservableObject {
           confidence: update.matcherEstimate.confidence,
           guidance: update.guidanceProgressState
         )
+        scheduleSpeech(from: update)
       case .completed:
         inputState = .pipelineRejected("JOURNEY_ALREADY_COMPLETED")
       }
     } catch {
       inputState = .pipelineRejected(Self.errorCode(error))
+    }
+  }
+
+  private func scheduleSpeech(from update: NavigationSessionUpdate) {
+    guard
+      let frame = update.navigationSnapshot.activeGuidanceFrame,
+      let emission = update.guidancePromptEmission
+    else {
+      return
+    }
+    do {
+      let projection = try NavigationPresentationProjector.project(
+        NavigationPresentationRequest(
+          snapshot: update.navigationSnapshot,
+          networkSnapshotID: runtime.networkSnapshotID,
+          guidanceFrame: frame,
+          promptEmission: emission,
+          languages: NavigationLanguageSelection(
+            interfaceLocale: .simplifiedChinese,
+            guidanceVoiceLocale: .japanese
+          ),
+          passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+          drivingContext: PresentationDrivingContext(
+            isVehicleMoving: true,
+            isInsideDecisionZone: true
+          )
+        )
+      )
+      speechStatus = speechCoordinator.submit(projection)
+    } catch {
+      speechStatus = .invalidProjection
     }
   }
 

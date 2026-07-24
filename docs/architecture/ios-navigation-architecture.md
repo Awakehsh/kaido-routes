@@ -271,6 +271,26 @@ an optional Finish drive exit; only
 separately from the interface locale. `voice.shouldSpeak` is true only when the
 request carries an emission matching the frame and persisted engine ledger.
 
+`GuidanceSpeechScheduler` is the platform-light final admission boundary. It is
+bound to one exact RoutePlan and keys consumption by prompt, anchor, and anchor
+occurrence. Persistent frames, duplicate adapter delivery, another RoutePlan,
+and inconsistent phone/CarPlay identities cannot create speech. A newer
+occurrence-scoped prompt may replace an older active prompt. An interruption
+consumes and drops the active prompt; ending the interruption never replays it or
+any prompt that arrived while audio was unavailable.
+
+`GuidanceSpeechCoordinator` connects that scheduler to an injected output.
+The iOS `AVSpeechGuidanceOutput` resolves only the requested reviewed locale,
+uses `AVAudioSession.Mode.voicePrompt` with temporary `duckOthers` and
+`interruptSpokenAudioAndMixWithOthers`, activates audio only for an admitted
+prompt, and deactivates with `notifyOthersOnDeactivation`. It observes Apple
+audio interruptions, cancels current synthesis, and deliberately does not
+resume stale navigation speech. Missing installed voices and audio-session
+configuration or activation failures remain typed, observable blocked states.
+This implements scheduling and lifecycle ownership; pronunciation, output-route
+timing, interruption behavior on real phone/CarPlay hardware, and driver
+comprehension remain device evidence gates.
+
 `JunctionViewDefinition` is renderer-neutral data, not a retained provider image.
 It contains normalized approach, selected, and alternative paths; zero-based
 left-to-right allowed and preferred lane indices; route shields; the Japanese
@@ -580,8 +600,10 @@ That is a development fact, not yet the minimum deployment target.
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory
   text. It supplies no prompt emission and therefore has no speech authority.
-  KR-U05 and KR-U11 cover this adapter boundary; complete app localization,
-  pronunciation review, and the audio lifecycle remain pending.
+  KR-U05 and KR-U11 cover this adapter boundary; complete app localization and
+  pronunciation review remain pending. The separate product-runtime adapter
+  exercises the implemented speech scheduler and Apple output lifecycle without
+  allowing this text preview to speak.
 - A synthetic driving-surface adapter executes stale LOW location evidence and
   Finish drive through `NavigationEngine`, then renders only the resulting
   `NavigationPresentationProjection`. SwiftUI maps `MEASURED`, `ESTIMATED`,
@@ -1015,6 +1037,14 @@ core; phone, CarPlay, and speech adapters consume emissions but cannot retrigger
 them independently. Restoring a navigation snapshot also restores emitted keys
 from prompt IDs, so an adapter or process lifecycle transition does not replay a
 prompt merely because the engine value was reconstructed.
+
+The speech adapter retains a second, output-local consumed set using the full
+`prompt_id + anchor_id + anchor_occurrence_id` identity. This does not replace
+the engine ledger; it prevents duplicate projection delivery or delayed speech
+callbacks from replaying an already admitted command. A new command replaces
+older in-flight speech, while stale completion callbacks cannot clear the newer
+identity. Audio interruptions drop, rather than queue, prompts so resumption
+does not deliver obsolete maneuver guidance.
 
 `ReleasedGuidanceDefinition` binds that identity to a reviewed trigger distance
 and immutable frame template. For one anchor occurrence, thresholds advance from

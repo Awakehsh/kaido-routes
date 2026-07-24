@@ -60,6 +60,7 @@ private struct ScenarioHarness {
   var matcherSession: RouteMatcherSession?
   var matcherCorridor: RouteMatcherCorridor?
   var routeEditorSession: ExpertRouteEditorSession?
+  var routeEditorCorridorResolutionSession: ParkedCorridorResolutionSession?
   var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
@@ -74,6 +75,7 @@ private struct ScenarioHarness {
     matcherSession = nil
     matcherCorridor = nil
     routeEditorSession = nil
+    routeEditorCorridorResolutionSession = nil
     lastGuidancePromptEmission = nil
   }
 
@@ -92,6 +94,10 @@ private struct ScenarioHarness {
       try startRouteEditor(event.payload)
     case "ROUTE_EDITOR_CHOICE_SELECTED":
       try selectRouteEditorChoice(event.payload)
+    case "ROUTE_EDITOR_CORRIDOR_MATCH_SUBMITTED":
+      try submitRouteEditorCorridorMatch(event.payload)
+    case "ROUTE_EDITOR_CORRIDOR_RESOLUTION_REQUESTED":
+      try resolveRouteEditorCorridor(event.payload)
     case "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED":
       try duplicateRouteEditorLap(event.payload)
     case "ROUTE_EDITOR_UNDO_REQUESTED":
@@ -458,6 +464,7 @@ private struct ScenarioHarness {
         interaction: try routeEditorInteraction(payload)
       )
       routeEditorSession = session
+      routeEditorCorridorResolutionSession = nil
       publish(session.snapshot)
     } catch let error as ExpertRouteEditorError {
       routeEditorSession = nil
@@ -481,10 +488,84 @@ private struct ScenarioHarness {
         interaction: try routeEditorInteraction(payload)
       )
       routeEditorSession = session
+      routeEditorCorridorResolutionSession = nil
       publish(session.snapshot)
     } catch let error as ExpertRouteEditorError {
       routeEditorSession = session
       publish(session.snapshot)
+      adapterObservations["editor.last_error"] = .string(error.code)
+    }
+  }
+
+  private mutating func submitRouteEditorCorridorMatch(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard let editorSession = routeEditorSession else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
+    }
+    do {
+      let resolutionSession = try ParkedCorridorResolutionSession(
+        editorSnapshot: editorSession.snapshot,
+        match: FreehandCorridorChoiceMatch(
+          networkSnapshotID: try payload.requiredString("network_snapshot_id"),
+          decisionPointID: try payload.requiredString("decision_point_id"),
+          candidateChoiceIDs: try requiredStrings(
+            payload,
+            key: "candidate_choice_ids"
+          )
+        ),
+        interaction: try routeEditorInteraction(payload)
+      )
+      routeEditorCorridorResolutionSession = resolutionSession
+      publish(editorSession.snapshot)
+      publish(resolutionSession.snapshot)
+    } catch let error as ParkedCorridorResolutionError {
+      routeEditorCorridorResolutionSession = nil
+      publish(editorSession.snapshot)
+      adapterObservations["editor.corridor.last_error"] = .string(error.code)
+    }
+  }
+
+  private mutating func resolveRouteEditorCorridor(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard var editorSession = routeEditorSession,
+      var resolutionSession = routeEditorCorridorResolutionSession
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "expert_route_editor_corridor_resolution_session"
+      )
+    }
+    do {
+      let interaction = try routeEditorInteraction(payload)
+      let choice = try resolutionSession.resolve(
+        choiceID: try payload.requiredString("choice_id"),
+        editorSnapshot: editorSession.snapshot,
+        interaction: interaction
+      )
+      try editorSession.select(
+        choiceID: choice.id,
+        movementOccurrenceID: try payload.requiredString("movement_occurrence_id"),
+        outgoingEdgeOccurrenceID: try payload.requiredString(
+          "outgoing_edge_occurrence_id"
+        ),
+        interaction: interaction
+      )
+      routeEditorSession = editorSession
+      routeEditorCorridorResolutionSession = resolutionSession
+      publish(editorSession.snapshot)
+      publish(resolutionSession.snapshot)
+    } catch let error as ParkedCorridorResolutionError {
+      routeEditorSession = editorSession
+      routeEditorCorridorResolutionSession = resolutionSession
+      publish(editorSession.snapshot)
+      publish(resolutionSession.snapshot)
+      adapterObservations["editor.corridor.last_error"] = .string(error.code)
+    } catch let error as ExpertRouteEditorError {
+      routeEditorSession = editorSession
+      routeEditorCorridorResolutionSession = resolutionSession
+      publish(editorSession.snapshot)
+      publish(resolutionSession.snapshot)
       adapterObservations["editor.last_error"] = .string(error.code)
     }
   }
@@ -496,6 +577,7 @@ private struct ScenarioHarness {
     do {
       try session.undo(interaction: try routeEditorInteraction(payload))
       routeEditorSession = session
+      routeEditorCorridorResolutionSession = nil
       publish(session.snapshot)
     } catch let error as ExpertRouteEditorError {
       routeEditorSession = session
@@ -517,6 +599,7 @@ private struct ScenarioHarness {
         interaction: try routeEditorInteraction(payload)
       )
       routeEditorSession = session
+      routeEditorCorridorResolutionSession = nil
       publish(session.snapshot)
     } catch let error as ExpertRouteEditorError {
       routeEditorSession = session
@@ -769,6 +852,32 @@ private struct ScenarioHarness {
     }
   }
 
+  private mutating func publish(
+    _ snapshot: ParkedCorridorResolutionSnapshot
+  ) {
+    clearRouteEditorCorridorObservations()
+    adapterObservations["editor.corridor.state"] = .string(
+      snapshot.state.rawValue
+    )
+    adapterObservations["editor.corridor.network_snapshot_id"] = .string(
+      snapshot.networkSnapshotID
+    )
+    adapterObservations["editor.corridor.route_plan_id"] = .string(
+      snapshot.routePlanID
+    )
+    adapterObservations["editor.corridor.decision_point_id"] = .string(
+      snapshot.decisionPointID
+    )
+    adapterObservations["editor.corridor.candidate_choice_ids"] = .strings(
+      snapshot.candidateChoices.map(\.id)
+    )
+    if let selectedChoiceID = snapshot.selectedChoiceID {
+      adapterObservations["editor.corridor.selected_choice_id"] = .string(
+        selectedChoiceID
+      )
+    }
+  }
+
   private mutating func publishCompiledRoutePlan(_ routePlan: RoutePlan) {
     adapterObservations["editor.compiled.status"] = .string("COMPILED")
     adapterObservations["editor.compiled.network_snapshot_id"] = .string(
@@ -796,6 +905,14 @@ private struct ScenarioHarness {
 
   private mutating func clearRouteEditorObservations() {
     for key in adapterObservations.keys.filter({ $0.hasPrefix("editor.") }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func clearRouteEditorCorridorObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("editor.corridor.")
+    }) {
       adapterObservations.removeValue(forKey: key)
     }
   }

@@ -15,6 +15,7 @@
 		20F92188AD9C1E12C3DD80FE /* ParkedRouteEditorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */; };
 		211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */ = {isa = PBXBuildFile; fileRef = 0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */; };
 		2FDD37296E5C36302AAC3131 /* InternalLocationCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */; };
+		31C81EB5F6310D33857A24E1 /* KRU03CorridorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */; };
 		364EAB2BE5288A7F6CAF6CAB /* PreDriveReviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */; };
 		3CB3F1B631646861469BFE8C /* InternalLocationCalibrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797D999FF7F8C7A290AC65FA /* InternalLocationCalibrationTests.swift */; };
 		460FCC9B5E902926D2F69D3F /* KRU09AccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */; };
@@ -74,6 +75,7 @@
 		2A29BADA2DFB4418389E861A /* InternalLocationCalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationModel.swift; sourceTree = "<group>"; };
 		2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoRoutesApp.swift; sourceTree = "<group>"; };
 		2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationView.swift; sourceTree = "<group>"; };
+		40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KRU03CorridorUITests.swift; sourceTree = "<group>"; };
 		41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModel.swift; sourceTree = "<group>"; };
 		49835B009E287E91711B8440 /* KaidoRoutesAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 		7B7D100FB46DE333007A9704 /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */,
 				A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */,
 			);
 			path = UITests;
@@ -379,6 +382,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				31C81EB5F6310D33857A24E1 /* KRU03CorridorUITests.swift in Sources */,
 				460FCC9B5E902926D2F69D3F /* KRU09AccessibilityUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

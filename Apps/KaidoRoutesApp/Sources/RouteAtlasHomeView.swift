@@ -217,7 +217,7 @@ private struct RouteAtlasCard: View {
   }
 }
 
-private struct ParkedRouteEditorPanel: View {
+struct ParkedRouteEditorPanel: View {
   @ObservedObject var model: ParkedRouteEditorModel
 
   var body: some View {
@@ -225,6 +225,10 @@ private struct ParkedRouteEditorPanel: View {
       editorHeader
       entrance
       RouteOccurrenceRail(occurrences: model.snapshot.occurrences)
+
+      if model.corridorResolution?.state == .resolved {
+        corridorResolutionReceipt
+      }
 
       if model.snapshot.state == .editing {
         currentDecision
@@ -251,6 +255,8 @@ private struct ParkedRouteEditorPanel: View {
       RoundedRectangle(cornerRadius: 22)
         .stroke(KaidoTheme.signalAmber.opacity(0.45), lineWidth: 1)
     }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("kr-u03-editor-panel")
   }
 
   private var editorHeader: some View {
@@ -321,6 +327,10 @@ private struct ParkedRouteEditorPanel: View {
           Text(model.decisionTitle)
             .font(.system(size: 16, weight: .black, design: .rounded))
             .foregroundStyle(KaidoTheme.routeWhite)
+            .accessibilityIdentifier("route-editor-current-decision")
+            .accessibilityValue(
+              model.snapshot.currentDecisionPointID ?? "NONE"
+            )
         }
 
         Spacer()
@@ -341,47 +351,143 @@ private struct ParkedRouteEditorPanel: View {
         )
       }
 
-      VStack(spacing: 8) {
-        ForEach(model.snapshot.availableChoices, id: \.id) { choice in
-          Button {
-            model.select(choiceID: choice.id)
-          } label: {
-            HStack(spacing: 12) {
-              Image(systemName: "arrow.triangle.branch")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(KaidoTheme.signalAmber)
-                .frame(width: 22)
-
-              VStack(alignment: .leading, spacing: 2) {
-                Text(model.title(for: choice))
-                  .font(.system(size: 14, weight: .bold))
-                  .foregroundStyle(KaidoTheme.routeWhite)
-
-                Text(model.detail(for: choice))
-                  .font(.system(size: 10, weight: .medium))
-                  .foregroundStyle(KaidoTheme.muted)
-              }
-
-              Spacer(minLength: 8)
-
-              Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .black))
-                .foregroundStyle(KaidoTheme.muted)
-            }
-            .padding(.horizontal, 12)
-            .frame(minHeight: 52)
-            .background(KaidoTheme.asphalt.opacity(0.72))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay {
-              RoundedRectangle(cornerRadius: 12)
-                .stroke(KaidoTheme.steel.opacity(0.8), lineWidth: 1)
-            }
+      if let resolution = activeCorridorResolution {
+        corridorResolutionChoices(resolution)
+      } else {
+        if model.canSubmitFreehandCorridor {
+          SyntheticFreehandCorridorPad {
+            model.submitFreehandCorridor()
           }
-          .buttonStyle(.plain)
-          .accessibilityHint("提交已审核 choice ID \(choice.id)")
         }
+        legalChoiceButtons
       }
     }
+  }
+
+  private var activeCorridorResolution: ParkedCorridorResolutionSnapshot? {
+    guard let resolution = model.corridorResolution,
+      resolution.decisionPointID == model.snapshot.currentDecisionPointID,
+      resolution.state == .confirmationRequired
+        || resolution.state == .resolutionRequired
+    else {
+      return nil
+    }
+    return resolution
+  }
+
+  private var legalChoiceButtons: some View {
+    VStack(spacing: 8) {
+      ForEach(model.snapshot.availableChoices, id: \.id) { choice in
+        Button {
+          model.select(choiceID: choice.id)
+        } label: {
+          routeChoiceLabel(choice)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("提交已审核 choice ID \(choice.id)")
+      }
+    }
+  }
+
+  private func corridorResolutionChoices(
+    _ resolution: ParkedCorridorResolutionSnapshot
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        Label("手绘走廊有歧义", systemImage: "point.3.filled.connected.trianglepath.dotted")
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.signalAmber)
+
+        Spacer()
+
+        Text("\(resolution.candidateChoices.count) REVIEWED")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.signalAmber)
+      }
+
+      Text("停车状态下选择一个当前合法分岔；手势本身不会创建路线。")
+        .font(.system(size: 10, weight: .medium))
+        .foregroundStyle(KaidoTheme.muted)
+
+      ForEach(
+        Array(resolution.candidateChoices.enumerated()),
+        id: \.element.id
+      ) { index, choice in
+        Button {
+          model.resolveFreehandCorridor(choiceID: choice.id)
+        } label: {
+          routeChoiceLabel(choice)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("corridor-candidate-\(index)")
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.signalAmber.opacity(0.08))
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+    .overlay {
+      RoundedRectangle(cornerRadius: 14)
+        .stroke(
+          KaidoTheme.signalAmber.opacity(0.55),
+          style: StrokeStyle(lineWidth: 1, dash: [6, 4])
+        )
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("corridor-resolution-card")
+    .accessibilityValue(resolution.state.rawValue)
+  }
+
+  private func routeChoiceLabel(
+    _ choice: ReviewedRouteEditorChoice
+  ) -> some View {
+    HStack(spacing: 12) {
+      Image(systemName: "arrow.triangle.branch")
+        .font(.system(size: 15, weight: .bold))
+        .foregroundStyle(KaidoTheme.signalAmber)
+        .frame(width: 22)
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(model.title(for: choice))
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+        Text(model.detail(for: choice))
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+
+      Spacer(minLength: 8)
+
+      Image(systemName: "chevron.right")
+        .font(.system(size: 10, weight: .black))
+        .foregroundStyle(KaidoTheme.muted)
+    }
+    .padding(.horizontal, 12)
+    .frame(minHeight: 52)
+    .background(KaidoTheme.asphalt.opacity(0.72))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay {
+      RoundedRectangle(cornerRadius: 12)
+        .stroke(KaidoTheme.steel.opacity(0.8), lineWidth: 1)
+    }
+  }
+
+  private var corridorResolutionReceipt: some View {
+    Label(
+      "已确认手绘候选；路线由 editor session 追加",
+      systemImage: "checkmark.circle.fill"
+    )
+    .font(.system(size: 11, weight: .bold))
+    .foregroundStyle(KaidoTheme.positionCyan)
+    .padding(10)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(KaidoTheme.positionCyan.opacity(0.08))
+    .clipShape(RoundedRectangle(cornerRadius: 11))
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      "手绘走廊候选已确认，\(model.corridorResolution?.selectedChoiceID ?? "未知选择")"
+    )
+    .accessibilityIdentifier("corridor-resolution-selected")
   }
 
   private var selectedExit: some View {
@@ -536,7 +642,86 @@ private struct ParkedRouteEditorPanel: View {
       )
       .clipShape(RoundedRectangle(cornerRadius: 11))
       .disabled(!model.canCompile || model.compiledRoutePlan != nil)
+      .accessibilityIdentifier("route-editor-compile")
     }
+  }
+}
+
+private struct SyntheticFreehandCorridorPad: View {
+  @State private var points: [CGPoint] = []
+
+  let onCompleted: () -> Void
+
+  var body: some View {
+    Button(action: onCompleted) {
+      VStack(alignment: .leading, spacing: 8) {
+        HStack {
+          VStack(alignment: .leading, spacing: 2) {
+            Text("手绘想走的方向")
+              .font(.system(size: 12, weight: .black, design: .rounded))
+              .foregroundStyle(KaidoTheme.routeWhite)
+
+            Text("SYNTHETIC MATCH · PARKED ONLY")
+              .font(.system(size: 8, weight: .black, design: .monospaced))
+              .foregroundStyle(KaidoTheme.evidenceCoral)
+          }
+
+          Spacer()
+
+          Image(systemName: "pencil.and.scribble")
+            .foregroundStyle(KaidoTheme.positionCyan)
+        }
+
+        Canvas { context, _ in
+          guard let first = points.first else { return }
+          var path = Path()
+          path.move(to: first)
+          for point in points.dropFirst() {
+            path.addLine(to: point)
+          }
+          context.stroke(
+            path,
+            with: .color(KaidoTheme.positionCyan),
+            style: StrokeStyle(
+              lineWidth: 5,
+              lineCap: .round,
+              lineJoin: .round,
+              dash: [8, 5]
+            )
+          )
+        }
+        .frame(height: 104)
+        .background(KaidoTheme.asphalt.opacity(0.72))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay {
+          RoundedRectangle(cornerRadius: 12)
+            .stroke(KaidoTheme.positionCyan.opacity(0.45), lineWidth: 1)
+        }
+        .contentShape(Rectangle())
+      }
+      .padding(12)
+      .background(KaidoTheme.positionCyan.opacity(0.06))
+      .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+    .buttonStyle(.plain)
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 0)
+        .onChanged { value in
+          points.append(value.location)
+        }
+        .onEnded { _ in
+          guard points.count > 1 else {
+            points = []
+            return
+          }
+          onCompleted()
+        }
+    )
+    .accessibilityLabel(
+      "合成手绘走廊区域。手势只加载固定测试候选，不会直接创建路线。"
+    )
+    .accessibilityHint("双击可提交合成手势候选")
+    .accessibilityIdentifier("corridor-draw-pad")
   }
 }
 

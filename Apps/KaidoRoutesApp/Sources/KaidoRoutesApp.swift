@@ -6,6 +6,10 @@ struct KaidoRoutesApp: App {
   var body: some Scene {
     WindowGroup {
       if ProcessInfo.processInfo.arguments.contains(
+        "-KR-U03-CORRIDOR-PREVIEW"
+      ) {
+        KR_U03CorridorPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-KR-U09-ACCESSIBILITY-PREVIEW"
       ) {
         KR_U09AccessibilityPreviewHost()
@@ -13,6 +17,29 @@ struct KaidoRoutesApp: App {
         RouteAtlasHomeView()
       }
     }
+  }
+}
+
+private struct KR_U03CorridorPreviewHost: View {
+  @StateObject private var model: ParkedRouteEditorModel
+
+  init() {
+    let initialModel: ParkedRouteEditorModel
+    do {
+      initialModel = try ParkedRouteEditorModel()
+    } catch {
+      preconditionFailure("Invalid KR-U03 corridor fixture: \(error)")
+    }
+    _model = StateObject(wrappedValue: initialModel)
+  }
+
+  var body: some View {
+    ScrollView {
+      ParkedRouteEditorPanel(model: model)
+        .padding(18)
+    }
+    .background(KaidoTheme.asphalt.ignoresSafeArea())
+    .accessibilityIdentifier("kr-u03-corridor-preview")
   }
 }
 

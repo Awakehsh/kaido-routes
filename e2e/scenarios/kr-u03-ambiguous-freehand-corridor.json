@@ -1,0 +1,288 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U03",
+  "title": "Ambiguous freehand corridor requires parked resolution",
+  "layer": "IPHONE_UI",
+  "tags": ["route-editor", "freehand", "ambiguity", "parked"],
+  "purpose": "Keep a freehand gesture from creating route semantics: a snapshot- and cursor-bound match may expose only current reviewed choices, and one explicit parked resolution is required before the editor appends fresh occurrences.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The fixture supplies synthetic match candidates and does not validate production gesture geometry, topology layout, or snapping tolerances.",
+      "The portable scenario verifies the pure resolution boundary; local XCUITest separately exercises the SwiftUI drag surface."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.freehand-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "inputs": {
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.freehand-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.freehand-directional",
+            "initial_edge_id": "test.edge.freehand-entry",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.freehand"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.freehand",
+            "incoming_approach_id": "test.approach.freehand",
+            "junction_complex_id": "test.junction.freehand",
+            "choices": [
+              {
+                "choice_id": "test.choice.freehand-left",
+                "movement_id": "test.movement.freehand-left",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.freehand-left",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "next_decision_point_id": "test.decision.exit"
+              },
+              {
+                "choice_id": "test.choice.freehand-right",
+                "movement_id": "test.movement.freehand-right",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.freehand-right",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "next_decision_point_id": "test.decision.exit"
+              }
+            ]
+          },
+          {
+            "decision_point_id": "test.decision.exit",
+            "incoming_approach_id": "test.approach.exit",
+            "junction_complex_id": "test.junction.exit",
+            "choices": [
+              {
+                "choice_id": "test.choice.explicit-exit",
+                "movement_id": "test.movement.explicit-exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.explicit-exit",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.freehand-directional"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start-editor",
+      "at_ms": 0,
+      "type": "ROUTE_EDITOR_STARTED",
+      "payload": {
+        "route_plan_id": "test.plan.freehand",
+        "entrance_facility_id": "test.entrance.freehand-directional",
+        "initial_occurrence_id": "test.occurrence.freehand-entry",
+        "recovery_policy": "STRICT",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-moving-match",
+      "at_ms": 1,
+      "type": "ROUTE_EDITOR_CORRIDOR_MATCH_SUBMITTED",
+      "payload": {
+        "network_snapshot_id": "test.snapshot.freehand-v1",
+        "decision_point_id": "test.decision.freehand",
+        "candidate_choice_ids": [
+          "test.choice.freehand-left",
+          "test.choice.freehand-right"
+        ],
+        "vehicle_moving": true
+      }
+    },
+    {
+      "id": "submit-ambiguous-match",
+      "at_ms": 2,
+      "type": "ROUTE_EDITOR_CORRIDOR_MATCH_SUBMITTED",
+      "payload": {
+        "network_snapshot_id": "test.snapshot.freehand-v1",
+        "decision_point_id": "test.decision.freehand",
+        "candidate_choice_ids": [
+          "test.choice.freehand-left",
+          "test.choice.freehand-right"
+        ],
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-non-candidate",
+      "at_ms": 3,
+      "type": "ROUTE_EDITOR_CORRIDOR_RESOLUTION_REQUESTED",
+      "payload": {
+        "choice_id": "test.choice.explicit-exit",
+        "movement_occurrence_id": "test.occurrence.invalid-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.invalid-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-moving-resolution",
+      "at_ms": 4,
+      "type": "ROUTE_EDITOR_CORRIDOR_RESOLUTION_REQUESTED",
+      "payload": {
+        "choice_id": "test.choice.freehand-left",
+        "movement_occurrence_id": "test.occurrence.left-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.left-edge",
+        "vehicle_moving": true
+      }
+    },
+    {
+      "id": "resolve-left-candidate",
+      "at_ms": 5,
+      "type": "ROUTE_EDITOR_CORRIDOR_RESOLUTION_REQUESTED",
+      "payload": {
+        "choice_id": "test.choice.freehand-left",
+        "movement_occurrence_id": "test.occurrence.left-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.left-edge",
+        "vehicle_moving": false
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "gesture-starts-without-route-mutation",
+      "after": "start-editor",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.freehand-entry"],
+      "rationale": "The exact entrance remains the only authored occurrence before any explicit choice."
+    },
+    {
+      "id": "moving-match-is-locked",
+      "after": "reject-moving-match",
+      "category": "SAFETY",
+      "subject": "editor.corridor.last_error",
+      "matcher": "EQUALS",
+      "expected": "CORRIDOR_INTERACTION_LOCKED",
+      "rationale": "Freehand route authoring cannot start while the vehicle is moving."
+    },
+    {
+      "id": "moving-match-does-not-author",
+      "after": "reject-moving-match",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.freehand-entry"],
+      "rationale": "A rejected moving-time gesture leaves the route untouched."
+    },
+    {
+      "id": "ambiguity-requires-resolution",
+      "after": "submit-ambiguous-match",
+      "category": "UI",
+      "subject": "editor.corridor.state",
+      "matcher": "EQUALS",
+      "expected": "RESOLUTION_REQUIRED",
+      "rationale": "Two legal reviewed candidates cannot be silently ranked into one route."
+    },
+    {
+      "id": "only-current-reviewed-candidates-appear",
+      "after": "submit-ambiguous-match",
+      "category": "SAFETY",
+      "subject": "editor.corridor.candidate_choice_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.choice.freehand-left",
+        "test.choice.freehand-right"
+      ],
+      "rationale": "The resolver exposes exact current editor choices rather than UI-invented paths."
+    },
+    {
+      "id": "ambiguous-gesture-does-not-author",
+      "after": "submit-ambiguous-match",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.freehand-entry"],
+      "rationale": "Submitting an ambiguous gesture alone cannot append an occurrence."
+    },
+    {
+      "id": "non-candidate-is-rejected",
+      "after": "reject-non-candidate",
+      "category": "SAFETY",
+      "subject": "editor.corridor.last_error",
+      "matcher": "EQUALS",
+      "expected": "ILLEGAL_CORRIDOR_CANDIDATE",
+      "rationale": "A choice outside the gesture's current reviewed candidate set fails closed."
+    },
+    {
+      "id": "invalid-resolution-retains-prompt",
+      "after": "reject-non-candidate",
+      "category": "UI",
+      "subject": "editor.corridor.state",
+      "matcher": "EQUALS",
+      "expected": "RESOLUTION_REQUIRED",
+      "rationale": "A rejected candidate does not dismiss the ambiguity."
+    },
+    {
+      "id": "moving-resolution-is-locked",
+      "after": "reject-moving-resolution",
+      "category": "SAFETY",
+      "subject": "editor.corridor.last_error",
+      "matcher": "EQUALS",
+      "expected": "CORRIDOR_INTERACTION_LOCKED",
+      "rationale": "Even an already displayed candidate cannot be chosen while moving."
+    },
+    {
+      "id": "moving-resolution-does-not-author",
+      "after": "reject-moving-resolution",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.freehand-entry"],
+      "rationale": "The moving-time resolution attempt leaves the exact route unchanged."
+    },
+    {
+      "id": "explicit-candidate-is-recorded",
+      "after": "resolve-left-candidate",
+      "category": "UI",
+      "subject": "editor.corridor.selected_choice_id",
+      "matcher": "EQUALS",
+      "expected": "test.choice.freehand-left",
+      "rationale": "The resolver records the user's explicit reviewed candidate choice."
+    },
+    {
+      "id": "explicit-resolution-advances-editor",
+      "after": "resolve-left-candidate",
+      "category": "NAVIGATION",
+      "subject": "editor.current_decision_point_id",
+      "matcher": "EQUALS",
+      "expected": "test.decision.exit",
+      "rationale": "Only the explicit selected choice advances the existing editor cursor."
+    },
+    {
+      "id": "explicit-resolution-appends-fresh-occurrences",
+      "after": "resolve-left-candidate",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.freehand-entry",
+        "test.occurrence.left-movement",
+        "test.occurrence.left-edge"
+      ],
+      "rationale": "The existing editor, not the freehand matcher, appends fresh movement and edge occurrences."
+    },
+    {
+      "id": "route-remains-incomplete-after-corridor-choice",
+      "after": "resolve-left-candidate",
+      "category": "SAFETY",
+      "subject": "editor.state",
+      "matcher": "EQUALS",
+      "expected": "EDITING",
+      "rationale": "Resolving the corridor does not synthesize or skip the required explicit exit."
+    }
+  ]
+}

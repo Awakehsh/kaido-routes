@@ -181,13 +181,20 @@ names one exact closed choice sequence. Only an authored match becomes an opaque
 lap candidate; duplication copies semantic values into fresh occurrences and is
 one grouped parked-undo action. UI code cannot infer closure, submit a future
 decision's choice, reuse an occurrence ID, or edit while moving. KR-U01 and
-KR-U02 execute this stateful boundary. The internal iPhone shell now composes the
+KR-U02 execute this stateful boundary. KR-U03 adds a separate parked corridor
+resolver between freehand geometry matching and the editor. It accepts only the
+exact current snapshot, decision point, and reviewed choice IDs; ambiguity
+requires an explicit choice and still cannot append occurrences by itself. The
+internal iPhone shell now composes the
 same session through a synthetic parked-only catalog: SwiftUI renders its
 immutable choices and lap candidates, preserves repeated occurrences, uses
-session-owned undo, and unlocks compilation only after an explicit exit. This
-is an adapter proof, not released Shuto authoring data; real released editor
-catalogs, localized labels, topology rendering, and accessibility validation
-remain pending.
+session-owned undo, and unlocks compilation only after an explicit exit. Its
+synthetic Canvas sends no geometry semantics to the editor; a fixed fixture
+returns two candidate choice IDs, and XCUITest proves a drag requires parked
+resolution before the editor advances. This is an adapter proof, not production
+snapping or released Shuto authoring data; real released editor catalogs,
+reviewed layout geometry, matching tolerances, localized labels, topology
+rendering, and accessibility validation remain pending.
 
 After exact compilation, the internal iPhone shell resolves actual distance from
 a same-snapshot synthetic reviewed-distance catalog and opens a KR-U04 pre-drive

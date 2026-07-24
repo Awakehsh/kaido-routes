@@ -476,14 +476,16 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 54 scenarios with 345 semantic assertions executable at L1/L2. KR-S16
+   current 55 scenarios with 359 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
    geometry to that same guidance path without using lateral residual;
    KR-U01 crosses the parked expert-editor cursor and exact RoutePlan compilation
    boundary; KR-U02 adds reviewed closed-lap candidate matching, value
-   duplication with fresh occurrence IDs, and grouped undo; KR-U04 through U09,
+   duplication with fresh occurrence IDs, and grouped undo; KR-U03 adds
+   parked-only freehand-corridor ambiguity resolution without giving gesture
+   matching occurrence authority; KR-U04 through U09,
    KR-U10 through U12, and KR-U14 cross the shared presentation projection
    boundary, including one released junction-view definition shared by phone and
    CarPlay and localized accessibility semantics with non-color branch/lane
@@ -599,12 +601,17 @@ gate.
     parked undo, and requires an explicit directional exit before RoutePlan
     compilation. Its reviewed lap templates expose candidates only for exact
     authored closed sequences; duplication copies semantic values under fresh
-    occurrence IDs. KR-U01 and KR-U02 execute this boundary. The internal iPhone
+    occurrence IDs. `ParkedCorridorResolutionSession` separately requires an
+    exact snapshot/current-cursor match, never authors from zero or one candidate
+    automatically, and keeps ambiguity pending until an explicit parked choice.
+    KR-U01 through KR-U03 execute these boundaries. The internal iPhone
     preview now renders the session snapshot, stable choice IDs, and lap
     candidates from a synthetic catalog, preserves repeated occurrences, and
-    gates compilation through the session. Next build released editor catalogs,
-    production labels/topology rendering, and full accessibility validation
-    without moving graph logic into UI.
+    gates compilation through the session. Its synthetic Canvas is covered by a
+    real XCUITest drag but supplies only a fixed two-choice match. Next build
+    released editor catalogs, reviewed layout matching and calibrated snapping
+    tolerances, production labels/topology rendering, and full accessibility
+    validation without moving graph logic into UI.
 12. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 

@@ -5,6 +5,52 @@ import XCTest
 
 @MainActor
 final class ParkedRouteEditorModelTests: XCTestCase {
+  func testAmbiguousFreehandCorridorRequiresExplicitCandidate() throws {
+    let model = try ParkedRouteEditorModel()
+
+    XCTAssertTrue(model.canSubmitFreehandCorridor)
+    XCTAssertEqual(
+      model.snapshot.occurrences.map(\.id),
+      ["preview.synthetic.occurrence.entry.0"]
+    )
+
+    model.submitFreehandCorridor()
+
+    XCTAssertEqual(model.corridorResolution?.state, .resolutionRequired)
+    XCTAssertEqual(
+      model.corridorResolution?.candidateChoices.map(\.id),
+      [
+        "preview.synthetic.choice.enter-loop",
+        "preview.synthetic.choice.early-exit",
+      ]
+    )
+    XCTAssertEqual(model.snapshot.occurrences.count, 1)
+    XCTAssertFalse(model.canCompile)
+
+    model.resolveFreehandCorridor(
+      choiceID: "preview.synthetic.choice.enter-loop"
+    )
+
+    XCTAssertEqual(model.corridorResolution?.state, .resolved)
+    XCTAssertEqual(
+      model.corridorResolution?.selectedChoiceID,
+      "preview.synthetic.choice.enter-loop"
+    )
+    XCTAssertEqual(
+      model.snapshot.currentDecisionPointID,
+      "preview.synthetic.decision.loop"
+    )
+    XCTAssertEqual(
+      model.snapshot.occurrences.map(\.id),
+      [
+        "preview.synthetic.occurrence.entry.0",
+        "preview.synthetic.occurrence.movement.1",
+        "preview.synthetic.occurrence.edge.1",
+      ]
+    )
+    XCTAssertFalse(model.canCompile)
+  }
+
   func testEditorStartsAtExactParkedEntranceWithCurrentChoicesOnly() throws {
     let model = try ParkedRouteEditorModel()
 

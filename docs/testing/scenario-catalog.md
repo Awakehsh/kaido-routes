@@ -62,7 +62,7 @@ should become scenarios when their layer is built.
 |---|---|---:|---|
 | KR-U01 | Parked editor exposes only legal next choices and compiles an explicit directional exit | P0 | Seeded |
 | KR-U02 | Expert editor can duplicate a closed subsequence as another lap | P0 | Seeded |
-| KR-U03 | An ambiguous freehand corridor asks for resolution while parked | P1 | Planned |
+| KR-U03 | An ambiguous freehand corridor asks for resolution while parked | P1 | Seeded |
 | KR-U04 | Pre-drive review separates actual distance, tariff distance, and toll status | P0 | Seeded |
 | KR-U05 | Japanese sign target remains primary in Japanese, Chinese, and English UI | P0 | Seeded |
 | KR-U06 | Estimated topology position is visually distinct from measured position | P0 | Seeded |

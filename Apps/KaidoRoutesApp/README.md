@@ -68,6 +68,19 @@ the exact `RoutePlan`. The app owns display labels for this synthetic fixture
 only; it does not construct real Shuto topology, infer movement legality, or
 promote the Route Atlas into selectable navigation data.
 
+KR-U03 adds one synthetic freehand-corridor surface to the initial decision
+point. The Canvas records only the parked gesture. Its fixture returns two
+stable current choice IDs, and `ParkedCorridorResolutionSession` revalidates the
+snapshot, RoutePlan, decision point, and complete candidate values before the
+UI may show them. A gesture with zero candidates is unmatched, one candidate
+still needs confirmation, and multiple candidates require explicit resolution.
+Only the user's selected reviewed choice is then submitted to
+`ExpertRouteEditorSession`, which creates the fresh movement and edge
+occurrences. The compile control remains locked until the later explicit exit.
+The launch-only `-KR-U03-CORRIDOR-PREVIEW` XCUITest performs a real drag and
+checks this transition. The fixture does not implement production geometry
+matching, snapping tolerances, or release any road layout.
+
 ## Pre-drive review
 
 An accepted explicit-exit compilation is enriched by

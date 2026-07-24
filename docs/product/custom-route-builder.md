@@ -110,6 +110,22 @@ Freehand drawing may be used as a gesture for selecting a desired corridor, but
 it cannot directly create a route. The compiler must snap the gesture to legal
 movements and ask the user to resolve any ambiguity while parked.
 
+`ParkedCorridorResolutionSession` now defines the boundary after geometry
+matching and before expert-editor mutation. A match carries only the exact
+network snapshot, current decision-point ID, and stable candidate choice IDs.
+The resolver rejects snapshot or cursor drift, duplicates, unknown or future
+choices, and every moving-time request. Zero candidates stay unmatched; one
+candidate still requires confirmation; multiple candidates require explicit
+resolution. Resolution returns one existing `ReviewedRouteEditorChoice` but
+does not create an occurrence. The caller must submit that choice through
+`ExpertRouteEditorSession` with fresh movement and edge occurrence IDs.
+
+KR-U03 executes this contract with synthetic candidates. The internal iPhone
+Canvas demonstrates the interaction using a fixed fixture match and a real drag
+test. Production gesture sampling, released topology/layout binding, candidate
+scoring, and snapping-tolerance calibration remain unimplemented; the synthetic
+surface must not be described as a production matcher.
+
 ## Starting away from the expressway
 
 A user normally creates or selects a route before reaching the Shuto network.

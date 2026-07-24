@@ -494,6 +494,14 @@ That is a development fact, not yet the minimum deployment target.
   fresh occurrence creation, grouped parked undo, and explicit exit completion.
   KR-U01 and KR-U02 execute this pure boundary; the internal SwiftUI editor uses
   a synthetic catalog and does not release real Shuto authoring data.
+- A freehand gesture is only adapter input. `ParkedCorridorResolutionSession`
+  accepts a geometry match only when its snapshot, RoutePlan, current decision
+  point, and candidate choice values still match `ExpertRouteEditorSnapshot`.
+  Zero or one matches never author a route automatically; multiple matches
+  require an explicit parked choice. Resolution returns one reviewed choice,
+  which must still pass through `ExpertRouteEditorSession` with fresh occurrence
+  IDs. KR-U03 and the internal synthetic Canvas execute this boundary without
+  implementing production snapping or layout matching.
 - The pre-drive adapter consumes only the compiled exact RoutePlan. A
   same-snapshot reviewed-distance catalog may populate actual distance by
   walking ordered occurrences; a separate uniquely active tariff record supplies

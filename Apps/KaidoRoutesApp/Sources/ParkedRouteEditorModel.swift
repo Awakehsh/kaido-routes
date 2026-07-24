@@ -12,6 +12,7 @@ struct ParkedRouteEditorFixture: Sendable {
   let choiceTitles: [String: String]
   let choiceDetails: [String: String]
   let decisionTitles: [String: String]
+  let freehandCorridorMatch: FreehandCorridorChoiceMatch
 
   static let synthetic = ParkedRouteEditorFixture(
     catalog: ReviewedRouteEditorCatalog(
@@ -112,7 +113,15 @@ struct ParkedRouteEditorFixture: Sendable {
     decisionTitles: [
       "preview.synthetic.decision.loop-gate": "环线入口分岔",
       "preview.synthetic.decision.loop": "环线内分岔",
-    ]
+    ],
+    freehandCorridorMatch: FreehandCorridorChoiceMatch(
+      networkSnapshotID: "preview.synthetic.snapshot-v1",
+      decisionPointID: "preview.synthetic.decision.loop-gate",
+      candidateChoiceIDs: [
+        "preview.synthetic.choice.enter-loop",
+        "preview.synthetic.choice.early-exit",
+      ]
+    )
   )
 }
 
@@ -120,12 +129,14 @@ struct ParkedRouteEditorFixture: Sendable {
 final class ParkedRouteEditorModel: ObservableObject {
   @Published private(set) var snapshot: ExpertRouteEditorSnapshot
   @Published private(set) var compiledRoutePlan: RoutePlan?
+  @Published private(set) var corridorResolution: ParkedCorridorResolutionSnapshot?
   @Published private(set) var lastErrorCode: String?
 
   let fixture: ParkedRouteEditorFixture
   let interaction: RouteEditorInteractionContext
 
   private var session: ExpertRouteEditorSession
+  private var corridorResolutionSession: ParkedCorridorResolutionSession?
   private var nextSelectionSerial = 1
   private var nextLapDuplicationSerial = 1
   private var successfulEditCount = 0
@@ -145,6 +156,7 @@ final class ParkedRouteEditorModel: ObservableObject {
       interaction: interaction
     )
     snapshot = session.snapshot
+    corridorResolution = nil
   }
 
   var canUndo: Bool {
@@ -153,6 +165,13 @@ final class ParkedRouteEditorModel: ObservableObject {
 
   var canCompile: Bool {
     (try? session.makeRoutePlan(interaction: interaction)) != nil
+  }
+
+  var canSubmitFreehandCorridor: Bool {
+    interaction == .parked
+      && snapshot.state == .editing
+      && snapshot.currentDecisionPointID == fixture.freehandCorridorMatch.decisionPointID
+      && corridorResolution == nil
   }
 
   var decisionTitle: String {
@@ -181,6 +200,8 @@ final class ParkedRouteEditorModel: ObservableObject {
       )
       nextSelectionSerial += 1
       successfulEditCount += 1
+      corridorResolutionSession = nil
+      corridorResolution = nil
       compiledRoutePlan = nil
       lastErrorCode = nil
       snapshot = session.snapshot
@@ -188,6 +209,66 @@ final class ParkedRouteEditorModel: ObservableObject {
       lastErrorCode = error.code
     } catch {
       lastErrorCode = "UNKNOWN_EDITOR_ERROR"
+    }
+  }
+
+  func submitFreehandCorridor() {
+    do {
+      let resolutionSession = try ParkedCorridorResolutionSession(
+        editorSnapshot: snapshot,
+        match: fixture.freehandCorridorMatch,
+        interaction: interaction
+      )
+      corridorResolutionSession = resolutionSession
+      corridorResolution = resolutionSession.snapshot
+      lastErrorCode = nil
+    } catch let error as ParkedCorridorResolutionError {
+      corridorResolutionSession = nil
+      corridorResolution = nil
+      lastErrorCode = error.code
+    } catch {
+      corridorResolutionSession = nil
+      corridorResolution = nil
+      lastErrorCode = "UNKNOWN_CORRIDOR_ERROR"
+    }
+  }
+
+  func resolveFreehandCorridor(choiceID: String) {
+    guard var resolutionSession = corridorResolutionSession else {
+      lastErrorCode = ParkedCorridorResolutionError.resolutionNotAllowed.code
+      return
+    }
+    var editorSession = session
+    let serial = nextSelectionSerial
+    do {
+      let selectedChoice = try resolutionSession.resolve(
+        choiceID: choiceID,
+        editorSnapshot: snapshot,
+        interaction: interaction
+      )
+      try editorSession.select(
+        choiceID: selectedChoice.id,
+        movementOccurrenceID: "preview.synthetic.occurrence.movement.\(serial)",
+        outgoingEdgeOccurrenceID: "preview.synthetic.occurrence.edge.\(serial)",
+        interaction: interaction
+      )
+      session = editorSession
+      corridorResolutionSession = resolutionSession
+      corridorResolution = resolutionSession.snapshot
+      nextSelectionSerial += 1
+      successfulEditCount += 1
+      compiledRoutePlan = nil
+      lastErrorCode = nil
+      snapshot = editorSession.snapshot
+    } catch let error as ParkedCorridorResolutionError {
+      corridorResolution = resolutionSession.snapshot
+      lastErrorCode = error.code
+    } catch let error as ExpertRouteEditorError {
+      corridorResolution = resolutionSession.snapshot
+      lastErrorCode = error.code
+    } catch {
+      corridorResolution = resolutionSession.snapshot
+      lastErrorCode = "UNKNOWN_CORRIDOR_ERROR"
     }
   }
 
@@ -212,6 +293,8 @@ final class ParkedRouteEditorModel: ObservableObject {
       )
       nextLapDuplicationSerial += 1
       successfulEditCount += 1
+      corridorResolutionSession = nil
+      corridorResolution = nil
       compiledRoutePlan = nil
       lastErrorCode = nil
       snapshot = session.snapshot
@@ -226,6 +309,8 @@ final class ParkedRouteEditorModel: ObservableObject {
     do {
       try session.undo(interaction: interaction)
       successfulEditCount -= 1
+      corridorResolutionSession = nil
+      corridorResolution = nil
       compiledRoutePlan = nil
       lastErrorCode = nil
       snapshot = session.snapshot

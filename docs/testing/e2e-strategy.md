@@ -231,6 +231,18 @@ compilation, and moving-time lockout. KR-U01 and KR-U02 remain the portable
 L1/L2 contracts; Simulator interaction and accessibility-tree inspection are
 local L3 evidence, not a CI field or release-data claim.
 
+KR-U03 inserts `ParkedCorridorResolutionSession` before editor mutation. The
+portable runner submits a synthetic match containing only snapshot,
+decision-point, and candidate choice IDs. Moving-time submission, a choice
+outside the current candidate set, and moving-time resolution all fail without
+adding occurrences. Ambiguous candidates remain pending until an explicit
+parked choice; only then does the runner submit that reviewed choice to
+`ExpertRouteEditorSession` with fresh occurrence IDs. A focused XCUITest adds
+local L3 evidence by dragging on the actual SwiftUI Canvas, checking that two
+reviewed candidates appear and compilation remains locked before and after the
+first movement. This does not validate production gesture geometry, released
+layout binding, candidate ranking, or snapping tolerances.
+
 The internal iPhone adapter also composes KR-U04 after the exact explicit-exit
 compilation. A same-snapshot reviewed-distance catalog walks RoutePlan
 occurrences, so repeated entities contribute once per traversal. The app model

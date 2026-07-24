@@ -117,6 +117,8 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     XCTAssertEqual(model.snapshot?.journeyPhase, .planning)
     XCTAssertFalse(try XCTUnwrap(model.snapshot).strictRouteAutoCommitAllowed)
     XCTAssertFalse(model.isRealRoadAuthority)
+    XCTAssertNil(model.presentationProjection)
+    XCTAssertEqual(model.presentationState, .awaitingGuidanceFrame)
 
     await model.process(
       [makeLocation(longitude: 139.75925, timestamp: 1_000)],
@@ -134,6 +136,7 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     )
     XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
     XCTAssertTrue(try XCTUnwrap(model.snapshot).strictRouteAutoCommitAllowed)
+    XCTAssertNil(model.presentationProjection)
     XCTAssertEqual(
       model.inputState,
       .entryUpdated(status: .strictRouteEntered, rejection: nil)
@@ -149,6 +152,31 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     }
     XCTAssertEqual(confidence, .high)
     XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
+    let projection = try XCTUnwrap(model.presentationProjection)
+    XCTAssertEqual(model.presentationState, .ready)
+    XCTAssertEqual(projection.iPhone.routePlanID, model.routePlanID)
+    XCTAssertEqual(
+      projection.iPhone.currentOccurrenceID,
+      model.snapshot?.currentOccurrenceID
+    )
+    XCTAssertEqual(
+      projection.carPlay.currentOccurrenceID,
+      projection.iPhone.currentOccurrenceID
+    )
+    XCTAssertEqual(
+      projection.carPlay.nextMovementOccurrenceID,
+      projection.iPhone.nextMovementOccurrenceID
+    )
+    XCTAssertEqual(
+      projection.iPhone.guidancePromptID,
+      "test.prompt.loop-1"
+    )
+    XCTAssertTrue(projection.voice.shouldSpeak)
+    XCTAssertEqual(
+      projection.iPhone.passage.evidence,
+      .noKnownConflictRealtimeUnconfirmed
+    )
+    XCTAssertFalse(projection.iPhone.passage.usesPositiveOpenColor)
     XCTAssertEqual(speechOutput.commands.count, 1)
     let speech = try XCTUnwrap(speechOutput.commands.first)
     XCTAssertEqual(speech.routePlanID, model.routePlanID)
@@ -168,6 +196,50 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     await model.process(
       [makeLocation(longitude: 139.76025, timestamp: 1_003)],
       receivedAt: Date(timeIntervalSince1970: 1_003)
+    )
+    XCTAssertEqual(speechOutput.commands.count, 1)
+    XCTAssertFalse(
+      try XCTUnwrap(model.presentationProjection).voice.shouldSpeak
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.guidancePromptID,
+      "test.prompt.loop-1"
+    )
+  }
+
+  @MainActor
+  func testDeterministicPreviewTracePublishesActorOwnedPhoneProjection() async throws {
+    let speechOutput = RecordingGuidanceSpeechOutput()
+    let model = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: speechOutput
+    )
+    await model.activate()
+
+    XCTAssertTrue(model.canRunDeterministicPreviewTrace)
+    await model.runDeterministicPreviewTrace()
+
+    XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
+    XCTAssertFalse(model.canRunDeterministicPreviewTrace)
+    XCTAssertEqual(model.presentationState, .ready)
+    let projection = try XCTUnwrap(model.presentationProjection)
+    XCTAssertTrue(projection.iPhone.isPrimarySurface)
+    XCTAssertFalse(projection.carPlay.isPrimarySurface)
+    XCTAssertEqual(
+      projection.iPhone.currentOccurrenceID,
+      projection.carPlay.currentOccurrenceID
+    )
+    XCTAssertEqual(
+      projection.iPhone.nextMovementOccurrenceID,
+      projection.carPlay.nextMovementOccurrenceID
+    )
+    XCTAssertEqual(speechOutput.commands.count, 1)
+
+    await model.runDeterministicPreviewTrace()
+    XCTAssertEqual(
+      model.inputState,
+      .pipelineRejected("SYNTHETIC_TRACE_REQUIRES_FRESH_PLANNING")
     )
     XCTAssertEqual(speechOutput.commands.count, 1)
   }
@@ -250,6 +322,8 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     )
     XCTAssertEqual(restored.snapshot?.journeyPhase, .strictRoute)
     XCTAssertEqual(restored.snapshot?.locationConfidence, .lost)
+    XCTAssertNil(restored.presentationProjection)
+    XCTAssertEqual(restored.presentationState, .awaitingGuidanceFrame)
     XCTAssertEqual(
       restored.snapshot?.signalReacquisitionStatus,
       .pending
@@ -322,6 +396,10 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     XCTAssertEqual(
       model.lifecycleState,
       .checkpointRejected("CHECKPOINT_DECODE_FAILED")
+    )
+    XCTAssertEqual(
+      model.presentationState,
+      .blocked("CHECKPOINT_DECODE_FAILED")
     )
 
     await model.activate()

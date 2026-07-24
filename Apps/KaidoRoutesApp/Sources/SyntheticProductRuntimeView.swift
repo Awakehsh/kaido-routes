@@ -10,6 +10,7 @@ struct SyntheticProductRuntimePanel: View {
       releaseIdentity
       runtimeMetrics
       actorState
+      actorProjection
       lifecycleState
       inputState
       speechState
@@ -26,6 +27,11 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityIdentifier("synthetic-product-runtime-panel")
     .task {
       await model.activate()
+      if ProcessInfo.processInfo.arguments.contains(
+        "-PRODUCT-RUNTIME-AUTO-TRACE"
+      ) {
+        await model.runDeterministicPreviewTrace()
+      }
     }
     .onChange(of: scenePhase, initial: true) { _, newPhase in
       Task {
@@ -172,6 +178,64 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityValue(model.lifecycleStatusLabel)
   }
 
+  private var actorProjection: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .firstTextBaseline, spacing: 8) {
+        Text(model.presentationState.label)
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.35)
+          .foregroundStyle(presentationColor)
+
+        Spacer()
+
+        Text("SYNTHETIC INPUT ONLY")
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+      }
+
+      if let projection = model.presentationProjection {
+        ProductRuntimeDrivingSurface(projection: projection)
+      } else {
+        Text(model.presentationState.detail)
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(KaidoTheme.muted)
+          .padding(11)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(KaidoTheme.asphalt.opacity(0.42))
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+      }
+
+      Button {
+        Task {
+          await model.runDeterministicPreviewTrace()
+        }
+      } label: {
+        Label("执行合成 actor 输入链", systemImage: "point.3.connected.trianglepath.dotted")
+          .font(.system(.subheadline, design: .rounded, weight: .black))
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 11)
+          .foregroundStyle(
+            model.canRunDeterministicPreviewTrace
+              ? KaidoTheme.asphalt
+              : KaidoTheme.muted
+          )
+          .background(
+            model.canRunDeterministicPreviewTrace
+              ? KaidoTheme.positionCyan
+              : KaidoTheme.steel.opacity(0.35)
+          )
+          .clipShape(RoundedRectangle(cornerRadius: 11))
+      }
+      .buttonStyle(.plain)
+      .disabled(!model.canRunDeterministicPreviewTrace)
+      .accessibilityLabel("执行合成 actor 输入链，不连接实时定位")
+      .accessibilityIdentifier("product-runtime-run-trace")
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-runtime-presentation-state")
+    .accessibilityValue(model.presentationState.label)
+  }
+
   private var inputState: some View {
     VStack(alignment: .leading, spacing: 4) {
       Text(model.inputState.label)
@@ -260,6 +324,17 @@ struct SyntheticProductRuntimePanel: View {
       KaidoTheme.signalAmber
     case .idle, .stopped:
       KaidoTheme.muted
+    }
+  }
+
+  private var presentationColor: Color {
+    switch model.presentationState {
+    case .awaitingGuidanceFrame:
+      KaidoTheme.signalAmber
+    case .ready:
+      KaidoTheme.positionCyan
+    case .blocked:
+      KaidoTheme.evidenceCoral
     }
   }
 

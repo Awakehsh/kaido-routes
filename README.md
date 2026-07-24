@@ -169,8 +169,11 @@ preempts stale speech for a newer prompt, and drops interrupted prompts without
 catch-up replay. The Apple adapter uses `AVSpeechSynthesizer` with the
 turn-by-turn `voicePrompt` audio-session mode, temporary ducking, explicit
 interruption handling, and typed unavailable-voice/audio-session failures. The
-synthetic runtime panel exercises this boundary with injected output and remains
-input-disconnected by default. Production corridor construction, DecisionZone
+synthetic runtime panel exercises this boundary with injected output, retains the
+exact phone/CarPlay/voice projection constructed from one actor update, and
+remains input-disconnected by default. Its explicit fixed synthetic trace proves
+that visual refresh and one-shot voice authority stay separate without creating
+a second UI progress state. Production corridor construction, DecisionZone
 calibration, real-road live navigation-state SwiftUI composition, CarPlay
 entitlement, full-app and device accessibility validation, pronunciation and
 physical audio/CarPlay hardware behavior remain unimplemented or unproven.
@@ -282,16 +285,22 @@ the production codec, constructs `KaidoProductNavigationRuntime`, and publishes
 only the actor's atomic snapshot. Its foreground pipeline binds
 `CoreLocationObservationAdapter` and `CoreLocationEntryTransitionAdapter` to the
 session, and app tests execute the ordered two-edge admission plus one
-strict-route matcher update. The visible preview deliberately attaches no
-`CLLocationManager`. A versioned, coordinate-free navigation checkpoint now
-binds progress, recovery/egress state, and the prompt ledger to the exact product
-release, navigation release, runtime policy, snapshot, RoutePlan, and matcher
-corridor. SwiftUI scene changes stop speech and atomically save that checkpoint;
-restoration clears partial entry evidence, CarPlay ownership, position, matcher
-posterior, and speech authority, then requires a fresh multi-fix matcher window.
-This is process-lifecycle recovery, not background navigation: no location
-background mode or active background location session is enabled. Real released
-assets and device lifecycle evidence remain Apple-integration gates.
+strict-route matcher update. Every strict-route actor update now constructs one
+shared `NavigationPresentationProjection` for the SwiftUI phone surface,
+CarPlay semantics, and optional voice event. A persistent frame can refresh the
+visual projection without replaying speech; no active frame or a projection
+failure leaves the driving surface unavailable. The internal panel can execute
+one fixed synthetic adapter-to-actor trace, while the visible preview
+deliberately attaches no `CLLocationManager`. A versioned, coordinate-free
+navigation checkpoint now binds progress, recovery/egress state, and the prompt
+ledger to the exact product release, navigation release, runtime policy,
+snapshot, RoutePlan, and matcher corridor. SwiftUI scene changes stop speech and
+atomically save that checkpoint; restoration clears partial entry evidence,
+CarPlay ownership, position, matcher posterior, active presentation, and speech
+authority, then requires a fresh multi-fix matcher window. This is
+process-lifecycle recovery, not background navigation: no location background
+mode or active background location session is enabled. Real released assets and
+device lifecycle evidence remain Apple-integration gates.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid

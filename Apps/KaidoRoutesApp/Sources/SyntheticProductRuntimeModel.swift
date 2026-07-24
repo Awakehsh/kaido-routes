@@ -84,6 +84,34 @@ enum SyntheticProductRuntimeLifecycleState: Equatable, Sendable {
   case checkpointRejected(String)
 }
 
+enum SyntheticProductRuntimePresentationState: Equatable, Sendable {
+  case awaitingGuidanceFrame
+  case ready
+  case blocked(String)
+
+  var label: String {
+    switch self {
+    case .awaitingGuidanceFrame:
+      "WAITING FOR ACTOR FRAME"
+    case .ready:
+      "ACTOR FRAME READY"
+    case .blocked:
+      "PROJECTION BLOCKED"
+    }
+  }
+
+  var detail: String {
+    switch self {
+    case .awaitingGuidanceFrame:
+      "SwiftUI has no guidance semantics until the actor publishes an active frame."
+    case .ready:
+      "Phone, CarPlay, and voice values came from one atomic NavigationSession update."
+    case .blocked(let code):
+      code
+    }
+  }
+}
+
 @MainActor
 final class SyntheticProductRuntimeModel: ObservableObject {
   @Published private(set) var activation: SyntheticProductRuntimeActivation =
@@ -94,6 +122,10 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus =
     .idle
   @Published private(set) var lifecycleState: SyntheticProductRuntimeLifecycleState = .foreground
+  @Published private(set) var presentationProjection: NavigationPresentationProjection?
+  @Published private(set) var presentationState: SyntheticProductRuntimePresentationState =
+    .awaitingGuidanceFrame
+  @Published private(set) var isDeterministicPreviewTraceRunning = false
 
   let fixture: SyntheticProductRuntimeFixture
 
@@ -157,6 +189,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     if let checkpointFailureCode {
       activation = .failed("CHECKPOINT_REJECTED")
       lifecycleState = .checkpointRejected(checkpointFailureCode)
+      presentationState = .blocked(checkpointFailureCode)
     }
   }
 
@@ -218,6 +251,13 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 
   var isRealRoadAuthority: Bool {
     false
+  }
+
+  var canRunDeterministicPreviewTrace: Bool {
+    activation == .ready
+      && snapshot?.journeyPhase == .planning
+      && acceptsLiveInput
+      && !isDeterministicPreviewTraceRunning
   }
 
   var lifecycleStatusLabel: String {
@@ -310,6 +350,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     guard started.activeRoutePlanID == routePlanID else {
       activation = .failed("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
       snapshot = nil
+      presentationState = .blocked("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
       return
     }
     if runtime.origin == .fresh {
@@ -321,6 +362,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       else {
         activation = .failed("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
         snapshot = nil
+        presentationState = .blocked("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
         return
       }
       lifecycleState = .foreground
@@ -332,6 +374,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       else {
         activation = .failed("RESTORED_RUNTIME_TRANSIENT_STATE_DRIFT")
         snapshot = nil
+        presentationState = .blocked("RESTORED_RUNTIME_TRANSIENT_STATE_DRIFT")
         return
       }
       lifecycleState =
@@ -433,6 +476,30 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     }
   }
 
+  /// Exercises the exact adapter-to-actor-to-presentation path with synthetic
+  /// coordinates. This is an internal preview action and never attaches a
+  /// CLLocationManager or grants real-road authority.
+  func runDeterministicPreviewTrace() async {
+    guard canRunDeterministicPreviewTrace else {
+      inputState = .pipelineRejected("SYNTHETIC_TRACE_REQUIRES_FRESH_PLANNING")
+      return
+    }
+    isDeterministicPreviewTraceRunning = true
+    defer {
+      isDeterministicPreviewTraceRunning = false
+    }
+    for (longitude, timestamp) in [
+      (139.75925, 1_000.0),
+      (139.75975, 1_001.0),
+      (139.76025, 1_002.0),
+    ] {
+      await process(
+        [Self.previewLocation(longitude: longitude, timestamp: timestamp)],
+        receivedAt: Date(timeIntervalSince1970: timestamp)
+      )
+    }
+  }
+
   private func process(_ envelope: CoreLocationObservationEnvelope) async {
     guard let snapshot else {
       inputState = .pipelineRejected("RUNTIME_SNAPSHOT_MISSING")
@@ -463,7 +530,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
           confidence: update.matcherEstimate.confidence,
           guidance: update.guidanceProgressState
         )
-        scheduleSpeech(from: update)
+        publishPresentationAndScheduleSpeech(from: update)
       case .completed:
         inputState = .pipelineRejected("JOURNEY_ALREADY_COMPLETED")
       }
@@ -472,11 +539,12 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     }
   }
 
-  private func scheduleSpeech(from update: NavigationSessionUpdate) {
-    guard
-      let frame = update.navigationSnapshot.activeGuidanceFrame,
-      let emission = update.guidancePromptEmission
-    else {
+  private func publishPresentationAndScheduleSpeech(
+    from update: NavigationSessionUpdate
+  ) {
+    guard let frame = update.navigationSnapshot.activeGuidanceFrame else {
+      presentationProjection = nil
+      presentationState = .awaitingGuidanceFrame
       return
     }
     do {
@@ -485,7 +553,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
           snapshot: update.navigationSnapshot,
           networkSnapshotID: runtime.networkSnapshotID,
           guidanceFrame: frame,
-          promptEmission: emission,
+          promptEmission: update.guidancePromptEmission,
           languages: NavigationLanguageSelection(
             interfaceLocale: .simplifiedChinese,
             guidanceVoiceLocale: .japanese
@@ -497,9 +565,17 @@ final class SyntheticProductRuntimeModel: ObservableObject {
           )
         )
       )
-      speechStatus = speechCoordinator.submit(projection)
+      presentationProjection = projection
+      presentationState = .ready
+      if update.guidancePromptEmission != nil {
+        speechStatus = speechCoordinator.submit(projection)
+      }
     } catch {
-      speechStatus = .invalidProjection
+      presentationProjection = nil
+      presentationState = .blocked(Self.errorCode(error))
+      if update.guidancePromptEmission != nil {
+        speechStatus = .invalidProjection
+      }
     }
   }
 
@@ -516,6 +592,26 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 
   private static func currentTimeMilliseconds() -> Int {
     Int((Date().timeIntervalSince1970 * 1_000).rounded())
+  }
+
+  private static func previewLocation(
+    longitude: Double,
+    timestamp: TimeInterval
+  ) -> CLLocation {
+    CLLocation(
+      coordinate: CLLocationCoordinate2D(
+        latitude: 35.68,
+        longitude: longitude
+      ),
+      altitude: 0,
+      horizontalAccuracy: 5,
+      verticalAccuracy: 5,
+      course: 90,
+      courseAccuracy: 2,
+      speed: 10,
+      speedAccuracy: 1,
+      timestamp: Date(timeIntervalSince1970: timestamp)
+    )
   }
 
   private static func errorCode(_ error: Error) -> String {

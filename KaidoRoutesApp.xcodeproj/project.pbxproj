@@ -36,6 +36,7 @@
 		8E9F6B72F71B53C575AE8D29 /* SyntheticDrivingPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E94B8B69206BA8833AEDA899 /* SyntheticDrivingPreviewView.swift */; };
 		8FD647D8571EBC86D5F1A8A4 /* SyntheticDrivingPreviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8578B44EB78B5C32BAAD51F6 /* SyntheticDrivingPreviewModel.swift */; };
 		8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */; };
+		909E7D0B346C9262E90C031C /* ProductRuntimeDrivingSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D732025FBD031E83CAF8F68 /* ProductRuntimeDrivingSurface.swift */; };
 		933250A124B4B18A5C48BF84 /* ReviewedJunctionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */; };
 		9AB557C7D61A3F0F978EB360 /* GuidanceLanguagePreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */; };
 		9F8AB6CB19E6094A764D5647 /* EntranceRecommendationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */; };
@@ -90,6 +91,7 @@
 		41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModel.swift; sourceTree = "<group>"; };
 		4860344042C17F616B51F445 /* RouteAtlasAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasAttribution.swift; sourceTree = "<group>"; };
 		49835B009E287E91711B8440 /* KaidoRoutesAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D732025FBD031E83CAF8F68 /* ProductRuntimeDrivingSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRuntimeDrivingSurface.swift; sourceTree = "<group>"; };
 		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
 		5CCF9EEB45DF49C522D09A07 /* SyntheticProductRuntimeFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeFixture.swift; sourceTree = "<group>"; };
 		64D7D57200F5A1FF4D631BC2 /* k7-northwest-260721-directed-database.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "k7-northwest-260721-directed-database.json"; path = "data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json"; sourceTree = "<group>"; };
@@ -255,6 +257,7 @@
 				41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */,
 				28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */,
 				C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */,
+				4D732025FBD031E83CAF8F68 /* ProductRuntimeDrivingSurface.swift */,
 				E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */,
 				4860344042C17F616B51F445 /* RouteAtlasAttribution.swift */,
 				E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */,
@@ -441,6 +444,7 @@
 				0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */,
 				60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */,
 				1C7F2076FBD06953570E9B70 /* PreDriveReviewView.swift in Sources */,
+				909E7D0B346C9262E90C031C /* ProductRuntimeDrivingSurface.swift in Sources */,
 				933250A124B4B18A5C48BF84 /* ReviewedJunctionView.swift in Sources */,
 				EEE6CCFA40BA99EB8F3A1852 /* RouteAtlasAttribution.swift in Sources */,
 				783758C2CD68B21153F5EF9A /* RouteAtlasHomeView.swift in Sources */,

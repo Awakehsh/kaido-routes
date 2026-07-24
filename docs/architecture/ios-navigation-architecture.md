@@ -330,11 +330,17 @@ branch/lane cues, actual theme-token contrast checks, and standard plus AXXXL
 Simulator UI tests. A separate app panel decodes one complete
 `SYNTHETIC_TEST_ONLY` joint release, constructs
 `KaidoProductNavigationRuntime`, binds the Apple observation and entry adapters,
-and publishes only actor-returned snapshots. Its default scene has no location
-manager and keeps strict entry locked. Real-road live input, full-app focus and
+and publishes only actor-returned snapshots plus a presentation projection
+constructed from the exact same update. Each strict-route update projects phone,
+CarPlay, and voice from the same frame. An update without a transient prompt
+emission may refresh the visual projection but cannot speak, while a missing or
+invalid frame exposes no driving surface. The panel's explicit fixed synthetic
+trace exercises that full path without attaching a location manager or creating
+UI-owned occurrence progress. Its default scene still has no location manager
+and keeps strict entry locked. Real-road live input, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
-device-matrix layout, and physical display timing remain adapter work and
-device gates.
+device-matrix layout, and physical display timing remain adapter work and device
+gates.
 
 `NavigationSession` now owns the executable runtime ordering of these pieces.
 One matcher observation produces one atomic update containing matcher diagnostics,
@@ -352,7 +358,12 @@ egress options. The release gate additionally requires every transition edge to
 exist in the same matcher corridor, every consecutive pair to be an explicit
 successor, and the final transition edge to lead to the first RoutePlan
 occurrence binding. The internal app now owns a foreground-only synthetic
-composition pipeline and an input-disconnected SwiftUI scene.
+composition pipeline and an input-disconnected SwiftUI scene. The app model
+retains the `NavigationPresentationProjection` returned from the same atomic
+update used for speech scheduling. SwiftUI renders only that value; it does not
+recompute occurrence, movement, prompt, DecisionZone, sign, shield, lane, or
+distance semantics. A later update with the same active frame and no emission
+updates the display with `voice.shouldSpeak=false` and cannot replay the prompt.
 
 `NavigationSessionCheckpoint` schema 1.0 is the process-restoration boundary.
 It stores only coordinate-free reducer state and binds it to the exact product
@@ -657,7 +668,10 @@ That is a development fact, not yet the minimum deployment target.
   critical text contrast floor, non-color selected-path and preferred-lane
   cues, and a single-column accessibility Dynamic Type layout. Local XCUITest
   covers standard and AXXXL Simulator sizes; it is not full-app, device, or
-  CarPlay accessibility qualification.
+  CarPlay accessibility qualification. The separate joint-product runtime panel
+  now uses one actor-returned projection to render its iPhone driving surface and
+  corresponding CarPlay/voice identities. Its fixed synthetic input control is
+  an internal adapter proof, not a second navigation state or live input source.
 
 ### CarPlay
 

@@ -581,7 +581,10 @@ gate.
     executes KR-U06/U07/U08/U12 through a synthetic driving surface: a stale LOW
     engine observation remains estimated and realtime-unconfirmed, a moving
     DecisionZone locks editing, and engine-owned Finish selection names one
-    released synthetic exit before branch guidance. Next add production
+    released synthetic exit before branch guidance. A fourth state crosses
+    KR-U10/KR-U14 by changing only engine-owned surface ownership and rendering
+    one immutable occurrence-bound junction definition with exact path and lane
+    values on iPhone; it does not instantiate CarPlay. Next add production
     corridor/DecisionZone construction and calibration, then bind actual
     `NavigationSession` state to the SwiftUI phone renderer and accessibility
     tree, followed by the `CPMapTemplate` adapter and audio lifecycle.

@@ -272,13 +272,17 @@ KR-U05/KR-U11 adapter evidence, not complete app localization, voice
 installation, pronunciation, or audio-lifecycle evidence.
 
 The internal iPhone driving preview separately executes KR-U06, KR-U07,
-KR-U08, and KR-U12 using synthetic state. A stale LOW observation flows through
+KR-U08, KR-U10, KR-U12, and KR-U14 using synthetic state. A stale LOW observation flows through
 `NavigationEngine` before the projector labels the position estimated; the same
 projection keeps realtime-unconfirmed passage neutral and moving DecisionZone
 editing unavailable. Finish drive runs the engine's released egress selection
 before SwiftUI receives the selected exit name and before-branch priority.
 SwiftUI never converts these preview modes into live progress, realtime
-authority, or an exit choice.
+authority, or an exit choice. A fourth state connects only the engine's
+presentation ownership, preserves one phone/CarPlay occurrence and guidance
+frame, and renders the exact projected `JunctionViewDefinition` with
+Kaido-owned vectors and source-defined lane indices. It is not a CarPlay scene
+or physical-head-unit result.
 
 ```text
 LocalizedGuidanceBundle

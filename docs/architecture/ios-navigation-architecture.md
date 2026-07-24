@@ -480,7 +480,9 @@ That is a development fact, not yet the minimum deployment target.
   context and render accepted provider geometry as overlays.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
-  artwork.
+  artwork. The internal iPhone renderer now maps normalized path points and
+  left-indexed lane values directly from one synthetic definition; it does not
+  infer a path from labels or create a CarPlay scene.
 - Complex authoring is disabled while moving.
 - SwiftUI renders `ExpertRouteEditorSnapshot` and submits stable reviewed choice
   or lap-candidate IDs. `KaidoRouting`, not the view tree, owns the current
@@ -507,8 +509,12 @@ That is a development fact, not yet the minimum deployment target.
   realtime-unconfirmed, moving DecisionZone editing lockout, and the selected
   egress exit to explicit visual states without upgrading evidence or selecting
   an exit. KR-U06, KR-U07, KR-U08, and KR-U12 cover this local adapter boundary.
-  It is not an active `NavigationSession`, released-route renderer, or CarPlay
-  implementation.
+  A fourth state invokes `NavigationEngine.connectCarPlay()` and proves KR-U10
+  surface ownership plus KR-U14 shared junction-view identity. Both projections
+  retain one occurrence, prompt, distance, maneuver, lane preparation, sign,
+  shield, and definition; only `isPrimarySurface` changes. The iPhone labels
+  this as fixture-only and has no `CPMapTemplate` or CarPlay scene. The panel is
+  not an active `NavigationSession` or released-route renderer.
 
 ### CarPlay
 

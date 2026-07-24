@@ -7,6 +7,7 @@ import KaidoRouting
 enum SyntheticDrivingPreviewCase: String, CaseIterable, Identifiable, Sendable {
   case measuredReference = "MEASURED_REFERENCE"
   case degradedDecisionZone = "DEGRADED_DECISION_ZONE"
+  case reviewedJunctionHandoff = "REVIEWED_JUNCTION_HANDOFF"
   case finishDrive = "FINISH_DRIVE"
 
   var id: String { rawValue }
@@ -17,6 +18,7 @@ struct SyntheticDrivingPreviewFixture: Equatable, Sendable {
   let routePlan: RoutePlan
   let egressOption: EgressOption
   let approachFrame: GuidanceFrame
+  let junctionFrame: GuidanceFrame
   let finishFrame: GuidanceFrame
   let facilityNames: [String: LocalizedFacilityName]
 
@@ -80,6 +82,77 @@ struct SyntheticDrivingPreviewFixture: Equatable, Sendable {
           englishDisplayText: "Keep left for Route B toward Yokohama"
         )
       ),
+      junctionFrame: GuidanceFrame(
+        promptID: "preview.synthetic.prompt.junction-prepare",
+        anchorID: "PREPARE",
+        anchorOccurrenceID: currentOccurrenceID,
+        movementOccurrenceID: egressOccurrenceID,
+        decisionZoneID: "preview.synthetic.zone.reviewed-junction",
+        stage: .prepare,
+        distanceMeters: 600,
+        decisionPointNameJapanese: "テストJCT",
+        localizedDecisionPointNames: [
+          .japanese: "テストJCT",
+          .simplifiedChinese: "测试 JCT",
+          .english: "Test JCT",
+        ],
+        maneuver: .keepLeft,
+        lanePreparation: .useLeftLanes,
+        presentationSource: guidanceSource(
+          routeShield: "B",
+          japaneseSignText: "B 湾岸線・横浜方面",
+          japaneseDisplayText: "左側を進み、B 湾岸線・横浜方面へ",
+          chineseDisplayText: "保持左侧，跟随 B 湾岸线・横滨方向",
+          englishDisplayText: "Keep left for Route B toward Yokohama",
+          junctionView: JunctionViewDefinition(
+            id: "preview.synthetic.junction-view.selected-movement",
+            networkSnapshotID: snapshotID,
+            movementOccurrenceID: egressOccurrenceID,
+            paths: [
+              JunctionViewPath(
+                id: "preview.synthetic.junction-path.approach",
+                role: .approach,
+                points: [
+                  JunctionViewPoint(x: 0.5, y: 1),
+                  JunctionViewPoint(x: 0.5, y: 0.55),
+                ]
+              ),
+              JunctionViewPath(
+                id: "preview.synthetic.junction-path.selected",
+                role: .selected,
+                points: [
+                  JunctionViewPoint(x: 0.5, y: 0.55),
+                  JunctionViewPoint(x: 0.35, y: 0.3),
+                  JunctionViewPoint(x: 0.15, y: 0.05),
+                ]
+              ),
+              JunctionViewPath(
+                id: "preview.synthetic.junction-path.alternative",
+                role: .alternative,
+                points: [
+                  JunctionViewPoint(x: 0.5, y: 0.55),
+                  JunctionViewPoint(x: 0.65, y: 0.3),
+                  JunctionViewPoint(x: 0.85, y: 0.05),
+                ]
+              ),
+            ],
+            laneLayout: JunctionViewLaneLayout(
+              laneCount: 3,
+              allowedLaneIndices: [0, 1],
+              preferredLaneIndices: [0]
+            ),
+            japaneseSignText: "B 湾岸線・横浜方面",
+            routeShields: ["B"],
+            evidence: JunctionViewEvidence(
+              state: .released,
+              checkedAt: "2026-07-24",
+              sourceReferenceIDs: [
+                "preview.synthetic.source.reviewed-junction"
+              ]
+            )
+          )
+        )
+      ),
       finishFrame: GuidanceFrame(
         promptID: "preview.synthetic.prompt.finish",
         anchorID: "FINISH",
@@ -121,7 +194,8 @@ struct SyntheticDrivingPreviewFixture: Equatable, Sendable {
     japaneseSignText: String,
     japaneseDisplayText: String,
     chineseDisplayText: String,
-    englishDisplayText: String
+    englishDisplayText: String,
+    junctionView: JunctionViewDefinition? = nil
   ) -> GuidancePresentationSource {
     GuidancePresentationSource(
       routeShields: [routeShield],
@@ -145,7 +219,8 @@ struct SyntheticDrivingPreviewFixture: Equatable, Sendable {
           spokenForms: [routeShield: "Route \(routeShield)"],
           preservedJapaneseSignText: japaneseSignText
         ),
-      ]
+      ],
+      junctionView: junctionView
     )
   }
 }
@@ -163,6 +238,7 @@ enum SyntheticDrivingPreviewModelError: Error, Equatable, Sendable {
   case degradedStateSemanticDrift
   case finishDriveUnavailable
   case finishDriveSemanticDrift
+  case junctionStateSemanticDrift
   case surfaceSemanticDrift
 
   var code: String {
@@ -177,6 +253,8 @@ enum SyntheticDrivingPreviewModelError: Error, Equatable, Sendable {
       "DRIVING_PREVIEW_FINISH_UNAVAILABLE"
     case .finishDriveSemanticDrift:
       "DRIVING_PREVIEW_FINISH_STATE_DRIFT"
+    case .junctionStateSemanticDrift:
+      "DRIVING_PREVIEW_JUNCTION_STATE_DRIFT"
     case .surfaceSemanticDrift:
       "DRIVING_PREVIEW_SURFACE_STATE_DRIFT"
     }
@@ -239,6 +317,7 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
     let frame: GuidanceFrame
     let passageEvidence: RoutePassageEvidence
     let drivingContext: PresentationDrivingContext
+    let languageSelection: NavigationLanguageSelection
     switch previewCase {
     case .measuredReference:
       frame = fixture.approachFrame
@@ -246,6 +325,10 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
       drivingContext = PresentationDrivingContext(
         isVehicleMoving: false,
         isInsideDecisionZone: false
+      )
+      languageSelection = NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .english
       )
     case .degradedDecisionZone:
       engine.observeLocation(
@@ -260,6 +343,22 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
         isVehicleMoving: true,
         isInsideDecisionZone: true
       )
+      languageSelection = NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .english
+      )
+    case .reviewedJunctionHandoff:
+      engine.connectCarPlay()
+      frame = fixture.junctionFrame
+      passageEvidence = .noKnownConflictRealtimeUnconfirmed
+      drivingContext = PresentationDrivingContext(
+        isVehicleMoving: true,
+        isInsideDecisionZone: true
+      )
+      languageSelection = NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .japanese
+      )
     case .finishDrive:
       engine.finishDrive()
       guard engine.snapshot.egress.status == .active else {
@@ -271,6 +370,10 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
         isVehicleMoving: true,
         isInsideDecisionZone: false
       )
+      languageSelection = NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .english
+      )
     }
 
     let projection: NavigationPresentationProjection
@@ -280,10 +383,7 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
           snapshot: engine.snapshot,
           networkSnapshotID: fixture.networkSnapshotID,
           guidanceFrame: frame,
-          languages: NavigationLanguageSelection(
-            interfaceLocale: .simplifiedChinese,
-            guidanceVoiceLocale: .english
-          ),
+          languages: languageSelection,
           passageEvidence: passageEvidence,
           drivingContext: drivingContext,
           facilityNames: fixture.facilityNames
@@ -300,10 +400,40 @@ final class SyntheticDrivingPreviewModel: ObservableObject {
       projection.iPhone.currentOccurrenceID == projection.carPlay.currentOccurrenceID,
       projection.iPhone.nextMovementOccurrenceID
         == projection.carPlay.nextMovementOccurrenceID,
+      projection.iPhone.guidancePromptID == projection.carPlay.guidancePromptID,
+      projection.iPhone.guidanceAnchorID == projection.carPlay.guidanceAnchorID,
+      projection.iPhone.decisionZoneID == projection.carPlay.decisionZoneID,
+      projection.iPhone.distanceMeters == projection.carPlay.distanceMeters,
+      projection.iPhone.maneuver == projection.carPlay.maneuver,
+      projection.iPhone.lanePreparation == projection.carPlay.lanePreparation,
       projection.iPhone.marker == projection.carPlay.marker,
+      projection.iPhone.japaneseSignText == projection.carPlay.japaneseSignText,
+      projection.iPhone.routeShields == projection.carPlay.routeShields,
+      projection.iPhone.junctionView == projection.carPlay.junctionView,
       projection.iPhone.finishDrive == projection.carPlay.finishDrive
     else {
       throw SyntheticDrivingPreviewModelError.surfaceSemanticDrift
+    }
+
+    if previewCase == .reviewedJunctionHandoff {
+      guard
+        engine.snapshot.presentationSurface == .carPlay,
+        engine.snapshot.carPlayConnectionState == .connected,
+        projection.carPlay.isPrimarySurface,
+        !projection.iPhone.isPrimarySurface,
+        let junctionView = projection.iPhone.junctionView,
+        junctionView.networkSnapshotID == fixture.networkSnapshotID,
+        junctionView.movementOccurrenceID
+          == projection.iPhone.nextMovementOccurrenceID,
+        junctionView.paths.count(where: { $0.role == .selected }) == 1,
+        junctionView.laneLayout.laneCount == 3,
+        junctionView.laneLayout.preferredLaneIndices == [0],
+        junctionView.japaneseSignText == projection.iPhone.japaneseSignText,
+        junctionView.routeShields == projection.iPhone.routeShields,
+        junctionView.evidence.state == .released
+      else {
+        throw SyntheticDrivingPreviewModelError.junctionStateSemanticDrift
+      }
     }
 
     if previewCase == .degradedDecisionZone {

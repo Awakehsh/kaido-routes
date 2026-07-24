@@ -243,15 +243,19 @@ cannot play audio. This does not verify full-app localization, pronunciation,
 the audio lifecycle, or released road guidance.
 
 The internal iPhone driving preview adds local L3 adapter evidence for KR-U06,
-KR-U07, KR-U08, and KR-U12. It executes one stale LOW observation and one
+KR-U07, KR-U08, KR-U10, KR-U12, and KR-U14. It executes one stale LOW observation and one
 released synthetic egress selection through `NavigationEngine`, then passes the
 resulting snapshots to `KaidoPresentation`. Focused app tests compare measured
 and estimated markers, require neutral realtime-unconfirmed passage and
 DecisionZone editing lockout, and require Finish drive to name the engine's
 selected exit before branch guidance while retaining the reversal prohibition.
-The model supplies no prompt emission. This does not verify live location,
-production DecisionZones, final pixels, accessibility, CarPlay, or released
-road data.
+It also executes ownership-only `connectCarPlay()`, requires phone and CarPlay
+to retain one occurrence-scoped frame and junction definition, and rejects an
+unreleased junction definition without replacing the prior valid state. The
+SwiftUI renderer consumes exact normalized paths and lane indices. The model
+supplies no prompt emission. This does not verify live location, production
+DecisionZones, final pixels, accessibility, `CPMapTemplate`, a CarPlay scene,
+physical hardware, or released road data.
 
 KR-U13 reuses `ROUTE_COMPILE_REQUESTED` to cross the direction-first entrance
 recommendation into an iPhone-intended explanation contract. The runner exposes

@@ -19,18 +19,19 @@ The current app deliberately exposes only:
   passage evidence;
 - an independent interface-language and guidance-voice text preview that keeps
   the Japanese sign target and route shield fixed;
-- a three-state synthetic driving preview for conservative position, passage,
-  moving-time editing, and Finish-drive presentation;
+- a four-state synthetic driving preview for conservative position, passage,
+  moving-time editing, Finish drive, shared surface ownership, and one
+  occurrence-bound junction inset;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
 
 It requests when-in-use location only after the operator explicitly starts an
 internal calibration run with non-empty device and mount metadata. It does not
-construct a real `NavigationSession`, display a live measured position, highlight an
-active route, speak guidance, run location in the background, or expose a
-CarPlay scene. Those behaviors require a coherent released route bundle and
-device evidence.
+construct a real `NavigationSession`, display a live measured position,
+highlight an active route, speak guidance, run location in the background, or
+expose a CarPlay scene. Those behaviors require a coherent released route
+bundle and device evidence.
 
 ## Entrance recommendation
 
@@ -101,7 +102,7 @@ or implement audio focus and lifecycle.
 
 ## Synthetic driving preview
 
-The KR-U06/KR-U07/KR-U08/KR-U12 panel consumes only
+The KR-U06/KR-U07/KR-U08/KR-U10/KR-U12/KR-U14 panel consumes only
 `NavigationPresentationProjection`. Its measured reference and degraded
 DecisionZone states make the `MEASURED` versus `ESTIMATED` marker treatment
 explicit. The degraded state comes from a stale LOW `LocationObservation`
@@ -112,10 +113,20 @@ require no phone touch.
 The Finish state invokes `NavigationEngine.finishDrive()` against one released
 synthetic `EgressOption`. SwiftUI then renders the exact projected exit name and
 before-branch announcement priority; it does not choose an exit. The engine
-retains `U_TURN_OR_REVERSAL` as a prohibited action. All three states omit
-`GuidancePromptEmission`, so the preview cannot speak. This is synthetic adapter
+retains `U_TURN_OR_REVERSAL` as a prohibited action. Every state omits
+`GuidancePromptEmission`, so the preview cannot speak.
+
+The fourth junction-handoff state invokes `NavigationEngine.connectCarPlay()`
+to change only presentation ownership. Phone and CarPlay projections retain the
+same current occurrence, next movement, prompt, distance, maneuver, lane
+preparation, Japanese sign, shields, and immutable `JunctionViewDefinition`.
+The iPhone renderer maps the definition's normalized APPROACH, SELECTED, and
+ALTERNATIVE paths and zero-based left-indexed lane values without deriving a
+branch or lane from prose. Its green road-status color is deliberately not used:
+ownership uses cyan, the selected branch uses amber, and the synthetic
+`RELEASED` evidence value is labeled fixture-only. This is synthetic adapter
 evidence, not a live `NavigationSession`, real position, released route,
-CarPlay, or final visual/accessibility qualification.
+`CPMapTemplate`, CarPlay scene, final pixels, or accessibility qualification.
 
 ## Internal location calibration
 
@@ -212,7 +223,8 @@ preservation, no speech authority, and fail-closed localized-content drift.
 `SyntheticDrivingPreviewModelTests` proves conservative low-confidence
 presentation, measured/estimated distinction, no positive-open inference,
 DecisionZone editing lockout, engine-owned Finish exit selection, surface
-agreement, and fail-closed facility-name drift.
+agreement, shared junction geometry/lane identity, CarPlay ownership-only
+handoff, and fail-closed facility-name or unreleased-junction drift.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
 coordinate-free non-release reporting. The platform-light Swift package tests

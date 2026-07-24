@@ -28,6 +28,7 @@
 		8E9F6B72F71B53C575AE8D29 /* SyntheticDrivingPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E94B8B69206BA8833AEDA899 /* SyntheticDrivingPreviewView.swift */; };
 		8FD647D8571EBC86D5F1A8A4 /* SyntheticDrivingPreviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8578B44EB78B5C32BAAD51F6 /* SyntheticDrivingPreviewModel.swift */; };
 		8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */; };
+		933250A124B4B18A5C48BF84 /* ReviewedJunctionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */; };
 		9AB557C7D61A3F0F978EB360 /* GuidanceLanguagePreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */; };
 		9F8AB6CB19E6094A764D5647 /* EntranceRecommendationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */; };
 		A86BC9CA33D0CA93A2A62965 /* GuidanceLanguagePreviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */; };
@@ -79,6 +80,7 @@
 		D6736A54DBD926E1D2965FE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVGDocumentView.swift; sourceTree = "<group>"; };
 		E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasHomeView.swift; sourceTree = "<group>"; };
+		E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewedJunctionView.swift; sourceTree = "<group>"; };
 		E94B8B69206BA8833AEDA899 /* SyntheticDrivingPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewView.swift; sourceTree = "<group>"; };
 		ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoTheme.swift; sourceTree = "<group>"; };
 		F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationView.swift; sourceTree = "<group>"; };
@@ -198,6 +200,7 @@
 				41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */,
 				28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */,
 				C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */,
+				E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */,
 				E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */,
 				DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */,
 				8578B44EB78B5C32BAAD51F6 /* SyntheticDrivingPreviewModel.swift */,
@@ -340,6 +343,7 @@
 				0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */,
 				60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */,
 				1C7F2076FBD06953570E9B70 /* PreDriveReviewView.swift in Sources */,
+				933250A124B4B18A5C48BF84 /* ReviewedJunctionView.swift in Sources */,
 				783758C2CD68B21153F5EF9A /* RouteAtlasHomeView.swift in Sources */,
 				8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */,
 				8FD647D8571EBC86D5F1A8A4 /* SyntheticDrivingPreviewModel.swift in Sources */,

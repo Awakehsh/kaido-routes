@@ -10,6 +10,15 @@ struct SyntheticDrivingPreviewPanel: View {
       header
       stateSelector
       guidanceCard
+
+      if let junctionView = model.state.projection.iPhone.junctionView {
+        ReviewedJunctionViewCard(
+          definition: junctionView,
+          iPhone: model.state.projection.iPhone,
+          carPlay: model.state.projection.carPlay
+        )
+      }
+
       safetyGrid
 
       if let finishDrive = model.state.projection.iPhone.finishDrive {
@@ -60,7 +69,13 @@ struct SyntheticDrivingPreviewPanel: View {
   }
 
   private var stateSelector: some View {
-    HStack(spacing: 6) {
+    LazyVGrid(
+      columns: [
+        GridItem(.flexible(), spacing: 6),
+        GridItem(.flexible(), spacing: 6),
+      ],
+      spacing: 6
+    ) {
       ForEach(SyntheticDrivingPreviewCase.allCases) { previewCase in
         Button {
           model.select(previewCase)
@@ -245,6 +260,8 @@ struct SyntheticDrivingPreviewPanel: View {
       "测量\n参考"
     case .degradedDecisionZone:
       "降级\n决策区"
+    case .reviewedJunctionHandoff:
+      "路口\n跨屏投影"
     case .finishDrive:
       "结束\n驾驶"
     }
@@ -258,6 +275,8 @@ struct SyntheticDrivingPreviewPanel: View {
       "高置信度测量参考"
     case .degradedDecisionZone:
       "低置信度决策区"
+    case .reviewedJunctionHandoff:
+      "共享 occurrence 的审查路口投影"
     case .finishDrive:
       "结束驾驶并选择预计算出口"
     }
@@ -269,6 +288,8 @@ struct SyntheticDrivingPreviewPanel: View {
       KaidoTheme.positionCyan
     case .degradedDecisionZone:
       KaidoTheme.signalAmber
+    case .reviewedJunctionHandoff:
+      KaidoTheme.positionCyan
     case .finishDrive:
       KaidoTheme.evidenceCoral
     }

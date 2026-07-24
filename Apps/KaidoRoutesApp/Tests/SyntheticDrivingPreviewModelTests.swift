@@ -63,6 +63,51 @@ final class SyntheticDrivingPreviewModelTests: XCTestCase {
     XCTAssertFalse(state.projection.voice.shouldSpeak)
   }
 
+  func testReviewedJunctionHandoffSharesOccurrenceAndImmutableView() throws {
+    let model = try SyntheticDrivingPreviewModel()
+
+    model.select(.reviewedJunctionHandoff)
+
+    let state = model.state
+    let phone = state.projection.iPhone
+    let carPlay = state.projection.carPlay
+    let junctionView = try XCTUnwrap(phone.junctionView)
+    XCTAssertEqual(model.selectedCase, .reviewedJunctionHandoff)
+    XCTAssertEqual(state.snapshot.presentationSurface, .carPlay)
+    XCTAssertEqual(state.snapshot.carPlayConnectionState, .connected)
+    XCTAssertFalse(phone.isPrimarySurface)
+    XCTAssertTrue(carPlay.isPrimarySurface)
+    XCTAssertEqual(phone.currentOccurrenceID, carPlay.currentOccurrenceID)
+    XCTAssertEqual(
+      phone.nextMovementOccurrenceID,
+      carPlay.nextMovementOccurrenceID
+    )
+    XCTAssertEqual(phone.guidancePromptID, carPlay.guidancePromptID)
+    XCTAssertEqual(phone.distanceMeters, carPlay.distanceMeters)
+    XCTAssertEqual(phone.maneuver, carPlay.maneuver)
+    XCTAssertEqual(phone.lanePreparation, carPlay.lanePreparation)
+    XCTAssertEqual(carPlay.junctionView, junctionView)
+    XCTAssertEqual(
+      junctionView.networkSnapshotID,
+      "preview.synthetic.driving-snapshot-v1"
+    )
+    XCTAssertEqual(
+      junctionView.movementOccurrenceID,
+      phone.nextMovementOccurrenceID
+    )
+    XCTAssertEqual(
+      junctionView.paths.first(where: { $0.role == .selected })?.id,
+      "preview.synthetic.junction-path.selected"
+    )
+    XCTAssertEqual(junctionView.laneLayout.laneCount, 3)
+    XCTAssertEqual(junctionView.laneLayout.allowedLaneIndices, [0, 1])
+    XCTAssertEqual(junctionView.laneLayout.preferredLaneIndices, [0])
+    XCTAssertEqual(junctionView.japaneseSignText, phone.japaneseSignText)
+    XCTAssertEqual(junctionView.routeShields, phone.routeShields)
+    XCTAssertEqual(junctionView.evidence.state, .released)
+    XCTAssertFalse(state.projection.voice.shouldSpeak)
+  }
+
   func testEveryStateKeepsPhoneAndCarPlayOccurrenceSemanticsAligned() throws {
     let model = try SyntheticDrivingPreviewModel()
 
@@ -90,6 +135,7 @@ final class SyntheticDrivingPreviewModelTests: XCTestCase {
       routePlan: valid.routePlan,
       egressOption: valid.egressOption,
       approachFrame: valid.approachFrame,
+      junctionFrame: valid.junctionFrame,
       finishFrame: valid.finishFrame,
       facilityNames: [:]
     )
@@ -104,5 +150,75 @@ final class SyntheticDrivingPreviewModelTests: XCTestCase {
       "DRIVING_PREVIEW_PROJECTION_FAILED"
     )
     XCTAssertNil(model.state.projection.iPhone.finishDrive)
+  }
+
+  func testUnreleasedJunctionViewFailsClosedWithoutReplacingCurrentState() throws {
+    let valid = SyntheticDrivingPreviewFixture.synthetic
+    let validView = try XCTUnwrap(
+      valid.junctionFrame.presentationSource.junctionView
+    )
+    let unreleasedView = JunctionViewDefinition(
+      id: validView.id,
+      networkSnapshotID: validView.networkSnapshotID,
+      movementOccurrenceID: validView.movementOccurrenceID,
+      paths: validView.paths,
+      laneLayout: validView.laneLayout,
+      japaneseSignText: validView.japaneseSignText,
+      routeShields: validView.routeShields,
+      evidence: JunctionViewEvidence(
+        state: .officialChecked,
+        checkedAt: validView.evidence.checkedAt,
+        sourceReferenceIDs: validView.evidence.sourceReferenceIDs
+      )
+    )
+    let invalidFrame = replacingJunctionView(
+      in: valid.junctionFrame,
+      with: unreleasedView
+    )
+    let invalidFixture = SyntheticDrivingPreviewFixture(
+      networkSnapshotID: valid.networkSnapshotID,
+      routePlan: valid.routePlan,
+      egressOption: valid.egressOption,
+      approachFrame: valid.approachFrame,
+      junctionFrame: invalidFrame,
+      finishFrame: valid.finishFrame,
+      facilityNames: valid.facilityNames
+    )
+    let model = try SyntheticDrivingPreviewModel(fixture: invalidFixture)
+
+    model.select(.reviewedJunctionHandoff)
+
+    XCTAssertEqual(model.selectedCase, .degradedDecisionZone)
+    XCTAssertEqual(model.state.previewCase, .degradedDecisionZone)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      "DRIVING_PREVIEW_PROJECTION_FAILED"
+    )
+    XCTAssertNil(model.state.projection.iPhone.junctionView)
+  }
+
+  private func replacingJunctionView(
+    in frame: GuidanceFrame,
+    with junctionView: JunctionViewDefinition
+  ) -> GuidanceFrame {
+    GuidanceFrame(
+      promptID: frame.promptID,
+      anchorID: frame.anchorID,
+      anchorOccurrenceID: frame.anchorOccurrenceID,
+      movementOccurrenceID: frame.movementOccurrenceID,
+      decisionZoneID: frame.decisionZoneID,
+      stage: frame.stage,
+      distanceMeters: frame.distanceMeters,
+      decisionPointNameJapanese: frame.decisionPointNameJapanese,
+      localizedDecisionPointNames: frame.localizedDecisionPointNames,
+      maneuver: frame.maneuver,
+      lanePreparation: frame.lanePreparation,
+      presentationSource: GuidancePresentationSource(
+        routeShields: frame.presentationSource.routeShields,
+        japaneseSignText: frame.presentationSource.japaneseSignText,
+        localizedContent: frame.presentationSource.localizedContent,
+        junctionView: junctionView
+      )
+    )
   }
 }

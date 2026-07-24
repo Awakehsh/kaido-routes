@@ -74,8 +74,11 @@ unknown references, exitless entrance graphs, future-decision choices, and any
 edit while moving fail closed. Parked undo removes only the last authored pair
 and restores the prior decision point. SwiftUI remains an adapter over this
 state; it never determines legal choices itself. KR-U01 executes the first
-vertical contract with synthetic data. Released catalogs and the actual iPhone
-editor remain pending.
+vertical contract with synthetic data. The internal iPhone preview now binds
+that snapshot to accessible current-choice controls, occurrence-aware route
+sequence, parked undo, and explicit-exit compilation through an app-owned
+synthetic fixture. Released catalogs, production labels and topology rendering,
+and full accessibility validation remain pending.
 
 ### Circuit composition is explicit
 

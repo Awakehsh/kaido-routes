@@ -570,8 +570,11 @@ gate.
     only legal choices for the exact incoming approach/JCT, creates fresh
     occurrences across cycles, locks moving-time interaction, supports parked
     undo, and requires an explicit directional exit before RoutePlan compilation.
-    KR-U01 executes this boundary. Build released editor catalogs and the
-    accessible SwiftUI topology/editor adapter without moving graph logic into UI.
+    KR-U01 executes this boundary. The internal iPhone preview now renders the
+    session snapshot and current stable choice IDs from a synthetic catalog,
+    preserves repeated occurrences, and gates compilation through the session.
+    Next build released editor catalogs, production labels/topology rendering,
+    and full accessibility validation without moving graph logic into UI.
 12. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 

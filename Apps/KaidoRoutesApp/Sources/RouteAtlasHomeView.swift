@@ -1,3 +1,5 @@
+import KaidoDomain
+import KaidoRouting
 import SwiftUI
 
 struct RouteAtlasHomeView: View {
@@ -8,18 +10,25 @@ struct RouteAtlasHomeView: View {
       KaidoTheme.asphalt
         .ignoresSafeArea()
 
-      VStack(spacing: 14) {
-        header
-        atlasModePicker
+      ScrollView {
+        VStack(spacing: 14) {
+          header
+          atlasModePicker
 
-        RouteAtlasCard(mode: model.atlasMode)
-          .frame(maxHeight: .infinity)
+          RouteAtlasCard(mode: model.atlasMode)
+            .frame(height: model.atlasMode == .network ? 340 : 300)
 
-        routeDossier
+          ParkedRouteEditorPanel(model: model.routeEditor)
+
+          if model.atlasMode == .k7Evidence {
+            routeDossier
+          }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+        .padding(.bottom, 24)
       }
-      .padding(.horizontal, 18)
-      .padding(.top, 8)
-      .padding(.bottom, 12)
+      .scrollIndicators(.hidden)
     }
     .preferredColorScheme(.dark)
   }
@@ -191,6 +200,347 @@ private struct RouteAtlasCard: View {
         .rotationEffect(.degrees(90))
         .frame(width: 14, height: 58)
     }
+  }
+}
+
+private struct ParkedRouteEditorPanel: View {
+  @ObservedObject var model: ParkedRouteEditorModel
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      editorHeader
+      entrance
+      RouteOccurrenceRail(occurrences: model.snapshot.occurrences)
+
+      if model.snapshot.state == .editing {
+        currentDecision
+      } else {
+        selectedExit
+      }
+
+      if let lastErrorCode = model.lastErrorCode {
+        Text(lastErrorCode)
+          .font(.system(size: 10, weight: .bold, design: .monospaced))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+          .accessibilityLabel("路线编辑错误：\(lastErrorCode)")
+      }
+
+      editorActions
+    }
+    .padding(16)
+    .background(KaidoTheme.instrument)
+    .clipShape(RoundedRectangle(cornerRadius: 22))
+    .overlay {
+      RoundedRectangle(cornerRadius: 22)
+        .stroke(KaidoTheme.signalAmber.opacity(0.45), lineWidth: 1)
+    }
+  }
+
+  private var editorHeader: some View {
+    HStack(alignment: .top) {
+      VStack(alignment: .leading, spacing: 3) {
+        Text("停驻路线编排")
+          .font(.system(size: 19, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+        Text("SYNTHETIC CATALOG · ROUTE FIRST")
+          .font(.system(size: 9, weight: .bold, design: .monospaced))
+          .tracking(0.85)
+          .foregroundStyle(KaidoTheme.muted)
+
+        Text(verbatim: model.snapshot.networkSnapshotID)
+          .font(.system(size: 8, weight: .medium, design: .monospaced))
+          .foregroundStyle(KaidoTheme.muted.opacity(0.78))
+      }
+
+      Spacer()
+
+      StatusCapsule(
+        title: model.interaction.rawValue,
+        color: KaidoTheme.signalAmber
+      )
+    }
+  }
+
+  private var entrance: some View {
+    HStack(spacing: 12) {
+      ZStack {
+        Circle()
+          .fill(KaidoTheme.signalAmber)
+          .frame(width: 30, height: 30)
+
+        Image(systemName: "arrow.down.to.line.compact")
+          .font(.system(size: 12, weight: .black))
+          .foregroundStyle(KaidoTheme.asphalt)
+      }
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(model.fixture.entranceTitle)
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+        Text(verbatim: model.snapshot.entranceFacilityID)
+          .font(.system(size: 9, weight: .medium, design: .monospaced))
+          .foregroundStyle(KaidoTheme.muted)
+          .lineLimit(1)
+          .minimumScaleFactor(0.65)
+      }
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(
+      "精确入口，\(model.fixture.entranceTitle)，\(model.snapshot.entranceFacilityID)"
+    )
+  }
+
+  private var currentDecision: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("当前分岔")
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .tracking(0.8)
+            .foregroundStyle(KaidoTheme.signalAmber)
+
+          Text(model.decisionTitle)
+            .font(.system(size: 16, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+        }
+
+        Spacer()
+
+        Text("\(model.snapshot.availableChoices.count) LEGAL")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+
+      HStack(alignment: .top, spacing: 8) {
+        DecisionIdentity(
+          label: "INCOMING APPROACH",
+          value: model.snapshot.incomingApproachID ?? "—"
+        )
+        DecisionIdentity(
+          label: "JCT COMPLEX",
+          value: model.snapshot.junctionComplexID ?? "—"
+        )
+      }
+
+      VStack(spacing: 8) {
+        ForEach(model.snapshot.availableChoices, id: \.id) { choice in
+          Button {
+            model.select(choiceID: choice.id)
+          } label: {
+            HStack(spacing: 12) {
+              Image(systemName: "arrow.triangle.branch")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(KaidoTheme.signalAmber)
+                .frame(width: 22)
+
+              VStack(alignment: .leading, spacing: 2) {
+                Text(model.title(for: choice))
+                  .font(.system(size: 14, weight: .bold))
+                  .foregroundStyle(KaidoTheme.routeWhite)
+
+                Text(model.detail(for: choice))
+                  .font(.system(size: 10, weight: .medium))
+                  .foregroundStyle(KaidoTheme.muted)
+              }
+
+              Spacer(minLength: 8)
+
+              Image(systemName: "chevron.right")
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(KaidoTheme.muted)
+            }
+            .padding(.horizontal, 12)
+            .frame(minHeight: 52)
+            .background(KaidoTheme.asphalt.opacity(0.72))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+              RoundedRectangle(cornerRadius: 12)
+                .stroke(KaidoTheme.steel.opacity(0.8), lineWidth: 1)
+            }
+          }
+          .buttonStyle(.plain)
+          .accessibilityHint("提交已审核 choice ID \(choice.id)")
+        }
+      }
+    }
+  }
+
+  private var selectedExit: some View {
+    HStack(spacing: 12) {
+      Image(systemName: "checkmark.seal.fill")
+        .font(.system(size: 22, weight: .bold))
+        .foregroundStyle(KaidoTheme.positionCyan)
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text("明确出口已选择")
+          .font(.system(size: 14, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+        Text(verbatim: model.snapshot.selectedExitFacilityID ?? "—")
+          .font(.system(size: 9, weight: .medium, design: .monospaced))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+
+      Spacer()
+    }
+    .padding(12)
+    .background(KaidoTheme.positionCyan.opacity(0.08))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay {
+      RoundedRectangle(cornerRadius: 12)
+        .stroke(KaidoTheme.positionCyan.opacity(0.35), lineWidth: 1)
+    }
+  }
+
+  private var editorActions: some View {
+    HStack(spacing: 10) {
+      Button {
+        model.undo()
+      } label: {
+        Label("撤销", systemImage: "arrow.uturn.backward")
+          .font(.system(size: 13, weight: .bold))
+          .frame(maxWidth: .infinity)
+          .frame(height: 44)
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(model.canUndo ? KaidoTheme.routeWhite : KaidoTheme.muted)
+      .background(KaidoTheme.steel.opacity(model.canUndo ? 0.65 : 0.28))
+      .clipShape(RoundedRectangle(cornerRadius: 11))
+      .disabled(!model.canUndo)
+
+      Button {
+        model.compile()
+      } label: {
+        Label(
+          model.compiledRoutePlan == nil ? "编译路线" : "路线已编译",
+          systemImage: model.compiledRoutePlan == nil ? "flag.checkered" : "checkmark"
+        )
+        .font(.system(size: 13, weight: .black))
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(
+        model.canCompile && model.compiledRoutePlan == nil
+          ? KaidoTheme.asphalt
+          : KaidoTheme.muted
+      )
+      .background(
+        model.canCompile && model.compiledRoutePlan == nil
+          ? KaidoTheme.signalAmber
+          : KaidoTheme.steel.opacity(0.28)
+      )
+      .clipShape(RoundedRectangle(cornerRadius: 11))
+      .disabled(!model.canCompile || model.compiledRoutePlan != nil)
+    }
+  }
+}
+
+private struct DecisionIdentity: View {
+  let label: String
+  let value: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 5) {
+      Text(label)
+        .font(.system(size: 8, weight: .black, design: .monospaced))
+        .tracking(0.55)
+        .foregroundStyle(KaidoTheme.muted)
+
+      Text(verbatim: value)
+        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .lineLimit(2)
+        .minimumScaleFactor(0.72)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(10)
+    .background(KaidoTheme.asphalt.opacity(0.5))
+    .clipShape(RoundedRectangle(cornerRadius: 10))
+  }
+}
+
+private struct RouteOccurrenceRail: View {
+  let occurrences: [RouteOccurrence]
+
+  var body: some View {
+    ScrollView(.horizontal) {
+      HStack(spacing: 0) {
+        ForEach(Array(occurrences.enumerated()), id: \.element.id) { index, occurrence in
+          OccurrenceNode(occurrence: occurrence)
+
+          if index < occurrences.count - 1 {
+            Rectangle()
+              .fill(KaidoTheme.signalAmber.opacity(0.55))
+              .frame(width: 22, height: 2)
+          }
+        }
+      }
+      .padding(.vertical, 2)
+    }
+    .scrollIndicators(.hidden)
+    .accessibilityLabel("路线 occurrence 序列，共 \(occurrences.count) 项")
+  }
+}
+
+private struct OccurrenceNode: View {
+  let occurrence: RouteOccurrence
+
+  var body: some View {
+    HStack(spacing: 8) {
+      ZStack {
+        Circle()
+          .fill(markerColor.opacity(0.15))
+          .frame(width: 30, height: 30)
+
+        Text(String(format: "%02d", occurrence.index + 1))
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(markerColor)
+      }
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(kindLabel)
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .tracking(0.5)
+          .foregroundStyle(KaidoTheme.muted)
+
+        Text(shortEntityID)
+          .font(.system(size: 10, weight: .bold, design: .monospaced))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .lineLimit(1)
+      }
+    }
+    .frame(width: 122, alignment: .leading)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      "第 \(occurrence.index + 1) 个 occurrence，\(occurrence.kind.rawValue)，\(occurrence.entityID)"
+    )
+  }
+
+  private var markerColor: Color {
+    occurrence.kind == .junctionMovement
+      ? KaidoTheme.signalAmber
+      : KaidoTheme.routeWhite
+  }
+
+  private var kindLabel: String {
+    switch occurrence.kind {
+    case .edge:
+      "ROAD EDGE"
+    case .junctionMovement:
+      "JCT MOVE"
+    case .paVisit:
+      "PA VISIT"
+    }
+  }
+
+  private var shortEntityID: String {
+    occurrence.entityID
+      .split(separator: ".")
+      .suffix(2)
+      .joined(separator: " · ")
   }
 }
 

@@ -145,9 +145,13 @@ junction complex, exposes only that decision point's legal choices, appends
 fresh movement and outgoing-edge occurrences, supports reviewed cycles and
 parked undo, and compiles only after an explicit directional exit choice. UI
 code cannot submit a future decision's choice or edit while moving. KR-U01
-executes this stateful boundary; the internal iPhone shell does not yet compose
-the editor session, and real released editor catalogs, labels, topology
-rendering, and accessibility remain pending.
+executes this stateful boundary. The internal iPhone shell now composes the same
+session through a synthetic parked-only catalog: SwiftUI renders its immutable
+snapshot, submits stable current-choice IDs, preserves repeated occurrences,
+uses session-owned undo, and unlocks compilation only after an explicit exit.
+This is an adapter proof, not released Shuto authoring data; real released editor
+catalogs, localized labels, topology rendering, and accessibility validation
+remain pending.
 
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts

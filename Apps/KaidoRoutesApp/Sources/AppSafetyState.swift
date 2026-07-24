@@ -73,4 +73,13 @@ final class KaidoRoutesAppModel: ObservableObject {
   @Published var atlasMode: RouteAtlasMode = .network
 
   let safety = AppSafetyState.preview
+  let routeEditor: ParkedRouteEditorModel
+
+  init() {
+    do {
+      routeEditor = try ParkedRouteEditorModel()
+    } catch {
+      preconditionFailure("Invalid internal route-editor fixture: \(error)")
+    }
+  }
 }

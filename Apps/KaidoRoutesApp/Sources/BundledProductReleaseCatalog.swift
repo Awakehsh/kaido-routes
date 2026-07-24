@@ -19,7 +19,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "synthetic-product-runtime-preview",
       resourceExtension: "json",
       expectedSHA256:
-        "5721d078ed3b2d6360d7e52b1c03ef82a0bb7a6dd4098cb7874f943dd8d1c534",
+        "e863fcdfc0ecf0e404a2b0cb13487d96caca78197a023c9fde75ce0af7fb6854",
       expectedReleaseID: "preview.synthetic.product-release.v1",
       role: .demoOnly
     )

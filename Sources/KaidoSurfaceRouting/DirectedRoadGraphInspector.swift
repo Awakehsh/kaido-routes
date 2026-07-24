@@ -187,7 +187,9 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
 /// This is an offline feasibility inspector, not the live Shuto map matcher. It
 /// deliberately fails closed when graph coverage, direction, or topology is
 /// unresolved.
-public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
+public struct DirectedRoadGraphInspector:
+  SurfaceCandidateInspector, SurfaceApproachCandidateInspector
+{
   public let graph: SurfaceRoadGraphSnapshot
   public let configuration: DirectedRoadGraphInspectorConfiguration
   private let measuredEdges: [MeasuredEdge]
@@ -213,7 +215,19 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
     request: SurfaceRouteRequest,
     fixture: EntranceProbeFixture
   ) async -> SurfaceCandidateInspection {
-    guard graph.networkSnapshotID == fixture.networkSnapshotID,
+    await inspect(
+      candidate: candidate,
+      request: request,
+      policy: fixture.approachPolicy
+    )
+  }
+
+  public func inspect(
+    candidate: SurfaceRouteCandidate,
+    request: SurfaceRouteRequest,
+    policy: SurfaceApproachPolicy
+  ) async -> SurfaceCandidateInspection {
+    guard graph.networkSnapshotID == policy.networkSnapshotID,
       graph.isStructurallyValid,
       measuredEdges.count == graph.edges.count,
       configuration.isValid,
@@ -230,7 +244,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
         selectedPathEvidence,
         candidate: candidate,
         request: request,
-        fixture: fixture,
+        policy: policy,
         samples: samples,
         terminalHeading: terminalHeading
       )
@@ -332,12 +346,12 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
     _ evidence: SurfaceSelectedPathEvidence,
     candidate: SurfaceRouteCandidate,
     request: SurfaceRouteRequest,
-    fixture: EntranceProbeFixture,
+    policy: SurfaceApproachPolicy,
     samples: [RouteSample],
     terminalHeading: Double
   ) -> SurfaceCandidateInspection {
     guard evidence.networkSnapshotID == graph.networkSnapshotID,
-      evidence.networkSnapshotID == fixture.networkSnapshotID,
+      evidence.networkSnapshotID == policy.networkSnapshotID,
       !evidence.providerDatasetID.isEmpty,
       evidence.providerDatasetID == graph.provenance?.sourceDatasetID,
       !evidence.directedEdgeIDs.isEmpty,

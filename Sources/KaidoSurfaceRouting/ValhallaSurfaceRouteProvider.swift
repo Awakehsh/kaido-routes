@@ -110,7 +110,7 @@ public enum ValhallaSurfaceRouteProviderInitializationError: Error, Equatable, S
 /// shape is then edge-walked, normalized, and translated onto the exact Kaido
 /// graph before a candidate is returned. This adapter cannot author or mutate
 /// the expressway RoutePlan.
-public struct ValhallaSurfaceRouteProvider: SurfaceRouteProvider {
+public struct ValhallaSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -119,6 +119,21 @@ public struct ValhallaSurfaceRouteProvider: SurfaceRouteProvider {
   private let transport: any ValhallaHTTPTransport
   private let bindingsByAnchorID: [String: ValhallaApproachIdentityBinding]
   private let normalizer: ValhallaSurfaceRouteNormalizer
+
+  public var releaseIdentity: SurfaceRouteProviderReleaseIdentity {
+    SurfaceRouteProviderReleaseIdentity(
+      providerID: metadata.id,
+      adapterVersion: metadata.adapterVersion,
+      providerVersion: manifest.engineBuild.providerVersion,
+      networkSnapshotID: manifest.networkSnapshotID,
+      providerDatasetID: manifest.providerDatasetID,
+      buildManifestID: manifest.id,
+      engineBuildID: manifest.engineBuild.id,
+      manifestValidationProfile: configuration.manifestValidationProfile,
+      manifestIntendedUse: manifest.intendedUse,
+      dataReviewStatus: metadata.dataReviewStatus
+    )
+  }
 
   public init(
     graph: SurfaceRoadGraphSnapshot,

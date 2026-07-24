@@ -450,7 +450,7 @@ func productReleaseAuthorRejectsInvalidNestedInputs() {
     licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
   )
   let invalidNavigation = NavigationReleaseArtifact(
-    schemaVersion: "5.0",
+    schemaVersion: "999.0",
     releaseID: validNavigation.releaseID,
     releasedAt: validNavigation.releasedAt,
     editorCatalogID: validNavigation.editorCatalogID,

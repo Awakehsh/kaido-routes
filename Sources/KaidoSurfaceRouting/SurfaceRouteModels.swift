@@ -343,6 +343,94 @@ public struct SurfaceRouteProviderMetadata: Codable, Equatable, Sendable {
   }
 }
 
+public enum SurfaceRouteProviderReleaseIdentityIssue: String, Equatable, Sendable {
+  case invalidIdentity = "INVALID_SURFACE_PROVIDER_RELEASE_IDENTITY"
+  case wrongManifestProfile = "SURFACE_PROVIDER_MANIFEST_NOT_RELEASE_CANDIDATE"
+  case wrongManifestIntendedUse = "SURFACE_PROVIDER_BUILD_NOT_RELEASE_CANDIDATE"
+}
+
+/// Exact provider/build identity admitted by one released surface definition.
+///
+/// Concrete self-hosted providers derive this value from the manifest and
+/// configuration that passed their initialization gate. Product composition
+/// compares the complete value instead of accepting one caller-selected
+/// expected-provider string.
+public struct SurfaceRouteProviderReleaseIdentity: Codable, Equatable, Sendable {
+  public let providerID: String
+  public let adapterVersion: String
+  public let providerVersion: String
+  public let networkSnapshotID: String
+  public let providerDatasetID: String
+  public let buildManifestID: String
+  public let engineBuildID: String
+  public let manifestValidationProfile: SurfaceRoutingManifestValidationProfile
+  public let manifestIntendedUse: SurfaceRoutingBuildIntendedUse
+  public let dataReviewStatus: ProviderDataReviewStatus
+
+  package init(
+    providerID: String,
+    adapterVersion: String,
+    providerVersion: String,
+    networkSnapshotID: String,
+    providerDatasetID: String,
+    buildManifestID: String,
+    engineBuildID: String,
+    manifestValidationProfile: SurfaceRoutingManifestValidationProfile,
+    manifestIntendedUse: SurfaceRoutingBuildIntendedUse,
+    dataReviewStatus: ProviderDataReviewStatus
+  ) {
+    self.providerID = providerID
+    self.adapterVersion = adapterVersion
+    self.providerVersion = providerVersion
+    self.networkSnapshotID = networkSnapshotID
+    self.providerDatasetID = providerDatasetID
+    self.buildManifestID = buildManifestID
+    self.engineBuildID = engineBuildID
+    self.manifestValidationProfile = manifestValidationProfile
+    self.manifestIntendedUse = manifestIntendedUse
+    self.dataReviewStatus = dataReviewStatus
+  }
+
+  public var validationIssues: [SurfaceRouteProviderReleaseIdentityIssue] {
+    var issues: [SurfaceRouteProviderReleaseIdentityIssue] = []
+    if [
+      providerID,
+      adapterVersion,
+      providerVersion,
+      networkSnapshotID,
+      providerDatasetID,
+      buildManifestID,
+      engineBuildID,
+    ].contains(where: { normalized($0).isEmpty }) {
+      issues.append(.invalidIdentity)
+    }
+    if manifestValidationProfile != .releaseCandidate {
+      issues.append(.wrongManifestProfile)
+    }
+    if manifestIntendedUse != .releaseCandidate {
+      issues.append(.wrongManifestIntendedUse)
+    }
+    return issues
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case providerID = "provider_id"
+    case adapterVersion = "adapter_version"
+    case providerVersion = "provider_version"
+    case networkSnapshotID = "network_snapshot_id"
+    case providerDatasetID = "provider_dataset_id"
+    case buildManifestID = "build_manifest_id"
+    case engineBuildID = "engine_build_id"
+    case manifestValidationProfile = "manifest_validation_profile"
+    case manifestIntendedUse = "manifest_intended_use"
+    case dataReviewStatus = "data_review_status"
+  }
+
+  private func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
 public struct SurfaceProviderFailure: Codable, Equatable, Sendable {
   public enum Kind: String, Codable, Sendable {
     case noRoute = "NO_ROUTE"
@@ -384,4 +472,10 @@ public protocol SurfaceRouteProvider: Sendable {
   var metadata: SurfaceRouteProviderMetadata { get }
 
   func routes(for request: SurfaceRouteRequest) async -> SurfaceProviderResponse
+}
+
+/// A surface provider whose runtime identity was derived from one validated
+/// release-candidate build manifest.
+public protocol ReleaseBoundSurfaceRouteProvider: SurfaceRouteProvider {
+  var releaseIdentity: SurfaceRouteProviderReleaseIdentity { get }
 }

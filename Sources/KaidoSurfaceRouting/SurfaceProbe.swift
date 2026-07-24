@@ -248,6 +248,12 @@ public enum SurfaceHardGateEvaluator {
   }
 
   public static func invalidEmptySuccess() -> SurfaceCandidateEvaluation {
+    invalidResponse(reasonCodes: ["EMPTY_SUCCESS_RESPONSE"])
+  }
+
+  public static func invalidResponse(
+    reasonCodes: [String]
+  ) -> SurfaceCandidateEvaluation {
     var gates = notEvaluatedGates()
     replace(
       gate: .honestProviderStatus,
@@ -255,7 +261,7 @@ public enum SurfaceHardGateEvaluator {
       with: HardGateResult(
         gate: .honestProviderStatus,
         status: .fail,
-        reasonCodes: ["EMPTY_SUCCESS_RESPONSE"]
+        reasonCodes: reasonCodes
       )
     )
     return SurfaceCandidateEvaluation(
@@ -453,6 +459,16 @@ public protocol SurfaceCandidateInspector: Sendable {
     candidate: SurfaceRouteCandidate,
     request: SurfaceRouteRequest,
     fixture: EntranceProbeFixture
+  ) async -> SurfaceCandidateInspection
+}
+
+/// Inspects one candidate against a release-authorable approach policy without
+/// requiring a private probe fixture.
+public protocol SurfaceApproachCandidateInspector: Sendable {
+  func inspect(
+    candidate: SurfaceRouteCandidate,
+    request: SurfaceRouteRequest,
+    policy: SurfaceApproachPolicy
   ) async -> SurfaceCandidateInspection
 }
 

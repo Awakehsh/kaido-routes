@@ -116,7 +116,7 @@ public enum GraphHopperSurfaceRouteProviderInitializationError: Error, Equatable
 /// keys and OSM way IDs must translate onto one exact Kaido edge path before a
 /// candidate can escape this adapter. GraphHopper does not own the expressway
 /// `RoutePlan`, recovery target, localized guidance, or driving-side truth.
-public struct GraphHopperSurfaceRouteProvider: SurfaceRouteProvider {
+public struct GraphHopperSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -125,6 +125,21 @@ public struct GraphHopperSurfaceRouteProvider: SurfaceRouteProvider {
   private let transport: any GraphHopperHTTPTransport
   private let bindingsByAnchorID: [String: GraphHopperApproachIdentityBinding]
   private let normalizer: GraphHopperSurfaceRouteNormalizer
+
+  public var releaseIdentity: SurfaceRouteProviderReleaseIdentity {
+    SurfaceRouteProviderReleaseIdentity(
+      providerID: metadata.id,
+      adapterVersion: metadata.adapterVersion,
+      providerVersion: manifest.engineBuild.providerVersion,
+      networkSnapshotID: manifest.networkSnapshotID,
+      providerDatasetID: manifest.providerDatasetID,
+      buildManifestID: manifest.id,
+      engineBuildID: manifest.engineBuild.id,
+      manifestValidationProfile: configuration.manifestValidationProfile,
+      manifestIntendedUse: manifest.intendedUse,
+      dataReviewStatus: metadata.dataReviewStatus
+    )
+  }
   private let translator: OSMWayPointPathTranslator
 
   public init(

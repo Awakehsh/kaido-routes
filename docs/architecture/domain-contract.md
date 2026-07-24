@@ -217,15 +217,19 @@ versioned Kaido network, not from an IC name returned by a surface router.
 The platform-light implementation makes that boundary executable.
 `ReleasedSurfaceAccessDefinition` binds one `SurfaceApproachPolicy` to the exact
 snapshot, RoutePlan, entrance, first join occurrence, entry-transition edges,
-compatible exit, and supported finish policies. It is optional because a
-journey may begin at the entrance, but when present it is a separately evidenced
-navigation-release asset. `JourneyPlanCompiler` re-runs all six surface hard
-gates against an inspection bound to that exact snapshot before it can create
-an access leg, preserves the complete resolved
-directed-edge sequence including repeats, and retains the release-owned
-RoutePlan, entry transition, and egress options unchanged. Provider prose is not
-carried into navigation authority. `RETURN_NEAR_ORIGIN` remains unavailable
-until a reviewed surface-egress leg exists.
+compatible exit, supported finish policies, and one reviewed
+release-candidate provider/build identity. It is optional because a journey may
+begin at the entrance, but when present it is a separately evidenced
+navigation-release asset. `ReleasedSurfaceAccessPlanner` requires the runtime
+provider to carry that exact identity, obtains and inspects every response
+candidate, and re-runs all six surface hard gates against the exact snapshot.
+The package-scoped `JourneyPlanCompiler` alone may then create an access leg,
+preserving the complete resolved directed-edge sequence including repeats and
+retaining the release-owned RoutePlan, entry transition, and egress options
+unchanged. Multiple accepted provider alternatives remain unselected until an
+explicit parked choice. Provider prose is not carried into navigation
+authority. `RETURN_NEAR_ORIGIN` remains unavailable until a reviewed
+surface-egress leg exists.
 
 Phase changes are evidence-based. A proximity region may create an entry
 candidate, but only matching the directed transition, heading, and continuous

@@ -549,7 +549,7 @@ func navigationReleaseArtifactRoundTrips() throws {
   #expect(release.assetEvidence.count == 11)
 
   let json = try #require(String(data: data, encoding: .utf8))
-  #expect(json.contains("\"schema_version\" : \"4.0\""))
+  #expect(json.contains("\"schema_version\" : \"5.0\""))
   #expect(json.contains("\"ja-JP\""))
   #expect(json.contains("\"zh-Hans\""))
   #expect(json.contains("\"en\""))
@@ -602,7 +602,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     !($0.role == .decisionZone && $0.assetID == "test.zone.loop-2")
   }
   let artifact = NavigationReleaseArtifact(
-    schemaVersion: "5.0",
+    schemaVersion: "999.0",
     releaseID: valid.releaseID,
     releasedAt: valid.releasedAt,
     editorCatalogID: valid.editorCatalogID,

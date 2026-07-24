@@ -773,7 +773,7 @@
       "route_plan_id" : "test.plan.release-bundle",
       "runtime_policy_id" : "test.runtime-policy.release-bundle"
     },
-    "schema_version" : "4.0",
+    "schema_version" : "5.0",
     "source_registry" : {
       "references" : [
         {

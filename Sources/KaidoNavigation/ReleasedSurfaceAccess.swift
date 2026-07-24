@@ -13,6 +13,8 @@ public enum ReleasedSurfaceAccessIssue: String, Hashable, Sendable {
   case invalidIdentity = "INVALID_RELEASED_SURFACE_ACCESS_IDENTITY"
   case networkSnapshotMismatch = "SURFACE_ACCESS_NETWORK_SNAPSHOT_MISMATCH"
   case routePlanMismatch = "SURFACE_ACCESS_ROUTE_PLAN_MISMATCH"
+  case invalidProviderIdentity = "INVALID_RELEASED_SURFACE_PROVIDER_IDENTITY"
+  case providerSnapshotMismatch = "SURFACE_PROVIDER_NETWORK_SNAPSHOT_MISMATCH"
   case invalidApproachPolicy = "INVALID_RELEASED_SURFACE_APPROACH_POLICY"
   case entranceMismatch = "SURFACE_ACCESS_ENTRANCE_MISMATCH"
   case joinOccurrenceMismatch = "SURFACE_ACCESS_JOIN_OCCURRENCE_MISMATCH"
@@ -29,17 +31,20 @@ public enum ReleasedSurfaceAccessIssue: String, Hashable, Sendable {
 public struct ReleasedSurfaceAccessDefinition: Codable, Equatable, Sendable {
   public let id: String
   public let routePlanID: String
+  public let providerIdentity: SurfaceRouteProviderReleaseIdentity
   public let approachPolicy: SurfaceApproachPolicy
   public let allowedFinishPolicies: [JourneyFinishPolicy]
 
   public init(
     id: String,
     routePlanID: String,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity,
     approachPolicy: SurfaceApproachPolicy,
     allowedFinishPolicies: [JourneyFinishPolicy]
   ) {
     self.id = id
     self.routePlanID = routePlanID
+    self.providerIdentity = providerIdentity
     self.approachPolicy = approachPolicy
     self.allowedFinishPolicies = allowedFinishPolicies
   }
@@ -58,6 +63,12 @@ public struct ReleasedSurfaceAccessDefinition: Codable, Equatable, Sendable {
     }
     if routePlanID != routePlan.id {
       issues.append(.routePlanMismatch)
+    }
+    if !providerIdentity.validationIssues.isEmpty {
+      issues.append(.invalidProviderIdentity)
+    }
+    if providerIdentity.networkSnapshotID != networkSnapshot.id {
+      issues.append(.providerSnapshotMismatch)
     }
     if !approachPolicy.validationIssues.isEmpty {
       issues.append(.invalidApproachPolicy)
@@ -98,6 +109,7 @@ public struct ReleasedSurfaceAccessDefinition: Codable, Equatable, Sendable {
   private enum CodingKeys: String, CodingKey {
     case id = "surface_access_definition_id"
     case routePlanID = "route_plan_id"
+    case providerIdentity = "provider_identity"
     case approachPolicy = "approach_policy"
     case allowedFinishPolicies = "allowed_finish_policies"
   }
@@ -125,7 +137,7 @@ public enum JourneySurfaceLegRole: String, Codable, Sendable {
 public struct JourneySurfaceLeg: Equatable, Sendable {
   public let role: JourneySurfaceLegRole
   public let networkSnapshotID: String
-  public let providerID: String
+  public let providerIdentity: SurfaceRouteProviderReleaseIdentity
   public let candidateID: String
   public let originID: String
   public let destinationAnchorID: String
@@ -136,6 +148,9 @@ public struct JourneySurfaceLeg: Equatable, Sendable {
   public let distanceMeters: Double
   public let expectedTravelTimeSeconds: Double
 
+  public var providerID: String {
+    providerIdentity.providerID
+  }
 }
 
 /// One immutable product journey composition around the authoritative RoutePlan.
@@ -159,6 +174,7 @@ public struct JourneyPlan: Equatable, Sendable {
 public enum JourneyPlanCompilerError: Error, Equatable, Sendable {
   case surfaceAccessNotReleased
   case invalidReleasedSurfaceAccess([ReleasedSurfaceAccessIssue])
+  case providerIdentityMismatch
   case invalidRequest([String])
   case inspectionSnapshotMismatch
   case candidateRejected([HardGateResult])
@@ -190,61 +206,27 @@ public enum JourneyPlanCompiler {
     )
   }
 
-  public static func surfaceAccess(
+  package static func surfaceAccess(
     release: KaidoProductRelease,
     request: SurfaceRouteRequest,
     candidate: SurfaceRouteCandidate,
     inspection: SurfaceCandidateInspection,
-    expectedProviderID: String,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity,
     finishPolicy: JourneyFinishPolicy
   ) throws -> JourneyPlan {
-    let bundle = release.navigation.bundle
-    guard let definition = bundle.surfaceAccessDefinition else {
-      throw JourneyPlanCompilerError.surfaceAccessNotReleased
-    }
-    let definitionIssues = definition.validationIssues(
-      networkSnapshot: bundle.networkSnapshot,
-      routePlan: bundle.routePlan,
-      runtimePolicy: bundle.runtimePolicy
+    let definition = try surfaceAccessPreflight(
+      release: release,
+      request: request,
+      providerIdentity: providerIdentity,
+      finishPolicy: finishPolicy
     )
-    guard definitionIssues.isEmpty else {
-      throw JourneyPlanCompilerError.invalidReleasedSurfaceAccess(definitionIssues)
-    }
-    guard definition.allowedFinishPolicies.contains(finishPolicy) else {
-      throw JourneyPlanCompilerError.finishPolicyNotReleased(finishPolicy)
-    }
-    if finishPolicy == .returnNearOrigin {
-      throw JourneyPlanCompilerError.surfaceEgressNotReleased
-    }
-
-    var requestIssues: [String] = []
-    if normalized(request.id).isEmpty
-      || normalized(request.originID).isEmpty
-      || !request.origin.isValid
-    {
-      requestIssues.append("INVALID_SURFACE_ACCESS_REQUEST_IDENTITY")
-    }
-    if normalized(expectedProviderID).isEmpty
-      || normalized(candidate.id).isEmpty
-      || normalized(candidate.providerID).isEmpty
-    {
-      requestIssues.append("INVALID_SURFACE_ACCESS_PROVIDER_IDENTITY")
-    }
-    if request.entranceFacilityID != definition.approachPolicy.entranceFacilityID {
-      requestIssues.append("SURFACE_ACCESS_REQUEST_ENTRANCE_MISMATCH")
-    }
-    if request.destinationAnchor != definition.approachPolicy.destinationAnchor {
-      requestIssues.append("SURFACE_ACCESS_REQUEST_ANCHOR_MISMATCH")
-    }
-    if request.selectedJoinOccurrenceID != bundle.routePlan.occurrences.first?.id
-      || !definition.approachPolicy.allowedJoinOccurrenceIDs.contains(
-        request.selectedJoinOccurrenceID
-      )
-    {
-      requestIssues.append("SURFACE_ACCESS_REQUEST_JOIN_MISMATCH")
-    }
-    guard requestIssues.isEmpty else {
-      throw JourneyPlanCompilerError.invalidRequest(requestIssues.sorted())
+    let bundle = release.navigation.bundle
+    guard normalized(candidate.id).isEmpty == false,
+      normalized(candidate.providerID).isEmpty == false
+    else {
+      throw JourneyPlanCompilerError.invalidRequest([
+        "INVALID_SURFACE_ACCESS_PROVIDER_IDENTITY"
+      ])
     }
     guard inspection.networkSnapshotID == bundle.networkSnapshot.id else {
       throw JourneyPlanCompilerError.inspectionSnapshotMismatch
@@ -255,7 +237,7 @@ public enum JourneyPlanCompiler {
       request: request,
       policy: definition.approachPolicy,
       inspection: inspection,
-      expectedProviderID: expectedProviderID
+      expectedProviderID: providerIdentity.providerID
     )
     guard evaluation.isAccepted else {
       throw JourneyPlanCompilerError.candidateRejected(evaluation.hardGates)
@@ -268,7 +250,8 @@ public enum JourneyPlanCompiler {
     }
     if let selectedPathEvidence = candidate.selectedPathEvidence {
       guard selectedPathEvidence.networkSnapshotID == bundle.networkSnapshot.id,
-        normalized(selectedPathEvidence.providerDatasetID).isEmpty == false,
+        selectedPathEvidence.providerDatasetID
+          == providerIdentity.providerDatasetID,
         selectedPathEvidence.directedEdgeIDs == directedEdgeIDs
       else {
         throw JourneyPlanCompilerError.selectedPathEvidenceMismatch
@@ -294,7 +277,7 @@ public enum JourneyPlanCompiler {
     let accessLeg = JourneySurfaceLeg(
       role: .access,
       networkSnapshotID: bundle.networkSnapshot.id,
-      providerID: candidate.providerID,
+      providerIdentity: providerIdentity,
       candidateID: candidate.id,
       originID: request.originID,
       destinationAnchorID: request.destinationAnchor.id,
@@ -306,7 +289,7 @@ public enum JourneyPlanCompiler {
       expectedTravelTimeSeconds: candidate.expectedTravelTimeSeconds
     )
     return JourneyPlan(
-      id: "\(release.releaseID).journey.\(request.id)",
+      id: "\(release.releaseID).journey.\(request.id).\(candidate.id)",
       productReleaseID: release.releaseID,
       navigationReleaseID: release.navigation.releaseID,
       networkSnapshotID: bundle.networkSnapshot.id,
@@ -320,6 +303,60 @@ public enum JourneyPlanCompiler {
       egressLeg: nil,
       initialPhase: .planning
     )
+  }
+
+  package static func surfaceAccessPreflight(
+    release: KaidoProductRelease,
+    request: SurfaceRouteRequest,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity,
+    finishPolicy: JourneyFinishPolicy
+  ) throws -> ReleasedSurfaceAccessDefinition {
+    let bundle = release.navigation.bundle
+    guard let definition = bundle.surfaceAccessDefinition else {
+      throw JourneyPlanCompilerError.surfaceAccessNotReleased
+    }
+    let definitionIssues = definition.validationIssues(
+      networkSnapshot: bundle.networkSnapshot,
+      routePlan: bundle.routePlan,
+      runtimePolicy: bundle.runtimePolicy
+    )
+    guard definitionIssues.isEmpty else {
+      throw JourneyPlanCompilerError.invalidReleasedSurfaceAccess(definitionIssues)
+    }
+    guard providerIdentity == definition.providerIdentity else {
+      throw JourneyPlanCompilerError.providerIdentityMismatch
+    }
+    guard definition.allowedFinishPolicies.contains(finishPolicy) else {
+      throw JourneyPlanCompilerError.finishPolicyNotReleased(finishPolicy)
+    }
+    if finishPolicy == .returnNearOrigin {
+      throw JourneyPlanCompilerError.surfaceEgressNotReleased
+    }
+
+    var requestIssues: [String] = []
+    if normalized(request.id).isEmpty
+      || normalized(request.originID).isEmpty
+      || !request.origin.isValid
+    {
+      requestIssues.append("INVALID_SURFACE_ACCESS_REQUEST_IDENTITY")
+    }
+    if request.entranceFacilityID != definition.approachPolicy.entranceFacilityID {
+      requestIssues.append("SURFACE_ACCESS_REQUEST_ENTRANCE_MISMATCH")
+    }
+    if request.destinationAnchor != definition.approachPolicy.destinationAnchor {
+      requestIssues.append("SURFACE_ACCESS_REQUEST_ANCHOR_MISMATCH")
+    }
+    if request.selectedJoinOccurrenceID != bundle.routePlan.occurrences.first?.id
+      || !definition.approachPolicy.allowedJoinOccurrenceIDs.contains(
+        request.selectedJoinOccurrenceID
+      )
+    {
+      requestIssues.append("SURFACE_ACCESS_REQUEST_JOIN_MISMATCH")
+    }
+    guard requestIssues.isEmpty else {
+      throw JourneyPlanCompilerError.invalidRequest(requestIssues.sorted())
+    }
+    return definition
   }
 
   private static func normalized(_ value: String) -> String {

@@ -50,13 +50,20 @@ parked near an entrance may begin at `ENTRY_TRANSITION`, and a user may choose t
 end guidance at the exit's surface handoff anchor.
 
 The current platform-light composition boundary is release-first.
-`ReleasedSurfaceAccessDefinition` carries one exact `SurfaceApproachPolicy`;
-`NavigationReleaseBundle` admits it only when its snapshot, RoutePlan,
-directional entrance, first join occurrence, entry transition, compatible exit,
-and finish policies match the released runtime policy. `JourneyPlanCompiler`
-then re-evaluates the candidate against all six hard gates and requires a
-same-snapshot inspection with a non-empty, unambiguous directed-edge path.
-Repeated path edges remain repeated.
+`ReleasedSurfaceAccessDefinition` carries one exact `SurfaceApproachPolicy` and
+one release-candidate provider/build identity; `NavigationReleaseBundle` admits
+it only when its provider identity is complete and reviewed and its snapshot,
+RoutePlan, directional entrance, first join occurrence, entry transition,
+compatible exit, and finish policies match the released runtime policy.
+`ReleasedSurfaceAccessPlanner` then requires the runtime provider to match the
+released provider, adapter, engine, dataset, manifest, build, profile, intended
+use, and declared data-retention review status before making a request. It
+inspects and re-evaluates
+every candidate against all six hard gates, and the package-scoped
+`JourneyPlanCompiler` requires a same-snapshot inspection with a non-empty,
+unambiguous directed-edge path. One accepted candidate is ready; multiple
+accepted alternatives require an explicit parked selection rather than using
+provider response order. Repeated path edges remain repeated.
 The product runtime exposes a route-only `JourneyPlan` when no access result has
 been accepted, so beginning near the entrance remains valid without fabricating
 a provider leg.

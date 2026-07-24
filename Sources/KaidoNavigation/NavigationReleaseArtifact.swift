@@ -140,7 +140,7 @@ public struct NavigationReleaseAssetEvidence: Codable, Equatable, Sendable {
 /// must construct `NavigationRelease`, which validates provenance coverage and
 /// reuses the complete `NavigationReleaseBundle` integrity gate.
 public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "4.0"
+  public static let currentSchemaVersion = "5.0"
 
   public let schemaVersion: String
   public let releaseID: String

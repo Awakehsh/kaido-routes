@@ -514,15 +514,21 @@ real-road eligibility.
 When surface access is present, the bundle additionally requires its
 `SurfaceApproachPolicy` to match the exact snapshot, RoutePlan entrance, first
 join occurrence, runtime entry-transition edges, and compatible compiled exit.
-The definition is inert until `JourneyPlanCompiler` recomputes every surface
-hard gate against one candidate and requires a same-snapshot inspection with
-an unambiguous resolved edge
-sequence. The resulting `JourneyPlan` composes around the unchanged RoutePlan;
-provider guidance steps never enter released guidance authority. A route-only
-plan remains valid, while `RETURN_NEAR_ORIGIN` fails closed until reviewed
-surface-egress assets exist.
+It also requires a complete reviewed release-candidate provider/build identity
+covering provider, adapter, engine, snapshot, dataset, manifest, build,
+validation profile, and intended use. The definition is inert until
+`ReleasedSurfaceAccessPlanner` proves the runtime provider carries that exact
+identity, runs it, inspects every candidate, and recomputes every surface hard
+gate. The package-scoped `JourneyPlanCompiler` then requires a same-snapshot
+inspection with an unambiguous resolved edge sequence. A single accepted
+candidate becomes ready; multiple accepted alternatives require explicit
+selection and cannot inherit provider response order. The resulting
+`JourneyPlan` composes around the unchanged RoutePlan; provider guidance steps
+never enter released guidance authority. A route-only plan remains valid,
+while `RETURN_NEAR_ORIGIN` fails closed until reviewed surface-egress assets
+exist.
 
-`NavigationReleaseArtifact` schema 4.0 is the Codable distribution envelope for
+`NavigationReleaseArtifact` schema 5.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
 editor-catalog identity, a complete locale-exact editor presentation catalog,
 and a source registry with HTTPS locations, pinned SHA-256 values, checked

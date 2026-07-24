@@ -14,6 +14,10 @@ func releasedSurfaceAccessRequiresExactPolicyAndEvidence() throws {
 
   let release = try NavigationRelease(artifact: artifact)
   #expect(release.bundle.surfaceAccessDefinition == definition)
+  let encoded = try NavigationReleaseArtifactCodec.encode(artifact)
+  let encodedJSON = try #require(String(data: encoded, encoding: .utf8))
+  #expect(encodedJSON.contains("\"provider_identity\""))
+  #expect(encodedJSON.contains("\"test.surface-build.release-bundle\""))
   #expect(
     release.assetEvidence.contains {
       $0.role == .surfaceAccess && $0.assetID == definition.id
@@ -59,6 +63,7 @@ func releasedSurfaceAccessRejectsIdentityDrift() {
   let drifted = ReleasedSurfaceAccessDefinition(
     id: valid.id,
     routePlanID: "other.plan",
+    providerIdentity: valid.providerIdentity,
     approachPolicy: SurfaceApproachPolicy(
       networkSnapshotID: "other.snapshot",
       entranceFacilityID: "other.entrance",
@@ -104,6 +109,58 @@ func releasedSurfaceAccessRejectsIdentityDrift() {
   }
 }
 
+@Test("Surface release requires one reviewed release-candidate provider build")
+func releasedSurfaceAccessRejectsUnreviewedProviderBuild() {
+  let fixture = navigationReleaseBundleFixture()
+  let valid = releasedSurfaceAccessDefinition(fixture)
+  let invalidProvider = SurfaceRouteProviderReleaseIdentity(
+    providerID: valid.providerIdentity.providerID,
+    adapterVersion: valid.providerIdentity.adapterVersion,
+    providerVersion: valid.providerIdentity.providerVersion,
+    networkSnapshotID: "other.snapshot",
+    providerDatasetID: valid.providerIdentity.providerDatasetID,
+    buildManifestID: valid.providerIdentity.buildManifestID,
+    engineBuildID: valid.providerIdentity.engineBuildID,
+    manifestValidationProfile: .structural,
+    manifestIntendedUse: .labOnly,
+    dataReviewStatus: .reviewRequired
+  )
+  let definition = ReleasedSurfaceAccessDefinition(
+    id: valid.id,
+    routePlanID: valid.routePlanID,
+    providerIdentity: invalidProvider,
+    approachPolicy: valid.approachPolicy,
+    allowedFinishPolicies: valid.allowedFinishPolicies
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
+      runtimePolicy: fixture.runtimePolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews,
+      surfaceAccessDefinition: definition
+    )
+    Issue.record("Expected an unreviewed provider build to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    let details = issues.compactMap { issue -> [ReleasedSurfaceAccessIssue]? in
+      guard case .invalidSurfaceAccessDefinition(let details) = issue else {
+        return nil
+      }
+      return details
+    }.flatMap { $0 }
+    #expect(details.contains(.invalidProviderIdentity))
+    #expect(details.contains(.providerSnapshotMismatch))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Accepted surface candidate composes around the exact released RoutePlan")
 func journeyPlanPreservesAcceptedSurfacePathOccurrences() throws {
   let fixture = navigationReleaseBundleFixture()
@@ -119,7 +176,7 @@ func journeyPlanPreservesAcceptedSurfacePathOccurrences() throws {
     request: input.request,
     candidate: input.candidate,
     inspection: input.inspection,
-    expectedProviderID: input.candidate.providerID,
+    providerIdentity: definition.providerIdentity,
     finishPolicy: .fixedExit
   )
 
@@ -162,7 +219,7 @@ func journeyPlanRejectsSurfaceAuthorityDrift() throws {
       request: input.request,
       candidate: providerDrift,
       inspection: input.inspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected provider drift to block JourneyPlan creation")
@@ -188,7 +245,7 @@ func journeyPlanRejectsSurfaceAuthorityDrift() throws {
       request: input.request,
       candidate: input.candidate,
       inspection: snapshotDriftInspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected inspection snapshot drift to block JourneyPlan creation")
@@ -210,7 +267,7 @@ func journeyPlanRejectsSurfaceAuthorityDrift() throws {
       request: input.request,
       candidate: input.candidate,
       inspection: earlyExpresswayInspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected early expressway entry to block JourneyPlan creation")
@@ -237,7 +294,7 @@ func journeyPlanRejectsSurfaceAuthorityDrift() throws {
       request: input.request,
       candidate: input.candidate,
       inspection: ambiguousInspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected ambiguous geometry to block JourneyPlan creation")
@@ -268,7 +325,7 @@ func journeyPlanRejectsSurfaceAuthorityDrift() throws {
       request: input.request,
       candidate: evidenceDrift,
       inspection: input.inspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected selected-path evidence drift to block JourneyPlan creation")
@@ -300,7 +357,7 @@ func journeyPlanRequiresReleasedSurfaceAccess() throws {
       request: input.request,
       candidate: input.candidate,
       inspection: input.inspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .finishOnRequest
     )
     Issue.record("Expected an omitted release asset to block surface access")
@@ -325,7 +382,7 @@ func journeyPlanRequiresReleasedReturnEgress() throws {
       request: input.request,
       candidate: input.candidate,
       inspection: input.inspection,
-      expectedProviderID: input.candidate.providerID,
+      providerIdentity: definition.providerIdentity,
       finishPolicy: .returnNearOrigin
     )
     Issue.record("Expected missing return egress to fail closed")
@@ -334,10 +391,278 @@ func journeyPlanRequiresReleasedReturnEgress() throws {
   }
 }
 
+@Test("Released surface planner runs provider, graph inspection, and compiler as one gate")
+func releasedSurfaceAccessPlannerBuildsOnlyOneReadyPlan() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let planner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: definition.providerIdentity,
+      response: .success([input.candidate])
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+
+  let result = try await planner.plan(
+    release: release,
+    request: input.request,
+    finishPolicy: .finishOnRequest
+  )
+
+  #expect(result.disposition == .ready)
+  #expect(result.selectedPlan?.accessLeg?.candidateID == input.candidate.id)
+  #expect(
+    result.selectedPlan?.accessLeg?.providerIdentity
+      == definition.providerIdentity
+  )
+  #expect(result.evaluations.count == 1)
+  #expect(result.evaluations[0].isAccepted)
+  #expect(result.compilationFailures.isEmpty)
+}
+
+@Test("Provider alternative order cannot silently select a surface journey")
+func releasedSurfaceAccessPlannerRequiresExplicitAlternativeSelection() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let candidateB = SurfaceRouteCandidate(
+    id: "test.surface-candidate.b",
+    providerID: input.candidate.providerID,
+    coordinates: input.candidate.coordinates,
+    steps: input.candidate.steps,
+    distanceMeters: input.candidate.distanceMeters + 100,
+    expectedTravelTimeSeconds:
+      input.candidate.expectedTravelTimeSeconds + 30,
+    selectedPathEvidence: input.candidate.selectedPathEvidence
+  )
+  let candidateA = SurfaceRouteCandidate(
+    id: "test.surface-candidate.a",
+    providerID: input.candidate.providerID,
+    coordinates: input.candidate.coordinates,
+    steps: input.candidate.steps,
+    distanceMeters: input.candidate.distanceMeters,
+    expectedTravelTimeSeconds: input.candidate.expectedTravelTimeSeconds,
+    selectedPathEvidence: input.candidate.selectedPathEvidence
+  )
+  let planner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: definition.providerIdentity,
+      response: .success([candidateB, candidateA])
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+
+  let result = try await planner.plan(
+    release: release,
+    request: input.request,
+    finishPolicy: .finishOnRequest
+  )
+
+  #expect(result.disposition == .selectionRequired)
+  #expect(result.selectedPlan == nil)
+  #expect(
+    result.options.map(\.candidateID)
+      == ["test.surface-candidate.a", "test.surface-candidate.b"]
+  )
+  #expect(Set(result.options.map(\.journeyPlan.id)).count == 2)
+}
+
+@Test("Surface planner keeps provider failure and malformed success explicit")
+func releasedSurfaceAccessPlannerDisclosesProviderResponseFailures() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let failure = SurfaceProviderFailure(
+    kind: .network,
+    providerErrorCode: "TEST_NETWORK"
+  )
+  let failedPlanner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: definition.providerIdentity,
+      response: .failure(failure)
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+  let failed = try await failedPlanner.plan(
+    release: release,
+    request: input.request,
+    finishPolicy: .finishOnRequest
+  )
+  #expect(failed.disposition == .providerFailure)
+  #expect(failed.providerFailure == failure)
+  #expect(failed.selectedPlan == nil)
+
+  let emptyPlanner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: definition.providerIdentity,
+      response: .success([])
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+  let empty = try await emptyPlanner.plan(
+    release: release,
+    request: input.request,
+    finishPolicy: .finishOnRequest
+  )
+  #expect(empty.disposition == .invalidResponse)
+  #expect(
+    empty.evaluations[0].hardGates.contains {
+      $0.reasonCodes.contains("EMPTY_SUCCESS_RESPONSE")
+    }
+  )
+}
+
+@Test("Surface planner refuses provider build drift before a request")
+func releasedSurfaceAccessPlannerRejectsProviderIdentityDrift() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let driftedIdentity = SurfaceRouteProviderReleaseIdentity(
+    providerID: definition.providerIdentity.providerID,
+    adapterVersion: "other.adapter",
+    providerVersion: definition.providerIdentity.providerVersion,
+    networkSnapshotID: definition.providerIdentity.networkSnapshotID,
+    providerDatasetID: definition.providerIdentity.providerDatasetID,
+    buildManifestID: definition.providerIdentity.buildManifestID,
+    engineBuildID: definition.providerIdentity.engineBuildID,
+    manifestValidationProfile: .releaseCandidate,
+    manifestIntendedUse: .releaseCandidate,
+    dataReviewStatus: .derivedFixtureReviewed
+  )
+  let planner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: driftedIdentity,
+      response: .success([input.candidate])
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+
+  await #expect(throws: JourneyPlanCompilerError.providerIdentityMismatch) {
+    _ = try await planner.plan(
+      release: release,
+      request: input.request,
+      finishPolicy: .finishOnRequest
+    )
+  }
+}
+
+@Test("Selected-path dataset drift cannot escape an accepted hard-gate result")
+func releasedSurfaceAccessPlannerRejectsDatasetDriftAtCompilation() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let driftedCandidate = SurfaceRouteCandidate(
+    id: input.candidate.id,
+    providerID: input.candidate.providerID,
+    coordinates: input.candidate.coordinates,
+    steps: input.candidate.steps,
+    distanceMeters: input.candidate.distanceMeters,
+    expectedTravelTimeSeconds: input.candidate.expectedTravelTimeSeconds,
+    selectedPathEvidence: SurfaceSelectedPathEvidence(
+      networkSnapshotID: fixture.networkSnapshot.id,
+      providerDatasetID: "other.dataset",
+      directedEdgeIDs:
+        input.candidate.selectedPathEvidence?.directedEdgeIDs ?? []
+    )
+  )
+  let planner = ReleasedSurfaceAccessPlanner(
+    provider: StubReleaseBoundSurfaceProvider(
+      releaseIdentity: definition.providerIdentity,
+      response: .success([driftedCandidate])
+    ),
+    inspector: StubSurfaceApproachInspector(
+      inspection: input.inspection
+    )
+  )
+
+  let result = try await planner.plan(
+    release: release,
+    request: input.request,
+    finishPolicy: .finishOnRequest
+  )
+
+  #expect(result.disposition == .rejected)
+  #expect(result.options.isEmpty)
+  #expect(
+    result.compilationFailures
+      == [
+        ReleasedSurfaceAccessCompilationFailure(
+          candidateID: input.candidate.id,
+          error: .selectedPathEvidenceMismatch
+        )
+      ]
+  )
+}
+
 private struct SurfaceAccessInput {
   let request: SurfaceRouteRequest
   let candidate: SurfaceRouteCandidate
   let inspection: SurfaceCandidateInspection
+}
+
+private struct StubReleaseBoundSurfaceProvider:
+  ReleaseBoundSurfaceRouteProvider
+{
+  let releaseIdentity: SurfaceRouteProviderReleaseIdentity
+  let response: SurfaceProviderResponse
+
+  var metadata: SurfaceRouteProviderMetadata {
+    SurfaceRouteProviderMetadata(
+      id: releaseIdentity.providerID,
+      adapterVersion: releaseIdentity.adapterVersion,
+      providerVersion: releaseIdentity.providerVersion,
+      dataReviewStatus: releaseIdentity.dataReviewStatus
+    )
+  }
+
+  func routes(for _: SurfaceRouteRequest) async -> SurfaceProviderResponse {
+    response
+  }
+}
+
+private struct StubSurfaceApproachInspector:
+  SurfaceApproachCandidateInspector
+{
+  let inspection: SurfaceCandidateInspection
+
+  func inspect(
+    candidate _: SurfaceRouteCandidate,
+    request _: SurfaceRouteRequest,
+    policy _: SurfaceApproachPolicy
+  ) async -> SurfaceCandidateInspection {
+    inspection
+  }
 }
 
 private func releasedSurfaceAccessDefinition(
@@ -346,6 +671,18 @@ private func releasedSurfaceAccessDefinition(
   ReleasedSurfaceAccessDefinition(
     id: "test.surface-access.release-bundle",
     routePlanID: fixture.routePlan.id,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity(
+      providerID: "test.provider",
+      adapterVersion: "test.adapter.v1",
+      providerVersion: "test.engine.v1",
+      networkSnapshotID: fixture.networkSnapshot.id,
+      providerDatasetID: "test.dataset",
+      buildManifestID: "test.surface-build.release-bundle",
+      engineBuildID: "test.surface-engine.release-bundle",
+      manifestValidationProfile: .releaseCandidate,
+      manifestIntendedUse: .releaseCandidate,
+      dataReviewStatus: .derivedFixtureReviewed
+    ),
     approachPolicy: SurfaceApproachPolicy(
       networkSnapshotID: fixture.networkSnapshot.id,
       entranceFacilityID: fixture.routePlan.entryFacilityID,

@@ -445,7 +445,10 @@ occurrence-scoped DecisionZones and released guidance, and an optional registry
 of released junction views. It may also carry one optional
 `ReleasedSurfaceAccessDefinition` bound to the exact snapshot, RoutePlan,
 directional entrance, first join occurrence, entry transition, compatible exit,
-and finish-policy set. The runtime policy binds the directional entry
+finish-policy set, and one reviewed release-candidate provider/build identity.
+That identity pins the provider and adapter versions, network snapshot,
+provider dataset, build manifest, engine build, validation profile, intended
+use, and declared data-retention review status. The runtime policy binds the directional entry
 transition, released in-domain recovery candidates targeting later RoutePlan
 occurrences only for `SAFE_REJOIN`, and released legal egress to the exact
 RoutePlan. Other recovery policies cannot carry rejoin candidates, and egress
@@ -464,7 +467,7 @@ release. KR-D18 executes this boundary with synthetic data; it does not release
 a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
-`NavigationReleaseArtifact` schema 4.0 serializes the exact bundle inputs
+`NavigationReleaseArtifact` schema 5.0 serializes the exact bundle inputs
 together with a stable release identity, editor-catalog identity, complete
 Japanese/Simplified-Chinese/English editor presentation, dated source registry,
 and one released evidence record for every distributable asset, including the
@@ -484,15 +487,20 @@ overwrite. `validate-navigation` independently exposes the same boundary to a
 release pipeline. KR-D25 proves authoring, serialization, and unknown-schema
 rejection with synthetic data; no real navigation release artifact exists yet.
 
-`JourneyPlanCompiler` is the platform-light composition gate after release. It
-re-runs all six surface hard gates against the release-owned
-`SurfaceApproachPolicy`, requires an exact-snapshot inspection and a non-empty
-unambiguous resolved edge path,
-preserves repeated surface traversals, and wraps that leg around the unchanged
-RoutePlan, entry transition, and released egress options. The product runtime
-always exposes a route-only `JourneyPlan` when no surface candidate has been
-accepted. `RETURN_NEAR_ORIGIN` remains blocked until a reviewed surface-egress
-leg is released; no provider or UI can synthesize it.
+`ReleasedSurfaceAccessPlanner` is the public platform-light composition path
+after release. It admits only a `ReleaseBoundSurfaceRouteProvider` whose exact
+provider/build identity equals the released definition, runs the provider,
+inspects every candidate against the release-owned graph policy, re-runs all
+six hard gates, and invokes the package-scoped `JourneyPlanCompiler`. One
+accepted result becomes ready; multiple accepted alternatives remain explicit
+and sorted for parked selection rather than inheriting provider array order.
+Provider failures, empty or duplicate candidate identities, graph ambiguity,
+dataset drift, and compiler rejection remain typed fail-closed outcomes. The
+result preserves repeated surface traversals and wraps the accepted leg around
+the unchanged RoutePlan, entry transition, and released egress options. The
+product runtime always exposes a route-only `JourneyPlan` when no surface
+candidate has been accepted. `RETURN_NEAR_ORIGIN` remains blocked until a
+reviewed surface-egress leg is released; no provider or UI can synthesize it.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated

@@ -108,7 +108,7 @@ public enum OSRMSurfaceRouteProviderInitializationError: Error, Equatable, Senda
 /// OSM nodes. Kaido accepts the candidate only after `data_version` matches the
 /// manifest and every node pair maps to one exact graph edge. OSRM cannot
 /// author, optimize, recover, or mutate the active expressway `RoutePlan`.
-public struct OSRMSurfaceRouteProvider: SurfaceRouteProvider {
+public struct OSRMSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -118,6 +118,21 @@ public struct OSRMSurfaceRouteProvider: SurfaceRouteProvider {
   private let bindingsByAnchorID: [String: OSRMApproachIdentityBinding]
   private let normalizer: OSRMSurfaceRouteNormalizer
   private let translator: OSMNodePathTranslator
+
+  public var releaseIdentity: SurfaceRouteProviderReleaseIdentity {
+    SurfaceRouteProviderReleaseIdentity(
+      providerID: metadata.id,
+      adapterVersion: metadata.adapterVersion,
+      providerVersion: manifest.engineBuild.providerVersion,
+      networkSnapshotID: manifest.networkSnapshotID,
+      providerDatasetID: manifest.providerDatasetID,
+      buildManifestID: manifest.id,
+      engineBuildID: manifest.engineBuild.id,
+      manifestValidationProfile: configuration.manifestValidationProfile,
+      manifestIntendedUse: manifest.intendedUse,
+      dataReviewStatus: metadata.dataReviewStatus
+    )
+  }
 
   public init(
     graph: SurfaceRoadGraphSnapshot,

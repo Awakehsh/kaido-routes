@@ -373,7 +373,7 @@ the portable scenario nor those tests promote their synthetic `ACTIVE` or
 KR-D25 takes the next distribution step without weakening that distinction.
 The runner first gives the immutable reviewed assets and separate provenance
 configuration to `NavigationReleaseAuthor`; only a complete
-`NavigationRelease` may produce the schema-4.0 artifact. It then encodes and
+`NavigationRelease` may produce the schema-5.0 artifact. It then encodes and
 decodes that artifact, requires exact released evidence coverage for every
 runtime asset role and identity—including `EDITOR_PRESENTATION` and
 `RUNTIME_POLICY`—and re-runs `NavigationReleaseBundle`. A final event proves

@@ -2,7 +2,7 @@
 
 `kaido-release build-navigation` is the production assembly boundary between
 reviewed navigation runtime assets, their reviewed provenance, and the
-schema-4.0 artifact consumed by the product-release pipeline. It does not
+schema-5.0 artifact consumed by the product-release pipeline. It does not
 derive topology, author a RoutePlan, create guidance, promote evidence, or
 select a synthetic mode.
 
@@ -23,7 +23,8 @@ The schema-1.0 draft contains the exact immutable runtime assets:
 - one DecisionZone and released guidance coverage for every planned junction
   movement;
 - the optional exact junction-view registry; and
-- the optional exact surface-access definition.
+- the optional exact surface-access definition, including its reviewed
+  release-candidate provider/build identity.
 
 The root JSON keys are:
 
@@ -44,6 +45,14 @@ surface_access_definition
 
 The draft has no release ID, release time, source registry, or evidence state.
 It therefore cannot become a release on its own.
+
+When `surface_access_definition` is present, its provider identity must pin the
+provider and adapter versions, network snapshot, provider dataset, build
+manifest, engine build, `RELEASE_CANDIDATE` validation profile and intended
+use, plus the provider's declared data-retention review status. The latter is
+an exact configuration identity, not a claim that future live responses were
+reviewed in advance. Runtime provider selection is not supplied by the App or
+CLI after release.
 
 ## Configuration
 

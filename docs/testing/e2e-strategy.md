@@ -274,6 +274,17 @@ accessibility-visible review. App tests verify that actual distance changes with
 a duplicated lap while tariff distance does not, unconfirmed passage is not
 positive-open, invalid evidence fails closed, and undo removes the review.
 
+The default iPhone product-journey shell has a separate app-state and XCUITest
+floor. App tests require Route Atlas → parked authoring → pre-drive review
+ordering, reject early review/navigation selection, demote stale review after
+compiled-route invalidation, and keep the bundled synthetic release blocked
+from navigation. XCUITest proves the default launch and primary authoring
+transition, while a deterministic review launch verifies the exact visible
+`ROUTE_RELEASE_AUTHORITY_UNAVAILABLE` blocker and disabled navigation action.
+These are app-composition tests; existing portable domain scenarios remain the
+authority for editor legality, repeated occurrences, release validation, and
+navigation behavior.
+
 The internal iPhone language preview adds local L3 adapter evidence for KR-U05
 and KR-U11. It projects one synthetic `GuidanceFrame` through
 `KaidoPresentation`, lets interface and guidance-voice locales vary

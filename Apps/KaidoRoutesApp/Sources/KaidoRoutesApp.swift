@@ -21,8 +21,18 @@ struct KaidoRoutesApp: App {
         "-PRODUCT-RUNTIME-PREVIEW"
       ) {
         ProductRuntimePreviewHost()
-      } else {
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-INTERNAL-REVIEW-HOME"
+      ) {
         RouteAtlasHomeView()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-PRODUCT-JOURNEY-REVIEW-PREVIEW"
+      ) {
+        KaidoProductJourneyView(
+          model: .reviewPreview()
+        )
+      } else {
+        KaidoProductJourneyView()
       }
     }
   }

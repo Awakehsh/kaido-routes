@@ -15,9 +15,16 @@ Metropolitan Expressway Company Limited.
 This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
 links the local domain, routing, navigation, and presentation modules and renders
-the tracked full-network and K7 Route Atlas assets. It presents a synthetic
-directional-entrance recommendation, parked route authoring, and RoutePlan-bound
-pre-drive review without calling live location or surface routing. A separate
+the tracked full-network and K7 Route Atlas assets. Its default launch is now one
+ordered route-first journey instead of the former vertically stacked evidence
+workbench: Route Atlas recognition leads to parked authoring, an exact compiled
+RoutePlan unlocks pre-drive review, and navigation remains visibly locked until
+a real joint product release grants authority. Returning to edit and
+invalidating the compiled route automatically removes review readiness. The
+original internal workbench remains available through a dedicated launch
+argument. The journey presents a synthetic directional-entrance recommendation,
+parked route authoring, and RoutePlan-bound pre-drive review without calling live
+location or surface routing. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
 and has no audio authority. A synthetic driving-surface panel contrasts measured

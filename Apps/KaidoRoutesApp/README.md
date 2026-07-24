@@ -7,7 +7,25 @@ links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`, and
 `KaidoPresentation`, and `KaidoAppleAdapters` products and renders the tracked
 Route Atlas assets in one fixed north-up instrument.
 
-The current app deliberately exposes only:
+The default scene is now an ordered product journey rather than the complete
+internal evidence workbench:
+
+1. the fixed north-up Route Atlas establishes recognition context;
+2. the user enters the existing parked `ExpertRouteEditorSession` adapter;
+3. only an exact compiled RoutePlan unlocks pre-drive review; and
+4. navigation remains locked until a real joint product release and runtime
+   authority exist.
+
+The journey coordinator owns UI stage only. It does not author topology,
+occurrence progress, a RoutePlan, passage status, or navigation authority.
+Returning to the editor and invalidating the compiled route immediately removes
+review readiness and returns the scene to authoring. A future stage cannot be
+selected early, and the bundled synthetic release can never unlock navigation.
+The former all-panel review workbench remains available with
+`-INTERNAL-REVIEW-HOME`; focused previews retain their existing launch
+arguments.
+
+The current app deliberately composes only:
 
 - the 26-route full-network recognition reference;
 - the topology-bound K7 evidence candidate;
@@ -32,6 +50,14 @@ The current app deliberately exposes only:
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
+
+`KaidoProductJourneyModelTests` execute ordered advancement, no early review,
+compiled-route invalidation, backwards navigation, and the synthetic
+release-authority blocker. `KaidoProductJourneyUITests` prove the default scene
+starts at Route Atlas, exposes a locked navigation step, enters parked authoring
+through the primary action, and renders the exact release blocker in pre-drive
+review. The review screenshot is visual adapter evidence only; it does not
+qualify a physical device or real navigation.
 
 The SVG remains non-interactive. Attribution is not delegated to SVG text:
 `route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and

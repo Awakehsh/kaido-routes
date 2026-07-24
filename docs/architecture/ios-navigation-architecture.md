@@ -641,6 +641,13 @@ That is a development fact, not yet the minimum deployment target.
   intersections or author an alternate successor graph. Before a real joint
   product release exists, concept compositions must be marked
   topology-unverified and not for navigation.
+- The default internal iPhone scene now sequences Route Atlas, parked authoring,
+  pre-drive review, and a locked navigation stage through
+  `KaidoProductJourneyModel`. This coordinator owns presentation stage only. It
+  observes the editor-owned compiled RoutePlan and review projection, returns to
+  authoring when that plan is invalidated, and cannot convert a structurally
+  valid synthetic release into navigation authority. The former all-panel
+  evidence workbench remains a launch-only internal surface.
 - A precise vehicle bead requires fresh route-resolved evidence. Degraded,
   ambiguous, tunnel, or stacked-road positioning renders an honest segment or
   uncertainty halo rather than a falsely precise point.
@@ -672,7 +679,9 @@ That is a development fact, not yet the minimum deployment target.
   tariff distance and toll evidence. SwiftUI renders the resulting KR-U04
   projection and cannot derive one distance from the other. The internal
   synthetic review keeps navigation start locked until a coherent released
-  bundle exists.
+  bundle exists. The journey shell can expose review only after this projection
+  exists; undo or any new edit removes the compiled plan and demotes the shell
+  back to authoring rather than retaining stale readiness.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

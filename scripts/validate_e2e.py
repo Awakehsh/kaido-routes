@@ -50,12 +50,14 @@ GUIDANCE_LANE_PREPARATIONS = {
 }
 NAVIGATION_RELEASE_ASSET_ROLES = {
     "EDITOR_CATALOG",
+    "EDITOR_PRESENTATION",
     "RUNTIME_POLICY",
     "MATCHER_CORRIDOR",
     "DECISION_ZONE",
     "GUIDANCE",
     "JUNCTION_VIEW",
 }
+RELEASE_LOCALES = {"ja-JP", "zh-Hans", "en"}
 PRODUCT_RUNTIME_EVIDENCE_SCOPES = {
     "SYNTHETIC_TEST_ONLY",
     "RELEASED_ROAD",
@@ -798,6 +800,129 @@ def validate_expert_route_editor(v: Validation, given: dict[str, Any]) -> None:
             )
 
 
+def validate_route_editor_presentation(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if (
+        not isinstance(inputs, dict)
+        or "route_editor_presentation_catalog" not in inputs
+    ):
+        return
+    presentation = inputs["route_editor_presentation_catalog"]
+    editor_catalog = inputs.get("expert_route_editor_catalog")
+    if not isinstance(presentation, dict):
+        v.add("given.inputs.route_editor_presentation_catalog must be an object")
+        return
+    if not isinstance(editor_catalog, dict):
+        v.add(
+            "route editor presentation requires expert_route_editor_catalog"
+        )
+        return
+    required = {
+        "presentation_catalog_id",
+        "network_snapshot_id",
+        "entrances",
+        "decision_points",
+        "choices",
+    }
+    if not v.require_keys(
+        presentation,
+        required,
+        "given.inputs.route_editor_presentation_catalog",
+    ):
+        return
+    if (
+        not isinstance(presentation["presentation_catalog_id"], str)
+        or not presentation["presentation_catalog_id"].strip()
+    ):
+        v.add(
+            "given.inputs.route_editor_presentation_catalog."
+            "presentation_catalog_id must be non-empty"
+        )
+    if presentation["network_snapshot_id"] != editor_catalog.get(
+        "network_snapshot_id"
+    ):
+        v.add(
+            "route editor presentation network_snapshot_id must match "
+            "expert_route_editor_catalog"
+        )
+
+    expected_ids = {
+        "entrances": {
+            item.get("facility_id")
+            for item in editor_catalog.get("entrances", [])
+            if isinstance(item, dict)
+            and isinstance(item.get("facility_id"), str)
+        },
+        "decision_points": {
+            item.get("decision_point_id")
+            for item in editor_catalog.get("decision_points", [])
+            if isinstance(item, dict)
+            and isinstance(item.get("decision_point_id"), str)
+        },
+        "choices": {
+            choice.get("choice_id")
+            for decision in editor_catalog.get("decision_points", [])
+            if isinstance(decision, dict)
+            for choice in decision.get("choices", [])
+            if isinstance(choice, dict)
+            and isinstance(choice.get("choice_id"), str)
+        },
+    }
+    id_fields = {
+        "entrances": "facility_id",
+        "decision_points": "decision_point_id",
+        "choices": "choice_id",
+    }
+
+    def validate_localized_text(value: Any, context: str) -> None:
+        if not isinstance(value, dict) or set(value.keys()) != RELEASE_LOCALES:
+            v.add(f"{context} must cover every release locale exactly")
+            return
+        for locale, text in value.items():
+            if not isinstance(text, str) or not text.strip():
+                v.add(f"{context}.{locale} must be non-empty")
+
+    for collection, id_field in id_fields.items():
+        values = presentation[collection]
+        if not isinstance(values, list) or not values:
+            v.add(
+                "given.inputs.route_editor_presentation_catalog."
+                f"{collection} must be a non-empty array"
+            )
+            continue
+        actual_ids: list[str] = []
+        for index, item in enumerate(values):
+            context = (
+                "given.inputs.route_editor_presentation_catalog."
+                f"{collection}[{index}]"
+            )
+            if not isinstance(item, dict):
+                v.add(f"{context} must be an object")
+                continue
+            required_fields = {id_field, "title"}
+            if collection == "choices":
+                required_fields.add("detail")
+            if not v.require_keys(item, required_fields, context):
+                continue
+            item_id = item[id_field]
+            if not isinstance(item_id, str) or not item_id.strip():
+                v.add(f"{context}.{id_field} must be non-empty")
+            else:
+                actual_ids.append(item_id)
+            validate_localized_text(item["title"], f"{context}.title")
+            if collection == "choices":
+                validate_localized_text(item["detail"], f"{context}.detail")
+        if len(actual_ids) != len(set(actual_ids)):
+            v.add(
+                f"route editor presentation {collection} IDs must be unique"
+            )
+        if set(actual_ids) != expected_ids[collection]:
+            v.add(
+                f"route editor presentation {collection} must exactly cover "
+                "the expert editor catalog"
+            )
+
+
 def validate_released_guidance(v: Validation, given: dict[str, Any]) -> None:
     inputs = given.get("inputs")
     if not isinstance(inputs, dict) or "released_guidance" not in inputs:
@@ -1330,6 +1455,7 @@ def validate_navigation_release_artifact(
         "navigation_release_sources",
         "navigation_release_asset_evidence",
         "expert_route_editor_catalog",
+        "route_editor_presentation_catalog",
         "navigation_runtime_policy",
         "matcher_corridor",
         "decision_zones",
@@ -1412,8 +1538,15 @@ def validate_navigation_release_artifact(
         ):
             v.add(f"{context}.checked_at cannot follow the navigation release")
 
-    expected_keys: list[tuple[str, str]] = [
-        ("EDITOR_CATALOG", inputs["navigation_release_editor_catalog_id"])
+    presentation_catalog = inputs["route_editor_presentation_catalog"]
+    presentation_catalog_id = (
+        presentation_catalog.get("presentation_catalog_id")
+        if isinstance(presentation_catalog, dict)
+        else None
+    )
+    expected_keys: list[tuple[str, Any]] = [
+        ("EDITOR_CATALOG", inputs["navigation_release_editor_catalog_id"]),
+        ("EDITOR_PRESENTATION", presentation_catalog_id),
     ]
     runtime_policy = inputs["navigation_runtime_policy"]
     if isinstance(runtime_policy, dict):
@@ -1563,6 +1696,7 @@ def validate_product_release_artifact(
         "navigation_release_sources",
         "navigation_release_asset_evidence",
         "expert_route_editor_catalog",
+        "route_editor_presentation_catalog",
         "navigation_runtime_policy",
         "matcher_corridor",
         "decision_zones",
@@ -2044,6 +2178,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_entrance_recommendation(v, given)
         validate_matcher_guidance_inputs(v, given)
         validate_expert_route_editor(v, given)
+        validate_route_editor_presentation(v, given)
         validate_released_guidance(v, given)
         validate_navigation_runtime_policy(v, given)
         validate_entry_transition_admission(v, given, scenario["when"])

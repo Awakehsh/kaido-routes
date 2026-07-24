@@ -82,8 +82,13 @@ it never determines legal choices or loop closure itself. KR-U01 and KR-U02
 execute these vertical contracts with synthetic data. The internal iPhone
 preview now renders current choices, occurrence-aware history, session-provided
 lap candidates, grouped undo, and explicit-exit compilation through an
-app-owned synthetic fixture. Released catalogs, production labels and topology
-rendering, and full accessibility validation remain pending.
+app-owned synthetic fixture. A release-bound presentation catalog now requires
+exact Japanese, Simplified Chinese, and English labels for every reviewed
+entrance, decision point, and choice; missing, duplicate, or orphaned labels
+block the whole navigation release. The iPhone adapter resolves those labels
+without raw-ID fallback and replays only release-owned choice and occurrence
+IDs. Real released catalogs, production labels and topology rendering, and full
+accessibility validation remain pending.
 
 ### Circuit composition is explicit
 

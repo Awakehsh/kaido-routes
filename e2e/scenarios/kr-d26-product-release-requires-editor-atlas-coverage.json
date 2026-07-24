@@ -66,6 +66,7 @@
           "source_reference_id": "test.source.product-navigation",
           "roles": [
             "EDITOR_CATALOG",
+            "EDITOR_PRESENTATION",
             "RUNTIME_POLICY",
             "MATCHER_CORRIDOR",
             "DECISION_ZONE",
@@ -82,6 +83,13 @@
         {
           "role": "EDITOR_CATALOG",
           "asset_id": "test.catalog.product-release-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        },
+        {
+          "role": "EDITOR_PRESENTATION",
+          "asset_id": "test.editor-presentation.product-release-v1",
           "state": "RELEASED",
           "checked_at": "2026-07-24",
           "source_reference_ids": ["test.source.product-navigation"]
@@ -140,6 +148,45 @@
                 "exit_facility_id": "test.exit.product-release"
               }
             ]
+          }
+        ]
+      },
+      "route_editor_presentation_catalog": {
+        "presentation_catalog_id": "test.editor-presentation.product-release-v1",
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.product-release",
+            "title": {
+              "ja-JP": "テスト入口",
+              "zh-Hans": "测试入口",
+              "en": "Test entrance"
+            }
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.product-release.exit",
+            "title": {
+              "ja-JP": "テスト分岐",
+              "zh-Hans": "测试分岔",
+              "en": "Test decision"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "choice_id": "test.choice.product-release.exit",
+            "title": {
+              "ja-JP": "出口へ",
+              "zh-Hans": "驶向出口",
+              "en": "Take exit"
+            },
+            "detail": {
+              "ja-JP": "確認済みの方向別出口を使用",
+              "zh-Hans": "使用已审核的方向性出口",
+              "en": "Use the reviewed directional exit"
+            }
           }
         ]
       },
@@ -458,7 +505,7 @@
       "id": "validate-navigation-release",
       "at_ms": 0,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "2.0"}
+      "payload": {"schema_version": "3.0"}
     },
     {
       "id": "validate-route-atlas-release",
@@ -470,13 +517,13 @@
       "id": "validate-product-release",
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "3.0"}
+      "payload": {"schema_version": "4.0"}
     },
     {
       "id": "create-product-runtime",
       "at_ms": 3,
       "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
-      "payload": {"schema_version": "3.0"}
+      "payload": {"schema_version": "4.0"}
     }
   ],
   "then": [

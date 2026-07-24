@@ -19,7 +19,7 @@ struct BundledProductReleaseDescriptor: Equatable, Sendable {
     resourceName: "synthetic-product-runtime-preview",
     resourceExtension: "json",
     expectedSHA256:
-      "f728e936b6276d8dc7599f103b41f00a7d479e82acd2312956af0eabea4198d6",
+      "2b9efbcd8730bd4e586c9465788d7757d0f09116b348404d778098ad1c73c94c",
     expectedReleaseID: "preview.synthetic.product-release.v1",
     role: .demoOnly
   )

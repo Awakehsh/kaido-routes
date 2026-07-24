@@ -11,6 +11,7 @@ func navigationReleaseBundleAcceptsCoherentRepeatedOccurrences() throws {
     networkSnapshot: fixture.networkSnapshot,
     routePlan: fixture.routePlan,
     editorCatalog: fixture.editorCatalog,
+    editorPresentationCatalog: fixture.editorPresentationCatalog,
     runtimePolicy: fixture.runtimePolicy,
     matcherCorridor: fixture.matcherCorridor,
     decisionZones: fixture.decisionZones,
@@ -59,6 +60,7 @@ func navigationReleaseBundleRejectsEditorStepDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: driftedRoutePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -79,6 +81,45 @@ func navigationReleaseBundleRejectsEditorStepDrift() {
   }
 }
 
+@Test("Navigation release bundle rejects incomplete editor presentation coverage")
+func navigationReleaseBundleRejectsEditorPresentationDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  let incompletePresentation = ReviewedRouteEditorPresentationCatalog(
+    id: fixture.editorPresentationCatalog.id,
+    networkSnapshotID: fixture.editorPresentationCatalog.networkSnapshotID,
+    entrances: fixture.editorPresentationCatalog.entrances,
+    decisionPoints: fixture.editorPresentationCatalog.decisionPoints,
+    choices: fixture.editorPresentationCatalog.choices.filter {
+      $0.choiceID != "test.choice.exit"
+    }
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: incompletePresentation,
+      runtimePolicy: fixture.runtimePolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected incomplete editor presentation to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidEditorPresentationCatalog([
+          "editor presentation is missing choice test.choice.exit"
+        ])
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Every repeated movement occurrence needs its own DecisionZone and guidance")
 func navigationReleaseBundleRejectsMissingOccurrenceAssets() {
   let fixture = navigationReleaseBundleFixture()
@@ -89,6 +130,7 @@ func navigationReleaseBundleRejectsMissingOccurrenceAssets() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones.filter {
@@ -124,6 +166,7 @@ func navigationReleaseBundleRejectsDuplicateMovementZones() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones + [duplicate],
@@ -151,6 +194,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -183,6 +227,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -201,6 +246,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -221,6 +267,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -248,6 +295,7 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
       networkSnapshot: proposedSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -273,6 +321,7 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: driftedCorridor,
       decisionZones: fixture.decisionZones,
@@ -314,6 +363,7 @@ func navigationReleaseBundleRejectsIncompleteRuntimePolicy() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: invalidPolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -369,6 +419,7 @@ func navigationReleaseBundleRejectsUnusableRecoveryTarget() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: invalidPolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -407,6 +458,7 @@ func navigationReleaseBundleRejectsUnexpectedRecoveryCandidates() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: strictRoutePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -453,6 +505,7 @@ func navigationReleaseBundleRejectsRuntimeEgressExitDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: driftedPolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
@@ -484,15 +537,18 @@ func navigationReleaseArtifactRoundTrips() throws {
   #expect(release.releaseID == artifact.releaseID)
   #expect(release.bundle.routePlan == fixture.routePlan)
   #expect(release.bundle.editorCatalog == fixture.editorCatalog)
+  #expect(
+    release.bundle.editorPresentationCatalog == fixture.editorPresentationCatalog
+  )
   #expect(release.bundle.runtimePolicy == fixture.runtimePolicy)
   #expect(release.bundle.matcherCorridor == fixture.matcherCorridor)
   #expect(release.bundle.decisionZones == fixture.decisionZones)
   #expect(release.bundle.releasedGuidance == fixture.releasedGuidance)
   #expect(release.bundle.junctionViews == fixture.junctionViews)
-  #expect(release.assetEvidence.count == 10)
+  #expect(release.assetEvidence.count == 11)
 
   let json = try #require(String(data: data, encoding: .utf8))
-  #expect(json.contains("\"schema_version\" : \"2.0\""))
+  #expect(json.contains("\"schema_version\" : \"3.0\""))
   #expect(json.contains("\"ja-JP\""))
   #expect(json.contains("\"zh-Hans\""))
   #expect(json.contains("\"en\""))
@@ -511,6 +567,7 @@ func navigationReleaseArtifactRejectsMissingRuntimePolicy() throws {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: valid.assetEvidence,
     editorCatalog: valid.editorCatalog,
+    editorPresentationCatalog: valid.editorPresentationCatalog,
     runtimePolicy: nil,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
@@ -544,7 +601,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     !($0.role == .decisionZone && $0.assetID == "test.zone.loop-2")
   }
   let artifact = NavigationReleaseArtifact(
-    schemaVersion: "3.0",
+    schemaVersion: "4.0",
     releaseID: valid.releaseID,
     releasedAt: valid.releasedAt,
     editorCatalogID: valid.editorCatalogID,
@@ -553,6 +610,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: missingEvidence,
     editorCatalog: valid.editorCatalog,
+    editorPresentationCatalog: valid.editorPresentationCatalog,
     runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
@@ -609,6 +667,7 @@ func navigationReleaseArtifactRejectsUnreleasedAndJunctionEvidenceDrift() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: driftedEvidence,
     editorCatalog: valid.editorCatalog,
+    editorPresentationCatalog: valid.editorPresentationCatalog,
     runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
@@ -660,6 +719,7 @@ func navigationReleaseArtifactRejectsFutureEvidence() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: futureEvidence,
     editorCatalog: valid.editorCatalog,
+    editorPresentationCatalog: valid.editorPresentationCatalog,
     runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
@@ -685,6 +745,7 @@ struct NavigationReleaseBundleFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
   let editorCatalog: ReviewedRouteEditorCatalog
+  let editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog
   let runtimePolicy: ReleasedNavigationRuntimePolicy
   let matcherCorridor: RouteMatcherCorridor
   let decisionZones: [DecisionZoneProgressDefinition]
@@ -713,6 +774,13 @@ func navigationReleaseArtifact(
     NavigationReleaseAssetEvidence(
       role: .editorCatalog,
       assetID: "test.catalog.release-bundle",
+      state: .released,
+      checkedAt: "2026-07-23",
+      sourceReferenceIDs: [sourceID]
+    ),
+    NavigationReleaseAssetEvidence(
+      role: .editorPresentation,
+      assetID: fixture.editorPresentationCatalog.id,
       state: .released,
       checkedAt: "2026-07-23",
       sourceReferenceIDs: [sourceID]
@@ -775,6 +843,7 @@ func navigationReleaseArtifact(
     sourceRegistry: sourceRegistry,
     assetEvidence: evidence,
     editorCatalog: fixture.editorCatalog,
+    editorPresentationCatalog: fixture.editorPresentationCatalog,
     runtimePolicy: fixture.runtimePolicy,
     matcherCorridor: fixture.matcherCorridor,
     decisionZones: fixture.decisionZones,
@@ -855,6 +924,9 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
         ]
       )
     ]
+  )
+  let editorPresentationCatalog = navigationEditorPresentationCatalog(
+    editorCatalog: editorCatalog
   )
   let runtimePolicy = ReleasedNavigationRuntimePolicy(
     id: "test.runtime-policy.release-bundle",
@@ -997,11 +1069,70 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     networkSnapshot: networkSnapshot,
     routePlan: routePlan,
     editorCatalog: editorCatalog,
+    editorPresentationCatalog: editorPresentationCatalog,
     runtimePolicy: runtimePolicy,
     matcherCorridor: matcherCorridor,
     decisionZones: decisionZones,
     releasedGuidance: releasedGuidance,
     junctionViews: [junctionView]
+  )
+}
+
+private func navigationEditorPresentationCatalog(
+  editorCatalog: ReviewedRouteEditorCatalog
+) -> ReviewedRouteEditorPresentationCatalog {
+  ReviewedRouteEditorPresentationCatalog(
+    id: "test.editor-presentation.release-bundle",
+    networkSnapshotID: editorCatalog.networkSnapshotID,
+    entrances: editorCatalog.entrances.map {
+      ReviewedRouteEditorEntrancePresentation(
+        facilityID: $0.facilityID,
+        title: releaseLocalizedText(
+          japanese: "テスト入口",
+          chinese: "测试入口",
+          english: "Test entrance"
+        )
+      )
+    },
+    decisionPoints: editorCatalog.decisionPoints.map {
+      ReviewedRouteEditorDecisionPresentation(
+        decisionPointID: $0.id,
+        title: releaseLocalizedText(
+          japanese: "テスト分岐",
+          chinese: "测试分岔",
+          english: "Test decision"
+        )
+      )
+    },
+    choices: editorCatalog.decisionPoints.flatMap(\.choices).map {
+      ReviewedRouteEditorChoicePresentation(
+        choiceID: $0.id,
+        title: releaseLocalizedText(
+          japanese: "テスト選択",
+          chinese: "测试选择",
+          english: "Test choice"
+        ),
+        detail: releaseLocalizedText(
+          japanese: "確認済みの方向選択",
+          chinese: "已审核的方向选择",
+          english: "Reviewed directional choice"
+        )
+      )
+    }
+  )
+}
+
+private func releaseLocalizedText(
+  japanese: String,
+  chinese: String,
+  english: String
+) -> RouteEditorLocalizedText {
+  RouteEditorLocalizedText(
+    values: [
+      .japanese: japanese,
+      .simplifiedChinese: chinese,
+      .english: english,
+    ]
   )
 }
 

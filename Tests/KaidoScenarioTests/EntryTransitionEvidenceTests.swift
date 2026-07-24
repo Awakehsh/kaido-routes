@@ -208,6 +208,7 @@ func navigationReleaseRejectsUnboundEntryGeometry() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
       runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: corridor,
       decisionZones: fixture.decisionZones,

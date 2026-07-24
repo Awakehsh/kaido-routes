@@ -59,6 +59,7 @@
           "source_reference_id": "test.source.navigation-artifact",
           "roles": [
             "EDITOR_CATALOG",
+            "EDITOR_PRESENTATION",
             "RUNTIME_POLICY",
             "MATCHER_CORRIDOR",
             "DECISION_ZONE",
@@ -75,6 +76,13 @@
         {
           "role": "EDITOR_CATALOG",
           "asset_id": "test.catalog.navigation-artifact-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        },
+        {
+          "role": "EDITOR_PRESENTATION",
+          "asset_id": "test.editor-presentation.navigation-artifact-v1",
           "state": "RELEASED",
           "checked_at": "2026-07-24",
           "source_reference_ids": ["test.source.navigation-artifact"]
@@ -133,6 +141,45 @@
                 "exit_facility_id": "test.exit.navigation-artifact"
               }
             ]
+          }
+        ]
+      },
+      "route_editor_presentation_catalog": {
+        "presentation_catalog_id": "test.editor-presentation.navigation-artifact-v1",
+        "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.navigation-artifact",
+            "title": {
+              "ja-JP": "テスト入口",
+              "zh-Hans": "测试入口",
+              "en": "Test entrance"
+            }
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.navigation-artifact.exit",
+            "title": {
+              "ja-JP": "テスト分岐",
+              "zh-Hans": "测试分岔",
+              "en": "Test decision"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "choice_id": "test.choice.navigation-artifact.exit",
+            "title": {
+              "ja-JP": "出口へ",
+              "zh-Hans": "驶向出口",
+              "en": "Take exit"
+            },
+            "detail": {
+              "ja-JP": "確認済みの方向別出口を使用",
+              "zh-Hans": "使用已审核的方向性出口",
+              "en": "Use the reviewed directional exit"
+            }
           }
         ]
       },
@@ -312,13 +359,13 @@
       "id": "validate-versioned-artifact",
       "at_ms": 0,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "2.0"}
+      "payload": {"schema_version": "3.0"}
     },
     {
       "id": "reject-unknown-artifact-schema",
       "at_ms": 1,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "3.0"}
+      "payload": {"schema_version": "4.0"}
     }
   ],
   "then": [
@@ -337,7 +384,7 @@
       "category": "EVIDENCE",
       "subject": "release_artifact.schema_version",
       "matcher": "EQUALS",
-      "expected": "2.0",
+      "expected": "3.0",
       "rationale": "The decoded distribution unit retains the exact supported schema version."
     },
     {
@@ -388,6 +435,7 @@
       "matcher": "EQUALS",
       "expected": [
         "EDITOR_CATALOG:test.catalog.navigation-artifact-v1",
+        "EDITOR_PRESENTATION:test.editor-presentation.navigation-artifact-v1",
         "RUNTIME_POLICY:test.runtime-policy.navigation-artifact-v1",
         "MATCHER_CORRIDOR:test.corridor.navigation-artifact-v1",
         "DECISION_ZONE:test.zone.navigation-artifact.exit",

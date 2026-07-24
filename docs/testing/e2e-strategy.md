@@ -344,7 +344,7 @@ the portable scenario nor those tests promote their synthetic `ACTIVE` or
 KR-D25 takes the next distribution step without weakening that distinction.
 The runner constructs a `NavigationReleaseArtifact`, encodes and decodes it,
 requires exact released evidence coverage for every runtime asset role and
-identity—including `RUNTIME_POLICY`—and then re-runs
+identity—including `EDITOR_PRESENTATION` and `RUNTIME_POLICY`—and then re-runs
 `NavigationReleaseBundle`. A second event proves that an unknown artifact schema
 fails closed. Python independently checks the policy's snapshot, RoutePlan,
 entry, safe-rejoin, and compiled-exit bindings as well as the source registry,
@@ -365,7 +365,7 @@ cannot expose a partial runtime identity. Every released value remains
 synthetic.
 
 KR-D27 separates structural product validity from sensor authority. A shared
-platform-light evaluator consumes the schema-3.0 `runtime_use` declaration and
+platform-light evaluator consumes the schema-4.0 `runtime_use` declaration and
 both nested source domains. Synthetic scope is valid only with live input
 disabled; released-road scope rejects every `SYNTHETIC_TEST_ONLY` source; and a
 valid released-road product with disabled input still mints no token. Only the

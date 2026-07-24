@@ -249,14 +249,17 @@ replayed through that same catalog. It exposes stable choice and occurrence IDs
 for user submission, never selects them automatically, and returns the exact
 released plan—including reviewed actual distance—only after the parked session
 matches every field and occurrence. The internal iPhone shell now composes the
-same session through a synthetic parked-only catalog: SwiftUI renders its
-immutable choices and lap candidates, preserves repeated occurrences, uses
+same session through a synthetic parked-only catalog. A separate release-bound
+iPhone adapter consumes the validated localized presentation catalog without
+raw-ID fallback and can replay only the exact recipe-owned choice and occurrence
+IDs before regaining the released RoutePlan. SwiftUI renders its immutable
+synthetic choices and lap candidates, preserves repeated occurrences, uses
 session-owned undo, and unlocks compilation only after an explicit exit. Its
 synthetic Canvas sends no geometry semantics to the editor; a fixed fixture
 returns two candidate choice IDs, and XCUITest proves a drag requires parked
 resolution before the editor advances. This is an adapter proof, not production
-snapping or released Shuto authoring data; real released editor catalogs,
-reviewed layout geometry, matching tolerances, localized labels, topology
+snapping or released Shuto authoring data; real released editor catalogs and
+localized text, reviewed layout geometry, matching tolerances, topology
 rendering, and accessibility validation remain pending.
 
 After exact compilation, the internal iPhone shell resolves actual distance from
@@ -378,10 +381,12 @@ release. KR-D18 executes this boundary with synthetic data; it does not release
 a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
-`NavigationReleaseArtifact` schema 2.0 serializes the exact bundle inputs
-together with a stable release identity, editor-catalog identity, dated source registry, and
-one released evidence record for every distributable asset, including the
-runtime policy under the `RUNTIME_POLICY` role. `NavigationRelease`
+`NavigationReleaseArtifact` schema 3.0 serializes the exact bundle inputs
+together with a stable release identity, editor-catalog identity, complete
+Japanese/Simplified-Chinese/English editor presentation, dated source registry,
+and one released evidence record for every distributable asset, including the
+editor presentation under `EDITOR_PRESENTATION` and runtime policy under
+`RUNTIME_POLICY`. `NavigationRelease`
 rejects unknown schemas, missing or orphaned evidence, unused sources,
 source-role drift, junction-view provenance drift, and evidence dated after the
 release before re-running the whole `NavigationReleaseBundle` gate. The codec
@@ -405,7 +410,7 @@ internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
 Neither independently valid artifact can authorize a product build by itself.
-`KaidoProductReleaseArtifact` schema 3.0 contains one complete navigation
+`KaidoProductReleaseArtifact` schema 4.0 contains one complete navigation
 artifact, one complete Route Atlas artifact, and an explicit `runtime_use`
 declaration. `KaidoProductRelease` revalidates both, requires
 exact snapshot and RoutePlan identity, rejects navigation or atlas evidence
@@ -431,7 +436,7 @@ identity-drifted, duplicate, and ambiguous assets fail closed. The default
 journey selects only an exact compiled `RoutePlan`; it does not fall back by
 route ID or substitute the bundled demo. This app-distribution gate is covered
 at L3 rather than by a new portable scenario because it depends on Apple bundle
-resources, while schema-3.0 product semantics remain portable and
+resources, while schema-4.0 product semantics remain portable and
 codec-authoritative.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
@@ -632,7 +637,7 @@ hard properties that must remain proven as the product expands:
     and its released runtime policy is the only source of entry transition,
     recovery candidates, and legal egress.
 33. structural release validity alone cannot enable live sensors; only one
-    schema-3.0 joint product release with consistent released-road sources and
+    schema-4.0 joint product release with consistent released-road sources and
     explicit foreground policy can mint the exact runtime-bound foreground
     input token, while synthetic or mixed evidence fails closed.
 

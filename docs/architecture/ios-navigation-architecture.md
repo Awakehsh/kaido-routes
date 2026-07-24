@@ -462,11 +462,12 @@ orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
 real-road eligibility.
 
-`NavigationReleaseArtifact` schema 2.0 is the Codable distribution envelope for
+`NavigationReleaseArtifact` schema 3.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
-editor-catalog identity, and a source registry with HTTPS locations, pinned
-SHA-256 values, checked dates, licences, and explicit asset roles. Exactly one
-`RELEASED` evidence record must cover the editor catalog, runtime policy,
+editor-catalog identity, a complete locale-exact editor presentation catalog,
+and a source registry with HTTPS locations, pinned SHA-256 values, checked
+dates, licences, and explicit asset roles. Exactly one `RELEASED` evidence
+record must cover the editor catalog, editor presentation, runtime policy,
 matcher corridor, every DecisionZone, every guidance prompt, and every junction
 view. Unresolved
 or unused sources, missing or orphaned evidence, duplicate asset identities,
@@ -504,7 +505,7 @@ an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 
-`KaidoProductReleaseArtifact` schema 3.0 is the outer distribution envelope a
+`KaidoProductReleaseArtifact` schema 4.0 is the outer distribution envelope a
 product build must consume. It embeds the complete navigation and Route Atlas
 artifacts plus an explicit `runtime_use` declaration rather than referencing two
 mutable release names. `KaidoProductRelease` first

@@ -46,8 +46,13 @@ surface while Core Location remains idle. A second explicit action starts
 foreground input only after actor activation and When In Use authorization.
 Runtime construction failure stays in review, and ending navigation stops input
 and speech, removes the active checkpoint, and returns to review. There is no
-ID-only or synthetic fallback. The current manifest contains
-`0 RELEASED ROAD · 1 DEMO`, so no real road navigation is bundled.
+ID-only or synthetic fallback. `ReleasedRouteEditorAdapter` likewise accepts
+only one decoded joint product release, resolves every recipe step through its
+exact locale-complete editor presentation, and submits only release-owned
+choice and occurrence IDs. It never substitutes raw IDs or compiles a different
+route. The current manifest contains `0 RELEASED ROAD · 1 DEMO`, so this adapter
+is covered at the consumption boundary but is not exposed as real road
+authoring.
 
 The current app deliberately composes only:
 
@@ -91,6 +96,9 @@ trace input unavailable, and remove the checkpoint on termination. Catalog
 tests cover hash mutation before codec admission, role promotion, released-road
 authority, missing/corrupt assets, descriptor and identity drift, duplicate
 resources and release IDs, exact RoutePlan selection, and ambiguous matches.
+Released-editor adapter tests replay the bundled repeated occurrences through
+Simplified Chinese labels and reject a non-recipe choice without mutating the
+session.
 `KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
 a locked navigation step, enters parked authoring through the primary action,
@@ -113,7 +121,7 @@ joint release whose identities, sources, and licences are explicitly synthetic.
 Its foreground-navigation controller does not construct a `CLLocationManager`
 unless it receives the unforgeable live-input token minted by a validated joint
 product release for the exact product release, navigation release, runtime
-policy, snapshot, RoutePlan, and matcher corridor. The schema-3.0 bundled
+policy, snapshot, RoutePlan, and matcher corridor. The schema-4.0 bundled
 synthetic release declares `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and
 always supplies a typed blocker, so the panel requests no permission and
 displays no live measured position. An admitted

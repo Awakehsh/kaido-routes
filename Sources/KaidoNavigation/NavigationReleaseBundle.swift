@@ -8,6 +8,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case invalidRoutePlan
   case editorCatalogSnapshotMismatch
   case invalidEditorCatalog([String])
+  case invalidEditorPresentationCatalog([String])
   case routePlanEditorCatalogMismatch(ReleasedRouteAuthoringError)
   case unknownRouteEntrance
   case routeEntranceEdgeMismatch
@@ -38,6 +39,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "EDITOR_CATALOG_SNAPSHOT_MISMATCH"
     case .invalidEditorCatalog:
       "INVALID_EDITOR_CATALOG"
+    case .invalidEditorPresentationCatalog:
+      "INVALID_EDITOR_PRESENTATION_CATALOG"
     case .routePlanEditorCatalogMismatch(let error):
       error.code
     case .unknownRouteEntrance:
@@ -83,6 +86,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "\(code):\(detail)"
     case .invalidEditorCatalog(let details):
       "\(code):\(details.joined(separator: ","))"
+    case .invalidEditorPresentationCatalog(let details):
+      "\(code):\(details.joined(separator: ","))"
     case .routePlanEditorCatalogMismatch(let error):
       "\(code):\(error.sortKey)"
     case .invalidRuntimeConfiguration(let detail):
@@ -116,6 +121,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
   public let networkSnapshot: NetworkSnapshot
   public let routePlan: RoutePlan
   public let editorCatalog: ReviewedRouteEditorCatalog
+  public let editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog
   public let routeAuthoringRecipe: ReleasedRouteAuthoringRecipe
   public let runtimePolicy: ReleasedNavigationRuntimePolicy
   public let matcherCorridor: RouteMatcherCorridor
@@ -127,6 +133,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     editorCatalog: ReviewedRouteEditorCatalog,
+    editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog,
     runtimePolicy: ReleasedNavigationRuntimePolicy,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
@@ -137,6 +144,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       networkSnapshot: networkSnapshot,
       routePlan: routePlan,
       editorCatalog: editorCatalog,
+      editorPresentationCatalog: editorPresentationCatalog,
       runtimePolicy: runtimePolicy,
       matcherCorridor: matcherCorridor,
       decisionZones: decisionZones,
@@ -155,6 +163,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     self.networkSnapshot = networkSnapshot
     self.routePlan = routePlan
     self.editorCatalog = editorCatalog
+    self.editorPresentationCatalog = editorPresentationCatalog
     self.routeAuthoringRecipe = routeAuthoringRecipe
     self.runtimePolicy = runtimePolicy
     self.matcherCorridor = matcherCorridor
@@ -167,6 +176,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     editorCatalog: ReviewedRouteEditorCatalog,
+    editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog,
     runtimePolicy: ReleasedNavigationRuntimePolicy,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
@@ -197,6 +207,11 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     }
     if editorCatalog.networkSnapshotID != networkSnapshot.id {
       issues.append(.editorCatalogSnapshotMismatch)
+    }
+    let editorPresentationIssues =
+      editorPresentationCatalog.validationIssues(for: editorCatalog)
+    if !editorPresentationIssues.isEmpty {
+      issues.append(.invalidEditorPresentationCatalog(editorPresentationIssues))
     }
     let routeAuthoringRecipe: ReleasedRouteAuthoringRecipe?
     do {

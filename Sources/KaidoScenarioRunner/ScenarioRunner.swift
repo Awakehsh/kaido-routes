@@ -744,6 +744,9 @@ private struct ScenarioHarness {
   private mutating func validateNavigationReleaseBundle() throws {
     guard let routePlan = scenario.given.routePlan,
       let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let presentationValue = scenario.given.inputs.object(
+        "route_editor_presentation_catalog"
+      ),
       let runtimePolicyValue = scenario.given.inputs.object(
         "navigation_runtime_policy"
       ),
@@ -754,6 +757,9 @@ private struct ScenarioHarness {
     }
     let junctionViewValues = scenario.given.inputs.array("junction_views") ?? []
     let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let presentationCatalog = try reviewedRouteEditorPresentationCatalog(
+      presentationValue
+    )
     let runtimePolicy = try navigationRuntimePolicy(runtimePolicyValue)
     let corridor = try routeMatcherCorridor(corridorValue)
     let decisionZones = try decisionZoneValues.map { value in
@@ -778,6 +784,7 @@ private struct ScenarioHarness {
         networkSnapshot: scenario.given.networkSnapshot,
         routePlan: routePlan,
         editorCatalog: catalog,
+        editorPresentationCatalog: presentationCatalog,
         runtimePolicy: runtimePolicy,
         matcherCorridor: corridor,
         decisionZones: decisionZones,
@@ -827,6 +834,9 @@ private struct ScenarioHarness {
         "navigation_release_editor_catalog_id"
       ),
       let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let presentationValue = scenario.given.inputs.object(
+        "route_editor_presentation_catalog"
+      ),
       let runtimePolicyValue = scenario.given.inputs.object(
         "navigation_runtime_policy"
       ),
@@ -841,6 +851,9 @@ private struct ScenarioHarness {
     }
 
     let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let presentationCatalog = try reviewedRouteEditorPresentationCatalog(
+      presentationValue
+    )
     let runtimePolicy = try navigationRuntimePolicy(runtimePolicyValue)
     let corridor = try routeMatcherCorridor(corridorValue)
     let decisionZones = try decisionZoneValues.map { value in
@@ -912,6 +925,7 @@ private struct ScenarioHarness {
       sourceRegistry: NavigationReleaseSourceRegistry(references: sources),
       assetEvidence: evidence,
       editorCatalog: catalog,
+      editorPresentationCatalog: presentationCatalog,
       runtimePolicy: runtimePolicy,
       matcherCorridor: corridor,
       decisionZones: decisionZones,
@@ -3069,6 +3083,82 @@ private struct ScenarioHarness {
       decisionPoints: decisionPoints,
       lapTemplates: lapTemplates
     )
+  }
+
+  private func reviewedRouteEditorPresentationCatalog(
+    _ value: [String: JSONValue]
+  ) throws -> ReviewedRouteEditorPresentationCatalog {
+    guard let entranceValues = value.array("entrances"),
+      let decisionPointValues = value.array("decision_points"),
+      let choiceValues = value.array("choices")
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "route_editor_presentation_catalog"
+      )
+    }
+    let entrances = try entranceValues.map { rawValue in
+      guard let presentation = rawValue.objectValue,
+        let title = presentation.object("title")
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "route_editor_presentation_catalog.entrances"
+        )
+      }
+      return ReviewedRouteEditorEntrancePresentation(
+        facilityID: try presentation.requiredString("facility_id"),
+        title: try routeEditorLocalizedText(title)
+      )
+    }
+    let decisionPoints = try decisionPointValues.map { rawValue in
+      guard let presentation = rawValue.objectValue,
+        let title = presentation.object("title")
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "route_editor_presentation_catalog.decision_points"
+        )
+      }
+      return ReviewedRouteEditorDecisionPresentation(
+        decisionPointID: try presentation.requiredString("decision_point_id"),
+        title: try routeEditorLocalizedText(title)
+      )
+    }
+    let choices = try choiceValues.map { rawValue in
+      guard let presentation = rawValue.objectValue,
+        let title = presentation.object("title"),
+        let detail = presentation.object("detail")
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "route_editor_presentation_catalog.choices"
+        )
+      }
+      return ReviewedRouteEditorChoicePresentation(
+        choiceID: try presentation.requiredString("choice_id"),
+        title: try routeEditorLocalizedText(title),
+        detail: try routeEditorLocalizedText(detail)
+      )
+    }
+    return ReviewedRouteEditorPresentationCatalog(
+      id: try value.requiredString("presentation_catalog_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      entrances: entrances,
+      decisionPoints: decisionPoints,
+      choices: choices
+    )
+  }
+
+  private func routeEditorLocalizedText(
+    _ value: [String: JSONValue]
+  ) throws -> RouteEditorLocalizedText {
+    guard Set(value.keys) == Set(KaidoReleaseLocale.allCases.map(\.rawValue)) else {
+      throw ScenarioExecutionError.invalidInput(
+        "route_editor_presentation_catalog.localized_text"
+      )
+    }
+    var localizedValues: [KaidoReleaseLocale: String] = [:]
+    for locale in KaidoReleaseLocale.allCases {
+      localizedValues[locale] = try value.requiredString(locale.rawValue)
+    }
+    return RouteEditorLocalizedText(values: localizedValues)
   }
 
   private func routeEditorInteraction(

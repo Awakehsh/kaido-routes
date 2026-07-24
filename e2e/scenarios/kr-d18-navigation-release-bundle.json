@@ -79,6 +79,45 @@
           }
         ]
       },
+      "route_editor_presentation_catalog": {
+        "presentation_catalog_id": "test.editor-presentation.release-bundle-v1",
+        "network_snapshot_id": "test.snapshot.release-bundle-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.directional",
+            "title": {
+              "ja-JP": "テスト入口",
+              "zh-Hans": "测试入口",
+              "en": "Test entrance"
+            }
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.exit",
+            "title": {
+              "ja-JP": "テスト分岐",
+              "zh-Hans": "测试分岔",
+              "en": "Test decision"
+            }
+          }
+        ],
+        "choices": [
+          {
+            "choice_id": "test.choice.exit",
+            "title": {
+              "ja-JP": "出口へ",
+              "zh-Hans": "驶向出口",
+              "en": "Take exit"
+            },
+            "detail": {
+              "ja-JP": "確認済みの方向別出口を使用",
+              "zh-Hans": "使用已审核的方向性出口",
+              "en": "Use the reviewed directional exit"
+            }
+          }
+        ]
+      },
       "navigation_runtime_policy": {
         "runtime_policy_id": "test.runtime-policy.release-bundle-v1",
         "network_snapshot_id": "test.snapshot.release-bundle-v1",

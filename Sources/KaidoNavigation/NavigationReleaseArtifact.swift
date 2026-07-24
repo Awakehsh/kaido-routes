@@ -4,6 +4,7 @@ import KaidoRouting
 
 public enum NavigationReleaseAssetRole: String, Codable, CaseIterable, Hashable, Sendable {
   case editorCatalog = "EDITOR_CATALOG"
+  case editorPresentation = "EDITOR_PRESENTATION"
   case runtimePolicy = "RUNTIME_POLICY"
   case matcherCorridor = "MATCHER_CORRIDOR"
   case decisionZone = "DECISION_ZONE"
@@ -137,7 +138,7 @@ public struct NavigationReleaseAssetEvidence: Codable, Equatable, Sendable {
 /// must construct `NavigationRelease`, which validates provenance coverage and
 /// reuses the complete `NavigationReleaseBundle` integrity gate.
 public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "2.0"
+  public static let currentSchemaVersion = "3.0"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -148,6 +149,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
   public let sourceRegistry: NavigationReleaseSourceRegistry
   public let assetEvidence: [NavigationReleaseAssetEvidence]
   public let editorCatalog: ReviewedRouteEditorCatalog
+  public let editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog
   public let runtimePolicy: ReleasedNavigationRuntimePolicy?
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
@@ -164,6 +166,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     sourceRegistry: NavigationReleaseSourceRegistry,
     assetEvidence: [NavigationReleaseAssetEvidence],
     editorCatalog: ReviewedRouteEditorCatalog,
+    editorPresentationCatalog: ReviewedRouteEditorPresentationCatalog,
     runtimePolicy: ReleasedNavigationRuntimePolicy?,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
@@ -179,6 +182,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     self.sourceRegistry = sourceRegistry
     self.assetEvidence = assetEvidence
     self.editorCatalog = editorCatalog
+    self.editorPresentationCatalog = editorPresentationCatalog
     self.runtimePolicy = runtimePolicy
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
@@ -196,6 +200,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     case sourceRegistry = "source_registry"
     case assetEvidence = "asset_evidence"
     case editorCatalog = "editor_catalog"
+    case editorPresentationCatalog = "editor_presentation_catalog"
     case runtimePolicy = "runtime_policy"
     case matcherCorridor = "matcher_corridor"
     case decisionZones = "decision_zones"
@@ -313,6 +318,7 @@ public struct NavigationRelease: Equatable, Sendable {
           networkSnapshot: artifact.networkSnapshot,
           routePlan: artifact.routePlan,
           editorCatalog: artifact.editorCatalog,
+          editorPresentationCatalog: artifact.editorPresentationCatalog,
           runtimePolicy: runtimePolicy,
           matcherCorridor: artifact.matcherCorridor,
           decisionZones: artifact.decisionZones,
@@ -397,6 +403,7 @@ public struct NavigationRelease: Equatable, Sendable {
       expectedAssetCounts[AssetKey(role: role, assetID: assetID), default: 0] += 1
     }
     expect(.editorCatalog, artifact.editorCatalogID)
+    expect(.editorPresentation, artifact.editorPresentationCatalog.id)
     if let runtimePolicy = artifact.runtimePolicy {
       expect(.runtimePolicy, runtimePolicy.id)
     }

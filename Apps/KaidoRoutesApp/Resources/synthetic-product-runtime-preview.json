@@ -11,6 +11,15 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "test.editor-presentation.release-bundle",
+        "checked_at" : "2026-07-23",
+        "role" : "EDITOR_PRESENTATION",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "test.runtime-policy.release-bundle",
         "checked_at" : "2026-07-23",
         "role" : "RUNTIME_POLICY",
@@ -159,6 +168,58 @@
       "network_snapshot_id" : "test.snapshot.release-bundle"
     },
     "editor_catalog_id" : "test.catalog.release-bundle",
+    "editor_presentation_catalog" : {
+      "choices" : [
+        {
+          "choice_id" : "test.choice.loop",
+          "detail" : {
+            "en" : "Continue the reviewed loop",
+            "ja-JP" : "確認済みの周回を続ける",
+            "zh-Hans" : "继续已审核的循环路线"
+          },
+          "title" : {
+            "en" : "Continue loop",
+            "ja-JP" : "周回を続ける",
+            "zh-Hans" : "继续循环"
+          }
+        },
+        {
+          "choice_id" : "test.choice.exit",
+          "detail" : {
+            "en" : "Use the reviewed directional exit",
+            "ja-JP" : "確認済みの方向別出口を使用",
+            "zh-Hans" : "使用已审核的方向性出口"
+          },
+          "title" : {
+            "en" : "Take exit",
+            "ja-JP" : "出口へ",
+            "zh-Hans" : "驶向出口"
+          }
+        }
+      ],
+      "decision_points" : [
+        {
+          "decision_point_id" : "test.decision.loop",
+          "title" : {
+            "en" : "Test loop decision",
+            "ja-JP" : "テスト周回分岐",
+            "zh-Hans" : "测试循环分岔"
+          }
+        }
+      ],
+      "entrances" : [
+        {
+          "facility_id" : "test.entrance",
+          "title" : {
+            "en" : "Test entrance",
+            "ja-JP" : "テスト入口",
+            "zh-Hans" : "测试入口"
+          }
+        }
+      ],
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "presentation_catalog_id" : "test.editor-presentation.release-bundle"
+    },
     "junction_views" : [
       {
         "evidence" : {
@@ -711,7 +772,7 @@
       "route_plan_id" : "test.plan.release-bundle",
       "runtime_policy_id" : "test.runtime-policy.release-bundle"
     },
-    "schema_version" : "2.0",
+    "schema_version" : "3.0",
     "source_registry" : {
       "references" : [
         {
@@ -723,6 +784,7 @@
           "roles" : [
             "DECISION_ZONE",
             "EDITOR_CATALOG",
+            "EDITOR_PRESENTATION",
             "GUIDANCE",
             "JUNCTION_VIEW",
             "MATCHER_CORRIDOR",
@@ -1101,5 +1163,5 @@
     "evidence_scope" : "SYNTHETIC_TEST_ONLY",
     "live_input_policy" : "DISABLED"
   },
-  "schema_version" : "3.0"
+  "schema_version" : "4.0"
 }

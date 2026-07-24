@@ -119,6 +119,7 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     sourceRegistry: validNavigation.sourceRegistry,
     assetEvidence: validNavigation.assetEvidence,
     editorCatalog: validNavigation.editorCatalog,
+    editorPresentationCatalog: validNavigation.editorPresentationCatalog,
     runtimePolicy: validNavigation.runtimePolicy,
     matcherCorridor: validNavigation.matcherCorridor,
     decisionZones: validNavigation.decisionZones,
@@ -126,7 +127,7 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     junctionViews: validNavigation.junctionViews
   )
   let artifact = KaidoProductReleaseArtifact(
-    schemaVersion: "4.0",
+    schemaVersion: "5.0",
     releaseID: "test.product-release.future-navigation",
     releasedAt: "2026-07-24T12:00:00+09:00",
     navigationRelease: futureNavigation,
@@ -591,6 +592,7 @@ private func productNavigationReleaseArtifact(
     ),
     assetEvidence: artifact.assetEvidence,
     editorCatalog: artifact.editorCatalog,
+    editorPresentationCatalog: artifact.editorPresentationCatalog,
     runtimePolicy: artifact.runtimePolicy,
     matcherCorridor: artifact.matcherCorridor,
     decisionZones: artifact.decisionZones,

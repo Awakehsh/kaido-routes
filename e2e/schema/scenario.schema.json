@@ -362,6 +362,77 @@
         }
       }
     },
+    "saved_route_library": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "saved_route_id",
+        "display_name",
+        "saved_at",
+        "origin",
+        "evidence_state",
+        "template_parameters",
+        "release_candidates"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "saved_route_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "saved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "origin": {
+          "enum": ["AUTHORED_HERE", "SHARED_IMPORT"]
+        },
+        "evidence_state": {
+          "enum": [
+            "COMMUNITY_CANDIDATE",
+            "OFFICIAL_CHECKED",
+            "FIELD_CHECKED",
+            "RELEASED",
+            "STALE_REVIEW_REQUIRED"
+          ]
+        },
+        "template_parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "release_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["release_id", "route_plan_relation"],
+            "properties": {
+              "release_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "route_plan_relation": {
+                "enum": ["EXACT", "SNAPSHOT_DRIFT"]
+              },
+              "network_snapshot_id": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
     "given": {
       "type": "object",
       "additionalProperties": false,
@@ -387,6 +458,9 @@
             },
             "pre_drive_session": {
               "$ref": "#/$defs/pre_drive_session"
+            },
+            "saved_route_library": {
+              "$ref": "#/$defs/saved_route_library"
             }
           }
         },

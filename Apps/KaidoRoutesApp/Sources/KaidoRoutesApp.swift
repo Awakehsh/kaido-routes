@@ -1,4 +1,6 @@
 import Foundation
+import KaidoAppleAdapters
+import KaidoDomain
 import SwiftUI
 
 @main
@@ -31,10 +33,57 @@ struct KaidoRoutesApp: App {
         KaidoProductJourneyView(
           model: .reviewPreview()
         )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-SAVED-ROUTE-LIBRARY-PREVIEW"
+      ) {
+        SavedRouteLibraryPreviewHost()
       } else {
-        KaidoProductJourneyView()
+        KaidoProductJourneyView(
+          model: KaidoProductJourneyModel(
+            composition: .production()
+          )
+        )
       }
     }
+  }
+}
+
+private struct SavedRouteLibraryPreviewHost: View {
+  @StateObject private var model: KaidoProductJourneyModel
+
+  init() {
+    let store = PreviewSavedRouteLibraryStore()
+    let composition = KaidoRoutesAppModel(
+      savedRouteStore: store
+    )
+    let model = KaidoProductJourneyModel(
+      composition: composition
+    )
+    composition.routeEditor.select(
+      choiceID: "preview.synthetic.choice.early-exit"
+    )
+    composition.routeEditor.compile()
+    model.go(to: .review)
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    KaidoProductJourneyView(model: model)
+  }
+}
+
+@MainActor
+private final class PreviewSavedRouteLibraryStore:
+  SavedRouteLibraryStoring
+{
+  private var library: SavedRouteLibraryDocument?
+
+  func load() throws -> SavedRouteLibraryDocument? {
+    library
+  }
+
+  func save(_ library: SavedRouteLibraryDocument) throws {
+    self.library = library
   }
 }
 

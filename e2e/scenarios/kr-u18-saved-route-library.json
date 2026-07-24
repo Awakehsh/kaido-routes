@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U18",
+  "title": "Saved route reopens only through one exact current release",
+  "layer": "IPHONE_UI",
+  "tags": ["saved-route", "library", "release", "occurrence"],
+  "purpose": "Persist one complete occurrence-based shared route, preserve its source and evidence state, and select only one whole-RoutePlan-equal current release without silently migrating a stale snapshot or granting navigation authority.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This proves deterministic saved-route storage and current-release selection only.",
+      "The selected release ID reopens a parked release-owned editor; it does not compile, execute, migrate, or authorize the saved route."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.saved-route-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-25T05:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.saved-route",
+      "network_snapshot_id": "test.snapshot.saved-route-v1",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "STRICT",
+      "actual_distance_km": 19.2,
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.loop-1",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "test.occurrence.turn",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.turn",
+          "toll_domain_id": "test.toll.shuto"
+        },
+        {
+          "occurrence_id": "test.occurrence.loop-2",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop",
+          "toll_domain_id": "test.toll.shuto"
+        }
+      ]
+    },
+    "inputs": {
+      "saved_route_library": {
+        "schema_version": "1.0",
+        "saved_route_id": "test.saved-route.loop",
+        "display_name": "Two-loop night route",
+        "saved_at": "2026-07-25T05:10:00+09:00",
+        "origin": "AUTHORED_HERE",
+        "evidence_state": "COMMUNITY_CANDIDATE",
+        "template_parameters": {
+          "lap_count": "2"
+        },
+        "release_candidates": [
+          {
+            "release_id": "test.release.stale-snapshot",
+            "route_plan_relation": "SNAPSHOT_DRIFT",
+            "network_snapshot_id": "test.snapshot.saved-route-v2"
+          },
+          {
+            "release_id": "test.release.exact",
+            "route_plan_relation": "EXACT"
+          }
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "PLANNING"
+    }
+  },
+  "when": [
+    {
+      "id": "save-and-match-route",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "library-round-trip-passes",
+      "after": "save-and-match-route",
+      "category": "DOMAIN",
+      "subject": "saved_route.library.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Only a fully valid versioned library value may be persisted and reopened."
+    },
+    {
+      "id": "library-schema-is-explicit",
+      "after": "save-and-match-route",
+      "category": "DOMAIN",
+      "subject": "saved_route.library.schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "Saved-route persistence cannot silently reinterpret an unknown schema."
+    },
+    {
+      "id": "record-identity-survives",
+      "after": "save-and-match-route",
+      "category": "DOMAIN",
+      "subject": "saved_route.library.record_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.saved-route.loop"],
+      "rationale": "The user-visible saved record retains one stable identity."
+    },
+    {
+      "id": "local-origin-survives",
+      "after": "save-and-match-route",
+      "category": "EVIDENCE",
+      "subject": "saved_route.library.origins",
+      "matcher": "EQUALS",
+      "expected": ["AUTHORED_HERE"],
+      "rationale": "Local authoring and external sharing remain distinct storage provenance."
+    },
+    {
+      "id": "evidence-is-not-upgraded",
+      "after": "save-and-match-route",
+      "category": "EVIDENCE",
+      "subject": "saved_route.library.evidence_states",
+      "matcher": "EQUALS",
+      "expected": ["COMMUNITY_CANDIDATE"],
+      "rationale": "Saving a route cannot promote its evidence state."
+    },
+    {
+      "id": "occurrences-remain-ordered",
+      "after": "save-and-match-route",
+      "category": "DOMAIN",
+      "subject": "saved_route.library.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1",
+        "test.occurrence.turn",
+        "test.occurrence.loop-2"
+      ],
+      "rationale": "The saved value retains every route occurrence in exact authored order."
+    },
+    {
+      "id": "repeated-entity-remains-repeated",
+      "after": "save-and-match-route",
+      "category": "DOMAIN",
+      "subject": "saved_route.library.entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.edge.loop",
+        "test.movement.turn",
+        "test.edge.loop"
+      ],
+      "rationale": "Persistence never deduplicates repeated traversal of one road entity."
+    },
+    {
+      "id": "one-current-release-is-selected",
+      "after": "save-and-match-route",
+      "category": "SAFETY",
+      "subject": "saved_route.release_selection.status",
+      "matcher": "EQUALS",
+      "expected": "SELECTED",
+      "rationale": "A saved route may reopen only when exactly one current candidate owns the same whole RoutePlan."
+    },
+    {
+      "id": "stale-snapshot-is-not-selected",
+      "after": "save-and-match-route",
+      "category": "SAFETY",
+      "subject": "saved_route.release_selection.release_id",
+      "matcher": "EQUALS",
+      "expected": "test.release.exact",
+      "rationale": "The snapshot-drifted candidate cannot be treated as an implicit migration."
+    }
+  ]
+}

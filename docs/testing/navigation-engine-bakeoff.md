@@ -476,7 +476,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 60 scenarios with 417 semantic assertions executable at L1/L2. KR-S16
+   current 61 scenarios with 426 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
@@ -493,7 +493,9 @@ gate.
    reasons into an iPhone-intended explanation without giving UI ranking
    authority; KR-U17 projects one exact released atlas and actor snapshot into
    occurrence-aware route state without deduplicating repeated schematic
-   segments or promoting context geometry; KR-D25 round-trips one
+   segments or promoting context geometry; KR-U18 persists the complete shared
+   route and reopens only through one whole-RoutePlan-equal current release,
+   without migration or navigation authority; KR-D25 round-trips one
    provenance-covered navigation release
    artifact and rejects unknown artifact schemas before runtime; KR-D26 keeps
    independently valid navigation and Route Atlas artifacts product-blocked

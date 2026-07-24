@@ -171,6 +171,62 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testSavedRoutePersistsAndReturnsToLibraryWithoutAuthority() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-SAVED-ROUTE-LIBRARY-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "en",
+    ]
+    app.launch()
+
+    let stage = element("product-journey-stage", in: app)
+    XCTAssertTrue(stage.waitForExistence(timeout: 5))
+    XCTAssertEqual(stage.value as? String, "REVIEW")
+
+    _ = reveal("saved-route-save-panel", in: app)
+    let name = element("saved-route-name", in: app)
+    name.tap()
+    name.typeText("Night loop")
+    let returnKey = app.keyboards.buttons["return"]
+    XCTAssertTrue(returnKey.exists)
+    returnKey.tap()
+
+    let save = reveal("saved-route-save", in: app)
+    XCTAssertTrue(save.isEnabled)
+    save.tap()
+    XCTAssertTrue(
+      element("saved-route-save-success", in: app)
+        .waitForExistence(timeout: 5)
+    )
+
+    element("product-journey-back", in: app).tap()
+    XCTAssertEqual(stage.value as? String, "AUTHORING")
+    element("product-journey-step-atlas", in: app).tap()
+    XCTAssertEqual(stage.value as? String, "ATLAS")
+
+    let library = reveal("saved-route-library", in: app)
+    XCTAssertTrue((library.value as? String)?.hasPrefix("1 RECORDS") == true)
+    let savedName = app.staticTexts["Night loop"]
+    XCTAssertTrue(savedName.exists)
+    for _ in 0..<8 where !savedName.isHittable {
+      app.swipeUp()
+    }
+    XCTAssertTrue(savedName.isHittable)
+    let open = app.buttons["Open in parked editor"]
+    XCTAssertTrue(open.exists)
+    XCTAssertFalse(open.isEnabled)
+    XCTAssertTrue(app.staticTexts["REVIEW REQUIRED"].exists)
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Saved route remains release-gated"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
   private func element(
     _ identifier: String,
     in app: XCUIApplication

@@ -258,3 +258,20 @@ occurrence identity or order; it does not silently repair or migrate them.
 Community routes should initially import as `COMMUNITY_CANDIDATE`. They remain
 non-navigable until the compiler validates current topology and a reviewer checks
 the safety-critical movements and signs. Popularity never upgrades evidence.
+
+The first iPhone saved-route library persists named local routes separately
+from navigation authority. Saving stores the complete versioned shared document
+and records whether it was authored here or externally imported. A saved route
+may show that review is required indefinitely; the App never hides or migrates
+it merely because a newer graph exists.
+
+When exactly one current foreground product release owns the identical whole
+RoutePlan, **Open in parked editor** selects that release and nothing more. The
+user must still submit every release-owned choice, compile the exact route,
+select the tariff profile, obtain current pre-drive evidence, and explicitly
+start navigation. A save or import cannot bypass those steps.
+
+The first App surface supports local save, listing, and exact-release reopening.
+Rename, delete, export, and shared-document import controls remain pending; the
+`SHARED_IMPORT` origin is already part of the storage contract so a later import
+adapter cannot erase provenance.

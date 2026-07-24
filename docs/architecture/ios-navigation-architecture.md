@@ -1353,6 +1353,16 @@ For the first small graph:
 - store saved route plans as occurrence-based records tied to a snapshot ID;
 - reject incompatible or partially migrated snapshots before navigation.
 
+The first saved-route implementation follows that direction without adopting a
+UI object graph. `FileSavedRouteLibraryStore` atomically replaces one validated
+schema-1.0 library under Application Support. Every record contains a complete
+`SharedRouteDocument`; storage origin remains separate from its evidence state.
+The App can reopen a record only after `SavedRouteReleaseMatcher` finds exactly
+one whole-RoutePlan-equal current foreground release. Reopening selects that
+release's parked `ReleasedRouteEditorAdapter`; it does not replay choices,
+compile, admit pre-drive evidence, or start navigation. Missing, corrupt,
+snapshot-drifted, or ambiguous state stays fail-closed.
+
 Do not use SwiftData object relationships as the routing graph. The graph needs
 explicit adjacency, stable IDs, spatial queries, and deterministic snapshot
 loading rather than UI-oriented object persistence.

@@ -148,6 +148,19 @@ occurrences, drops toll-domain bindings, changes evidence state, or migrates the
 plan to a newer snapshot. Snapshot migration remains a separate reviewed compile
 operation.
 
+Local persistence wraps that unchanged value in a schema-1.0
+`SavedRouteLibraryDocument`. Each `SavedRouteRecord` adds only a stable record
+ID, user-visible name, saved time, and `AUTHORED_HERE` or `SHARED_IMPORT`
+storage origin. The codec validates every embedded shared document and unique
+record identity before an atomic write. Library metadata cannot upgrade
+evidence, rewrite the snapshot, or reorder occurrences.
+
+`SavedRouteReleaseMatcher` is selection-only. It compares the complete saved
+`RoutePlan` value against independently validated current release candidates.
+Zero matches are unavailable, multiple matches are ambiguous, and only one
+whole-value match returns a release ID. The result does not compile, migrate,
+or execute the route.
+
 ## Reviewed route-component requirements
 
 A friendly route template may span multiple official route names. Its

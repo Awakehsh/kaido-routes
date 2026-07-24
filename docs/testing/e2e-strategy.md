@@ -452,6 +452,18 @@ the three separately numbered tracks and retains a screenshot. This is
 synthetic renderer evidence only: it does not release Shuto topology, calibrate
 a position marker, or prove physical-device layout.
 
+KR-U18 adds saved-route persistence and reopening without treating storage as
+authority. Its schema-1.0 library record contains one complete
+`SharedRouteDocument` with a repeated road entity, local-authoring origin, and
+unchanged community-candidate evidence. The portable runner round-trips that
+value and selects the one whole-RoutePlan-equal release candidate while
+rejecting a snapshot-drifted candidate. Package tests cover corrupt metadata,
+duplicate identities, zero/one/multiple current matches, unsafe candidate
+identity, and atomic file storage. App tests prove that a saved released route
+only selects the release-owned parked editor with no automatic choice or
+compilation; the UI test saves a synthetic route, returns to the library, and
+keeps its open action disabled as `REVIEW REQUIRED`.
+
 KR-U16 adds package and L3 process-lifecycle evidence without inventing a
 portable Apple scene event. A schema-1.0 checkpoint round-trips deterministic
 coordinate-free state, fails on release identity or schema drift, clears partial

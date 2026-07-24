@@ -100,6 +100,13 @@ The current app deliberately composes only:
   occurrence tracks, preserves repeated traversals with separate ordinal
   markers, keeps source/licence attribution adjacent, and never invents a
   vehicle position;
+- an Application Support saved-route library whose atomically replaced
+  schema-1.0 file retains complete shared documents, storage origin, evidence
+  state, snapshot, and ordered occurrences; only one whole-RoutePlan-equal
+  foreground release can reopen a record in the parked release-owned editor,
+  with no automatic choices, compilation, evidence admission, or navigation;
+- local rename, delete, export, and shared-document import controls are not yet
+  implemented; the current App surface saves and reopens only;
 - a dormant released-road navigation surface that can be constructed only from
   one exact foreground catalog selection, separates the bound release key from
   user-started live input, renders only actor-owned projections, and preserves

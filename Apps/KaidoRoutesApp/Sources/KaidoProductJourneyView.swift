@@ -238,6 +238,15 @@ struct KaidoProductJourneyView: View {
           + " RELEASED ROAD · "
           + "\(model.composition.productReleaseCatalog.demoEntries.count) DEMO"
       )
+
+      SavedRouteLibraryPanel(
+        model: model.composition.savedRouteLibrary,
+        openRecord: { recordID in
+          withAnimation(stageAnimation) {
+            model.openSavedRoute(recordID)
+          }
+        }
+      )
     }
   }
 
@@ -349,6 +358,14 @@ struct KaidoProductJourneyView: View {
 
       ReleasedRouteAtlasOverlayContainer(
         presentation: model.routeAtlasOverlayPresentation
+      )
+
+      SavedRouteSavePanel(
+        library: model.composition.savedRouteLibrary,
+        routePlan: model.compiledRoutePlan,
+        save: {
+          model.saveCompiledRoute(named: $0)
+        }
       )
 
       GuidanceVoiceSetupPanel(

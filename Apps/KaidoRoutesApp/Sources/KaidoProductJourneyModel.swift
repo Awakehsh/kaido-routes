@@ -31,6 +31,9 @@ enum KaidoProductJourneyBlocker: String, Equatable, Sendable {
   case releasedPreDriveEvidenceUnavailable =
     "RELEASED_PRE_DRIVE_EVIDENCE_UNAVAILABLE"
   case navigationRuntimeUnavailable = "NAVIGATION_RUNTIME_UNAVAILABLE"
+  case savedRouteUnavailable = "SAVED_ROUTE_RELEASE_UNAVAILABLE"
+  case savedRouteAmbiguous = "SAVED_ROUTE_RELEASE_AMBIGUOUS"
+  case savedRouteInvalid = "SAVED_ROUTE_INVALID"
 }
 
 @MainActor
@@ -285,6 +288,54 @@ final class KaidoProductJourneyModel: ObservableObject {
     } catch {
       navigationRuntime = nil
       lastBlocker = .navigationRuntimeUnavailable
+    }
+  }
+
+  func saveCompiledRoute(named displayName: String) {
+    let evidenceState: SharedRouteEvidenceState
+    if case .selected(let entry) = productReleaseSelection,
+      entry.release.navigation.bundle.routePlan == compiledRoutePlan
+    {
+      evidenceState = .released
+    } else {
+      evidenceState = .communityCandidate
+    }
+    composition.savedRouteLibrary.save(
+      routePlan: compiledRoutePlan,
+      displayName: displayName,
+      evidenceState: evidenceState
+    )
+    objectWillChange.send()
+  }
+
+  func openSavedRoute(_ recordID: String) {
+    guard
+      let record = composition.savedRouteLibrary.record(id: recordID)
+    else {
+      lastBlocker = .savedRouteInvalid
+      return
+    }
+    switch composition.savedRouteLibrary.availability(for: record) {
+    case .selected(let releaseID):
+      guard
+        let authoring = composition.releasedRouteAuthoring
+      else {
+        lastBlocker = .savedRouteUnavailable
+        return
+      }
+      authoring.selectRelease(releaseID)
+      guard authoring.selectedReleaseID == releaseID else {
+        lastBlocker = .savedRouteInvalid
+        return
+      }
+      stage = .authoring
+      lastBlocker = nil
+    case .unavailable:
+      lastBlocker = .savedRouteUnavailable
+    case .ambiguous:
+      lastBlocker = .savedRouteAmbiguous
+    case .invalid:
+      lastBlocker = .savedRouteInvalid
     }
   }
 

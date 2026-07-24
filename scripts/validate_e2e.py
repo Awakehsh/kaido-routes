@@ -75,6 +75,8 @@ PRODUCT_LIVE_INPUT_POLICIES = {
     "DISABLED",
     "FOREGROUND_WHEN_IN_USE",
 }
+SAVED_ROUTE_ORIGINS = {"AUTHORED_HERE", "SHARED_IMPORT"}
+SAVED_ROUTE_PLAN_RELATIONS = {"EXACT", "SNAPSHOT_DRIFT"}
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
     "ROUTE_EDITOR_STARTED",
@@ -495,6 +497,83 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
                 v.add(
                     f"given.tariff_quotes[{index}].checked_at "
                     "must not postdate pre-drive evaluation"
+                )
+
+
+def validate_saved_route_library(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "saved_route_library" not in inputs:
+        return
+    value = inputs["saved_route_library"]
+    context = "given.inputs.saved_route_library"
+    required = {
+        "schema_version",
+        "saved_route_id",
+        "display_name",
+        "saved_at",
+        "origin",
+        "evidence_state",
+        "template_parameters",
+        "release_candidates",
+    }
+    if not v.require_keys(value, required, context):
+        return
+    if not isinstance(given.get("route_plan"), dict):
+        v.add(f"{context} requires given.route_plan")
+        return
+    for field in ("saved_route_id", "display_name"):
+        if not isinstance(value[field], str) or not value[field].strip():
+            v.add(f"{context}.{field} must be non-empty")
+    if value["schema_version"] != "1.0":
+        v.add(f"{context}.schema_version must be '1.0'")
+    if not is_datetime(value["saved_at"]):
+        v.add(f"{context}.saved_at must be an ISO date-time")
+    if value["origin"] not in SAVED_ROUTE_ORIGINS:
+        v.add(f"{context}.origin is unknown")
+    if value["evidence_state"] not in EVIDENCE_CLASSES - {"SYNTHETIC"}:
+        v.add(f"{context}.evidence_state is unknown")
+    parameters = value["template_parameters"]
+    if not isinstance(parameters, dict) or not all(
+        isinstance(key, str)
+        and key.strip()
+        and isinstance(parameter, str)
+        and parameter.strip()
+        for key, parameter in parameters.items()
+    ):
+        v.add(f"{context}.template_parameters must contain non-empty strings")
+    candidates = value["release_candidates"]
+    if not isinstance(candidates, list):
+        v.add(f"{context}.release_candidates must be an array")
+        return
+    release_ids: set[str] = set()
+    for index, candidate in enumerate(candidates):
+        candidate_context = f"{context}.release_candidates[{index}]"
+        if not v.require_keys(
+            candidate,
+            {"release_id", "route_plan_relation"},
+            candidate_context,
+        ):
+            continue
+        release_id = candidate["release_id"]
+        if not isinstance(release_id, str) or not release_id.strip():
+            v.add(f"{candidate_context}.release_id must be non-empty")
+        elif release_id in release_ids:
+            v.add(f"{candidate_context}.release_id must be unique")
+        release_ids.add(release_id)
+        relation = candidate["route_plan_relation"]
+        if relation not in SAVED_ROUTE_PLAN_RELATIONS:
+            v.add(f"{candidate_context}.route_plan_relation is unknown")
+        if relation == "SNAPSHOT_DRIFT":
+            snapshot_id = candidate.get("network_snapshot_id")
+            if not isinstance(snapshot_id, str) or not snapshot_id.strip():
+                v.add(
+                    f"{candidate_context}.network_snapshot_id is required "
+                    "for SNAPSHOT_DRIFT"
+                )
+            elif snapshot_id == given["route_plan"].get("network_snapshot_id"):
+                v.add(
+                    f"{candidate_context}.network_snapshot_id must differ "
+                    "from given.route_plan"
                 )
 
 
@@ -2330,6 +2409,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_pre_drive_evidence(v, given)
+        validate_saved_route_library(v, given)
         validate_guidance_anchors(v, given)
         validate_entrance_recommendation(v, given)
         validate_matcher_guidance_inputs(v, given)

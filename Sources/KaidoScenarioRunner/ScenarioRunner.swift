@@ -294,6 +294,90 @@ private struct ScenarioHarness {
   private mutating func compileRoute(_ payload: [String: JSONValue]) throws {
     let inputs = scenario.given.inputs
 
+    if let libraryValue = inputs.object("saved_route_library"),
+      let routePlan = scenario.given.routePlan
+    {
+      let parameterValues =
+        libraryValue.object("template_parameters") ?? [:]
+      guard parameterValues.values.allSatisfy({ $0.stringValue != nil }) else {
+        throw ScenarioExecutionError.invalidInput(
+          "saved_route_library.template_parameters"
+        )
+      }
+      guard
+        let origin = SavedRouteOrigin(
+          rawValue: try libraryValue.requiredString("origin")
+        ),
+        let evidenceState = SharedRouteEvidenceState(
+          rawValue: try libraryValue.requiredString("evidence_state")
+        )
+      else {
+        throw ScenarioExecutionError.invalidInput("saved_route_library")
+      }
+      let record = SavedRouteRecord(
+        id: try libraryValue.requiredString("saved_route_id"),
+        displayName: try libraryValue.requiredString("display_name"),
+        savedAt: try libraryValue.requiredString("saved_at"),
+        origin: origin,
+        document: SharedRouteDocument(
+          evidenceState: evidenceState,
+          templateParameters:
+            parameterValues.compactMapValues(\.stringValue),
+          routePlan: routePlan
+        )
+      )
+      let library = try SavedRouteLibraryCodec.decode(
+        SavedRouteLibraryCodec.encode(
+          SavedRouteLibraryDocument(
+            schemaVersion:
+              try libraryValue.requiredString("schema_version"),
+            records: [record]
+          )
+        )
+      )
+      let candidates = try (libraryValue.array("release_candidates") ?? []).map {
+        value -> SavedRouteReleaseCandidate in
+        guard let candidate = value.objectValue else {
+          throw ScenarioExecutionError.invalidInput(
+            "saved_route_library.release_candidates"
+          )
+        }
+        let candidatePlan: RoutePlan
+        switch try candidate.requiredString("route_plan_relation") {
+        case "EXACT":
+          candidatePlan = routePlan
+        case "SNAPSHOT_DRIFT":
+          candidatePlan = RoutePlan(
+            id: routePlan.id,
+            networkSnapshotID:
+              try candidate.requiredString("network_snapshot_id"),
+            entryFacilityID: routePlan.entryFacilityID,
+            exitFacilityID: routePlan.exitFacilityID,
+            recoveryPolicy: routePlan.recoveryPolicy,
+            actualDistanceKM: routePlan.actualDistanceKM,
+            occurrences: routePlan.occurrences
+          )
+        default:
+          throw ScenarioExecutionError.invalidInput(
+            "saved_route_library.route_plan_relation"
+          )
+        }
+        return SavedRouteReleaseCandidate(
+          releaseID: try candidate.requiredString("release_id"),
+          routePlan: candidatePlan
+        )
+      }
+      let selection = try SavedRouteReleaseMatcher.select(
+        record: library.records[0],
+        candidates: candidates
+      )
+      publishSavedRouteLibrary(
+        library,
+        selection: selection
+      )
+      return
+    }
+
     if let roundTrip = inputs.object("shared_route_round_trip"),
       let routePlan = scenario.given.routePlan
     {
@@ -1694,6 +1778,50 @@ private struct ScenarioHarness {
     adapterObservations["shared_route.template_parameters"] = .strings(
       document.templateParameters.map { "\($0.key)=\($0.value)" }.sorted()
     )
+  }
+
+  private mutating func publishSavedRouteLibrary(
+    _ library: SavedRouteLibraryDocument,
+    selection: SavedRouteReleaseSelection
+  ) {
+    adapterObservations["saved_route.library.status"] = .string("PASS")
+    adapterObservations["saved_route.library.schema_version"] = .string(
+      library.schemaVersion
+    )
+    adapterObservations["saved_route.library.record_ids"] = .strings(
+      library.records.map(\.id)
+    )
+    adapterObservations["saved_route.library.origins"] = .strings(
+      library.records.map(\.origin.rawValue)
+    )
+    adapterObservations["saved_route.library.evidence_states"] = .strings(
+      library.records.map(\.document.evidenceState.rawValue)
+    )
+    adapterObservations["saved_route.library.occurrence_ids"] = .strings(
+      library.records.flatMap {
+        $0.document.routePlan.occurrences.map(\.id)
+      }
+    )
+    adapterObservations["saved_route.library.entity_ids"] = .strings(
+      library.records.flatMap {
+        $0.document.routePlan.occurrences.map(\.entityID)
+      }
+    )
+    switch selection {
+    case .unavailable:
+      adapterObservations["saved_route.release_selection.status"] =
+        .string("UNAVAILABLE")
+    case .selected(let releaseID):
+      adapterObservations["saved_route.release_selection.status"] =
+        .string("SELECTED")
+      adapterObservations["saved_route.release_selection.release_id"] =
+        .string(releaseID)
+    case .ambiguous(let releaseIDs):
+      adapterObservations["saved_route.release_selection.status"] =
+        .string("AMBIGUOUS")
+      adapterObservations["saved_route.release_selection.release_ids"] =
+        .strings(releaseIDs)
+    }
   }
 
   private mutating func publish(_ recommendation: EntranceRecommendation) {

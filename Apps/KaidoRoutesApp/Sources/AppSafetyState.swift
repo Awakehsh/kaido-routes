@@ -124,6 +124,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let releasedRouteAuthoring: ReleasedProductRouteAuthoringModel?
+  let savedRouteLibrary: SavedRouteLibraryModel
   let preDriveReview: PreDriveReviewModel
   let languageSettings: KaidoLanguageSettingsModel
   let guidanceVoiceSetup: GuidanceVoiceSetupModel
@@ -138,6 +139,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   init(
     productReleaseCatalog injectedProductReleaseCatalog:
       BundledProductReleaseCatalog? = nil,
+    savedRouteStore: (any SavedRouteLibraryStoring)? = nil,
     releasedPreDriveEvidenceProvider:
       @escaping ReleasedProductRouteAuthoringModel.EvidenceProvider = {
         _, _ in nil
@@ -154,6 +156,11 @@ final class KaidoRoutesAppModel: ObservableObject {
           try BundledProductReleaseCatalogLoader.bundledPreview()
       }
       self.productReleaseCatalog = productReleaseCatalog
+      savedRouteLibrary = SavedRouteLibraryModel(
+        store: savedRouteStore,
+        foregroundEntries:
+          productReleaseCatalog.foregroundNavigationEntries
+      )
       routeAtlasAttributions = try RouteAtlasAttributionCatalog.bundled()
       entranceRecommendation = try EntranceRecommendationModel(
         routeEditor: routeEditor
@@ -216,9 +223,19 @@ final class KaidoRoutesAppModel: ObservableObject {
         }
         .store(in: &languageSettingsSubscriptions)
       }
+      savedRouteLibrary.objectWillChange.sink { [weak self] _ in
+        self?.objectWillChange.send()
+      }
+      .store(in: &languageSettingsSubscriptions)
     } catch {
       preconditionFailure("Invalid internal app fixture: \(error)")
     }
+  }
+
+  static func production() -> KaidoRoutesAppModel {
+    KaidoRoutesAppModel(
+      savedRouteStore: try? FileSavedRouteLibraryStore.applicationSupport()
+    )
   }
 
   func attribution(for mode: RouteAtlasMode) -> RouteAtlasAttribution {

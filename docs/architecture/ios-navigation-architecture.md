@@ -314,6 +314,29 @@ voice asset; when a device has only default quality, the preview says so rather
 than claiming neural or enhanced synthesis, and exposes the device Spoken
 Content installation path after real voice resolution.
 
+`GuidanceAudioRelease` is an optional higher-quality offline output layer, not a
+second guidance authority. Its manifest is bound to one exact product release,
+navigation release, network snapshot, and RoutePlan. It must contain exactly one
+record for every released guidance anchor occurrence and each supported speech
+locale. Each record preserves the exact reviewed spoken string and hashes both
+that string and one flat mono PCM16 WAV resource. Sample rate, duration, byte
+count, non-silence, generation or recording provenance, model revision, voice
+identifier, licence identifier, source URL, and generation/review chronology
+are validated before the pack can be admitted. One missing, extra, duplicate,
+corrupt, future-reviewed, or identity-drifted record rejects the whole pack.
+
+`ReleasedGuidanceAudioOutput` performs only exact
+`RoutePlan + prompt + anchor + anchor occurrence + locale + spoken text`
+resolution. A match is played by `AVAudioPlayerGuidancePlayback` through the
+same temporary `voicePrompt` audio-session policy. A miss or playback-start
+failure falls back to `AVSpeechGuidanceOutput`; a failure after recorded audio
+has started is terminal and cannot replay the consumed prompt in another voice.
+The product-release catalog must explicitly declare and SHA-256-pin an audio
+manifest before the runtime composes this output. No audio release is present in
+the current preview catalog. Locally generated auditions are selection evidence
+only and cannot enter navigation unless they are reviewed, complete, declared,
+and packaged through this release gate.
+
 The parked pre-drive sound check is a separate Apple-adapter boundary.
 `GuidanceVoiceSetupModel` may select Japanese, Simplified Chinese, or English,
 persist a device-local installed-voice preference for each language, and always
@@ -1167,7 +1190,7 @@ matched occurrence and progress
 → prompt stage
 → structured GuidanceFrame
 → localized display + reviewed spoken form
-→ phone / CarPlay / AVSpeech adapters
+→ phone / CarPlay / released offline audio or AVSpeech fallback
 ```
 
 The executable `GuidanceFrame` is a `KaidoDomain` value containing prompt, anchor,
@@ -1197,6 +1220,14 @@ callbacks from replaying an already admitted command. A new command replaces
 older in-flight speech, while stale completion callbacks cannot clear the newer
 identity. Audio interruptions drop, rather than queue, prompts so resumption
 does not deliver obsolete maneuver guidance.
+
+An optional `GuidanceAudioRelease` is complete and occurrence-scoped rather than
+a generic phrase cache. The manifest covers every released anchor and locale,
+binds exact spoken content and local WAV hashes to the same product and route
+identities, and is hash-pinned by the bundled release catalog. Exact matches use
+recorded playback; absent or unstartable assets fall back to the installed Apple
+voice. A prompt that already began recorded playback is never replayed after an
+interruption or decoder failure.
 
 `ReleasedGuidanceDefinition` binds that identity to a reviewed trigger distance
 and immutable frame template. For one anchor occurrence, thresholds advance from

@@ -20,6 +20,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertEqual(entry.descriptor.role, .demoOnly)
     XCTAssertGreaterThan(entry.encodedByteCount, 0)
     XCTAssertNil(entry.release.foregroundLiveInputAuthority)
+    XCTAssertNil(entry.guidanceAudioRelease)
   }
 
   func testContentMutationFailsAtManifestHashBeforeCodecAdmission() throws {
@@ -301,6 +302,35 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
         $0 as? BundledProductReleaseCatalogError,
         .releaseIdentityMismatch(
           driftedDescriptor.resourceFilename
+        )
+      )
+    }
+  }
+
+  func testDeclaredGuidanceAudioCannotSilentlyDisappear() throws {
+    let data = try bundledPreviewData()
+    let guidanceAudio = BundledGuidanceAudioReleaseDescriptor(
+      manifestResourceName: "test-guidance-audio",
+      expectedManifestSHA256: String(repeating: "0", count: 64),
+      expectedReleaseID: "test.guidance-audio.v1"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "synthetic-product-runtime-preview",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "preview.synthetic.product-release.v1",
+      role: .demoOnly,
+      guidanceAudio: guidanceAudio
+    )
+
+    XCTAssertThrowsError(
+      try load(descriptor: descriptor, data: data)
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .missingGuidanceAudioManifest(
+          guidanceAudio.manifestFilename
         )
       )
     }

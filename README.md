@@ -201,7 +201,20 @@ each language, and plays a fixed sample only while parked. Release locales are
 translated to exact Apple synthesis locales (`ja-JP`, `zh-CN`, and `en-US`)
 before voice resolution. The real one-shot output reads that preference only
 after an actor-owned prompt has been admitted; the independent audition output
-cannot create or consume a navigation prompt. The synthetic
+cannot create or consume a navigation prompt. Apple voice is now also an
+explicit fallback behind an optional offline guidance audio release. That
+release must cover every released guidance anchor occurrence in all three
+locales and bind each exact spoken string to a flat local PCM16 WAV resource,
+SHA-256 digest, byte count, audio metadata, model or recording provenance, and
+the same product, navigation, snapshot, and RoutePlan identities. The entire
+audio release is rejected for missing, extra, corrupt, silent, future-reviewed,
+or identity-drifted content. Runtime selection does not fuzz text or reuse
+another occurrence: an exact asset plays through `AVAudioPlayer`, while a lookup
+or playback-start failure uses the selected installed Apple voice. Interruption
+after recorded playback begins consumes the prompt without replaying it through
+fallback. The bundled product-release catalog can declare and hash-pin one such
+manifest; the current preview catalog declares none, and no audition output is
+presented as a reviewed release asset. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves

@@ -9,12 +9,14 @@ public enum GuidanceSpeechOutputFailureCode: String, Equatable, Sendable {
   case voiceUnavailable = "VOICE_UNAVAILABLE"
   case audioSessionConfigurationFailed = "AUDIO_SESSION_CONFIGURATION_FAILED"
   case audioSessionActivationFailed = "AUDIO_SESSION_ACTIVATION_FAILED"
+  case recordedAudioPlaybackFailed = "RECORDED_AUDIO_PLAYBACK_FAILED"
 }
 
 public enum GuidanceSpeechOutputError: Error, Equatable, Sendable {
   case voiceUnavailable(String)
   case audioSessionConfigurationFailed
   case audioSessionActivationFailed
+  case recordedAudioPlaybackFailed
 
   public var code: GuidanceSpeechOutputFailureCode {
     switch self {
@@ -24,6 +26,8 @@ public enum GuidanceSpeechOutputError: Error, Equatable, Sendable {
       .audioSessionConfigurationFailed
     case .audioSessionActivationFailed:
       .audioSessionActivationFailed
+    case .recordedAudioPlaybackFailed:
+      .recordedAudioPlaybackFailed
     }
   }
 }

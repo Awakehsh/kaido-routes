@@ -163,14 +163,25 @@ final class KaidoRoutesAppModel: ObservableObject {
   func makeForegroundNavigationRuntime(
     for entry: BundledProductReleaseEntry
   ) throws -> ProductNavigationRuntimeModel {
-    try ProductNavigationRuntimeModel(
+    let fallback = AVSpeechGuidanceOutput(
+      preferredVoiceIdentifierProvider: {
+        [guidanceVoicePreferenceStore] languageCode in
+        guidanceVoicePreferenceStore.identifier(for: languageCode)
+      }
+    )
+    let speechOutput: any GuidanceSpeechOutput
+    if let guidanceAudioRelease = entry.guidanceAudioRelease {
+      speechOutput = ReleasedGuidanceAudioOutput(
+        release: guidanceAudioRelease,
+        player: AVAudioPlayerGuidancePlayback(),
+        fallback: fallback
+      )
+    } else {
+      speechOutput = fallback
+    }
+    return try ProductNavigationRuntimeModel(
       releasedEntry: entry,
-      speechOutput: AVSpeechGuidanceOutput(
-        preferredVoiceIdentifierProvider: {
-          [guidanceVoicePreferenceStore] languageCode in
-          guidanceVoicePreferenceStore.identifier(for: languageCode)
-        }
-      ),
+      speechOutput: speechOutput,
       languageSelectionProvider: {
         [languageSettings] in
         NavigationLanguageSelection(

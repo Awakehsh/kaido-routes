@@ -4,6 +4,10 @@ import PackageDescription
 
 let package = Package(
   name: "KaidoRoutes",
+  platforms: [
+    .macOS(.v10_15),
+    .iOS(.v13),
+  ],
   products: [
     .library(name: "KaidoDomain", targets: ["KaidoDomain"]),
     .library(name: "KaidoRouting", targets: ["KaidoRouting"]),
@@ -37,6 +41,7 @@ let package = Package(
     .target(
       name: "KaidoAppleAdapters",
       dependencies: [
+        "KaidoDomain",
         "KaidoNavigation",
         "KaidoPresentation",
         "KaidoSurfaceRouting",

@@ -4,6 +4,7 @@ import KaidoNavigation
 enum SyntheticProductRuntimeFixtureError: Error, Equatable {
   case missingResource(String)
   case unexpectedReleaseIdentity
+  case unexpectedRuntimeUse
   case nonSyntheticSource
 }
 
@@ -47,6 +48,9 @@ struct SyntheticProductRuntimeFixture: Sendable {
     else {
       throw SyntheticProductRuntimeFixtureError.unexpectedReleaseIdentity
     }
+    guard artifact.runtimeUse == .syntheticTestOnlyDisabled else {
+      throw SyntheticProductRuntimeFixtureError.unexpectedRuntimeUse
+    }
 
     let navigationSources = artifact.navigationRelease.sourceRegistry.references
     let atlasSources = artifact.routeAtlasRelease.sourceRegistry.references
@@ -60,7 +64,11 @@ struct SyntheticProductRuntimeFixture: Sendable {
     }
 
     let release = try KaidoProductReleaseArtifactCodec.decode(data)
-    guard release.releaseID == expectedProductReleaseID else {
+    guard
+      release.releaseID == expectedProductReleaseID,
+      release.runtimeUse == .syntheticTestOnlyDisabled,
+      release.foregroundLiveInputAuthority == nil
+    else {
       throw SyntheticProductRuntimeFixtureError.unexpectedReleaseIdentity
     }
     return SyntheticProductRuntimeFixture(

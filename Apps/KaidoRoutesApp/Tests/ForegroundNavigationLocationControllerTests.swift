@@ -1,4 +1,6 @@
 import CoreLocation
+import Foundation
+import KaidoNavigation
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -6,7 +8,7 @@ import XCTest
 final class ForegroundNavigationLocationControllerTests: XCTestCase {
   @MainActor
   func testSyntheticAuthorityNeverAttachesOrRequestsALocationSource() throws {
-    let identity = makeIdentity()
+    let identity = try SyntheticProductRuntimeFixture.bundled().release.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource()
     let controller = try ForegroundNavigationLocationController(
@@ -34,22 +36,18 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   }
 
   @MainActor
-  func testReleasedAuthorityRequiresTheExactRuntimeIdentity() {
-    let identity = makeIdentity()
+  func testReleasedAuthorityRequiresTheExactRuntimeIdentity() throws {
+    let authority = try makeReleasedAuthority()
+    let otherAuthority = try makeReleasedAuthority(
+      productReleaseID: "test.product.release.other"
+    )
     let consumer = RecordingLocationConsumer(
-      identity: ForegroundNavigationRuntimeIdentity(
-        productReleaseID: identity.productReleaseID,
-        navigationReleaseID: identity.navigationReleaseID,
-        runtimePolicyID: identity.runtimePolicyID,
-        networkSnapshotID: identity.networkSnapshotID,
-        routePlanID: "test.plan.other",
-        matcherCorridorID: identity.matcherCorridorID
-      )
+      identity: otherAuthority.runtimeIdentity
     )
 
     XCTAssertThrowsError(
       try ForegroundNavigationLocationController(
-        authority: .releasedProduct(identity: identity),
+        authority: .releasedProduct(authority),
         consumer: consumer,
         source: FakeForegroundNavigationLocationSource()
       )
@@ -61,41 +59,23 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
     }
   }
 
-  @MainActor
-  func testReleasedAuthorityRejectsAnIncompleteRuntimeIdentity() {
-    let identity = ForegroundNavigationRuntimeIdentity(
-      productReleaseID: "test.product.release",
-      navigationReleaseID: "test.navigation.release",
-      runtimePolicyID: "",
-      networkSnapshotID: "test.snapshot",
-      routePlanID: "test.plan",
-      matcherCorridorID: "test.matcher-corridor"
-    )
-    let consumer = RecordingLocationConsumer(identity: identity)
+  func testSyntheticProductReleaseCannotMintForegroundAuthority() throws {
+    let release = try SyntheticProductRuntimeFixture.bundled().release
 
-    XCTAssertThrowsError(
-      try ForegroundNavigationLocationController(
-        authority: .releasedProduct(identity: identity),
-        consumer: consumer,
-        source: FakeForegroundNavigationLocationSource()
-      )
-    ) {
-      XCTAssertEqual(
-        $0 as? ForegroundNavigationLocationControllerError,
-        .invalidRuntimeIdentity
-      )
-    }
+    XCTAssertEqual(release.runtimeUse, .syntheticTestOnlyDisabled)
+    XCTAssertNil(release.foregroundLiveInputAuthority)
   }
 
   @MainActor
   func testExplicitAuthorizationStartsAndSerializesCallbackBatches() async throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .notDetermined
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -149,13 +129,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
   @MainActor
   func testSceneDepartureStopsWithoutAutomaticResume() async throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -185,13 +166,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   func testSceneDepartureWaitsForTheCurrentActorCallbackBeforeCheckpointing()
     async throws
   {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = SuspendedLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -223,13 +205,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
   @MainActor
   func testNewerActiveSceneWinsWhileInactiveWaitsForActorDrain() async throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = SuspendedLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -265,13 +248,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
   @MainActor
   func testPermissionDowngradeStopsAndRequiresAnotherExplicitStart() throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -299,13 +283,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   func testCallbackBacklogFailsClosedInsteadOfDroppingOrReorderingInput()
     async throws
   {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = SuspendedLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -344,7 +329,8 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
   @MainActor
   func testRuntimeMustBeReadyBeforeTheControllerCanStart() throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(
       identity: identity,
       acceptsLocations: false
@@ -353,7 +339,7 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -372,13 +358,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
   @MainActor
   func testTransientAndTerminalSourceFailuresRemainDistinct() throws {
-    let identity = makeIdentity()
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
     let controller = try ForegroundNavigationLocationController(
-      authority: .releasedProduct(identity: identity),
+      authority: .releasedProduct(authority),
       consumer: consumer,
       source: source
     )
@@ -418,16 +405,42 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
     XCTAssertFalse(manager.showsBackgroundLocationIndicator)
   }
 
-  @MainActor
-  private func makeIdentity() -> ForegroundNavigationRuntimeIdentity {
-    ForegroundNavigationRuntimeIdentity(
-      productReleaseID: "test.product.release",
-      navigationReleaseID: "test.navigation.release",
-      runtimePolicyID: "test.runtime-policy",
-      networkSnapshotID: "test.snapshot",
-      routePlanID: "test.plan",
-      matcherCorridorID: "test.matcher-corridor"
+  private func makeReleasedAuthority(
+    productReleaseID: String = "test.product.release"
+  ) throws -> KaidoForegroundLiveInputAuthority {
+    let url = try XCTUnwrap(
+      Bundle.main.url(
+        forResource: SyntheticProductRuntimeFixture.resourceName,
+        withExtension: "json"
+      )
     )
+    var root = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        as? [String: Any]
+    )
+    root["release_id"] = productReleaseID
+    root["runtime_use"] = [
+      "evidence_scope": "RELEASED_ROAD",
+      "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+    ]
+    for releaseKey in ["navigation_release", "route_atlas_release"] {
+      var nestedRelease = try XCTUnwrap(root[releaseKey] as? [String: Any])
+      var registry = try XCTUnwrap(
+        nestedRelease["source_registry"] as? [String: Any]
+      )
+      var references = try XCTUnwrap(
+        registry["references"] as? [[String: Any]]
+      )
+      for index in references.indices {
+        references[index]["licence_identifier"] = "TEST_REVIEWED_ROAD_ONLY"
+      }
+      registry["references"] = references
+      nestedRelease["source_registry"] = registry
+      root[releaseKey] = nestedRelease
+    }
+    let data = try JSONSerialization.data(withJSONObject: root)
+    let release = try KaidoProductReleaseArtifactCodec.decode(data)
+    return try XCTUnwrap(release.foregroundLiveInputAuthority)
   }
 
   @MainActor
@@ -456,14 +469,14 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 private final class SuspendedLocationConsumer:
   ForegroundNavigationLocationConsuming
 {
-  let foregroundNavigationRuntimeIdentity: ForegroundNavigationRuntimeIdentity
+  let foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity
   let canConsumeForegroundNavigationLocations = true
   var didStart: (() -> Void)?
   private(set) var completedBatchCount = 0
 
   private var continuation: CheckedContinuation<Void, Never>?
 
-  init(identity: ForegroundNavigationRuntimeIdentity) {
+  init(identity: KaidoProductRuntimeIdentity) {
     foregroundNavigationRuntimeIdentity = identity
   }
 
@@ -493,7 +506,7 @@ private final class RecordingLocationConsumer:
     let receivedAt: Date
   }
 
-  let foregroundNavigationRuntimeIdentity: ForegroundNavigationRuntimeIdentity
+  let foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity
   var canConsumeForegroundNavigationLocations: Bool {
     acceptsLocations
   }
@@ -502,7 +515,7 @@ private final class RecordingLocationConsumer:
   var didConsume: (() -> Void)?
 
   init(
-    identity: ForegroundNavigationRuntimeIdentity,
+    identity: KaidoProductRuntimeIdentity,
     acceptsLocations: Bool = true
   ) {
     foregroundNavigationRuntimeIdentity = identity

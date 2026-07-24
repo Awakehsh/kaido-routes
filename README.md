@@ -293,10 +293,11 @@ failure leaves the driving surface unavailable. The internal panel can execute
 one fixed synthetic adapter-to-actor trace. A separate foreground location
 controller now owns When In Use authorization, automotive manager configuration,
 callback-order serialization, and scene shutdown. It requires an exact
-product/navigation/runtime-policy/snapshot/RoutePlan/matcher-corridor authority
-before constructing its `CLLocationManager`; the bundled
-`SYNTHETIC_TEST_ONLY` release therefore remains blocked without requesting
-permission. A versioned, coordinate-free navigation checkpoint now binds
+product/navigation/runtime-policy/snapshot/RoutePlan/matcher-corridor token
+minted by the validated joint product release before constructing its
+`CLLocationManager`. The bundled `SYNTHETIC_TEST_ONLY` release declares live
+input `DISABLED`, cannot mint that token, and therefore remains blocked without
+requesting permission. A versioned, coordinate-free navigation checkpoint now binds
 progress, recovery/egress state, and the prompt ledger to the exact product
 release, navigation release, runtime policy, snapshot, RoutePlan, and matcher
 corridor. SwiftUI scene changes stop the location source and drain its current
@@ -356,8 +357,9 @@ internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
 Neither independently valid artifact can authorize a product build by itself.
-`KaidoProductReleaseArtifact` schema 2.0 contains one complete navigation
-artifact and one complete Route Atlas artifact. `KaidoProductRelease` revalidates both, requires
+`KaidoProductReleaseArtifact` schema 3.0 contains one complete navigation
+artifact, one complete Route Atlas artifact, and an explicit `runtime_use`
+declaration. `KaidoProductRelease` revalidates both, requires
 exact snapshot and RoutePlan identity, rejects navigation or atlas evidence
 newer than the product release, and requires released atlas topology to contain
 every initial edge, incoming approach, movement, and outgoing edge exposed by
@@ -367,7 +369,11 @@ while `kaido-release validate-product` exposes the same joint gate to release
 automation. KR-D26 proves that two separately valid synthetic artifacts still
 fail the product gate when one editor approach is absent from the atlas, and
 that the failure cannot produce a partial product runtime identity. No real
-Kaido product release exists yet.
+Kaido product release exists yet. KR-D27 adds the live-input gate:
+`SYNTHETIC_TEST_ONLY` must remain `DISABLED`; a `RELEASED_ROAD` declaration
+must contain no synthetic source in either nested release; and only a valid
+`RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release mints the unforgeable
+six-part foreground authority consumed by the app.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
 `RouteAtlasContextBundle` accepts only `CONTEXT_ONLY` geometry with a matching
@@ -566,6 +572,10 @@ hard properties that must remain proven as the product expands:
     assets; one validated product release owns the session and atlas identity,
     and its released runtime policy is the only source of entry transition,
     recovery candidates, and legal egress.
+33. structural release validity alone cannot enable live sensors; only one
+    schema-3.0 joint product release with consistent released-road sources and
+    explicit foreground policy can mint the exact runtime-bound foreground
+    input token, while synthetic or mixed evidence fails closed.
 
 ## Repository map
 

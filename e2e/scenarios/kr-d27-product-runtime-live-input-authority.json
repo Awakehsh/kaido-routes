@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D27",
+  "title": "Joint product runtime use alone can admit foreground live input",
+  "layer": "DOMAIN",
+  "tags": [
+    "product-release",
+    "runtime-authority",
+    "live-location",
+    "fail-closed"
+  ],
+  "purpose": "Require explicit released-road evidence scope and foreground policy before a validated joint product release may mint live-input authority.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "All source identifiers and classifications are synthetic test values.",
+      "A PASS for the released-road cases proves admission semantics only and does not release real road data or qualify a physical device."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.product-runtime-use-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "inputs": {
+      "product_runtime_use_cases": [
+        {
+          "case_id": "synthetic-disabled",
+          "evidence_scope": "SYNTHETIC_TEST_ONLY",
+          "live_input_policy": "DISABLED",
+          "navigation_sources": [
+            {
+              "source_id": "test.source.synthetic-navigation",
+              "licence_identifier": "SYNTHETIC_TEST_ONLY"
+            }
+          ],
+          "route_atlas_sources": [
+            {
+              "source_id": "test.source.synthetic-atlas",
+              "licence_identifier": "SYNTHETIC_TEST_ONLY"
+            }
+          ]
+        },
+        {
+          "case_id": "synthetic-foreground",
+          "evidence_scope": "SYNTHETIC_TEST_ONLY",
+          "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+          "navigation_sources": [
+            {
+              "source_id": "test.source.synthetic-navigation",
+              "licence_identifier": "SYNTHETIC_TEST_ONLY"
+            }
+          ],
+          "route_atlas_sources": [
+            {
+              "source_id": "test.source.synthetic-atlas",
+              "licence_identifier": "SYNTHETIC_TEST_ONLY"
+            }
+          ]
+        },
+        {
+          "case_id": "released-foreground",
+          "evidence_scope": "RELEASED_ROAD",
+          "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+          "navigation_sources": [
+            {
+              "source_id": "test.source.reviewed-navigation",
+              "licence_identifier": "TEST_REVIEWED_ROAD_ONLY"
+            }
+          ],
+          "route_atlas_sources": [
+            {
+              "source_id": "test.source.reviewed-atlas",
+              "licence_identifier": "TEST_REVIEWED_ROAD_ONLY"
+            }
+          ]
+        },
+        {
+          "case_id": "released-disabled",
+          "evidence_scope": "RELEASED_ROAD",
+          "live_input_policy": "DISABLED",
+          "navigation_sources": [
+            {
+              "source_id": "test.source.reviewed-navigation",
+              "licence_identifier": "TEST_REVIEWED_ROAD_ONLY"
+            }
+          ],
+          "route_atlas_sources": [
+            {
+              "source_id": "test.source.reviewed-atlas",
+              "licence_identifier": "TEST_REVIEWED_ROAD_ONLY"
+            }
+          ]
+        },
+        {
+          "case_id": "mixed-released",
+          "evidence_scope": "RELEASED_ROAD",
+          "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+          "navigation_sources": [
+            {
+              "source_id": "test.source.reviewed-navigation",
+              "licence_identifier": "TEST_REVIEWED_ROAD_ONLY"
+            }
+          ],
+          "route_atlas_sources": [
+            {
+              "source_id": "test.source.synthetic-atlas",
+              "licence_identifier": "SYNTHETIC_TEST_ONLY"
+            }
+          ]
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "evaluate-synthetic-disabled",
+      "at_ms": 0,
+      "type": "PRODUCT_RUNTIME_USE_EVALUATED",
+      "payload": {
+        "case_id": "synthetic-disabled"
+      }
+    },
+    {
+      "id": "evaluate-synthetic-foreground",
+      "at_ms": 1,
+      "type": "PRODUCT_RUNTIME_USE_EVALUATED",
+      "payload": {
+        "case_id": "synthetic-foreground"
+      }
+    },
+    {
+      "id": "evaluate-released-foreground",
+      "at_ms": 2,
+      "type": "PRODUCT_RUNTIME_USE_EVALUATED",
+      "payload": {
+        "case_id": "released-foreground"
+      }
+    },
+    {
+      "id": "evaluate-released-disabled",
+      "at_ms": 3,
+      "type": "PRODUCT_RUNTIME_USE_EVALUATED",
+      "payload": {
+        "case_id": "released-disabled"
+      }
+    },
+    {
+      "id": "evaluate-mixed-released",
+      "at_ms": 4,
+      "type": "PRODUCT_RUNTIME_USE_EVALUATED",
+      "payload": {
+        "case_id": "mixed-released"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "synthetic-disabled-is-valid",
+      "after": "evaluate-synthetic-disabled",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "A synthetic product remains structurally usable when live input is explicitly disabled."
+    },
+    {
+      "id": "synthetic-disabled-has-no-errors",
+      "after": "evaluate-synthetic-disabled",
+      "category": "EVIDENCE",
+      "subject": "product_runtime_use.error_codes",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "Synthetic evidence is internally consistent with its declared scope."
+    },
+    {
+      "id": "synthetic-disabled-cannot-admit-live-input",
+      "after": "evaluate-synthetic-disabled",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.foreground_live_input_admitted",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A valid synthetic release still has no sensor authority."
+    },
+    {
+      "id": "synthetic-foreground-is-blocked",
+      "after": "evaluate-synthetic-foreground",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "Synthetic evidence can never opt into foreground live input."
+    },
+    {
+      "id": "synthetic-foreground-reports-policy-error",
+      "after": "evaluate-synthetic-foreground",
+      "category": "EVIDENCE",
+      "subject": "product_runtime_use.error_codes",
+      "matcher": "EQUALS",
+      "expected": [
+        "SYNTHETIC_PRODUCT_LIVE_INPUT_FORBIDDEN"
+      ],
+      "rationale": "The failure identifies the forbidden synthetic live-input declaration."
+    },
+    {
+      "id": "synthetic-foreground-has-no-authority",
+      "after": "evaluate-synthetic-foreground",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.foreground_live_input_admitted",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A rejected declaration cannot mint partial authority."
+    },
+    {
+      "id": "released-foreground-is-valid",
+      "after": "evaluate-released-foreground",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Released-road scope with consistent non-synthetic sources may request foreground use."
+    },
+    {
+      "id": "released-foreground-has-no-errors",
+      "after": "evaluate-released-foreground",
+      "category": "EVIDENCE",
+      "subject": "product_runtime_use.error_codes",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "Both release domains match the declared released-road evidence scope."
+    },
+    {
+      "id": "released-foreground-admits-live-input",
+      "after": "evaluate-released-foreground",
+      "category": "DOMAIN",
+      "subject": "product_runtime_use.foreground_live_input_admitted",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "This is the only declaration combination eligible to mint the foreground token."
+    },
+    {
+      "id": "released-disabled-is-valid",
+      "after": "evaluate-released-disabled",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "A released-road product may intentionally ship with all live input disabled."
+    },
+    {
+      "id": "released-disabled-retains-policy",
+      "after": "evaluate-released-disabled",
+      "category": "DOMAIN",
+      "subject": "product_runtime_use.live_input_policy",
+      "matcher": "EQUALS",
+      "expected": "DISABLED",
+      "rationale": "Validation never upgrades a disabled policy."
+    },
+    {
+      "id": "released-disabled-has-no-authority",
+      "after": "evaluate-released-disabled",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.foreground_live_input_admitted",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Released evidence alone is insufficient without the explicit foreground policy."
+    },
+    {
+      "id": "mixed-released-is-blocked",
+      "after": "evaluate-mixed-released",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A released-road declaration cannot conceal a synthetic nested source."
+    },
+    {
+      "id": "mixed-released-reports-scope-error",
+      "after": "evaluate-mixed-released",
+      "category": "EVIDENCE",
+      "subject": "product_runtime_use.error_codes",
+      "matcher": "EQUALS",
+      "expected": [
+        "PRODUCT_RUNTIME_SOURCE_SCOPE_MISMATCH"
+      ],
+      "rationale": "The joint gate reports the cross-source evidence-scope mismatch."
+    },
+    {
+      "id": "mixed-released-has-no-authority",
+      "after": "evaluate-mixed-released",
+      "category": "SAFETY",
+      "subject": "product_runtime_use.foreground_live_input_admitted",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "A mixed release cannot mint any foreground authority."
+    }
+  ]
+}

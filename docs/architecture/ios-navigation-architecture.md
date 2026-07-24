@@ -463,9 +463,10 @@ an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 
-`KaidoProductReleaseArtifact` schema 2.0 is the outer distribution envelope a
-product build must consume. It embeds the complete navigation and Route Atlas artifacts rather
-than referencing two mutable release names. `KaidoProductRelease` first
+`KaidoProductReleaseArtifact` schema 3.0 is the outer distribution envelope a
+product build must consume. It embeds the complete navigation and Route Atlas
+artifacts plus an explicit `runtime_use` declaration rather than referencing two
+mutable release names. `KaidoProductRelease` first
 revalidates both nested gates, then requires exact `NetworkSnapshot` and
 `RoutePlan` equality. Its release time cannot precede the nested navigation
 release or any Route Atlas source, topology, or layout evidence. Finally, every
@@ -480,7 +481,14 @@ scenario then attempts `PRODUCT_NAVIGATION_RUNTIME_CREATED` and proves that the
 failed release yields no partial runtime release identity. A focused positive
 unit test proves that a valid joint release supplies one exact runtime
 composition and that its released policy supplies executable Finish egress
-without an adapter-authored default.
+without an adapter-authored default. KR-D27 proves that structural validity is
+not sensor authority: synthetic releases must disable live input, mixed
+synthetic/released-road source scopes fail closed, and a released-road release
+with live input disabled remains valid without minting authority. Only a fully
+validated `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release can construct
+`KaidoForegroundLiveInputAuthority`. Its six-part runtime identity and token
+initializers are package-only, so application adapters can compare and consume
+the authority but cannot invent it.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is

@@ -34,6 +34,7 @@ should become scenarios when their layer is built.
 | KR-D24 | A Kaido-owned K7 schematic covers the reviewed expressway slice and stops before every unreviewed surface successor | P0 | Seeded |
 | KR-D25 | A versioned navigation release artifact evidences entry/recovery/egress policy and revalidates the whole runtime bundle after decoding | P0 | Seeded |
 | KR-D26 | A product release binds navigation policy and atlas identity, covers every released editor entity, and is required for runtime admission | P0 | Seeded |
+| KR-D27 | A joint product release must declare consistent runtime evidence scope and live-input policy before foreground authority exists | P0 | Seeded |
 
 ## Navigation simulation
 

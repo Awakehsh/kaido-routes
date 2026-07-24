@@ -26,6 +26,8 @@ func kaidoProductReleaseRoundTrips() throws {
   #expect(release.navigation.bundle.routePlan == navigationFixture.routePlan)
   #expect(release.routeAtlas.routePlan == navigationFixture.routePlan)
   #expect(release.routeAtlas.topologySlice.edges.count == 5)
+  #expect(release.runtimeUse == .syntheticTestOnlyDisabled)
+  #expect(release.foregroundLiveInputAuthority == nil)
 }
 
 @Test("Product release blocks an editor approach absent from released atlas topology")
@@ -67,7 +69,19 @@ func kaidoProductReleaseRejectsIndependentReleaseDrift() throws {
   let atlasArtifact = RouteAtlasReleaseArtifact(
     networkSnapshot: otherAtlas.networkSnapshot,
     routePlan: otherAtlas.routePlan,
-    sourceRegistry: otherAtlas.sourceRegistry,
+    sourceRegistry: RouteAtlasSourceRegistry(
+      references: otherAtlas.sourceRegistry.references.map { source in
+        RouteAtlasSourceReference(
+          id: source.id,
+          roles: source.roles,
+          authorityName: source.authorityName,
+          sourceURL: source.sourceURL,
+          contentSHA256: source.contentSHA256,
+          checkedAt: source.checkedAt,
+          licenceIdentifier: "SYNTHETIC_TEST_ONLY"
+        )
+      }
+    ),
     topologySlice: otherAtlas.topologySlice,
     definition: otherAtlas.definition
   )
@@ -112,7 +126,7 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     junctionViews: validNavigation.junctionViews
   )
   let artifact = KaidoProductReleaseArtifact(
-    schemaVersion: "3.0",
+    schemaVersion: "4.0",
     releaseID: "test.product-release.future-navigation",
     releasedAt: "2026-07-24T12:00:00+09:00",
     navigationRelease: futureNavigation,
@@ -131,6 +145,125 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
   } catch {
     Issue.record("Unexpected error: \(error)")
   }
+}
+
+@Test("Synthetic product evidence cannot request foreground live input")
+func syntheticProductReleaseCannotRequestLiveInput() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let artifact = KaidoProductReleaseArtifact(
+    releaseID: "test.product-release.synthetic-live-input",
+    releasedAt: "2026-07-24T12:00:00+09:00",
+    runtimeUse: KaidoProductRuntimeUseDeclaration(
+      evidenceScope: .syntheticTestOnly,
+      liveInputPolicy: .foregroundWhenInUse
+    ),
+    navigationRelease: navigationReleaseArtifact(fixture),
+    routeAtlasRelease: productRouteAtlasArtifact(
+      fixture,
+      includeIncomingApproach: true
+    )
+  )
+
+  do {
+    _ = try KaidoProductRelease(artifact: artifact)
+    Issue.record("Expected synthetic live input to fail closed")
+  } catch KaidoProductReleaseError.invalid(let issues) {
+    #expect(
+      issues == [
+        .invalidRuntimeUse(.syntheticLiveInputForbidden)
+      ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Product release requires an explicit runtime-use declaration")
+func productReleaseRequiresRuntimeUse() {
+  let fixture = navigationReleaseBundleFixture()
+  let artifact = KaidoProductReleaseArtifact(
+    releaseID: "test.product-release.missing-runtime-use",
+    releasedAt: "2026-07-24T12:00:00+09:00",
+    runtimeUse: nil,
+    navigationRelease: navigationReleaseArtifact(fixture),
+    routeAtlasRelease: productRouteAtlasArtifact(
+      fixture,
+      includeIncomingApproach: true
+    )
+  )
+
+  do {
+    _ = try KaidoProductRelease(artifact: artifact)
+    Issue.record("Expected missing runtime use to fail closed")
+  } catch KaidoProductReleaseError.invalid(let issues) {
+    #expect(issues == [.missingRuntimeUse])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Only a validated released-road product mints foreground authority")
+func releasedRoadProductMintsForegroundAuthority() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let artifact = KaidoProductReleaseArtifact(
+    releaseID: "test.product-release.released-road",
+    releasedAt: "2026-07-24T12:00:00+09:00",
+    runtimeUse: KaidoProductRuntimeUseDeclaration(
+      evidenceScope: .releasedRoad,
+      liveInputPolicy: .foregroundWhenInUse
+    ),
+    navigationRelease: productNavigationReleaseArtifact(
+      fixture,
+      licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+    ),
+    routeAtlasRelease: productRouteAtlasArtifact(
+      fixture,
+      includeIncomingApproach: true,
+      licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+    )
+  )
+
+  let release = try KaidoProductRelease(artifact: artifact)
+  let authority = try #require(release.foregroundLiveInputAuthority)
+
+  #expect(release.runtimeUseEvaluation.foregroundLiveInputAdmitted)
+  #expect(authority.runtimeIdentity == release.runtimeIdentity)
+  #expect(release.runtimeIdentity.productReleaseID == artifact.releaseID)
+  #expect(release.runtimeIdentity.navigationReleaseID == artifact.navigationRelease.releaseID)
+  #expect(release.runtimeIdentity.runtimePolicyID == fixture.runtimePolicy.id)
+  #expect(release.runtimeIdentity.networkSnapshotID == fixture.networkSnapshot.id)
+  #expect(release.runtimeIdentity.routePlanID == fixture.routePlan.id)
+  #expect(release.runtimeIdentity.matcherCorridorID == fixture.matcherCorridor.id)
+}
+
+@Test("Released-road runtime scope rejects mixed synthetic sources")
+func releasedRoadRuntimeScopeRejectsSyntheticSources() {
+  let evaluation = KaidoProductRuntimeUseEvaluator.evaluate(
+    declaration: KaidoProductRuntimeUseDeclaration(
+      evidenceScope: .releasedRoad,
+      liveInputPolicy: .foregroundWhenInUse
+    ),
+    sources: [
+      KaidoProductRuntimeSourceDescriptor(
+        domain: .navigation,
+        sourceID: "test.source.navigation",
+        licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+      ),
+      KaidoProductRuntimeSourceDescriptor(
+        domain: .routeAtlas,
+        sourceID: "test.source.atlas",
+        licenceIdentifier: "SYNTHETIC_TEST_ONLY"
+      ),
+    ]
+  )
+
+  #expect(!evaluation.isValid)
+  #expect(!evaluation.foregroundLiveInputAdmitted)
+  #expect(
+    evaluation.issues == [
+      .sourceScopeMismatch(.routeAtlas, sourceID: "test.source.atlas")
+    ]
+  )
 }
 
 @Test("Route Atlas evidence cannot postdate the product release")
@@ -212,7 +345,8 @@ func kaidoProductRuntimeUsesJointReleaseAuthority() async throws {
 func productRouteAtlasArtifact(
   _ fixture: NavigationReleaseBundleFixture,
   includeIncomingApproach: Bool,
-  checkedAt: String = "2026-07-23"
+  checkedAt: String = "2026-07-23",
+  licenceIdentifier: String = "SYNTHETIC_TEST_ONLY"
 ) -> RouteAtlasReleaseArtifact {
   let topologySourceID = "test.source.product-topology"
   let layoutSourceID = "test.source.product-layout"
@@ -225,7 +359,7 @@ func productRouteAtlasArtifact(
         sourceURL: "https://example.com/test-product-topology",
         contentSHA256: String(repeating: "b", count: 64),
         checkedAt: checkedAt,
-        licenceIdentifier: "SYNTHETIC_TEST_ONLY"
+        licenceIdentifier: licenceIdentifier
       ),
       RouteAtlasSourceReference(
         id: layoutSourceID,
@@ -234,7 +368,7 @@ func productRouteAtlasArtifact(
         sourceURL: "https://example.com/test-product-layout",
         contentSHA256: String(repeating: "c", count: 64),
         checkedAt: checkedAt,
-        licenceIdentifier: "SYNTHETIC_TEST_ONLY"
+        licenceIdentifier: licenceIdentifier
       ),
     ]
   )
@@ -427,5 +561,40 @@ func productRouteAtlasArtifact(
     sourceRegistry: sourceRegistry,
     topologySlice: topology,
     definition: definition
+  )
+}
+
+private func productNavigationReleaseArtifact(
+  _ fixture: NavigationReleaseBundleFixture,
+  licenceIdentifier: String
+) -> NavigationReleaseArtifact {
+  let artifact = navigationReleaseArtifact(fixture)
+  return NavigationReleaseArtifact(
+    schemaVersion: artifact.schemaVersion,
+    releaseID: artifact.releaseID,
+    releasedAt: artifact.releasedAt,
+    editorCatalogID: artifact.editorCatalogID,
+    networkSnapshot: artifact.networkSnapshot,
+    routePlan: artifact.routePlan,
+    sourceRegistry: NavigationReleaseSourceRegistry(
+      references: artifact.sourceRegistry.references.map { source in
+        NavigationReleaseSourceReference(
+          id: source.id,
+          roles: source.roles,
+          authorityName: source.authorityName,
+          sourceURL: source.sourceURL,
+          contentSHA256: source.contentSHA256,
+          checkedAt: source.checkedAt,
+          licenceIdentifier: licenceIdentifier
+        )
+      }
+    ),
+    assetEvidence: artifact.assetEvidence,
+    editorCatalog: artifact.editorCatalog,
+    runtimePolicy: artifact.runtimePolicy,
+    matcherCorridor: artifact.matcherCorridor,
+    decisionZones: artifact.decisionZones,
+    releasedGuidance: artifact.releasedGuidance,
+    junctionViews: artifact.junctionViews
   )
 }

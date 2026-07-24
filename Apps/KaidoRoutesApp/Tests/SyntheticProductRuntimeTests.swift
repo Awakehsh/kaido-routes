@@ -30,6 +30,11 @@ final class SyntheticProductRuntimeTests: XCTestCase {
       fixture.release.routeAtlas.networkSnapshot.id
     )
     XCTAssertGreaterThan(fixture.encodedByteCount, 0)
+    XCTAssertEqual(
+      fixture.release.runtimeUse,
+      .syntheticTestOnlyDisabled
+    )
+    XCTAssertNil(fixture.release.foregroundLiveInputAuthority)
     XCTAssertTrue(
       fixture.release.navigation.sourceRegistry.references.allSatisfy {
         $0.licenceIdentifier == "SYNTHETIC_TEST_ONLY"
@@ -56,6 +61,7 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     let mutated = KaidoProductReleaseArtifact(
       releaseID: "release-without-synthetic-preview-identity",
       releasedAt: artifact.releasedAt,
+      runtimeUse: artifact.runtimeUse,
       navigationRelease: artifact.navigationRelease,
       routeAtlasRelease: artifact.routeAtlasRelease
     )
@@ -65,6 +71,31 @@ final class SyntheticProductRuntimeTests: XCTestCase {
       XCTAssertEqual(
         $0 as? SyntheticProductRuntimeFixtureError,
         .unexpectedReleaseIdentity
+      )
+    }
+  }
+
+  func testFixtureRejectsLiveInputRuntimeUse() throws {
+    let url = try XCTUnwrap(
+      Bundle.main.url(
+        forResource: SyntheticProductRuntimeFixture.resourceName,
+        withExtension: "json"
+      )
+    )
+    var root = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        as? [String: Any]
+    )
+    root["runtime_use"] = [
+      "evidence_scope": "SYNTHETIC_TEST_ONLY",
+      "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+    ]
+    let data = try JSONSerialization.data(withJSONObject: root)
+
+    XCTAssertThrowsError(try SyntheticProductRuntimeFixture.decode(data)) {
+      XCTAssertEqual(
+        $0 as? SyntheticProductRuntimeFixtureError,
+        .unexpectedRuntimeUse
       )
     }
   }

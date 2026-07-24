@@ -652,16 +652,8 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 }
 
 extension SyntheticProductRuntimeModel: ForegroundNavigationLocationConsuming {
-  var foregroundNavigationRuntimeIdentity: ForegroundNavigationRuntimeIdentity {
-    ForegroundNavigationRuntimeIdentity(
-      productReleaseID: productReleaseID,
-      navigationReleaseID: navigationReleaseID,
-      runtimePolicyID: runtime.entryTransitionAdmissionContext.runtimePolicyID,
-      networkSnapshotID: networkSnapshotID,
-      routePlanID: routePlanID,
-      matcherCorridorID:
-        runtime.entryTransitionAdmissionContext.matcherCorridorID
-    )
+  var foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity {
+    runtime.runtimeIdentity
   }
 
   var canConsumeForegroundNavigationLocations: Bool {

@@ -37,6 +37,10 @@ public struct KaidoProductNavigationRuntime: Sendable {
     release.routeAtlas
   }
 
+  public var runtimeIdentity: KaidoProductRuntimeIdentity {
+    release.runtimeIdentity
+  }
+
   public init(release: KaidoProductRelease) throws {
     try self.init(release: release, checkpoint: nil)
   }

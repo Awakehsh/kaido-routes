@@ -87,7 +87,11 @@ do {
           + "\(release.navigation.releaseID) to Route Atlas "
           + "\(release.routeAtlas.definition.id) for "
           + "\(release.navigation.bundle.routePlan.occurrences.count) "
-          + "RoutePlan occurrences"
+          + "RoutePlan occurrences; runtime use "
+          + "\(release.runtimeUse.evidenceScope.rawValue)/"
+          + "\(release.runtimeUse.liveInputPolicy.rawValue); foreground "
+          + "authority "
+          + (release.foregroundLiveInputAuthority == nil ? "DISABLED" : "ADMITTED")
       )
     } catch KaidoProductReleaseError.invalid(let issues) {
       throw CLIError.invalidProduct(issues)

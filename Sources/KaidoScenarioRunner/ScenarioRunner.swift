@@ -152,6 +152,8 @@ private struct ScenarioHarness {
       try validateNavigationReleaseArtifact(event.payload)
     case "PRODUCT_RELEASE_ARTIFACT_VALIDATED":
       try validateProductReleaseArtifact(event.payload)
+    case "PRODUCT_RUNTIME_USE_EVALUATED":
+      try evaluateProductRuntimeUse(event.payload)
     case "PRODUCT_NAVIGATION_RUNTIME_CREATED":
       try createProductNavigationRuntime(event.payload)
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
@@ -1039,7 +1041,19 @@ private struct ScenarioHarness {
     schemaVersion: String
   ) throws -> KaidoProductReleaseArtifact {
     guard let releaseID = scenario.given.inputs.string("product_release_id"),
-      let releasedAt = scenario.given.inputs.string("product_release_released_at")
+      let releasedAt = scenario.given.inputs.string("product_release_released_at"),
+      let evidenceScopeValue = scenario.given.inputs.string(
+        "product_runtime_evidence_scope"
+      ),
+      let evidenceScope = KaidoProductRuntimeEvidenceScope(
+        rawValue: evidenceScopeValue
+      ),
+      let liveInputPolicyValue = scenario.given.inputs.string(
+        "product_live_input_policy"
+      ),
+      let liveInputPolicy = KaidoProductLiveInputPolicy(
+        rawValue: liveInputPolicyValue
+      )
     else {
       throw ScenarioExecutionError.invalidInput("product_release_artifact")
     }
@@ -1047,11 +1061,87 @@ private struct ScenarioHarness {
       schemaVersion: schemaVersion,
       releaseID: releaseID,
       releasedAt: releasedAt,
+      runtimeUse: KaidoProductRuntimeUseDeclaration(
+        evidenceScope: evidenceScope,
+        liveInputPolicy: liveInputPolicy
+      ),
       navigationRelease: try navigationReleaseArtifact(
         schemaVersion: NavigationReleaseArtifact.currentSchemaVersion
       ),
       routeAtlasRelease: try routeAtlasReleaseArtifact()
     )
+  }
+
+  private mutating func evaluateProductRuntimeUse(
+    _ payload: [String: JSONValue]
+  ) throws {
+    let caseID = try payload.requiredString("case_id")
+    guard
+      let rawCases = scenario.given.inputs.array("product_runtime_use_cases"),
+      let value = rawCases.compactMap(\.objectValue).first(where: {
+        $0.string("case_id") == caseID
+      }),
+      let evidenceScopeValue = value.string("evidence_scope"),
+      let evidenceScope = KaidoProductRuntimeEvidenceScope(
+        rawValue: evidenceScopeValue
+      ),
+      let liveInputPolicyValue = value.string("live_input_policy"),
+      let liveInputPolicy = KaidoProductLiveInputPolicy(
+        rawValue: liveInputPolicyValue
+      ),
+      let navigationSources = value.array("navigation_sources"),
+      let routeAtlasSources = value.array("route_atlas_sources")
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "product_runtime_use_cases.\(caseID)"
+      )
+    }
+
+    func descriptors(
+      _ values: [JSONValue],
+      domain: KaidoProductRuntimeSourceDomain
+    ) throws -> [KaidoProductRuntimeSourceDescriptor] {
+      try values.map { rawValue in
+        guard let source = rawValue.objectValue else {
+          throw ScenarioExecutionError.invalidInput(
+            "product_runtime_use_cases.\(caseID).sources"
+          )
+        }
+        return KaidoProductRuntimeSourceDescriptor(
+          domain: domain,
+          sourceID: try source.requiredString("source_id"),
+          licenceIdentifier: try source.requiredString("licence_identifier")
+        )
+      }
+    }
+
+    let declaration = KaidoProductRuntimeUseDeclaration(
+      evidenceScope: evidenceScope,
+      liveInputPolicy: liveInputPolicy
+    )
+    let sources =
+      try descriptors(navigationSources, domain: .navigation)
+      + descriptors(routeAtlasSources, domain: .routeAtlas)
+    let evaluation = KaidoProductRuntimeUseEvaluator.evaluate(
+      declaration: declaration,
+      sources: sources
+    )
+
+    clearProductRuntimeUseObservations()
+    adapterObservations["product_runtime_use.status"] = .string(
+      evaluation.isValid ? "PASS" : "BLOCKED"
+    )
+    adapterObservations["product_runtime_use.error_codes"] = .strings(
+      Array(Set(evaluation.issues.map(\.code))).sorted()
+    )
+    adapterObservations["product_runtime_use.evidence_scope"] = .string(
+      declaration.evidenceScope.rawValue
+    )
+    adapterObservations["product_runtime_use.live_input_policy"] = .string(
+      declaration.liveInputPolicy.rawValue
+    )
+    adapterObservations["product_runtime_use.foreground_live_input_admitted"] =
+      .bool(evaluation.foregroundLiveInputAdmitted)
   }
 
   private mutating func createProductNavigationRuntime(
@@ -1250,6 +1340,15 @@ private struct ScenarioHarness {
       release.routeAtlas.topologySlice.edges.map(\.routeEntityID)
     )
     adapterObservations["product_release.missing_editor_entity_ids"] = .strings([])
+    adapterObservations["product_release.runtime_evidence_scope"] = .string(
+      release.runtimeUse.evidenceScope.rawValue
+    )
+    adapterObservations["product_release.live_input_policy"] = .string(
+      release.runtimeUse.liveInputPolicy.rawValue
+    )
+    adapterObservations["product_release.foreground_live_input_admitted"] = .bool(
+      release.foregroundLiveInputAuthority != nil
+    )
   }
 
   private mutating func clearReleaseBundleObservations() {
@@ -1277,6 +1376,14 @@ private struct ScenarioHarness {
   private mutating func clearProductNavigationRuntimeObservations() {
     for key in adapterObservations.keys.filter({
       $0.hasPrefix("product_runtime.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func clearProductRuntimeUseObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("product_runtime_use.")
     }) {
       adapterObservations.removeValue(forKey: key)
     }

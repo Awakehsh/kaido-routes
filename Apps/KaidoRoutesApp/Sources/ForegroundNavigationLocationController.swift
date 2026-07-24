@@ -1,28 +1,7 @@
 import Combine
 import CoreLocation
 import Foundation
-
-struct ForegroundNavigationRuntimeIdentity: Equatable, Sendable {
-  let productReleaseID: String
-  let navigationReleaseID: String
-  let runtimePolicyID: String
-  let networkSnapshotID: String
-  let routePlanID: String
-  let matcherCorridorID: String
-
-  var isComplete: Bool {
-    [
-      productReleaseID,
-      navigationReleaseID,
-      runtimePolicyID,
-      networkSnapshotID,
-      routePlanID,
-      matcherCorridorID,
-    ].allSatisfy {
-      !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-  }
-}
+import KaidoNavigation
 
 enum ForegroundNavigationLocationBlockReason: String, Equatable, Sendable {
   case syntheticTestOnly = "SYNTHETIC_TEST_ONLY"
@@ -31,15 +10,17 @@ enum ForegroundNavigationLocationBlockReason: String, Equatable, Sendable {
 
 enum ForegroundNavigationLocationAuthority: Equatable, Sendable {
   case blocked(
-    identity: ForegroundNavigationRuntimeIdentity,
+    identity: KaidoProductRuntimeIdentity,
     reason: ForegroundNavigationLocationBlockReason
   )
-  case releasedProduct(identity: ForegroundNavigationRuntimeIdentity)
+  case releasedProduct(KaidoForegroundLiveInputAuthority)
 
-  var identity: ForegroundNavigationRuntimeIdentity {
+  var identity: KaidoProductRuntimeIdentity {
     switch self {
-    case .blocked(let identity, _), .releasedProduct(let identity):
+    case .blocked(let identity, _):
       identity
+    case .releasedProduct(let authority):
+      authority.runtimeIdentity
     }
   }
 }
@@ -109,7 +90,7 @@ enum ForegroundNavigationLocationState: Equatable, Sendable {
 
 @MainActor
 protocol ForegroundNavigationLocationConsuming: AnyObject {
-  var foregroundNavigationRuntimeIdentity: ForegroundNavigationRuntimeIdentity {
+  var foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity {
     get
   }
   var canConsumeForegroundNavigationLocations: Bool { get }

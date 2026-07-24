@@ -345,6 +345,15 @@ missing set. A final runtime-admission event proves that the blocked release
 cannot expose a partial runtime identity. Every released value remains
 synthetic.
 
+KR-D27 separates structural product validity from sensor authority. A shared
+platform-light evaluator consumes the schema-3.0 `runtime_use` declaration and
+both nested source domains. Synthetic scope is valid only with live input
+disabled; released-road scope rejects every `SYNTHETIC_TEST_ONLY` source; and a
+valid released-road product with disabled input still mints no token. Only the
+released-road foreground case is eligible for the package-only authority used
+by the App controller. The fixture's non-synthetic labels are test values and
+do not claim a real release.
+
 The internal iPhone target adds a local L3 composition check above KR-D26. One
 bundled `SYNTHETIC_TEST_ONLY` product artifact is decoded through the production
 codec before `KaidoProductNavigationRuntime` may exist. Unit tests exercise the

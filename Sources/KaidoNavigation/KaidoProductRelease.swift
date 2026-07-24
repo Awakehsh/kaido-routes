@@ -13,13 +13,15 @@ public enum ProductEditorAtlasEntityRole: String, Equatable, Sendable {
 /// renderer-neutral released topology.
 ///
 /// Both nested artifacts retain their independent validators. This outer
-/// artifact adds cross-artifact identity and authoring-coverage checks.
+/// artifact adds cross-artifact identity, authoring coverage, and an explicit
+/// runtime-use declaration.
 public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "2.0"
+  public static let currentSchemaVersion = "3.0"
 
   public let schemaVersion: String
   public let releaseID: String
   public let releasedAt: String
+  public let runtimeUse: KaidoProductRuntimeUseDeclaration?
   public let navigationRelease: NavigationReleaseArtifact
   public let routeAtlasRelease: RouteAtlasReleaseArtifact
 
@@ -27,12 +29,14 @@ public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
     schemaVersion: String = KaidoProductReleaseArtifact.currentSchemaVersion,
     releaseID: String,
     releasedAt: String,
+    runtimeUse: KaidoProductRuntimeUseDeclaration? = .syntheticTestOnlyDisabled,
     navigationRelease: NavigationReleaseArtifact,
     routeAtlasRelease: RouteAtlasReleaseArtifact
   ) {
     self.schemaVersion = schemaVersion
     self.releaseID = releaseID
     self.releasedAt = releasedAt
+    self.runtimeUse = runtimeUse
     self.navigationRelease = navigationRelease
     self.routeAtlasRelease = routeAtlasRelease
   }
@@ -41,6 +45,7 @@ public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
     case schemaVersion = "schema_version"
     case releaseID = "release_id"
     case releasedAt = "released_at"
+    case runtimeUse = "runtime_use"
     case navigationRelease = "navigation_release"
     case routeAtlasRelease = "route_atlas_release"
   }
@@ -56,6 +61,8 @@ public enum KaidoProductReleaseIssue: Equatable, Sendable {
   case navigationReleaseAfterProductRelease
   case atlasEvidenceAfterProductRelease(String)
   case missingAtlasEditorEntity(ProductEditorAtlasEntityRole, String)
+  case missingRuntimeUse
+  case invalidRuntimeUse(KaidoProductRuntimeUseIssue)
 
   public var code: String {
     switch self {
@@ -77,6 +84,10 @@ public enum KaidoProductReleaseIssue: Equatable, Sendable {
       "ATLAS_EVIDENCE_AFTER_PRODUCT_RELEASE"
     case .missingAtlasEditorEntity:
       "MISSING_PRODUCT_ATLAS_EDITOR_ENTITY"
+    case .missingRuntimeUse:
+      "MISSING_PRODUCT_RUNTIME_USE"
+    case .invalidRuntimeUse(let issue):
+      issue.code
     }
   }
 
@@ -90,6 +101,8 @@ public enum KaidoProductReleaseIssue: Equatable, Sendable {
       "\(code):\(detail)"
     case .missingAtlasEditorEntity(let role, let entityID):
       "\(code):\(role.rawValue):\(entityID)"
+    case .invalidRuntimeUse(let issue):
+      "RUNTIME_USE:\(issue.sortKey)"
     default:
       code
     }
@@ -106,6 +119,10 @@ public struct KaidoProductRelease: Equatable, Sendable {
   public let releasedAt: String
   public let navigation: NavigationRelease
   public let routeAtlas: RouteAtlasRelease
+  public let runtimeUse: KaidoProductRuntimeUseDeclaration
+  public let runtimeUseEvaluation: KaidoProductRuntimeUseEvaluation
+  public let runtimeIdentity: KaidoProductRuntimeIdentity
+  public let foregroundLiveInputAuthority: KaidoForegroundLiveInputAuthority?
 
   public init(artifact: KaidoProductReleaseArtifact) throws {
     var issues: [KaidoProductReleaseIssue] = []
@@ -139,7 +156,38 @@ public struct KaidoProductRelease: Equatable, Sendable {
       routeAtlas = nil
     }
 
+    var runtimeUseEvaluation: KaidoProductRuntimeUseEvaluation?
+    if artifact.runtimeUse == nil {
+      issues.append(.missingRuntimeUse)
+    }
+
     if let navigation, let routeAtlas {
+      if let runtimeUse = artifact.runtimeUse {
+        let sources =
+          navigation.sourceRegistry.references.map {
+            KaidoProductRuntimeSourceDescriptor(
+              domain: .navigation,
+              sourceID: $0.id,
+              licenceIdentifier: $0.licenceIdentifier
+            )
+          }
+          + routeAtlas.sourceRegistry.references.map {
+            KaidoProductRuntimeSourceDescriptor(
+              domain: .routeAtlas,
+              sourceID: $0.id,
+              licenceIdentifier: $0.licenceIdentifier
+            )
+          }
+        let evaluation = KaidoProductRuntimeUseEvaluator.evaluate(
+          declaration: runtimeUse,
+          sources: sources
+        )
+        runtimeUseEvaluation = evaluation
+        issues.append(
+          contentsOf: evaluation.issues.map(KaidoProductReleaseIssue.invalidRuntimeUse)
+        )
+      }
+
       let networkSnapshotMatches =
         navigation.bundle.networkSnapshot == routeAtlas.networkSnapshot
       let routePlanMatches = navigation.bundle.routePlan == routeAtlas.routePlan
@@ -213,14 +261,36 @@ public struct KaidoProductRelease: Equatable, Sendable {
     }
 
     issues = Self.sortedUnique(issues)
-    guard issues.isEmpty, let navigation, let routeAtlas else {
+    guard
+      issues.isEmpty,
+      let navigation,
+      let routeAtlas,
+      let runtimeUse = artifact.runtimeUse,
+      let runtimeUseEvaluation
+    else {
       throw KaidoProductReleaseError.invalid(issues)
     }
+
+    let runtimeIdentity = KaidoProductRuntimeIdentity(
+      productReleaseID: artifact.releaseID,
+      navigationReleaseID: navigation.releaseID,
+      runtimePolicyID: navigation.bundle.runtimePolicy.id,
+      networkSnapshotID: navigation.bundle.networkSnapshot.id,
+      routePlanID: navigation.bundle.routePlan.id,
+      matcherCorridorID: navigation.bundle.matcherCorridor.id
+    )
 
     releaseID = artifact.releaseID
     releasedAt = artifact.releasedAt
     self.navigation = navigation
     self.routeAtlas = routeAtlas
+    self.runtimeUse = runtimeUse
+    self.runtimeUseEvaluation = runtimeUseEvaluation
+    self.runtimeIdentity = runtimeIdentity
+    foregroundLiveInputAuthority =
+      runtimeUseEvaluation.foregroundLiveInputAdmitted
+      ? KaidoForegroundLiveInputAuthority(runtimeIdentity: runtimeIdentity)
+      : nil
   }
 
   private static func sortedUnique(

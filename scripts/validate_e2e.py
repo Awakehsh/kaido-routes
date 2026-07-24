@@ -56,6 +56,14 @@ NAVIGATION_RELEASE_ASSET_ROLES = {
     "GUIDANCE",
     "JUNCTION_VIEW",
 }
+PRODUCT_RUNTIME_EVIDENCE_SCOPES = {
+    "SYNTHETIC_TEST_ONLY",
+    "RELEASED_ROAD",
+}
+PRODUCT_LIVE_INPUT_POLICIES = {
+    "DISABLED",
+    "FOREGROUND_WHEN_IN_USE",
+}
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
     "ROUTE_EDITOR_STARTED",
@@ -68,6 +76,7 @@ EVENT_TYPES = {
     "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
     "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
     "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
+    "PRODUCT_RUNTIME_USE_EVALUATED",
     "PRODUCT_NAVIGATION_RUNTIME_CREATED",
     "ROUTE_ATLAS_RELEASE_VALIDATED",
     "ROUTE_ATLAS_CONTEXT_VALIDATED",
@@ -1545,6 +1554,8 @@ def validate_product_release_artifact(
     required_inputs = {
         "product_release_id",
         "product_release_released_at",
+        "product_runtime_evidence_scope",
+        "product_live_input_policy",
         "product_release_expected_missing_editor_entity_ids",
         "navigation_release_id",
         "navigation_release_released_at",
@@ -1564,6 +1575,39 @@ def validate_product_release_artifact(
     if missing:
         v.add("product release inputs are missing: " + ", ".join(missing))
         return
+
+    evidence_scope = inputs["product_runtime_evidence_scope"]
+    if evidence_scope not in PRODUCT_RUNTIME_EVIDENCE_SCOPES:
+        v.add(
+            "given.inputs.product_runtime_evidence_scope must be "
+            "SYNTHETIC_TEST_ONLY or RELEASED_ROAD"
+        )
+    live_input_policy = inputs["product_live_input_policy"]
+    if live_input_policy not in PRODUCT_LIVE_INPUT_POLICIES:
+        v.add(
+            "given.inputs.product_live_input_policy must be DISABLED or "
+            "FOREGROUND_WHEN_IN_USE"
+        )
+    if (
+        evidence_scope == "SYNTHETIC_TEST_ONLY"
+        and live_input_policy != "DISABLED"
+    ):
+        v.add("synthetic product release live input must be DISABLED")
+
+    source_licences = [
+        source.get("licence_identifier")
+        for source_key in ("navigation_release_sources", "route_atlas_sources")
+        for source in inputs.get(source_key, [])
+        if isinstance(source, dict)
+    ]
+    if evidence_scope == "SYNTHETIC_TEST_ONLY" and any(
+        licence != "SYNTHETIC_TEST_ONLY" for licence in source_licences
+    ):
+        v.add("synthetic product runtime sources must be SYNTHETIC_TEST_ONLY")
+    if evidence_scope == "RELEASED_ROAD" and any(
+        licence == "SYNTHETIC_TEST_ONLY" for licence in source_licences
+    ):
+        v.add("released-road product runtime cannot contain synthetic sources")
 
     release_id = inputs["product_release_id"]
     if not isinstance(release_id, str) or not release_id.strip():
@@ -1779,6 +1823,107 @@ def validate_product_release_artifact(
                 v.add(f"{context} cannot follow the product release")
 
 
+def validate_product_runtime_use_cases(
+    v: Validation, given: dict[str, Any], events: Any
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "product_runtime_use_cases" not in inputs:
+        return
+
+    cases = inputs["product_runtime_use_cases"]
+    if not isinstance(cases, list) or not cases:
+        v.add("given.inputs.product_runtime_use_cases must be a non-empty array")
+        return
+
+    case_ids: set[str] = set()
+    required_case_keys = {
+        "case_id",
+        "evidence_scope",
+        "live_input_policy",
+        "navigation_sources",
+        "route_atlas_sources",
+    }
+    for case_index, case in enumerate(cases):
+        context = f"given.inputs.product_runtime_use_cases[{case_index}]"
+        if not v.require_keys(case, required_case_keys, context):
+            continue
+        extra_keys = sorted(set(case) - required_case_keys)
+        if extra_keys:
+            v.add(f"{context} has unsupported keys: {', '.join(extra_keys)}")
+
+        case_id = case["case_id"]
+        if not isinstance(case_id, str) or not SLUG_RE.fullmatch(case_id):
+            v.add(f"{context}.case_id must be a lowercase stable identifier")
+        elif case_id in case_ids:
+            v.add(f"duplicate product runtime-use case id: {case_id}")
+        else:
+            case_ids.add(case_id)
+
+        if case["evidence_scope"] not in PRODUCT_RUNTIME_EVIDENCE_SCOPES:
+            v.add(f"{context}.evidence_scope is unknown")
+        if case["live_input_policy"] not in PRODUCT_LIVE_INPUT_POLICIES:
+            v.add(f"{context}.live_input_policy is unknown")
+
+        source_ids: set[str] = set()
+        for source_key in ("navigation_sources", "route_atlas_sources"):
+            sources = case[source_key]
+            if not isinstance(sources, list) or not sources:
+                v.add(f"{context}.{source_key} must be a non-empty array")
+                continue
+            for source_index, source in enumerate(sources):
+                source_context = (
+                    f"{context}.{source_key}[{source_index}]"
+                )
+                required_source_keys = {"source_id", "licence_identifier"}
+                if not v.require_keys(
+                    source, required_source_keys, source_context
+                ):
+                    continue
+                extra_source_keys = sorted(
+                    set(source) - required_source_keys
+                )
+                if extra_source_keys:
+                    v.add(
+                        f"{source_context} has unsupported keys: "
+                        + ", ".join(extra_source_keys)
+                    )
+                source_id = source["source_id"]
+                if (
+                    not isinstance(source_id, str)
+                    or not source_id.strip()
+                ):
+                    v.add(f"{source_context}.source_id must be non-empty")
+                elif source_id in source_ids:
+                    v.add(
+                        f"{context} has duplicate source_id: {source_id}"
+                    )
+                else:
+                    source_ids.add(source_id)
+                licence = source["licence_identifier"]
+                if not isinstance(licence, str) or not licence.strip():
+                    v.add(
+                        f"{source_context}.licence_identifier must be non-empty"
+                    )
+
+    if isinstance(events, list):
+        for index, event in enumerate(events):
+            if (
+                isinstance(event, dict)
+                and event.get("type") == "PRODUCT_RUNTIME_USE_EVALUATED"
+            ):
+                payload = event.get("payload")
+                case_id = (
+                    payload.get("case_id")
+                    if isinstance(payload, dict)
+                    else None
+                )
+                if case_id not in case_ids:
+                    v.add(
+                        f"when[{index}] product runtime-use event references "
+                        f"unknown case_id: {case_id!r}"
+                    )
+
+
 def validate_timeline(v: Validation, events: Any) -> set[str]:
     if not isinstance(events, list) or not events:
         v.add("when must be a non-empty array")
@@ -1904,6 +2049,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_entry_transition_admission(v, given, scenario["when"])
         validate_navigation_release_artifact(v, given)
         validate_product_release_artifact(v, given)
+        validate_product_runtime_use_cases(v, given, scenario["when"])
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")
         if not isinstance(given["system_state"], dict):

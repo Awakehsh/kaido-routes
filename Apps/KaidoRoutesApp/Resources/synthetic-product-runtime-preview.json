@@ -1083,5 +1083,9 @@
       "topology_slice_id" : "test.topology.product-release"
     }
   },
-  "schema_version" : "2.0"
+  "runtime_use" : {
+    "evidence_scope" : "SYNTHETIC_TEST_ONLY",
+    "live_input_policy" : "DISABLED"
+  },
+  "schema_version" : "3.0"
 }

@@ -50,6 +50,8 @@
     "inputs": {
       "product_release_id": "test.product-release.missing-editor-approach",
       "product_release_released_at": "2026-07-24T12:30:00+09:00",
+      "product_runtime_evidence_scope": "SYNTHETIC_TEST_ONLY",
+      "product_live_input_policy": "DISABLED",
       "product_release_expected_missing_editor_entity_ids": [
         "test.approach.product-release.exit"
       ],
@@ -465,13 +467,13 @@
       "id": "validate-product-release",
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "2.0"}
+      "payload": {"schema_version": "3.0"}
     },
     {
       "id": "create-product-runtime",
       "at_ms": 3,
       "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
-      "payload": {"schema_version": "2.0"}
+      "payload": {"schema_version": "3.0"}
     }
   ],
   "then": [

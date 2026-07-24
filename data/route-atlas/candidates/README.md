@@ -135,9 +135,20 @@ hash-bound pre-release decision for the most advanced K7 candidate. It binds
 the schematic candidate, directed source review, exact successor audit,
 project-authored layout source, official road-register review, and coordinate-
 free field-review template without copying official map imagery or private
-field evidence. It also binds the ODbL technical distribution review, which in
-turn binds the complete derivative database, reconstruction offer, app
-attribution catalog, native SwiftUI evidence strip, and Xcode project source.
+field evidence. Field schema 1.1 rejects extra manifest fields, raw media and
+location keys, unsafe collection, non-independent review, unbound raw hashes,
+and validity beyond 31 days; completed in-repository manifests must remain
+under ignored `research/`. The readiness package also binds the ODbL technical
+distribution review, which in turn binds the complete derivative database,
+reconstruction offer, app attribution catalog, native SwiftUI evidence strip,
+and Xcode project source.
+
+Initialize a non-overwriting private working manifest:
+
+```sh
+python3 scripts/prepare_k7_surface_field_review.py \
+  --output research/evidence/k7-kohoku-field-review.json
+```
 
 The separate
 `k7-northwest-up-aoba-to-kohoku-road-register-review.json` records that

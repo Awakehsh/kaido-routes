@@ -54,6 +54,8 @@ def completed_field_review() -> dict:
         "observer_role": "PASSENGER",
         "driver_interaction": False,
         "expressway_stop_required": False,
+        "unsafe_positioning_required": False,
+        "lawful_travel_only": True,
         "raw_evidence_sha256": hashes,
     }
     for observation, digest in zip(review["observations"], hashes):
@@ -65,6 +67,7 @@ def completed_field_review() -> dict:
         "current_legal_direction": "FORWARD_ONLY",
         "permitted_exit_movement": "ALLOWED",
         "reviewed_by": "synthetic-reviewer",
+        "reviewer_role": "INDEPENDENT_REVIEWER",
         "reviewed_at": "2026-07-24T12:00:00+09:00",
         "valid_through": "2026-08-24",
     }

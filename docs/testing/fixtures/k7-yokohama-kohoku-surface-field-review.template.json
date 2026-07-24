@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "plan_id": "k7-yokohama-kohoku-surface-field-verification",
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
@@ -9,11 +9,20 @@
     "surface_osm_way_id": 776884422,
     "source_direction": "FORWARD"
   },
+  "privacy_contract": {
+    "manifest_classification": "PRIVATE_COORDINATE_FREE_REVIEW",
+    "raw_evidence_storage": "IGNORED_PRIVATE_STORAGE_ONLY",
+    "raw_media_embedded": false,
+    "coordinates_embedded": false,
+    "device_metadata_embedded": false
+  },
   "collection": {
     "captured_at": null,
     "observer_role": "UNASSIGNED",
     "driver_interaction": false,
     "expressway_stop_required": false,
+    "unsafe_positioning_required": false,
+    "lawful_travel_only": true,
     "raw_evidence_sha256": []
   },
   "observations": [
@@ -51,6 +60,7 @@
     "current_legal_direction": "UNCONFIRMED",
     "permitted_exit_movement": "UNCONFIRMED",
     "reviewed_by": null,
+    "reviewer_role": "UNASSIGNED",
     "reviewed_at": null,
     "valid_through": null
   }

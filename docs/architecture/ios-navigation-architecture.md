@@ -534,8 +534,11 @@ outgoing successors and no applicable turn-restriction relation. This proves
 source translation completeness, not road legality: the third surface way has
 an official historic identity but no current road-level direction or
 permitted-movement review. The coordinate-free field-review validator requires
-four current, safely collected, hash-bound checkpoints and still grants no
-Route Atlas release authority.
+four current, lawfully passenger-collected, hash-bound checkpoints, an
+independent reviewer, an exact privacy allowlist, and no more than 31 days of
+validity. It refuses completed in-repository manifests outside ignored
+`research/`, exposes no raw media or location in its report, and still grants
+no Route Atlas release authority.
 Both evidence states remain `CANDIDATE`; OSM community directionality plus
 current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime

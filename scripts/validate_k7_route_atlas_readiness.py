@@ -15,6 +15,7 @@ from typing import Any
 from validate_k7_surface_field_review import (
     FieldReviewError,
     evaluate as evaluate_field_review,
+    validate_review_input_path,
 )
 
 
@@ -1129,11 +1130,11 @@ def main() -> int:
     arguments = parse_arguments()
     try:
         readiness = load_object(arguments.readiness)
-        field_review = (
-            load_object(arguments.field_review)
-            if arguments.field_review is not None
-            else None
-        )
+        if arguments.field_review is not None:
+            validate_review_input_path(arguments.field_review)
+            field_review = load_object(arguments.field_review)
+        else:
+            field_review = None
         report = evaluate(
             readiness,
             arguments.as_of,
@@ -1142,7 +1143,7 @@ def main() -> int:
         )
         if arguments.report is not None:
             write_report(report, arguments.report)
-    except (OSError, ReadinessError) as error:
+    except (OSError, FieldReviewError, ReadinessError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     if report["candidate_ready_for_release_validation"]:

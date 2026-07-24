@@ -114,15 +114,38 @@ Copy
 [`k7-yokohama-kohoku-surface-field-review.template.json`](fixtures/k7-yokohama-kohoku-surface-field-review.template.json)
 into ignored private storage. Keep raw photos, video, coordinates, device
 metadata, and personal traces under `research/`; do not commit them.
+The validator accepts the tracked empty template for deterministic negative
+testing, but refuses any other in-repository manifest outside ignored
+`research/`. Private storage outside the repository is also allowed.
+Initialize a fresh manifest without overwriting an existing private review:
+
+```sh
+python3 scripts/prepare_k7_surface_field_review.py \
+  --output research/evidence/k7-kohoku-field-review.json
+```
+
+Schema 1.1 is an exact allowlist. A completed manifest cannot add raw media,
+file paths, coordinates, device metadata, or arbitrary observation fields.
+It declares `PRIVATE_COORDINATE_FREE_REVIEW`, retains raw evidence only by
+SHA-256, and requires every listed raw hash to be referenced by at least one
+checkpoint.
 
 The manifest records only:
 
 - the exact snapshot, facility, OSM way, node, and source direction;
-- capture time and safe observer role;
+- capture time, passenger observer role, lawful-travel status, and explicit
+  absence of driver interaction, expressway stopping, or unsafe positioning;
 - SHA-256 hashes that bind each checkpoint to private raw evidence;
 - concise sign findings without coordinates;
 - current physical status, legal direction, and permitted exit movement;
-- reviewer, review time, and a bounded validity date.
+- independent reviewer, review time, and a validity date no more than 31 days
+  after review.
+
+Hash each private raw evidence file without copying it into the manifest:
+
+```sh
+shasum -a 256 "research/evidence/k7-kohoku/evidence-file.mov"
+```
 
 Validate a completed manifest with an explicit date:
 
@@ -135,6 +158,9 @@ python3 scripts/validate_k7_surface_field_review.py \
 
 The tracked template must return `BLOCKED`. A completed manifest returns
 `PASS`, but its report still sets `route_release_authority` to `false`.
+The report contains only the fixed target identity, scalar conclusions, file
+count, privacy classification, and blocker codes; it cannot reproduce media,
+coordinates, paths, reviewer identity, or device metadata.
 Field completion closes only the physical-status, legal-direction, and
 permitted-movement part of this road-level evidence gap. It does not name an
 official municipal road route. The exact road identity remains a separate
@@ -168,6 +194,7 @@ The current movement may enter topology review only when:
   `NO_MOTOR_ACCESS`;
 - the exit movement is explicitly `ALLOWED` or `PROHIBITED`;
 - an independent reviewer accepts the findings and validity interval; and
+- the validity interval is no longer than 31 days from review;
 - no newer operator, government, police, construction, or field evidence
   conflicts with the conclusion.
 

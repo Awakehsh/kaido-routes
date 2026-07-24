@@ -42,7 +42,7 @@
     {
       "role": "FIELD_REVIEW_TEMPLATE",
       "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-surface-field-review.template.json",
-      "content_sha256": "2081289560b0eb30e3258858c97f1c1392d15273af4fddc0a4b85955d335d5b8"
+      "content_sha256": "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
     },
     {
       "role": "ODBL_DISTRIBUTION_REVIEW",

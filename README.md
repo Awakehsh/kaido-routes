@@ -412,9 +412,12 @@ no applicable turn-restriction relation. It deliberately reports legal review
 as incomplete because the third surface way's current road-level direction and
 movement remain unconfirmed. The tracked
 [field-verification plan](docs/testing/k7-yokohama-kohoku-surface-field-verification.md)
-and coordinate-free manifest validator make that gap executable without
-committing raw field media. This closes the structured directed-candidate gap,
-not release: topology and layout stay
+and schema-1.1 coordinate-free manifest validator make that gap executable
+without committing raw field media. The validator accepts only an exact
+allowlist, refuses completed in-repository manifests outside ignored
+`research/`, requires lawful passenger collection and an independent reviewer,
+binds every raw hash to a checkpoint, and caps validity at 31 days. This closes
+the structured directed-candidate gap, not release: topology and layout stay
 `CANDIDATE` until independent lawful field/topology review and production layout
 are complete. In-product attribution and derivative-database distribution are
 separately complete under a dated, hash-bound technical review: the full

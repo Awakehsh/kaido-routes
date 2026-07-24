@@ -4,56 +4,22 @@ import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
 
-enum BundledProductReleaseRole: String, Equatable, Sendable {
-  case demoOnly = "DEMO_ONLY"
-  case foregroundNavigation = "FOREGROUND_NAVIGATION"
-}
+typealias BundledProductReleaseRole = AppBundleProductReleaseRole
+typealias BundledProductReleaseDescriptor =
+  AppBundleProductReleaseDescriptor
+typealias BundledGuidanceAudioReleaseDescriptor =
+  AppBundleGuidanceAudioReleaseDescriptor
 
-struct BundledProductReleaseDescriptor: Equatable, Sendable {
-  let resourceName: String
-  let resourceExtension: String
-  let expectedSHA256: String
-  let expectedReleaseID: String
-  let role: BundledProductReleaseRole
-  let guidanceAudio: BundledGuidanceAudioReleaseDescriptor?
-
-  init(
-    resourceName: String,
-    resourceExtension: String,
-    expectedSHA256: String,
-    expectedReleaseID: String,
-    role: BundledProductReleaseRole,
-    guidanceAudio: BundledGuidanceAudioReleaseDescriptor? = nil
-  ) {
-    self.resourceName = resourceName
-    self.resourceExtension = resourceExtension
-    self.expectedSHA256 = expectedSHA256
-    self.expectedReleaseID = expectedReleaseID
-    self.role = role
-    self.guidanceAudio = guidanceAudio
-  }
-
-  static let syntheticPreview = BundledProductReleaseDescriptor(
-    resourceName: "synthetic-product-runtime-preview",
-    resourceExtension: "json",
-    expectedSHA256:
-      "53792af35b9712a1a5fadd7be9cbc3c868df09e99a5d99c3c92f7c318f7dca1e",
-    expectedReleaseID: "preview.synthetic.product-release.v1",
-    role: .demoOnly
-  )
-
-  var resourceFilename: String {
-    "\(resourceName).\(resourceExtension)"
-  }
-}
-
-struct BundledGuidanceAudioReleaseDescriptor: Equatable, Sendable {
-  let manifestResourceName: String
-  let expectedManifestSHA256: String
-  let expectedReleaseID: String
-
-  var manifestFilename: String {
-    "\(manifestResourceName).json"
+extension AppBundleProductReleaseDescriptor {
+  static var syntheticPreview: AppBundleProductReleaseDescriptor {
+    AppBundleProductReleaseDescriptor(
+      resourceName: "synthetic-product-runtime-preview",
+      resourceExtension: "json",
+      expectedSHA256:
+        "53792af35b9712a1a5fadd7be9cbc3c868df09e99a5d99c3c92f7c318f7dca1e",
+      expectedReleaseID: "preview.synthetic.product-release.v1",
+      role: .demoOnly
+    )
   }
 }
 

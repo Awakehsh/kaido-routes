@@ -13,6 +13,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case productAuthoring(KaidoProductReleaseAuthoringError)
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
+  case appBundleStaging(AppBundleReleaseStagingError)
 
   var description: String {
     switch self {
@@ -36,6 +37,12 @@ private enum CLIError: Error, CustomStringConvertible {
           --product-artifact <product-release.json> \\
           --manifest <guidance-audio-release.json> \\
           --resources <wav-directory>
+        kaido-release prepare-app-bundle \\
+          --product-artifact <product-release.json> \\
+          --config <app-bundle-staging.json> \\
+          [--guidance-audio-manifest <guidance-audio-release.json> \\
+           --guidance-audio-resources <wav-directory>] \\
+          --output <new-staging-directory>
       """
     case .readFailed(let path, let error):
       "Cannot read \(path): \(error)"
@@ -58,6 +65,8 @@ private enum CLIError: Error, CustomStringConvertible {
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
+    case .appBundleStaging(let error):
+      Self.appBundleStagingDescription(error)
     }
   }
 
@@ -102,6 +111,32 @@ private enum CLIError: Error, CustomStringConvertible {
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     }
   }
+
+  private static func appBundleStagingDescription(
+    _ error: AppBundleReleaseStagingError
+  ) -> String {
+    switch error {
+    case .invalidConfiguration(let issues):
+      "App bundle staging configuration is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidProductArtifact:
+      "App bundle staging product artifact cannot be decoded"
+    case .invalidProductRelease(let issues):
+      "App bundle staging product release is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .foregroundProductRequired:
+      "App bundle staging requires a released-road foreground product"
+    case .guidanceAudioInputMismatch:
+      "App bundle staging audio configuration and inputs do not agree"
+    case .invalidGuidanceAudioArtifact:
+      "App bundle staging guidance audio artifact cannot be decoded"
+    case .invalidGuidanceAudioRelease(let issues):
+      "App bundle staging guidance audio release is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .duplicateResourceFilename(let filename):
+      "App bundle staging resource filename is duplicated: \(filename)"
+    }
+  }
 }
 
 private enum Command {
@@ -127,6 +162,13 @@ private enum Command {
     productArtifact: String,
     manifest: String,
     resources: String
+  )
+  case prepareAppBundle(
+    productArtifact: String,
+    configuration: String,
+    guidanceAudioManifest: String?,
+    guidanceAudioResources: String?,
+    output: String
   )
 }
 
@@ -200,6 +242,37 @@ private struct Arguments {
         manifest: try flags.value("--manifest"),
         resources: try flags.value("--resources")
       )
+    case "prepare-app-bundle":
+      let baseFlags: Set<String> = [
+        "--product-artifact",
+        "--config",
+        "--output",
+      ]
+      let audioFlags = baseFlags.union([
+        "--guidance-audio-manifest",
+        "--guidance-audio-resources",
+      ])
+      let guidanceAudioManifest: String?
+      let guidanceAudioResources: String?
+      if flags.matches(exactly: baseFlags) {
+        guidanceAudioManifest = nil
+        guidanceAudioResources = nil
+      } else {
+        try flags.require(exactly: audioFlags)
+        guidanceAudioManifest = try flags.value(
+          "--guidance-audio-manifest"
+        )
+        guidanceAudioResources = try flags.value(
+          "--guidance-audio-resources"
+        )
+      }
+      command = .prepareAppBundle(
+        productArtifact: try flags.value("--product-artifact"),
+        configuration: try flags.value("--config"),
+        guidanceAudioManifest: guidanceAudioManifest,
+        guidanceAudioResources: guidanceAudioResources,
+        output: try flags.value("--output")
+      )
     default:
       throw CLIError.usage
     }
@@ -238,6 +311,10 @@ private struct FlagValues {
     }
   }
 
+  func matches(exactly required: Set<String>) -> Bool {
+    Set(values.keys) == required
+  }
+
   func value(_ flag: String) throws -> String {
     guard let value = values[flag] else {
       throw CLIError.usage
@@ -272,6 +349,61 @@ private func writeNew(_ data: Data, path: String) throws {
     try FileManager.default.moveItem(at: temporaryURL, to: url)
   } catch {
     if FileManager.default.fileExists(atPath: url.path) {
+      throw CLIError.outputExists(path)
+    }
+    throw CLIError.writeFailed(path, error)
+  }
+}
+
+private func writeNewDirectory(
+  _ package: AppBundleReleaseStagingPackage,
+  path: String
+) throws {
+  let outputURL = URL(fileURLWithPath: path, isDirectory: true)
+    .standardizedFileURL
+  guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+    throw CLIError.outputExists(path)
+  }
+  let parentURL = outputURL.deletingLastPathComponent()
+  let temporaryURL = parentURL.appendingPathComponent(
+    ".kaido-app-bundle-\(UUID().uuidString).tmp",
+    isDirectory: true
+  )
+  defer {
+    try? FileManager.default.removeItem(at: temporaryURL)
+  }
+  do {
+    try FileManager.default.createDirectory(
+      at: temporaryURL,
+      withIntermediateDirectories: false
+    )
+    for file in package.files {
+      let fileURL = temporaryURL.appendingPathComponent(
+        file.relativePath,
+        isDirectory: false
+      ).standardizedFileURL
+      guard
+        fileURL.path.hasPrefix(temporaryURL.path + "/")
+      else {
+        throw CLIError.writeFailed(
+          path,
+          CocoaError(.fileWriteInvalidFileName)
+        )
+      }
+      try FileManager.default.createDirectory(
+        at: fileURL.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+      )
+      try file.data.write(to: fileURL, options: .atomic)
+    }
+    try FileManager.default.moveItem(
+      at: temporaryURL,
+      to: outputURL
+    )
+  } catch let error as CLIError {
+    throw error
+  } catch {
+    if FileManager.default.fileExists(atPath: outputURL.path) {
       throw CLIError.outputExists(path)
     }
     throw CLIError.writeFailed(path, error)
@@ -514,6 +646,48 @@ do {
     } catch GuidanceAudioReleaseError.invalid(let issues) {
       throw CLIError.invalidGuidanceAudio(issues)
     }
+  case .prepareAppBundle(
+    let productArtifactPath,
+    let configurationPath,
+    let guidanceAudioManifestPath,
+    let guidanceAudioResources,
+    let output
+  ):
+    let productArtifactData = try read(path: productArtifactPath)
+    let configuration =
+      try AppBundleReleaseStagingConfigurationCodec.decode(
+        read(path: configurationPath)
+      )
+    let guidanceAudioManifestData = try guidanceAudioManifestPath.map {
+      try read(path: $0)
+    }
+    let package: AppBundleReleaseStagingPackage
+    do {
+      package = try AppBundleReleaseStagingAuthor.prepare(
+        configuration: configuration,
+        productArtifactData: productArtifactData,
+        guidanceAudioManifestData: guidanceAudioManifestData,
+        guidanceAudioResourceProvider: guidanceAudioResources.map {
+          resources in
+          {
+            try guidanceAudioResource(
+              filename: $0,
+              directoryPath: resources
+            )
+          }
+        }
+      )
+    } catch let error as AppBundleReleaseStagingError {
+      throw CLIError.appBundleStaging(error)
+    }
+    try writeNewDirectory(package, path: output)
+    print(
+      "PASS: staged foreground product "
+        + "\(package.manifest.descriptor.expectedReleaseID) with "
+        + "\(package.manifest.resources.count) hash-bound resources and "
+        + "compile-time descriptor ."
+        + "\(package.manifest.descriptorSymbol) at \(output)"
+    )
   }
 } catch {
   writeError(String(describing: error))

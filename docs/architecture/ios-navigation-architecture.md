@@ -588,6 +588,17 @@ cannot promote synthetic evidence. Duplicate resources, duplicate release IDs,
 missing or corrupt assets, and identity or role drift block catalog
 construction.
 
+`AppBundleReleaseStagingAuthor` is the package-time bridge into this boundary.
+It accepts only a production-decoded foreground product, optionally revalidates
+one complete exact-product guidance-audio release, retains all artifact bytes,
+and derives the shared descriptor values and per-resource audit hashes.
+`kaido-release prepare-app-bundle` writes those resources plus a generated
+compile-time descriptor into a new atomic staging directory. It refuses
+synthetic products, partial audio input, unsafe names, duplicate resources, and
+existing output. A maintainer must still review and explicitly enroll the
+generated static symbol in the App manifest; no runtime scanning or automatic
+promotion is introduced.
+
 The default product journey queries only foreground releases by exact
 `RoutePlan` equality. Zero matches remain unavailable, and multiple matches
 remain ambiguous even when both artifacts independently validate. One exact

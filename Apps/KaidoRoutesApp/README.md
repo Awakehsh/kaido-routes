@@ -37,6 +37,14 @@ release to match both identity and role. A demo must remain
 entry must be `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` and carry only the
 authority minted by production decode.
 
+`kaido-release prepare-app-bundle` can derive one exact foreground descriptor,
+copy the unchanged validated product and optional complete guidance-audio
+resources into an Xcode-ready staging directory, and emit an audit manifest.
+The App and CLI share the descriptor value types, so release ID, role, resource
+name, and SHA-256 cannot drift through hand transcription. The generated static
+descriptor must still be reviewed and explicitly added to `previewManifest`;
+staging never becomes runtime resource discovery or automatic enrollment.
+
 The product journey searches only foreground entries and compares the whole
 compiled `RoutePlan`, including snapshot and occurrence order. No match remains
 release-blocked and multiple exact matches are an explicit ambiguity. One exact

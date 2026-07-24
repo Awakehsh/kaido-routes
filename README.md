@@ -779,6 +779,22 @@ The authoring configuration contains only schema version, product release ID,
 and release timestamp. Runtime scope is intentionally not configurable. See
 [`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md).
 
+After independent validation, prepare the exact Xcode-ready resources and
+compile-time foreground descriptor without transcribing release IDs or hashes:
+
+```sh
+swift run kaido-release prepare-app-bundle \
+  --product-artifact <product-release.json> \
+  --config <app-bundle-staging.json> \
+  --output <new-staging-directory>
+```
+
+An optional complete guidance-audio release may be supplied in the same run.
+Synthetic products fail before output, existing destinations are never
+overwritten, and the generated descriptor still requires an explicit reviewed
+addition to the App catalog. See
+[`docs/contributing/app-bundle-staging.md`](docs/contributing/app-bundle-staging.md).
+
 Offline guidance-audio authoring is executable without copying prompt records by
 hand:
 

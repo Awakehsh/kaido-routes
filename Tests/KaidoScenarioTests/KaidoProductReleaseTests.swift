@@ -1,3 +1,6 @@
+import CryptoKit
+import Foundation
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
 import Testing
@@ -511,6 +514,240 @@ func productReleaseAuthorRejectsInvalidNestedInputs() {
   }
 }
 
+@Test("App bundle staging derives one deterministic compile-time descriptor")
+func appBundleStagingPreparesForegroundProduct() throws {
+  let productData = try appBundleReleasedProductData()
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7AobaKohoku",
+    productResourceName: "k7-aoba-kohoku-product-release"
+  )
+
+  let configurationData =
+    try AppBundleReleaseStagingConfigurationCodec.encode(configuration)
+  let decodedConfiguration =
+    try AppBundleReleaseStagingConfigurationCodec.decode(configurationData)
+  let package = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: decodedConfiguration,
+    productArtifactData: productData
+  )
+  let repeated = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: decodedConfiguration,
+    productArtifactData: productData
+  )
+  let manifestData =
+    try AppBundleReleaseStagingManifestCodec.encode(package.manifest)
+  let decodedManifest =
+    try AppBundleReleaseStagingManifestCodec.decode(manifestData)
+
+  #expect(package == repeated)
+  #expect(decodedConfiguration == configuration)
+  #expect(decodedManifest == package.manifest)
+  #expect(package.manifest.descriptor.role == .foregroundNavigation)
+  #expect(
+    package.manifest.descriptor.expectedReleaseID
+      == "test.product-release.app-bundle"
+  )
+  #expect(
+    package.manifest.descriptor.expectedSHA256
+      == testSHA256Hex(productData)
+  )
+  #expect(package.manifest.descriptor.guidanceAudio == nil)
+  #expect(
+    package.manifest.resources
+      == [
+        AppBundleStagedResourceRecord(
+          relativePath:
+            "Resources/k7-aoba-kohoku-product-release.json",
+          kind: .productRelease,
+          sha256: testSHA256Hex(productData),
+          byteCount: productData.count
+        )
+      ]
+  )
+  #expect(
+    package.files.map(\.relativePath)
+      == [
+        "Resources/k7-aoba-kohoku-product-release.json",
+        "Sources/BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift",
+        "app-bundle-staging-manifest.json",
+      ]
+  )
+  let generatedSource = try #require(
+    package.files.first {
+      $0.relativePath.hasPrefix("Sources/")
+    }
+  )
+  let sourceText = try #require(
+    String(data: generatedSource.data, encoding: .utf8)
+  )
+  #expect(
+    sourceText.contains(
+      "static let releasedK7AobaKohoku"
+    )
+  )
+  #expect(sourceText.contains("role: .foregroundNavigation"))
+}
+
+@Test("App bundle staging rejects synthetic products and partial audio input")
+func appBundleStagingRejectsNonForegroundInput() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let syntheticData = try KaidoProductReleaseArtifactCodec.encode(
+    KaidoProductReleaseArtifact(
+      releaseID: "test.product-release.synthetic-staging",
+      releasedAt: "2026-07-24T12:00:00+09:00",
+      navigationRelease: navigationReleaseArtifact(fixture),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: true
+      )
+    )
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7AobaKohoku",
+    productResourceName: "k7-aoba-kohoku-product-release"
+  )
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: configuration,
+      productArtifactData: syntheticData
+    )
+    Issue.record("Expected synthetic product staging to fail")
+  } catch AppBundleReleaseStagingError.foregroundProductRequired {
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: AppBundleReleaseStagingConfiguration(
+        descriptorSymbol: "releasedK7AobaKohoku",
+        productResourceName: "k7-aoba-kohoku-product-release",
+        guidanceAudioManifestResourceName: "k7-guidance-audio"
+      ),
+      productArtifactData: try appBundleReleasedProductData()
+    )
+    Issue.record("Expected partial guidance audio input to fail")
+  } catch AppBundleReleaseStagingError.guidanceAudioInputMismatch {
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("App bundle staging validates configuration before artifact admission")
+func appBundleStagingRejectsInvalidConfiguration() throws {
+  let configuration = AppBundleReleaseStagingConfiguration(
+    schemaVersion: "2.0",
+    descriptorSymbol: "class",
+    productResourceName: "../product",
+    guidanceAudioManifestResourceName: "../product"
+  )
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: configuration,
+      productArtifactData: Data()
+    )
+    Issue.record("Expected invalid staging configuration to fail")
+  } catch AppBundleReleaseStagingError.invalidConfiguration(let issues) {
+    #expect(
+      issues
+        == [
+          .invalidSchemaVersion,
+          .invalidDescriptorSymbol,
+          .invalidProductResourceName,
+          .invalidGuidanceAudioManifestResourceName,
+          .duplicateManifestResourceName,
+        ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("App bundle staging retains one complete released guidance audio pack")
+func appBundleStagingPreparesGuidanceAudio() throws {
+  let productData = try appBundleReleasedProductData()
+  let productRelease = try KaidoProductReleaseArtifactCodec.decode(
+    productData
+  )
+  let baseFixture = guidanceAudioManifestFixture(productRelease)
+  let releasedRecords = baseFixture.manifest.assets.map { record in
+    GuidanceAudioAssetRecord(
+      key: record.key,
+      spokenText: record.spokenText,
+      spokenTextSHA256: record.spokenTextSHA256,
+      resourceFilename: record.resourceFilename,
+      audioSHA256: record.audioSHA256,
+      byteCount: record.byteCount,
+      sampleRateHz: record.sampleRateHz,
+      channelCount: record.channelCount,
+      durationMilliseconds: record.durationMilliseconds,
+      provenance: GuidanceAudioSynthesisProvenance(
+        evidenceScope: .releasedAsset,
+        generationMode: .localOpenWeight,
+        engineID: "test.engine",
+        engineVersion: "1.0.0",
+        modelID: "test/model",
+        modelRevision: String(repeating: "a", count: 40),
+        voiceID: record.provenance.voiceID,
+        licenceIdentifier: "Apache-2.0",
+        sourceURL: "https://example.com/test-guidance-audio",
+        generatedAt: "2026-07-24T13:00:00+09:00",
+        reviewedAt: "2026-07-24T14:00:00+09:00"
+      )
+    )
+  }
+  let manifest = GuidanceAudioReleaseManifest(
+    releaseID: "test.guidance-audio.app-bundle.v1",
+    releasedAt: "2026-07-24T15:00:00+09:00",
+    productReleaseID: productRelease.releaseID,
+    navigationReleaseID: productRelease.navigation.releaseID,
+    networkSnapshotID:
+      productRelease.navigation.bundle.networkSnapshot.id,
+    routePlanID: productRelease.navigation.bundle.routePlan.id,
+    assets: releasedRecords
+  )
+  let manifestData = try GuidanceAudioReleaseManifestCodec.encode(
+    manifest,
+    productRelease: productRelease,
+    resourceProvider: { baseFixture.resources[$0] }
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7WithAudio",
+    productResourceName: "k7-product",
+    guidanceAudioManifestResourceName: "k7-guidance-audio"
+  )
+
+  let package = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: configuration,
+    productArtifactData: productData,
+    guidanceAudioManifestData: manifestData,
+    guidanceAudioResourceProvider: { baseFixture.resources[$0] }
+  )
+  let audioDescriptor = try #require(
+    package.manifest.descriptor.guidanceAudio
+  )
+
+  #expect(
+    audioDescriptor.expectedReleaseID
+      == "test.guidance-audio.app-bundle.v1"
+  )
+  #expect(
+    audioDescriptor.expectedManifestSHA256
+      == testSHA256Hex(manifestData)
+  )
+  #expect(
+    package.manifest.resources.count
+      == 2 + Set(releasedRecords.map(\.resourceFilename)).count
+  )
+  #expect(
+    package.manifest.resources.filter {
+      $0.kind == .guidanceAudioWave
+    }.count == Set(releasedRecords.map(\.resourceFilename)).count
+  )
+}
+
 @Test("Released-road runtime scope rejects mixed synthetic sources")
 func releasedRoadRuntimeScopeRejectsSyntheticSources() {
   let evaluation = KaidoProductRuntimeUseEvaluator.evaluate(
@@ -873,4 +1110,30 @@ private func productNavigationReleaseArtifact(
     releasedGuidance: artifact.releasedGuidance,
     junctionViews: artifact.junctionViews
   )
+}
+
+private func appBundleReleasedProductData() throws -> Data {
+  let fixture = navigationReleaseBundleFixture()
+  let artifact = try KaidoProductReleaseAuthor.buildArtifact(
+    navigationRelease: productNavigationReleaseArtifact(
+      fixture,
+      licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+    ),
+    routeAtlasRelease: productRouteAtlasArtifact(
+      fixture,
+      includeIncomingApproach: true,
+      licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+    ),
+    configuration: KaidoProductReleaseAuthoringConfiguration(
+      releaseID: "test.product-release.app-bundle",
+      releasedAt: "2026-07-24T12:30:00+09:00"
+    )
+  )
+  return try KaidoProductReleaseArtifactCodec.encode(artifact)
+}
+
+private func testSHA256Hex(_ data: Data) -> String {
+  SHA256.hash(data: data).map {
+    String(format: "%02x", $0)
+  }.joined()
 }

@@ -595,7 +595,7 @@ func releasedGuidanceAudioOutputDoesNotReplayAfterInterruption() throws {
   )
 }
 
-private struct GuidanceAudioManifestFixture {
+struct GuidanceAudioManifestFixture {
   let manifest: GuidanceAudioReleaseManifest
   let resources: [String: GuidanceAudioResource]
 }
@@ -615,7 +615,7 @@ private func guidanceAudioProductRelease() throws -> KaidoProductRelease {
   )
 }
 
-private func guidanceAudioManifestFixture(
+func guidanceAudioManifestFixture(
   _ productRelease: KaidoProductRelease
 ) -> GuidanceAudioManifestFixture {
   let waveData = guidanceTestWaveData(
@@ -733,7 +733,7 @@ private func guidanceAudioCommand(
   )
 }
 
-private func guidanceTestWaveData(
+func guidanceTestWaveData(
   sampleRateHz: Int,
   frameCount: Int,
   sampleValue: Int16
@@ -776,7 +776,7 @@ private func guidanceAppendUInt32(_ value: UInt32, to data: inout Data) {
   data.append(UInt8((value >> 24) & 0xff))
 }
 
-private func guidanceSHA256Hex(_ data: Data) -> String {
+func guidanceSHA256Hex(_ data: Data) -> String {
   SHA256.hash(data: data).map {
     String(format: "%02x", $0)
   }.joined()

@@ -78,7 +78,10 @@ licensing review, current road evidence, field review, pronunciation review,
 physical-device qualification, or the App catalog's separate filename,
 SHA-256, release-ID, and role binding.
 
-After validation, record the final artifact SHA-256 in one
-`FOREGROUND_NAVIGATION` `BundledProductReleaseDescriptor`, rebuild the App, and
-qualify the exact release on a physical iPhone. Do not enable background
-location or CarPlay merely because product assembly passed.
+After validation, use
+[`app-bundle-staging.md`](app-bundle-staging.md) to derive the final artifact
+SHA-256 and one `FOREGROUND_NAVIGATION` descriptor without manual
+transcription. Review and explicitly enroll that generated descriptor, rebuild
+the App, and qualify the exact release on a physical iPhone. Do not enable
+background location or CarPlay merely because product assembly or staging
+passed.

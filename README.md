@@ -25,13 +25,17 @@ and estimated markers, keeps realtime-unconfirmed passage neutral, locks route
 editing in a moving DecisionZone, executes a precomputed Finish-drive exit, and
 renders one immutable occurrence-bound junction definition with shared
 phone/CarPlay projection ownership.
+Another internal panel decodes one complete `SYNTHETIC_TEST_ONLY` joint product
+release, constructs `KaidoProductNavigationRuntime`, and publishes the actor's
+atomic planning snapshot into SwiftUI. Its strict-entry gate stays locked and
+its Core Location input stays disconnected by default.
 The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
 emits only a coordinate-free non-release report, and rejects simulated locations
-by default. The app remains explicitly review-only: it has no released route
-bundle, live measured-position display, active-route highlight, voice, background
-navigation, or CarPlay scene. The repository still has no production road
+by default. The app remains explicitly review-only: it has no real-road released
+route bundle, live measured-position display, active-route highlight, voice,
+background navigation, or CarPlay scene. The repository still has no production road
 database or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, an OSM selected-path translator, an offline evidence
@@ -155,8 +159,8 @@ ledger, and presentation projection, and KR-U14 proves the junction-view
 ownership boundary. KR-U09 adds localized assistive labels for the same
 projection, non-color branch and lane cues, tested theme contrast, and an
 accessibility-size single-column SwiftUI layout for the synthetic driving/JCT
-panel. Production corridor construction, DecisionZone calibration, live
-navigation-state SwiftUI composition, CarPlay entitlement, full-app and device
+panel. Production corridor construction, DecisionZone calibration, real-road
+live navigation-state SwiftUI composition, CarPlay entitlement, full-app and device
 accessibility validation, audio, and physical head-unit behavior remain
 unimplemented or unproven.
 
@@ -262,9 +266,14 @@ heading-compatible, release-identity-matched sequence. It computes continuity
 from the exact ordered edge history instead of accepting a caller boolean, and
 restarts route matching at the first occurrence only after strict-route entry.
 KR-S19 covers skipped edges, simulation, identity drift, and the valid sequence.
-The first app scene is now present, but Core Location callbacks currently feed
-only the internal calibration harness. Live app composition, lifecycle
-persistence, background execution, and audio remain Apple-adapter work.
+The app now decodes one complete `SYNTHETIC_TEST_ONLY` product artifact through
+the production codec, constructs `KaidoProductNavigationRuntime`, and publishes
+only the actor's atomic snapshot. Its foreground pipeline binds
+`CoreLocationObservationAdapter` and `CoreLocationEntryTransitionAdapter` to the
+session, and app tests execute the ordered two-edge admission plus one
+strict-route matcher update. The visible preview deliberately attaches no
+`CLLocationManager`; real released assets, live app lifecycle, persistence,
+background execution, and audio remain Apple-adapter work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
@@ -565,7 +574,8 @@ open KaidoRoutesApp.xcodeproj
 ```
 
 The Simulator app requires no device signing. It renders review-only assets and
-cannot claim released navigation authority. See
+one explicitly synthetic joint-release runtime fixture; neither can claim
+real-road navigation authority. See
 [`Apps/KaidoRoutesApp/README.md`](Apps/KaidoRoutesApp/README.md) for Xcode,
 Preview Canvas, regeneration, and test instructions.
 

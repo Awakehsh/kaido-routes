@@ -22,26 +22,53 @@ The current app deliberately exposes only:
 - a four-state synthetic driving preview for conservative position, passage,
   moving-time editing, Finish drive, shared surface ownership, and one
   occurrence-bound junction inset;
+- a complete `SYNTHETIC_TEST_ONLY` joint product-release fixture that is decoded
+  through the production codec, constructs `KaidoProductNavigationRuntime`, and
+  publishes its actor-owned atomic snapshot into SwiftUI while strict entry
+  remains locked;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
 
 It requests when-in-use location only after the operator explicitly starts an
-internal calibration run with non-empty device and mount metadata. It does not
-construct a real `NavigationSession`, display a live measured position,
-highlight an active route, speak guidance, run location in the background, or
-expose a CarPlay scene. Those behaviors require a coherent released route
-bundle and device evidence. When that evidence exists, the app must construct
-`KaidoProductNavigationRuntime` from the joint product release; the package-only
-raw session initializer is not an adapter escape hatch. The navigation artifact
-must include one evidenced `ReleasedNavigationRuntimePolicy`; the app cannot
-supply or replace its entry transition, recovery candidates, or Finish egress.
-The validated runtime supplies the only `EntryTransitionAdmissionContext`.
-`CoreLocationEntryTransitionAdapter` may convert accepted callbacks into typed
-entry evidence against that exact corridor, but the actor alone owns ordered
-continuity and strict-route admission. The current preview does not yet compose
-that live path.
-No real product release artifact exists in the app today.
+internal calibration run with non-empty device and mount metadata. The product
+runtime panel constructs a real `NavigationSession`, but only from a complete
+joint release whose identities, sources, and licences are explicitly synthetic.
+The panel does not attach a `CLLocationManager`, display a live measured
+position, highlight an active route, speak guidance, run location in the
+background, or expose a CarPlay scene. Those behaviors still require a coherent
+real released route bundle and device evidence.
+
+The app constructs `KaidoProductNavigationRuntime` from the joint product
+release; the package-only raw session initializer is not an adapter escape
+hatch. The navigation artifact includes one evidenced
+`ReleasedNavigationRuntimePolicy`; the app cannot supply or replace its entry
+transition, recovery candidates, or Finish egress. The validated runtime
+supplies the only `EntryTransitionAdmissionContext`. The app-owned foreground
+pipeline is wired as `CoreLocationObservationAdapter` →
+`CoreLocationEntryTransitionAdapter` → `NavigationSession`, and after strict
+entry as `CoreLocationObservationAdapter` → `NavigationSession.observe`. Only
+the actor's returned atomic snapshot is published. The default preview keeps
+this input disconnected, and tests prove ordered synthetic fixture callbacks
+without granting those callbacks real-road authority. No real product release
+artifact exists in the app today.
+
+## Synthetic product runtime composition
+
+`synthetic-product-runtime-preview.json` is a distributable composition fixture,
+not a road-data release. Its product release, navigation release, RoutePlan,
+runtime policy, matcher corridor, guidance, and renderer-neutral atlas pass the
+same validators used by production code. The app then adds a separate safety
+gate: every navigation and atlas source must use
+`SYNTHETIC_TEST_ONLY`, identify a synthetic authority, and resolve under
+`example.com`. Identity or source drift blocks model construction.
+
+The foreground model starts the actor in `PLANNING` with strict-route
+auto-commit locked. It retains neither `CLLocation` nor matcher input; it
+publishes only the latest actor snapshot and a coordinate-free pipeline status.
+Unit tests execute the real two-edge entry adapter and then one route matcher
+update, while a launch-only UI test verifies that the default scene remains
+input-disconnected and entry-locked.
 
 ## Entrance recommendation
 

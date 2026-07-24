@@ -1,0 +1,1087 @@
+{
+  "navigation_release" : {
+    "asset_evidence" : [
+      {
+        "asset_id" : "test.catalog.release-bundle",
+        "checked_at" : "2026-07-23",
+        "role" : "EDITOR_CATALOG",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.runtime-policy.release-bundle",
+        "checked_at" : "2026-07-23",
+        "role" : "RUNTIME_POLICY",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.corridor.release-bundle",
+        "checked_at" : "2026-07-23",
+        "role" : "MATCHER_CORRIDOR",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.zone.loop-1",
+        "checked_at" : "2026-07-23",
+        "role" : "DECISION_ZONE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.zone.loop-2",
+        "checked_at" : "2026-07-23",
+        "role" : "DECISION_ZONE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.zone.exit",
+        "checked_at" : "2026-07-23",
+        "role" : "DECISION_ZONE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.prompt.loop-1",
+        "checked_at" : "2026-07-23",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.prompt.loop-2",
+        "checked_at" : "2026-07-23",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.prompt.exit",
+        "checked_at" : "2026-07-23",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "test.junction-view.exit",
+        "checked_at" : "2026-07-23",
+        "role" : "JUNCTION_VIEW",
+        "source_reference_ids" : [
+          "test.source.junction-view"
+        ],
+        "state" : "RELEASED"
+      }
+    ],
+    "decision_zones" : [
+      {
+        "decision_zone_id" : "test.zone.loop-1",
+        "entry_offset_meters" : 5,
+        "movement_occurrence_id" : "test.occurrence.loop-movement-1",
+        "network_snapshot_id" : "test.snapshot.release-bundle",
+        "route_plan_id" : "test.plan.release-bundle"
+      },
+      {
+        "decision_zone_id" : "test.zone.loop-2",
+        "entry_offset_meters" : 5,
+        "movement_occurrence_id" : "test.occurrence.loop-movement-2",
+        "network_snapshot_id" : "test.snapshot.release-bundle",
+        "route_plan_id" : "test.plan.release-bundle"
+      },
+      {
+        "decision_zone_id" : "test.zone.exit",
+        "entry_offset_meters" : 5,
+        "movement_occurrence_id" : "test.occurrence.exit-movement",
+        "network_snapshot_id" : "test.snapshot.release-bundle",
+        "route_plan_id" : "test.plan.release-bundle"
+      }
+    ],
+    "editor_catalog" : {
+      "decision_points" : [
+        {
+          "choices" : [
+            {
+              "choice_id" : "test.choice.loop",
+              "destination" : {
+                "decision_point_id" : "test.decision.loop"
+              },
+              "movement_id" : "test.movement.loop",
+              "movement_toll_domain_id" : "test.toll",
+              "outgoing_edge_id" : "test.edge.loop",
+              "outgoing_edge_toll_domain_id" : "test.toll"
+            },
+            {
+              "choice_id" : "test.choice.exit",
+              "destination" : {
+                "exit_facility_id" : "test.exit"
+              },
+              "movement_id" : "test.movement.exit",
+              "movement_toll_domain_id" : "test.toll",
+              "outgoing_edge_id" : "test.edge.exit",
+              "outgoing_edge_toll_domain_id" : "test.toll"
+            }
+          ],
+          "decision_point_id" : "test.decision.loop",
+          "incoming_approach_id" : "test.approach.loop",
+          "junction_complex_id" : "test.junction.loop"
+        }
+      ],
+      "entrances" : [
+        {
+          "facility_id" : "test.entrance",
+          "first_decision_point_id" : "test.decision.loop",
+          "initial_edge_id" : "test.edge.loop",
+          "initial_edge_toll_domain_id" : "test.toll"
+        }
+      ],
+      "lap_templates" : [
+
+      ],
+      "network_snapshot_id" : "test.snapshot.release-bundle"
+    },
+    "editor_catalog_id" : "test.catalog.release-bundle",
+    "junction_views" : [
+      {
+        "evidence" : {
+          "checked_at" : "2026-07-23",
+          "source_reference_ids" : [
+            "test.source.junction-view"
+          ],
+          "state" : "RELEASED"
+        },
+        "japanese_sign_text" : "B 湾岸線・横浜方面",
+        "lane_layout" : {
+          "allowed_lane_indices" : [
+            0,
+            1
+          ],
+          "lane_count" : 3,
+          "preferred_lane_indices" : [
+            0
+          ]
+        },
+        "movement_occurrence_id" : "test.occurrence.exit-movement",
+        "network_snapshot_id" : "test.snapshot.release-bundle",
+        "paths" : [
+          {
+            "path_id" : "test.path.approach",
+            "points" : [
+              {
+                "x" : 0.5,
+                "y" : 1
+              },
+              {
+                "x" : 0.5,
+                "y" : 0.5
+              }
+            ],
+            "role" : "APPROACH"
+          },
+          {
+            "path_id" : "test.path.selected",
+            "points" : [
+              {
+                "x" : 0.5,
+                "y" : 0.5
+              },
+              {
+                "x" : 0.2,
+                "y" : 0
+              }
+            ],
+            "role" : "SELECTED"
+          },
+          {
+            "path_id" : "test.path.alternative",
+            "points" : [
+              {
+                "x" : 0.5,
+                "y" : 0.5
+              },
+              {
+                "x" : 0.8,
+                "y" : 0
+              }
+            ],
+            "role" : "ALTERNATIVE"
+          }
+        ],
+        "route_shields" : [
+          "B"
+        ],
+        "view_id" : "test.junction-view.exit"
+      }
+    ],
+    "matcher_corridor" : {
+      "corridor_id" : "test.corridor.release-bundle",
+      "edges" : [
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.759
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.7595
+            }
+          ],
+          "directed_edge_id" : "test.entry-transition.surface",
+          "successor_edge_ids" : [
+            "test.entry-transition.ramp"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.7595
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.76
+            }
+          ],
+          "directed_edge_id" : "test.entry-transition.ramp",
+          "successor_edge_ids" : [
+            "test.edge.loop"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.76
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.761
+            }
+          ],
+          "directed_edge_id" : "test.edge.loop",
+          "successor_edge_ids" : [
+            "test.edge.exit-movement",
+            "test.edge.loop-movement"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.761
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.7612
+            }
+          ],
+          "directed_edge_id" : "test.edge.loop-movement",
+          "successor_edge_ids" : [
+            "test.edge.loop"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.761
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.7613
+            }
+          ],
+          "directed_edge_id" : "test.edge.exit-movement",
+          "successor_edge_ids" : [
+            "test.edge.exit"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.7613
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.762
+            }
+          ],
+          "directed_edge_id" : "test.edge.exit",
+          "successor_edge_ids" : [
+
+          ]
+        }
+      ],
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "occurrences" : [
+        {
+          "directed_edge_id" : "test.edge.loop",
+          "index" : 0,
+          "occurrence_id" : "test.occurrence.entry"
+        },
+        {
+          "directed_edge_id" : "test.edge.loop-movement",
+          "index" : 1,
+          "occurrence_id" : "test.occurrence.loop-movement-1"
+        },
+        {
+          "directed_edge_id" : "test.edge.loop",
+          "index" : 2,
+          "occurrence_id" : "test.occurrence.loop-edge-1"
+        },
+        {
+          "directed_edge_id" : "test.edge.loop-movement",
+          "index" : 3,
+          "occurrence_id" : "test.occurrence.loop-movement-2"
+        },
+        {
+          "directed_edge_id" : "test.edge.loop",
+          "index" : 4,
+          "occurrence_id" : "test.occurrence.loop-edge-2"
+        },
+        {
+          "directed_edge_id" : "test.edge.exit-movement",
+          "index" : 5,
+          "occurrence_id" : "test.occurrence.exit-movement"
+        },
+        {
+          "directed_edge_id" : "test.edge.exit",
+          "index" : 6,
+          "occurrence_id" : "test.occurrence.exit-edge"
+        }
+      ],
+      "route_plan_id" : "test.plan.release-bundle"
+    },
+    "network_snapshot" : {
+      "effective_at" : "2026-07-23T00:00:00+09:00",
+      "id" : "test.snapshot.release-bundle",
+      "status" : "ACTIVE"
+    },
+    "release_id" : "test.navigation-release.release-bundle.v1",
+    "released_at" : "2026-07-23T12:00:00+09:00",
+    "released_guidance" : [
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "test.occurrence.entry",
+          "prompt_id" : "test.prompt.loop-1"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "テストJCT",
+          "decision_zone_id" : "test.zone.loop-1",
+          "lane_preparation" : "USE_LEFT_LANES",
+          "localized_decision_point_names" : {
+            "en" : "Test JCT",
+            "ja-JP" : "テストJCT",
+            "zh-Hans" : "测试 JCT"
+          },
+          "maneuver" : "KEEP_LEFT",
+          "movement_occurrence_id" : "test.occurrence.loop-movement-1",
+          "presentation_source" : {
+            "japanese_sign_text" : "B 湾岸線・横浜方面",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "Keep left",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "Route B"
+                },
+                "spoken_text" : "Keep left"
+              },
+              "ja-JP" : {
+                "display_text" : "左側を進む",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "ビー"
+                },
+                "spoken_text" : "左側を進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "保持左侧",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "B 路线"
+                },
+                "spoken_text" : "请保持左侧"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 500
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "test.occurrence.loop-edge-1",
+          "prompt_id" : "test.prompt.loop-2"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "テストJCT",
+          "decision_zone_id" : "test.zone.loop-2",
+          "lane_preparation" : "USE_LEFT_LANES",
+          "localized_decision_point_names" : {
+            "en" : "Test JCT",
+            "ja-JP" : "テストJCT",
+            "zh-Hans" : "测试 JCT"
+          },
+          "maneuver" : "KEEP_LEFT",
+          "movement_occurrence_id" : "test.occurrence.loop-movement-2",
+          "presentation_source" : {
+            "japanese_sign_text" : "B 湾岸線・横浜方面",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "Keep left",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "Route B"
+                },
+                "spoken_text" : "Keep left"
+              },
+              "ja-JP" : {
+                "display_text" : "左側を進む",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "ビー"
+                },
+                "spoken_text" : "左側を進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "保持左侧",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "B 路线"
+                },
+                "spoken_text" : "请保持左侧"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 500
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "test.occurrence.loop-edge-2",
+          "prompt_id" : "test.prompt.exit"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "テストJCT",
+          "decision_zone_id" : "test.zone.exit",
+          "lane_preparation" : "USE_LEFT_LANES",
+          "localized_decision_point_names" : {
+            "en" : "Test JCT",
+            "ja-JP" : "テストJCT",
+            "zh-Hans" : "测试 JCT"
+          },
+          "maneuver" : "KEEP_LEFT",
+          "movement_occurrence_id" : "test.occurrence.exit-movement",
+          "presentation_source" : {
+            "japanese_sign_text" : "B 湾岸線・横浜方面",
+            "junction_view" : {
+              "evidence" : {
+                "checked_at" : "2026-07-23",
+                "source_reference_ids" : [
+                  "test.source.junction-view"
+                ],
+                "state" : "RELEASED"
+              },
+              "japanese_sign_text" : "B 湾岸線・横浜方面",
+              "lane_layout" : {
+                "allowed_lane_indices" : [
+                  0,
+                  1
+                ],
+                "lane_count" : 3,
+                "preferred_lane_indices" : [
+                  0
+                ]
+              },
+              "movement_occurrence_id" : "test.occurrence.exit-movement",
+              "network_snapshot_id" : "test.snapshot.release-bundle",
+              "paths" : [
+                {
+                  "path_id" : "test.path.approach",
+                  "points" : [
+                    {
+                      "x" : 0.5,
+                      "y" : 1
+                    },
+                    {
+                      "x" : 0.5,
+                      "y" : 0.5
+                    }
+                  ],
+                  "role" : "APPROACH"
+                },
+                {
+                  "path_id" : "test.path.selected",
+                  "points" : [
+                    {
+                      "x" : 0.5,
+                      "y" : 0.5
+                    },
+                    {
+                      "x" : 0.2,
+                      "y" : 0
+                    }
+                  ],
+                  "role" : "SELECTED"
+                },
+                {
+                  "path_id" : "test.path.alternative",
+                  "points" : [
+                    {
+                      "x" : 0.5,
+                      "y" : 0.5
+                    },
+                    {
+                      "x" : 0.8,
+                      "y" : 0
+                    }
+                  ],
+                  "role" : "ALTERNATIVE"
+                }
+              ],
+              "route_shields" : [
+                "B"
+              ],
+              "view_id" : "test.junction-view.exit"
+            },
+            "localized_content" : {
+              "en" : {
+                "display_text" : "Keep left",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "Route B"
+                },
+                "spoken_text" : "Keep left"
+              },
+              "ja-JP" : {
+                "display_text" : "左側を進む",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "ビー"
+                },
+                "spoken_text" : "左側を進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "保持左侧",
+                "preserved_japanese_sign_text" : "B 湾岸線・横浜方面",
+                "spoken_forms" : {
+                  "B" : "B 路线"
+                },
+                "spoken_text" : "请保持左侧"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 500
+      }
+    ],
+    "route_plan" : {
+      "entry_facility_id" : "test.entrance",
+      "exit_facility_id" : "test.exit",
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "occurrences" : [
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 0,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.entry",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.loop",
+          "index" : 1,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.loop-movement-1",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 2,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.loop-edge-1",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.loop",
+          "index" : 3,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.loop-movement-2",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 4,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.loop-edge-2",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.exit",
+          "index" : 5,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.exit-movement",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.exit",
+          "index" : 6,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.exit-edge",
+          "optional" : false
+        }
+      ],
+      "plan_id" : "test.plan.release-bundle",
+      "recovery_policy" : "SAFE_REJOIN"
+    },
+    "runtime_policy" : {
+      "egress_options" : [
+        {
+          "egress_occurrence_ids" : [
+            "test.egress.release-bundle.movement",
+            "test.egress.release-bundle.edge"
+          ],
+          "egress_option_id" : "test.egress.release-bundle",
+          "exit_facility_id" : "test.exit",
+          "first_eligible_occurrence_id" : "test.occurrence.loop-edge-2",
+          "released" : true
+        }
+      ],
+      "entry_transition" : {
+        "directed_edge_ids" : [
+          "test.entry-transition.surface",
+          "test.entry-transition.ramp"
+        ],
+        "facility_id" : "test.entrance",
+        "first_route_occurrence_id" : "test.occurrence.entry"
+      },
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "recovery_candidates" : [
+        {
+          "recovery_occurrence_ids" : [
+            "test.recovery.release-bundle.movement",
+            "test.recovery.release-bundle.edge"
+          ],
+          "released" : true,
+          "stays_in_allowed_toll_domain" : true,
+          "target_occurrence_id" : "test.occurrence.loop-edge-2"
+        }
+      ],
+      "route_plan_id" : "test.plan.release-bundle",
+      "runtime_policy_id" : "test.runtime-policy.release-bundle"
+    },
+    "schema_version" : "2.0",
+    "source_registry" : {
+      "references" : [
+        {
+          "authority_name" : "Synthetic test authority",
+          "checked_at" : "2026-07-23",
+          "content_sha256" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "id" : "test.source.junction-view",
+          "licence_identifier" : "SYNTHETIC_TEST_ONLY",
+          "roles" : [
+            "DECISION_ZONE",
+            "EDITOR_CATALOG",
+            "GUIDANCE",
+            "JUNCTION_VIEW",
+            "MATCHER_CORRIDOR",
+            "RUNTIME_POLICY"
+          ],
+          "source_url" : "https:\/\/example.com\/test-navigation-release-source"
+        }
+      ]
+    }
+  },
+  "release_id" : "preview.synthetic.product-release.v1",
+  "released_at" : "2026-07-24T12:00:00+09:00",
+  "route_atlas_release" : {
+    "definition" : {
+      "atlas_id" : "test.atlas.product-release",
+      "evidence" : {
+        "checked_at" : "2026-07-23",
+        "source_reference_ids" : [
+          "test.source.product-layout"
+        ],
+        "state" : "RELEASED"
+      },
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "nodes" : [
+        {
+          "point" : {
+            "x" : 0.1,
+            "y" : 0.8
+          },
+          "topology_node_id" : "test.node.a"
+        },
+        {
+          "point" : {
+            "x" : 0.5,
+            "y" : 0.5
+          },
+          "topology_node_id" : "test.node.b"
+        },
+        {
+          "point" : {
+            "x" : 0.75,
+            "y" : 0.35
+          },
+          "topology_node_id" : "test.node.c"
+        },
+        {
+          "point" : {
+            "x" : 0.95,
+            "y" : 0.2
+          },
+          "topology_node_id" : "test.node.d"
+        },
+        {
+          "point" : {
+            "x" : 0.05,
+            "y" : 0.5
+          },
+          "topology_node_id" : "test.node.editor-approach"
+        }
+      ],
+      "occurrence_bindings" : [
+        {
+          "occurrence_id" : "test.occurrence.entry",
+          "occurrence_index" : 0,
+          "segment_id" : "test.segment.loop"
+        },
+        {
+          "occurrence_id" : "test.occurrence.loop-movement-1",
+          "occurrence_index" : 1,
+          "segment_id" : "test.segment.loop-movement"
+        },
+        {
+          "occurrence_id" : "test.occurrence.loop-edge-1",
+          "occurrence_index" : 2,
+          "segment_id" : "test.segment.loop"
+        },
+        {
+          "occurrence_id" : "test.occurrence.loop-movement-2",
+          "occurrence_index" : 3,
+          "segment_id" : "test.segment.loop-movement"
+        },
+        {
+          "occurrence_id" : "test.occurrence.loop-edge-2",
+          "occurrence_index" : 4,
+          "segment_id" : "test.segment.loop"
+        },
+        {
+          "occurrence_id" : "test.occurrence.exit-movement",
+          "occurrence_index" : 5,
+          "segment_id" : "test.segment.exit-movement"
+        },
+        {
+          "occurrence_id" : "test.occurrence.exit-edge",
+          "occurrence_index" : 6,
+          "segment_id" : "test.segment.exit"
+        }
+      ],
+      "route_plan_id" : "test.plan.release-bundle",
+      "segments" : [
+        {
+          "from_node_id" : "test.node.a",
+          "points" : [
+            {
+              "x" : 0.1,
+              "y" : 0.8
+            },
+            {
+              "x" : 0.5,
+              "y" : 0.5
+            }
+          ],
+          "segment_id" : "test.segment.loop",
+          "successor_segment_ids" : [
+            "test.segment.exit-movement",
+            "test.segment.loop-movement"
+          ],
+          "to_node_id" : "test.node.b",
+          "topology_edge_id" : "test.topology-edge.loop"
+        },
+        {
+          "from_node_id" : "test.node.b",
+          "points" : [
+            {
+              "x" : 0.5,
+              "y" : 0.5
+            },
+            {
+              "x" : 0.1,
+              "y" : 0.8
+            }
+          ],
+          "segment_id" : "test.segment.loop-movement",
+          "successor_segment_ids" : [
+            "test.segment.loop"
+          ],
+          "to_node_id" : "test.node.a",
+          "topology_edge_id" : "test.topology-edge.loop-movement"
+        },
+        {
+          "from_node_id" : "test.node.b",
+          "points" : [
+            {
+              "x" : 0.5,
+              "y" : 0.5
+            },
+            {
+              "x" : 0.75,
+              "y" : 0.35
+            }
+          ],
+          "segment_id" : "test.segment.exit-movement",
+          "successor_segment_ids" : [
+            "test.segment.exit"
+          ],
+          "to_node_id" : "test.node.c",
+          "topology_edge_id" : "test.topology-edge.exit-movement"
+        },
+        {
+          "from_node_id" : "test.node.c",
+          "points" : [
+            {
+              "x" : 0.75,
+              "y" : 0.35
+            },
+            {
+              "x" : 0.95,
+              "y" : 0.2
+            }
+          ],
+          "segment_id" : "test.segment.exit",
+          "successor_segment_ids" : [
+
+          ],
+          "to_node_id" : "test.node.d",
+          "topology_edge_id" : "test.topology-edge.exit"
+        },
+        {
+          "from_node_id" : "test.node.editor-approach",
+          "points" : [
+            {
+              "x" : 0.05,
+              "y" : 0.5
+            },
+            {
+              "x" : 0.5,
+              "y" : 0.5
+            }
+          ],
+          "segment_id" : "test.segment.editor-approach",
+          "successor_segment_ids" : [
+            "test.segment.exit-movement",
+            "test.segment.loop-movement"
+          ],
+          "to_node_id" : "test.node.b",
+          "topology_edge_id" : "test.topology-edge.editor-approach"
+        }
+      ],
+      "topology_slice_id" : "test.topology.product-release"
+    },
+    "network_snapshot" : {
+      "effective_at" : "2026-07-23T00:00:00+09:00",
+      "id" : "test.snapshot.release-bundle",
+      "status" : "ACTIVE"
+    },
+    "route_plan" : {
+      "entry_facility_id" : "test.entrance",
+      "exit_facility_id" : "test.exit",
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "occurrences" : [
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 0,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.entry",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.loop",
+          "index" : 1,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.loop-movement-1",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 2,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.loop-edge-1",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.loop",
+          "index" : 3,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.loop-movement-2",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.loop",
+          "index" : 4,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.loop-edge-2",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.movement.exit",
+          "index" : 5,
+          "kind" : "JUNCTION_MOVEMENT",
+          "occurrence_id" : "test.occurrence.exit-movement",
+          "optional" : false
+        },
+        {
+          "entity_id" : "test.edge.exit",
+          "index" : 6,
+          "kind" : "EDGE",
+          "occurrence_id" : "test.occurrence.exit-edge",
+          "optional" : false
+        }
+      ],
+      "plan_id" : "test.plan.release-bundle",
+      "recovery_policy" : "SAFE_REJOIN"
+    },
+    "schema_version" : "1.0",
+    "source_registry" : {
+      "references" : [
+        {
+          "authority_name" : "Synthetic product topology authority",
+          "checked_at" : "2026-07-23",
+          "content_sha256" : "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "licence_identifier" : "SYNTHETIC_TEST_ONLY",
+          "roles" : [
+            "TOPOLOGY_EVIDENCE"
+          ],
+          "source_reference_id" : "test.source.product-topology",
+          "source_url" : "https:\/\/example.com\/test-product-topology"
+        },
+        {
+          "authority_name" : "Synthetic product layout authority",
+          "checked_at" : "2026-07-23",
+          "content_sha256" : "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "licence_identifier" : "SYNTHETIC_TEST_ONLY",
+          "roles" : [
+            "LAYOUT_EVIDENCE"
+          ],
+          "source_reference_id" : "test.source.product-layout",
+          "source_url" : "https:\/\/example.com\/test-product-layout"
+        }
+      ]
+    },
+    "topology_slice" : {
+      "edges" : [
+        {
+          "edge_id" : "test.topology-edge.loop",
+          "from_node_id" : "test.node.a",
+          "route_entity_id" : "test.edge.loop",
+          "successor_edge_ids" : [
+            "test.topology-edge.exit-movement",
+            "test.topology-edge.loop-movement"
+          ],
+          "to_node_id" : "test.node.b"
+        },
+        {
+          "edge_id" : "test.topology-edge.loop-movement",
+          "from_node_id" : "test.node.b",
+          "route_entity_id" : "test.movement.loop",
+          "successor_edge_ids" : [
+            "test.topology-edge.loop"
+          ],
+          "to_node_id" : "test.node.a"
+        },
+        {
+          "edge_id" : "test.topology-edge.exit-movement",
+          "from_node_id" : "test.node.b",
+          "route_entity_id" : "test.movement.exit",
+          "successor_edge_ids" : [
+            "test.topology-edge.exit"
+          ],
+          "to_node_id" : "test.node.c"
+        },
+        {
+          "edge_id" : "test.topology-edge.exit",
+          "from_node_id" : "test.node.c",
+          "route_entity_id" : "test.edge.exit",
+          "successor_edge_ids" : [
+
+          ],
+          "to_node_id" : "test.node.d"
+        },
+        {
+          "edge_id" : "test.topology-edge.editor-approach",
+          "from_node_id" : "test.node.editor-approach",
+          "route_entity_id" : "test.approach.loop",
+          "successor_edge_ids" : [
+            "test.topology-edge.exit-movement",
+            "test.topology-edge.loop-movement"
+          ],
+          "to_node_id" : "test.node.b"
+        }
+      ],
+      "evidence" : {
+        "checked_at" : "2026-07-23",
+        "source_reference_ids" : [
+          "test.source.product-topology"
+        ],
+        "state" : "RELEASED"
+      },
+      "network_snapshot_id" : "test.snapshot.release-bundle",
+      "nodes" : [
+        {
+          "node_id" : "test.node.a"
+        },
+        {
+          "node_id" : "test.node.b"
+        },
+        {
+          "node_id" : "test.node.c"
+        },
+        {
+          "node_id" : "test.node.d"
+        },
+        {
+          "node_id" : "test.node.editor-approach"
+        }
+      ],
+      "topology_slice_id" : "test.topology.product-release"
+    }
+  },
+  "schema_version" : "2.0"
+}

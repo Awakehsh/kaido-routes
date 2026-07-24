@@ -331,6 +331,15 @@ missing set. A final runtime-admission event proves that the blocked release
 cannot expose a partial runtime identity. Every released value remains
 synthetic.
 
+The internal iPhone target adds a local L3 composition check above KR-D26. One
+bundled `SYNTHETIC_TEST_ONLY` product artifact is decoded through the production
+codec before `KaidoProductNavigationRuntime` may exist. Unit tests exercise the
+real Apple observation adapter, ordered two-edge entry adapter, actor admission,
+and one post-entry matcher update, asserting only actor-returned snapshots. A
+launch-only XCUITest verifies that the visible preview starts in `PLANNING`,
+keeps strict entry locked, and exposes `INPUT DISCONNECTED`. This does not add a
+portable scenario event, field evidence, or real-road release authority.
+
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation
 fixtures, audio lifecycle, and the visible Japanese sign target. A device voice

@@ -305,7 +305,11 @@ through planning, ledger, and projection. Production corridor construction and
 zone calibration remain data/field gates. The synthetic driving/JCT panel now
 has a KR-U09 accessibility baseline: localized assistive projection, non-color
 branch/lane cues, actual theme-token contrast checks, and standard plus AXXXL
-Simulator UI tests. Live `NavigationSession` binding, full-app focus and
+Simulator UI tests. A separate app panel decodes one complete
+`SYNTHETIC_TEST_ONLY` joint release, constructs
+`KaidoProductNavigationRuntime`, binds the Apple observation and entry adapters,
+and publishes only actor-returned snapshots. Its default scene has no location
+manager and keeps strict entry locked. Real-road live input, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
 device-matrix layout, and physical display timing remain adapter work and
 device gates.
@@ -325,9 +329,11 @@ directional entry transition, released in-domain recovery candidates, and legal
 egress options. The release gate additionally requires every transition edge to
 exist in the same matcher corridor, every consecutive pair to be an explicit
 successor, and the final transition edge to lead to the first RoutePlan
-occurrence binding. Core Location callback ownership,
-background lifecycle, persistence/restoration, audio scheduling, and app-scene
-composition are still unimplemented Apple boundaries.
+occurrence binding. The internal app now owns a foreground-only synthetic
+composition pipeline and an input-disconnected SwiftUI scene. Real released
+assets, `CLLocationManager` navigation ownership, background lifecycle,
+persistence/restoration, audio scheduling, and production app-scene composition
+remain unimplemented Apple boundaries.
 
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor

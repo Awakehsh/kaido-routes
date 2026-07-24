@@ -13,10 +13,37 @@ struct KaidoRoutesApp: App {
         "-KR-U09-ACCESSIBILITY-PREVIEW"
       ) {
         KR_U09AccessibilityPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-PRODUCT-RUNTIME-PREVIEW"
+      ) {
+        ProductRuntimePreviewHost()
       } else {
         RouteAtlasHomeView()
       }
     }
+  }
+}
+
+private struct ProductRuntimePreviewHost: View {
+  @StateObject private var model: SyntheticProductRuntimeModel
+
+  init() {
+    let initialModel: SyntheticProductRuntimeModel
+    do {
+      initialModel = try SyntheticProductRuntimeModel()
+    } catch {
+      preconditionFailure("Invalid synthetic product runtime fixture: \(error)")
+    }
+    _model = StateObject(wrappedValue: initialModel)
+  }
+
+  var body: some View {
+    ScrollView {
+      SyntheticProductRuntimePanel(model: model)
+        .padding(18)
+    }
+    .background(KaidoTheme.asphalt.ignoresSafeArea())
+    .accessibilityIdentifier("product-runtime-preview")
   }
 }
 

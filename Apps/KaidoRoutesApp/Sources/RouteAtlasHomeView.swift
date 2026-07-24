@@ -216,6 +216,9 @@ private struct ParkedRouteEditorPanel: View {
 
       if model.snapshot.state == .editing {
         currentDecision
+        if !model.snapshot.availableLapCandidates.isEmpty {
+          reviewedLapActions
+        }
       } else {
         selectedExit
       }
@@ -394,6 +397,91 @@ private struct ParkedRouteEditorPanel: View {
       RoundedRectangle(cornerRadius: 12)
         .stroke(KaidoTheme.positionCyan.opacity(0.35), lineWidth: 1)
     }
+  }
+
+  private var reviewedLapActions: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 10) {
+        ZStack {
+          Circle()
+            .stroke(KaidoTheme.signalAmber.opacity(0.55), lineWidth: 1)
+            .frame(width: 34, height: 34)
+
+          Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+            .font(.system(size: 13, weight: .black))
+            .foregroundStyle(KaidoTheme.signalAmber)
+        }
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text("已审核闭合圈")
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text("只复制 session 给出的 occurrence 序列")
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(KaidoTheme.muted)
+        }
+
+        Spacer()
+
+        Text("\(model.snapshot.availableLapCandidates.count) READY")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.signalAmber)
+      }
+
+      ForEach(
+        Array(model.snapshot.availableLapCandidates.enumerated()),
+        id: \.element.id
+      ) { index, candidate in
+        Button {
+          model.duplicate(lapCandidateID: candidate.id)
+        } label: {
+          HStack(spacing: 10) {
+            Text(String(format: "L%02d", index + 1))
+              .font(.system(size: 10, weight: .black, design: .monospaced))
+              .foregroundStyle(KaidoTheme.asphalt)
+              .frame(width: 34, height: 26)
+              .background(KaidoTheme.signalAmber)
+              .clipShape(Capsule())
+
+            VStack(alignment: .leading, spacing: 2) {
+              Text("再加一圈")
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(KaidoTheme.routeWhite)
+
+              Text("\(candidate.sourceOccurrenceIDs.count) 个 occurrence · 新建独立 ID")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(KaidoTheme.muted)
+            }
+
+            Spacer()
+
+            Image(systemName: "plus")
+              .font(.system(size: 11, weight: .black))
+              .foregroundStyle(KaidoTheme.signalAmber)
+          }
+          .padding(.horizontal, 11)
+          .frame(minHeight: 48)
+          .background(KaidoTheme.signalAmber.opacity(0.08))
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+          .overlay {
+            RoundedRectangle(cornerRadius: 12)
+              .stroke(
+                KaidoTheme.signalAmber.opacity(0.42),
+                style: StrokeStyle(lineWidth: 1, dash: [5, 3])
+              )
+          }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+          "按第 \(index + 1) 个已审核闭合序列再加一圈"
+        )
+        .accessibilityHint("提交 session 候选 \(candidate.id) 并创建全新 occurrence ID")
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.asphalt.opacity(0.36))
+    .clipShape(RoundedRectangle(cornerRadius: 14))
   }
 
   private var editorActions: some View {

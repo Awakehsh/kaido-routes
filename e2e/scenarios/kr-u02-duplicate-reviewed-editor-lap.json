@@ -1,0 +1,416 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U02",
+  "title": "Parked expert editor duplicates only an authored reviewed lap",
+  "layer": "IPHONE_UI",
+  "tags": ["route-editor", "lap", "occurrence", "parked"],
+  "purpose": "Let a parked user add another reviewed lap without allowing SwiftUI, labels, or coordinate contact to infer closure or reuse occurrence identity.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic IDs prove editor duplication and fail-closed identity semantics only; real loop topology and every movement still require released evidence."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.editor-lap-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "inputs": {
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.editor-lap-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.loop-directional",
+            "initial_edge_id": "test.edge.loop",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.loop"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.loop",
+            "incoming_approach_id": "test.approach.loop-clockwise",
+            "junction_complex_id": "test.junction.loop",
+            "choices": [
+              {
+                "choice_id": "test.choice.loop",
+                "movement_id": "test.movement.loop",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.loop",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "next_decision_point_id": "test.decision.loop"
+              },
+              {
+                "choice_id": "test.choice.exit",
+                "movement_id": "test.movement.exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.exit-ramp",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.loop-directional"
+              }
+            ]
+          }
+        ],
+        "lap_templates": [
+          {
+            "template_id": "test.lap-template.loop",
+            "start_decision_point_id": "test.decision.loop",
+            "choice_ids": ["test.choice.loop"]
+          }
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start-editor",
+      "at_ms": 0,
+      "type": "ROUTE_EDITOR_STARTED",
+      "payload": {
+        "route_plan_id": "test.plan.authored-laps",
+        "entrance_facility_id": "test.entrance.loop-directional",
+        "initial_occurrence_id": "test.occurrence.loop-1-edge",
+        "recovery_policy": "STRICT",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-unearned-lap",
+      "at_ms": 1,
+      "type": "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
+      "payload": {
+        "lap_candidate_id": "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge",
+        "new_occurrence_ids": [
+          "test.occurrence.unearned-movement",
+          "test.occurrence.unearned-edge"
+        ],
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "author-reviewed-lap",
+      "at_ms": 2,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.loop",
+        "movement_occurrence_id": "test.occurrence.loop-1-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.loop-2-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "reject-moving-duplication",
+      "at_ms": 3,
+      "type": "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
+      "payload": {
+        "lap_candidate_id": "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge",
+        "new_occurrence_ids": [
+          "test.occurrence.moving-movement",
+          "test.occurrence.moving-edge"
+        ],
+        "vehicle_moving": true
+      }
+    },
+    {
+      "id": "reject-wrong-count",
+      "at_ms": 4,
+      "type": "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
+      "payload": {
+        "lap_candidate_id": "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge",
+        "new_occurrence_ids": ["test.occurrence.wrong-count"],
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "duplicate-reviewed-lap",
+      "at_ms": 5,
+      "type": "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
+      "payload": {
+        "lap_candidate_id": "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge",
+        "new_occurrence_ids": [
+          "test.occurrence.loop-2-movement",
+          "test.occurrence.loop-3-edge"
+        ],
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "undo-whole-duplicated-lap",
+      "at_ms": 6,
+      "type": "ROUTE_EDITOR_UNDO_REQUESTED",
+      "payload": {
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "duplicate-again-with-fresh-ids",
+      "at_ms": 7,
+      "type": "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
+      "payload": {
+        "lap_candidate_id": "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge",
+        "new_occurrence_ids": [
+          "test.occurrence.loop-3-movement",
+          "test.occurrence.loop-4-edge"
+        ],
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "select-directional-exit",
+      "at_ms": 8,
+      "type": "ROUTE_EDITOR_CHOICE_SELECTED",
+      "payload": {
+        "choice_id": "test.choice.exit",
+        "movement_occurrence_id": "test.occurrence.exit-movement",
+        "outgoing_edge_occurrence_id": "test.occurrence.exit-edge",
+        "vehicle_moving": false
+      }
+    },
+    {
+      "id": "compile-editor-route",
+      "at_ms": 9,
+      "type": "ROUTE_EDITOR_COMPILE_REQUESTED",
+      "payload": {
+        "vehicle_moving": false
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "no-lap-is-available-before-authorship",
+      "after": "start-editor",
+      "category": "SAFETY",
+      "subject": "editor.available_lap_candidate_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A catalog template alone does not prove that the user has authored its exact occurrence slice."
+    },
+    {
+      "id": "unearned-lap-is-rejected",
+      "after": "reject-unearned-lap",
+      "category": "SAFETY",
+      "subject": "editor.last_error",
+      "matcher": "EQUALS",
+      "expected": "ILLEGAL_EDITOR_LAP_CANDIDATE",
+      "rationale": "The adapter cannot fabricate a candidate ID before the reviewed closed sequence exists in history."
+    },
+    {
+      "id": "unearned-lap-does-not-mutate-route",
+      "after": "reject-unearned-lap",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.occurrence.loop-1-edge"],
+      "rationale": "Rejected duplication leaves the exact entrance occurrence unchanged."
+    },
+    {
+      "id": "authored-lap-exposes-domain-candidate",
+      "after": "author-reviewed-lap",
+      "category": "UI",
+      "subject": "editor.available_lap_candidate_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge"
+      ],
+      "rationale": "SwiftUI receives an opaque candidate from the session instead of inferring topology."
+    },
+    {
+      "id": "candidate-retains-reviewed-template",
+      "after": "author-reviewed-lap",
+      "category": "EVIDENCE",
+      "subject": "editor.available_lap_template_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.lap-template.loop"],
+      "rationale": "The candidate stays bound to one catalog-reviewed lap template."
+    },
+    {
+      "id": "candidate-retains-exact-source-occurrences",
+      "after": "author-reviewed-lap",
+      "category": "DOMAIN",
+      "subject": "editor.available_lap_source_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        [
+          "test.occurrence.loop-1-movement",
+          "test.occurrence.loop-2-edge"
+        ]
+      ],
+      "rationale": "The selectable slice is occurrence-bound and cannot collapse repeated entities."
+    },
+    {
+      "id": "moving-duplication-is-locked",
+      "after": "reject-moving-duplication",
+      "category": "SAFETY",
+      "subject": "editor.last_error",
+      "matcher": "EQUALS",
+      "expected": "EDITOR_INTERACTION_LOCKED",
+      "rationale": "Adding a lap is parked authoring and is unavailable while moving."
+    },
+    {
+      "id": "wrong-count-is-rejected",
+      "after": "reject-wrong-count",
+      "category": "SAFETY",
+      "subject": "editor.last_error",
+      "matcher": "EQUALS",
+      "expected": "INVALID_EDITOR_LAP_OCCURRENCE_COUNT",
+      "rationale": "Every copied occurrence requires one caller-supplied fresh identity."
+    },
+    {
+      "id": "rejected-duplications-do-not-mutate-route",
+      "after": "reject-wrong-count",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1-edge",
+        "test.occurrence.loop-1-movement",
+        "test.occurrence.loop-2-edge"
+      ],
+      "rationale": "Fail-closed validation happens before appending any copied value."
+    },
+    {
+      "id": "duplicated-lap-gets-fresh-occurrences",
+      "after": "duplicate-reviewed-lap",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1-edge",
+        "test.occurrence.loop-1-movement",
+        "test.occurrence.loop-2-edge",
+        "test.occurrence.loop-2-movement",
+        "test.occurrence.loop-3-edge"
+      ],
+      "rationale": "The new lap contains copied values with new occurrence IDs rather than references."
+    },
+    {
+      "id": "duplicated-lap-copies-semantic-entities",
+      "after": "duplicate-reviewed-lap",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.edge.loop",
+        "test.movement.loop",
+        "test.edge.loop",
+        "test.movement.loop",
+        "test.edge.loop"
+      ],
+      "rationale": "Entity repetition is intentional while every traversal occurrence remains distinct."
+    },
+    {
+      "id": "duplicated-lap-is-reindexed",
+      "after": "duplicate-reviewed-lap",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_indexes",
+      "matcher": "EQUALS",
+      "expected": [0, 1, 2, 3, 4],
+      "rationale": "The copied sequence becomes one contiguous extension of the authored RoutePlan."
+    },
+    {
+      "id": "duplicated-lap-keeps-closed-cursor",
+      "after": "duplicate-reviewed-lap",
+      "category": "NAVIGATION",
+      "subject": "editor.current_decision_point_id",
+      "matcher": "EQUALS",
+      "expected": "test.decision.loop",
+      "rationale": "A reviewed closed sequence returns to the same exact incoming-approach decision."
+    },
+    {
+      "id": "undo-removes-whole-duplicated-lap",
+      "after": "undo-whole-duplicated-lap",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1-edge",
+        "test.occurrence.loop-1-movement",
+        "test.occurrence.loop-2-edge"
+      ],
+      "rationale": "One user duplication action is one parked undo record."
+    },
+    {
+      "id": "undo-restores-original-candidate",
+      "after": "undo-whole-duplicated-lap",
+      "category": "UI",
+      "subject": "editor.available_lap_candidate_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.lap-template.loop::test.occurrence.loop-1-movement::test.occurrence.loop-2-edge"
+      ],
+      "rationale": "Undo does not erase the earlier authored lap that remains a legal duplication source."
+    },
+    {
+      "id": "redo-never-reuses-removed-ids",
+      "after": "duplicate-again-with-fresh-ids",
+      "category": "DOMAIN",
+      "subject": "editor.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1-edge",
+        "test.occurrence.loop-1-movement",
+        "test.occurrence.loop-2-edge",
+        "test.occurrence.loop-3-movement",
+        "test.occurrence.loop-4-edge"
+      ],
+      "rationale": "Caller-generated identity remains monotonic across undo and another duplication."
+    },
+    {
+      "id": "explicit-exit-finishes-editor",
+      "after": "select-directional-exit",
+      "category": "UI",
+      "subject": "editor.state",
+      "matcher": "EQUALS",
+      "expected": "FINISHED",
+      "rationale": "Duplicating a closed lap does not replace the explicit directional-exit requirement."
+    },
+    {
+      "id": "finished-editor-hides-lap-actions",
+      "after": "select-directional-exit",
+      "category": "SAFETY",
+      "subject": "editor.available_lap_candidate_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A finished session cannot append another lap."
+    },
+    {
+      "id": "compiled-route-preserves-fresh-lap-values",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1-edge",
+        "test.occurrence.loop-1-movement",
+        "test.occurrence.loop-2-edge",
+        "test.occurrence.loop-3-movement",
+        "test.occurrence.loop-4-edge",
+        "test.occurrence.exit-movement",
+        "test.occurrence.exit-edge"
+      ],
+      "rationale": "Compilation retains every occurrence selected or copied by the editor."
+    },
+    {
+      "id": "compiled-route-preserves-repeated-entities",
+      "after": "compile-editor-route",
+      "category": "DOMAIN",
+      "subject": "editor.compiled.entity_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.edge.loop",
+        "test.movement.loop",
+        "test.edge.loop",
+        "test.movement.loop",
+        "test.edge.loop",
+        "test.movement.exit",
+        "test.edge.exit-ramp"
+      ],
+      "rationale": "No deduplication or route optimization erases the repeated lap."
+    }
+  ]
+}

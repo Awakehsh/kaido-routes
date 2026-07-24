@@ -47,6 +47,75 @@ final class ParkedRouteEditorModelTests: XCTestCase {
     XCTAssertFalse(model.canCompile)
   }
 
+  func testReviewedLapCandidateDuplicatesValuesAndUndoRemovesWholeLap() throws {
+    let model = try ParkedRouteEditorModel()
+
+    model.select(choiceID: "preview.synthetic.choice.enter-loop")
+    XCTAssertTrue(model.snapshot.availableLapCandidates.isEmpty)
+
+    model.select(choiceID: "preview.synthetic.choice.repeat-loop")
+    let candidate = try XCTUnwrap(model.snapshot.availableLapCandidates.first)
+    XCTAssertEqual(
+      candidate.reviewedTemplateID,
+      "preview.synthetic.lap-template.loop"
+    )
+    XCTAssertEqual(
+      candidate.sourceOccurrenceIDs,
+      [
+        "preview.synthetic.occurrence.movement.2",
+        "preview.synthetic.occurrence.edge.2",
+      ]
+    )
+
+    model.duplicate(lapCandidateID: candidate.id)
+
+    XCTAssertNil(model.lastErrorCode)
+    XCTAssertEqual(
+      Array(model.snapshot.occurrences.suffix(2).map(\.id)),
+      [
+        "preview.synthetic.occurrence.lap-copy.1.1",
+        "preview.synthetic.occurrence.lap-copy.1.2",
+      ]
+    )
+    XCTAssertEqual(
+      Array(model.snapshot.occurrences.suffix(2).map(\.entityID)),
+      [
+        "preview.synthetic.movement.repeat-loop",
+        "preview.synthetic.edge.loop",
+      ]
+    )
+    XCTAssertEqual(model.snapshot.availableLapCandidates.count, 2)
+
+    let removedIDs = Set(model.snapshot.occurrences.suffix(2).map(\.id))
+    model.undo()
+
+    XCTAssertEqual(model.snapshot.availableLapCandidates.count, 1)
+    XCTAssertEqual(model.snapshot.occurrences.count, 5)
+
+    model.duplicate(lapCandidateID: candidate.id)
+
+    XCTAssertEqual(
+      Array(model.snapshot.occurrences.suffix(2).map(\.id)),
+      [
+        "preview.synthetic.occurrence.lap-copy.2.1",
+        "preview.synthetic.occurrence.lap-copy.2.2",
+      ]
+    )
+    XCTAssertTrue(
+      removedIDs.isDisjoint(with: Set(model.snapshot.occurrences.map(\.id)))
+    )
+  }
+
+  func testUnknownLapCandidateFailsClosedWithoutMutatingRoute() throws {
+    let model = try ParkedRouteEditorModel()
+    let originalSnapshot = model.snapshot
+
+    model.duplicate(lapCandidateID: "preview.synthetic.lap.unknown")
+
+    XCTAssertEqual(model.lastErrorCode, "ILLEGAL_EDITOR_LAP_CANDIDATE")
+    XCTAssertEqual(model.snapshot, originalSnapshot)
+  }
+
   func testRepeatedLoopSelectionsKeepFreshOccurrenceIdentityAfterUndo() throws {
     let model = try ParkedRouteEditorModel()
 

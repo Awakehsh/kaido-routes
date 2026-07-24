@@ -39,13 +39,17 @@ keeps matcher-to-navigation commit policy executable without importing Core
 Location or a UI framework into the portable core.
 
 Route-editor scenarios use `ROUTE_EDITOR_STARTED`,
-`ROUTE_EDITOR_CHOICE_SELECTED`, `ROUTE_EDITOR_UNDO_REQUESTED`, and
-`ROUTE_EDITOR_COMPILE_REQUESTED`. Their reviewed catalog is bound to the same
-network snapshot and names exact directional entrances, incoming approaches,
-junction complexes, movements, outgoing edges, and exits. KR-U01 proves that a
+`ROUTE_EDITOR_CHOICE_SELECTED`, `ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED`,
+`ROUTE_EDITOR_UNDO_REQUESTED`, and `ROUTE_EDITOR_COMPILE_REQUESTED`. Their
+reviewed catalog is bound to the same network snapshot and names exact
+directional entrances, incoming approaches, junction complexes, movements,
+outgoing edges, exits, and optional closed lap templates. KR-U01 proves that a
 future choice and moving-time edit cannot mutate the draft, while each accepted
 choice creates fresh occurrences and an explicit exit produces one RoutePlan.
-The portable runner does not claim that a SwiftUI editor has rendered.
+KR-U02 proves that only an already authored template-matched closed sequence
+becomes a lap candidate, duplication creates fresh occurrence values, and one
+undo removes the whole copied lap. The portable runner does not claim that a
+SwiftUI editor has rendered.
 
 Presentation scenarios project the same current occurrence and structured
 occurrence-scoped guidance frame into semantic phone, CarPlay, and voice values.

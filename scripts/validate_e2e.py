@@ -51,6 +51,7 @@ EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
     "ROUTE_EDITOR_STARTED",
     "ROUTE_EDITOR_CHOICE_SELECTED",
+    "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED",
     "ROUTE_EDITOR_UNDO_REQUESTED",
     "ROUTE_EDITOR_COMPILE_REQUESTED",
     "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
@@ -597,6 +598,72 @@ def validate_expert_route_editor(v: Validation, given: dict[str, Any]) -> None:
                 v.add(
                     f"editor decision {decision_id!r} references unknown next decision {next_id!r}"
                 )
+
+    lap_templates = catalog.get("lap_templates", [])
+    if not isinstance(lap_templates, list):
+        v.add("expert route editor catalog lap_templates must be an array")
+        lap_templates = []
+    lap_template_ids: set[str] = set()
+    for index, template in enumerate(lap_templates):
+        context = f"given.inputs.expert_route_editor_catalog.lap_templates[{index}]"
+        required = {"template_id", "start_decision_point_id", "choice_ids"}
+        if not v.require_keys(template, required, context):
+            continue
+        template_id = template["template_id"]
+        if not isinstance(template_id, str) or not template_id.strip():
+            v.add(f"{context}.template_id must be non-empty")
+        elif template_id in lap_template_ids:
+            v.add(f"duplicate editor lap template_id: {template_id}")
+        else:
+            lap_template_ids.add(template_id)
+        start_decision_id = template["start_decision_point_id"]
+        if (
+            not isinstance(start_decision_id, str)
+            or not start_decision_id.strip()
+            or start_decision_id not in decision_by_id
+        ):
+            v.add(f"{context}.start_decision_point_id must name a decision point")
+            continue
+        choice_sequence = template["choice_ids"]
+        if (
+            not isinstance(choice_sequence, list)
+            or not choice_sequence
+            or not all(
+                isinstance(choice_id, str) and choice_id.strip()
+                for choice_id in choice_sequence
+            )
+        ):
+            v.add(f"{context}.choice_ids must be a non-empty string array")
+            continue
+
+        current_decision_id = start_decision_id
+        forms_closed_sequence = True
+        for choice_id in choice_sequence:
+            decision = decision_by_id.get(current_decision_id)
+            choices = decision.get("choices", []) if decision else []
+            choice = next(
+                (
+                    candidate
+                    for candidate in choices
+                    if isinstance(candidate, dict)
+                    and candidate.get("choice_id") == choice_id
+                ),
+                None,
+            )
+            next_decision_id = (
+                choice.get("next_decision_point_id")
+                if isinstance(choice, dict)
+                else None
+            )
+            if (
+                not isinstance(next_decision_id, str)
+                or next_decision_id not in decision_by_id
+            ):
+                forms_closed_sequence = False
+                break
+            current_decision_id = next_decision_id
+        if not forms_closed_sequence or current_decision_id != start_decision_id:
+            v.add(f"{context} must form a reviewed closed choice sequence")
 
     for entrance in entrances:
         if not isinstance(entrance, dict):

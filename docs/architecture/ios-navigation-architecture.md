@@ -483,9 +483,11 @@ That is a development fact, not yet the minimum deployment target.
   artwork.
 - Complex authoring is disabled while moving.
 - SwiftUI renders `ExpertRouteEditorSnapshot` and submits stable reviewed choice
-  IDs. `KaidoRouting`, not the view tree, owns the current incoming approach,
-  legal movement set, fresh occurrence creation, parked undo, and explicit exit
-  completion. KR-U01 executes this pure boundary; the visual editor is not built.
+  or lap-candidate IDs. `KaidoRouting`, not the view tree, owns the current
+  incoming approach, legal movement set, reviewed closed-sequence matching,
+  fresh occurrence creation, grouped parked undo, and explicit exit completion.
+  KR-U01 and KR-U02 execute this pure boundary; the internal SwiftUI editor uses
+  a synthetic catalog and does not release real Shuto authoring data.
 
 ### CarPlay
 

@@ -92,6 +92,8 @@ private struct ScenarioHarness {
       try startRouteEditor(event.payload)
     case "ROUTE_EDITOR_CHOICE_SELECTED":
       try selectRouteEditorChoice(event.payload)
+    case "ROUTE_EDITOR_LAP_DUPLICATION_REQUESTED":
+      try duplicateRouteEditorLap(event.payload)
     case "ROUTE_EDITOR_UNDO_REQUESTED":
       try undoRouteEditorChoice(event.payload)
     case "ROUTE_EDITOR_COMPILE_REQUESTED":
@@ -499,6 +501,27 @@ private struct ScenarioHarness {
     }
   }
 
+  private mutating func duplicateRouteEditorLap(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard var session = routeEditorSession else {
+      throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
+    }
+    do {
+      try session.duplicateLap(
+        candidateID: try payload.requiredString("lap_candidate_id"),
+        newOccurrenceIDs: try requiredStrings(payload, key: "new_occurrence_ids"),
+        interaction: try routeEditorInteraction(payload)
+      )
+      routeEditorSession = session
+      publish(session.snapshot)
+    } catch let error as ExpertRouteEditorError {
+      routeEditorSession = session
+      publish(session.snapshot)
+      adapterObservations["editor.last_error"] = .string(error.code)
+    }
+  }
+
   private mutating func compileRouteEditor(_ payload: [String: JSONValue]) throws {
     guard let session = routeEditorSession else {
       throw ScenarioExecutionError.invalidInput("expert_route_editor_session")
@@ -701,6 +724,17 @@ private struct ScenarioHarness {
     )
     adapterObservations["editor.available_movement_ids"] = .strings(
       snapshot.availableChoices.map(\.movementID)
+    )
+    adapterObservations["editor.available_lap_candidate_ids"] = .strings(
+      snapshot.availableLapCandidates.map(\.id)
+    )
+    adapterObservations["editor.available_lap_template_ids"] = .strings(
+      snapshot.availableLapCandidates.map(\.reviewedTemplateID)
+    )
+    adapterObservations["editor.available_lap_source_occurrence_ids"] = .array(
+      snapshot.availableLapCandidates.map {
+        .strings($0.sourceOccurrenceIDs)
+      }
     )
     adapterObservations["editor.occurrence_ids"] = .strings(
       snapshot.occurrences.map(\.id)
@@ -2209,10 +2243,35 @@ private struct ScenarioHarness {
         choices: choices
       )
     }
+    let lapTemplateValues: [JSONValue]
+    if value["lap_templates"] == nil {
+      lapTemplateValues = []
+    } else if let values = value.array("lap_templates") {
+      lapTemplateValues = values
+    } else {
+      throw ScenarioExecutionError.invalidInput(
+        "expert_route_editor_catalog.lap_templates"
+      )
+    }
+    let lapTemplates = try lapTemplateValues.map { templateValue in
+      guard let template = templateValue.objectValue else {
+        throw ScenarioExecutionError.invalidInput(
+          "expert_route_editor_catalog.lap_templates"
+        )
+      }
+      return ReviewedRouteEditorLapTemplate(
+        id: try template.requiredString("template_id"),
+        startDecisionPointID: try template.requiredString(
+          "start_decision_point_id"
+        ),
+        choiceIDs: try requiredStrings(template, key: "choice_ids")
+      )
+    }
     return ReviewedRouteEditorCatalog(
       networkSnapshotID: try value.requiredString("network_snapshot_id"),
       entrances: entrances,
-      decisionPoints: decisionPoints
+      decisionPoints: decisionPoints,
+      lapTemplates: lapTemplates
     )
   }
 

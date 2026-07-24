@@ -70,6 +70,13 @@ struct ParkedRouteEditorFixture: Sendable {
             ),
           ]
         ),
+      ],
+      lapTemplates: [
+        ReviewedRouteEditorLapTemplate(
+          id: "preview.synthetic.lap-template.loop",
+          startDecisionPointID: "preview.synthetic.decision.loop",
+          choiceIDs: ["preview.synthetic.choice.repeat-loop"]
+        )
       ]
     ),
     entranceFacilityID: "preview.synthetic.entrance.eastbound",
@@ -106,7 +113,8 @@ final class ParkedRouteEditorModel: ObservableObject {
 
   private var session: ExpertRouteEditorSession
   private var nextSelectionSerial = 1
-  private var successfulSelectionCount = 0
+  private var nextLapDuplicationSerial = 1
+  private var successfulEditCount = 0
 
   init(
     fixture: ParkedRouteEditorFixture = .synthetic,
@@ -126,7 +134,7 @@ final class ParkedRouteEditorModel: ObservableObject {
   }
 
   var canUndo: Bool {
-    successfulSelectionCount > 0
+    successfulEditCount > 0
   }
 
   var canCompile: Bool {
@@ -158,7 +166,38 @@ final class ParkedRouteEditorModel: ObservableObject {
         interaction: interaction
       )
       nextSelectionSerial += 1
-      successfulSelectionCount += 1
+      successfulEditCount += 1
+      compiledRoutePlan = nil
+      lastErrorCode = nil
+      snapshot = session.snapshot
+    } catch let error as ExpertRouteEditorError {
+      lastErrorCode = error.code
+    } catch {
+      lastErrorCode = "UNKNOWN_EDITOR_ERROR"
+    }
+  }
+
+  func duplicate(lapCandidateID: String) {
+    guard
+      let candidate = snapshot.availableLapCandidates.first(where: {
+        $0.id == lapCandidateID
+      })
+    else {
+      lastErrorCode = ExpertRouteEditorError.illegalLapCandidate.code
+      return
+    }
+    let serial = nextLapDuplicationSerial
+    let newOccurrenceIDs = candidate.sourceOccurrenceIDs.indices.map { offset in
+      "preview.synthetic.occurrence.lap-copy.\(serial).\(offset + 1)"
+    }
+    do {
+      try session.duplicateLap(
+        candidateID: candidate.id,
+        newOccurrenceIDs: newOccurrenceIDs,
+        interaction: interaction
+      )
+      nextLapDuplicationSerial += 1
+      successfulEditCount += 1
       compiledRoutePlan = nil
       lastErrorCode = nil
       snapshot = session.snapshot
@@ -172,7 +211,7 @@ final class ParkedRouteEditorModel: ObservableObject {
   func undo() {
     do {
       try session.undo(interaction: interaction)
-      successfulSelectionCount -= 1
+      successfulEditCount -= 1
       compiledRoutePlan = nil
       lastErrorCode = nil
       snapshot = session.snapshot

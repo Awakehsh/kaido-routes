@@ -18,6 +18,8 @@ public enum ExpertRouteEditorError: Error, Equatable, Sendable {
   case interactionLocked
   case sessionFinished
   case illegalChoice
+  case illegalLapCandidate
+  case invalidLapOccurrenceCount
   case duplicateOccurrenceID
   case nothingToUndo
   case routeIncomplete
@@ -36,6 +38,10 @@ public enum ExpertRouteEditorError: Error, Equatable, Sendable {
       "EDITOR_SESSION_FINISHED"
     case .illegalChoice:
       "ILLEGAL_EDITOR_CHOICE"
+    case .illegalLapCandidate:
+      "ILLEGAL_EDITOR_LAP_CANDIDATE"
+    case .invalidLapOccurrenceCount:
+      "INVALID_EDITOR_LAP_OCCURRENCE_COUNT"
     case .duplicateOccurrenceID:
       "DUPLICATE_OCCURRENCE_ID"
     case .nothingToUndo:
@@ -117,20 +123,45 @@ public struct ReviewedRouteEditorEntrance: Equatable, Sendable {
   }
 }
 
+/// One catalog-reviewed closed choice sequence eligible for value duplication.
+public struct ReviewedRouteEditorLapTemplate: Equatable, Sendable {
+  public let id: String
+  public let startDecisionPointID: String
+  public let choiceIDs: [String]
+
+  public init(
+    id: String,
+    startDecisionPointID: String,
+    choiceIDs: [String]
+  ) {
+    self.id = id
+    self.startDecisionPointID = startDecisionPointID
+    self.choiceIDs = choiceIDs
+  }
+}
+
+private struct ResolvedRouteEditorLapTemplate: Sendable {
+  let template: ReviewedRouteEditorLapTemplate
+  let decisionPointIDs: [String]
+}
+
 /// Snapshot-bound authoring data. Cycles are valid; missing references are not.
 public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
   public let networkSnapshotID: String
   public let entrances: [ReviewedRouteEditorEntrance]
   public let decisionPoints: [ReviewedRouteEditorDecisionPoint]
+  public let lapTemplates: [ReviewedRouteEditorLapTemplate]
 
   public init(
     networkSnapshotID: String,
     entrances: [ReviewedRouteEditorEntrance],
-    decisionPoints: [ReviewedRouteEditorDecisionPoint]
+    decisionPoints: [ReviewedRouteEditorDecisionPoint],
+    lapTemplates: [ReviewedRouteEditorLapTemplate] = []
   ) {
     self.networkSnapshotID = networkSnapshotID
     self.entrances = entrances
     self.decisionPoints = decisionPoints
+    self.lapTemplates = lapTemplates
   }
 
   public var validationIssues: [String] {
@@ -207,6 +238,26 @@ public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
     if Set(allChoiceIDs).count != allChoiceIDs.count {
       issues.append("editor choice IDs are not unique")
     }
+    let lapTemplateIDs = lapTemplates.map(\.id)
+    if Set(lapTemplateIDs).count != lapTemplateIDs.count {
+      issues.append("editor lap template IDs are not unique")
+    }
+    for template in lapTemplates {
+      if template.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        issues.append("editor lap template ID is empty")
+      }
+      if template.startDecisionPointID.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      ).isEmpty {
+        issues.append("editor lap template start decision point ID is empty")
+      }
+      if template.choiceIDs.isEmpty {
+        issues.append("editor lap template choice sequence is empty")
+      }
+      if resolvedLapTemplate(template) == nil {
+        issues.append("editor lap template does not form a reviewed closed sequence")
+      }
+    }
     for entrance in entrances
     where !hasReachableExit(
       from: entrance.firstDecisionPointID,
@@ -215,6 +266,34 @@ public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
       issues.append("editor entrance has no reachable exit")
     }
     return Array(Set(issues)).sorted()
+  }
+
+  fileprivate func resolvedLapTemplate(
+    _ template: ReviewedRouteEditorLapTemplate
+  ) -> ResolvedRouteEditorLapTemplate? {
+    guard !template.choiceIDs.isEmpty else { return nil }
+    var currentDecisionPointID = template.startDecisionPointID
+    var decisionPointIDs: [String] = []
+    for choiceID in template.choiceIDs {
+      guard
+        let decisionPoint = decisionPoints.first(where: {
+          $0.id == currentDecisionPointID
+        }),
+        let choice = decisionPoint.choices.first(where: { $0.id == choiceID }),
+        case .decisionPoint(let nextDecisionPointID) = choice.destination
+      else {
+        return nil
+      }
+      decisionPointIDs.append(currentDecisionPointID)
+      currentDecisionPointID = nextDecisionPointID
+    }
+    guard currentDecisionPointID == template.startDecisionPointID else {
+      return nil
+    }
+    return ResolvedRouteEditorLapTemplate(
+      template: template,
+      decisionPointIDs: decisionPointIDs
+    )
   }
 
   private func hasReachableExit(
@@ -244,6 +323,26 @@ public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
   }
 }
 
+/// One previously authored, template-matched closed subsequence.
+///
+/// UI submits this stable candidate ID; it does not infer closure or reconstruct
+/// the source occurrence slice.
+public struct ExpertRouteEditorLapCandidate: Equatable, Sendable {
+  public let id: String
+  public let reviewedTemplateID: String
+  public let sourceOccurrenceIDs: [String]
+
+  public init(
+    id: String,
+    reviewedTemplateID: String,
+    sourceOccurrenceIDs: [String]
+  ) {
+    self.id = id
+    self.reviewedTemplateID = reviewedTemplateID
+    self.sourceOccurrenceIDs = sourceOccurrenceIDs
+  }
+}
+
 public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
   public let state: ExpertRouteEditorState
   public let networkSnapshotID: String
@@ -253,6 +352,7 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
   public let incomingApproachID: String?
   public let junctionComplexID: String?
   public let availableChoices: [ReviewedRouteEditorChoice]
+  public let availableLapCandidates: [ExpertRouteEditorLapCandidate]
   public let occurrences: [RouteOccurrence]
   public let selectedExitFacilityID: String?
 
@@ -265,6 +365,7 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
     incomingApproachID: String?,
     junctionComplexID: String?,
     availableChoices: [ReviewedRouteEditorChoice],
+    availableLapCandidates: [ExpertRouteEditorLapCandidate],
     occurrences: [RouteOccurrence],
     selectedExitFacilityID: String?
   ) {
@@ -276,6 +377,7 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
     self.incomingApproachID = incomingApproachID
     self.junctionComplexID = junctionComplexID
     self.availableChoices = availableChoices
+    self.availableLapCandidates = availableLapCandidates
     self.occurrences = occurrences
     self.selectedExitFacilityID = selectedExitFacilityID
   }
@@ -284,8 +386,15 @@ public struct ExpertRouteEditorSnapshot: Equatable, Sendable {
 /// Platform-light expert authoring state. UI renders choices; it does not infer them.
 public struct ExpertRouteEditorSession: Sendable {
   private struct SelectionRecord: Sendable {
+    let decisionPointIDs: [String]
+    let choiceIDs: [String]
+    let appendedOccurrenceIDs: [String]
+  }
+
+  private struct AuthoredStep: Sendable {
     let decisionPointID: String
-    let appendedOccurrenceCount: Int
+    let choiceID: String
+    let occurrenceIDs: [String]
   }
 
   private let catalog: ReviewedRouteEditorCatalog
@@ -356,6 +465,7 @@ public struct ExpertRouteEditorSession: Sendable {
       incomingApproachID: decisionPoint?.incomingApproachID,
       junctionComplexID: decisionPoint?.junctionComplexID,
       availableChoices: state == .editing ? decisionPoint?.choices ?? [] : [],
+      availableLapCandidates: availableLapCandidates,
       occurrences: occurrences,
       selectedExitFacilityID: selectedExitFacilityID
     )
@@ -409,7 +519,11 @@ public struct ExpertRouteEditorSession: Sendable {
         tollDomainID: choice.outgoingEdgeTollDomainID
       ))
     history.append(
-      SelectionRecord(decisionPointID: currentDecisionPointID, appendedOccurrenceCount: 2)
+      SelectionRecord(
+        decisionPointIDs: [currentDecisionPointID],
+        choiceIDs: [choice.id],
+        appendedOccurrenceIDs: newIDs
+      )
     )
 
     switch choice.destination {
@@ -422,6 +536,75 @@ public struct ExpertRouteEditorSession: Sendable {
     }
   }
 
+  public mutating func duplicateLap(
+    candidateID: String,
+    newOccurrenceIDs: [String],
+    interaction: RouteEditorInteractionContext
+  ) throws {
+    guard interaction == .parked else {
+      throw ExpertRouteEditorError.interactionLocked
+    }
+    guard state == .editing else {
+      throw ExpertRouteEditorError.sessionFinished
+    }
+    guard
+      let candidate = availableLapCandidates.first(where: { $0.id == candidateID }),
+      let template = catalog.lapTemplates.first(where: {
+        $0.id == candidate.reviewedTemplateID
+      }),
+      let resolvedTemplate = catalog.resolvedLapTemplate(template)
+    else {
+      throw ExpertRouteEditorError.illegalLapCandidate
+    }
+    guard newOccurrenceIDs.count == candidate.sourceOccurrenceIDs.count else {
+      throw ExpertRouteEditorError.invalidLapOccurrenceCount
+    }
+    guard
+      !newOccurrenceIDs.contains(where: {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      })
+    else {
+      throw ExpertRouteEditorError.invalidIdentifier
+    }
+    let newIDSet = Set(newOccurrenceIDs)
+    guard newIDSet.count == newOccurrenceIDs.count,
+      Set(occurrences.map(\.id)).isDisjoint(with: newIDSet)
+    else {
+      throw ExpertRouteEditorError.duplicateOccurrenceID
+    }
+    let occurrencesByID = Dictionary(
+      uniqueKeysWithValues: occurrences.map { ($0.id, $0) }
+    )
+    let sourceOccurrences = candidate.sourceOccurrenceIDs.compactMap {
+      occurrencesByID[$0]
+    }
+    guard sourceOccurrences.count == candidate.sourceOccurrenceIDs.count else {
+      throw ExpertRouteEditorError.illegalLapCandidate
+    }
+    let firstIndex = occurrences.count
+    let duplicated = zip(sourceOccurrences, newOccurrenceIDs)
+      .enumerated()
+      .map { offset, pair in
+        return RouteOccurrence(
+          id: pair.1,
+          index: firstIndex + offset,
+          kind: pair.0.kind,
+          entityID: pair.0.entityID,
+          parkingAreaID: pair.0.parkingAreaID,
+          tollDomainID: pair.0.tollDomainID,
+          isOptional: pair.0.isOptional
+        )
+      }
+    occurrences.append(contentsOf: duplicated)
+    history.append(
+      SelectionRecord(
+        decisionPointIDs: resolvedTemplate.decisionPointIDs,
+        choiceIDs: resolvedTemplate.template.choiceIDs,
+        appendedOccurrenceIDs: newOccurrenceIDs
+      )
+    )
+  }
+
   public mutating func undo(interaction: RouteEditorInteractionContext) throws {
     guard interaction == .parked else {
       throw ExpertRouteEditorError.interactionLocked
@@ -429,8 +612,8 @@ public struct ExpertRouteEditorSession: Sendable {
     guard let record = history.popLast() else {
       throw ExpertRouteEditorError.nothingToUndo
     }
-    occurrences.removeLast(record.appendedOccurrenceCount)
-    currentDecisionPointID = record.decisionPointID
+    occurrences.removeLast(record.appendedOccurrenceIDs.count)
+    currentDecisionPointID = record.decisionPointIDs.first
     selectedExitFacilityID = nil
     state = .editing
   }
@@ -456,5 +639,52 @@ public struct ExpertRouteEditorSession: Sendable {
 
   private func decisionPoint(id: String) -> ReviewedRouteEditorDecisionPoint? {
     catalog.decisionPoints.first { $0.id == id }
+  }
+
+  private var availableLapCandidates: [ExpertRouteEditorLapCandidate] {
+    guard state == .editing, let currentDecisionPointID else { return [] }
+    var steps: [AuthoredStep] = []
+    for record in history {
+      guard record.decisionPointIDs.count == record.choiceIDs.count,
+        record.appendedOccurrenceIDs.count == record.choiceIDs.count * 2
+      else { return [] }
+      for offset in record.choiceIDs.indices {
+        let occurrenceOffset = offset * 2
+        steps.append(
+          AuthoredStep(
+            decisionPointID: record.decisionPointIDs[offset],
+            choiceID: record.choiceIDs[offset],
+            occurrenceIDs: Array(
+              record.appendedOccurrenceIDs[occurrenceOffset..<(occurrenceOffset + 2)]
+            )
+          )
+        )
+      }
+    }
+    var candidates: [ExpertRouteEditorLapCandidate] = []
+    for template in catalog.lapTemplates
+    where template.startDecisionPointID == currentDecisionPointID {
+      guard let resolved = catalog.resolvedLapTemplate(template),
+        steps.count >= template.choiceIDs.count
+      else { continue }
+      for start in 0...(steps.count - template.choiceIDs.count) {
+        let slice = Array(steps[start..<(start + template.choiceIDs.count)])
+        guard slice.map(\.decisionPointID) == resolved.decisionPointIDs,
+          slice.map(\.choiceID) == template.choiceIDs
+        else { continue }
+        let sourceOccurrenceIDs = slice.flatMap(\.occurrenceIDs)
+        guard let firstID = sourceOccurrenceIDs.first,
+          let lastID = sourceOccurrenceIDs.last
+        else { continue }
+        candidates.append(
+          ExpertRouteEditorLapCandidate(
+            id: "\(template.id)::\(firstID)::\(lastID)",
+            reviewedTemplateID: template.id,
+            sourceOccurrenceIDs: sourceOccurrenceIDs
+          )
+        )
+      }
+    }
+    return candidates
   }
 }

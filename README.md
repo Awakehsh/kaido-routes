@@ -151,14 +151,17 @@ The parked expert-authoring boundary is executable independently of SwiftUI.
 `ExpertRouteEditorSession` starts from one exact directional entrance and a
 snapshot-bound reviewed catalog. Its cursor names the incoming approach and
 junction complex, exposes only that decision point's legal choices, appends
-fresh movement and outgoing-edge occurrences, supports reviewed cycles and
-parked undo, and compiles only after an explicit directional exit choice. UI
-code cannot submit a future decision's choice or edit while moving. KR-U01
-executes this stateful boundary. The internal iPhone shell now composes the same
-session through a synthetic parked-only catalog: SwiftUI renders its immutable
-snapshot, submits stable current-choice IDs, preserves repeated occurrences,
-uses session-owned undo, and unlocks compilation only after an explicit exit.
-This is an adapter proof, not released Shuto authoring data; real released editor
+fresh movement and outgoing-edge occurrences, supports reviewed cycles, and
+compiles only after an explicit directional exit choice. A reviewed lap template
+names one exact closed choice sequence. Only an authored match becomes an opaque
+lap candidate; duplication copies semantic values into fresh occurrences and is
+one grouped parked-undo action. UI code cannot infer closure, submit a future
+decision's choice, reuse an occurrence ID, or edit while moving. KR-U01 and
+KR-U02 execute this stateful boundary. The internal iPhone shell now composes the
+same session through a synthetic parked-only catalog: SwiftUI renders its
+immutable choices and lap candidates, preserves repeated occurrences, uses
+session-owned undo, and unlocks compilation only after an explicit exit. This
+is an adapter proof, not released Shuto authoring data; real released editor
 catalogs, localized labels, topology rendering, and accessibility validation
 remain pending.
 
@@ -335,8 +338,9 @@ hard properties that must remain proven as the product expands:
     edge-, and DecisionZone-bound corridor may convert it into guidance distance.
 24. parked route authoring starts from an exact directional entrance, exposes
     only the current incoming approach's reviewed choices, preserves cycles as
-    fresh occurrences, rejects moving-time edits, and finishes only through an
-    explicit directional exit.
+    fresh occurrences, exposes only authored reviewed closed sequences for lap
+    duplication, groups a copied lap into one undo action, rejects moving-time
+    edits, and finishes only through an explicit directional exit.
 25. phone and CarPlay consume one released, normalized junction-view definition;
     snapshot, movement occurrence, lane, route-shield, Japanese-sign, and evidence
     drift fail closed before any adapter renders an inset.

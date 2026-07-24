@@ -67,18 +67,23 @@ The platform-light `ExpertRouteEditorSession` now implements the stepwise cursor
 contract. A `ReviewedRouteEditorCatalog` is bound to one network snapshot and
 contains exact directional entrances, decision points keyed by incoming approach
 and junction complex, reviewed movement choices, outgoing edges, and either the
-next decision point or an explicit directional exit. The session returns an
-immutable snapshot for UI rendering; selecting a stable choice ID appends fresh
-movement and edge occurrences. Cycles are valid, but duplicate identities,
-unknown references, exitless entrance graphs, future-decision choices, and any
-edit while moving fail closed. Parked undo removes only the last authored pair
-and restores the prior decision point. SwiftUI remains an adapter over this
-state; it never determines legal choices itself. KR-U01 executes the first
-vertical contract with synthetic data. The internal iPhone preview now binds
-that snapshot to accessible current-choice controls, occurrence-aware route
-sequence, parked undo, and explicit-exit compilation through an app-owned
-synthetic fixture. Released catalogs, production labels and topology rendering,
-and full accessibility validation remain pending.
+next decision point or an explicit directional exit. Optional reviewed lap
+templates name an exact closed choice sequence and start decision point. The
+session exposes a lap candidate only after the user's authored history matches
+that sequence and has returned to the same decision point. Selecting a stable
+choice ID appends fresh movement and edge occurrences; duplicating an opaque lap
+candidate copies its semantic values into caller-identified fresh occurrences
+and reindexes them. Cycles are valid, but duplicate identities, unknown
+references, unclosed templates, exitless entrance graphs, future-decision
+choices, and any edit while moving fail closed. Parked undo removes the last
+user action: one selected movement pair or one whole duplicated lap, then
+restores the prior decision point. SwiftUI remains an adapter over this state;
+it never determines legal choices or loop closure itself. KR-U01 and KR-U02
+execute these vertical contracts with synthetic data. The internal iPhone
+preview now renders current choices, occurrence-aware history, session-provided
+lap candidates, grouped undo, and explicit-exit compilation through an
+app-owned synthetic fixture. Released catalogs, production labels and topology
+rendering, and full accessibility validation remain pending.
 
 ### Circuit composition is explicit
 

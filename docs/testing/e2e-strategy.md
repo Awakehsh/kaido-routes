@@ -208,18 +208,21 @@ projections to accessibility-visible views in L3/L4; their `layer` records the
 intended final verification surface, not a claim that a simulator or head unit
 ran in CI.
 
-KR-U01 executes the parked `ExpertRouteEditorSession` at L1/L2 even though its
-declared final surface is iPhone UI. The runner starts from an exact directional
-entrance, observes the incoming-approach/JCT choice set, rejects a future choice
-and a moving-time edit, advances through reviewed choices, and compares the final
-RoutePlan occurrence sequence. The SwiftUI adapter must bind these semantic
-values to accessible controls without recreating movement legality in the view.
-The internal iPhone preview now does so for a synthetic catalog,
-and focused app-model tests cover current-choice binding, future-choice
-rejection, repeated fresh occurrences, parked undo, explicit-exit compilation,
-and moving-time lockout. KR-U01 remains the portable L1/L2 contract; Simulator
-interaction and accessibility-tree inspection are local L3 evidence, not a CI
-field or release-data claim.
+KR-U01 and KR-U02 execute the parked `ExpertRouteEditorSession` at L1/L2 even
+though their declared final surface is iPhone UI. The runner starts from an exact
+directional entrance, observes the incoming-approach/JCT choice set, rejects a
+future choice and moving-time edits, advances through reviewed choices, and
+compares the final RoutePlan occurrence sequence. It additionally requires an
+authored choice-history match before exposing one reviewed closed-lap candidate;
+duplication copies fresh occurrence values, and one undo removes the whole copy.
+The SwiftUI adapter must bind these semantic values to accessible controls
+without recreating movement legality or closure in the view. The internal
+iPhone preview now does so for a synthetic catalog, and focused app-model tests
+cover current-choice binding, future-choice rejection, repeated fresh
+occurrences, session-provided lap candidates, grouped undo, explicit-exit
+compilation, and moving-time lockout. KR-U01 and KR-U02 remain the portable
+L1/L2 contracts; Simulator interaction and accessibility-tree inspection are
+local L3 evidence, not a CI field or release-data claim.
 
 KR-D18 executes `NavigationReleaseBundle` at L1/L2 before any Apple adapter or
 live service exists. Its synthetic asset set proves that one active snapshot,

@@ -476,15 +476,17 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 44 scenarios with 283 semantic assertions executable at L1/L2. KR-S16
+   current 52 scenarios with 326 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
    geometry to that same guidance path without using lateral residual;
    KR-U01 crosses the parked expert-editor cursor and exact RoutePlan compilation
-   boundary; KR-U04 through U08, KR-U10 through U12, and KR-U14 cross the shared
-   presentation projection boundary, including one released junction-view
-   definition shared by phone and CarPlay.
+   boundary; KR-U02 adds reviewed closed-lap candidate matching, value
+   duplication with fresh occurrence IDs, and grouped undo; KR-U04 through U08,
+   KR-U10 through U12, and KR-U14 cross the shared presentation projection
+   boundary, including one released junction-view definition shared by phone and
+   CarPlay.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph
@@ -576,13 +578,16 @@ gate.
     `CPMapTemplate` adapter; none of those platform layers exists yet.
 11. **Partial complete:** the snapshot-bound `ExpertRouteEditorSession` exposes
     only legal choices for the exact incoming approach/JCT, creates fresh
-    occurrences across cycles, locks moving-time interaction, supports parked
-    undo, and requires an explicit directional exit before RoutePlan compilation.
-    KR-U01 executes this boundary. The internal iPhone preview now renders the
-    session snapshot and current stable choice IDs from a synthetic catalog,
-    preserves repeated occurrences, and gates compilation through the session.
-    Next build released editor catalogs, production labels/topology rendering,
-    and full accessibility validation without moving graph logic into UI.
+    occurrences across cycles, locks moving-time interaction, supports grouped
+    parked undo, and requires an explicit directional exit before RoutePlan
+    compilation. Its reviewed lap templates expose candidates only for exact
+    authored closed sequences; duplication copies semantic values under fresh
+    occurrence IDs. KR-U01 and KR-U02 execute this boundary. The internal iPhone
+    preview now renders the session snapshot, stable choice IDs, and lap
+    candidates from a synthetic catalog, preserves repeated occurrences, and
+    gates compilation through the session. Next build released editor catalogs,
+    production labels/topology rendering, and full accessibility validation
+    without moving graph logic into UI.
 12. Perform passenger-observed tunnel and entry tests only after synthetic and
    simulator gates pass.
 

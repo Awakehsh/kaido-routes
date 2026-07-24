@@ -33,11 +33,15 @@ snapshot's stable choice IDs; the app composition layer supplies fresh
 occurrence IDs, including after undo. Reviewed cycles remain repeated
 occurrences in the route rail instead of being deduplicated.
 
-Undo calls the session boundary. The compile control stays disabled until the
-session accepts an explicit directional exit, after which it creates the exact
-`RoutePlan`. The app owns display labels for this synthetic fixture only; it
-does not construct real Shuto topology, infer movement legality, or promote the
-Route Atlas into selectable navigation data.
+The synthetic catalog also declares one exact reviewed lap template. The app
+shows **Add another lap** only for opaque candidates returned by the session,
+then supplies a fresh ID for every copied occurrence. It never reconstructs the
+source slice or infers loop closure. Undo calls the session boundary and removes
+one whole duplicated lap as one user action. The compile control stays disabled
+until the session accepts an explicit directional exit, after which it creates
+the exact `RoutePlan`. The app owns display labels for this synthetic fixture
+only; it does not construct real Shuto topology, infer movement legality, or
+promote the Route Atlas into selectable navigation data.
 
 ## Internal location calibration
 
@@ -120,9 +124,10 @@ xcodebuild \
 
 `AppSafetyStateTests` proves that the internal preview cannot claim route-release
 authority or a measured position. `ParkedRouteEditorModelTests` proves exact
-entrance/current-choice binding, future-choice rejection, fresh identities
-across repeated loops and undo, explicit-exit compilation, and moving-time
-lockout. `InternalLocationCalibrationTests` proves exact candidate-corridor
-construction, fail-closed navigation-authority handling, transport-context
-separation, and coordinate-free non-release reporting. The platform-light Swift
-package tests remain the authoritative domain and navigation verification.
+entrance/current-choice binding, future-choice rejection, session-provided lap
+candidates, fresh identities across duplication and undo, grouped lap undo,
+explicit-exit compilation, and moving-time lockout.
+`InternalLocationCalibrationTests` proves exact candidate-corridor construction,
+fail-closed navigation-authority handling, transport-context separation, and
+coordinate-free non-release reporting. The platform-light Swift package tests
+remain the authoritative domain and navigation verification.

@@ -365,13 +365,13 @@
       "id": "validate-versioned-artifact",
       "at_ms": 1,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "3.0"}
+      "payload": {"schema_version": "4.0"}
     },
     {
       "id": "reject-unknown-artifact-schema",
       "at_ms": 2,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "4.0"}
+      "payload": {"schema_version": "5.0"}
     }
   ],
   "then": [
@@ -408,7 +408,7 @@
       "category": "DOMAIN",
       "subject": "release_artifact.schema_version",
       "matcher": "EQUALS",
-      "expected": "3.0",
+      "expected": "4.0",
       "rationale": "The author derives the supported distribution schema instead of copying a caller-selected artifact version."
     },
     {
@@ -435,7 +435,7 @@
       "category": "EVIDENCE",
       "subject": "release_artifact.schema_version",
       "matcher": "EQUALS",
-      "expected": "3.0",
+      "expected": "4.0",
       "rationale": "The decoded distribution unit retains the exact supported schema version."
     },
     {

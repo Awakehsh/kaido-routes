@@ -1,6 +1,7 @@
 import Foundation
 import KaidoDomain
 import KaidoRouting
+import KaidoSurfaceRouting
 
 /// The reviewed runtime assets for one navigation release before provenance
 /// metadata turns them into a distributable artifact.
@@ -22,6 +23,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
+  public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
 
   public init(
     schemaVersion: String = NavigationReleaseDraft.currentSchemaVersion,
@@ -34,7 +36,8 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
-    junctionViews: [JunctionViewDefinition] = []
+    junctionViews: [JunctionViewDefinition] = [],
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.editorCatalogID = editorCatalogID
@@ -47,6 +50,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
+    self.surfaceAccessDefinition = surfaceAccessDefinition
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -61,6 +65,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     case decisionZones = "decision_zones"
     case releasedGuidance = "released_guidance"
     case junctionViews = "junction_views"
+    case surfaceAccessDefinition = "surface_access_definition"
   }
 }
 
@@ -161,7 +166,8 @@ public enum NavigationReleaseAuthor {
       matcherCorridor: draft.matcherCorridor,
       decisionZones: draft.decisionZones,
       releasedGuidance: draft.releasedGuidance,
-      junctionViews: draft.junctionViews
+      junctionViews: draft.junctionViews,
+      surfaceAccessDefinition: draft.surfaceAccessDefinition
     )
     do {
       _ = try NavigationRelease(artifact: artifact)

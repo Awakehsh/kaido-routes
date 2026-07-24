@@ -1,6 +1,7 @@
 import Foundation
 import KaidoDomain
 import KaidoRouting
+import KaidoSurfaceRouting
 
 public enum NavigationReleaseAssetRole: String, Codable, CaseIterable, Hashable, Sendable {
   case editorCatalog = "EDITOR_CATALOG"
@@ -10,6 +11,7 @@ public enum NavigationReleaseAssetRole: String, Codable, CaseIterable, Hashable,
   case decisionZone = "DECISION_ZONE"
   case guidance = "GUIDANCE"
   case junctionView = "JUNCTION_VIEW"
+  case surfaceAccess = "SURFACE_ACCESS"
 }
 
 public enum NavigationReleaseEvidenceState: String, Codable, Sendable {
@@ -138,7 +140,7 @@ public struct NavigationReleaseAssetEvidence: Codable, Equatable, Sendable {
 /// must construct `NavigationRelease`, which validates provenance coverage and
 /// reuses the complete `NavigationReleaseBundle` integrity gate.
 public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "3.0"
+  public static let currentSchemaVersion = "4.0"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -155,6 +157,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
+  public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
 
   public init(
     schemaVersion: String = NavigationReleaseArtifact.currentSchemaVersion,
@@ -171,7 +174,8 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
-    junctionViews: [JunctionViewDefinition] = []
+    junctionViews: [JunctionViewDefinition] = [],
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.releaseID = releaseID
@@ -188,6 +192,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
+    self.surfaceAccessDefinition = surfaceAccessDefinition
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -206,6 +211,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     case decisionZones = "decision_zones"
     case releasedGuidance = "released_guidance"
     case junctionViews = "junction_views"
+    case surfaceAccessDefinition = "surface_access_definition"
   }
 }
 
@@ -323,7 +329,8 @@ public struct NavigationRelease: Equatable, Sendable {
           matcherCorridor: artifact.matcherCorridor,
           decisionZones: artifact.decisionZones,
           releasedGuidance: artifact.releasedGuidance,
-          junctionViews: artifact.junctionViews
+          junctionViews: artifact.junctionViews,
+          surfaceAccessDefinition: artifact.surfaceAccessDefinition
         )
       } catch NavigationReleaseBundleError.invalid(let bundleIssues) {
         issues.append(contentsOf: bundleIssues.map(NavigationReleaseIssue.invalidBundle))
@@ -416,6 +423,9 @@ public struct NavigationRelease: Equatable, Sendable {
     }
     for definition in artifact.junctionViews {
       expect(.junctionView, definition.id)
+    }
+    if let definition = artifact.surfaceAccessDefinition {
+      expect(.surfaceAccess, definition.id)
     }
     for (key, count) in expectedAssetCounts where count != 1 {
       issues.append(.duplicateArtifactAsset(key.description))

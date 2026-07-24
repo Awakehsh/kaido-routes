@@ -214,6 +214,19 @@ accepts it only if it reaches the selected facility's approach anchor without
 entering another expressway facility. Entry and exit transitions come from the
 versioned Kaido network, not from an IC name returned by a surface router.
 
+The platform-light implementation makes that boundary executable.
+`ReleasedSurfaceAccessDefinition` binds one `SurfaceApproachPolicy` to the exact
+snapshot, RoutePlan, entrance, first join occurrence, entry-transition edges,
+compatible exit, and supported finish policies. It is optional because a
+journey may begin at the entrance, but when present it is a separately evidenced
+navigation-release asset. `JourneyPlanCompiler` re-runs all six surface hard
+gates against an inspection bound to that exact snapshot before it can create
+an access leg, preserves the complete resolved
+directed-edge sequence including repeats, and retains the release-owned
+RoutePlan, entry transition, and egress options unchanged. Provider prose is not
+carried into navigation authority. `RETURN_NEAR_ORIGIN` remains unavailable
+until a reviewed surface-egress leg exists.
+
 Phase changes are evidence-based. A proximity region may create an entry
 candidate, but only matching the directed transition, heading, and continuous
 forward progress may automatically commit `STRICT_ROUTE`. Low confidence keeps

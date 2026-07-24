@@ -442,7 +442,10 @@ The pre-runtime release boundary is now explicit as well.
 `RoutePlan`, one locally valid reviewed editor catalog, one
 `ReleasedNavigationRuntimePolicy`, one complete matcher corridor,
 occurrence-scoped DecisionZones and released guidance, and an optional registry
-of released junction views. The runtime policy binds the directional entry
+of released junction views. It may also carry one optional
+`ReleasedSurfaceAccessDefinition` bound to the exact snapshot, RoutePlan,
+directional entrance, first join occurrence, entry transition, compatible exit,
+and finish-policy set. The runtime policy binds the directional entry
 transition, released in-domain recovery candidates targeting later RoutePlan
 occurrences only for `SAFE_REJOIN`, and released legal egress to the exact
 RoutePlan. Other recovery policies cannot carry rejoin candidates, and egress
@@ -461,12 +464,13 @@ release. KR-D18 executes this boundary with synthetic data; it does not release
 a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
-`NavigationReleaseArtifact` schema 3.0 serializes the exact bundle inputs
+`NavigationReleaseArtifact` schema 4.0 serializes the exact bundle inputs
 together with a stable release identity, editor-catalog identity, complete
 Japanese/Simplified-Chinese/English editor presentation, dated source registry,
 and one released evidence record for every distributable asset, including the
 editor presentation under `EDITOR_PRESENTATION` and runtime policy under
-`RUNTIME_POLICY`. `NavigationRelease`
+`RUNTIME_POLICY`, plus `SURFACE_ACCESS` whenever that optional definition is
+present. `NavigationRelease`
 rejects unknown schemas, missing or orphaned evidence, unused sources,
 source-role drift, junction-view provenance drift, and evidence dated after the
 release before re-running the whole `NavigationReleaseBundle` gate. The codec
@@ -479,6 +483,16 @@ both inputs unchanged, runs the whole gate before writing, and refuses
 overwrite. `validate-navigation` independently exposes the same boundary to a
 release pipeline. KR-D25 proves authoring, serialization, and unknown-schema
 rejection with synthetic data; no real navigation release artifact exists yet.
+
+`JourneyPlanCompiler` is the platform-light composition gate after release. It
+re-runs all six surface hard gates against the release-owned
+`SurfaceApproachPolicy`, requires an exact-snapshot inspection and a non-empty
+unambiguous resolved edge path,
+preserves repeated surface traversals, and wraps that leg around the unchanged
+RoutePlan, entry transition, and released egress options. The product runtime
+always exposes a route-only `JourneyPlan` when no surface candidate has been
+accepted. `RETURN_NEAR_ORIGIN` remains blocked until a reviewed surface-egress
+leg is released; no provider or UI can synthesize it.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated

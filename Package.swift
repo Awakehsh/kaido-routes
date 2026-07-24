@@ -31,7 +31,7 @@ let package = Package(
     ),
     .target(
       name: "KaidoNavigation",
-      dependencies: ["KaidoDomain", "KaidoRouting"]
+      dependencies: ["KaidoDomain", "KaidoRouting", "KaidoSurfaceRouting"]
     ),
     .target(
       name: "KaidoPresentation",

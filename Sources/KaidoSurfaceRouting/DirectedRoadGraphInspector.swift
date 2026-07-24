@@ -298,6 +298,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
     }
 
     return SurfaceCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
       anchorBinding: anchorBinding,
       geometryBindingIsUnambiguous: geometryIsUnambiguous && anchorBinding != nil,
       expresswayEdgeIDsBeforeEntry: geometryIsUnambiguous
@@ -315,6 +316,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
   private func failedInspection() -> SurfaceCandidateInspection {
     SurfaceCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
       anchorBinding: nil,
       geometryBindingIsUnambiguous: false,
       expresswayEdgeIDsBeforeEntry: nil,
@@ -412,6 +414,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
       unmatchedSampleCount == 0 && selectionMatchesEvidence && anchorBinding != nil
 
     return SurfaceCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
       anchorBinding: anchorBinding,
       geometryBindingIsUnambiguous: geometryIsBound,
       expresswayEdgeIDsBeforeEntry: geometryIsBound
@@ -430,6 +433,7 @@ public struct DirectedRoadGraphInspector: SurfaceCandidateInspector {
 
   private func invalidSelectedPathInspection(edgeIDs: [String]) -> SurfaceCandidateInspection {
     SurfaceCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
       anchorBinding: nil,
       geometryBindingIsUnambiguous: false,
       expresswayEdgeIDsBeforeEntry: nil,

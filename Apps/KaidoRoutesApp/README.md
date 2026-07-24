@@ -133,7 +133,8 @@ The current app deliberately composes only:
   published library changes;
 - a dormant released-road navigation surface that can be constructed only from
   one exact foreground catalog selection, separates the bound release key from
-  user-started live input, renders only actor-owned projections, and preserves
+  user-started live input, exposes the exact release-owned route-only
+  `JourneyPlan`, renders only actor-owned projections, and preserves
   `REALTIME_UNCONFIRMED`;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and

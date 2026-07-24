@@ -15,6 +15,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
   public let release: KaidoProductRelease
   public let session: NavigationSession
   public let entryTransitionAdmissionContext: EntryTransitionAdmissionContext
+  public let journeyPlan: JourneyPlan
   public let origin: KaidoProductNavigationRuntimeOrigin
 
   public var productReleaseID: String {
@@ -79,6 +80,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
     )
     self.release = release
     self.entryTransitionAdmissionContext = entryTransitionAdmissionContext
+    journeyPlan = JourneyPlanCompiler.routeOnly(release: release)
     let initialSnapshot: NavigationSnapshot
     let initialMatcherOccurrenceID: String?
     let requiresRestorationReacquisition: Bool

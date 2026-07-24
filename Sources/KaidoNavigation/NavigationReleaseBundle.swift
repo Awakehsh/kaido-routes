@@ -1,6 +1,7 @@
 import Foundation
 import KaidoDomain
 import KaidoRouting
+import KaidoSurfaceRouting
 
 public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case invalidNetworkSnapshot
@@ -14,6 +15,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case routeEntranceEdgeMismatch
   case unknownRouteExit
   case invalidRuntimePolicy(NavigationRuntimePolicyIssue)
+  case invalidSurfaceAccessDefinition([ReleasedSurfaceAccessIssue])
   case invalidEntryTransitionCorridor(String)
   case invalidRuntimeConfiguration(String)
   case duplicateDecisionZoneForMovement(String)
@@ -51,6 +53,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "UNKNOWN_ROUTE_EXIT"
     case .invalidRuntimePolicy(let issue):
       issue.code
+    case .invalidSurfaceAccessDefinition:
+      "INVALID_SURFACE_ACCESS_DEFINITION"
     case .invalidEntryTransitionCorridor:
       "INVALID_ENTRY_TRANSITION_CORRIDOR"
     case .invalidRuntimeConfiguration:
@@ -82,6 +86,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
     switch self {
     case .invalidRuntimePolicy(let issue):
       "RUNTIME_POLICY:\(issue.sortKey)"
+    case .invalidSurfaceAccessDefinition(let details):
+      "\(code):\(details.map(\.rawValue).joined(separator: ","))"
     case .invalidEntryTransitionCorridor(let detail):
       "\(code):\(detail)"
     case .invalidEditorCatalog(let details):
@@ -128,6 +134,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
+  public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
 
   public init(
     networkSnapshot: NetworkSnapshot,
@@ -138,7 +145,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
-    junctionViews: [JunctionViewDefinition] = []
+    junctionViews: [JunctionViewDefinition] = [],
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
   ) throws {
     let validation = Self.validation(
       networkSnapshot: networkSnapshot,
@@ -149,7 +157,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       matcherCorridor: matcherCorridor,
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
-      junctionViews: junctionViews
+      junctionViews: junctionViews,
+      surfaceAccessDefinition: surfaceAccessDefinition
     )
     guard validation.issues.isEmpty else {
       throw NavigationReleaseBundleError.invalid(validation.issues)
@@ -170,6 +179,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
+    self.surfaceAccessDefinition = surfaceAccessDefinition
   }
 
   private static func validation(
@@ -181,7 +191,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
-    junctionViews: [JunctionViewDefinition]
+    junctionViews: [JunctionViewDefinition],
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
   ) -> (
     issues: [NavigationReleaseBundleIssue],
     recipe: ReleasedRouteAuthoringRecipe?
@@ -253,6 +264,16 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
         routePlan: routePlan
       ).map(NavigationReleaseBundleIssue.invalidRuntimePolicy)
     )
+    if let surfaceAccessDefinition {
+      let surfaceAccessIssues = surfaceAccessDefinition.validationIssues(
+        networkSnapshot: networkSnapshot,
+        routePlan: routePlan,
+        runtimePolicy: runtimePolicy
+      )
+      if !surfaceAccessIssues.isEmpty {
+        issues.append(.invalidSurfaceAccessDefinition(surfaceAccessIssues))
+      }
+    }
 
     issues.append(
       contentsOf: NavigationRuntimeConfigurationValidator.issues(

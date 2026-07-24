@@ -27,6 +27,7 @@ public struct AnchorBindingObservation: Codable, Equatable, Sendable {
 }
 
 public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
+  public let networkSnapshotID: String?
   public let anchorBinding: AnchorBindingObservation?
   public let geometryBindingIsUnambiguous: Bool?
   public let expresswayEdgeIDsBeforeEntry: [String]?
@@ -37,6 +38,7 @@ public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
   public let resolvedPathEdgeIDs: [String]?
 
   public init(
+    networkSnapshotID: String? = nil,
     anchorBinding: AnchorBindingObservation?,
     geometryBindingIsUnambiguous: Bool?,
     expresswayEdgeIDsBeforeEntry: [String]?,
@@ -46,6 +48,7 @@ public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
     disconnectedDirectedEdgeIDs: [String]? = nil,
     resolvedPathEdgeIDs: [String]? = nil
   ) {
+    self.networkSnapshotID = networkSnapshotID
     self.anchorBinding = anchorBinding
     self.geometryBindingIsUnambiguous = geometryBindingIsUnambiguous
     self.expresswayEdgeIDsBeforeEntry = expresswayEdgeIDsBeforeEntry
@@ -57,6 +60,7 @@ public struct SurfaceCandidateInspection: Codable, Equatable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
     case anchorBinding = "anchor_binding"
     case geometryBindingIsUnambiguous = "geometry_binding_is_unambiguous"
     case expresswayEdgeIDsBeforeEntry = "expressway_edge_ids_before_entry"
@@ -153,11 +157,60 @@ public enum SurfaceHardGateEvaluator {
     expectedProviderID: String,
     inspectionLatencyMilliseconds: Int? = nil
   ) -> SurfaceCandidateEvaluation {
+    evaluate(
+      candidate: candidate,
+      request: request,
+      policy: fixture.approachPolicy,
+      inspection: inspection,
+      expectedProviderID: expectedProviderID,
+      inspectionLatencyMilliseconds: inspectionLatencyMilliseconds
+    )
+  }
+
+  public static func evaluate(
+    candidate: SurfaceRouteCandidate,
+    request: SurfaceRouteRequest,
+    policy: SurfaceApproachPolicy,
+    inspection: SurfaceCandidateInspection,
+    expectedProviderID: String,
+    inspectionLatencyMilliseconds: Int? = nil
+  ) -> SurfaceCandidateEvaluation {
+    if !policy.validationIssues.isEmpty {
+      let reasons = policy.validationIssues.map(\.rawValue)
+      return SurfaceCandidateEvaluation(
+        candidateID: candidate.id,
+        candidate: candidate,
+        inspection: inspection,
+        inspectionLatencyMilliseconds: inspectionLatencyMilliseconds,
+        disposition: .rejected,
+        hardGates: SurfaceHardGate.allCases.map {
+          HardGateResult(gate: $0, status: .fail, reasonCodes: reasons)
+        }
+      )
+    }
+    if let networkSnapshotID = inspection.networkSnapshotID,
+      networkSnapshotID != policy.networkSnapshotID
+    {
+      return SurfaceCandidateEvaluation(
+        candidateID: candidate.id,
+        candidate: candidate,
+        inspection: inspection,
+        inspectionLatencyMilliseconds: inspectionLatencyMilliseconds,
+        disposition: .rejected,
+        hardGates: SurfaceHardGate.allCases.map {
+          HardGateResult(
+            gate: $0,
+            status: .fail,
+            reasonCodes: ["INSPECTION_NETWORK_SNAPSHOT_MISMATCH"]
+          )
+        }
+      )
+    }
     let gates = [
-      directedApproachGate(request: request, fixture: fixture, inspection: inspection),
-      earlyExpresswayGate(fixture: fixture, inspection: inspection),
-      routeJoinGate(request: request, fixture: fixture),
-      tollDomainGate(fixture: fixture, inspection: inspection),
+      directedApproachGate(request: request, policy: policy, inspection: inspection),
+      earlyExpresswayGate(policy: policy, inspection: inspection),
+      routeJoinGate(request: request, policy: policy),
+      tollDomainGate(policy: policy, inspection: inspection),
       geometryGate(candidate: candidate, inspection: inspection),
       providerStatusGate(candidate: candidate, expectedProviderID: expectedProviderID),
     ]
@@ -214,43 +267,48 @@ public enum SurfaceHardGateEvaluator {
 
   private static func directedApproachGate(
     request: SurfaceRouteRequest,
-    fixture: EntranceProbeFixture,
+    policy: SurfaceApproachPolicy,
     inspection: SurfaceCandidateInspection
   ) -> HardGateResult {
     var reasons: [String] = []
-    if request.destinationAnchor.id != fixture.approachAnchor.id {
+    if request.destinationAnchor != policy.destinationAnchor {
       reasons.append("REQUEST_ANCHOR_MISMATCH")
     }
     guard let binding = inspection.anchorBinding else {
       reasons.append("ANCHOR_BINDING_MISSING")
       return gate(.correctDirectedApproach, reasons: reasons)
     }
-    if binding.anchorID != fixture.approachAnchor.id {
+    if binding.anchorID != policy.destinationAnchor.id {
       reasons.append("ANCHOR_ID_MISMATCH")
     }
-    if binding.directedSurfaceEdgeID != fixture.approachAnchor.directedSurfaceEdgeID {
+    if binding.directedSurfaceEdgeID != policy.destinationAnchor.directedSurfaceEdgeID {
       reasons.append("APPROACH_EDGE_MISMATCH")
     }
-    if binding.terminalDistanceMeters > fixture.approachAnchor.maxTerminalDistanceMeters {
+    if !binding.terminalDistanceMeters.isFinite {
+      reasons.append("INVALID_TERMINAL_DISTANCE")
+    } else if binding.terminalDistanceMeters
+      > policy.destinationAnchor.maxTerminalDistanceMeters
+    {
       reasons.append("TERMINAL_TOO_FAR")
-    }
-    if binding.terminalDistanceMeters < 0 {
+    } else if binding.terminalDistanceMeters < 0 {
       reasons.append("INVALID_TERMINAL_DISTANCE")
     }
-    if !(0..<360).contains(binding.terminalBearingDegrees) {
+    if !binding.terminalBearingDegrees.isFinite
+      || !(0..<360).contains(binding.terminalBearingDegrees)
+    {
       reasons.append("INVALID_TERMINAL_BEARING")
     }
     if angularDifference(
       binding.terminalBearingDegrees,
-      fixture.approachAnchor.expectedBearingDegrees
-    ) > fixture.approachAnchor.bearingToleranceDegrees {
+      policy.destinationAnchor.expectedBearingDegrees
+    ) > policy.destinationAnchor.bearingToleranceDegrees {
       reasons.append("TERMINAL_HEADING_MISMATCH")
     }
     return gate(.correctDirectedApproach, reasons: reasons)
   }
 
   private static func earlyExpresswayGate(
-    fixture: EntranceProbeFixture,
+    policy: SurfaceApproachPolicy,
     inspection: SurfaceCandidateInspection
   ) -> HardGateResult {
     guard let edgeIDs = inspection.expresswayEdgeIDsBeforeEntry else {
@@ -260,7 +318,7 @@ public enum SurfaceHardGateEvaluator {
       return gate(.noEarlyExpressway, reasons: [])
     }
 
-    let knownForbidden = Set(fixture.prohibitions.forbiddenEarlyExpresswayEdgeIDs)
+    let knownForbidden = Set(policy.forbiddenEarlyExpresswayEdgeIDs)
     let crossedKnownForbidden = edgeIDs.contains { knownForbidden.contains($0) }
     return gate(
       .noEarlyExpressway,
@@ -274,13 +332,13 @@ public enum SurfaceHardGateEvaluator {
 
   private static func routeJoinGate(
     request: SurfaceRouteRequest,
-    fixture: EntranceProbeFixture
+    policy: SurfaceApproachPolicy
   ) -> HardGateResult {
     var reasons: [String] = []
-    if request.entranceFacilityID != fixture.entrance.facilityID {
+    if request.entranceFacilityID != policy.entranceFacilityID {
       reasons.append("FACILITY_MISMATCH")
     }
-    if !fixture.journeyCompatibility.allowedJoinOccurrenceIDs.contains(
+    if !policy.allowedJoinOccurrenceIDs.contains(
       request.selectedJoinOccurrenceID
     ) {
       reasons.append("JOIN_OCCURRENCE_NOT_ALLOWED")
@@ -289,13 +347,13 @@ public enum SurfaceHardGateEvaluator {
   }
 
   private static func tollDomainGate(
-    fixture: EntranceProbeFixture,
+    policy: SurfaceApproachPolicy,
     inspection: SurfaceCandidateInspection
   ) -> HardGateResult {
     guard let crossedIDs = inspection.crossedTollDomainIDs else {
       return gate(.allowedTollDomain, reasons: ["TOLL_DOMAIN_INSPECTION_MISSING"])
     }
-    let forbidden = Set(fixture.prohibitions.forbiddenTollDomainIDs)
+    let forbidden = Set(policy.forbiddenTollDomainIDs)
     let crossedForbidden = crossedIDs.contains { forbidden.contains($0) }
     return gate(
       .allowedTollDomain,
@@ -314,7 +372,11 @@ public enum SurfaceHardGateEvaluator {
     if candidate.coordinates.contains(where: { !$0.isValid }) {
       reasons.append("INVALID_GEOMETRY_COORDINATE")
     }
-    if candidate.distanceMeters < 0 || candidate.expectedTravelTimeSeconds < 0 {
+    if !candidate.distanceMeters.isFinite
+      || !candidate.expectedTravelTimeSeconds.isFinite
+      || candidate.distanceMeters < 0
+      || candidate.expectedTravelTimeSeconds < 0
+    {
       reasons.append("INVALID_ROUTE_METRICS")
     }
     switch inspection.geometryBindingIsUnambiguous {

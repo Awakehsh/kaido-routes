@@ -49,6 +49,18 @@ JourneyPhase
 parked near an entrance may begin at `ENTRY_TRANSITION`, and a user may choose to
 end guidance at the exit's surface handoff anchor.
 
+The current platform-light composition boundary is release-first.
+`ReleasedSurfaceAccessDefinition` carries one exact `SurfaceApproachPolicy`;
+`NavigationReleaseBundle` admits it only when its snapshot, RoutePlan,
+directional entrance, first join occurrence, entry transition, compatible exit,
+and finish policies match the released runtime policy. `JourneyPlanCompiler`
+then re-evaluates the candidate against all six hard gates and requires a
+same-snapshot inspection with a non-empty, unambiguous directed-edge path.
+Repeated path edges remain repeated.
+The product runtime exposes a route-only `JourneyPlan` when no access result has
+been accepted, so beginning near the entrance remains valid without fabricating
+a provider leg.
+
 ## Exact access facilities
 
 IC naming is presentation, not connectivity. The routable model separates a
@@ -135,6 +147,11 @@ open-source candidate after the manifest-bound five-entrance bake-off; MapKit,
 OSRM, and GraphHopper remain bounded adapters and executable controls. Every
 answer is only a candidate: reject it if it enters an expressway early, reaches
 the wrong side of the facility, or cannot be bound to one verified transition.
+An accepted probe record is still not a product journey by itself. Product
+composition requires the exact released surface-access definition and
+recomputes the gates from the request, candidate, and inspection. A provider or
+UI cannot inject a different anchor, entrance, join occurrence, transition,
+exit, or RoutePlan.
 
 Opening Apple Maps is a useful fallback, not the seamless target. The documented
 `openInMaps` flow launches Maps and suspends interaction with the calling app.

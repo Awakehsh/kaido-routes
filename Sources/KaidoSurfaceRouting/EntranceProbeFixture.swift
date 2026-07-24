@@ -55,6 +55,19 @@ public struct EntranceProbeFixture: Codable, Equatable, Sendable {
     )
   }
 
+  public var approachPolicy: SurfaceApproachPolicy {
+    SurfaceApproachPolicy(
+      networkSnapshotID: networkSnapshotID,
+      entranceFacilityID: entrance.facilityID,
+      allowedJoinOccurrenceIDs: journeyCompatibility.allowedJoinOccurrenceIDs,
+      destinationAnchor: approachAnchor,
+      entryTransitionDirectedEdgeIDs: entryTransition.directedEdgeIDs,
+      compatibleExitFacilityIDs: journeyCompatibility.compatibleExitFacilityIDs,
+      forbiddenEarlyExpresswayEdgeIDs: prohibitions.forbiddenEarlyExpresswayEdgeIDs,
+      forbiddenTollDomainIDs: prohibitions.forbiddenTollDomainIDs
+    )
+  }
+
   private enum CodingKeys: String, CodingKey {
     case schemaVersion = "schema_version"
     case id = "fixture_id"

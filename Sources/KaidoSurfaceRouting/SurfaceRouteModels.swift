@@ -108,6 +108,105 @@ public struct SurfaceRouteRequest: Codable, Equatable, Sendable {
   }
 }
 
+public enum SurfaceApproachPolicyIssue: String, Equatable, Sendable {
+  case invalidIdentity = "INVALID_SURFACE_APPROACH_POLICY_IDENTITY"
+  case invalidDestinationAnchor = "INVALID_SURFACE_APPROACH_DESTINATION_ANCHOR"
+  case invalidAllowedJoinOccurrences = "INVALID_SURFACE_APPROACH_ALLOWED_JOIN_OCCURRENCES"
+  case invalidEntryTransition = "INVALID_SURFACE_APPROACH_ENTRY_TRANSITION"
+  case invalidCompatibleExits = "INVALID_SURFACE_APPROACH_COMPATIBLE_EXITS"
+  case invalidProhibitions = "INVALID_SURFACE_APPROACH_PROHIBITIONS"
+}
+
+/// Release-authorable constraints for one exact directional surface approach.
+///
+/// This value contains no provider result and grants no RoutePlan authority.
+/// A consumer must still evaluate a candidate against every hard gate.
+public struct SurfaceApproachPolicy: Codable, Equatable, Sendable {
+  public let networkSnapshotID: String
+  public let entranceFacilityID: String
+  public let allowedJoinOccurrenceIDs: [String]
+  public let destinationAnchor: DirectedApproachAnchor
+  public let entryTransitionDirectedEdgeIDs: [String]
+  public let compatibleExitFacilityIDs: [String]
+  public let forbiddenEarlyExpresswayEdgeIDs: [String]
+  public let forbiddenTollDomainIDs: [String]
+
+  public init(
+    networkSnapshotID: String,
+    entranceFacilityID: String,
+    allowedJoinOccurrenceIDs: [String],
+    destinationAnchor: DirectedApproachAnchor,
+    entryTransitionDirectedEdgeIDs: [String],
+    compatibleExitFacilityIDs: [String],
+    forbiddenEarlyExpresswayEdgeIDs: [String],
+    forbiddenTollDomainIDs: [String]
+  ) {
+    self.networkSnapshotID = networkSnapshotID
+    self.entranceFacilityID = entranceFacilityID
+    self.allowedJoinOccurrenceIDs = allowedJoinOccurrenceIDs
+    self.destinationAnchor = destinationAnchor
+    self.entryTransitionDirectedEdgeIDs = entryTransitionDirectedEdgeIDs
+    self.compatibleExitFacilityIDs = compatibleExitFacilityIDs
+    self.forbiddenEarlyExpresswayEdgeIDs = forbiddenEarlyExpresswayEdgeIDs
+    self.forbiddenTollDomainIDs = forbiddenTollDomainIDs
+  }
+
+  public var validationIssues: [SurfaceApproachPolicyIssue] {
+    var issues: [SurfaceApproachPolicyIssue] = []
+    if normalized(networkSnapshotID).isEmpty || normalized(entranceFacilityID).isEmpty {
+      issues.append(.invalidIdentity)
+    }
+    if normalized(destinationAnchor.id).isEmpty
+      || !destinationAnchor.coordinate.isValid
+      || normalized(destinationAnchor.directedSurfaceEdgeID).isEmpty
+      || !destinationAnchor.expectedBearingDegrees.isFinite
+      || !(0..<360).contains(destinationAnchor.expectedBearingDegrees)
+      || !destinationAnchor.bearingToleranceDegrees.isFinite
+      || !(0...180).contains(destinationAnchor.bearingToleranceDegrees)
+      || !destinationAnchor.maxTerminalDistanceMeters.isFinite
+      || destinationAnchor.maxTerminalDistanceMeters < 0
+    {
+      issues.append(.invalidDestinationAnchor)
+    }
+    if invalidUniqueIDs(allowedJoinOccurrenceIDs, allowEmpty: false) {
+      issues.append(.invalidAllowedJoinOccurrences)
+    }
+    if invalidUniqueIDs(entryTransitionDirectedEdgeIDs, allowEmpty: false) {
+      issues.append(.invalidEntryTransition)
+    }
+    if invalidUniqueIDs(compatibleExitFacilityIDs, allowEmpty: false) {
+      issues.append(.invalidCompatibleExits)
+    }
+    if invalidUniqueIDs(forbiddenEarlyExpresswayEdgeIDs, allowEmpty: true)
+      || invalidUniqueIDs(forbiddenTollDomainIDs, allowEmpty: true)
+    {
+      issues.append(.invalidProhibitions)
+    }
+    return issues
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case entranceFacilityID = "entrance_facility_id"
+    case allowedJoinOccurrenceIDs = "allowed_join_occurrence_ids"
+    case destinationAnchor = "destination_anchor"
+    case entryTransitionDirectedEdgeIDs = "entry_transition_directed_edge_ids"
+    case compatibleExitFacilityIDs = "compatible_exit_facility_ids"
+    case forbiddenEarlyExpresswayEdgeIDs = "forbidden_early_expressway_edge_ids"
+    case forbiddenTollDomainIDs = "forbidden_toll_domain_ids"
+  }
+
+  private func invalidUniqueIDs(_ ids: [String], allowEmpty: Bool) -> Bool {
+    (!allowEmpty && ids.isEmpty)
+      || ids.contains(where: { normalized($0).isEmpty })
+      || Set(ids).count != ids.count
+  }
+
+  private func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
 public struct SurfaceRouteStep: Codable, Equatable, Sendable {
   public let id: String
   public let instruction: String

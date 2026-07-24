@@ -2,7 +2,7 @@
 
 `kaido-release build-navigation` is the production assembly boundary between
 reviewed navigation runtime assets, their reviewed provenance, and the
-schema-3.0 artifact consumed by the product-release pipeline. It does not
+schema-4.0 artifact consumed by the product-release pipeline. It does not
 derive topology, author a RoutePlan, create guidance, promote evidence, or
 select a synthetic mode.
 
@@ -21,8 +21,9 @@ The schema-1.0 draft contains the exact immutable runtime assets:
 - released entry/recovery/egress runtime policy;
 - complete matcher corridor;
 - one DecisionZone and released guidance coverage for every planned junction
-  movement; and
-- the optional exact junction-view registry.
+  movement;
+- the optional exact junction-view registry; and
+- the optional exact surface-access definition.
 
 The root JSON keys are:
 
@@ -38,6 +39,7 @@ matcher_corridor
 decision_zones
 released_guidance
 junction_views
+surface_access_definition
 ```
 
 The draft has no release ID, release time, source registry, or evidence state.
@@ -65,8 +67,9 @@ SHA-256 values, licences, and explicit asset roles as
 - runtime policy;
 - matcher corridor;
 - every DecisionZone;
-- every guidance prompt; and
-- every junction view.
+- every guidance prompt;
+- every junction view; and
+- the surface-access definition when present.
 
 Every source must be used, every evidence record must resolve to a source whose
 role permits it, and neither source nor evidence review may postdate

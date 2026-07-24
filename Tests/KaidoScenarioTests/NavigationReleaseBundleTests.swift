@@ -2,6 +2,7 @@ import Foundation
 import KaidoDomain
 import KaidoNavigation
 import KaidoRouting
+import KaidoSurfaceRouting
 import Testing
 
 @Test("Navigation release bundle accepts repeated graph entities as distinct occurrences")
@@ -548,7 +549,7 @@ func navigationReleaseArtifactRoundTrips() throws {
   #expect(release.assetEvidence.count == 11)
 
   let json = try #require(String(data: data, encoding: .utf8))
-  #expect(json.contains("\"schema_version\" : \"3.0\""))
+  #expect(json.contains("\"schema_version\" : \"4.0\""))
   #expect(json.contains("\"ja-JP\""))
   #expect(json.contains("\"zh-Hans\""))
   #expect(json.contains("\"en\""))
@@ -601,7 +602,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     !($0.role == .decisionZone && $0.assetID == "test.zone.loop-2")
   }
   let artifact = NavigationReleaseArtifact(
-    schemaVersion: "4.0",
+    schemaVersion: "5.0",
     releaseID: valid.releaseID,
     releasedAt: valid.releasedAt,
     editorCatalogID: valid.editorCatalogID,
@@ -754,7 +755,8 @@ struct NavigationReleaseBundleFixture {
 }
 
 func navigationReleaseArtifact(
-  _ fixture: NavigationReleaseBundleFixture
+  _ fixture: NavigationReleaseBundleFixture,
+  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
 ) -> NavigationReleaseArtifact {
   let sourceID = "test.source.junction-view"
   let sourceRegistry = NavigationReleaseSourceRegistry(
@@ -833,6 +835,17 @@ func navigationReleaseArtifact(
       )
     }
   )
+  if let surfaceAccessDefinition {
+    evidence.append(
+      NavigationReleaseAssetEvidence(
+        role: .surfaceAccess,
+        assetID: surfaceAccessDefinition.id,
+        state: .released,
+        checkedAt: "2026-07-23",
+        sourceReferenceIDs: [sourceID]
+      )
+    )
+  }
 
   return NavigationReleaseArtifact(
     releaseID: "test.navigation-release.release-bundle.v1",
@@ -848,7 +861,8 @@ func navigationReleaseArtifact(
     matcherCorridor: fixture.matcherCorridor,
     decisionZones: fixture.decisionZones,
     releasedGuidance: fixture.releasedGuidance,
-    junctionViews: fixture.junctionViews
+    junctionViews: fixture.junctionViews,
+    surfaceAccessDefinition: surfaceAccessDefinition
   )
 }
 

@@ -486,8 +486,9 @@ Apple boundaries.
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor
 catalog, `ReleasedNavigationRuntimePolicy`, `RouteMatcherCorridor`, DecisionZone
-definitions, released guidance, and optional junction-view registry in one
-value. The policy must bind the same snapshot and RoutePlan, name the compiled
+definitions, released guidance, an optional junction-view registry, and an
+optional `ReleasedSurfaceAccessDefinition` in one value. The policy must bind
+the same snapshot and RoutePlan, name the compiled
 directional entrance and first route occurrence, provide a released in-domain
 candidate targeting a later RoutePlan occurrence for `SAFE_REJOIN`, and provide
 no rejoin candidates for any other recovery policy. It must also provide at
@@ -510,14 +511,25 @@ orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
 real-road eligibility.
 
-`NavigationReleaseArtifact` schema 3.0 is the Codable distribution envelope for
+When surface access is present, the bundle additionally requires its
+`SurfaceApproachPolicy` to match the exact snapshot, RoutePlan entrance, first
+join occurrence, runtime entry-transition edges, and compatible compiled exit.
+The definition is inert until `JourneyPlanCompiler` recomputes every surface
+hard gate against one candidate and requires a same-snapshot inspection with
+an unambiguous resolved edge
+sequence. The resulting `JourneyPlan` composes around the unchanged RoutePlan;
+provider guidance steps never enter released guidance authority. A route-only
+plan remains valid, while `RETURN_NEAR_ORIGIN` fails closed until reviewed
+surface-egress assets exist.
+
+`NavigationReleaseArtifact` schema 4.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
 editor-catalog identity, a complete locale-exact editor presentation catalog,
 and a source registry with HTTPS locations, pinned SHA-256 values, checked
 dates, licences, and explicit asset roles. Exactly one `RELEASED` evidence
 record must cover the editor catalog, editor presentation, runtime policy,
 matcher corridor, every DecisionZone, every guidance prompt, and every junction
-view. Unresolved
+view, plus the optional surface-access definition when present. Unresolved
 or unused sources, missing or orphaned evidence, duplicate asset identities,
 role mismatch, junction-view provenance drift, and evidence checked after the
 release date fail closed.
@@ -1019,6 +1031,14 @@ Use a two-stage algorithm.
 
 The surface provider supplies candidate geometry and ETA. It does not decide
 that a facility is compatible.
+
+`SurfaceApproachPolicy` is the provider-neutral release shape for those hard
+filters. Private entrance fixtures can project into it for bake-off execution,
+but a product release must carry and evidence the policy independently. The
+compiler compares the full directed anchor, entrance, selected first
+occurrence, provider identity, exact inspection snapshot, and optional
+snapshot-bound selected-path evidence. It preserves repeated resolved edges and
+cannot alter the Shuto RoutePlan.
 
 The routing result exposes one structured `EntranceRecommendationSelection`
 with exact facility, target carriageway, join occurrence, ETA, straight-line

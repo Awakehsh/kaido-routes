@@ -450,7 +450,7 @@ func productReleaseAuthorRejectsInvalidNestedInputs() {
     licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
   )
   let invalidNavigation = NavigationReleaseArtifact(
-    schemaVersion: "4.0",
+    schemaVersion: "5.0",
     releaseID: validNavigation.releaseID,
     releasedAt: validNavigation.releasedAt,
     editorCatalogID: validNavigation.editorCatalogID,
@@ -1132,6 +1132,14 @@ func kaidoProductRuntimeUsesJointReleaseAuthority() async throws {
   #expect(runtime.networkSnapshotID == navigationFixture.networkSnapshot.id)
   #expect(runtime.routePlanID == navigationFixture.routePlan.id)
   #expect(runtime.routeAtlas == release.routeAtlas)
+  #expect(runtime.journeyPlan.productReleaseID == release.releaseID)
+  #expect(runtime.journeyPlan.routePlanID == navigationFixture.routePlan.id)
+  #expect(runtime.journeyPlan.accessLeg == nil)
+  #expect(runtime.journeyPlan.finishPolicy == .finishOnRequest)
+  #expect(
+    runtime.journeyPlan.precomputedEgressOptions
+      == navigationFixture.runtimePolicy.egressOptions
+  )
   #expect(
     runtime.release.navigation.bundle.runtimePolicy
       == navigationFixture.runtimePolicy

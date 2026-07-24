@@ -1,0 +1,229 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D29",
+  "title": "Hash-bound pre-drive evidence resolves only a fresh exact tariff profile",
+  "layer": "DOMAIN",
+  "tags": ["pre-drive", "evidence", "freshness", "release", "fail-closed"],
+  "purpose": "Keep dated tariff and passage evidence separate from the versioned product release while requiring exact product, RoutePlan, vehicle-class, payment-method, provenance, and validity-window agreement before pre-drive admission.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The released identifiers and official-looking values are synthetic contract fixtures.",
+      "This scenario does not provide a current toll quote, realtime passage authority, or real-road navigation authority."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.pre-drive-bundle",
+      "status": "TEST",
+      "effective_at": "2026-07-25T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.pre-drive-bundle",
+      "network_snapshot_id": "test.snapshot.pre-drive-bundle",
+      "entry_facility_id": "test.entrance.pre-drive-bundle",
+      "exit_facility_id": "test.exit.pre-drive-bundle",
+      "recovery_policy": "STRICT",
+      "actual_distance_km": 27.4,
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.pre-drive-bundle",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.pre-drive-bundle"
+        }
+      ]
+    },
+    "inputs": {
+      "pre_drive_session": {
+        "network_snapshot_id": "test.snapshot.pre-drive-bundle",
+        "route_plan_id": "test.plan.pre-drive-bundle",
+        "vehicle_class": "STANDARD",
+        "payment_method": "ETC"
+      },
+      "pre_drive_evidence_bundle": {
+        "schema_version": "1.0",
+        "release_id": "test.pre-drive-evidence-bundle.v1",
+        "released_at": "2026-07-25T12:15:00+09:00",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "product_release_id": "test.product.pre-drive-bundle",
+        "navigation_release_id": "test.navigation.pre-drive-bundle",
+        "network_snapshot_id": "test.snapshot.pre-drive-bundle",
+        "route_plan_id": "test.plan.pre-drive-bundle",
+        "source_registry": [
+          {
+            "source_reference_id": "test.source.pre-drive-tariff",
+            "roles": ["TARIFF_QUERY"],
+            "authority_name": "Synthetic tariff authority",
+            "source_url": "https://example.test/pre-drive-tariff",
+            "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "checked_at": "2026-07-25T11:30:00+09:00",
+            "reviewer_id": "test.reviewer.tariff",
+            "reviewed_at": "2026-07-25T12:10:00+09:00"
+          },
+          {
+            "source_reference_id": "test.source.pre-drive-passage",
+            "roles": ["PASSAGE_REVIEW"],
+            "authority_name": "Synthetic passage authority",
+            "source_url": "https://example.test/pre-drive-passage",
+            "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "checked_at": "2026-07-25T11:35:00+09:00",
+            "reviewer_id": "test.reviewer.passage",
+            "reviewed_at": "2026-07-25T12:10:00+09:00"
+          }
+        ],
+        "records": [
+          {
+            "record_id": "test.record.pre-drive-standard-etc",
+            "valid_from": "2026-07-25T12:00:00+09:00",
+            "expires_at": "2026-07-26T00:00:00+09:00",
+            "source_reference_ids": [
+              "test.source.pre-drive-tariff",
+              "test.source.pre-drive-passage"
+            ],
+            "evidence": {
+              "evaluated_at": "2026-07-25T11:45:00+09:00",
+              "network_snapshot_id": "test.snapshot.pre-drive-bundle",
+              "route_plan_id": "test.plan.pre-drive-bundle",
+              "vehicle_class": "STANDARD",
+              "payment_method": "ETC",
+              "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+              "tariff_quotes": [
+                {
+                  "quote_id": "test.quote.pre-drive-standard-etc",
+                  "entry_facility_id": "test.entrance.pre-drive-bundle",
+                  "exit_facility_id": "test.exit.pre-drive-bundle",
+                  "status": "VERIFIED_QUERY",
+                  "vehicle_class": "STANDARD",
+                  "payment_method": "ETC",
+                  "tariff_version_id": "test.tariff.pre-drive.v1",
+                  "tariff_version_status": "ACTIVE",
+                  "tariff_distance_km": 24.8,
+                  "estimated_amount_yen": 1320,
+                  "checked_at": "2026-07-25T11:30:00+09:00",
+                  "official_query_reference": "https://example.test/pre-drive-tariff"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "resolve-fresh-profile",
+      "at_ms": 0,
+      "type": "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
+      "payload": {
+        "product_release_id": "test.product.pre-drive-bundle",
+        "product_released_at": "2026-07-25T12:00:00+09:00",
+        "navigation_release_id": "test.navigation.pre-drive-bundle",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "resolved_at": "2026-07-25T12:30:00+09:00"
+      }
+    },
+    {
+      "id": "reject-expired-profile",
+      "at_ms": 1,
+      "type": "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
+      "payload": {
+        "product_release_id": "test.product.pre-drive-bundle",
+        "product_released_at": "2026-07-25T12:00:00+09:00",
+        "navigation_release_id": "test.navigation.pre-drive-bundle",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "resolved_at": "2026-07-26T00:00:00+09:00"
+      }
+    },
+    {
+      "id": "reject-missing-payment-profile",
+      "at_ms": 2,
+      "type": "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
+      "payload": {
+        "product_release_id": "test.product.pre-drive-bundle",
+        "product_released_at": "2026-07-25T12:00:00+09:00",
+        "navigation_release_id": "test.navigation.pre-drive-bundle",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "resolved_at": "2026-07-25T12:30:00+09:00",
+        "payment_method": "CASH"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "fresh-exact-profile-passes",
+      "after": "resolve-fresh-profile",
+      "category": "SAFETY",
+      "subject": "pre_drive.bundle.status",
+      "matcher": "EQUALS",
+      "expected": "VALID",
+      "rationale": "Only a record inside its validity window and matching the selected session may reach pre-drive evaluation."
+    },
+    {
+      "id": "bundle-identity-is-retained",
+      "after": "resolve-fresh-profile",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.bundle.release_id",
+      "matcher": "EQUALS",
+      "expected": "test.pre-drive-evidence-bundle.v1",
+      "rationale": "Runtime evidence remains traceable to one hash-pinned bundle identity."
+    },
+    {
+      "id": "both-source-roles-are-retained",
+      "after": "resolve-fresh-profile",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.bundle.source_count",
+      "matcher": "EQUALS",
+      "expected": 2,
+      "rationale": "The record requires separately identified tariff and passage provenance."
+    },
+    {
+      "id": "exact-tariff-is-selected",
+      "after": "resolve-fresh-profile",
+      "category": "TOLL",
+      "subject": "pre_drive.bundle.selected_quote_id",
+      "matcher": "EQUALS",
+      "expected": "test.quote.pre-drive-standard-etc",
+      "rationale": "The unique active quote is selected only after complete bundle and session validation."
+    },
+    {
+      "id": "expiry-blocks",
+      "after": "reject-expired-profile",
+      "category": "SAFETY",
+      "subject": "pre_drive.bundle.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "An evidence record is unavailable at its exclusive expiry boundary."
+    },
+    {
+      "id": "expiry-has-stable-code",
+      "after": "reject-expired-profile",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.bundle.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "PRE_DRIVE_EVIDENCE_EXPIRED",
+      "rationale": "The App can distinguish stale evidence from an absent release."
+    },
+    {
+      "id": "missing-profile-blocks",
+      "after": "reject-missing-payment-profile",
+      "category": "SAFETY",
+      "subject": "pre_drive.bundle.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A CASH selection cannot reuse the reviewed ETC record."
+    },
+    {
+      "id": "missing-profile-has-stable-code",
+      "after": "reject-missing-payment-profile",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.bundle.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "PRE_DRIVE_EVIDENCE_PROFILE_UNAVAILABLE",
+      "rationale": "Profile absence remains explicit and never falls back to another vehicle or payment path."
+    }
+  ]
+}

@@ -478,6 +478,27 @@ struct ReleasedProductRouteAuthoringPanel: View {
         english: "Current pre-drive evidence is unavailable"
       )
     }
+    if code == PreDriveEvidenceResolutionError.expired.code {
+      return copy.resolve(
+        japanese: "出発前証拠の有効期限が切れました",
+        simplifiedChinese: "行前证据已过期",
+        english: "Pre-drive evidence has expired"
+      )
+    }
+    if code == PreDriveEvidenceResolutionError.notYetValid.code {
+      return copy.resolve(
+        japanese: "出発前証拠はまだ有効ではありません",
+        simplifiedChinese: "行前证据尚未生效",
+        english: "Pre-drive evidence is not yet valid"
+      )
+    }
+    if code == PreDriveEvidenceResolutionError.profileUnavailable.code {
+      return copy.resolve(
+        japanese: "この料金区分の証拠がありません",
+        simplifiedChinese: "缺少该计费组合的证据",
+        english: "Evidence is unavailable for this tariff profile"
+      )
+    }
     if isRejectedPreDriveEvidence(code) {
       return copy.resolve(
         japanese: "出発前証拠が一致しません",
@@ -527,6 +548,36 @@ struct ReleasedProductRouteAuthoringPanel: View {
           "在取得绑定同一 RoutePlan 的计费记录与通行状态前，不会启动导航。",
         english:
           "Navigation stays locked until tariff and passage evidence for this exact RoutePlan is available."
+      )
+    }
+    if code == PreDriveEvidenceResolutionError.expired.code {
+      return copy.resolve(
+        japanese:
+          "期限切れの料金・通行証拠は使用しません。更新された証拠パッケージが必要です。",
+        simplifiedChinese:
+          "不会使用过期的计费与通行证据；需要更新后的证据包。",
+        english:
+          "Expired tariff and passage evidence is never used. An updated evidence bundle is required."
+      )
+    }
+    if code == PreDriveEvidenceResolutionError.notYetValid.code {
+      return copy.resolve(
+        japanese:
+          "この証拠の有効期間が始まるまでナビを開始しません。",
+        simplifiedChinese:
+          "在该证据有效期开始前不会启动导航。",
+        english:
+          "Navigation stays locked until this evidence validity window begins."
+      )
+    }
+    if code == PreDriveEvidenceResolutionError.profileUnavailable.code {
+      return copy.resolve(
+        japanese:
+          "選択した車種区分と支払方法に完全一致する証拠記録がありません。",
+        simplifiedChinese:
+          "没有与所选车型和支付方式完全匹配的证据记录。",
+        english:
+          "No evidence record exactly matches the selected vehicle class and payment method."
       )
     }
     if code

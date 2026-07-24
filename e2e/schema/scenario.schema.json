@@ -336,6 +336,196 @@
         }
       }
     },
+    "pre_drive_evidence_bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "release_id",
+        "released_at",
+        "evidence_scope",
+        "product_release_id",
+        "navigation_release_id",
+        "network_snapshot_id",
+        "route_plan_id",
+        "source_registry",
+        "records"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "release_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "released_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "evidence_scope": {
+          "enum": ["SYNTHETIC_TEST_ONLY", "RELEASED_ROAD"]
+        },
+        "product_release_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "navigation_release_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "network_snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_registry": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_reference_id",
+              "roles",
+              "authority_name",
+              "source_url",
+              "content_sha256",
+              "checked_at",
+              "reviewer_id",
+              "reviewed_at"
+            ],
+            "properties": {
+              "source_reference_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "roles": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "enum": ["TARIFF_QUERY", "PASSAGE_REVIEW"]
+                }
+              },
+              "authority_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "content_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{64}$"
+              },
+              "checked_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "reviewer_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reviewed_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "record_id",
+              "valid_from",
+              "expires_at",
+              "source_reference_ids",
+              "evidence"
+            ],
+            "properties": {
+              "record_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "valid_from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "source_reference_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "evaluated_at",
+                  "network_snapshot_id",
+                  "route_plan_id",
+                  "vehicle_class",
+                  "payment_method",
+                  "passage_evidence",
+                  "tariff_quotes"
+                ],
+                "properties": {
+                  "evaluated_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "network_snapshot_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "route_plan_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "vehicle_class": {
+                    "$ref": "#/$defs/shuto_vehicle_class"
+                  },
+                  "payment_method": {
+                    "$ref": "#/$defs/shuto_payment_method"
+                  },
+                  "passage_evidence": {
+                    "enum": [
+                      "KNOWN_CLOSED",
+                      "PLANNED_CONFLICT",
+                      "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+                      "REALTIME_CONFIRMED_PASSABLE"
+                    ]
+                  },
+                  "tariff_quotes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/$defs/tariff_quote"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "pre_drive_session": {
       "type": "object",
       "additionalProperties": false,
@@ -487,6 +677,9 @@
             "pre_drive_session": {
               "$ref": "#/$defs/pre_drive_session"
             },
+            "pre_drive_evidence_bundle": {
+              "$ref": "#/$defs/pre_drive_evidence_bundle"
+            },
             "saved_route_library": {
               "$ref": "#/$defs/saved_route_library"
             }
@@ -529,6 +722,7 @@
             "PRODUCT_NAVIGATION_RUNTIME_CREATED",
             "ROUTE_ATLAS_RELEASE_VALIDATED",
             "ROUTE_ATLAS_RELEASE_AUTHORED",
+            "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
             "ROUTE_ATLAS_CONTEXT_VALIDATED",
             "NAVIGATION_STARTED",
             "LOCATION_UPDATED",

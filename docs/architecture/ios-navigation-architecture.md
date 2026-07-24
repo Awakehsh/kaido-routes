@@ -858,18 +858,28 @@ That is a development fact, not yet the minimum deployment target.
   selected. A provider cannot drift its envelope and every quote together to
   another profile; one proposed or retired quote for another class or payment
   path also rejects the whole evidence set.
-  Tariff and passage evidence remain session inputs rather than versioned product
-  assets. Until a live authority and freshness contract exists, the evaluator
-  rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays neutral.
+  Tariff and passage evidence remain session inputs rather than versioned
+  product assets. `PreDriveEvidenceBundle` now provides the first operational,
+  non-network provider: a separately hash-pinned schema-1.0 manifest binds the
+  exact product/navigation/snapshot/RoutePlan identities, reviewed tariff and
+  passage sources, one vehicle/payment profile per record, and an exclusive
+  runtime expiry. The App catalog decodes it only beside the matching foreground
+  product, and the released authoring model resolves it at the current time by
+  default. Missing, not-yet-valid, expired, or unlisted profiles fail closed and
+  cannot reuse another record. Until a live authority contract exists, the
+  evaluator rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays
+  neutral.
   SwiftUI renders the resulting KR-U04 projection and cannot derive one distance
   from the other. `ReleasedPreDriveReviewAdapter` exposes the same evaluator for
-  one validated joint product release. Its evidence remains a separately
-  injected current-session input; missing or identity-drifted evidence cannot
-  fall back to the internal synthetic review. The journey shell can expose
+  one validated joint product release. Its evidence remains a separate
+  current-session input; missing or identity-drifted evidence cannot fall back
+  to the internal synthetic review. The journey shell can expose
   review only after this exact projection exists; route or evidence invalidation
   demotes the shell back to authoring and terminates an active runtime rather
-  than retaining stale readiness. The current build has no authorized session
-  evidence provider.
+  than retaining stale readiness. The checked preview descriptor contains no
+  released evidence bundle, so its visible branch remains dormant; a future
+  network refresh transport still requires independent authority, freshness,
+  data-use, and failure-policy review.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

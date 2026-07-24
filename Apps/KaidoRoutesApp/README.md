@@ -50,11 +50,14 @@ The product journey exposes only foreground entries. If at least one exists,
 release through its own locale-complete presentation, and submits every stable
 recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
 equal the selected release's whole `RoutePlan`, including snapshot and
-occurrence order. A separately injected session-evidence provider must then
-satisfy `ReleasedPreDriveReviewAdapter`. The user explicitly selects one of the
+occurrence order. An optional compile-time, hash-bound
+`PreDriveEvidenceBundle` is the default foreground session-evidence provider;
+tests may still inject one explicitly. The bundle must satisfy
+`ReleasedPreDriveReviewAdapter`. The user explicitly selects one of the
 five canonical Shuto vehicle classes and independently selects ETC or cash
 first; the provider receives that exact RoutePlan/snapshot/class/payment
-request. Missing or drifting tariff and passage evidence, a provider envelope
+request. Missing, expired, not-yet-valid, or drifting tariff and passage
+evidence, a provider envelope
 for another selection, or any mixed-profile quote keeps review and navigation
 locked. Only that exact route, session, and review tuple enables the primary
 user action to construct the selected entry's

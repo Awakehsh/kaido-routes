@@ -3,12 +3,15 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 
 typealias BundledProductReleaseRole = AppBundleProductReleaseRole
 typealias BundledProductReleaseDescriptor =
   AppBundleProductReleaseDescriptor
 typealias BundledGuidanceAudioReleaseDescriptor =
   AppBundleGuidanceAudioReleaseDescriptor
+typealias BundledPreDriveEvidenceDescriptor =
+  AppBundlePreDriveEvidenceDescriptor
 
 extension AppBundleProductReleaseDescriptor {
   static var syntheticPreview: AppBundleProductReleaseDescriptor {
@@ -27,17 +30,20 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   let descriptor: BundledProductReleaseDescriptor
   let release: KaidoProductRelease
   let guidanceAudioRelease: GuidanceAudioRelease?
+  let preDriveEvidenceBundle: PreDriveEvidenceBundle?
   let encodedByteCount: Int
 
   fileprivate init(
     descriptor: BundledProductReleaseDescriptor,
     release: KaidoProductRelease,
     guidanceAudioRelease: GuidanceAudioRelease?,
+    preDriveEvidenceBundle: PreDriveEvidenceBundle?,
     encodedByteCount: Int
   ) {
     self.descriptor = descriptor
     self.release = release
     self.guidanceAudioRelease = guidanceAudioRelease
+    self.preDriveEvidenceBundle = preDriveEvidenceBundle
     self.encodedByteCount = encodedByteCount
   }
 }
@@ -95,6 +101,12 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
   case guidanceAudioManifestHashMismatch(String)
   case invalidGuidanceAudioRelease(String)
   case guidanceAudioReleaseIdentityMismatch(String)
+  case invalidPreDriveEvidenceDescriptor(String)
+  case missingPreDriveEvidenceManifest(String)
+  case unreadablePreDriveEvidenceResource(String)
+  case preDriveEvidenceManifestHashMismatch(String)
+  case invalidPreDriveEvidenceBundle(String)
+  case preDriveEvidenceReleaseIdentityMismatch(String)
 
   var code: String {
     switch self {
@@ -130,6 +142,18 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
       "GUIDANCE_AUDIO_RELEASE_INVALID"
     case .guidanceAudioReleaseIdentityMismatch:
       "GUIDANCE_AUDIO_RELEASE_IDENTITY_MISMATCH"
+    case .invalidPreDriveEvidenceDescriptor:
+      "PRE_DRIVE_EVIDENCE_DESCRIPTOR_INVALID"
+    case .missingPreDriveEvidenceManifest:
+      "PRE_DRIVE_EVIDENCE_MANIFEST_MISSING"
+    case .unreadablePreDriveEvidenceResource:
+      "PRE_DRIVE_EVIDENCE_RESOURCE_UNREADABLE"
+    case .preDriveEvidenceManifestHashMismatch:
+      "PRE_DRIVE_EVIDENCE_MANIFEST_HASH_MISMATCH"
+    case .invalidPreDriveEvidenceBundle:
+      "PRE_DRIVE_EVIDENCE_BUNDLE_INVALID"
+    case .preDriveEvidenceReleaseIdentityMismatch:
+      "PRE_DRIVE_EVIDENCE_RELEASE_IDENTITY_MISMATCH"
     }
   }
 }
@@ -150,6 +174,28 @@ enum BundledProductReleaseCatalogLoader {
           productRelease: productRelease,
           bundle: bundle
         )
+      },
+      preDriveEvidenceDataProvider: { descriptor in
+        guard let evidence = descriptor.preDriveEvidence else {
+          return nil
+        }
+        guard
+          let manifestURL = bundle.url(
+            forResource: evidence.manifestResourceName,
+            withExtension: "json"
+          )
+        else {
+          return nil
+        }
+        do {
+          return try Data(contentsOf: manifestURL)
+        } catch {
+          throw
+            BundledProductReleaseCatalogError
+            .unreadablePreDriveEvidenceResource(
+              evidence.manifestFilename
+            )
+        }
       },
       dataProvider: { descriptor in
         guard
@@ -177,6 +223,8 @@ enum BundledProductReleaseCatalogLoader {
       BundledProductReleaseDescriptor,
       KaidoProductRelease
     ) throws -> GuidanceAudioRelease? = { _, _ in nil },
+    preDriveEvidenceDataProvider:
+      (BundledProductReleaseDescriptor) throws -> Data? = { _ in nil },
     dataProvider: (BundledProductReleaseDescriptor) throws -> Data?
   ) throws -> BundledProductReleaseCatalog {
     guard !descriptors.isEmpty else {
@@ -192,10 +240,24 @@ enum BundledProductReleaseCatalogLoader {
       if let guidanceAudio = descriptor.guidanceAudio {
         try validate(guidanceAudio)
       }
+      if let preDriveEvidence = descriptor.preDriveEvidence {
+        try validate(preDriveEvidence)
+      }
       guard resourceFilenames.insert(descriptor.resourceFilename).inserted else {
         throw BundledProductReleaseCatalogError.duplicateResource(
           descriptor.resourceFilename
         )
+      }
+      let auxiliaryManifestFilenames = [
+        descriptor.guidanceAudio?.manifestFilename,
+        descriptor.preDriveEvidence?.manifestFilename,
+      ].compactMap { $0 }
+      for filename in auxiliaryManifestFilenames {
+        guard resourceFilenames.insert(filename).inserted else {
+          throw BundledProductReleaseCatalogError.duplicateResource(
+            filename
+          )
+        }
       }
       guard let data = try dataProvider(descriptor) else {
         throw BundledProductReleaseCatalogError.missingResource(
@@ -273,11 +335,84 @@ enum BundledProductReleaseCatalogLoader {
             )
         }
       }
+      var preDriveEvidenceBundle: PreDriveEvidenceBundle?
+      if let preDriveEvidence = descriptor.preDriveEvidence {
+        guard let evidenceData = try preDriveEvidenceDataProvider(descriptor)
+        else {
+          throw
+            BundledProductReleaseCatalogError
+            .missingPreDriveEvidenceManifest(
+              preDriveEvidence.manifestFilename
+            )
+        }
+        guard
+          sha256Hex(evidenceData)
+            == preDriveEvidence.expectedManifestSHA256.lowercased()
+        else {
+          throw
+            BundledProductReleaseCatalogError
+            .preDriveEvidenceManifestHashMismatch(
+              preDriveEvidence.manifestFilename
+            )
+        }
+        do {
+          preDriveEvidenceBundle = try PreDriveEvidenceBundleCodec.decode(
+            evidenceData,
+            context: PreDriveEvidenceBundleContext(
+              productReleaseID: release.releaseID,
+              productReleasedAt: release.releasedAt,
+              navigationReleaseID: release.navigation.releaseID,
+              routePlan: release.navigation.bundle.routePlan,
+              evidenceScope: .releasedRoad
+            )
+          )
+        } catch {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceBundle(
+              preDriveEvidence.manifestFilename
+            )
+        }
+        guard let preDriveEvidenceBundle else {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceBundle(
+              preDriveEvidence.manifestFilename
+            )
+        }
+        let evidenceManifest = preDriveEvidenceBundle.manifest
+        guard
+          evidenceManifest.productReleaseID == release.releaseID,
+          evidenceManifest.navigationReleaseID
+            == release.navigation.releaseID,
+          evidenceManifest.networkSnapshotID
+            == release.navigation.bundle.networkSnapshot.id,
+          evidenceManifest.routePlanID
+            == release.navigation.bundle.routePlan.id,
+          evidenceManifest.evidenceScope == .releasedRoad
+        else {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceBundle(
+              preDriveEvidence.manifestFilename
+            )
+        }
+        guard
+          evidenceManifest.releaseID == preDriveEvidence.expectedReleaseID
+        else {
+          throw
+            BundledProductReleaseCatalogError
+            .preDriveEvidenceReleaseIdentityMismatch(
+              preDriveEvidence.manifestFilename
+            )
+        }
+      }
       entries.append(
         BundledProductReleaseEntry(
           descriptor: descriptor,
           release: release,
           guidanceAudioRelease: guidanceAudioRelease,
+          preDriveEvidenceBundle: preDriveEvidenceBundle,
           encodedByteCount: data.count
         )
       )
@@ -337,6 +472,37 @@ enum BundledProductReleaseCatalogLoader {
       throw BundledProductReleaseCatalogError.invalidDescriptor(
         descriptor.resourceFilename
       )
+    }
+  }
+
+  private static func validate(
+    _ descriptor: BundledPreDriveEvidenceDescriptor
+  ) throws {
+    let resourceName = descriptor.manifestResourceName
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let releaseID = descriptor.expectedReleaseID
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let digest = descriptor.expectedManifestSHA256.lowercased()
+    let isHexDigest =
+      digest.count == 64
+      && digest.allSatisfy {
+        ("0"..."9").contains($0) || ("a"..."f").contains($0)
+      }
+    let isSafeResourceName =
+      !resourceName.isEmpty
+      && resourceName.allSatisfy {
+        $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_"
+      }
+    guard
+      isSafeResourceName,
+      resourceName == descriptor.manifestResourceName,
+      !releaseID.isEmpty,
+      releaseID == descriptor.expectedReleaseID,
+      isHexDigest
+    else {
+      throw
+        BundledProductReleaseCatalogError
+        .invalidPreDriveEvidenceDescriptor(descriptor.manifestFilename)
     }
   }
 

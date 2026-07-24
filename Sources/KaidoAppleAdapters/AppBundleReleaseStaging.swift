@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import KaidoNavigation
+import KaidoPresentation
 
 public enum AppBundleProductReleaseRole: String, Codable, Equatable, Sendable {
   case demoOnly = "DEMO_ONLY"
@@ -8,6 +9,34 @@ public enum AppBundleProductReleaseRole: String, Codable, Equatable, Sendable {
 }
 
 public struct AppBundleGuidanceAudioReleaseDescriptor:
+  Codable, Equatable, Sendable
+{
+  public let manifestResourceName: String
+  public let expectedManifestSHA256: String
+  public let expectedReleaseID: String
+
+  public init(
+    manifestResourceName: String,
+    expectedManifestSHA256: String,
+    expectedReleaseID: String
+  ) {
+    self.manifestResourceName = manifestResourceName
+    self.expectedManifestSHA256 = expectedManifestSHA256
+    self.expectedReleaseID = expectedReleaseID
+  }
+
+  public var manifestFilename: String {
+    "\(manifestResourceName).json"
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case manifestResourceName = "manifest_resource_name"
+    case expectedManifestSHA256 = "expected_manifest_sha256"
+    case expectedReleaseID = "expected_release_id"
+  }
+}
+
+public struct AppBundlePreDriveEvidenceDescriptor:
   Codable, Equatable, Sendable
 {
   public let manifestResourceName: String
@@ -44,6 +73,7 @@ public struct AppBundleProductReleaseDescriptor:
   public let expectedReleaseID: String
   public let role: AppBundleProductReleaseRole
   public let guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor?
+  public let preDriveEvidence: AppBundlePreDriveEvidenceDescriptor?
 
   public init(
     resourceName: String,
@@ -51,7 +81,8 @@ public struct AppBundleProductReleaseDescriptor:
     expectedSHA256: String,
     expectedReleaseID: String,
     role: AppBundleProductReleaseRole,
-    guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor? = nil
+    guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor? = nil,
+    preDriveEvidence: AppBundlePreDriveEvidenceDescriptor? = nil
   ) {
     self.resourceName = resourceName
     self.resourceExtension = resourceExtension
@@ -59,6 +90,7 @@ public struct AppBundleProductReleaseDescriptor:
     self.expectedReleaseID = expectedReleaseID
     self.role = role
     self.guidanceAudio = guidanceAudio
+    self.preDriveEvidence = preDriveEvidence
   }
 
   public var resourceFilename: String {
@@ -72,6 +104,7 @@ public struct AppBundleProductReleaseDescriptor:
     case expectedReleaseID = "expected_release_id"
     case role
     case guidanceAudio = "guidance_audio"
+    case preDriveEvidence = "pre_drive_evidence"
   }
 }
 
@@ -84,19 +117,23 @@ public struct AppBundleReleaseStagingConfiguration:
   public let descriptorSymbol: String
   public let productResourceName: String
   public let guidanceAudioManifestResourceName: String?
+  public let preDriveEvidenceManifestResourceName: String?
 
   public init(
     schemaVersion: String =
       AppBundleReleaseStagingConfiguration.currentSchemaVersion,
     descriptorSymbol: String,
     productResourceName: String,
-    guidanceAudioManifestResourceName: String? = nil
+    guidanceAudioManifestResourceName: String? = nil,
+    preDriveEvidenceManifestResourceName: String? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.descriptorSymbol = descriptorSymbol
     self.productResourceName = productResourceName
     self.guidanceAudioManifestResourceName =
       guidanceAudioManifestResourceName
+    self.preDriveEvidenceManifestResourceName =
+      preDriveEvidenceManifestResourceName
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -105,6 +142,8 @@ public struct AppBundleReleaseStagingConfiguration:
     case productResourceName = "product_resource_name"
     case guidanceAudioManifestResourceName =
       "guidance_audio_manifest_resource_name"
+    case preDriveEvidenceManifestResourceName =
+      "pre_drive_evidence_manifest_resource_name"
   }
 }
 
@@ -115,6 +154,7 @@ public enum AppBundleReleaseStagingConfigurationIssue:
   case invalidDescriptorSymbol
   case invalidProductResourceName
   case invalidGuidanceAudioManifestResourceName
+  case invalidPreDriveEvidenceManifestResourceName
   case duplicateManifestResourceName
 
   public var code: String {
@@ -127,6 +167,8 @@ public enum AppBundleReleaseStagingConfigurationIssue:
       "INVALID_APP_BUNDLE_PRODUCT_RESOURCE_NAME"
     case .invalidGuidanceAudioManifestResourceName:
       "INVALID_APP_BUNDLE_AUDIO_MANIFEST_RESOURCE_NAME"
+    case .invalidPreDriveEvidenceManifestResourceName:
+      "INVALID_APP_BUNDLE_PRE_DRIVE_EVIDENCE_RESOURCE_NAME"
     case .duplicateManifestResourceName:
       "DUPLICATE_APP_BUNDLE_MANIFEST_RESOURCE_NAME"
     }
@@ -141,6 +183,9 @@ public enum AppBundleReleaseStagingError: Error, Equatable, Sendable {
   case guidanceAudioInputMismatch
   case invalidGuidanceAudioArtifact
   case invalidGuidanceAudioRelease([GuidanceAudioReleaseIssue])
+  case preDriveEvidenceInputMismatch
+  case invalidPreDriveEvidenceArtifact
+  case invalidPreDriveEvidenceBundle([PreDriveEvidenceBundleIssue])
   case duplicateResourceFilename(String)
 }
 
@@ -150,6 +195,7 @@ public enum AppBundleStagedResourceKind:
   case productRelease = "PRODUCT_RELEASE"
   case guidanceAudioManifest = "GUIDANCE_AUDIO_MANIFEST"
   case guidanceAudioWave = "GUIDANCE_AUDIO_WAVE"
+  case preDriveEvidenceManifest = "PRE_DRIVE_EVIDENCE_MANIFEST"
 }
 
 public struct AppBundleStagedResourceRecord:
@@ -246,7 +292,8 @@ public enum AppBundleReleaseStagingAuthor {
     guidanceAudioManifestData: Data? = nil,
     guidanceAudioResourceProvider: (
       (String) throws -> GuidanceAudioResource?
-    )? = nil
+    )? = nil,
+    preDriveEvidenceManifestData: Data? = nil
   ) throws -> AppBundleReleaseStagingPackage {
     let configurationIssues = validationIssues(configuration)
     guard configurationIssues.isEmpty else {
@@ -292,6 +339,7 @@ public enum AppBundleReleaseStagingAuthor {
       )
     ]
     var audioDescriptor: AppBundleGuidanceAudioReleaseDescriptor?
+    var preDriveEvidenceDescriptor: AppBundlePreDriveEvidenceDescriptor?
 
     if let audioResourceName =
       configuration.guidanceAudioManifestResourceName,
@@ -350,6 +398,52 @@ public enum AppBundleReleaseStagingAuthor {
       )
     }
 
+    let hasPreDriveEvidenceResourceName =
+      configuration.preDriveEvidenceManifestResourceName != nil
+    let hasPreDriveEvidenceManifest =
+      preDriveEvidenceManifestData != nil
+    guard
+      hasPreDriveEvidenceResourceName == hasPreDriveEvidenceManifest
+    else {
+      throw AppBundleReleaseStagingError.preDriveEvidenceInputMismatch
+    }
+    if let preDriveEvidenceResourceName =
+      configuration.preDriveEvidenceManifestResourceName,
+      let preDriveEvidenceManifestData
+    {
+      let bundle: PreDriveEvidenceBundle
+      do {
+        bundle = try PreDriveEvidenceBundleCodec.decode(
+          preDriveEvidenceManifestData,
+          context: PreDriveEvidenceBundleContext(
+            productReleaseID: productRelease.releaseID,
+            productReleasedAt: productRelease.releasedAt,
+            navigationReleaseID: productRelease.navigation.releaseID,
+            routePlan: productRelease.navigation.bundle.routePlan,
+            evidenceScope: .releasedRoad
+          )
+        )
+      } catch PreDriveEvidenceBundleError.invalid(let issues) {
+        throw AppBundleReleaseStagingError.invalidPreDriveEvidenceBundle(
+          issues
+        )
+      } catch {
+        throw AppBundleReleaseStagingError.invalidPreDriveEvidenceArtifact
+      }
+      stagedFiles.append(
+        AppBundleStagedFile(
+          relativePath:
+            "Resources/\(preDriveEvidenceResourceName).json",
+          data: preDriveEvidenceManifestData
+        )
+      )
+      preDriveEvidenceDescriptor = AppBundlePreDriveEvidenceDescriptor(
+        manifestResourceName: preDriveEvidenceResourceName,
+        expectedManifestSHA256: sha256Hex(preDriveEvidenceManifestData),
+        expectedReleaseID: bundle.manifest.releaseID
+      )
+    }
+
     let duplicateResource = Dictionary(grouping: stagedFiles) {
       $0.relativePath
     }.first { $0.value.count > 1 }?.key
@@ -365,7 +459,8 @@ public enum AppBundleReleaseStagingAuthor {
       expectedSHA256: sha256Hex(productArtifactData),
       expectedReleaseID: productRelease.releaseID,
       role: .foregroundNavigation,
-      guidanceAudio: audioDescriptor
+      guidanceAudio: audioDescriptor,
+      preDriveEvidence: preDriveEvidenceDescriptor
     )
     let resourceRecords = stagedFiles.map { file in
       AppBundleStagedResourceRecord(
@@ -374,7 +469,9 @@ public enum AppBundleReleaseStagingAuthor {
           relativePath: file.relativePath,
           productResourceName: configuration.productResourceName,
           audioManifestResourceName:
-            configuration.guidanceAudioManifestResourceName
+            configuration.guidanceAudioManifestResourceName,
+          preDriveEvidenceManifestResourceName:
+            configuration.preDriveEvidenceManifestResourceName
         ),
         sha256: sha256Hex(file.data),
         byteCount: file.data.count
@@ -434,9 +531,18 @@ public enum AppBundleReleaseStagingAuthor {
     {
       issues.append(.invalidGuidanceAudioManifestResourceName)
     }
-    if configuration.guidanceAudioManifestResourceName
-      == configuration.productResourceName
+    if let preDriveEvidenceResourceName =
+      configuration.preDriveEvidenceManifestResourceName,
+      !isSafeResourceName(preDriveEvidenceResourceName)
     {
+      issues.append(.invalidPreDriveEvidenceManifestResourceName)
+    }
+    let resourceNames = [
+      configuration.productResourceName,
+      configuration.guidanceAudioManifestResourceName,
+      configuration.preDriveEvidenceManifestResourceName,
+    ].compactMap { $0 }
+    if Set(resourceNames).count != resourceNames.count {
       issues.append(.duplicateManifestResourceName)
     }
     return issues
@@ -445,7 +551,8 @@ public enum AppBundleReleaseStagingAuthor {
   private static func resourceKind(
     relativePath: String,
     productResourceName: String,
-    audioManifestResourceName: String?
+    audioManifestResourceName: String?,
+    preDriveEvidenceManifestResourceName: String?
   ) -> AppBundleStagedResourceKind {
     if relativePath == "Resources/\(productResourceName).json" {
       return .productRelease
@@ -454,6 +561,12 @@ public enum AppBundleReleaseStagingAuthor {
       relativePath == "Resources/\(audioManifestResourceName).json"
     {
       return .guidanceAudioManifest
+    }
+    if let preDriveEvidenceManifestResourceName,
+      relativePath
+        == "Resources/\(preDriveEvidenceManifestResourceName).json"
+    {
+      return .preDriveEvidenceManifest
     }
     return .guidanceAudioWave
   }
@@ -514,6 +627,19 @@ public enum AppBundleReleaseStagingAuthor {
     } else {
       audioSource = "nil"
     }
+    let preDriveEvidenceSource: String
+    if let evidence = descriptor.preDriveEvidence {
+      preDriveEvidenceSource =
+        """
+        AppBundlePreDriveEvidenceDescriptor(
+              manifestResourceName: \(swiftString(evidence.manifestResourceName)),
+              expectedManifestSHA256: \(swiftString(evidence.expectedManifestSHA256)),
+              expectedReleaseID: \(swiftString(evidence.expectedReleaseID))
+            )
+        """
+    } else {
+      preDriveEvidenceSource = "nil"
+    }
     return
       """
       // Generated by kaido-release prepare-app-bundle.
@@ -528,7 +654,8 @@ public enum AppBundleReleaseStagingAuthor {
           expectedSHA256: \(swiftString(descriptor.expectedSHA256)),
           expectedReleaseID: \(swiftString(descriptor.expectedReleaseID)),
           role: .foregroundNavigation,
-          guidanceAudio: \(audioSource)
+          guidanceAudio: \(audioSource),
+          preDriveEvidence: \(preDriveEvidenceSource)
         )
       }
 

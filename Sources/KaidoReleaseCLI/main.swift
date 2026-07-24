@@ -1,6 +1,7 @@
 import Foundation
 import KaidoAppleAdapters
 import KaidoNavigation
+import KaidoPresentation
 
 private enum CLIError: Error, CustomStringConvertible {
   case usage
@@ -13,6 +14,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case invalidProduct([KaidoProductReleaseIssue])
   case productAuthoring(KaidoProductReleaseAuthoringError)
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
+  case invalidPreDriveEvidence([PreDriveEvidenceBundleIssue])
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
   case appBundleStaging(AppBundleReleaseStagingError)
 
@@ -42,11 +44,15 @@ private enum CLIError: Error, CustomStringConvertible {
           --product-artifact <product-release.json> \\
           --manifest <guidance-audio-release.json> \\
           --resources <wav-directory>
+        kaido-release validate-pre-drive-evidence \\
+          --product-artifact <product-release.json> \\
+          --manifest <pre-drive-evidence.json>
         kaido-release prepare-app-bundle \\
           --product-artifact <product-release.json> \\
           --config <app-bundle-staging.json> \\
           [--guidance-audio-manifest <guidance-audio-release.json> \\
            --guidance-audio-resources <wav-directory>] \\
+          [--pre-drive-evidence-manifest <pre-drive-evidence.json>] \\
           --output <new-staging-directory>
       """
     case .readFailed(let path, let error):
@@ -69,6 +75,9 @@ private enum CLIError: Error, CustomStringConvertible {
       Self.productAuthoringDescription(error)
     case .invalidGuidanceAudio(let issues):
       "Guidance audio release is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidPreDriveEvidence(let issues):
+      "Pre-drive evidence bundle is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
@@ -156,6 +165,13 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidGuidanceAudioRelease(let issues):
       "App bundle staging guidance audio release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .preDriveEvidenceInputMismatch:
+      "App bundle staging pre-drive evidence configuration and input do not agree"
+    case .invalidPreDriveEvidenceArtifact:
+      "App bundle staging pre-drive evidence artifact cannot be decoded"
+    case .invalidPreDriveEvidenceBundle(let issues):
+      "App bundle staging pre-drive evidence is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .duplicateResourceFilename(let filename):
       "App bundle staging resource filename is duplicated: \(filename)"
     }
@@ -191,11 +207,16 @@ private enum Command {
     manifest: String,
     resources: String
   )
+  case validatePreDriveEvidence(
+    productArtifact: String,
+    manifest: String
+  )
   case prepareAppBundle(
     productArtifact: String,
     configuration: String,
     guidanceAudioManifest: String?,
     guidanceAudioResources: String?,
+    preDriveEvidenceManifest: String?,
     output: String
   )
 }
@@ -279,6 +300,14 @@ private struct Arguments {
         manifest: try flags.value("--manifest"),
         resources: try flags.value("--resources")
       )
+    case "validate-pre-drive-evidence":
+      try flags.require(
+        exactly: ["--product-artifact", "--manifest"]
+      )
+      command = .validatePreDriveEvidence(
+        productArtifact: try flags.value("--product-artifact"),
+        manifest: try flags.value("--manifest")
+      )
     case "prepare-app-bundle":
       let baseFlags: Set<String> = [
         "--product-artifact",
@@ -289,18 +318,43 @@ private struct Arguments {
         "--guidance-audio-manifest",
         "--guidance-audio-resources",
       ])
+      let evidenceFlags = baseFlags.union([
+        "--pre-drive-evidence-manifest"
+      ])
+      let completeFlags = audioFlags.union([
+        "--pre-drive-evidence-manifest"
+      ])
       let guidanceAudioManifest: String?
       let guidanceAudioResources: String?
+      let preDriveEvidenceManifest: String?
       if flags.matches(exactly: baseFlags) {
         guidanceAudioManifest = nil
         guidanceAudioResources = nil
-      } else {
-        try flags.require(exactly: audioFlags)
+        preDriveEvidenceManifest = nil
+      } else if flags.matches(exactly: audioFlags) {
         guidanceAudioManifest = try flags.value(
           "--guidance-audio-manifest"
         )
         guidanceAudioResources = try flags.value(
           "--guidance-audio-resources"
+        )
+        preDriveEvidenceManifest = nil
+      } else if flags.matches(exactly: evidenceFlags) {
+        guidanceAudioManifest = nil
+        guidanceAudioResources = nil
+        preDriveEvidenceManifest = try flags.value(
+          "--pre-drive-evidence-manifest"
+        )
+      } else {
+        try flags.require(exactly: completeFlags)
+        guidanceAudioManifest = try flags.value(
+          "--guidance-audio-manifest"
+        )
+        guidanceAudioResources = try flags.value(
+          "--guidance-audio-resources"
+        )
+        preDriveEvidenceManifest = try flags.value(
+          "--pre-drive-evidence-manifest"
         )
       }
       command = .prepareAppBundle(
@@ -308,6 +362,7 @@ private struct Arguments {
         configuration: try flags.value("--config"),
         guidanceAudioManifest: guidanceAudioManifest,
         guidanceAudioResources: guidanceAudioResources,
+        preDriveEvidenceManifest: preDriveEvidenceManifest,
         output: try flags.value("--output")
       )
     default:
@@ -719,11 +774,36 @@ do {
     } catch GuidanceAudioReleaseError.invalid(let issues) {
       throw CLIError.invalidGuidanceAudio(issues)
     }
+  case .validatePreDriveEvidence(
+    let productArtifact,
+    let manifestPath
+  ):
+    let release = try decodeProductRelease(path: productArtifact)
+    do {
+      let bundle = try PreDriveEvidenceBundleCodec.decode(
+        read(path: manifestPath),
+        context: PreDriveEvidenceBundleContext(
+          productReleaseID: release.releaseID,
+          productReleasedAt: release.releasedAt,
+          navigationReleaseID: release.navigation.releaseID,
+          routePlan: release.navigation.bundle.routePlan,
+          evidenceScope: .releasedRoad
+        )
+      )
+      print(
+        "PASS: \(bundle.manifest.releaseID) validates "
+          + "\(bundle.manifest.records.count) pre-drive evidence records for "
+          + "\(release.releaseID)"
+      )
+    } catch PreDriveEvidenceBundleError.invalid(let issues) {
+      throw CLIError.invalidPreDriveEvidence(issues)
+    }
   case .prepareAppBundle(
     let productArtifactPath,
     let configurationPath,
     let guidanceAudioManifestPath,
     let guidanceAudioResources,
+    let preDriveEvidenceManifestPath,
     let output
   ):
     let productArtifactData = try read(path: productArtifactPath)
@@ -734,6 +814,10 @@ do {
     let guidanceAudioManifestData = try guidanceAudioManifestPath.map {
       try read(path: $0)
     }
+    let preDriveEvidenceManifestData =
+      try preDriveEvidenceManifestPath.map {
+        try read(path: $0)
+      }
     let package: AppBundleReleaseStagingPackage
     do {
       package = try AppBundleReleaseStagingAuthor.prepare(
@@ -748,7 +832,8 @@ do {
               directoryPath: resources
             )
           }
-        }
+        },
+        preDriveEvidenceManifestData: preDriveEvidenceManifestData
       )
     } catch let error as AppBundleReleaseStagingError {
       throw CLIError.appBundleStaging(error)

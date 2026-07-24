@@ -414,6 +414,17 @@ requires the exact authoring inputs, rejects unsupported payload keys, and
 checks explicit non-empty schema overrides. The fixture remains synthetic and
 does not establish real-road topology, layout, or evidence.
 
+KR-D29 keeps current pre-drive evidence separate from the versioned product
+release without leaving the App dependent on a test-injected closure. One
+schema-1.0 bundle binds the exact product/navigation/snapshot/RoutePlan
+identities, separate tariff and passage source roles, reviewed content hashes,
+one exact vehicle/payment profile, and an exclusive expiry. The runner resolves
+the fresh ETC record, then proves that expiry and a CASH selection fail with
+stable distinct codes. Swift tests cover deterministic codec round-trip,
+identity/scope/profile drift, source-role completeness, and the same runtime
+validity boundary. The fixture is synthetic and cannot establish a current
+tariff, passage state, or released-road authority.
+
 Product release authoring is covered at the same platform-light layer without a
 new route-behavior event. Focused Swift tests pass independently valid
 released-road navigation and Route Atlas fixtures to
@@ -438,15 +449,19 @@ a device test. A launch-only XCUITest verifies that the visible preview starts
 in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
 guidance audio `IDLE`.
 
-The same L3 target tests the Apple bundle distribution gate without adding a
-portable scenario event. Catalog tests require the checked-in demo resource to
+The same L3 target tests the Apple bundle distribution gate above the portable
+release contracts. Catalog tests require the checked-in demo resource to
 match its compile-time SHA-256, expected release ID, and demo-only runtime role.
 They mutate bytes before codec admission; exercise missing, corrupt, invalid,
 identity-drifted, role-drifted, and duplicate manifests; admit a test
 released-road entry only through a production-codec-minted authority; and
-require whole-`RoutePlan` equality. Two independently valid released entries for
-the same exact plan produce an explicit ambiguity rather than an arbitrary
-choice. XCUITest exposes the current `0 RELEASED ROAD · 1 DEMO` catalog in the
+require whole-`RoutePlan` equality. A declared pre-drive evidence manifest is
+also hash-pinned, production-decoded against that exact release, and used by the
+default authoring model only inside its validity window; missing, mutated, or
+expired evidence cannot fall back to injected values. Two independently valid
+released entries for the same exact plan produce an explicit ambiguity rather
+than an arbitrary choice. XCUITest exposes the current
+`0 RELEASED ROAD · 1 DEMO` catalog in the
 default journey. Product schema, release validity, and live-input authority
 remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
 are L3-specific.

@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoPresentation
 import XCTest
@@ -59,6 +60,47 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     XCTAssertEqual(
       model.lastErrorCode,
       ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
+    )
+  }
+
+  func testBundledPreDriveEvidenceIsTheDefaultFreshnessCheckedProvider()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry(
+      includePreDriveEvidence: true
+    )
+    var now = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-25T12:30:00+09:00"
+      )
+    )
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      currentDateProvider: { now }
+    )
+
+    authorReleasedRoute(model, entry: entry)
+
+    XCTAssertTrue(model.reviewReady)
+    XCTAssertEqual(
+      model.preDriveReviewSnapshot?.routePlanID,
+      entry.release.navigation.bundle.routePlan.id
+    )
+    XCTAssertNil(model.lastErrorCode)
+
+    now = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-26T00:00:00+09:00"
+      )
+    )
+    model.refreshPreDriveReview()
+
+    XCTAssertFalse(model.reviewReady)
+    XCTAssertNil(model.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      PreDriveEvidenceResolutionError.expired.code
     )
   }
 

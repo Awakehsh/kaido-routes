@@ -1,6 +1,7 @@
 import Foundation
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -336,6 +337,107 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     }
   }
 
+  func testHashBoundPreDriveEvidenceLoadsForOneExactForegroundRelease()
+    throws
+  {
+    let data = try releasedRoadData()
+    let release = try KaidoProductReleaseArtifactCodec.decode(data)
+    let evidenceData = try releasedPreDriveEvidenceData(for: release)
+    let evidenceDescriptor = BundledPreDriveEvidenceDescriptor(
+      manifestResourceName: "released-pre-drive-evidence",
+      expectedManifestSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(evidenceData),
+      expectedReleaseID: "test.pre-drive-evidence.catalog.v1"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "released-road-product",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "test.released-road.product",
+      role: .foregroundNavigation,
+      preDriveEvidence: evidenceDescriptor
+    )
+
+    let catalog = try BundledProductReleaseCatalogLoader.load(
+      descriptors: [descriptor],
+      preDriveEvidenceDataProvider: { _ in evidenceData },
+      dataProvider: { _ in data }
+    )
+    let entry = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
+    let evidenceBundle = try XCTUnwrap(entry.preDriveEvidenceBundle)
+    let date = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-25T12:30:00+09:00"
+      )
+    )
+    let evidence = try evidenceBundle.evidence(
+      for: PreDriveReviewSession(
+        networkSnapshotID:
+          release.navigation.bundle.routePlan.networkSnapshotID,
+        routePlanID: release.navigation.bundle.routePlan.id,
+        vehicleClass: .standard,
+        paymentMethod: .etc
+      ),
+      at: date
+    )
+
+    XCTAssertEqual(evidence.vehicleClass, .standard)
+    XCTAssertEqual(evidence.paymentMethod, .etc)
+    XCTAssertEqual(
+      evidenceBundle.manifest.releaseID,
+      evidenceDescriptor.expectedReleaseID
+    )
+  }
+
+  func testPreDriveEvidenceHashAndPresenceFailClosed() throws {
+    let data = try releasedRoadData()
+    let release = try KaidoProductReleaseArtifactCodec.decode(data)
+    let evidenceData = try releasedPreDriveEvidenceData(for: release)
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "released-road-product",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "test.released-road.product",
+      role: .foregroundNavigation,
+      preDriveEvidence: BundledPreDriveEvidenceDescriptor(
+        manifestResourceName: "released-pre-drive-evidence",
+        expectedManifestSHA256: String(repeating: "0", count: 64),
+        expectedReleaseID: "test.pre-drive-evidence.catalog.v1"
+      )
+    )
+
+    XCTAssertThrowsError(
+      try BundledProductReleaseCatalogLoader.load(
+        descriptors: [descriptor]
+      ) { _ in data }
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .missingPreDriveEvidenceManifest(
+          "released-pre-drive-evidence.json"
+        )
+      )
+    }
+
+    XCTAssertThrowsError(
+      try BundledProductReleaseCatalogLoader.load(
+        descriptors: [descriptor],
+        preDriveEvidenceDataProvider: { _ in evidenceData }
+      ) { _ in data }
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .preDriveEvidenceManifestHashMismatch(
+          "released-pre-drive-evidence.json"
+        )
+      )
+    }
+  }
+
   private func load(
     descriptor: BundledProductReleaseDescriptor,
     data: Data
@@ -401,5 +503,87 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       root[releaseKey] = nestedRelease
     }
     return try JSONSerialization.data(withJSONObject: root)
+  }
+
+  private func releasedPreDriveEvidenceData(
+    for release: KaidoProductRelease
+  ) throws -> Data {
+    let routePlan = release.navigation.bundle.routePlan
+    let manifest = PreDriveEvidenceBundleManifest(
+      releaseID: "test.pre-drive-evidence.catalog.v1",
+      releasedAt: "2026-07-25T12:15:00+09:00",
+      evidenceScope: .releasedRoad,
+      productReleaseID: release.releaseID,
+      navigationReleaseID: release.navigation.releaseID,
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      sourceRegistry: [
+        PreDriveEvidenceSourceReference(
+          id: "test.pre-drive-source.tariff",
+          roles: [.tariffQuery],
+          authorityName: "Test tariff authority",
+          sourceURL: "https://example.com/tariff",
+          contentSHA256: String(repeating: "a", count: 64),
+          checkedAt: "2026-07-25T11:30:00+09:00",
+          reviewerID: "test.reviewer.tariff",
+          reviewedAt: "2026-07-25T12:10:00+09:00"
+        ),
+        PreDriveEvidenceSourceReference(
+          id: "test.pre-drive-source.passage",
+          roles: [.passageReview],
+          authorityName: "Test passage authority",
+          sourceURL: "https://example.com/passage",
+          contentSHA256: String(repeating: "b", count: 64),
+          checkedAt: "2026-07-25T11:35:00+09:00",
+          reviewerID: "test.reviewer.passage",
+          reviewedAt: "2026-07-25T12:10:00+09:00"
+        ),
+      ],
+      records: [
+        PreDriveEvidenceRecord(
+          id: "test.pre-drive-record.standard-etc",
+          validFrom: "2026-07-25T12:00:00+09:00",
+          expiresAt: "2026-07-26T00:00:00+09:00",
+          sourceReferenceIDs: [
+            "test.pre-drive-source.tariff",
+            "test.pre-drive-source.passage",
+          ],
+          evidence: PreDriveReviewEvidence(
+            evaluatedAt: "2026-07-25T11:45:00+09:00",
+            networkSnapshotID: routePlan.networkSnapshotID,
+            routePlanID: routePlan.id,
+            vehicleClass: .standard,
+            paymentMethod: .etc,
+            passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+            tariffQuotes: [
+              TariffQuote(
+                id: "test.tariff.standard-etc.active",
+                entryFacilityID: routePlan.entryFacilityID,
+                exitFacilityID: routePlan.exitFacilityID,
+                vehicleClass: .standard,
+                paymentMethod: .etc,
+                tariffVersionID: "test.tariff.v1",
+                tariffVersionStatus: .active,
+                tariffDistanceKM: 24.8,
+                estimatedAmountYen: 1_320,
+                evidenceStatus: .verifiedQuery,
+                checkedAt: "2026-07-25T11:30:00+09:00",
+                officialQueryReference: "https://example.com/tariff"
+              )
+            ]
+          )
+        )
+      ]
+    )
+    return try PreDriveEvidenceBundleCodec.encode(
+      manifest,
+      context: PreDriveEvidenceBundleContext(
+        productReleaseID: release.releaseID,
+        productReleasedAt: release.releasedAt,
+        navigationReleaseID: release.navigation.releaseID,
+        routePlan: routePlan,
+        evidenceScope: .releasedRoad
+      )
+    )
   }
 }

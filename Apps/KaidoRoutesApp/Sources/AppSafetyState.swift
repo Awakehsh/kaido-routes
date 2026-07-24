@@ -141,9 +141,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       BundledProductReleaseCatalog? = nil,
     savedRouteStore: (any SavedRouteLibraryStoring)? = nil,
     releasedPreDriveEvidenceProvider:
-      @escaping ReleasedProductRouteAuthoringModel.EvidenceProvider = {
-        _, _ in nil
-      }
+      ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil
   ) {
     do {
       let routeEditor = try ParkedRouteEditorModel()

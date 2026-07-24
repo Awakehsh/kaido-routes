@@ -18,14 +18,16 @@ Start from
 {
   "descriptor_symbol": "releasedK7AobaKohoku",
   "guidance_audio_manifest_resource_name": null,
+  "pre_drive_evidence_manifest_resource_name": null,
   "product_resource_name": "k7-aoba-kohoku-product-release",
   "schema_version": "1.0"
 }
 ```
 
 `descriptor_symbol` must be a non-keyword Swift identifier.
-`product_resource_name` and the optional audio manifest resource name must be
-safe extension-free bundle basenames. They cannot be equal.
+`product_resource_name` and the optional audio and pre-drive evidence manifest
+resource names must be safe extension-free bundle basenames. They must be
+distinct.
 
 ## Product-only staging
 
@@ -76,20 +78,43 @@ blocks the whole staging run.
 Supplying only a manifest, only a resource directory, or an audio resource name
 without both inputs is invalid.
 
+## Staging current pre-drive evidence
+
+Validate the schema-1.0 bundle first as described in
+[`pre-drive-evidence.md`](pre-drive-evidence.md). Set
+`pre_drive_evidence_manifest_resource_name`, then stage the same bytes:
+
+```sh
+swift run kaido-release prepare-app-bundle \
+  --product-artifact <product-release.json> \
+  --config <app-bundle-staging-with-evidence.json> \
+  --pre-drive-evidence-manifest <pre-drive-evidence.json> \
+  --output <new-staging-directory>
+```
+
+The generated descriptor pins the evidence release ID and manifest SHA-256.
+Staging revalidates every source, record, tariff profile, identity, and validity
+window against the exact product. The App checks the current time each time the
+user selects or refreshes a vehicle/payment profile; not-yet-valid, expired, or
+missing profiles remain locked with stable error codes.
+
+Audio and pre-drive evidence may be supplied together. Omitting either optional
+artifact keeps only that capability unavailable and never invents a fallback.
+
 ## Safety properties
 
 - Inputs are fully validated before any destination is created.
 - The destination is assembled in a sibling temporary directory and moved into
   place only after every file is written.
 - Existing output is never overwritten.
-- Product and audio bytes are retained exactly; staging does not re-author
-  either artifact.
+- Product, audio, and pre-drive evidence bytes are retained exactly; staging
+  does not re-author any artifact.
 - Duplicate output resource paths fail closed.
 - The generated source retains the App's compile-time catalog boundary.
 - Staging grants no release, route, location, prompt, audio, or navigation
   authority by itself.
 
 The first real App entry still requires real Route Atlas and navigation
-releases, reviewed localized editor/pre-drive data, an exact product release,
-and physical-device qualification. This command only prepares already-released
-content for deliberate bundle inclusion.
+releases, reviewed localized editor data, current reviewed pre-drive evidence,
+an exact product release, and physical-device qualification. This command only
+prepares already-reviewed content for deliberate bundle inclusion.

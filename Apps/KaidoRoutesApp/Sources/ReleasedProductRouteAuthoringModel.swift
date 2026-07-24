@@ -1,4 +1,5 @@
 import Combine
+import Foundation
 import KaidoDomain
 import KaidoPresentation
 import KaidoRouting
@@ -39,7 +40,7 @@ enum ReleasedProductRouteAuthoringError: String, Error, Equatable, Sendable {
 final class ReleasedProductRouteAuthoringModel: ObservableObject {
   typealias EvidenceProvider =
     (BundledProductReleaseEntry, PreDriveReviewSession)
-    -> PreDriveReviewEvidence?
+    throws -> PreDriveReviewEvidence?
 
   @Published private(set) var locale: KaidoReleaseLocale
   @Published private(set) var options: [ReleasedProductRouteOptionPresentation]
@@ -60,7 +61,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   init(
     entries: [BundledProductReleaseEntry],
     locale: KaidoReleaseLocale,
-    evidenceProvider: @escaping EvidenceProvider = { _, _ in nil }
+    evidenceProvider: EvidenceProvider? = nil,
+    currentDateProvider: @escaping () -> Date = Date.init
   ) throws {
     let releaseIDs = entries.map(\.release.releaseID)
     guard !entries.isEmpty,
@@ -76,7 +78,16 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       uniqueKeysWithValues: entries.map { ($0.release.releaseID, $0) }
     )
     self.locale = locale
-    self.evidenceProvider = evidenceProvider
+    self.evidenceProvider =
+      evidenceProvider ?? { entry, session in
+        guard let bundle = entry.preDriveEvidenceBundle else {
+          return nil
+        }
+        return try bundle.evidence(
+          for: session,
+          at: currentDateProvider()
+        )
+      }
     options = try Self.makeOptions(entries: entries, locale: locale)
   }
 
@@ -232,12 +243,12 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       vehicleClass: selectedVehicleClass,
       paymentMethod: selectedPaymentMethod
     )
-    guard let evidence = evidenceProvider(entry, session) else {
-      preDriveReviewSnapshot = nil
-      fail(.preDriveEvidenceUnavailable)
-      return
-    }
     do {
+      guard let evidence = try evidenceProvider(entry, session) else {
+        preDriveReviewSnapshot = nil
+        fail(.preDriveEvidenceUnavailable)
+        return
+      }
       let adapter = try ReleasedPreDriveReviewAdapter(
         productRelease: entry.release,
         session: session,
@@ -259,6 +270,9 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       )
       lastErrorCode = nil
     } catch let error as PreDriveReviewEvaluationError {
+      preDriveReviewSnapshot = nil
+      lastErrorCode = error.code
+    } catch let error as PreDriveEvidenceResolutionError {
       preDriveReviewSnapshot = nil
       lastErrorCode = error.code
     } catch {

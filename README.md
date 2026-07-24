@@ -49,7 +49,12 @@ tariff and passage evidence evaluates against the same RoutePlan and network
 snapshot. The user must first select one of the five canonical Shuto vehicle
 classes and select the ETC or cash tariff path independently; the evidence
 provider receives that exact session request, and its envelope plus every tariff
-quote must match both selections. The
+quote must match both selections. The first operational provider is now an
+optional compile-time, hash-bound schema-1.0 pre-drive evidence bundle attached
+to the exact foreground product. It retains separate reviewed tariff and
+passage source roles, resolves only one exact vehicle/payment profile inside its
+declared validity window, and fails closed when missing, not yet valid, or
+expired. It does not fetch live services or claim realtime-open authority. The
 current manifest contains zero foreground releases and one
 synthetic demo, so that branch remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
@@ -851,6 +856,19 @@ The authoring configuration contains only schema version, product release ID,
 and release timestamp. Runtime scope is intentionally not configurable. See
 [`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md).
 
+Validate separately reviewed current tariff and passage evidence against that
+exact product before App staging:
+
+```sh
+swift run kaido-release validate-pre-drive-evidence \
+  --product-artifact <product-release.json> \
+  --manifest <pre-drive-evidence.json>
+```
+
+The bundle remains separate from versioned route authority and expires at
+runtime. See
+[`docs/contributing/pre-drive-evidence.md`](docs/contributing/pre-drive-evidence.md).
+
 After independent validation, prepare the exact Xcode-ready resources and
 compile-time foreground descriptor without transcribing release IDs or hashes:
 
@@ -861,10 +879,10 @@ swift run kaido-release prepare-app-bundle \
   --output <new-staging-directory>
 ```
 
-An optional complete guidance-audio release may be supplied in the same run.
-Synthetic products fail before output, existing destinations are never
-overwritten, and the generated descriptor still requires an explicit reviewed
-addition to the App catalog. See
+An optional complete guidance-audio release and optional current pre-drive
+evidence bundle may be supplied in the same run. Synthetic products fail before
+output, existing destinations are never overwritten, and the generated
+descriptor still requires an explicit reviewed addition to the App catalog. See
 [`docs/contributing/app-bundle-staging.md`](docs/contributing/app-bundle-staging.md).
 
 Offline guidance-audio authoring is executable without copying prompt records by

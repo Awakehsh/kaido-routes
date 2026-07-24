@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoPresentation
 import Testing
@@ -207,6 +208,194 @@ func preDriveReviewRejectsMixedPaymentMethodQuote() {
   }
 }
 
+@Test("Pre-drive evidence bundle resolves one exact fresh session profile")
+func preDriveEvidenceBundleResolvesFreshExactProfile() throws {
+  let manifest = preDriveEvidenceBundleManifest()
+  let context = preDriveEvidenceBundleContext()
+  let data = try PreDriveEvidenceBundleCodec.encode(
+    manifest,
+    context: context
+  )
+  let bundle = try PreDriveEvidenceBundleCodec.decode(
+    data,
+    context: context
+  )
+  let now = try #require(
+    ISO8601DateFormatter().date(
+      from: "2026-07-24T12:30:00+09:00"
+    )
+  )
+
+  let evidence = try bundle.evidence(for: preDriveSession(), at: now)
+  let repeatedData = try PreDriveEvidenceBundleCodec.encode(
+    manifest,
+    context: context
+  )
+
+  #expect(evidence == preDriveEvidence(quotes: [preDriveTariffQuote()]))
+  #expect(bundle.manifest.releaseID == "test.pre-drive-evidence.v1")
+  #expect(data == repeatedData)
+}
+
+@Test("Pre-drive evidence bundle fails closed outside its validity window")
+func preDriveEvidenceBundleRejectsNotYetValidAndExpiredProfiles() throws {
+  let bundle = try PreDriveEvidenceBundle(
+    manifest: preDriveEvidenceBundleManifest(),
+    context: preDriveEvidenceBundleContext()
+  )
+  let before = try #require(
+    ISO8601DateFormatter().date(
+      from: "2026-07-24T11:59:59+09:00"
+    )
+  )
+  let beforeBundleRelease = try #require(
+    ISO8601DateFormatter().date(
+      from: "2026-07-24T12:10:00+09:00"
+    )
+  )
+  let expiry = try #require(
+    ISO8601DateFormatter().date(
+      from: "2026-07-25T00:00:00+09:00"
+    )
+  )
+
+  #expect(throws: PreDriveEvidenceResolutionError.notYetValid) {
+    try bundle.evidence(for: preDriveSession(), at: before)
+  }
+  #expect(throws: PreDriveEvidenceResolutionError.notYetValid) {
+    try bundle.evidence(
+      for: preDriveSession(),
+      at: beforeBundleRelease
+    )
+  }
+  #expect(throws: PreDriveEvidenceResolutionError.expired) {
+    try bundle.evidence(for: preDriveSession(), at: expiry)
+  }
+  #expect(throws: PreDriveEvidenceResolutionError.profileUnavailable) {
+    try bundle.evidence(
+      for: PreDriveReviewSession(
+        networkSnapshotID: preDriveSession().networkSnapshotID,
+        routePlanID: preDriveSession().routePlanID,
+        vehicleClass: .standard,
+        paymentMethod: .cash
+      ),
+      at: before
+    )
+  }
+}
+
+@Test("Pre-drive evidence bundle rejects identity, role, and profile drift")
+func preDriveEvidenceBundleRejectsAuthorityDrift() {
+  let valid = preDriveEvidenceBundleManifest()
+  let duplicateRecord = PreDriveEvidenceRecord(
+    id: "test.pre-drive-record.duplicate",
+    validFrom: valid.records[0].validFrom,
+    expiresAt: valid.records[0].expiresAt,
+    sourceReferenceIDs: valid.records[0].sourceReferenceIDs,
+    evidence: valid.records[0].evidence
+  )
+  let drifted = PreDriveEvidenceBundleManifest(
+    releaseID: valid.releaseID,
+    releasedAt: valid.releasedAt,
+    evidenceScope: .releasedRoad,
+    productReleaseID: "test.product.other",
+    navigationReleaseID: valid.navigationReleaseID,
+    networkSnapshotID: valid.networkSnapshotID,
+    routePlanID: valid.routePlanID,
+    sourceRegistry: valid.sourceRegistry,
+    records: valid.records + [duplicateRecord]
+  )
+
+  do {
+    _ = try PreDriveEvidenceBundle(
+      manifest: drifted,
+      context: preDriveEvidenceBundleContext()
+    )
+    Issue.record("Expected authority and duplicate-profile drift to fail")
+  } catch PreDriveEvidenceBundleError.invalid(let issues) {
+    #expect(issues.contains(.evidenceScopeMismatch))
+    #expect(issues.contains(.productReleaseMismatch))
+    #expect(
+      issues.contains(
+        .duplicateProfile(
+          PreDriveEvidenceProfileKey(
+            vehicleClass: .standard,
+            paymentMethod: .etc
+          )
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Pre-drive evidence bundle requires reviewed tariff and passage sources")
+func preDriveEvidenceBundleRequiresBothSourceRoles() {
+  let valid = preDriveEvidenceBundleManifest()
+  let missingPassageRole = PreDriveEvidenceBundleManifest(
+    releaseID: valid.releaseID,
+    releasedAt: valid.releasedAt,
+    evidenceScope: valid.evidenceScope,
+    productReleaseID: valid.productReleaseID,
+    navigationReleaseID: valid.navigationReleaseID,
+    networkSnapshotID: valid.networkSnapshotID,
+    routePlanID: valid.routePlanID,
+    sourceRegistry: [valid.sourceRegistry[0]],
+    records: [
+      PreDriveEvidenceRecord(
+        id: valid.records[0].id,
+        validFrom: valid.records[0].validFrom,
+        expiresAt: valid.records[0].expiresAt,
+        sourceReferenceIDs: [valid.sourceRegistry[0].id],
+        evidence: valid.records[0].evidence
+      )
+    ]
+  )
+
+  do {
+    _ = try PreDriveEvidenceBundle(
+      manifest: missingPassageRole,
+      context: preDriveEvidenceBundleContext()
+    )
+    Issue.record("Expected missing passage provenance to fail")
+  } catch PreDriveEvidenceBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .missingSourceRole(
+          "test.pre-drive-record.standard-etc",
+          .passageReview
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Pre-drive evidence bundle cannot predate its product release")
+func preDriveEvidenceBundleCannotPredateProductRelease() {
+  let context = PreDriveEvidenceBundleContext(
+    productReleaseID: "test.product.pre-drive",
+    productReleasedAt: "2026-07-24T12:30:00+09:00",
+    navigationReleaseID: "test.navigation.pre-drive",
+    routePlan: preDriveRoutePlan(),
+    evidenceScope: .syntheticTestOnly
+  )
+
+  do {
+    _ = try PreDriveEvidenceBundle(
+      manifest: preDriveEvidenceBundleManifest(),
+      context: context
+    )
+    Issue.record("Expected pre-product evidence release to fail")
+  } catch PreDriveEvidenceBundleError.invalid(let issues) {
+    #expect(issues.contains(.evidenceBeforeProductRelease))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 private func preDriveRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan.pre-drive",
@@ -270,5 +459,65 @@ private func preDriveEvidence(
     paymentMethod: paymentMethod,
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: quotes
+  )
+}
+
+private func preDriveEvidenceBundleContext() -> PreDriveEvidenceBundleContext {
+  PreDriveEvidenceBundleContext(
+    productReleaseID: "test.product.pre-drive",
+    productReleasedAt: "2026-07-24T11:30:00+09:00",
+    navigationReleaseID: "test.navigation.pre-drive",
+    routePlan: preDriveRoutePlan(),
+    evidenceScope: .syntheticTestOnly
+  )
+}
+
+private func preDriveEvidenceBundleManifest()
+  -> PreDriveEvidenceBundleManifest
+{
+  PreDriveEvidenceBundleManifest(
+    releaseID: "test.pre-drive-evidence.v1",
+    releasedAt: "2026-07-24T12:15:00+09:00",
+    evidenceScope: .syntheticTestOnly,
+    productReleaseID: "test.product.pre-drive",
+    navigationReleaseID: "test.navigation.pre-drive",
+    networkSnapshotID: "test.snapshot.pre-drive",
+    routePlanID: "test.plan.pre-drive",
+    sourceRegistry: [
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.tariff",
+        roles: [.tariffQuery],
+        authorityName: "Synthetic tariff authority",
+        sourceURL: "https://example.com/tariff",
+        contentSHA256:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        checkedAt: "2026-07-24T09:00:00+09:00",
+        reviewerID: "test.reviewer.tariff",
+        reviewedAt: "2026-07-24T12:05:00+09:00"
+      ),
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.passage",
+        roles: [.passageReview],
+        authorityName: "Synthetic passage authority",
+        sourceURL: "https://example.com/passage",
+        contentSHA256:
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        checkedAt: "2026-07-24T10:00:00+09:00",
+        reviewerID: "test.reviewer.passage",
+        reviewedAt: "2026-07-24T12:10:00+09:00"
+      ),
+    ],
+    records: [
+      PreDriveEvidenceRecord(
+        id: "test.pre-drive-record.standard-etc",
+        validFrom: "2026-07-24T12:00:00+09:00",
+        expiresAt: "2026-07-25T00:00:00+09:00",
+        sourceReferenceIDs: [
+          "test.pre-drive-source.tariff",
+          "test.pre-drive-source.passage",
+        ],
+        evidence: preDriveEvidence(quotes: [preDriveTariffQuote()])
+      )
+    ]
   )
 }

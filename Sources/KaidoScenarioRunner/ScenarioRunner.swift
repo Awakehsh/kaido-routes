@@ -168,6 +168,8 @@ private struct ScenarioHarness {
       try validateRouteAtlasRelease()
     case "ROUTE_ATLAS_RELEASE_AUTHORED":
       try authorRouteAtlasRelease(event.payload)
+    case "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED":
+      try resolvePreDriveEvidenceBundle(event.payload)
     case "ROUTE_ATLAS_CONTEXT_VALIDATED":
       try validateRouteAtlasContext()
     case "NAVIGATION_STARTED":
@@ -2440,6 +2442,122 @@ private struct ScenarioHarness {
       )
     )
     publish(review)
+  }
+
+  private mutating func resolvePreDriveEvidenceBundle(
+    _ payload: [String: JSONValue]
+  ) throws {
+    for key in adapterObservations.keys
+    where key.hasPrefix("pre_drive.bundle.") {
+      adapterObservations.removeValue(forKey: key)
+    }
+    guard
+      let routePlan = scenario.given.routePlan,
+      let manifestValue =
+        scenario.given.inputs["pre_drive_evidence_bundle"],
+      let sessionValue = scenario.given.inputs.object("pre_drive_session"),
+      let vehicleClass =
+        (payload.string("vehicle_class")
+        ?? sessionValue.string("vehicle_class")).flatMap(ShutoVehicleClass.init(rawValue:)),
+      let paymentMethod =
+        (payload.string("payment_method")
+        ?? sessionValue.string("payment_method")).flatMap(ShutoPaymentMethod.init(rawValue:)),
+      let resolvedAt = Self.parseISO8601(
+        try payload.requiredString("resolved_at")
+      ),
+      let evidenceScope = payload.string("evidence_scope")
+        .flatMap(PreDriveEvidenceScope.init(rawValue:))
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "pre_drive_evidence_bundle"
+      )
+    }
+    let session = PreDriveReviewSession(
+      networkSnapshotID: try sessionValue.requiredString(
+        "network_snapshot_id"
+      ),
+      routePlanID: try sessionValue.requiredString("route_plan_id"),
+      vehicleClass: vehicleClass,
+      paymentMethod: paymentMethod
+    )
+    let context = PreDriveEvidenceBundleContext(
+      productReleaseID: try payload.requiredString("product_release_id"),
+      productReleasedAt: try payload.requiredString("product_released_at"),
+      navigationReleaseID: try payload.requiredString(
+        "navigation_release_id"
+      ),
+      routePlan: routePlan,
+      evidenceScope: evidenceScope
+    )
+
+    do {
+      let data = try JSONEncoder().encode(manifestValue)
+      let bundle = try PreDriveEvidenceBundleCodec.decode(
+        data,
+        context: context
+      )
+      let evidence = try bundle.evidence(
+        for: session,
+        at: resolvedAt
+      )
+      let evaluation = try PreDriveReviewEvaluator.evaluate(
+        routePlan: routePlan,
+        session: session,
+        evidence: evidence
+      )
+      adapterObservations["pre_drive.bundle.status"] = .string("VALID")
+      adapterObservations["pre_drive.bundle.release_id"] = .string(
+        bundle.manifest.releaseID
+      )
+      adapterObservations["pre_drive.bundle.record_count"] = .integer(
+        bundle.manifest.records.count
+      )
+      adapterObservations["pre_drive.bundle.source_count"] = .integer(
+        bundle.manifest.sourceRegistry.count
+      )
+      adapterObservations["pre_drive.bundle.vehicle_class"] = .string(
+        evidence.vehicleClass.rawValue
+      )
+      adapterObservations["pre_drive.bundle.payment_method"] = .string(
+        evidence.paymentMethod.rawValue
+      )
+      adapterObservations["pre_drive.bundle.selected_quote_id"] = .string(
+        evaluation.selectedTariffQuote.id
+      )
+      adapterObservations.removeValue(
+        forKey: "pre_drive.bundle.error_codes"
+      )
+    } catch PreDriveEvidenceBundleError.invalid(let issues) {
+      adapterObservations["pre_drive.bundle.status"] = .string("BLOCKED")
+      adapterObservations["pre_drive.bundle.error_codes"] = .strings(
+        issues.map(\.code)
+      )
+    } catch let error as PreDriveEvidenceResolutionError {
+      adapterObservations["pre_drive.bundle.status"] = .string("BLOCKED")
+      adapterObservations["pre_drive.bundle.error_codes"] = .strings([
+        error.code
+      ])
+    } catch let error as PreDriveReviewEvaluationError {
+      adapterObservations["pre_drive.bundle.status"] = .string("BLOCKED")
+      adapterObservations["pre_drive.bundle.error_codes"] = .strings([
+        error.code
+      ])
+    } catch {
+      adapterObservations["pre_drive.bundle.status"] = .string("BLOCKED")
+      adapterObservations["pre_drive.bundle.error_codes"] = .strings([
+        "PRE_DRIVE_EVIDENCE_ARTIFACT_INVALID"
+      ])
+    }
+  }
+
+  private static func parseISO8601(_ value: String) -> Date? {
+    let standard = ISO8601DateFormatter()
+    if let result = standard.date(from: value) {
+      return result
+    }
+    let fractional = ISO8601DateFormatter()
+    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return fractional.date(from: value)
   }
 
   private mutating func clearPreDriveReviewObservations() {

@@ -6,7 +6,7 @@ import KaidoDomain
 /// This request is independent from returned tariff evidence so an evidence
 /// provider cannot authorize a different vehicle class or payment method by
 /// changing both its evidence envelope and quotes together.
-public struct PreDriveReviewSession: Equatable, Sendable {
+public struct PreDriveReviewSession: Codable, Equatable, Sendable {
   public let networkSnapshotID: String
   public let routePlanID: String
   public let vehicleClass: ShutoVehicleClass
@@ -23,12 +23,19 @@ public struct PreDriveReviewSession: Equatable, Sendable {
     self.vehicleClass = vehicleClass
     self.paymentMethod = paymentMethod
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case vehicleClass = "vehicle_class"
+    case paymentMethod = "payment_method"
+  }
 }
 
 /// Dated evidence evaluated immediately before a drive. This is intentionally
 /// not part of a versioned product release because tariff and passage evidence
 /// have independent freshness and authority.
-public struct PreDriveReviewEvidence: Equatable, Sendable {
+public struct PreDriveReviewEvidence: Codable, Equatable, Sendable {
   public let evaluatedAt: String
   public let networkSnapshotID: String
   public let routePlanID: String
@@ -53,6 +60,16 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
     self.paymentMethod = paymentMethod
     self.passageEvidence = passageEvidence
     self.tariffQuotes = tariffQuotes
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case evaluatedAt = "evaluated_at"
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case vehicleClass = "vehicle_class"
+    case paymentMethod = "payment_method"
+    case passageEvidence = "passage_evidence"
+    case tariffQuotes = "tariff_quotes"
   }
 }
 

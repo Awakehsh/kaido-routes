@@ -1,5 +1,6 @@
 import Foundation
 import KaidoDomain
+import KaidoNavigation
 import KaidoPresentation
 
 @testable import KaidoRoutesApp
@@ -10,7 +11,8 @@ enum ReleasedProductTestSupportError: Error {
 }
 
 func makeReleasedProductTestEntry(
-  releaseID: String = "test.released-road.product"
+  releaseID: String = "test.released-road.product",
+  includePreDriveEvidence: Bool = false
 ) throws -> BundledProductReleaseEntry {
   guard
     let url = Bundle.main.url(
@@ -49,23 +51,121 @@ func makeReleasedProductTestEntry(
     root[releaseKey] = nestedRelease
   }
   let data = try JSONSerialization.data(withJSONObject: root)
+  let release = try KaidoProductReleaseArtifactCodec.decode(data)
+  let preDriveEvidenceData: Data? =
+    if includePreDriveEvidence {
+      try makeBundledPreDriveEvidenceData(for: release)
+    } else {
+      nil
+    }
   let descriptor = BundledProductReleaseDescriptor(
     resourceName: "released-road-product",
     resourceExtension: "json",
     expectedSHA256:
       BundledProductReleaseCatalogLoader.sha256Hex(data),
     expectedReleaseID: releaseID,
-    role: .foregroundNavigation
+    role: .foregroundNavigation,
+    preDriveEvidence: preDriveEvidenceData.map {
+      BundledPreDriveEvidenceDescriptor(
+        manifestResourceName: "released-pre-drive-evidence",
+        expectedManifestSHA256:
+          BundledProductReleaseCatalogLoader.sha256Hex($0),
+        expectedReleaseID: "test.pre-drive-evidence.app.v1"
+      )
+    }
   )
   let catalog = try BundledProductReleaseCatalogLoader.load(
-    descriptors: [descriptor]
-  ) { _ in
-    data
-  }
+    descriptors: [descriptor],
+    preDriveEvidenceDataProvider: { _ in preDriveEvidenceData },
+    dataProvider: { _ in data }
+  )
   guard let entry = catalog.foregroundNavigationEntries.first else {
     throw ReleasedProductTestSupportError.invalidFixture
   }
   return entry
+}
+
+private func makeBundledPreDriveEvidenceData(
+  for release: KaidoProductRelease
+) throws -> Data {
+  let routePlan = release.navigation.bundle.routePlan
+  let evidence = PreDriveReviewEvidence(
+    evaluatedAt: "2026-07-25T12:00:00+09:00",
+    networkSnapshotID: routePlan.networkSnapshotID,
+    routePlanID: routePlan.id,
+    vehicleClass: .standard,
+    paymentMethod: .etc,
+    passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+    tariffQuotes: [
+      TariffQuote(
+        id: "test.released-road.tariff.active",
+        entryFacilityID: routePlan.entryFacilityID,
+        exitFacilityID: routePlan.exitFacilityID,
+        vehicleClass: .standard,
+        paymentMethod: .etc,
+        tariffVersionID: "test.released-road.tariff.v1",
+        tariffVersionStatus: .active,
+        tariffDistanceKM: 24.8,
+        estimatedAmountYen: 1_320,
+        evidenceStatus: .estimated,
+        checkedAt: "2026-07-25T11:30:00+09:00",
+        officialQueryReference: "https://search.shutoko.jp/"
+      )
+    ]
+  )
+  let manifest = PreDriveEvidenceBundleManifest(
+    releaseID: "test.pre-drive-evidence.app.v1",
+    releasedAt: "2026-07-25T12:15:00+09:00",
+    evidenceScope: .releasedRoad,
+    productReleaseID: release.releaseID,
+    navigationReleaseID: release.navigation.releaseID,
+    networkSnapshotID: routePlan.networkSnapshotID,
+    routePlanID: routePlan.id,
+    sourceRegistry: [
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.tariff",
+        roles: [.tariffQuery],
+        authorityName: "Test tariff authority",
+        sourceURL: "https://search.shutoko.jp/",
+        contentSHA256: String(repeating: "a", count: 64),
+        checkedAt: "2026-07-25T11:30:00+09:00",
+        reviewerID: "test.reviewer.tariff",
+        reviewedAt: "2026-07-25T12:10:00+09:00"
+      ),
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.passage",
+        roles: [.passageReview],
+        authorityName: "Test passage authority",
+        sourceURL: "https://www.shutoko.jp/",
+        contentSHA256: String(repeating: "b", count: 64),
+        checkedAt: "2026-07-25T11:35:00+09:00",
+        reviewerID: "test.reviewer.passage",
+        reviewedAt: "2026-07-25T12:10:00+09:00"
+      ),
+    ],
+    records: [
+      PreDriveEvidenceRecord(
+        id: "test.pre-drive-record.standard-etc",
+        validFrom: "2026-07-25T12:00:00+09:00",
+        expiresAt: "2026-07-26T00:00:00+09:00",
+        sourceReferenceIDs: [
+          "test.pre-drive-source.tariff",
+          "test.pre-drive-source.passage",
+        ],
+        evidence: evidence
+      )
+    ]
+  )
+  return try PreDriveEvidenceBundleCodec.encode(
+    manifest,
+    context: PreDriveEvidenceBundleContext(
+      productReleaseID: release.releaseID,
+      productReleasedAt: release.releasedAt,
+      navigationReleaseID: release.navigation.releaseID,
+      routePlan: routePlan,
+      evidenceScope: .releasedRoad
+    )
+  )
 }
 
 func makeReleasedPreDriveEvidence(

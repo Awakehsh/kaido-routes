@@ -3,6 +3,7 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 import Testing
 
 @Test("Product release round-trips one exact navigation and atlas authority")
@@ -588,7 +589,7 @@ func appBundleStagingPreparesForegroundProduct() throws {
   #expect(sourceText.contains("role: .foregroundNavigation"))
 }
 
-@Test("App bundle staging rejects synthetic products and partial audio input")
+@Test("App bundle staging rejects synthetic products and partial optional input")
 func appBundleStagingRejectsNonForegroundInput() throws {
   let fixture = navigationReleaseBundleFixture()
   let syntheticData = try KaidoProductReleaseArtifactCodec.encode(
@@ -629,6 +630,21 @@ func appBundleStagingRejectsNonForegroundInput() throws {
     )
     Issue.record("Expected partial guidance audio input to fail")
   } catch AppBundleReleaseStagingError.guidanceAudioInputMismatch {
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: AppBundleReleaseStagingConfiguration(
+        descriptorSymbol: "releasedK7AobaKohoku",
+        productResourceName: "k7-aoba-kohoku-product-release",
+        preDriveEvidenceManifestResourceName: "k7-pre-drive-evidence"
+      ),
+      productArtifactData: try appBundleReleasedProductData()
+    )
+    Issue.record("Expected partial pre-drive evidence input to fail")
+  } catch AppBundleReleaseStagingError.preDriveEvidenceInputMismatch {
   } catch {
     Issue.record("Unexpected error: \(error)")
   }
@@ -745,6 +761,133 @@ func appBundleStagingPreparesGuidanceAudio() throws {
     package.manifest.resources.filter {
       $0.kind == .guidanceAudioWave
     }.count == Set(releasedRecords.map(\.resourceFilename)).count
+  )
+}
+
+@Test("App bundle staging pins one exact current pre-drive evidence bundle")
+func appBundleStagingPreparesPreDriveEvidence() throws {
+  let productData = try appBundleReleasedProductData()
+  let productRelease = try KaidoProductReleaseArtifactCodec.decode(
+    productData
+  )
+  let routePlan = productRelease.navigation.bundle.routePlan
+  let evidenceManifest = PreDriveEvidenceBundleManifest(
+    releaseID: "test.pre-drive-evidence.app-bundle.v1",
+    releasedAt: "2026-07-24T12:45:00+09:00",
+    evidenceScope: .releasedRoad,
+    productReleaseID: productRelease.releaseID,
+    navigationReleaseID: productRelease.navigation.releaseID,
+    networkSnapshotID: routePlan.networkSnapshotID,
+    routePlanID: routePlan.id,
+    sourceRegistry: [
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.tariff",
+        roles: [.tariffQuery],
+        authorityName: "Test reviewed tariff authority",
+        sourceURL: "https://example.com/tariff",
+        contentSHA256: String(repeating: "a", count: 64),
+        checkedAt: "2026-07-24T12:00:00+09:00",
+        reviewerID: "test.reviewer.tariff",
+        reviewedAt: "2026-07-24T12:40:00+09:00"
+      ),
+      PreDriveEvidenceSourceReference(
+        id: "test.pre-drive-source.passage",
+        roles: [.passageReview],
+        authorityName: "Test reviewed passage authority",
+        sourceURL: "https://example.com/passage",
+        contentSHA256: String(repeating: "b", count: 64),
+        checkedAt: "2026-07-24T12:05:00+09:00",
+        reviewerID: "test.reviewer.passage",
+        reviewedAt: "2026-07-24T12:40:00+09:00"
+      ),
+    ],
+    records: [
+      PreDriveEvidenceRecord(
+        id: "test.pre-drive-record.standard-etc",
+        validFrom: "2026-07-24T12:35:00+09:00",
+        expiresAt: "2026-07-25T00:00:00+09:00",
+        sourceReferenceIDs: [
+          "test.pre-drive-source.tariff",
+          "test.pre-drive-source.passage",
+        ],
+        evidence: PreDriveReviewEvidence(
+          evaluatedAt: "2026-07-24T12:30:00+09:00",
+          networkSnapshotID: routePlan.networkSnapshotID,
+          routePlanID: routePlan.id,
+          vehicleClass: .standard,
+          paymentMethod: .etc,
+          passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+          tariffQuotes: [
+            TariffQuote(
+              id: "test.tariff.standard-etc.active",
+              entryFacilityID: routePlan.entryFacilityID,
+              exitFacilityID: routePlan.exitFacilityID,
+              vehicleClass: .standard,
+              paymentMethod: .etc,
+              tariffVersionID: "test.tariff.v1",
+              tariffVersionStatus: .active,
+              tariffDistanceKM: 24.8,
+              estimatedAmountYen: 1_320,
+              evidenceStatus: .verifiedQuery,
+              checkedAt: "2026-07-24T12:00:00+09:00",
+              officialQueryReference: "https://example.com/tariff"
+            )
+          ]
+        )
+      )
+    ]
+  )
+  let context = PreDriveEvidenceBundleContext(
+    productReleaseID: productRelease.releaseID,
+    productReleasedAt: productRelease.releasedAt,
+    navigationReleaseID: productRelease.navigation.releaseID,
+    routePlan: routePlan,
+    evidenceScope: .releasedRoad
+  )
+  let evidenceData = try PreDriveEvidenceBundleCodec.encode(
+    evidenceManifest,
+    context: context
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7WithPreDriveEvidence",
+    productResourceName: "k7-product",
+    preDriveEvidenceManifestResourceName: "k7-pre-drive-evidence"
+  )
+
+  let package = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: configuration,
+    productArtifactData: productData,
+    preDriveEvidenceManifestData: evidenceData
+  )
+  let descriptor = try #require(
+    package.manifest.descriptor.preDriveEvidence
+  )
+
+  #expect(
+    descriptor.expectedReleaseID
+      == "test.pre-drive-evidence.app-bundle.v1"
+  )
+  #expect(
+    descriptor.expectedManifestSHA256 == testSHA256Hex(evidenceData)
+  )
+  #expect(
+    package.manifest.resources
+      .contains {
+        $0.kind == .preDriveEvidenceManifest
+          && $0.relativePath
+            == "Resources/k7-pre-drive-evidence.json"
+      }
+  )
+  let generatedSource = try #require(
+    package.files.first { $0.relativePath.hasPrefix("Sources/") }
+  )
+  let sourceText = try #require(
+    String(data: generatedSource.data, encoding: .utf8)
+  )
+  #expect(
+    sourceText.contains(
+      "AppBundlePreDriveEvidenceDescriptor("
+    )
   )
 }
 

@@ -95,6 +95,7 @@ EVENT_TYPES = {
     "PRODUCT_NAVIGATION_RUNTIME_CREATED",
     "ROUTE_ATLAS_RELEASE_VALIDATED",
     "ROUTE_ATLAS_RELEASE_AUTHORED",
+    "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
     "ROUTE_ATLAS_CONTEXT_VALIDATED",
     "NAVIGATION_STARTED",
     "LOCATION_UPDATED",
@@ -501,6 +502,336 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
                     f"given.tariff_quotes[{index}].checked_at "
                     "must not postdate pre-drive evaluation"
                 )
+
+
+def validate_pre_drive_evidence_bundle(
+    v: Validation,
+    given: dict[str, Any],
+    events: Any,
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "pre_drive_evidence_bundle" not in inputs:
+        return
+    manifest = inputs["pre_drive_evidence_bundle"]
+    context = "given.inputs.pre_drive_evidence_bundle"
+    required = {
+        "schema_version",
+        "release_id",
+        "released_at",
+        "evidence_scope",
+        "product_release_id",
+        "navigation_release_id",
+        "network_snapshot_id",
+        "route_plan_id",
+        "source_registry",
+        "records",
+    }
+    if not v.require_keys(manifest, required, context):
+        return
+    route_plan = given.get("route_plan")
+    session = inputs.get("pre_drive_session")
+    if not isinstance(route_plan, dict):
+        v.add(f"{context} requires given.route_plan")
+        return
+    if not isinstance(session, dict):
+        v.add(f"{context} requires given.inputs.pre_drive_session")
+        return
+    if manifest["schema_version"] != "1.0":
+        v.add(f"{context}.schema_version must be '1.0'")
+    for field in ("release_id", "product_release_id", "navigation_release_id"):
+        if not isinstance(manifest[field], str) or not manifest[field].strip():
+            v.add(f"{context}.{field} must be non-empty")
+    if manifest["evidence_scope"] not in PRODUCT_RUNTIME_EVIDENCE_SCOPES:
+        v.add(f"{context}.evidence_scope is unknown")
+    if manifest["network_snapshot_id"] != route_plan.get("network_snapshot_id"):
+        v.add(f"{context}.network_snapshot_id must match given.route_plan")
+    if manifest["route_plan_id"] != route_plan.get("plan_id"):
+        v.add(f"{context}.route_plan_id must match given.route_plan")
+    if not is_datetime(manifest["released_at"]):
+        v.add(f"{context}.released_at must be an ISO date-time")
+        released_at = None
+    else:
+        released_at = datetime.fromisoformat(
+            manifest["released_at"].replace("Z", "+00:00")
+        )
+
+    sources = manifest["source_registry"]
+    sources_by_id: dict[str, dict[str, Any]] = {}
+    if not isinstance(sources, list) or not sources:
+        v.add(f"{context}.source_registry must be a non-empty array")
+        sources = []
+    for index, source in enumerate(sources):
+        source_context = f"{context}.source_registry[{index}]"
+        source_required = {
+            "source_reference_id",
+            "roles",
+            "authority_name",
+            "source_url",
+            "content_sha256",
+            "checked_at",
+            "reviewer_id",
+            "reviewed_at",
+        }
+        if not v.require_keys(source, source_required, source_context):
+            continue
+        source_id = source["source_reference_id"]
+        if not isinstance(source_id, str) or not source_id.strip():
+            v.add(f"{source_context}.source_reference_id must be non-empty")
+            continue
+        if source_id in sources_by_id:
+            v.add(f"{source_context}.source_reference_id must be unique")
+        sources_by_id[source_id] = source
+        roles = source["roles"]
+        if (
+            not isinstance(roles, list)
+            or not roles
+            or len(roles) != len(set(roles))
+            or any(role not in {"TARIFF_QUERY", "PASSAGE_REVIEW"} for role in roles)
+        ):
+            v.add(f"{source_context}.roles are invalid")
+        for field in ("authority_name", "reviewer_id"):
+            if not isinstance(source[field], str) or not source[field].strip():
+                v.add(f"{source_context}.{field} must be non-empty")
+        parsed_url = (
+            urlparse(source["source_url"])
+            if isinstance(source["source_url"], str)
+            else None
+        )
+        if (
+            parsed_url is None
+            or parsed_url.scheme.lower() != "https"
+            or not parsed_url.netloc
+        ):
+            v.add(f"{source_context}.source_url must be an HTTPS URI")
+        digest = source["content_sha256"]
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-fA-F]{64}", digest) is None:
+            v.add(f"{source_context}.content_sha256 must be SHA-256")
+        checked_at = source["checked_at"]
+        reviewed_at = source["reviewed_at"]
+        if not is_datetime(checked_at):
+            v.add(f"{source_context}.checked_at must be an ISO date-time")
+        if not is_datetime(reviewed_at):
+            v.add(f"{source_context}.reviewed_at must be an ISO date-time")
+        if is_datetime(checked_at) and is_datetime(reviewed_at):
+            checked = datetime.fromisoformat(checked_at.replace("Z", "+00:00"))
+            reviewed = datetime.fromisoformat(reviewed_at.replace("Z", "+00:00"))
+            if checked > reviewed:
+                v.add(f"{source_context}.checked_at must not postdate review")
+            if released_at is not None and reviewed > released_at:
+                v.add(f"{source_context}.reviewed_at must not postdate release")
+
+    records = manifest["records"]
+    record_ids: set[str] = set()
+    profiles: set[tuple[str, str]] = set()
+    referenced_source_ids: set[str] = set()
+    if not isinstance(records, list) or not records:
+        v.add(f"{context}.records must be a non-empty array")
+        records = []
+    for index, record in enumerate(records):
+        record_context = f"{context}.records[{index}]"
+        record_required = {
+            "record_id",
+            "valid_from",
+            "expires_at",
+            "source_reference_ids",
+            "evidence",
+        }
+        if not v.require_keys(record, record_required, record_context):
+            continue
+        record_id = record["record_id"]
+        if not isinstance(record_id, str) or not record_id.strip():
+            v.add(f"{record_context}.record_id must be non-empty")
+        elif record_id in record_ids:
+            v.add(f"{record_context}.record_id must be unique")
+        record_ids.add(record_id)
+        evidence = record["evidence"]
+        evidence_required = {
+            "evaluated_at",
+            "network_snapshot_id",
+            "route_plan_id",
+            "vehicle_class",
+            "payment_method",
+            "passage_evidence",
+            "tariff_quotes",
+        }
+        if not v.require_keys(evidence, evidence_required, f"{record_context}.evidence"):
+            continue
+        if evidence["network_snapshot_id"] != route_plan.get("network_snapshot_id"):
+            v.add(f"{record_context}.evidence.network_snapshot_id must match route")
+        if evidence["route_plan_id"] != route_plan.get("plan_id"):
+            v.add(f"{record_context}.evidence.route_plan_id must match route")
+        vehicle_class = evidence["vehicle_class"]
+        payment_method = evidence["payment_method"]
+        if vehicle_class not in SHUTO_VEHICLE_CLASSES:
+            v.add(f"{record_context}.evidence.vehicle_class is unknown")
+        if payment_method not in SHUTO_PAYMENT_METHODS:
+            v.add(f"{record_context}.evidence.payment_method is unknown")
+        profile = (vehicle_class, payment_method)
+        if profile in profiles:
+            v.add(f"{record_context} duplicates a tariff profile")
+        profiles.add(profile)
+        if evidence["passage_evidence"] == "REALTIME_CONFIRMED_PASSABLE":
+            v.add(f"{record_context}.evidence cannot claim realtime authority")
+        for field in ("evaluated_at",):
+            if not is_datetime(evidence[field]):
+                v.add(f"{record_context}.evidence.{field} must be an ISO date-time")
+        if not is_datetime(record["valid_from"]):
+            v.add(f"{record_context}.valid_from must be an ISO date-time")
+        if not is_datetime(record["expires_at"]):
+            v.add(f"{record_context}.expires_at must be an ISO date-time")
+        if (
+            released_at is not None
+            and is_datetime(evidence["evaluated_at"])
+            and is_datetime(record["valid_from"])
+            and is_datetime(record["expires_at"])
+        ):
+            evaluated = datetime.fromisoformat(
+                evidence["evaluated_at"].replace("Z", "+00:00")
+            )
+            valid_from = datetime.fromisoformat(
+                record["valid_from"].replace("Z", "+00:00")
+            )
+            expires_at = datetime.fromisoformat(
+                record["expires_at"].replace("Z", "+00:00")
+            )
+            if not evaluated <= valid_from <= released_at < expires_at:
+                v.add(f"{record_context} has an invalid validity chronology")
+        source_ids = record["source_reference_ids"]
+        if (
+            not isinstance(source_ids, list)
+            or not source_ids
+            or len(source_ids) != len(set(source_ids))
+        ):
+            v.add(f"{record_context}.source_reference_ids are invalid")
+            source_ids = []
+        roles: set[str] = set()
+        for source_id in source_ids:
+            referenced_source_ids.add(source_id)
+            source = sources_by_id.get(source_id)
+            if source is None:
+                v.add(f"{record_context} references unknown source {source_id!r}")
+            else:
+                source_roles = source["roles"]
+                if isinstance(source_roles, list):
+                    roles.update(source_roles)
+                if (
+                    is_datetime(source["checked_at"])
+                    and is_datetime(evidence["evaluated_at"])
+                ):
+                    source_checked_at = datetime.fromisoformat(
+                        source["checked_at"].replace("Z", "+00:00")
+                    )
+                    evidence_evaluated_at = datetime.fromisoformat(
+                        evidence["evaluated_at"].replace("Z", "+00:00")
+                    )
+                    if source_checked_at > evidence_evaluated_at:
+                        v.add(
+                            f"{record_context} source {source_id!r} "
+                            "must not postdate evidence evaluation"
+                        )
+        for role in ("TARIFF_QUERY", "PASSAGE_REVIEW"):
+            if role not in roles:
+                v.add(f"{record_context} requires {role}")
+        quotes = evidence["tariff_quotes"]
+        temporary_given = {
+            "tariff_quotes": quotes,
+            "route_plan": route_plan,
+            "inputs": {
+                "pre_drive_evidence": {
+                    key: evidence[key]
+                    for key in (
+                        "evaluated_at",
+                        "network_snapshot_id",
+                        "route_plan_id",
+                        "vehicle_class",
+                        "payment_method",
+                        "passage_evidence",
+                    )
+                },
+                "pre_drive_session": {
+                    "network_snapshot_id": evidence["network_snapshot_id"],
+                    "route_plan_id": evidence["route_plan_id"],
+                    "vehicle_class": vehicle_class,
+                    "payment_method": payment_method,
+                },
+            },
+        }
+        validate_tariff_quotes(v, quotes)
+        validate_pre_drive_evidence(v, temporary_given)
+
+    for source_id in sources_by_id.keys() - referenced_source_ids:
+        v.add(f"{context}.source_registry contains orphan {source_id!r}")
+
+    if not isinstance(events, list):
+        return
+    allowed_payload_keys = {
+        "product_release_id",
+        "product_released_at",
+        "navigation_release_id",
+        "evidence_scope",
+        "resolved_at",
+        "vehicle_class",
+        "payment_method",
+    }
+    for index, event in enumerate(events):
+        if (
+            not isinstance(event, dict)
+            or event.get("type") != "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED"
+        ):
+            continue
+        payload = event.get("payload")
+        event_context = (
+            f"when[{index}] PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED"
+        )
+        if not isinstance(payload, dict):
+            continue
+        unsupported = sorted(payload.keys() - allowed_payload_keys)
+        if unsupported:
+            v.add(
+                f"{event_context} payload has unsupported keys: "
+                + ", ".join(unsupported)
+            )
+        for field in (
+            "product_release_id",
+            "product_released_at",
+            "navigation_release_id",
+            "evidence_scope",
+            "resolved_at",
+        ):
+            if field not in payload:
+                v.add(f"{event_context}.payload.{field} is required")
+        if payload.get("product_release_id") != manifest["product_release_id"]:
+            v.add(f"{event_context}.payload.product_release_id must match bundle")
+        if not is_datetime(payload.get("product_released_at")):
+            v.add(
+                f"{event_context}.payload.product_released_at "
+                "must be an ISO date-time"
+            )
+        elif released_at is not None:
+            product_released_at = datetime.fromisoformat(
+                payload["product_released_at"].replace("Z", "+00:00")
+            )
+            if product_released_at > released_at:
+                v.add(
+                    f"{event_context}.payload.product_released_at "
+                    "must not postdate bundle"
+                )
+        if payload.get("navigation_release_id") != manifest["navigation_release_id"]:
+            v.add(f"{event_context}.payload.navigation_release_id must match bundle")
+        if payload.get("evidence_scope") != manifest["evidence_scope"]:
+            v.add(f"{event_context}.payload.evidence_scope must match bundle")
+        if not is_datetime(payload.get("resolved_at")):
+            v.add(f"{event_context}.payload.resolved_at must be an ISO date-time")
+        if (
+            "vehicle_class" in payload
+            and payload["vehicle_class"] not in SHUTO_VEHICLE_CLASSES
+        ):
+            v.add(f"{event_context}.payload.vehicle_class is unknown")
+        if (
+            "payment_method" in payload
+            and payload["payment_method"] not in SHUTO_PAYMENT_METHODS
+        ):
+            v.add(f"{event_context}.payload.payment_method is unknown")
 
 
 def validate_saved_route_library(v: Validation, given: dict[str, Any]) -> None:
@@ -2583,6 +2914,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_pre_drive_evidence(v, given)
+        validate_pre_drive_evidence_bundle(v, given, scenario["when"])
         validate_saved_route_library(v, given)
         validate_saved_route_lifecycle_events(v, given, scenario["when"])
         validate_guidance_anchors(v, given)

@@ -42,6 +42,12 @@ ROUTE_ATLAS_AUTHORING_SCENARIO_PATH = (
     / "scenarios"
     / "kr-d28-route-atlas-release-authoring.json"
 )
+PRE_DRIVE_EVIDENCE_BUNDLE_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-d29-pre-drive-evidence-bundle.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -210,6 +216,77 @@ class ValidatePreDriveEvidenceTests(unittest.TestCase):
 
         self.assertTrue(
             any("requires given.inputs.pre_drive_session" in error for error in errors)
+        )
+
+
+class ValidatePreDriveEvidenceBundleTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            PRE_DRIVE_EVIDENCE_BUNDLE_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_bundle(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(PRE_DRIVE_EVIDENCE_BUNDLE_SCENARIO_PATH)
+        validator.validate_pre_drive_evidence_bundle(
+            validation,
+            scenario["given"],
+            scenario["when"],
+        )
+        return validation.errors
+
+    def test_exact_pre_drive_evidence_bundle_is_valid(self) -> None:
+        self.assertEqual(self.validate_bundle(self.scenario), [])
+        self.assertIn(
+            "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
+            validator.EVENT_TYPES,
+        )
+
+    def test_missing_passage_source_role_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        manifest = scenario["given"]["inputs"]["pre_drive_evidence_bundle"]
+        manifest["source_registry"][1]["roles"] = ["TARIFF_QUERY"]
+
+        errors = self.validate_bundle(scenario)
+
+        self.assertTrue(any("requires PASSAGE_REVIEW" in error for error in errors))
+
+    def test_duplicate_tariff_profile_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        manifest = scenario["given"]["inputs"]["pre_drive_evidence_bundle"]
+        duplicate = copy.deepcopy(manifest["records"][0])
+        duplicate["record_id"] = "test.record.pre-drive-duplicate"
+        manifest["records"].append(duplicate)
+
+        errors = self.validate_bundle(scenario)
+
+        self.assertTrue(any("duplicates a tariff profile" in error for error in errors))
+
+    def test_event_identity_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][0]["payload"][
+            "product_release_id"
+        ] = "test.product.drift"
+
+        errors = self.validate_bundle(scenario)
+
+        self.assertTrue(
+            any("product_release_id must match bundle" in error for error in errors)
+        )
+
+    def test_source_check_cannot_postdate_evidence_evaluation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        manifest = scenario["given"]["inputs"]["pre_drive_evidence_bundle"]
+        manifest["source_registry"][0][
+            "checked_at"
+        ] = "2026-07-25T12:00:00+09:00"
+
+        errors = self.validate_bundle(scenario)
+
+        self.assertTrue(
+            any(
+                "must not postdate evidence evaluation" in error
+                for error in errors
+            )
         )
 
 

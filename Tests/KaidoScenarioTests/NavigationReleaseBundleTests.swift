@@ -108,8 +108,9 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
   }
 
   let guidanceWithoutJunctionView = fixture.releasedGuidance.map { definition in
-    guard definition.frameTemplate.movementOccurrenceID
-      == "test.occurrence.exit-movement"
+    guard
+      definition.frameTemplate.movementOccurrenceID
+        == "test.occurrence.exit-movement"
     else {
       return definition
     }
@@ -230,6 +231,131 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
   }
 }
 
+@Test("Navigation release artifact round-trips through the provenance and bundle gates")
+func navigationReleaseArtifactRoundTrips() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let artifact = navigationReleaseArtifact(fixture)
+
+  let data = try NavigationReleaseArtifactCodec.encode(artifact)
+  let repeatedData = try NavigationReleaseArtifactCodec.encode(artifact)
+  let release = try NavigationReleaseArtifactCodec.decode(data)
+
+  #expect(data == repeatedData)
+  #expect(release.releaseID == artifact.releaseID)
+  #expect(release.bundle.routePlan == fixture.routePlan)
+  #expect(release.bundle.editorCatalog == fixture.editorCatalog)
+  #expect(release.bundle.matcherCorridor == fixture.matcherCorridor)
+  #expect(release.bundle.decisionZones == fixture.decisionZones)
+  #expect(release.bundle.releasedGuidance == fixture.releasedGuidance)
+  #expect(release.bundle.junctionViews == fixture.junctionViews)
+  #expect(release.assetEvidence.count == 9)
+
+  let json = try #require(String(data: data, encoding: .utf8))
+  #expect(json.contains("\"schema_version\" : \"1.0\""))
+  #expect(json.contains("\"ja-JP\""))
+  #expect(json.contains("\"zh-Hans\""))
+  #expect(json.contains("\"en\""))
+}
+
+@Test("Navigation release artifact rejects schema and exact evidence coverage drift")
+func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  let valid = navigationReleaseArtifact(fixture)
+  let missingEvidence = valid.assetEvidence.filter {
+    !($0.role == .decisionZone && $0.assetID == "test.zone.loop-2")
+  }
+  let artifact = NavigationReleaseArtifact(
+    schemaVersion: "2.0",
+    releaseID: valid.releaseID,
+    releasedAt: valid.releasedAt,
+    editorCatalogID: valid.editorCatalogID,
+    networkSnapshot: valid.networkSnapshot,
+    routePlan: valid.routePlan,
+    sourceRegistry: valid.sourceRegistry,
+    assetEvidence: missingEvidence,
+    editorCatalog: valid.editorCatalog,
+    matcherCorridor: valid.matcherCorridor,
+    decisionZones: valid.decisionZones,
+    releasedGuidance: valid.releasedGuidance,
+    junctionViews: valid.junctionViews
+  )
+
+  do {
+    _ = try NavigationRelease(artifact: artifact)
+    Issue.record("Expected schema and evidence coverage drift to block release")
+  } catch NavigationReleaseError.invalid(let issues) {
+    #expect(issues.contains(.invalidArtifactSchemaVersion))
+    #expect(
+      issues.contains(
+        .missingAssetEvidence("DECISION_ZONE:test.zone.loop-2")
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Navigation release artifact requires released evidence and matching junction provenance")
+func navigationReleaseArtifactRejectsUnreleasedAndJunctionEvidenceDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  let valid = navigationReleaseArtifact(fixture)
+  let driftedEvidence = valid.assetEvidence.map { evidence in
+    if evidence.role == .editorCatalog {
+      return NavigationReleaseAssetEvidence(
+        role: evidence.role,
+        assetID: evidence.assetID,
+        state: .officialChecked,
+        checkedAt: evidence.checkedAt,
+        sourceReferenceIDs: evidence.sourceReferenceIDs
+      )
+    }
+    if evidence.role == .junctionView {
+      return NavigationReleaseAssetEvidence(
+        role: evidence.role,
+        assetID: evidence.assetID,
+        state: evidence.state,
+        checkedAt: "2026-07-24",
+        sourceReferenceIDs: evidence.sourceReferenceIDs
+      )
+    }
+    return evidence
+  }
+  let artifact = NavigationReleaseArtifact(
+    releaseID: valid.releaseID,
+    releasedAt: valid.releasedAt,
+    editorCatalogID: valid.editorCatalogID,
+    networkSnapshot: valid.networkSnapshot,
+    routePlan: valid.routePlan,
+    sourceRegistry: valid.sourceRegistry,
+    assetEvidence: driftedEvidence,
+    editorCatalog: valid.editorCatalog,
+    matcherCorridor: valid.matcherCorridor,
+    decisionZones: valid.decisionZones,
+    releasedGuidance: valid.releasedGuidance,
+    junctionViews: valid.junctionViews
+  )
+
+  do {
+    _ = try NavigationRelease(artifact: artifact)
+    Issue.record("Expected unreleased and drifted evidence to block release")
+  } catch NavigationReleaseError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .unreleasedAssetEvidence(
+          "EDITOR_CATALOG:test.catalog.release-bundle"
+        )
+      )
+    )
+    #expect(
+      issues.contains(
+        .junctionViewEvidenceMismatch("test.junction-view.exit")
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 private struct NavigationReleaseBundleFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
@@ -238,6 +364,89 @@ private struct NavigationReleaseBundleFixture {
   let decisionZones: [DecisionZoneProgressDefinition]
   let releasedGuidance: [ReleasedGuidanceDefinition]
   let junctionViews: [JunctionViewDefinition]
+}
+
+private func navigationReleaseArtifact(
+  _ fixture: NavigationReleaseBundleFixture
+) -> NavigationReleaseArtifact {
+  let sourceID = "test.source.junction-view"
+  let sourceRegistry = NavigationReleaseSourceRegistry(
+    references: [
+      NavigationReleaseSourceReference(
+        id: sourceID,
+        roles: Set(NavigationReleaseAssetRole.allCases),
+        authorityName: "Synthetic test authority",
+        sourceURL: "https://example.com/test-navigation-release-source",
+        contentSHA256: String(repeating: "a", count: 64),
+        checkedAt: "2026-07-23",
+        licenceIdentifier: "SYNTHETIC_TEST_ONLY"
+      )
+    ]
+  )
+  var evidence = [
+    NavigationReleaseAssetEvidence(
+      role: .editorCatalog,
+      assetID: "test.catalog.release-bundle",
+      state: .released,
+      checkedAt: "2026-07-23",
+      sourceReferenceIDs: [sourceID]
+    ),
+    NavigationReleaseAssetEvidence(
+      role: .matcherCorridor,
+      assetID: fixture.matcherCorridor.id,
+      state: .released,
+      checkedAt: "2026-07-23",
+      sourceReferenceIDs: [sourceID]
+    ),
+  ]
+  evidence.append(
+    contentsOf: fixture.decisionZones.map {
+      NavigationReleaseAssetEvidence(
+        role: .decisionZone,
+        assetID: $0.id,
+        state: .released,
+        checkedAt: "2026-07-23",
+        sourceReferenceIDs: [sourceID]
+      )
+    }
+  )
+  evidence.append(
+    contentsOf: fixture.releasedGuidance.map {
+      NavigationReleaseAssetEvidence(
+        role: .guidance,
+        assetID: $0.anchor.promptID,
+        state: .released,
+        checkedAt: "2026-07-23",
+        sourceReferenceIDs: [sourceID]
+      )
+    }
+  )
+  evidence.append(
+    contentsOf: fixture.junctionViews.map {
+      NavigationReleaseAssetEvidence(
+        role: .junctionView,
+        assetID: $0.id,
+        state: .released,
+        checkedAt: $0.evidence.checkedAt,
+        sourceReferenceIDs: $0.evidence.sourceReferenceIDs
+      )
+    }
+  )
+
+  return NavigationReleaseArtifact(
+    releaseID: "test.navigation-release.release-bundle.v1",
+    releasedAt: "2026-07-23T12:00:00+09:00",
+    editorCatalogID: "test.catalog.release-bundle",
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: sourceRegistry,
+    assetEvidence: evidence,
+    editorCatalog: fixture.editorCatalog,
+    matcherCorridor: fixture.matcherCorridor,
+    decisionZones: fixture.decisionZones,
+    releasedGuidance: fixture.releasedGuidance,
+    junctionViews: fixture.junctionViews
+  )
 }
 
 private func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {

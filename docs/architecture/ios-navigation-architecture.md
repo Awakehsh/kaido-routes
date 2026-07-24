@@ -323,6 +323,19 @@ orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
 real-road eligibility.
 
+`NavigationReleaseArtifact` is the Codable distribution envelope for those
+runtime inputs. It adds a stable release identity, release time,
+editor-catalog identity, and a source registry with HTTPS locations, pinned
+SHA-256 values, checked dates, licences, and explicit asset roles. Exactly one
+`RELEASED` evidence record must cover the editor catalog, matcher corridor,
+every DecisionZone, every guidance prompt, and every junction view. Unresolved
+or unused sources, missing or orphaned evidence, duplicate asset identities,
+role mismatch, and junction-view provenance drift fail closed.
+`NavigationReleaseArtifactCodec` validates on encode and decode, and the
+resulting `NavigationRelease` always contains a freshly validated
+`NavigationReleaseBundle`; decoding never bypasses runtime identity checks.
+KR-D25 proves the version and provenance boundary with synthetic values only.
+
 `RouteAtlasRelease` is the separate renderer-neutral map-integrity gate. Its
 `RouteAtlasTopologySlice` is the separately released, dated graph truth for
 exactly the network coverage that may be visible. `RouteAtlasDefinition`

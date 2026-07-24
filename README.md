@@ -264,6 +264,17 @@ entry exactly, and registry orphans fail closed. Repeated graph entities remain
 distinct because coverage is keyed by occurrence ID. KR-D18 executes this
 boundary with synthetic data; it does not release a real route or dataset.
 
+The navigation bundle now also has a versioned distribution boundary.
+`NavigationReleaseArtifact` serializes the exact bundle inputs together with a
+stable release identity, editor-catalog identity, dated source registry, and
+one released evidence record for every distributable asset. `NavigationRelease`
+rejects unknown schemas, missing or orphaned evidence, unused sources,
+source-role drift, and junction-view provenance drift before re-running the
+whole `NavigationReleaseBundle` gate. The codec validates on both encode and
+decode, and `kaido-release validate-navigation` exposes the same boundary to a
+release pipeline. KR-D25 proves this with synthetic data; no real navigation
+release artifact exists yet.
+
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
 topology slice, and separately released normalized layout. Layout nodes and topology edges
@@ -430,6 +441,9 @@ hard properties that must remain proven as the product expands:
     drift.
 29. a real official-checked directed atlas candidate remains blocked until both
     its topology evidence and production layout are explicitly released.
+30. a versioned navigation artifact must resolve released, role-matched evidence
+    for every runtime asset and survive the whole bundle gate after decoding;
+    unknown schemas or provenance drift fail closed.
 
 ## Repository map
 
@@ -488,6 +502,9 @@ event ordering, evidence references, and assertion references.
 `kaido-atlas validate-release --artifact <file>` decodes and validates a future
 versioned topology/layout release artifact through the same source-registry and
 graph-integrity gate; no real Shuto release artifact exists yet.
+`kaido-release validate-navigation --artifact <file>` equivalently validates a
+future navigation runtime artifact through its provenance registry and the
+whole-bundle gate; no real navigation release artifact exists yet.
 
 Generate or open the tracked iPhone project and run the internal preview:
 

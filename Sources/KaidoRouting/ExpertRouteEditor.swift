@@ -52,13 +52,53 @@ public enum ExpertRouteEditorError: Error, Equatable, Sendable {
   }
 }
 
-public enum ReviewedRouteEditorDestination: Equatable, Sendable {
+public enum ReviewedRouteEditorDestination: Codable, Equatable, Sendable {
   case decisionPoint(String)
   case exitFacility(String)
+
+  private enum CodingKeys: String, CodingKey {
+    case decisionPointID = "decision_point_id"
+    case exitFacilityID = "exit_facility_id"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let decisionPointID = try container.decodeIfPresent(
+      String.self,
+      forKey: .decisionPointID
+    )
+    let exitFacilityID = try container.decodeIfPresent(
+      String.self,
+      forKey: .exitFacilityID
+    )
+    switch (decisionPointID, exitFacilityID) {
+    case (.some(let id), .none):
+      self = .decisionPoint(id)
+    case (.none, .some(let id)):
+      self = .exitFacility(id)
+    default:
+      throw DecodingError.dataCorrupted(
+        DecodingError.Context(
+          codingPath: decoder.codingPath,
+          debugDescription: "Editor destination must contain exactly one destination ID"
+        )
+      )
+    }
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    switch self {
+    case .decisionPoint(let id):
+      try container.encode(id, forKey: .decisionPointID)
+    case .exitFacility(let id):
+      try container.encode(id, forKey: .exitFacilityID)
+    }
+  }
 }
 
 /// One reviewed outgoing movement shown at an exact directional decision point.
-public struct ReviewedRouteEditorChoice: Equatable, Sendable {
+public struct ReviewedRouteEditorChoice: Codable, Equatable, Sendable {
   public let id: String
   public let movementID: String
   public let movementTollDomainID: String
@@ -81,10 +121,19 @@ public struct ReviewedRouteEditorChoice: Equatable, Sendable {
     self.outgoingEdgeTollDomainID = outgoingEdgeTollDomainID
     self.destination = destination
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "choice_id"
+    case movementID = "movement_id"
+    case movementTollDomainID = "movement_toll_domain_id"
+    case outgoingEdgeID = "outgoing_edge_id"
+    case outgoingEdgeTollDomainID = "outgoing_edge_toll_domain_id"
+    case destination
+  }
 }
 
 /// A UI cursor, not a named JCT pin: incoming approach and complex are explicit.
-public struct ReviewedRouteEditorDecisionPoint: Equatable, Sendable {
+public struct ReviewedRouteEditorDecisionPoint: Codable, Equatable, Sendable {
   public let id: String
   public let incomingApproachID: String
   public let junctionComplexID: String
@@ -101,10 +150,17 @@ public struct ReviewedRouteEditorDecisionPoint: Equatable, Sendable {
     self.junctionComplexID = junctionComplexID
     self.choices = choices
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "decision_point_id"
+    case incomingApproachID = "incoming_approach_id"
+    case junctionComplexID = "junction_complex_id"
+    case choices
+  }
 }
 
 /// Begins authoring at one exact directional entrance and first mainline edge.
-public struct ReviewedRouteEditorEntrance: Equatable, Sendable {
+public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
   public let facilityID: String
   public let initialEdgeID: String
   public let initialEdgeTollDomainID: String
@@ -121,10 +177,17 @@ public struct ReviewedRouteEditorEntrance: Equatable, Sendable {
     self.initialEdgeTollDomainID = initialEdgeTollDomainID
     self.firstDecisionPointID = firstDecisionPointID
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case facilityID = "facility_id"
+    case initialEdgeID = "initial_edge_id"
+    case initialEdgeTollDomainID = "initial_edge_toll_domain_id"
+    case firstDecisionPointID = "first_decision_point_id"
+  }
 }
 
 /// One catalog-reviewed closed choice sequence eligible for value duplication.
-public struct ReviewedRouteEditorLapTemplate: Equatable, Sendable {
+public struct ReviewedRouteEditorLapTemplate: Codable, Equatable, Sendable {
   public let id: String
   public let startDecisionPointID: String
   public let choiceIDs: [String]
@@ -138,6 +201,12 @@ public struct ReviewedRouteEditorLapTemplate: Equatable, Sendable {
     self.startDecisionPointID = startDecisionPointID
     self.choiceIDs = choiceIDs
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "template_id"
+    case startDecisionPointID = "start_decision_point_id"
+    case choiceIDs = "choice_ids"
+  }
 }
 
 private struct ResolvedRouteEditorLapTemplate: Sendable {
@@ -146,7 +215,7 @@ private struct ResolvedRouteEditorLapTemplate: Sendable {
 }
 
 /// Snapshot-bound authoring data. Cycles are valid; missing references are not.
-public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
+public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
   public let networkSnapshotID: String
   public let entrances: [ReviewedRouteEditorEntrance]
   public let decisionPoints: [ReviewedRouteEditorDecisionPoint]
@@ -162,6 +231,28 @@ public struct ReviewedRouteEditorCatalog: Equatable, Sendable {
     self.entrances = entrances
     self.decisionPoints = decisionPoints
     self.lapTemplates = lapTemplates
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case entrances
+    case decisionPoints = "decision_points"
+    case lapTemplates = "lap_templates"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    networkSnapshotID = try container.decode(String.self, forKey: .networkSnapshotID)
+    entrances = try container.decode([ReviewedRouteEditorEntrance].self, forKey: .entrances)
+    decisionPoints = try container.decode(
+      [ReviewedRouteEditorDecisionPoint].self,
+      forKey: .decisionPoints
+    )
+    lapTemplates =
+      try container.decodeIfPresent(
+        [ReviewedRouteEditorLapTemplate].self,
+        forKey: .lapTemplates
+      ) ?? []
   }
 
   public var validationIssues: [String] {

@@ -6,7 +6,7 @@ public enum JunctionViewEvidenceState: String, Codable, Sendable {
   case released = "RELEASED"
 }
 
-public struct JunctionViewEvidence: Equatable, Sendable {
+public struct JunctionViewEvidence: Codable, Equatable, Sendable {
   public let state: JunctionViewEvidenceState
   public let checkedAt: String
   public let sourceReferenceIDs: [String]
@@ -20,6 +20,12 @@ public struct JunctionViewEvidence: Equatable, Sendable {
     self.checkedAt = checkedAt
     self.sourceReferenceIDs = sourceReferenceIDs
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case state
+    case checkedAt = "checked_at"
+    case sourceReferenceIDs = "source_reference_ids"
+  }
 }
 
 public enum JunctionViewPathRole: String, Codable, Sendable {
@@ -29,7 +35,7 @@ public enum JunctionViewPathRole: String, Codable, Sendable {
 }
 
 /// A renderer-neutral point in a normalized 0...1 junction-view coordinate space.
-public struct JunctionViewPoint: Equatable, Sendable {
+public struct JunctionViewPoint: Codable, Equatable, Sendable {
   public let x: Double
   public let y: Double
 
@@ -39,7 +45,7 @@ public struct JunctionViewPoint: Equatable, Sendable {
   }
 }
 
-public struct JunctionViewPath: Equatable, Sendable {
+public struct JunctionViewPath: Codable, Equatable, Sendable {
   public let id: String
   public let role: JunctionViewPathRole
   public let points: [JunctionViewPoint]
@@ -49,10 +55,16 @@ public struct JunctionViewPath: Equatable, Sendable {
     self.role = role
     self.points = points
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "path_id"
+    case role
+    case points
+  }
 }
 
 /// Lane indices are zero-based from the left in the driver's direction of travel.
-public struct JunctionViewLaneLayout: Equatable, Sendable {
+public struct JunctionViewLaneLayout: Codable, Equatable, Sendable {
   public let laneCount: Int
   public let allowedLaneIndices: [Int]
   public let preferredLaneIndices: [Int]
@@ -66,10 +78,16 @@ public struct JunctionViewLaneLayout: Equatable, Sendable {
     self.allowedLaneIndices = allowedLaneIndices
     self.preferredLaneIndices = preferredLaneIndices
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case laneCount = "lane_count"
+    case allowedLaneIndices = "allowed_lane_indices"
+    case preferredLaneIndices = "preferred_lane_indices"
+  }
 }
 
 /// A reviewed, snapshot- and occurrence-bound source for an independently rendered junction inset.
-public struct JunctionViewDefinition: Equatable, Sendable {
+public struct JunctionViewDefinition: Codable, Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
   public let movementOccurrenceID: String
@@ -97,6 +115,17 @@ public struct JunctionViewDefinition: Equatable, Sendable {
     self.japaneseSignText = japaneseSignText
     self.routeShields = routeShields
     self.evidence = evidence
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "view_id"
+    case networkSnapshotID = "network_snapshot_id"
+    case movementOccurrenceID = "movement_occurrence_id"
+    case paths
+    case laneLayout = "lane_layout"
+    case japaneseSignText = "japanese_sign_text"
+    case routeShields = "route_shields"
+    case evidence
   }
 }
 

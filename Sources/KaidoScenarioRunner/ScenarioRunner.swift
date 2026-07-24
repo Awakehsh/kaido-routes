@@ -106,6 +106,8 @@ private struct ScenarioHarness {
       try compileRouteEditor(event.payload)
     case "NAVIGATION_RELEASE_BUNDLE_VALIDATED":
       try validateNavigationReleaseBundle()
+    case "NAVIGATION_RELEASE_ARTIFACT_VALIDATED":
+      try validateNavigationReleaseArtifact(event.payload)
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
       try validateRouteAtlasRelease()
     case "ROUTE_ATLAS_CONTEXT_VALIDATED":
@@ -671,6 +673,120 @@ private struct ScenarioHarness {
     }
   }
 
+  private mutating func validateNavigationReleaseArtifact(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard let routePlan = scenario.given.routePlan,
+      let releaseID = scenario.given.inputs.string("navigation_release_id"),
+      let releasedAt = scenario.given.inputs.string("navigation_release_released_at"),
+      let editorCatalogID = scenario.given.inputs.string(
+        "navigation_release_editor_catalog_id"
+      ),
+      let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let corridorValue = scenario.given.inputs.object("matcher_corridor"),
+      let decisionZoneValues = scenario.given.inputs.array("decision_zones"),
+      let sourceValues = scenario.given.inputs.array("navigation_release_sources"),
+      let assetEvidenceValues = scenario.given.inputs.array(
+        "navigation_release_asset_evidence"
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput("navigation_release_artifact")
+    }
+
+    let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let corridor = try routeMatcherCorridor(corridorValue)
+    let decisionZones = try decisionZoneValues.map { value in
+      guard let definition = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("decision_zones")
+      }
+      return try Self.decisionZoneProgressDefinition(definition)
+    }
+    let junctionViews = try (scenario.given.inputs.array("junction_views") ?? []).map { value in
+      guard let definition = value.objectValue,
+        let junctionView = try Self.junctionViewDefinition(definition)
+      else {
+        throw ScenarioExecutionError.invalidInput("junction_views")
+      }
+      return junctionView
+    }
+    let releasedGuidance = try Self.releasedGuidance(from: scenario.given.inputs)
+    let sources = try sourceValues.map { value in
+      guard let source = value.objectValue else {
+        throw ScenarioExecutionError.invalidInput("navigation_release_sources")
+      }
+      let roleValues = source.array("roles") ?? []
+      let roles = try roleValues.map { value in
+        guard let rawValue = value.stringValue,
+          let role = NavigationReleaseAssetRole(rawValue: rawValue)
+        else {
+          throw ScenarioExecutionError.invalidInput("navigation_release_source_role")
+        }
+        return role
+      }
+      return NavigationReleaseSourceReference(
+        id: try source.requiredString("source_reference_id"),
+        roles: Set(roles),
+        authorityName: try source.requiredString("authority_name"),
+        sourceURL: try source.requiredString("source_url"),
+        contentSHA256: try source.requiredString("content_sha256"),
+        checkedAt: try source.requiredString("checked_at"),
+        licenceIdentifier: try source.requiredString("licence_identifier")
+      )
+    }
+    let evidence = try assetEvidenceValues.map { value in
+      guard let record = value.objectValue,
+        let role = record.string("role").flatMap(NavigationReleaseAssetRole.init(rawValue:)),
+        let state = record.string("state").flatMap(
+          NavigationReleaseEvidenceState.init(rawValue:)
+        )
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "navigation_release_asset_evidence"
+        )
+      }
+      return NavigationReleaseAssetEvidence(
+        role: role,
+        assetID: try record.requiredString("asset_id"),
+        state: state,
+        checkedAt: try record.requiredString("checked_at"),
+        sourceReferenceIDs: (record.array("source_reference_ids") ?? [])
+          .compactMap(\.stringValue)
+      )
+    }
+
+    let artifact = NavigationReleaseArtifact(
+      schemaVersion: payload.string("schema_version")
+        ?? NavigationReleaseArtifact.currentSchemaVersion,
+      releaseID: releaseID,
+      releasedAt: releasedAt,
+      editorCatalogID: editorCatalogID,
+      networkSnapshot: scenario.given.networkSnapshot,
+      routePlan: routePlan,
+      sourceRegistry: NavigationReleaseSourceRegistry(references: sources),
+      assetEvidence: evidence,
+      editorCatalog: catalog,
+      matcherCorridor: corridor,
+      decisionZones: decisionZones,
+      releasedGuidance: releasedGuidance,
+      junctionViews: junctionViews
+    )
+
+    clearNavigationReleaseArtifactObservations()
+    adapterObservations["release_artifact.schema_version"] = .string(
+      artifact.schemaVersion
+    )
+    do {
+      let data = try NavigationReleaseArtifactCodec.encode(artifact)
+      let release = try NavigationReleaseArtifactCodec.decode(data)
+      publish(release)
+    } catch NavigationReleaseError.invalid(let issues) {
+      adapterObservations["release_artifact.status"] = .string("BLOCKED")
+      adapterObservations["release_artifact.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
   private mutating func validateRouteAtlasRelease() throws {
     guard let routePlan = scenario.given.routePlan,
       let sourceValues = scenario.given.inputs.array("route_atlas_sources"),
@@ -784,8 +900,34 @@ private struct ScenarioHarness {
     )
   }
 
+  private mutating func publish(_ release: NavigationRelease) {
+    adapterObservations["release_artifact.status"] = .string("PASS")
+    adapterObservations["release_artifact.error_codes"] = .strings([])
+    adapterObservations["release_artifact.release_id"] = .string(release.releaseID)
+    adapterObservations["release_artifact.network_snapshot_id"] = .string(
+      release.bundle.networkSnapshot.id
+    )
+    adapterObservations["release_artifact.route_plan_id"] = .string(
+      release.bundle.routePlan.id
+    )
+    adapterObservations["release_artifact.occurrence_ids"] = .strings(
+      release.bundle.routePlan.occurrences.map(\.id)
+    )
+    adapterObservations["release_artifact.asset_keys"] = .strings(
+      release.assetEvidence.map { "\($0.role.rawValue):\($0.assetID)" }
+    )
+  }
+
   private mutating func clearReleaseBundleObservations() {
     for key in adapterObservations.keys.filter({ $0.hasPrefix("release_bundle.") }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func clearNavigationReleaseArtifactObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("release_artifact.")
+    }) {
       adapterObservations.removeValue(forKey: key)
     }
   }

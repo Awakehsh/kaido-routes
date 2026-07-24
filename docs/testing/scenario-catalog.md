@@ -32,6 +32,7 @@ should become scenarios when their layer is built.
 | KR-D22 | An ODbL-isolated K7 one-way candidate preserves two reviewed divergences without gaining release authority | P0 | Seeded |
 | KR-D23 | Historic K7 corridor identity and completed surrounding works do not prove the current legal movement | P0 | Seeded |
 | KR-D24 | A Kaido-owned K7 schematic covers the reviewed expressway slice and stops before every unreviewed surface successor | P0 | Seeded |
+| KR-D25 | A versioned navigation release artifact preserves exact provenance and revalidates the whole runtime bundle after decoding | P0 | Seeded |
 
 ## Navigation simulation
 

@@ -96,7 +96,7 @@ passage evidence through `PreDriveReviewProjector`. The view never derives toll
 from route distance and never presents
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open. The tracked fixture
 is synthetic, and the navigation control remains locked because the app has no
-released `NavigationReleaseBundle`.
+provenance-validated real `NavigationRelease` artifact.
 
 ## Guidance language preview
 

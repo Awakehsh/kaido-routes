@@ -1,0 +1,346 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D25",
+  "title": "Versioned navigation release artifact preserves one validated runtime bundle",
+  "layer": "DOMAIN",
+  "tags": ["release-artifact", "provenance", "network-snapshot", "route-plan"],
+  "purpose": "Require a distributable navigation artifact to carry exact released evidence for every editor, matcher, DecisionZone, and guidance asset, then decode through the same whole-bundle runtime gate.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The source, RELEASED values, and road identities are synthetic and exercise serialization plus integrity gates only.",
+      "This scenario does not release a real road, route, DecisionZone, guidance definition, or matcher corridor."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.navigation-artifact-v1",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.navigation-artifact",
+      "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+      "entry_facility_id": "test.entrance.navigation-artifact",
+      "exit_facility_id": "test.exit.navigation-artifact",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.navigation-artifact.approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.navigation-artifact.approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.navigation-artifact.movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.navigation-artifact.exit"
+        },
+        {
+          "occurrence_id": "test.occurrence.navigation-artifact.exit",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.navigation-artifact.exit"
+        }
+      ]
+    },
+    "inputs": {
+      "navigation_release_id": "test.navigation-release.artifact-v1",
+      "navigation_release_released_at": "2026-07-24T12:00:00+09:00",
+      "navigation_release_editor_catalog_id": "test.catalog.navigation-artifact-v1",
+      "navigation_release_sources": [
+        {
+          "source_reference_id": "test.source.navigation-artifact",
+          "roles": [
+            "EDITOR_CATALOG",
+            "MATCHER_CORRIDOR",
+            "DECISION_ZONE",
+            "GUIDANCE"
+          ],
+          "authority_name": "Synthetic test authority",
+          "source_url": "https://example.com/test-navigation-artifact-source",
+          "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "checked_at": "2026-07-24",
+          "licence_identifier": "SYNTHETIC_TEST_ONLY"
+        }
+      ],
+      "navigation_release_asset_evidence": [
+        {
+          "role": "EDITOR_CATALOG",
+          "asset_id": "test.catalog.navigation-artifact-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        },
+        {
+          "role": "MATCHER_CORRIDOR",
+          "asset_id": "test.corridor.navigation-artifact-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        },
+        {
+          "role": "DECISION_ZONE",
+          "asset_id": "test.zone.navigation-artifact.exit",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        },
+        {
+          "role": "GUIDANCE",
+          "asset_id": "test.prompt.navigation-artifact.exit",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        }
+      ],
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.navigation-artifact",
+            "initial_edge_id": "test.edge.navigation-artifact.approach",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.navigation-artifact.exit"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.navigation-artifact.exit",
+            "incoming_approach_id": "test.approach.navigation-artifact.exit",
+            "junction_complex_id": "test.junction.navigation-artifact.exit",
+            "choices": [
+              {
+                "choice_id": "test.choice.navigation-artifact.exit",
+                "movement_id": "test.movement.navigation-artifact.exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.navigation-artifact.exit",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.navigation-artifact"
+              }
+            ]
+          }
+        ]
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.navigation-artifact-v1",
+        "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+        "route_plan_id": "test.plan.navigation-artifact",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.navigation-artifact.approach",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.76},
+              {"latitude": 35.68, "longitude": 139.761}
+            ],
+            "successor_edge_ids": ["test.edge.navigation-artifact.movement"]
+          },
+          {
+            "directed_edge_id": "test.edge.navigation-artifact.movement",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.6801, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.navigation-artifact.exit"]
+          },
+          {
+            "directed_edge_id": "test.edge.navigation-artifact.exit",
+            "coordinates": [
+              {"latitude": 35.6801, "longitude": 139.7612},
+              {"latitude": 35.6802, "longitude": 139.762}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.navigation-artifact.approach",
+            "index": 0,
+            "directed_edge_id": "test.edge.navigation-artifact.approach"
+          },
+          {
+            "occurrence_id": "test.occurrence.navigation-artifact.movement",
+            "index": 1,
+            "directed_edge_id": "test.edge.navigation-artifact.movement"
+          },
+          {
+            "occurrence_id": "test.occurrence.navigation-artifact.exit",
+            "index": 2,
+            "directed_edge_id": "test.edge.navigation-artifact.exit"
+          }
+        ]
+      },
+      "decision_zones": [
+        {
+          "decision_zone_id": "test.zone.navigation-artifact.exit",
+          "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+          "route_plan_id": "test.plan.navigation-artifact",
+          "movement_occurrence_id": "test.occurrence.navigation-artifact.movement",
+          "entry_offset_meters": 5
+        }
+      ],
+      "released_guidance": [
+        {
+          "occurrence_id": "test.occurrence.navigation-artifact.approach",
+          "anchor_id": "PREPARE",
+          "prompt_id": "test.prompt.navigation-artifact.exit",
+          "trigger_distance_meters": 500,
+          "frame": {
+            "movement_occurrence_id": "test.occurrence.navigation-artifact.movement",
+            "decision_zone_id": "test.zone.navigation-artifact.exit",
+            "stage": "PREPARE",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進む",
+                "spoken_text": "左側を進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧",
+                "spoken_text": "请保持左侧",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left",
+                "spoken_text": "Keep left",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "validate-versioned-artifact",
+      "at_ms": 0,
+      "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
+      "payload": {"schema_version": "1.0"}
+    },
+    {
+      "id": "reject-unknown-artifact-schema",
+      "at_ms": 1,
+      "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
+      "payload": {"schema_version": "2.0"}
+    }
+  ],
+  "then": [
+    {
+      "id": "versioned-artifact-passes",
+      "after": "validate-versioned-artifact",
+      "category": "SAFETY",
+      "subject": "release_artifact.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Only an artifact that survives encode, decode, provenance coverage, and the runtime bundle gate becomes eligible."
+    },
+    {
+      "id": "artifact-schema-is-retained",
+      "after": "validate-versioned-artifact",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "The decoded distribution unit retains the exact supported schema version."
+    },
+    {
+      "id": "release-identity-is-retained",
+      "after": "validate-versioned-artifact",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.release_id",
+      "matcher": "EQUALS",
+      "expected": "test.navigation-release.artifact-v1",
+      "rationale": "Runtime composition remains attributable to one stable release identity."
+    },
+    {
+      "id": "snapshot-is-retained",
+      "after": "validate-versioned-artifact",
+      "category": "DOMAIN",
+      "subject": "release_artifact.network_snapshot_id",
+      "matcher": "EQUALS",
+      "expected": "test.snapshot.navigation-artifact-v1",
+      "rationale": "Serialization cannot migrate navigation assets onto another graph snapshot."
+    },
+    {
+      "id": "route-plan-is-retained",
+      "after": "validate-versioned-artifact",
+      "category": "DOMAIN",
+      "subject": "release_artifact.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.navigation-artifact",
+      "rationale": "The exact RoutePlan remains the authority after artifact decoding."
+    },
+    {
+      "id": "occurrence-order-is-retained",
+      "after": "validate-versioned-artifact",
+      "category": "SAFETY",
+      "subject": "release_artifact.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.navigation-artifact.approach",
+        "test.occurrence.navigation-artifact.movement",
+        "test.occurrence.navigation-artifact.exit"
+      ],
+      "rationale": "Artifact round-trip preserves ordered occurrence identity instead of deduplicating graph entities."
+    },
+    {
+      "id": "every-runtime-asset-has-evidence",
+      "after": "validate-versioned-artifact",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.asset_keys",
+      "matcher": "EQUALS",
+      "expected": [
+        "EDITOR_CATALOG:test.catalog.navigation-artifact-v1",
+        "MATCHER_CORRIDOR:test.corridor.navigation-artifact-v1",
+        "DECISION_ZONE:test.zone.navigation-artifact.exit",
+        "GUIDANCE:test.prompt.navigation-artifact.exit"
+      ],
+      "rationale": "The release contains exact evidence coverage for each distributable runtime asset role and identity."
+    },
+    {
+      "id": "valid-artifact-has-no-hidden-error",
+      "after": "validate-versioned-artifact",
+      "category": "SAFETY",
+      "subject": "release_artifact.error_codes",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "A passing artifact exposes no suppressed provenance or bundle-integrity error."
+    },
+    {
+      "id": "unknown-schema-is-blocked",
+      "after": "reject-unknown-artifact-schema",
+      "category": "SAFETY",
+      "subject": "release_artifact.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "A future or unknown release schema cannot enter runtime through permissive decoding."
+    },
+    {
+      "id": "unknown-schema-code-is-explicit",
+      "after": "reject-unknown-artifact-schema",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.error_codes",
+      "matcher": "EQUALS",
+      "expected": ["INVALID_NAVIGATION_RELEASE_ARTIFACT_SCHEMA_VERSION"],
+      "rationale": "The release pipeline reports the exact schema incompatibility instead of falling back to partial assets."
+    }
+  ]
+}

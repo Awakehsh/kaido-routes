@@ -153,7 +153,7 @@ public struct SignGuidance: Equatable, Sendable {
   }
 }
 
-public struct GuidanceAnchorDefinition: Equatable, Sendable {
+public struct GuidanceAnchorDefinition: Codable, Equatable, Sendable {
   public let occurrenceID: String
   public let anchorID: String
   public let promptID: String
@@ -162,6 +162,12 @@ public struct GuidanceAnchorDefinition: Equatable, Sendable {
     self.occurrenceID = occurrenceID
     self.anchorID = anchorID
     self.promptID = promptID
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case occurrenceID = "occurrence_id"
+    case anchorID = "anchor_id"
+    case promptID = "prompt_id"
   }
 }
 

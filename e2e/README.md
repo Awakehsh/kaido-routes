@@ -66,6 +66,12 @@ production geometry, zone calibration, SwiftUI, `CPMapTemplate`, accessibility,
 audio, or hardware rendering has run; those later layers must consume the same
 semantics without inferring them.
 
+Release scenarios use `NAVIGATION_RELEASE_BUNDLE_VALIDATED` for in-memory
+runtime coherence and `NAVIGATION_RELEASE_ARTIFACT_VALIDATED` for the versioned
+distribution boundary. KR-D25 encodes and decodes the artifact, checks exact
+role-matched evidence coverage, and then reuses the bundle gate. Its synthetic
+source and `RELEASED` values test fail-closed mechanics only.
+
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.
 

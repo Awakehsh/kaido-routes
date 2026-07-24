@@ -48,6 +48,13 @@ GUIDANCE_LANE_PREPARATIONS = {
     "USE_LEFT_LANES",
     "USE_RIGHT_LANES",
 }
+NAVIGATION_RELEASE_ASSET_ROLES = {
+    "EDITOR_CATALOG",
+    "MATCHER_CORRIDOR",
+    "DECISION_ZONE",
+    "GUIDANCE",
+    "JUNCTION_VIEW",
+}
 EVENT_TYPES = {
     "ROUTE_COMPILE_REQUESTED",
     "ROUTE_EDITOR_STARTED",
@@ -58,6 +65,7 @@ EVENT_TYPES = {
     "ROUTE_EDITOR_UNDO_REQUESTED",
     "ROUTE_EDITOR_COMPILE_REQUESTED",
     "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
+    "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
     "ROUTE_ATLAS_RELEASE_VALIDATED",
     "ROUTE_ATLAS_CONTEXT_VALIDATED",
     "NAVIGATION_STARTED",
@@ -921,6 +929,214 @@ def validate_released_guidance(v: Validation, given: dict[str, Any]) -> None:
                     v.add(f"{context}.frame.localized_content[{locale}].spoken_forms is invalid")
 
 
+def validate_navigation_release_artifact(
+    v: Validation, given: dict[str, Any]
+) -> None:
+    inputs = given.get("inputs")
+    if (
+        not isinstance(inputs, dict)
+        or "navigation_release_asset_evidence" not in inputs
+    ):
+        return
+
+    required_inputs = {
+        "navigation_release_id",
+        "navigation_release_released_at",
+        "navigation_release_editor_catalog_id",
+        "navigation_release_sources",
+        "navigation_release_asset_evidence",
+        "expert_route_editor_catalog",
+        "matcher_corridor",
+        "decision_zones",
+        "released_guidance",
+    }
+    missing = sorted(required_inputs - inputs.keys())
+    if missing:
+        v.add(
+            "navigation release artifact inputs are missing: "
+            + ", ".join(missing)
+        )
+        return
+
+    for field in ("navigation_release_id", "navigation_release_editor_catalog_id"):
+        if not isinstance(inputs[field], str) or not inputs[field].strip():
+            v.add(f"given.inputs.{field} must be non-empty")
+    if not is_datetime(inputs["navigation_release_released_at"]):
+        v.add(
+            "given.inputs.navigation_release_released_at must be an ISO date-time"
+        )
+
+    sources = inputs["navigation_release_sources"]
+    if not isinstance(sources, list) or not sources:
+        v.add("given.inputs.navigation_release_sources must be a non-empty array")
+        sources = []
+    source_by_id: dict[str, dict[str, Any]] = {}
+    for index, source in enumerate(sources):
+        context = f"given.inputs.navigation_release_sources[{index}]"
+        required = {
+            "source_reference_id",
+            "roles",
+            "authority_name",
+            "source_url",
+            "content_sha256",
+            "checked_at",
+            "licence_identifier",
+        }
+        if not v.require_keys(source, required, context):
+            continue
+        source_id = source["source_reference_id"]
+        if not isinstance(source_id, str) or not source_id.strip():
+            v.add(f"{context}.source_reference_id must be non-empty")
+        elif source_id in source_by_id:
+            v.add(f"duplicate navigation release source: {source_id}")
+        else:
+            source_by_id[source_id] = source
+        roles = source["roles"]
+        if (
+            not isinstance(roles, list)
+            or not roles
+            or not all(isinstance(role, str) for role in roles)
+            or len(roles) != len(set(roles))
+            or not set(roles).issubset(NAVIGATION_RELEASE_ASSET_ROLES)
+        ):
+            v.add(f"{context}.roles must be unique known asset roles")
+        for field in ("authority_name", "licence_identifier"):
+            if not isinstance(source[field], str) or not source[field].strip():
+                v.add(f"{context}.{field} must be non-empty")
+        if (
+            not isinstance(source["source_url"], str)
+            or not source["source_url"].startswith("https://")
+        ):
+            v.add(f"{context}.source_url must be HTTPS")
+        if (
+            not isinstance(source["content_sha256"], str)
+            or re.fullmatch(r"[0-9a-fA-F]{64}", source["content_sha256"])
+            is None
+        ):
+            v.add(f"{context}.content_sha256 must contain 64 hexadecimal characters")
+        if not is_date(source["checked_at"]):
+            v.add(f"{context}.checked_at must be an ISO date")
+
+    expected_keys: list[tuple[str, str]] = [
+        ("EDITOR_CATALOG", inputs["navigation_release_editor_catalog_id"])
+    ]
+    corridor = inputs["matcher_corridor"]
+    if isinstance(corridor, dict):
+        expected_keys.append(("MATCHER_CORRIDOR", corridor.get("corridor_id")))
+    for zone in inputs["decision_zones"] if isinstance(inputs["decision_zones"], list) else []:
+        if isinstance(zone, dict):
+            expected_keys.append(("DECISION_ZONE", zone.get("decision_zone_id")))
+    for guidance in (
+        inputs["released_guidance"]
+        if isinstance(inputs["released_guidance"], list)
+        else []
+    ):
+        if isinstance(guidance, dict):
+            expected_keys.append(("GUIDANCE", guidance.get("prompt_id")))
+    for view in inputs.get("junction_views", []):
+        if isinstance(view, dict):
+            expected_keys.append(("JUNCTION_VIEW", view.get("view_id")))
+
+    normalized_expected: set[tuple[str, str]] = set()
+    for role, asset_id in expected_keys:
+        if not isinstance(asset_id, str) or not asset_id.strip():
+            v.add(f"navigation release {role} asset identity must be non-empty")
+            continue
+        key = (role, asset_id)
+        if key in normalized_expected:
+            v.add(f"duplicate navigation release asset identity: {role}:{asset_id}")
+        normalized_expected.add(key)
+
+    evidence_values = inputs["navigation_release_asset_evidence"]
+    if not isinstance(evidence_values, list) or not evidence_values:
+        v.add(
+            "given.inputs.navigation_release_asset_evidence must be a non-empty array"
+        )
+        evidence_values = []
+    evidence_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    used_source_ids: set[str] = set()
+    junction_view_by_id = {
+        view.get("view_id"): view
+        for view in inputs.get("junction_views", [])
+        if isinstance(view, dict)
+    }
+    for index, evidence in enumerate(evidence_values):
+        context = f"given.inputs.navigation_release_asset_evidence[{index}]"
+        required = {
+            "role",
+            "asset_id",
+            "state",
+            "checked_at",
+            "source_reference_ids",
+        }
+        if not v.require_keys(evidence, required, context):
+            continue
+        role = evidence["role"]
+        asset_id = evidence["asset_id"]
+        if role not in NAVIGATION_RELEASE_ASSET_ROLES:
+            v.add(f"{context}.role is unknown")
+            continue
+        if not isinstance(asset_id, str) or not asset_id.strip():
+            v.add(f"{context}.asset_id must be non-empty")
+            continue
+        key = (role, asset_id)
+        if key in evidence_by_key:
+            v.add(f"duplicate navigation release asset evidence: {role}:{asset_id}")
+        else:
+            evidence_by_key[key] = evidence
+        if key not in normalized_expected:
+            v.add(f"orphan navigation release asset evidence: {role}:{asset_id}")
+        if evidence["state"] != "RELEASED":
+            v.add(f"{context}.state must be RELEASED")
+        if not is_date(evidence["checked_at"]):
+            v.add(f"{context}.checked_at must be an ISO date")
+        source_ids = evidence["source_reference_ids"]
+        if (
+            not isinstance(source_ids, list)
+            or not source_ids
+            or not all(
+                isinstance(source_id, str) and source_id.strip()
+                for source_id in source_ids
+            )
+            or len(source_ids) != len(set(source_ids))
+        ):
+            v.add(f"{context}.source_reference_ids must be unique non-empty strings")
+            source_ids = []
+        for source_id in source_ids:
+            used_source_ids.add(source_id)
+            source = source_by_id.get(source_id)
+            if source is None:
+                v.add(f"{context} references unknown source {source_id!r}")
+            elif role not in source.get("roles", []):
+                v.add(f"{context} source {source_id!r} does not support role {role}")
+        if role == "JUNCTION_VIEW":
+            view = junction_view_by_id.get(asset_id)
+            embedded = view.get("evidence") if isinstance(view, dict) else None
+            embedded_source_ids = (
+                embedded.get("source_reference_ids")
+                if isinstance(embedded, dict)
+                else None
+            )
+            if (
+                not isinstance(embedded, dict)
+                or not isinstance(embedded_source_ids, list)
+                or not all(
+                    isinstance(source_id, str)
+                    for source_id in embedded_source_ids
+                )
+                or evidence["checked_at"] != embedded.get("checked_at")
+                or set(source_ids) != set(embedded_source_ids)
+            ):
+                v.add(f"{context} must match embedded junction-view evidence")
+
+    for role, asset_id in sorted(normalized_expected):
+        if (role, asset_id) not in evidence_by_key:
+            v.add(f"missing navigation release asset evidence: {role}:{asset_id}")
+    for source_id in source_by_id:
+        if source_id not in used_source_ids:
+            v.add(f"orphan navigation release source: {source_id}")
+
+
 def validate_timeline(v: Validation, events: Any) -> set[str]:
     if not isinstance(events, list) or not events:
         v.add("when must be a non-empty array")
@@ -1042,6 +1258,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_matcher_guidance_inputs(v, given)
         validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)
+        validate_navigation_release_artifact(v, given)
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")
         if not isinstance(given["system_state"], dict):

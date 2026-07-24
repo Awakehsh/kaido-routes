@@ -66,7 +66,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
     }
   }
 
-  fileprivate var sortKey: String {
+  var sortKey: String {
     switch self {
     case .invalidEditorCatalog(let details):
       "\(code):\(details.joined(separator: ","))"

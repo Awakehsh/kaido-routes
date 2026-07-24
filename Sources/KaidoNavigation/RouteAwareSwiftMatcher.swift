@@ -33,7 +33,7 @@ public enum RouteAwareSwiftMatcherError: Error, Equatable, Sendable {
   case missingInitialOccurrence(String)
 }
 
-public struct RouteMatcherDirectedEdge: Equatable, Sendable {
+public struct RouteMatcherDirectedEdge: Codable, Equatable, Sendable {
   public let id: String
   public let coordinates: [MatcherCoordinate]
   public let successorEdgeIDs: Set<String>
@@ -48,6 +48,28 @@ public struct RouteMatcherDirectedEdge: Equatable, Sendable {
     self.successorEdgeIDs = successorEdgeIDs
   }
 
+  private enum CodingKeys: String, CodingKey {
+    case id = "directed_edge_id"
+    case coordinates
+    case successorEdgeIDs = "successor_edge_ids"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    coordinates = try container.decode([MatcherCoordinate].self, forKey: .coordinates)
+    successorEdgeIDs = Set(
+      try container.decodeIfPresent([String].self, forKey: .successorEdgeIDs) ?? []
+    )
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(coordinates, forKey: .coordinates)
+    try container.encode(successorEdgeIDs.sorted(), forKey: .successorEdgeIDs)
+  }
+
   public var lengthMeters: Double {
     zip(coordinates, coordinates.dropFirst()).reduce(0) {
       $0 + matcherCoordinateDistanceMeters($1.0, $1.1)
@@ -55,7 +77,7 @@ public struct RouteMatcherDirectedEdge: Equatable, Sendable {
   }
 }
 
-public struct RouteMatcherOccurrence: Equatable, Sendable {
+public struct RouteMatcherOccurrence: Codable, Equatable, Sendable {
   public let id: String
   public let index: Int
   public let directedEdgeID: String
@@ -65,6 +87,12 @@ public struct RouteMatcherOccurrence: Equatable, Sendable {
     self.index = index
     self.directedEdgeID = directedEdgeID
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "occurrence_id"
+    case index
+    case directedEdgeID = "directed_edge_id"
+  }
 }
 
 /// A version-bound, route-local road corridor for one navigation session.
@@ -72,7 +100,7 @@ public struct RouteMatcherOccurrence: Equatable, Sendable {
 /// Include the compiled route edges plus nearby legal deviation/rejoin edges.
 /// Successors must come from the same directed graph snapshot; the matcher does
 /// not infer production topology from provider prose or road names.
-public struct RouteMatcherCorridor: Equatable, Sendable {
+public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
   public let routePlanID: String
@@ -91,6 +119,14 @@ public struct RouteMatcherCorridor: Equatable, Sendable {
     self.routePlanID = routePlanID
     self.edges = edges
     self.occurrences = occurrences
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "corridor_id"
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case edges
+    case occurrences
   }
 
   public var validationIssues: [String] {

@@ -298,6 +298,15 @@ duplicate movement zones, and unregistered or orphaned junction views. Neither
 the portable scenario nor those tests promote their synthetic `ACTIVE` or
 `RELEASED` flags into real release evidence.
 
+KR-D25 takes the next distribution step without weakening that distinction.
+The runner constructs a `NavigationReleaseArtifact`, encodes and decodes it,
+requires exact released evidence coverage for every runtime asset role and
+identity, and then re-runs `NavigationReleaseBundle`. A second event proves that
+an unknown artifact schema fails closed. Python independently checks the source
+registry, exact asset-evidence coverage, role compatibility, and embedded
+junction-view provenance. The fixture remains synthetic and does not establish
+real-road release eligibility.
+
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation
 fixtures, audio lifecycle, and the visible Japanese sign target. A device voice

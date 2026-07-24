@@ -9,6 +9,7 @@ public enum EntranceApproachAvailability: String, Equatable, Sendable {
 
 public struct EntranceCandidate: Equatable, Sendable {
   public let facilityID: String
+  public let targetCarriagewayID: String
   public let straightLineDistanceKM: Double
   public let surfaceETAMinutes: Double
   public let legalJoinOccurrenceIDs: Set<String>
@@ -16,12 +17,14 @@ public struct EntranceCandidate: Equatable, Sendable {
 
   public init(
     facilityID: String,
+    targetCarriagewayID: String,
     straightLineDistanceKM: Double,
     surfaceETAMinutes: Double,
     legalJoinOccurrenceIDs: Set<String>,
     approachAvailability: EntranceApproachAvailability = .available
   ) {
     self.facilityID = facilityID
+    self.targetCarriagewayID = targetCarriagewayID
     self.straightLineDistanceKM = straightLineDistanceKM
     self.surfaceETAMinutes = surfaceETAMinutes
     self.legalJoinOccurrenceIDs = legalJoinOccurrenceIDs
@@ -29,19 +32,71 @@ public struct EntranceCandidate: Equatable, Sendable {
   }
 }
 
-public struct EntranceRecommendation: Equatable, Sendable {
-  public let selectedFacilityID: String?
-  public let joinOccurrenceID: String?
-  public let rejections: [String: [String]]
+public enum EntranceRecommendationStatus: String, Equatable, Sendable {
+  case selected = "SELECTED"
+  case noEligibleCandidate = "NO_ELIGIBLE_CANDIDATE"
+  case rejected = "REJECTED"
+}
+
+public enum EntranceRecommendationSelectionReason: String, Equatable, Sendable {
+  case exactDirectionalCarriageway = "EXACT_DIRECTIONAL_CARRIAGEWAY"
+  case legalRouteJoin = "LEGAL_ROUTE_JOIN"
+  case approachAvailableAtEntryTime = "APPROACH_AVAILABLE_AT_ENTRY_TIME"
+  case lowestSurfaceETAAfterHardFilters = "LOWEST_SURFACE_ETA_AFTER_HARD_FILTERS"
+}
+
+public struct EntranceRecommendationSelection: Equatable, Sendable {
+  public let facilityID: String
+  public let targetCarriagewayID: String
+  public let joinOccurrenceID: String
+  public let straightLineDistanceKM: Double
+  public let straightLineDistanceRank: Int
+  public let surfaceETAMinutes: Double
+  public let reasonCodes: [EntranceRecommendationSelectionReason]
 
   public init(
-    selectedFacilityID: String?,
-    joinOccurrenceID: String?,
-    rejections: [String: [String]]
+    facilityID: String,
+    targetCarriagewayID: String,
+    joinOccurrenceID: String,
+    straightLineDistanceKM: Double,
+    straightLineDistanceRank: Int,
+    surfaceETAMinutes: Double,
+    reasonCodes: [EntranceRecommendationSelectionReason]
   ) {
-    self.selectedFacilityID = selectedFacilityID
+    self.facilityID = facilityID
+    self.targetCarriagewayID = targetCarriagewayID
     self.joinOccurrenceID = joinOccurrenceID
+    self.straightLineDistanceKM = straightLineDistanceKM
+    self.straightLineDistanceRank = straightLineDistanceRank
+    self.surfaceETAMinutes = surfaceETAMinutes
+    self.reasonCodes = reasonCodes
+  }
+}
+
+public struct EntranceRecommendation: Equatable, Sendable {
+  public let status: EntranceRecommendationStatus
+  public let selection: EntranceRecommendationSelection?
+  public let rejections: [String: [String]]
+  public let errorCodes: [String]
+
+  public var selectedFacilityID: String? {
+    selection?.facilityID
+  }
+
+  public var joinOccurrenceID: String? {
+    selection?.joinOccurrenceID
+  }
+
+  public init(
+    status: EntranceRecommendationStatus,
+    selection: EntranceRecommendationSelection?,
+    rejections: [String: [String]],
+    errorCodes: [String] = []
+  ) {
+    self.status = status
+    self.selection = selection
     self.rejections = rejections
+    self.errorCodes = errorCodes
   }
 }
 
@@ -50,6 +105,19 @@ public enum EntranceRecommender {
     candidates: [EntranceCandidate],
     allowedJoinOccurrenceIDs: Set<String>
   ) -> EntranceRecommendation {
+    let inputErrors = validateInputs(
+      candidates: candidates,
+      allowedJoinOccurrenceIDs: allowedJoinOccurrenceIDs
+    )
+    guard inputErrors.isEmpty else {
+      return EntranceRecommendation(
+        status: .rejected,
+        selection: nil,
+        rejections: [:],
+        errorCodes: inputErrors
+      )
+    }
+
     var eligible: [(candidate: EntranceCandidate, joins: Set<String>)] = []
     var rejections: [String: [String]] = [:]
 
@@ -85,11 +153,90 @@ public enum EntranceRecommender {
       return $0.candidate.facilityID < $1.candidate.facilityID
     }
 
+    guard let selected else {
+      return EntranceRecommendation(
+        status: .noEligibleCandidate,
+        selection: nil,
+        rejections: rejections
+      )
+    }
+    let straightLineDistanceRank =
+      candidates.filter {
+        $0.straightLineDistanceKM < selected.candidate.straightLineDistanceKM
+      }.count + 1
+    guard let joinOccurrenceID = selected.joins.sorted().first else {
+      return EntranceRecommendation(
+        status: .rejected,
+        selection: nil,
+        rejections: rejections,
+        errorCodes: ["ENTRANCE_SELECTION_JOIN_MISSING"]
+      )
+    }
+
     return EntranceRecommendation(
-      selectedFacilityID: selected?.candidate.facilityID,
-      joinOccurrenceID: selected?.joins.sorted().first,
+      status: .selected,
+      selection: EntranceRecommendationSelection(
+        facilityID: selected.candidate.facilityID,
+        targetCarriagewayID: selected.candidate.targetCarriagewayID,
+        joinOccurrenceID: joinOccurrenceID,
+        straightLineDistanceKM: selected.candidate.straightLineDistanceKM,
+        straightLineDistanceRank: straightLineDistanceRank,
+        surfaceETAMinutes: selected.candidate.surfaceETAMinutes,
+        reasonCodes: [
+          .exactDirectionalCarriageway,
+          .legalRouteJoin,
+          .approachAvailableAtEntryTime,
+          .lowestSurfaceETAAfterHardFilters,
+        ]
+      ),
       rejections: rejections
     )
+  }
+
+  private static func validateInputs(
+    candidates: [EntranceCandidate],
+    allowedJoinOccurrenceIDs: Set<String>
+  ) -> [String] {
+    var errorCodes: Set<String> = []
+    if candidates.isEmpty {
+      errorCodes.insert("NO_ENTRANCE_CANDIDATES")
+    }
+    if allowedJoinOccurrenceIDs.isEmpty
+      || allowedJoinOccurrenceIDs.contains(where: {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      })
+    {
+      errorCodes.insert("INVALID_ALLOWED_JOIN_OCCURRENCE_IDS")
+    }
+
+    var facilityIDs: Set<String> = []
+    for candidate in candidates {
+      let facilityID = candidate.facilityID.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      )
+      let targetCarriagewayID = candidate.targetCarriagewayID.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      )
+      if facilityID.isEmpty || targetCarriagewayID.isEmpty {
+        errorCodes.insert("INVALID_ENTRANCE_CANDIDATE_IDENTITY")
+      }
+      if !facilityIDs.insert(candidate.facilityID).inserted {
+        errorCodes.insert("DUPLICATE_ENTRANCE_FACILITY_ID")
+      }
+      if !candidate.straightLineDistanceKM.isFinite
+        || candidate.straightLineDistanceKM < 0
+        || !candidate.surfaceETAMinutes.isFinite
+        || candidate.surfaceETAMinutes < 0
+      {
+        errorCodes.insert("INVALID_ENTRANCE_CANDIDATE_METRIC")
+      }
+      if candidate.legalJoinOccurrenceIDs.contains(where: {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      }) {
+        errorCodes.insert("INVALID_ENTRANCE_LEGAL_JOIN_ID")
+      }
+    }
+    return errorCodes.sorted()
   }
 }
 

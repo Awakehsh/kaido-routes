@@ -406,6 +406,9 @@ private struct ScenarioHarness {
         }
         return EntranceCandidate(
           facilityID: try candidate.requiredString("facility_id"),
+          targetCarriagewayID: try candidate.requiredString(
+            "target_carriageway_id"
+          ),
           straightLineDistanceKM: try requiredDouble(
             candidate,
             key: "straight_line_distance_km"
@@ -881,6 +884,12 @@ private struct ScenarioHarness {
   }
 
   private mutating func publish(_ recommendation: EntranceRecommendation) {
+    adapterObservations["entry_recommendation.status"] = .string(
+      recommendation.status.rawValue
+    )
+    adapterObservations["entry_recommendation.error_codes"] = .strings(
+      recommendation.errorCodes
+    )
     if let selectedFacilityID = recommendation.selectedFacilityID {
       adapterObservations["entry_recommendation.selected_facility_id"] = .string(selectedFacilityID)
     }
@@ -889,6 +898,23 @@ private struct ScenarioHarness {
     }
     for (facilityID, reasons) in recommendation.rejections {
       adapterObservations["entry_recommendation.rejections.\(facilityID)"] = .strings(reasons)
+    }
+    if let selection = recommendation.selection {
+      adapterObservations["entry_recommendation.selection.target_carriageway_id"] =
+        .string(selection.targetCarriagewayID)
+      adapterObservations["entry_recommendation.selection.straight_line_distance_km"] =
+        .number(selection.straightLineDistanceKM)
+      adapterObservations["entry_recommendation.selection.straight_line_distance_rank"] =
+        .integer(selection.straightLineDistanceRank)
+      adapterObservations["entry_recommendation.selection.surface_eta_minutes"] =
+        .number(selection.surfaceETAMinutes)
+      adapterObservations["entry_recommendation.selection.reason_codes"] = .strings(
+        selection.reasonCodes.map(\.rawValue)
+      )
+      adapterObservations["entry_recommendation.selection.proximity_only"] = .bool(
+        !selection.reasonCodes.contains(.exactDirectionalCarriageway)
+          || !selection.reasonCodes.contains(.legalRouteJoin)
+      )
     }
   }
 

@@ -11,6 +11,8 @@ The current app deliberately exposes only:
 
 - the 26-route full-network recognition reference;
 - the topology-bound K7 evidence candidate;
+- a synthetic entrance recommendation whose exact direction and route join
+  match the parked editor;
 - a parked route-authoring adapter backed by `ExpertRouteEditorSession` and a
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
@@ -25,6 +27,22 @@ construct a real `NavigationSession`, display a measured position, highlight an
 active route, speak guidance, run location in the background, or expose a
 CarPlay scene. Those behaviors require a coherent released route bundle and
 device evidence.
+
+## Entrance recommendation
+
+The KR-U13 panel renders one immutable `EntranceRecommendation` produced by
+`KaidoRouting`. Its selection names an exact facility, target carriageway, route
+join occurrence, surface ETA, straight-line distance rank, and routing-owned
+reason codes. Rejected nearby candidates retain their failure reasons, so the UI
+can explain that the selected entrance is route-compatible rather than merely
+closest.
+
+The bundled candidate set is synthetic and makes no location or provider call.
+`EntranceRecommendationModel` requires its network snapshot, selected facility,
+and join occurrence to match the exact entrance and initial occurrence owned by
+the parked editor. Duplicate identities, invalid metrics, missing labels, drift,
+or no eligible candidate fail closed. This proves adapter ownership only; it
+does not release an entrance or prove a surface approach.
 
 ## Parked route authoring
 
@@ -142,7 +160,9 @@ xcodebuild \
 ```
 
 `AppSafetyStateTests` proves that the internal preview cannot claim route-release
-authority or a measured position. `ParkedRouteEditorModelTests` proves exact
+authority or a measured position. `EntranceRecommendationModelTests` prove
+direction-first selection evidence, rejected nearer candidates, editor identity
+binding, and invalid candidate failure. `ParkedRouteEditorModelTests` prove exact
 entrance/current-choice binding, future-choice rejection, session-provided lap
 candidates, fresh identities across duplication and undo, grouped lap undo,
 explicit-exit compilation with reviewed actual-distance resolution, and

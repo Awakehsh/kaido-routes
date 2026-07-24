@@ -15,7 +15,10 @@ Metropolitan Expressway Company Limited.
 This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
 links the local domain, routing, navigation, and presentation modules and renders
-the tracked full-network and K7 Route Atlas assets. It also exposes an opt-in,
+the tracked full-network and K7 Route Atlas assets. It presents a synthetic
+directional-entrance recommendation, parked route authoring, and RoutePlan-bound
+pre-drive review without calling live location or surface routing. It also
+exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
 emits only a coordinate-free non-release report, and rejects simulated locations
@@ -146,6 +149,17 @@ ownership boundary. Production corridor construction,
 DecisionZone calibration, production navigation-state SwiftUI rendering,
 CarPlay entitlement, accessibility validation, audio, and physical head-unit
 behavior remain unimplemented or unproven.
+
+The entrance recommendation boundary now returns a structured selected facility,
+exact target carriageway, legal join occurrence, surface ETA, straight-line
+distance rank, hard-filter reason codes, and rejected-candidate reasons. Invalid
+candidate identity or metrics reject the whole recommendation; an unavailable,
+unknown, or route-incompatible approach cannot win. KR-D16 and KR-D17 retain the
+routing rules, while KR-U13 proves that an iPhone adapter can explain why the
+selected exact directional entrance is farther than rejected nearby candidates.
+The internal iPhone shell binds one synthetic recommendation to the exact
+entrance and initial occurrence used by its editor. It uses no live location or
+provider result and releases no real entrance.
 
 The parked expert-authoring boundary is executable independently of SwiftUI.
 `ExpertRouteEditorSession` starts from one exact directional entrance and a
@@ -301,7 +315,8 @@ hard properties that must remain proven as the product expands:
    consistent post-gap window before resuming an exact occurrence;
 4. a current-location recommendation selects a compatible directional entrance
    approach that is available at the predicted entry time, not merely the
-   nearest IC name;
+   nearest IC name, and explains its exact carriageway, route join, distance
+   rank, and rejected alternatives;
 5. a deviation rejoins the active route plan instead of becoming a generic
    destination reroute;
 6. Japanese, Simplified Chinese, and English guidance preserve the same physical

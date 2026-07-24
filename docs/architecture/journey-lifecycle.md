@@ -108,6 +108,16 @@ longer reviewed approach that is legal for the full supported time range. The UI
 must explain that choice. It must not route to an approach whose availability is
 unknown and ask the driver to improvise at the ramp.
 
+`EntranceRecommender` now returns a structured selection with the exact target
+carriageway, legal join occurrence, surface ETA, straight-line distance rank,
+and stable reasons for passing the hard filters. It also retains rejection
+reasons for every unavailable, unknown, or route-incompatible candidate.
+Malformed candidate identities, duplicate facilities, invalid metrics, or
+invalid join IDs reject the entire recommendation. KR-U13 executes the
+explanation contract: the adapter can show that a compatible entrance ranks
+third by distance without recreating route legality in UI. The current iPhone
+fixture is synthetic and makes no current-location or surface-provider claim.
+
 A route does not have to begin on C1 or C2. A verified radial-road lead-in may
 join a later ring occurrence. A closed loop can be rotated to a compatible join
 occurrence while preserving its cyclic order and creating fresh occurrence IDs.

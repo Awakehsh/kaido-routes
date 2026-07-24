@@ -73,6 +73,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   @Published var atlasMode: RouteAtlasMode = .network
 
   let safety = AppSafetyState.preview
+  let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let preDriveReview: PreDriveReviewModel
   let locationCalibration: InternalLocationCalibrationModel
@@ -81,6 +82,9 @@ final class KaidoRoutesAppModel: ObservableObject {
     do {
       let routeEditor = try ParkedRouteEditorModel()
       self.routeEditor = routeEditor
+      entranceRecommendation = try EntranceRecommendationModel(
+        routeEditor: routeEditor
+      )
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()

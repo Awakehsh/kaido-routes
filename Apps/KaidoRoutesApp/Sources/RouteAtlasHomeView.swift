@@ -18,6 +18,8 @@ struct RouteAtlasHomeView: View {
           RouteAtlasCard(mode: model.atlasMode)
             .frame(height: model.atlasMode == .network ? 340 : 300)
 
+          EntranceRecommendationPanel(model: model.entranceRecommendation)
+
           ParkedRouteEditorPanel(model: model.routeEditor)
 
           PreDriveReviewPanel(model: model.preDriveReview)

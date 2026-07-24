@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U13",
+  "title": "Entrance recommendation explains directional compatibility before proximity",
+  "layer": "IPHONE_UI",
+  "tags": ["pre-drive", "entrance", "direction", "explanation"],
+  "purpose": "Make a farther exact directional entrance understandable without allowing the UI to replace route-compatibility hard filters with nearest-IC ranking.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Facilities, carriageways, ETAs, distances, and route joins are synthetic.",
+      "This scenario does not call live location or a surface-routing provider."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.entrance-explanation-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "inputs": {
+      "route_template": {
+        "template_id": "test.template.directional-explanation",
+        "allowed_join_occurrence_ids": ["test.occurrence.join.eastbound"]
+      },
+      "entrance_candidates": [
+        {
+          "facility_id": "test.entry.nearest.westbound",
+          "straight_line_distance_km": 0.5,
+          "surface_eta_minutes": 3,
+          "target_carriageway_id": "test.carriageway.westbound",
+          "legal_join_occurrence_ids": []
+        },
+        {
+          "facility_id": "test.entry.unknown.eastbound",
+          "straight_line_distance_km": 0.9,
+          "surface_eta_minutes": 4,
+          "target_carriageway_id": "test.carriageway.eastbound",
+          "legal_join_occurrence_ids": ["test.occurrence.join.eastbound"],
+          "approach_availability": "UNKNOWN"
+        },
+        {
+          "facility_id": "test.entry.reviewed.eastbound",
+          "straight_line_distance_km": 1.8,
+          "surface_eta_minutes": 7,
+          "target_carriageway_id": "test.carriageway.eastbound",
+          "legal_join_occurrence_ids": ["test.occurrence.join.eastbound"],
+          "approach_availability": "AVAILABLE"
+        }
+      ]
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "recommend",
+      "at_ms": 0,
+      "type": "ROUTE_COMPILE_REQUESTED",
+      "payload": {
+        "recommend_entry_from_current_location": true
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "recommendation-selected",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.status",
+      "matcher": "EQUALS",
+      "expected": "SELECTED",
+      "rationale": "One exact directional entrance remains after the hard filters."
+    },
+    {
+      "id": "farther-compatible-entry-selected",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.selected_facility_id",
+      "matcher": "EQUALS",
+      "expected": "test.entry.reviewed.eastbound",
+      "rationale": "The UI presents the route-compatible directional facility rather than the nearest named entrance."
+    },
+    {
+      "id": "target-carriageway-is-explicit",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.selection.target_carriageway_id",
+      "matcher": "EQUALS",
+      "expected": "test.carriageway.eastbound",
+      "rationale": "Directional compatibility names an exact target carriageway."
+    },
+    {
+      "id": "route-join-is-explicit",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.join_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.join.eastbound",
+      "rationale": "The recommendation explains where the approach joins the selected route."
+    },
+    {
+      "id": "distance-rank-remains-visible",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.selection.straight_line_distance_rank",
+      "matcher": "EQUALS",
+      "expected": 3,
+      "rationale": "The selected entrance is visibly not the nearest candidate."
+    },
+    {
+      "id": "direction-is-a-selection-reason",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.selection.reason_codes",
+      "matcher": "CONTAINS",
+      "expected": "EXACT_DIRECTIONAL_CARRIAGEWAY",
+      "rationale": "The adapter receives a routing-owned direction reason instead of inferring it from a label."
+    },
+    {
+      "id": "legal-join-is-a-selection-reason",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.selection.reason_codes",
+      "matcher": "CONTAINS",
+      "expected": "LEGAL_ROUTE_JOIN",
+      "rationale": "Route compatibility remains a hard-filter explanation."
+    },
+    {
+      "id": "selection-is-not-proximity-only",
+      "after": "recommend",
+      "category": "SAFETY",
+      "subject": "entry_recommendation.selection.proximity_only",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The UI cannot describe the recommendation as a nearest-entrance choice."
+    },
+    {
+      "id": "nearest-wrong-direction-is-explained",
+      "after": "recommend",
+      "category": "UI",
+      "subject": "entry_recommendation.rejections.test.entry.nearest.westbound",
+      "matcher": "CONTAINS",
+      "expected": "NO_LEGAL_ROUTE_JOIN",
+      "rationale": "A closer but route-incompatible entrance remains visible with its rejection reason."
+    },
+    {
+      "id": "unknown-approach-is-explained",
+      "after": "recommend",
+      "category": "SAFETY",
+      "subject": "entry_recommendation.rejections.test.entry.unknown.eastbound",
+      "matcher": "CONTAINS",
+      "expected": "APPROACH_AVAILABILITY_UNKNOWN",
+      "rationale": "Unknown timed availability fails closed and is not shown as usable."
+    }
+  ]
+}

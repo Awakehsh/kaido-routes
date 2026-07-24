@@ -576,6 +576,14 @@ Use a two-stage algorithm.
 The surface provider supplies candidate geometry and ETA. It does not decide
 that a facility is compatible.
 
+The routing result exposes one structured `EntranceRecommendationSelection`
+with exact facility, target carriageway, join occurrence, ETA, straight-line
+distance rank, and stable hard-filter reasons. Rejected candidates retain their
+reason codes. KR-U13 requires the iPhone adapter to render those values without
+re-ranking candidates or inferring direction from display labels. The internal
+implementation uses a synthetic set bound to the parked editor; live location,
+provider routing, and released entrance evidence remain separate gates.
+
 ### Deviation recovery
 
 Recovery is a constrained multi-target search from the observed road state to a

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from datetime import date, datetime
@@ -371,6 +372,85 @@ def validate_guidance_anchors(v: Validation, given: dict[str, Any]) -> None:
         if prompt_id in prompt_ids:
             v.add(f"duplicate guidance prompt_id: {prompt_id}")
         prompt_ids.add(prompt_id)
+
+
+def validate_entrance_recommendation(v: Validation, given: dict[str, Any]) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict):
+        return
+    route_template = inputs.get("route_template")
+    candidates = inputs.get("entrance_candidates")
+    if route_template is None and candidates is None:
+        return
+    if not isinstance(route_template, dict):
+        v.add("given.inputs.route_template must be an object")
+        return
+    if not isinstance(candidates, list) or not candidates:
+        v.add("given.inputs.entrance_candidates must be a non-empty array")
+        return
+
+    context = "given.inputs.route_template"
+    if v.require_keys(
+        route_template,
+        {"template_id", "allowed_join_occurrence_ids"},
+        context,
+    ):
+        template_id = route_template["template_id"]
+        if not isinstance(template_id, str) or not template_id.strip():
+            v.add(f"{context}.template_id must be non-empty")
+        allowed_joins = route_template["allowed_join_occurrence_ids"]
+        if not isinstance(allowed_joins, list) or not allowed_joins:
+            v.add(f"{context}.allowed_join_occurrence_ids must be a non-empty array")
+        elif not all(
+            isinstance(join_id, str) and join_id.strip()
+            for join_id in allowed_joins
+        ):
+            v.add(f"{context}.allowed_join_occurrence_ids must contain non-empty strings")
+        elif len(allowed_joins) != len(set(allowed_joins)):
+            v.add(f"{context}.allowed_join_occurrence_ids must be unique")
+
+    facility_ids: set[str] = set()
+    required = {
+        "facility_id",
+        "target_carriageway_id",
+        "straight_line_distance_km",
+        "surface_eta_minutes",
+        "legal_join_occurrence_ids",
+    }
+    for index, candidate in enumerate(candidates):
+        context = f"given.inputs.entrance_candidates[{index}]"
+        if not v.require_keys(candidate, required, context):
+            continue
+        for field in ("facility_id", "target_carriageway_id"):
+            value = candidate[field]
+            if not isinstance(value, str) or not value.strip():
+                v.add(f"{context}.{field} must be non-empty")
+        facility_id = candidate["facility_id"]
+        if isinstance(facility_id, str):
+            if facility_id in facility_ids:
+                v.add(f"duplicate entrance candidate facility_id: {facility_id}")
+            facility_ids.add(facility_id)
+        for field in ("straight_line_distance_km", "surface_eta_minutes"):
+            value = candidate[field]
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(value)
+                or value < 0
+            ):
+                v.add(f"{context}.{field} must be finite and non-negative")
+        join_ids = candidate["legal_join_occurrence_ids"]
+        if not isinstance(join_ids, list):
+            v.add(f"{context}.legal_join_occurrence_ids must be an array")
+        elif not all(
+            isinstance(join_id, str) and join_id.strip() for join_id in join_ids
+        ):
+            v.add(f"{context}.legal_join_occurrence_ids must contain non-empty strings")
+        elif len(join_ids) != len(set(join_ids)):
+            v.add(f"{context}.legal_join_occurrence_ids must be unique")
+        availability = candidate.get("approach_availability", "AVAILABLE")
+        if availability not in {"AVAILABLE", "UNAVAILABLE", "UNKNOWN"}:
+            v.add(f"{context}.approach_availability is unknown: {availability!r}")
 
 
 def validate_matcher_guidance_inputs(v: Validation, given: dict[str, Any]) -> None:
@@ -956,6 +1036,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         if "tariff_quotes" in given:
             validate_tariff_quotes(v, given["tariff_quotes"])
         validate_guidance_anchors(v, given)
+        validate_entrance_recommendation(v, given)
         validate_matcher_guidance_inputs(v, given)
         validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)

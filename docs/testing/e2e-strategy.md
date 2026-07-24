@@ -233,6 +233,15 @@ accessibility-visible review. App tests verify that actual distance changes with
 a duplicated lap while tariff distance does not, unconfirmed passage is not
 positive-open, invalid evidence fails closed, and undo removes the review.
 
+KR-U13 reuses `ROUTE_COMPILE_REQUESTED` to cross the direction-first entrance
+recommendation into an iPhone-intended explanation contract. The runner exposes
+the exact target carriageway, legal join occurrence, ETA, distance rank,
+selection reasons, and rejected-candidate reasons. The app binds the same
+selection to its editor entrance and initial occurrence. Focused tests prove
+that duplicate identities, invalid metrics, snapshot drift, and editor identity
+drift fail closed. The fixture is synthetic and no L1/L2 or Simulator execution
+is evidence of a live location, provider route, or released entrance.
+
 KR-D18 executes `NavigationReleaseBundle` at L1/L2 before any Apple adapter or
 live service exists. Its synthetic asset set proves that one active snapshot,
 RoutePlan, editor catalog, matcher corridor, DecisionZone set, released-guidance

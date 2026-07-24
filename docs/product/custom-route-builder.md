@@ -127,6 +127,13 @@ route difficulty, and the selected exit or return policy. A closed route may be
 rotated to a verified join occurrence. A linear route may offer only its fixed
 entrance or explicitly approved alternatives.
 
+The recommendation result carries the exact target carriageway and route join,
+not just a facility label. It exposes straight-line distance as context and
+retains its rank, but selected and rejected reason codes make clear that
+direction, availability, and legal RoutePlan access were evaluated first.
+KR-U13 binds those routing-owned values into the internal iPhone preview using a
+synthetic candidate set; SwiftUI does not recalculate compatibility.
+
 The surface leg ends at a directed approach anchor on the ordinary road before
 the entrance ramp. It must not target an IC label, the center of a junction, or
 a place where the driver would have to stop. The entry transition from that

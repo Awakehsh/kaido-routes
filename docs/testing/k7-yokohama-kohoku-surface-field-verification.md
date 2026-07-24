@@ -68,9 +68,14 @@ signal. It is not a legal-direction claim.
   dates the online recognized-route map to 2026-07-03. The checked HTML has
   SHA-256
   `33d94d39759fa1d5d7438c9c7b41ee412b6aa9dacd828019d25e935e415a07f9`.
-- [Yokohama City road-register terms for map 67](https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?IsPost=False&MapId=67&RequestPage=%2Fyokohama%2FPositionSelect%3Fmid%3D67)
+- [Yokohama City recognized-route map 66 terms](https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=66)
   state that online material is not proof and direct the latest legal-record
   review to the Road Survey Division counter. The checked HTML has SHA-256
+  `ed482c2fd7b92c88ec68e06d15c2d517339120f57acda8234aceca18c177ee83`.
+  Map 66 identifies itself as `認定路線図`.
+- [Yokohama City map 67 terms](https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=67)
+  identify that separate layer as `平面図・補正図・別図・補正別図`. It is not
+  accepted as recognized-route evidence. The checked HTML has SHA-256
   `e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102`.
   No exact recognized-route record has been obtained that uniquely maps OSM way
   `776884422` rather than either named Kawamuki Line carriageway leaving the

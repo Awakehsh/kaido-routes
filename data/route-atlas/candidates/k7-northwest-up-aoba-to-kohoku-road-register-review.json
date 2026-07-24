@@ -40,9 +40,17 @@
       "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
     },
     {
-      "source_reference_id": "yokohama.road-register-terms.2026-07-24",
+      "source_reference_id": "yokohama.recognized-route-terms.2026-07-24",
       "authority_name": "City of Yokohama",
-      "source_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?IsPost=False&MapId=67&RequestPage=%2Fyokohama%2FPositionSelect%3Fmid%3D67",
+      "source_url": "https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=66",
+      "content_sha256": "ed482c2fd7b92c88ec68e06d15c2d517339120f57acda8234aceca18c177ee83",
+      "checked_at": "2026-07-24",
+      "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "yokohama.plan-drawing-terms.2026-07-24",
+      "authority_name": "City of Yokohama",
+      "source_url": "https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=67",
       "content_sha256": "e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102",
       "checked_at": "2026-07-24",
       "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
@@ -68,7 +76,15 @@
   ],
   "review_method": {
     "interactive_register_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Portal",
-    "recognized_route_map_id": 67,
+    "recognized_route_map_id": 66,
+    "recognized_route_map_name_ja": "認定路線図",
+    "rejected_register_maps": [
+      {
+        "map_id": 67,
+        "map_name_ja": "平面図・補正図・別図・補正別図",
+        "reason_code": "NOT_RECOGNIZED_ROUTE_MAP"
+      }
+    ],
     "available_register_layers": [
       "ROAD_LEDGER_PLAN",
       "ROAD_AREA_BOUNDARY",

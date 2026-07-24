@@ -412,6 +412,21 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 date(2026, 7, 24),
             )
 
+    def test_plan_drawing_map_cannot_replace_recognized_route_map(
+        self,
+    ) -> None:
+        review = load(ROAD_REVIEW_PATH)
+        review["review_method"]["recognized_route_map_id"] = 67
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "road-register review contract",
+        ):
+            validator.evaluate_road_register_review(
+                review,
+                date(2026, 7, 24),
+            )
+
     def test_malformed_road_register_layers_fail_without_crashing(
         self,
     ) -> None:

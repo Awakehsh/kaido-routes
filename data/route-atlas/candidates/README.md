@@ -157,7 +157,9 @@ python3 scripts/prepare_k7_surface_field_review.py \
 The separate
 `k7-northwest-up-aoba-to-kohoku-road-register-review.json` records that
 Yokohama's official register exposes road-ledger, road-area, and recognized-
-route layers. The recognized-route map is dated 2026-07-03, and the official
+route layers. Map 66 is explicitly titled `認定路線図`; map 67 is the separate
+plan/correction-drawing layer and is rejected for this review. The
+recognized-route map is dated 2026-07-03, and the official
 terms state that online material is not proof and that the latest legal record
 must be reviewed at the Road Survey Division counter. The historic opening
 notice names the broader Kawamuki corridor as municipal Higashikatacho Route

@@ -157,13 +157,25 @@ EXPECTED_ROAD_SOURCE_REFERENCES = {
         "checked_at": "2026-07-24",
         "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
     },
-    "yokohama.road-register-terms.2026-07-24": {
-        "source_reference_id": "yokohama.road-register-terms.2026-07-24",
+    "yokohama.recognized-route-terms.2026-07-24": {
+        "source_reference_id": "yokohama.recognized-route-terms.2026-07-24",
         "authority_name": "City of Yokohama",
         "source_url": (
-            "https://wwwm.city.yokohama.lg.jp/yokohama/Agreement?"
-            "IsPost=False&MapId=67&RequestPage=%2Fyokohama%2F"
-            "PositionSelect%3Fmid%3D67"
+            "https://wwwm.city.yokohama.lg.jp/yokohama/"
+            "PositionSelect?mid=66"
+        ),
+        "content_sha256": (
+            "ed482c2fd7b92c88ec68e06d15c2d517339120f57acda8234aceca18c177ee83"
+        ),
+        "checked_at": "2026-07-24",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
+    "yokohama.plan-drawing-terms.2026-07-24": {
+        "source_reference_id": "yokohama.plan-drawing-terms.2026-07-24",
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://wwwm.city.yokohama.lg.jp/yokohama/"
+            "PositionSelect?mid=67"
         ),
         "content_sha256": (
             "e98aa1e272f7aca3bb8c52dd2855fae6038bb29902aa00ff63a58ca27295d102"
@@ -269,7 +281,7 @@ EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
     "ROAD_REGISTER_REVIEW": {
         "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW"],
         "content_sha256": (
-            "aa2edd8d08d0007388ab46de39721bf5dff81a1c6abb2e863af227b1e47d0d29"
+            "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
         ),
     },
     "FIELD_REVIEW_TEMPLATE": {
@@ -747,7 +759,16 @@ def evaluate_road_register_review(
         or review.get("navigation_authority") is not False
         or not isinstance(method, dict)
         or method.get("interactive_register_url") != EXPECTED_REGISTER_URL
-        or method.get("recognized_route_map_id") != 67
+        or method.get("recognized_route_map_id") != 66
+        or method.get("recognized_route_map_name_ja") != "認定路線図"
+        or method.get("rejected_register_maps")
+        != [
+            {
+                "map_id": 67,
+                "map_name_ja": "平面図・補正図・別図・補正別図",
+                "reason_code": "NOT_RECOGNIZED_ROUTE_MAP",
+            }
+        ]
         or not is_exact_string_set(
             method.get("available_register_layers"),
             {

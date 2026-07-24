@@ -74,12 +74,16 @@ final class KaidoRoutesAppModel: ObservableObject {
 
   let safety = AppSafetyState.preview
   let routeEditor: ParkedRouteEditorModel
+  let locationCalibration: InternalLocationCalibrationModel
 
   init() {
     do {
       routeEditor = try ParkedRouteEditorModel()
+      locationCalibration = try InternalLocationCalibrationModel(
+        fixture: .bundled()
+      )
     } catch {
-      preconditionFailure("Invalid internal route-editor fixture: \(error)")
+      preconditionFailure("Invalid internal app fixture: \(error)")
     }
   }
 }

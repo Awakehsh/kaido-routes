@@ -20,6 +20,8 @@ struct RouteAtlasHomeView: View {
 
           ParkedRouteEditorPanel(model: model.routeEditor)
 
+          InternalLocationCalibrationPanel(model: model.locationCalibration)
+
           if model.atlasMode == .k7Evidence {
             routeDossier
           }
@@ -544,7 +546,7 @@ private struct OccurrenceNode: View {
   }
 }
 
-private struct StatusCapsule: View {
+struct StatusCapsule: View {
   let title: String
   let color: Color
 
@@ -570,7 +572,7 @@ private struct StatusCapsule: View {
   }
 }
 
-private struct Metric: View {
+struct Metric: View {
   let value: String
   let label: String
 
@@ -588,7 +590,7 @@ private struct Metric: View {
   }
 }
 
-private struct DividerMark: View {
+struct DividerMark: View {
   var body: some View {
     Rectangle()
       .fill(KaidoTheme.steel)

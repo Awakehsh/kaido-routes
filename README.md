@@ -15,9 +15,13 @@ Metropolitan Expressway Company Limited.
 This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
 links the local domain, routing, navigation, and presentation modules and renders
-the tracked full-network and K7 Route Atlas assets. It remains explicitly
-review-only: it has no released route bundle, measured position, active-route
-highlight, voice, or CarPlay scene. The repository still has no production road
+the tracked full-network and K7 Route Atlas assets. It also exposes an opt-in,
+foreground-only internal Core Location calibration harness bound to the exact
+review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
+emits only a coordinate-free non-release report, and rejects simulated locations
+by default. The app remains explicitly review-only: it has no released route
+bundle, measured-position display, active-route highlight, voice, background
+navigation, or CarPlay scene. The repository still has no production road
 database or released provider integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, an OSM selected-path translator, an offline evidence
@@ -107,7 +111,12 @@ emit a coordinate-free scalar report with p95 timings and confidence reliability
 bins only within one exact snapshot, matcher configuration, device configuration,
 and declared transport context. Mixed configurations fail closed, and synthetic
 or software-simulated samples can never satisfy the field statistical floor.
-No iPhone/head-unit trace has been collected yet, so device performance and
+The internal iPhone shell now owns the explicit when-in-use permission and
+delegate lifecycle for a foreground calibration run. It validates the tracked
+13-occurrence/15-edge K7 candidate before constructing the session, requires
+explicit device/mount metadata, keeps connected-unknown separate from declared
+wired/wireless context, and discards the memory trace on command. No real
+iPhone/head-unit trace has been collected yet, so device performance and
 confidence calibration remain unproven.
 
 The platform-light matcher-to-guidance-to-presentation boundary is executable
@@ -161,8 +170,9 @@ distance bridge, and returns one atomic snapshot plus optional prompt emission.
 Initialization rejects mismatched route, snapshot, corridor, zone, or guidance
 identities. Matcher reset/restart clears temporal evidence without rewinding
 navigation progress. The first app scene is now present, but Core Location
-callbacks, `NavigationSession` composition, lifecycle persistence, background
-execution, and audio remain Apple-adapter work.
+callbacks currently feed only the internal calibration harness.
+`NavigationSession` composition, lifecycle persistence, background execution,
+and audio remain Apple-adapter work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid

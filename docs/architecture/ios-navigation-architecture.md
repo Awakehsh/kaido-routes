@@ -683,6 +683,20 @@ annotation validity, p95 calculation, Apple provenance mapping, real pipeline
 timing, adapter rejection, and matcher receive-order rejection. These tests
 prove the recording/evaluation contract, not any iPhone performance result.
 
+The internal iPhone shell now supplies the first real Apple lifecycle adapter
+for this evidence boundary. Its foreground-only calibration panel requires
+explicit device/mount metadata and transport scope before requesting when-in-use
+location. A bundled loader joins the exact tracked K7 ODbL database to its
+candidate RoutePlan, verifies 13 occurrence edges plus two divergence
+alternatives, and refuses any snapshot, facility, timestamp, direction,
+occurrence, or licence drift while requiring `navigation_authority=false`.
+Delegate batches feed the existing calibration session unchanged. Raw traces
+remain in memory and are destroyed on discard; the UI exposes only counts,
+cohort/confidence status, and the coordinate-free report gate. This adapter does
+not create a
+`NavigationSession`, render position, run in the background, or turn candidate
+data into release evidence. No real device trace has run yet.
+
 ### Candidate generation
 
 - Query directed edges from an R-tree or equivalent spatial index using the

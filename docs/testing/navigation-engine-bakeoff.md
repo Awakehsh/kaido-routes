@@ -192,7 +192,12 @@ floor, false-`HIGH` blocking, categorical reliability bins, nearest-rank p95,
 synthetic/simulated exclusion, and the measured Apple-adapter-to-matcher path.
 The default 30 held-out samples per observed cohort is a provisional minimum,
 not a release threshold. `STATISTICAL_FLOOR_MET_NOT_RELEASE_APPROVAL` explicitly
-does not promote a route or confidence policy. No device trace has run yet.
+does not promote a route or confidence policy. The internal iPhone app now
+provides a foreground-only capture harness around this path. It validates the
+exact review-only K7 candidate corridor, requests location only after explicit
+run metadata, rejects simulated fixes, retains raw trace data only in memory,
+and emits no more than a coordinate-free report. No real device trace has run
+yet.
 
 ### B3: guidance fixtures
 
@@ -554,7 +559,10 @@ gate.
    rejects mismatched runtime composition. KR-S18 proves that only HIGH along-edge
    progress on the exact RoutePlan corridor becomes DecisionZone distance; the
    lateral matcher residual is never route progress.
-   Run the target device matrix and collect independently annotated held-out
+   The foreground-only internal iPhone capture harness now executes the real
+   delegate-to-adapter-to-matcher path against the exact review-only K7 candidate
+   corridor without persisting raw coordinates or claiming navigation authority.
+   Next run the target device matrix and collect independently annotated held-out
    evidence; no current test substitutes for that field work.
 10. **Partial complete:** released frame semantics live in `KaidoDomain`, and the
     pure `GuidanceFramePlanner` selects a most-actionable, non-regressing frame
@@ -580,11 +588,10 @@ gate.
 
 The next provider tasks are exact cross-engine route-difference review, a
 directional-mouth evidence decision for Daikoku-futo, and eventual expansion of
-the released facility corpus. The next implementation/evidence task is a thin,
-internal iPhone capture harness around the completed memory-only logger, followed
-by passenger-safe held-out runs and performance profiles around entrance mouths,
-stacked roads, and tunnel reacquisition. This is not yet the product UI and not a
-C++ or Rust rewrite.
+the released facility corpus. The thin internal iPhone capture harness around the
+memory-only logger is complete. The next evidence task is passenger-safe held-out
+runs and performance profiles around entrance mouths, stacked roads, and tunnel
+reacquisition. This is not yet product navigation and not a C++ or Rust rewrite.
 
 ## Sources checked 2026-07-23
 

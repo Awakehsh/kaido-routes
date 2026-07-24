@@ -4,19 +4,23 @@ Status: internal SwiftUI preview app; not released navigation.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
 links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`, and
-`KaidoPresentation` products and renders the tracked Route Atlas assets in one
-fixed north-up instrument.
+`KaidoPresentation`, and `KaidoAppleAdapters` products and renders the tracked
+Route Atlas assets in one fixed north-up instrument.
 
 The current app deliberately exposes only:
 
 - the 26-route full-network recognition reference;
 - the topology-bound K7 evidence candidate;
 - a parked route-authoring adapter backed by `ExpertRouteEditorSession` and a
-  clearly synthetic reviewed catalog; and
+  clearly synthetic reviewed catalog;
+- an opt-in, foreground-only internal location-calibration harness bound to the
+  exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
 
-It does not request location, construct a real `NavigationSession`, display a
-measured position, highlight an active route, speak guidance, or expose a
+It requests when-in-use location only after the operator explicitly starts an
+internal calibration run with non-empty device and mount metadata. It does not
+construct a real `NavigationSession`, display a measured position, highlight an
+active route, speak guidance, run location in the background, or expose a
 CarPlay scene. Those behaviors require a coherent released route bundle and
 device evidence.
 
@@ -34,6 +38,31 @@ session accepts an explicit directional exit, after which it creates the exact
 `RoutePlan`. The app owns display labels for this synthetic fixture only; it
 does not construct real Shuto topology, infer movement legality, or promote the
 Route Atlas into selectable navigation data.
+
+## Internal location calibration
+
+The calibration panel is an internal evidence instrument, not product
+navigation. Its bundled fixture decodes the tracked K7 ODbL directed database
+and candidate RoutePlan into one exact `RouteMatcherCorridor`: 13 ordered route
+occurrences plus two reviewed divergence alternatives. The loader requires
+`CANDIDATE`, `ODbL-1.0`, explicit one-way geometry, matching snapshot, RoutePlan,
+facility, timestamp, and occurrence identities, and
+`navigation_authority=false`.
+
+A run must declare an opaque device-configuration ID, a private mount
+description, and one transport context. A connected CarPlay scene remains
+`CARPLAY_CONNECTED_TRANSPORT_UNKNOWN`; wired or wireless is available only as
+an explicit field declaration. Starting requests when-in-use location and feeds
+Core Location delegate batches through the real
+`CoreLocationObservationAdapter` → `RouteMatcherSession` path. Software-simulated
+locations are rejected by the production-default policy.
+
+Raw coordinates, observation IDs, route-plan identity, device details, and
+mount details stay inside the in-memory `PRIVATE_RAW_LOCATION` trace. The app
+offers no raw-trace persistence or export. Stopping may create only a
+coordinate-free `MatcherCalibrationReport`; without independent held-out
+annotations it remains `INSUFFICIENT_HELD_OUT_EVIDENCE`. Discard destroys both
+the in-memory trace and report.
 
 ## Open in Xcode
 
@@ -93,5 +122,7 @@ xcodebuild \
 authority or a measured position. `ParkedRouteEditorModelTests` proves exact
 entrance/current-choice binding, future-choice rejection, fresh identities
 across repeated loops and undo, explicit-exit compilation, and moving-time
-lockout. The platform-light Swift package tests remain the authoritative domain
-and navigation verification.
+lockout. `InternalLocationCalibrationTests` proves exact candidate-corridor
+construction, fail-closed navigation-authority handling, transport-context
+separation, and coordinate-free non-release reporting. The platform-light Swift
+package tests remain the authoritative domain and navigation verification.

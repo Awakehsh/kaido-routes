@@ -52,7 +52,8 @@ public struct ScenarioTariffQuote: Decodable, Equatable, Sendable {
   public let entryFacilityID: String
   public let exitFacilityID: String
   public let status: String
-  public let vehicleClass: String
+  public let vehicleClass: ShutoVehicleClass
+  public let paymentMethod: ShutoPaymentMethod
   public let tariffVersionID: String
   public let tariffVersionStatus: TariffVersionStatus
   public let tariffDistanceKM: Double?
@@ -66,6 +67,7 @@ public struct ScenarioTariffQuote: Decodable, Equatable, Sendable {
     case exitFacilityID = "exit_facility_id"
     case status
     case vehicleClass = "vehicle_class"
+    case paymentMethod = "payment_method"
     case tariffVersionID = "tariff_version_id"
     case tariffVersionStatus = "tariff_version_status"
     case tariffDistanceKM = "tariff_distance_km"
@@ -83,6 +85,7 @@ public struct ScenarioTariffQuote: Decodable, Equatable, Sendable {
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       vehicleClass: vehicleClass,
+      paymentMethod: paymentMethod,
       tariffVersionID: tariffVersionID,
       tariffVersionStatus: tariffVersionStatus,
       tariffDistanceKM: tariffDistanceKM,

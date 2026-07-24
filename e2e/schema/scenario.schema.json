@@ -66,6 +66,18 @@
     }
   },
   "$defs": {
+    "shuto_vehicle_class": {
+      "enum": [
+        "LIGHT_MOTORCYCLE",
+        "STANDARD",
+        "MEDIUM",
+        "LARGE",
+        "EXTRA_LARGE"
+      ]
+    },
+    "shuto_payment_method": {
+      "enum": ["ETC", "CASH"]
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
@@ -231,6 +243,7 @@
         "exit_facility_id",
         "status",
         "vehicle_class",
+        "payment_method",
         "tariff_version_id",
         "tariff_version_status",
         "checked_at",
@@ -253,8 +266,10 @@
           "enum": ["VERIFIED_QUERY", "ESTIMATED", "UNKNOWN"]
         },
         "vehicle_class": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/shuto_vehicle_class"
+        },
+        "payment_method": {
+          "$ref": "#/$defs/shuto_payment_method"
         },
         "tariff_version_id": {
           "type": "string",
@@ -289,6 +304,7 @@
         "network_snapshot_id",
         "route_plan_id",
         "vehicle_class",
+        "payment_method",
         "passage_evidence"
       ],
       "properties": {
@@ -305,8 +321,10 @@
           "minLength": 1
         },
         "vehicle_class": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/shuto_vehicle_class"
+        },
+        "payment_method": {
+          "$ref": "#/$defs/shuto_payment_method"
         },
         "passage_evidence": {
           "enum": [
@@ -315,6 +333,32 @@
             "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
             "REALTIME_CONFIRMED_PASSABLE"
           ]
+        }
+      }
+    },
+    "pre_drive_session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_snapshot_id",
+        "route_plan_id",
+        "vehicle_class",
+        "payment_method"
+      ],
+      "properties": {
+        "network_snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vehicle_class": {
+          "$ref": "#/$defs/shuto_vehicle_class"
+        },
+        "payment_method": {
+          "$ref": "#/$defs/shuto_payment_method"
         }
       }
     },
@@ -340,6 +384,9 @@
           "properties": {
             "pre_drive_evidence": {
               "$ref": "#/$defs/pre_drive_evidence"
+            },
+            "pre_drive_session": {
+              "$ref": "#/$defs/pre_drive_session"
             }
           }
         },

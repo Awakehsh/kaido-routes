@@ -20,6 +20,8 @@ enum ReleasedProductRouteAuthoringError: String, Error, Equatable, Sendable {
   case editorUnavailable = "RELEASED_ROUTE_EDITOR_UNAVAILABLE"
   case choiceRejected = "RELEASED_ROUTE_CHOICE_REJECTED"
   case routeIncomplete = "RELEASED_ROUTE_INCOMPLETE"
+  case vehicleClassRequired = "RELEASED_PRE_DRIVE_VEHICLE_CLASS_REQUIRED"
+  case paymentMethodRequired = "RELEASED_PRE_DRIVE_PAYMENT_METHOD_REQUIRED"
   case preDriveEvidenceUnavailable =
     "RELEASED_PRE_DRIVE_EVIDENCE_UNAVAILABLE"
   case preDriveEvidenceRejected = "RELEASED_PRE_DRIVE_EVIDENCE_REJECTED"
@@ -30,12 +32,14 @@ enum ReleasedProductRouteAuthoringError: String, Error, Equatable, Sendable {
 /// Every visible label comes from the selected product release. The user still
 /// submits each stable recipe choice explicitly, while the adapter retains all
 /// release-owned occurrence identities. A compiled route becomes review-ready
-/// only after separately supplied session evidence evaluates against that exact
-/// product release and RoutePlan.
+/// only after the user explicitly selects a canonical Shuto vehicle class and
+/// payment method, and separately supplied session evidence evaluates against
+/// that exact product release, RoutePlan, and tariff profile.
 @MainActor
 final class ReleasedProductRouteAuthoringModel: ObservableObject {
   typealias EvidenceProvider =
-    (BundledProductReleaseEntry) -> PreDriveReviewEvidence?
+    (BundledProductReleaseEntry, PreDriveReviewSession)
+    -> PreDriveReviewEvidence?
 
   @Published private(set) var locale: KaidoReleaseLocale
   @Published private(set) var options: [ReleasedProductRouteOptionPresentation]
@@ -43,6 +47,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   @Published private(set) var snapshot: ExpertRouteEditorSnapshot?
   @Published private(set) var currentStep: ReleasedRouteEditorStepPresentation?
   @Published private(set) var compiledRoutePlan: RoutePlan?
+  @Published private(set) var selectedVehicleClass: ShutoVehicleClass?
+  @Published private(set) var selectedPaymentMethod: ShutoPaymentMethod?
   @Published private(set) var preDriveReviewSnapshot: PreDriveReviewSnapshot?
   @Published private(set) var lastErrorCode: String?
 
@@ -54,7 +60,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   init(
     entries: [BundledProductReleaseEntry],
     locale: KaidoReleaseLocale,
-    evidenceProvider: @escaping EvidenceProvider = { _ in nil }
+    evidenceProvider: @escaping EvidenceProvider = { _, _ in nil }
   ) throws {
     let releaseIDs = entries.map(\.release.releaseID)
     guard !entries.isEmpty,
@@ -83,7 +89,17 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   }
 
   var reviewReady: Bool {
-    compiledRoutePlan != nil && preDriveReviewSnapshot != nil
+    compiledRoutePlan != nil && selectedVehicleClass != nil
+      && selectedPaymentMethod != nil
+      && preDriveReviewSnapshot != nil
+  }
+
+  var availableVehicleClasses: [ShutoVehicleClass] {
+    ShutoVehicleClass.allCases
+  }
+
+  var availablePaymentMethods: [ShutoPaymentMethod] {
+    ShutoPaymentMethod.allCases
   }
 
   var selectedEntry: BundledProductReleaseEntry? {
@@ -107,6 +123,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       snapshot = adapter.snapshot
       currentStep = adapter.nextStep
       compiledRoutePlan = nil
+      selectedVehicleClass = nil
+      selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
       lastErrorCode = nil
     } catch {
@@ -132,6 +150,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       snapshot = adapter.snapshot
       currentStep = adapter.nextStep
       compiledRoutePlan = nil
+      selectedVehicleClass = nil
+      selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
       lastErrorCode = nil
     } catch {
@@ -155,6 +175,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
         return
       }
       compiledRoutePlan = routePlan
+      selectedVehicleClass = nil
+      selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
       refreshPreDriveReview()
     } catch {
@@ -162,6 +184,26 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       preDriveReviewSnapshot = nil
       fail(.routeIncomplete)
     }
+  }
+
+  func selectVehicleClass(_ vehicleClass: ShutoVehicleClass) {
+    guard compiledRoutePlan != nil else {
+      fail(.routeIncomplete)
+      return
+    }
+    selectedVehicleClass = vehicleClass
+    preDriveReviewSnapshot = nil
+    refreshPreDriveReview()
+  }
+
+  func selectPaymentMethod(_ paymentMethod: ShutoPaymentMethod) {
+    guard compiledRoutePlan != nil else {
+      fail(.routeIncomplete)
+      return
+    }
+    selectedPaymentMethod = paymentMethod
+    preDriveReviewSnapshot = nil
+    refreshPreDriveReview()
   }
 
   func refreshPreDriveReview() {
@@ -174,7 +216,23 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       fail(.routeIdentityMismatch)
       return
     }
-    guard let evidence = evidenceProvider(entry) else {
+    guard let selectedVehicleClass else {
+      preDriveReviewSnapshot = nil
+      fail(.vehicleClassRequired)
+      return
+    }
+    guard let selectedPaymentMethod else {
+      preDriveReviewSnapshot = nil
+      fail(.paymentMethodRequired)
+      return
+    }
+    let session = PreDriveReviewSession(
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: selectedVehicleClass,
+      paymentMethod: selectedPaymentMethod
+    )
+    guard let evidence = evidenceProvider(entry, session) else {
       preDriveReviewSnapshot = nil
       fail(.preDriveEvidenceUnavailable)
       return
@@ -182,12 +240,14 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     do {
       let adapter = try ReleasedPreDriveReviewAdapter(
         productRelease: entry.release,
+        session: session,
         evidence: evidence
       )
       guard
         adapter.productReleaseID == entry.release.releaseID,
         adapter.navigationReleaseID == entry.release.navigation.releaseID,
-        adapter.routePlanID == routePlan.id
+        adapter.routePlanID == routePlan.id,
+        adapter.session == session
       else {
         preDriveReviewSnapshot = nil
         fail(.routeIdentityMismatch)
@@ -249,6 +309,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     snapshot = nil
     currentStep = nil
     compiledRoutePlan = nil
+    selectedVehicleClass = nil
+    selectedPaymentMethod = nil
     preDriveReviewSnapshot = nil
   }
 

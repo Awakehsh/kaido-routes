@@ -2,6 +2,33 @@ import KaidoDomain
 import KaidoPresentation
 import Testing
 
+@Test("Shuto tariff vehicle classes retain the official five-category order")
+func shutoVehicleClassesRetainOfficialOrder() {
+  #expect(
+    ShutoVehicleClass.allCases.map(\.rawValue)
+      == [
+        "LIGHT_MOTORCYCLE",
+        "STANDARD",
+        "MEDIUM",
+        "LARGE",
+        "EXTRA_LARGE",
+      ]
+  )
+  #expect(
+    ShutoVehicleClass.allCases.map(\.officialJapaneseLabel)
+      == ["軽・二輪", "普通車", "中型車", "大型車", "特大車"]
+  )
+}
+
+@Test("Shuto payment methods remain independent from vehicle class")
+func shutoPaymentMethodsRemainIndependent() {
+  #expect(ShutoPaymentMethod.allCases.map(\.rawValue) == ["ETC", "CASH"])
+  #expect(
+    ShutoPaymentMethod.allCases.map(\.officialJapaneseLabel)
+      == ["ETC", "現金"]
+  )
+}
+
 @Test("Pre-drive review binds current tariff evidence to one exact route")
 func preDriveReviewBindsExactRouteEvidence() throws {
   let routePlan = preDriveRoutePlan()
@@ -10,7 +37,8 @@ func preDriveReviewBindsExactRouteEvidence() throws {
     id: "test.quote.proposed",
     entryFacilityID: routePlan.entryFacilityID,
     exitFacilityID: routePlan.exitFacilityID,
-    vehicleClass: "STANDARD",
+    vehicleClass: .standard,
+    paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",
     tariffVersionStatus: .proposed,
     tariffDistanceKM: 6.7,
@@ -22,6 +50,7 @@ func preDriveReviewBindsExactRouteEvidence() throws {
 
   let result = try PreDriveReviewEvaluator.evaluate(
     routePlan: routePlan,
+    session: preDriveSession(),
     evidence: preDriveEvidence(quotes: [proposed, active])
   )
 
@@ -40,7 +69,8 @@ func preDriveReviewRejectsInvalidNonActiveEvidence() {
     id: "test.quote.proposed",
     entryFacilityID: routePlan.entryFacilityID,
     exitFacilityID: routePlan.exitFacilityID,
-    vehicleClass: "STANDARD",
+    vehicleClass: .standard,
+    paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",
     tariffVersionStatus: .proposed,
     tariffDistanceKM: 6.7,
@@ -53,6 +83,7 @@ func preDriveReviewRejectsInvalidNonActiveEvidence() {
   #expect(throws: PreDriveReviewEvaluationError.invalidTariffEvidence) {
     try PreDriveReviewEvaluator.evaluate(
       routePlan: routePlan,
+      session: preDriveSession(),
       evidence: preDriveEvidence(
         quotes: [preDriveTariffQuote(), invalidProposed]
       )
@@ -67,7 +98,8 @@ func preDriveReviewRejectsVehicleClassDrift() {
     id: "test.quote.proposed.other-vehicle",
     entryFacilityID: routePlan.entryFacilityID,
     exitFacilityID: routePlan.exitFacilityID,
-    vehicleClass: "LIGHT",
+    vehicleClass: .lightMotorcycle,
+    paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",
     tariffVersionStatus: .proposed,
     tariffDistanceKM: 6.7,
@@ -82,9 +114,30 @@ func preDriveReviewRejectsVehicleClassDrift() {
   ) {
     try PreDriveReviewEvaluator.evaluate(
       routePlan: routePlan,
+      session: preDriveSession(),
       evidence: preDriveEvidence(
         quotes: [preDriveTariffQuote(), mismatchedProposed]
       )
+    )
+  }
+}
+
+@Test("Pre-drive review rejects evidence that drifts from the selected session class")
+func preDriveReviewRejectsProviderVehicleClassDrift() {
+  let evidence = preDriveEvidence(
+    vehicleClass: .lightMotorcycle,
+    quotes: [
+      preDriveTariffQuote(vehicleClass: .lightMotorcycle)
+    ]
+  )
+
+  #expect(
+    throws: PreDriveReviewEvaluationError.sessionVehicleClassMismatch
+  ) {
+    try PreDriveReviewEvaluator.evaluate(
+      routePlan: preDriveRoutePlan(),
+      session: preDriveSession(),
+      evidence: evidence
     )
   }
 }
@@ -95,7 +148,8 @@ func preDriveReviewRejectsUnauthorizedRealtimePassage() {
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "test.snapshot.pre-drive",
     routePlanID: "test.plan.pre-drive",
-    vehicleClass: "STANDARD",
+    vehicleClass: .standard,
+    paymentMethod: .etc,
     passageEvidence: .realtimeConfirmedPassable,
     tariffQuotes: [preDriveTariffQuote()]
   )
@@ -105,7 +159,50 @@ func preDriveReviewRejectsUnauthorizedRealtimePassage() {
   ) {
     try PreDriveReviewEvaluator.evaluate(
       routePlan: preDriveRoutePlan(),
+      session: preDriveSession(),
       evidence: evidence
+    )
+  }
+}
+
+@Test("Pre-drive review rejects evidence that drifts from the selected payment path")
+func preDriveReviewRejectsProviderPaymentMethodDrift() {
+  let evidence = preDriveEvidence(
+    paymentMethod: .cash,
+    quotes: [
+      preDriveTariffQuote(paymentMethod: .cash)
+    ]
+  )
+
+  #expect(
+    throws: PreDriveReviewEvaluationError.sessionPaymentMethodMismatch
+  ) {
+    try PreDriveReviewEvaluator.evaluate(
+      routePlan: preDriveRoutePlan(),
+      session: preDriveSession(),
+      evidence: evidence
+    )
+  }
+}
+
+@Test("Pre-drive review rejects a mixed payment-method quote")
+func preDriveReviewRejectsMixedPaymentMethodQuote() {
+  #expect(
+    throws: PreDriveReviewEvaluationError.tariffPaymentMethodMismatch
+  ) {
+    try PreDriveReviewEvaluator.evaluate(
+      routePlan: preDriveRoutePlan(),
+      session: preDriveSession(),
+      evidence: preDriveEvidence(
+        quotes: [
+          preDriveTariffQuote(),
+          preDriveTariffQuote(
+            id: "test.quote.cash.proposed",
+            paymentMethod: .cash,
+            tariffVersionStatus: .proposed
+          ),
+        ]
+      )
     )
   }
 }
@@ -129,14 +226,29 @@ private func preDriveRoutePlan() -> RoutePlan {
   )
 }
 
-private func preDriveTariffQuote() -> TariffQuote {
+private func preDriveSession() -> PreDriveReviewSession {
+  PreDriveReviewSession(
+    networkSnapshotID: "test.snapshot.pre-drive",
+    routePlanID: "test.plan.pre-drive",
+    vehicleClass: .standard,
+    paymentMethod: .etc
+  )
+}
+
+private func preDriveTariffQuote(
+  id: String = "test.quote.active",
+  vehicleClass: ShutoVehicleClass = .standard,
+  paymentMethod: ShutoPaymentMethod = .etc,
+  tariffVersionStatus: TariffVersionStatus = .active
+) -> TariffQuote {
   TariffQuote(
-    id: "test.quote.active",
+    id: id,
     entryFacilityID: "test.entrance",
     exitFacilityID: "test.exit",
-    vehicleClass: "STANDARD",
-    tariffVersionID: "test.tariff.active",
-    tariffVersionStatus: .active,
+    vehicleClass: vehicleClass,
+    paymentMethod: paymentMethod,
+    tariffVersionID: "test.tariff.\(tariffVersionStatus.rawValue.lowercased())",
+    tariffVersionStatus: tariffVersionStatus,
     tariffDistanceKM: 6.7,
     estimatedAmountYen: 630,
     evidenceStatus: .estimated,
@@ -146,13 +258,16 @@ private func preDriveTariffQuote() -> TariffQuote {
 }
 
 private func preDriveEvidence(
+  vehicleClass: ShutoVehicleClass = .standard,
+  paymentMethod: ShutoPaymentMethod = .etc,
   quotes: [TariffQuote]
 ) -> PreDriveReviewEvidence {
   PreDriveReviewEvidence(
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "test.snapshot.pre-drive",
     routePlanID: "test.plan.pre-drive",
-    vehicleClass: "STANDARD",
+    vehicleClass: vehicleClass,
+    paymentMethod: paymentMethod,
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: quotes
   )

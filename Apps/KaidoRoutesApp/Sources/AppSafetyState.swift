@@ -140,7 +140,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       BundledProductReleaseCatalog? = nil,
     releasedPreDriveEvidenceProvider:
       @escaping ReleasedProductRouteAuthoringModel.EvidenceProvider = {
-        _ in nil
+        _, _ in nil
       }
   ) {
     do {

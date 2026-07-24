@@ -275,19 +275,23 @@ layout binding, candidate ranking, or snapping tolerances.
 The internal iPhone adapter also composes KR-U04 after the exact explicit-exit
 compilation. A same-snapshot reviewed-distance catalog walks RoutePlan
 occurrences, so repeated entities contribute once per traversal. The shared
-pre-drive evaluator binds a dated evidence set to the exact snapshot, RoutePlan,
-entry, exit, and declared session vehicle class, validates every tariff record,
-and selects one unique `ACTIVE` version before creating the presentation
-projection. The portable runner now executes that same boundary rather than
-projecting loose scalars and exposes the selected exact vehicle class. App tests
-verify that actual distance changes with a duplicated lap while tariff distance
-does not, another vehicle class fails closed even on a non-active quote,
+pre-drive evaluator receives an independently declared session plus a dated
+evidence set. Both bind the exact snapshot and RoutePlan; the session owns one
+canonical Shuto vehicle class plus one independent ETC or cash method, while the
+evidence envelope and every tariff record must match both before one unique
+`ACTIVE` version can be selected. The portable runner exposes session and
+evidence profile fields separately. App tests verify that compilation or class
+selection alone cannot request evidence, the exact selected class and payment
+method reach the provider, changing either replaces the old review,
+provider-wide drift and a single non-active mixed-profile quote fail closed,
+actual distance changes with a duplicated lap while tariff distance does not,
 unconfirmed passage is not positive-open, unauthorized positive live state and
 invalid evidence fail closed, and undo removes the review.
 Released-authoring model tests additionally require a separately supplied
-session evidence set after exact release compilation. Missing, RoutePlan-drifted,
-snapshot-drifted, or vehicle-class-drifted evidence leaves the released route
-compiled but blocks review and navigation; no synthetic review or injected
+session evidence set after exact release compilation plus explicit vehicle-class
+and payment-method choices. Missing, RoutePlan-drifted, snapshot-drifted,
+vehicle-class-drifted, or payment-method-drifted evidence leaves the released
+route compiled but blocks review and navigation; no synthetic review or injected
 mismatched release can authorize the journey. The default App composition
 intentionally supplies no such current evidence provider.
 

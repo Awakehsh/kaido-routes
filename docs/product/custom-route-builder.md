@@ -213,9 +213,24 @@ interpretation remains non-authoritative. The app should link the current
 official query, retain `tariff_version_status`, and tell the user that the ETC
 statement is final.
 
+The operator's current vehicle-class page and 2026 toll guide were rechecked on
+2026-07-25. They define five categories: `軽・二輪`, `普通車`, `中型車`,
+`大型車`, and `特大車`. Kaido maps these to stable
+`LIGHT_MOTORCYCLE`, `STANDARD`, `MEDIUM`, `LARGE`, and `EXTRA_LARGE`
+identities. The parked user must choose one category before tariff evidence is
+requested. The user must separately choose `ETC` or `CASH`; the latter names the
+operator's 現金車 tariff path and does not exclude an accepted credit-card
+payment at a general lane. The evidence provider and every returned quote must
+match both independent selections. Choosing a payment path does not itself prove
+that the directional entrance accepts it. The operator's detailed axle, towing,
+eligibility, lane, and payment rules remain authoritative.
+
 Primary references:
 
 - [ETC basic charges](https://www.shutoko.jp/fee/fee-info/pay_etc/)
+- [Cash-customer basic charges](https://www.shutoko.jp/fee/fee-info/pay_cash/)
+- [Vehicle classes](https://www.shutoko.jp/fee/class/)
+- [2026 toll guide](https://www.shutoko.jp/-/media/pdf/responsive/customer/fee/fee-info/2604_pamphlet_guide.pdf)
 - [Tariff-distance and route-selection rule](https://www.shutoko.jp/fee/fee-info/pay_etc/distance/)
 - [Official route and toll query](https://search.shutoko.jp/)
 

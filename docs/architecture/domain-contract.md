@@ -320,11 +320,44 @@ TariffQuote
   tariff_version_status: ACTIVE | PROPOSED | RETIRED
   tariff_distance_km
   vehicle_class
+  payment_method
   estimated_amount_yen
   status: VERIFIED_QUERY | ESTIMATED | UNKNOWN
   checked_at
   official_query_reference
 ```
+
+`ShutoVehicleClass` uses five stable Kaido IDs mapped one-to-one to the
+operator's current Japanese categories:
+
+```text
+LIGHT_MOTORCYCLE -> 軽・二輪
+STANDARD         -> 普通車
+MEDIUM           -> 中型車
+LARGE            -> 大型車
+EXTRA_LARGE      -> 特大車
+```
+
+The mapping was checked against the current
+[Shuto vehicle-class definition](https://www.shutoko.jp/fee/class/) and
+[2026 toll guide](https://www.shutoko.jp/-/media/pdf/responsive/customer/fee/fee-info/2604_pamphlet_guide.pdf)
+on 2026-07-25. `ShutoPaymentMethod` is independently selected:
+
+```text
+ETC  -> ETC車 tariff path
+CASH -> 現金車 tariff path
+```
+
+This mapping was checked against the operator's current
+[ETC](https://www.shutoko.jp/fee/fee-info/pay_etc/) and
+[cash-customer](https://www.shutoko.jp/fee/fee-info/pay_cash/) pages on the same
+date. ETC is not part of vehicle-class identity; values such as
+`STANDARD_CAR_ETC` are invalid. `CASH` names the operator's 現金車 tariff path,
+which may include an accepted credit-card payment at a general lane; it is not a
+claim that banknotes are the only tender. Operator eligibility details,
+including towing and axle rules, remain authoritative and the app must not infer
+a class from a casual vehicle description. Selecting either payment method also
+does not prove that the exact directional entrance accepts it.
 
 `RouteDistanceResolver` may populate `RoutePlan.actual_distance_km` only from a
 reviewed distance catalog bound to the same network snapshot. It walks the
@@ -341,17 +374,22 @@ Input order, a newer check timestamp, or a proposed amount cannot make a
 non-active version win.
 
 `PreDriveReviewEvidence` is evaluated per session and is not embedded in a
-versioned product release. It declares the exact vehicle class selected for the
-session. `PreDriveReviewEvaluator` requires exact snapshot, RoutePlan,
-directional entrance, directional exit, and vehicle-class identity; a finite
-positive actual route distance; a valid evaluation time; unique, dated HTTPS
-tariff evidence; and exactly one active tariff version. Every quote, including a
-proposed or retired record, must match the session vehicle class; a different
-class fails with `PRE_DRIVE_TARIFF_VEHICLE_CLASS_MISMATCH` and cannot hide
-behind the selected result. Until a separate live-passage authority and
-freshness contract exists, `REALTIME_CONFIRMED_PASSABLE` fails closed. Missing
-live input remains `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED`, never confirmed
-open.
+versioned product release. `PreDriveReviewSession` independently records the
+exact snapshot, RoutePlan, vehicle class, and payment method explicitly selected
+for the drive. The evidence envelope must match that session before quote
+evaluation, so a provider cannot change its envelope and every quote together to
+self-authorize another profile; class drift fails with
+`PRE_DRIVE_SESSION_VEHICLE_CLASS_MISMATCH`, while payment drift fails with
+`PRE_DRIVE_SESSION_PAYMENT_METHOD_MISMATCH`. `PreDriveReviewEvaluator` also
+requires exact directional entrance and exit identity; a finite positive actual
+route distance; a valid evaluation time; unique, dated HTTPS tariff evidence;
+and exactly one active tariff version. Every quote, including a proposed or
+retired record, must match the evidence class and payment method; a mixed quote
+fails with `PRE_DRIVE_TARIFF_VEHICLE_CLASS_MISMATCH` or
+`PRE_DRIVE_TARIFF_PAYMENT_METHOD_MISMATCH` and cannot hide behind the selected
+result. Until a separate live-passage authority and freshness contract exists,
+`REALTIME_CONFIRMED_PASSABLE` fails closed. Missing live input remains
+`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED`, never confirmed open.
 
 ## Signs and localization
 

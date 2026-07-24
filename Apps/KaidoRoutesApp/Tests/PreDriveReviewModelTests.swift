@@ -105,6 +105,7 @@ final class PreDriveReviewModelTests: XCTestCase {
       networkSnapshotID: PreDriveReviewFixture.synthetic.networkSnapshotID,
       routePlanID: PreDriveReviewFixture.synthetic.routePlanID,
       vehicleClass: PreDriveReviewFixture.synthetic.vehicleClass,
+      paymentMethod: PreDriveReviewFixture.synthetic.paymentMethod,
       passageEvidence: PreDriveReviewFixture.synthetic.passageEvidence,
       tariffQuotes: [
         PreDriveReviewFixture.synthetic.tariffQuotes[0],
@@ -130,6 +131,7 @@ final class PreDriveReviewModelTests: XCTestCase {
       networkSnapshotID: PreDriveReviewFixture.synthetic.networkSnapshotID,
       routePlanID: PreDriveReviewFixture.synthetic.routePlanID,
       vehicleClass: PreDriveReviewFixture.synthetic.vehicleClass,
+      paymentMethod: PreDriveReviewFixture.synthetic.paymentMethod,
       passageEvidence: .realtimeConfirmedPassable,
       tariffQuotes: PreDriveReviewFixture.synthetic.tariffQuotes
     )

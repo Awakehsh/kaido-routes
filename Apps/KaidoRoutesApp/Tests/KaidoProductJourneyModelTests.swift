@@ -98,8 +98,12 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     let catalog = BundledProductReleaseCatalog(entries: [entry])
     let composition = KaidoRoutesAppModel(
       productReleaseCatalog: catalog,
-      releasedPreDriveEvidenceProvider: {
-        makeReleasedPreDriveEvidence(for: $0)
+      releasedPreDriveEvidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
       }
     )
     let model = KaidoProductJourneyModel(
@@ -146,8 +150,12 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     let catalog = BundledProductReleaseCatalog(entries: [entry])
     let composition = KaidoRoutesAppModel(
       productReleaseCatalog: catalog,
-      releasedPreDriveEvidenceProvider: {
-        makeReleasedPreDriveEvidence(for: $0)
+      releasedPreDriveEvidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
       }
     )
     let model = KaidoProductJourneyModel(
@@ -179,8 +187,12 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     let catalog = BundledProductReleaseCatalog(entries: [entry])
     let composition = KaidoRoutesAppModel(
       productReleaseCatalog: catalog,
-      releasedPreDriveEvidenceProvider: {
-        makeReleasedPreDriveEvidence(for: $0)
+      releasedPreDriveEvidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
       }
     )
     let model = KaidoProductJourneyModel(

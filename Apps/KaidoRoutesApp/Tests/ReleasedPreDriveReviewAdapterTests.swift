@@ -10,6 +10,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     let routePlan = entry.release.navigation.bundle.routePlan
     let adapter = try ReleasedPreDriveReviewAdapter(
       productRelease: entry.release,
+      session: releasedPreDriveSession(routePlan: routePlan),
       evidence: releasedPreDriveEvidence(routePlan: routePlan)
     )
 
@@ -40,7 +41,8 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: "preview.synthetic.route-plan.drift",
-      vehicleClass: "STANDARD",
+      vehicleClass: .standard,
+      paymentMethod: .etc,
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
@@ -48,6 +50,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     XCTAssertThrowsError(
       try ReleasedPreDriveReviewAdapter(
         productRelease: entry.release,
+        session: releasedPreDriveSession(routePlan: routePlan),
         evidence: evidence
       )
     ) {
@@ -65,7 +68,8 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: routePlan.id,
-      vehicleClass: "STANDARD",
+      vehicleClass: .standard,
+      paymentMethod: .etc,
       passageEvidence: .realtimeConfirmedPassable,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
@@ -73,6 +77,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     XCTAssertThrowsError(
       try ReleasedPreDriveReviewAdapter(
         productRelease: entry.release,
+        session: releasedPreDriveSession(routePlan: routePlan),
         evidence: evidence
       )
     ) {
@@ -90,12 +95,13 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: routePlan.id,
-      vehicleClass: "STANDARD",
+      vehicleClass: .standard,
+      paymentMethod: .etc,
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       tariffQuotes: [
         releasedTariffQuote(
           routePlan: routePlan,
-          vehicleClass: "LIGHT"
+          vehicleClass: .lightMotorcycle
         )
       ]
     )
@@ -103,12 +109,77 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     XCTAssertThrowsError(
       try ReleasedPreDriveReviewAdapter(
         productRelease: entry.release,
+        session: releasedPreDriveSession(routePlan: routePlan),
         evidence: evidence
       )
     ) {
       XCTAssertEqual(
         $0 as? PreDriveReviewEvaluationError,
         .tariffVehicleClassMismatch
+      )
+    }
+  }
+
+  func testAdapterRejectsProviderClassDriftFromSession() throws {
+    let entry = try bundledProductEntry()
+    let routePlan = entry.release.navigation.bundle.routePlan
+    let evidence = PreDriveReviewEvidence(
+      evaluatedAt: "2026-07-24T12:00:00+09:00",
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: .lightMotorcycle,
+      paymentMethod: .etc,
+      passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+      tariffQuotes: [
+        releasedTariffQuote(
+          routePlan: routePlan,
+          vehicleClass: .lightMotorcycle
+        )
+      ]
+    )
+
+    XCTAssertThrowsError(
+      try ReleasedPreDriveReviewAdapter(
+        productRelease: entry.release,
+        session: releasedPreDriveSession(routePlan: routePlan),
+        evidence: evidence
+      )
+    ) {
+      XCTAssertEqual(
+        $0 as? PreDriveReviewEvaluationError,
+        .sessionVehicleClassMismatch
+      )
+    }
+  }
+
+  func testAdapterRejectsProviderPaymentDriftFromSession() throws {
+    let entry = try bundledProductEntry()
+    let routePlan = entry.release.navigation.bundle.routePlan
+    let evidence = PreDriveReviewEvidence(
+      evaluatedAt: "2026-07-24T12:00:00+09:00",
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: .standard,
+      paymentMethod: .cash,
+      passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+      tariffQuotes: [
+        releasedTariffQuote(
+          routePlan: routePlan,
+          paymentMethod: .cash
+        )
+      ]
+    )
+
+    XCTAssertThrowsError(
+      try ReleasedPreDriveReviewAdapter(
+        productRelease: entry.release,
+        session: releasedPreDriveSession(routePlan: routePlan),
+        evidence: evidence
+      )
+    ) {
+      XCTAssertEqual(
+        $0 as? PreDriveReviewEvaluationError,
+        .sessionPaymentMethodMismatch
       )
     }
   }
@@ -126,7 +197,8 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: routePlan.id,
-      vehicleClass: "STANDARD",
+      vehicleClass: .standard,
+      paymentMethod: .etc,
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
@@ -134,13 +206,15 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
 
   private func releasedTariffQuote(
     routePlan: RoutePlan,
-    vehicleClass: String = "STANDARD"
+    vehicleClass: ShutoVehicleClass = .standard,
+    paymentMethod: ShutoPaymentMethod = .etc
   ) -> TariffQuote {
     TariffQuote(
       id: "preview.synthetic.quote.active",
       entryFacilityID: routePlan.entryFacilityID,
       exitFacilityID: routePlan.exitFacilityID,
       vehicleClass: vehicleClass,
+      paymentMethod: paymentMethod,
       tariffVersionID: "preview.synthetic.tariff.active",
       tariffVersionStatus: .active,
       tariffDistanceKM: 6.7,
@@ -148,6 +222,17 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evidenceStatus: .estimated,
       checkedAt: "2026-07-24T09:00:00+09:00",
       officialQueryReference: "https://example.com/tariff/active"
+    )
+  }
+
+  private func releasedPreDriveSession(
+    routePlan: RoutePlan
+  ) -> PreDriveReviewSession {
+    PreDriveReviewSession(
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: .standard,
+      paymentMethod: .etc
     )
   }
 }

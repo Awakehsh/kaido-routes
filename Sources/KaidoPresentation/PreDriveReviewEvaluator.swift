@@ -1,6 +1,30 @@
 import Foundation
 import KaidoDomain
 
+/// The route and tariff profile explicitly selected for one drive.
+///
+/// This request is independent from returned tariff evidence so an evidence
+/// provider cannot authorize a different vehicle class or payment method by
+/// changing both its evidence envelope and quotes together.
+public struct PreDriveReviewSession: Equatable, Sendable {
+  public let networkSnapshotID: String
+  public let routePlanID: String
+  public let vehicleClass: ShutoVehicleClass
+  public let paymentMethod: ShutoPaymentMethod
+
+  public init(
+    networkSnapshotID: String,
+    routePlanID: String,
+    vehicleClass: ShutoVehicleClass,
+    paymentMethod: ShutoPaymentMethod
+  ) {
+    self.networkSnapshotID = networkSnapshotID
+    self.routePlanID = routePlanID
+    self.vehicleClass = vehicleClass
+    self.paymentMethod = paymentMethod
+  }
+}
+
 /// Dated evidence evaluated immediately before a drive. This is intentionally
 /// not part of a versioned product release because tariff and passage evidence
 /// have independent freshness and authority.
@@ -8,7 +32,8 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
   public let evaluatedAt: String
   public let networkSnapshotID: String
   public let routePlanID: String
-  public let vehicleClass: String
+  public let vehicleClass: ShutoVehicleClass
+  public let paymentMethod: ShutoPaymentMethod
   public let passageEvidence: RoutePassageEvidence
   public let tariffQuotes: [TariffQuote]
 
@@ -16,7 +41,8 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
     evaluatedAt: String,
     networkSnapshotID: String,
     routePlanID: String,
-    vehicleClass: String,
+    vehicleClass: ShutoVehicleClass,
+    paymentMethod: ShutoPaymentMethod,
     passageEvidence: RoutePassageEvidence,
     tariffQuotes: [TariffQuote]
   ) {
@@ -24,6 +50,7 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
     self.networkSnapshotID = networkSnapshotID
     self.routePlanID = routePlanID
     self.vehicleClass = vehicleClass
+    self.paymentMethod = paymentMethod
     self.passageEvidence = passageEvidence
     self.tariffQuotes = tariffQuotes
   }
@@ -51,7 +78,10 @@ public enum PreDriveReviewEvaluationError: Error, Equatable, Sendable {
   case invalidTariffEvidence
   case noUniqueActiveTariff
   case tariffRouteMismatch
+  case sessionVehicleClassMismatch
+  case sessionPaymentMethodMismatch
   case tariffVehicleClassMismatch
+  case tariffPaymentMethodMismatch
   case realtimePassageAuthorityUnavailable
   case projectionFailed
 
@@ -67,8 +97,14 @@ public enum PreDriveReviewEvaluationError: Error, Equatable, Sendable {
       "PRE_DRIVE_NO_UNIQUE_ACTIVE_TARIFF"
     case .tariffRouteMismatch:
       "PRE_DRIVE_TARIFF_ROUTE_MISMATCH"
+    case .sessionVehicleClassMismatch:
+      "PRE_DRIVE_SESSION_VEHICLE_CLASS_MISMATCH"
+    case .sessionPaymentMethodMismatch:
+      "PRE_DRIVE_SESSION_PAYMENT_METHOD_MISMATCH"
     case .tariffVehicleClassMismatch:
       "PRE_DRIVE_TARIFF_VEHICLE_CLASS_MISMATCH"
+    case .tariffPaymentMethodMismatch:
+      "PRE_DRIVE_TARIFF_PAYMENT_METHOD_MISMATCH"
     case .realtimePassageAuthorityUnavailable:
       "PRE_DRIVE_REALTIME_PASSAGE_AUTHORITY_UNAVAILABLE"
     case .projectionFailed:
@@ -80,12 +116,21 @@ public enum PreDriveReviewEvaluationError: Error, Equatable, Sendable {
 public enum PreDriveReviewEvaluator {
   public static func evaluate(
     routePlan: RoutePlan,
+    session: PreDriveReviewSession,
     evidence: PreDriveReviewEvidence
   ) throws -> PreDriveReviewEvaluation {
-    guard routePlan.id == evidence.routePlanID,
-      routePlan.networkSnapshotID == evidence.networkSnapshotID
+    guard routePlan.id == session.routePlanID,
+      routePlan.networkSnapshotID == session.networkSnapshotID,
+      evidence.routePlanID == session.routePlanID,
+      evidence.networkSnapshotID == session.networkSnapshotID
     else {
       throw PreDriveReviewEvaluationError.routeIdentityMismatch
+    }
+    guard evidence.vehicleClass == session.vehicleClass else {
+      throw PreDriveReviewEvaluationError.sessionVehicleClassMismatch
+    }
+    guard evidence.paymentMethod == session.paymentMethod else {
+      throw PreDriveReviewEvaluationError.sessionPaymentMethodMismatch
     }
     guard let actualDistanceKM = routePlan.actualDistanceKM,
       actualDistanceKM.isFinite,
@@ -94,9 +139,6 @@ public enum PreDriveReviewEvaluator {
       throw PreDriveReviewEvaluationError.actualDistanceUnavailable
     }
     guard let evaluatedAt = parseISO8601(evidence.evaluatedAt) else {
-      throw PreDriveReviewEvaluationError.invalidTariffEvidence
-    }
-    guard !normalized(evidence.vehicleClass).isEmpty else {
       throw PreDriveReviewEvaluationError.invalidTariffEvidence
     }
     guard evidence.passageEvidence != .realtimeConfirmedPassable else {
@@ -112,6 +154,7 @@ public enum PreDriveReviewEvaluator {
         quote: quote,
         for: routePlan,
         vehicleClass: evidence.vehicleClass,
+        paymentMethod: evidence.paymentMethod,
         evaluatedAt: evaluatedAt
       )
     }
@@ -160,13 +203,13 @@ public enum PreDriveReviewEvaluator {
   private static func validate(
     quote: TariffQuote,
     for routePlan: RoutePlan,
-    vehicleClass: String,
+    vehicleClass: ShutoVehicleClass,
+    paymentMethod: ShutoPaymentMethod,
     evaluatedAt: Date
   ) throws {
     guard !normalized(quote.id).isEmpty,
       !normalized(quote.entryFacilityID).isEmpty,
       !normalized(quote.exitFacilityID).isEmpty,
-      !normalized(quote.vehicleClass).isEmpty,
       !normalized(quote.tariffVersionID).isEmpty,
       let checkedAt = parseISO8601(quote.checkedAt),
       checkedAt <= evaluatedAt,
@@ -183,6 +226,9 @@ public enum PreDriveReviewEvaluator {
     }
     guard quote.vehicleClass == vehicleClass else {
       throw PreDriveReviewEvaluationError.tariffVehicleClassMismatch
+    }
+    guard quote.paymentMethod == paymentMethod else {
+      throw PreDriveReviewEvaluationError.tariffPaymentMethodMismatch
     }
     if let distance = quote.tariffDistanceKM,
       !distance.isFinite || distance < 0

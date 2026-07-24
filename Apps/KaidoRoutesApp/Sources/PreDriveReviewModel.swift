@@ -11,14 +11,16 @@ extension PreDriveReviewEvidence {
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "preview.synthetic.snapshot-v1",
     routePlanID: "preview.synthetic.route-plan",
-    vehicleClass: "STANDARD",
+    vehicleClass: .standard,
+    paymentMethod: .etc,
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: [
       TariffQuote(
         id: "preview.synthetic.quote.active",
         entryFacilityID: "preview.synthetic.entrance.eastbound",
         exitFacilityID: "preview.synthetic.exit.eastbound",
-        vehicleClass: "STANDARD",
+        vehicleClass: .standard,
+        paymentMethod: .etc,
         tariffVersionID: "preview.synthetic.tariff.active",
         tariffVersionStatus: .active,
         tariffDistanceKM: 6.7,
@@ -31,7 +33,8 @@ extension PreDriveReviewEvidence {
         id: "preview.synthetic.quote.proposed",
         entryFacilityID: "preview.synthetic.entrance.eastbound",
         exitFacilityID: "preview.synthetic.exit.eastbound",
-        vehicleClass: "STANDARD",
+        vehicleClass: .standard,
+        paymentMethod: .etc,
         tariffVersionID: "preview.synthetic.tariff.proposed",
         tariffVersionStatus: .proposed,
         tariffDistanceKM: 6.7,
@@ -49,7 +52,8 @@ struct PreDriveReviewSnapshot: Equatable, Sendable {
   let occurrenceCount: Int
   let presentation: PreDriveReviewPresentation
   let quoteID: String
-  let vehicleClass: String
+  let vehicleClass: ShutoVehicleClass
+  let paymentMethod: ShutoPaymentMethod
   let tariffVersionID: String
   let tariffVersionStatus: TariffVersionStatus
   let checkedAt: String
@@ -66,6 +70,7 @@ struct PreDriveReviewSnapshot: Equatable, Sendable {
     presentation = evaluation.presentation
     quoteID = quote.id
     vehicleClass = quote.vehicleClass
+    paymentMethod = quote.paymentMethod
     tariffVersionID = quote.tariffVersionID
     tariffVersionStatus = quote.tariffVersionStatus
     checkedAt = quote.checkedAt
@@ -120,6 +125,12 @@ final class PreDriveReviewModel: ObservableObject {
   private func makeSnapshot(routePlan: RoutePlan) throws -> PreDriveReviewSnapshot {
     let evaluation = try PreDriveReviewEvaluator.evaluate(
       routePlan: routePlan,
+      session: PreDriveReviewSession(
+        networkSnapshotID: routePlan.networkSnapshotID,
+        routePlanID: routePlan.id,
+        vehicleClass: fixture.vehicleClass,
+        paymentMethod: fixture.paymentMethod
+      ),
       evidence: fixture
     )
     return PreDriveReviewSnapshot(

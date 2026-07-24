@@ -187,9 +187,12 @@ struct PreDriveReviewPanel: View {
       }
 
       HStack {
-        Text("\(snapshot.vehicleClass) · \(checkedDate(snapshot.checkedAt))")
-          .font(.system(size: 9, weight: .medium, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
+        Text(
+          "\(snapshot.vehicleClass.rawValue) · \(snapshot.vehicleClass.officialJapaneseLabel) · "
+            + "\(snapshot.paymentMethod.rawValue) · \(checkedDate(snapshot.checkedAt))"
+        )
+        .font(.system(size: 9, weight: .medium, design: .monospaced))
+        .foregroundStyle(KaidoTheme.muted)
 
         Spacer()
 

@@ -72,8 +72,10 @@ func makeReleasedPreDriveEvidence(
   for entry: BundledProductReleaseEntry,
   routePlanID: String? = nil,
   networkSnapshotID: String? = nil,
-  vehicleClass: String = "STANDARD",
-  quoteVehicleClass: String? = nil
+  vehicleClass: ShutoVehicleClass = .standard,
+  quoteVehicleClass: ShutoVehicleClass? = nil,
+  paymentMethod: ShutoPaymentMethod = .etc,
+  quotePaymentMethod: ShutoPaymentMethod? = nil
 ) -> PreDriveReviewEvidence {
   let routePlan = entry.release.navigation.bundle.routePlan
   return PreDriveReviewEvidence(
@@ -81,6 +83,7 @@ func makeReleasedPreDriveEvidence(
     networkSnapshotID: networkSnapshotID ?? routePlan.networkSnapshotID,
     routePlanID: routePlanID ?? routePlan.id,
     vehicleClass: vehicleClass,
+    paymentMethod: paymentMethod,
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: [
       TariffQuote(
@@ -88,6 +91,7 @@ func makeReleasedPreDriveEvidence(
         entryFacilityID: routePlan.entryFacilityID,
         exitFacilityID: routePlan.exitFacilityID,
         vehicleClass: quoteVehicleClass ?? vehicleClass,
+        paymentMethod: quotePaymentMethod ?? paymentMethod,
         tariffVersionID: "test.released-road.tariff.v1",
         tariffVersionStatus: .active,
         tariffDistanceKM: 24.8,
@@ -103,11 +107,19 @@ func makeReleasedPreDriveEvidence(
 @MainActor
 func authorReleasedRoute(
   _ model: ReleasedProductRouteAuthoringModel,
-  entry: BundledProductReleaseEntry
+  entry: BundledProductReleaseEntry,
+  vehicleClass: ShutoVehicleClass? = .standard,
+  paymentMethod: ShutoPaymentMethod? = .etc
 ) {
   model.selectRelease(entry.release.releaseID)
   while let step = model.currentStep {
     model.selectReleasedChoice(step.choiceID)
   }
   model.compile()
+  if let vehicleClass {
+    model.selectVehicleClass(vehicleClass)
+  }
+  if let paymentMethod {
+    model.selectPaymentMethod(paymentMethod)
+  }
 }

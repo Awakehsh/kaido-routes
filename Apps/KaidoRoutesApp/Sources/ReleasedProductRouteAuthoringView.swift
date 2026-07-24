@@ -149,6 +149,8 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
         if let routePlan = model.compiledRoutePlan {
           compiledIdentity(routePlan)
+          vehicleClassPicker
+          paymentMethodPicker
         }
 
         if let errorCode = model.lastErrorCode {
@@ -192,11 +194,11 @@ struct ReleasedProductRouteAuthoringPanel: View {
             ),
             detail: copy.resolve(
               japanese:
-                "コンパイル済み RoutePlan、料金記録、通行状態は同じ RoutePlan とネットワークスナップショットに固定されています。",
+                "選択した車種区分と支払方法、コンパイル済み RoutePlan、料金記録、通行状態は同じ走行セッションに固定されています。",
               simplifiedChinese:
-                "编译 RoutePlan、计费记录与通行状态均已绑定同一 RoutePlan 与网络快照。",
+                "所选车型与支付方式、编译 RoutePlan、计费记录与通行状态均已绑定同一行程会话。",
               english:
-                "The compiled RoutePlan, tariff record, and passage state are bound to the same RoutePlan and network snapshot."
+                "The selected vehicle class and payment method, compiled RoutePlan, tariff record, and passage state are bound to the same drive session."
             ),
             code: "RELEASED PRE-DRIVE · READY",
             color: KaidoTheme.positionCyan
@@ -264,6 +266,149 @@ struct ReleasedProductRouteAuthoringPanel: View {
     .accessibilityIdentifier("released-route-compile")
   }
 
+  private var vehicleClassPicker: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      panelHeader(
+        title: copy.resolve(
+          japanese: "この走行の車種区分",
+          simplifiedChinese: "选择本次行程的车型",
+          english: "Choose the vehicle class for this drive"
+        ),
+        detail: copy.resolve(
+          japanese:
+            "首都高の公式5区分から選択します。支払方法は別に選択します。",
+          simplifiedChinese:
+            "请从首都高官方五类车型中选择；支付方式另行选择。",
+          english:
+            "Choose one of Shuto Expressway's five official classes. Select payment separately."
+        )
+      )
+
+      ForEach(model.availableVehicleClasses, id: \.rawValue) { vehicleClass in
+        let isSelected = model.selectedVehicleClass == vehicleClass
+        Button {
+          model.selectVehicleClass(vehicleClass)
+        } label: {
+          HStack(spacing: 10) {
+            Image(
+              systemName: isSelected
+                ? "checkmark.circle.fill"
+                : "circle"
+            )
+            .foregroundStyle(
+              isSelected ? KaidoTheme.signalAmber : KaidoTheme.muted
+            )
+
+            VStack(alignment: .leading, spacing: 2) {
+              Text(vehicleClassTitle(vehicleClass))
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(KaidoTheme.routeWhite)
+              Text(
+                "\(vehicleClass.rawValue) · \(vehicleClass.officialJapaneseLabel)"
+              )
+              .font(.system(size: 8, weight: .bold, design: .monospaced))
+              .foregroundStyle(KaidoTheme.muted)
+            }
+
+            Spacer(minLength: 4)
+          }
+          .padding(11)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(
+            isSelected
+              ? KaidoTheme.signalAmber.opacity(0.12)
+              : KaidoTheme.asphalt.opacity(0.45)
+          )
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+          .overlay {
+            RoundedRectangle(cornerRadius: 12)
+              .stroke(
+                isSelected
+                  ? KaidoTheme.signalAmber.opacity(0.72)
+                  : KaidoTheme.steel.opacity(0.55),
+                lineWidth: 1
+              )
+          }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(
+          "released-vehicle-class-\(vehicleClass.rawValue)"
+        )
+        .accessibilityLabel(
+          "\(vehicleClassTitle(vehicleClass))；\(vehicleClass.officialJapaneseLabel)"
+        )
+        .accessibilityValue(isSelected ? "SELECTED" : "NOT_SELECTED")
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.asphalt.opacity(0.34))
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+  }
+
+  private var paymentMethodPicker: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      panelHeader(
+        title: copy.resolve(
+          japanese: "この走行の支払方法",
+          simplifiedChinese: "选择本次行程的支付方式",
+          english: "Choose the payment method for this drive"
+        ),
+        detail: copy.resolve(
+          japanese:
+            "選択だけでは入口の利用可否を証明しません。経路ごとの証拠が必要です。",
+          simplifiedChinese:
+            "选择支付方式并不证明入口可用；仍需路线对应的当前证据。",
+          english:
+            "Selection does not prove entrance availability; current route-specific evidence is still required."
+        )
+      )
+
+      HStack(spacing: 8) {
+        ForEach(model.availablePaymentMethods, id: \.rawValue) { paymentMethod in
+          let isSelected = model.selectedPaymentMethod == paymentMethod
+          Button {
+            model.selectPaymentMethod(paymentMethod)
+          } label: {
+            VStack(alignment: .leading, spacing: 3) {
+              Text(paymentMethodTitle(paymentMethod))
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(KaidoTheme.routeWhite)
+              Text(paymentMethod.rawValue)
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .foregroundStyle(KaidoTheme.muted)
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+              isSelected
+                ? KaidoTheme.positionCyan.opacity(0.14)
+                : KaidoTheme.asphalt.opacity(0.45)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay {
+              RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                  isSelected
+                    ? KaidoTheme.positionCyan.opacity(0.72)
+                    : KaidoTheme.steel.opacity(0.55),
+                  lineWidth: 1
+                )
+            }
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier(
+            "released-payment-method-\(paymentMethod.rawValue)"
+          )
+          .accessibilityLabel(paymentMethodTitle(paymentMethod))
+          .accessibilityValue(isSelected ? "SELECTED" : "NOT_SELECTED")
+        }
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.asphalt.opacity(0.34))
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+  }
+
   private func compiledIdentity(_ routePlan: RoutePlan) -> some View {
     HStack(spacing: 10) {
       Image(systemName: "point.3.connected.trianglepath.dotted")
@@ -307,6 +452,24 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
   private func blockedTitle(_ code: String) -> String {
     if code
+      == ReleasedProductRouteAuthoringError.vehicleClassRequired.rawValue
+    {
+      return copy.resolve(
+        japanese: "車種区分を選択してください",
+        simplifiedChinese: "请选择车型",
+        english: "Choose a vehicle class"
+      )
+    }
+    if code
+      == ReleasedProductRouteAuthoringError.paymentMethodRequired.rawValue
+    {
+      return copy.resolve(
+        japanese: "支払方法を選択してください",
+        simplifiedChinese: "请选择支付方式",
+        english: "Choose a payment method"
+      )
+    }
+    if code
       == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
     {
       return copy.resolve(
@@ -331,6 +494,30 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
   private func blockedDetail(_ code: String) -> String {
     if code
+      == ReleasedProductRouteAuthoringError.vehicleClassRequired.rawValue
+    {
+      return copy.resolve(
+        japanese:
+          "料金証拠を要求する前に、この走行の首都高車種区分を明示的に選択してください。",
+        simplifiedChinese:
+          "请求计费证据前，请明确选择本次行程对应的首都高车型分类。",
+        english:
+          "Select this drive's Shuto vehicle class before requesting tariff evidence."
+      )
+    }
+    if code
+      == ReleasedProductRouteAuthoringError.paymentMethodRequired.rawValue
+    {
+      return copy.resolve(
+        japanese:
+          "料金証拠を要求する前に、この走行の ETC または現金を明示的に選択してください。",
+        simplifiedChinese:
+          "请求计费证据前，请明确选择本次行程使用 ETC 或现金。",
+        english:
+          "Select ETC or cash for this drive before requesting tariff evidence."
+      )
+    }
+    if code
       == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
     {
       return copy.resolve(
@@ -343,15 +530,51 @@ struct ReleasedProductRouteAuthoringPanel: View {
       )
     }
     if code
+      == PreDriveReviewEvaluationError.sessionVehicleClassMismatch.code
+    {
+      return copy.resolve(
+        japanese:
+          "選択した車種区分と、証拠提供者が返した車種区分が一致しません。",
+        simplifiedChinese:
+          "所选车型与证据提供器返回的车型不一致。",
+        english:
+          "The selected vehicle class does not match the class returned by the evidence provider."
+      )
+    }
+    if code
+      == PreDriveReviewEvaluationError.sessionPaymentMethodMismatch.code
+    {
+      return copy.resolve(
+        japanese:
+          "選択した支払方法と、証拠提供者が返した支払方法が一致しません。",
+        simplifiedChinese:
+          "所选支付方式与证据提供器返回的支付方式不一致。",
+        english:
+          "The selected payment method does not match the method returned by the evidence provider."
+      )
+    }
+    if code
       == PreDriveReviewEvaluationError.tariffVehicleClassMismatch.code
     {
       return copy.resolve(
         japanese:
-          "この走行で選択した車種区分と料金記録の車種区分が一致しません。",
+          "証拠セット内の料金記録に異なる車種区分が含まれています。",
         simplifiedChinese:
-          "本次行程选择的车辆类别与计费记录中的车辆类别不一致。",
+          "证据集中包含了其他车型的计费记录。",
         english:
-          "The vehicle class selected for this drive does not match the tariff record."
+          "The evidence set contains a tariff record for another vehicle class."
+      )
+    }
+    if code
+      == PreDriveReviewEvaluationError.tariffPaymentMethodMismatch.code
+    {
+      return copy.resolve(
+        japanese:
+          "証拠セット内の料金記録に異なる支払方法が含まれています。",
+        simplifiedChinese:
+          "证据集中包含了其他支付方式的计费记录。",
+        english:
+          "The evidence set contains a tariff record for another payment method."
       )
     }
     if isRejectedPreDriveEvidence(code) {
@@ -373,6 +596,54 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private func vehicleClassTitle(_ vehicleClass: ShutoVehicleClass) -> String {
+    switch vehicleClass {
+    case .lightMotorcycle:
+      copy.resolve(
+        japanese: "軽・二輪",
+        simplifiedChinese: "轻型汽车／摩托车",
+        english: "Kei vehicle / motorcycle"
+      )
+    case .standard:
+      copy.resolve(
+        japanese: "普通車",
+        simplifiedChinese: "普通车",
+        english: "Standard vehicle"
+      )
+    case .medium:
+      copy.resolve(
+        japanese: "中型車",
+        simplifiedChinese: "中型车",
+        english: "Medium vehicle"
+      )
+    case .large:
+      copy.resolve(
+        japanese: "大型車",
+        simplifiedChinese: "大型车",
+        english: "Large vehicle"
+      )
+    case .extraLarge:
+      copy.resolve(
+        japanese: "特大車",
+        simplifiedChinese: "特大型车",
+        english: "Extra-large vehicle"
+      )
+    }
+  }
+
+  private func paymentMethodTitle(_ paymentMethod: ShutoPaymentMethod) -> String {
+    switch paymentMethod {
+    case .etc:
+      "ETC"
+    case .cash:
+      copy.resolve(
+        japanese: "現金",
+        simplifiedChinese: "现金",
+        english: "Cash"
+      )
+    }
   }
 
   private func canRefreshPreDriveEvidence(_ code: String) -> Bool {

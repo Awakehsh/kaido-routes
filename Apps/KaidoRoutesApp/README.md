@@ -51,9 +51,12 @@ release through its own locale-complete presentation, and submits every stable
 recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
 equal the selected release's whole `RoutePlan`, including snapshot and
 occurrence order. A separately injected session-evidence provider must then
-satisfy `ReleasedPreDriveReviewAdapter`; missing or drifting tariff and passage
-evidence, or any tariff quote for another vehicle class, keeps review and
-navigation locked. Only that exact route and review pair enables the primary
+satisfy `ReleasedPreDriveReviewAdapter`. The user explicitly selects one of the
+five canonical Shuto vehicle classes and independently selects ETC or cash
+first; the provider receives that exact RoutePlan/snapshot/class/payment
+request. Missing or drifting tariff and passage evidence, a provider envelope
+for another selection, or any mixed-profile quote keeps review and navigation
+locked. Only that exact route, session, and review tuple enables the primary
 user action to construct the selected entry's
 `ProductNavigationRuntimeModel`. The App then enters a release-keyed navigation
 surface while Core Location remains idle. A second explicit action starts
@@ -265,11 +268,13 @@ increase `RoutePlan.actualDistanceKM` again instead of being deduplicated.
 Missing distance coverage, invalid values, or snapshot drift block compilation.
 
 `PreDriveReviewModel` delegates to the platform-light
-`PreDriveReviewEvaluator`. The evaluator binds a dated evidence set to the exact
-RoutePlan and network snapshot, validates every quote against the directional
-entrance, exit, and session vehicle class, and requires one unique `ACTIVE`
-tariff version before creating the presentation. A quote for another vehicle
-class rejects the whole evidence set, including when that quote is non-active.
+`PreDriveReviewEvaluator`. The evaluator binds a dated evidence set to an
+independently constructed `PreDriveReviewSession` containing the exact RoutePlan,
+network snapshot, canonical `ShutoVehicleClass`, and `ShutoPaymentMethod`. The
+evidence envelope and every quote must match that session, and exactly one
+tariff version must be `ACTIVE` before presentation. A provider cannot change
+its envelope and all quotes together to self-authorize another class or payment
+path; any mixed-profile non-active quote also rejects the whole evidence set.
 It rejects a positive realtime passage state because no live authority and
 freshness token exists yet. The view never derives toll from route distance and
 never presents
@@ -279,13 +284,16 @@ never presents
 owned by one validated `KaidoProductRelease`; tariff and passage evidence remain
 per-session inputs rather than frozen release assets.
 `ReleasedProductRouteAuthoringModel` requests that evidence only after the
-release-owned recipe compiles to the exact selected RoutePlan. Missing,
-snapshot-drifted, route-drifted, vehicle-class-drifted, or rejected evidence
-keeps review unavailable; changing the interface locale rebuilds released
-labels without changing occurrence progress and reevaluates the evidence. The
-bundled fixture is synthetic, the default provider supplies no live evidence,
-and navigation remains locked because the app has no real-road product release
-plus current authorized session evidence.
+release-owned recipe compiles to the exact selected RoutePlan and the user
+explicitly selects one of the five official categories plus ETC or cash.
+Changing either selection invalidates the old review and issues a new exact
+session request. Missing, snapshot-drifted, route-drifted,
+vehicle-class-drifted, payment-method-drifted, or rejected evidence keeps review
+unavailable; changing the interface locale rebuilds released labels without
+changing occurrence progress and reevaluates the same selected tariff profile.
+The bundled fixture is synthetic, the default provider supplies no live
+evidence, and navigation remains locked because the app has no real-road product
+release plus current authorized session evidence.
 
 ## Guidance language preview
 

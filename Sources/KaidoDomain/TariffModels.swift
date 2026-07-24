@@ -1,5 +1,50 @@
 import Foundation
 
+/// Current Shuto Expressway tariff vehicle classes.
+///
+/// These stable IDs map to the operator's five Japanese categories. Payment
+/// method, including ETC, is deliberately not part of vehicle-class identity.
+public enum ShutoVehicleClass: String, Codable, CaseIterable, Equatable, Sendable {
+  case lightMotorcycle = "LIGHT_MOTORCYCLE"
+  case standard = "STANDARD"
+  case medium = "MEDIUM"
+  case large = "LARGE"
+  case extraLarge = "EXTRA_LARGE"
+
+  public var officialJapaneseLabel: String {
+    switch self {
+    case .lightMotorcycle:
+      "軽・二輪"
+    case .standard:
+      "普通車"
+    case .medium:
+      "中型車"
+    case .large:
+      "大型車"
+    case .extraLarge:
+      "特大車"
+    }
+  }
+}
+
+/// The operator's two tariff paths used by the current product scope.
+///
+/// Selecting a method does not prove that a directional entrance accepts it;
+/// route-specific evidence must still establish that independently.
+public enum ShutoPaymentMethod: String, Codable, CaseIterable, Equatable, Sendable {
+  case etc = "ETC"
+  case cash = "CASH"
+
+  public var officialJapaneseLabel: String {
+    switch self {
+    case .etc:
+      "ETC"
+    case .cash:
+      "現金"
+    }
+  }
+}
+
 public enum TariffVersionStatus: String, Codable, Equatable, Sendable {
   case active = "ACTIVE"
   case proposed = "PROPOSED"
@@ -18,7 +63,8 @@ public struct TariffQuote: Codable, Equatable, Sendable {
   public let id: String
   public let entryFacilityID: String
   public let exitFacilityID: String
-  public let vehicleClass: String
+  public let vehicleClass: ShutoVehicleClass
+  public let paymentMethod: ShutoPaymentMethod
   public let tariffVersionID: String
   public let tariffVersionStatus: TariffVersionStatus
   public let tariffDistanceKM: Double?
@@ -31,7 +77,8 @@ public struct TariffQuote: Codable, Equatable, Sendable {
     id: String,
     entryFacilityID: String,
     exitFacilityID: String,
-    vehicleClass: String,
+    vehicleClass: ShutoVehicleClass,
+    paymentMethod: ShutoPaymentMethod,
     tariffVersionID: String,
     tariffVersionStatus: TariffVersionStatus,
     tariffDistanceKM: Double?,
@@ -44,6 +91,7 @@ public struct TariffQuote: Codable, Equatable, Sendable {
     self.entryFacilityID = entryFacilityID
     self.exitFacilityID = exitFacilityID
     self.vehicleClass = vehicleClass
+    self.paymentMethod = paymentMethod
     self.tariffVersionID = tariffVersionID
     self.tariffVersionStatus = tariffVersionStatus
     self.tariffDistanceKM = tariffDistanceKM
@@ -58,6 +106,7 @@ public struct TariffQuote: Codable, Equatable, Sendable {
     case entryFacilityID = "entry_facility_id"
     case exitFacilityID = "exit_facility_id"
     case vehicleClass = "vehicle_class"
+    case paymentMethod = "payment_method"
     case tariffVersionID = "tariff_version_id"
     case tariffVersionStatus = "tariff_version_status"
     case tariffDistanceKM = "tariff_distance_km"

@@ -1,3 +1,4 @@
+import KaidoDomain
 import KaidoPresentation
 import XCTest
 
@@ -12,8 +13,12 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
       locale: .simplifiedChinese,
-      evidenceProvider: {
-        makeReleasedPreDriveEvidence(for: $0)
+      evidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
       }
     )
 
@@ -62,10 +67,12 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
       locale: .english,
-      evidenceProvider: {
+      evidenceProvider: { entry, session in
         makeReleasedPreDriveEvidence(
-          for: $0,
-          routePlanID: "test.route-plan.drift"
+          for: entry,
+          routePlanID: "test.route-plan.drift",
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
         )
       }
     )
@@ -85,11 +92,12 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
       locale: .english,
-      evidenceProvider: {
+      evidenceProvider: { entry, session in
         makeReleasedPreDriveEvidence(
-          for: $0,
-          vehicleClass: "STANDARD",
-          quoteVehicleClass: "LIGHT"
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          quoteVehicleClass: .lightMotorcycle,
+          paymentMethod: session.paymentMethod
         )
       }
     )
@@ -102,6 +110,206 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
       model.lastErrorCode,
       PreDriveReviewEvaluationError.tariffVehicleClassMismatch.code
     )
+  }
+
+  func testCompiledRouteRequiresExplicitVehicleClassBeforeEvidenceRequest()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry()
+    var requestCount = 0
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { _, _ in
+        requestCount += 1
+        return nil
+      }
+    )
+
+    authorReleasedRoute(
+      model,
+      entry: entry,
+      vehicleClass: nil,
+      paymentMethod: nil
+    )
+
+    XCTAssertEqual(
+      model.compiledRoutePlan,
+      entry.release.navigation.bundle.routePlan
+    )
+    XCTAssertNil(model.selectedVehicleClass)
+    XCTAssertNil(model.selectedPaymentMethod)
+    XCTAssertFalse(model.reviewReady)
+    XCTAssertEqual(requestCount, 0)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      ReleasedProductRouteAuthoringError.vehicleClassRequired.rawValue
+    )
+  }
+
+  func testEvidenceProviderReceivesExactSelectedSession() throws {
+    let entry = try makeReleasedProductTestEntry()
+    var requestedSession: PreDriveReviewSession?
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { entry, session in
+        requestedSession = session
+        return makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
+      }
+    )
+
+    authorReleasedRoute(
+      model,
+      entry: entry,
+      vehicleClass: .lightMotorcycle
+    )
+
+    let routePlan = entry.release.navigation.bundle.routePlan
+    XCTAssertEqual(
+      requestedSession,
+      PreDriveReviewSession(
+        networkSnapshotID: routePlan.networkSnapshotID,
+        routePlanID: routePlan.id,
+        vehicleClass: .lightMotorcycle,
+        paymentMethod: .etc
+      )
+    )
+    XCTAssertEqual(model.selectedVehicleClass, .lightMotorcycle)
+    XCTAssertEqual(model.selectedPaymentMethod, .etc)
+    XCTAssertEqual(
+      model.preDriveReviewSnapshot?.vehicleClass,
+      .lightMotorcycle
+    )
+    XCTAssertEqual(model.preDriveReviewSnapshot?.paymentMethod, .etc)
+    XCTAssertTrue(model.reviewReady)
+  }
+
+  func testVehicleClassAloneCannotRequestEvidenceWithoutPaymentMethod()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry()
+    var requestCount = 0
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { _, _ in
+        requestCount += 1
+        return nil
+      }
+    )
+
+    authorReleasedRoute(
+      model,
+      entry: entry,
+      vehicleClass: .standard,
+      paymentMethod: nil
+    )
+
+    XCTAssertEqual(model.selectedVehicleClass, .standard)
+    XCTAssertNil(model.selectedPaymentMethod)
+    XCTAssertEqual(requestCount, 0)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      ReleasedProductRouteAuthoringError.paymentMethodRequired.rawValue
+    )
+  }
+
+  func testProviderCannotDriftEvidenceAndQuotesTogetherFromSession() throws {
+    let entry = try makeReleasedProductTestEntry()
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { entry, _ in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: .lightMotorcycle
+        )
+      }
+    )
+
+    authorReleasedRoute(model, entry: entry, vehicleClass: .standard)
+
+    XCTAssertFalse(model.reviewReady)
+    XCTAssertNil(model.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      PreDriveReviewEvaluationError.sessionVehicleClassMismatch.code
+    )
+  }
+
+  func testProviderCannotDriftPaymentAndQuotesTogetherFromSession() throws {
+    let entry = try makeReleasedProductTestEntry()
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: .cash
+        )
+      }
+    )
+
+    authorReleasedRoute(
+      model,
+      entry: entry,
+      vehicleClass: .standard,
+      paymentMethod: .etc
+    )
+
+    XCTAssertFalse(model.reviewReady)
+    XCTAssertNil(model.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      PreDriveReviewEvaluationError.sessionPaymentMethodMismatch.code
+    )
+  }
+
+  func testChangingTariffProfileRequeriesAndReplacesReview() throws {
+    let entry = try makeReleasedProductTestEntry()
+    var requestedSessions: [PreDriveReviewSession] = []
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: { entry, session in
+        requestedSessions.append(session)
+        return makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod
+        )
+      }
+    )
+
+    authorReleasedRoute(model, entry: entry, vehicleClass: .standard)
+    XCTAssertEqual(model.preDriveReviewSnapshot?.vehicleClass, .standard)
+    XCTAssertEqual(model.preDriveReviewSnapshot?.paymentMethod, .etc)
+
+    model.selectVehicleClass(.large)
+    model.selectPaymentMethod(.cash)
+
+    XCTAssertEqual(
+      requestedSessions.map {
+        "\($0.vehicleClass.rawValue):\($0.paymentMethod.rawValue)"
+      },
+      [
+        "STANDARD:ETC",
+        "LARGE:ETC",
+        "LARGE:CASH",
+      ]
+    )
+    XCTAssertEqual(model.selectedVehicleClass, .large)
+    XCTAssertEqual(model.selectedPaymentMethod, .cash)
+    XCTAssertEqual(model.preDriveReviewSnapshot?.vehicleClass, .large)
+    XCTAssertEqual(model.preDriveReviewSnapshot?.paymentMethod, .cash)
+    XCTAssertTrue(model.reviewReady)
+    XCTAssertNil(model.lastErrorCode)
   }
 
   func testWrongReleasedChoiceDoesNotMutateEditor() throws {
@@ -152,9 +360,13 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
       locale: .japanese,
-      evidenceProvider: {
+      evidenceProvider: { entry, session in
         evidenceAvailable
-          ? makeReleasedPreDriveEvidence(for: $0)
+          ? makeReleasedPreDriveEvidence(
+            for: entry,
+            vehicleClass: session.vehicleClass,
+            paymentMethod: session.paymentMethod
+          )
           : nil
       }
     )

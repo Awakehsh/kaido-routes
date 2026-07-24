@@ -31,6 +31,14 @@ OCCURRENCE_KINDS = {"EDGE", "JUNCTION_MOVEMENT", "PA_VISIT"}
 RECOVERY_POLICIES = {"STRICT", "SAFE_REJOIN", "SAFE_EXIT", "MANUAL_WHEN_PARKED"}
 TARIFF_QUOTE_STATUSES = {"VERIFIED_QUERY", "ESTIMATED", "UNKNOWN"}
 TARIFF_VERSION_STATUSES = {"ACTIVE", "PROPOSED", "RETIRED"}
+SHUTO_VEHICLE_CLASSES = {
+    "LIGHT_MOTORCYCLE",
+    "STANDARD",
+    "MEDIUM",
+    "LARGE",
+    "EXTRA_LARGE",
+}
+SHUTO_PAYMENT_METHODS = {"ETC", "CASH"}
 GUIDANCE_STAGES = {"PREVIEW", "PREPARE", "COMMIT", "RECOVERY", "FINISH"}
 GUIDANCE_MANEUVERS = {
     "STAY_MAINLINE",
@@ -317,6 +325,7 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
         "exit_facility_id",
         "status",
         "vehicle_class",
+        "payment_method",
         "tariff_version_id",
         "tariff_version_status",
         "checked_at",
@@ -339,6 +348,10 @@ def validate_tariff_quotes(v: Validation, quotes: Any) -> None:
                 f"{context}.tariff_version_status is unknown: "
                 f"{quote['tariff_version_status']!r}"
             )
+        if quote["vehicle_class"] not in SHUTO_VEHICLE_CLASSES:
+            v.add(f"{context}.vehicle_class is unknown: {quote['vehicle_class']!r}")
+        if quote["payment_method"] not in SHUTO_PAYMENT_METHODS:
+            v.add(f"{context}.payment_method is unknown: {quote['payment_method']!r}")
         for field in (
             "entry_facility_id",
             "exit_facility_id",
@@ -382,11 +395,25 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
         return
     evidence = inputs["pre_drive_evidence"]
     context = "given.inputs.pre_drive_evidence"
+    session = inputs.get("pre_drive_session")
+    session_context = "given.inputs.pre_drive_session"
+    session_required = {
+        "network_snapshot_id",
+        "route_plan_id",
+        "vehicle_class",
+        "payment_method",
+    }
+    if not isinstance(session, dict):
+        v.add(f"{context} requires {session_context}")
+        return
+    if not v.require_keys(session, session_required, session_context):
+        return
     required = {
         "evaluated_at",
         "network_snapshot_id",
         "route_plan_id",
         "vehicle_class",
+        "payment_method",
         "passage_evidence",
     }
     if not v.require_keys(evidence, required, context):
@@ -395,13 +422,30 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
     if not isinstance(route_plan, dict):
         v.add(f"{context} requires given.route_plan")
         return
+    if session["network_snapshot_id"] != route_plan.get("network_snapshot_id"):
+        v.add(f"{session_context}.network_snapshot_id must match given.route_plan")
+    if session["route_plan_id"] != route_plan.get("plan_id"):
+        v.add(f"{session_context}.route_plan_id must match given.route_plan")
+    session_vehicle_class = session["vehicle_class"]
+    if session_vehicle_class not in SHUTO_VEHICLE_CLASSES:
+        v.add(f"{session_context}.vehicle_class is unknown")
+    session_payment_method = session["payment_method"]
+    if session_payment_method not in SHUTO_PAYMENT_METHODS:
+        v.add(f"{session_context}.payment_method is unknown")
     if evidence["network_snapshot_id"] != route_plan.get("network_snapshot_id"):
         v.add(f"{context}.network_snapshot_id must match given.route_plan")
     if evidence["route_plan_id"] != route_plan.get("plan_id"):
         v.add(f"{context}.route_plan_id must match given.route_plan")
     vehicle_class = evidence["vehicle_class"]
-    if not isinstance(vehicle_class, str) or not vehicle_class.strip():
-        v.add(f"{context}.vehicle_class must be non-empty")
+    if vehicle_class not in SHUTO_VEHICLE_CLASSES:
+        v.add(f"{context}.vehicle_class is unknown")
+    if vehicle_class != session_vehicle_class:
+        v.add(f"{context}.vehicle_class must match pre-drive session")
+    payment_method = evidence["payment_method"]
+    if payment_method not in SHUTO_PAYMENT_METHODS:
+        v.add(f"{context}.payment_method is unknown")
+    if payment_method != session_payment_method:
+        v.add(f"{context}.payment_method must match pre-drive session")
     if not is_datetime(evidence["evaluated_at"]):
         v.add(f"{context}.evaluated_at must be an ISO date-time")
     passage_states = {
@@ -434,6 +478,11 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
         if quote.get("vehicle_class") != vehicle_class:
             v.add(
                 f"given.tariff_quotes[{index}].vehicle_class "
+                "must match pre-drive evidence"
+            )
+        if quote.get("payment_method") != payment_method:
+            v.add(
+                f"given.tariff_quotes[{index}].payment_method "
                 "must match pre-drive evidence"
             )
         checked_at = quote.get("checked_at")

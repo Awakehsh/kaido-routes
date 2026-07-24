@@ -115,15 +115,12 @@ class ValidatePreDriveEvidenceTests(unittest.TestCase):
         errors = self.validate_evidence(scenario)
 
         self.assertTrue(
-            any(
-                "must not postdate pre-drive evaluation" in error
-                for error in errors
-            )
+            any("must not postdate pre-drive evaluation" in error for error in errors)
         )
 
     def test_tariff_vehicle_class_drift_fails_validation(self) -> None:
         scenario = copy.deepcopy(self.scenario)
-        scenario["given"]["tariff_quotes"][0]["vehicle_class"] = "LIGHT"
+        scenario["given"]["tariff_quotes"][0]["vehicle_class"] = "LIGHT_MOTORCYCLE"
 
         errors = self.validate_evidence(scenario)
 
@@ -132,6 +129,69 @@ class ValidatePreDriveEvidenceTests(unittest.TestCase):
                 "vehicle_class must match pre-drive evidence" in error
                 for error in errors
             )
+        )
+
+    def test_provider_vehicle_class_drift_fails_session_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["inputs"]["pre_drive_evidence"]["vehicle_class"] = (
+            "LIGHT_MOTORCYCLE"
+        )
+        for quote in scenario["given"]["tariff_quotes"]:
+            quote["vehicle_class"] = "LIGHT_MOTORCYCLE"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "vehicle_class must match pre-drive session" in error
+                for error in errors
+            )
+        )
+
+    def test_payment_method_is_not_accepted_as_vehicle_class(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["tariff_quotes"][0]["vehicle_class"] = "STANDARD_CAR_ETC"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(any("vehicle_class is unknown" in error for error in errors))
+
+    def test_tariff_payment_method_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["tariff_quotes"][0]["payment_method"] = "CASH"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "payment_method must match pre-drive evidence" in error
+                for error in errors
+            )
+        )
+
+    def test_provider_payment_method_drift_fails_session_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["inputs"]["pre_drive_evidence"]["payment_method"] = "CASH"
+        for quote in scenario["given"]["tariff_quotes"]:
+            quote["payment_method"] = "CASH"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "payment_method must match pre-drive session" in error
+                for error in errors
+            )
+        )
+
+    def test_missing_pre_drive_session_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        del scenario["given"]["inputs"]["pre_drive_session"]
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any("requires given.inputs.pre_drive_session" in error for error in errors)
         )
 
 

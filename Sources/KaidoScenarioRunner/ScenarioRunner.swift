@@ -1901,22 +1901,39 @@ private struct ScenarioHarness {
     if let evidenceValue = scenario.given.inputs.object("pre_drive_evidence") {
       clearPreDriveReviewObservations()
       guard let routePlan = scenario.given.routePlan,
+        let sessionValue = scenario.given.inputs.object("pre_drive_session"),
+        let sessionVehicleClass = sessionValue.string("vehicle_class")
+          .flatMap(ShutoVehicleClass.init(rawValue:)),
+        let sessionPaymentMethod = sessionValue.string("payment_method")
+          .flatMap(ShutoPaymentMethod.init(rawValue:)),
+        let evidenceVehicleClass = evidenceValue.string("vehicle_class")
+          .flatMap(ShutoVehicleClass.init(rawValue:)),
+        let evidencePaymentMethod = evidenceValue.string("payment_method")
+          .flatMap(ShutoPaymentMethod.init(rawValue:)),
         let passageEvidence = evidenceValue.string("passage_evidence")
           .flatMap(RoutePassageEvidence.init(rawValue:))
       else {
         throw ScenarioExecutionError.invalidInput("pre_drive_evidence")
       }
+      let session = try PreDriveReviewSession(
+        networkSnapshotID: sessionValue.requiredString("network_snapshot_id"),
+        routePlanID: sessionValue.requiredString("route_plan_id"),
+        vehicleClass: sessionVehicleClass,
+        paymentMethod: sessionPaymentMethod
+      )
       let evidence = try PreDriveReviewEvidence(
         evaluatedAt: evidenceValue.requiredString("evaluated_at"),
         networkSnapshotID: evidenceValue.requiredString("network_snapshot_id"),
         routePlanID: evidenceValue.requiredString("route_plan_id"),
-        vehicleClass: evidenceValue.requiredString("vehicle_class"),
+        vehicleClass: evidenceVehicleClass,
+        paymentMethod: evidencePaymentMethod,
         passageEvidence: passageEvidence,
         tariffQuotes: scenario.given.tariffQuotes.map { try $0.tariffQuote() }
       )
       do {
         let evaluation = try PreDriveReviewEvaluator.evaluate(
           routePlan: routePlan,
+          session: session,
           evidence: evidence
         )
         guard evaluation.selectedTariffQuote.id == quote.id else {
@@ -1930,7 +1947,16 @@ private struct ScenarioHarness {
           evaluation.selectedTariffQuote.id
         )
         adapterObservations["pre_drive.evidence.vehicle_class"] = .string(
-          evaluation.selectedTariffQuote.vehicleClass
+          evaluation.selectedTariffQuote.vehicleClass.rawValue
+        )
+        adapterObservations["pre_drive.session.vehicle_class"] = .string(
+          session.vehicleClass.rawValue
+        )
+        adapterObservations["pre_drive.evidence.payment_method"] = .string(
+          evaluation.selectedTariffQuote.paymentMethod.rawValue
+        )
+        adapterObservations["pre_drive.session.payment_method"] = .string(
+          session.paymentMethod.rawValue
         )
         adapterObservations[
           "pre_drive.evidence.ignored_non_active_quote_ids"

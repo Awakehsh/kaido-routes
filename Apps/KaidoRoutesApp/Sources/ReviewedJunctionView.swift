@@ -3,6 +3,7 @@ import KaidoPresentation
 import SwiftUI
 
 struct ReviewedJunctionViewCard: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   let definition: JunctionViewDefinition
@@ -16,7 +17,12 @@ struct ReviewedJunctionViewCard: View {
       JunctionVectorDiagram(
         definition: definition,
         accessibilityText:
-          phoneAccessibility.junctionDiagramLabel ?? "无路口示意"
+          phoneAccessibility.junctionDiagramLabel
+          ?? copy.resolve(
+            japanese: "ジャンクション図なし",
+            simplifiedChinese: "无路口示意",
+            english: "No junction diagram"
+          )
       )
       .frame(height: dynamicTypeSize.isAccessibilitySize ? 250 : 190)
 
@@ -53,18 +59,30 @@ struct ReviewedJunctionViewCard: View {
 
   private var headerText: some View {
     VStack(alignment: .leading, spacing: 3) {
-      Text("合成路口示意")
-        .font(.system(.headline, design: .rounded, weight: .black))
-        .foregroundStyle(KaidoTheme.routeWhite)
+      Text(
+        copy.resolve(
+          japanese: "合成ジャンクション図",
+          simplifiedChinese: "合成路口示意",
+          english: "Synthetic junction diagram"
+        )
+      )
+      .font(.system(.headline, design: .rounded, weight: .black))
+      .foregroundStyle(KaidoTheme.routeWhite)
 
       Text("REVIEW CONTRACT · FIXTURE ONLY")
         .font(.system(.caption2, design: .monospaced, weight: .black))
         .tracking(0.55)
         .foregroundStyle(KaidoTheme.positionCyan)
 
-      Text("几何、车道与分支均来自同一不可变定义")
-        .font(.subheadline)
-        .foregroundStyle(KaidoTheme.muted)
+      Text(
+        copy.resolve(
+          japanese: "形状・車線・分岐は同じ不変定義から投影",
+          simplifiedChinese: "几何、车道与分支均来自同一不可变定义",
+          english: "Geometry, lanes, and branches share one immutable definition"
+        )
+      )
+      .font(.subheadline)
+      .foregroundStyle(KaidoTheme.muted)
     }
   }
 
@@ -110,27 +128,40 @@ struct ReviewedJunctionViewCard: View {
       }
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(phoneAccessibility.junctionLaneLabel ?? "无车道信息")
+    .accessibilityLabel(
+      phoneAccessibility.junctionLaneLabel
+        ?? copy.resolve(
+          japanese: "車線情報なし",
+          simplifiedChinese: "无车道信息",
+          english: "No lane information"
+        )
+    )
     .accessibilityIdentifier("junction-lane-layout")
   }
 
   private var laneTitle: some View {
-    Text("车道 · 从左到右")
-      .font(.system(.caption, design: .monospaced, weight: .black))
-      .foregroundStyle(KaidoTheme.muted)
+    Text(
+      copy.resolve(
+        japanese: "車線・左から右",
+        simplifiedChinese: "车道 · 从左到右",
+        english: "LANES · LEFT TO RIGHT"
+      )
+    )
+    .font(.system(.caption, design: .monospaced, weight: .black))
+    .foregroundStyle(KaidoTheme.muted)
   }
 
   private var laneLegend: some View {
     HStack(spacing: 5) {
       Image(systemName: "checkmark.circle.fill")
         .accessibilityHidden(true)
-      Text("首选")
+      Text(preferredLaneLabel)
       Image(systemName: "arrow.up")
         .accessibilityHidden(true)
-      Text("可用")
+      Text(allowedLaneLabel)
       Image(systemName: "xmark")
         .accessibilityHidden(true)
-      Text("不可用")
+      Text(unavailableLaneLabel)
     }
     .font(.caption2.weight(.bold))
     .foregroundStyle(KaidoTheme.muted)
@@ -170,27 +201,39 @@ struct ReviewedJunctionViewCard: View {
 
   private func laneStateLabel(isPreferred: Bool, isAllowed: Bool) -> String {
     if isPreferred {
-      return "首选"
+      return preferredLaneLabel
     }
     if isAllowed {
-      return "可用"
+      return allowedLaneLabel
     }
-    return "不可用"
+    return unavailableLaneLabel
   }
 
   private var surfaceOwnership: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack {
-        Text("共享投影")
-          .font(.system(.caption, design: .monospaced, weight: .black))
-          .foregroundStyle(KaidoTheme.muted)
+        Text(
+          copy.resolve(
+            japanese: "共有投影",
+            simplifiedChinese: "共享投影",
+            english: "SHARED PROJECTION"
+          )
+        )
+        .font(.system(.caption, design: .monospaced, weight: .black))
+        .foregroundStyle(KaidoTheme.muted)
 
         Spacer()
 
         Text("NO CARPLAY SCENE")
           .font(.system(.caption2, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.evidenceCoral)
-          .accessibilityLabel("仅投影所有权，没有 CarPlay 场景")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "投影所有権のみ。CarPlay シーンはありません",
+              simplifiedChinese: "仅投影所有权，没有 CarPlay 场景",
+              english: "Projection ownership only; no CarPlay scene"
+            )
+          )
           .accessibilityIdentifier("junction-no-carplay-scene")
       }
 
@@ -248,7 +291,14 @@ struct ReviewedJunctionViewCard: View {
         Text("SYNTHETIC RELEASE-GATE VALUE")
           .font(.system(.caption2, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.evidenceCoral)
-          .accessibilityLabel("合成发布门槛值，不是真实道路发布证据")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "合成リリース審査値であり、実道路のリリース証拠ではありません",
+              simplifiedChinese: "合成发布门槛值，不是真实道路发布证据",
+              english:
+                "Synthetic release-gate value, not real-road release evidence"
+            )
+          )
           .accessibilityIdentifier("junction-synthetic-evidence-warning")
 
         Spacer()
@@ -284,15 +334,43 @@ struct ReviewedJunctionViewCard: View {
   private var phoneAccessibility: NavigationAccessibilityPresentation {
     NavigationAccessibilityProjector.project(
       iPhone,
-      locale: .simplifiedChinese
+      locale: interfaceLocale
     )
   }
 
   private var carPlayAccessibility: NavigationAccessibilityPresentation {
     NavigationAccessibilityProjector.project(
       carPlay,
-      locale: .simplifiedChinese
+      locale: interfaceLocale
     )
+  }
+
+  private var preferredLaneLabel: String {
+    copy.resolve(
+      japanese: "推奨",
+      simplifiedChinese: "首选",
+      english: "Preferred"
+    )
+  }
+
+  private var allowedLaneLabel: String {
+    copy.resolve(
+      japanese: "利用可",
+      simplifiedChinese: "可用",
+      english: "Allowed"
+    )
+  }
+
+  private var unavailableLaneLabel: String {
+    copy.resolve(
+      japanese: "利用不可",
+      simplifiedChinese: "不可用",
+      english: "Unavailable"
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

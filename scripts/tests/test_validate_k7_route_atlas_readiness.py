@@ -127,7 +127,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     def test_tracked_candidate_has_exact_release_blockers(self) -> None:
         report = validator.evaluate(
             load(READINESS_PATH),
-            date(2026, 7, 24),
+            date(2026, 7, 25),
             REPOSITORY_ROOT,
         )
 
@@ -182,7 +182,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -196,7 +196,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -220,7 +220,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
         report = validator.evaluate(
             readiness,
-            date(2026, 7, 24),
+            date(2026, 7, 25),
             REPOSITORY_ROOT,
             completed_field_review(),
         )
@@ -252,7 +252,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     ) -> None:
         report = validator.evaluate(
             load(READINESS_PATH),
-            date(2026, 7, 24),
+            date(2026, 7, 25),
             REPOSITORY_ROOT,
             road_register_review_override=completed_road_register_review(),
         )
@@ -284,7 +284,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         field_review = completed_field_review()
         complete, reviewer_id, status = validator.evaluate_topology_release_review(
             load(TOPOLOGY_REVIEW_PATH),
-            date(2026, 7, 24),
+            date(2026, 7, 25),
             REPOSITORY_ROOT,
             "RELEASED",
             True,
@@ -299,7 +299,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     def test_pending_layout_review_blocks_a_released_state(self) -> None:
         complete, reviewer_id, status = validator.evaluate_layout_release_review(
             load(LAYOUT_REVIEW_PATH),
-            date(2026, 7, 24),
+            date(2026, 7, 25),
             REPOSITORY_ROOT,
             "RELEASED",
             True,
@@ -321,7 +321,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_topology_release_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "CANDIDATE",
                 False,
@@ -345,7 +345,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_release_review_decision(
                 decision,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 "INDEPENDENT_TOPOLOGY_REVIEWER",
                 "topology_release_review",
             )
@@ -381,7 +381,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_topology_release_review(
                 topology_review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "RELEASED",
                 True,
@@ -391,7 +391,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         topology_complete, topology_reviewer_id, _ = (
             validator.evaluate_topology_release_review(
                 topology_review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "RELEASED",
                 True,
@@ -426,7 +426,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_layout_release_review(
                 layout_review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "RELEASED",
                 topology_complete,
@@ -438,7 +438,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         layout_complete, layout_reviewer_id, status = (
             validator.evaluate_layout_release_review(
                 layout_review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "RELEASED",
                 topology_complete,
@@ -456,7 +456,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         review = load(ROAD_REVIEW_PATH)
         complete, blockers = validator.evaluate_road_register_review(
             review,
-            date(2026, 7, 24),
+            date(2026, 7, 25),
         )
 
         self.assertFalse(complete)
@@ -487,7 +487,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_road_register_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
             )
 
     def test_road_register_source_reference_drift_is_rejected(
@@ -502,7 +502,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_road_register_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
             )
 
     def test_plan_drawing_map_cannot_replace_recognized_route_map(
@@ -517,7 +517,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_road_register_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
             )
 
     def test_malformed_road_register_layers_fail_without_crashing(
@@ -534,7 +534,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_road_register_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
             )
 
     def test_confirmed_road_identity_requires_exact_record_fields(
@@ -554,7 +554,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate_road_register_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
             )
 
     def test_distribution_status_cannot_replace_bound_review(
@@ -569,7 +569,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -585,7 +585,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -601,7 +601,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -617,7 +617,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -633,7 +633,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 
@@ -647,7 +647,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 24),
+                date(2026, 7, 25),
                 REPOSITORY_ROOT,
             )
 

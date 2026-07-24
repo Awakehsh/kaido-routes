@@ -283,6 +283,12 @@ compiled-route invalidation, and keep the bundled synthetic release blocked
 from navigation. XCUITest proves the default launch and primary authoring
 transition, while a deterministic review launch verifies the exact visible
 `ROUTE_RELEASE_AUTHORITY_UNAVAILABLE` blocker and disabled navigation action.
+The same launch switches the persisted interface locale in place, verifies that
+the route-first shell changes from Simplified Chinese to English, and requires
+the separately selected Japanese guidance voice and fixed sample to remain
+unchanged. Focused unit tests cover exact three-locale interface-copy selection
+and complete synthetic entrance/editor presentation coverage without raw-ID
+fallback.
 That review launch also verifies the parked sound-check panel, three-language
 selector, locale-specific fixed sample, installed-voice menu, quality status,
 and audition control without playing audio. Focused app tests inject the
@@ -301,8 +307,10 @@ and KR-U11. It projects one synthetic `GuidanceFrame` through
 independently, and verifies that Japanese, Simplified Chinese, and English all
 retain the same Japanese sign target and route shield. It deliberately supplies
 no one-shot prompt emission, so `voice.should_speak` remains false and the panel
-cannot play audio. This does not verify full-app localization, pronunciation,
-or released road guidance.
+cannot play audio. The default product journey now consumes the same independent
+interface preference across its app-owned product surfaces. The internal
+evidence workbench, system permission UI, pronunciation, and released road
+guidance remain outside this localization evidence.
 
 The internal iPhone driving preview adds local L3 adapter evidence for KR-U06
 through KR-U10, KR-U12, and KR-U14. It executes one stale LOW observation and one

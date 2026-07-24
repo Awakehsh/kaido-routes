@@ -163,21 +163,6 @@ final class GuidanceVoiceSetupModel: ObservableObject {
     }
   }
 
-  var statusDetail: String {
-    switch state {
-    case .ready:
-      "停车后试听固定样句，不会消耗导航提示。"
-    case .preparing:
-      "正在解析设备已安装的\(selectedGuidanceLocale.nativeLanguageName)音色。"
-    case .speaking(let profile):
-      "\(profile.name) · \(profile.quality.label)"
-    case .completed(let profile):
-      "已试听 \(profile.name) · \(profile.quality.label)"
-    case .blocked(let code):
-      code
-    }
-  }
-
   func refreshProfiles() {
     let refreshed = profileProvider(languageCode)
     profiles = refreshed

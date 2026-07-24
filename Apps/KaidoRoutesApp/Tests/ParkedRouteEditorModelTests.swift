@@ -1,3 +1,4 @@
+import KaidoDomain
 import KaidoRouting
 import XCTest
 
@@ -5,6 +6,49 @@ import XCTest
 
 @MainActor
 final class ParkedRouteEditorModelTests: XCTestCase {
+  func testSyntheticEditorPresentationCoversEveryReleaseLocale() throws {
+    let model = try ParkedRouteEditorModel()
+
+    for locale in KaidoReleaseLocale.allCases {
+      XCTAssertFalse(model.entranceTitle(for: locale).isEmpty)
+      XCTAssertFalse(model.decisionTitle(for: locale).isEmpty)
+      for choice in model.snapshot.availableChoices {
+        XCTAssertFalse(model.title(for: choice, locale: locale).isEmpty)
+        XCTAssertFalse(model.detail(for: choice, locale: locale).isEmpty)
+        XCTAssertNotEqual(model.title(for: choice, locale: locale), choice.id)
+        XCTAssertNotEqual(model.detail(for: choice, locale: locale), choice.id)
+      }
+    }
+
+    XCTAssertEqual(model.entranceTitle(for: .japanese), "デモ入口・東行き")
+    XCTAssertEqual(model.entranceTitle(for: .simplifiedChinese), "演示入口 · 东向")
+    XCTAssertEqual(model.entranceTitle(for: .english), "Demo entrance · eastbound")
+  }
+
+  func testEditorRejectsIncompleteInterfacePresentation() {
+    let complete = ParkedRouteEditorFixture.synthetic
+    let incomplete = ParkedRouteEditorFixture(
+      catalog: complete.catalog,
+      distanceCatalog: complete.distanceCatalog,
+      entranceFacilityID: complete.entranceFacilityID,
+      routePlanID: complete.routePlanID,
+      initialOccurrenceID: complete.initialOccurrenceID,
+      presentations: complete.presentations.filter {
+        $0.key != .english
+      },
+      freehandCorridorMatch: complete.freehandCorridorMatch
+    )
+
+    XCTAssertThrowsError(
+      try ParkedRouteEditorModel(fixture: incomplete)
+    ) { error in
+      XCTAssertEqual(
+        error as? ParkedRouteEditorModelError,
+        .incompleteLocalizedPresentation(.english)
+      )
+    }
+  }
+
   func testAmbiguousFreehandCorridorRequiresExplicitCandidate() throws {
     let model = try ParkedRouteEditorModel()
 

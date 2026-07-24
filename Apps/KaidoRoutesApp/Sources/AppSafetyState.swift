@@ -37,11 +37,24 @@ enum RouteAtlasMode: String, CaseIterable, Hashable, Identifiable, Sendable {
   var id: String { rawValue }
 
   var label: String {
-    switch self {
+    label(for: .simplifiedChinese)
+  }
+
+  func label(for locale: KaidoReleaseLocale) -> String {
+    let copy = KaidoInterfaceText(locale: locale)
+    return switch self {
     case .network:
-      "全网"
+      copy.resolve(
+        japanese: "全体図",
+        simplifiedChinese: "全网",
+        english: "Network"
+      )
     case .k7Evidence:
-      "K7 证据"
+      copy.resolve(
+        japanese: "K7 証拠",
+        simplifiedChinese: "K7 证据",
+        english: "K7 evidence"
+      )
     }
   }
 
@@ -73,11 +86,30 @@ enum RouteAtlasMode: String, CaseIterable, Hashable, Identifiable, Sendable {
   }
 
   var accessibilityLabel: String {
-    switch self {
+    accessibilityLabel(for: .simplifiedChinese)
+  }
+
+  func accessibilityLabel(for locale: KaidoReleaseLocale) -> String {
+    let copy = KaidoInterfaceText(locale: locale)
+    return switch self {
     case .network:
-      "固定北向首都高速全网识别图。二十六条路线已识别，不可用于导航。"
+      copy.resolve(
+        japanese:
+          "北を上に固定した首都高速の全体識別図。26 路線を識別できますが、ナビには使用できません。",
+        simplifiedChinese:
+          "固定北向首都高速全网识别图。二十六条路线已识别，不可用于导航。",
+        english:
+          "North-up Shuto Expressway recognition atlas. Twenty-six routes are identified; it is not navigation authority."
+      )
     case .k7Evidence:
-      "K7 横滨北西线上行拓扑示意候选。地表后继未审核，不可用于导航。"
+      copy.resolve(
+        japanese:
+          "K7 横浜北西線上りのトポロジー模式候補。一般道への後続は未審査で、ナビには使用できません。",
+        simplifiedChinese:
+          "K7 横滨北西线上行拓扑示意候选。地表后继未审核，不可用于导航。",
+        english:
+          "K7 Yokohama Northwest Route inbound topology candidate. Surface successors are unreviewed; it is not navigation authority."
+      )
     }
   }
 }

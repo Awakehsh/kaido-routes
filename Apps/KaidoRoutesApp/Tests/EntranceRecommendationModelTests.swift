@@ -1,3 +1,4 @@
+import KaidoDomain
 import KaidoRouting
 import XCTest
 
@@ -5,6 +6,38 @@ import XCTest
 
 @MainActor
 final class EntranceRecommendationModelTests: XCTestCase {
+  func testSyntheticPresentationCoversEveryInterfaceLocale() throws {
+    let routeEditor = try ParkedRouteEditorModel()
+    let model = try EntranceRecommendationModel(routeEditor: routeEditor)
+
+    for locale in KaidoReleaseLocale.allCases {
+      for candidate in model.fixture.candidates {
+        XCTAssertNotEqual(
+          model.fixture.facilityTitle(
+            for: candidate.facilityID,
+            locale: locale
+          ),
+          candidate.facilityID
+        )
+        XCTAssertNotEqual(
+          model.fixture.carriagewayTitle(
+            for: candidate.targetCarriagewayID,
+            locale: locale
+          ),
+          candidate.targetCarriagewayID
+        )
+      }
+    }
+
+    XCTAssertEqual(
+      model.fixture.facilityTitle(
+        for: "preview.synthetic.entrance.eastbound",
+        locale: .english
+      ),
+      "Demo entrance · eastbound"
+    )
+  }
+
   func testRecommendationExplainsFartherExactEditorEntrance() throws {
     let editor = try ParkedRouteEditorModel()
     let model = try EntranceRecommendationModel(routeEditor: editor)

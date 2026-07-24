@@ -2,6 +2,7 @@ import KaidoPresentation
 import SwiftUI
 
 struct PreDriveReviewPanel: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: PreDriveReviewModel
   let navigationStartAvailable: Bool
 
@@ -47,9 +48,15 @@ struct PreDriveReviewPanel: View {
   ) -> some View {
     HStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("行前确认")
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "出発前確認",
+            simplifiedChinese: "行前确认",
+            english: "Pre-drive review"
+          )
+        )
+        .font(.system(size: 19, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("ROUTE FIRST · SYNTHETIC REVIEW")
           .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -73,9 +80,17 @@ struct PreDriveReviewPanel: View {
   private func distanceLedger(_ snapshot: PreDriveReviewSnapshot) -> some View {
     HStack(spacing: 8) {
       PreDriveDistanceMetric(
-        eyebrow: "实际规划",
+        eyebrow: copy.resolve(
+          japanese: "実走予定",
+          simplifiedChinese: "实际规划",
+          english: "PLANNED ROUTE"
+        ),
         value: kilometers(snapshot.presentation.actualDistanceKM),
-        detail: "\(snapshot.occurrenceCount) 个路线步骤",
+        detail: copy.resolve(
+          japanese: "\(snapshot.occurrenceCount) 経路ステップ",
+          simplifiedChinese: "\(snapshot.occurrenceCount) 个路线步骤",
+          english: "\(snapshot.occurrenceCount) route steps"
+        ),
         accent: KaidoTheme.signalAmber
       )
 
@@ -85,9 +100,17 @@ struct PreDriveReviewPanel: View {
         .accessibilityHidden(true)
 
       PreDriveDistanceMetric(
-        eyebrow: "计费距离",
+        eyebrow: copy.resolve(
+          japanese: "料金計算距離",
+          simplifiedChinese: "计费距离",
+          english: "TARIFF DISTANCE"
+        ),
         value: snapshot.presentation.tariffDistanceKM.map(kilometers) ?? "—",
-        detail: "独立计费记录",
+        detail: copy.resolve(
+          japanese: "独立した料金記録",
+          simplifiedChinese: "独立计费记录",
+          english: "Independent tariff record"
+        ),
         accent: KaidoTheme.positionCyan
       )
     }
@@ -98,10 +121,16 @@ struct PreDriveReviewPanel: View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .firstTextBaseline) {
         VStack(alignment: .leading, spacing: 2) {
-          Text("通行费证据")
-            .font(.system(size: 9, weight: .black, design: .monospaced))
-            .tracking(0.7)
-            .foregroundStyle(KaidoTheme.muted)
+          Text(
+            copy.resolve(
+              japanese: "通行料金の根拠",
+              simplifiedChinese: "通行费证据",
+              english: "TOLL EVIDENCE"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.7)
+          .foregroundStyle(KaidoTheme.muted)
 
           Text(amount(snapshot.presentation.estimatedAmountYen))
             .font(.system(size: 24, weight: .black, design: .rounded))
@@ -139,9 +168,16 @@ struct PreDriveReviewPanel: View {
 
         if let url = URL(string: snapshot.officialQueryReference) {
           Link(destination: url) {
-            Label("官方查询", systemImage: "arrow.up.right")
-              .font(.system(size: 10, weight: .bold))
-              .foregroundStyle(KaidoTheme.positionCyan)
+            Label(
+              copy.resolve(
+                japanese: "公式照会",
+                simplifiedChinese: "官方查询",
+                english: "Official query"
+              ),
+              systemImage: "arrow.up.right"
+            )
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(KaidoTheme.positionCyan)
           }
         }
       }
@@ -198,8 +234,16 @@ struct PreDriveReviewPanel: View {
       )
       Text(
         navigationStartAvailable
-          ? "联合发布包已绑定"
-          : "导航发布包尚未具备"
+          ? copy.resolve(
+            japanese: "統合リリースを固定済み",
+            simplifiedChinese: "联合发布包已绑定",
+            english: "Joint release bound"
+          )
+          : copy.resolve(
+            japanese: "ナビリリースが未準備",
+            simplifiedChinese: "导航发布包尚未具备",
+            english: "Navigation release unavailable"
+          )
       )
       Spacer()
       Text(navigationStartAvailable ? "READY" : "BLOCKED")
@@ -222,8 +266,16 @@ struct PreDriveReviewPanel: View {
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
       navigationStartAvailable
-        ? "联合发布包已绑定，可以由用户开始导航"
-        : "导航发布包尚未具备，无法开始导航"
+        ? copy.resolve(
+          japanese: "統合リリースを固定済みです。ユーザーがナビを開始できます。",
+          simplifiedChinese: "联合发布包已绑定，可以由用户开始导航",
+          english: "The joint release is bound and the user may start navigation."
+        )
+        : copy.resolve(
+          japanese: "ナビリリースが未準備のため、ナビを開始できません。",
+          simplifiedChinese: "导航发布包尚未具备，无法开始导航",
+          english: "The navigation release is unavailable, so navigation cannot start."
+        )
     )
     .accessibilityIdentifier("pre-drive-navigation-gate")
     .accessibilityValue(
@@ -237,9 +289,15 @@ struct PreDriveReviewPanel: View {
         .foregroundStyle(KaidoTheme.evidenceCoral)
 
       VStack(alignment: .leading, spacing: 3) {
-        Text("行前确认已阻止")
-          .font(.system(size: 14, weight: .black))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "出発前確認で停止",
+            simplifiedChinese: "行前确认已阻止",
+            english: "Pre-drive review blocked"
+          )
+        )
+        .font(.system(size: 14, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text(verbatim: errorCode)
           .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -261,7 +319,13 @@ struct PreDriveReviewPanel: View {
   }
 
   private func amount(_ value: Int?) -> String {
-    guard let value else { return "金额未知" }
+    guard let value else {
+      return copy.resolve(
+        japanese: "金額不明",
+        simplifiedChinese: "金额未知",
+        english: "Amount unknown"
+      )
+    }
     return "¥\(value.formatted())"
   }
 
@@ -275,33 +339,85 @@ struct PreDriveReviewPanel: View {
     switch presentation.tone {
     case .blocked:
       PreDrivePassageStyle(
-        badge: "已阻止",
-        primary: "计划层：存在已知关闭",
-        secondary: "当前路线不能开始",
+        badge: copy.resolve(
+          japanese: "停止",
+          simplifiedChinese: "已阻止",
+          english: "BLOCKED"
+        ),
+        primary: copy.resolve(
+          japanese: "計画レイヤー：既知の通行止めあり",
+          simplifiedChinese: "计划层：存在已知关闭",
+          english: "Plan layer: known closure"
+        ),
+        secondary: copy.resolve(
+          japanese: "現在の経路は開始できません",
+          simplifiedChinese: "当前路线不能开始",
+          english: "The current route cannot start"
+        ),
         color: KaidoTheme.evidenceCoral
       )
     case .warning:
       PreDrivePassageStyle(
-        badge: "有冲突",
-        primary: "计划层：存在通行冲突",
-        secondary: "需要重新审查路线",
+        badge: copy.resolve(
+          japanese: "競合あり",
+          simplifiedChinese: "有冲突",
+          english: "CONFLICT"
+        ),
+        primary: copy.resolve(
+          japanese: "計画レイヤー：通行競合あり",
+          simplifiedChinese: "计划层：存在通行冲突",
+          english: "Plan layer: passage conflict"
+        ),
+        secondary: copy.resolve(
+          japanese: "経路の再審査が必要です",
+          simplifiedChinese: "需要重新审查路线",
+          english: "The route requires another review"
+        ),
         color: KaidoTheme.evidenceCoral
       )
     case .unconfirmed:
       PreDrivePassageStyle(
-        badge: "未确认",
-        primary: "计划层：未发现已知冲突",
-        secondary: "实时通行状态尚未确认",
+        badge: copy.resolve(
+          japanese: "未確認",
+          simplifiedChinese: "未确认",
+          english: "UNCONFIRMED"
+        ),
+        primary: copy.resolve(
+          japanese: "計画レイヤー：既知の競合なし",
+          simplifiedChinese: "计划层：未发现已知冲突",
+          english: "Plan layer: no known conflict"
+        ),
+        secondary: copy.resolve(
+          japanese: "リアルタイム通行状態は未確認です",
+          simplifiedChinese: "实时通行状态尚未确认",
+          english: "Realtime passage state is unconfirmed"
+        ),
         color: KaidoTheme.evidenceCoral
       )
     case .confirmedPassable:
       PreDrivePassageStyle(
-        badge: "实时已确认",
-        primary: "实时来源：已确认可通行",
-        secondary: "仍需遵循现场标志与管制",
+        badge: copy.resolve(
+          japanese: "リアルタイム確認済み",
+          simplifiedChinese: "实时已确认",
+          english: "REALTIME CONFIRMED"
+        ),
+        primary: copy.resolve(
+          japanese: "リアルタイム情報：通行可能を確認",
+          simplifiedChinese: "实时来源：已确认可通行",
+          english: "Realtime source: passage confirmed"
+        ),
+        secondary: copy.resolve(
+          japanese: "現地の標識と規制には引き続き従ってください",
+          simplifiedChinese: "仍需遵循现场标志与管制",
+          english: "Continue to follow on-road signs and restrictions"
+        ),
         color: KaidoTheme.confirmedGreen
       )
     }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

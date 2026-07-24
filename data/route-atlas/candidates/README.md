@@ -179,7 +179,7 @@ Validate the tracked decision:
 ```sh
 python3 scripts/validate_k7_route_atlas_readiness.py \
   data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
-  --as-of 2026-07-24 \
+  --as-of 2026-07-25 \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 

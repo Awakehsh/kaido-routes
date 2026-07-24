@@ -8,6 +8,7 @@ import SwiftUI
 /// its own. Its input remains synthetic until a real joint product release and
 /// device-qualified location pipeline exist.
 struct ProductRuntimeDrivingSurface: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   let projection: NavigationPresentationProjection
@@ -53,9 +54,15 @@ struct ProductRuntimeDrivingSurface: View {
   private var header: some View {
     HStack(alignment: .top, spacing: 10) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("Actor 导航画面")
-          .font(.system(.headline, design: .rounded, weight: .black))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "Actor ナビ画面",
+            simplifiedChinese: "Actor 导航画面",
+            english: "Actor navigation surface"
+          )
+        )
+        .font(.system(.headline, design: .rounded, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("ONE UPDATE · PHONE + CARPLAY + VOICE")
           .font(.system(.caption2, design: .monospaced, weight: .black))
@@ -133,7 +140,12 @@ struct ProductRuntimeDrivingSurface: View {
       .background(KaidoTheme.signalAmber)
       .clipShape(RoundedRectangle(cornerRadius: 9))
       .accessibilityLabel(
-        accessibility.routeShieldLabels.first ?? "路线盾牌未知"
+        accessibility.routeShieldLabels.first
+          ?? copy.resolve(
+            japanese: "ルートシールド不明",
+            simplifiedChinese: "路线盾牌未知",
+            english: "Unknown route shield"
+          )
       )
       .accessibilityIdentifier("product-runtime-driving-route-shield")
   }
@@ -170,7 +182,11 @@ struct ProductRuntimeDrivingSurface: View {
   private var statusRows: some View {
     VStack(spacing: 7) {
       statusRow(
-        title: "位置呈现",
+        title: copy.resolve(
+          japanese: "位置表示",
+          simplifiedChinese: "位置呈现",
+          english: "POSITION"
+        ),
         value: markerLabel,
         detail: phone.marker.rawValue,
         color: phone.marker == .measured
@@ -179,7 +195,11 @@ struct ProductRuntimeDrivingSurface: View {
         accessibilityID: "product-runtime-driving-marker"
       )
       statusRow(
-        title: "实时通行",
+        title: copy.resolve(
+          japanese: "リアルタイム通行",
+          simplifiedChinese: "实时通行",
+          english: "REALTIME PASSAGE"
+        ),
         value: passageLabel,
         detail: phone.passage.evidence.rawValue,
         color: phone.passage.usesPositiveOpenColor
@@ -188,7 +208,11 @@ struct ProductRuntimeDrivingSurface: View {
         accessibilityID: "product-runtime-driving-passage"
       )
       statusRow(
-        title: "路线编辑",
+        title: copy.resolve(
+          japanese: "経路編集",
+          simplifiedChinese: "路线编辑",
+          english: "ROUTE EDITING"
+        ),
         value: editingLabel,
         detail: phone.requiresPhoneTouchWhileMoving
           ? "PHONE TOUCH REQUIRED"
@@ -236,7 +260,11 @@ struct ProductRuntimeDrivingSurface: View {
     _ finishDrive: FinishDrivePresentation
   ) -> some View {
     Label(
-      "先确认结束出口：\(finishDrive.localizedExitName)",
+      copy.resolve(
+        japanese: "終了出口を先に確認：\(finishDrive.localizedExitName)",
+        simplifiedChinese: "先确认结束出口：\(finishDrive.localizedExitName)",
+        english: "Confirm the finishing exit first: \(finishDrive.localizedExitName)"
+      ),
       systemImage: "door.left.hand.open"
     )
     .font(.subheadline.weight(.bold))
@@ -253,37 +281,81 @@ struct ProductRuntimeDrivingSurface: View {
   private var markerLabel: String {
     switch phone.marker {
     case .measured:
-      "测量位置"
+      copy.resolve(
+        japanese: "測定位置",
+        simplifiedChinese: "测量位置",
+        english: "Measured position"
+      )
     case .estimated:
-      "估算位置"
+      copy.resolve(
+        japanese: "推定位置",
+        simplifiedChinese: "估算位置",
+        english: "Estimated position"
+      )
     case .unresolved:
-      "位置未解析"
+      copy.resolve(
+        japanese: "位置未解決",
+        simplifiedChinese: "位置未解析",
+        english: "Position unresolved"
+      )
     }
   }
 
   private var passageLabel: String {
     switch phone.passage.tone {
     case .blocked:
-      "已知封闭"
+      copy.resolve(
+        japanese: "既知の通行止め",
+        simplifiedChinese: "已知封闭",
+        english: "Known closure"
+      )
     case .warning:
-      "存在计划冲突"
+      copy.resolve(
+        japanese: "計画競合あり",
+        simplifiedChinese: "存在计划冲突",
+        english: "Plan conflict"
+      )
     case .unconfirmed:
-      "尚未确认"
+      copy.resolve(
+        japanese: "未確認",
+        simplifiedChinese: "尚未确认",
+        english: "Unconfirmed"
+      )
     case .confirmedPassable:
-      "已确认可通行"
+      copy.resolve(
+        japanese: "通行可能を確認済み",
+        simplifiedChinese: "已确认可通行",
+        english: "Passage confirmed"
+      )
     }
   }
 
   private var editingLabel: String {
     switch phone.routeEditingAvailability {
     case .availableWhileParked:
-      "停车时可编辑"
+      copy.resolve(
+        japanese: "停車中は編集可能",
+        simplifiedChinese: "停车时可编辑",
+        english: "Editable while parked"
+      )
     case .unavailableWhileMoving:
-      "行驶中不可编辑"
+      copy.resolve(
+        japanese: "走行中は編集不可",
+        simplifiedChinese: "行驶中不可编辑",
+        english: "Unavailable while moving"
+      )
     case .unavailableInDecisionZone:
-      "决策区不可编辑"
+      copy.resolve(
+        japanese: "判断ゾーン内は編集不可",
+        simplifiedChinese: "决策区不可编辑",
+        english: "Unavailable in DecisionZone"
+      )
     case .lockedForActiveDrive:
-      "活动行程已锁定"
+      copy.resolve(
+        japanese: "走行中のためロック",
+        simplifiedChinese: "活动行程已锁定",
+        english: "Locked for active drive"
+      )
     }
   }
 
@@ -292,5 +364,9 @@ struct ProductRuntimeDrivingSurface: View {
       return String(format: "%.1f km", meters / 1_000)
     }
     return "\(Int(meters.rounded())) m"
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }

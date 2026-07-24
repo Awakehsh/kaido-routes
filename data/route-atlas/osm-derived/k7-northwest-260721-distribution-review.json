@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "review_id": "shutoko.k7-northwest.osm-derived-distribution.2026-07-24",
-  "reviewed_at": "2026-07-24T15:20:00+09:00",
+  "reviewed_at": "2026-07-25T01:29:27+09:00",
   "reviewed_by": "Kaido Routes project technical review",
   "classification": "DERIVATIVE_DATABASE",
   "status": "TECHNICAL_REVIEW_COMPLETE",
@@ -71,7 +71,7 @@
     {
       "role": "ATTRIBUTION_VIEW",
       "repository_path": "Apps/KaidoRoutesApp/Sources/RouteAtlasHomeView.swift",
-      "content_sha256": "3dcdd8a826efc4c60d2ae1b7f00ff5a18f8f07695fa7f92e26fcb3a6800c86e8"
+      "content_sha256": "13ddc3f98f4bce5c580bf849ca4ae1f7d5d7d01f00973f164f30355ae0afea9a"
     },
     {
       "role": "APP_PROJECT_MANIFEST",

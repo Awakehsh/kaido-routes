@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ReleasedProductNavigationPanel: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @Environment(\.scenePhase) private var scenePhase
   @ObservedObject var model: ProductNavigationRuntimeModel
   @ObservedObject private var locationController: ForegroundNavigationLocationController
@@ -42,9 +43,15 @@ struct ReleasedProductNavigationPanel: View {
   private var header: some View {
     HStack(alignment: .top, spacing: 12) {
       VStack(alignment: .leading, spacing: 4) {
-        Text("路线导航")
-          .font(.system(size: 23, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "ルートナビ",
+            simplifiedChinese: "路线导航",
+            english: "Route navigation"
+          )
+        )
+        .font(.system(size: 23, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("RELEASE-BOUND · USER STARTED")
           .font(.system(size: 9, weight: .black, design: .monospaced))
@@ -55,11 +62,11 @@ struct ReleasedProductNavigationPanel: View {
       Spacer()
 
       StatusCapsule(
-        title: model.activation.label,
+        title: activationLabel,
         color: activationColor
       )
       .accessibilityIdentifier("released-runtime-activation")
-      .accessibilityValue(model.activation.label)
+      .accessibilityValue(activationLabel)
     }
   }
 
@@ -111,9 +118,15 @@ struct ReleasedProductNavigationPanel: View {
         .font(.system(size: 10, weight: .black))
         .foregroundStyle(KaidoTheme.signalAmber)
 
-      Text("用户明确启动后才连接定位")
-        .font(.system(size: 9, weight: .bold))
-        .foregroundStyle(KaidoTheme.muted)
+      Text(
+        copy.resolve(
+          japanese: "位置情報はユーザーが明示的に開始した後だけ接続",
+          simplifiedChinese: "用户明确启动后才连接定位",
+          english: "Location connects only after explicit user start"
+        )
+      )
+      .font(.system(size: 9, weight: .bold))
+      .foregroundStyle(KaidoTheme.muted)
 
       Rectangle()
         .fill(KaidoTheme.steel)
@@ -132,23 +145,31 @@ struct ReleasedProductNavigationPanel: View {
 
         Spacer()
 
-        Text(locationController.state.label)
+        Text(locationStateLabel)
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .foregroundStyle(locationColor)
       }
 
-      Text(locationController.state.detail)
+      Text(locationStateDetail)
         .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(KaidoTheme.muted)
         .fixedSize(horizontal: false, vertical: true)
 
       HStack {
         runtimeMetric(
-          title: "授权",
+          title: copy.resolve(
+            japanese: "許可",
+            simplifiedChinese: "授权",
+            english: "AUTHORIZATION"
+          ),
           value: locationController.authorizationLabel
         )
         runtimeMetric(
-          title: "精度",
+          title: copy.resolve(
+            japanese: "精度",
+            simplifiedChinese: "精度",
+            english: "ACCURACY"
+          ),
           value: locationController.accuracyAuthorizationLabel
         )
       }
@@ -163,7 +184,17 @@ struct ReleasedProductNavigationPanel: View {
         }
       } label: {
         Label(
-          locationController.canStop ? "停止前台定位" : "启动前台定位",
+          locationController.canStop
+            ? copy.resolve(
+              japanese: "前景位置情報を停止",
+              simplifiedChinese: "停止前台定位",
+              english: "Stop foreground location"
+            )
+            : copy.resolve(
+              japanese: "前景位置情報を開始",
+              simplifiedChinese: "启动前台定位",
+              english: "Start foreground location"
+            ),
           systemImage:
             locationController.canStop
             ? "location.slash.fill"
@@ -200,7 +231,7 @@ struct ReleasedProductNavigationPanel: View {
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("released-runtime-live-input")
-    .accessibilityValue(locationController.state.label)
+    .accessibilityValue(locationStateLabel)
   }
 
   @ViewBuilder
@@ -210,9 +241,19 @@ struct ReleasedProductNavigationPanel: View {
     } else {
       ReviewBoundaryCard(
         symbol: "scope",
-        title: "等待 release-bound actor 证据",
-        detail:
-          "定位未进入严格路线，或尚未产生有效 guidance frame；界面不会猜测当前位置或下一分岔。",
+        title: copy.resolve(
+          japanese: "リリースに固定された actor の証拠を待機",
+          simplifiedChinese: "等待 release-bound actor 证据",
+          english: "Waiting for release-bound actor evidence"
+        ),
+        detail: copy.resolve(
+          japanese:
+            "位置が厳密経路に入っていないか、有効な guidance frame がまだありません。画面は現在地や次の分岐を推測しません。",
+          simplifiedChinese:
+            "定位未进入严格路线，或尚未产生有效 guidance frame；界面不会猜测当前位置或下一分岔。",
+          english:
+            "Location has not entered the strict route or no valid guidance frame exists; the UI will not guess position or the next decision."
+        ),
         code: model.presentationState.label,
         color: KaidoTheme.positionCyan
       )
@@ -224,8 +265,19 @@ struct ReleasedProductNavigationPanel: View {
   private var realtimeBoundary: some View {
     ReviewBoundaryCard(
       symbol: "wave.3.right.circle.fill",
-      title: "实时通行状态尚未确认",
-      detail: "静态发布身份和实时开放状态保持分离；缺少实时证据不会显示为畅通。",
+      title: copy.resolve(
+        japanese: "リアルタイム通行状態は未確認",
+        simplifiedChinese: "实时通行状态尚未确认",
+        english: "Realtime passage state unconfirmed"
+      ),
+      detail: copy.resolve(
+        japanese:
+          "静的なリリース ID とリアルタイムの通行可否は分離されています。証拠がなければ通行可とは表示しません。",
+        simplifiedChinese:
+          "静态发布身份和实时开放状态保持分离；缺少实时证据不会显示为畅通。",
+        english:
+          "Static release identity stays separate from realtime openness; missing realtime evidence is never shown as open."
+      ),
       code: "REALTIME_UNCONFIRMED",
       color: KaidoTheme.evidenceCoral
     )
@@ -239,13 +291,20 @@ struct ReleasedProductNavigationPanel: View {
         await endNavigation()
       }
     } label: {
-      Label("结束本次导航", systemImage: "xmark.circle.fill")
-        .font(.system(size: 13, weight: .black, design: .rounded))
-        .frame(maxWidth: .infinity)
-        .frame(height: 44)
-        .foregroundStyle(KaidoTheme.routeWhite)
-        .background(KaidoTheme.steel.opacity(0.62))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+      Label(
+        copy.resolve(
+          japanese: "このナビを終了",
+          simplifiedChinese: "结束本次导航",
+          english: "End this navigation"
+        ),
+        systemImage: "xmark.circle.fill"
+      )
+      .font(.system(size: 13, weight: .black, design: .rounded))
+      .frame(maxWidth: .infinity)
+      .frame(height: 44)
+      .foregroundStyle(KaidoTheme.routeWhite)
+      .background(KaidoTheme.steel.opacity(0.62))
+      .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("released-runtime-end")
@@ -314,6 +373,158 @@ struct ReleasedProductNavigationPanel: View {
       .permissionDenied, .failed:
       KaidoTheme.evidenceCoral
     }
+  }
+
+  private var activationLabel: String {
+    switch model.activation {
+    case .validating:
+      copy.resolve(
+        japanese: "検証中",
+        simplifiedChinese: "正在验证",
+        english: "VALIDATING"
+      )
+    case .ready:
+      copy.resolve(
+        japanese: "ランタイム準備完了",
+        simplifiedChinese: "运行时已就绪",
+        english: "RUNTIME READY"
+      )
+    case .ended:
+      copy.resolve(
+        japanese: "ランタイム終了",
+        simplifiedChinese: "运行时已结束",
+        english: "RUNTIME ENDED"
+      )
+    case .failed:
+      copy.resolve(
+        japanese: "停止",
+        simplifiedChinese: "已阻止",
+        english: "BLOCKED"
+      )
+    }
+  }
+
+  private var locationStateLabel: String {
+    switch locationController.state {
+    case .releaseBlocked:
+      copy.resolve(
+        japanese: "ライブ位置情報はリリースで停止",
+        simplifiedChinese: "实时定位已被发布门阻止",
+        english: "LIVE LOCATION BLOCKED"
+      )
+    case .runtimeUnavailable:
+      copy.resolve(
+        japanese: "ランタイム利用不可",
+        simplifiedChinese: "运行时不可用",
+        english: "RUNTIME UNAVAILABLE"
+      )
+    case .idle:
+      copy.resolve(
+        japanese: "ライブ位置情報は待機中",
+        simplifiedChinese: "实时定位待机",
+        english: "LIVE LOCATION IDLE"
+      )
+    case .awaitingAuthorization:
+      copy.resolve(
+        japanese: "位置情報の許可待ち",
+        simplifiedChinese: "等待定位授权",
+        english: "AWAITING LOCATION AUTHORIZATION"
+      )
+    case .running:
+      copy.resolve(
+        japanese: "前景位置情報を実行中",
+        simplifiedChinese: "前台定位运行中",
+        english: "FOREGROUND LOCATION RUNNING"
+      )
+    case .stopped:
+      copy.resolve(
+        japanese: "前景位置情報を停止",
+        simplifiedChinese: "前台定位已停止",
+        english: "FOREGROUND LOCATION STOPPED"
+      )
+    case .sceneInactive:
+      copy.resolve(
+        japanese: "画面非アクティブのため位置情報停止",
+        simplifiedChinese: "场景非活动，定位已停止",
+        english: "LOCATION STOPPED · SCENE INACTIVE"
+      )
+    case .permissionDenied:
+      copy.resolve(
+        japanese: "位置情報の許可なし",
+        simplifiedChinese: "定位权限被拒绝",
+        english: "LOCATION PERMISSION DENIED"
+      )
+    case .failed:
+      copy.resolve(
+        japanese: "位置情報パイプライン停止",
+        simplifiedChinese: "定位管线已阻止",
+        english: "LOCATION PIPELINE BLOCKED"
+      )
+    }
+  }
+
+  private var locationStateDetail: String {
+    switch locationController.state {
+    case .releaseBlocked(let reason):
+      reason.rawValue
+    case .runtimeUnavailable:
+      copy.resolve(
+        japanese: "リリースに固定された actor は前景入力を受け取る準備ができていません。",
+        simplifiedChinese: "绑定发布包的 actor 尚未准备接收前台输入。",
+        english:
+          "The release-bound actor is not ready to accept foreground input."
+      )
+    case .idle:
+      copy.resolve(
+        japanese: "位置情報はユーザーが明示的に操作した後だけ開始します。",
+        simplifiedChinese: "只有用户明确操作后才会启动定位。",
+        english: "Location starts only after an explicit user action."
+      )
+    case .awaitingAuthorization:
+      copy.resolve(
+        japanese: "使用中の位置情報許可を待っています。更新はまだ開始していません。",
+        simplifiedChinese: "正在等待“使用 App 期间”定位授权，尚未开始更新。",
+        english:
+          "Waiting for When In Use authorization; no updates have started."
+      )
+    case .running:
+      copy.resolve(
+        japanese:
+          "使用中の位置更新をコールバック順のまま正確な release-bound actor に渡します。",
+        simplifiedChinese:
+          "“使用 App 期间”的定位更新按回调顺序传入精确绑定发布包的 actor。",
+        english:
+          "When In Use updates feed the exact release-bound actor in callback order."
+      )
+    case .stopped:
+      copy.resolve(
+        japanese: "次の明示的な操作まで更新は停止したままです。",
+        simplifiedChinese: "定位更新保持停止，直到用户再次明确启动。",
+        english: "Updates remain stopped until another explicit user action."
+      )
+    case .sceneInactive:
+      copy.resolve(
+        japanese:
+          "チェックポイント保存前に更新を停止しました。バックグラウンド位置情報は無効です。",
+        simplifiedChinese: "保存检查点前已停止更新；后台定位保持禁用。",
+        english:
+          "Updates stopped before checkpointing; background location is disabled."
+      )
+    case .permissionDenied:
+      copy.resolve(
+        japanese:
+          "Core Location が拒否または制限されています。経路進行は受け付けません。",
+        simplifiedChinese: "Core Location 被拒绝或受限；不会接受路线进度。",
+        english:
+          "Core Location is denied or restricted; no route progress is accepted."
+      )
+    case .failed(let code):
+      code
+    }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   private func handleScenePhase(

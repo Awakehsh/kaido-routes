@@ -25,6 +25,14 @@ original internal workbench remains available through a dedicated launch
 argument. The journey presents a synthetic directional-entrance recommendation,
 parked route authoring, RoutePlan-bound pre-drive review, and a parked
 guidance-voice sound check without calling live location or surface routing.
+Its visible, persisted interface selector switches the default journey among
+Japanese, Simplified Chinese, and English immediately. App-owned copy for the
+atlas, entrance explanation, parked editor, pre-drive review, voice setup, and
+released navigation surfaces follows that one interface locale, while
+release-owned guidance and editor labels still come from their exact validated
+locale catalogs. Changing the interface locale does not change the independently
+persisted guidance-voice locale. Japanese sign text, route shields, raw
+occurrence identity, and evidence codes are never translated away.
 The sound check independently selects Japanese, Simplified Chinese, or English,
 enumerates only installed exact-synthesis-locale Apple voices, keeps one
 device-local preference per language, and plays one fixed locale-specific sample
@@ -227,8 +235,9 @@ that path, ending navigation removes the active checkpoint, and missing or
 ambiguous releases remain locked. No real release is bundled, so this
 composition is structurally tested but not real-road or device evidence.
 Production corridor construction, DecisionZone calibration, CarPlay entitlement,
-full-app and device accessibility validation, pronunciation and physical
-location/audio/CarPlay hardware behavior remain unimplemented or unproven.
+internal-workbench localization, full device accessibility validation,
+pronunciation, and physical location/audio/CarPlay hardware behavior remain
+unimplemented or unproven.
 
 The entrance recommendation boundary now returns a structured selected facility,
 exact target carriageway, legal join occurrence, surface ETA, straight-line

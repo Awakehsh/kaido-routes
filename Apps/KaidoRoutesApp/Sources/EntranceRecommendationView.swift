@@ -3,6 +3,8 @@ import KaidoRouting
 import SwiftUI
 
 struct EntranceRecommendationPanel: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let model: EntranceRecommendationModel
 
   private var snapshot: EntranceRecommendationSnapshot {
@@ -29,9 +31,15 @@ struct EntranceRecommendationPanel: View {
   private var header: some View {
     HStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("入口推荐")
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "入口の提案",
+            simplifiedChinese: "入口推荐",
+            english: "Entrance recommendation"
+          )
+        )
+        .font(.system(size: 19, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("SYNTHETIC CANDIDATES · NO LIVE LOCATION")
           .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -46,7 +54,11 @@ struct EntranceRecommendationPanel: View {
       Spacer()
 
       StatusCapsule(
-        title: "方向优先",
+        title: copy.resolve(
+          japanese: "方向優先",
+          simplifiedChinese: "方向优先",
+          english: "DIRECTION FIRST"
+        ),
         color: KaidoTheme.positionCyan
       )
     }
@@ -66,18 +78,34 @@ struct EntranceRecommendationPanel: View {
         }
 
         VStack(alignment: .leading, spacing: 3) {
-          Text("推荐精确入口")
-            .font(.system(size: 9, weight: .black, design: .monospaced))
-            .tracking(0.6)
-            .foregroundStyle(KaidoTheme.positionCyan)
+          Text(
+            copy.resolve(
+              japanese: "推奨する正確な入口",
+              simplifiedChinese: "推荐精确入口",
+              english: "RECOMMENDED EXACT ENTRANCE"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.6)
+          .foregroundStyle(KaidoTheme.positionCyan)
 
-          Text(snapshot.selectedFacilityTitle)
-            .font(.system(size: 17, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeWhite)
+          Text(
+            model.fixture.facilityTitle(
+              for: snapshot.selection.facilityID,
+              locale: interfaceLocale
+            )
+          )
+          .font(.system(size: 17, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
 
-          Text(snapshot.selectedCarriagewayTitle)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(KaidoTheme.muted)
+          Text(
+            model.fixture.carriagewayTitle(
+              for: snapshot.selection.targetCarriagewayID,
+              locale: interfaceLocale
+            )
+          )
+          .font(.system(size: 12, weight: .bold))
+          .foregroundStyle(KaidoTheme.muted)
         }
 
         Spacer()
@@ -86,15 +114,27 @@ struct EntranceRecommendationPanel: View {
       HStack(spacing: 8) {
         EntranceMetric(
           value: minutes(snapshot.selection.surfaceETAMinutes),
-          label: "地表预计"
+          label: copy.resolve(
+            japanese: "一般道所要",
+            simplifiedChinese: "地表预计",
+            english: "Surface ETA"
+          )
         )
         EntranceMetric(
           value: kilometers(snapshot.selection.straightLineDistanceKM),
-          label: "直线距离"
+          label: copy.resolve(
+            japanese: "直線距離",
+            simplifiedChinese: "直线距离",
+            english: "Straight line"
+          )
         )
         EntranceMetric(
-          value: "第 \(snapshot.selection.straightLineDistanceRank)",
-          label: "距离排名"
+          value: rank(snapshot.selection.straightLineDistanceRank),
+          label: copy.resolve(
+            japanese: "距離順位",
+            simplifiedChinese: "距离排名",
+            english: "Distance rank"
+          )
         )
       }
 
@@ -118,18 +158,36 @@ struct EntranceRecommendationPanel: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
-      "推荐精确入口，\(snapshot.selectedFacilityTitle)，目标车道\(snapshot.selectedCarriagewayTitle)，"
-        + "地表预计\(minutes(snapshot.selection.surfaceETAMinutes))，"
-        + "直线距离排名第\(snapshot.selection.straightLineDistanceRank)"
+      copy.resolve(
+        japanese:
+          "推奨する正確な入口、\(selectedFacilityTitle)、対象車線\(selectedCarriagewayTitle)、"
+          + "一般道所要時間\(minutes(snapshot.selection.surfaceETAMinutes))、"
+          + "直線距離順位\(snapshot.selection.straightLineDistanceRank)位",
+        simplifiedChinese:
+          "推荐精确入口，\(selectedFacilityTitle)，目标车道\(selectedCarriagewayTitle)，"
+          + "地表预计\(minutes(snapshot.selection.surfaceETAMinutes))，"
+          + "直线距离排名第\(snapshot.selection.straightLineDistanceRank)",
+        english:
+          "Recommended exact entrance, \(selectedFacilityTitle), target carriageway "
+          + "\(selectedCarriagewayTitle), surface ETA "
+          + "\(minutes(snapshot.selection.surfaceETAMinutes)), straight-line distance rank "
+          + "\(snapshot.selection.straightLineDistanceRank)"
+      )
     )
   }
 
   private var selectionReasons: some View {
     VStack(alignment: .leading, spacing: 9) {
-      Text("为什么不是最近入口")
-        .font(.system(size: 10, weight: .black, design: .monospaced))
-        .tracking(0.65)
-        .foregroundStyle(KaidoTheme.signalAmber)
+      Text(
+        copy.resolve(
+          japanese: "最寄りの入口を選ばない理由",
+          simplifiedChinese: "为什么不是最近入口",
+          english: "Why not the nearest entrance"
+        )
+      )
+      .font(.system(size: 10, weight: .black, design: .monospaced))
+      .tracking(0.65)
+      .foregroundStyle(KaidoTheme.signalAmber)
 
       ForEach(snapshot.selection.reasonCodes, id: \.rawValue) { reason in
         HStack(spacing: 9) {
@@ -154,10 +212,16 @@ struct EntranceRecommendationPanel: View {
   private var rejectedEntrances: some View {
     if !snapshot.rejectedCandidates.isEmpty {
       VStack(alignment: .leading, spacing: 9) {
-        Text("较近候选没有被静默采用")
-          .font(.system(size: 10, weight: .black, design: .monospaced))
-          .tracking(0.55)
-          .foregroundStyle(KaidoTheme.evidenceCoral)
+        Text(
+          copy.resolve(
+            japanese: "近い候補は暗黙に採用されません",
+            simplifiedChinese: "较近候选没有被静默采用",
+            english: "Nearer candidates were not silently selected"
+          )
+        )
+        .font(.system(size: 10, weight: .black, design: .monospaced))
+        .tracking(0.55)
+        .foregroundStyle(KaidoTheme.evidenceCoral)
 
         ForEach(snapshot.rejectedCandidates, id: \.facilityID) { candidate in
           HStack(alignment: .top, spacing: 10) {
@@ -167,16 +231,21 @@ struct EntranceRecommendationPanel: View {
               .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 3) {
-              Text(candidate.facilityTitle)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(KaidoTheme.routeWhite)
+              Text(
+                model.fixture.facilityTitle(
+                  for: candidate.facilityID,
+                  locale: interfaceLocale
+                )
+              )
+              .font(.system(size: 12, weight: .bold))
+              .foregroundStyle(KaidoTheme.routeWhite)
 
               Text(rejectionCopy(candidate.reasonCodes))
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(KaidoTheme.evidenceCoral)
 
               Text(
-                "\(candidate.targetCarriagewayTitle) · "
+                "\(model.fixture.carriagewayTitle(for: candidate.targetCarriagewayID, locale: interfaceLocale)) · "
                   + "\(kilometers(candidate.straightLineDistanceKM)) · "
                   + "\(minutes(candidate.surfaceETAMinutes))"
               )
@@ -200,13 +269,29 @@ struct EntranceRecommendationPanel: View {
   ) -> String {
     switch reason {
     case .exactDirectionalCarriageway:
-      "精确方向车道一致"
+      copy.resolve(
+        japanese: "正確な進行方向の車線と一致",
+        simplifiedChinese: "精确方向车道一致",
+        english: "Matches the exact directional carriageway"
+      )
     case .legalRouteJoin:
-      "可合法接入当前 RoutePlan occurrence"
+      copy.resolve(
+        japanese: "現在の RoutePlan occurrence へ合法に接続可能",
+        simplifiedChinese: "可合法接入当前 RoutePlan occurrence",
+        english: "Legally joins the active RoutePlan occurrence"
+      )
     case .approachAvailableAtEntryTime:
-      "预计到达时段可用"
+      copy.resolve(
+        japanese: "到着予定時間帯に進入可能",
+        simplifiedChinese: "预计到达时段可用",
+        english: "Approach is available at the estimated arrival time"
+      )
     case .lowestSurfaceETAAfterHardFilters:
-      "通过硬筛选后，地表 ETA 最短"
+      copy.resolve(
+        japanese: "必須条件を通過した候補の中で一般道 ETA が最短",
+        simplifiedChinese: "通过硬筛选后，地表 ETA 最短",
+        english: "Lowest surface ETA after all hard filters"
+      )
     }
   }
 
@@ -214,11 +299,23 @@ struct EntranceRecommendationPanel: View {
     reasonCodes.map { reasonCode in
       switch reasonCode {
       case "NO_LEGAL_ROUTE_JOIN":
-        "不能合法接入当前路线"
+        copy.resolve(
+          japanese: "現在の経路へ合法に接続できません",
+          simplifiedChinese: "不能合法接入当前路线",
+          english: "Cannot legally join the current route"
+        )
       case "APPROACH_UNAVAILABLE_AT_ENTRY_TIME":
-        "预计到达时段不可用"
+        copy.resolve(
+          japanese: "到着予定時間帯は利用できません",
+          simplifiedChinese: "预计到达时段不可用",
+          english: "Unavailable at the estimated arrival time"
+        )
       case "APPROACH_AVAILABILITY_UNKNOWN":
-        "预计到达时段的通行条件未知"
+        copy.resolve(
+          japanese: "到着予定時間帯の通行条件が不明です",
+          simplifiedChinese: "预计到达时段的通行条件未知",
+          english: "Passage conditions are unknown at the estimated arrival time"
+        )
       default:
         reasonCode
       }
@@ -230,7 +327,38 @@ struct EntranceRecommendationPanel: View {
   }
 
   private func minutes(_ value: Double) -> String {
-    String(format: "%.0f min", value)
+    let rounded = Int(value.rounded())
+    return copy.resolve(
+      japanese: "\(rounded) 分",
+      simplifiedChinese: "\(rounded) 分钟",
+      english: "\(rounded) min"
+    )
+  }
+
+  private func rank(_ value: Int) -> String {
+    copy.resolve(
+      japanese: "\(value) 位",
+      simplifiedChinese: "第 \(value)",
+      english: "#\(value)"
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private var selectedFacilityTitle: String {
+    model.fixture.facilityTitle(
+      for: snapshot.selection.facilityID,
+      locale: interfaceLocale
+    )
+  }
+
+  private var selectedCarriagewayTitle: String {
+    model.fixture.carriagewayTitle(
+      for: snapshot.selection.targetCarriagewayID,
+      locale: interfaceLocale
+    )
   }
 }
 

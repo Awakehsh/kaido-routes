@@ -1,17 +1,23 @@
 import Combine
+import Foundation
 import KaidoDomain
 import KaidoRouting
+
+struct ParkedRouteEditorFixturePresentation: Sendable {
+  let entranceTitle: String
+  let completedRouteTitle: String
+  let choiceTitles: [String: String]
+  let choiceDetails: [String: String]
+  let decisionTitles: [String: String]
+}
 
 struct ParkedRouteEditorFixture: Sendable {
   let catalog: ReviewedRouteEditorCatalog
   let distanceCatalog: ReviewedRouteDistanceCatalog
   let entranceFacilityID: String
-  let entranceTitle: String
   let routePlanID: String
   let initialOccurrenceID: String
-  let choiceTitles: [String: String]
-  let choiceDetails: [String: String]
-  let decisionTitles: [String: String]
+  let presentations: [KaidoReleaseLocale: ParkedRouteEditorFixturePresentation]
   let freehandCorridorMatch: FreehandCorridorChoiceMatch
 
   static let synthetic = ParkedRouteEditorFixture(
@@ -95,24 +101,71 @@ struct ParkedRouteEditorFixture: Sendable {
       ]
     ),
     entranceFacilityID: "preview.synthetic.entrance.eastbound",
-    entranceTitle: "演示入口 · 东向",
     routePlanID: "preview.synthetic.route-plan",
     initialOccurrenceID: "preview.synthetic.occurrence.entry.0",
-    choiceTitles: [
-      "preview.synthetic.choice.enter-loop": "进入演示环线",
-      "preview.synthetic.choice.early-exit": "直接驶出演示出口",
-      "preview.synthetic.choice.repeat-loop": "再经过一次环线",
-      "preview.synthetic.choice.final-exit": "驶出演示出口",
-    ],
-    choiceDetails: [
-      "preview.synthetic.choice.enter-loop": "前往下一个已审核分岔",
-      "preview.synthetic.choice.early-exit": "选择明确的东向出口",
-      "preview.synthetic.choice.repeat-loop": "保留重复路段为新 occurrence",
-      "preview.synthetic.choice.final-exit": "完成路线后允许编译",
-    ],
-    decisionTitles: [
-      "preview.synthetic.decision.loop-gate": "环线入口分岔",
-      "preview.synthetic.decision.loop": "环线内分岔",
+    presentations: [
+      .japanese: ParkedRouteEditorFixturePresentation(
+        entranceTitle: "デモ入口・東行き",
+        completedRouteTitle: "経路作成完了",
+        choiceTitles: [
+          "preview.synthetic.choice.enter-loop": "デモループへ進む",
+          "preview.synthetic.choice.early-exit": "デモ出口へ直接進む",
+          "preview.synthetic.choice.repeat-loop": "もう一度ループを走る",
+          "preview.synthetic.choice.final-exit": "デモ出口へ進む",
+        ],
+        choiceDetails: [
+          "preview.synthetic.choice.enter-loop": "次の審査済み分岐へ進む",
+          "preview.synthetic.choice.early-exit": "明示した東行き出口を選ぶ",
+          "preview.synthetic.choice.repeat-loop":
+            "重複区間を新しい occurrence として保持",
+          "preview.synthetic.choice.final-exit": "経路を完了してコンパイルを許可",
+        ],
+        decisionTitles: [
+          "preview.synthetic.decision.loop-gate": "ループ入口の分岐",
+          "preview.synthetic.decision.loop": "ループ内の分岐",
+        ]
+      ),
+      .simplifiedChinese: ParkedRouteEditorFixturePresentation(
+        entranceTitle: "演示入口 · 东向",
+        completedRouteTitle: "路线已完成",
+        choiceTitles: [
+          "preview.synthetic.choice.enter-loop": "进入演示环线",
+          "preview.synthetic.choice.early-exit": "直接驶出演示出口",
+          "preview.synthetic.choice.repeat-loop": "再经过一次环线",
+          "preview.synthetic.choice.final-exit": "驶出演示出口",
+        ],
+        choiceDetails: [
+          "preview.synthetic.choice.enter-loop": "前往下一个已审核分岔",
+          "preview.synthetic.choice.early-exit": "选择明确的东向出口",
+          "preview.synthetic.choice.repeat-loop": "保留重复路段为新 occurrence",
+          "preview.synthetic.choice.final-exit": "完成路线后允许编译",
+        ],
+        decisionTitles: [
+          "preview.synthetic.decision.loop-gate": "环线入口分岔",
+          "preview.synthetic.decision.loop": "环线内分岔",
+        ]
+      ),
+      .english: ParkedRouteEditorFixturePresentation(
+        entranceTitle: "Demo entrance · eastbound",
+        completedRouteTitle: "Route complete",
+        choiceTitles: [
+          "preview.synthetic.choice.enter-loop": "Enter the demo loop",
+          "preview.synthetic.choice.early-exit": "Take the demo exit directly",
+          "preview.synthetic.choice.repeat-loop": "Travel the loop again",
+          "preview.synthetic.choice.final-exit": "Take the demo exit",
+        ],
+        choiceDetails: [
+          "preview.synthetic.choice.enter-loop": "Continue to the next reviewed decision",
+          "preview.synthetic.choice.early-exit": "Choose the explicit eastbound exit",
+          "preview.synthetic.choice.repeat-loop":
+            "Preserve the repeated segment as a fresh occurrence",
+          "preview.synthetic.choice.final-exit": "Complete the route and allow compilation",
+        ],
+        decisionTitles: [
+          "preview.synthetic.decision.loop-gate": "Loop entrance decision",
+          "preview.synthetic.decision.loop": "Decision inside the loop",
+        ]
+      ),
     ],
     freehandCorridorMatch: FreehandCorridorChoiceMatch(
       networkSnapshotID: "preview.synthetic.snapshot-v1",
@@ -123,6 +176,10 @@ struct ParkedRouteEditorFixture: Sendable {
       ]
     )
   )
+}
+
+enum ParkedRouteEditorModelError: Error, Equatable, Sendable {
+  case incompleteLocalizedPresentation(KaidoReleaseLocale)
 }
 
 @MainActor
@@ -145,6 +202,7 @@ final class ParkedRouteEditorModel: ObservableObject {
     fixture: ParkedRouteEditorFixture = .synthetic,
     interaction: RouteEditorInteractionContext = .parked
   ) throws {
+    try Self.validatePresentations(fixture)
     self.fixture = fixture
     self.interaction = interaction
     session = try ExpertRouteEditorSession(
@@ -174,19 +232,46 @@ final class ParkedRouteEditorModel: ObservableObject {
       && corridorResolution == nil
   }
 
-  var decisionTitle: String {
+  func entranceTitle(for locale: KaidoReleaseLocale) -> String {
+    presentation(for: locale).entranceTitle
+  }
+
+  func decisionTitle(for locale: KaidoReleaseLocale) -> String {
     guard let decisionPointID = snapshot.currentDecisionPointID else {
-      return "路线已完成"
+      return presentation(for: locale).completedRouteTitle
     }
-    return fixture.decisionTitles[decisionPointID] ?? decisionPointID
+    guard
+      let title = presentation(for: locale).decisionTitles[decisionPointID]
+    else {
+      preconditionFailure(
+        "Validated editor presentation lost decision \(decisionPointID)"
+      )
+    }
+    return title
   }
 
-  func title(for choice: ReviewedRouteEditorChoice) -> String {
-    fixture.choiceTitles[choice.id] ?? choice.id
+  func title(
+    for choice: ReviewedRouteEditorChoice,
+    locale: KaidoReleaseLocale
+  ) -> String {
+    guard let title = presentation(for: locale).choiceTitles[choice.id] else {
+      preconditionFailure(
+        "Validated editor presentation lost choice title \(choice.id)"
+      )
+    }
+    return title
   }
 
-  func detail(for choice: ReviewedRouteEditorChoice) -> String {
-    fixture.choiceDetails[choice.id] ?? choice.id
+  func detail(
+    for choice: ReviewedRouteEditorChoice,
+    locale: KaidoReleaseLocale
+  ) -> String {
+    guard let detail = presentation(for: locale).choiceDetails[choice.id] else {
+      preconditionFailure(
+        "Validated editor presentation lost choice detail \(choice.id)"
+      )
+    }
+    return detail
   }
 
   func select(choiceID: String) {
@@ -336,6 +421,55 @@ final class ParkedRouteEditorModel: ObservableObject {
       lastErrorCode = error.code
     } catch {
       lastErrorCode = "UNKNOWN_EDITOR_ERROR"
+    }
+  }
+
+  private func presentation(
+    for locale: KaidoReleaseLocale
+  ) -> ParkedRouteEditorFixturePresentation {
+    guard let presentation = fixture.presentations[locale] else {
+      preconditionFailure(
+        "Validated editor presentation lost locale \(locale.rawValue)"
+      )
+    }
+    return presentation
+  }
+
+  private static func validatePresentations(
+    _ fixture: ParkedRouteEditorFixture
+  ) throws {
+    let decisionIDs = Set(fixture.catalog.decisionPoints.map(\.id))
+    let choiceIDs = Set(
+      fixture.catalog.decisionPoints.flatMap { point in
+        point.choices.map(\.id)
+      }
+    )
+    for locale in KaidoReleaseLocale.allCases {
+      guard
+        let presentation = fixture.presentations[locale],
+        !presentation.entranceTitle.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty,
+        !presentation.completedRouteTitle.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty,
+        Set(presentation.decisionTitles.keys) == decisionIDs,
+        Set(presentation.choiceTitles.keys) == choiceIDs,
+        Set(presentation.choiceDetails.keys) == choiceIDs,
+        presentation.decisionTitles.values.allSatisfy({
+          !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }),
+        presentation.choiceTitles.values.allSatisfy({
+          !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }),
+        presentation.choiceDetails.values.allSatisfy({
+          !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        })
+      else {
+        throw ParkedRouteEditorModelError.incompleteLocalizedPresentation(
+          locale
+        )
+      }
     }
   }
 }

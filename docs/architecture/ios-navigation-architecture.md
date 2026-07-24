@@ -743,6 +743,15 @@ That is a development fact, not yet the minimum deployment target.
   authoring when that plan is invalidated, and cannot convert a structurally
   valid synthetic release into navigation authority. The former all-panel
   evidence workbench remains a launch-only internal surface.
+- The default journey owns one persisted interface-locale environment with exact
+  Japanese, Simplified Chinese, and English app copy. The selection is visible
+  and changes atlas, entrance explanation, parked editor, pre-drive review,
+  voice setup, and released-navigation chrome immediately. It does not mutate
+  the separately persisted guidance-voice locale, reinterpret RoutePlan values,
+  translate evidence codes, or replace release-owned editor and guidance
+  catalogs. Synthetic entrance and editor labels must be complete in all three
+  locales before the preview model initializes; production labels remain a
+  release gate.
 - A precise vehicle bead requires fresh route-resolved evidence. Degraded,
   ambiguous, tunnel, or stacked-road positioning renders an honest segment or
   uncertainty halo rather than a falsely precise point.
@@ -789,8 +798,10 @@ That is a development fact, not yet the minimum deployment target.
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory
   text. It supplies no prompt emission and therefore has no speech authority.
-  KR-U05 and KR-U11 cover this adapter boundary; complete app localization and
-  pronunciation review remain pending. The separate product-runtime adapter
+  KR-U05 and KR-U11 cover this adapter boundary; the default product journey now
+  applies the independent interface preference to its app-owned chrome, while
+  internal-workbench localization and pronunciation review remain pending. The
+  separate product-runtime adapter
   exercises the implemented speech scheduler and Apple output lifecycle without
   allowing this text preview to speak.
 - A synthetic driving-surface adapter executes stale LOW location evidence and

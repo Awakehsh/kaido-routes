@@ -1,4 +1,5 @@
 import Foundation
+import KaidoDomain
 import KaidoRouting
 
 struct EntranceRecommendationFixture: Equatable, Sendable {
@@ -45,6 +46,56 @@ struct EntranceRecommendationFixture: Equatable, Sendable {
       "preview.synthetic.carriageway.eastbound": "演示主线 · 东向",
     ]
   )
+
+  func facilityTitle(
+    for facilityID: String,
+    locale: KaidoReleaseLocale
+  ) -> String {
+    let localized: [KaidoReleaseLocale: [String: String]] = [
+      .japanese: [
+        "preview.synthetic.entrance.nearest.westbound": "最寄り入口・西行き",
+        "preview.synthetic.entrance.unknown.eastbound": "近距離入口・東行き",
+        "preview.synthetic.entrance.eastbound": "デモ入口・東行き",
+      ],
+      .simplifiedChinese: facilityTitles,
+      .english: [
+        "preview.synthetic.entrance.nearest.westbound":
+          "Nearest entrance · westbound",
+        "preview.synthetic.entrance.unknown.eastbound":
+          "Nearby entrance · eastbound",
+        "preview.synthetic.entrance.eastbound": "Demo entrance · eastbound",
+      ],
+    ]
+    guard let title = localized[locale]?[facilityID] else {
+      preconditionFailure(
+        "Synthetic entrance presentation is missing facility \(facilityID) for \(locale.rawValue)"
+      )
+    }
+    return title
+  }
+
+  func carriagewayTitle(
+    for carriagewayID: String,
+    locale: KaidoReleaseLocale
+  ) -> String {
+    let localized: [KaidoReleaseLocale: [String: String]] = [
+      .japanese: [
+        "preview.synthetic.carriageway.westbound": "デモ本線・西行き",
+        "preview.synthetic.carriageway.eastbound": "デモ本線・東行き",
+      ],
+      .simplifiedChinese: carriagewayTitles,
+      .english: [
+        "preview.synthetic.carriageway.westbound": "Demo mainline · westbound",
+        "preview.synthetic.carriageway.eastbound": "Demo mainline · eastbound",
+      ],
+    ]
+    guard let title = localized[locale]?[carriagewayID] else {
+      preconditionFailure(
+        "Synthetic entrance presentation is missing carriageway \(carriagewayID) for \(locale.rawValue)"
+      )
+    }
+    return title
+  }
 }
 
 enum EntranceRecommendationModelError: Error, Equatable, Sendable {

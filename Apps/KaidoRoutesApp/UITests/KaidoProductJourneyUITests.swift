@@ -124,6 +124,53 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testInterfaceLanguageSwitchesWithoutChangingGuidanceVoice() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-PRODUCT-JOURNEY-REVIEW-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let header = element("product-journey-header", in: app)
+    XCTAssertTrue(header.waitForExistence(timeout: 5))
+    XCTAssertEqual(
+      header.label,
+      "Kaido Routes。先选路，再出发。当前步骤行前确认。"
+    )
+
+    let english = element(
+      "product-journey-interface-language-en",
+      in: app
+    )
+    XCTAssertTrue(english.exists)
+    english.tap()
+
+    XCTAssertTrue(english.isSelected)
+    XCTAssertEqual(
+      header.label,
+      "Kaido Routes. Choose the route, then drive. Current step: Pre-drive review."
+    )
+    XCTAssertEqual(
+      element("product-journey-interface-language", in: app).value as? String,
+      "en"
+    )
+
+    let voiceCheck = reveal("product-journey-voice-check", in: app)
+    XCTAssertTrue(voiceCheck.exists)
+    XCTAssertTrue(
+      element("voice-check-language-ja-JP", in: app).isSelected
+    )
+    XCTAssertEqual(
+      element("voice-check-sample", in: app).value as? String,
+      "この先、左側です。"
+    )
+  }
+
   private func element(
     _ identifier: String,
     in app: XCUIApplication

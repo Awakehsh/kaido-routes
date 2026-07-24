@@ -172,6 +172,8 @@ struct RouteAtlasHomeView: View {
 }
 
 struct RouteAtlasCard: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let mode: RouteAtlasMode
   let attribution: RouteAtlasAttribution
 
@@ -195,7 +197,7 @@ struct RouteAtlasCard: View {
             .padding(14)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityLabel(mode.accessibilityLabel(for: interfaceLocale))
       }
       .frame(height: mode.mapViewportHeight)
 
@@ -230,6 +232,8 @@ struct RouteAtlasCard: View {
 }
 
 private struct RouteAtlasAttributionStrip: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let attribution: RouteAtlasAttribution
 
   var body: some View {
@@ -273,9 +277,19 @@ private struct RouteAtlasAttributionStrip: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel(
-      "地图数据来源，\(attribution.attribution)"
+      copy.resolve(
+        japanese: "地図データの出典、\(attribution.attribution)",
+        simplifiedChinese: "地图数据来源，\(attribution.attribution)",
+        english: "Map data source, \(attribution.attribution)"
+      )
     )
-    .accessibilityHint("打开 \(attribution.sourceLabel) 来源说明")
+    .accessibilityHint(
+      copy.resolve(
+        japanese: "\(attribution.sourceLabel) の出典説明を開く",
+        simplifiedChinese: "打开 \(attribution.sourceLabel) 来源说明",
+        english: "Open the \(attribution.sourceLabel) source statement"
+      )
+    )
     .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
   }
 
@@ -292,10 +306,24 @@ private struct RouteAtlasAttributionStrip: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel(
-      "数据许可证，\(attribution.licenceIdentifier)"
+      copy.resolve(
+        japanese: "データライセンス、\(attribution.licenceIdentifier)",
+        simplifiedChinese: "数据许可证，\(attribution.licenceIdentifier)",
+        english: "Data licence, \(attribution.licenceIdentifier)"
+      )
     )
-    .accessibilityHint("打开许可证全文")
+    .accessibilityHint(
+      copy.resolve(
+        japanese: "ライセンス全文を開く",
+        simplifiedChinese: "打开许可证全文",
+        english: "Open the full licence"
+      )
+    )
     .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 
@@ -325,6 +353,7 @@ struct RouteAtlasAttributionPreviewHost: View {
 }
 
 struct ParkedRouteEditorPanel: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: ParkedRouteEditorModel
 
   var body: some View {
@@ -350,7 +379,13 @@ struct ParkedRouteEditorPanel: View {
         Text(lastErrorCode)
           .font(.system(size: 10, weight: .bold, design: .monospaced))
           .foregroundStyle(KaidoTheme.evidenceCoral)
-          .accessibilityLabel("路线编辑错误：\(lastErrorCode)")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "経路編集エラー：\(lastErrorCode)",
+              simplifiedChinese: "路线编辑错误：\(lastErrorCode)",
+              english: "Route editor error: \(lastErrorCode)"
+            )
+          )
       }
 
       editorActions
@@ -369,9 +404,15 @@ struct ParkedRouteEditorPanel: View {
   private var editorHeader: some View {
     HStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("停驻路线编排")
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "停車中の経路作成",
+            simplifiedChinese: "停驻路线编排",
+            english: "Parked route authoring"
+          )
+        )
+        .font(.system(size: 19, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("SYNTHETIC CATALOG · ROUTE FIRST")
           .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -405,7 +446,7 @@ struct ParkedRouteEditorPanel: View {
       }
 
       VStack(alignment: .leading, spacing: 2) {
-        Text(model.fixture.entranceTitle)
+        Text(model.entranceTitle(for: interfaceLocale))
           .font(.system(size: 14, weight: .bold))
           .foregroundStyle(KaidoTheme.routeWhite)
 
@@ -418,7 +459,14 @@ struct ParkedRouteEditorPanel: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
-      "精确入口，\(model.fixture.entranceTitle)，\(model.snapshot.entranceFacilityID)"
+      copy.resolve(
+        japanese:
+          "正確な入口、\(model.entranceTitle(for: interfaceLocale))、\(model.snapshot.entranceFacilityID)",
+        simplifiedChinese:
+          "精确入口，\(model.entranceTitle(for: interfaceLocale))，\(model.snapshot.entranceFacilityID)",
+        english:
+          "Exact entrance, \(model.entranceTitle(for: interfaceLocale)), \(model.snapshot.entranceFacilityID)"
+      )
     )
   }
 
@@ -426,12 +474,18 @@ struct ParkedRouteEditorPanel: View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
         VStack(alignment: .leading, spacing: 2) {
-          Text("当前分岔")
-            .font(.system(size: 9, weight: .black, design: .monospaced))
-            .tracking(0.8)
-            .foregroundStyle(KaidoTheme.signalAmber)
+          Text(
+            copy.resolve(
+              japanese: "現在の分岐",
+              simplifiedChinese: "当前分岔",
+              english: "CURRENT DECISION"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.8)
+          .foregroundStyle(KaidoTheme.signalAmber)
 
-          Text(model.decisionTitle)
+          Text(model.decisionTitle(for: interfaceLocale))
             .font(.system(size: 16, weight: .black, design: .rounded))
             .foregroundStyle(KaidoTheme.routeWhite)
             .accessibilityIdentifier("route-editor-current-decision")
@@ -491,7 +545,13 @@ struct ParkedRouteEditorPanel: View {
           routeChoiceLabel(choice)
         }
         .buttonStyle(.plain)
-        .accessibilityHint("提交已审核 choice ID \(choice.id)")
+        .accessibilityHint(
+          copy.resolve(
+            japanese: "審査済み choice ID \(choice.id) を送信",
+            simplifiedChinese: "提交已审核 choice ID \(choice.id)",
+            english: "Submit reviewed choice ID \(choice.id)"
+          )
+        )
       }
     }
   }
@@ -501,9 +561,16 @@ struct ParkedRouteEditorPanel: View {
   ) -> some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack {
-        Label("手绘走廊有歧义", systemImage: "point.3.filled.connected.trianglepath.dotted")
-          .font(.system(size: 13, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.signalAmber)
+        Label(
+          copy.resolve(
+            japanese: "描画した経路候補が複数あります",
+            simplifiedChinese: "手绘走廊有歧义",
+            english: "Drawn corridor is ambiguous"
+          ),
+          systemImage: "point.3.filled.connected.trianglepath.dotted"
+        )
+        .font(.system(size: 13, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.signalAmber)
 
         Spacer()
 
@@ -512,9 +579,16 @@ struct ParkedRouteEditorPanel: View {
           .foregroundStyle(KaidoTheme.signalAmber)
       }
 
-      Text("停车状态下选择一个当前合法分岔；手势本身不会创建路线。")
-        .font(.system(size: 10, weight: .medium))
-        .foregroundStyle(KaidoTheme.muted)
+      Text(
+        copy.resolve(
+          japanese: "停車中に現在の合法な分岐を選んでください。描画だけでは経路を作成しません。",
+          simplifiedChinese: "停车状态下选择一个当前合法分岔；手势本身不会创建路线。",
+          english:
+            "While parked, choose one currently legal decision; the gesture itself never authors a route."
+        )
+      )
+      .font(.system(size: 10, weight: .medium))
+      .foregroundStyle(KaidoTheme.muted)
 
       ForEach(
         Array(resolution.candidateChoices.enumerated()),
@@ -554,11 +628,11 @@ struct ParkedRouteEditorPanel: View {
         .frame(width: 22)
 
       VStack(alignment: .leading, spacing: 2) {
-        Text(model.title(for: choice))
+        Text(model.title(for: choice, locale: interfaceLocale))
           .font(.system(size: 14, weight: .bold))
           .foregroundStyle(KaidoTheme.routeWhite)
 
-        Text(model.detail(for: choice))
+        Text(model.detail(for: choice, locale: interfaceLocale))
           .font(.system(size: 10, weight: .medium))
           .foregroundStyle(KaidoTheme.muted)
       }
@@ -581,7 +655,11 @@ struct ParkedRouteEditorPanel: View {
 
   private var corridorResolutionReceipt: some View {
     Label(
-      "已确认手绘候选；路线由 editor session 追加",
+      copy.resolve(
+        japanese: "描画候補を確認済み。経路への追加は editor session が実行",
+        simplifiedChinese: "已确认手绘候选；路线由 editor session 追加",
+        english: "Drawn candidate confirmed; the editor session appends the route"
+      ),
       systemImage: "checkmark.circle.fill"
     )
     .font(.system(size: 11, weight: .bold))
@@ -592,7 +670,14 @@ struct ParkedRouteEditorPanel: View {
     .clipShape(RoundedRectangle(cornerRadius: 11))
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
-      "手绘走廊候选已确认，\(model.corridorResolution?.selectedChoiceID ?? "未知选择")"
+      copy.resolve(
+        japanese:
+          "描画した経路候補を確認済み、\(model.corridorResolution?.selectedChoiceID ?? "選択不明")",
+        simplifiedChinese:
+          "手绘走廊候选已确认，\(model.corridorResolution?.selectedChoiceID ?? "未知选择")",
+        english:
+          "Drawn corridor candidate confirmed, \(model.corridorResolution?.selectedChoiceID ?? "unknown choice")"
+      )
     )
     .accessibilityIdentifier("corridor-resolution-selected")
   }
@@ -604,9 +689,15 @@ struct ParkedRouteEditorPanel: View {
         .foregroundStyle(KaidoTheme.positionCyan)
 
       VStack(alignment: .leading, spacing: 2) {
-        Text("明确出口已选择")
-          .font(.system(size: 14, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "明示した出口を選択済み",
+            simplifiedChinese: "明确出口已选择",
+            english: "Explicit exit selected"
+          )
+        )
+        .font(.system(size: 14, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text(verbatim: model.snapshot.selectedExitFacilityID ?? "—")
           .font(.system(size: 9, weight: .medium, design: .monospaced))
@@ -638,13 +729,25 @@ struct ParkedRouteEditorPanel: View {
         }
 
         VStack(alignment: .leading, spacing: 2) {
-          Text("已审核闭合圈")
-            .font(.system(size: 13, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeWhite)
+          Text(
+            copy.resolve(
+              japanese: "審査済みの閉ループ",
+              simplifiedChinese: "已审核闭合圈",
+              english: "Reviewed closed lap"
+            )
+          )
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
 
-          Text("只复制 session 给出的 occurrence 序列")
-            .font(.system(size: 9, weight: .medium))
-            .foregroundStyle(KaidoTheme.muted)
+          Text(
+            copy.resolve(
+              japanese: "session が返した occurrence 列だけを複製",
+              simplifiedChinese: "只复制 session 给出的 occurrence 序列",
+              english: "Copies only the occurrence sequence supplied by the session"
+            )
+          )
+          .font(.system(size: 9, weight: .medium))
+          .foregroundStyle(KaidoTheme.muted)
         }
 
         Spacer()
@@ -670,13 +773,28 @@ struct ParkedRouteEditorPanel: View {
               .clipShape(Capsule())
 
             VStack(alignment: .leading, spacing: 2) {
-              Text("再加一圈")
-                .font(.system(size: 13, weight: .black))
-                .foregroundStyle(KaidoTheme.routeWhite)
+              Text(
+                copy.resolve(
+                  japanese: "もう 1 周追加",
+                  simplifiedChinese: "再加一圈",
+                  english: "Add another lap"
+                )
+              )
+              .font(.system(size: 13, weight: .black))
+              .foregroundStyle(KaidoTheme.routeWhite)
 
-              Text("\(candidate.sourceOccurrenceIDs.count) 个 occurrence · 新建独立 ID")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(KaidoTheme.muted)
+              Text(
+                copy.resolve(
+                  japanese:
+                    "\(candidate.sourceOccurrenceIDs.count) occurrence・新しい独立 ID",
+                  simplifiedChinese:
+                    "\(candidate.sourceOccurrenceIDs.count) 个 occurrence · 新建独立 ID",
+                  english:
+                    "\(candidate.sourceOccurrenceIDs.count) occurrences · new independent IDs"
+                )
+              )
+              .font(.system(size: 9, weight: .medium))
+              .foregroundStyle(KaidoTheme.muted)
             }
 
             Spacer()
@@ -699,9 +817,22 @@ struct ParkedRouteEditorPanel: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
-          "按第 \(index + 1) 个已审核闭合序列再加一圈"
+          copy.resolve(
+            japanese: "審査済み閉ループ \(index + 1) をもう 1 周追加",
+            simplifiedChinese: "按第 \(index + 1) 个已审核闭合序列再加一圈",
+            english: "Add another lap using reviewed closed sequence \(index + 1)"
+          )
         )
-        .accessibilityHint("提交 session 候选 \(candidate.id) 并创建全新 occurrence ID")
+        .accessibilityHint(
+          copy.resolve(
+            japanese:
+              "session 候補 \(candidate.id) を送信して新しい occurrence ID を作成",
+            simplifiedChinese:
+              "提交 session 候选 \(candidate.id) 并创建全新 occurrence ID",
+            english:
+              "Submit session candidate \(candidate.id) and create fresh occurrence IDs"
+          )
+        )
       }
     }
     .padding(12)
@@ -714,10 +845,17 @@ struct ParkedRouteEditorPanel: View {
       Button {
         model.undo()
       } label: {
-        Label("撤销", systemImage: "arrow.uturn.backward")
-          .font(.system(size: 13, weight: .bold))
-          .frame(maxWidth: .infinity)
-          .frame(height: 44)
+        Label(
+          copy.resolve(
+            japanese: "元に戻す",
+            simplifiedChinese: "撤销",
+            english: "Undo"
+          ),
+          systemImage: "arrow.uturn.backward"
+        )
+        .font(.system(size: 13, weight: .bold))
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
       }
       .buttonStyle(.plain)
       .foregroundStyle(model.canUndo ? KaidoTheme.routeWhite : KaidoTheme.muted)
@@ -729,7 +867,17 @@ struct ParkedRouteEditorPanel: View {
         model.compile()
       } label: {
         Label(
-          model.compiledRoutePlan == nil ? "编译路线" : "路线已编译",
+          model.compiledRoutePlan == nil
+            ? copy.resolve(
+              japanese: "経路をコンパイル",
+              simplifiedChinese: "编译路线",
+              english: "Compile route"
+            )
+            : copy.resolve(
+              japanese: "経路コンパイル済み",
+              simplifiedChinese: "路线已编译",
+              english: "Route compiled"
+            ),
           systemImage: model.compiledRoutePlan == nil ? "flag.checkered" : "checkmark"
         )
         .font(.system(size: 13, weight: .black))
@@ -752,9 +900,14 @@ struct ParkedRouteEditorPanel: View {
       .accessibilityIdentifier("route-editor-compile")
     }
   }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
 }
 
 private struct SyntheticFreehandCorridorPad: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @State private var points: [CGPoint] = []
 
   let onCompleted: () -> Void
@@ -764,9 +917,15 @@ private struct SyntheticFreehandCorridorPad: View {
       VStack(alignment: .leading, spacing: 8) {
         HStack {
           VStack(alignment: .leading, spacing: 2) {
-            Text("手绘想走的方向")
-              .font(.system(size: 12, weight: .black, design: .rounded))
-              .foregroundStyle(KaidoTheme.routeWhite)
+            Text(
+              copy.resolve(
+                japanese: "進みたい方向を描く",
+                simplifiedChinese: "手绘想走的方向",
+                english: "Draw the intended direction"
+              )
+            )
+            .font(.system(size: 12, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
 
             Text("SYNTHETIC MATCH · PARKED ONLY")
               .font(.system(size: 8, weight: .black, design: .monospaced))
@@ -825,10 +984,27 @@ private struct SyntheticFreehandCorridorPad: View {
         }
     )
     .accessibilityLabel(
-      "合成手绘走廊区域。手势只加载固定测试候选，不会直接创建路线。"
+      copy.resolve(
+        japanese:
+          "合成の経路描画領域。ジェスチャーは固定テスト候補を読み込むだけで、経路を直接作成しません。",
+        simplifiedChinese:
+          "合成手绘走廊区域。手势只加载固定测试候选，不会直接创建路线。",
+        english:
+          "Synthetic corridor drawing area. The gesture loads fixed test candidates and never authors a route directly."
+      )
     )
-    .accessibilityHint("双击可提交合成手势候选")
+    .accessibilityHint(
+      copy.resolve(
+        japanese: "ダブルタップで合成ジェスチャー候補を送信",
+        simplifiedChinese: "双击可提交合成手势候选",
+        english: "Double-tap to submit the synthetic gesture candidate"
+      )
+    )
     .accessibilityIdentifier("corridor-draw-pad")
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 
@@ -857,6 +1033,8 @@ private struct DecisionIdentity: View {
 }
 
 private struct RouteOccurrenceRail: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let occurrences: [RouteOccurrence]
 
   var body: some View {
@@ -875,11 +1053,23 @@ private struct RouteOccurrenceRail: View {
       .padding(.vertical, 2)
     }
     .scrollIndicators(.hidden)
-    .accessibilityLabel("路线 occurrence 序列，共 \(occurrences.count) 项")
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: "経路 occurrence 列、全 \(occurrences.count) 項目",
+        simplifiedChinese: "路线 occurrence 序列，共 \(occurrences.count) 项",
+        english: "Route occurrence sequence, \(occurrences.count) items"
+      )
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 
 private struct OccurrenceNode: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let occurrence: RouteOccurrence
 
   var body: some View {
@@ -909,7 +1099,14 @@ private struct OccurrenceNode: View {
     .frame(width: 122, alignment: .leading)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(
-      "第 \(occurrence.index + 1) 个 occurrence，\(occurrence.kind.rawValue)，\(occurrence.entityID)"
+      copy.resolve(
+        japanese:
+          "\(occurrence.index + 1) 番目の occurrence、\(occurrence.kind.rawValue)、\(occurrence.entityID)",
+        simplifiedChinese:
+          "第 \(occurrence.index + 1) 个 occurrence，\(occurrence.kind.rawValue)，\(occurrence.entityID)",
+        english:
+          "Occurrence \(occurrence.index + 1), \(occurrence.kind.rawValue), \(occurrence.entityID)"
+      )
     )
   }
 
@@ -935,6 +1132,10 @@ private struct OccurrenceNode: View {
       .split(separator: ".")
       .suffix(2)
       .joined(separator: " · ")
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

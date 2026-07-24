@@ -11,6 +11,8 @@ The current app deliberately exposes only:
 
 - the 26-route full-network recognition reference;
 - the topology-bound K7 evidence candidate;
+- a catalog-driven native attribution strip adjacent to each Route Atlas,
+  including visible OpenStreetMap credit and ODbL source/licence links for K7;
 - a synthetic entrance recommendation whose exact direction and route join
   match the parked editor;
 - a parked route-authoring adapter backed by `ExpertRouteEditorSession` and a
@@ -29,6 +31,13 @@ The current app deliberately exposes only:
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
+
+The SVG remains non-interactive. Attribution is not delegated to SVG text:
+`route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and
+SwiftUI exposes native source and licence links beside the visible map. The K7
+entry must retain `© OpenStreetMap contributors`, the OpenStreetMap copyright
+URL, the ODbL 1.0 identifier and URI, always-visible placement, and stable
+accessibility identifiers.
 
 It requests when-in-use location only after the operator explicitly starts an
 internal calibration run with non-empty device and mount metadata. The product

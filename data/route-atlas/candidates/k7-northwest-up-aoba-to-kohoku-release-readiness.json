@@ -17,17 +17,17 @@
     {
       "role": "ROUTE_ATLAS_CANDIDATE",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json",
-      "content_sha256": "f30ac30001ef5ddd83c1ef871e8302b82fec0d7c5616dc436d60411a66c090ed"
+      "content_sha256": "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
     },
     {
       "role": "DIRECTED_SOURCE_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-review.json",
-      "content_sha256": "c74fe637b9435f7fa324a87977552001b19fea6151f72a3eb29e1e7ec68c2bb0"
+      "content_sha256": "68afa2e133f32f5da7b866bde2c99ef55014d629baa1c7aee0bbcdb68d766a40"
     },
     {
       "role": "SOURCE_SUCCESSOR_AUDIT",
       "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json",
-      "content_sha256": "7ff40c18c60b51a1644df71a78ac9437db6d7bd8c12d803ee3a0badb1381c8d8"
+      "content_sha256": "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
     },
     {
       "role": "SCHEMATIC_LAYOUT_SOURCE",
@@ -43,15 +43,21 @@
       "role": "FIELD_REVIEW_TEMPLATE",
       "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-surface-field-review.template.json",
       "content_sha256": "2081289560b0eb30e3258858c97f1c1392d15273af4fddc0a4b85955d335d5b8"
+    },
+    {
+      "role": "ODBL_DISTRIBUTION_REVIEW",
+      "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-distribution-review.json",
+      "content_sha256": "595d0090518595b8adc33989f5854499d673d38e42ce009898f285a13fb3c6e3"
     }
   ],
   "distribution_readiness": {
     "licence_identifier": "ODbL-1.0",
+    "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
     "required_attribution": "© OpenStreetMap contributors",
-    "in_product_attribution_status": "PENDING",
-    "derivative_database_distribution_review_status": "PENDING",
-    "reviewed_by": null,
-    "reviewed_at": null
+    "attribution_url": "https://www.openstreetmap.org/copyright",
+    "review_binding_role": "ODBL_DISTRIBUTION_REVIEW",
+    "review_id": "shutoko.k7-northwest.osm-derived-distribution.2026-07-24",
+    "implementation_status": "TECHNICAL_REVIEW_COMPLETE"
   },
   "realtime_context": {
     "status": "REALTIME_UNCONFIRMED",
@@ -64,20 +70,18 @@
     "satisfied_gate_ids": [
       "ARTIFACT_BINDINGS",
       "DIRECTED_CANDIDATE_STRUCTURE",
+      "ODBL_DISTRIBUTION",
       "SOURCE_ADJACENCY"
     ],
     "blocked_gate_ids": [
       "CURRENT_ROAD_IDENTITY",
       "CURRENT_SURFACE_FIELD_REVIEW",
       "LAYOUT_RELEASE_EVIDENCE",
-      "ODBL_DISTRIBUTION",
       "TOPOLOGY_RELEASE_EVIDENCE"
     ],
     "blocker_codes": [
       "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
       "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
-      "ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_REVIEW_PENDING",
-      "ODBL_IN_PRODUCT_ATTRIBUTION_PENDING",
       "UNRELEASED_ATLAS_EVIDENCE",
       "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE"
     ]

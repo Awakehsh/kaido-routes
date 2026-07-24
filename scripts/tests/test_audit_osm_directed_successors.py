@@ -121,9 +121,7 @@ def fixture() -> tuple[dict, dict, str]:
                 "historical_planned_exit_connection": {
                     "status": "OFFICIAL_CHECKED_AT_PUBLICATION",
                     "source_published_at": "2020-04-21",
-                    "source_reference_ids": [
-                        "official.historic-connection"
-                    ],
+                    "source_reference_ids": ["official.historic-connection"],
                 },
                 "current_physical_status": "UNCONFIRMED",
                 "current_legal_direction": "UNCONFIRMED",
@@ -134,9 +132,7 @@ def fixture() -> tuple[dict, dict, str]:
         ],
         "successor_audit": {
             "audit_id": "audit.synthetic",
-            "state": (
-                "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE"
-            ),
+            "state": ("SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE"),
             "navigation_authority": False,
             "unresolved_legal_successors": [
                 {
@@ -174,9 +170,7 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
             1,
         )
         self.assertEqual(
-            result["summary"][
-                "current_area_infrastructure_reviewed_count"
-            ],
+            result["summary"]["current_area_infrastructure_reviewed_count"],
             1,
         )
         self.assertEqual(
@@ -188,6 +182,14 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
             0,
         )
         self.assertTrue(result["summary"]["field_verification_required"])
+        self.assertEqual(
+            result["licence_url"],
+            "https://opendatacommons.org/licenses/odbl/1-0/",
+        )
+        self.assertEqual(
+            result["attribution_url"],
+            "https://www.openstreetmap.org/copyright",
+        )
         exit_checkpoint = result["checkpoints"][-1]
         self.assertEqual(
             [
@@ -210,9 +212,7 @@ class AuditOSMDirectedSuccessorsTests(unittest.TestCase):
 
     def test_unexpected_source_successor_fails_closed(self) -> None:
         source_extract, review, extract_sha256 = fixture()
-        source_extract["boundary_ways"].append(
-            way(15, 4, 50, highway="tertiary")
-        )
+        source_extract["boundary_ways"].append(way(15, 4, 50, highway="tertiary"))
 
         with self.assertRaisesRegex(
             auditor.SuccessorAuditError,

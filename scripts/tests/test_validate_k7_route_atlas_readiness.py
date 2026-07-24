@@ -36,6 +36,10 @@ CANDIDATE_PATH = (
     REPOSITORY_ROOT / "data/route-atlas/candidates/"
     "k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json"
 )
+DISTRIBUTION_REVIEW_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/osm-derived/"
+    "k7-northwest-260721-distribution-review.json"
+)
 
 
 def load(path: Path) -> dict:
@@ -83,6 +87,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             [
                 "ARTIFACT_BINDINGS",
                 "DIRECTED_CANDIDATE_STRUCTURE",
+                "ODBL_DISTRIBUTION",
                 "SOURCE_ADJACENCY",
             ],
         )
@@ -91,11 +96,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             [
                 "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
                 "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
-                ("ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_" "REVIEW_PENDING"),
-                "ODBL_IN_PRODUCT_ATTRIBUTION_PENDING",
                 "UNRELEASED_ATLAS_EVIDENCE",
                 "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
             ],
+        )
+        self.assertEqual(
+            report["distribution_review_status"],
+            "TECHNICAL_REVIEW_COMPLETE",
         )
         self.assertEqual(
             report["realtime_status"],
@@ -229,20 +236,66 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 date(2026, 7, 24),
             )
 
-    def test_distribution_completion_requires_review_metadata(
+    def test_distribution_status_cannot_replace_bound_review(
         self,
     ) -> None:
         readiness = load(READINESS_PATH)
-        distribution = readiness["distribution_readiness"]
-        distribution["in_product_attribution_status"] = "COMPLETE"
-        distribution["derivative_database_distribution_review_status"] = "COMPLETE"
+        readiness["distribution_readiness"]["implementation_status"] = "PENDING"
 
         with self.assertRaisesRegex(
             validator.ReadinessError,
-            "reviewed_by",
+            "distribution contract has drifted",
         ):
             validator.evaluate(
                 readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_distribution_review_licence_url_drift_is_rejected(
+        self,
+    ) -> None:
+        review = load(DISTRIBUTION_REVIEW_PATH)
+        review["licence"]["url"] = "https://example.invalid/odbl"
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "review licence has drifted",
+        ):
+            validator.validate_distribution_review(
+                review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_distribution_review_artifact_digest_drift_is_rejected(
+        self,
+    ) -> None:
+        review = load(DISTRIBUTION_REVIEW_PATH)
+        review["artifact_bindings"][0]["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "binding digest drifted",
+        ):
+            validator.validate_distribution_review(
+                review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_distribution_review_malformed_binding_role_fails_without_crashing(
+        self,
+    ) -> None:
+        review = load(DISTRIBUTION_REVIEW_PATH)
+        review["artifact_bindings"][0]["role"] = ["unexpected"]
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "binding role must be a string",
+        ):
+            validator.validate_distribution_review(
+                review,
                 date(2026, 7, 24),
                 REPOSITORY_ROOT,
             )

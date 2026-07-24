@@ -15,8 +15,10 @@ struct RouteAtlasHomeView: View {
           header
           atlasModePicker
 
-          RouteAtlasCard(mode: model.atlasMode)
-            .frame(height: model.atlasMode == .network ? 340 : 300)
+          RouteAtlasCard(
+            mode: model.atlasMode,
+            attribution: model.attribution(for: model.atlasMode)
+          )
 
           EntranceRecommendationPanel(model: model.entranceRecommendation)
 
@@ -169,36 +171,42 @@ struct RouteAtlasHomeView: View {
   }
 }
 
-private struct RouteAtlasCard: View {
+struct RouteAtlasCard: View {
   let mode: RouteAtlasMode
+  let attribution: RouteAtlasAttribution
 
   var body: some View {
-    GeometryReader { proxy in
-      ZStack(alignment: .topTrailing) {
-        KaidoTheme.instrument
+    VStack(spacing: 0) {
+      GeometryReader { proxy in
+        ZStack(alignment: .topTrailing) {
+          KaidoTheme.instrument
 
-        SVGDocumentView(resourceName: mode.resourceName)
-          .aspectRatio(mode.aspectRatio, contentMode: .fit)
-          .frame(
-            maxWidth: proxy.size.width - 20,
-            maxHeight: proxy.size.height - 20
-          )
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .padding(10)
-          .id(mode)
+          SVGDocumentView(resourceName: mode.resourceName)
+            .aspectRatio(mode.aspectRatio, contentMode: .fit)
+            .frame(
+              maxWidth: proxy.size.width - 20,
+              maxHeight: proxy.size.height - 20
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(10)
+            .id(mode)
 
-        evidenceRail
-          .padding(14)
+          evidenceRail
+            .padding(14)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(mode.accessibilityLabel)
       }
-      .clipShape(RoundedRectangle(cornerRadius: 24))
-      .overlay {
-        RoundedRectangle(cornerRadius: 24)
-          .stroke(KaidoTheme.steel.opacity(0.85), lineWidth: 1)
-      }
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel(mode.accessibilityLabel)
+      .frame(height: mode.mapViewportHeight)
+
+      RouteAtlasAttributionStrip(attribution: attribution)
     }
-    .frame(minHeight: 300)
+    .background(KaidoTheme.instrument)
+    .clipShape(RoundedRectangle(cornerRadius: 24))
+    .overlay {
+      RoundedRectangle(cornerRadius: 24)
+        .stroke(KaidoTheme.steel.opacity(0.85), lineWidth: 1)
+    }
   }
 
   private var evidenceRail: some View {
@@ -218,6 +226,101 @@ private struct RouteAtlasCard: View {
         .rotationEffect(.degrees(90))
         .frame(width: 14, height: 58)
     }
+  }
+}
+
+private struct RouteAtlasAttributionStrip: View {
+  let attribution: RouteAtlasAttribution
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 12) {
+        sourceLink
+        Spacer(minLength: 8)
+        licenceLink
+      }
+
+      VStack(alignment: .leading, spacing: 7) {
+        sourceLink
+        licenceLink
+      }
+    }
+    .padding(.horizontal, 12)
+    .padding(.vertical, 9)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(KaidoTheme.asphalt.opacity(0.86))
+    .overlay(alignment: .top) {
+      Rectangle()
+        .fill(KaidoTheme.steel.opacity(0.8))
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("route-atlas-attribution-strip")
+    .accessibilityValue("ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS")
+  }
+
+  private var sourceLink: some View {
+    Link(destination: attribution.sourceURL) {
+      HStack(spacing: 5) {
+        Text(attribution.attribution)
+          .lineLimit(2)
+
+        Image(systemName: "arrow.up.right")
+          .font(.system(size: 7, weight: .black))
+      }
+      .font(.system(size: 9, weight: .bold, design: .monospaced))
+      .foregroundStyle(KaidoTheme.muted)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(
+      "地图数据来源，\(attribution.attribution)"
+    )
+    .accessibilityHint("打开 \(attribution.sourceLabel) 来源说明")
+    .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
+  }
+
+  private var licenceLink: some View {
+    Link(destination: attribution.licenceURL) {
+      HStack(spacing: 5) {
+        Text(attribution.licenceLabel)
+
+        Image(systemName: "doc.text")
+          .font(.system(size: 7, weight: .black))
+      }
+      .font(.system(size: 9, weight: .black, design: .monospaced))
+      .foregroundStyle(KaidoTheme.positionCyan)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(
+      "数据许可证，\(attribution.licenceIdentifier)"
+    )
+    .accessibilityHint("打开许可证全文")
+    .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
+  }
+}
+
+struct RouteAtlasAttributionPreviewHost: View {
+  private let attribution: RouteAtlasAttribution
+
+  init() {
+    do {
+      attribution = try RouteAtlasAttributionCatalog.bundled()
+        .attribution(for: .k7Evidence)
+    } catch {
+      preconditionFailure("Invalid Route Atlas attribution fixture: \(error)")
+    }
+  }
+
+  var body: some View {
+    ScrollView {
+      RouteAtlasCard(
+        mode: .k7Evidence,
+        attribution: attribution
+      )
+      .padding(18)
+    }
+    .background(KaidoTheme.asphalt.ignoresSafeArea())
+    .accessibilityIdentifier("route-atlas-attribution-preview")
   }
 }
 

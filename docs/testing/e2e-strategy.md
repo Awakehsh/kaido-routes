@@ -29,6 +29,13 @@ candidate files by hash, then feed an authoritative release validator only when
 all preflight gates are satisfied. The K7 readiness validator deliberately
 reuses KR-D22 through KR-D24 for Swift graph/release semantics rather than
 adding a route-specific field-evidence event to the pure runtime runner.
+Its ODbL distribution gate is cross-layer evidence: L0 hash-validates the full
+derivative database, reconstruction README, machine-readable notices,
+attribution catalog, SwiftUI implementation, and Xcode resource declaration;
+focused L3 unit and UI tests then prove the K7 credit and source/licence links
+are actually exposed adjacent to the non-interactive map. Passing that gate is
+technical distribution evidence only, not road, topology, layout, realtime, or
+navigation evidence.
 
 ## Portable scenario envelope
 

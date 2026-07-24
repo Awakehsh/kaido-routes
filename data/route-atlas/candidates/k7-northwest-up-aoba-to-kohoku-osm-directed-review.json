@@ -129,7 +129,10 @@
       "source_url": "https://download.geofabrik.de/asia/japan/kanto-260721.osm.pbf",
       "content_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
       "checked_at": "2026-07-23",
-      "licence_identifier": "ODbL-1.0"
+      "licence_identifier": "ODbL-1.0",
+      "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "© OpenStreetMap contributors",
+      "attribution_url": "https://www.openstreetmap.org/copyright"
     },
     {
       "source_reference_id": "shutoko.route.k7-northwest.2026-07-23",
@@ -361,7 +364,6 @@
     "The fourteen-checkpoint source-adjacency audit is exact. The third way's 2020 temporary-passage corridor and the surrounding project's later completion are official, but the exact way's current road identity, physical status, legal direction, and permitted exit movement remain unconfirmed.",
     "The two expressway divergence alternatives are source-bound candidates, not a complete released graph beyond the bounded slice.",
     "Lane, sign, DecisionZone, and production schematic-layout review remain incomplete.",
-    "In-app OSM attribution and derivative-database distribution integration are not implemented.",
     "Realtime operating state remains unconfirmed."
   ]
 }

@@ -22,7 +22,9 @@ struct InternalLocationCalibrationFixture: Sendable {
   let exitFacilityID: String
   let evidenceState: String
   let attribution: String
+  let attributionURL: URL
   let licence: String
+  let licenceURL: URL
   let navigationAuthority: Bool
 
   static func bundled(in bundle: Bundle = .main) throws
@@ -77,8 +79,18 @@ struct InternalLocationCalibrationFixture: Sendable {
     if database.licence != "ODbL-1.0" {
       issues.append("candidate database licence is not ODbL-1.0")
     }
-    if database.attribution.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      issues.append("candidate database attribution is empty")
+    if database.licenceURL.absoluteString
+      != "https://opendatacommons.org/licenses/odbl/1-0/"
+    {
+      issues.append("candidate database licence URL has drifted")
+    }
+    if database.attribution != "© OpenStreetMap contributors" {
+      issues.append("candidate database attribution has drifted")
+    }
+    if database.attributionURL.absoluteString
+      != "https://www.openstreetmap.org/copyright"
+    {
+      issues.append("candidate database attribution URL has drifted")
     }
     if candidate.definition.evidence.state != "CANDIDATE" {
       issues.append("route atlas evidence is not CANDIDATE")
@@ -250,7 +262,9 @@ struct InternalLocationCalibrationFixture: Sendable {
       exitFacilityID: database.route.exitFacilityID,
       evidenceState: candidate.definition.evidence.state,
       attribution: database.attribution,
+      attributionURL: database.attributionURL,
       licence: database.licence,
+      licenceURL: database.licenceURL,
       navigationAuthority: database.navigationAuthority
     )
   }
@@ -269,7 +283,9 @@ private struct DirectedDatabase: Decodable {
   let nodes: [Node]
   let ways: [Way]
   let licence: String
+  let licenceURL: URL
   let attribution: String
+  let attributionURL: URL
   let navigationAuthority: Bool
 
   struct Source: Decodable {
@@ -339,7 +355,9 @@ private struct DirectedDatabase: Decodable {
     case nodes
     case ways
     case licence
+    case licenceURL = "licence_url"
     case attribution
+    case attributionURL = "attribution_url"
     case navigationAuthority = "navigation_authority"
   }
 }

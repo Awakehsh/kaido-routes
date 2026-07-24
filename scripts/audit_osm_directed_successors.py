@@ -12,6 +12,10 @@ from typing import Any
 
 
 EXPECTED_SCHEMA_VERSION = "1.0"
+EXPECTED_LICENCE = "ODbL-1.0"
+EXPECTED_LICENCE_URL = "https://opendatacommons.org/licenses/odbl/1-0/"
+EXPECTED_ATTRIBUTION = "© OpenStreetMap contributors"
+EXPECTED_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright"
 MOTOR_ROAD_HIGHWAYS = {
     "living_street",
     "motorway",
@@ -67,8 +71,7 @@ def sha256(path: Path) -> str:
 def write_json(value: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
-        + "\n",
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -102,9 +105,7 @@ def outgoing_directions(
     node_id: int,
 ) -> list[str]:
     nodes = way["nodes"]
-    positions = [
-        index for index, candidate in enumerate(nodes) if candidate == node_id
-    ]
+    positions = [index for index, candidate in enumerate(nodes) if candidate == node_id]
     if not positions:
         return []
     if positions not in ([0], [len(nodes) - 1]):
@@ -117,8 +118,7 @@ def outgoing_directions(
     if highway not in MOTOR_ROAD_HIGHWAYS:
         return []
     access_values = {
-        str(tags.get(key, "")).lower()
-        for key in ("access", "vehicle", "motor_vehicle")
+        str(tags.get(key, "")).lower() for key in ("access", "vehicle", "motor_vehicle")
     }
     if access_values.intersection({"no", "private"}):
         return []
@@ -218,8 +218,7 @@ def expected_checkpoints(
         raise SuccessorAuditError("review has no complete successor declaration")
     route_way_ids = route["way_ids"]
     alternative_by_predecessor = {
-        alternative["after_way_id"]: alternative
-        for alternative in alternatives
+        alternative["after_way_id"]: alternative for alternative in alternatives
     }
     checkpoints = [
         {
@@ -305,9 +304,7 @@ def legal_successor_evidence(
         source_references,
         list,
     ):
-        raise SuccessorAuditError(
-            "legal successor evidence registry is incomplete"
-        )
+        raise SuccessorAuditError("legal successor evidence registry is incomplete")
     source_reference_ids = {
         reference.get("source_reference_id")
         for reference in source_references
@@ -336,17 +333,11 @@ def legal_successor_evidence(
             item.get("direction"),
         )
         if key in evidence_keys or key not in unresolved_keys:
-            raise SuccessorAuditError(
-                "legal successor evidence identity has drifted"
-            )
+            raise SuccessorAuditError("legal successor evidence identity has drifted")
         road_identity = item.get("road_identity")
-        current_area_infrastructure = item.get(
-            "current_area_infrastructure"
-        )
+        current_area_infrastructure = item.get("current_area_infrastructure")
         current_road_identity = item.get("current_road_identity")
-        historical_connection = item.get(
-            "historical_planned_exit_connection"
-        )
+        historical_connection = item.get("historical_planned_exit_connection")
         if (
             item.get("source_adjacency_exact") is not True
             or item.get("current_physical_status") != "UNCONFIRMED"
@@ -373,12 +364,10 @@ def legal_successor_evidence(
                 source_reference_ids
             )
             or not isinstance(current_area_infrastructure, dict)
-            or current_area_infrastructure.get("status")
-            != "OFFICIAL_CHECKED"
+            or current_area_infrastructure.get("status") != "OFFICIAL_CHECKED"
             or current_area_infrastructure.get("infrastructure_completed_at")
             != "2022-03"
-            or current_area_infrastructure.get("project_closed_at")
-            != "2023-07-25"
+            or current_area_infrastructure.get("project_closed_at") != "2023-07-25"
             or current_area_infrastructure.get("exact_way_identity_status")
             != "UNCONFIRMED"
             or not isinstance(
@@ -386,9 +375,9 @@ def legal_successor_evidence(
                 list,
             )
             or not current_area_infrastructure["source_reference_ids"]
-            or not set(
-                current_area_infrastructure["source_reference_ids"]
-            ).issubset(source_reference_ids)
+            or not set(current_area_infrastructure["source_reference_ids"]).issubset(
+                source_reference_ids
+            )
             or not isinstance(current_road_identity, dict)
             or current_road_identity.get("status") != "UNCONFIRMED"
             or current_road_identity.get("classification") != "UNCONFIRMED"
@@ -397,12 +386,11 @@ def legal_successor_evidence(
                 list,
             )
             or not current_road_identity["source_reference_ids"]
-            or not set(
-                current_road_identity["source_reference_ids"]
-            ).issubset(source_reference_ids)
+            or not set(current_road_identity["source_reference_ids"]).issubset(
+                source_reference_ids
+            )
             or not isinstance(historical_connection, dict)
-            or historical_connection.get("status")
-            != "OFFICIAL_CHECKED_AT_PUBLICATION"
+            or historical_connection.get("status") != "OFFICIAL_CHECKED_AT_PUBLICATION"
             or not isinstance(
                 historical_connection.get("source_published_at"),
                 str,
@@ -412,9 +400,9 @@ def legal_successor_evidence(
                 list,
             )
             or not historical_connection["source_reference_ids"]
-            or not set(
-                historical_connection["source_reference_ids"]
-            ).issubset(source_reference_ids)
+            or not set(historical_connection["source_reference_ids"]).issubset(
+                source_reference_ids
+            )
         ):
             raise SuccessorAuditError(
                 "legal successor evidence must separate historic corridor "
@@ -441,12 +429,9 @@ def build_audit(
         source_extract.get("schema_version") != EXPECTED_SCHEMA_VERSION
         or not isinstance(source, dict)
         or not isinstance(expected_source, dict)
-        or source_extract_sha256
-        != expected_source.get("expected_extract_sha256")
-        or source.get("input_sha256")
-        != expected_source.get("parent_pbf_sha256")
-        or source.get("source_snapshot_at")
-        != expected_source.get("source_snapshot_at")
+        or source_extract_sha256 != expected_source.get("expected_extract_sha256")
+        or source.get("input_sha256") != expected_source.get("parent_pbf_sha256")
+        or source.get("source_snapshot_at") != expected_source.get("source_snapshot_at")
         or not isinstance(audit_review, dict)
         or audit_review.get("state")
         != "SOURCE_ADJACENCY_COMPLETE_LEGAL_REVIEW_INCOMPLETE"
@@ -464,9 +449,7 @@ def build_audit(
         incoming_way_id = checkpoint["incoming_way_id"]
         incoming = ways.get(incoming_way_id)
         if incoming is None:
-            raise SuccessorAuditError(
-                f"incoming way {incoming_way_id} is absent"
-            )
+            raise SuccessorAuditError(f"incoming way {incoming_way_id} is absent")
         via_node_id = checkpoint["via_node_id"]
         if via_node_id is None:
             if incoming_way_id not in route_way_ids:
@@ -576,9 +559,7 @@ def build_audit(
             )
     successor_evidence = legal_successor_evidence(review, unresolved)
 
-    total_successors = sum(
-        len(result["observed_successors"]) for result in results
-    )
+    total_successors = sum(len(result["observed_successors"]) for result in results)
     return {
         "schema_version": EXPECTED_SCHEMA_VERSION,
         "audit_id": audit_review["audit_id"],
@@ -587,8 +568,10 @@ def build_audit(
         "route_plan_id": review["route_plan_id"],
         "state": audit_review["state"],
         "navigation_authority": False,
-        "licence": "ODbL-1.0",
-        "attribution": "© OpenStreetMap contributors",
+        "licence": EXPECTED_LICENCE,
+        "licence_url": EXPECTED_LICENCE_URL,
+        "attribution": EXPECTED_ATTRIBUTION,
+        "attribution_url": EXPECTED_ATTRIBUTION_URL,
         "source": {
             "bounded_extract_sha256": source_extract_sha256,
             "parent_pbf_sha256": source["input_sha256"],
@@ -606,8 +589,7 @@ def build_audit(
                 for item in successor_evidence
             ),
             "current_area_infrastructure_reviewed_count": sum(
-                item["current_area_infrastructure"]["status"]
-                == "OFFICIAL_CHECKED"
+                item["current_area_infrastructure"]["status"] == "OFFICIAL_CHECKED"
                 for item in successor_evidence
             ),
             "current_road_identity_confirmed_count": sum(
@@ -638,9 +620,7 @@ def build_scenario(
     return {
         "schema_version": "1.0",
         "id": "KR-D23",
-        "title": (
-            "Completed K7 exit-area works do not prove current legal movement"
-        ),
+        "title": ("Completed K7 exit-area works do not prove current legal movement"),
         "layer": "DOMAIN",
         "tags": [
             "route-atlas",
@@ -729,31 +709,21 @@ def build_scenario(
             "network_snapshot": candidate["network_snapshot"],
             "route_plan": candidate["route_plan"],
             "inputs": {
-                "route_atlas_sources": candidate["source_registry"][
-                    "references"
-                ],
+                "route_atlas_sources": candidate["source_registry"]["references"],
                 "route_atlas_topology": candidate["topology_slice"],
                 "route_atlas": definition,
             },
             "system_state": {
-                "successor_checkpoint_count": audit["summary"][
-                    "checkpoint_count"
-                ],
-                "source_adjacency_exact": audit["summary"][
-                    "source_adjacency_exact"
-                ],
-                "legal_review_complete": audit["summary"][
-                    "legal_review_complete"
-                ],
+                "successor_checkpoint_count": audit["summary"]["checkpoint_count"],
+                "source_adjacency_exact": audit["summary"]["source_adjacency_exact"],
+                "legal_review_complete": audit["summary"]["legal_review_complete"],
                 "unresolved_legal_successor_count": audit["summary"][
                     "unresolved_legal_successor_count"
                 ],
                 "historical_road_identity_reviewed_count": audit["summary"][
                     "historical_road_identity_reviewed_count"
                 ],
-                "current_area_infrastructure_reviewed_count": audit[
-                    "summary"
-                ][
+                "current_area_infrastructure_reviewed_count": audit["summary"][
                     "current_area_infrastructure_reviewed_count"
                 ],
                 "current_road_identity_confirmed_count": audit["summary"][

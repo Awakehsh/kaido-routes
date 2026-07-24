@@ -22,7 +22,9 @@ from audit_osm_directed_successors import (
 EXPECTED_SCHEMA_VERSION = "1.0"
 EXPECTED_CANDIDATE_STATE = "CANDIDATE"
 EXPECTED_LICENCE = "ODbL-1.0"
+EXPECTED_LICENCE_URL = "https://opendatacommons.org/licenses/odbl/1-0/"
 EXPECTED_ATTRIBUTION = "© OpenStreetMap contributors"
+EXPECTED_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright"
 EXPECTED_HIGHWAYS = {"motorway", "motorway_link"}
 
 
@@ -104,8 +106,7 @@ def validated_review(review: dict[str, Any]) -> None:
         or len(route["way_ids"]) < 2
         or len(set(route["way_ids"])) != len(route["way_ids"])
         or not all(
-            isinstance(way_id, int) and way_id > 0
-            for way_id in route["way_ids"]
+            isinstance(way_id, int) and way_id > 0 for way_id in route["way_ids"]
         )
         or not isinstance(alternatives, list)
         or len(alternatives) != 2
@@ -171,17 +172,21 @@ def validated_review(review: dict[str, Any]) -> None:
                 "directed candidate evidence date is invalid"
             ) from error
         references_by_id[reference_id] = reference
+    osm_reference = references_by_id.get("osm.geofabrik.kanto-260721.k7-directed")
     if (
         set(topology_ids) | set(layout_ids) != set(references_by_id)
         or not set(layout_ids).issubset(set(topology_ids))
+        or not isinstance(osm_reference, dict)
+        or osm_reference.get("licence_identifier") != EXPECTED_LICENCE
+        or osm_reference.get("licence_url") != EXPECTED_LICENCE_URL
+        or osm_reference.get("attribution") != EXPECTED_ATTRIBUTION
+        or osm_reference.get("attribution_url") != EXPECTED_ATTRIBUTION_URL
         or any(
-            "TOPOLOGY_EVIDENCE"
-            not in references_by_id[source_id]["roles"]
+            "TOPOLOGY_EVIDENCE" not in references_by_id[source_id]["roles"]
             for source_id in topology_ids
         )
         or any(
-            "LAYOUT_EVIDENCE"
-            not in references_by_id[source_id]["roles"]
+            "LAYOUT_EVIDENCE" not in references_by_id[source_id]["roles"]
             for source_id in layout_ids
         )
     ):
@@ -211,19 +216,15 @@ def validate_source_extract(
         or source_extract_sha256 != expected["expected_extract_sha256"]
         or not isinstance(source, dict)
         or source.get("input_sha256") != expected["parent_pbf_sha256"]
-        or source.get("source_snapshot_at")
-        != expected["source_snapshot_at"]
+        or source.get("source_snapshot_at") != expected["source_snapshot_at"]
         or source.get("source_uri") != expected["source_url"]
         or source.get("licence") != EXPECTED_LICENCE
         or source.get("attribution") != EXPECTED_ATTRIBUTION
         or source.get("extraction_tool") != "pyosmium"
-        or source.get("extraction_tool_version")
-        != expected["extraction_tool_version"]
+        or source.get("extraction_tool_version") != expected["extraction_tool_version"]
         or source_extract.get("bounds") != expected["bounds"]
     ):
-        raise DirectedCandidateBuildError(
-            "bounded OSM source identity has drifted"
-        )
+        raise DirectedCandidateBuildError("bounded OSM source identity has drifted")
     ways_value = source_extract.get("ways")
     nodes_value = source_extract.get("nodes")
     boundary_ways_value = source_extract.get("boundary_ways")
@@ -297,8 +298,7 @@ def build_database(
     route = review["route"]
     route_way_ids = route["way_ids"]
     alternative_way_ids = [
-        alternative["way_id"]
-        for alternative in review["divergence_alternatives"]
+        alternative["way_id"] for alternative in review["divergence_alternatives"]
     ]
     selected_way_ids = route_way_ids + alternative_way_ids
     try:
@@ -324,10 +324,8 @@ def build_database(
                 f"route discontinuity between OSM ways {first_id} and {second_id}"
             )
     if (
-        ways[route_way_ids[0]]["nodes"][0]
-        != route["entry_node_id"]
-        or ways[route_way_ids[-1]]["nodes"][-1]
-        != route["exit_node_id"]
+        ways[route_way_ids[0]]["nodes"][0] != route["entry_node_id"]
+        or ways[route_way_ids[-1]]["nodes"][-1] != route["exit_node_id"]
     ):
         raise DirectedCandidateBuildError(
             "directed route facility boundary has drifted"
@@ -342,50 +340,33 @@ def build_database(
 
     boundary_checks = review.get("facility_boundary_checks")
     if not isinstance(boundary_checks, dict):
-        raise DirectedCandidateBuildError(
-            "facility boundary checks are missing"
-        )
-    entry_predecessor_id = boundary_checks.get(
-        "entry_predecessor_way_id"
-    )
-    entry_nonroute_successor_id = boundary_checks.get(
-        "entry_nonroute_successor_way_id"
-    )
-    exit_surface_successor_ids = boundary_checks.get(
-        "exit_surface_successor_way_ids"
-    )
+        raise DirectedCandidateBuildError("facility boundary checks are missing")
+    entry_predecessor_id = boundary_checks.get("entry_predecessor_way_id")
+    entry_nonroute_successor_id = boundary_checks.get("entry_nonroute_successor_way_id")
+    exit_surface_successor_ids = boundary_checks.get("exit_surface_successor_way_ids")
     if (
         not isinstance(entry_predecessor_id, int)
         or entry_predecessor_id not in ways
-        or ways[entry_predecessor_id]["nodes"][-1]
-        != route["entry_node_id"]
+        or ways[entry_predecessor_id]["nodes"][-1] != route["entry_node_id"]
         or not isinstance(entry_nonroute_successor_id, int)
         or entry_nonroute_successor_id not in ways
-        or ways[entry_nonroute_successor_id]["nodes"][0]
-        != route["entry_node_id"]
+        or ways[entry_nonroute_successor_id]["nodes"][0] != route["entry_node_id"]
         or not isinstance(exit_surface_successor_ids, list)
         or len(exit_surface_successor_ids) < 1
         or any(
             way_id not in boundary_ways
-            or boundary_ways[way_id]["nodes"][0]
-            != route["exit_node_id"]
+            or boundary_ways[way_id]["nodes"][0] != route["exit_node_id"]
             for way_id in exit_surface_successor_ids
         )
     ):
-        raise DirectedCandidateBuildError(
-            "facility boundary connection has drifted"
-        )
+        raise DirectedCandidateBuildError("facility boundary connection has drifted")
     expected_surface_tags_by_way = boundary_checks.get(
         "required_exit_surface_tags_by_way",
     )
-    if (
-        not isinstance(expected_surface_tags_by_way, dict)
-        or set(expected_surface_tags_by_way)
-        != {str(way_id) for way_id in exit_surface_successor_ids}
-    ):
-        raise DirectedCandidateBuildError(
-            "exit surface tag requirements have drifted"
-        )
+    if not isinstance(expected_surface_tags_by_way, dict) or set(
+        expected_surface_tags_by_way
+    ) != {str(way_id) for way_id in exit_surface_successor_ids}:
+        raise DirectedCandidateBuildError("exit surface tag requirements have drifted")
     for way_id in exit_surface_successor_ids:
         tags = boundary_ways[way_id]["tags"]
         expected_surface_tags = expected_surface_tags_by_way[str(way_id)]
@@ -393,10 +374,7 @@ def build_database(
             raise DirectedCandidateBuildError(
                 f"exit surface tag requirements are invalid for OSM way {way_id}"
             )
-        if any(
-            tags.get(key) != value
-            for key, value in expected_surface_tags.items()
-        ):
+        if any(tags.get(key) != value for key, value in expected_surface_tags.items()):
             raise DirectedCandidateBuildError(
                 f"exit surface tags drifted for OSM way {way_id}"
             )
@@ -405,27 +383,22 @@ def build_database(
     for way_id_text, expected_tags in required_tags.items():
         way_id = int(way_id_text)
         actual_tags = ways.get(way_id, {}).get("tags", {})
-        if any(
-            actual_tags.get(key) != value
-            for key, value in expected_tags.items()
-        ):
+        if any(actual_tags.get(key) != value for key, value in expected_tags.items()):
             raise DirectedCandidateBuildError(
                 f"required tags drifted for OSM way {way_id}"
             )
 
     retained_node_ids = sorted(
-        {
-            node_id
-            for way in selected_ways
-            for node_id in way["nodes"]
-        }
+        {node_id for way in selected_ways for node_id in way["nodes"]}
     )
     source = source_extract["source"]
     return {
         "schema_version": EXPECTED_SCHEMA_VERSION,
         "database_id": review["database_id"],
         "licence": EXPECTED_LICENCE,
+        "licence_url": EXPECTED_LICENCE_URL,
         "attribution": EXPECTED_ATTRIBUTION,
+        "attribution_url": EXPECTED_ATTRIBUTION_URL,
         "navigation_authority": False,
         "source": {
             "parent_pbf_url": source["source_uri"],
@@ -433,9 +406,7 @@ def build_database(
             "source_snapshot_at": source["source_snapshot_at"],
             "bounded_extract_sha256": source_extract_sha256,
             "extraction_tool": source["extraction_tool"],
-            "extraction_tool_version": source[
-                "extraction_tool_version"
-            ],
+            "extraction_tool_version": source["extraction_tool_version"],
             "bounds": source_extract["bounds"],
         },
         "route": {
@@ -445,17 +416,12 @@ def build_database(
             "exit_node_id": route["exit_node_id"],
             "way_ids": route_way_ids,
         },
-        "divergence_alternatives": review[
-            "divergence_alternatives"
-        ],
+        "divergence_alternatives": review["divergence_alternatives"],
         "facility_boundary_evidence": {
             "entry_predecessor_way": ways[entry_predecessor_id],
-            "entry_nonroute_successor_way": ways[
-                entry_nonroute_successor_id
-            ],
+            "entry_nonroute_successor_way": ways[entry_nonroute_successor_id],
             "exit_surface_successor_ways": [
-                boundary_ways[way_id]
-                for way_id in exit_surface_successor_ids
+                boundary_ways[way_id] for way_id in exit_surface_successor_ids
             ],
         },
         "nodes": [nodes[node_id] for node_id in retained_node_ids],
@@ -479,17 +445,12 @@ def normalized_points(
     height = maximum_latitude - minimum_latitude
     extent = max(width, height)
     if extent <= 0:
-        raise DirectedCandidateBuildError(
-            "directed candidate geometry is degenerate"
-        )
+        raise DirectedCandidateBuildError("directed candidate geometry is degenerate")
     scale = 0.84 / extent
     return {
         node_id: {
             "x": round(
-                0.5
-                + (node["lon"] - center_longitude)
-                * longitude_scale
-                * scale,
+                0.5 + (node["lon"] - center_longitude) * longitude_scale * scale,
                 9,
             ),
             "y": round(
@@ -510,25 +471,23 @@ def build_candidate(
         database.get("schema_version") != EXPECTED_SCHEMA_VERSION
         or database.get("database_id") != review["database_id"]
         or database.get("licence") != EXPECTED_LICENCE
+        or database.get("licence_url") != EXPECTED_LICENCE_URL
         or database.get("attribution") != EXPECTED_ATTRIBUTION
+        or database.get("attribution_url") != EXPECTED_ATTRIBUTION_URL
         or database.get("navigation_authority") is not False
         or database.get("route") != review["route"]
-        or database.get("divergence_alternatives")
-        != review["divergence_alternatives"]
+        or database.get("divergence_alternatives") != review["divergence_alternatives"]
         or not isinstance(
             database.get("facility_boundary_evidence"),
             dict,
         )
     ):
-        raise DirectedCandidateBuildError(
-            "derived K7 database identity has drifted"
-        )
+        raise DirectedCandidateBuildError("derived K7 database identity has drifted")
     ways = {way["id"]: way for way in database.get("ways", [])}
     nodes = {node["id"]: node for node in database.get("nodes", [])}
     route_way_ids = review["route"]["way_ids"]
     alternative_way_ids = [
-        alternative["way_id"]
-        for alternative in review["divergence_alternatives"]
+        alternative["way_id"] for alternative in review["divergence_alternatives"]
     ]
     all_way_ids = route_way_ids + alternative_way_ids
     if set(ways) != set(all_way_ids):
@@ -538,21 +497,13 @@ def build_candidate(
     facility_boundary = database["facility_boundary_evidence"]
     boundary_checks = review["facility_boundary_checks"]
     entry_predecessor = facility_boundary.get("entry_predecessor_way")
-    entry_nonroute_successor = facility_boundary.get(
-        "entry_nonroute_successor_way"
-    )
-    exit_surface_successors = facility_boundary.get(
-        "exit_surface_successor_ways"
-    )
-    required_exit_tags_by_way = boundary_checks.get(
-        "required_exit_surface_tags_by_way"
-    )
+    entry_nonroute_successor = facility_boundary.get("entry_nonroute_successor_way")
+    exit_surface_successors = facility_boundary.get("exit_surface_successor_ways")
+    required_exit_tags_by_way = boundary_checks.get("required_exit_surface_tags_by_way")
     if (
         not isinstance(entry_predecessor, dict)
-        or entry_predecessor.get("id")
-        != boundary_checks["entry_predecessor_way_id"]
-        or entry_predecessor.get("nodes", [])[-1:]
-        != [review["route"]["entry_node_id"]]
+        or entry_predecessor.get("id") != boundary_checks["entry_predecessor_way_id"]
+        or entry_predecessor.get("nodes", [])[-1:] != [review["route"]["entry_node_id"]]
         or not isinstance(entry_nonroute_successor, dict)
         or entry_nonroute_successor.get("id")
         != boundary_checks["entry_nonroute_successor_way_id"]
@@ -561,19 +512,11 @@ def build_candidate(
         or not isinstance(exit_surface_successors, list)
         or not isinstance(required_exit_tags_by_way, dict)
         or set(required_exit_tags_by_way)
-        != {
-            str(way_id)
-            for way_id in boundary_checks["exit_surface_successor_way_ids"]
-        }
-        or [
-            way.get("id")
-            for way in exit_surface_successors
-            if isinstance(way, dict)
-        ]
+        != {str(way_id) for way_id in boundary_checks["exit_surface_successor_way_ids"]}
+        or [way.get("id") for way in exit_surface_successors if isinstance(way, dict)]
         != boundary_checks["exit_surface_successor_way_ids"]
         or any(
-            way.get("nodes", [])[:1]
-            != [review["route"]["exit_node_id"]]
+            way.get("nodes", [])[:1] != [review["route"]["exit_node_id"]]
             or any(
                 way.get("tags", {}).get(key) != value
                 for key, value in required_exit_tags_by_way.get(
@@ -592,10 +535,8 @@ def build_candidate(
     if (
         not isinstance(source, dict)
         or source.get("parent_pbf_url") != expected_source["source_url"]
-        or source.get("parent_pbf_sha256")
-        != expected_source["parent_pbf_sha256"]
-        or source.get("source_snapshot_at")
-        != expected_source["source_snapshot_at"]
+        or source.get("parent_pbf_sha256") != expected_source["parent_pbf_sha256"]
+        or source.get("source_snapshot_at") != expected_source["source_snapshot_at"]
         or source.get("bounded_extract_sha256")
         != expected_source["expected_extract_sha256"]
         or source.get("extraction_tool") != "pyosmium"
@@ -616,23 +557,17 @@ def build_candidate(
             or way["tags"].get("oneway") != "yes"
             or any(node_id not in nodes for node_id in way["nodes"])
         ):
-            raise DirectedCandidateBuildError(
-                f"derived OSM way {way_id} has drifted"
-            )
+            raise DirectedCandidateBuildError(f"derived OSM way {way_id} has drifted")
     for first_id, second_id in zip(route_way_ids, route_way_ids[1:]):
         if ways[first_id]["nodes"][-1] != ways[second_id]["nodes"][0]:
             raise DirectedCandidateBuildError(
                 f"derived route discontinuity between {first_id} and {second_id}"
             )
     if (
-        ways[route_way_ids[0]]["nodes"][0]
-        != review["route"]["entry_node_id"]
-        or ways[route_way_ids[-1]]["nodes"][-1]
-        != review["route"]["exit_node_id"]
+        ways[route_way_ids[0]]["nodes"][0] != review["route"]["entry_node_id"]
+        or ways[route_way_ids[-1]]["nodes"][-1] != review["route"]["exit_node_id"]
     ):
-        raise DirectedCandidateBuildError(
-            "derived route facility boundary has drifted"
-        )
+        raise DirectedCandidateBuildError("derived route facility boundary has drifted")
     for alternative in review["divergence_alternatives"]:
         if (
             ways[alternative["after_way_id"]]["nodes"][-1]
@@ -646,10 +581,7 @@ def build_candidate(
         {},
     ).items():
         actual_tags = ways[int(way_id_text)]["tags"]
-        if any(
-            actual_tags.get(key) != value
-            for key, value in expected_tags.items()
-        ):
+        if any(actual_tags.get(key) != value for key, value in expected_tags.items()):
             raise DirectedCandidateBuildError(
                 f"derived required tags drifted for OSM way {way_id_text}"
             )
@@ -675,11 +607,7 @@ def build_candidate(
     }
     successors: dict[int, list[int]] = {}
     for index, way_id in enumerate(route_way_ids):
-        next_ids = (
-            [route_way_ids[index + 1]]
-            if index + 1 < len(route_way_ids)
-            else []
-        )
+        next_ids = [route_way_ids[index + 1]] if index + 1 < len(route_way_ids) else []
         if way_id in alternative_by_predecessor:
             next_ids.append(alternative_by_predecessor[way_id])
         successors[way_id] = next_ids
@@ -687,20 +615,13 @@ def build_candidate(
         successors[way_id] = []
 
     endpoint_node_ids = sorted(
-        {
-            way["nodes"][0]
-            for way in ways.values()
-        }
-        | {
-            way["nodes"][-1]
-            for way in ways.values()
-        }
+        {way["nodes"][0] for way in ways.values()}
+        | {way["nodes"][-1] for way in ways.values()}
     )
     occurrences = [
         {
             "occurrence_id": (
-                f"shutoko.occurrence.k7-northwest.up.osm-way.{way_id}."
-                f"{index}"
+                f"shutoko.occurrence.k7-northwest.up.osm-way.{way_id}." f"{index}"
             ),
             "index": index,
             "kind": "EDGE",
@@ -715,8 +636,7 @@ def build_candidate(
             "from_node_id": f"osm.node.{ways[way_id]['nodes'][0]}",
             "to_node_id": f"osm.node.{ways[way_id]['nodes'][-1]}",
             "successor_edge_ids": [
-                topology_edge_id(successor_id)
-                for successor_id in successors[way_id]
+                topology_edge_id(successor_id) for successor_id in successors[way_id]
             ],
         }
         for way_id in all_way_ids
@@ -728,13 +648,9 @@ def build_candidate(
             "from_node_id": f"osm.node.{ways[way_id]['nodes'][0]}",
             "to_node_id": f"osm.node.{ways[way_id]['nodes'][-1]}",
             "successor_segment_ids": [
-                segment_id(successor_id)
-                for successor_id in successors[way_id]
+                segment_id(successor_id) for successor_id in successors[way_id]
             ],
-            "points": [
-                points_by_node[node_id]
-                for node_id in ways[way_id]["nodes"]
-            ],
+            "points": [points_by_node[node_id] for node_id in ways[way_id]["nodes"]],
         }
         for way_id in all_way_ids
     ]
@@ -764,21 +680,17 @@ def build_candidate(
             "topology_slice_id": topology_slice_id,
             "network_snapshot_id": snapshot_id,
             "nodes": [
-                {"node_id": f"osm.node.{node_id}"}
-                for node_id in endpoint_node_ids
+                {"node_id": f"osm.node.{node_id}"} for node_id in endpoint_node_ids
             ],
             "edges": topology_edges,
             "evidence": {
                 **evidence,
-                "source_reference_ids": review[
-                    "topology_evidence_source_ids"
-                ],
+                "source_reference_ids": review["topology_evidence_source_ids"],
             },
         },
         "definition": {
             "atlas_id": (
-                "shutoko.atlas.k7-northwest."
-                "osm-directed-candidate.2026-07-23"
+                "shutoko.atlas.k7-northwest." "osm-directed-candidate.2026-07-23"
             ),
             "network_snapshot_id": snapshot_id,
             "route_plan_id": plan_id,
@@ -804,9 +716,7 @@ def build_candidate(
             ],
             "evidence": {
                 **evidence,
-                "source_reference_ids": review[
-                    "layout_evidence_source_ids"
-                ],
+                "source_reference_ids": review["layout_evidence_source_ids"],
             },
         },
     }
@@ -859,9 +769,9 @@ def build_scenario(
                 },
                 {
                     "id": "shutoko-k7-aoba-guide",
-                    "uri": source_references[
-                        "shutoko.guide.k7-aoba.2026-07-23"
-                    ]["source_url"],
+                    "uri": source_references["shutoko.guide.k7-aoba.2026-07-23"][
+                        "source_url"
+                    ],
                     "checked_at": review["checked_at"],
                     "supports": (
                         "The operator guide documents the Yokohama "
@@ -870,9 +780,9 @@ def build_scenario(
                 },
                 {
                     "id": "shutoko-k7-kohoku-guide",
-                    "uri": source_references[
-                        "shutoko.guide.k7-kohoku.2026-07-23"
-                    ]["source_url"],
+                    "uri": source_references["shutoko.guide.k7-kohoku.2026-07-23"][
+                        "source_url"
+                    ],
                     "checked_at": review["checked_at"],
                     "supports": (
                         "The operator guide documents the K7 Northwest "
@@ -897,19 +807,13 @@ def build_scenario(
             "network_snapshot": candidate["network_snapshot"],
             "route_plan": candidate["route_plan"],
             "inputs": {
-                "route_atlas_sources": candidate["source_registry"][
-                    "references"
-                ],
+                "route_atlas_sources": candidate["source_registry"]["references"],
                 "route_atlas_topology": candidate["topology_slice"],
                 "route_atlas": definition,
             },
             "system_state": {
-                "directed_route_way_count": len(
-                    database["route"]["way_ids"]
-                ),
-                "reviewed_alternative_count": len(
-                    database["divergence_alternatives"]
-                ),
+                "directed_route_way_count": len(database["route"]["way_ids"]),
+                "reviewed_alternative_count": len(database["divergence_alternatives"]),
             },
         },
         "when": [
@@ -964,8 +868,7 @@ def build_scenario(
 def write_json(value: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
-        + "\n",
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 

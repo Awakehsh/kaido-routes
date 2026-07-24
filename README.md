@@ -33,7 +33,10 @@ The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
 emits only a coordinate-free non-release report, and rejects simulated locations
-by default. The app remains explicitly review-only: it has no real-road released
+by default. A machine-readable attribution catalog now drives a native evidence
+strip adjacent to every Route Atlas; the K7 strip visibly links OpenStreetMap
+credit and the ODbL 1.0 licence without making the SVG interactive. The app
+remains explicitly review-only: it has no real-road released
 route bundle, live measured-position display, active-route highlight, voice,
 background navigation, or CarPlay scene. The repository still has no production road
 database or released provider integration. It includes a
@@ -397,8 +400,13 @@ movement remain unconfirmed. The tracked
 and coordinate-free manifest validator make that gap executable without
 committing raw field media. This closes the structured directed-candidate gap,
 not release: topology and layout stay
-`CANDIDATE` until independent lawful field/topology review, production layout,
-and attribution/distribution integration are complete. Realtime passage remains
+`CANDIDATE` until independent lawful field/topology review and production layout
+are complete. In-product attribution and derivative-database distribution are
+separately complete under a dated, hash-bound technical review: the full
+machine-readable derivative database and reconstruction instructions are
+public, each ODbL artifact embeds source/licence URIs, and SwiftUI renders native
+source and licence links adjacent to the K7 map. This is an implementation
+review, not legal advice or road evidence. Realtime passage remains
 separately `REALTIME_UNCONFIRMED`; it is not silently treated as open and is not
 used as a substitute for static graph evidence. KR-D22 proves that
 the internally coherent 13-occurrence, 15-edge artifact still fails release
@@ -418,12 +426,15 @@ layout evidence issues.
 
 A dated K7 pre-release package now binds that schematic candidate, the directed
 source review, the 14-checkpoint successor audit, the Kaido-authored layout
-source, an official road-register access review, and the coordinate-free field
-template by SHA-256. Its independent validator derives six exact blockers:
-current road identity, current field legality, topology and layout release
-evidence, in-product OSM attribution, and ODbL derivative-database distribution
-review. It reports the already proven structure and source adjacency separately
-from those unresolved gates. The official register entry page confirms that
+source, an official road-register access review, the coordinate-free field
+template, and the ODbL technical distribution review by SHA-256. The
+distribution review in turn binds the derivative database, successor audit,
+reconstruction README, attribution catalog, SwiftUI implementation, and Xcode
+project source. Its independent validator derives four exact remaining blockers:
+current road identity, current field legality, and topology and layout release
+evidence. It reports the already proven structure, source adjacency, and ODbL
+distribution separately from those unresolved gates. The official register
+entry page confirms that
 recognized-route material belongs in Yokohama's road-register system and warns
 that online data may lag; no exact register record has been obtained for OSM way
 `776884422`. The tracked decision therefore remains `BLOCKED` and

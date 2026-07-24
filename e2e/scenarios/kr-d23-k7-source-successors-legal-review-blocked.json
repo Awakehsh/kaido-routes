@@ -1480,10 +1480,13 @@
       },
       "route_atlas_sources": [
         {
+          "attribution": "© OpenStreetMap contributors",
+          "attribution_url": "https://www.openstreetmap.org/copyright",
           "authority_name": "OpenStreetMap contributors via Geofabrik",
           "checked_at": "2026-07-23",
           "content_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
           "licence_identifier": "ODbL-1.0",
+          "licence_url": "https://opendatacommons.org/licenses/odbl/1-0/",
           "roles": [
             "TOPOLOGY_EVIDENCE",
             "LAYOUT_EVIDENCE"

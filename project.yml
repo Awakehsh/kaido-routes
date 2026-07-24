@@ -35,6 +35,9 @@ targets:
       - path: data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg
         buildPhase: resources
         group: Route Atlas
+      - path: data/route-atlas/attribution/route-atlas-attribution-catalog.json
+        buildPhase: resources
+        group: Route Atlas
       - path: data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json
         buildPhase: resources
         group: Internal Calibration

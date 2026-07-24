@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shutoko.k7-northwest.osm-derived-distribution.2026-07-24",
+  "reviewed_at": "2026-07-24T15:20:00+09:00",
+  "reviewed_by": "Kaido Routes project technical review",
+  "classification": "DERIVATIVE_DATABASE",
+  "status": "TECHNICAL_REVIEW_COMPLETE",
+  "scope": {
+    "database_id": "osm.geofabrik.kanto-260721.k7-northwest-directed",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+    "source_snapshot_at": "2026-07-21T20:21:50Z"
+  },
+  "licence": {
+    "identifier": "ODbL-1.0",
+    "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "attribution": "© OpenStreetMap contributors",
+    "attribution_url": "https://www.openstreetmap.org/copyright"
+  },
+  "primary_references": [
+    {
+      "url": "https://www.openstreetmap.org/copyright",
+      "checked_at": "2026-07-24",
+      "supports": [
+        "OpenStreetMap data is offered under ODbL and public data use must credit OpenStreetMap and identify that licence."
+      ]
+    },
+    {
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "checked_at": "2026-07-24",
+      "supports": [
+        "Publicly conveyed derivative databases retain the licence notice and database-right notices.",
+        "Public use of a derivative database or produced work requires a machine-readable database or complete alteration method offer."
+      ]
+    },
+    {
+      "url": "https://osmfoundation.org/wiki/Licence/Attribution_Guidelines",
+      "checked_at": "2026-07-24",
+      "supports": [
+        "Produced-work attribution remains visible, legible, near the map, and available without requiring map interaction.",
+        "Database attribution and the ODbL text or link remain in database metadata or a relevant README."
+      ]
+    }
+  ],
+  "artifact_bindings": [
+    {
+      "role": "DERIVATIVE_DATABASE",
+      "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json",
+      "content_sha256": "f3b84117a6aec2c016ad9a3f362bd666e7ff1bd93a873e571398dbb517a21ef2"
+    },
+    {
+      "role": "SOURCE_SUCCESSOR_AUDIT",
+      "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json",
+      "content_sha256": "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
+    },
+    {
+      "role": "DISTRIBUTION_README",
+      "repository_path": "data/route-atlas/osm-derived/README.md",
+      "content_sha256": "28b18fbe5780d98ecbe16cc1dfe292261f8dc07c12c4940826d3d5b93376f92a"
+    },
+    {
+      "role": "ATTRIBUTION_CATALOG",
+      "repository_path": "data/route-atlas/attribution/route-atlas-attribution-catalog.json",
+      "content_sha256": "feb7fc889b4b639a8898ecda57bc1f75070b14f5b0027d25ecdc89ccc8a5f0d2"
+    },
+    {
+      "role": "ATTRIBUTION_MODEL",
+      "repository_path": "Apps/KaidoRoutesApp/Sources/RouteAtlasAttribution.swift",
+      "content_sha256": "027fc3a32026f0696c76af5837e77616193b95d724040cef486fcdb940c41fe3"
+    },
+    {
+      "role": "ATTRIBUTION_VIEW",
+      "repository_path": "Apps/KaidoRoutesApp/Sources/RouteAtlasHomeView.swift",
+      "content_sha256": "3dcdd8a826efc4c60d2ae1b7f00ff5a18f8f07695fa7f92e26fcb3a6800c86e8"
+    },
+    {
+      "role": "APP_PROJECT_MANIFEST",
+      "repository_path": "project.yml",
+      "content_sha256": "8c6fddd8f4f90e8f4898db7184d53df425d16c6fc81fe1518ce155bb94e57bbc"
+    }
+  ],
+  "database_distribution": {
+    "public_repository_url": "https://github.com/Awakehsh/kaido-routes",
+    "database_repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json",
+    "database_download_url": "https://raw.githubusercontent.com/Awakehsh/kaido-routes/main/data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json",
+    "entire_derivative_database_distributed": true,
+    "machine_readable": true,
+    "internet_access_charge": "FREE",
+    "reconstruction_instructions_repository_path": "data/route-atlas/osm-derived/README.md",
+    "reconstruction_instructions_url": "https://github.com/Awakehsh/kaido-routes/blob/main/data/route-atlas/osm-derived/README.md",
+    "parent_pbf_url": "https://download.geofabrik.de/asia/japan/kanto-260721.osm.pbf",
+    "parent_pbf_sha256": "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac",
+    "bounded_extract_sha256": "36bd95c1987842099dc7b3953c38e623951a1a5eb6c9a38400786c47c6ddc0f3",
+    "additional_restrictions": false
+  },
+  "produced_work_attribution": {
+    "catalog_mode_id": "k7Evidence",
+    "placement": "ADJACENT_TO_MAP",
+    "always_visible": true,
+    "requires_interaction": false,
+    "native_links": true,
+    "source_accessibility_identifier": "route-atlas-attribution-source",
+    "licence_accessibility_identifier": "route-atlas-attribution-licence"
+  },
+  "review_limitations": [
+    "This is a technical implementation review, not legal advice.",
+    "The review does not establish road identity, legal movement, topology release, layout release, realtime passage, or navigation authority.",
+    "Future database, app, project, or documentation changes must update and rerun the hash-bound review."
+  ],
+  "legal_advice": false,
+  "navigation_authority": false
+}

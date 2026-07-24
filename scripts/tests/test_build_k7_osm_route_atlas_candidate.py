@@ -21,9 +21,7 @@ REPOSITORY_ROOT = Path(__file__).parents[2]
 
 
 def load(relative_path: str) -> dict:
-    return json.loads(
-        (REPOSITORY_ROOT / relative_path).read_text(encoding="utf-8")
-    )
+    return json.loads((REPOSITORY_ROOT / relative_path).read_text(encoding="utf-8"))
 
 
 class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
@@ -33,24 +31,20 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
             "k7-northwest-up-aoba-to-kohoku-osm-directed-review.json"
         )
         self.database = load(
-            "data/route-atlas/osm-derived/"
-            "k7-northwest-260721-directed-database.json"
+            "data/route-atlas/osm-derived/" "k7-northwest-260721-directed-database.json"
         )
         self.expected_candidate = load(
             "data/route-atlas/candidates/"
             "k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json"
         )
         self.expected_scenario = load(
-            "e2e/scenarios/"
-            "kr-d22-osm-directed-k7-candidate-remains-blocked.json"
+            "e2e/scenarios/" "kr-d22-osm-directed-k7-candidate-remains-blocked.json"
         )
         self.successor_audit = load(
-            "data/route-atlas/osm-derived/"
-            "k7-northwest-260721-successor-audit.json"
+            "data/route-atlas/osm-derived/" "k7-northwest-260721-successor-audit.json"
         )
         self.successor_scenario = load(
-            "e2e/scenarios/"
-            "kr-d23-k7-source-successors-legal-review-blocked.json"
+            "e2e/scenarios/" "kr-d23-k7-source-successors-legal-review-blocked.json"
         )
 
     def test_candidate_rebuild_is_deterministic_and_non_authoritative(
@@ -103,11 +97,7 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
 
     def test_database_direction_drift_fails_closed(self) -> None:
         database = copy.deepcopy(self.database)
-        way = next(
-            way
-            for way in database["ways"]
-            if way["id"] == 692755609
-        )
+        way = next(way for way in database["ways"] if way["id"] == 692755609)
         way["nodes"] = list(reversed(way["nodes"]))
 
         with self.assertRaisesRegex(
@@ -119,8 +109,16 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
     def test_database_keeps_odbl_boundary(self) -> None:
         self.assertEqual(self.database["licence"], "ODbL-1.0")
         self.assertEqual(
+            self.database["licence_url"],
+            "https://opendatacommons.org/licenses/odbl/1-0/",
+        )
+        self.assertEqual(
             self.database["attribution"],
             "© OpenStreetMap contributors",
+        )
+        self.assertEqual(
+            self.database["attribution_url"],
+            "https://www.openstreetmap.org/copyright",
         )
         self.assertFalse(self.database["navigation_authority"])
         self.assertEqual(len(self.database["route"]["way_ids"]), 13)
@@ -132,10 +130,7 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
             44421530,
         )
         self.assertEqual(
-            [
-                way["id"]
-                for way in boundary["exit_surface_successor_ways"]
-            ],
+            [way["id"] for way in boundary["exit_surface_successor_ways"]],
             [734299108, 734299111, 776884422],
         )
 
@@ -171,8 +166,16 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
         )
         self.assertEqual(self.successor_audit["licence"], "ODbL-1.0")
         self.assertEqual(
+            self.successor_audit["licence_url"],
+            "https://opendatacommons.org/licenses/odbl/1-0/",
+        )
+        self.assertEqual(
             self.successor_audit["attribution"],
             "© OpenStreetMap contributors",
+        )
+        self.assertEqual(
+            self.successor_audit["attribution_url"],
+            "https://www.openstreetmap.org/copyright",
         )
         exit_checkpoint = next(
             checkpoint
@@ -188,14 +191,10 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
         )
         self.assertEqual(self.successor_scenario["id"], "KR-D23")
         self.assertEqual(
-            self.successor_audit["unresolved_legal_successors"][0][
-                "reason_code"
-            ],
+            self.successor_audit["unresolved_legal_successors"][0]["reason_code"],
             "CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED",
         )
-        passage_evidence = self.successor_audit[
-            "legal_successor_evidence"
-        ][0]
+        passage_evidence = self.successor_audit["legal_successor_evidence"][0]
         self.assertEqual(
             passage_evidence["road_identity"]["classification"],
             "HISTORICAL_LAND_READJUSTMENT_TEMPORARY_PASSAGE",
@@ -206,9 +205,7 @@ class BuildK7OSMRouteAtlasCandidateTests(unittest.TestCase):
         )
         self.assertFalse(passage_evidence["release_eligible"])
         self.assertFalse(
-            self.successor_scenario["given"]["system_state"][
-                "legal_review_complete"
-            ]
+            self.successor_scenario["given"]["system_state"]["legal_review_complete"]
         )
 
 

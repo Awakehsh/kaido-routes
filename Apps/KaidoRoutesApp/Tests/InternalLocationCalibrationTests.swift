@@ -26,7 +26,15 @@ final class InternalLocationCalibrationTests: XCTestCase {
     )
     XCTAssertEqual(fixture.evidenceState, "CANDIDATE")
     XCTAssertEqual(fixture.licence, "ODbL-1.0")
+    XCTAssertEqual(
+      fixture.licenceURL.absoluteString,
+      "https://opendatacommons.org/licenses/odbl/1-0/"
+    )
     XCTAssertEqual(fixture.attribution, "© OpenStreetMap contributors")
+    XCTAssertEqual(
+      fixture.attributionURL.absoluteString,
+      "https://www.openstreetmap.org/copyright"
+    )
     XCTAssertFalse(fixture.navigationAuthority)
     XCTAssertTrue(fixture.corridor.validationIssues.isEmpty)
 

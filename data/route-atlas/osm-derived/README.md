@@ -14,6 +14,10 @@ Licence and attribution references:
 - <https://opendatacommons.org/licenses/odbl/1-0/>
 - <https://osmfoundation.org/wiki/Licence/Attribution_Guidelines>
 
+Both distributed K7 JSON artifacts also carry the exact ODbL URI and
+OpenStreetMap attribution URI in machine-readable metadata. The root
+Apache-2.0 licence does not relicense this directory.
+
 ## K7 Northwest directed candidate database
 
 `k7-northwest-260721-directed-database.json` is a deliberately bounded
@@ -39,6 +43,28 @@ remain unconfirmed. None of those surface ways is silently appended to the
 Shuto RoutePlan.
 
 It has no navigation authority and is not a complete interchange database.
+
+## Public distribution and produced-work attribution
+
+The complete machine-readable derivative database is committed at
+`k7-northwest-260721-directed-database.json` in the public repository. The
+reconstruction instructions below provide the pinned parent PBF, checksums,
+bounded extraction parameters, tool version, and deterministic candidate
+builders. Recipients may therefore use either the distributed complete
+database or reconstruct the bounded derivative from the pinned source. No
+additional restriction is imposed on the ODbL database.
+
+The iPhone target bundles
+`../attribution/route-atlas-attribution-catalog.json`. When the K7 produced
+work is visible, SwiftUI renders `© OpenStreetMap contributors` and a separate
+`ODbL 1.0` link in a native strip adjacent to the map. The credit is visible
+without interacting with the non-interactive SVG. Unit and UI tests verify the
+exact URLs and accessibility identities.
+
+`k7-northwest-260721-distribution-review.json` is the dated, hash-bound
+technical implementation review for this distribution and attribution
+contract. It is not legal advice and grants no navigation or road-evidence
+authority.
 
 ## Reconstruction
 

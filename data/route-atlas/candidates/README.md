@@ -85,8 +85,10 @@ project ended in July 2023; the final replotting map still does not map OSM way
 `776884422` to a current road identity or traffic direction. None relicenses the
 OSM database or becomes a layout asset. Both candidate evidence states
 therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful road-level
-review, production layout release review, in-product attribution, and realtime
-review remain open.
+review, production layout release review, and realtime review remain open.
+In-product OpenStreetMap attribution and derivative-database distribution are
+implemented separately under a hash-bound technical review; that review grants
+no topology, layout, realtime, or navigation authority.
 
 KR-D22 executes the complete 13-occurrence / 15-edge artifact and requires
 release validation to fail with only:
@@ -133,7 +135,9 @@ hash-bound pre-release decision for the most advanced K7 candidate. It binds
 the schematic candidate, directed source review, exact successor audit,
 project-authored layout source, official road-register review, and coordinate-
 free field-review template without copying official map imagery or private
-field evidence.
+field evidence. It also binds the ODbL technical distribution review, which in
+turn binds the complete derivative database, reconstruction offer, app
+attribution catalog, native SwiftUI evidence strip, and Xcode project source.
 
 The separate
 `k7-northwest-up-aoba-to-kohoku-road-register-review.json` records that
@@ -151,16 +155,17 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-The command must return `BLOCKED` with six exact top-level blockers:
+The command must return `BLOCKED` with four exact top-level blockers:
 
 ```text
 CURRENT_ROAD_IDENTITY_UNCONFIRMED
 CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE
-ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_REVIEW_PENDING
-ODBL_IN_PRODUCT_ATTRIBUTION_PENDING
 UNRELEASED_ATLAS_EVIDENCE
 UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 ```
+
+The technical review clears only `ODBL_DISTRIBUTION`. It is not legal advice
+and cannot clear a road, topology, layout, realtime, or navigation gate.
 
 A private completed field manifest may be supplied with `--field-review`; it
 can clear only the field gate. A readiness `PASS` would mean that the candidate

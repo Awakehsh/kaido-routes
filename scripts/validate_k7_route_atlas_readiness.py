@@ -69,6 +69,35 @@ EXPECTED_BINDING_PATHS = {
     "FIELD_REVIEW_TEMPLATE": (
         "docs/testing/fixtures/" "k7-yokohama-kohoku-surface-field-review.template.json"
     ),
+    "ODBL_DISTRIBUTION_REVIEW": (
+        "data/route-atlas/osm-derived/" "k7-northwest-260721-distribution-review.json"
+    ),
+}
+EXPECTED_DISTRIBUTION_REVIEW_ID = (
+    "shutoko.k7-northwest.osm-derived-distribution.2026-07-24"
+)
+EXPECTED_ODBL_LICENCE_URL = "https://opendatacommons.org/licenses/odbl/1-0/"
+EXPECTED_OSM_ATTRIBUTION = "© OpenStreetMap contributors"
+EXPECTED_OSM_ATTRIBUTION_URL = "https://www.openstreetmap.org/copyright"
+EXPECTED_DISTRIBUTION_BINDING_PATHS = {
+    "DERIVATIVE_DATABASE": (
+        "data/route-atlas/osm-derived/" "k7-northwest-260721-directed-database.json"
+    ),
+    "SOURCE_SUCCESSOR_AUDIT": (
+        "data/route-atlas/osm-derived/" "k7-northwest-260721-successor-audit.json"
+    ),
+    "DISTRIBUTION_README": "data/route-atlas/osm-derived/README.md",
+    "ATTRIBUTION_CATALOG": (
+        "data/route-atlas/attribution/" "route-atlas-attribution-catalog.json"
+    ),
+    "ATTRIBUTION_MODEL": ("Apps/KaidoRoutesApp/Sources/RouteAtlasAttribution.swift"),
+    "ATTRIBUTION_VIEW": ("Apps/KaidoRoutesApp/Sources/RouteAtlasHomeView.swift"),
+    "APP_PROJECT_MANIFEST": "project.yml",
+}
+EXPECTED_DISTRIBUTION_REFERENCE_URLS = {
+    "https://www.openstreetmap.org/copyright",
+    "https://opendatacommons.org/licenses/odbl/1-0/",
+    "https://osmfoundation.org/wiki/Licence/Attribution_Guidelines",
 }
 EXPECTED_OSM_SOURCE_ID = "osm.geofabrik.kanto-260721.k7-directed"
 EXPECTED_AUDIT_ID = (
@@ -308,9 +337,15 @@ def validate_candidate(candidate: dict[str, Any]) -> tuple[str, str]:
     if len(osm_sources) != 1:
         raise ReadinessError("Route Atlas OSM source binding has drifted")
     osm_source = osm_sources[0]
-    if osm_source.get("licence_identifier") != "ODbL-1.0" or not is_exact_string_set(
-        osm_source.get("roles"),
-        {"TOPOLOGY_EVIDENCE", "LAYOUT_EVIDENCE"},
+    if (
+        osm_source.get("licence_identifier") != "ODbL-1.0"
+        or osm_source.get("licence_url") != EXPECTED_ODBL_LICENCE_URL
+        or osm_source.get("attribution") != EXPECTED_OSM_ATTRIBUTION
+        or osm_source.get("attribution_url") != EXPECTED_OSM_ATTRIBUTION_URL
+        or not is_exact_string_set(
+            osm_source.get("roles"),
+            {"TOPOLOGY_EVIDENCE", "LAYOUT_EVIDENCE"},
+        )
     ):
         raise ReadinessError("Route Atlas ODbL source contract has drifted")
     terminal_segments = [
@@ -388,6 +423,10 @@ def validate_successor_audit(audit: dict[str, Any]) -> None:
         or audit.get("network_snapshot_id") != EXPECTED_TARGET["network_snapshot_id"]
         or audit.get("route_plan_id") != EXPECTED_TARGET["route_plan_id"]
         or audit.get("navigation_authority") is not False
+        or audit.get("licence") != "ODbL-1.0"
+        or audit.get("licence_url") != EXPECTED_ODBL_LICENCE_URL
+        or audit.get("attribution") != EXPECTED_OSM_ATTRIBUTION
+        or audit.get("attribution_url") != EXPECTED_OSM_ATTRIBUTION_URL
         or audit.get("unresolved_legal_successors") != [EXPECTED_UNRESOLVED_SUCCESSOR]
         or not isinstance(summary, dict)
         or summary.get("checkpoint_count") != 14
@@ -546,46 +585,246 @@ def evaluate_road_register_review(
     return True, []
 
 
+def validate_distribution_review(
+    review: dict[str, Any],
+    as_of: date,
+    repository_root: Path,
+) -> None:
+    if (
+        review.get("schema_version") != "1.0"
+        or review.get("review_id") != EXPECTED_DISTRIBUTION_REVIEW_ID
+        or review.get("classification") != "DERIVATIVE_DATABASE"
+        or review.get("status") != "TECHNICAL_REVIEW_COMPLETE"
+        or review.get("legal_advice") is not False
+        or review.get("navigation_authority") is not False
+    ):
+        raise ReadinessError("ODbL distribution review identity has drifted")
+    require_nonempty(
+        review.get("reviewed_by"),
+        "distribution_review.reviewed_by",
+    )
+    reviewed_at = parse_timestamp(
+        review.get("reviewed_at"),
+        "distribution_review.reviewed_at",
+    )
+    if reviewed_at.date() > as_of:
+        raise ReadinessError("distribution review time is in the future")
+
+    licence = review.get("licence")
+    if review.get("scope") != {
+        "database_id": "osm.geofabrik.kanto-260721.k7-northwest-directed",
+        "network_snapshot_id": EXPECTED_TARGET["network_snapshot_id"],
+        "route_plan_id": EXPECTED_TARGET["route_plan_id"],
+        "source_snapshot_at": "2026-07-21T20:21:50Z",
+    }:
+        raise ReadinessError("ODbL distribution review scope has drifted")
+    if licence != {
+        "identifier": "ODbL-1.0",
+        "url": EXPECTED_ODBL_LICENCE_URL,
+        "attribution": EXPECTED_OSM_ATTRIBUTION,
+        "attribution_url": EXPECTED_OSM_ATTRIBUTION_URL,
+    }:
+        raise ReadinessError("ODbL distribution review licence has drifted")
+
+    bindings = review.get("artifact_bindings")
+    if not isinstance(bindings, list):
+        raise ReadinessError("distribution review artifact_bindings must be an array")
+    bound_paths: dict[str, Path] = {}
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            raise ReadinessError("distribution review binding must be an object")
+        role = binding.get("role")
+        if not isinstance(role, str):
+            raise ReadinessError("distribution review binding role must be a string")
+        if role in bound_paths:
+            raise ReadinessError(f"duplicate distribution review binding {role!r}")
+        if role not in EXPECTED_DISTRIBUTION_BINDING_PATHS:
+            raise ReadinessError(f"unknown distribution review binding {role!r}")
+        expected_path = EXPECTED_DISTRIBUTION_BINDING_PATHS[role]
+        if binding.get("repository_path") != expected_path:
+            raise ReadinessError(f"distribution review binding path drifted for {role}")
+        expected_digest = binding.get("content_sha256")
+        if (
+            not isinstance(expected_digest, str)
+            or SHA256_PATTERN.fullmatch(expected_digest) is None
+        ):
+            raise ReadinessError(
+                f"distribution review binding digest is invalid for {role}"
+            )
+        path = (repository_root / expected_path).resolve()
+        try:
+            path.relative_to(repository_root)
+        except ValueError as error:
+            raise ReadinessError(
+                f"distribution review binding escapes repository root for {role}"
+            ) from error
+        actual_digest = sha256(path)
+        if actual_digest != expected_digest:
+            raise ReadinessError(
+                f"distribution review binding digest drifted for {role}: "
+                f"expected {expected_digest}, got {actual_digest}"
+            )
+        bound_paths[role] = path
+    if set(bound_paths) != set(EXPECTED_DISTRIBUTION_BINDING_PATHS):
+        missing = sorted(set(EXPECTED_DISTRIBUTION_BINDING_PATHS) - set(bound_paths))
+        raise ReadinessError(
+            "distribution review binding coverage is incomplete: " + ", ".join(missing)
+        )
+
+    database = load_object(bound_paths["DERIVATIVE_DATABASE"])
+    audit = load_object(bound_paths["SOURCE_SUCCESSOR_AUDIT"])
+    catalog = load_object(bound_paths["ATTRIBUTION_CATALOG"])
+    for name, document in (("database", database), ("successor audit", audit)):
+        if (
+            document.get("licence") != "ODbL-1.0"
+            or document.get("licence_url") != EXPECTED_ODBL_LICENCE_URL
+            or document.get("attribution") != EXPECTED_OSM_ATTRIBUTION
+            or document.get("attribution_url") != EXPECTED_OSM_ATTRIBUTION_URL
+            or document.get("navigation_authority") is not False
+        ):
+            raise ReadinessError(f"ODbL {name} notice has drifted")
+
+    entries = catalog.get("entries")
+    k7_entries = (
+        [
+            entry
+            for entry in entries
+            if isinstance(entry, dict) and entry.get("mode_id") == "k7Evidence"
+        ]
+        if isinstance(entries, list)
+        else []
+    )
+    if (
+        catalog.get("schema_version") != "1.0"
+        or catalog.get("catalog_id") != "kaido.route-atlas-attribution.2026-07-24"
+        or len(k7_entries) != 1
+    ):
+        raise ReadinessError("in-product attribution catalog has drifted")
+    k7 = k7_entries[0]
+    if (
+        k7.get("resource_name") != "k7-northwest-up-schematic-layout-candidate"
+        or k7.get("attribution") != EXPECTED_OSM_ATTRIBUTION
+        or k7.get("source_url") != EXPECTED_OSM_ATTRIBUTION_URL
+        or k7.get("licence_identifier") != "ODbL-1.0"
+        or k7.get("licence_url") != EXPECTED_ODBL_LICENCE_URL
+        or k7.get("navigation_authority") is not False
+        or k7.get("presentation")
+        != {
+            "always_visible": True,
+            "placement": "ADJACENT_TO_MAP",
+            "requires_interaction": False,
+            "native_links": True,
+            "source_accessibility_identifier": ("route-atlas-attribution-source"),
+            "licence_accessibility_identifier": ("route-atlas-attribution-licence"),
+        }
+    ):
+        raise ReadinessError("K7 in-product attribution contract has drifted")
+
+    distribution = review.get("database_distribution")
+    expected_database_path = EXPECTED_DISTRIBUTION_BINDING_PATHS["DERIVATIVE_DATABASE"]
+    expected_readme_path = EXPECTED_DISTRIBUTION_BINDING_PATHS["DISTRIBUTION_README"]
+    if distribution != {
+        "public_repository_url": "https://github.com/Awakehsh/kaido-routes",
+        "database_repository_path": expected_database_path,
+        "database_download_url": (
+            "https://raw.githubusercontent.com/Awakehsh/kaido-routes/main/"
+            + expected_database_path
+        ),
+        "entire_derivative_database_distributed": True,
+        "machine_readable": True,
+        "internet_access_charge": "FREE",
+        "reconstruction_instructions_repository_path": expected_readme_path,
+        "reconstruction_instructions_url": (
+            "https://github.com/Awakehsh/kaido-routes/blob/main/" + expected_readme_path
+        ),
+        "parent_pbf_url": (
+            "https://download.geofabrik.de/asia/japan/" "kanto-260721.osm.pbf"
+        ),
+        "parent_pbf_sha256": (
+            "b13cc6eabacbd5a0362265cc5fd1eaf512d87c241ce3ab9daba4f8263b8d35ac"
+        ),
+        "bounded_extract_sha256": (
+            "36bd95c1987842099dc7b3953c38e623951a1a5eb6c9a38400786c47c6ddc0f3"
+        ),
+        "additional_restrictions": False,
+    }:
+        raise ReadinessError("ODbL database access offer has drifted")
+
+    produced_work = review.get("produced_work_attribution")
+    if produced_work != {
+        "catalog_mode_id": "k7Evidence",
+        "placement": "ADJACENT_TO_MAP",
+        "always_visible": True,
+        "requires_interaction": False,
+        "native_links": True,
+        "source_accessibility_identifier": ("route-atlas-attribution-source"),
+        "licence_accessibility_identifier": ("route-atlas-attribution-licence"),
+    }:
+        raise ReadinessError("ODbL produced-work attribution has drifted")
+
+    references = review.get("primary_references")
+    if not isinstance(references, list):
+        raise ReadinessError("distribution review primary references are missing")
+    reference_urls: set[str] = set()
+    for reference in references:
+        if (
+            not isinstance(reference, dict)
+            or not isinstance(reference.get("url"), str)
+            or reference["url"] in reference_urls
+            or not isinstance(reference.get("supports"), list)
+            or not reference["supports"]
+            or not all(
+                isinstance(value, str) and value for value in reference["supports"]
+            )
+        ):
+            raise ReadinessError("distribution review primary reference is invalid")
+        checked_at = parse_iso_date(
+            reference.get("checked_at"),
+            "distribution_review.primary_reference.checked_at",
+        )
+        if checked_at > as_of:
+            raise ReadinessError(
+                "distribution review primary reference is dated in the future"
+            )
+        reference_urls.add(reference["url"])
+    if reference_urls != EXPECTED_DISTRIBUTION_REFERENCE_URLS:
+        raise ReadinessError("distribution review primary references have drifted")
+
+    readme = bound_paths["DISTRIBUTION_README"].read_text(encoding="utf-8")
+    project_manifest = bound_paths["APP_PROJECT_MANIFEST"].read_text(encoding="utf-8")
+    for notice in (
+        EXPECTED_OSM_ATTRIBUTION,
+        EXPECTED_OSM_ATTRIBUTION_URL,
+        EXPECTED_ODBL_LICENCE_URL,
+    ):
+        if notice not in readme:
+            raise ReadinessError("distribution README notice has drifted")
+    if (
+        EXPECTED_DISTRIBUTION_BINDING_PATHS["ATTRIBUTION_CATALOG"]
+        not in project_manifest
+    ):
+        raise ReadinessError("app attribution catalog is not bundled")
+
+
 def evaluate_distribution(
     readiness: dict[str, Any],
+    review: dict[str, Any],
     as_of: date,
+    repository_root: Path,
 ) -> tuple[bool, list[str]]:
     distribution = readiness.get("distribution_readiness")
-    if (
-        not isinstance(distribution, dict)
-        or distribution.get("licence_identifier") != "ODbL-1.0"
-        or distribution.get("required_attribution") != "© OpenStreetMap contributors"
-    ):
+    if distribution != {
+        "licence_identifier": "ODbL-1.0",
+        "licence_url": EXPECTED_ODBL_LICENCE_URL,
+        "required_attribution": EXPECTED_OSM_ATTRIBUTION,
+        "attribution_url": EXPECTED_OSM_ATTRIBUTION_URL,
+        "review_binding_role": "ODBL_DISTRIBUTION_REVIEW",
+        "review_id": EXPECTED_DISTRIBUTION_REVIEW_ID,
+        "implementation_status": "TECHNICAL_REVIEW_COMPLETE",
+    }:
         raise ReadinessError("ODbL distribution contract has drifted")
-    attribution_status = distribution.get("in_product_attribution_status")
-    database_status = distribution.get("derivative_database_distribution_review_status")
-    allowed = {"PENDING", "COMPLETE"}
-    if attribution_status not in allowed or database_status not in allowed:
-        raise ReadinessError("ODbL distribution status is invalid")
-    blockers: list[str] = []
-    if attribution_status != "COMPLETE":
-        blockers.append("ODBL_IN_PRODUCT_ATTRIBUTION_PENDING")
-    if database_status != "COMPLETE":
-        blockers.append("ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_REVIEW_PENDING")
-    if not blockers:
-        require_nonempty(
-            distribution.get("reviewed_by"),
-            "distribution_readiness.reviewed_by",
-        )
-        reviewed_at = parse_timestamp(
-            distribution.get("reviewed_at"),
-            "distribution_readiness.reviewed_at",
-        )
-        if reviewed_at.date() > as_of:
-            raise ReadinessError("distribution review time is in the future")
-    elif (
-        distribution.get("reviewed_by") is not None
-        or distribution.get("reviewed_at") is not None
-    ):
-        raise ReadinessError(
-            "pending distribution review cannot claim reviewer metadata"
-        )
-    return not blockers, blockers
+    validate_distribution_review(review, as_of, repository_root)
+    return True, []
 
 
 def evaluate(
@@ -642,7 +881,9 @@ def evaluate(
 
     distribution_complete, distribution_blockers = evaluate_distribution(
         readiness,
+        documents["ODBL_DISTRIBUTION_REVIEW"],
         as_of,
+        repository_root,
     )
     topology_released = topology_state == "RELEASED"
     layout_released = layout_state == "RELEASED"
@@ -709,6 +950,8 @@ def evaluate(
                 separators=(",", ":"),
             ).encode("utf-8")
         ).hexdigest(),
+        "distribution_review_id": EXPECTED_DISTRIBUTION_REVIEW_ID,
+        "distribution_review_status": "TECHNICAL_REVIEW_COMPLETE",
         "realtime_status": realtime["status"],
         "realtime_release_blocking": False,
     }

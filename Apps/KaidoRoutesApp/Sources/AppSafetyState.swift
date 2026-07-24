@@ -25,7 +25,7 @@ struct AppSafetyState: Equatable, Sendable {
   )
 }
 
-enum RouteAtlasMode: String, CaseIterable, Identifiable, Sendable {
+enum RouteAtlasMode: String, CaseIterable, Hashable, Identifiable, Sendable {
   case network
   case k7Evidence
 
@@ -58,6 +58,15 @@ enum RouteAtlasMode: String, CaseIterable, Identifiable, Sendable {
     }
   }
 
+  var mapViewportHeight: CGFloat {
+    switch self {
+    case .network:
+      296
+    case .k7Evidence:
+      252
+    }
+  }
+
   var accessibilityLabel: String {
     switch self {
     case .network:
@@ -73,6 +82,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   @Published var atlasMode: RouteAtlasMode = .network
 
   let safety = AppSafetyState.preview
+  let routeAtlasAttributions: RouteAtlasAttributionCatalog
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let preDriveReview: PreDriveReviewModel
@@ -85,6 +95,7 @@ final class KaidoRoutesAppModel: ObservableObject {
     do {
       let routeEditor = try ParkedRouteEditorModel()
       self.routeEditor = routeEditor
+      routeAtlasAttributions = try RouteAtlasAttributionCatalog.bundled()
       entranceRecommendation = try EntranceRecommendationModel(
         routeEditor: routeEditor
       )
@@ -98,5 +109,9 @@ final class KaidoRoutesAppModel: ObservableObject {
     } catch {
       preconditionFailure("Invalid internal app fixture: \(error)")
     }
+  }
+
+  func attribution(for mode: RouteAtlasMode) -> RouteAtlasAttribution {
+    routeAtlasAttributions.attribution(for: mode)
   }
 }

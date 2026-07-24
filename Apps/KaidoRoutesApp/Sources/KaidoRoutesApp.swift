@@ -6,6 +6,10 @@ struct KaidoRoutesApp: App {
   var body: some Scene {
     WindowGroup {
       if ProcessInfo.processInfo.arguments.contains(
+        "-ROUTE-ATLAS-ATTRIBUTION-PREVIEW"
+      ) {
+        RouteAtlasAttributionPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-KR-U03-CORRIDOR-PREVIEW"
       ) {
         KR_U03CorridorPreviewHost()

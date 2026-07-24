@@ -115,6 +115,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
   public let channelCount: Int
   public let durationMilliseconds: Int
   public let provenance: GuidanceAudioSynthesisProvenance
+  public let review: GuidanceAudioAssetReview
 
   public init(
     key: GuidanceAudioAssetKey,
@@ -127,7 +128,8 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
     sampleRateHz: Int,
     channelCount: Int,
     durationMilliseconds: Int,
-    provenance: GuidanceAudioSynthesisProvenance
+    provenance: GuidanceAudioSynthesisProvenance,
+    review: GuidanceAudioAssetReview
   ) {
     self.key = key
     self.spokenText = spokenText
@@ -140,6 +142,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
     self.channelCount = channelCount
     self.durationMilliseconds = durationMilliseconds
     self.provenance = provenance
+    self.review = review
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -154,6 +157,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
     case channelCount = "channel_count"
     case durationMilliseconds = "duration_milliseconds"
     case provenance
+    case review
   }
 }
 
@@ -163,7 +167,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
 /// optional at the product level, but once present it is all-or-nothing: a
 /// missing, extra, corrupt, or identity-drifted record rejects the whole pack.
 public struct GuidanceAudioReleaseManifest: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.1"
+  public static let currentSchemaVersion = "1.2"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -241,6 +245,7 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
   case spokenTextHashMismatch(GuidanceAudioAssetKey)
   case invalidProvenance(GuidanceAudioAssetKey)
   case provenanceScopeMismatch(GuidanceAudioAssetKey)
+  case invalidReview(GuidanceAudioAssetKey)
   case resourceMissing(String)
   case resourceURLInvalid(String)
   case resourceFilenameMismatch(String)
@@ -279,6 +284,8 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
       "GUIDANCE_AUDIO_PROVENANCE_INVALID"
     case .provenanceScopeMismatch:
       "GUIDANCE_AUDIO_PROVENANCE_SCOPE_MISMATCH"
+    case .invalidReview:
+      "GUIDANCE_AUDIO_REVIEW_INVALID"
     case .resourceMissing:
       "GUIDANCE_AUDIO_RESOURCE_MISSING"
     case .resourceURLInvalid:
@@ -305,7 +312,8 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
       .spokenTextMismatch(let key),
       .spokenTextHashMismatch(let key),
       .invalidProvenance(let key),
-      .provenanceScopeMismatch(let key):
+      .provenanceScopeMismatch(let key),
+      .invalidReview(let key):
       "\(code):\(key.sortKey)"
     case .resourceMissing(let filename),
       .resourceURLInvalid(let filename),
@@ -402,6 +410,13 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       }
       if record.provenance.evidenceScope != expectedEvidenceScope {
         issues.append(.provenanceScopeMismatch(key))
+      }
+      if !Self.isValid(
+        record.review,
+        provenance: record.provenance,
+        noLaterThan: manifest.releasedAt
+      ) {
+        issues.append(.invalidReview(key))
       }
       guard Self.isSafeWaveFilename(record.resourceFilename) else {
         continue
@@ -561,6 +576,30 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       let releaseDate = parseISO8601(releasedAt),
       generatedAt <= reviewedAt,
       reviewedAt <= releaseDate
+    else {
+      return false
+    }
+    return true
+  }
+
+  private static func isValid(
+    _ review: GuidanceAudioAssetReview,
+    provenance: GuidanceAudioSynthesisProvenance,
+    noLaterThan releasedAt: String
+  ) -> Bool {
+    guard
+      !normalized(review.reviewerID).isEmpty,
+      review.reviewerID == normalized(review.reviewerID),
+      review.pronunciation == .passed,
+      review.intelligibility == .passed,
+      review.audioQuality == .passed,
+      let generatedAt = parseISO8601(provenance.generatedAt),
+      let assetReviewedAt = parseISO8601(review.reviewedAt),
+      let profileReviewedAt = parseISO8601(provenance.reviewedAt),
+      let releaseDate = parseISO8601(releasedAt),
+      generatedAt <= assetReviewedAt,
+      assetReviewedAt <= profileReviewedAt,
+      profileReviewedAt <= releaseDate
     else {
       return false
     }

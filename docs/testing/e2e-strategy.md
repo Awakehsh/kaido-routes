@@ -485,6 +485,13 @@ default journey. Product schema, release validity, and live-input authority
 remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
 are L3-specific.
 
+Portable guidance-audio tests also prepare a complete exact-WAV review
+checklist, require every generated decision to begin `PENDING`, and reject
+pending conclusions, changed audio hashes, rejected pronunciation, and invalid
+review chronology before a schema-1.2 manifest can be authored or admitted.
+These deterministic checks prove review binding and fail-closed mechanics, not
+acoustic quality or human listening.
+
 KR-U17 adds the Route Atlas journey-overlay contract without granting map or
 position authority. Its synthetic released atlas carries one context-only
 branch and a RoutePlan that traverses one schematic segment twice. The portable

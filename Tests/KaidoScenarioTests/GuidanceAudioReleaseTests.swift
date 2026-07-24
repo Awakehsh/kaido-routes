@@ -162,7 +162,8 @@ func guidanceAudioReleaseRejectsUnsafeFilenameBeforeLookup() throws {
     sampleRateHz: original.sampleRateHz,
     channelCount: original.channelCount,
     durationMilliseconds: original.durationMilliseconds,
-    provenance: original.provenance
+    provenance: original.provenance,
+    review: original.review
   )
   var records = fixture.manifest.assets
   records[0] = unsafe
@@ -223,7 +224,8 @@ func guidanceAudioReleaseRejectsFutureProvenance() throws {
     sampleRateHz: original.sampleRateHz,
     channelCount: original.channelCount,
     durationMilliseconds: original.durationMilliseconds,
-    provenance: futureProvenance
+    provenance: futureProvenance,
+    review: original.review
   )
   var records = fixture.manifest.assets
   records[0] = driftedRecord
@@ -246,7 +248,8 @@ func guidanceAudioReleaseRejectsFutureProvenance() throws {
     Issue.record("Expected future synthesis review to fail")
   } catch GuidanceAudioReleaseError.invalid(let issues) {
     #expect(issues.contains(.invalidProvenance(original.key)))
-    #expect(issues.count == 1)
+    #expect(issues.contains(.invalidReview(original.key)))
+    #expect(issues.count == 2)
   }
 }
 
@@ -278,7 +281,8 @@ func guidanceAudioReleaseRejectsEvidenceScopeDrift() throws {
     sampleRateHz: original.sampleRateHz,
     channelCount: original.channelCount,
     durationMilliseconds: original.durationMilliseconds,
-    provenance: driftedProvenance
+    provenance: driftedProvenance,
+    review: original.review
   )
   var records = fixture.manifest.assets
   records[0] = driftedRecord
@@ -301,6 +305,54 @@ func guidanceAudioReleaseRejectsEvidenceScopeDrift() throws {
     Issue.record("Expected provenance scope drift to fail")
   } catch GuidanceAudioReleaseError.invalid(let issues) {
     #expect(issues == [.provenanceScopeMismatch(original.key)])
+  }
+}
+
+@Test("Every released WAV carries an exact passed human review")
+func guidanceAudioReleaseRejectsReviewDrift() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let original = try #require(fixture.manifest.assets.first)
+  let rejected = GuidanceAudioAssetRecord(
+    key: original.key,
+    spokenText: original.spokenText,
+    spokenTextSHA256: original.spokenTextSHA256,
+    resourceFilename: original.resourceFilename,
+    audioSHA256: original.audioSHA256,
+    byteCount: original.byteCount,
+    sampleRateHz: original.sampleRateHz,
+    channelCount: original.channelCount,
+    durationMilliseconds: original.durationMilliseconds,
+    provenance: original.provenance,
+    review: GuidanceAudioAssetReview(
+      reviewerID: original.review.reviewerID,
+      reviewedAt: original.review.reviewedAt,
+      pronunciation: .rejected,
+      intelligibility: .passed,
+      audioQuality: .passed
+    )
+  )
+  var records = fixture.manifest.assets
+  records[0] = rejected
+  let manifest = GuidanceAudioReleaseManifest(
+    releaseID: fixture.manifest.releaseID,
+    releasedAt: fixture.manifest.releasedAt,
+    productReleaseID: fixture.manifest.productReleaseID,
+    navigationReleaseID: fixture.manifest.navigationReleaseID,
+    networkSnapshotID: fixture.manifest.networkSnapshotID,
+    routePlanID: fixture.manifest.routePlanID,
+    assets: records
+  )
+
+  do {
+    _ = try GuidanceAudioRelease(
+      manifest: manifest,
+      productRelease: productRelease,
+      resourceProvider: { fixture.resources[$0] }
+    )
+    Issue.record("Expected rejected pronunciation review to fail")
+  } catch GuidanceAudioReleaseError.invalid(let issues) {
+    #expect(issues == [.invalidReview(original.key)])
   }
 }
 
@@ -359,6 +411,108 @@ func guidanceAudioRecordingWorklistIsComplete() throws {
   #expect(rejectedDrift)
 }
 
+@Test("Audio review preparation is deterministic, exact, and pending")
+func guidanceAudioReviewPreparationIsPending() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let resources = try guidanceAudioAuthoringResources(productRelease)
+  let worklist = try GuidanceAudioRecordingWorklistCodec.derive(
+    productRelease: productRelease
+  )
+  let checklist = try GuidanceAudioReviewChecklistCodec.prepare(
+    reviewID: "test.guidance-audio-review.v1",
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+  let encoded = try GuidanceAudioReviewChecklistCodec.encode(
+    checklist
+  )
+  let repeated = try GuidanceAudioReviewChecklistCodec.encode(
+    checklist
+  )
+  let decoded = try GuidanceAudioReviewChecklistCodec.decode(
+    encoded
+  )
+
+  #expect(encoded == repeated)
+  #expect(decoded == checklist)
+  #expect(checklist.records.count == worklist.items.count)
+  #expect(
+    checklist.records.map(\.resourceFilename)
+      == worklist.items.map(\.suggestedResourceFilename)
+  )
+  #expect(
+    checklist.records.allSatisfy {
+      $0.review == .pending
+        && $0.audioSHA256
+          == guidanceSHA256Hex(
+            resources[$0.resourceFilename]!.data
+          )
+    }
+  )
+}
+
+@Test("Authoring rejects pending or hash-drifted human review")
+func guidanceAudioAuthoringRequiresExactPassedReview() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let configuration = try guidanceAudioAuthoringConfiguration(
+    fixture
+  )
+  let resources = try guidanceAudioAuthoringResources(productRelease)
+  let pending = try GuidanceAudioReviewChecklistCodec.prepare(
+    reviewID: "test.guidance-audio-review.v1",
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+  let firstKey = try #require(pending.records.first?.key)
+
+  do {
+    _ = try GuidanceAudioReleaseAuthor.buildManifest(
+      productRelease: productRelease,
+      configuration: configuration,
+      reviewChecklist: pending,
+      resourceProvider: { resources[$0] }
+    )
+    Issue.record("Expected pending human review to fail")
+  } catch GuidanceAudioAuthoringError.invalidReview(let issues) {
+    #expect(issues.contains(.invalidReviewer(firstKey)))
+    #expect(issues.contains(.reviewIncomplete(firstKey)))
+    #expect(issues.contains(.reviewChronologyInvalid(firstKey)))
+  }
+
+  let passed = passingGuidanceAudioReviewChecklist(pending)
+  let firstRecord = try #require(passed.records.first)
+  var driftedRecords = passed.records
+  driftedRecords[0] = GuidanceAudioReviewChecklistRecord(
+    key: firstRecord.key,
+    spokenTextSHA256: firstRecord.spokenTextSHA256,
+    resourceFilename: firstRecord.resourceFilename,
+    audioSHA256: String(repeating: "0", count: 64),
+    review: firstRecord.review
+  )
+  let drifted = GuidanceAudioReviewChecklist(
+    schemaVersion: passed.schemaVersion,
+    reviewID: passed.reviewID,
+    productReleaseID: passed.productReleaseID,
+    navigationReleaseID: passed.navigationReleaseID,
+    networkSnapshotID: passed.networkSnapshotID,
+    routePlanID: passed.routePlanID,
+    records: driftedRecords
+  )
+
+  do {
+    _ = try GuidanceAudioReleaseAuthor.buildManifest(
+      productRelease: productRelease,
+      configuration: configuration,
+      reviewChecklist: drifted,
+      resourceProvider: { resources[$0] }
+    )
+    Issue.record("Expected review audio hash drift to fail")
+  } catch GuidanceAudioAuthoringError.invalidReview(let issues) {
+    #expect(issues == [.recordBindingMismatch(firstRecord.key)])
+  }
+}
+
 @Test("Authoring configuration builds a complete validated audio manifest")
 func guidanceAudioAuthoringBuildsManifest() throws {
   let productRelease = try guidanceAudioProductRelease()
@@ -369,34 +523,28 @@ func guidanceAudioAuthoringBuildsManifest() throws {
   let worklist = try GuidanceAudioRecordingWorklistCodec.derive(
     productRelease: productRelease
   )
-  let waveData = guidanceTestWaveData(
-    sampleRateHz: 24_000,
-    frameCount: 4_800,
-    sampleValue: 1_600
+  let resources = try guidanceAudioAuthoringResources(
+    productRelease
   )
-  let resources = Dictionary(
-    uniqueKeysWithValues: worklist.items.map {
-      (
-        $0.suggestedResourceFilename,
-        GuidanceAudioResource(
-          url: URL(
-            fileURLWithPath:
-              "/tmp/\($0.suggestedResourceFilename)"
-          ),
-          data: waveData
-        )
-      )
-    }
+  let pendingReview = try GuidanceAudioReviewChecklistCodec.prepare(
+    reviewID: "test.guidance-audio-review.v1",
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+  let review = passingGuidanceAudioReviewChecklist(
+    pendingReview
   )
 
   let manifest = try GuidanceAudioReleaseAuthor.buildManifest(
     productRelease: productRelease,
     configuration: configuration,
+    reviewChecklist: review,
     resourceProvider: { resources[$0] }
   )
   let repeated = try GuidanceAudioReleaseAuthor.buildManifest(
     productRelease: productRelease,
     configuration: configuration,
+    reviewChecklist: review,
     resourceProvider: { resources[$0] }
   )
   let encoded = try GuidanceAudioReleaseManifestCodec.encode(
@@ -428,6 +576,15 @@ func guidanceAudioAuthoringRequiresProfilesAndResources() throws {
   let productRelease = try guidanceAudioProductRelease()
   let fixture = guidanceAudioManifestFixture(productRelease)
   let complete = try guidanceAudioAuthoringConfiguration(fixture)
+  let resources = try guidanceAudioAuthoringResources(productRelease)
+  let pendingReview = try GuidanceAudioReviewChecklistCodec.prepare(
+    reviewID: "test.guidance-audio-review.v1",
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+  let review = passingGuidanceAudioReviewChecklist(
+    pendingReview
+  )
   let missingProfile = GuidanceAudioAuthoringConfiguration(
     releaseID: complete.releaseID,
     releasedAt: complete.releasedAt,
@@ -445,6 +602,7 @@ func guidanceAudioAuthoringRequiresProfilesAndResources() throws {
     _ = try GuidanceAudioReleaseAuthor.buildManifest(
       productRelease: productRelease,
       configuration: missingProfile,
+      reviewChecklist: review,
       resourceProvider: { _ in nil }
     )
     Issue.record("Expected a missing language profile to fail")
@@ -461,6 +619,7 @@ func guidanceAudioAuthoringRequiresProfilesAndResources() throws {
     _ = try GuidanceAudioReleaseAuthor.buildManifest(
       productRelease: productRelease,
       configuration: complete,
+      reviewChecklist: review,
       resourceProvider: { _ in nil }
     )
     Issue.record("Expected a missing WAV resource to fail")
@@ -667,6 +826,13 @@ func guidanceAudioManifestFixture(
             sourceURL: "https://example.com/test-guidance-audio",
             generatedAt: "2026-07-24T13:00:00+09:00",
             reviewedAt: "2026-07-24T14:00:00+09:00"
+          ),
+          review: GuidanceAudioAssetReview(
+            reviewerID: "test.reviewer.\(locale.rawValue)",
+            reviewedAt: "2026-07-24T13:30:00+09:00",
+            pronunciation: .passed,
+            intelligibility: .passed,
+            audioQuality: .passed
           )
         )
       )
@@ -714,6 +880,61 @@ private func guidanceAudioAuthoringConfiguration(
     releaseID: "test.guidance-audio-authored.v1",
     releasedAt: "2026-07-24T15:00:00+09:00",
     languageProfiles: profiles
+  )
+}
+
+private func guidanceAudioAuthoringResources(
+  _ productRelease: KaidoProductRelease
+) throws -> [String: GuidanceAudioResource] {
+  let worklist = try GuidanceAudioRecordingWorklistCodec.derive(
+    productRelease: productRelease
+  )
+  let waveData = guidanceTestWaveData(
+    sampleRateHz: 24_000,
+    frameCount: 4_800,
+    sampleValue: 1_600
+  )
+  return Dictionary(
+    uniqueKeysWithValues: worklist.items.map {
+      (
+        $0.suggestedResourceFilename,
+        GuidanceAudioResource(
+          url: URL(
+            fileURLWithPath:
+              "/tmp/\($0.suggestedResourceFilename)"
+          ),
+          data: waveData
+        )
+      )
+    }
+  )
+}
+
+private func passingGuidanceAudioReviewChecklist(
+  _ checklist: GuidanceAudioReviewChecklist
+) -> GuidanceAudioReviewChecklist {
+  GuidanceAudioReviewChecklist(
+    schemaVersion: checklist.schemaVersion,
+    reviewID: checklist.reviewID,
+    productReleaseID: checklist.productReleaseID,
+    navigationReleaseID: checklist.navigationReleaseID,
+    networkSnapshotID: checklist.networkSnapshotID,
+    routePlanID: checklist.routePlanID,
+    records: checklist.records.map {
+      GuidanceAudioReviewChecklistRecord(
+        key: $0.key,
+        spokenTextSHA256: $0.spokenTextSHA256,
+        resourceFilename: $0.resourceFilename,
+        audioSHA256: $0.audioSHA256,
+        review: GuidanceAudioAssetReview(
+          reviewerID: "test.guidance-audio-reviewer",
+          reviewedAt: "2026-07-24T13:30:00+09:00",
+          pronunciation: .passed,
+          intelligibility: .passed,
+          audioQuality: .passed
+        )
+      )
+    }
   )
 }
 

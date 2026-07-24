@@ -17,6 +17,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case invalidPreDriveEvidence([PreDriveEvidenceBundleIssue])
   case preDriveEvidenceAuthoring(PreDriveEvidenceAuthoringError)
   case preDriveEvidenceUpdate(PreDriveEvidenceUpdateError)
+  case guidanceAudioReview(GuidanceAudioReviewError)
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
   case appBundleStaging(AppBundleReleaseStagingError)
 
@@ -38,9 +39,14 @@ private enum CLIError: Error, CustomStringConvertible {
           --output <product-release.json>
         kaido-release export-guidance-audio-worklist \\
           --product-artifact <product-release.json> --output <worklist.json>
+        kaido-release prepare-guidance-audio-review \\
+          --product-artifact <product-release.json> \\
+          --resources <wav-directory> --review-id <stable-review-id> \\
+          --output <guidance-audio-review.json>
         kaido-release build-guidance-audio \\
           --product-artifact <product-release.json> \\
           --config <authoring-config.json> --resources <wav-directory> \\
+          --review <guidance-audio-review.json> \\
           --output <guidance-audio-release.json>
         kaido-release validate-guidance-audio \\
           --product-artifact <product-release.json> \\
@@ -101,6 +107,8 @@ private enum CLIError: Error, CustomStringConvertible {
       Self.preDriveEvidenceAuthoringDescription(error)
     case .preDriveEvidenceUpdate(let error):
       Self.preDriveEvidenceUpdateDescription(error)
+    case .guidanceAudioReview(let error):
+      Self.guidanceAudioReviewDescription(error)
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
     case .appBundleStaging(let error):
@@ -154,6 +162,9 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidConfiguration(let issues):
       "Guidance audio authoring configuration is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidReview(let issues):
+      "Guidance audio human review is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .resourceMissing(let filename):
       "Guidance audio resource is missing: \(filename)"
     case .resourceUnreadable(let filename):
@@ -163,6 +174,25 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidRelease(let issues):
       "Guidance audio release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    }
+  }
+
+  private static func guidanceAudioReviewDescription(
+    _ error: GuidanceAudioReviewError
+  ) -> String {
+    switch error {
+    case .invalid(let issues):
+      "Guidance audio human review is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .resourceMissing(let filename),
+      .resourceUnreadable(let filename),
+      .resourceURLInvalid(let filename),
+      .resourceFilenameMismatch(let filename),
+      .invalidWaveAudio(let filename):
+      "Guidance audio human review preparation is blocked: "
+        + "\(error.code): \(filename)"
+    case .invalidReviewID:
+      "Guidance audio human review preparation is blocked: \(error.code)"
     }
   }
 
@@ -248,10 +278,17 @@ private enum Command {
     productArtifact: String,
     output: String
   )
+  case prepareGuidanceAudioReview(
+    productArtifact: String,
+    resources: String,
+    reviewID: String,
+    output: String
+  )
   case buildGuidanceAudio(
     productArtifact: String,
     configuration: String,
     resources: String,
+    review: String,
     output: String
   )
   case validateGuidanceAudio(
@@ -346,12 +383,28 @@ private struct Arguments {
         productArtifact: try flags.value("--product-artifact"),
         output: try flags.value("--output")
       )
+    case "prepare-guidance-audio-review":
+      try flags.require(
+        exactly: [
+          "--product-artifact",
+          "--resources",
+          "--review-id",
+          "--output",
+        ]
+      )
+      command = .prepareGuidanceAudioReview(
+        productArtifact: try flags.value("--product-artifact"),
+        resources: try flags.value("--resources"),
+        reviewID: try flags.value("--review-id"),
+        output: try flags.value("--output")
+      )
     case "build-guidance-audio":
       try flags.require(
         exactly: [
           "--product-artifact",
           "--config",
           "--resources",
+          "--review",
           "--output",
         ]
       )
@@ -359,6 +412,7 @@ private struct Arguments {
         productArtifact: try flags.value("--product-artifact"),
         configuration: try flags.value("--config"),
         resources: try flags.value("--resources"),
+        review: try flags.value("--review"),
         output: try flags.value("--output")
       )
     case "validate-guidance-audio":
@@ -885,10 +939,41 @@ do {
       "PASS: wrote \(worklist.items.count) guidance audio work items "
         + "for \(release.releaseID) to \(output)"
     )
+  case .prepareGuidanceAudioReview(
+    let productArtifact,
+    let resources,
+    let reviewID,
+    let output
+  ):
+    let release = try decodeProductRelease(path: productArtifact)
+    let checklist: GuidanceAudioReviewChecklist
+    do {
+      checklist = try GuidanceAudioReviewChecklistCodec.prepare(
+        reviewID: reviewID,
+        productRelease: release,
+        resourceProvider: {
+          try guidanceAudioResource(
+            filename: $0,
+            directoryPath: resources
+          )
+        }
+      )
+    } catch let error as GuidanceAudioReviewError {
+      throw CLIError.guidanceAudioReview(error)
+    }
+    let encoded = try GuidanceAudioReviewChecklistCodec.encode(
+      checklist
+    )
+    try writeNew(encoded, path: output)
+    print(
+      "PASS: wrote \(checklist.records.count) exact hash-bound guidance "
+        + "audio review records in PENDING state to \(output)"
+    )
   case .buildGuidanceAudio(
     let productArtifact,
     let configurationPath,
     let resources,
+    let reviewPath,
     let output
   ):
     let release = try decodeProductRelease(path: productArtifact)
@@ -896,11 +981,16 @@ do {
       try GuidanceAudioAuthoringConfigurationCodec.decode(
         read(path: configurationPath)
       )
+    let reviewChecklist =
+      try GuidanceAudioReviewChecklistCodec.decode(
+        read(path: reviewPath)
+      )
     let manifest: GuidanceAudioReleaseManifest
     do {
       manifest = try GuidanceAudioReleaseAuthor.buildManifest(
         productRelease: release,
         configuration: configuration,
+        reviewChecklist: reviewChecklist,
         resourceProvider: {
           try guidanceAudioResource(
             filename: $0,

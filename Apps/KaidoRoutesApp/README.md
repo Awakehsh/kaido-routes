@@ -40,6 +40,8 @@ authority minted by production decode.
 `kaido-release prepare-app-bundle` can derive one exact foreground descriptor,
 copy the unchanged validated product and optional complete guidance-audio
 resources into an Xcode-ready staging directory, and emit an audit manifest.
+Any guidance-audio manifest is schema 1.2 and already contains a passed,
+hash-bound human review for every exact WAV.
 The App and CLI share the descriptor value types, so release ID, role, resource
 name, and SHA-256 cannot drift through hand transcription. The generated static
 descriptor must still be reviewed and explicitly added to `previewManifest`;

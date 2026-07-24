@@ -322,8 +322,11 @@ locale. Each record preserves the exact reviewed spoken string and hashes both
 that string and one flat mono PCM16 WAV resource. Sample rate, duration, byte
 count, non-silence, generation or recording provenance, model revision, voice
 identifier, licence identifier, source URL, and generation/review chronology
-are validated before the pack can be admitted. One missing, extra, duplicate,
-corrupt, future-reviewed, or identity-drifted record rejects the whole pack.
+are validated before the pack can be admitted. Schema 1.2 additionally embeds a
+reviewer ID, review timestamp, and passed pronunciation, intelligibility, and
+audio-quality decisions for the exact WAV hash in every asset record. One
+missing, extra, duplicate, corrupt, pending, rejected, future-reviewed, or
+identity-drifted record rejects the whole pack.
 
 `ReleasedGuidanceAudioOutput` performs only exact
 `RoutePlan + prompt + anchor + anchor occurrence + locale + spoken text`
@@ -340,13 +343,16 @@ and packaged through this release gate.
 `GuidanceAudioRecordingWorklistCodec` derives the complete immutable recording
 surface directly from one validated product release. It carries exact
 occurrence/text identity and deterministic filenames but no model choice or
-release authority. `GuidanceAudioReleaseAuthor` combines that worklist with
-exactly one reviewed provenance profile per supported locale and local PCM16 WAV
-files, calculates hashes and metadata, then re-runs the complete release gate.
-Synthetic product and audio evidence scopes must agree; a released-road product
-requires `RELEASED_ASSET`. The `kaido-release` CLI exposes worklist export,
-manifest build, and independent manifest/resource validation without permitting
-manual prompt identity or text substitution.
+release authority. `GuidanceAudioReviewChecklistCodec` prepares one deterministic
+checklist bound to the exact worklist and local WAV hashes with every decision
+`PENDING`; it never contains audio bytes. `GuidanceAudioReleaseAuthor` combines
+that human-completed checklist with exactly one reviewed provenance profile per
+supported locale and local PCM16 WAV files, recalculates hashes and metadata,
+then re-runs the complete release gate. Synthetic product and audio evidence
+scopes must agree; a released-road product requires `RELEASED_ASSET`. The
+`kaido-release` CLI exposes worklist export, review preparation, manifest build,
+and independent manifest/resource validation without permitting manual prompt
+identity or text substitution.
 
 The parked pre-drive sound check is a separate Apple-adapter boundary.
 `GuidanceVoiceSetupModel` may select Japanese, Simplified Chinese, or English,
@@ -1356,10 +1362,11 @@ does not deliver obsolete maneuver guidance.
 An optional `GuidanceAudioRelease` is complete and occurrence-scoped rather than
 a generic phrase cache. The manifest covers every released anchor and locale,
 binds exact spoken content and local WAV hashes to the same product and route
-identities, and is hash-pinned by the bundled release catalog. Exact matches use
-recorded playback; absent or unstartable assets fall back to the installed Apple
-voice. A prompt that already began recorded playback is never replayed after an
-interruption or decoder failure.
+identities, embeds the passed exact-WAV human review, and is hash-pinned by the
+bundled release catalog. Exact matches use recorded playback; absent or
+unstartable assets fall back to the installed Apple voice. A prompt that already
+began recorded playback is never replayed after an interruption or decoder
+failure.
 
 `ReleasedGuidanceDefinition` binds that identity to a reviewed trigger distance
 and immutable frame template. For one anchor occurrence, thresholds advance from

@@ -257,15 +257,17 @@ explicit fallback behind an optional offline guidance audio release. That
 release must cover every released guidance anchor occurrence in all three
 locales and bind each exact spoken string to a flat local PCM16 WAV resource,
 SHA-256 digest, byte count, audio metadata, model or recording provenance, and
-the same product, navigation, snapshot, and RoutePlan identities. The entire
+the same product, navigation, snapshot, and RoutePlan identities. Schema 1.2
+also embeds one exact-WAV human review per asset; pronunciation,
+intelligibility, and audio quality must all pass before authoring. The entire
 audio release is rejected for missing, extra, corrupt, silent, future-reviewed,
-or identity-drifted content. Runtime selection does not fuzz text or reuse
-another occurrence: an exact asset plays through `AVAudioPlayer`, while a lookup
-or playback-start failure uses the selected installed Apple voice. Interruption
-after recorded playback begins consumes the prompt without replaying it through
-fallback. The bundled product-release catalog can declare and hash-pin one such
-manifest; the current preview catalog declares none, and no audition output is
-presented as a reviewed release asset. The synthetic
+review-incomplete, or identity-drifted content. Runtime selection does not fuzz
+text or reuse another occurrence: an exact asset plays through `AVAudioPlayer`,
+while a lookup or playback-start failure uses the selected installed Apple
+voice. Interruption after recorded playback begins consumes the prompt without
+replaying it through fallback. The bundled product-release catalog can declare
+and hash-pin one such manifest; the current preview catalog declares none, and
+no audition output is presented as a reviewed release asset. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves
@@ -927,10 +929,17 @@ swift run kaido-release export-guidance-audio-worklist \
   --product-artifact <product-release.json> \
   --output <worklist.json>
 
+swift run kaido-release prepare-guidance-audio-review \
+  --product-artifact <product-release.json> \
+  --resources <wav-directory> \
+  --review-id <stable-review-id> \
+  --output <guidance-audio-review.json>
+
 swift run kaido-release build-guidance-audio \
   --product-artifact <product-release.json> \
   --config <authoring-config.json> \
   --resources <wav-directory> \
+  --review <guidance-audio-review.json> \
   --output <guidance-audio-release.json>
 
 swift run kaido-release validate-guidance-audio \
@@ -940,10 +949,13 @@ swift run kaido-release validate-guidance-audio \
 ```
 
 The worklist derives every exact anchor occurrence, locale, spoken string, hash,
-and deterministic filename from the validated product release. The authoring
-command accepts only three locale profiles, derives WAV metadata and hashes, and
-runs the whole audio-release gate before writing a new file. Existing outputs
-are never overwritten. See
+and deterministic filename from the validated product release. Review
+preparation binds every local WAV hash to that exact worklist and writes only
+`PENDING` decisions; a human reviewer must mark pronunciation,
+intelligibility, and audio quality `PASSED`. The authoring command accepts only
+three locale profiles plus that complete review, derives WAV metadata and
+hashes, and runs the whole audio-release gate before writing a new file.
+Existing outputs are never overwritten. See
 [`docs/contributing/guidance-audio-authoring.md`](docs/contributing/guidance-audio-authoring.md)
 for the provenance, evidence-scope, licensing, and device-review contract.
 

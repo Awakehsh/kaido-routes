@@ -782,7 +782,8 @@ func appBundleStagingPreparesGuidanceAudio() throws {
         sourceURL: "https://example.com/test-guidance-audio",
         generatedAt: "2026-07-24T13:00:00+09:00",
         reviewedAt: "2026-07-24T14:00:00+09:00"
-      )
+      ),
+      review: record.review
     )
   }
   let manifest = GuidanceAudioReleaseManifest(

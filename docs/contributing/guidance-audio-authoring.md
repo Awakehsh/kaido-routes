@@ -17,6 +17,8 @@ deduplicate guidance.
   generated worklist.
 - Select exactly one reviewed voice/provenance profile for each of `ja-JP`,
   `zh-CN`, and `en-US`.
+- Complete a separate human review for every exact WAV. Pronunciation,
+  intelligibility, and audio quality must all pass.
 - Use local mono PCM16 WAV files. Network URLs, symlink escapes, silence,
   malformed RIFF data, metadata drift, and missing assets fail closed.
 - `SYNTHETIC_TEST_ONLY` product releases require synthetic audio provenance.
@@ -46,12 +48,38 @@ The worklist grants no release authority. Re-export it whenever the product
 release changes. `GuidanceAudioRecordingWorklistCodec.decode` rejects a
 worklist that no longer exactly matches its product release.
 
-## 2. Generate and review WAV files
+## 2. Generate WAV files
 
 Generate or record the exact worklist text and place every file in one private
 directory using its suggested filename. Do not add prompt text from a provider,
 change punctuation after review, or reuse a file under another occurrence
 identity.
+
+## 3. Prepare and complete the exact-WAV review
+
+Prepare a deterministic checklist after the candidate files are final:
+
+```sh
+swift run kaido-release prepare-guidance-audio-review \
+  --product-artifact path/to/product-release.json \
+  --resources path/to/private-wav-directory \
+  --review-id <stable-organizational-review-id> \
+  --output path/to/guidance-audio-review.json
+```
+
+The command validates every required WAV and binds each record to the exact
+product, worklist identity, spoken-text hash, deterministic filename, and audio
+SHA-256. It emits every review decision as `PENDING` and never copies audio
+bytes. It refuses an empty or whitespace-padded review ID and never overwrites
+an existing output.
+
+A human reviewer must listen to every hash-bound file, then fill a stable
+organizational `reviewer_id`, an ISO-8601 `reviewed_at`, and these three fields
+with `PASSED` or `REJECTED`:
+
+- `pronunciation`;
+- `intelligibility`; and
+- `audio_quality`.
 
 Review at least:
 
@@ -65,7 +93,12 @@ Review at least:
 Field audio-route, interruption, timing, and driver-comprehension qualification
 remain separate device gates.
 
-## 3. Create the authoring configuration
+Changing any WAV after review invalidates its hash and requires a newly prepared
+checklist plus a new listen. Do not mark a file `PASSED` by script. Use a stable
+organizational reviewer identifier rather than a personal name when the review
+artifact will be distributed.
+
+## 4. Create the authoring configuration
 
 The configuration contains only release metadata and one provenance profile per
 locale. It cannot alter worklist identities or text. See the executable
@@ -80,24 +113,29 @@ For a real release, replace every synthetic value with reviewed facts:
   `HUMAN_RECORDED`);
 - engine, model, immutable model revision, and voice identity;
 - exact licence identifier and HTTPS source URL; and
-- generation and independent review timestamps no later than the audio release.
+- generation and locale-profile review timestamps no later than the audio
+  release. Every per-WAV human review must occur after generation and no later
+  than its locale-profile review.
 
-## 4. Build the manifest
+## 5. Build the manifest
 
 ```sh
 swift run kaido-release build-guidance-audio \
   --product-artifact path/to/product-release.json \
   --config path/to/guidance-audio-authoring-config.json \
   --resources path/to/private-wav-directory \
+  --review path/to/guidance-audio-review.json \
   --output path/to/guidance-audio-release.json
 ```
 
 The author derives every asset record from the product worklist, reads the local
-WAV, calculates audio SHA-256 and byte count, parses PCM metadata, and runs the
+WAV, recalculates audio SHA-256 and byte count, parses PCM metadata, requires an
+exact complete passed review, embeds that review in schema 1.2, and runs the
 whole `GuidanceAudioRelease` gate before writing a new manifest. It refuses to
-overwrite an existing output.
+overwrite an existing output. A pending or rejected decision, invalid review
+chronology, missing record, or changed WAV fails before output.
 
-## 5. Revalidate the distributable set
+## 6. Revalidate the distributable set
 
 ```sh
 swift run kaido-release validate-guidance-audio \
@@ -107,8 +145,8 @@ swift run kaido-release validate-guidance-audio \
 ```
 
 Validation requires complete one-to-one coverage and exact product, RoutePlan,
-occurrence, locale, text, hash, WAV, chronology, and provenance-scope identity.
-One invalid record blocks the whole pack.
+occurrence, locale, text, hash, WAV, per-asset review, chronology, and
+provenance-scope identity. One invalid record blocks the whole pack.
 
 Only after this command passes and the device gates are complete may the App
 catalog declare the audio manifest filename, release ID, and manifest SHA-256

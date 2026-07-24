@@ -167,6 +167,7 @@ public enum GuidanceAudioAuthoringError:
   case invalidProductGuidance
   case worklistDrift
   case invalidConfiguration([GuidanceAudioAuthoringIssue])
+  case invalidReview([GuidanceAudioReviewIssue])
   case resourceMissing(String)
   case resourceUnreadable(String)
   case invalidWaveAudio(String)
@@ -303,6 +304,7 @@ public enum GuidanceAudioReleaseAuthor {
   public static func buildManifest(
     productRelease: KaidoProductRelease,
     configuration: GuidanceAudioAuthoringConfiguration,
+    reviewChecklist: GuidanceAudioReviewChecklist,
     resourceProvider: (String) throws -> GuidanceAudioResource?
   ) throws -> GuidanceAudioReleaseManifest {
     let worklist = try GuidanceAudioRecordingWorklistCodec.derive(
@@ -310,6 +312,7 @@ public enum GuidanceAudioReleaseAuthor {
     )
     let profiles = try validatedProfiles(configuration)
     var resources: [String: GuidanceAudioResource] = [:]
+    var metadataByFilename: [String: GuidanceWaveMetadata] = [:]
     var records: [GuidanceAudioAssetRecord] = []
 
     for item in worklist.items {
@@ -326,10 +329,35 @@ public enum GuidanceAudioReleaseAuthor {
       guard let metadata = GuidanceWaveMetadata(data: resource.data) else {
         throw GuidanceAudioAuthoringError.invalidWaveAudio(filename)
       }
-      guard let profile = profiles[item.key.languageCode] else {
+      resources[filename] = resource
+      metadataByFilename[filename] = metadata
+    }
+
+    let provenanceByLanguage = profiles.mapValues(\.provenance)
+    let reviews: [GuidanceAudioAssetKey: GuidanceAudioAssetReview]
+    do {
+      reviews = try GuidanceAudioReviewValidator.validate(
+        reviewChecklist,
+        productRelease: productRelease,
+        worklist: worklist,
+        releaseAt: configuration.releasedAt,
+        provenanceByLanguage: provenanceByLanguage,
+        resources: resources
+      )
+    } catch GuidanceAudioReviewError.invalid(let issues) {
+      throw GuidanceAudioAuthoringError.invalidReview(issues)
+    }
+
+    for item in worklist.items {
+      let filename = item.suggestedResourceFilename
+      guard
+        let resource = resources[filename],
+        let metadata = metadataByFilename[filename],
+        let profile = profiles[item.key.languageCode],
+        let review = reviews[item.key]
+      else {
         throw GuidanceAudioAuthoringError.invalidProductGuidance
       }
-      resources[filename] = resource
       records.append(
         GuidanceAudioAssetRecord(
           key: item.key,
@@ -341,7 +369,8 @@ public enum GuidanceAudioReleaseAuthor {
           sampleRateHz: metadata.sampleRateHz,
           channelCount: metadata.channelCount,
           durationMilliseconds: metadata.durationMilliseconds,
-          provenance: profile.provenance
+          provenance: profile.provenance,
+          review: review
         )
       )
     }

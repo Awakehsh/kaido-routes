@@ -77,11 +77,13 @@ swift run kaido-release prepare-app-bundle \
   --output <new-staging-directory>
 ```
 
-The complete schema-1.1 audio release is revalidated against the exact product.
-Every manifest WAV is copied by its reviewed safe filename, and the generated
-descriptor pins the audio manifest release ID and SHA-256. A missing, corrupt,
-identity-drifted, synthetic-scope, remote, or path-escaping audio resource
-blocks the whole staging run.
+The complete schema-1.2 audio release is revalidated against the exact product.
+Every manifest WAV must retain its hash-bound passed human pronunciation,
+intelligibility, and audio-quality review. It is copied by its reviewed safe
+filename, and the generated descriptor pins the audio manifest release ID and
+SHA-256. A missing, corrupt, review-incomplete, identity-drifted,
+synthetic-scope, remote, or path-escaping audio resource blocks the whole
+staging run.
 
 Supplying only a manifest, only a resource directory, or an audio resource name
 without both inputs is invalid.

@@ -1,5 +1,6 @@
 import Combine
 import CoreGraphics
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
@@ -102,7 +103,10 @@ final class KaidoRoutesAppModel: ObservableObject {
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
       syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
-      syntheticProductRuntime = try SyntheticProductRuntimeModel()
+      syntheticProductRuntime = try SyntheticProductRuntimeModel(
+        checkpointStore:
+          FileNavigationSessionCheckpointStore.applicationSupport()
+      )
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()
       )

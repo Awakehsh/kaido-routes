@@ -357,7 +357,21 @@ typed missing-voice failure. The real iOS output is compile- and launch-checked
 with Apple's `voicePrompt` audio-session configuration; acoustic output remains
 a device test. A launch-only XCUITest verifies that the visible preview starts
 in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
-guidance audio `IDLE`. This selects the existing KR-S10/KR-S17/KR-S18 transient
+guidance audio `IDLE`.
+
+KR-U16 adds package and L3 process-lifecycle evidence without inventing a
+portable Apple scene event. A schema-1.0 checkpoint round-trips deterministic
+coordinate-free state, fails on release identity or schema drift, clears partial
+entry evidence and transient presentation/audio values, and preserves the prompt
+ledger. A restored actor exposes its first otherwise-HIGH matcher result as LOW,
+does not advance or emit, and requires the ordinary reacquisition window.
+KR-S03 now also asserts that the first post-gap fix remains LOW; KR-S10, KR-S16,
+and KR-S19 retain prompt, matcher-reset, and entry-admission boundaries.
+App tests drive `background → atomic store → new runtime → first fix` and prove
+no position or prompt replay. XCUITest keeps the no-store launch preview
+`FOREGROUND` and deterministic. The app target has no location background mode,
+so these checks are termination recovery rather than background navigation.
+Together with KR-U15, this selects the existing KR-S10/KR-S17/KR-S18 transient
 emission contract rather than adding a portable Apple-audio event, and grants no
 field evidence or real-road release authority.
 

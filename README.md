@@ -37,9 +37,10 @@ by default. A machine-readable attribution catalog now drives a native evidence
 strip adjacent to every Route Atlas; the K7 strip visibly links OpenStreetMap
 credit and the ODbL 1.0 licence without making the SVG interactive. The app
 remains explicitly review-only: it has no real-road released
-route bundle, live measured-position display, active-route highlight, voice,
-background navigation, or CarPlay scene. The repository still has no production road
-database or released provider integration. It includes a
+route bundle, live measured-position display, active-route highlight, qualified
+device voice, active background location session, or CarPlay scene. The
+repository still has no production road database or released provider
+integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
 surface-routing hard gates, an OSM selected-path translator, an offline evidence
 CLI, an explicit local live-probe command, a scalar-only cross-window stability
@@ -282,8 +283,15 @@ only the actor's atomic snapshot. Its foreground pipeline binds
 `CoreLocationObservationAdapter` and `CoreLocationEntryTransitionAdapter` to the
 session, and app tests execute the ordered two-edge admission plus one
 strict-route matcher update. The visible preview deliberately attaches no
-`CLLocationManager`; real released assets, live app lifecycle, persistence,
-background execution, and audio remain Apple-adapter work.
+`CLLocationManager`. A versioned, coordinate-free navigation checkpoint now
+binds progress, recovery/egress state, and the prompt ledger to the exact product
+release, navigation release, runtime policy, snapshot, RoutePlan, and matcher
+corridor. SwiftUI scene changes stop speech and atomically save that checkpoint;
+restoration clears partial entry evidence, CarPlay ownership, position, matcher
+posterior, and speech authority, then requires a fresh multi-fix matcher window.
+This is process-lifecycle recovery, not background navigation: no location
+background mode or active background location session is enabled. Real released
+assets and device lifecycle evidence remain Apple-integration gates.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid

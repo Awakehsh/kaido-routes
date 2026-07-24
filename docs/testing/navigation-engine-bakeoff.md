@@ -476,7 +476,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 58 scenarios with 387 semantic assertions executable at L1/L2. KR-S16
+   current 58 scenarios with 388 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
@@ -604,7 +604,11 @@ gate.
     CarPlay or qualify the full app. Next add production corridor/DecisionZone
     construction and calibration, then bind actual `NavigationSession` state to
     the SwiftUI phone renderer, followed by full-app accessibility review, the
-    `CPMapTemplate` adapter, and audio lifecycle.
+    `CPMapTemplate` adapter, and physical audio/device qualification. The
+    release-bound one-shot speech scheduler, Apple audio-session adapter, and
+    coordinate-free process checkpoint are implemented against synthetic
+    runtime evidence; they do not qualify pronunciation, hardware routes,
+    background location, or process termination on a real device.
 11. **Partial complete:** the snapshot-bound `ExpertRouteEditorSession` exposes
     only legal choices for the exact incoming approach/JCT, creates fresh
     occurrences across cycles, locks moving-time interaction, supports grouped

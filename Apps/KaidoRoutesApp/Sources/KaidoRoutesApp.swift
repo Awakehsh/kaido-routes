@@ -98,3 +98,18 @@ private struct KR_U09AccessibilityPreviewHost: View {
     .accessibilityIdentifier("kr-u09-accessibility-preview")
   }
 }
+
+extension ScenePhase {
+  var productRuntimePhase: SyntheticProductRuntimeScenePhase {
+    switch self {
+    case .active:
+      .active
+    case .inactive:
+      .inactive
+    case .background:
+      .background
+    @unknown default:
+      .inactive
+    }
+  }
+}

@@ -196,8 +196,8 @@ public enum CarPlayConnectionState: String, Codable, Sendable {
   case connected = "CONNECTED"
 }
 
-public struct RecoveryState: Equatable, Sendable {
-  public enum Status: String, Sendable {
+public struct RecoveryState: Codable, Equatable, Sendable {
+  public enum Status: String, Codable, Sendable {
     case inactive = "INACTIVE"
     case active = "ACTIVE"
     case unavailable = "NO_RELEASED_REJOIN"
@@ -210,10 +210,18 @@ public struct RecoveryState: Equatable, Sendable {
   public var destinationRerouteUsed = false
 
   public init() {}
+
+  private enum CodingKeys: String, CodingKey {
+    case status
+    case objective
+    case routePlanID = "route_plan_id"
+    case chosenRejoinOccurrenceID = "chosen_rejoin_occurrence_id"
+    case destinationRerouteUsed = "destination_reroute_used"
+  }
 }
 
-public struct EgressState: Equatable, Sendable {
-  public enum Status: String, Sendable {
+public struct EgressState: Codable, Equatable, Sendable {
+  public enum Status: String, Codable, Sendable {
     case inactive = "INACTIVE"
     case active = "ACTIVE"
     case unavailable = "UNAVAILABLE"
@@ -225,6 +233,13 @@ public struct EgressState: Equatable, Sendable {
   public var prohibitedActions: [String] = []
 
   public init() {}
+
+  private enum CodingKeys: String, CodingKey {
+    case status
+    case exitFacilityID = "exit_facility_id"
+    case firstEligibleOccurrenceID = "first_eligible_occurrence_id"
+    case prohibitedActions = "prohibited_actions"
+  }
 }
 
 public struct NavigationSnapshot: Equatable, Sendable {

@@ -199,6 +199,140 @@ final class SyntheticProductRuntimeTests: XCTestCase {
   }
 
   @MainActor
+  func testBackgroundCheckpointRestoresWithoutPositionOrPromptReplay() async throws {
+    let store = MemoryNavigationCheckpointStore()
+    let initialSpeechOutput = RecordingGuidanceSpeechOutput()
+    let initial = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: initialSpeechOutput,
+      checkpointStore: store
+    )
+    await initial.activate()
+    for (longitude, timestamp) in [
+      (139.75925, 1_000.0),
+      (139.75975, 1_001.0),
+      (139.76025, 1_002.0),
+    ] {
+      await initial.process(
+        [makeLocation(longitude: longitude, timestamp: timestamp)],
+        receivedAt: Date(timeIntervalSince1970: timestamp)
+      )
+    }
+    XCTAssertEqual(initialSpeechOutput.commands.count, 1)
+
+    await initial.handleScenePhase(
+      .background,
+      atMilliseconds: 1_100_000
+    )
+    XCTAssertEqual(initial.lifecycleState, .backgroundCheckpointed)
+    XCTAssertEqual(initial.speechStatus, .stopped)
+    let checkpoint = try XCTUnwrap(store.checkpoint)
+    XCTAssertEqual(
+      checkpoint.state.emittedGuidancePromptIDs,
+      ["test.prompt.loop-1"]
+    )
+
+    let restoredSpeechOutput = RecordingGuidanceSpeechOutput()
+    let restored = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: restoredSpeechOutput,
+      checkpoint: checkpoint,
+      checkpointStore: store
+    )
+    await restored.activate()
+
+    XCTAssertEqual(restored.activation, .ready)
+    XCTAssertEqual(
+      restored.lifecycleState,
+      .restoredReacquisitionRequired
+    )
+    XCTAssertEqual(restored.snapshot?.journeyPhase, .strictRoute)
+    XCTAssertEqual(restored.snapshot?.locationConfidence, .lost)
+    XCTAssertEqual(
+      restored.snapshot?.signalReacquisitionStatus,
+      .pending
+    )
+    XCTAssertEqual(
+      restored.snapshot?.emittedGuidancePromptIDs,
+      ["test.prompt.loop-1"]
+    )
+    XCTAssertTrue(restoredSpeechOutput.commands.isEmpty)
+
+    await restored.process(
+      [makeLocation(longitude: 139.76025, timestamp: 1_101)],
+      receivedAt: Date(timeIntervalSince1970: 1_101)
+    )
+    guard
+      case .matcherUpdated(let confidence, let guidance) =
+        restored.inputState
+    else {
+      XCTFail("Expected restoration matcher fence")
+      return
+    }
+    XCTAssertEqual(confidence, .low)
+    XCTAssertEqual(guidance, .insufficientMatcherEvidence)
+    XCTAssertEqual(
+      restored.snapshot?.currentOccurrenceID,
+      checkpoint.state.currentOccurrenceID
+    )
+    XCTAssertTrue(restoredSpeechOutput.commands.isEmpty)
+
+    await restored.process(
+      [makeLocation(longitude: 139.76035, timestamp: 1_102)],
+      receivedAt: Date(timeIntervalSince1970: 1_102)
+    )
+    XCTAssertEqual(restored.lifecycleState, .foreground)
+    XCTAssertEqual(
+      restored.snapshot?.signalReacquisitionStatus,
+      .confirmed
+    )
+    XCTAssertTrue(restoredSpeechOutput.commands.isEmpty)
+  }
+
+  @MainActor
+  func testCheckpointLoadFailureBlocksRuntimeActivation() async throws {
+    let directoryURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer {
+      try? FileManager.default.removeItem(at: directoryURL)
+    }
+    let store = try FileNavigationSessionCheckpointStore(
+      directoryURL: directoryURL
+    )
+    try FileManager.default.createDirectory(
+      at: directoryURL,
+      withIntermediateDirectories: true
+    )
+    try Data("{\"schema_version\":".utf8).write(to: store.fileURL)
+
+    let model = try SyntheticProductRuntimeModel(
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(
+        isSimulated: false
+      ),
+      speechOutput: RecordingGuidanceSpeechOutput(),
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(
+      model.activation,
+      .failed("CHECKPOINT_REJECTED")
+    )
+    XCTAssertEqual(
+      model.lifecycleState,
+      .checkpointRejected("CHECKPOINT_DECODE_FAILED")
+    )
+
+    await model.activate()
+    XCTAssertEqual(
+      model.activation,
+      .failed("CHECKPOINT_REJECTED")
+    )
+    XCTAssertNil(model.snapshot)
+  }
+
+  @MainActor
   func testSoftwareSimulationIsRejectedBeforeEntryAdmission() async throws {
     let model = try SyntheticProductRuntimeModel(
       fixture: SyntheticProductRuntimeFixture.bundled(),
@@ -297,4 +431,24 @@ final class SyntheticProductRuntimeTests: XCTestCase {
 
     func stop() {}
   }
+
+  @MainActor
+  private final class MemoryNavigationCheckpointStore:
+    NavigationSessionCheckpointStoring
+  {
+    var checkpoint: NavigationSessionCheckpoint?
+
+    func load() throws -> NavigationSessionCheckpoint? {
+      checkpoint
+    }
+
+    func save(_ checkpoint: NavigationSessionCheckpoint) throws {
+      self.checkpoint = checkpoint
+    }
+
+    func remove() throws {
+      checkpoint = nil
+    }
+  }
+
 }

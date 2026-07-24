@@ -1,5 +1,10 @@
 import KaidoDomain
 
+public enum KaidoProductNavigationRuntimeOrigin: String, Equatable, Sendable {
+  case fresh = "FRESH"
+  case restored = "RESTORED"
+}
+
 /// The product-facing live composition boundary.
 ///
 /// External adapters cannot construct `NavigationSession` from independently
@@ -10,6 +15,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
   public let release: KaidoProductRelease
   public let session: NavigationSession
   public let entryTransitionAdmissionContext: EntryTransitionAdmissionContext
+  public let origin: KaidoProductNavigationRuntimeOrigin
 
   public var productReleaseID: String {
     release.releaseID
@@ -32,6 +38,20 @@ public struct KaidoProductNavigationRuntime: Sendable {
   }
 
   public init(release: KaidoProductRelease) throws {
+    try self.init(release: release, checkpoint: nil)
+  }
+
+  public init(
+    release: KaidoProductRelease,
+    checkpoint: NavigationSessionCheckpoint
+  ) throws {
+    try self.init(release: release, checkpoint: Optional(checkpoint))
+  }
+
+  private init(
+    release: KaidoProductRelease,
+    checkpoint: NavigationSessionCheckpoint?
+  ) throws {
     let bundle = release.navigation.bundle
     guard let firstRouteOccurrence = bundle.routePlan.occurrences.first,
       let firstRouteBinding = bundle.matcherCorridor.occurrences.first(where: {
@@ -55,6 +75,21 @@ public struct KaidoProductNavigationRuntime: Sendable {
     )
     self.release = release
     self.entryTransitionAdmissionContext = entryTransitionAdmissionContext
+    let initialSnapshot: NavigationSnapshot
+    let initialMatcherOccurrenceID: String?
+    let requiresRestorationReacquisition: Bool
+    if let checkpoint {
+      initialSnapshot = try checkpoint.restoredSnapshot(for: release)
+      initialMatcherOccurrenceID = initialSnapshot.currentOccurrenceID
+      requiresRestorationReacquisition =
+        checkpoint.requiresMatcherReacquisition
+      origin = .restored
+    } else {
+      initialSnapshot = NavigationSnapshot()
+      initialMatcherOccurrenceID = nil
+      requiresRestorationReacquisition = false
+      origin = .fresh
+    }
     session = try NavigationSession(
       navigationConfiguration: NavigationConfiguration(
         routePlan: bundle.routePlan,
@@ -65,7 +100,21 @@ public struct KaidoProductNavigationRuntime: Sendable {
       ),
       matcherCorridor: bundle.matcherCorridor,
       decisionZones: bundle.decisionZones,
-      entryTransitionAdmissionContext: entryTransitionAdmissionContext
+      initialNavigationSnapshot: initialSnapshot,
+      initialMatcherOccurrenceID: initialMatcherOccurrenceID,
+      entryTransitionAdmissionContext: entryTransitionAdmissionContext,
+      requiresRestorationReacquisition:
+        requiresRestorationReacquisition
+    )
+  }
+
+  public func makeCheckpoint(
+    savedAtMilliseconds: Int
+  ) async throws -> NavigationSessionCheckpoint {
+    try NavigationSessionCheckpoint.capture(
+      release: release,
+      snapshot: await session.snapshot,
+      savedAtMilliseconds: savedAtMilliseconds
     )
   }
 }

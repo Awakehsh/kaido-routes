@@ -290,7 +290,7 @@ public struct NavigationEngine: Sendable {
         after: currentIndex
       )
     else {
-      snapshot.recovery.status = .unavailable
+      activateUnavailableRecovery(routePlan: routePlan)
       return
     }
     activateRecovery(recovery, routePlan: routePlan)
@@ -352,10 +352,13 @@ public struct NavigationEngine: Sendable {
         from: currentIndex
       )
     else {
+      snapshot.egress = EgressState()
       snapshot.egress.status = .unavailable
+      snapshot.finishConfirmationExitFacilityID = nil
       return
     }
 
+    snapshot.egress = EgressState()
     snapshot.egress.status = .active
     snapshot.egress.exitFacilityID = option.exitFacilityID
     snapshot.egress.firstEligibleOccurrenceID = option.firstEligibleOccurrenceID
@@ -411,6 +414,7 @@ public struct NavigationEngine: Sendable {
     confidence: LocationConfidence
   ) {
     guard confidence == .high else { return }
+    snapshot.locationConfidence = .low
     snapshot.markerStyle = "UNRESOLVED"
 
     let candidates = eligibleReacquisitionCandidates(from: observation)
@@ -453,6 +457,7 @@ public struct NavigationEngine: Sendable {
     }
 
     advance(to: occurrenceID)
+    snapshot.locationConfidence = .high
     snapshot.signalReacquisitionStatus = .confirmed
     snapshot.signalReacquisitionTrigger = "CONSISTENT_POST_TUNNEL_WINDOW"
     snapshot.ambiguityReason = nil
@@ -547,17 +552,7 @@ public struct NavigationEngine: Sendable {
         after: avoidThroughIndex
       )
     else {
-      snapshot.journeyPhase = .routeRecovery
-      snapshot.recovery.status = .unavailable
-      snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
-      snapshot.recovery.routePlanID = routePlan.id
-      snapshot.recovery.destinationRerouteUsed = false
-      snapshot.egress.status = .inactive
-      appendUnique(
-        "ABRUPT_LANE_CHANGE_OR_REVERSAL",
-        to: &snapshot.prohibitedGuidanceActions
-      )
-      snapshot.requiresRouteEditingWhileMoving = false
+      activateUnavailableRecovery(routePlan: routePlan)
       return
     }
     activateRecovery(recovery, routePlan: routePlan)
@@ -568,14 +563,36 @@ public struct NavigationEngine: Sendable {
     routePlan: RoutePlan
   ) {
     snapshot.journeyPhase = .routeRecovery
+    snapshot.recovery = RecoveryState()
     snapshot.recovery.status = .active
     snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
     snapshot.recovery.routePlanID = routePlan.id
     snapshot.recovery.chosenRejoinOccurrenceID = recovery.targetOccurrenceID
     snapshot.recovery.destinationRerouteUsed = false
-    snapshot.egress.status = .inactive
+    clearEgress()
     appendUnique("ABRUPT_LANE_CHANGE_OR_REVERSAL", to: &snapshot.prohibitedGuidanceActions)
     snapshot.requiresRouteEditingWhileMoving = false
+  }
+
+  private mutating func activateUnavailableRecovery(
+    routePlan: RoutePlan
+  ) {
+    snapshot.journeyPhase = .routeRecovery
+    snapshot.recovery = RecoveryState()
+    snapshot.recovery.status = .unavailable
+    snapshot.recovery.objective = "REJOIN_ACTIVE_ROUTE_PLAN"
+    snapshot.recovery.routePlanID = routePlan.id
+    clearEgress()
+    appendUnique(
+      "ABRUPT_LANE_CHANGE_OR_REVERSAL",
+      to: &snapshot.prohibitedGuidanceActions
+    )
+    snapshot.requiresRouteEditingWhileMoving = false
+  }
+
+  private mutating func clearEgress() {
+    snapshot.egress = EgressState()
+    snapshot.finishConfirmationExitFacilityID = nil
   }
 
   private mutating func advance(to occurrenceID: String) {

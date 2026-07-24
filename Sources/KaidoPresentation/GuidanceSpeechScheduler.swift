@@ -155,6 +155,11 @@ public struct GuidanceSpeechScheduler: Sendable {
     return stoppedIdentity
   }
 
+  public mutating func resume() {
+    guard state == .stopped else { return }
+    state = .idle
+  }
+
   private mutating func finishIfActive(
     _ identity: GuidanceSpeechIdentity
   ) -> Bool {

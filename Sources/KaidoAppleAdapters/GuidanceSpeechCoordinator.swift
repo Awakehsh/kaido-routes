@@ -123,6 +123,12 @@ public final class GuidanceSpeechCoordinator {
     status = .stopped
   }
 
+  public func resume() {
+    scheduler.resume()
+    guard scheduler.state == .idle else { return }
+    status = .idle
+  }
+
   private func handle(_ event: GuidanceSpeechOutputEvent) {
     switch event {
     case .didStart(let identity):

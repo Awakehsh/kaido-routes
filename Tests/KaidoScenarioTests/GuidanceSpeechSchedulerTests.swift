@@ -122,6 +122,44 @@ func speechSchedulerRejectsRoutePlanDrift() throws {
   #expect(scheduler.consumedIdentities.isEmpty)
 }
 
+@Test("Speech scheduler resumes after lifecycle stop without replaying consumed prompts")
+func speechSchedulerResumesWithoutReplay() throws {
+  var scheduler = try GuidanceSpeechScheduler(
+    expectedRoutePlanID: "test.plan.speech"
+  )
+  let beforeBackground = try speechProjection(
+    promptID: "test.prompt.before-background",
+    anchorOccurrenceID: "test.occurrence.before-background"
+  )
+  guard
+    case .speak = try scheduler.submit(beforeBackground)
+  else {
+    Issue.record("Expected pre-background prompt")
+    return
+  }
+
+  _ = scheduler.stop()
+  scheduler.resume()
+  #expect(scheduler.state == .idle)
+  #expect(
+    try scheduler.submit(beforeBackground)
+      == .suppressed(.duplicate)
+  )
+
+  let afterForeground = try speechProjection(
+    promptID: "test.prompt.after-foreground",
+    anchorOccurrenceID: "test.occurrence.after-foreground"
+  )
+  guard
+    case .speak(let command, replacing: nil) =
+      try scheduler.submit(afterForeground)
+  else {
+    Issue.record("Expected fresh post-foreground prompt")
+    return
+  }
+  #expect(command.identity.promptID == "test.prompt.after-foreground")
+}
+
 @MainActor
 @Test("Speech coordinator stops replaced output and ignores its stale callback")
 func speechCoordinatorStopsReplacedOutput() throws {

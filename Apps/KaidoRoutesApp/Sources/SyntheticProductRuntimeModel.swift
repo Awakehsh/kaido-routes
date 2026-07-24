@@ -67,6 +67,23 @@ enum SyntheticProductRuntimeInputState: Equatable, Sendable {
   }
 }
 
+enum SyntheticProductRuntimeScenePhase: Equatable, Sendable {
+  case active
+  case inactive
+  case background
+}
+
+enum SyntheticProductRuntimeLifecycleState: Equatable, Sendable {
+  case foreground
+  case restoredReacquisitionRequired
+  case inactiveCheckpointed
+  case backgroundCheckpointed
+  case inactiveUnpersisted
+  case backgroundUnpersisted
+  case checkpointFailed(String)
+  case checkpointRejected(String)
+}
+
 @MainActor
 final class SyntheticProductRuntimeModel: ObservableObject {
   @Published private(set) var activation: SyntheticProductRuntimeActivation =
@@ -76,6 +93,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     .disconnected
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus =
     .idle
+  @Published private(set) var lifecycleState: SyntheticProductRuntimeLifecycleState = .foreground
 
   let fixture: SyntheticProductRuntimeFixture
 
@@ -83,15 +101,43 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   private var observationAdapter: CoreLocationObservationAdapter
   private var entryTransitionAdapter: CoreLocationEntryTransitionAdapter
   private let speechCoordinator: GuidanceSpeechCoordinator
+  private let checkpointStore: (any NavigationSessionCheckpointStoring)?
+  private var scenePhase: SyntheticProductRuntimeScenePhase = .active
+  private var lifecycleOperationID = 0
 
   init(
     fixture: SyntheticProductRuntimeFixture,
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
-    speechOutput: (any GuidanceSpeechOutput)? = nil
+    speechOutput: (any GuidanceSpeechOutput)? = nil,
+    checkpoint: NavigationSessionCheckpoint? = nil,
+    checkpointStore: (
+      any NavigationSessionCheckpointStoring
+    )? = nil,
+    checkpointLoadFailureCode: String? = nil
   ) throws {
     self.fixture = fixture
-    runtime = try KaidoProductNavigationRuntime(release: fixture.release)
+    self.checkpointStore = checkpointStore
+    let restoredRuntime: KaidoProductNavigationRuntime
+    var checkpointFailureCode = checkpointLoadFailureCode
+    if let checkpoint {
+      do {
+        restoredRuntime = try KaidoProductNavigationRuntime(
+          release: fixture.release,
+          checkpoint: checkpoint
+        )
+      } catch {
+        restoredRuntime = try KaidoProductNavigationRuntime(
+          release: fixture.release
+        )
+        checkpointFailureCode = Self.checkpointErrorCode(error)
+      }
+    } else {
+      restoredRuntime = try KaidoProductNavigationRuntime(
+        release: fixture.release
+      )
+    }
+    runtime = restoredRuntime
     observationAdapter = try CoreLocationObservationAdapter(
       sessionID: "synthetic-product-runtime-preview",
       simulatedLocationPolicy: .reject,
@@ -108,18 +154,37 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     speechCoordinator.statusDidChange = { [weak self] status in
       self?.speechStatus = status
     }
+    if let checkpointFailureCode {
+      activation = .failed("CHECKPOINT_REJECTED")
+      lifecycleState = .checkpointRejected(checkpointFailureCode)
+    }
   }
 
   convenience init(
     bundle: Bundle = .main,
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
-    speechOutput: (any GuidanceSpeechOutput)? = nil
+    speechOutput: (any GuidanceSpeechOutput)? = nil,
+    checkpointStore: (
+      any NavigationSessionCheckpointStoring
+    )? = nil
   ) throws {
+    let checkpoint: NavigationSessionCheckpoint?
+    let checkpointLoadFailureCode: String?
+    do {
+      checkpoint = try checkpointStore?.load()
+      checkpointLoadFailureCode = nil
+    } catch {
+      checkpoint = nil
+      checkpointLoadFailureCode = Self.checkpointErrorCode(error)
+    }
     try self.init(
       fixture: SyntheticProductRuntimeFixture.bundled(in: bundle),
       sourceEvidenceProvider: sourceEvidenceProvider,
-      speechOutput: speechOutput
+      speechOutput: speechOutput,
+      checkpoint: checkpoint,
+      checkpointStore: checkpointStore,
+      checkpointLoadFailureCode: checkpointLoadFailureCode
     )
   }
 
@@ -153,6 +218,46 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 
   var isRealRoadAuthority: Bool {
     false
+  }
+
+  var lifecycleStatusLabel: String {
+    switch lifecycleState {
+    case .foreground:
+      "FOREGROUND"
+    case .restoredReacquisitionRequired:
+      "RESTORED · REACQUIRE"
+    case .inactiveCheckpointed:
+      "INACTIVE · SAVED"
+    case .backgroundCheckpointed:
+      "BACKGROUND · SAVED"
+    case .inactiveUnpersisted:
+      "INACTIVE · MEMORY ONLY"
+    case .backgroundUnpersisted:
+      "BACKGROUND · MEMORY ONLY"
+    case .checkpointFailed:
+      "SAVE BLOCKED"
+    case .checkpointRejected:
+      "RESTORE BLOCKED"
+    }
+  }
+
+  var lifecycleStatusDetail: String {
+    switch lifecycleState {
+    case .foreground:
+      "Scene is active; only fresh admitted input may update the actor."
+    case .restoredReacquisitionRequired:
+      "Progress and prompt ledger restored; measured position requires a fresh evidence window."
+    case .inactiveCheckpointed:
+      "Speech stopped and coordinate-free state saved atomically."
+    case .backgroundCheckpointed:
+      "Termination-safe checkpoint saved; background location is not enabled."
+    case .inactiveUnpersisted:
+      "Speech stopped; this deterministic preview has no checkpoint store."
+    case .backgroundUnpersisted:
+      "Speech stopped; this deterministic preview keeps no process state."
+    case .checkpointFailed(let code), .checkpointRejected(let code):
+      code
+    }
   }
 
   var speechStatusLabel: String {
@@ -202,19 +307,102 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   func activate() async {
     guard activation == .validating else { return }
     let started = await runtime.session.start()
-    guard
-      started.activeRoutePlanID == routePlanID,
-      started.currentOccurrenceID
-        == fixture.release.navigation.bundle.routePlan.occurrences.first?.id,
-      started.journeyPhase == .planning,
-      !started.strictRouteAutoCommitAllowed
-    else {
+    guard started.activeRoutePlanID == routePlanID else {
       activation = .failed("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
       snapshot = nil
       return
     }
+    if runtime.origin == .fresh {
+      guard
+        started.currentOccurrenceID
+          == fixture.release.navigation.bundle.routePlan.occurrences.first?.id,
+        started.journeyPhase == .planning,
+        !started.strictRouteAutoCommitAllowed
+      else {
+        activation = .failed("INITIAL_RUNTIME_SNAPSHOT_IDENTITY_DRIFT")
+        snapshot = nil
+        return
+      }
+      lifecycleState = .foreground
+    } else {
+      guard
+        started.carPlayConnectionState == .disconnected,
+        started.presentationSurface == .iPhone,
+        started.locationConfidence == .lost
+      else {
+        activation = .failed("RESTORED_RUNTIME_TRANSIENT_STATE_DRIFT")
+        snapshot = nil
+        return
+      }
+      lifecycleState =
+        started.signalReacquisitionStatus == .pending
+        ? .restoredReacquisitionRequired
+        : .foreground
+    }
     snapshot = started
     activation = .ready
+    if scenePhase != .active {
+      await handleScenePhase(scenePhase)
+    }
+  }
+
+  func handleScenePhase(
+    _ phase: SyntheticProductRuntimeScenePhase
+  ) async {
+    await handleScenePhase(
+      phase,
+      atMilliseconds: Self.currentTimeMilliseconds()
+    )
+  }
+
+  func handleScenePhase(
+    _ phase: SyntheticProductRuntimeScenePhase,
+    atMilliseconds: Int
+  ) async {
+    scenePhase = phase
+    lifecycleOperationID += 1
+    let operationID = lifecycleOperationID
+    guard activation == .ready else { return }
+    switch phase {
+    case .active:
+      speechCoordinator.resume()
+      if snapshot?.signalReacquisitionStatus == .pending {
+        lifecycleState = .restoredReacquisitionRequired
+      } else {
+        lifecycleState = .foreground
+      }
+    case .inactive, .background:
+      speechCoordinator.stop()
+      guard let checkpointStore else {
+        lifecycleState =
+          phase == .inactive
+          ? .inactiveUnpersisted
+          : .backgroundUnpersisted
+        return
+      }
+      do {
+        if snapshot?.journeyPhase == .completed {
+          try checkpointStore.remove()
+        } else {
+          let checkpoint = try await runtime.makeCheckpoint(
+            savedAtMilliseconds: atMilliseconds
+          )
+          try checkpointStore.save(checkpoint)
+        }
+        if operationID == lifecycleOperationID {
+          lifecycleState =
+            phase == .inactive
+            ? .inactiveCheckpointed
+            : .backgroundCheckpointed
+        }
+      } catch {
+        if operationID == lifecycleOperationID {
+          lifecycleState = .checkpointFailed(
+            Self.checkpointErrorCode(error)
+          )
+        }
+      }
+    }
   }
 
   /// Connects an explicit foreground Core Location callback to the admitted
@@ -225,6 +413,10 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   ) async {
     guard activation == .ready else {
       inputState = .pipelineRejected("RUNTIME_NOT_READY")
+      return
+    }
+    guard acceptsLiveInput else {
+      inputState = .pipelineRejected("SCENE_NOT_ACTIVE")
       return
     }
 
@@ -262,6 +454,11 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       case .strictRoute, .routeRecovery, .exitTransition, .surfaceEgress:
         let update = try await runtime.session.observe(envelope.observation)
         self.snapshot = update.navigationSnapshot
+        if lifecycleState == .restoredReacquisitionRequired,
+          update.navigationSnapshot.signalReacquisitionStatus == .confirmed
+        {
+          lifecycleState = .foreground
+        }
         inputState = .matcherUpdated(
           confidence: update.matcherEstimate.confidence,
           guidance: update.guidanceProgressState
@@ -306,7 +503,35 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     }
   }
 
+  private var acceptsLiveInput: Bool {
+    switch lifecycleState {
+    case .foreground, .restoredReacquisitionRequired:
+      true
+    case .inactiveCheckpointed, .backgroundCheckpointed,
+      .inactiveUnpersisted, .backgroundUnpersisted,
+      .checkpointFailed, .checkpointRejected:
+      false
+    }
+  }
+
+  private static func currentTimeMilliseconds() -> Int {
+    Int((Date().timeIntervalSince1970 * 1_000).rounded())
+  }
+
   private static func errorCode(_ error: Error) -> String {
     String(describing: error).uppercased()
+  }
+
+  private static func checkpointErrorCode(_ error: Error) -> String {
+    if let error = error as? NavigationSessionCheckpointStoreError {
+      return error.code
+    }
+    if case NavigationSessionCheckpointError.invalid(let issues) = error {
+      return issues.map(\.code).sorted().joined(separator: "+")
+    }
+    if error is DecodingError {
+      return "CHECKPOINT_DECODE_FAILED"
+    }
+    return "CHECKPOINT_OPERATION_FAILED"
   }
 }

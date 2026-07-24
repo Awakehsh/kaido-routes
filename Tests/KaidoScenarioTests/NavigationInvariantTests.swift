@@ -285,6 +285,52 @@ func runtimeClosureActivatesReleasedRecovery() {
   #expect(engine.snapshot.requiresRouteEditingWhileMoving == false)
 }
 
+@Test("Unavailable recovery clears stale egress authority")
+func unavailableRecoveryClearsStaleEgressAuthority() {
+  let routePlan = testRoutePlan()
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      egressOptions: [
+        EgressOption(
+          id: "test.egress",
+          firstEligibleOccurrenceID: "second",
+          exitFacilityID: routePlan.exitFacilityID,
+          egressOccurrenceIDs: ["test.egress.edge"],
+          isReleased: true
+        )
+      ]
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.start()
+  engine.finishDrive()
+  #expect(engine.snapshot.egress.status == .active)
+
+  engine.observeBranch(
+    BranchObservation(
+      observedMovementID: "test.movement.unplanned",
+      confidence: .high
+    )
+  )
+
+  #expect(engine.snapshot.journeyPhase == .routeRecovery)
+  #expect(engine.snapshot.recovery.status == .unavailable)
+  #expect(engine.snapshot.recovery.objective == "REJOIN_ACTIVE_ROUTE_PLAN")
+  #expect(engine.snapshot.recovery.routePlanID == routePlan.id)
+  #expect(engine.snapshot.recovery.chosenRejoinOccurrenceID == nil)
+  #expect(engine.snapshot.egress.status == .inactive)
+  #expect(engine.snapshot.egress.exitFacilityID == nil)
+  #expect(engine.snapshot.egress.firstEligibleOccurrenceID == nil)
+  #expect(engine.snapshot.egress.prohibitedActions.isEmpty)
+  #expect(engine.snapshot.finishConfirmationExitFacilityID == nil)
+}
+
 @Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(

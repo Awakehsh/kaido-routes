@@ -3,14 +3,16 @@
 **Status:** accepted and implemented for the platform-light feasibility core,
 with the first internal SwiftUI iPhone composition target now present. The app
 renders review-only Route Atlas assets and links the local domain, routing,
-navigation, and presentation modules; it does not yet compose a released
-`NavigationSession`, Core Location, voice, or CarPlay. The current bake-off
+navigation, presentation, and Apple-adapter modules. It composes a complete
+synthetic released `NavigationSession`, checkpoint lifecycle, and one-shot
+speech boundary, but has no real-road released session, active navigation
+`CLLocationManager`, background location service, or CarPlay scene. The current bake-off
 selects Valhalla as the leading shared implementation behind the bounded
 surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
 subject to Apple-adapter, operations, and field evidence in
 `docs/testing/navigation-engine-bakeoff.md`.
 
-**Checked:** 2026-07-23
+**Checked:** 2026-07-24
 
 ## Decision summary
 
@@ -350,10 +352,32 @@ egress options. The release gate additionally requires every transition edge to
 exist in the same matcher corridor, every consecutive pair to be an explicit
 successor, and the final transition edge to lead to the first RoutePlan
 occurrence binding. The internal app now owns a foreground-only synthetic
-composition pipeline and an input-disconnected SwiftUI scene. Real released
-assets, `CLLocationManager` navigation ownership, background lifecycle,
-persistence/restoration, audio scheduling, and production app-scene composition
-remain unimplemented Apple boundaries.
+composition pipeline and an input-disconnected SwiftUI scene.
+
+`NavigationSessionCheckpoint` schema 1.0 is the process-restoration boundary.
+It stores only coordinate-free reducer state and binds it to the exact product
+release, navigation release, runtime policy, network snapshot, RoutePlan, and
+matcher corridor. It does not persist coordinates, matcher posterior, partial
+entry-transition evidence, CarPlay connection, active guidance frame, or an
+audio queue. Restoration revalidates the whole identity, maps an interrupted
+entry transition back to `APPROACH_TO_ENTRY`, disconnects CarPlay, clears speech
+authority, and exposes active navigation as LOST/estimated with a pending
+reacquisition window. The first otherwise-HIGH matcher estimate may seed that
+window but is returned as LOW and cannot advance progress or emit guidance.
+Later fresh evidence must satisfy the ordinary multi-observation reacquisition
+policy. The emitted-prompt ledger remains in the checkpoint, so reconstruction
+cannot replay a prior prompt.
+
+`FileNavigationSessionCheckpointStore` atomically replaces one JSON file under
+Application Support. The runtime panel observes `scenePhase`; inactive or
+background stops current speech and saves immediately because background can
+precede termination, while active resumes only future prompt delivery. A
+completed journey removes the active checkpoint on the next inactive/background
+lifecycle save. This is termination recovery, not background navigation: the
+target declares no location background mode and starts no
+`CLBackgroundActivitySession` or equivalent live location service. Real released
+assets, `CLLocationManager` navigation ownership, active background location,
+and production process/device evidence remain Apple boundaries.
 
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor
@@ -651,8 +675,8 @@ direction without requiring an Apple base map on the CarPlay surface.
 
 The pure Swift lifecycle and presentation scenarios prove this ownership
 boundary only. CarPlay entitlement, scene connection order, audio routing,
-simulator rendering, process termination, and wired/wireless head-unit behavior
-remain platform integration and field-test gates.
+simulator rendering, termination timing on a physical device, and wired/wireless
+head-unit behavior remain platform integration and field-test gates.
 
 ## Routing responsibilities
 
@@ -1059,6 +1083,18 @@ returns a transient `GuidancePromptEmission`; the frame itself never means
 
 ## Snapshot storage direction
 
+The live-session checkpoint is separate from graph storage and saved routes:
+
+- encode only coordinate-free navigation reducer state in schema 1.0;
+- bind every checkpoint to the exact validated product/navigation release,
+  runtime policy, network snapshot, RoutePlan, and matcher corridor;
+- atomically replace one active-session file and delete it on the next lifecycle
+  save after completion, or after an explicit discard;
+- never restore matcher posterior, a measured marker, partial entry continuity,
+  CarPlay ownership, active audio, or a one-shot prompt emission; and
+- require a fresh multi-observation location window before measured progress
+  resumes.
+
 For the first small graph:
 
 - keep source fixtures human-reviewable and separate by licence;
@@ -1096,7 +1132,7 @@ bounded role it may own.
 - Commercial SDK evaluation requires a separate cost, data-use, and licence
   review before code integration.
 
-## Sources checked 2026-07-23
+## Sources checked 2026-07-24
 
 - [Apple MapKit for SwiftUI](https://developer.apple.com/documentation/mapkit/mapkit-for-swiftui)
 - [Apple `MKDirections.Request`](https://developer.apple.com/documentation/mapkit/mkdirections/request)
@@ -1105,6 +1141,7 @@ bounded role it may own.
 - [Apple `CPManeuver` junction images and maneuver metadata](https://developer.apple.com/documentation/carplay/cpmaneuver)
 - [Apple `CPLaneGuidance`](https://developer.apple.com/documentation/carplay/cplaneguidance)
 - [Apple background location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
+- [Apple SwiftUI `ScenePhase`](https://developer.apple.com/documentation/swiftui/scenephase)
 - [Apple `CLLocation` source information](https://developer.apple.com/documentation/corelocation/cllocation/sourceinformation)
 - [Apple external-accessory location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory)
 - [Apple software-simulation location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/issimulatedbysoftware)

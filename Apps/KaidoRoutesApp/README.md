@@ -66,6 +66,20 @@ this input disconnected, and tests prove ordered synthetic fixture callbacks
 without granting those callbacks real-road authority. No real product release
 artifact exists in the app today.
 
+The main review scene also supplies one
+`FileNavigationSessionCheckpointStore` under Application Support. On
+`ScenePhase.inactive` or `.background`, the runtime stops speech and atomically
+replaces a coordinate-free schema-1.0 checkpoint. That file includes no
+coordinates, matcher posterior, Core Location source metadata, or audio queue.
+It is bound to the exact product/navigation release, runtime policy, snapshot,
+RoutePlan, and matcher corridor. Restoration clears CarPlay ownership, partial
+entry evidence, active frame, measured position, and speech authority; an active
+drive returns as estimated/LOST and must rebuild a multi-fix matcher window. The
+prompt ledger remains, so a process restart cannot replay an old instruction.
+The dedicated launch-only preview injects no store to stay deterministic.
+Neither scene declares the location background mode or starts a background
+location session.
+
 ## Synthetic product runtime composition
 
 `synthetic-product-runtime-preview.json` is a distributable composition fixture,
@@ -83,9 +97,10 @@ Unit tests execute the real two-edge entry adapter and then one route matcher
 update through the actor. When that update returns one matching
 `GuidancePromptEmission`, the app reprojects the active frame and submits it to
 `GuidanceSpeechCoordinator`. Tests require one Japanese command, duplicate
-suppression, interruption without replay, and a typed installed-voice failure.
+suppression, interruption without replay, a typed installed-voice failure, an
+atomic background checkpoint, and restoration without position or prompt replay.
 A launch-only UI test verifies that the default scene remains input-disconnected,
-entry-locked, and audio-idle.
+entry-locked, lifecycle-foreground, and audio-idle.
 
 ## Entrance recommendation
 
@@ -309,8 +324,13 @@ agreement, shared junction geometry/lane identity, CarPlay ownership-only
 handoff, and fail-closed facility-name or unreleased-junction drift.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
-coordinate-free non-release reporting. `SyntheticProductRuntimeTests` additionally
-prove that actor output schedules one occurrence-scoped Japanese prompt, a
-duplicate callback does not schedule it again, an interruption never replays it,
-and a missing installed voice remains a typed blocked state. The platform-light
+coordinate-free non-release reporting. `SyntheticProductRuntimeTests`
+additionally prove that actor output schedules one occurrence-scoped Japanese
+prompt, a duplicate callback does not schedule it again, an interruption never
+replays it, and a missing installed voice remains a typed blocked state. They
+also save one background checkpoint, reconstruct a fresh runtime, retain
+occurrence/prompt identity, clear position/CarPlay state, and require LOW
+reacquisition evidence without replay. Package tests independently cover
+deterministic checkpoint JSON, release-identity drift, partial-entry reset, the
+first-fix matcher fence, and atomic file-store round trip. The platform-light
 Swift package tests remain the authoritative domain and navigation verification.

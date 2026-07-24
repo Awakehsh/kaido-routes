@@ -38,5 +38,11 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     XCTAssertTrue(
       app.descendants(matching: .any)["product-runtime-safety"].exists
     )
+
+    let lifecycle = app.descendants(matching: .any)[
+      "product-runtime-lifecycle"
+    ]
+    XCTAssertTrue(lifecycle.waitForExistence(timeout: 2))
+    XCTAssertEqual(lifecycle.value as? String, "FOREGROUND")
   }
 }

@@ -171,6 +171,15 @@
       "rationale": "Good coordinate accuracy does not erase route-occurrence ambiguity."
     },
     {
+      "id": "first-fix-confidence-remains-low",
+      "after": "first-reacquired-fix",
+      "category": "SAFETY",
+      "subject": "navigation.location_confidence",
+      "matcher": "EQUALS",
+      "expected": "LOW",
+      "rationale": "One post-gap fix may seed the evidence window but cannot restore HIGH navigation confidence."
+    },
+    {
       "id": "window-confirms-one-occurrence",
       "after": "consistent-reacquired-fix",
       "category": "NAVIGATION",

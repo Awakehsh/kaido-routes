@@ -262,14 +262,16 @@ English:  In 800 meters, at Tatsumi JCT, keep left for Route B, Bayshore Route, 
 Sign line shown in every locale: B 湾岸線・横浜方面
 ```
 
-The internal iPhone preview now executes this selection boundary without
-pretending that audio is implemented. Its interface and voice controls
-independently reproject one synthetic `GuidanceFrame`; the Japanese sign target
-and route shield remain unchanged. Missing locale content or a localized bundle
-whose preserved sign differs from the frame fails closed. The model supplies no
-prompt emission, so the voice result is text-only and cannot speak. This is
-KR-U05/KR-U11 adapter evidence, not complete app localization, voice
-installation, pronunciation, or audio-lifecycle evidence.
+The internal language-selection preview executes this boundary without speech
+authority. Its interface and voice controls independently reproject one
+synthetic `GuidanceFrame`; the Japanese sign target and route shield remain
+unchanged. Missing locale content or a localized bundle whose preserved sign
+differs from the frame fails closed. That model supplies no prompt emission, so
+its voice result is text-only and cannot speak. A separate product-runtime
+composition owns the implemented one-shot Apple speech and process-checkpoint
+lifecycle. This remains KR-U05/KR-U11 adapter evidence, not complete app
+localization, installed-voice qualification, pronunciation, physical audio, or
+background-location evidence.
 
 The internal iPhone driving preview separately executes KR-U06, KR-U07,
 KR-U08, KR-U10, KR-U12, and KR-U14 using synthetic state. A stale LOW observation flows through
@@ -318,7 +320,7 @@ tests show that:
 
 This spike establishes feasibility, not nationwide door-to-door navigation.
 
-## Sources checked 2026-07-22
+## Sources checked 2026-07-24
 
 - [Shuto entrance and exit directory](https://www.shutoko.jp/use/network/map/)
 - [Shuto entrance and exit sign guidance](https://www.shutoko.jp/use/convenience/infoboard/guidance/)
@@ -328,6 +330,7 @@ This spike establishes feasibility, not nationwide door-to-door navigation.
 - [Apple MapKit route steps](https://developer.apple.com/documentation/mapkit/mkroute/steps)
 - [Apple Maps handoff through `openInMaps`](https://developer.apple.com/documentation/mapkit/mkmapitem/openinmaps(launchoptions:))
 - [Apple background location guidance](https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background)
+- [Apple SwiftUI scene phases](https://developer.apple.com/documentation/swiftui/scenephase)
 - [Apple geographic condition monitoring](https://developer.apple.com/documentation/corelocation/monitoring-the-user-s-proximity-to-geographic-regions)
 - [Apple CarPlay navigation session](https://developer.apple.com/documentation/carplay/cpnavigationsession)
 - [Apple speech synthesis voices](https://developer.apple.com/documentation/avfaudio/avspeechsynthesisvoice)

@@ -49,6 +49,7 @@ public actor NavigationSession {
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
+  private var requiresRestorationReacquisition: Bool
 
   package init(
     navigationConfiguration: NavigationConfiguration,
@@ -58,7 +59,8 @@ public actor NavigationSession {
     matcherConfiguration: RouteAwareSwiftMatcherConfiguration = .init(),
     matcherSessionConfiguration: RouteMatcherSessionConfiguration = .init(),
     initialMatcherOccurrenceID: String? = nil,
-    entryTransitionAdmissionContext: EntryTransitionAdmissionContext? = nil
+    entryTransitionAdmissionContext: EntryTransitionAdmissionContext? = nil,
+    requiresRestorationReacquisition: Bool = false
   ) throws {
     guard let routePlan = navigationConfiguration.routePlan else {
       throw NavigationSessionConfigurationError.invalid(["route plan is missing"])
@@ -124,6 +126,8 @@ public actor NavigationSession {
       sessionConfiguration: matcherSessionConfiguration,
       initialOccurrenceID: initialMatcherOccurrenceID
     )
+    self.requiresRestorationReacquisition =
+      requiresRestorationReacquisition
   }
 
   public var snapshot: NavigationSnapshot {
@@ -145,6 +149,24 @@ public actor NavigationSession {
       || engine.snapshot.journeyPhase == .routeRecovery
       || engine.snapshot.journeyPhase == .exitTransition
       || engine.snapshot.journeyPhase == .surfaceEgress
+
+    if requiresRestorationReacquisition {
+      engine.observeLocation(
+        Self.locationObservation(
+          from: estimate,
+          source: observation,
+          admitsOccurrenceProgress: admitsOccurrenceProgress
+        )
+      )
+      if engine.snapshot.signalReacquisitionStatus == .confirmed {
+        requiresRestorationReacquisition = false
+      }
+      return update(
+        estimate: Self.restorationEstimate(from: estimate),
+        guidanceProgressState: .insufficientMatcherEvidence
+      )
+    }
+
     engine.observeLocation(
       Self.locationObservation(
         from: estimate,
@@ -343,6 +365,21 @@ public actor NavigationSession {
       ageMilliseconds: observation.receivedAtMilliseconds
         - observation.observedAtMilliseconds,
       forwardContinuity: false
+    )
+  }
+
+  private static func restorationEstimate(
+    from estimate: MatcherEstimate
+  ) -> MatcherEstimate {
+    MatcherEstimate(
+      observationID: estimate.observationID,
+      estimatedAtMilliseconds: estimate.estimatedAtMilliseconds,
+      directedEdgeID: estimate.directedEdgeID,
+      occurrenceID: estimate.occurrenceID,
+      candidateEdgeIDs: estimate.candidateEdgeIDs,
+      confidence: estimate.confidence == .lost ? .lost : .low,
+      distanceMeters: estimate.distanceMeters,
+      fractionAlongEdge: estimate.fractionAlongEdge
     )
   }
 

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SyntheticProductRuntimePanel: View {
+  @Environment(\.scenePhase) private var scenePhase
   @ObservedObject var model: SyntheticProductRuntimeModel
 
   var body: some View {
@@ -9,6 +10,7 @@ struct SyntheticProductRuntimePanel: View {
       releaseIdentity
       runtimeMetrics
       actorState
+      lifecycleState
       inputState
       speechState
       safetyNotice
@@ -24,6 +26,11 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityIdentifier("synthetic-product-runtime-panel")
     .task {
       await model.activate()
+    }
+    .onChange(of: scenePhase, initial: true) { _, newPhase in
+      Task {
+        await model.handleScenePhase(newPhase.productRuntimePhase)
+      }
     }
   }
 
@@ -132,6 +139,39 @@ struct SyntheticProductRuntimePanel: View {
     )
   }
 
+  private var lifecycleState: some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: lifecycleSymbol)
+        .font(.system(size: 12, weight: .black))
+        .foregroundStyle(lifecycleColor)
+        .frame(width: 20)
+        .accessibilityHidden(true)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text("SESSION LIFECYCLE · \(model.lifecycleStatusLabel)")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.35)
+          .foregroundStyle(lifecycleColor)
+
+        Text(model.lifecycleStatusDetail)
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+    }
+    .padding(11)
+    .background(KaidoTheme.asphalt.opacity(0.42))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay(alignment: .leading) {
+      Rectangle()
+        .fill(lifecycleColor)
+        .frame(width: 2)
+        .padding(.vertical, 10)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-runtime-lifecycle")
+    .accessibilityValue(model.lifecycleStatusLabel)
+  }
+
   private var inputState: some View {
     VStack(alignment: .leading, spacing: 4) {
       Text(model.inputState.label)
@@ -220,6 +260,34 @@ struct SyntheticProductRuntimePanel: View {
       KaidoTheme.signalAmber
     case .idle, .stopped:
       KaidoTheme.muted
+    }
+  }
+
+  private var lifecycleColor: Color {
+    switch model.lifecycleState {
+    case .foreground:
+      KaidoTheme.positionCyan
+    case .restoredReacquisitionRequired, .inactiveCheckpointed,
+      .backgroundCheckpointed, .inactiveUnpersisted,
+      .backgroundUnpersisted:
+      KaidoTheme.signalAmber
+    case .checkpointFailed, .checkpointRejected:
+      KaidoTheme.evidenceCoral
+    }
+  }
+
+  private var lifecycleSymbol: String {
+    switch model.lifecycleState {
+    case .foreground:
+      "location.fill"
+    case .restoredReacquisitionRequired:
+      "location.magnifyingglass"
+    case .inactiveCheckpointed, .backgroundCheckpointed:
+      "externaldrive.fill.badge.checkmark"
+    case .inactiveUnpersisted, .backgroundUnpersisted:
+      "memorychip"
+    case .checkpointFailed, .checkpointRejected:
+      "externaldrive.fill.badge.xmark"
     }
   }
 

@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shutoko.k7-northwest.kohoku-surface-road-register.2026-07-24",
+  "checked_at": "2026-07-24",
+  "navigation_authority": false,
+  "target": {
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "incoming_osm_way_id": 734299106,
+    "via_osm_node_id": 7473451738,
+    "surface_osm_way_id": 776884422,
+    "source_direction": "FORWARD"
+  },
+  "source_reference": {
+    "source_reference_id": "yokohama.road-register-access.2026-07-24",
+    "authority_name": "City of Yokohama",
+    "source_url": "https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html",
+    "interactive_register_url": "https://wwwm.city.yokohama.lg.jp/yokohama/Portal",
+    "content_sha256": "d3969d3cc62c04208abbffa2fa6c36d2f15fc6e509302f8f335697bc227fe9b6",
+    "source_last_updated_at": "2026-01-20",
+    "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY"
+  },
+  "review_method": {
+    "available_register_layers": [
+      "ROAD_LEDGER_PLAN",
+      "ROAD_AREA_BOUNDARY",
+      "RECOGNIZED_ROUTE"
+    ],
+    "online_update_lag_warning_recorded": true,
+    "exact_record_review_status": "PENDING",
+    "exact_record_reference": null
+  },
+  "current_road_identity": {
+    "status": "UNCONFIRMED",
+    "recognized_route_identifier": null,
+    "recognized_route_name_ja": null,
+    "osm_way_mapping_basis": null,
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "valid_through": null
+  },
+  "scope_limits": {
+    "current_physical_status": "OUTSIDE_ROAD_REGISTER_IDENTITY_REVIEW",
+    "current_legal_direction": "OUTSIDE_ROAD_REGISTER_IDENTITY_REVIEW",
+    "permitted_exit_movement": "OUTSIDE_ROAD_REGISTER_IDENTITY_REVIEW"
+  },
+  "decision": {
+    "status": "BLOCKED",
+    "blocker_codes": [
+      "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+      "INTERACTIVE_ROAD_REGISTER_RECORD_NOT_REVIEWED"
+    ]
+  }
+}

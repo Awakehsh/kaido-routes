@@ -1,0 +1,293 @@
+from __future__ import annotations
+
+from datetime import date
+import importlib.util
+import json
+import sys
+import unittest
+from pathlib import Path
+
+
+SCRIPTS_DIR = Path(__file__).parents[1]
+MODULE_PATH = SCRIPTS_DIR / "validate_k7_route_atlas_readiness.py"
+sys.path.insert(0, str(SCRIPTS_DIR))
+SPEC = importlib.util.spec_from_file_location(
+    "validate_k7_route_atlas_readiness",
+    MODULE_PATH,
+)
+assert SPEC and SPEC.loader
+validator = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(validator)
+
+REPOSITORY_ROOT = Path(__file__).parents[2]
+READINESS_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-release-readiness.json"
+)
+FIELD_TEMPLATE_PATH = (
+    REPOSITORY_ROOT / "docs/testing/fixtures/"
+    "k7-yokohama-kohoku-surface-field-review.template.json"
+)
+ROAD_REVIEW_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-road-register-review.json"
+)
+CANDIDATE_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json"
+)
+
+
+def load(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def completed_field_review() -> dict:
+    review = load(FIELD_TEMPLATE_PATH)
+    hashes = [f"{index:064x}" for index in range(1, len(review["observations"]) + 1)]
+    review["collection"] = {
+        "captured_at": "2026-07-24T10:00:00+09:00",
+        "observer_role": "PASSENGER",
+        "driver_interaction": False,
+        "expressway_stop_required": False,
+        "raw_evidence_sha256": hashes,
+    }
+    for observation, digest in zip(review["observations"], hashes):
+        observation["status"] = "CAPTURED"
+        observation["sign_findings"] = ["Synthetic test finding; not route evidence."]
+        observation["evidence_sha256"] = [digest]
+    review["conclusions"] = {
+        "current_physical_status": "ACTIVE",
+        "current_legal_direction": "FORWARD_ONLY",
+        "permitted_exit_movement": "ALLOWED",
+        "reviewed_by": "synthetic-reviewer",
+        "reviewed_at": "2026-07-24T12:00:00+09:00",
+        "valid_through": "2026-08-24",
+    }
+    return review
+
+
+class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
+    def test_tracked_candidate_has_exact_release_blockers(self) -> None:
+        report = validator.evaluate(
+            load(READINESS_PATH),
+            date(2026, 7, 24),
+            REPOSITORY_ROOT,
+        )
+
+        self.assertEqual(report["status"], "BLOCKED")
+        self.assertFalse(report["candidate_ready_for_release_validation"])
+        self.assertFalse(report["navigation_authority"])
+        self.assertEqual(
+            report["satisfied_gate_ids"],
+            [
+                "ARTIFACT_BINDINGS",
+                "DIRECTED_CANDIDATE_STRUCTURE",
+                "SOURCE_ADJACENCY",
+            ],
+        )
+        self.assertEqual(
+            report["blocker_codes"],
+            [
+                "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+                "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+                ("ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_" "REVIEW_PENDING"),
+                "ODBL_IN_PRODUCT_ATTRIBUTION_PENDING",
+                "UNRELEASED_ATLAS_EVIDENCE",
+                "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
+            ],
+        )
+        self.assertEqual(
+            report["realtime_status"],
+            "REALTIME_UNCONFIRMED",
+        )
+        self.assertFalse(report["realtime_release_blocking"])
+
+    def test_artifact_digest_drift_is_rejected(self) -> None:
+        readiness = load(READINESS_PATH)
+        readiness["artifact_bindings"][0]["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "artifact binding digest drifted",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_malformed_binding_role_fails_without_crashing(self) -> None:
+        readiness = load(READINESS_PATH)
+        readiness["artifact_bindings"][0]["role"] = ["unexpected"]
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "role must be a string",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_malformed_osm_roles_fail_without_crashing(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        osm_source = next(
+            source
+            for source in candidate["source_registry"]["references"]
+            if source["source_reference_id"] == "osm.geofabrik.kanto-260721.k7-directed"
+        )
+        osm_source["roles"] = [{"unexpected": "object"}]
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "ODbL source contract",
+        ):
+            validator.validate_candidate(candidate)
+
+    def test_complete_field_review_clears_only_its_gate(self) -> None:
+        readiness = load(READINESS_PATH)
+
+        report = validator.evaluate(
+            readiness,
+            date(2026, 7, 24),
+            REPOSITORY_ROOT,
+            completed_field_review(),
+        )
+
+        self.assertNotIn(
+            "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+            report["blocker_codes"],
+        )
+        self.assertEqual(
+            report["gate_states"]["CURRENT_SURFACE_FIELD_REVIEW"],
+            "SATISFIED",
+        )
+        self.assertIn(
+            "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+            report["blocker_codes"],
+        )
+        self.assertEqual(
+            report["field_review_input"],
+            "PRIVATE_OVERRIDE",
+        )
+        self.assertRegex(
+            report["field_review_manifest_sha256"],
+            r"^[0-9a-f]{64}$",
+        )
+        self.assertFalse(report["navigation_authority"])
+
+    def test_pending_road_register_review_stays_identity_blocked(
+        self,
+    ) -> None:
+        complete, blockers = validator.evaluate_road_register_review(
+            load(ROAD_REVIEW_PATH),
+            date(2026, 7, 24),
+        )
+
+        self.assertFalse(complete)
+        self.assertEqual(
+            blockers,
+            ["CURRENT_ROAD_IDENTITY_UNCONFIRMED"],
+        )
+
+    def test_malformed_road_register_layers_fail_without_crashing(
+        self,
+    ) -> None:
+        review = load(ROAD_REVIEW_PATH)
+        review["review_method"]["available_register_layers"] = [
+            {"unexpected": "object"}
+        ]
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "road-register review contract",
+        ):
+            validator.evaluate_road_register_review(
+                review,
+                date(2026, 7, 24),
+            )
+
+    def test_confirmed_road_identity_requires_exact_record_fields(
+        self,
+    ) -> None:
+        review = load(ROAD_REVIEW_PATH)
+        review["review_method"]["exact_record_review_status"] = "CONFIRMED"
+        review["current_road_identity"]["status"] = "CONFIRMED"
+        review["decision"] = {
+            "status": "READY_FOR_TOPOLOGY_REVIEW",
+            "blocker_codes": [],
+        }
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "exact_record_reference",
+        ):
+            validator.evaluate_road_register_review(
+                review,
+                date(2026, 7, 24),
+            )
+
+    def test_distribution_completion_requires_review_metadata(
+        self,
+    ) -> None:
+        readiness = load(READINESS_PATH)
+        distribution = readiness["distribution_readiness"]
+        distribution["in_product_attribution_status"] = "COMPLETE"
+        distribution["derivative_database_distribution_review_status"] = "COMPLETE"
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "reviewed_by",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_realtime_unconfirmed_cannot_be_promoted_by_readiness(
+        self,
+    ) -> None:
+        readiness = load(READINESS_PATH)
+        readiness["realtime_context"]["status"] = "OPEN"
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "realtime context must remain unconfirmed",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_declared_decision_must_match_derived_result(self) -> None:
+        readiness = load(READINESS_PATH)
+        readiness["expected_decision"]["blocker_codes"] = []
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "expected_decision does not match",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+            )
+
+    def test_assessment_cannot_postdate_as_of(self) -> None:
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "assessment is in the future",
+        ):
+            validator.evaluate(
+                load(READINESS_PATH),
+                date(2026, 7, 23),
+                REPOSITORY_ROOT,
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

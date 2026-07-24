@@ -23,6 +23,13 @@ screen taps.
 L1 and L2 carry most logic coverage. L3 and L4 prove platform integration. L5
 tests hardware and road reality that simulators cannot reproduce.
 
+Real-source release-readiness packages are also L0 contracts, but they are not
+portable runtime scenarios. They bind dated external reviews and distributable
+candidate files by hash, then feed an authoritative release validator only when
+all preflight gates are satisfied. The K7 readiness validator deliberately
+reuses KR-D22 through KR-D24 for Swift graph/release semantics rather than
+adding a route-specific field-evidence event to the pure runtime runner.
+
 ## Portable scenario envelope
 
 Each file under `e2e/scenarios/` contains:

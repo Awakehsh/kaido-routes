@@ -121,9 +121,27 @@ python3 scripts/validate_k7_surface_field_review.py \
 
 The tracked template must return `BLOCKED`. A completed manifest returns
 `PASS`, but its report still sets `route_release_authority` to `false`.
-Field completion closes only this road-level evidence gap. Route Atlas release
-still requires production schematic review, occurrence bindings, attribution,
-and the other release gates.
+Field completion closes only the physical-status, legal-direction, and
+permitted-movement part of this road-level evidence gap. It does not name an
+official municipal road route. The exact road identity remains a separate
+official road-register review, and Route Atlas release still requires production
+schematic review, occurrence bindings, attribution, and the other release gates.
+
+The tracked aggregate decision binds this template to the candidate and the
+separate road-register review:
+
+```sh
+python3 scripts/validate_k7_route_atlas_readiness.py \
+  data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
+  --as-of 2026-07-24 \
+  --field-review research/evidence/k7-kohoku-field-review.json \
+  --report /tmp/k7-route-atlas-readiness-report.json
+```
+
+Passing the field validator can clear only
+`CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE`. It cannot clear
+`CURRENT_ROAD_IDENTITY_UNCONFIRMED`, ODbL distribution work, or unreleased
+topology/layout evidence, and it never grants navigation authority.
 
 ## Acceptance
 

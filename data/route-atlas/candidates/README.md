@@ -125,3 +125,49 @@ python3 scripts/build_k7_schematic_layout_candidate.py \
   --scenario-output e2e/scenarios/kr-d24-k7-schematic-stops-at-surface-boundary.json \
   --svg-output data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg
 ```
+
+## K7 release-readiness package
+
+`k7-northwest-up-aoba-to-kohoku-release-readiness.json` is the dated,
+hash-bound pre-release decision for the most advanced K7 candidate. It binds
+the schematic candidate, directed source review, exact successor audit,
+project-authored layout source, official road-register review, and coordinate-
+free field-review template without copying official map imagery or private
+field evidence.
+
+The separate
+`k7-northwest-up-aoba-to-kohoku-road-register-review.json` records that
+Yokohama's official register exposes road-ledger, road-area, and recognized-
+route layers and warns that the online system can lag. No exact current register
+record has yet been reviewed for OSM way `776884422`, so the package does not
+invent a municipal road identity from the historic construction material.
+
+Validate the tracked decision:
+
+```sh
+python3 scripts/validate_k7_route_atlas_readiness.py \
+  data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
+  --as-of 2026-07-24 \
+  --report /tmp/k7-route-atlas-readiness-report.json
+```
+
+The command must return `BLOCKED` with six exact top-level blockers:
+
+```text
+CURRENT_ROAD_IDENTITY_UNCONFIRMED
+CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE
+ODBL_DERIVATIVE_DATABASE_DISTRIBUTION_REVIEW_PENDING
+ODBL_IN_PRODUCT_ATTRIBUTION_PENDING
+UNRELEASED_ATLAS_EVIDENCE
+UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
+```
+
+A private completed field manifest may be supplied with `--field-review`; it
+can clear only the field gate. A readiness `PASS` would mean that the candidate
+may be submitted to `kaido-atlas validate-release`. The readiness report always
+keeps `navigation_authority=false`; only the authoritative Route Atlas and
+joint product release gates can grant product authority.
+
+`REALTIME_UNCONFIRMED` is retained as a separate non-blocking context value.
+It never means confirmed open, but missing live traffic alone does not turn a
+static, fully evidenced topology/layout release into an invalid graph.

@@ -398,7 +398,9 @@ and coordinate-free manifest validator make that gap executable without
 committing raw field media. This closes the structured directed-candidate gap,
 not release: topology and layout stay
 `CANDIDATE` until independent lawful field/topology review, production layout,
-attribution integration, and realtime review are complete. KR-D22 proves that
+and attribution/distribution integration are complete. Realtime passage remains
+separately `REALTIME_UNCONFIRMED`; it is not silently treated as open and is not
+used as a substitute for static graph evidence. KR-D22 proves that
 the internally coherent 13-occurrence, 15-edge artifact still fails release
 with only the two unreleased-evidence issues. KR-D23 proves that source-complete
 successor enumeration, a historic official identity, and later area completion
@@ -413,6 +415,21 @@ surface ways. Its generated SVG carries OpenStreetMap attribution. This is a
 production-layout candidate, not released navigation evidence: KR-D24 requires
 release validation to fail with only the two expected unreleased topology and
 layout evidence issues.
+
+A dated K7 pre-release package now binds that schematic candidate, the directed
+source review, the 14-checkpoint successor audit, the Kaido-authored layout
+source, an official road-register access review, and the coordinate-free field
+template by SHA-256. Its independent validator derives six exact blockers:
+current road identity, current field legality, topology and layout release
+evidence, in-product OSM attribution, and ODbL derivative-database distribution
+review. It reports the already proven structure and source adjacency separately
+from those unresolved gates. The official register entry page confirms that
+recognized-route material belongs in Yokohama's road-register system and warns
+that online data may lag; no exact register record has been obtained for OSM way
+`776884422`. The tracked decision therefore remains `BLOCKED` and
+`navigation_authority=false`. A later completed private field review can clear
+only its own gate, and even a readiness `PASS` merely admits the candidate to
+the authoritative `kaido-atlas validate-release` command.
 
 The feasibility core currently executes portable scenarios for the following
 hard properties that must remain proven as the product expands:
@@ -557,6 +574,16 @@ references.
 `kaido-atlas validate-release --artifact <file>` decodes and validates a future
 versioned topology/layout release artifact through the same source-registry and
 graph-integrity gate; no real Shuto release artifact exists yet.
+The K7 readiness command is a stricter real-evidence preflight around the
+current hash-bound candidate inputs. Its expected exit is `BLOCKED`; it never
+grants release or navigation authority.
+
+```sh
+python3 scripts/validate_k7_route_atlas_readiness.py \
+  data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
+  --as-of 2026-07-24
+```
+
 `kaido-release validate-navigation --artifact <file>` equivalently validates a
 future navigation runtime artifact through its provenance registry,
 entry/recovery/egress policy, and the whole-bundle gate; no real navigation

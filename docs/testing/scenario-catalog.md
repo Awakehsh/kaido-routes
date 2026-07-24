@@ -35,6 +35,7 @@ should become scenarios when their layer is built.
 | KR-D25 | A versioned navigation release artifact is authored from separate reviewed assets and provenance, evidences entry/recovery/egress policy, and revalidates the whole runtime bundle | P0 | Seeded |
 | KR-D26 | A product release binds navigation policy and atlas identity, covers every released editor entity, and is required for runtime admission | P0 | Seeded |
 | KR-D27 | A joint product release must declare consistent runtime evidence scope and live-input policy before foreground authority exists | P0 | Seeded |
+| KR-D28 | A Route Atlas release artifact is authored from an evidence-free reviewed draft plus separate topology and layout provenance before the whole gate runs | P0 | Seeded |
 
 ## Navigation simulation
 

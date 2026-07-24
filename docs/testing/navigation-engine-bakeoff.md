@@ -476,7 +476,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 62 scenarios with 439 semantic assertions executable at L1/L2. KR-S16
+   current 63 scenarios with 446 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
@@ -505,7 +505,9 @@ gate.
    until the atlas covers every released editor entity, then proves a blocked
    joint artifact cannot create a partial runtime identity; KR-D27 proves that
    only consistent released-road sources plus an explicit foreground policy can
-   mint live-input authority.
+   mint live-input authority; KR-D28 derives one Route Atlas release from
+   evidence-free reviewed content plus separate topology/layout provenance and
+   rejects unknown authoring schemas before output.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
    graph-binding validator, normalized result, offline hard-gate
    evaluator, MapKit candidate adapter, and synthetic directed-road graph

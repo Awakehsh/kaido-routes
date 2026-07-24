@@ -543,13 +543,21 @@ authority, HTTPS source, content SHA-256, checked date, and licence identifier. 
 duplicate, invalid, or role-mismatched source records fail closed. The complete
 network snapshot, RoutePlan, source registry, topology slice, and definition are
 Codable as a versioned `RouteAtlasReleaseArtifact`; decoding never bypasses the
-same release validator.
+same release validator. `RouteAtlasReleaseDraft` carries the exact reviewed
+snapshot, RoutePlan, topology, layout, and occurrence bindings without
+evidence. `RouteAtlasReleaseAuthoringConfiguration` separately carries the
+source registry plus topology and layout release evidence.
+`RouteAtlasReleaseAuthor` derives the current artifact schema, retains those
+inputs unchanged, and must construct a valid `RouteAtlasRelease` before the CLI
+may create a new non-overwriting output. It exposes no synthetic or
+evidence-promotion switch.
 Every RoutePlan occurrence has its own binding in exact RoutePlan order, while
 repeated occurrences may intentionally reference the same schematic segment.
 Snapshot drift, missing or extra coverage, an invented connection, incomplete
 occurrence binding, or anything short of released dated topology and layout
-evidence fails closed. KR-D19 executes
-an invented-connection rejection with synthetic data. This gate proves internal
+evidence fails closed. KR-D19 executes an invented-connection rejection with
+synthetic data, while KR-D28 executes the authoring/schema boundary. This gate
+proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 

@@ -5,7 +5,11 @@ private enum CLIError: Error, CustomStringConvertible {
   case usage
   case readFailed(String, Error)
   case decodeFailed(String, Error)
+  case outputExists(String)
+  case writeFailed(String, Error)
   case invalid([RouteAtlasContextIssue])
+  case invalidRelease([RouteAtlasReleaseIssue])
+  case releaseAuthoring(RouteAtlasReleaseAuthoringError)
 
   var description: String {
     switch self {
@@ -14,13 +18,42 @@ private enum CLIError: Error, CustomStringConvertible {
       Usage:
         kaido-atlas validate --source <source.json> --context <context.json>
         kaido-atlas validate-release --artifact <release-artifact.json>
+        kaido-atlas build-release \
+          --draft <release-draft.json> \
+          --config <release-authoring.json> \
+          --output <release-artifact.json>
       """
     case .readFailed(let path, let error):
       "Cannot read \(path): \(error)"
     case .decodeFailed(let path, let error):
       "Cannot decode \(path): \(error)"
+    case .outputExists(let path):
+      "Refusing to overwrite existing output: \(path)"
+    case .writeFailed(let path, let error):
+      "Cannot write \(path): \(error)"
     case .invalid(let issues):
       "Route Atlas context is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidRelease(let issues):
+      "Route Atlas release is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .releaseAuthoring(let error):
+      Self.releaseAuthoringDescription(error)
+    }
+  }
+
+  private static func releaseAuthoringDescription(
+    _ error: RouteAtlasReleaseAuthoringError
+  ) -> String {
+    switch error {
+    case .invalidDraft(let issues):
+      "Route Atlas release draft is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidConfiguration(let issues):
+      "Route Atlas release authoring configuration is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidRelease(let issues):
+      "Route Atlas release authoring whole gate is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     }
   }
@@ -29,6 +62,11 @@ private enum CLIError: Error, CustomStringConvertible {
 private enum Command {
   case validateContext(sourcePath: String, contextPath: String)
   case validateRelease(artifactPath: String)
+  case buildRelease(
+    draftPath: String,
+    configurationPath: String,
+    outputPath: String
+  )
 }
 
 private struct Arguments {
@@ -43,6 +81,42 @@ private struct Arguments {
         throw CLIError.usage
       }
       command = .validateRelease(artifactPath: values[2])
+      return
+    }
+    if operation == "build-release" {
+      var draftPath: String?
+      var configurationPath: String?
+      var outputPath: String?
+      var index = 1
+      while index < values.count {
+        guard index + 1 < values.count else {
+          throw CLIError.usage
+        }
+        switch values[index] {
+        case "--draft":
+          guard draftPath == nil else { throw CLIError.usage }
+          draftPath = values[index + 1]
+        case "--config":
+          guard configurationPath == nil else {
+            throw CLIError.usage
+          }
+          configurationPath = values[index + 1]
+        case "--output":
+          guard outputPath == nil else { throw CLIError.usage }
+          outputPath = values[index + 1]
+        default:
+          throw CLIError.usage
+        }
+        index += 2
+      }
+      guard let draftPath, let configurationPath, let outputPath else {
+        throw CLIError.usage
+      }
+      command = .buildRelease(
+        draftPath: draftPath,
+        configurationPath: configurationPath,
+        outputPath: outputPath
+      )
       return
     }
     guard operation == "validate" else {
@@ -98,6 +172,30 @@ private func writeError(_ value: String) {
   FileHandle.standardError.write(Data((value + "\n").utf8))
 }
 
+private func writeNew(_ data: Data, path: String) throws {
+  let url = URL(fileURLWithPath: path)
+  guard !FileManager.default.fileExists(atPath: url.path) else {
+    throw CLIError.outputExists(path)
+  }
+  let temporaryURL = url.deletingLastPathComponent()
+    .appendingPathComponent(
+      ".kaido-atlas-\(UUID().uuidString).tmp",
+      isDirectory: false
+    )
+  defer {
+    try? FileManager.default.removeItem(at: temporaryURL)
+  }
+  do {
+    try data.write(to: temporaryURL, options: .atomic)
+    try FileManager.default.moveItem(at: temporaryURL, to: url)
+  } catch {
+    if FileManager.default.fileExists(atPath: url.path) {
+      throw CLIError.outputExists(path)
+    }
+    throw CLIError.writeFailed(path, error)
+  }
+}
+
 do {
   let arguments = try Arguments(Array(CommandLine.arguments.dropFirst()))
   switch arguments.command {
@@ -126,12 +224,13 @@ do {
       throw CLIError.invalid(issues)
     }
   case .validateRelease(let artifactPath):
-    let artifact = try decode(
-      RouteAtlasReleaseArtifact.self,
-      path: artifactPath
-    )
     do {
-      let release = try RouteAtlasRelease(artifact: artifact)
+      let artifact = try decode(
+        RouteAtlasReleaseArtifact.self,
+        path: artifactPath
+      )
+      let encoded = try JSONEncoder().encode(artifact)
+      let release = try RouteAtlasReleaseArtifactCodec.decode(encoded)
       print(
         "PASS: \(release.definition.id) resolves "
           + "\(release.sourceRegistry.references.count) evidence sources and "
@@ -139,12 +238,40 @@ do {
           + "\(release.routePlan.occurrences.count) RoutePlan occurrences"
       )
     } catch RouteAtlasReleaseError.invalid(let issues) {
-      writeError(
-        "Route Atlas release is blocked:\n"
-          + issues.map { "  \($0.code)" }.joined(separator: "\n")
-      )
-      exit(1)
+      throw CLIError.invalidRelease(issues)
     }
+  case .buildRelease(
+    let draftPath,
+    let configurationPath,
+    let outputPath
+  ):
+    let draft = try decode(
+      RouteAtlasReleaseDraft.self,
+      path: draftPath
+    )
+    let configuration = try decode(
+      RouteAtlasReleaseAuthoringConfiguration.self,
+      path: configurationPath
+    )
+    let artifact: RouteAtlasReleaseArtifact
+    do {
+      artifact = try RouteAtlasReleaseAuthor.buildArtifact(
+        draft: draft,
+        configuration: configuration
+      )
+    } catch let error as RouteAtlasReleaseAuthoringError {
+      throw CLIError.releaseAuthoring(error)
+    }
+    let encoded = try RouteAtlasReleaseArtifactCodec.encode(artifact)
+    let release = try RouteAtlasReleaseArtifactCodec.decode(encoded)
+    try writeNew(encoded, path: outputPath)
+    print(
+      "PASS: wrote Route Atlas release \(release.definition.id) with "
+        + "\(release.sourceRegistry.references.count) evidence sources and "
+        + "\(release.topologySlice.edges.count) directed topology edges for "
+        + "\(release.routePlan.occurrences.count) RoutePlan occurrences; "
+        + "output \(outputPath)"
+    )
   }
 } catch {
   writeError(String(describing: error))

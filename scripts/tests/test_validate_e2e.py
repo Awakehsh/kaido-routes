@@ -36,6 +36,12 @@ NAVIGATION_RELEASE_SCENARIO_PATH = (
     / "scenarios"
     / "kr-d25-versioned-navigation-release-artifact.json"
 )
+ROUTE_ATLAS_AUTHORING_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-d28-route-atlas-release-authoring.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -323,6 +329,63 @@ class ValidateNavigationReleaseAuthoringTests(unittest.TestCase):
         self.assertTrue(
             any("draft_schema_version must be non-empty" in error
                 for error in errors)
+        )
+
+
+class ValidateRouteAtlasReleaseAuthoringTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            ROUTE_ATLAS_AUTHORING_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_authoring(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(ROUTE_ATLAS_AUTHORING_SCENARIO_PATH)
+        validator.validate_route_atlas_release_authoring_events(
+            validation,
+            scenario["given"],
+            scenario["when"],
+        )
+        return validation.errors
+
+    def test_route_atlas_release_authoring_event_is_valid(self) -> None:
+        self.assertEqual(self.validate_authoring(self.scenario), [])
+
+    def test_route_atlas_authoring_rejects_unknown_payload(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][0]["payload"] = {"promote_candidate": True}
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any("payload has unsupported keys" in error for error in errors)
+        )
+
+    def test_route_atlas_authoring_requires_release_inputs(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        del scenario["given"]["inputs"]["route_atlas_sources"]
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any(
+                "requires Route Atlas release inputs" in error
+                for error in errors
+            )
+        )
+
+    def test_route_atlas_authoring_rejects_empty_schema(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][0]["payload"] = {
+            "configuration_schema_version": ""
+        }
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any(
+                "configuration_schema_version must be non-empty" in error
+                for error in errors
+            )
         )
 
 

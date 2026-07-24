@@ -381,6 +381,8 @@ public struct RouteAtlasDefinition: Codable, Equatable, Sendable {
 }
 
 public struct RouteAtlasReleaseArtifact: Codable, Equatable, Sendable {
+  public static let currentSchemaVersion = "1.0"
+
   public let schemaVersion: String
   public let networkSnapshot: NetworkSnapshot
   public let routePlan: RoutePlan
@@ -389,7 +391,7 @@ public struct RouteAtlasReleaseArtifact: Codable, Equatable, Sendable {
   public let definition: RouteAtlasDefinition
 
   public init(
-    schemaVersion: String = "1.0",
+    schemaVersion: String = RouteAtlasReleaseArtifact.currentSchemaVersion,
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     sourceRegistry: RouteAtlasSourceRegistry,
@@ -615,7 +617,9 @@ public struct RouteAtlasRelease: Equatable, Sendable {
       topologySlice: artifact.topologySlice,
       definition: artifact.definition
     )
-    if artifact.schemaVersion != "1.0" {
+    if artifact.schemaVersion
+      != RouteAtlasReleaseArtifact.currentSchemaVersion
+    {
       issues.append(.invalidArtifactSchemaVersion)
     }
     issues = Self.sortedUnique(issues)

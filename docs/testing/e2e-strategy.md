@@ -404,6 +404,16 @@ released-road foreground case is eligible for the package-only authority used
 by the App controller. The fixture's non-synthetic labels are test values and
 do not claim a real release.
 
+KR-D28 keeps reviewed atlas content separate from release authority. The runner
+removes topology and layout evidence from one immutable draft, supplies the
+source registry plus both evidence values through a separate authoring
+configuration, derives schema 1.0, and re-runs the complete
+`RouteAtlasRelease` gate before publishing the artifact. Two later events prove
+that unknown draft and configuration schemas fail closed. Python independently
+requires the exact authoring inputs, rejects unsupported payload keys, and
+checks explicit non-empty schema overrides. The fixture remains synthetic and
+does not establish real-road topology, layout, or evidence.
+
 Product release authoring is covered at the same platform-light layer without a
 new route-behavior event. Focused Swift tests pass independently valid
 released-road navigation and Route Atlas fixtures to

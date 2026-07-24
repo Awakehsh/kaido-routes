@@ -166,6 +166,8 @@ private struct ScenarioHarness {
       try createProductNavigationRuntime(event.payload)
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
       try validateRouteAtlasRelease()
+    case "ROUTE_ATLAS_RELEASE_AUTHORED":
+      try authorRouteAtlasRelease(event.payload)
     case "ROUTE_ATLAS_CONTEXT_VALIDATED":
       try validateRouteAtlasContext()
     case "NAVIGATION_STARTED":
@@ -1463,6 +1465,81 @@ private struct ScenarioHarness {
       adapterObservations["route_atlas.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
       )
+    }
+  }
+
+  private mutating func authorRouteAtlasRelease(
+    _ payload: [String: JSONValue]
+  ) throws {
+    let source = try routeAtlasReleaseArtifact()
+    let draft = RouteAtlasReleaseDraft(
+      schemaVersion: payload.string("draft_schema_version")
+        ?? RouteAtlasReleaseDraft.currentSchemaVersion,
+      networkSnapshot: source.networkSnapshot,
+      routePlan: source.routePlan,
+      topologySlice: RouteAtlasTopologyDraft(
+        id: source.topologySlice.id,
+        networkSnapshotID: source.topologySlice.networkSnapshotID,
+        nodes: source.topologySlice.nodes,
+        edges: source.topologySlice.edges
+      ),
+      definition: RouteAtlasDefinitionDraft(
+        id: source.definition.id,
+        networkSnapshotID: source.definition.networkSnapshotID,
+        routePlanID: source.definition.routePlanID,
+        topologySliceID: source.definition.topologySliceID,
+        nodes: source.definition.nodes,
+        segments: source.definition.segments,
+        occurrenceBindings: source.definition.occurrenceBindings
+      )
+    )
+    let configuration = RouteAtlasReleaseAuthoringConfiguration(
+      schemaVersion: payload.string("configuration_schema_version")
+        ?? RouteAtlasReleaseAuthoringConfiguration.currentSchemaVersion,
+      sourceRegistry: source.sourceRegistry,
+      topologyEvidence: source.topologySlice.evidence,
+      layoutEvidence: source.definition.evidence
+    )
+
+    clearRouteAtlasObservations()
+    routeAtlasRelease = nil
+    adapterObservations["route_atlas.draft_schema_version"] =
+      .string(draft.schemaVersion)
+    adapterObservations[
+      "route_atlas.authoring_configuration_schema_version"
+    ] = .string(configuration.schemaVersion)
+    do {
+      let artifact = try RouteAtlasReleaseAuthor.buildArtifact(
+        draft: draft,
+        configuration: configuration
+      )
+      let data = try RouteAtlasReleaseArtifactCodec.encode(artifact)
+      let release = try RouteAtlasReleaseArtifactCodec.decode(data)
+      routeAtlasRelease = release
+      publish(release)
+      adapterObservations["route_atlas.authoring_status"] =
+        .string("PASS")
+      adapterObservations["route_atlas.schema_version"] =
+        .string(artifact.schemaVersion)
+    } catch let error as RouteAtlasReleaseAuthoringError {
+      adapterObservations["route_atlas.status"] = .string("BLOCKED")
+      adapterObservations["route_atlas.authoring_status"] =
+        .string("BLOCKED")
+      adapterObservations["route_atlas.error_codes"] = .strings(
+        routeAtlasReleaseAuthoringErrorCodes(error)
+      )
+    }
+  }
+
+  private func routeAtlasReleaseAuthoringErrorCodes(
+    _ error: RouteAtlasReleaseAuthoringError
+  ) -> [String] {
+    switch error {
+    case .invalidDraft(let issues),
+      .invalidConfiguration(let issues):
+      issues.map(\.code).sorted()
+    case .invalidRelease(let issues):
+      Array(Set(issues.map(\.code))).sorted()
     }
   }
 

@@ -472,8 +472,14 @@ occurrences share one schematic segment. Coordinate crossings never author graph
 connectivity, and the layout type contains no arbitrary display labels. Topology
 and layout evidence IDs must resolve to explicit dated, licensed, role-matched
 source records with pinned content SHA-256 values in the versioned Codable
-release artifact. KR-D19 proves that one
-visually invented connection blocks release. This verifies
+release artifact. `RouteAtlasReleaseDraft` contains the reviewed snapshot,
+RoutePlan, topology, layout, and ordered occurrence bindings without evidence;
+`RouteAtlasReleaseAuthoringConfiguration` separately carries the source
+registry plus topology and layout evidence. `kaido-atlas build-release` derives
+the current artifact schema, preserves both inputs, runs the whole gate before
+writing, and refuses overwrite. KR-D19 proves that one visually invented
+connection blocks release, while KR-D28 proves the separate authoring boundary.
+This verifies
 internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
@@ -744,6 +750,7 @@ hard properties that must remain proven as the product expands:
 - [`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md): evidence gates for route data.
 - [`docs/contributing/licensing.md`](docs/contributing/licensing.md): Apache-2.0 and third-party material boundaries.
 - [`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md): fail-closed assembly of validated navigation and Route Atlas releases.
+- [`docs/contributing/route-atlas-release-authoring.md`](docs/contributing/route-atlas-release-authoring.md): fail-closed assembly of reviewed atlas content and separate release evidence.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`benchmarks/surface-routing/`](benchmarks/surface-routing/README.md): directional entrance fixtures and provider hard gates.
 - [`benchmarks/map-matching/`](benchmarks/map-matching/README.md): deterministic matcher replay fixtures, evaluator, and negative control.
@@ -786,9 +793,11 @@ prints a result for every scenario and assertion. The Python validator remains
 an independent L0 check for the portable envelope, route-occurrence identity,
 event ordering, release-bound runtime policy, evidence references, and assertion
 references.
-`kaido-atlas validate-release --artifact <file>` decodes and validates a future
-versioned topology/layout release artifact through the same source-registry and
-graph-integrity gate; no real Shuto release artifact exists yet.
+`kaido-atlas build-release --draft <file> --config <file> --output <file>`
+assembles reviewed content and separate release evidence only through the whole
+source-registry and graph-integrity gate. `validate-release --artifact <file>`
+independently decodes and validates that artifact; no real Shuto release
+artifact exists yet.
 The K7 readiness command is a stricter real-evidence preflight around the
 current hash-bound candidate inputs. Its expected exit is `BLOCKED`; it never
 grants release or navigation authority.

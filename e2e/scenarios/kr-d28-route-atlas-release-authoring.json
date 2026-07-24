@@ -1,0 +1,210 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D28",
+  "title": "Route Atlas release authoring keeps reviewed content separate from evidence",
+  "layer": "DOMAIN",
+  "tags": ["route-atlas", "authoring", "provenance", "fail-closed"],
+  "purpose": "Require the final Route Atlas artifact to be derived from an evidence-free reviewed draft plus separate topology and layout release evidence before the whole integrity gate runs.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "RELEASED inside this synthetic fixture exercises authoring mechanics only.",
+      "This scenario does not establish real Shuto topology, layout, provenance, or release eligibility."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.route-atlas-authoring",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-25T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.route-atlas-authoring",
+      "network_snapshot_id": "test.snapshot.route-atlas-authoring",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.route-atlas-authoring",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.route-atlas-authoring"
+        }
+      ]
+    },
+    "inputs": {
+      "route_atlas_sources": [
+        {
+          "source_reference_id": "test.source.route-atlas-topology",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Synthetic topology review authority",
+          "source_url": "https://example.test/route-atlas-topology",
+          "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "checked_at": "2026-07-25",
+          "licence_identifier": "SYNTHETIC"
+        },
+        {
+          "source_reference_id": "test.source.route-atlas-layout",
+          "roles": ["LAYOUT_EVIDENCE"],
+          "authority_name": "Synthetic layout review authority",
+          "source_url": "https://example.test/route-atlas-layout",
+          "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "checked_at": "2026-07-25",
+          "licence_identifier": "SYNTHETIC"
+        }
+      ],
+      "route_atlas_topology": {
+        "topology_slice_id": "test.topology.route-atlas-authoring",
+        "network_snapshot_id": "test.snapshot.route-atlas-authoring",
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-25",
+          "source_reference_ids": ["test.source.route-atlas-topology"]
+        },
+        "nodes": [
+          {"node_id": "test.node.route-atlas-start"},
+          {"node_id": "test.node.route-atlas-end"}
+        ],
+        "edges": [
+          {
+            "edge_id": "test.topology-edge.route-atlas-authoring",
+            "route_entity_id": "test.edge.route-atlas-authoring",
+            "from_node_id": "test.node.route-atlas-start",
+            "to_node_id": "test.node.route-atlas-end",
+            "successor_edge_ids": []
+          }
+        ]
+      },
+      "route_atlas": {
+        "atlas_id": "test.atlas.route-atlas-authoring",
+        "network_snapshot_id": "test.snapshot.route-atlas-authoring",
+        "route_plan_id": "test.plan.route-atlas-authoring",
+        "topology_slice_id": "test.topology.route-atlas-authoring",
+        "nodes": [
+          {
+            "topology_node_id": "test.node.route-atlas-start",
+            "point": {"x": 0.1, "y": 0.5}
+          },
+          {
+            "topology_node_id": "test.node.route-atlas-end",
+            "point": {"x": 0.9, "y": 0.5}
+          }
+        ],
+        "segments": [
+          {
+            "segment_id": "test.segment.route-atlas-authoring",
+            "topology_edge_id": "test.topology-edge.route-atlas-authoring",
+            "from_node_id": "test.node.route-atlas-start",
+            "to_node_id": "test.node.route-atlas-end",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.1, "y": 0.5},
+              {"x": 0.9, "y": 0.5}
+            ]
+          }
+        ],
+        "occurrence_bindings": [
+          {
+            "occurrence_id": "test.occurrence.route-atlas-authoring",
+            "index": 0,
+            "segment_id": "test.segment.route-atlas-authoring"
+          }
+        ],
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-25",
+          "source_reference_ids": ["test.source.route-atlas-layout"]
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "author-route-atlas-release",
+      "at_ms": 0,
+      "type": "ROUTE_ATLAS_RELEASE_AUTHORED",
+      "payload": {}
+    },
+    {
+      "id": "reject-route-atlas-draft-schema",
+      "at_ms": 1,
+      "type": "ROUTE_ATLAS_RELEASE_AUTHORED",
+      "payload": {"draft_schema_version": "2.0"}
+    },
+    {
+      "id": "reject-route-atlas-configuration-schema",
+      "at_ms": 2,
+      "type": "ROUTE_ATLAS_RELEASE_AUTHORED",
+      "payload": {"configuration_schema_version": "2.0"}
+    }
+  ],
+  "then": [
+    {
+      "id": "route-atlas-authoring-passes",
+      "after": "author-route-atlas-release",
+      "category": "SAFETY",
+      "subject": "route_atlas.authoring_status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Only the complete artifact derived from separate reviewed content and evidence may pass."
+    },
+    {
+      "id": "route-atlas-draft-schema-is-explicit",
+      "after": "author-route-atlas-release",
+      "category": "EVIDENCE",
+      "subject": "route_atlas.draft_schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "An unknown draft shape cannot be treated as current reviewed topology or layout."
+    },
+    {
+      "id": "route-atlas-configuration-schema-is-explicit",
+      "after": "author-route-atlas-release",
+      "category": "EVIDENCE",
+      "subject": "route_atlas.authoring_configuration_schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "Source provenance and release evidence have their own explicit schema."
+    },
+    {
+      "id": "route-atlas-artifact-schema-is-derived",
+      "after": "author-route-atlas-release",
+      "category": "DOMAIN",
+      "subject": "route_atlas.schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "The author derives the supported artifact schema instead of copying a caller-selected value."
+    },
+    {
+      "id": "route-atlas-route-plan-is-preserved",
+      "after": "author-route-atlas-release",
+      "category": "SAFETY",
+      "subject": "route_atlas.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.route-atlas-authoring",
+      "rationale": "Atlas assembly cannot optimize, migrate, or replace the reviewed RoutePlan."
+    },
+    {
+      "id": "unknown-route-atlas-draft-schema-blocks",
+      "after": "reject-route-atlas-draft-schema",
+      "category": "SAFETY",
+      "subject": "route_atlas.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "INVALID_ROUTE_ATLAS_RELEASE_DRAFT_SCHEMA_VERSION",
+      "rationale": "Unknown reviewed-content schemas fail before any artifact is returned."
+    },
+    {
+      "id": "unknown-route-atlas-configuration-schema-blocks",
+      "after": "reject-route-atlas-configuration-schema",
+      "category": "SAFETY",
+      "subject": "route_atlas.error_codes",
+      "matcher": "CONTAINS",
+      "expected": "INVALID_ROUTE_ATLAS_RELEASE_AUTHORING_SCHEMA_VERSION",
+      "rationale": "Unknown provenance schemas fail before any artifact is returned."
+    }
+  ]
+}

@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "77490D08B862452A4A0A6606"
-               BuildableName = "KaidoRoutesApp.app"
+               BuildableName = "KaidoRoutes.app"
                BlueprintName = "KaidoRoutesApp"
                ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
             </BuildableReference>
@@ -47,7 +47,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "77490D08B862452A4A0A6606"
-            BuildableName = "KaidoRoutesApp.app"
+            BuildableName = "KaidoRoutes.app"
             BlueprintName = "KaidoRoutesApp"
             ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
          </BuildableReference>
@@ -83,7 +83,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "77490D08B862452A4A0A6606"
-            BuildableName = "KaidoRoutesApp.app"
+            BuildableName = "KaidoRoutes.app"
             BlueprintName = "KaidoRoutesApp"
             ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
          </BuildableReference>
@@ -102,7 +102,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "77490D08B862452A4A0A6606"
-            BuildableName = "KaidoRoutesApp.app"
+            BuildableName = "KaidoRoutes.app"
             BlueprintName = "KaidoRoutesApp"
             ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
          </BuildableReference>

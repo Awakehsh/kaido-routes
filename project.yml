@@ -25,6 +25,7 @@ targets:
   KaidoRoutesApp:
     type: application
     platform: iOS
+    productName: KaidoRoutes
     sources:
       - path: Apps/KaidoRoutesApp/Sources
       - path: Apps/KaidoRoutesApp/Resources

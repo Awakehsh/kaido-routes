@@ -38,7 +38,7 @@
 		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
 		88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		959C69E60D902F280806BE3E /* KaidoRoutesApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D6736A54DBD926E1D2965FE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SVGDocumentView.swift; sourceTree = "<group>"; };
 		E2B0BEBE0CC9DCCC94FF311F /* RouteAtlasHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasHomeView.swift; sourceTree = "<group>"; };
@@ -81,7 +81,7 @@
 		367EDB88F8DD20EE0C314C2E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				959C69E60D902F280806BE3E /* KaidoRoutesApp.app */,
+				8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */,
 				88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */,
 			);
 			name = Products;
@@ -167,7 +167,7 @@
 				55CA08F012ED78E3B6403A9D /* KaidoPresentation */,
 			);
 			productName = KaidoRoutesApp;
-			productReference = 959C69E60D902F280806BE3E /* KaidoRoutesApp.app */;
+			productReference = 8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */;
 			productType = "com.apple.product-type.application";
 		};
 		8A994C962B4A54283040F521 /* KaidoRoutesAppTests */ = {

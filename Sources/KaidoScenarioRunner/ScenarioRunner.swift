@@ -108,6 +108,8 @@ private struct ScenarioHarness {
       try validateNavigationReleaseBundle()
     case "NAVIGATION_RELEASE_ARTIFACT_VALIDATED":
       try validateNavigationReleaseArtifact(event.payload)
+    case "PRODUCT_RELEASE_ARTIFACT_VALIDATED":
+      try validateProductReleaseArtifact(event.payload)
     case "ROUTE_ATLAS_RELEASE_VALIDATED":
       try validateRouteAtlasRelease()
     case "ROUTE_ATLAS_CONTEXT_VALIDATED":
@@ -676,6 +678,30 @@ private struct ScenarioHarness {
   private mutating func validateNavigationReleaseArtifact(
     _ payload: [String: JSONValue]
   ) throws {
+    let artifact = try navigationReleaseArtifact(
+      schemaVersion: payload.string("schema_version")
+        ?? NavigationReleaseArtifact.currentSchemaVersion
+    )
+
+    clearNavigationReleaseArtifactObservations()
+    adapterObservations["release_artifact.schema_version"] = .string(
+      artifact.schemaVersion
+    )
+    do {
+      let data = try NavigationReleaseArtifactCodec.encode(artifact)
+      let release = try NavigationReleaseArtifactCodec.decode(data)
+      publish(release)
+    } catch NavigationReleaseError.invalid(let issues) {
+      adapterObservations["release_artifact.status"] = .string("BLOCKED")
+      adapterObservations["release_artifact.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private func navigationReleaseArtifact(
+    schemaVersion: String
+  ) throws -> NavigationReleaseArtifact {
     guard let routePlan = scenario.given.routePlan,
       let releaseID = scenario.given.inputs.string("navigation_release_id"),
       let releasedAt = scenario.given.inputs.string("navigation_release_released_at"),
@@ -754,9 +780,8 @@ private struct ScenarioHarness {
       )
     }
 
-    let artifact = NavigationReleaseArtifact(
-      schemaVersion: payload.string("schema_version")
-        ?? NavigationReleaseArtifact.currentSchemaVersion,
+    return NavigationReleaseArtifact(
+      schemaVersion: schemaVersion,
       releaseID: releaseID,
       releasedAt: releasedAt,
       editorCatalogID: editorCatalogID,
@@ -770,24 +795,71 @@ private struct ScenarioHarness {
       releasedGuidance: releasedGuidance,
       junctionViews: junctionViews
     )
+  }
 
-    clearNavigationReleaseArtifactObservations()
-    adapterObservations["release_artifact.schema_version"] = .string(
+  private mutating func validateProductReleaseArtifact(
+    _ payload: [String: JSONValue]
+  ) throws {
+    guard let releaseID = scenario.given.inputs.string("product_release_id"),
+      let releasedAt = scenario.given.inputs.string("product_release_released_at")
+    else {
+      throw ScenarioExecutionError.invalidInput("product_release_artifact")
+    }
+    let artifact = KaidoProductReleaseArtifact(
+      schemaVersion: payload.string("schema_version")
+        ?? KaidoProductReleaseArtifact.currentSchemaVersion,
+      releaseID: releaseID,
+      releasedAt: releasedAt,
+      navigationRelease: try navigationReleaseArtifact(
+        schemaVersion: NavigationReleaseArtifact.currentSchemaVersion
+      ),
+      routeAtlasRelease: try routeAtlasReleaseArtifact()
+    )
+
+    clearProductReleaseArtifactObservations()
+    adapterObservations["product_release.schema_version"] = .string(
       artifact.schemaVersion
     )
     do {
-      let data = try NavigationReleaseArtifactCodec.encode(artifact)
-      let release = try NavigationReleaseArtifactCodec.decode(data)
+      let data = try KaidoProductReleaseArtifactCodec.encode(artifact)
+      let release = try KaidoProductReleaseArtifactCodec.decode(data)
       publish(release)
-    } catch NavigationReleaseError.invalid(let issues) {
-      adapterObservations["release_artifact.status"] = .string("BLOCKED")
-      adapterObservations["release_artifact.error_codes"] = .strings(
+    } catch KaidoProductReleaseError.invalid(let issues) {
+      adapterObservations["product_release.status"] = .string("BLOCKED")
+      adapterObservations["product_release.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
+      )
+      adapterObservations["product_release.missing_editor_entity_ids"] = .strings(
+        Array(
+          Set(
+            issues.compactMap { issue in
+              guard case .missingAtlasEditorEntity(_, let entityID) = issue else {
+                return nil
+              }
+              return entityID
+            }
+          )
+        ).sorted()
       )
     }
   }
 
   private mutating func validateRouteAtlasRelease() throws {
+    let artifact = try routeAtlasReleaseArtifact()
+
+    clearRouteAtlasObservations()
+    do {
+      let release = try RouteAtlasRelease(artifact: artifact)
+      publish(release)
+    } catch RouteAtlasReleaseError.invalid(let issues) {
+      adapterObservations["route_atlas.status"] = .string("BLOCKED")
+      adapterObservations["route_atlas.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private func routeAtlasReleaseArtifact() throws -> RouteAtlasReleaseArtifact {
     guard let routePlan = scenario.given.routePlan,
       let sourceValues = scenario.given.inputs.array("route_atlas_sources"),
       let topologyValue = scenario.given.inputs.object("route_atlas_topology"),
@@ -799,22 +871,13 @@ private struct ScenarioHarness {
     let topology = try routeAtlasTopologySlice(topologyValue)
     let definition = try routeAtlasDefinition(definitionValue)
 
-    clearRouteAtlasObservations()
-    do {
-      let release = try RouteAtlasRelease(
-        networkSnapshot: scenario.given.networkSnapshot,
-        routePlan: routePlan,
-        sourceRegistry: sourceRegistry,
-        topologySlice: topology,
-        definition: definition
-      )
-      publish(release)
-    } catch RouteAtlasReleaseError.invalid(let issues) {
-      adapterObservations["route_atlas.status"] = .string("BLOCKED")
-      adapterObservations["route_atlas.error_codes"] = .strings(
-        Array(Set(issues.map(\.code))).sorted()
-      )
-    }
+    return RouteAtlasReleaseArtifact(
+      networkSnapshot: scenario.given.networkSnapshot,
+      routePlan: routePlan,
+      sourceRegistry: sourceRegistry,
+      topologySlice: topology,
+      definition: definition
+    )
   }
 
   private mutating func validateRouteAtlasContext() throws {
@@ -918,6 +981,22 @@ private struct ScenarioHarness {
     )
   }
 
+  private mutating func publish(_ release: KaidoProductRelease) {
+    adapterObservations["product_release.status"] = .string("PASS")
+    adapterObservations["product_release.error_codes"] = .strings([])
+    adapterObservations["product_release.release_id"] = .string(release.releaseID)
+    adapterObservations["product_release.network_snapshot_id"] = .string(
+      release.navigation.bundle.networkSnapshot.id
+    )
+    adapterObservations["product_release.route_plan_id"] = .string(
+      release.navigation.bundle.routePlan.id
+    )
+    adapterObservations["product_release.atlas_route_entity_ids"] = .strings(
+      release.routeAtlas.topologySlice.edges.map(\.routeEntityID)
+    )
+    adapterObservations["product_release.missing_editor_entity_ids"] = .strings([])
+  }
+
   private mutating func clearReleaseBundleObservations() {
     for key in adapterObservations.keys.filter({ $0.hasPrefix("release_bundle.") }) {
       adapterObservations.removeValue(forKey: key)
@@ -927,6 +1006,14 @@ private struct ScenarioHarness {
   private mutating func clearNavigationReleaseArtifactObservations() {
     for key in adapterObservations.keys.filter({
       $0.hasPrefix("release_artifact.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+  }
+
+  private mutating func clearProductReleaseArtifactObservations() {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("product_release.")
     }) {
       adapterObservations.removeValue(forKey: key)
     }

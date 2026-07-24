@@ -96,7 +96,8 @@ passage evidence through `PreDriveReviewProjector`. The view never derives toll
 from route distance and never presents
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open. The tracked fixture
 is synthetic, and the navigation control remains locked because the app has no
-provenance-validated real `NavigationRelease` artifact.
+provenance-validated real `KaidoProductReleaseArtifact` binding one navigation
+release to the exact released Route Atlas and editor topology.
 
 ## Guidance language preview
 

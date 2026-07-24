@@ -307,6 +307,16 @@ registry, exact asset-evidence coverage, role compatibility, and embedded
 junction-view provenance. The fixture remains synthetic and does not establish
 real-road release eligibility.
 
+KR-D26 crosses the two independently valid distribution boundaries without
+merging their authority. The runner builds and validates one navigation artifact
+and one Route Atlas artifact, embeds both in `KaidoProductReleaseArtifact`, and
+then requires exact snapshot, RoutePlan, chronology, and complete
+editor-catalog-to-atlas entity coverage. Its negative fixture omits one incoming
+approach from otherwise valid atlas topology, so both nested events pass while
+the joint product event blocks with the exact missing entity ID. Python
+independently derives the required editor entity set and verifies the declared
+missing set. Every released value remains synthetic.
+
 For localization, domain tests prove that all required bundles and spoken forms
 exist. Simulator or device tests separately prove voice discovery, pronunciation
 fixtures, audio lifecycle, and the visible Japanese sign target. A device voice

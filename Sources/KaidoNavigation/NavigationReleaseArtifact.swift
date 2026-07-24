@@ -56,9 +56,18 @@ public struct NavigationReleaseSourceReference: Codable, Equatable, Sendable {
   public init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     id = try container.decode(String.self, forKey: .id)
-    roles = Set(
-      try container.decode([NavigationReleaseAssetRole].self, forKey: .roles)
+    let decodedRoles = try container.decode(
+      [NavigationReleaseAssetRole].self,
+      forKey: .roles
     )
+    guard Set(decodedRoles).count == decodedRoles.count else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .roles,
+        in: container,
+        debugDescription: "Navigation release source roles must be unique"
+      )
+    }
+    roles = Set(decodedRoles)
     authorityName = try container.decode(String.self, forKey: .authorityName)
     sourceURL = try container.decode(String.self, forKey: .sourceURL)
     contentSHA256 = try container.decode(String.self, forKey: .contentSHA256)
@@ -206,6 +215,7 @@ public enum NavigationReleaseIssue: Equatable, Sendable {
   case unresolvedAssetSource(String)
   case invalidAssetSourceRole(String)
   case junctionViewEvidenceMismatch(String)
+  case evidenceAfterRelease(String)
   case invalidBundle(NavigationReleaseBundleIssue)
 
   public var code: String {
@@ -240,12 +250,14 @@ public enum NavigationReleaseIssue: Equatable, Sendable {
       "INVALID_NAVIGATION_ASSET_SOURCE_ROLE"
     case .junctionViewEvidenceMismatch:
       "NAVIGATION_JUNCTION_VIEW_EVIDENCE_MISMATCH"
+    case .evidenceAfterRelease:
+      "NAVIGATION_EVIDENCE_AFTER_RELEASE"
     case .invalidBundle(let issue):
       issue.code
     }
   }
 
-  fileprivate var sortKey: String {
+  var sortKey: String {
     switch self {
     case .duplicateSourceReference(let detail),
       .orphanSourceReference(let detail),
@@ -257,7 +269,8 @@ public enum NavigationReleaseIssue: Equatable, Sendable {
       .unreleasedAssetEvidence(let detail),
       .unresolvedAssetSource(let detail),
       .invalidAssetSourceRole(let detail),
-      .junctionViewEvidenceMismatch(let detail):
+      .junctionViewEvidenceMismatch(let detail),
+      .evidenceAfterRelease(let detail):
       "\(code):\(detail)"
     case .invalidBundle(let issue):
       "BUNDLE:\(issue.sortKey)"
@@ -333,6 +346,9 @@ public struct NavigationRelease: Equatable, Sendable {
     if normalized(artifact.editorCatalogID).isEmpty {
       issues.append(.invalidEditorCatalogID)
     }
+    let releaseDate =
+      isISO8601DateTime(artifact.releasedAt)
+      ? String(artifact.releasedAt.prefix(10)) : nil
 
     var sourcesByID: [String: NavigationReleaseSourceReference] = [:]
     var sourceRegistryIsInvalid = artifact.sourceRegistry.references.isEmpty
@@ -351,6 +367,9 @@ public struct NavigationRelease: Equatable, Sendable {
         || normalized(source.licenceIdentifier).isEmpty
       {
         sourceRegistryIsInvalid = true
+      }
+      if let releaseDate, isISODate(source.checkedAt), source.checkedAt > releaseDate {
+        issues.append(.evidenceAfterRelease("SOURCE:\(source.id)"))
       }
     }
     if sourceRegistryIsInvalid {
@@ -392,6 +411,11 @@ public struct NavigationRelease: Equatable, Sendable {
       }
       if evidence.state != .released {
         issues.append(.unreleasedAssetEvidence(key.description))
+      }
+      if let releaseDate, isISODate(evidence.checkedAt),
+        evidence.checkedAt > releaseDate
+      {
+        issues.append(.evidenceAfterRelease(key.description))
       }
       if expectedAssetCounts[key] == nil {
         issues.append(.orphanAssetEvidence(key.description))

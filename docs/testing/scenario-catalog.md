@@ -33,6 +33,7 @@ should become scenarios when their layer is built.
 | KR-D23 | Historic K7 corridor identity and completed surrounding works do not prove the current legal movement | P0 | Seeded |
 | KR-D24 | A Kaido-owned K7 schematic covers the reviewed expressway slice and stops before every unreviewed surface successor | P0 | Seeded |
 | KR-D25 | A versioned navigation release artifact preserves exact provenance and revalidates the whole runtime bundle after decoding | P0 | Seeded |
+| KR-D26 | A product release binds navigation and atlas identity and covers every released editor entity | P0 | Seeded |
 
 ## Navigation simulation
 

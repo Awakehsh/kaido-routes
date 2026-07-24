@@ -356,7 +356,50 @@ func navigationReleaseArtifactRejectsUnreleasedAndJunctionEvidenceDrift() {
   }
 }
 
-private struct NavigationReleaseBundleFixture {
+@Test("Navigation release evidence cannot postdate its release")
+func navigationReleaseArtifactRejectsFutureEvidence() {
+  let fixture = navigationReleaseBundleFixture()
+  let valid = navigationReleaseArtifact(fixture)
+  let futureEvidence = valid.assetEvidence.map { evidence in
+    guard evidence.role == .editorCatalog else { return evidence }
+    return NavigationReleaseAssetEvidence(
+      role: evidence.role,
+      assetID: evidence.assetID,
+      state: evidence.state,
+      checkedAt: "2026-07-25",
+      sourceReferenceIDs: evidence.sourceReferenceIDs
+    )
+  }
+  let artifact = NavigationReleaseArtifact(
+    releaseID: valid.releaseID,
+    releasedAt: "2026-07-24T12:00:00+09:00",
+    editorCatalogID: valid.editorCatalogID,
+    networkSnapshot: valid.networkSnapshot,
+    routePlan: valid.routePlan,
+    sourceRegistry: valid.sourceRegistry,
+    assetEvidence: futureEvidence,
+    editorCatalog: valid.editorCatalog,
+    matcherCorridor: valid.matcherCorridor,
+    decisionZones: valid.decisionZones,
+    releasedGuidance: valid.releasedGuidance,
+    junctionViews: valid.junctionViews
+  )
+
+  do {
+    _ = try NavigationRelease(artifact: artifact)
+    Issue.record("Expected future evidence to block navigation release")
+  } catch NavigationReleaseError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .evidenceAfterRelease("EDITOR_CATALOG:test.catalog.release-bundle")
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+struct NavigationReleaseBundleFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
   let editorCatalog: ReviewedRouteEditorCatalog
@@ -366,7 +409,7 @@ private struct NavigationReleaseBundleFixture {
   let junctionViews: [JunctionViewDefinition]
 }
 
-private func navigationReleaseArtifact(
+func navigationReleaseArtifact(
   _ fixture: NavigationReleaseBundleFixture
 ) -> NavigationReleaseArtifact {
   let sourceID = "test.source.junction-view"
@@ -449,7 +492,7 @@ private func navigationReleaseArtifact(
   )
 }
 
-private func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
+func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
   let networkSnapshot = NetworkSnapshot(
     id: "test.snapshot.release-bundle",
     status: .active,

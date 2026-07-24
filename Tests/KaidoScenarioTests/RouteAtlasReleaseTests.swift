@@ -390,7 +390,7 @@ func routeAtlasReleaseArtifactRejectsSchemaDrift() {
   }
 }
 
-private struct RouteAtlasFixture {
+struct RouteAtlasFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
   let sourceRegistry: RouteAtlasSourceRegistry
@@ -398,7 +398,7 @@ private struct RouteAtlasFixture {
   let definition: RouteAtlasDefinition
 }
 
-private func routeAtlasFixture() -> RouteAtlasFixture {
+func routeAtlasFixture() -> RouteAtlasFixture {
   let networkSnapshot = NetworkSnapshot(
     id: "test.snapshot.route-atlas",
     status: .active,

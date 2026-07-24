@@ -71,6 +71,11 @@ runtime coherence and `NAVIGATION_RELEASE_ARTIFACT_VALIDATED` for the versioned
 distribution boundary. KR-D25 encodes and decodes the artifact, checks exact
 role-matched evidence coverage, and then reuses the bundle gate. Its synthetic
 source and `RELEASED` values test fail-closed mechanics only.
+`PRODUCT_RELEASE_ARTIFACT_VALIDATED` is the joint product boundary. KR-D26 first
+proves that its navigation and Route Atlas artifacts pass independently, then
+blocks their combination because one editor incoming approach is absent from
+released atlas topology. It reports the exact missing entity ID; it does not
+promote either synthetic fixture into real-road authority.
 
 Scenario IDs are stable. File names may add descriptive words, but changing a
 scenario's behavior should retain its ID or create a new version intentionally.

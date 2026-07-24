@@ -66,6 +66,7 @@ EVENT_TYPES = {
     "ROUTE_EDITOR_COMPILE_REQUESTED",
     "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
     "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
+    "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
     "ROUTE_ATLAS_RELEASE_VALIDATED",
     "ROUTE_ATLAS_CONTEXT_VALIDATED",
     "NAVIGATION_STARTED",
@@ -965,6 +966,11 @@ def validate_navigation_release_artifact(
         v.add(
             "given.inputs.navigation_release_released_at must be an ISO date-time"
         )
+        navigation_release_date = None
+    else:
+        navigation_release_date = datetime.fromisoformat(
+            inputs["navigation_release_released_at"].replace("Z", "+00:00")
+        ).date()
 
     sources = inputs["navigation_release_sources"]
     if not isinstance(sources, list) or not sources:
@@ -1016,6 +1022,11 @@ def validate_navigation_release_artifact(
             v.add(f"{context}.content_sha256 must contain 64 hexadecimal characters")
         if not is_date(source["checked_at"]):
             v.add(f"{context}.checked_at must be an ISO date")
+        elif (
+            navigation_release_date is not None
+            and date.fromisoformat(source["checked_at"]) > navigation_release_date
+        ):
+            v.add(f"{context}.checked_at cannot follow the navigation release")
 
     expected_keys: list[tuple[str, str]] = [
         ("EDITOR_CATALOG", inputs["navigation_release_editor_catalog_id"])
@@ -1090,6 +1101,11 @@ def validate_navigation_release_artifact(
             v.add(f"{context}.state must be RELEASED")
         if not is_date(evidence["checked_at"]):
             v.add(f"{context}.checked_at must be an ISO date")
+        elif (
+            navigation_release_date is not None
+            and date.fromisoformat(evidence["checked_at"]) > navigation_release_date
+        ):
+            v.add(f"{context}.checked_at cannot follow the navigation release")
         source_ids = evidence["source_reference_ids"]
         if (
             not isinstance(source_ids, list)
@@ -1135,6 +1151,251 @@ def validate_navigation_release_artifact(
     for source_id in source_by_id:
         if source_id not in used_source_ids:
             v.add(f"orphan navigation release source: {source_id}")
+
+
+def validate_product_release_artifact(
+    v: Validation, given: dict[str, Any]
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or not any(
+        key.startswith("product_release_") for key in inputs
+    ):
+        return
+
+    required_inputs = {
+        "product_release_id",
+        "product_release_released_at",
+        "product_release_expected_missing_editor_entity_ids",
+        "navigation_release_id",
+        "navigation_release_released_at",
+        "navigation_release_editor_catalog_id",
+        "navigation_release_sources",
+        "navigation_release_asset_evidence",
+        "expert_route_editor_catalog",
+        "matcher_corridor",
+        "decision_zones",
+        "released_guidance",
+        "route_atlas_sources",
+        "route_atlas_topology",
+        "route_atlas",
+    }
+    missing = sorted(required_inputs - inputs.keys())
+    if missing:
+        v.add("product release inputs are missing: " + ", ".join(missing))
+        return
+
+    release_id = inputs["product_release_id"]
+    if not isinstance(release_id, str) or not release_id.strip():
+        v.add("given.inputs.product_release_id must be non-empty")
+
+    released_at = inputs["product_release_released_at"]
+    product_datetime = None
+    if not is_datetime(released_at):
+        v.add("given.inputs.product_release_released_at must be an ISO date-time")
+    else:
+        product_datetime = datetime.fromisoformat(released_at.replace("Z", "+00:00"))
+
+    navigation_released_at = inputs["navigation_release_released_at"]
+    if product_datetime is not None and is_datetime(navigation_released_at):
+        navigation_datetime = datetime.fromisoformat(
+            navigation_released_at.replace("Z", "+00:00")
+        )
+        try:
+            if navigation_datetime > product_datetime:
+                v.add(
+                    "given.inputs.navigation_release_released_at cannot follow "
+                    "the product release"
+                )
+        except TypeError:
+            v.add(
+                "product and navigation release date-times must use comparable "
+                "timezone forms"
+            )
+
+    expected_missing = inputs[
+        "product_release_expected_missing_editor_entity_ids"
+    ]
+    if (
+        not isinstance(expected_missing, list)
+        or not all(
+            isinstance(entity_id, str) and entity_id.strip()
+            for entity_id in expected_missing
+        )
+        or len(expected_missing) != len(set(expected_missing))
+    ):
+        v.add(
+            "given.inputs.product_release_expected_missing_editor_entity_ids "
+            "must be unique non-empty strings"
+        )
+        expected_missing = []
+
+    snapshot = given.get("network_snapshot")
+    snapshot_id = snapshot.get("id") if isinstance(snapshot, dict) else None
+    route_plan = given.get("route_plan")
+    route_plan_id = (
+        route_plan.get("plan_id") if isinstance(route_plan, dict) else None
+    )
+
+    catalog = inputs["expert_route_editor_catalog"]
+    required_editor_entity_ids: set[str] = set()
+    if not isinstance(catalog, dict):
+        v.add("given.inputs.expert_route_editor_catalog must be an object")
+    else:
+        if catalog.get("network_snapshot_id") != snapshot_id:
+            v.add(
+                "product release editor catalog network_snapshot_id must match "
+                "given.network_snapshot.id"
+            )
+        entrances = catalog.get("entrances")
+        decisions = catalog.get("decision_points")
+        if not isinstance(entrances, list) or not isinstance(decisions, list):
+            v.add(
+                "product release editor catalog must contain entrance and "
+                "decision-point arrays"
+            )
+        else:
+            for entrance in entrances:
+                if not isinstance(entrance, dict):
+                    continue
+                initial_edge_id = entrance.get("initial_edge_id")
+                if isinstance(initial_edge_id, str) and initial_edge_id.strip():
+                    required_editor_entity_ids.add(initial_edge_id)
+            for decision in decisions:
+                if not isinstance(decision, dict):
+                    continue
+                incoming_approach_id = decision.get("incoming_approach_id")
+                if (
+                    isinstance(incoming_approach_id, str)
+                    and incoming_approach_id.strip()
+                ):
+                    required_editor_entity_ids.add(incoming_approach_id)
+                choices = decision.get("choices")
+                if not isinstance(choices, list):
+                    continue
+                for choice in choices:
+                    if not isinstance(choice, dict):
+                        continue
+                    for field in ("movement_id", "outgoing_edge_id"):
+                        entity_id = choice.get(field)
+                        if isinstance(entity_id, str) and entity_id.strip():
+                            required_editor_entity_ids.add(entity_id)
+
+    topology = inputs["route_atlas_topology"]
+    atlas_entity_ids: set[str] = set()
+    if not isinstance(topology, dict):
+        v.add("given.inputs.route_atlas_topology must be an object")
+    else:
+        if topology.get("network_snapshot_id") != snapshot_id:
+            v.add(
+                "product release Route Atlas topology network_snapshot_id must "
+                "match given.network_snapshot.id"
+            )
+        edges = topology.get("edges")
+        if not isinstance(edges, list):
+            v.add("given.inputs.route_atlas_topology.edges must be an array")
+        else:
+            route_entity_values: list[str] = []
+            for edge in edges:
+                entity_id = (
+                    edge.get("route_entity_id") if isinstance(edge, dict) else None
+                )
+                if not isinstance(entity_id, str) or not entity_id.strip():
+                    v.add(
+                        "every product release Route Atlas topology edge must "
+                        "name a non-empty route_entity_id"
+                    )
+                    continue
+                route_entity_values.append(entity_id)
+            if len(route_entity_values) != len(set(route_entity_values)):
+                v.add(
+                    "product release Route Atlas route_entity_id values must be "
+                    "unique"
+                )
+            atlas_entity_ids = set(route_entity_values)
+
+    atlas = inputs["route_atlas"]
+    if not isinstance(atlas, dict):
+        v.add("given.inputs.route_atlas must be an object")
+    else:
+        if atlas.get("network_snapshot_id") != snapshot_id:
+            v.add(
+                "product release Route Atlas network_snapshot_id must match "
+                "given.network_snapshot.id"
+            )
+        if atlas.get("route_plan_id") != route_plan_id:
+            v.add(
+                "product release Route Atlas route_plan_id must match "
+                "given.route_plan.plan_id"
+            )
+        topology_id = (
+            topology.get("topology_slice_id")
+            if isinstance(topology, dict)
+            else None
+        )
+        if atlas.get("topology_slice_id") != topology_id:
+            v.add(
+                "product release Route Atlas topology_slice_id must match its "
+                "topology input"
+            )
+
+    route_occurrence_entity_ids = {
+        occurrence.get("entity_id")
+        for occurrence in (
+            route_plan.get("occurrences", [])
+            if isinstance(route_plan, dict)
+            else []
+        )
+        if isinstance(occurrence, dict)
+        and isinstance(occurrence.get("entity_id"), str)
+        and occurrence.get("entity_id").strip()
+    }
+    missing_route_entities = sorted(route_occurrence_entity_ids - atlas_entity_ids)
+    if missing_route_entities:
+        v.add(
+            "product release Route Atlas is missing RoutePlan entities: "
+            + ", ".join(missing_route_entities)
+        )
+
+    derived_missing = sorted(required_editor_entity_ids - atlas_entity_ids)
+    if sorted(expected_missing) != derived_missing:
+        v.add(
+            "given.inputs.product_release_expected_missing_editor_entity_ids "
+            "must exactly match derived missing editor entities: "
+            + json.dumps(derived_missing)
+        )
+
+    if product_datetime is not None:
+        product_date = product_datetime.date()
+        dated_evidence: list[tuple[str, Any]] = []
+        for index, source in enumerate(inputs.get("route_atlas_sources", [])):
+            if isinstance(source, dict):
+                dated_evidence.append(
+                    (
+                        f"given.inputs.route_atlas_sources[{index}].checked_at",
+                        source.get("checked_at"),
+                    )
+                )
+        if isinstance(topology, dict):
+            topology_evidence = topology.get("evidence")
+            if isinstance(topology_evidence, dict):
+                dated_evidence.append(
+                    (
+                        "given.inputs.route_atlas_topology.evidence.checked_at",
+                        topology_evidence.get("checked_at"),
+                    )
+                )
+        if isinstance(atlas, dict):
+            atlas_evidence = atlas.get("evidence")
+            if isinstance(atlas_evidence, dict):
+                dated_evidence.append(
+                    (
+                        "given.inputs.route_atlas.evidence.checked_at",
+                        atlas_evidence.get("checked_at"),
+                    )
+                )
+        for context, checked_at in dated_evidence:
+            if is_date(checked_at) and date.fromisoformat(checked_at) > product_date:
+                v.add(f"{context} cannot follow the product release")
 
 
 def validate_timeline(v: Validation, events: Any) -> set[str]:
@@ -1259,6 +1520,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)
         validate_navigation_release_artifact(v, given)
+        validate_product_release_artifact(v, given)
         if not isinstance(given["inputs"], dict):
             v.add("given.inputs must be an object")
         if not isinstance(given["system_state"], dict):

@@ -1,0 +1,460 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D26",
+  "title": "Product release requires every editor entity in released atlas topology",
+  "layer": "DOMAIN",
+  "tags": ["product-release", "route-atlas", "route-editor", "fail-closed"],
+  "purpose": "Block a product release when an independently valid navigation artifact exposes an incoming approach that an independently valid Route Atlas release does not contain.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Every RELEASED value and source in this fixture is synthetic.",
+      "The fixture proves cross-artifact identity and coverage gates only; it does not release real road data."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.product-release-v1",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.product-release",
+      "network_snapshot_id": "test.snapshot.product-release-v1",
+      "entry_facility_id": "test.entrance.product-release",
+      "exit_facility_id": "test.exit.product-release",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.product-release.approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.product-release.approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.product-release.movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.product-release.exit"
+        },
+        {
+          "occurrence_id": "test.occurrence.product-release.exit",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.product-release.exit"
+        }
+      ]
+    },
+    "inputs": {
+      "product_release_id": "test.product-release.missing-editor-approach",
+      "product_release_released_at": "2026-07-24T12:30:00+09:00",
+      "product_release_expected_missing_editor_entity_ids": [
+        "test.approach.product-release.exit"
+      ],
+      "navigation_release_id": "test.navigation-release.product-release-v1",
+      "navigation_release_released_at": "2026-07-24T12:00:00+09:00",
+      "navigation_release_editor_catalog_id": "test.catalog.product-release-v1",
+      "navigation_release_sources": [
+        {
+          "source_reference_id": "test.source.product-navigation",
+          "roles": [
+            "EDITOR_CATALOG",
+            "MATCHER_CORRIDOR",
+            "DECISION_ZONE",
+            "GUIDANCE"
+          ],
+          "authority_name": "Synthetic navigation review authority",
+          "source_url": "https://example.com/test-product-navigation",
+          "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "checked_at": "2026-07-24",
+          "licence_identifier": "SYNTHETIC_TEST_ONLY"
+        }
+      ],
+      "navigation_release_asset_evidence": [
+        {
+          "role": "EDITOR_CATALOG",
+          "asset_id": "test.catalog.product-release-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        },
+        {
+          "role": "MATCHER_CORRIDOR",
+          "asset_id": "test.corridor.product-release-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        },
+        {
+          "role": "DECISION_ZONE",
+          "asset_id": "test.zone.product-release.exit",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        },
+        {
+          "role": "GUIDANCE",
+          "asset_id": "test.prompt.product-release.exit",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        }
+      ],
+      "expert_route_editor_catalog": {
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "entrances": [
+          {
+            "facility_id": "test.entrance.product-release",
+            "initial_edge_id": "test.edge.product-release.approach",
+            "initial_edge_toll_domain_id": "test.toll.shuto",
+            "first_decision_point_id": "test.decision.product-release.exit"
+          }
+        ],
+        "decision_points": [
+          {
+            "decision_point_id": "test.decision.product-release.exit",
+            "incoming_approach_id": "test.approach.product-release.exit",
+            "junction_complex_id": "test.junction.product-release.exit",
+            "choices": [
+              {
+                "choice_id": "test.choice.product-release.exit",
+                "movement_id": "test.movement.product-release.exit",
+                "movement_toll_domain_id": "test.toll.shuto",
+                "outgoing_edge_id": "test.edge.product-release.exit",
+                "outgoing_edge_toll_domain_id": "test.toll.shuto",
+                "exit_facility_id": "test.exit.product-release"
+              }
+            ]
+          }
+        ]
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.product-release-v1",
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "route_plan_id": "test.plan.product-release",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.product-release.approach",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.76},
+              {"latitude": 35.68, "longitude": 139.761}
+            ],
+            "successor_edge_ids": ["test.edge.product-release.movement"]
+          },
+          {
+            "directed_edge_id": "test.edge.product-release.movement",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.6801, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.product-release.exit"]
+          },
+          {
+            "directed_edge_id": "test.edge.product-release.exit",
+            "coordinates": [
+              {"latitude": 35.6801, "longitude": 139.7612},
+              {"latitude": 35.6802, "longitude": 139.762}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.product-release.approach",
+            "index": 0,
+            "directed_edge_id": "test.edge.product-release.approach"
+          },
+          {
+            "occurrence_id": "test.occurrence.product-release.movement",
+            "index": 1,
+            "directed_edge_id": "test.edge.product-release.movement"
+          },
+          {
+            "occurrence_id": "test.occurrence.product-release.exit",
+            "index": 2,
+            "directed_edge_id": "test.edge.product-release.exit"
+          }
+        ]
+      },
+      "decision_zones": [
+        {
+          "decision_zone_id": "test.zone.product-release.exit",
+          "network_snapshot_id": "test.snapshot.product-release-v1",
+          "route_plan_id": "test.plan.product-release",
+          "movement_occurrence_id": "test.occurrence.product-release.movement",
+          "entry_offset_meters": 5
+        }
+      ],
+      "released_guidance": [
+        {
+          "occurrence_id": "test.occurrence.product-release.approach",
+          "anchor_id": "PREPARE",
+          "prompt_id": "test.prompt.product-release.exit",
+          "trigger_distance_meters": 500,
+          "frame": {
+            "movement_occurrence_id": "test.occurrence.product-release.movement",
+            "decision_zone_id": "test.zone.product-release.exit",
+            "stage": "PREPARE",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": ["B"],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進む",
+                "spoken_text": "左側を進んでください",
+                "spoken_forms": {"B": "ビー"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧",
+                "spoken_text": "请保持左侧",
+                "spoken_forms": {"B": "B 路线"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left",
+                "spoken_text": "Keep left",
+                "spoken_forms": {"B": "Route B"},
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        }
+      ],
+      "route_atlas_sources": [
+        {
+          "source_reference_id": "test.source.product-topology",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Synthetic product topology authority",
+          "source_url": "https://example.com/test-product-topology",
+          "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "checked_at": "2026-07-24",
+          "licence_identifier": "SYNTHETIC_TEST_ONLY"
+        },
+        {
+          "source_reference_id": "test.source.product-layout",
+          "roles": ["LAYOUT_EVIDENCE"],
+          "authority_name": "Synthetic product layout authority",
+          "source_url": "https://example.com/test-product-layout",
+          "content_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "checked_at": "2026-07-24",
+          "licence_identifier": "SYNTHETIC_TEST_ONLY"
+        }
+      ],
+      "route_atlas_topology": {
+        "topology_slice_id": "test.topology.product-release-v1",
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "nodes": [
+          {"node_id": "test.node.product.entry"},
+          {"node_id": "test.node.product.decision"},
+          {"node_id": "test.node.product.movement-end"},
+          {"node_id": "test.node.product.exit-end"}
+        ],
+        "edges": [
+          {
+            "edge_id": "test.topology-edge.product.approach",
+            "route_entity_id": "test.edge.product-release.approach",
+            "from_node_id": "test.node.product.entry",
+            "to_node_id": "test.node.product.decision",
+            "successor_edge_ids": ["test.topology-edge.product.movement"]
+          },
+          {
+            "edge_id": "test.topology-edge.product.movement",
+            "route_entity_id": "test.movement.product-release.exit",
+            "from_node_id": "test.node.product.decision",
+            "to_node_id": "test.node.product.movement-end",
+            "successor_edge_ids": ["test.topology-edge.product.exit"]
+          },
+          {
+            "edge_id": "test.topology-edge.product.exit",
+            "route_entity_id": "test.edge.product-release.exit",
+            "from_node_id": "test.node.product.movement-end",
+            "to_node_id": "test.node.product.exit-end",
+            "successor_edge_ids": []
+          }
+        ],
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-topology"]
+        }
+      },
+      "route_atlas": {
+        "atlas_id": "test.atlas.product-release-v1",
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "route_plan_id": "test.plan.product-release",
+        "topology_slice_id": "test.topology.product-release-v1",
+        "nodes": [
+          {
+            "topology_node_id": "test.node.product.entry",
+            "point": {"x": 0.1, "y": 0.8}
+          },
+          {
+            "topology_node_id": "test.node.product.decision",
+            "point": {"x": 0.45, "y": 0.55}
+          },
+          {
+            "topology_node_id": "test.node.product.movement-end",
+            "point": {"x": 0.65, "y": 0.35}
+          },
+          {
+            "topology_node_id": "test.node.product.exit-end",
+            "point": {"x": 0.9, "y": 0.2}
+          }
+        ],
+        "segments": [
+          {
+            "segment_id": "test.segment.product.approach",
+            "topology_edge_id": "test.topology-edge.product.approach",
+            "from_node_id": "test.node.product.entry",
+            "to_node_id": "test.node.product.decision",
+            "successor_segment_ids": ["test.segment.product.movement"],
+            "points": [
+              {"x": 0.1, "y": 0.8},
+              {"x": 0.45, "y": 0.55}
+            ]
+          },
+          {
+            "segment_id": "test.segment.product.movement",
+            "topology_edge_id": "test.topology-edge.product.movement",
+            "from_node_id": "test.node.product.decision",
+            "to_node_id": "test.node.product.movement-end",
+            "successor_segment_ids": ["test.segment.product.exit"],
+            "points": [
+              {"x": 0.45, "y": 0.55},
+              {"x": 0.65, "y": 0.35}
+            ]
+          },
+          {
+            "segment_id": "test.segment.product.exit",
+            "topology_edge_id": "test.topology-edge.product.exit",
+            "from_node_id": "test.node.product.movement-end",
+            "to_node_id": "test.node.product.exit-end",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.65, "y": 0.35},
+              {"x": 0.9, "y": 0.2}
+            ]
+          }
+        ],
+        "occurrence_bindings": [
+          {
+            "occurrence_id": "test.occurrence.product-release.approach",
+            "index": 0,
+            "segment_id": "test.segment.product.approach"
+          },
+          {
+            "occurrence_id": "test.occurrence.product-release.movement",
+            "index": 1,
+            "segment_id": "test.segment.product.movement"
+          },
+          {
+            "occurrence_id": "test.occurrence.product-release.exit",
+            "index": 2,
+            "segment_id": "test.segment.product.exit"
+          }
+        ],
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-layout"]
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "validate-navigation-release",
+      "at_ms": 0,
+      "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
+      "payload": {"schema_version": "1.0"}
+    },
+    {
+      "id": "validate-route-atlas-release",
+      "at_ms": 1,
+      "type": "ROUTE_ATLAS_RELEASE_VALIDATED",
+      "payload": {}
+    },
+    {
+      "id": "validate-product-release",
+      "at_ms": 2,
+      "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
+      "payload": {"schema_version": "1.0"}
+    }
+  ],
+  "then": [
+    {
+      "id": "navigation-release-passes-alone",
+      "after": "validate-navigation-release",
+      "category": "SAFETY",
+      "subject": "release_artifact.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "The navigation artifact is internally coherent before cross-artifact validation."
+    },
+    {
+      "id": "route-atlas-passes-alone",
+      "after": "validate-route-atlas-release",
+      "category": "SAFETY",
+      "subject": "route_atlas.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "The atlas is a valid release for the active RoutePlan even though it does not cover every editor choice entity."
+    },
+    {
+      "id": "navigation-route-identity-is-exact",
+      "after": "validate-navigation-release",
+      "category": "DOMAIN",
+      "subject": "release_artifact.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.product-release",
+      "rationale": "The navigation side retains the exact RoutePlan identity."
+    },
+    {
+      "id": "atlas-route-identity-is-exact",
+      "after": "validate-route-atlas-release",
+      "category": "DOMAIN",
+      "subject": "route_atlas.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.product-release",
+      "rationale": "The independent atlas side retains the same RoutePlan identity."
+    },
+    {
+      "id": "joint-product-release-is-blocked",
+      "after": "validate-product-release",
+      "category": "SAFETY",
+      "subject": "product_release.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "Independent validity cannot hide an editor approach absent from released atlas topology."
+    },
+    {
+      "id": "joint-gate-reports-editor-coverage",
+      "after": "validate-product-release",
+      "category": "EVIDENCE",
+      "subject": "product_release.error_codes",
+      "matcher": "EQUALS",
+      "expected": ["MISSING_PRODUCT_ATLAS_EDITOR_ENTITY"],
+      "rationale": "The only product-level failure is the missing released editor entity."
+    },
+    {
+      "id": "missing-incoming-approach-is-exact",
+      "after": "validate-product-release",
+      "category": "DOMAIN",
+      "subject": "product_release.missing_editor_entity_ids",
+      "matcher": "EQUALS",
+      "expected": ["test.approach.product-release.exit"],
+      "rationale": "The gate names the exact reviewed incoming approach rather than a display label or JCT pin."
+    }
+  ]
+}

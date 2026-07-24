@@ -75,6 +75,36 @@ public struct RouteAtlasSourceReference: Codable, Equatable, Sendable {
     case checkedAt = "checked_at"
     case licenceIdentifier = "licence_identifier"
   }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    let decodedRoles = try container.decode([RouteAtlasSourceRole].self, forKey: .roles)
+    guard Set(decodedRoles).count == decodedRoles.count else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .roles,
+        in: container,
+        debugDescription: "Route Atlas source roles must be unique"
+      )
+    }
+    roles = Set(decodedRoles)
+    authorityName = try container.decode(String.self, forKey: .authorityName)
+    sourceURL = try container.decode(String.self, forKey: .sourceURL)
+    contentSHA256 = try container.decode(String.self, forKey: .contentSHA256)
+    checkedAt = try container.decode(String.self, forKey: .checkedAt)
+    licenceIdentifier = try container.decode(String.self, forKey: .licenceIdentifier)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(roles.sorted(by: { $0.rawValue < $1.rawValue }), forKey: .roles)
+    try container.encode(authorityName, forKey: .authorityName)
+    try container.encode(sourceURL, forKey: .sourceURL)
+    try container.encode(contentSHA256, forKey: .contentSHA256)
+    try container.encode(checkedAt, forKey: .checkedAt)
+    try container.encode(licenceIdentifier, forKey: .licenceIdentifier)
+  }
 }
 
 public struct RouteAtlasSourceRegistry: Codable, Equatable, Sendable {
@@ -129,6 +159,33 @@ public struct RouteAtlasTopologyEdge: Codable, Equatable, Sendable {
     case fromNodeID = "from_node_id"
     case toNodeID = "to_node_id"
     case successorEdgeIDs = "successor_edge_ids"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    routeEntityID = try container.decode(String.self, forKey: .routeEntityID)
+    fromNodeID = try container.decode(String.self, forKey: .fromNodeID)
+    toNodeID = try container.decode(String.self, forKey: .toNodeID)
+    let decodedSuccessors =
+      try container.decodeIfPresent([String].self, forKey: .successorEdgeIDs) ?? []
+    guard Set(decodedSuccessors).count == decodedSuccessors.count else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .successorEdgeIDs,
+        in: container,
+        debugDescription: "Route Atlas topology successors must be unique"
+      )
+    }
+    successorEdgeIDs = Set(decodedSuccessors)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(routeEntityID, forKey: .routeEntityID)
+    try container.encode(fromNodeID, forKey: .fromNodeID)
+    try container.encode(toNodeID, forKey: .toNodeID)
+    try container.encode(successorEdgeIDs.sorted(), forKey: .successorEdgeIDs)
   }
 }
 
@@ -225,6 +282,35 @@ public struct RouteAtlasSegment: Codable, Equatable, Sendable {
     case toNodeID = "to_node_id"
     case successorSegmentIDs = "successor_segment_ids"
     case points
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    topologyEdgeID = try container.decode(String.self, forKey: .topologyEdgeID)
+    fromNodeID = try container.decode(String.self, forKey: .fromNodeID)
+    toNodeID = try container.decode(String.self, forKey: .toNodeID)
+    let decodedSuccessors =
+      try container.decodeIfPresent([String].self, forKey: .successorSegmentIDs) ?? []
+    guard Set(decodedSuccessors).count == decodedSuccessors.count else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .successorSegmentIDs,
+        in: container,
+        debugDescription: "Route Atlas segment successors must be unique"
+      )
+    }
+    successorSegmentIDs = Set(decodedSuccessors)
+    points = try container.decode([RouteAtlasPoint].self, forKey: .points)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(topologyEdgeID, forKey: .topologyEdgeID)
+    try container.encode(fromNodeID, forKey: .fromNodeID)
+    try container.encode(toNodeID, forKey: .toNodeID)
+    try container.encode(successorSegmentIDs.sorted(), forKey: .successorSegmentIDs)
+    try container.encode(points, forKey: .points)
   }
 }
 
@@ -449,7 +535,7 @@ public enum RouteAtlasReleaseIssue: Equatable, Sendable {
     }
   }
 
-  fileprivate var sortKey: String {
+  var sortKey: String {
     switch self {
     case .duplicateSourceReference(let id),
       .orphanSourceReference(let id),

@@ -330,7 +330,8 @@ SHA-256 values, checked dates, licences, and explicit asset roles. Exactly one
 `RELEASED` evidence record must cover the editor catalog, matcher corridor,
 every DecisionZone, every guidance prompt, and every junction view. Unresolved
 or unused sources, missing or orphaned evidence, duplicate asset identities,
-role mismatch, and junction-view provenance drift fail closed.
+role mismatch, junction-view provenance drift, and evidence checked after the
+release date fail closed.
 `NavigationReleaseArtifactCodec` validates on encode and decode, and the
 resulting `NavigationRelease` always contains a freshly validated
 `NavigationReleaseBundle`; decoding never bypasses runtime identity checks.
@@ -362,6 +363,20 @@ evidence fails closed. KR-D19 executes
 an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
+
+`KaidoProductReleaseArtifact` is the outer distribution envelope a product build
+must consume. It embeds the complete navigation and Route Atlas artifacts rather
+than referencing two mutable release names. `KaidoProductRelease` first
+revalidates both nested gates, then requires exact `NetworkSnapshot` and
+`RoutePlan` equality. Its release time cannot precede the nested navigation
+release or any Route Atlas source, topology, or layout evidence. Finally, every
+editor-catalog initial edge, incoming approach, movement, and outgoing edge must
+resolve to one unique `routeEntityID` in the released atlas topology slice.
+Coverage is over the whole released editor catalog, not only the occurrences in
+the active RoutePlan. `KaidoProductReleaseArtifactCodec` validates on encode and
+decode, and `kaido-release validate-product` exposes the same boundary to build
+automation. KR-D26 proves that independently valid synthetic artifacts remain
+product-blocked when this cross-artifact coverage is incomplete.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
@@ -466,9 +481,10 @@ That is a development fact, not yet the minimum deployment target.
   SwiftUI `Canvas`/`Path` or a shared Core Graphics renderer. It is not a MapKit
   geographic map.
 - The persistent frame is deliberately dual-layer: source-derived geographic
-  context establishes the recognizable full-network shape, while an independently
-  released `RouteAtlasRelease` alone may add selectable topology, RoutePlan
-  occurrence state, direction, legal movement, and position.
+  context establishes the recognizable full-network shape, while released Route
+  Atlas data may become selectable or carry RoutePlan occurrence state only
+  through a validated `KaidoProductRelease`; a standalone `RouteAtlasRelease`
+  has no navigation or editor authority.
 - This renderer is the persistent `Route Atlas` for the supported Shuto slice,
   not a decorative preview. Its system and route views keep a stable north-up
   frame so the driver can retain network context. An approach-aligned
@@ -485,11 +501,11 @@ That is a development fact, not yet the minimum deployment target.
   occurrences, repeated traversals, recovery and egress paths, and
   released-versus-context-only topology. Unsupported or unreleased corridors
   cannot appear selectable or look equivalent to released navigable coverage.
-- Phone and CarPlay receive an already validated `RouteAtlasRelease`; renderers
-  never infer connectivity from line intersections or author an alternate
-  successor graph. Before real released topology and layout evidence exist,
-  concept compositions must be marked topology-unverified and not for
-  navigation.
+- Phone and CarPlay receive the Route Atlas value from an already validated
+  `KaidoProductRelease`; renderers never infer connectivity from line
+  intersections or author an alternate successor graph. Before a real joint
+  product release exists, concept compositions must be marked
+  topology-unverified and not for navigation.
 - A precise vehicle bead requires fresh route-resolved evidence. Degraded,
   ambiguous, tunnel, or stacked-road positioning renders an honest segment or
   uncertainty halo rather than a falsely precise point.

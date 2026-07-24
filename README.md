@@ -269,11 +269,11 @@ The navigation bundle now also has a versioned distribution boundary.
 stable release identity, editor-catalog identity, dated source registry, and
 one released evidence record for every distributable asset. `NavigationRelease`
 rejects unknown schemas, missing or orphaned evidence, unused sources,
-source-role drift, and junction-view provenance drift before re-running the
-whole `NavigationReleaseBundle` gate. The codec validates on both encode and
-decode, and `kaido-release validate-navigation` exposes the same boundary to a
-release pipeline. KR-D25 proves this with synthetic data; no real navigation
-release artifact exists yet.
+source-role drift, junction-view provenance drift, and evidence dated after the
+release before re-running the whole `NavigationReleaseBundle` gate. The codec
+validates on both encode and decode, and `kaido-release validate-navigation`
+exposes the same boundary to a release pipeline. KR-D25 proves this with
+synthetic data; no real navigation release artifact exists yet.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
@@ -289,6 +289,19 @@ release artifact. KR-D19 proves that one
 visually invented connection blocks release. This verifies
 internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
+
+Neither independently valid artifact can authorize a product build by itself.
+`KaidoProductReleaseArtifact` contains one complete navigation artifact and one
+complete Route Atlas artifact. `KaidoProductRelease` revalidates both, requires
+exact snapshot and RoutePlan identity, rejects navigation or atlas evidence
+newer than the product release, and requires released atlas topology to contain
+every initial edge, incoming approach, movement, and outgoing edge exposed by
+the reviewed editor catalog. This keeps authoring choices from naming entities
+that the product map cannot represent. The codec validates on encode and decode,
+while `kaido-release validate-product` exposes the same joint gate to release
+automation. KR-D26 proves that two separately valid synthetic artifacts still
+fail the product gate when one editor approach is absent from the atlas. No real
+Kaido product release exists yet.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
 `RouteAtlasContextBundle` accepts only `CONTEXT_ONLY` geometry with a matching
@@ -444,6 +457,9 @@ hard properties that must remain proven as the product expands:
 30. a versioned navigation artifact must resolve released, role-matched evidence
     for every runtime asset and survive the whole bundle gate after decoding;
     unknown schemas or provenance drift fail closed.
+31. a product release must bind one independently valid navigation artifact and
+    Route Atlas artifact to the exact same snapshot and RoutePlan, reject future
+    evidence, and cover every released editor entity in atlas topology.
 
 ## Repository map
 
@@ -505,6 +521,9 @@ graph-integrity gate; no real Shuto release artifact exists yet.
 `kaido-release validate-navigation --artifact <file>` equivalently validates a
 future navigation runtime artifact through its provenance registry and the
 whole-bundle gate; no real navigation release artifact exists yet.
+`kaido-release validate-product --artifact <file>` revalidates both nested
+artifacts and their cross-artifact identity, chronology, and editor-atlas
+coverage; no real product release artifact exists yet.
 
 Generate or open the tracked iPhone project and run the internal preview:
 

@@ -163,6 +163,11 @@ final class ParkedRouteEditorModelTests: XCTestCase {
     XCTAssertEqual(routePlan.networkSnapshotID, "preview.synthetic.snapshot-v1")
     XCTAssertEqual(routePlan.entryFacilityID, "preview.synthetic.entrance.eastbound")
     XCTAssertEqual(routePlan.exitFacilityID, "preview.synthetic.exit.eastbound")
+    XCTAssertEqual(
+      try XCTUnwrap(routePlan.actualDistanceKM),
+      3.3,
+      accuracy: 0.000_001
+    )
     XCTAssertEqual(routePlan.occurrences.map(\.index), [0, 1, 2])
   }
 

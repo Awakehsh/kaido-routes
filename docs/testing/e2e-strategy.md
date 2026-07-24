@@ -224,6 +224,15 @@ compilation, and moving-time lockout. KR-U01 and KR-U02 remain the portable
 L1/L2 contracts; Simulator interaction and accessibility-tree inspection are
 local L3 evidence, not a CI field or release-data claim.
 
+The internal iPhone adapter also composes KR-U04 after the exact explicit-exit
+compilation. A same-snapshot reviewed-distance catalog walks RoutePlan
+occurrences, so repeated entities contribute once per traversal. The app model
+then requires exact route, entry, and exit identity, selects one unique
+`ACTIVE` tariff record, and binds the existing presentation projection to an
+accessibility-visible review. App tests verify that actual distance changes with
+a duplicated lap while tariff distance does not, unconfirmed passage is not
+positive-open, invalid evidence fails closed, and undo removes the review.
+
 KR-D18 executes `NavigationReleaseBundle` at L1/L2 before any Apple adapter or
 live service exists. Its synthetic asset set proves that one active snapshot,
 RoutePlan, editor catalog, matcher corridor, DecisionZone set, released-guidance

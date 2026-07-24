@@ -165,6 +165,15 @@ is an adapter proof, not released Shuto authoring data; real released editor
 catalogs, localized labels, topology rendering, and accessibility validation
 remain pending.
 
+After exact compilation, the internal iPhone shell resolves actual distance from
+a same-snapshot synthetic reviewed-distance catalog and opens a KR-U04 pre-drive
+review. The review binds to the exact RoutePlan, entry, and exit, selects exactly
+one `ACTIVE` tariff record, and keeps actual route distance, tariff distance,
+toll evidence, and passage evidence visibly separate. A repeated lap increases
+actual distance without changing the independent tariff record. The fixture is
+synthetic, realtime passage remains unconfirmed, and navigation start stays
+locked because no released navigation bundle exists.
+
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts
 each accepted matcher estimate into the conservative location observation,

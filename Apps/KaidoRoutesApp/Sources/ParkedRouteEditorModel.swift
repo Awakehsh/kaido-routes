@@ -4,6 +4,7 @@ import KaidoRouting
 
 struct ParkedRouteEditorFixture: Sendable {
   let catalog: ReviewedRouteEditorCatalog
+  let distanceCatalog: ReviewedRouteDistanceCatalog
   let entranceFacilityID: String
   let entranceTitle: String
   let routePlanID: String
@@ -77,6 +78,19 @@ struct ParkedRouteEditorFixture: Sendable {
           startDecisionPointID: "preview.synthetic.decision.loop",
           choiceIDs: ["preview.synthetic.choice.repeat-loop"]
         )
+      ]
+    ),
+    distanceCatalog: ReviewedRouteDistanceCatalog(
+      networkSnapshotID: "preview.synthetic.snapshot-v1",
+      distanceKMByEntityID: [
+        "preview.synthetic.edge.entry-mainline": 1.8,
+        "preview.synthetic.movement.enter-loop": 0.4,
+        "preview.synthetic.edge.loop": 12,
+        "preview.synthetic.movement.early-exit": 0.3,
+        "preview.synthetic.edge.early-exit-ramp": 1.2,
+        "preview.synthetic.movement.repeat-loop": 0.4,
+        "preview.synthetic.movement.final-exit": 0.3,
+        "preview.synthetic.edge.final-exit-ramp": 1.4,
       ]
     ),
     entranceFacilityID: "preview.synthetic.entrance.eastbound",
@@ -224,10 +238,16 @@ final class ParkedRouteEditorModel: ObservableObject {
 
   func compile() {
     do {
-      compiledRoutePlan = try session.makeRoutePlan(interaction: interaction)
+      let authoredRoutePlan = try session.makeRoutePlan(interaction: interaction)
+      compiledRoutePlan = try RouteDistanceResolver.resolve(
+        routePlan: authoredRoutePlan,
+        catalog: fixture.distanceCatalog
+      )
       lastErrorCode = nil
       snapshot = session.snapshot
     } catch let error as ExpertRouteEditorError {
+      lastErrorCode = error.code
+    } catch let error as RouteDistanceResolutionError {
       lastErrorCode = error.code
     } catch {
       lastErrorCode = "UNKNOWN_EDITOR_ERROR"

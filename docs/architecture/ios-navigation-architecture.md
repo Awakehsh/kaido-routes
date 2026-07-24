@@ -488,6 +488,13 @@ That is a development fact, not yet the minimum deployment target.
   fresh occurrence creation, grouped parked undo, and explicit exit completion.
   KR-U01 and KR-U02 execute this pure boundary; the internal SwiftUI editor uses
   a synthetic catalog and does not release real Shuto authoring data.
+- The pre-drive adapter consumes only the compiled exact RoutePlan. A
+  same-snapshot reviewed-distance catalog may populate actual distance by
+  walking ordered occurrences; a separate uniquely active tariff record supplies
+  tariff distance and toll evidence. SwiftUI renders the resulting KR-U04
+  projection and cannot derive one distance from the other. The internal
+  synthetic review keeps navigation start locked until a coherent released
+  bundle exists.
 
 ### CarPlay
 

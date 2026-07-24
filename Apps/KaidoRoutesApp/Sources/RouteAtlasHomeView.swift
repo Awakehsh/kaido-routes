@@ -20,6 +20,8 @@ struct RouteAtlasHomeView: View {
 
           ParkedRouteEditorPanel(model: model.routeEditor)
 
+          PreDriveReviewPanel(model: model.preDriveReview)
+
           InternalLocationCalibrationPanel(model: model.locationCalibration)
 
           if model.atlasMode == .k7Evidence {

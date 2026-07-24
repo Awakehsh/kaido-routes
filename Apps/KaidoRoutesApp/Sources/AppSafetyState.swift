@@ -74,11 +74,14 @@ final class KaidoRoutesAppModel: ObservableObject {
 
   let safety = AppSafetyState.preview
   let routeEditor: ParkedRouteEditorModel
+  let preDriveReview: PreDriveReviewModel
   let locationCalibration: InternalLocationCalibrationModel
 
   init() {
     do {
-      routeEditor = try ParkedRouteEditorModel()
+      let routeEditor = try ParkedRouteEditorModel()
+      self.routeEditor = routeEditor
+      preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()
       )

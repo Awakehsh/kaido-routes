@@ -13,6 +13,8 @@ The current app deliberately exposes only:
 - the topology-bound K7 evidence candidate;
 - a parked route-authoring adapter backed by `ExpertRouteEditorSession` and a
   clearly synthetic reviewed catalog;
+- a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
+  passage evidence;
 - an opt-in, foreground-only internal location-calibration harness bound to the
   exact ODbL K7 candidate corridor; and
 - explicit review and release-blocked states.
@@ -42,6 +44,23 @@ until the session accepts an explicit directional exit, after which it creates
 the exact `RoutePlan`. The app owns display labels for this synthetic fixture
 only; it does not construct real Shuto topology, infer movement legality, or
 promote the Route Atlas into selectable navigation data.
+
+## Pre-drive review
+
+An accepted explicit-exit compilation is enriched by
+`RouteDistanceResolver`, which walks the exact occurrence sequence against a
+same-snapshot synthetic reviewed-distance catalog. Repeated traversals therefore
+increase `RoutePlan.actualDistanceKM` again instead of being deduplicated.
+Missing distance coverage, invalid values, or snapshot drift block compilation.
+
+`PreDriveReviewModel` then requires the exact RoutePlan, entrance, and exit
+identity. It uses `TariffSelector` to require one unique `ACTIVE` tariff quote
+and sends the independent actual distance, tariff distance, amount evidence, and
+passage evidence through `PreDriveReviewProjector`. The view never derives toll
+from route distance and never presents
+`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open. The tracked fixture
+is synthetic, and the navigation control remains locked because the app has no
+released `NavigationReleaseBundle`.
 
 ## Internal location calibration
 
@@ -126,7 +145,11 @@ xcodebuild \
 authority or a measured position. `ParkedRouteEditorModelTests` proves exact
 entrance/current-choice binding, future-choice rejection, session-provided lap
 candidates, fresh identities across duplication and undo, grouped lap undo,
-explicit-exit compilation, and moving-time lockout.
+explicit-exit compilation with reviewed actual-distance resolution, and
+moving-time lockout. `PreDriveReviewModelTests` proves exact RoutePlan identity,
+unique active-tariff selection, repeated-occurrence distance, independent
+tariff distance, conservative passage presentation, undo invalidation, and
+fail-closed quote evidence.
 `InternalLocationCalibrationTests` proves exact candidate-corridor construction,
 fail-closed navigation-authority handling, transport-context separation, and
 coordinate-free non-release reporting. The platform-light Swift package tests

@@ -360,6 +360,103 @@ func sharedRouteDocumentRoundTripPreservesOccurrences() throws {
   #expect(firstExport == secondExport)
 }
 
+@Test("Reviewed route distance counts every repeated occurrence")
+func reviewedRouteDistanceCountsRepeatedOccurrences() throws {
+  let routePlan = RoutePlan(
+    id: "test.plan.distance",
+    networkSnapshotID: "test.snapshot.distance-v1",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .strict,
+    occurrences: [
+      RouteOccurrence(
+        id: "test.occurrence.edge.1",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.loop"
+      ),
+      RouteOccurrence(
+        id: "test.occurrence.movement.1",
+        index: 1,
+        kind: .junctionMovement,
+        entityID: "test.movement.loop"
+      ),
+      RouteOccurrence(
+        id: "test.occurrence.edge.2",
+        index: 2,
+        kind: .edge,
+        entityID: "test.edge.loop"
+      ),
+    ]
+  )
+  let resolved = try RouteDistanceResolver.resolve(
+    routePlan: routePlan,
+    catalog: ReviewedRouteDistanceCatalog(
+      networkSnapshotID: routePlan.networkSnapshotID,
+      distanceKMByEntityID: [
+        "test.edge.loop": 12,
+        "test.movement.loop": 0.4,
+      ]
+    )
+  )
+
+  #expect(resolved.actualDistanceKM == 24.4)
+  #expect(resolved.occurrences == routePlan.occurrences)
+}
+
+@Test("Reviewed route distance fails closed on snapshot, coverage, or scalar drift")
+func reviewedRouteDistanceFailsClosed() {
+  let routePlan = RoutePlan(
+    id: "test.plan.distance",
+    networkSnapshotID: "test.snapshot.distance-v1",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .strict,
+    occurrences: [
+      RouteOccurrence(
+        id: "test.occurrence.edge",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge"
+      )
+    ]
+  )
+
+  #expect(throws: RouteDistanceResolutionError.networkSnapshotMismatch) {
+    try RouteDistanceResolver.resolve(
+      routePlan: routePlan,
+      catalog: ReviewedRouteDistanceCatalog(
+        networkSnapshotID: "test.snapshot.other",
+        distanceKMByEntityID: ["test.edge": 1]
+      )
+    )
+  }
+  #expect(
+    throws: RouteDistanceResolutionError.missingOccurrenceDistance(
+      "test.occurrence.edge"
+    )
+  ) {
+    try RouteDistanceResolver.resolve(
+      routePlan: routePlan,
+      catalog: ReviewedRouteDistanceCatalog(
+        networkSnapshotID: routePlan.networkSnapshotID,
+        distanceKMByEntityID: [:]
+      )
+    )
+  }
+  #expect(
+    throws: RouteDistanceResolutionError.invalidEntityDistance("test.edge")
+  ) {
+    try RouteDistanceResolver.resolve(
+      routePlan: routePlan,
+      catalog: ReviewedRouteDistanceCatalog(
+        networkSnapshotID: routePlan.networkSnapshotID,
+        distanceKMByEntityID: ["test.edge": .infinity]
+      )
+    )
+  }
+}
+
 private func routePlan(entityIDs: [String]) -> RoutePlan {
   RoutePlan(
     id: "test.plan.components",

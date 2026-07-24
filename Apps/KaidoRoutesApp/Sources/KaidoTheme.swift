@@ -7,6 +7,7 @@ enum KaidoTheme {
   static let routeWhite = Color(hex: 0xEEF2F2)
   static let signalAmber = Color(hex: 0xF0B641)
   static let evidenceCoral = Color(hex: 0xF07D6D)
+  static let confirmedGreen = Color(hex: 0x6EC59B)
   static let positionCyan = Color(hex: 0x5FC9D5)
   static let muted = Color(hex: 0x91A1A7)
 }

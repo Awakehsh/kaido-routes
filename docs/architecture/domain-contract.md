@@ -326,6 +326,13 @@ TariffQuote
   official_query_reference
 ```
 
+`RouteDistanceResolver` may populate `RoutePlan.actual_distance_km` only from a
+reviewed distance catalog bound to the same network snapshot. It walks the
+ordered occurrence sequence rather than unique entity IDs, so each repeated
+traversal contributes its reviewed length again. Missing coverage, invalid
+scalars, snapshot drift, or a non-positive total fail closed. The result remains
+route distance only; it cannot create or replace tariff distance.
+
 Never calculate a final toll from actual route distance. Proposed tariff
 versions are non-active until primary evidence establishes an effective rule.
 `TariffSelector` accepts a candidate set only when exactly one version is

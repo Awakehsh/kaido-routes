@@ -92,11 +92,14 @@ final class KaidoRoutesAppModel: ObservableObject {
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let preDriveReview: PreDriveReviewModel
+  let languageSettings: KaidoLanguageSettingsModel
   let guidanceVoiceSetup: GuidanceVoiceSetupModel
   let guidanceLanguagePreview: GuidanceLanguagePreviewModel
   let syntheticDrivingPreview: SyntheticDrivingPreviewModel
   let syntheticProductRuntime: SyntheticProductRuntimeModel
   let locationCalibration: InternalLocationCalibrationModel
+
+  private var languageSettingsSubscription: AnyCancellable?
 
   init() {
     do {
@@ -109,10 +112,16 @@ final class KaidoRoutesAppModel: ObservableObject {
         routeEditor: routeEditor
       )
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
+      let languageSettings = KaidoLanguageSettingsModel()
+      self.languageSettings = languageSettings
       let guidanceVoicePreferenceStore =
         UserDefaultsGuidanceVoicePreferenceStore()
       guidanceVoiceSetup = GuidanceVoiceSetupModel(
-        preferenceStore: guidanceVoicePreferenceStore
+        guidanceLocale: languageSettings.guidanceVoiceLocale,
+        preferenceStore: guidanceVoicePreferenceStore,
+        guidanceLocaleDidChange: {
+          languageSettings.selectGuidanceVoiceLocale($0)
+        }
       )
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
       syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
@@ -123,12 +132,22 @@ final class KaidoRoutesAppModel: ObservableObject {
       )
       syntheticProductRuntime = try SyntheticProductRuntimeModel(
         speechOutput: guidanceSpeechOutput,
+        languageSelectionProvider: {
+          NavigationLanguageSelection(
+            interfaceLocale: languageSettings.interfaceLocale,
+            guidanceVoiceLocale: languageSettings.guidanceVoiceLocale
+          )
+        },
         checkpointStore:
           FileNavigationSessionCheckpointStore.applicationSupport()
       )
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()
       )
+      languageSettingsSubscription =
+        languageSettings.objectWillChange.sink { [weak self] _ in
+          self?.objectWillChange.send()
+        }
     } catch {
       preconditionFailure("Invalid internal app fixture: \(error)")
     }

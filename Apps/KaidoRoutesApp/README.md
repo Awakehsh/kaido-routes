@@ -56,9 +56,9 @@ The current app deliberately composes only:
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
-- a parked Japanese guidance-voice sound check that ranks installed Apple
-  premium/enhanced/default voices, persists an exact preference, and keeps
-  audition authority separate from navigation speech;
+- a parked three-language guidance-voice sound check that ranks installed Apple
+  premium/enhanced/default voices, persists one exact preference per synthesis
+  locale, and keeps audition authority separate from navigation speech;
 - an independent interface-language and guidance-voice text preview that keeps
   the Japanese sign target and route shield fixed;
 - a four-state synthetic driving preview for conservative position, passage,
@@ -254,24 +254,30 @@ authority.
 ## Parked guidance-voice sound check
 
 The product journey's pre-drive stage owns a separate
-`GuidanceVoiceSetupModel`. It enumerates exact `ja-JP` voices already installed
-on the device, excludes novelty and personal voices through the shared selector,
-and orders premium, enhanced, then default quality. Automatic mode follows that
-order; an explicit installed identifier may be selected and is persisted in
-`UserDefaults`. A resolved non-empty catalog clears a stale identifier rather
-than silently naming a removed voice. A temporarily empty catalog does not erase
-the preference before Apple voice enumeration has resolved.
+`GuidanceVoiceSetupModel`. Japanese, Simplified Chinese, and English are
+translated to exact Apple synthesis locales `ja-JP`, `zh-CN`, and `en-US`
+before voice discovery. The model enumerates only exact-locale voices already
+installed on the device, excludes novelty and personal voices through the shared
+selector, and orders premium, enhanced, then default quality. Automatic mode
+follows that order; an explicit installed identifier may be selected and is
+persisted independently for each language in `UserDefaults`. A resolved
+non-empty catalog clears a stale identifier rather than silently naming a
+removed voice. A temporarily empty catalog does not erase the preference before
+Apple voice enumeration has resolved.
 
-The audition button is parked-only and always requests the fixed sample
-`この先、左側です。`. `AVSpeechVoiceAuditionOutput` owns its own synthesizer and
+The audition button is parked-only and requests one fixed sample for the
+selected language. `AVSpeechVoiceAuditionOutput` owns its own synthesizer and
 audio lifecycle and receives no RoutePlan, occurrence, guidance frame, prompt,
 or ledger value. It therefore cannot authorize or consume navigation speech.
-The real `AVSpeechGuidanceOutput` reads the stored identifier only when the
-actor-owned one-shot command is admitted, and falls back to the best eligible
-installed voice if that preference is unavailable. The app cannot download
-Apple voice assets. A default-only device is told to install an enhanced or
-premium Japanese voice through iPhone Spoken Content settings and then return
-for a physical-device audition.
+The real `AVSpeechGuidanceOutput` reads the same locale-scoped stored identifier
+only when the actor-owned one-shot command is admitted, and falls back to the
+best eligible installed voice if that preference is unavailable. The app cannot
+download Apple voice assets. A default-only device is explicitly described as
+basic synthesis and is told to install an enhanced or premium voice through
+iPhone Spoken Content settings, then return for a physical-device audition.
+On 2026-07-24, the checked preview Simulator exposed only
+`Kyoko / ja-JP / DEFAULT`, `Tingting / zh-CN / DEFAULT`, and
+`Samantha / en-US / DEFAULT`; it is not acoustic-quality evidence.
 
 ## Synthetic driving preview
 
@@ -421,14 +427,15 @@ and personal voices, requires the exact locale, ranks premium above enhanced
 above default quality, honors an eligible explicit identifier, rejects stale
 preferences, deduplicates the exposed catalog, and uses the system default only
 as an equal-quality tie-break. `GuidanceVoiceSetupModelTests` cover persistence,
-fixed-sample requests, moving-context lockout, lifecycle events, and cold empty
-voice enumeration. Neutral Apple rate and pitch are tested independently so a
-compact voice is not made more mechanical by slow, lowered-pitch app tuning. The
-product-runtime UI test executes real Simulator voice discovery on its first
-admitted prompt and exposes the selected name, locale, and quality. A
-default-only result is marked as a basic fallback and names the iPhone Spoken
-Content voice installation path; the current preview Simulator reports
-`Kyoko / ja-JP / DEFAULT`, not an enhanced-voice qualification.
+fixed-sample requests, moving-context lockout, lifecycle events, cold empty
+voice enumeration, independent three-language preferences, and locale switches.
+Neutral Apple rate and pitch are tested independently so a compact voice is not
+made more mechanical by slow, lowered-pitch app tuning. The product-runtime UI
+test executes real Simulator voice discovery on its first admitted prompt and
+exposes the selected name, locale, and quality. A default-only result is marked
+as a basic fallback and names the iPhone Spoken Content voice installation path;
+the current preview Simulator reports only default-quality voices, not an
+enhanced-voice qualification.
 They also save one background checkpoint, reconstruct a fresh runtime, retain
 occurrence/prompt identity, clear position/CarPlay state, and require LOW
 reacquisition evidence without replay. Package tests independently cover

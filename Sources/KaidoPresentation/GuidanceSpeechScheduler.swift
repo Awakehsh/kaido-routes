@@ -99,7 +99,9 @@ public struct GuidanceSpeechScheduler: Sendable {
     guard !text.isEmpty else {
       throw GuidanceSpeechSchedulerError.emptySpokenText
     }
-    let languageCode = Self.normalized(projection.voice.locale.rawValue)
+    let languageCode = Self.normalized(
+      projection.voice.locale.speechLanguageCode
+    )
     guard !languageCode.isEmpty else {
       throw GuidanceSpeechSchedulerError.emptyLanguageCode
     }

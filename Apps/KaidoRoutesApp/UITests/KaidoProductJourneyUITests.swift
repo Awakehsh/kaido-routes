@@ -5,6 +5,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testDefaultLaunchPresentsOrderedRouteFirstJourney() {
     continueAfterFailure = false
     let app = XCUIApplication()
+    app.launchArguments = [
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
 
     let shell = element("product-journey-scroll", in: app)
@@ -51,7 +57,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testReviewPreviewShowsTruthfulNavigationReleaseBlocker() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-PRODUCT-JOURNEY-REVIEW-PREVIEW"]
+    app.launchArguments = [
+      "-PRODUCT-JOURNEY-REVIEW-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
 
     let stage = element("product-journey-stage", in: app)
@@ -71,6 +83,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(
       element("voice-check-audition", in: app).isEnabled
+    )
+    XCTAssertTrue(
+      element("voice-check-language-ja-JP", in: app).isSelected
+    )
+    XCTAssertEqual(
+      element("voice-check-sample", in: app).value as? String,
+      "この先、左側です。"
+    )
+
+    let chineseVoice = element(
+      "voice-check-language-zh-Hans",
+      in: app
+    )
+    chineseVoice.tap()
+    XCTAssertTrue(chineseVoice.isSelected)
+    XCTAssertEqual(
+      element("voice-check-sample", in: app).value as? String,
+      "前方请靠左行驶。"
     )
 
     let blocker = reveal(

@@ -288,6 +288,33 @@ final class SyntheticProductRuntimeTests: XCTestCase {
   }
 
   @MainActor
+  func testLanguageSelectionProviderControlsOneAtomicProjection() async throws {
+    let speechOutput = RecordingGuidanceSpeechOutput()
+    let model = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: speechOutput,
+      languageSelectionProvider: {
+        NavigationLanguageSelection(
+          interfaceLocale: .english,
+          guidanceVoiceLocale: .simplifiedChinese
+        )
+      }
+    )
+    await model.activate()
+
+    await model.runDeterministicPreviewTrace()
+
+    let projection = try XCTUnwrap(model.presentationProjection)
+    XCTAssertEqual(projection.interfaceLocale, .english)
+    XCTAssertEqual(projection.voice.locale, .simplifiedChinese)
+    XCTAssertEqual(projection.iPhone.localizedDisplayText, "Keep left")
+    let command = try XCTUnwrap(speechOutput.commands.first)
+    XCTAssertEqual(command.languageCode, "zh-CN")
+    XCTAssertEqual(command.spokenText, "请保持左侧")
+  }
+
+  @MainActor
   func testUnavailableInstalledVoiceBlocksWithoutRetryingThePrompt() async throws {
     let speechOutput = FailingGuidanceSpeechOutput()
     let model = try SyntheticProductRuntimeModel(

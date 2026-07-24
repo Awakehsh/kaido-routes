@@ -4,6 +4,17 @@ public enum KaidoReleaseLocale: String, Codable, CaseIterable, Hashable, Sendabl
   case japanese = "ja-JP"
   case simplifiedChinese = "zh-Hans"
   case english = "en"
+
+  public var speechLanguageCode: String {
+    switch self {
+    case .japanese:
+      "ja-JP"
+    case .simplifiedChinese:
+      "zh-CN"
+    case .english:
+      "en-US"
+    }
+  }
 }
 
 private struct KaidoReleaseLocaleCodingKey: CodingKey {

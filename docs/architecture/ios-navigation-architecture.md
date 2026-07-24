@@ -285,10 +285,16 @@ any prompt that arrived while audio was unavailable.
 The iOS `AVSpeechGuidanceOutput` resolves only the requested reviewed locale,
 enumerates only voices already installed on the device, excludes novelty and
 personal voices, and ranks premium, enhanced, then default quality. The locale's
+release identifier is translated to an exact synthesis locale before voice
+resolution: Japanese uses `ja-JP`, Simplified Chinese uses `zh-CN`, and English
+uses `en-US`. A generic release-language tag such as `zh-Hans` or `en` is not
+passed directly to the Apple voice API.
+The locale's
 system default is only an equal-quality tie-break, so a generic accessibility
 character cannot displace a higher-quality normal voice. A persisted explicit
-identifier may override automatic quality ranking only while it remains an
-eligible exact-locale installed voice; removal falls back to the ranked result.
+identifier is stored independently for each synthesis locale and may override
+automatic quality ranking only while it remains an eligible exact-locale
+installed voice; removal falls back to the ranked result.
 The chosen identifier, name, locale, and quality remain observable without
 granting speech authority.
 Short guidance keeps Apple's neutral rate and pitch; app-side tuning does not
@@ -309,8 +315,9 @@ than claiming neural or enhanced synthesis, and exposes the device Spoken
 Content installation path after real voice resolution.
 
 The parked pre-drive sound check is a separate Apple-adapter boundary.
-`GuidanceVoiceSetupModel` may persist a device-local installed-voice preference,
-and always supplies the product's fixed sample.
+`GuidanceVoiceSetupModel` may select Japanese, Simplified Chinese, or English,
+persist a device-local installed-voice preference for each language, and always
+supplies the corresponding fixed sample.
 `AVSpeechVoiceAuditionOutput` receives only an exact locale, optional identifier,
 and sample text. It has no RoutePlan, occurrence, frame, emission, prompt, or
 ledger input, so audition cannot enter `GuidanceSpeechScheduler` or consume

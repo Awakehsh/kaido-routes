@@ -1,4 +1,5 @@
 import KaidoAppleAdapters
+import KaidoDomain
 import SwiftUI
 
 struct GuidanceVoiceSetupPanel: View {
@@ -8,6 +9,7 @@ struct GuidanceVoiceSetupPanel: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 15) {
       header
+      guidanceLanguageSelection
       sampleMonitor
       voiceSelection
       readiness
@@ -42,7 +44,7 @@ struct GuidanceVoiceSetupPanel: View {
           .font(.system(size: 19, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
 
-        Text("PARKED SOUND CHECK · JA-JP")
+        Text("PARKED SOUND CHECK · \(model.languageCode.uppercased())")
           .font(.system(size: 9, weight: .bold, design: .monospaced))
           .tracking(0.75)
           .foregroundStyle(KaidoTheme.muted)
@@ -54,6 +56,54 @@ struct GuidanceVoiceSetupPanel: View {
         title: model.statusLabel,
         color: accentColor
       )
+    }
+  }
+
+  private var guidanceLanguageSelection: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text("导航声音语言")
+        .font(.system(size: 9, weight: .black, design: .monospaced))
+        .tracking(0.65)
+        .foregroundStyle(KaidoTheme.muted)
+
+      HStack(spacing: 5) {
+        ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
+          Button {
+            model.selectGuidanceLocale(locale)
+          } label: {
+            Text(locale.interfaceLanguageCode)
+              .font(.system(size: 10, weight: .black, design: .monospaced))
+              .frame(maxWidth: .infinity)
+              .frame(height: 34)
+              .foregroundStyle(
+                model.selectedGuidanceLocale == locale
+                  ? KaidoTheme.asphalt
+                  : KaidoTheme.muted
+              )
+              .background(
+                model.selectedGuidanceLocale == locale
+                  ? KaidoTheme.signalAmber
+                  : KaidoTheme.asphalt.opacity(0.48)
+              )
+              .clipShape(RoundedRectangle(cornerRadius: 9))
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(locale.nativeLanguageName)
+          .accessibilityAddTraits(
+            model.selectedGuidanceLocale == locale ? .isSelected : []
+          )
+          .accessibilityIdentifier(
+            "voice-check-language-\(locale.rawValue)"
+          )
+        }
+      }
+      .padding(4)
+      .background(KaidoTheme.asphalt.opacity(0.4))
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+
+      Text("界面语言与导航声音可分别选择。")
+        .font(.system(size: 9, weight: .medium))
+        .foregroundStyle(KaidoTheme.muted)
     }
   }
 
@@ -82,6 +132,8 @@ struct GuidanceVoiceSetupPanel: View {
           .font(.system(size: 17, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
           .frame(maxWidth: .infinity, alignment: .leading)
+          .accessibilityIdentifier("voice-check-sample")
+          .accessibilityValue(model.auditionText)
       }
     }
     .padding(13)
@@ -151,7 +203,9 @@ struct GuidanceVoiceSetupPanel: View {
             .stroke(KaidoTheme.steel.opacity(0.75), lineWidth: 1)
         }
       }
-      .accessibilityLabel("选择已安装的日语导航声音")
+      .accessibilityLabel(
+        "选择已安装的\(model.selectedGuidanceLocale.nativeLanguageName)导航声音"
+      )
       .accessibilityValue("\(selectionTitle)，\(selectionDetail)")
       .accessibilityIdentifier("voice-check-profile-menu")
     }
@@ -281,10 +335,12 @@ struct GuidanceVoiceSetupPanel: View {
 
   private var readinessTitle: String {
     if model.effectiveProfile?.quality.isHigherQuality == true {
-      return "高质量日语声音已安装"
+      return
+        "高质量\(model.selectedGuidanceLocale.nativeLanguageName)声音已安装"
     }
     if model.profiles.isEmpty {
-      return "等待系统列出日语声音"
+      return
+        "等待系统列出\(model.selectedGuidanceLocale.nativeLanguageName)声音"
     }
     return "当前只能使用系统默认音质"
   }
@@ -294,7 +350,10 @@ struct GuidanceVoiceSetupPanel: View {
       return "实际音质仍需在这台 iPhone 上试听确认。"
     }
     return
-      "要减少机器感，请先在 iPhone“设置 → 辅助功能 → 朗读内容 → 声音 → 日语”下载增强或高级声音，再回到这里试听。"
+      "当前 DEFAULT 是基础声线，调整语速不能把它变成高级音色。"
+      + "要减少机器感，请先在 iPhone“设置 → 辅助功能 → 朗读内容 → 声音 → "
+      + "\(model.selectedGuidanceLocale.nativeLanguageName)”下载增强或高级声音，"
+      + "再回到这里试听。"
   }
 
   private var readinessSymbol: String {

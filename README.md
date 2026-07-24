@@ -25,10 +25,11 @@ original internal workbench remains available through a dedicated launch
 argument. The journey presents a synthetic directional-entrance recommendation,
 parked route authoring, RoutePlan-bound pre-drive review, and a parked
 guidance-voice sound check without calling live location or surface routing.
-The sound check enumerates only installed exact-locale Apple voices, permits an
-explicit device-local preference, and plays one fixed Japanese sample through a
-separate output with no route, position, occurrence, or prompt-ledger input. Its
-bundled product-release catalog is a
+The sound check independently selects Japanese, Simplified Chinese, or English,
+enumerates only installed exact-synthesis-locale Apple voices, keeps one
+device-local preference per language, and plays one fixed locale-specific sample
+through a separate output with no route, position, occurrence, or prompt-ledger
+input. Its bundled product-release catalog is a
 compile-time manifest: every resource is pinned to an exact filename, SHA-256,
 release ID, and `DEMO_ONLY` or `FOREGROUND_NAVIGATION` role before the production
 codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
@@ -190,14 +191,17 @@ voices, prefers premium over enhanced over default quality, and applies a
 neutral Apple rate and pitch so app-side tuning does not exaggerate compact
 voice cadence. After the first admitted prompt, the runtime panel exposes the
 actual selected voice and quality. A default-only result is visibly marked as a
-basic fallback with the device installation path; the checked Simulator
-currently has only default-quality Japanese `Kyoko`, so enhanced/premium
-acoustic quality still requires the corresponding voice asset on a physical
-device. The pre-drive sound check exposes the same installed voice ranking,
-persists an explicit identifier or automatic highest-quality preference, and
-plays a fixed sample only while parked. The real one-shot output reads that
-preference only after an actor-owned prompt has been admitted; the independent
-audition output cannot create or consume a navigation prompt. The synthetic
+basic fallback with the device installation path. The 2026-07-24 checked
+Simulator exposes only default-quality `Kyoko / ja-JP`,
+`Tingting / zh-CN`, and `Samantha / en-US`; enhanced or premium acoustic
+quality still requires the corresponding voice asset on a physical device.
+The pre-drive sound check exposes the same installed voice ranking, persists an
+explicit identifier or automatic highest-quality preference independently for
+each language, and plays a fixed sample only while parked. Release locales are
+translated to exact Apple synthesis locales (`ja-JP`, `zh-CN`, and `en-US`)
+before voice resolution. The real one-shot output reads that preference only
+after an actor-owned prompt has been admitted; the independent audition output
+cannot create or consume a navigation prompt. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves

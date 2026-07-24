@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KaidoAppleAdapters
+import KaidoDomain
 
 @MainActor
 protocol GuidanceVoicePreferenceStoring: AnyObject {
@@ -79,35 +80,36 @@ final class GuidanceVoiceSetupModel: ObservableObject {
   static let japaneseAuditionText = "この先、左側です。"
 
   @Published private(set) var profiles: [GuidanceSpeechVoiceProfile] = []
+  @Published private(set) var selectedGuidanceLocale: KaidoReleaseLocale
   @Published private(set) var selectedVoiceIdentifier: String?
   @Published private(set) var lastAuditionedProfile: GuidanceSpeechVoiceProfile?
   @Published private(set) var state: GuidanceVoiceSetupState = .ready
 
-  let languageCode: String
-  let auditionText: String
-
   private let preferenceStore: any GuidanceVoicePreferenceStoring
   private let output: any GuidanceVoiceAuditionOutput
   private let profileProvider: (String) -> [GuidanceSpeechVoiceProfile]
+  private let guidanceLocaleDidChange: (KaidoReleaseLocale) -> Void
 
   init(
-    languageCode: String = japaneseLanguageCode,
-    auditionText: String = japaneseAuditionText,
+    guidanceLocale: KaidoReleaseLocale = .japanese,
     preferenceStore: any GuidanceVoicePreferenceStoring =
       UserDefaultsGuidanceVoicePreferenceStore(),
     output: any GuidanceVoiceAuditionOutput =
       LazyAVSpeechVoiceAuditionOutput(),
     profileProvider: @escaping (String) -> [GuidanceSpeechVoiceProfile] = {
       AVSpeechGuidanceOutput.installedVoiceProfiles(for: $0)
+    },
+    guidanceLocaleDidChange: @escaping (KaidoReleaseLocale) -> Void = {
+      _ in
     }
   ) {
-    self.languageCode = languageCode
-    self.auditionText = auditionText
+    selectedGuidanceLocale = guidanceLocale
     self.preferenceStore = preferenceStore
     self.output = output
     self.profileProvider = profileProvider
+    self.guidanceLocaleDidChange = guidanceLocaleDidChange
     selectedVoiceIdentifier = preferenceStore.identifier(
-      for: languageCode
+      for: guidanceLocale.speechLanguageCode
     )
     output.eventHandler = { [weak self] event in
       self?.handle(event)
@@ -119,6 +121,14 @@ final class GuidanceVoiceSetupModel: ObservableObject {
     return profiles.first {
       $0.identifier == selectedVoiceIdentifier
     }
+  }
+
+  var languageCode: String {
+    selectedGuidanceLocale.speechLanguageCode
+  }
+
+  var auditionText: String {
+    selectedGuidanceLocale.guidanceAuditionText
   }
 
   var effectiveProfile: GuidanceSpeechVoiceProfile? {
@@ -158,7 +168,7 @@ final class GuidanceVoiceSetupModel: ObservableObject {
     case .ready:
       "停车后试听固定样句，不会消耗导航提示。"
     case .preparing:
-      "正在解析设备已安装的日语音色。"
+      "正在解析设备已安装的\(selectedGuidanceLocale.nativeLanguageName)音色。"
     case .speaking(let profile):
       "\(profile.name) · \(profile.quality.label)"
     case .completed(let profile):
@@ -201,6 +211,20 @@ final class GuidanceVoiceSetupModel: ObservableObject {
     selectedVoiceIdentifier = identifier
     lastAuditionedProfile = nil
     state = .ready
+  }
+
+  func selectGuidanceLocale(_ locale: KaidoReleaseLocale) {
+    guard locale != selectedGuidanceLocale else { return }
+    output.stop()
+    selectedGuidanceLocale = locale
+    guidanceLocaleDidChange(locale)
+    profiles = []
+    selectedVoiceIdentifier = preferenceStore.identifier(
+      for: locale.speechLanguageCode
+    )
+    lastAuditionedProfile = nil
+    state = .ready
+    refreshProfiles()
   }
 
   func audition(isVehicleMoving: Bool = false) {

@@ -146,6 +146,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   private var observationAdapter: CoreLocationObservationAdapter
   private var entryTransitionAdapter: CoreLocationEntryTransitionAdapter
   private let speechCoordinator: GuidanceSpeechCoordinator
+  private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let checkpointStore: (any NavigationSessionCheckpointStoring)?
   private var scenePhase: SyntheticProductRuntimeScenePhase = .active
   private var lifecycleOperationID = 0
@@ -155,6 +156,12 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
+    languageSelectionProvider: @escaping () -> NavigationLanguageSelection = {
+      NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .japanese
+      )
+    },
     checkpoint: NavigationSessionCheckpoint? = nil,
     checkpointStore: (
       any NavigationSessionCheckpointStoring
@@ -163,6 +170,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   ) throws {
     self.fixture = fixture
     self.checkpointStore = checkpointStore
+    self.languageSelectionProvider = languageSelectionProvider
     let restoredRuntime: KaidoProductNavigationRuntime
     var checkpointFailureCode = checkpointLoadFailureCode
     if let checkpoint {
@@ -214,6 +222,12 @@ final class SyntheticProductRuntimeModel: ObservableObject {
     sourceEvidenceProvider: any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
+    languageSelectionProvider: @escaping () -> NavigationLanguageSelection = {
+      NavigationLanguageSelection(
+        interfaceLocale: .simplifiedChinese,
+        guidanceVoiceLocale: .japanese
+      )
+    },
     checkpointStore: (
       any NavigationSessionCheckpointStoring
     )? = nil
@@ -231,6 +245,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       fixture: SyntheticProductRuntimeFixture.bundled(in: bundle),
       sourceEvidenceProvider: sourceEvidenceProvider,
       speechOutput: speechOutput,
+      languageSelectionProvider: languageSelectionProvider,
       checkpoint: checkpoint,
       checkpointStore: checkpointStore,
       checkpointLoadFailureCode: checkpointLoadFailureCode
@@ -577,10 +592,7 @@ final class SyntheticProductRuntimeModel: ObservableObject {
           networkSnapshotID: runtime.networkSnapshotID,
           guidanceFrame: frame,
           promptEmission: update.guidancePromptEmission,
-          languages: NavigationLanguageSelection(
-            interfaceLocale: .simplifiedChinese,
-            guidanceVoiceLocale: .japanese
-          ),
+          languages: languageSelectionProvider(),
           passageEvidence: .noKnownConflictRealtimeUnconfirmed,
           drivingContext: PresentationDrivingContext(
             isVehicleMoving: true,

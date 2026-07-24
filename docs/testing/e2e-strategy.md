@@ -281,13 +281,14 @@ compiled-route invalidation, and keep the bundled synthetic release blocked
 from navigation. XCUITest proves the default launch and primary authoring
 transition, while a deterministic review launch verifies the exact visible
 `ROUTE_RELEASE_AUTHORITY_UNAVAILABLE` blocker and disabled navigation action.
-That review launch also verifies the parked sound-check panel, installed-voice
-menu, quality status, and audition control without playing audio. Focused app
-tests inject the preference store, voice catalog, and audition output to prove
-exact identifier persistence, a fixed `ja-JP` sample, moving-context lockout,
-stale-preference handling, and lifecycle projection. These stay at L3 because
-Apple voice installation and audio output are environment facts, not portable
-route events.
+That review launch also verifies the parked sound-check panel, three-language
+selector, locale-specific fixed sample, installed-voice menu, quality status,
+and audition control without playing audio. Focused app tests inject the
+preference store, voice catalog, and audition output to prove exact
+locale-scoped identifier persistence, `ja-JP` / `zh-CN` / `en-US` synthesis
+mapping, moving-context lockout, stale-preference handling, and lifecycle
+projection. These stay at L3 because Apple voice installation and audio output
+are environment facts, not portable route events.
 These are app-composition tests; existing portable domain scenarios remain the
 authority for editor legality, repeated occurrences, release validation, and
 navigation behavior.

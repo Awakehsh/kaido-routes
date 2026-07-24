@@ -1,4 +1,5 @@
 import KaidoAppleAdapters
+import KaidoDomain
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -79,6 +80,75 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
       .blocked("VOICE_AUDITION_MOVING_CONTEXT")
     )
     XCTAssertTrue(output.requests.isEmpty)
+  }
+
+  func testGuidanceLanguageSwitchRefreshesAnIndependentInstalledVoiceCatalog() {
+    let output = RecordingGuidanceVoiceAuditionOutput()
+    var selectedLocale: KaidoReleaseLocale?
+    let chineseProfile = GuidanceSpeechVoiceProfile(
+      identifier: "test.voice.zh-cn.enhanced",
+      name: "Chinese Enhanced",
+      languageCode: "zh-CN",
+      quality: .enhanced
+    )
+    let model = GuidanceVoiceSetupModel(
+      preferenceStore: RecordingGuidanceVoicePreferenceStore(),
+      output: output,
+      profileProvider: { languageCode in
+        languageCode == "zh-CN" ? [chineseProfile] : Self.profiles
+      },
+      guidanceLocaleDidChange: {
+        selectedLocale = $0
+      }
+    )
+    model.refreshProfiles()
+
+    model.selectGuidanceLocale(.simplifiedChinese)
+
+    XCTAssertEqual(selectedLocale, .simplifiedChinese)
+    XCTAssertEqual(model.selectedGuidanceLocale, .simplifiedChinese)
+    XCTAssertEqual(model.languageCode, "zh-CN")
+    XCTAssertEqual(model.auditionText, "前方请靠左行驶。")
+    XCTAssertEqual(model.profiles, [chineseProfile])
+    XCTAssertTrue(model.usesAutomaticSelection)
+    XCTAssertEqual(output.stopCallCount, 1)
+  }
+
+  func testEachGuidanceLanguageRestoresItsOwnInstalledVoicePreference() {
+    let suiteName = "GuidanceVoiceSetupModelTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer {
+      defaults.removePersistentDomain(forName: suiteName)
+    }
+    let store = UserDefaultsGuidanceVoicePreferenceStore(
+      defaults: defaults,
+      keyPrefix: "test.guidance-voice"
+    )
+    let japaneseProfile = Self.profiles[0]
+    let chineseProfile = GuidanceSpeechVoiceProfile(
+      identifier: "test.voice.zh-cn.premium",
+      name: "Chinese Premium",
+      languageCode: "zh-CN",
+      quality: .premium
+    )
+    store.setIdentifier(japaneseProfile.identifier, for: "ja-JP")
+    store.setIdentifier(chineseProfile.identifier, for: "zh-CN")
+    let model = GuidanceVoiceSetupModel(
+      preferenceStore: store,
+      output: RecordingGuidanceVoiceAuditionOutput(),
+      profileProvider: { languageCode in
+        languageCode == "zh-CN" ? [chineseProfile] : Self.profiles
+      }
+    )
+
+    model.refreshProfiles()
+    XCTAssertEqual(model.selectedProfile, japaneseProfile)
+
+    model.selectGuidanceLocale(.simplifiedChinese)
+    XCTAssertEqual(model.selectedProfile, chineseProfile)
+
+    model.selectGuidanceLocale(.japanese)
+    XCTAssertEqual(model.selectedProfile, japaneseProfile)
   }
 
   func testMissingInstalledPreferenceFailsClosedAfterCatalogResolution() {

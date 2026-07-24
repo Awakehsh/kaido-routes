@@ -122,6 +122,32 @@ func speechSchedulerRejectsRoutePlanDrift() throws {
   #expect(scheduler.consumedIdentities.isEmpty)
 }
 
+@Test("Speech scheduler maps release locales to exact synthesis language codes")
+func speechSchedulerUsesExactSynthesisLocales() throws {
+  for (locale, expectedCode) in [
+    (KaidoReleaseLocale.japanese, "ja-JP"),
+    (KaidoReleaseLocale.simplifiedChinese, "zh-CN"),
+    (KaidoReleaseLocale.english, "en-US"),
+  ] {
+    var scheduler = try GuidanceSpeechScheduler(
+      expectedRoutePlanID: "test.plan.speech"
+    )
+    let projection = try speechProjection(
+      promptID: "test.prompt.\(locale.rawValue)",
+      anchorOccurrenceID: "test.occurrence.\(locale.rawValue)",
+      guidanceVoiceLocale: locale
+    )
+    guard
+      case .speak(let command, replacing: nil) =
+        try scheduler.submit(projection)
+    else {
+      Issue.record("Expected one command for \(locale.rawValue)")
+      continue
+    }
+    #expect(command.languageCode == expectedCode)
+  }
+}
+
 @Test("Speech scheduler resumes after lifecycle stop without replaying consumed prompts")
 func speechSchedulerResumesWithoutReplay() throws {
   var scheduler = try GuidanceSpeechScheduler(
@@ -205,7 +231,8 @@ private func speechProjection(
   routePlanID: String = "test.plan.speech",
   promptID: String,
   anchorOccurrenceID: String,
-  emitsPrompt: Bool = true
+  emitsPrompt: Bool = true,
+  guidanceVoiceLocale: KaidoReleaseLocale = .japanese
 ) throws -> NavigationPresentationProjection {
   let sign = "B 湾岸線・横浜方面"
   let source = GuidancePresentationSource(
@@ -276,7 +303,7 @@ private func speechProjection(
       promptEmission: emission,
       languages: NavigationLanguageSelection(
         interfaceLocale: .simplifiedChinese,
-        guidanceVoiceLocale: .japanese
+        guidanceVoiceLocale: guidanceVoiceLocale
       ),
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       drivingContext: PresentationDrivingContext(

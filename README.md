@@ -732,6 +732,34 @@ release artifact exists yet.
 artifacts and their cross-artifact identity, chronology, and editor-atlas
 coverage; no real product release artifact exists yet.
 
+Offline guidance-audio authoring is executable without copying prompt records by
+hand:
+
+```sh
+swift run kaido-release export-guidance-audio-worklist \
+  --product-artifact <product-release.json> \
+  --output <worklist.json>
+
+swift run kaido-release build-guidance-audio \
+  --product-artifact <product-release.json> \
+  --config <authoring-config.json> \
+  --resources <wav-directory> \
+  --output <guidance-audio-release.json>
+
+swift run kaido-release validate-guidance-audio \
+  --product-artifact <product-release.json> \
+  --manifest <guidance-audio-release.json> \
+  --resources <wav-directory>
+```
+
+The worklist derives every exact anchor occurrence, locale, spoken string, hash,
+and deterministic filename from the validated product release. The authoring
+command accepts only three locale profiles, derives WAV metadata and hashes, and
+runs the whole audio-release gate before writing a new file. Existing outputs
+are never overwritten. See
+[`docs/contributing/guidance-audio-authoring.md`](docs/contributing/guidance-audio-authoring.md)
+for the provenance, evidence-scope, licensing, and device-review contract.
+
 Generate or open the tracked iPhone project and run the internal preview:
 
 ```sh

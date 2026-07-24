@@ -14,7 +14,13 @@ public enum GuidanceAudioEncoding: String, Codable, Sendable {
   case wavPCM16LittleEndian = "WAV_PCM_S16LE"
 }
 
+public enum GuidanceAudioEvidenceScope: String, Codable, Sendable {
+  case syntheticTestOnly = "SYNTHETIC_TEST_ONLY"
+  case releasedAsset = "RELEASED_ASSET"
+}
+
 public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
+  public let evidenceScope: GuidanceAudioEvidenceScope
   public let generationMode: GuidanceAudioGenerationMode
   public let engineID: String
   public let engineVersion: String
@@ -27,6 +33,7 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   public let reviewedAt: String
 
   public init(
+    evidenceScope: GuidanceAudioEvidenceScope,
     generationMode: GuidanceAudioGenerationMode,
     engineID: String,
     engineVersion: String,
@@ -38,6 +45,7 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     generatedAt: String,
     reviewedAt: String
   ) {
+    self.evidenceScope = evidenceScope
     self.generationMode = generationMode
     self.engineID = engineID
     self.engineVersion = engineVersion
@@ -51,6 +59,7 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
+    case evidenceScope = "evidence_scope"
     case generationMode = "generation_mode"
     case engineID = "engine_id"
     case engineVersion = "engine_version"
@@ -154,7 +163,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
 /// optional at the product level, but once present it is all-or-nothing: a
 /// missing, extra, corrupt, or identity-drifted record rejects the whole pack.
 public struct GuidanceAudioReleaseManifest: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "1.1"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -231,6 +240,7 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
   case spokenTextMismatch(GuidanceAudioAssetKey)
   case spokenTextHashMismatch(GuidanceAudioAssetKey)
   case invalidProvenance(GuidanceAudioAssetKey)
+  case provenanceScopeMismatch(GuidanceAudioAssetKey)
   case resourceMissing(String)
   case resourceURLInvalid(String)
   case resourceFilenameMismatch(String)
@@ -267,6 +277,8 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
       "GUIDANCE_AUDIO_SPOKEN_TEXT_HASH_MISMATCH"
     case .invalidProvenance:
       "GUIDANCE_AUDIO_PROVENANCE_INVALID"
+    case .provenanceScopeMismatch:
+      "GUIDANCE_AUDIO_PROVENANCE_SCOPE_MISMATCH"
     case .resourceMissing:
       "GUIDANCE_AUDIO_RESOURCE_MISSING"
     case .resourceURLInvalid:
@@ -292,7 +304,8 @@ public enum GuidanceAudioReleaseIssue: Equatable, Sendable {
       .invalidAssetRecord(let key),
       .spokenTextMismatch(let key),
       .spokenTextHashMismatch(let key),
-      .invalidProvenance(let key):
+      .invalidProvenance(let key),
+      .provenanceScopeMismatch(let key):
       "\(code):\(key.sortKey)"
     case .resourceMissing(let filename),
       .resourceURLInvalid(let filename),
@@ -352,6 +365,9 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
     }
 
     let expectedTextByKey = Self.expectedTextByKey(productRelease)
+    let expectedEvidenceScope: GuidanceAudioEvidenceScope =
+      productRelease.runtimeUse.evidenceScope == .releasedRoad
+      ? .releasedAsset : .syntheticTestOnly
     let expectedKeys = Set(expectedTextByKey.keys)
     var seenKeys: Set<GuidanceAudioAssetKey> = []
     var loadedAssets: [ReleasedGuidanceAudioAsset] = []
@@ -383,6 +399,12 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
         noLaterThan: manifest.releasedAt
       ) {
         issues.append(.invalidProvenance(key))
+      }
+      if record.provenance.evidenceScope != expectedEvidenceScope {
+        issues.append(.provenanceScopeMismatch(key))
+      }
+      guard Self.isSafeWaveFilename(record.resourceFilename) else {
+        continue
       }
 
       let resource: GuidanceAudioResource?
@@ -633,7 +655,7 @@ public enum GuidanceAudioReleaseManifestCodec {
   }
 }
 
-private struct GuidanceWaveMetadata {
+struct GuidanceWaveMetadata {
   let channelCount: Int
   let sampleRateHz: Int
   let durationMilliseconds: Int

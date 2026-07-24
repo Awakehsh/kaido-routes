@@ -1,0 +1,55 @@
+{
+  "language_profiles": [
+    {
+      "language_code": "ja-JP",
+      "provenance": {
+        "engine_id": "synthetic.test.engine",
+        "engine_version": "1.0.0",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "generated_at": "2026-07-24T12:00:00+09:00",
+        "generation_mode": "LOCAL_OPEN_WEIGHT",
+        "licence_identifier": "SYNTHETIC_TEST_ONLY",
+        "model_id": "synthetic/test-model",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "reviewed_at": "2026-07-24T13:00:00+09:00",
+        "source_url": "https://example.com/synthetic-guidance-audio",
+        "voice_id": "synthetic.voice.ja"
+      }
+    },
+    {
+      "language_code": "zh-CN",
+      "provenance": {
+        "engine_id": "synthetic.test.engine",
+        "engine_version": "1.0.0",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "generated_at": "2026-07-24T12:00:00+09:00",
+        "generation_mode": "LOCAL_OPEN_WEIGHT",
+        "licence_identifier": "SYNTHETIC_TEST_ONLY",
+        "model_id": "synthetic/test-model",
+        "model_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "reviewed_at": "2026-07-24T13:00:00+09:00",
+        "source_url": "https://example.com/synthetic-guidance-audio",
+        "voice_id": "synthetic.voice.zh"
+      }
+    },
+    {
+      "language_code": "en-US",
+      "provenance": {
+        "engine_id": "synthetic.test.engine",
+        "engine_version": "1.0.0",
+        "evidence_scope": "SYNTHETIC_TEST_ONLY",
+        "generated_at": "2026-07-24T12:00:00+09:00",
+        "generation_mode": "LOCAL_OPEN_WEIGHT",
+        "licence_identifier": "SYNTHETIC_TEST_ONLY",
+        "model_id": "synthetic/test-model",
+        "model_revision": "cccccccccccccccccccccccccccccccccccccccc",
+        "reviewed_at": "2026-07-24T13:00:00+09:00",
+        "source_url": "https://example.com/synthetic-guidance-audio",
+        "voice_id": "synthetic.voice.en"
+      }
+    }
+  ],
+  "release_id": "synthetic.guidance-audio-release.example.v1",
+  "released_at": "2026-07-24T14:00:00+09:00",
+  "schema_version": "1.0"
+}

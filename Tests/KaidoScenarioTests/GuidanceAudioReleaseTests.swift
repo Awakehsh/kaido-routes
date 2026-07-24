@@ -147,12 +147,61 @@ func guidanceAudioReleaseRejectsRemoteResourceURL() throws {
   }
 }
 
+@Test("Unsafe guidance resource names never reach the resource provider")
+func guidanceAudioReleaseRejectsUnsafeFilenameBeforeLookup() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let original = try #require(fixture.manifest.assets.first)
+  let unsafe = GuidanceAudioAssetRecord(
+    key: original.key,
+    spokenText: original.spokenText,
+    spokenTextSHA256: original.spokenTextSHA256,
+    resourceFilename: "../escape.wav",
+    audioSHA256: original.audioSHA256,
+    byteCount: original.byteCount,
+    sampleRateHz: original.sampleRateHz,
+    channelCount: original.channelCount,
+    durationMilliseconds: original.durationMilliseconds,
+    provenance: original.provenance
+  )
+  var records = fixture.manifest.assets
+  records[0] = unsafe
+  let manifest = GuidanceAudioReleaseManifest(
+    releaseID: fixture.manifest.releaseID,
+    releasedAt: fixture.manifest.releasedAt,
+    productReleaseID: fixture.manifest.productReleaseID,
+    navigationReleaseID: fixture.manifest.navigationReleaseID,
+    networkSnapshotID: fixture.manifest.networkSnapshotID,
+    routePlanID: fixture.manifest.routePlanID,
+    assets: records
+  )
+  var requestedUnsafeFilename = false
+
+  do {
+    _ = try GuidanceAudioRelease(
+      manifest: manifest,
+      productRelease: productRelease,
+      resourceProvider: { filename in
+        if filename == unsafe.resourceFilename {
+          requestedUnsafeFilename = true
+        }
+        return fixture.resources[filename]
+      }
+    )
+    Issue.record("Expected an unsafe audio filename to fail")
+  } catch GuidanceAudioReleaseError.invalid(let issues) {
+    #expect(issues == [.invalidAssetRecord(original.key)])
+    #expect(!requestedUnsafeFilename)
+  }
+}
+
 @Test("Audio provenance cannot postdate its reviewed release")
 func guidanceAudioReleaseRejectsFutureProvenance() throws {
   let productRelease = try guidanceAudioProductRelease()
   let fixture = guidanceAudioManifestFixture(productRelease)
   let original = try #require(fixture.manifest.assets.first)
   let futureProvenance = GuidanceAudioSynthesisProvenance(
+    evidenceScope: original.provenance.evidenceScope,
     generationMode: original.provenance.generationMode,
     engineID: original.provenance.engineID,
     engineVersion: original.provenance.engineVersion,
@@ -198,6 +247,225 @@ func guidanceAudioReleaseRejectsFutureProvenance() throws {
   } catch GuidanceAudioReleaseError.invalid(let issues) {
     #expect(issues.contains(.invalidProvenance(original.key)))
     #expect(issues.count == 1)
+  }
+}
+
+@Test("Audio provenance scope must match the product runtime scope")
+func guidanceAudioReleaseRejectsEvidenceScopeDrift() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let original = try #require(fixture.manifest.assets.first)
+  let driftedProvenance = GuidanceAudioSynthesisProvenance(
+    evidenceScope: .releasedAsset,
+    generationMode: original.provenance.generationMode,
+    engineID: original.provenance.engineID,
+    engineVersion: original.provenance.engineVersion,
+    modelID: original.provenance.modelID,
+    modelRevision: original.provenance.modelRevision,
+    voiceID: original.provenance.voiceID,
+    licenceIdentifier: original.provenance.licenceIdentifier,
+    sourceURL: original.provenance.sourceURL,
+    generatedAt: original.provenance.generatedAt,
+    reviewedAt: original.provenance.reviewedAt
+  )
+  let driftedRecord = GuidanceAudioAssetRecord(
+    key: original.key,
+    spokenText: original.spokenText,
+    spokenTextSHA256: original.spokenTextSHA256,
+    resourceFilename: original.resourceFilename,
+    audioSHA256: original.audioSHA256,
+    byteCount: original.byteCount,
+    sampleRateHz: original.sampleRateHz,
+    channelCount: original.channelCount,
+    durationMilliseconds: original.durationMilliseconds,
+    provenance: driftedProvenance
+  )
+  var records = fixture.manifest.assets
+  records[0] = driftedRecord
+  let drifted = GuidanceAudioReleaseManifest(
+    releaseID: fixture.manifest.releaseID,
+    releasedAt: fixture.manifest.releasedAt,
+    productReleaseID: fixture.manifest.productReleaseID,
+    navigationReleaseID: fixture.manifest.navigationReleaseID,
+    networkSnapshotID: fixture.manifest.networkSnapshotID,
+    routePlanID: fixture.manifest.routePlanID,
+    assets: records
+  )
+
+  do {
+    _ = try GuidanceAudioRelease(
+      manifest: drifted,
+      productRelease: productRelease,
+      resourceProvider: { fixture.resources[$0] }
+    )
+    Issue.record("Expected provenance scope drift to fail")
+  } catch GuidanceAudioReleaseError.invalid(let issues) {
+    #expect(issues == [.provenanceScopeMismatch(original.key)])
+  }
+}
+
+@Test("Recording worklist derives every released identity deterministically")
+func guidanceAudioRecordingWorklistIsComplete() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let encoded = try GuidanceAudioRecordingWorklistCodec.encode(
+    productRelease: productRelease
+  )
+  let repeated = try GuidanceAudioRecordingWorklistCodec.encode(
+    productRelease: productRelease
+  )
+  let worklist = try GuidanceAudioRecordingWorklistCodec.decode(
+    encoded,
+    productRelease: productRelease
+  )
+
+  #expect(encoded == repeated)
+  #expect(
+    worklist.items.count
+      == productRelease.navigation.bundle.releasedGuidance.count
+      * KaidoReleaseLocale.allCases.count
+  )
+  #expect(
+    Set(worklist.items.map(\.key)).count == worklist.items.count
+  )
+  #expect(
+    Set(worklist.items.map(\.suggestedResourceFilename)).count
+      == worklist.items.count
+  )
+  #expect(
+    worklist.items.allSatisfy {
+      $0.suggestedResourceFilename.hasPrefix("guidance-")
+        && $0.suggestedResourceFilename.hasSuffix(".wav")
+    }
+  )
+
+  let drifted = GuidanceAudioRecordingWorklist(
+    productReleaseID: worklist.productReleaseID,
+    navigationReleaseID: worklist.navigationReleaseID,
+    networkSnapshotID: worklist.networkSnapshotID,
+    routePlanID: worklist.routePlanID,
+    items: Array(worklist.items.dropLast())
+  )
+  let driftedData = try JSONEncoder().encode(drifted)
+  var rejectedDrift = false
+  do {
+    _ = try GuidanceAudioRecordingWorklistCodec.decode(
+      driftedData,
+      productRelease: productRelease
+    )
+    Issue.record("Expected worklist drift to fail")
+  } catch GuidanceAudioAuthoringError.worklistDrift {
+    rejectedDrift = true
+  }
+  #expect(rejectedDrift)
+}
+
+@Test("Authoring configuration builds a complete validated audio manifest")
+func guidanceAudioAuthoringBuildsManifest() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let configuration = try guidanceAudioAuthoringConfiguration(
+    fixture
+  )
+  let worklist = try GuidanceAudioRecordingWorklistCodec.derive(
+    productRelease: productRelease
+  )
+  let waveData = guidanceTestWaveData(
+    sampleRateHz: 24_000,
+    frameCount: 4_800,
+    sampleValue: 1_600
+  )
+  let resources = Dictionary(
+    uniqueKeysWithValues: worklist.items.map {
+      (
+        $0.suggestedResourceFilename,
+        GuidanceAudioResource(
+          url: URL(
+            fileURLWithPath:
+              "/tmp/\($0.suggestedResourceFilename)"
+          ),
+          data: waveData
+        )
+      )
+    }
+  )
+
+  let manifest = try GuidanceAudioReleaseAuthor.buildManifest(
+    productRelease: productRelease,
+    configuration: configuration,
+    resourceProvider: { resources[$0] }
+  )
+  let repeated = try GuidanceAudioReleaseAuthor.buildManifest(
+    productRelease: productRelease,
+    configuration: configuration,
+    resourceProvider: { resources[$0] }
+  )
+  let encoded = try GuidanceAudioReleaseManifestCodec.encode(
+    manifest,
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+  let release = try GuidanceAudioReleaseManifestCodec.decode(
+    encoded,
+    productRelease: productRelease,
+    resourceProvider: { resources[$0] }
+  )
+
+  #expect(manifest == repeated)
+  #expect(manifest.assets.count == worklist.items.count)
+  #expect(
+    manifest.assets.map(\.resourceFilename)
+      == worklist.items.map(\.suggestedResourceFilename)
+  )
+  #expect(release.assets.count == worklist.items.count)
+  #expect(
+    Set(manifest.assets.map(\.provenance.voiceID))
+      == Set(configuration.languageProfiles.map(\.provenance.voiceID))
+  )
+}
+
+@Test("Authoring fails before output when profiles or WAV files are missing")
+func guidanceAudioAuthoringRequiresProfilesAndResources() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let complete = try guidanceAudioAuthoringConfiguration(fixture)
+  let missingProfile = GuidanceAudioAuthoringConfiguration(
+    releaseID: complete.releaseID,
+    releasedAt: complete.releasedAt,
+    languageProfiles: Array(complete.languageProfiles.dropLast())
+  )
+  let missingLanguage = try #require(
+    Set(KaidoReleaseLocale.allCases.map(\.speechLanguageCode))
+      .subtracting(
+        missingProfile.languageProfiles.map(\.languageCode)
+      )
+      .first
+  )
+
+  do {
+    _ = try GuidanceAudioReleaseAuthor.buildManifest(
+      productRelease: productRelease,
+      configuration: missingProfile,
+      resourceProvider: { _ in nil }
+    )
+    Issue.record("Expected a missing language profile to fail")
+  } catch GuidanceAudioAuthoringError.invalidConfiguration(let issues) {
+    #expect(issues == [.missingLanguageProfile(missingLanguage)])
+  }
+
+  let firstFilename = try #require(
+    GuidanceAudioRecordingWorklistCodec.derive(
+      productRelease: productRelease
+    ).items.first?.suggestedResourceFilename
+  )
+  do {
+    _ = try GuidanceAudioReleaseAuthor.buildManifest(
+      productRelease: productRelease,
+      configuration: complete,
+      resourceProvider: { _ in nil }
+    )
+    Issue.record("Expected a missing WAV resource to fail")
+  } catch GuidanceAudioAuthoringError.resourceMissing(let filename) {
+    #expect(filename == firstFilename)
   }
 }
 
@@ -388,6 +656,7 @@ private func guidanceAudioManifestFixture(
           channelCount: 1,
           durationMilliseconds: 100,
           provenance: GuidanceAudioSynthesisProvenance(
+            evidenceScope: .syntheticTestOnly,
             generationMode: .localOpenWeight,
             engineID: "test.engine",
             engineVersion: "1.0.0",
@@ -421,6 +690,30 @@ private func guidanceAudioManifestFixture(
       assets: records
     ),
     resources: resources
+  )
+}
+
+private func guidanceAudioAuthoringConfiguration(
+  _ fixture: GuidanceAudioManifestFixture
+) throws -> GuidanceAudioAuthoringConfiguration {
+  var profiles: [GuidanceAudioLanguageProfile] = []
+  for locale in KaidoReleaseLocale.allCases {
+    let record = try #require(
+      fixture.manifest.assets.first {
+        $0.key.languageCode == locale.speechLanguageCode
+      }
+    )
+    profiles.append(
+      GuidanceAudioLanguageProfile(
+        languageCode: locale.speechLanguageCode,
+        provenance: record.provenance
+      )
+    )
+  }
+  return GuidanceAudioAuthoringConfiguration(
+    releaseID: "test.guidance-audio-authored.v1",
+    releasedAt: "2026-07-24T15:00:00+09:00",
+    languageProfiles: profiles
   )
 }
 

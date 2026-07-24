@@ -337,6 +337,17 @@ the current preview catalog. Locally generated auditions are selection evidence
 only and cannot enter navigation unless they are reviewed, complete, declared,
 and packaged through this release gate.
 
+`GuidanceAudioRecordingWorklistCodec` derives the complete immutable recording
+surface directly from one validated product release. It carries exact
+occurrence/text identity and deterministic filenames but no model choice or
+release authority. `GuidanceAudioReleaseAuthor` combines that worklist with
+exactly one reviewed provenance profile per supported locale and local PCM16 WAV
+files, calculates hashes and metadata, then re-runs the complete release gate.
+Synthetic product and audio evidence scopes must agree; a released-road product
+requires `RELEASED_ASSET`. The `kaido-release` CLI exposes worklist export,
+manifest build, and independent manifest/resource validation without permitting
+manual prompt identity or text substitution.
+
 The parked pre-drive sound check is a separate Apple-adapter boundary.
 `GuidanceVoiceSetupModel` may select Japanese, Simplified Chinese, or English,
 persist a device-local installed-voice preference for each language, and always

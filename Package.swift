@@ -78,7 +78,7 @@ let package = Package(
     ),
     .executableTarget(
       name: "KaidoReleaseCLI",
-      dependencies: ["KaidoNavigation"]
+      dependencies: ["KaidoNavigation", "KaidoAppleAdapters"]
     ),
     .testTarget(
       name: "KaidoScenarioTests",

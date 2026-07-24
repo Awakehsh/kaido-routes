@@ -60,12 +60,42 @@ func preDriveReviewRejectsInvalidNonActiveEvidence() {
   }
 }
 
+@Test("Pre-drive review rejects every tariff quote for another vehicle class")
+func preDriveReviewRejectsVehicleClassDrift() {
+  let routePlan = preDriveRoutePlan()
+  let mismatchedProposed = TariffQuote(
+    id: "test.quote.proposed.other-vehicle",
+    entryFacilityID: routePlan.entryFacilityID,
+    exitFacilityID: routePlan.exitFacilityID,
+    vehicleClass: "LIGHT",
+    tariffVersionID: "test.tariff.proposed",
+    tariffVersionStatus: .proposed,
+    tariffDistanceKM: 6.7,
+    estimatedAmountYen: 580,
+    evidenceStatus: .estimated,
+    checkedAt: "2026-07-24T09:00:00+09:00",
+    officialQueryReference: "https://example.com/tariff/proposed"
+  )
+
+  #expect(
+    throws: PreDriveReviewEvaluationError.tariffVehicleClassMismatch
+  ) {
+    try PreDriveReviewEvaluator.evaluate(
+      routePlan: routePlan,
+      evidence: preDriveEvidence(
+        quotes: [preDriveTariffQuote(), mismatchedProposed]
+      )
+    )
+  }
+}
+
 @Test("Pre-drive review rejects positive live passage without authority")
 func preDriveReviewRejectsUnauthorizedRealtimePassage() {
   let evidence = PreDriveReviewEvidence(
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "test.snapshot.pre-drive",
     routePlanID: "test.plan.pre-drive",
+    vehicleClass: "STANDARD",
     passageEvidence: .realtimeConfirmedPassable,
     tariffQuotes: [preDriveTariffQuote()]
   )
@@ -122,6 +152,7 @@ private func preDriveEvidence(
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "test.snapshot.pre-drive",
     routePlanID: "test.plan.pre-drive",
+    vehicleClass: "STANDARD",
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: quotes
   )

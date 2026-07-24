@@ -8,6 +8,7 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
   public let evaluatedAt: String
   public let networkSnapshotID: String
   public let routePlanID: String
+  public let vehicleClass: String
   public let passageEvidence: RoutePassageEvidence
   public let tariffQuotes: [TariffQuote]
 
@@ -15,12 +16,14 @@ public struct PreDriveReviewEvidence: Equatable, Sendable {
     evaluatedAt: String,
     networkSnapshotID: String,
     routePlanID: String,
+    vehicleClass: String,
     passageEvidence: RoutePassageEvidence,
     tariffQuotes: [TariffQuote]
   ) {
     self.evaluatedAt = evaluatedAt
     self.networkSnapshotID = networkSnapshotID
     self.routePlanID = routePlanID
+    self.vehicleClass = vehicleClass
     self.passageEvidence = passageEvidence
     self.tariffQuotes = tariffQuotes
   }
@@ -48,6 +51,7 @@ public enum PreDriveReviewEvaluationError: Error, Equatable, Sendable {
   case invalidTariffEvidence
   case noUniqueActiveTariff
   case tariffRouteMismatch
+  case tariffVehicleClassMismatch
   case realtimePassageAuthorityUnavailable
   case projectionFailed
 
@@ -63,6 +67,8 @@ public enum PreDriveReviewEvaluationError: Error, Equatable, Sendable {
       "PRE_DRIVE_NO_UNIQUE_ACTIVE_TARIFF"
     case .tariffRouteMismatch:
       "PRE_DRIVE_TARIFF_ROUTE_MISMATCH"
+    case .tariffVehicleClassMismatch:
+      "PRE_DRIVE_TARIFF_VEHICLE_CLASS_MISMATCH"
     case .realtimePassageAuthorityUnavailable:
       "PRE_DRIVE_REALTIME_PASSAGE_AUTHORITY_UNAVAILABLE"
     case .projectionFailed:
@@ -90,6 +96,9 @@ public enum PreDriveReviewEvaluator {
     guard let evaluatedAt = parseISO8601(evidence.evaluatedAt) else {
       throw PreDriveReviewEvaluationError.invalidTariffEvidence
     }
+    guard !normalized(evidence.vehicleClass).isEmpty else {
+      throw PreDriveReviewEvaluationError.invalidTariffEvidence
+    }
     guard evidence.passageEvidence != .realtimeConfirmedPassable else {
       throw PreDriveReviewEvaluationError.realtimePassageAuthorityUnavailable
     }
@@ -102,6 +111,7 @@ public enum PreDriveReviewEvaluator {
       try validate(
         quote: quote,
         for: routePlan,
+        vehicleClass: evidence.vehicleClass,
         evaluatedAt: evaluatedAt
       )
     }
@@ -150,6 +160,7 @@ public enum PreDriveReviewEvaluator {
   private static func validate(
     quote: TariffQuote,
     for routePlan: RoutePlan,
+    vehicleClass: String,
     evaluatedAt: Date
   ) throws {
     guard !normalized(quote.id).isEmpty,
@@ -169,6 +180,9 @@ public enum PreDriveReviewEvaluator {
       quote.exitFacilityID == routePlan.exitFacilityID
     else {
       throw PreDriveReviewEvaluationError.tariffRouteMismatch
+    }
+    guard quote.vehicleClass == vehicleClass else {
+      throw PreDriveReviewEvaluationError.tariffVehicleClassMismatch
     }
     if let distance = quote.tariffDistanceKM,
       !distance.isFinite || distance < 0

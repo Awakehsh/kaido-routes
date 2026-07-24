@@ -1910,6 +1910,7 @@ private struct ScenarioHarness {
         evaluatedAt: evidenceValue.requiredString("evaluated_at"),
         networkSnapshotID: evidenceValue.requiredString("network_snapshot_id"),
         routePlanID: evidenceValue.requiredString("route_plan_id"),
+        vehicleClass: evidenceValue.requiredString("vehicle_class"),
         passageEvidence: passageEvidence,
         tariffQuotes: scenario.given.tariffQuotes.map { try $0.tariffQuote() }
       )
@@ -1927,6 +1928,9 @@ private struct ScenarioHarness {
         adapterObservations["pre_drive.evidence.status"] = .string("VALID")
         adapterObservations["pre_drive.evidence.selected_quote_id"] = .string(
           evaluation.selectedTariffQuote.id
+        )
+        adapterObservations["pre_drive.evidence.vehicle_class"] = .string(
+          evaluation.selectedTariffQuote.vehicleClass
         )
         adapterObservations[
           "pre_drive.evidence.ignored_non_active_quote_ids"

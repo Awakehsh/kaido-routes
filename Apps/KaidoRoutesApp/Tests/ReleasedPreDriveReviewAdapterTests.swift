@@ -40,6 +40,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: "preview.synthetic.route-plan.drift",
+      vehicleClass: "STANDARD",
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
@@ -64,6 +65,7 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: routePlan.id,
+      vehicleClass: "STANDARD",
       passageEvidence: .realtimeConfirmedPassable,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
@@ -81,6 +83,36 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
     }
   }
 
+  func testAdapterRejectsTariffForAnotherVehicleClass() throws {
+    let entry = try bundledProductEntry()
+    let routePlan = entry.release.navigation.bundle.routePlan
+    let evidence = PreDriveReviewEvidence(
+      evaluatedAt: "2026-07-24T12:00:00+09:00",
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: "STANDARD",
+      passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+      tariffQuotes: [
+        releasedTariffQuote(
+          routePlan: routePlan,
+          vehicleClass: "LIGHT"
+        )
+      ]
+    )
+
+    XCTAssertThrowsError(
+      try ReleasedPreDriveReviewAdapter(
+        productRelease: entry.release,
+        evidence: evidence
+      )
+    ) {
+      XCTAssertEqual(
+        $0 as? PreDriveReviewEvaluationError,
+        .tariffVehicleClassMismatch
+      )
+    }
+  }
+
   private func bundledProductEntry() throws -> BundledProductReleaseEntry {
     try XCTUnwrap(
       BundledProductReleaseCatalogLoader.bundledPreview().demoEntries.first
@@ -94,17 +126,21 @@ final class ReleasedPreDriveReviewAdapterTests: XCTestCase {
       evaluatedAt: "2026-07-24T12:00:00+09:00",
       networkSnapshotID: routePlan.networkSnapshotID,
       routePlanID: routePlan.id,
+      vehicleClass: "STANDARD",
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
       tariffQuotes: [releasedTariffQuote(routePlan: routePlan)]
     )
   }
 
-  private func releasedTariffQuote(routePlan: RoutePlan) -> TariffQuote {
+  private func releasedTariffQuote(
+    routePlan: RoutePlan,
+    vehicleClass: String = "STANDARD"
+  ) -> TariffQuote {
     TariffQuote(
       id: "preview.synthetic.quote.active",
       entryFacilityID: routePlan.entryFacilityID,
       exitFacilityID: routePlan.exitFacilityID,
-      vehicleClass: "STANDARD",
+      vehicleClass: vehicleClass,
       tariffVersionID: "preview.synthetic.tariff.active",
       tariffVersionStatus: .active,
       tariffDistanceKM: 6.7,

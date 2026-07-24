@@ -1,3 +1,4 @@
+import KaidoPresentation
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -75,7 +76,31 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
-      ReleasedProductRouteAuthoringError.preDriveEvidenceRejected.rawValue
+      PreDriveReviewEvaluationError.routeIdentityMismatch.code
+    )
+  }
+
+  func testVehicleClassDriftedPreDriveEvidenceFailsClosed() throws {
+    let entry = try makeReleasedProductTestEntry()
+    let model = try ReleasedProductRouteAuthoringModel(
+      entries: [entry],
+      locale: .english,
+      evidenceProvider: {
+        makeReleasedPreDriveEvidence(
+          for: $0,
+          vehicleClass: "STANDARD",
+          quoteVehicleClass: "LIGHT"
+        )
+      }
+    )
+
+    authorReleasedRoute(model, entry: entry)
+
+    XCTAssertFalse(model.reviewReady)
+    XCTAssertNil(model.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      PreDriveReviewEvaluationError.tariffVehicleClassMismatch.code
     )
   }
 

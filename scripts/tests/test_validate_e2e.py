@@ -121,6 +121,19 @@ class ValidatePreDriveEvidenceTests(unittest.TestCase):
             )
         )
 
+    def test_tariff_vehicle_class_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["given"]["tariff_quotes"][0]["vehicle_class"] = "LIGHT"
+
+        errors = self.validate_evidence(scenario)
+
+        self.assertTrue(
+            any(
+                "vehicle_class must match pre-drive evidence" in error
+                for error in errors
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -613,8 +613,9 @@ user select one catalog entry and submit each release-owned recipe choice.
 `ReleasedRouteEditorAdapter` retains occurrence identity, and compilation must
 equal that release's whole `RoutePlan`. Review then requires separately injected
 session tariff and passage evidence to pass `ReleasedPreDriveReviewAdapter`
-against the exact RoutePlan and snapshot. Only that release-owned authoring and
-review pair enables an explicit user-start action. The action constructs
+against the exact RoutePlan, snapshot, and session vehicle class. Only that
+release-owned authoring and review pair enables an explicit user-start action.
+The action constructs
 `ProductNavigationRuntimeModel` from the selected entry, reuses the codec-minted
 live-input authority, and enters the navigation stage without starting Core
 Location. A second explicit action starts foreground location only after actor
@@ -824,7 +825,9 @@ That is a development fact, not yet the minimum deployment target.
   same-snapshot reviewed-distance catalog may populate actual distance by
   walking ordered occurrences. `PreDriveReviewEvaluator` then binds a separately
   dated evidence set to the exact snapshot, RoutePlan, entrance, and exit,
-  validates every tariff record, and selects exactly one `ACTIVE` version.
+  requires the session vehicle class on every tariff record, and selects exactly
+  one `ACTIVE` version. A proposed or retired quote for another vehicle class
+  rejects the whole evidence set rather than hiding behind the active result.
   Tariff and passage evidence remain session inputs rather than versioned product
   assets. Until a live authority and freshness contract exists, the evaluator
   rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays neutral.

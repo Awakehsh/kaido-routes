@@ -276,18 +276,20 @@ The internal iPhone adapter also composes KR-U04 after the exact explicit-exit
 compilation. A same-snapshot reviewed-distance catalog walks RoutePlan
 occurrences, so repeated entities contribute once per traversal. The shared
 pre-drive evaluator binds a dated evidence set to the exact snapshot, RoutePlan,
-entry, and exit, validates every tariff record, and selects one unique `ACTIVE`
-version before creating the presentation projection. The portable runner now
-executes that same boundary rather than projecting loose scalars. App tests
+entry, exit, and declared session vehicle class, validates every tariff record,
+and selects one unique `ACTIVE` version before creating the presentation
+projection. The portable runner now executes that same boundary rather than
+projecting loose scalars and exposes the selected exact vehicle class. App tests
 verify that actual distance changes with a duplicated lap while tariff distance
-does not, unconfirmed passage is not positive-open, unauthorized positive live
-state and invalid evidence fail closed, and undo removes the review.
+does not, another vehicle class fails closed even on a non-active quote,
+unconfirmed passage is not positive-open, unauthorized positive live state and
+invalid evidence fail closed, and undo removes the review.
 Released-authoring model tests additionally require a separately supplied
 session evidence set after exact release compilation. Missing, RoutePlan-drifted,
-or snapshot-drifted evidence leaves the released route compiled but blocks
-review and navigation; no synthetic review or injected mismatched release can
-authorize the journey. The default App composition intentionally supplies no
-such current evidence provider.
+snapshot-drifted, or vehicle-class-drifted evidence leaves the released route
+compiled but blocks review and navigation; no synthetic review or injected
+mismatched release can authorize the journey. The default App composition
+intentionally supplies no such current evidence provider.
 
 The default iPhone product-journey shell has a separate app-state and XCUITest
 floor. App tests require Route Atlas → parked authoring → pre-drive review

@@ -11,6 +11,7 @@ extension PreDriveReviewEvidence {
     evaluatedAt: "2026-07-24T12:00:00+09:00",
     networkSnapshotID: "preview.synthetic.snapshot-v1",
     routePlanID: "preview.synthetic.route-plan",
+    vehicleClass: "STANDARD",
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: [
       TariffQuote(

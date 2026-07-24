@@ -341,14 +341,17 @@ Input order, a newer check timestamp, or a proposed amount cannot make a
 non-active version win.
 
 `PreDriveReviewEvidence` is evaluated per session and is not embedded in a
-versioned product release. `PreDriveReviewEvaluator` requires exact snapshot,
-RoutePlan, directional entrance, and directional exit identity; a finite
+versioned product release. It declares the exact vehicle class selected for the
+session. `PreDriveReviewEvaluator` requires exact snapshot, RoutePlan,
+directional entrance, directional exit, and vehicle-class identity; a finite
 positive actual route distance; a valid evaluation time; unique, dated HTTPS
-tariff evidence; and exactly one active tariff version. It validates non-active
-quotes too, so an invalid proposed or retired record cannot hide behind the
-selected result. Until a separate live-passage authority and freshness contract
-exists, `REALTIME_CONFIRMED_PASSABLE` fails closed. Missing live input remains
-`NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED`, never confirmed open.
+tariff evidence; and exactly one active tariff version. Every quote, including a
+proposed or retired record, must match the session vehicle class; a different
+class fails with `PRE_DRIVE_TARIFF_VEHICLE_CLASS_MISMATCH` and cannot hide
+behind the selected result. Until a separate live-passage authority and
+freshness contract exists, `REALTIME_CONFIRMED_PASSABLE` fails closed. Missing
+live input remains `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED`, never confirmed
+open.
 
 ## Signs and localization
 

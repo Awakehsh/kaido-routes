@@ -281,6 +281,43 @@
         }
       }
     },
+    "pre_drive_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluated_at",
+        "network_snapshot_id",
+        "route_plan_id",
+        "vehicle_class",
+        "passage_evidence"
+      ],
+      "properties": {
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "network_snapshot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "route_plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vehicle_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "passage_evidence": {
+          "enum": [
+            "KNOWN_CLOSED",
+            "PLANNED_CONFLICT",
+            "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+            "REALTIME_CONFIRMED_PASSABLE"
+          ]
+        }
+      }
+    },
     "given": {
       "type": "object",
       "additionalProperties": false,
@@ -299,7 +336,12 @@
           }
         },
         "inputs": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "pre_drive_evidence": {
+              "$ref": "#/$defs/pre_drive_evidence"
+            }
+          }
         },
         "system_state": {
           "type": "object"

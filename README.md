@@ -46,7 +46,8 @@ present, the journey replaces synthetic authoring with that release's localized
 editor recipe, requires every stable choice explicitly, retains its exact
 occurrence sequence, and admits review only after separately supplied current
 tariff and passage evidence evaluates against the same RoutePlan and network
-snapshot. The current manifest contains zero foreground releases and one
+snapshot and every tariff quote matches the session's exact vehicle class. The
+current manifest contains zero foreground releases and one
 synthetic demo, so that branch remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
@@ -302,9 +303,9 @@ actual distance without changing the independent tariff record. The fixture is
 synthetic, realtime passage remains unconfirmed, and navigation start stays
 locked because no released navigation bundle exists. The foreground-release
 branch uses the same evaluator through `ReleasedPreDriveReviewAdapter`; missing
-or drifting per-session evidence keeps the exact compiled released route in
-authoring and cannot fall back to the synthetic review. A current authorized
-evidence provider is not yet connected.
+or drifting per-session evidence, including a mismatched vehicle class, keeps
+the exact compiled released route in authoring and cannot fall back to the
+synthetic review. A current authorized evidence provider is not yet connected.
 
 The internal iPhone shell now also binds KR-U05 and KR-U11 through a synthetic
 guidance-language preview. Japanese, Simplified Chinese, and English interface

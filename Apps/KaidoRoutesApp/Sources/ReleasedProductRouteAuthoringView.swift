@@ -1,5 +1,6 @@
 import Foundation
 import KaidoDomain
+import KaidoPresentation
 import SwiftUI
 
 struct ReleasedProductRouteAuthoringPanel: View {
@@ -160,10 +161,7 @@ struct ReleasedProductRouteAuthoringPanel: View {
           )
           .accessibilityIdentifier("released-route-authoring-blocker")
 
-          if errorCode
-            == ReleasedProductRouteAuthoringError
-            .preDriveEvidenceUnavailable.rawValue
-          {
+          if canRefreshPreDriveEvidence(errorCode) {
             Button {
               model.refreshPreDriveReview()
             } label: {
@@ -317,6 +315,13 @@ struct ReleasedProductRouteAuthoringPanel: View {
         english: "Current pre-drive evidence is unavailable"
       )
     }
+    if isRejectedPreDriveEvidence(code) {
+      return copy.resolve(
+        japanese: "出発前証拠が一致しません",
+        simplifiedChinese: "行前证据不匹配",
+        english: "Pre-drive evidence does not match"
+      )
+    }
     return copy.resolve(
       japanese: "リリース経路を続行できません",
       simplifiedChinese: "发布路线无法继续",
@@ -337,6 +342,28 @@ struct ReleasedProductRouteAuthoringPanel: View {
           "Navigation stays locked until tariff and passage evidence for this exact RoutePlan is available."
       )
     }
+    if code
+      == PreDriveReviewEvaluationError.tariffVehicleClassMismatch.code
+    {
+      return copy.resolve(
+        japanese:
+          "この走行で選択した車種区分と料金記録の車種区分が一致しません。",
+        simplifiedChinese:
+          "本次行程选择的车辆类别与计费记录中的车辆类别不一致。",
+        english:
+          "The vehicle class selected for this drive does not match the tariff record."
+      )
+    }
+    if isRejectedPreDriveEvidence(code) {
+      return copy.resolve(
+        japanese:
+          "RoutePlan、ネットワークスナップショット、料金、または通行証拠が完全一致しません。",
+        simplifiedChinese:
+          "RoutePlan、网络快照、计费或通行证据未通过精确匹配。",
+        english:
+          "The RoutePlan, network snapshot, tariff, or passage evidence failed exact matching."
+      )
+    }
     return copy.resolve(
       japanese: "リリース ID または編集レシピが一致しません。",
       simplifiedChinese: "发布身份或编辑配方不一致。",
@@ -346,5 +373,17 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private func canRefreshPreDriveEvidence(_ code: String) -> Bool {
+    code
+      == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
+      || isRejectedPreDriveEvidence(code)
+  }
+
+  private func isRejectedPreDriveEvidence(_ code: String) -> Bool {
+    code.hasPrefix("PRE_DRIVE_")
+      || code
+        == ReleasedProductRouteAuthoringError.preDriveEvidenceRejected.rawValue
   }
 }

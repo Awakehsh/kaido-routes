@@ -198,6 +198,9 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
         evaluation: adapter.evaluation
       )
       lastErrorCode = nil
+    } catch let error as PreDriveReviewEvaluationError {
+      preDriveReviewSnapshot = nil
+      lastErrorCode = error.code
     } catch {
       preDriveReviewSnapshot = nil
       fail(.preDriveEvidenceRejected)

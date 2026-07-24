@@ -386,6 +386,7 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
         "evaluated_at",
         "network_snapshot_id",
         "route_plan_id",
+        "vehicle_class",
         "passage_evidence",
     }
     if not v.require_keys(evidence, required, context):
@@ -398,6 +399,9 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
         v.add(f"{context}.network_snapshot_id must match given.route_plan")
     if evidence["route_plan_id"] != route_plan.get("plan_id"):
         v.add(f"{context}.route_plan_id must match given.route_plan")
+    vehicle_class = evidence["vehicle_class"]
+    if not isinstance(vehicle_class, str) or not vehicle_class.strip():
+        v.add(f"{context}.vehicle_class must be non-empty")
     if not is_datetime(evidence["evaluated_at"]):
         v.add(f"{context}.evaluated_at must be an ISO date-time")
     passage_states = {
@@ -426,6 +430,11 @@ def validate_pre_drive_evidence(v: Validation, given: dict[str, Any]) -> None:
             v.add(
                 f"given.tariff_quotes[{index}].exit_facility_id "
                 "must match given.route_plan"
+            )
+        if quote.get("vehicle_class") != vehicle_class:
+            v.add(
+                f"given.tariff_quotes[{index}].vehicle_class "
+                "must match pre-drive evidence"
             )
         checked_at = quote.get("checked_at")
         if is_datetime(checked_at) and is_datetime(evidence["evaluated_at"]):

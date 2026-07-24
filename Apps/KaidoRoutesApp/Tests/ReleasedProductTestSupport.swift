@@ -71,20 +71,23 @@ func makeReleasedProductTestEntry(
 func makeReleasedPreDriveEvidence(
   for entry: BundledProductReleaseEntry,
   routePlanID: String? = nil,
-  networkSnapshotID: String? = nil
+  networkSnapshotID: String? = nil,
+  vehicleClass: String = "STANDARD",
+  quoteVehicleClass: String? = nil
 ) -> PreDriveReviewEvidence {
   let routePlan = entry.release.navigation.bundle.routePlan
   return PreDriveReviewEvidence(
     evaluatedAt: "2026-07-25T12:00:00+09:00",
     networkSnapshotID: networkSnapshotID ?? routePlan.networkSnapshotID,
     routePlanID: routePlanID ?? routePlan.id,
+    vehicleClass: vehicleClass,
     passageEvidence: .noKnownConflictRealtimeUnconfirmed,
     tariffQuotes: [
       TariffQuote(
         id: "test.released-road.tariff.active",
         entryFacilityID: routePlan.entryFacilityID,
         exitFacilityID: routePlan.exitFacilityID,
-        vehicleClass: "STANDARD",
+        vehicleClass: quoteVehicleClass ?? vehicleClass,
         tariffVersionID: "test.released-road.tariff.v1",
         tariffVersionStatus: .active,
         tariffDistanceKM: 24.8,

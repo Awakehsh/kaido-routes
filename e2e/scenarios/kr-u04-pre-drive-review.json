@@ -55,6 +55,7 @@
         "evaluated_at": "2026-07-23T12:00:00+09:00",
         "network_snapshot_id": "test.snapshot.pre-drive-v1",
         "route_plan_id": "test.plan.pre-drive-v1",
+        "vehicle_class": "STANDARD",
         "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED"
       }
     },
@@ -88,6 +89,15 @@
       "matcher": "EQUALS",
       "expected": "test.quote.pre-drive",
       "rationale": "The event quote must be the unique active result selected from the validated evidence set."
+    },
+    {
+      "id": "vehicle-class-is-session-bound",
+      "after": "review",
+      "category": "TOLL",
+      "subject": "pre_drive.evidence.vehicle_class",
+      "matcher": "EQUALS",
+      "expected": "STANDARD",
+      "rationale": "The selected tariff quote must match the exact vehicle class declared for this pre-drive session."
     },
     {
       "id": "actual-distance-is-route-distance",

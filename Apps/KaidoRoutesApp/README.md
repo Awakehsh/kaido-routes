@@ -52,8 +52,9 @@ recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
 equal the selected release's whole `RoutePlan`, including snapshot and
 occurrence order. A separately injected session-evidence provider must then
 satisfy `ReleasedPreDriveReviewAdapter`; missing or drifting tariff and passage
-evidence keeps review and navigation locked. Only that exact route and review
-pair enables the primary user action to construct the selected entry's
+evidence, or any tariff quote for another vehicle class, keeps review and
+navigation locked. Only that exact route and review pair enables the primary
+user action to construct the selected entry's
 `ProductNavigationRuntimeModel`. The App then enters a release-keyed navigation
 surface while Core Location remains idle. A second explicit action starts
 foreground input only after actor activation and When In Use authorization.
@@ -266,10 +267,12 @@ Missing distance coverage, invalid values, or snapshot drift block compilation.
 `PreDriveReviewModel` delegates to the platform-light
 `PreDriveReviewEvaluator`. The evaluator binds a dated evidence set to the exact
 RoutePlan and network snapshot, validates every quote against the directional
-entrance and exit, and requires one unique `ACTIVE` tariff version before
-creating the presentation. It rejects a positive realtime passage state because
-no live authority and freshness token exists yet. The view never derives toll
-from route distance and never presents
+entrance, exit, and session vehicle class, and requires one unique `ACTIVE`
+tariff version before creating the presentation. A quote for another vehicle
+class rejects the whole evidence set, including when that quote is non-active.
+It rejects a positive realtime passage state because no live authority and
+freshness token exists yet. The view never derives toll from route distance and
+never presents
 `NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED` as confirmed open.
 
 `ReleasedPreDriveReviewAdapter` applies the same evaluation to the RoutePlan
@@ -277,12 +280,12 @@ owned by one validated `KaidoProductRelease`; tariff and passage evidence remain
 per-session inputs rather than frozen release assets.
 `ReleasedProductRouteAuthoringModel` requests that evidence only after the
 release-owned recipe compiles to the exact selected RoutePlan. Missing,
-snapshot-drifted, route-drifted, or rejected evidence keeps review unavailable;
-changing the interface locale rebuilds released labels without changing
-occurrence progress and reevaluates the evidence. The bundled fixture is
-synthetic, the default provider supplies no live evidence, and navigation
-remains locked because the app has no real-road product release plus current
-authorized session evidence.
+snapshot-drifted, route-drifted, vehicle-class-drifted, or rejected evidence
+keeps review unavailable; changing the interface locale rebuilds released
+labels without changing occurrence progress and reevaluates the evidence. The
+bundled fixture is synthetic, the default provider supplies no live evidence,
+and navigation remains locked because the app has no real-road product release
+plus current authorized session evidence.
 
 ## Guidance language preview
 

@@ -502,6 +502,23 @@ validated `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release can construct
 initializers are package-only, so application adapters can compare and consume
 the authority but cannot invent it.
 
+The iPhone distribution boundary adds `BundledProductReleaseCatalog` in front of
+the product codec. Its compile-time descriptors pin a safe bundle resource name,
+extension, SHA-256, expected release ID, and an explicit demo or foreground
+role. Hash verification precedes decode. The decoded runtime-use declaration
+and codec-minted authority must then match the descriptor role; manifest text
+cannot promote synthetic evidence. Duplicate resources, duplicate release IDs,
+missing or corrupt assets, and identity or role drift block catalog
+construction.
+
+The default product journey queries only foreground releases by exact
+`RoutePlan` equality. Zero matches remain unavailable, and multiple matches
+remain ambiguous even when both artifacts independently validate. One exact
+match is necessary but not sufficient: the app still requires the separate
+user-started navigation runtime composition before enabling the navigation
+stage. The current build intentionally carries zero foreground releases and one
+synthetic demo. It never substitutes that demo for a user route.
+
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
 `CONTEXT_ONLY`; it exposes source-derived display paths but no directed edge,

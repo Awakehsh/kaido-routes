@@ -20,11 +20,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("product-journey-step-navigation", in: app).value as? String,
       "LOCKED"
     )
-
     let k7Mode = element("product-journey-atlas-k7Evidence", in: app)
     XCTAssertTrue(k7Mode.isEnabled)
     k7Mode.tap()
     XCTAssertTrue(k7Mode.isSelected)
+    XCTAssertEqual(
+      reveal("product-journey-release-catalog", in: app).value as? String,
+      "0 RELEASED ROAD · 1 DEMO"
+    )
 
     let action = element("product-journey-primary-action", in: app)
     XCTAssertTrue(action.isEnabled)

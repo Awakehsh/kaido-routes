@@ -83,6 +83,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   @Published var atlasMode: RouteAtlasMode = .network
 
   let safety = AppSafetyState.preview
+  let productReleaseCatalog: BundledProductReleaseCatalog
   let routeAtlasAttributions: RouteAtlasAttributionCatalog
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
@@ -96,6 +97,8 @@ final class KaidoRoutesAppModel: ObservableObject {
     do {
       let routeEditor = try ParkedRouteEditorModel()
       self.routeEditor = routeEditor
+      productReleaseCatalog =
+        try BundledProductReleaseCatalogLoader.bundledPreview()
       routeAtlasAttributions = try RouteAtlasAttributionCatalog.bundled()
       entranceRecommendation = try EntranceRecommendationModel(
         routeEditor: routeEditor

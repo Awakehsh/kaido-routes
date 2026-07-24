@@ -379,6 +379,19 @@ a device test. A launch-only XCUITest verifies that the visible preview starts
 in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
 guidance audio `IDLE`.
 
+The same L3 target tests the Apple bundle distribution gate without adding a
+portable scenario event. Catalog tests require the checked-in demo resource to
+match its compile-time SHA-256, expected release ID, and demo-only runtime role.
+They mutate bytes before codec admission; exercise missing, corrupt, invalid,
+identity-drifted, role-drifted, and duplicate manifests; admit a test
+released-road entry only through a production-codec-minted authority; and
+require whole-`RoutePlan` equality. Two independently valid released entries for
+the same exact plan produce an explicit ambiguity rather than an arbitrary
+choice. XCUITest exposes the current `0 RELEASED ROAD · 1 DEMO` catalog in the
+default journey. Product schema, release validity, and live-input authority
+remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
+are L3-specific.
+
 KR-U16 adds package and L3 process-lifecycle evidence without inventing a
 portable Apple scene event. A schema-1.0 checkpoint round-trips deterministic
 coordinate-free state, fails on release identity or schema drift, clears partial

@@ -155,9 +155,18 @@ struct KaidoProductJourneyView: View {
         symbol: "shield.lefthalf.filled",
         title: "当前使用合成路线目录",
         detail:
-          "可以完整体验停车编辑和行前确认，但不会获得真实道路导航权限。",
-        code: "SYNTHETIC_TEST_ONLY",
+          "清单哈希与生产 codec 已验证；没有真实道路发布包，不会获得导航权限。",
+        code:
+          "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
+          + " RELEASED ROAD · "
+          + "\(model.composition.productReleaseCatalog.demoEntries.count) DEMO",
         color: KaidoTheme.evidenceCoral
+      )
+      .accessibilityIdentifier("product-journey-release-catalog")
+      .accessibilityValue(
+        "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
+          + " RELEASED ROAD · "
+          + "\(model.composition.productReleaseCatalog.demoEntries.count) DEMO"
       )
     }
   }

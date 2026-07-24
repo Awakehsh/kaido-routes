@@ -25,7 +25,7 @@ enum KaidoProductJourneyBlocker: String, Equatable, Sendable {
   case routeReviewNotReady = "ROUTE_REVIEW_NOT_READY"
   case routeReleaseAuthorityUnavailable =
     "ROUTE_RELEASE_AUTHORITY_UNAVAILABLE"
-  case navigationStartNotAdmitted = "NAVIGATION_START_NOT_ADMITTED"
+  case productReleaseAmbiguous = "PRODUCT_RELEASE_AMBIGUOUS"
   case navigationRuntimeUnavailable = "NAVIGATION_RUNTIME_UNAVAILABLE"
 }
 
@@ -62,24 +62,29 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   var canStartNavigation: Bool {
-    routeReviewReady
-      && composition.preDriveReview.snapshot?.navigationStartAllowed == true
-      && composition.safety.routeReleaseAuthority
+    false
+  }
+
+  var productReleaseSelection: BundledProductReleaseSelection {
+    guard let routePlan = composition.routeEditor.compiledRoutePlan else {
+      return .unavailable
+    }
+    return composition.productReleaseCatalog
+      .selectForegroundNavigationRelease(matching: routePlan)
   }
 
   var navigationBlocker: KaidoProductJourneyBlocker? {
     guard routeReviewReady else {
       return .routeReviewNotReady
     }
-    guard composition.safety.routeReleaseAuthority else {
+    switch productReleaseSelection {
+    case .unavailable:
       return .routeReleaseAuthorityUnavailable
+    case .ambiguous:
+      return .productReleaseAmbiguous
+    case .selected:
+      return .navigationRuntimeUnavailable
     }
-    guard
-      composition.preDriveReview.snapshot?.navigationStartAllowed == true
-    else {
-      return .navigationStartNotAdmitted
-    }
-    return .navigationRuntimeUnavailable
   }
 
   var canAdvance: Bool {

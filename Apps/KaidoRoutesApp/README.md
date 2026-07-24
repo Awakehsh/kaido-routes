@@ -25,6 +25,25 @@ The former all-panel review workbench remains available with
 `-INTERNAL-REVIEW-HOME`; focused previews retain their existing launch
 arguments.
 
+## Bundled product release catalog
+
+The app does not discover arbitrary JSON files at runtime. Its compile-time
+`BundledProductReleaseCatalog` manifest names each bundled artifact, pins its
+SHA-256 and expected product release ID, and assigns either `DEMO_ONLY` or
+`FOREGROUND_NAVIGATION`. The loader validates the descriptor and content hash
+before calling `KaidoProductReleaseArtifactCodec`, then requires the decoded
+release to match both identity and role. A demo must remain
+`SYNTHETIC_TEST_ONLY + DISABLED` with no live-input authority. A foreground
+entry must be `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` and carry only the
+authority minted by production decode.
+
+The product journey searches only foreground entries and compares the whole
+compiled `RoutePlan`, including snapshot and occurrence order. No match remains
+release-blocked; multiple exact matches are an explicit ambiguity; one match
+still remains runtime-blocked until the user-started product navigation surface
+is integrated. There is no ID-only or synthetic fallback. The current manifest
+contains `0 RELEASED ROAD · 1 DEMO`, so no real road navigation is bundled.
+
 The current app deliberately composes only:
 
 - the 26-route full-network recognition reference;
@@ -52,12 +71,16 @@ The current app deliberately composes only:
 - explicit review and release-blocked states.
 
 `KaidoProductJourneyModelTests` execute ordered advancement, no early review,
-compiled-route invalidation, backwards navigation, and the synthetic
-release-authority blocker. `KaidoProductJourneyUITests` prove the default scene
-starts at Route Atlas, exposes a locked navigation step, enters parked authoring
-through the primary action, and renders the exact release blocker in pre-drive
-review. The review screenshot is visual adapter evidence only; it does not
-qualify a physical device or real navigation.
+compiled-route invalidation, backwards navigation, and the exact catalog-backed
+release-authority blocker. Catalog tests cover hash mutation before codec
+admission, role promotion, released-road authority, missing/corrupt assets,
+descriptor and identity drift, duplicate resources and release IDs, exact
+RoutePlan selection, and ambiguous matches. `KaidoProductJourneyUITests` prove
+the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
+a locked navigation step, enters parked authoring through the primary action,
+and renders the exact release blocker in pre-drive review. The review screenshot
+is visual adapter evidence only; it does not qualify a physical device or real
+navigation.
 
 The SVG remains non-interactive. Attribution is not delegated to SVG text:
 `route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and

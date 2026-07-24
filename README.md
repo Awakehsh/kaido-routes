@@ -24,7 +24,12 @@ invalidating the compiled route automatically removes review readiness. The
 original internal workbench remains available through a dedicated launch
 argument. The journey presents a synthetic directional-entrance recommendation,
 parked route authoring, and RoutePlan-bound pre-drive review without calling live
-location or surface routing. A separate
+location or surface routing. Its bundled product-release catalog is a
+compile-time manifest: every resource is pinned to an exact filename, SHA-256,
+release ID, and `DEMO_ONLY` or `FOREGROUND_NAVIGATION` role before the production
+codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
+closed on zero or multiple released-road matches. The current manifest contains
+zero foreground releases and one synthetic demo. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
 and has no audio authority. A synthetic driving-surface panel contrasts measured
@@ -390,6 +395,17 @@ Kaido product release exists yet. KR-D27 adds the live-input gate:
 must contain no synthetic source in either nested release; and only a valid
 `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release mints the unforgeable
 six-part foreground authority consumed by the app.
+
+The iPhone build adds a hash-bound catalog in front of that codec. A descriptor
+cannot promote a synthetic artifact into foreground navigation, and a released
+road descriptor is accepted only when production decode mints the exact
+foreground authority. Missing, unreadable, mutated, invalid, role-drifted,
+identity-drifted, duplicate, and ambiguous assets fail closed. The default
+journey selects only an exact compiled `RoutePlan`; it does not fall back by
+route ID or substitute the bundled demo. This app-distribution gate is covered
+at L3 rather than by a new portable scenario because it depends on Apple bundle
+resources, while schema-3.0 product semantics remain portable and
+codec-authoritative.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
 `RouteAtlasContextBundle` accepts only `CONTEXT_ONLY` geometry with a matching

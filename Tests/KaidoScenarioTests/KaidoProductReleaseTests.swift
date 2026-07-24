@@ -589,6 +589,77 @@ func appBundleStagingPreparesForegroundProduct() throws {
   #expect(sourceText.contains("role: .foregroundNavigation"))
 }
 
+@Test("App bundle staging pins signed evidence update trust roots")
+func appBundleStagingPinsPreDriveEvidenceUpdateTrust() throws {
+  let productData = try appBundleReleasedProductData()
+  let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+    keyID: "test.pre-drive-evidence.2026"
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7WithEvidenceTrust",
+    productResourceName: "k7-product",
+    preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey]
+  )
+
+  let package = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: configuration,
+    productArtifactData: productData
+  )
+  let generatedSource = try #require(
+    package.files.first { $0.relativePath.hasPrefix("Sources/") }
+  )
+  let sourceText = try #require(
+    String(data: generatedSource.data, encoding: .utf8)
+  )
+
+  #expect(
+    package.manifest.descriptor.preDriveEvidenceUpdateTrustKeys
+      == [keyPair.trustKey]
+  )
+  #expect(
+    sourceText.contains(
+      "PreDriveEvidenceUpdateTrustKey("
+    )
+  )
+  #expect(
+    sourceText.contains(
+      "keyID: \"test.pre-drive-evidence.2026\""
+    )
+  )
+  #expect(
+    sourceText.contains(
+      "publicKeyBase64: \"\(keyPair.trustKey.publicKeyBase64)\""
+    )
+  )
+}
+
+@Test("App bundle staging rejects invalid signed update trust registries")
+func appBundleStagingRejectsInvalidPreDriveEvidenceUpdateTrust() throws {
+  let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+    keyID: "test.pre-drive-evidence.duplicate"
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7WithInvalidTrust",
+    productResourceName: "k7-product",
+    preDriveEvidenceUpdateTrustKeys: [
+      keyPair.trustKey,
+      keyPair.trustKey,
+    ]
+  )
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: configuration,
+      productArtifactData: try appBundleReleasedProductData()
+    )
+    Issue.record("Expected duplicate signed update trust to fail")
+  } catch AppBundleReleaseStagingError.invalidConfiguration(let issues) {
+    #expect(issues == [.invalidPreDriveEvidenceUpdateTrustKeys])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("App bundle staging rejects synthetic products and partial optional input")
 func appBundleStagingRejectsNonForegroundInput() throws {
   let fixture = navigationReleaseBundleFixture()

@@ -16,6 +16,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
   case invalidPreDriveEvidence([PreDriveEvidenceBundleIssue])
   case preDriveEvidenceAuthoring(PreDriveEvidenceAuthoringError)
+  case preDriveEvidenceUpdate(PreDriveEvidenceUpdateError)
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
   case appBundleStaging(AppBundleReleaseStagingError)
 
@@ -53,6 +54,17 @@ private enum CLIError: Error, CustomStringConvertible {
           --draft <pre-drive-evidence-draft.json> \\
           --config <pre-drive-evidence-authoring.json> \\
           --output <pre-drive-evidence.json>
+        kaido-release generate-pre-drive-evidence-signing-key \\
+          --key-id <stable-key-id> --output <new-private-key-directory>
+        kaido-release sign-pre-drive-evidence-update \\
+          --product-artifact <product-release.json> \\
+          --manifest <pre-drive-evidence.json> \\
+          --key-id <stable-key-id> --private-key <private-key.bin> \\
+          --output <pre-drive-evidence-update.json>
+        kaido-release validate-pre-drive-evidence-update \\
+          --product-artifact <product-release.json> \\
+          --envelope <pre-drive-evidence-update.json> \\
+          --trust-key <trust-key.json>
         kaido-release prepare-app-bundle \\
           --product-artifact <product-release.json> \\
           --config <app-bundle-staging.json> \\
@@ -87,6 +99,8 @@ private enum CLIError: Error, CustomStringConvertible {
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .preDriveEvidenceAuthoring(let error):
       Self.preDriveEvidenceAuthoringDescription(error)
+    case .preDriveEvidenceUpdate(let error):
+      Self.preDriveEvidenceUpdateDescription(error)
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
     case .appBundleStaging(let error):
@@ -170,6 +184,18 @@ private enum CLIError: Error, CustomStringConvertible {
     }
   }
 
+  private static func preDriveEvidenceUpdateDescription(
+    _ error: PreDriveEvidenceUpdateError
+  ) -> String {
+    switch error {
+    case .invalidBundle(let issues):
+      "Signed pre-drive evidence update is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    default:
+      "Signed pre-drive evidence update is blocked: \(error.code)"
+    }
+  }
+
   private static func appBundleStagingDescription(
     _ error: AppBundleReleaseStagingError
   ) -> String {
@@ -242,6 +268,22 @@ private enum Command {
     draft: String,
     configuration: String,
     output: String
+  )
+  case generatePreDriveEvidenceSigningKey(
+    keyID: String,
+    output: String
+  )
+  case signPreDriveEvidenceUpdate(
+    productArtifact: String,
+    manifest: String,
+    keyID: String,
+    privateKey: String,
+    output: String
+  )
+  case validatePreDriveEvidenceUpdate(
+    productArtifact: String,
+    envelope: String,
+    trustKey: String
   )
   case prepareAppBundle(
     productArtifact: String,
@@ -354,6 +396,42 @@ private struct Arguments {
         draft: try flags.value("--draft"),
         configuration: try flags.value("--config"),
         output: try flags.value("--output")
+      )
+    case "generate-pre-drive-evidence-signing-key":
+      try flags.require(exactly: ["--key-id", "--output"])
+      command = .generatePreDriveEvidenceSigningKey(
+        keyID: try flags.value("--key-id"),
+        output: try flags.value("--output")
+      )
+    case "sign-pre-drive-evidence-update":
+      try flags.require(
+        exactly: [
+          "--product-artifact",
+          "--manifest",
+          "--key-id",
+          "--private-key",
+          "--output",
+        ]
+      )
+      command = .signPreDriveEvidenceUpdate(
+        productArtifact: try flags.value("--product-artifact"),
+        manifest: try flags.value("--manifest"),
+        keyID: try flags.value("--key-id"),
+        privateKey: try flags.value("--private-key"),
+        output: try flags.value("--output")
+      )
+    case "validate-pre-drive-evidence-update":
+      try flags.require(
+        exactly: [
+          "--product-artifact",
+          "--envelope",
+          "--trust-key",
+        ]
+      )
+      command = .validatePreDriveEvidenceUpdate(
+        productArtifact: try flags.value("--product-artifact"),
+        envelope: try flags.value("--envelope"),
+        trustKey: try flags.value("--trust-key")
       )
     case "prepare-app-bundle":
       let baseFlags: Set<String> = [
@@ -541,6 +619,63 @@ private func writeNewDirectory(
     )
   } catch let error as CLIError {
     throw error
+  } catch {
+    if FileManager.default.fileExists(atPath: outputURL.path) {
+      throw CLIError.outputExists(path)
+    }
+    throw CLIError.writeFailed(path, error)
+  }
+}
+
+private func writeNewSigningKeyDirectory(
+  _ keyPair: PreDriveEvidenceUpdateSigningKeyPair,
+  path: String
+) throws {
+  let outputURL = URL(fileURLWithPath: path, isDirectory: true)
+    .standardizedFileURL
+  guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+    throw CLIError.outputExists(path)
+  }
+  let parentURL = outputURL.deletingLastPathComponent()
+  let temporaryURL = parentURL.appendingPathComponent(
+    ".kaido-pre-drive-signing-key-\(UUID().uuidString).tmp",
+    isDirectory: true
+  )
+  defer {
+    try? FileManager.default.removeItem(at: temporaryURL)
+  }
+  do {
+    try FileManager.default.createDirectory(
+      at: temporaryURL,
+      withIntermediateDirectories: false
+    )
+    let privateKeyURL = temporaryURL.appendingPathComponent(
+      "private-key.bin",
+      isDirectory: false
+    )
+    guard
+      FileManager.default.createFile(
+        atPath: privateKeyURL.path,
+        contents: keyPair.privateKeyData,
+        attributes: [.posixPermissions: 0o600]
+      )
+    else {
+      throw CocoaError(.fileWriteUnknown)
+    }
+    let trustKeyData = try PreDriveEvidenceUpdateTrustKeyCodec.encode(
+      keyPair.trustKey
+    )
+    try trustKeyData.write(
+      to: temporaryURL.appendingPathComponent(
+        "trust-key.json",
+        isDirectory: false
+      ),
+      options: .atomic
+    )
+    try FileManager.default.moveItem(
+      at: temporaryURL,
+      to: outputURL
+    )
   } catch {
     if FileManager.default.fileExists(atPath: outputURL.path) {
       throw CLIError.outputExists(path)
@@ -896,6 +1031,77 @@ do {
         + "\(bundle.manifest.records.count) exact tariff profiles for "
         + "\(release.releaseID); output \(output)"
     )
+  case .generatePreDriveEvidenceSigningKey(let keyID, let output):
+    do {
+      let keyPair =
+        try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+          keyID: keyID
+        )
+      try writeNewSigningKeyDirectory(keyPair, path: output)
+      print(
+        "PASS: generated pre-drive evidence signing key \(keyID); "
+          + "private key mode 0600 and public trust descriptor at \(output)"
+      )
+    } catch let error as PreDriveEvidenceUpdateError {
+      throw CLIError.preDriveEvidenceUpdate(error)
+    }
+  case .signPreDriveEvidenceUpdate(
+    let productArtifact,
+    let manifestPath,
+    let keyID,
+    let privateKeyPath,
+    let output
+  ):
+    let release = try decodeProductRelease(path: productArtifact)
+    do {
+      let privateKeyData = try read(path: privateKeyPath)
+      let encoded = try PreDriveEvidenceUpdateCodec.sign(
+        manifestData: read(path: manifestPath),
+        productRelease: release,
+        keyID: keyID,
+        privateKeyData: privateKeyData
+      )
+      let trustKey = try PreDriveEvidenceUpdateCodec.trustKey(
+        keyID: keyID,
+        privateKeyData: privateKeyData
+      )
+      let verified = try PreDriveEvidenceUpdateCodec.verify(
+        encoded,
+        productRelease: release,
+        trustedKeys: [trustKey]
+      )
+      try writeNew(encoded, path: output)
+      print(
+        "PASS: signed pre-drive evidence update "
+          + "\(verified.bundle.manifest.releaseID) for "
+          + "\(release.releaseID); output \(output)"
+      )
+    } catch let error as PreDriveEvidenceUpdateError {
+      throw CLIError.preDriveEvidenceUpdate(error)
+    }
+  case .validatePreDriveEvidenceUpdate(
+    let productArtifact,
+    let envelopePath,
+    let trustKeyPath
+  ):
+    let release = try decodeProductRelease(path: productArtifact)
+    do {
+      let trustKey = try PreDriveEvidenceUpdateTrustKeyCodec.decode(
+        read(path: trustKeyPath)
+      )
+      let verified = try PreDriveEvidenceUpdateCodec.verify(
+        read(path: envelopePath),
+        productRelease: release,
+        trustedKeys: [trustKey]
+      )
+      print(
+        "PASS: signed pre-drive evidence update "
+          + "\(verified.bundle.manifest.releaseID) verifies with "
+          + "\(verified.envelope.keyID) for \(release.releaseID)"
+      )
+    } catch let error as PreDriveEvidenceUpdateError {
+      throw CLIError.preDriveEvidenceUpdate(error)
+    }
   case .prepareAppBundle(
     let productArtifactPath,
     let configurationPath,

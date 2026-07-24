@@ -433,6 +433,17 @@ author derives every quote profile and route-owned field before running the
 same KR-D29 bundle gate. Synthetic products, unknown input schemas, and invalid
 reviewed source coverage return no manifest.
 
+Signed pre-drive evidence updates are also covered at the platform-light and App
+adapter layers without adding a portable route-behavior event. Package tests
+bind Ed25519 verification to exact manifest bytes, one compile-time key ID, and
+one whole foreground product; payload, hash, signature, trust, product, and
+synthetic-scope drift fail closed. Staging tests require a valid non-duplicate
+public-key registry. App tests then require exactly one trusted product match,
+persist-before-publish, monotonic evidence release time, unique release ID,
+release-time activation, and re-verification on restoration. These tests prove
+local update mechanics only and do not qualify source claims, transport, device
+storage, or realtime passage.
+
 Product release authoring is covered at the same platform-light layer without a
 new route-behavior event. Focused Swift tests pass independently valid
 released-road navigation and Route Atlas fixtures to

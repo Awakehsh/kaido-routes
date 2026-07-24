@@ -70,6 +70,17 @@ ID-only, injected mismatched-release, or synthetic-review fallback. The current
 manifest contains `0 RELEASED ROAD · 1 DEMO`, so the released authoring branch
 remains dormant and the default scene retains its synthetic preview.
 
+A foreground descriptor may also pin public Ed25519 keys for signed pre-drive
+evidence updates. The parked authoring and review stages expose a JSON importer
+only when both compile-time trust and the Application Support store exist. One
+envelope must verify against exactly one foreground product and the complete
+evidence bundle contract. The model rejects rollback and release-ID reuse,
+persists before publishing, verifies again after restart, and refreshes an
+already selected vehicle/payment review. A future release waits until its
+declared time; after activation, a missing or expired profile does not fall back
+to older bundled evidence. Import never changes product, RoutePlan, location,
+prompt, or navigation authority.
+
 The current app deliberately composes only:
 
 - the 26-route full-network recognition reference;
@@ -85,6 +96,9 @@ The current app deliberately composes only:
 - a dormant foreground-release authoring and pre-drive branch that retains
   release-owned choices and occurrences and requires exact current session
   evidence before review;
+- a dormant signed pre-drive evidence importer whose public trust roots are
+  compile-time product descriptors and whose accepted envelope is atomically
+  retained under Application Support;
 - a parked three-language guidance-voice sound check that ranks installed Apple
   premium/enhanced/default voices, persists one exact preference per synthesis
   locale, and keeps audition authority separate from navigation speech;
@@ -132,9 +146,11 @@ authority, reject demo entries, keep synthetic trace input unavailable, and
 remove the checkpoint on termination. Catalog tests cover hash mutation before
 codec admission, role promotion, released-road authority, missing/corrupt
 assets, descriptor and identity drift, duplicate resources and release IDs,
-exact RoutePlan selection, and ambiguous matches. Released-editor adapter tests
-replay the bundled repeated occurrences through Simplified Chinese labels and
-reject a non-recipe choice without mutating the session.
+exact RoutePlan selection, ambiguous matches, signed-update trust validation,
+and trust-role isolation. Signed-update model tests cover persist-before-publish,
+untrusted input, rollback, future activation, and restoration. Released-editor
+adapter tests replay the bundled repeated occurrences through Simplified
+Chinese labels and reject a non-recipe choice without mutating the session.
 `KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
 a locked navigation step, enters parked authoring through the primary action,

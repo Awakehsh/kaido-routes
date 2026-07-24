@@ -281,6 +281,17 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     }
   }
 
+  func evidenceSourceDidChange() {
+    guard
+      compiledRoutePlan != nil,
+      selectedVehicleClass != nil,
+      selectedPaymentMethod != nil
+    else {
+      return
+    }
+    refreshPreDriveReview()
+  }
+
   func updateLocale(_ locale: KaidoReleaseLocale) {
     guard locale != self.locale else { return }
     do {

@@ -74,6 +74,7 @@ public struct AppBundleProductReleaseDescriptor:
   public let role: AppBundleProductReleaseRole
   public let guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor?
   public let preDriveEvidence: AppBundlePreDriveEvidenceDescriptor?
+  public let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]?
 
   public init(
     resourceName: String,
@@ -82,7 +83,9 @@ public struct AppBundleProductReleaseDescriptor:
     expectedReleaseID: String,
     role: AppBundleProductReleaseRole,
     guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor? = nil,
-    preDriveEvidence: AppBundlePreDriveEvidenceDescriptor? = nil
+    preDriveEvidence: AppBundlePreDriveEvidenceDescriptor? = nil,
+    preDriveEvidenceUpdateTrustKeys:
+      [PreDriveEvidenceUpdateTrustKey]? = nil
   ) {
     self.resourceName = resourceName
     self.resourceExtension = resourceExtension
@@ -91,6 +94,8 @@ public struct AppBundleProductReleaseDescriptor:
     self.role = role
     self.guidanceAudio = guidanceAudio
     self.preDriveEvidence = preDriveEvidence
+    self.preDriveEvidenceUpdateTrustKeys =
+      preDriveEvidenceUpdateTrustKeys
   }
 
   public var resourceFilename: String {
@@ -105,19 +110,22 @@ public struct AppBundleProductReleaseDescriptor:
     case role
     case guidanceAudio = "guidance_audio"
     case preDriveEvidence = "pre_drive_evidence"
+    case preDriveEvidenceUpdateTrustKeys =
+      "pre_drive_evidence_update_trust_keys"
   }
 }
 
 public struct AppBundleReleaseStagingConfiguration:
   Codable, Equatable, Sendable
 {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "1.1"
 
   public let schemaVersion: String
   public let descriptorSymbol: String
   public let productResourceName: String
   public let guidanceAudioManifestResourceName: String?
   public let preDriveEvidenceManifestResourceName: String?
+  public let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]?
 
   public init(
     schemaVersion: String =
@@ -125,7 +133,9 @@ public struct AppBundleReleaseStagingConfiguration:
     descriptorSymbol: String,
     productResourceName: String,
     guidanceAudioManifestResourceName: String? = nil,
-    preDriveEvidenceManifestResourceName: String? = nil
+    preDriveEvidenceManifestResourceName: String? = nil,
+    preDriveEvidenceUpdateTrustKeys:
+      [PreDriveEvidenceUpdateTrustKey]? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.descriptorSymbol = descriptorSymbol
@@ -134,6 +144,8 @@ public struct AppBundleReleaseStagingConfiguration:
       guidanceAudioManifestResourceName
     self.preDriveEvidenceManifestResourceName =
       preDriveEvidenceManifestResourceName
+    self.preDriveEvidenceUpdateTrustKeys =
+      preDriveEvidenceUpdateTrustKeys
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -144,6 +156,8 @@ public struct AppBundleReleaseStagingConfiguration:
       "guidance_audio_manifest_resource_name"
     case preDriveEvidenceManifestResourceName =
       "pre_drive_evidence_manifest_resource_name"
+    case preDriveEvidenceUpdateTrustKeys =
+      "pre_drive_evidence_update_trust_keys"
   }
 }
 
@@ -155,6 +169,7 @@ public enum AppBundleReleaseStagingConfigurationIssue:
   case invalidProductResourceName
   case invalidGuidanceAudioManifestResourceName
   case invalidPreDriveEvidenceManifestResourceName
+  case invalidPreDriveEvidenceUpdateTrustKeys
   case duplicateManifestResourceName
 
   public var code: String {
@@ -169,6 +184,8 @@ public enum AppBundleReleaseStagingConfigurationIssue:
       "INVALID_APP_BUNDLE_AUDIO_MANIFEST_RESOURCE_NAME"
     case .invalidPreDriveEvidenceManifestResourceName:
       "INVALID_APP_BUNDLE_PRE_DRIVE_EVIDENCE_RESOURCE_NAME"
+    case .invalidPreDriveEvidenceUpdateTrustKeys:
+      "INVALID_APP_BUNDLE_PRE_DRIVE_EVIDENCE_UPDATE_TRUST_KEYS"
     case .duplicateManifestResourceName:
       "DUPLICATE_APP_BUNDLE_MANIFEST_RESOURCE_NAME"
     }
@@ -229,7 +246,7 @@ public struct AppBundleStagedResourceRecord:
 public struct AppBundleReleaseStagingManifest:
   Codable, Equatable, Sendable
 {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "1.1"
 
   public let schemaVersion: String
   public let descriptorSymbol: String
@@ -460,7 +477,9 @@ public enum AppBundleReleaseStagingAuthor {
       expectedReleaseID: productRelease.releaseID,
       role: .foregroundNavigation,
       guidanceAudio: audioDescriptor,
-      preDriveEvidence: preDriveEvidenceDescriptor
+      preDriveEvidence: preDriveEvidenceDescriptor,
+      preDriveEvidenceUpdateTrustKeys:
+        configuration.preDriveEvidenceUpdateTrustKeys
     )
     let resourceRecords = stagedFiles.map { file in
       AppBundleStagedResourceRecord(
@@ -536,6 +555,15 @@ public enum AppBundleReleaseStagingAuthor {
       !isSafeResourceName(preDriveEvidenceResourceName)
     {
       issues.append(.invalidPreDriveEvidenceManifestResourceName)
+    }
+    if let trustKeys = configuration.preDriveEvidenceUpdateTrustKeys {
+      if trustKeys.isEmpty
+        || (try? PreDriveEvidenceUpdateCodec.validateTrustedKeys(
+          trustKeys
+        )) == nil
+      {
+        issues.append(.invalidPreDriveEvidenceUpdateTrustKeys)
+      }
     }
     let resourceNames = [
       configuration.productResourceName,
@@ -640,6 +668,23 @@ public enum AppBundleReleaseStagingAuthor {
     } else {
       preDriveEvidenceSource = "nil"
     }
+    let preDriveEvidenceUpdateTrustSource: String
+    if let trustKeys = descriptor.preDriveEvidenceUpdateTrustKeys {
+      preDriveEvidenceUpdateTrustSource =
+        "[\n"
+        + trustKeys.map { trustKey in
+          """
+              PreDriveEvidenceUpdateTrustKey(
+                keyID: \(swiftString(trustKey.keyID)),
+                algorithm: .ed25519,
+                publicKeyBase64: \(swiftString(trustKey.publicKeyBase64))
+              )
+          """
+        }.joined(separator: ",\n")
+        + "\n          ]"
+    } else {
+      preDriveEvidenceUpdateTrustSource = "nil"
+    }
     return
       """
       // Generated by kaido-release prepare-app-bundle.
@@ -655,7 +700,8 @@ public enum AppBundleReleaseStagingAuthor {
           expectedReleaseID: \(swiftString(descriptor.expectedReleaseID)),
           role: .foregroundNavigation,
           guidanceAudio: \(audioSource),
-          preDriveEvidence: \(preDriveEvidenceSource)
+          preDriveEvidence: \(preDriveEvidenceSource),
+          preDriveEvidenceUpdateTrustKeys: \(preDriveEvidenceUpdateTrustSource)
         )
       }
 

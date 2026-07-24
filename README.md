@@ -57,9 +57,15 @@ declared validity window, and fails closed when missing, not yet valid, or
 expired. It does not fetch live services or claim realtime-open authority. The
 release CLI now builds that manifest from a reviewed identity-free draft,
 deriving product, RoutePlan, entrance/exit, and quote-profile identity instead
-of accepting copied values. The current manifest contains zero foreground
-releases and one
-synthetic demo, so that branch remains dormant. A separate
+of accepting copied values. A schema-1.1 App staging descriptor may additionally
+pin public Ed25519 trust roots for manually imported evidence updates. The CLI
+generates an offline private/public key pair, signs exact validated manifest
+bytes, and validates the self-contained envelope. The App accepts exactly one
+trusted whole-product match, persists before publishing, rejects rollback and
+release-ID reuse, revalidates on restoration, and never falls back after a
+newer effective bundle loses or expires a profile. The current manifest
+contains zero foreground releases and one synthetic demo, so that branch
+remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
 and has no audio authority. A synthetic driving-surface panel contrasts measured
@@ -872,11 +878,29 @@ swift run kaido-release build-pre-drive-evidence \
 swift run kaido-release validate-pre-drive-evidence \
   --product-artifact <product-release.json> \
   --manifest <pre-drive-evidence.json>
+
+swift run kaido-release generate-pre-drive-evidence-signing-key \
+  --key-id <stable-key-id> \
+  --output <new-private-key-directory>
+
+swift run kaido-release sign-pre-drive-evidence-update \
+  --product-artifact <product-release.json> \
+  --manifest <pre-drive-evidence.json> \
+  --key-id <stable-key-id> \
+  --private-key <private-key.bin> \
+  --output <pre-drive-evidence-update.json>
+
+swift run kaido-release validate-pre-drive-evidence-update \
+  --product-artifact <product-release.json> \
+  --envelope <pre-drive-evidence-update.json> \
+  --trust-key <trust-key.json>
 ```
 
 The author derives product, route, facility, and tariff-profile identity rather
 than accepting copied values. The bundle remains separate from versioned route
-authority and expires at runtime. See
+authority and expires at runtime. The signing private key remains offline and
+outside the repository; only its public trust descriptor is staged into the
+App. See
 [`docs/contributing/pre-drive-evidence.md`](docs/contributing/pre-drive-evidence.md).
 
 After independent validation, prepare the exact Xcode-ready resources and

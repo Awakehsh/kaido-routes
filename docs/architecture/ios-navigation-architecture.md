@@ -613,11 +613,13 @@ construction.
 `AppBundleReleaseStagingAuthor` is the package-time bridge into this boundary.
 It accepts only a production-decoded foreground product, optionally revalidates
 one complete exact-product guidance-audio release, retains all artifact bytes,
-and derives the shared descriptor values and per-resource audit hashes.
+optionally pins public Ed25519 pre-drive evidence update trust roots, and derives
+the shared descriptor values and per-resource audit hashes.
 `kaido-release prepare-app-bundle` writes those resources plus a generated
 compile-time descriptor into a new atomic staging directory. It refuses
-synthetic products, partial audio input, unsafe names, duplicate resources, and
-existing output. A maintainer must still review and explicitly enroll the
+synthetic products, partial audio input, unsafe names, duplicate resources,
+invalid or duplicate trust keys, and existing output. Private signing keys are
+never staging inputs. A maintainer must still review and explicitly enroll the
 generated static symbol in the App manifest; no runtime scanning or automatic
 promotion is introduced.
 
@@ -873,8 +875,16 @@ That is a development fact, not yet the minimum deployment target.
   entrance/exit identity, while each record supplies its vehicle/payment
   profile once; neither can be overridden per quote. The production CLI fixes
   scope to `RELEASED_ROAD`, requires codec-minted foreground authority, and
-  writes no output before the whole bundle gate passes. Until a live authority
-  contract exists, the
+  writes no output before the whole bundle gate passes.
+  `PreDriveEvidenceUpdateCodec` adds a manual refresh boundary without changing
+  product or RoutePlan authority. It signs exact validated manifest bytes with
+  Ed25519 and verifies a domain separator, key ID, SHA-256, compile-time public
+  key, exact foreground product, and the whole evidence bundle. The App accepts
+  one unambiguous trusted product, rejects rollback and release-ID reuse,
+  persists before publishing, and re-verifies on restoration. A future bundle
+  cannot activate early, and once effective it cannot fall back to older
+  profiles. Trust rotation or revocation still requires an App release; no
+  network update transport exists. Until a live authority contract exists, the
   evaluator rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays
   neutral.
   SwiftUI renders the resulting KR-U04 projection and cannot derive one distance

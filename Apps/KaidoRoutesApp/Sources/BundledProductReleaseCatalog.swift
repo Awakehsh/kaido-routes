@@ -31,6 +31,7 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   let release: KaidoProductRelease
   let guidanceAudioRelease: GuidanceAudioRelease?
   let preDriveEvidenceBundle: PreDriveEvidenceBundle?
+  let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]
   let encodedByteCount: Int
 
   fileprivate init(
@@ -38,12 +39,16 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
     release: KaidoProductRelease,
     guidanceAudioRelease: GuidanceAudioRelease?,
     preDriveEvidenceBundle: PreDriveEvidenceBundle?,
+    preDriveEvidenceUpdateTrustKeys:
+      [PreDriveEvidenceUpdateTrustKey],
     encodedByteCount: Int
   ) {
     self.descriptor = descriptor
     self.release = release
     self.guidanceAudioRelease = guidanceAudioRelease
     self.preDriveEvidenceBundle = preDriveEvidenceBundle
+    self.preDriveEvidenceUpdateTrustKeys =
+      preDriveEvidenceUpdateTrustKeys
     self.encodedByteCount = encodedByteCount
   }
 }
@@ -107,6 +112,8 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
   case preDriveEvidenceManifestHashMismatch(String)
   case invalidPreDriveEvidenceBundle(String)
   case preDriveEvidenceReleaseIdentityMismatch(String)
+  case invalidPreDriveEvidenceUpdateTrust(String)
+  case preDriveEvidenceUpdateTrustRoleMismatch(String)
 
   var code: String {
     switch self {
@@ -154,6 +161,10 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
       "PRE_DRIVE_EVIDENCE_BUNDLE_INVALID"
     case .preDriveEvidenceReleaseIdentityMismatch:
       "PRE_DRIVE_EVIDENCE_RELEASE_IDENTITY_MISMATCH"
+    case .invalidPreDriveEvidenceUpdateTrust:
+      "PRE_DRIVE_EVIDENCE_UPDATE_TRUST_INVALID"
+    case .preDriveEvidenceUpdateTrustRoleMismatch:
+      "PRE_DRIVE_EVIDENCE_UPDATE_TRUST_ROLE_MISMATCH"
     }
   }
 }
@@ -243,6 +254,24 @@ enum BundledProductReleaseCatalogLoader {
       if let preDriveEvidence = descriptor.preDriveEvidence {
         try validate(preDriveEvidence)
       }
+      if let trustKeys = descriptor.preDriveEvidenceUpdateTrustKeys {
+        guard !trustKeys.isEmpty else {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceUpdateTrust(
+              descriptor.resourceFilename
+            )
+        }
+        do {
+          try PreDriveEvidenceUpdateCodec.validateTrustedKeys(trustKeys)
+        } catch {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceUpdateTrust(
+              descriptor.resourceFilename
+            )
+        }
+      }
       guard resourceFilenames.insert(descriptor.resourceFilename).inserted else {
         throw BundledProductReleaseCatalogError.duplicateResource(
           descriptor.resourceFilename
@@ -287,6 +316,15 @@ enum BundledProductReleaseCatalogLoader {
         throw BundledProductReleaseCatalogError.releaseRoleMismatch(
           descriptor.resourceFilename
         )
+      }
+      if descriptor.preDriveEvidenceUpdateTrustKeys != nil,
+        descriptor.role != .foregroundNavigation
+      {
+        throw
+          BundledProductReleaseCatalogError
+          .preDriveEvidenceUpdateTrustRoleMismatch(
+            descriptor.resourceFilename
+          )
       }
       guard releaseIDs.insert(release.releaseID).inserted else {
         throw BundledProductReleaseCatalogError.duplicateReleaseID(
@@ -413,6 +451,8 @@ enum BundledProductReleaseCatalogLoader {
           release: release,
           guidanceAudioRelease: guidanceAudioRelease,
           preDriveEvidenceBundle: preDriveEvidenceBundle,
+          preDriveEvidenceUpdateTrustKeys:
+            descriptor.preDriveEvidenceUpdateTrustKeys ?? [],
           encodedByteCount: data.count
         )
       )

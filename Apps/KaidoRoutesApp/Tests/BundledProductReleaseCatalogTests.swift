@@ -1,4 +1,5 @@
 import Foundation
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
@@ -90,6 +91,89 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       .foregroundWhenInUse
     )
     XCTAssertNotNil(entry.release.foregroundLiveInputAuthority)
+  }
+
+  func testForegroundReleaseRetainsValidatedSignedUpdateTrust() throws {
+    let data = try releasedRoadData()
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.catalog.pre-drive-evidence"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "released-road-product",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "test.released-road.product",
+      role: .foregroundNavigation,
+      preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey]
+    )
+
+    let entry = try XCTUnwrap(
+      load(descriptor: descriptor, data: data)
+        .foregroundNavigationEntries.first
+    )
+
+    XCTAssertEqual(
+      entry.preDriveEvidenceUpdateTrustKeys,
+      [keyPair.trustKey]
+    )
+  }
+
+  func testSignedUpdateTrustCannotAttachToDemoRole() throws {
+    let data = try bundledPreviewData()
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.catalog.demo-trust"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "synthetic-product-runtime-preview",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "preview.synthetic.product-release.v1",
+      role: .demoOnly,
+      preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey]
+    )
+
+    XCTAssertThrowsError(
+      try load(descriptor: descriptor, data: data)
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .preDriveEvidenceUpdateTrustRoleMismatch(
+          descriptor.resourceFilename
+        )
+      )
+    }
+  }
+
+  func testDuplicateSignedUpdateTrustFailsClosed() throws {
+    let data = try releasedRoadData()
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.catalog.duplicate-trust"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "released-road-product",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "test.released-road.product",
+      role: .foregroundNavigation,
+      preDriveEvidenceUpdateTrustKeys: [
+        keyPair.trustKey,
+        keyPair.trustKey,
+      ]
+    )
+
+    XCTAssertThrowsError(
+      try load(descriptor: descriptor, data: data)
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .invalidPreDriveEvidenceUpdateTrust(
+          descriptor.resourceFilename
+        )
+      )
+    }
   }
 
   func testNavigationSelectionRequiresWholeRoutePlanEquality() throws {

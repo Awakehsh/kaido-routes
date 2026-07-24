@@ -124,6 +124,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let releasedRouteAuthoring: ReleasedProductRouteAuthoringModel?
+  let preDriveEvidenceUpdates: PreDriveEvidenceUpdateModel?
   let savedRouteLibrary: SavedRouteLibraryModel
   let preDriveReview: PreDriveReviewModel
   let languageSettings: KaidoLanguageSettingsModel
@@ -140,6 +141,8 @@ final class KaidoRoutesAppModel: ObservableObject {
     productReleaseCatalog injectedProductReleaseCatalog:
       BundledProductReleaseCatalog? = nil,
     savedRouteStore: (any SavedRouteLibraryStoring)? = nil,
+    preDriveEvidenceUpdateStore:
+      (any PreDriveEvidenceUpdateStoring)? = nil,
     releasedPreDriveEvidenceProvider:
       ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil
   ) {
@@ -167,13 +170,33 @@ final class KaidoRoutesAppModel: ObservableObject {
       let languageSettings = KaidoLanguageSettingsModel()
       self.languageSettings = languageSettings
       if productReleaseCatalog.foregroundNavigationEntries.isEmpty {
+        preDriveEvidenceUpdates = nil
         releasedRouteAuthoring = nil
       } else {
-        releasedRouteAuthoring = try ReleasedProductRouteAuthoringModel(
+        let preDriveEvidenceUpdates = PreDriveEvidenceUpdateModel(
           entries: productReleaseCatalog.foregroundNavigationEntries,
-          locale: languageSettings.interfaceLocale,
-          evidenceProvider: releasedPreDriveEvidenceProvider
+          store: preDriveEvidenceUpdateStore
         )
+        self.preDriveEvidenceUpdates = preDriveEvidenceUpdates
+        let evidenceProvider =
+          releasedPreDriveEvidenceProvider
+          ?? { entry, session in
+            try preDriveEvidenceUpdates.evidence(
+              for: entry,
+              session: session
+            )
+          }
+        let releasedRouteAuthoring =
+          try ReleasedProductRouteAuthoringModel(
+            entries: productReleaseCatalog.foregroundNavigationEntries,
+            locale: languageSettings.interfaceLocale,
+            evidenceProvider: evidenceProvider
+          )
+        self.releasedRouteAuthoring = releasedRouteAuthoring
+        preDriveEvidenceUpdates.evidenceDidChange = {
+          [weak releasedRouteAuthoring] in
+          releasedRouteAuthoring?.evidenceSourceDidChange()
+        }
       }
       let guidanceVoicePreferenceStore =
         UserDefaultsGuidanceVoicePreferenceStore()
@@ -221,6 +244,13 @@ final class KaidoRoutesAppModel: ObservableObject {
         }
         .store(in: &languageSettingsSubscriptions)
       }
+      if let preDriveEvidenceUpdates {
+        preDriveEvidenceUpdates.objectWillChange.sink {
+          [weak self] _ in
+          self?.objectWillChange.send()
+        }
+        .store(in: &languageSettingsSubscriptions)
+      }
       savedRouteLibrary.objectWillChange.sink { [weak self] _ in
         self?.objectWillChange.send()
       }
@@ -232,7 +262,9 @@ final class KaidoRoutesAppModel: ObservableObject {
 
   static func production() -> KaidoRoutesAppModel {
     KaidoRoutesAppModel(
-      savedRouteStore: try? FileSavedRouteLibraryStore.applicationSupport()
+      savedRouteStore: try? FileSavedRouteLibraryStore.applicationSupport(),
+      preDriveEvidenceUpdateStore:
+        try? FilePreDriveEvidenceUpdateStore.applicationSupport()
     )
   }
 

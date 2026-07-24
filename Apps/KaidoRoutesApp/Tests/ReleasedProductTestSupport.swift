@@ -1,4 +1,5 @@
 import Foundation
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
@@ -12,7 +13,10 @@ enum ReleasedProductTestSupportError: Error {
 
 func makeReleasedProductTestEntry(
   releaseID: String = "test.released-road.product",
-  includePreDriveEvidence: Bool = false
+  includePreDriveEvidence: Bool = false,
+  preDriveEvidencePaymentMethods: [ShutoPaymentMethod] = [.etc],
+  preDriveEvidenceUpdateTrustKeys:
+    [PreDriveEvidenceUpdateTrustKey]? = nil
 ) throws -> BundledProductReleaseEntry {
   guard
     let url = Bundle.main.url(
@@ -54,7 +58,10 @@ func makeReleasedProductTestEntry(
   let release = try KaidoProductReleaseArtifactCodec.decode(data)
   let preDriveEvidenceData: Data? =
     if includePreDriveEvidence {
-      try makeBundledPreDriveEvidenceData(for: release)
+      try makeBundledPreDriveEvidenceData(
+        for: release,
+        paymentMethods: preDriveEvidencePaymentMethods
+      )
     } else {
       nil
     }
@@ -72,7 +79,9 @@ func makeReleasedProductTestEntry(
           BundledProductReleaseCatalogLoader.sha256Hex($0),
         expectedReleaseID: "test.pre-drive-evidence.app.v1"
       )
-    }
+    },
+    preDriveEvidenceUpdateTrustKeys:
+      preDriveEvidenceUpdateTrustKeys
   )
   let catalog = try BundledProductReleaseCatalogLoader.load(
     descriptors: [descriptor],
@@ -86,33 +95,10 @@ func makeReleasedProductTestEntry(
 }
 
 private func makeBundledPreDriveEvidenceData(
-  for release: KaidoProductRelease
+  for release: KaidoProductRelease,
+  paymentMethods: [ShutoPaymentMethod]
 ) throws -> Data {
   let routePlan = release.navigation.bundle.routePlan
-  let evidence = PreDriveReviewEvidence(
-    evaluatedAt: "2026-07-25T12:00:00+09:00",
-    networkSnapshotID: routePlan.networkSnapshotID,
-    routePlanID: routePlan.id,
-    vehicleClass: .standard,
-    paymentMethod: .etc,
-    passageEvidence: .noKnownConflictRealtimeUnconfirmed,
-    tariffQuotes: [
-      TariffQuote(
-        id: "test.released-road.tariff.active",
-        entryFacilityID: routePlan.entryFacilityID,
-        exitFacilityID: routePlan.exitFacilityID,
-        vehicleClass: .standard,
-        paymentMethod: .etc,
-        tariffVersionID: "test.released-road.tariff.v1",
-        tariffVersionStatus: .active,
-        tariffDistanceKM: 24.8,
-        estimatedAmountYen: 1_320,
-        evidenceStatus: .estimated,
-        checkedAt: "2026-07-25T11:30:00+09:00",
-        officialQueryReference: "https://search.shutoko.jp/"
-      )
-    ]
-  )
   let manifest = PreDriveEvidenceBundleManifest(
     releaseID: "test.pre-drive-evidence.app.v1",
     releasedAt: "2026-07-25T12:15:00+09:00",
@@ -143,18 +129,44 @@ private func makeBundledPreDriveEvidenceData(
         reviewedAt: "2026-07-25T12:10:00+09:00"
       ),
     ],
-    records: [
+    records: paymentMethods.map { paymentMethod in
       PreDriveEvidenceRecord(
-        id: "test.pre-drive-record.standard-etc",
+        id:
+          "test.pre-drive-record.standard-\(paymentMethod.rawValue.lowercased())",
         validFrom: "2026-07-25T12:00:00+09:00",
         expiresAt: "2026-07-26T00:00:00+09:00",
         sourceReferenceIDs: [
           "test.pre-drive-source.tariff",
           "test.pre-drive-source.passage",
         ],
-        evidence: evidence
+        evidence: PreDriveReviewEvidence(
+          evaluatedAt: "2026-07-25T12:00:00+09:00",
+          networkSnapshotID: routePlan.networkSnapshotID,
+          routePlanID: routePlan.id,
+          vehicleClass: .standard,
+          paymentMethod: paymentMethod,
+          passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+          tariffQuotes: [
+            TariffQuote(
+              id:
+                "test.released-road.tariff.\(paymentMethod.rawValue.lowercased()).active",
+              entryFacilityID: routePlan.entryFacilityID,
+              exitFacilityID: routePlan.exitFacilityID,
+              vehicleClass: .standard,
+              paymentMethod: paymentMethod,
+              tariffVersionID: "test.released-road.tariff.v1",
+              tariffVersionStatus: .active,
+              tariffDistanceKM: 24.8,
+              estimatedAmountYen:
+                paymentMethod == .etc ? 1_320 : 1_400,
+              evidenceStatus: .estimated,
+              checkedAt: "2026-07-25T11:30:00+09:00",
+              officialQueryReference: "https://search.shutoko.jp/"
+            )
+          ]
+        )
       )
-    ]
+    }
   )
   return try PreDriveEvidenceBundleCodec.encode(
     manifest,

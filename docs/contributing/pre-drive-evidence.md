@@ -110,6 +110,68 @@ evidence.
 
 The compile-time descriptor must still be reviewed and explicitly enrolled.
 Bundled evidence is intentionally fail-closed and may expire before a later App
-release. This first operational provider does not fetch operator or traffic
-services, does not claim realtime passage, and does not remove the need for a
-future separately authorized refresh transport.
+release.
+
+## Sign an update without republishing the App
+
+The App can accept a manually imported, self-contained Ed25519 envelope when
+the foreground product descriptor already contains the matching public trust
+key. Generate a signing key once in a new offline directory:
+
+```sh
+swift run kaido-release generate-pre-drive-evidence-signing-key \
+  --key-id <stable-key-id> \
+  --output <new-private-key-directory>
+```
+
+The directory contains `private-key.bin` with mode `0600` and a public
+`trust-key.json`. Keep the private key outside the repository, App bundle,
+staging output, logs, backups shared with reviewers, and user-facing update
+files. Only the public trust descriptor belongs in the schema-1.1 App-bundle
+staging configuration:
+
+```json
+{
+  "pre_drive_evidence_update_trust_keys": [
+    {
+      "algorithm": "ED25519",
+      "key_id": "<stable-key-id>",
+      "public_key_base64": "<public-key-base64>"
+    }
+  ]
+}
+```
+
+After authoring and validating a newer evidence manifest, sign its exact bytes:
+
+```sh
+swift run kaido-release sign-pre-drive-evidence-update \
+  --product-artifact <product-release.json> \
+  --manifest <pre-drive-evidence.json> \
+  --key-id <stable-key-id> \
+  --private-key <private-key.bin> \
+  --output <pre-drive-evidence-update.json>
+
+swift run kaido-release validate-pre-drive-evidence-update \
+  --product-artifact <product-release.json> \
+  --envelope <pre-drive-evidence-update.json> \
+  --trust-key <trust-key.json>
+```
+
+Both commands revalidate the whole manifest against the exact foreground
+product. The envelope signs a domain separator, key ID, and unmodified manifest
+bytes; its SHA-256 is checked before signature verification. Existing outputs
+are never overwritten.
+
+The parked App import tries every compile-time trusted foreground product and
+requires exactly one signature plus whole-bundle match. It rejects an equal or
+older release timestamp and any reused evidence release ID, persists the
+envelope before publishing it, and verifies it again on restoration. A future
+signed release waits until its own release time. Once a newer release is
+effective, an expired or missing profile fails closed instead of falling back
+to bundled evidence. Updating or revoking trust roots still requires a reviewed
+App release.
+
+This boundary is deliberately manual and local. It does not fetch operator or
+traffic services, grant route or navigation authority, claim realtime passage,
+or establish that signed source claims are true.

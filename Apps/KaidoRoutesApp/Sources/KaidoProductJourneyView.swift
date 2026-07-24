@@ -279,6 +279,13 @@ struct KaidoProductJourneyView: View {
         ReleasedProductRouteAuthoringPanel(
           model: releasedRouteAuthoring
         )
+        if let preDriveEvidenceUpdates =
+          model.composition.preDriveEvidenceUpdates
+        {
+          PreDriveEvidenceUpdatePanel(
+            model: preDriveEvidenceUpdates
+          )
+        }
       } else {
         EntranceRecommendationPanel(
           model: model.composition.entranceRecommendation
@@ -341,6 +348,13 @@ struct KaidoProductJourneyView: View {
       if let releasedRouteAuthoring =
         model.composition.releasedRouteAuthoring
       {
+        if let preDriveEvidenceUpdates =
+          model.composition.preDriveEvidenceUpdates
+        {
+          PreDriveEvidenceUpdatePanel(
+            model: preDriveEvidenceUpdates
+          )
+        }
         PreDriveReviewPanel(
           model: model.composition.preDriveReview,
           navigationStartAvailable: model.canStartNavigation,

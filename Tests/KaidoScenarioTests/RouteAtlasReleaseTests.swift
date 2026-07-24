@@ -24,6 +24,184 @@ func routeAtlasReleaseAcceptsCoherentRepeatedOccurrences() throws {
   )
 }
 
+@Test("Route Atlas journey projection preserves planned repeated traversals")
+func routeAtlasJourneyProjectionPreservesPlannedRepeats() throws {
+  let fixture = routeAtlasFixture()
+  let release = try RouteAtlasRelease(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+
+  let projection = try RouteAtlasJourneyProjector.project(release: release)
+
+  #expect(projection.networkSnapshotID == fixture.networkSnapshot.id)
+  #expect(projection.routePlanID == fixture.routePlan.id)
+  #expect(projection.contextSegments.count == 2)
+  #expect(projection.occurrences.count == 3)
+  #expect(
+    projection.attributions.map(\.sourceID) == [
+      "test.source.reviewed-atlas",
+      "test.source.reviewed-topology",
+    ])
+  #expect(projection.occurrences.map(\.state) == [.planned, .planned, .planned])
+  #expect(
+    projection.occurrences
+      .filter { $0.segmentID == "test.segment.loop" }
+      .map(\.repeatOrdinal) == [1, 2]
+  )
+  #expect(
+    projection.occurrences
+      .filter { $0.segmentID == "test.segment.loop" }
+      .allSatisfy { $0.repeatCount == 2 }
+  )
+}
+
+@Test("Route Atlas journey projection uses actor-owned occurrence progress")
+func routeAtlasJourneyProjectionUsesActorProgress() throws {
+  let fixture = routeAtlasFixture()
+  let release = try RouteAtlasRelease(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+  var snapshot = NavigationSnapshot(
+    journeyPhase: .strictRoute,
+    activeRoutePlanID: fixture.routePlan.id,
+    currentOccurrenceID: "test.occurrence.loop-2",
+    locationConfidence: .high
+  )
+  snapshot.currentOccurrenceIndex = 2
+  snapshot.completedOccurrenceIDs = [
+    "test.occurrence.loop-1",
+    "test.occurrence.turn",
+  ]
+  snapshot.pendingOccurrenceIDs = ["test.occurrence.loop-2"]
+
+  let projection = try RouteAtlasJourneyProjector.project(
+    release: release,
+    navigationSnapshot: snapshot
+  )
+
+  #expect(projection.currentOccurrenceID == "test.occurrence.loop-2")
+  #expect(projection.occurrences.map(\.state) == [.passed, .passed, .current])
+  let repeated = projection.occurrences.filter {
+    $0.segmentID == "test.segment.loop"
+  }
+  #expect(
+    repeated.map(\.occurrenceID) == [
+      "test.occurrence.loop-1",
+      "test.occurrence.loop-2",
+    ])
+  #expect(repeated.map(\.state) == [.passed, .current])
+}
+
+@Test("Route Atlas journey projection exposes skipped occurrences separately")
+func routeAtlasJourneyProjectionExposesSkippedOccurrences() throws {
+  let fixture = routeAtlasFixture()
+  let release = try RouteAtlasRelease(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+  var snapshot = NavigationSnapshot(
+    journeyPhase: .routeRecovery,
+    activeRoutePlanID: fixture.routePlan.id,
+    currentOccurrenceID: "test.occurrence.loop-2",
+    locationConfidence: .low
+  )
+  snapshot.currentOccurrenceIndex = 2
+  snapshot.completedOccurrenceIDs = ["test.occurrence.loop-1"]
+  snapshot.pendingOccurrenceIDs = ["test.occurrence.loop-2"]
+  snapshot.skippedOccurrenceIDs = ["test.occurrence.turn"]
+
+  let projection = try RouteAtlasJourneyProjector.project(
+    release: release,
+    navigationSnapshot: snapshot
+  )
+
+  #expect(projection.occurrences.map(\.state) == [.passed, .skipped, .current])
+}
+
+@Test("Route Atlas journey projection rejects progress from another RoutePlan")
+func routeAtlasJourneyProjectionRejectsRoutePlanDrift() throws {
+  let fixture = routeAtlasFixture()
+  let release = try RouteAtlasRelease(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+  var snapshot = NavigationSnapshot(
+    journeyPhase: .strictRoute,
+    activeRoutePlanID: "test.plan.drift",
+    currentOccurrenceID: "test.occurrence.loop-1",
+    locationConfidence: .high
+  )
+  snapshot.currentOccurrenceIndex = 0
+  snapshot.pendingOccurrenceIDs = fixture.routePlan.occurrences.map(\.id)
+
+  do {
+    _ = try RouteAtlasJourneyProjector.project(
+      release: release,
+      navigationSnapshot: snapshot
+    )
+    Issue.record("Expected another RoutePlan to block the atlas overlay")
+  } catch RouteAtlasJourneyProjectionError.invalid(let issues) {
+    #expect(issues == [.routePlanMismatch])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Route Atlas journey projection rejects coordinated progress drift")
+func routeAtlasJourneyProjectionRejectsProgressPartitionDrift() throws {
+  let fixture = routeAtlasFixture()
+  let release = try RouteAtlasRelease(
+    networkSnapshot: fixture.networkSnapshot,
+    routePlan: fixture.routePlan,
+    sourceRegistry: fixture.sourceRegistry,
+    topologySlice: fixture.topologySlice,
+    definition: fixture.definition
+  )
+  var snapshot = NavigationSnapshot(
+    journeyPhase: .strictRoute,
+    activeRoutePlanID: fixture.routePlan.id,
+    currentOccurrenceID: "test.occurrence.loop-2",
+    locationConfidence: .high
+  )
+  snapshot.currentOccurrenceIndex = 2
+  snapshot.completedOccurrenceIDs = ["test.occurrence.loop-1"]
+  snapshot.pendingOccurrenceIDs = [
+    "test.occurrence.turn",
+    "test.occurrence.loop-2",
+  ]
+
+  do {
+    _ = try RouteAtlasJourneyProjector.project(
+      release: release,
+      navigationSnapshot: snapshot
+    )
+    Issue.record("Expected drifted completed and pending arrays to block")
+  } catch RouteAtlasJourneyProjectionError.invalid(let issues) {
+    #expect(
+      issues == [
+        .completedProgressOrderMismatch,
+        .pendingProgressOrderMismatch,
+      ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Real K7 candidate remains blocked only by unreleased evidence")
 func realK7RouteAtlasCandidateRemainsBlocked() throws {
   let repositoryRoot = URL(fileURLWithPath: #filePath)

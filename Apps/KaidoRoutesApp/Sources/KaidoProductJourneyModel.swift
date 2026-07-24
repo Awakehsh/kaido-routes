@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KaidoDomain
+import KaidoNavigation
 
 enum KaidoProductJourneyStage: String, CaseIterable, Equatable, Sendable {
   case atlas = "ATLAS"
@@ -111,6 +112,30 @@ final class KaidoProductJourneyModel: ObservableObject {
       return releasedRouteAuthoring.compiledRoutePlan
     }
     return composition.routeEditor.compiledRoutePlan
+  }
+
+  var routeAtlasOverlayPresentation: ReleasedRouteAtlasOverlayPresentation {
+    guard
+      let releasedRouteAuthoring = composition.releasedRouteAuthoring,
+      let entry = releasedRouteAuthoring.selectedEntry,
+      let routePlan = releasedRouteAuthoring.compiledRoutePlan
+    else {
+      return .unavailable
+    }
+    guard entry.release.routeAtlas.routePlan == routePlan else {
+      return .blocked("ATLAS_OVERLAY_ROUTE_PLAN_MISMATCH")
+    }
+    do {
+      return .ready(
+        projection: try RouteAtlasJourneyProjector.project(
+          release: entry.release.routeAtlas
+        ),
+        isRealRoadAuthority:
+          entry.release.foregroundLiveInputAuthority != nil
+      )
+    } catch {
+      return .blocked(releasedRouteAtlasOverlayErrorCode(error))
+    }
   }
 
   var canStartNavigation: Bool {

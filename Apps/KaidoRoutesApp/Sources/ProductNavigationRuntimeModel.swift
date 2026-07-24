@@ -350,6 +350,20 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     release.navigation.bundle.routePlan.occurrences.count
   }
 
+  var routeAtlasOverlayPresentation: ReleasedRouteAtlasOverlayPresentation {
+    do {
+      return .ready(
+        projection: try RouteAtlasJourneyProjector.project(
+          release: release.routeAtlas,
+          navigationSnapshot: snapshot
+        ),
+        isRealRoadAuthority: isRealRoadAuthority
+      )
+    } catch {
+      return .blocked(releasedRouteAtlasOverlayErrorCode(error))
+    }
+  }
+
   var corridorEdgeCount: Int {
     runtime.entryTransitionAdmissionContext.matcherCorridor.edges.count
   }

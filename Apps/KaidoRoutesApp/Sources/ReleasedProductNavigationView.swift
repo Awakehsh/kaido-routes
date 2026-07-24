@@ -21,6 +21,9 @@ struct ReleasedProductNavigationPanel: View {
     VStack(alignment: .leading, spacing: 14) {
       header
       releaseKey
+      ReleasedRouteAtlasOverlayContainer(
+        presentation: model.routeAtlasOverlayPresentation
+      )
       interlockArrow
       liveInput
       actorProjection

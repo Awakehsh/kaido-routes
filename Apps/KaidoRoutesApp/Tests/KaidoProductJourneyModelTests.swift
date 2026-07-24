@@ -124,6 +124,29 @@ final class KaidoProductJourneyModelTests: XCTestCase {
       try XCTUnwrap(composition.releasedRouteAuthoring),
       entry: entry
     )
+    guard
+      case .ready(let atlasProjection, let isRealRoadAuthority) =
+        model.routeAtlasOverlayPresentation
+    else {
+      return XCTFail("Expected the compiled released route on its atlas")
+    }
+    XCTAssertTrue(isRealRoadAuthority)
+    XCTAssertEqual(
+      atlasProjection.routePlanID,
+      entry.release.navigation.bundle.routePlan.id
+    )
+    XCTAssertEqual(
+      atlasProjection.occurrences.map(\.state),
+      Array(
+        repeating: .planned,
+        count: entry.release.navigation.bundle.routePlan.occurrences.count
+      )
+    )
+    XCTAssertTrue(
+      atlasProjection.occurrences.contains {
+        $0.isRepeatedTraversal
+      }
+    )
     model.go(to: .review)
 
     XCTAssertTrue(model.canStartNavigation)

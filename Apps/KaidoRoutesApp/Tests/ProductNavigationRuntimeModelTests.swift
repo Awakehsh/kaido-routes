@@ -40,6 +40,21 @@ final class ProductNavigationRuntimeModelTests: XCTestCase {
     XCTAssertEqual(authority.runtimeIdentity, entry.release.runtimeIdentity)
     XCTAssertFalse(model.canRunDeterministicPreviewTrace)
 
+    guard
+      case .ready(
+        let plannedProjection,
+        let plannedIsRealRoadAuthority
+      ) = model.routeAtlasOverlayPresentation
+    else {
+      return XCTFail("Expected a planned release-bound atlas overlay")
+    }
+    XCTAssertTrue(plannedIsRealRoadAuthority)
+    XCTAssertTrue(
+      plannedProjection.occurrences.allSatisfy {
+        $0.state == .planned
+      }
+    )
+
     await model.activate()
 
     XCTAssertEqual(model.activation, .ready)
@@ -47,6 +62,27 @@ final class ProductNavigationRuntimeModelTests: XCTestCase {
     XCTAssertEqual(
       model.snapshot?.activeRoutePlanID,
       entry.release.navigation.bundle.routePlan.id
+    )
+    guard
+      case .ready(let activeProjection, let isRealRoadAuthority) =
+        model.routeAtlasOverlayPresentation
+    else {
+      return XCTFail("Expected actor-owned atlas progress")
+    }
+    XCTAssertTrue(isRealRoadAuthority)
+    XCTAssertEqual(
+      activeProjection.currentOccurrenceID,
+      entry.release.navigation.bundle.routePlan.occurrences.first?.id
+    )
+    XCTAssertEqual(activeProjection.occurrences.first?.state, .current)
+    XCTAssertTrue(
+      activeProjection.occurrences.dropFirst().allSatisfy {
+        $0.state == .future
+      }
+    )
+    XCTAssertEqual(
+      activeProjection.occurrences.map(\.occurrenceID),
+      entry.release.navigation.bundle.routePlan.occurrences.map(\.id)
     )
   }
 

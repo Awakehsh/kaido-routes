@@ -62,7 +62,14 @@ phone/CarPlay projection ownership.
 Another internal panel decodes one complete `SYNTHETIC_TEST_ONLY` joint product
 release, constructs `KaidoProductNavigationRuntime`, and publishes the actor's
 atomic planning snapshot into SwiftUI. Its strict-entry gate stays locked and
-its Core Location input stays disconnected by default.
+its Core Location input stays disconnected by default. A renderer-neutral
+journey projection now converts only that exact validated Route Atlas release
+plus its optional actor snapshot into planned, passed, current, future, and
+skipped occurrence tracks. The SwiftUI overlay keeps all released topology as
+quiet context, preserves repeated traversals as separately numbered tracks,
+shows adjacent source and licence attribution, and never derives a position
+marker or occurrence progress itself. RoutePlan, release, binding, or actor
+progress drift blocks the overlay instead of drawing a best-effort route.
 The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
@@ -71,8 +78,8 @@ by default. A machine-readable attribution catalog now drives a native evidence
 strip adjacent to every Route Atlas; the K7 strip visibly links OpenStreetMap
 credit and the ODbL 1.0 licence without making the SVG interactive. The app
 remains explicitly review-only: it has no real-road released
-route bundle, live measured-position display, active-route highlight, qualified
-device voice, active background location session, or CarPlay scene. The
+route bundle, live measured-position display, real-road active-route highlight,
+qualified device voice, active background location session, or CarPlay scene. The
 repository still has no production road database or released provider
 integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,

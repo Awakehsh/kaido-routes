@@ -81,6 +81,30 @@ Those states still require one accepted `RouteAtlasRelease` bound to the exact
 active network snapshot, directed topology, legal successors, reviewed layout,
 and occurrence bindings. A coordinate crossing never establishes a connection.
 
+## Released journey overlay
+
+`RouteAtlasJourneyProjector` is the implemented renderer-neutral boundary
+between one accepted `RouteAtlasRelease` and a phone presentation. Before a
+navigation actor exists, it projects every exact RoutePlan occurrence as
+`PLANNED`. After activation, it accepts only the exact actor-owned
+`NavigationSnapshot` partition and projects `PASSED`, `CURRENT`, `FUTURE`, and
+`SKIPPED`. Unknown, duplicated, reordered, or mismatched occurrence progress
+blocks the projection.
+
+The projection carries all released layout segments as quiet context and a
+separate ordered occurrence value for every RoutePlan binding. Multiple
+occurrences may therefore reference the same schematic segment; the renderer
+offsets those traversals and exposes their ordinal and count instead of
+deduplicating them. Context-only segments never receive an occurrence state.
+Source and licence attribution remains adjacent to the rendered atlas.
+
+This overlay is a route cursor, not a vehicle bead. It does not consume a
+coordinate, infer along-route progress, or claim measured position. A position
+marker remains subject to the independent fresh route-resolved evidence gate.
+KR-U17 exercises the projection with synthetic released flags, including a
+repeated segment and a context-only branch. The iPhone preview and its
+XCUITest render that synthetic proof; no real Shuto atlas or road is released.
+
 The ODbL-isolated K7 directed candidate may appear only in an evidence view. Its
 13 one-way route occurrences and two immediate divergence alternatives improve
 auditability, but its `CANDIDATE` state cannot create active-route highlighting,

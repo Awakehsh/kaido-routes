@@ -2,6 +2,42 @@ import XCTest
 
 @MainActor
 final class ProductRuntimePreviewUITests: XCTestCase {
+  func testRouteAtlasOverlayKeepsRepeatedOccurrencesSeparate() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
+    app.launch()
+
+    let activation = element("product-runtime-activation", in: app)
+    XCTAssertTrue(activation.waitForExistence(timeout: 5))
+    XCTAssertEqual(activation.value as? String, "RUNTIME READY")
+
+    let overlay = reveal("released-route-atlas-overlay", in: app)
+    let value = overlay.value as? String ?? ""
+    XCTAssertTrue(
+      value.contains("test.occurrence.entry:CURRENT:1/3")
+    )
+    XCTAssertTrue(
+      value.contains("test.occurrence.loop-edge-1:FUTURE:2/3")
+    )
+    XCTAssertTrue(
+      value.contains("test.occurrence.loop-edge-2:FUTURE:3/3")
+    )
+    XCTAssertTrue(
+      element("released-route-atlas-repetition", in: app).exists
+    )
+    XCTAssertTrue(
+      element("released-route-atlas-attribution", in: app).exists
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Occurrence-aware Route Atlas overlay"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
   func testJointReleaseStartsPlanningWithStrictEntryLocked() {
     continueAfterFailure = false
     let app = XCUIApplication()

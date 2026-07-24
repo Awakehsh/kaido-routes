@@ -1,0 +1,352 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U17",
+  "title": "Route Atlas overlay preserves actor-owned progress and repeated traversals",
+  "layer": "IPHONE_UI",
+  "tags": ["route-atlas", "progress", "occurrence", "repetition"],
+  "purpose": "Project passed, current, future, and repeated RoutePlan occurrences from one exact released atlas without deduplicating a repeated schematic segment or highlighting context-only topology.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "RELEASED inside this synthetic fixture exercises renderer-neutral identity and progress only.",
+      "This scenario does not release real Shuto topology, layout, location evidence, or an iPhone renderer."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.route-atlas-overlay-v1",
+      "status": "ACTIVE",
+      "effective_at": "2026-07-25T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.route-atlas-overlay",
+      "network_snapshot_id": "test.snapshot.route-atlas-overlay-v1",
+      "entry_facility_id": "test.entrance.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.loop-1",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop"
+        },
+        {
+          "occurrence_id": "test.occurrence.turn",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.turn"
+        },
+        {
+          "occurrence_id": "test.occurrence.loop-2",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.loop"
+        },
+        {
+          "occurrence_id": "test.occurrence.exit",
+          "index": 3,
+          "kind": "EDGE",
+          "entity_id": "test.edge.exit"
+        }
+      ]
+    },
+    "inputs": {
+      "route_atlas_overlay": {
+        "progress_source": "NAVIGATION_SNAPSHOT"
+      },
+      "route_atlas_sources": [
+        {
+          "source_reference_id": "test.source.overlay-topology",
+          "roles": ["TOPOLOGY_EVIDENCE"],
+          "authority_name": "Synthetic topology review authority",
+          "source_url": "https://example.test/overlay-topology",
+          "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "checked_at": "2026-07-25",
+          "licence_identifier": "SYNTHETIC"
+        },
+        {
+          "source_reference_id": "test.source.overlay-layout",
+          "roles": ["LAYOUT_EVIDENCE"],
+          "authority_name": "Synthetic layout review authority",
+          "source_url": "https://example.test/overlay-layout",
+          "content_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "checked_at": "2026-07-25",
+          "licence_identifier": "SYNTHETIC"
+        }
+      ],
+      "route_atlas_topology": {
+        "topology_slice_id": "test.atlas-topology.overlay",
+        "network_snapshot_id": "test.snapshot.route-atlas-overlay-v1",
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-25",
+          "source_reference_ids": ["test.source.overlay-topology"]
+        },
+        "nodes": [
+          {"node_id": "test.node.a"},
+          {"node_id": "test.node.b"},
+          {"node_id": "test.node.exit"},
+          {"node_id": "test.node.context"}
+        ],
+        "edges": [
+          {
+            "edge_id": "test.topology-edge.loop",
+            "route_entity_id": "test.edge.loop",
+            "from_node_id": "test.node.a",
+            "to_node_id": "test.node.b",
+            "successor_edge_ids": [
+              "test.topology-edge.turn",
+              "test.topology-edge.exit",
+              "test.topology-edge.context"
+            ]
+          },
+          {
+            "edge_id": "test.topology-edge.turn",
+            "route_entity_id": "test.edge.turn",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.a",
+            "successor_edge_ids": ["test.topology-edge.loop"]
+          },
+          {
+            "edge_id": "test.topology-edge.exit",
+            "route_entity_id": "test.edge.exit",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.exit",
+            "successor_edge_ids": []
+          },
+          {
+            "edge_id": "test.topology-edge.context",
+            "route_entity_id": "test.edge.context",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.context",
+            "successor_edge_ids": []
+          }
+        ]
+      },
+      "route_atlas": {
+        "atlas_id": "test.route-atlas.overlay",
+        "network_snapshot_id": "test.snapshot.route-atlas-overlay-v1",
+        "route_plan_id": "test.plan.route-atlas-overlay",
+        "topology_slice_id": "test.atlas-topology.overlay",
+        "nodes": [
+          {
+            "topology_node_id": "test.node.a",
+            "point": {"x": 0.12, "y": 0.78}
+          },
+          {
+            "topology_node_id": "test.node.b",
+            "point": {"x": 0.5, "y": 0.48}
+          },
+          {
+            "topology_node_id": "test.node.exit",
+            "point": {"x": 0.88, "y": 0.2}
+          },
+          {
+            "topology_node_id": "test.node.context",
+            "point": {"x": 0.86, "y": 0.78}
+          }
+        ],
+        "segments": [
+          {
+            "segment_id": "test.segment.loop",
+            "topology_edge_id": "test.topology-edge.loop",
+            "from_node_id": "test.node.a",
+            "to_node_id": "test.node.b",
+            "successor_segment_ids": [
+              "test.segment.turn",
+              "test.segment.exit",
+              "test.segment.context"
+            ],
+            "points": [
+              {"x": 0.12, "y": 0.78},
+              {"x": 0.3, "y": 0.62},
+              {"x": 0.5, "y": 0.48}
+            ]
+          },
+          {
+            "segment_id": "test.segment.turn",
+            "topology_edge_id": "test.topology-edge.turn",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.a",
+            "successor_segment_ids": ["test.segment.loop"],
+            "points": [
+              {"x": 0.5, "y": 0.48},
+              {"x": 0.32, "y": 0.38},
+              {"x": 0.12, "y": 0.78}
+            ]
+          },
+          {
+            "segment_id": "test.segment.exit",
+            "topology_edge_id": "test.topology-edge.exit",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.exit",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.5, "y": 0.48},
+              {"x": 0.7, "y": 0.34},
+              {"x": 0.88, "y": 0.2}
+            ]
+          },
+          {
+            "segment_id": "test.segment.context",
+            "topology_edge_id": "test.topology-edge.context",
+            "from_node_id": "test.node.b",
+            "to_node_id": "test.node.context",
+            "successor_segment_ids": [],
+            "points": [
+              {"x": 0.5, "y": 0.48},
+              {"x": 0.68, "y": 0.62},
+              {"x": 0.86, "y": 0.78}
+            ]
+          }
+        ],
+        "occurrence_bindings": [
+          {
+            "occurrence_id": "test.occurrence.loop-1",
+            "index": 0,
+            "segment_id": "test.segment.loop"
+          },
+          {
+            "occurrence_id": "test.occurrence.turn",
+            "index": 1,
+            "segment_id": "test.segment.turn"
+          },
+          {
+            "occurrence_id": "test.occurrence.loop-2",
+            "index": 2,
+            "segment_id": "test.segment.loop"
+          },
+          {
+            "occurrence_id": "test.occurrence.exit",
+            "index": 3,
+            "segment_id": "test.segment.exit"
+          }
+        ],
+        "evidence": {
+          "state": "RELEASED",
+          "checked_at": "2026-07-25",
+          "source_reference_ids": ["test.source.overlay-layout"]
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "resolve-second-loop-occurrence",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_entity_id": "test.edge.loop",
+        "expected_occurrence_id": "test.occurrence.loop-2",
+        "confidence": "HIGH"
+      }
+    },
+    {
+      "id": "project-released-atlas",
+      "at_ms": 2000,
+      "type": "ROUTE_ATLAS_RELEASE_VALIDATED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "overlay-passes",
+      "after": "project-released-atlas",
+      "category": "SAFETY",
+      "subject": "route_atlas.overlay.status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "Only one validated released atlas may produce the route overlay."
+    },
+    {
+      "id": "overlay-binds-route-plan",
+      "after": "project-released-atlas",
+      "category": "DOMAIN",
+      "subject": "route_atlas.overlay.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.route-atlas-overlay",
+      "rationale": "The overlay cannot consume progress from another RoutePlan."
+    },
+    {
+      "id": "context-remains-separate",
+      "after": "project-released-atlas",
+      "category": "UI",
+      "subject": "route_atlas.overlay.context_segment_ids",
+      "matcher": "CONTAINS",
+      "expected": "test.segment.context",
+      "rationale": "Released context remains visible without becoming an active occurrence."
+    },
+    {
+      "id": "ordered-occurrences-remain-distinct",
+      "after": "project-released-atlas",
+      "category": "UI",
+      "subject": "route_atlas.overlay.occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1",
+        "test.occurrence.turn",
+        "test.occurrence.loop-2",
+        "test.occurrence.exit"
+      ],
+      "rationale": "The renderer receives occurrence order rather than a deduplicated segment set."
+    },
+    {
+      "id": "actor-progress-owns-state",
+      "after": "project-released-atlas",
+      "category": "NAVIGATION",
+      "subject": "route_atlas.overlay.occurrence_states",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1=PASSED",
+        "test.occurrence.turn=PASSED",
+        "test.occurrence.loop-2=CURRENT",
+        "test.occurrence.exit=FUTURE"
+      ],
+      "rationale": "Passed, current, and future state comes from the actor snapshot, not SwiftUI inference."
+    },
+    {
+      "id": "current-occurrence-is-exact",
+      "after": "project-released-atlas",
+      "category": "NAVIGATION",
+      "subject": "route_atlas.overlay.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.loop-2",
+      "rationale": "The second traversal is current even though it shares a segment with an earlier traversal."
+    },
+    {
+      "id": "repeated-segment-remains-repeated",
+      "after": "project-released-atlas",
+      "category": "DOMAIN",
+      "subject": "route_atlas.overlay.segment_bindings",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.loop-1=test.segment.loop",
+        "test.occurrence.turn=test.segment.turn",
+        "test.occurrence.loop-2=test.segment.loop",
+        "test.occurrence.exit=test.segment.exit"
+      ],
+      "rationale": "Two occurrence values may bind the same released segment without being merged."
+    },
+    {
+      "id": "repeat-ordinals-are-exposed",
+      "after": "project-released-atlas",
+      "category": "UI",
+      "subject": "route_atlas.overlay.repeat_ordinals",
+      "matcher": "CONTAINS",
+      "expected": "test.occurrence.loop-2=2/2",
+      "rationale": "The renderer can distinguish the second traversal without inventing another topology edge."
+    }
+  ]
+}

@@ -62,6 +62,7 @@ private struct ScenarioHarness {
   var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
   var routeEditorSession: ExpertRouteEditorSession?
   var routeEditorCorridorResolutionSession: ParkedCorridorResolutionSession?
+  var routeAtlasRelease: RouteAtlasRelease?
   var lastGuidancePromptEmission: GuidancePromptEmission?
   var adapterObservations: [String: JSONValue] = [:]
 
@@ -78,6 +79,7 @@ private struct ScenarioHarness {
     entryTransitionAdmission = nil
     routeEditorSession = nil
     routeEditorCorridorResolutionSession = nil
+    routeAtlasRelease = nil
     lastGuidancePromptEmission = nil
     if let admissionValue = scenario.given.inputs.object("entry_transition_admission") {
       guard let routePlan = scenario.given.routePlan,
@@ -220,6 +222,7 @@ private struct ScenarioHarness {
     default:
       throw ScenarioExecutionError.unsupportedEvent(event.type)
     }
+    try refreshRouteAtlasJourneyProjection()
     try refreshPresentation()
   }
 
@@ -1204,12 +1207,51 @@ private struct ScenarioHarness {
     let artifact = try routeAtlasReleaseArtifact()
 
     clearRouteAtlasObservations()
+    routeAtlasRelease = nil
     do {
       let release = try RouteAtlasRelease(artifact: artifact)
+      routeAtlasRelease = release
       publish(release)
     } catch RouteAtlasReleaseError.invalid(let issues) {
       adapterObservations["route_atlas.status"] = .string("BLOCKED")
       adapterObservations["route_atlas.error_codes"] = .strings(
+        Array(Set(issues.map(\.code))).sorted()
+      )
+    }
+  }
+
+  private mutating func refreshRouteAtlasJourneyProjection() throws {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("route_atlas.overlay.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+    guard
+      let value = scenario.given.inputs.object("route_atlas_overlay"),
+      let release = routeAtlasRelease
+    else {
+      return
+    }
+    let navigationSnapshot: NavigationSnapshot?
+    switch value.string("progress_source") {
+    case "PLANNED":
+      navigationSnapshot = nil
+    case "NAVIGATION_SNAPSHOT":
+      navigationSnapshot = engine.snapshot
+    default:
+      throw ScenarioExecutionError.invalidInput(
+        "route_atlas_overlay.progress_source"
+      )
+    }
+    do {
+      let projection = try RouteAtlasJourneyProjector.project(
+        release: release,
+        navigationSnapshot: navigationSnapshot
+      )
+      publish(projection)
+    } catch RouteAtlasJourneyProjectionError.invalid(let issues) {
+      adapterObservations["route_atlas.overlay.status"] = .string("BLOCKED")
+      adapterObservations["route_atlas.overlay.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
       )
     }
@@ -1293,6 +1335,47 @@ private struct ScenarioHarness {
     adapterObservations["route_atlas.occurrence_ids"] = .strings(
       release.definition.occurrenceBindings.map(\.occurrenceID)
     )
+  }
+
+  private mutating func publish(
+    _ projection: RouteAtlasJourneyProjection
+  ) {
+    adapterObservations["route_atlas.overlay.status"] = .string("PASS")
+    adapterObservations["route_atlas.overlay.error_codes"] = .strings([])
+    adapterObservations["route_atlas.overlay.network_snapshot_id"] = .string(
+      projection.networkSnapshotID
+    )
+    adapterObservations["route_atlas.overlay.route_plan_id"] = .string(
+      projection.routePlanID
+    )
+    adapterObservations["route_atlas.overlay.atlas_id"] = .string(
+      projection.atlasID
+    )
+    adapterObservations["route_atlas.overlay.context_segment_ids"] = .strings(
+      projection.contextSegments.map(\.segmentID)
+    )
+    adapterObservations["route_atlas.overlay.occurrence_ids"] = .strings(
+      projection.occurrences.map(\.occurrenceID)
+    )
+    adapterObservations["route_atlas.overlay.occurrence_states"] = .strings(
+      projection.occurrences.map {
+        "\($0.occurrenceID)=\($0.state.rawValue)"
+      }
+    )
+    adapterObservations["route_atlas.overlay.segment_bindings"] = .strings(
+      projection.occurrences.map {
+        "\($0.occurrenceID)=\($0.segmentID)"
+      }
+    )
+    adapterObservations["route_atlas.overlay.repeat_ordinals"] = .strings(
+      projection.occurrences.map {
+        "\($0.occurrenceID)=\($0.repeatOrdinal)/\($0.repeatCount)"
+      }
+    )
+    if let currentOccurrenceID = projection.currentOccurrenceID {
+      adapterObservations["route_atlas.overlay.current_occurrence_id"] =
+        .string(currentOccurrenceID)
+    }
   }
 
   private mutating func clearRouteAtlasObservations() {

@@ -80,6 +80,7 @@ should become scenarios when their layer is built.
 | KR-U14 | Phone and CarPlay consume one released snapshot- and occurrence-bound junction view | P0 | Seeded |
 | KR-U15 | One-shot guidance speech is RoutePlan-bound, duplicate-safe, and never catches up after an interruption | P0 | Covered by KR-S10/KR-S17/KR-S18 plus L3 |
 | KR-U16 | Process restoration retains forward route/prompt state but clears transient position, CarPlay, entry, and speech authority | P0 | Covered by KR-S03/KR-S10/KR-S16/KR-S19 plus L2/L3 |
+| KR-U17 | A released Route Atlas overlay preserves actor-owned progress, context-only topology, and repeated route occurrences | P0 | Seeded |
 
 ## Evidence and field verification
 

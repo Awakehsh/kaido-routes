@@ -772,6 +772,15 @@ That is a development fact, not yet the minimum deployment target.
   occurrences, repeated traversals, recovery and egress paths, and
   released-versus-context-only topology. Unsupported or unreleased corridors
   cannot appear selectable or look equivalent to released navigable coverage.
+- `RouteAtlasJourneyProjector` now implements the release-to-renderer boundary.
+  It accepts only one validated `RouteAtlasRelease` and an optional exact
+  actor-owned `NavigationSnapshot`, validates the completed/current/pending/
+  skipped occurrence partition, and emits immutable context segments, ordered
+  occurrence tracks, repeat ordinals, and adjacent source attribution. Before
+  actor activation all occurrences are `PLANNED`; afterward the renderer
+  receives only `PASSED`, `CURRENT`, `FUTURE`, or `SKIPPED`. Identity or order
+  drift blocks the overlay. The projection carries no coordinate and cannot
+  authorize or imitate a measured-position marker.
 - Phone and CarPlay receive the Route Atlas value from an already validated
   `KaidoProductRelease`; renderers never infer connectivity from line
   intersections or author an alternate successor graph. Before a real joint

@@ -439,6 +439,19 @@ default journey. Product schema, release validity, and live-input authority
 remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
 are L3-specific.
 
+KR-U17 adds the Route Atlas journey-overlay contract without granting map or
+position authority. Its synthetic released atlas carries one context-only
+branch and a RoutePlan that traverses one schematic segment twice. The portable
+runner requires the exact actor snapshot to produce ordered
+`PASSED/CURRENT/FUTURE` occurrence state, preserve both bindings, and expose a
+repeat ordinal instead of deduplicating the segment. Package tests cover
+pre-activation `PLANNED` state, skipped occurrences, completed/pending order
+drift, RoutePlan drift, and adjacent attribution. App model tests prove both
+pre-drive and actor-owned projections, while a launch-only XCUITest inspects
+the three separately numbered tracks and retains a screenshot. This is
+synthetic renderer evidence only: it does not release Shuto topology, calibrate
+a position marker, or prove physical-device layout.
+
 KR-U16 adds package and L3 process-lifecycle evidence without inventing a
 portable Apple scene event. A schema-1.0 checkpoint round-trips deterministic
 coordinate-free state, fails on release identity or schema drift, clears partial

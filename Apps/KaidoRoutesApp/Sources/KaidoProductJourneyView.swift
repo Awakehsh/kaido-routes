@@ -278,6 +278,10 @@ struct KaidoProductJourneyView: View {
         ParkedRouteEditorPanel(model: model.composition.routeEditor)
       }
 
+      ReleasedRouteAtlasOverlayContainer(
+        presentation: model.routeAtlasOverlayPresentation
+      )
+
       if model.routeReviewReady {
         ReviewBoundaryCard(
           symbol: "checkmark.seal.fill",
@@ -342,6 +346,10 @@ struct KaidoProductJourneyView: View {
           navigationStartAvailable: model.canStartNavigation
         )
       }
+
+      ReleasedRouteAtlasOverlayContainer(
+        presentation: model.routeAtlasOverlayPresentation
+      )
 
       GuidanceVoiceSetupPanel(
         model: model.composition.guidanceVoiceSetup,

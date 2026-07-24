@@ -17,6 +17,9 @@ struct SyntheticProductRuntimePanel: View {
       releaseIdentity
       runtimeMetrics
       actorState
+      ReleasedRouteAtlasOverlayContainer(
+        presentation: model.routeAtlasOverlayPresentation
+      )
       actorProjection
       lifecycleState
       foregroundLocationState

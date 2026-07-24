@@ -95,6 +95,11 @@ The current app deliberately composes only:
   publishes its actor-owned atomic snapshot into SwiftUI while strict entry
   remains locked, with a RoutePlan-bound exactly-once speech adapter waiting for
   a transient prompt emission;
+- a release-bound Route Atlas journey overlay that keeps released topology as
+  quiet context, renders planned or actor-owned passed/current/future/skipped
+  occurrence tracks, preserves repeated traversals with separate ordinal
+  markers, keeps source/licence attribution adjacent, and never invents a
+  vehicle position;
 - a dormant released-road navigation surface that can be constructed only from
   one exact foreground catalog selection, separates the bound release key from
   user-started live input, renders only actor-owned projections, and preserves

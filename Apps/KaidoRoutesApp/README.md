@@ -164,7 +164,10 @@ location session.
 `synthetic-product-runtime-preview.json` is a distributable composition fixture,
 not a road-data release. Its product release, navigation release, RoutePlan,
 runtime policy, matcher corridor, guidance, and renderer-neutral atlas pass the
-same validators used by production code. The app then adds a separate safety
+same validators used by production code. Its RoutePlan occurrences carry the
+same explicit toll-domain values used by the reviewed editor choices, allowing
+the release bundle to prove an exact `ReleasedRouteAuthoringRecipe` without
+weakening whole-plan equality. The app then adds a separate safety
 gate: every navigation and atlas source must use
 `SYNTHETIC_TEST_ONLY`, identify a synthetic authority, and resolve under
 `example.com`. Identity or source drift blocks model construction.

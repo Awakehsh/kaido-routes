@@ -25,6 +25,58 @@ func navigationReleaseBundleAcceptsCoherentRepeatedOccurrences() throws {
   )
   #expect(bundle.decisionZones.count == 3)
   #expect(bundle.junctionViews.map(\.id) == ["test.junction-view.exit"])
+  #expect(
+    bundle.routeAuthoringRecipe.steps.map(\.movementOccurrenceID) == [
+      "test.occurrence.loop-movement-1",
+      "test.occurrence.loop-movement-2",
+      "test.occurrence.exit-movement",
+    ])
+}
+
+@Test("Navigation release bundle rejects RoutePlan and editor-catalog step drift")
+func navigationReleaseBundleRejectsEditorStepDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  var occurrences = fixture.routePlan.occurrences
+  let exitEdge = occurrences[6]
+  occurrences[6] = RouteOccurrence(
+    id: exitEdge.id,
+    index: exitEdge.index,
+    kind: exitEdge.kind,
+    entityID: "test.edge.unreviewed",
+    tollDomainID: exitEdge.tollDomainID
+  )
+  let driftedRoutePlan = RoutePlan(
+    id: fixture.routePlan.id,
+    networkSnapshotID: fixture.routePlan.networkSnapshotID,
+    entryFacilityID: fixture.routePlan.entryFacilityID,
+    exitFacilityID: fixture.routePlan.exitFacilityID,
+    recoveryPolicy: fixture.routePlan.recoveryPolicy,
+    occurrences: occurrences
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: driftedRoutePlan,
+      editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected editor-catalog step drift to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .routePlanEditorCatalogMismatch(
+          .unavailableChoice("test.occurrence.exit-movement")
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
 }
 
 @Test("Every repeated movement occurrence needs its own DecisionZone and guidance")
@@ -959,7 +1011,13 @@ private func routeOccurrence(
   _ kind: RouteOccurrence.Kind,
   _ entityID: String
 ) -> RouteOccurrence {
-  RouteOccurrence(id: id, index: index, kind: kind, entityID: entityID)
+  RouteOccurrence(
+    id: id,
+    index: index,
+    kind: kind,
+    entityID: entityID,
+    tollDomainID: "test.toll"
+  )
 }
 
 private func matcherEdge(

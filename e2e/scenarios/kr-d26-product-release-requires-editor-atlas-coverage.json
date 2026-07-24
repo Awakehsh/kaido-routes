@@ -31,19 +31,22 @@
           "occurrence_id": "test.occurrence.product-release.approach",
           "index": 0,
           "kind": "EDGE",
-          "entity_id": "test.edge.product-release.approach"
+          "entity_id": "test.edge.product-release.approach",
+          "toll_domain_id": "test.toll.shuto"
         },
         {
           "occurrence_id": "test.occurrence.product-release.movement",
           "index": 1,
           "kind": "JUNCTION_MOVEMENT",
-          "entity_id": "test.movement.product-release.exit"
+          "entity_id": "test.movement.product-release.exit",
+          "toll_domain_id": "test.toll.shuto"
         },
         {
           "occurrence_id": "test.occurrence.product-release.exit",
           "index": 2,
           "kind": "EDGE",
-          "entity_id": "test.edge.product-release.exit"
+          "entity_id": "test.edge.product-release.exit",
+          "toll_domain_id": "test.toll.shuto"
         }
       ]
     },

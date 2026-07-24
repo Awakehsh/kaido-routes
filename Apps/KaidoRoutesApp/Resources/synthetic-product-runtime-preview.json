@@ -620,49 +620,56 @@
           "index" : 0,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.entry",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.loop",
           "index" : 1,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.loop-movement-1",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.loop",
           "index" : 2,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.loop-edge-1",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.loop",
           "index" : 3,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.loop-movement-2",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.loop",
           "index" : 4,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.loop-edge-2",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.exit",
           "index" : 5,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.exit-movement",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.exit",
           "index" : 6,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.exit-edge",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         }
       ],
       "plan_id" : "test.plan.release-bundle",
@@ -930,49 +937,56 @@
           "index" : 0,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.entry",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.loop",
           "index" : 1,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.loop-movement-1",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.loop",
           "index" : 2,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.loop-edge-1",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.loop",
           "index" : 3,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.loop-movement-2",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.loop",
           "index" : 4,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.loop-edge-2",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.movement.exit",
           "index" : 5,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "test.occurrence.exit-movement",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         },
         {
           "entity_id" : "test.edge.exit",
           "index" : 6,
           "kind" : "EDGE",
           "occurrence_id" : "test.occurrence.exit-edge",
-          "optional" : false
+          "optional" : false,
+          "toll_domain_id" : "test.toll"
         }
       ],
       "plan_id" : "test.plan.release-bundle",

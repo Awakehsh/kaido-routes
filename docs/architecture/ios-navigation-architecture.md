@@ -447,9 +447,16 @@ least one released egress whose exit is the compiled RoutePlan exit. The bundle 
 `NavigationSession`'s route/corridor/zone/guidance validator rather than defining
 a second runtime identity policy. It additionally requires the catalog to use
 the same snapshot and contain the route's directional entrance, initial edge,
-and exit; requires exactly one DecisionZone and at least one released guidance
-definition for every planned junction-movement occurrence; and requires every
-embedded junction view to match one released registry value exactly. Duplicate
+and exit. `ReleasedRouteAuthoringRecipe` then proves the stronger relationship:
+the exact initial edge plus every ordered movement/outgoing-edge pair, toll
+domain, directional destination, occurrence ID, and repeated traversal must be
+replayable through the same catalog. The recipe exposes immutable IDs for
+user-submitted parked choices; it does not auto-author a route. Only a completed
+session whose whole identity matches can regain the release-owned RoutePlan and
+its reviewed actual distance. The bundle also requires exactly one DecisionZone
+and at least one released guidance definition for every planned
+junction-movement occurrence; and requires every embedded junction view to match
+one released registry value exactly. Duplicate
 movement zones, missing repeated-occurrence assets, unregistered views, and
 orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
@@ -709,6 +716,9 @@ That is a development fact, not yet the minimum deployment target.
   or lap-candidate IDs. `KaidoRouting`, not the view tree, owns the current
   incoming approach, legal movement set, reviewed closed-sequence matching,
   fresh occurrence creation, grouped parked undo, and explicit exit completion.
+  A release may provide a validated `ReleasedRouteAuthoringRecipe`, but the UI
+  still submits each choice and cannot promote a partial or alternate authored
+  route back into the exact released RoutePlan.
   KR-U01 and KR-U02 execute this pure boundary; the internal SwiftUI editor uses
   a synthetic catalog and does not release real Shuto authoring data.
 - A freehand gesture is only adapter input. `ParkedCorridorResolutionSession`

@@ -8,6 +8,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case invalidRoutePlan
   case editorCatalogSnapshotMismatch
   case invalidEditorCatalog([String])
+  case routePlanEditorCatalogMismatch(ReleasedRouteAuthoringError)
   case unknownRouteEntrance
   case routeEntranceEdgeMismatch
   case unknownRouteExit
@@ -37,6 +38,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "EDITOR_CATALOG_SNAPSHOT_MISMATCH"
     case .invalidEditorCatalog:
       "INVALID_EDITOR_CATALOG"
+    case .routePlanEditorCatalogMismatch(let error):
+      error.code
     case .unknownRouteEntrance:
       "UNKNOWN_ROUTE_ENTRANCE"
     case .routeEntranceEdgeMismatch:
@@ -80,6 +83,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "\(code):\(detail)"
     case .invalidEditorCatalog(let details):
       "\(code):\(details.joined(separator: ","))"
+    case .routePlanEditorCatalogMismatch(let error):
+      "\(code):\(error.sortKey)"
     case .invalidRuntimeConfiguration(let detail):
       "\(code):\(detail)"
     case .duplicateDecisionZoneForMovement(let id),
@@ -111,6 +116,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
   public let networkSnapshot: NetworkSnapshot
   public let routePlan: RoutePlan
   public let editorCatalog: ReviewedRouteEditorCatalog
+  public let routeAuthoringRecipe: ReleasedRouteAuthoringRecipe
   public let runtimePolicy: ReleasedNavigationRuntimePolicy
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
@@ -127,7 +133,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition] = []
   ) throws {
-    let issues = Self.validationIssues(
+    let validation = Self.validation(
       networkSnapshot: networkSnapshot,
       routePlan: routePlan,
       editorCatalog: editorCatalog,
@@ -137,13 +143,19 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       releasedGuidance: releasedGuidance,
       junctionViews: junctionViews
     )
-    guard issues.isEmpty else {
-      throw NavigationReleaseBundleError.invalid(issues)
+    guard validation.issues.isEmpty else {
+      throw NavigationReleaseBundleError.invalid(validation.issues)
+    }
+    guard let routeAuthoringRecipe = validation.recipe else {
+      throw NavigationReleaseBundleError.invalid([
+        .routePlanEditorCatalogMismatch(.invalidRoutePlan)
+      ])
     }
 
     self.networkSnapshot = networkSnapshot
     self.routePlan = routePlan
     self.editorCatalog = editorCatalog
+    self.routeAuthoringRecipe = routeAuthoringRecipe
     self.runtimePolicy = runtimePolicy
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
@@ -151,7 +163,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     self.junctionViews = junctionViews
   }
 
-  private static func validationIssues(
+  private static func validation(
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     editorCatalog: ReviewedRouteEditorCatalog,
@@ -160,7 +172,10 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition]
-  ) -> [NavigationReleaseBundleIssue] {
+  ) -> (
+    issues: [NavigationReleaseBundleIssue],
+    recipe: ReleasedRouteAuthoringRecipe?
+  ) {
     var issues: [NavigationReleaseBundleIssue] = []
 
     if normalized(networkSnapshot.id).isEmpty
@@ -182,6 +197,19 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     }
     if editorCatalog.networkSnapshotID != networkSnapshot.id {
       issues.append(.editorCatalogSnapshotMismatch)
+    }
+    let routeAuthoringRecipe: ReleasedRouteAuthoringRecipe?
+    do {
+      routeAuthoringRecipe = try ReleasedRouteAuthoringRecipe(
+        routePlan: routePlan,
+        editorCatalog: editorCatalog
+      )
+    } catch let error as ReleasedRouteAuthoringError {
+      routeAuthoringRecipe = nil
+      issues.append(.routePlanEditorCatalogMismatch(error))
+    } catch {
+      routeAuthoringRecipe = nil
+      issues.append(.routePlanEditorCatalogMismatch(.invalidRoutePlan))
     }
     if let entrance = editorCatalog.entrances.first(where: {
       $0.facilityID == routePlan.entryFacilityID
@@ -290,7 +318,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       issues.append(.orphanedJunctionView(junctionViewID))
     }
 
-    return sorted(issues)
+    return (sorted(issues), routeAuthoringRecipe)
   }
 
   private static func routePlanIsValid(_ routePlan: RoutePlan) -> Bool {

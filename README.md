@@ -242,7 +242,13 @@ KR-U02 execute this stateful boundary. KR-U03 adds a separate parked corridor
 resolver between freehand geometry matching and the editor. It accepts only the
 exact current snapshot, decision point, and reviewed choice IDs; ambiguity
 requires an explicit choice and still cannot append occurrences by itself. The
-internal iPhone shell now composes the
+release boundary additionally constructs a `ReleasedRouteAuthoringRecipe`.
+It proves that every ordered movement/edge occurrence, toll domain, directional
+destination, and repeated traversal in the exact released `RoutePlan` can be
+replayed through that same catalog. It exposes stable choice and occurrence IDs
+for user submission, never selects them automatically, and returns the exact
+released plan—including reviewed actual distance—only after the parked session
+matches every field and occurrence. The internal iPhone shell now composes the
 same session through a synthetic parked-only catalog: SwiftUI renders its
 immutable choices and lap candidates, preserves repeated occurrences, uses
 session-owned undo, and unlocks compilation only after an explicit exit. Its
@@ -365,8 +371,11 @@ validation as `NavigationSession`, then adds whole-bundle coverage: every planne
 junction-movement occurrence needs exactly one DecisionZone and at least one
 released guidance definition. Embedded junction views must match one registry
 entry exactly, and registry orphans fail closed. Repeated graph entities remain
-distinct because coverage is keyed by occurrence ID. KR-D18 executes this
-boundary with synthetic data; it does not release a real route or dataset.
+distinct because coverage is keyed by occurrence ID. The bundle also retains the
+validated `ReleasedRouteAuthoringRecipe`; a catalog that merely contains the
+entry and exit but cannot replay an intermediate route occurrence now blocks
+release. KR-D18 executes this boundary with synthetic data; it does not release
+a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
 `NavigationReleaseArtifact` schema 2.0 serializes the exact bundle inputs

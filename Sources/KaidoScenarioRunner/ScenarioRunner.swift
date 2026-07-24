@@ -633,6 +633,9 @@ private struct ScenarioHarness {
   private mutating func validateNavigationReleaseBundle() throws {
     guard let routePlan = scenario.given.routePlan,
       let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let runtimePolicyValue = scenario.given.inputs.object(
+        "navigation_runtime_policy"
+      ),
       let corridorValue = scenario.given.inputs.object("matcher_corridor"),
       let decisionZoneValues = scenario.given.inputs.array("decision_zones")
     else {
@@ -640,6 +643,7 @@ private struct ScenarioHarness {
     }
     let junctionViewValues = scenario.given.inputs.array("junction_views") ?? []
     let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let runtimePolicy = try navigationRuntimePolicy(runtimePolicyValue)
     let corridor = try routeMatcherCorridor(corridorValue)
     let decisionZones = try decisionZoneValues.map { value in
       guard let definition = value.objectValue else {
@@ -663,6 +667,7 @@ private struct ScenarioHarness {
         networkSnapshot: scenario.given.networkSnapshot,
         routePlan: routePlan,
         editorCatalog: catalog,
+        runtimePolicy: runtimePolicy,
         matcherCorridor: corridor,
         decisionZones: decisionZones,
         releasedGuidance: releasedGuidance,
@@ -711,6 +716,9 @@ private struct ScenarioHarness {
         "navigation_release_editor_catalog_id"
       ),
       let catalogValue = scenario.given.inputs.object("expert_route_editor_catalog"),
+      let runtimePolicyValue = scenario.given.inputs.object(
+        "navigation_runtime_policy"
+      ),
       let corridorValue = scenario.given.inputs.object("matcher_corridor"),
       let decisionZoneValues = scenario.given.inputs.array("decision_zones"),
       let sourceValues = scenario.given.inputs.array("navigation_release_sources"),
@@ -722,6 +730,7 @@ private struct ScenarioHarness {
     }
 
     let catalog = try reviewedRouteEditorCatalog(catalogValue)
+    let runtimePolicy = try navigationRuntimePolicy(runtimePolicyValue)
     let corridor = try routeMatcherCorridor(corridorValue)
     let decisionZones = try decisionZoneValues.map { value in
       guard let definition = value.objectValue else {
@@ -792,11 +801,93 @@ private struct ScenarioHarness {
       sourceRegistry: NavigationReleaseSourceRegistry(references: sources),
       assetEvidence: evidence,
       editorCatalog: catalog,
+      runtimePolicy: runtimePolicy,
       matcherCorridor: corridor,
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
       junctionViews: junctionViews
     )
+  }
+
+  private func navigationRuntimePolicy(
+    _ value: [String: JSONValue]
+  ) throws -> ReleasedNavigationRuntimePolicy {
+    guard let entryTransition = value.object("entry_transition"),
+      let recoveryValues = value.array("recovery_candidates"),
+      let egressValues = value.array("egress_options")
+    else {
+      throw ScenarioExecutionError.invalidInput("navigation_runtime_policy")
+    }
+    let directedEdgeIDs = try Self.requiredStringArray(
+      entryTransition,
+      key: "directed_edge_ids"
+    )
+    let recoveryCandidates = try recoveryValues.map { rawValue in
+      guard let candidate = rawValue.objectValue,
+        let released = candidate.bool("released"),
+        let staysInAllowedTollDomain = candidate.bool(
+          "stays_in_allowed_toll_domain"
+        )
+      else {
+        throw ScenarioExecutionError.invalidInput("recovery_candidates")
+      }
+      return RecoveryCandidate(
+        targetOccurrenceID: try candidate.requiredString("target_occurrence_id"),
+        recoveryOccurrenceIDs: try Self.requiredStringArray(
+          candidate,
+          key: "recovery_occurrence_ids"
+        ),
+        isReleased: released,
+        staysInAllowedTollDomain: staysInAllowedTollDomain
+      )
+    }
+    let egressOptions = try egressValues.map { rawValue in
+      guard let option = rawValue.objectValue,
+        let released = option.bool("released")
+      else {
+        throw ScenarioExecutionError.invalidInput("egress_options")
+      }
+      return EgressOption(
+        id: try option.requiredString("egress_option_id"),
+        firstEligibleOccurrenceID: try option.requiredString(
+          "first_eligible_occurrence_id"
+        ),
+        exitFacilityID: try option.requiredString("exit_facility_id"),
+        egressOccurrenceIDs: try Self.requiredStringArray(
+          option,
+          key: "egress_occurrence_ids"
+        ),
+        isReleased: released
+      )
+    }
+    return ReleasedNavigationRuntimePolicy(
+      id: try value.requiredString("runtime_policy_id"),
+      networkSnapshotID: try value.requiredString("network_snapshot_id"),
+      routePlanID: try value.requiredString("route_plan_id"),
+      entryTransition: EntryTransition(
+        facilityID: try entryTransition.requiredString("facility_id"),
+        directedEdgeIDs: directedEdgeIDs,
+        firstRouteOccurrenceID: try entryTransition.requiredString(
+          "first_route_occurrence_id"
+        )
+      ),
+      recoveryCandidates: recoveryCandidates,
+      egressOptions: egressOptions
+    )
+  }
+
+  private static func requiredStringArray(
+    _ value: [String: JSONValue],
+    key: String
+  ) throws -> [String] {
+    guard let rawValues = value.array(key) else {
+      throw ScenarioExecutionError.invalidInput(key)
+    }
+    let values = rawValues.compactMap(\.stringValue)
+    guard values.count == rawValues.count else {
+      throw ScenarioExecutionError.invalidInput(key)
+    }
+    return values
   }
 
   private mutating func validateProductReleaseArtifact(
@@ -1004,6 +1095,9 @@ private struct ScenarioHarness {
       bundle.networkSnapshot.id
     )
     adapterObservations["release_bundle.route_plan_id"] = .string(bundle.routePlan.id)
+    adapterObservations["release_bundle.runtime_policy_id"] = .string(
+      bundle.runtimePolicy.id
+    )
     adapterObservations["release_bundle.decision_zone_movement_occurrence_ids"] =
       .strings(bundle.decisionZones.map(\.movementOccurrenceID))
     adapterObservations["release_bundle.guidance_movement_occurrence_ids"] =

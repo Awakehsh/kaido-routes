@@ -61,6 +61,7 @@
           "source_reference_id": "test.source.product-navigation",
           "roles": [
             "EDITOR_CATALOG",
+            "RUNTIME_POLICY",
             "MATCHER_CORRIDOR",
             "DECISION_ZONE",
             "GUIDANCE"
@@ -76,6 +77,13 @@
         {
           "role": "EDITOR_CATALOG",
           "asset_id": "test.catalog.product-release-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.product-navigation"]
+        },
+        {
+          "role": "RUNTIME_POLICY",
+          "asset_id": "test.runtime-policy.product-release-v1",
           "state": "RELEASED",
           "checked_at": "2026-07-24",
           "source_reference_ids": ["test.source.product-navigation"]
@@ -127,6 +135,42 @@
                 "exit_facility_id": "test.exit.product-release"
               }
             ]
+          }
+        ]
+      },
+      "navigation_runtime_policy": {
+        "runtime_policy_id": "test.runtime-policy.product-release-v1",
+        "network_snapshot_id": "test.snapshot.product-release-v1",
+        "route_plan_id": "test.plan.product-release",
+        "entry_transition": {
+          "facility_id": "test.entrance.product-release",
+          "directed_edge_ids": [
+            "test.entry-transition.product-release.surface",
+            "test.entry-transition.product-release.ramp"
+          ],
+          "first_route_occurrence_id": "test.occurrence.product-release.approach"
+        },
+        "recovery_candidates": [
+          {
+            "target_occurrence_id": "test.occurrence.product-release.exit",
+            "recovery_occurrence_ids": [
+              "test.recovery.product-release.movement",
+              "test.recovery.product-release.edge"
+            ],
+            "released": true,
+            "stays_in_allowed_toll_domain": true
+          }
+        ],
+        "egress_options": [
+          {
+            "egress_option_id": "test.egress.product-release",
+            "first_eligible_occurrence_id": "test.occurrence.product-release.movement",
+            "exit_facility_id": "test.exit.product-release",
+            "egress_occurrence_ids": [
+              "test.egress.product-release.movement",
+              "test.egress.product-release.edge"
+            ],
+            "released": true
           }
         ]
       },
@@ -377,7 +421,7 @@
       "id": "validate-navigation-release",
       "at_ms": 0,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "1.0"}
+      "payload": {"schema_version": "2.0"}
     },
     {
       "id": "validate-route-atlas-release",
@@ -389,13 +433,13 @@
       "id": "validate-product-release",
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "1.0"}
+      "payload": {"schema_version": "2.0"}
     },
     {
       "id": "create-product-runtime",
       "at_ms": 3,
       "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
-      "payload": {"schema_version": "1.0"}
+      "payload": {"schema_version": "2.0"}
     }
   ],
   "then": [

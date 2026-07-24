@@ -11,6 +11,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case unknownRouteEntrance
   case routeEntranceEdgeMismatch
   case unknownRouteExit
+  case invalidRuntimePolicy(NavigationRuntimePolicyIssue)
   case invalidRuntimeConfiguration(String)
   case duplicateDecisionZoneForMovement(String)
   case missingDecisionZoneForMovement(String)
@@ -41,6 +42,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       "ROUTE_ENTRANCE_EDGE_MISMATCH"
     case .unknownRouteExit:
       "UNKNOWN_ROUTE_EXIT"
+    case .invalidRuntimePolicy(let issue):
+      issue.code
     case .invalidRuntimeConfiguration:
       "INVALID_RUNTIME_CONFIGURATION"
     case .duplicateDecisionZoneForMovement:
@@ -68,6 +71,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
 
   var sortKey: String {
     switch self {
+    case .invalidRuntimePolicy(let issue):
+      "RUNTIME_POLICY:\(issue.sortKey)"
     case .invalidEditorCatalog(let details):
       "\(code):\(details.joined(separator: ","))"
     case .invalidRuntimeConfiguration(let detail):
@@ -101,6 +106,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
   public let networkSnapshot: NetworkSnapshot
   public let routePlan: RoutePlan
   public let editorCatalog: ReviewedRouteEditorCatalog
+  public let runtimePolicy: ReleasedNavigationRuntimePolicy
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
@@ -110,6 +116,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     editorCatalog: ReviewedRouteEditorCatalog,
+    runtimePolicy: ReleasedNavigationRuntimePolicy,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
@@ -119,6 +126,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       networkSnapshot: networkSnapshot,
       routePlan: routePlan,
       editorCatalog: editorCatalog,
+      runtimePolicy: runtimePolicy,
       matcherCorridor: matcherCorridor,
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
@@ -131,6 +139,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     self.networkSnapshot = networkSnapshot
     self.routePlan = routePlan
     self.editorCatalog = editorCatalog
+    self.runtimePolicy = runtimePolicy
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
@@ -141,6 +150,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     networkSnapshot: NetworkSnapshot,
     routePlan: RoutePlan,
     editorCatalog: ReviewedRouteEditorCatalog,
+    runtimePolicy: ReleasedNavigationRuntimePolicy,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
@@ -188,6 +198,13 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     if !catalogExitIDs.contains(routePlan.exitFacilityID) {
       issues.append(.unknownRouteExit)
     }
+
+    issues.append(
+      contentsOf: runtimePolicy.validationIssues(
+        networkSnapshot: networkSnapshot,
+        routePlan: routePlan
+      ).map(NavigationReleaseBundleIssue.invalidRuntimePolicy)
+    )
 
     issues.append(
       contentsOf: NavigationRuntimeConfigurationValidator.issues(

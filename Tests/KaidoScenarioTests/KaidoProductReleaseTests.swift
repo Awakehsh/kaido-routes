@@ -105,13 +105,14 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     sourceRegistry: validNavigation.sourceRegistry,
     assetEvidence: validNavigation.assetEvidence,
     editorCatalog: validNavigation.editorCatalog,
+    runtimePolicy: validNavigation.runtimePolicy,
     matcherCorridor: validNavigation.matcherCorridor,
     decisionZones: validNavigation.decisionZones,
     releasedGuidance: validNavigation.releasedGuidance,
     junctionViews: validNavigation.junctionViews
   )
   let artifact = KaidoProductReleaseArtifact(
-    schemaVersion: "2.0",
+    schemaVersion: "3.0",
     releaseID: "test.product-release.future-navigation",
     releasedAt: "2026-07-24T12:00:00+09:00",
     navigationRelease: futureNavigation,
@@ -172,7 +173,7 @@ func kaidoProductReleaseRejectsFutureAtlasEvidence() {
   }
 }
 
-@Test("Product runtime admits only the exact joint release and keeps unreleased egress unavailable")
+@Test("Product runtime consumes only the joint release runtime policy")
 func kaidoProductRuntimeUsesJointReleaseAuthority() async throws {
   let navigationFixture = navigationReleaseBundleFixture()
   let release = try KaidoProductRelease(
@@ -189,18 +190,23 @@ func kaidoProductRuntimeUsesJointReleaseAuthority() async throws {
 
   let runtime = try KaidoProductNavigationRuntime(release: release)
   let started = await runtime.session.start()
-  let finishWithoutReleasedEgress = await runtime.session.finishDrive()
+  let finish = await runtime.session.finishDrive()
 
   #expect(runtime.productReleaseID == release.releaseID)
   #expect(runtime.navigationReleaseID == release.navigation.releaseID)
   #expect(runtime.networkSnapshotID == navigationFixture.networkSnapshot.id)
   #expect(runtime.routePlanID == navigationFixture.routePlan.id)
   #expect(runtime.routeAtlas == release.routeAtlas)
+  #expect(
+    runtime.release.navigation.bundle.runtimePolicy
+      == navigationFixture.runtimePolicy
+  )
   #expect(started.activeRoutePlanID == navigationFixture.routePlan.id)
   #expect(started.currentOccurrenceID == navigationFixture.routePlan.occurrences.first?.id)
   #expect(started.journeyPhase == .planning)
   #expect(started.strictRouteAutoCommitAllowed == false)
-  #expect(finishWithoutReleasedEgress.egress.status == .unavailable)
+  #expect(finish.egress.status == .active)
+  #expect(finish.egress.exitFacilityID == navigationFixture.routePlan.exitFacilityID)
 }
 
 func productRouteAtlasArtifact(

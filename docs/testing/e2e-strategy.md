@@ -291,21 +291,25 @@ is evidence of a live location, provider route, or released entrance.
 
 KR-D18 executes `NavigationReleaseBundle` at L1/L2 before any Apple adapter or
 live service exists. Its synthetic asset set proves that one active snapshot,
-RoutePlan, editor catalog, matcher corridor, DecisionZone set, released-guidance
-set, and optional junction-view registry can pass as one coherent unit. Unit
-tests supply the fail-closed matrix for missing repeated-occurrence assets,
-duplicate movement zones, and unregistered or orphaned junction views. Neither
+RoutePlan, editor catalog, entry/recovery/egress runtime policy, matcher
+corridor, DecisionZone set, released-guidance set, and optional junction-view
+registry can pass as one coherent unit. Unit tests supply the fail-closed matrix
+for invalid entry binding, absent released recovery/egress, compiled-exit drift,
+non-rejoin policy contamination, missing repeated-occurrence assets, duplicate
+movement zones, and unregistered or orphaned junction views. Neither
 the portable scenario nor those tests promote their synthetic `ACTIVE` or
 `RELEASED` flags into real release evidence.
 
 KR-D25 takes the next distribution step without weakening that distinction.
 The runner constructs a `NavigationReleaseArtifact`, encodes and decodes it,
 requires exact released evidence coverage for every runtime asset role and
-identity, and then re-runs `NavigationReleaseBundle`. A second event proves that
-an unknown artifact schema fails closed. Python independently checks the source
-registry, exact asset-evidence coverage, role compatibility, and embedded
-junction-view provenance. The fixture remains synthetic and does not establish
-real-road release eligibility.
+identity—including `RUNTIME_POLICY`—and then re-runs
+`NavigationReleaseBundle`. A second event proves that an unknown artifact schema
+fails closed. Python independently checks the policy's snapshot, RoutePlan,
+entry, safe-rejoin, and compiled-exit bindings as well as the source registry,
+exact asset-evidence coverage, role compatibility, and embedded junction-view
+provenance. The fixture remains synthetic and does not establish real-road
+release eligibility.
 
 KR-D26 crosses the two independently valid distribution boundaries without
 merging their authority. The runner builds and validates one navigation artifact

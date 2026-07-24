@@ -36,6 +36,9 @@ public struct KaidoProductNavigationRuntime: Sendable {
     session = try NavigationSession(
       navigationConfiguration: NavigationConfiguration(
         routePlan: bundle.routePlan,
+        entryTransition: bundle.runtimePolicy.entryTransition,
+        recoveryCandidates: bundle.runtimePolicy.recoveryCandidates,
+        egressOptions: bundle.runtimePolicy.egressOptions,
         releasedGuidance: bundle.releasedGuidance
       ),
       matcherCorridor: bundle.matcherCorridor,

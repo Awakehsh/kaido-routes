@@ -50,6 +50,7 @@ GUIDANCE_LANE_PREPARATIONS = {
 }
 NAVIGATION_RELEASE_ASSET_ROLES = {
     "EDITOR_CATALOG",
+    "RUNTIME_POLICY",
     "MATCHER_CORRIDOR",
     "DECISION_ZONE",
     "GUIDANCE",
@@ -931,6 +932,225 @@ def validate_released_guidance(v: Validation, given: dict[str, Any]) -> None:
                     v.add(f"{context}.frame.localized_content[{locale}].spoken_forms is invalid")
 
 
+def validate_navigation_runtime_policy(
+    v: Validation, given: dict[str, Any]
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "navigation_runtime_policy" not in inputs:
+        return
+
+    policy = inputs["navigation_runtime_policy"]
+    required = {
+        "runtime_policy_id",
+        "network_snapshot_id",
+        "route_plan_id",
+        "entry_transition",
+        "recovery_candidates",
+        "egress_options",
+    }
+    if not v.require_keys(
+        policy,
+        required,
+        "given.inputs.navigation_runtime_policy",
+    ):
+        return
+
+    route_plan = given.get("route_plan")
+    snapshot = given.get("network_snapshot")
+    if not isinstance(route_plan, dict) or not isinstance(snapshot, dict):
+        v.add(
+            "given.inputs.navigation_runtime_policy requires a network snapshot "
+            "and RoutePlan"
+        )
+        return
+
+    context = "given.inputs.navigation_runtime_policy"
+    for field in ("runtime_policy_id", "network_snapshot_id", "route_plan_id"):
+        if not isinstance(policy[field], str) or not policy[field].strip():
+            v.add(f"{context}.{field} must be non-empty")
+    if policy["network_snapshot_id"] != snapshot.get("id"):
+        v.add(f"{context}.network_snapshot_id must match given.network_snapshot.id")
+    if policy["route_plan_id"] != route_plan.get("plan_id"):
+        v.add(f"{context}.route_plan_id must match given.route_plan.plan_id")
+
+    occurrences = route_plan.get("occurrences")
+    occurrence_by_id = (
+        {
+            occurrence.get("occurrence_id"): occurrence
+            for occurrence in occurrences
+            if isinstance(occurrence, dict)
+            and isinstance(occurrence.get("occurrence_id"), str)
+        }
+        if isinstance(occurrences, list)
+        else {}
+    )
+    occurrence_ids = set(occurrence_by_id)
+    first_occurrence_id = (
+        occurrences[0].get("occurrence_id")
+        if isinstance(occurrences, list)
+        and occurrences
+        and isinstance(occurrences[0], dict)
+        else None
+    )
+
+    entry = policy["entry_transition"]
+    entry_required = {
+        "facility_id",
+        "directed_edge_ids",
+        "first_route_occurrence_id",
+    }
+    if v.require_keys(entry, entry_required, f"{context}.entry_transition"):
+        if entry["facility_id"] != route_plan.get("entry_facility_id"):
+            v.add(
+                f"{context}.entry_transition.facility_id must match "
+                "given.route_plan.entry_facility_id"
+            )
+        edge_ids = entry["directed_edge_ids"]
+        if (
+            not isinstance(edge_ids, list)
+            or not edge_ids
+            or not all(
+                isinstance(edge_id, str) and edge_id.strip()
+                for edge_id in edge_ids
+            )
+            or len(edge_ids) != len(set(edge_ids))
+        ):
+            v.add(
+                f"{context}.entry_transition.directed_edge_ids must be "
+                "unique non-empty strings"
+            )
+        if entry["first_route_occurrence_id"] != first_occurrence_id:
+            v.add(
+                f"{context}.entry_transition.first_route_occurrence_id must "
+                "name the first RoutePlan occurrence"
+            )
+
+    recovery_candidates = policy["recovery_candidates"]
+    if not isinstance(recovery_candidates, list):
+        v.add(f"{context}.recovery_candidates must be an array")
+        recovery_candidates = []
+    if route_plan.get("recovery_policy") == "SAFE_REJOIN" and not recovery_candidates:
+        v.add(f"{context}.recovery_candidates requires a released safe rejoin")
+    if route_plan.get("recovery_policy") != "SAFE_REJOIN" and recovery_candidates:
+        v.add(
+            f"{context}.recovery_candidates are allowed only for SAFE_REJOIN"
+        )
+    recovery_keys: set[tuple[str, tuple[str, ...], bool, bool]] = set()
+    for index, candidate in enumerate(recovery_candidates):
+        candidate_context = f"{context}.recovery_candidates[{index}]"
+        candidate_required = {
+            "target_occurrence_id",
+            "recovery_occurrence_ids",
+            "released",
+            "stays_in_allowed_toll_domain",
+        }
+        if not v.require_keys(candidate, candidate_required, candidate_context):
+            continue
+        target_id = candidate["target_occurrence_id"]
+        if (
+            not isinstance(target_id, str)
+            or not target_id.strip()
+            or target_id not in occurrence_ids
+        ):
+            v.add(f"{candidate_context}.target_occurrence_id is unknown")
+        else:
+            target_index = occurrence_by_id[target_id].get("index")
+            first_index = occurrences[0].get("index")
+            if (
+                not isinstance(target_index, int)
+                or isinstance(target_index, bool)
+                or not isinstance(first_index, int)
+                or isinstance(first_index, bool)
+                or target_index <= first_index
+            ):
+                v.add(
+                    f"{candidate_context}.target_occurrence_id must be later "
+                    "than the first RoutePlan occurrence"
+                )
+        recovery_ids = candidate["recovery_occurrence_ids"]
+        valid_recovery_ids = (
+            isinstance(recovery_ids, list)
+            and bool(recovery_ids)
+            and all(
+                isinstance(occurrence_id, str) and occurrence_id.strip()
+                for occurrence_id in recovery_ids
+            )
+            and len(recovery_ids) == len(set(recovery_ids))
+        )
+        if not valid_recovery_ids:
+            v.add(
+                f"{candidate_context}.recovery_occurrence_ids must be "
+                "unique non-empty strings"
+            )
+        if candidate["released"] is not True:
+            v.add(f"{candidate_context}.released must be true")
+        if candidate["stays_in_allowed_toll_domain"] is not True:
+            v.add(
+                f"{candidate_context}.stays_in_allowed_toll_domain must be true"
+            )
+        if isinstance(target_id, str) and valid_recovery_ids:
+            key = (
+                target_id,
+                tuple(recovery_ids),
+                candidate["released"] is True,
+                candidate["stays_in_allowed_toll_domain"] is True,
+            )
+            if key in recovery_keys:
+                v.add(f"duplicate navigation runtime recovery candidate: {target_id}")
+            recovery_keys.add(key)
+
+    egress_options = policy["egress_options"]
+    if not isinstance(egress_options, list) or not egress_options:
+        v.add(f"{context}.egress_options must contain a released egress")
+        egress_options = []
+    egress_ids: set[str] = set()
+    for index, option in enumerate(egress_options):
+        option_context = f"{context}.egress_options[{index}]"
+        option_required = {
+            "egress_option_id",
+            "first_eligible_occurrence_id",
+            "exit_facility_id",
+            "egress_occurrence_ids",
+            "released",
+        }
+        if not v.require_keys(option, option_required, option_context):
+            continue
+        option_id = option["egress_option_id"]
+        if not isinstance(option_id, str) or not option_id.strip():
+            v.add(f"{option_context}.egress_option_id must be non-empty")
+        elif option_id in egress_ids:
+            v.add(f"duplicate navigation runtime egress option: {option_id}")
+        else:
+            egress_ids.add(option_id)
+        first_eligible = option["first_eligible_occurrence_id"]
+        if (
+            not isinstance(first_eligible, str)
+            or first_eligible not in occurrence_ids
+        ):
+            v.add(f"{option_context}.first_eligible_occurrence_id is unknown")
+        if option["exit_facility_id"] != route_plan.get("exit_facility_id"):
+            v.add(
+                f"{option_context}.exit_facility_id must match "
+                "given.route_plan.exit_facility_id"
+            )
+        egress_occurrence_ids = option["egress_occurrence_ids"]
+        if (
+            not isinstance(egress_occurrence_ids, list)
+            or not egress_occurrence_ids
+            or not all(
+                isinstance(occurrence_id, str) and occurrence_id.strip()
+                for occurrence_id in egress_occurrence_ids
+            )
+            or len(egress_occurrence_ids) != len(set(egress_occurrence_ids))
+        ):
+            v.add(
+                f"{option_context}.egress_occurrence_ids must be "
+                "unique non-empty strings"
+            )
+        if option["released"] is not True:
+            v.add(f"{option_context}.released must be true")
+
+
 def validate_navigation_release_artifact(
     v: Validation, given: dict[str, Any]
 ) -> None:
@@ -948,6 +1168,7 @@ def validate_navigation_release_artifact(
         "navigation_release_sources",
         "navigation_release_asset_evidence",
         "expert_route_editor_catalog",
+        "navigation_runtime_policy",
         "matcher_corridor",
         "decision_zones",
         "released_guidance",
@@ -1032,6 +1253,11 @@ def validate_navigation_release_artifact(
     expected_keys: list[tuple[str, str]] = [
         ("EDITOR_CATALOG", inputs["navigation_release_editor_catalog_id"])
     ]
+    runtime_policy = inputs["navigation_runtime_policy"]
+    if isinstance(runtime_policy, dict):
+        expected_keys.append(
+            ("RUNTIME_POLICY", runtime_policy.get("runtime_policy_id"))
+        )
     corridor = inputs["matcher_corridor"]
     if isinstance(corridor, dict):
         expected_keys.append(("MATCHER_CORRIDOR", corridor.get("corridor_id")))
@@ -1173,6 +1399,7 @@ def validate_product_release_artifact(
         "navigation_release_sources",
         "navigation_release_asset_evidence",
         "expert_route_editor_catalog",
+        "navigation_runtime_policy",
         "matcher_corridor",
         "decision_zones",
         "released_guidance",
@@ -1520,6 +1747,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_matcher_guidance_inputs(v, given)
         validate_expert_route_editor(v, given)
         validate_released_guidance(v, given)
+        validate_navigation_runtime_policy(v, given)
         validate_navigation_release_artifact(v, given)
         validate_product_release_artifact(v, given)
         if not isinstance(given["inputs"], dict):

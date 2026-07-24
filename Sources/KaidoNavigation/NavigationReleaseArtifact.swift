@@ -4,6 +4,7 @@ import KaidoRouting
 
 public enum NavigationReleaseAssetRole: String, Codable, CaseIterable, Hashable, Sendable {
   case editorCatalog = "EDITOR_CATALOG"
+  case runtimePolicy = "RUNTIME_POLICY"
   case matcherCorridor = "MATCHER_CORRIDOR"
   case decisionZone = "DECISION_ZONE"
   case guidance = "GUIDANCE"
@@ -136,7 +137,7 @@ public struct NavigationReleaseAssetEvidence: Codable, Equatable, Sendable {
 /// must construct `NavigationRelease`, which validates provenance coverage and
 /// reuses the complete `NavigationReleaseBundle` integrity gate.
 public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "2.0"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -147,6 +148,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
   public let sourceRegistry: NavigationReleaseSourceRegistry
   public let assetEvidence: [NavigationReleaseAssetEvidence]
   public let editorCatalog: ReviewedRouteEditorCatalog
+  public let runtimePolicy: ReleasedNavigationRuntimePolicy?
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
@@ -162,6 +164,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     sourceRegistry: NavigationReleaseSourceRegistry,
     assetEvidence: [NavigationReleaseAssetEvidence],
     editorCatalog: ReviewedRouteEditorCatalog,
+    runtimePolicy: ReleasedNavigationRuntimePolicy?,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
@@ -176,6 +179,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     self.sourceRegistry = sourceRegistry
     self.assetEvidence = assetEvidence
     self.editorCatalog = editorCatalog
+    self.runtimePolicy = runtimePolicy
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
@@ -192,6 +196,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     case sourceRegistry = "source_registry"
     case assetEvidence = "asset_evidence"
     case editorCatalog = "editor_catalog"
+    case runtimePolicy = "runtime_policy"
     case matcherCorridor = "matcher_corridor"
     case decisionZones = "decision_zones"
     case releasedGuidance = "released_guidance"
@@ -203,6 +208,7 @@ public enum NavigationReleaseIssue: Equatable, Sendable {
   case invalidArtifactSchemaVersion
   case invalidArtifactIdentity
   case invalidEditorCatalogID
+  case missingRuntimePolicy
   case invalidSourceRegistry
   case duplicateSourceReference(String)
   case orphanSourceReference(String)
@@ -226,6 +232,8 @@ public enum NavigationReleaseIssue: Equatable, Sendable {
       "INVALID_NAVIGATION_RELEASE_ARTIFACT_IDENTITY"
     case .invalidEditorCatalogID:
       "INVALID_NAVIGATION_EDITOR_CATALOG_ID"
+    case .missingRuntimePolicy:
+      "MISSING_NAVIGATION_RUNTIME_POLICY"
     case .invalidSourceRegistry:
       "INVALID_NAVIGATION_SOURCE_REGISTRY"
     case .duplicateSourceReference:
@@ -296,18 +304,26 @@ public struct NavigationRelease: Equatable, Sendable {
   public init(artifact: NavigationReleaseArtifact) throws {
     var issues = Self.artifactIssues(artifact)
     let bundle: NavigationReleaseBundle?
-    do {
-      bundle = try NavigationReleaseBundle(
-        networkSnapshot: artifact.networkSnapshot,
-        routePlan: artifact.routePlan,
-        editorCatalog: artifact.editorCatalog,
-        matcherCorridor: artifact.matcherCorridor,
-        decisionZones: artifact.decisionZones,
-        releasedGuidance: artifact.releasedGuidance,
-        junctionViews: artifact.junctionViews
-      )
-    } catch NavigationReleaseBundleError.invalid(let bundleIssues) {
-      issues.append(contentsOf: bundleIssues.map(NavigationReleaseIssue.invalidBundle))
+    if artifact.runtimePolicy == nil {
+      issues.append(.missingRuntimePolicy)
+    }
+    if let runtimePolicy = artifact.runtimePolicy {
+      do {
+        bundle = try NavigationReleaseBundle(
+          networkSnapshot: artifact.networkSnapshot,
+          routePlan: artifact.routePlan,
+          editorCatalog: artifact.editorCatalog,
+          runtimePolicy: runtimePolicy,
+          matcherCorridor: artifact.matcherCorridor,
+          decisionZones: artifact.decisionZones,
+          releasedGuidance: artifact.releasedGuidance,
+          junctionViews: artifact.junctionViews
+        )
+      } catch NavigationReleaseBundleError.invalid(let bundleIssues) {
+        issues.append(contentsOf: bundleIssues.map(NavigationReleaseIssue.invalidBundle))
+        bundle = nil
+      }
+    } else {
       bundle = nil
     }
     issues = Self.sortedUnique(issues)
@@ -381,6 +397,9 @@ public struct NavigationRelease: Equatable, Sendable {
       expectedAssetCounts[AssetKey(role: role, assetID: assetID), default: 0] += 1
     }
     expect(.editorCatalog, artifact.editorCatalogID)
+    if let runtimePolicy = artifact.runtimePolicy {
+      expect(.runtimePolicy, runtimePolicy.id)
+    }
     expect(.matcherCorridor, artifact.matcherCorridor.id)
     for definition in artifact.decisionZones {
       expect(.decisionZone, definition.id)

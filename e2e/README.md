@@ -69,8 +69,9 @@ semantics without inferring them.
 Release scenarios use `NAVIGATION_RELEASE_BUNDLE_VALIDATED` for in-memory
 runtime coherence and `NAVIGATION_RELEASE_ARTIFACT_VALIDATED` for the versioned
 distribution boundary. KR-D25 encodes and decodes the artifact, checks exact
-role-matched evidence coverage, and then reuses the bundle gate. Its synthetic
-source and `RELEASED` values test fail-closed mechanics only.
+role-matched evidence coverage—including the `RUNTIME_POLICY` asset that binds
+entry transition, safe rejoin, and legal egress—and then reuses the bundle gate.
+Its synthetic source and `RELEASED` values test fail-closed mechanics only.
 `PRODUCT_RELEASE_ARTIFACT_VALIDATED` is the joint product boundary. KR-D26 first
 proves that its navigation and Route Atlas artifacts pass independently, then
 blocks their combination because one editor incoming approach is absent from

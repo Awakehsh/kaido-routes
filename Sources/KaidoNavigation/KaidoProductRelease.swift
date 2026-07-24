@@ -15,7 +15,7 @@ public enum ProductEditorAtlasEntityRole: String, Equatable, Sendable {
 /// Both nested artifacts retain their independent validators. This outer
 /// artifact adds cross-artifact identity and authoring-coverage checks.
 public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "2.0"
 
   public let schemaVersion: String
   public let releaseID: String

@@ -307,17 +307,23 @@ RoutePlan, snapshot, occurrence corridor, DecisionZone, and released-guidance
 bindings before accepting observations. Its raw initializer is package-only.
 External adapters construct `KaidoProductNavigationRuntime` from one validated
 `KaidoProductRelease`; the runtime retains that release and Route Atlas and
-creates the session from the exact released RoutePlan, corridor, DecisionZones,
-and guidance without accepting independent replacements. The current artifact
-does not yet distribute entry-transition, recovery, or egress policy, so the
-runtime leaves those behaviors unavailable. Core Location callback ownership,
+creates the session from the exact released RoutePlan,
+`ReleasedNavigationRuntimePolicy`, corridor, DecisionZones, and guidance without
+accepting independent replacements. The policy supplies the only eligible
+directional entry transition, released in-domain recovery candidates, and legal
+egress options. Core Location callback ownership,
 background lifecycle, persistence/restoration, audio scheduling, and app-scene
 composition are still unimplemented Apple boundaries.
 
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor
-catalog, `RouteMatcherCorridor`, DecisionZone definitions, released guidance,
-and optional junction-view registry in one value. The bundle reuses
+catalog, `ReleasedNavigationRuntimePolicy`, `RouteMatcherCorridor`, DecisionZone
+definitions, released guidance, and optional junction-view registry in one
+value. The policy must bind the same snapshot and RoutePlan, name the compiled
+directional entrance and first route occurrence, provide a released in-domain
+candidate targeting a later RoutePlan occurrence for `SAFE_REJOIN`, and provide
+no rejoin candidates for any other recovery policy. It must also provide at
+least one released egress whose exit is the compiled RoutePlan exit. The bundle reuses
 `NavigationSession`'s route/corridor/zone/guidance validator rather than defining
 a second runtime identity policy. It additionally requires the catalog to use
 the same snapshot and contain the route's directional entrance, initial edge,
@@ -329,12 +335,13 @@ orphaned views fail closed. This is release-asset integrity, not evidence
 promotion: KR-D18's synthetic `ACTIVE` and `RELEASED` values do not establish
 real-road eligibility.
 
-`NavigationReleaseArtifact` is the Codable distribution envelope for those
-runtime inputs. It adds a stable release identity, release time,
+`NavigationReleaseArtifact` schema 2.0 is the Codable distribution envelope for
+those runtime inputs. It adds a stable release identity, release time,
 editor-catalog identity, and a source registry with HTTPS locations, pinned
 SHA-256 values, checked dates, licences, and explicit asset roles. Exactly one
-`RELEASED` evidence record must cover the editor catalog, matcher corridor,
-every DecisionZone, every guidance prompt, and every junction view. Unresolved
+`RELEASED` evidence record must cover the editor catalog, runtime policy,
+matcher corridor, every DecisionZone, every guidance prompt, and every junction
+view. Unresolved
 or unused sources, missing or orphaned evidence, duplicate asset identities,
 role mismatch, junction-view provenance drift, and evidence checked after the
 release date fail closed.
@@ -370,8 +377,8 @@ an invented-connection rejection with synthetic data. This gate proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 
-`KaidoProductReleaseArtifact` is the outer distribution envelope a product build
-must consume. It embeds the complete navigation and Route Atlas artifacts rather
+`KaidoProductReleaseArtifact` schema 2.0 is the outer distribution envelope a
+product build must consume. It embeds the complete navigation and Route Atlas artifacts rather
 than referencing two mutable release names. `KaidoProductRelease` first
 revalidates both nested gates, then requires exact `NetworkSnapshot` and
 `RoutePlan` equality. Its release time cannot precede the nested navigation
@@ -386,7 +393,8 @@ product-blocked when this cross-artifact coverage is incomplete. The same
 scenario then attempts `PRODUCT_NAVIGATION_RUNTIME_CREATED` and proves that the
 failed release yields no partial runtime release identity. A focused positive
 unit test proves that a valid joint release supplies one exact runtime
-composition while unreleased entry/recovery/egress behavior stays unavailable.
+composition and that its released policy supplies executable Finish egress
+without an adapter-authored default.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is

@@ -4,7 +4,7 @@
   "title": "Navigation release assets form one coherent bundle",
   "layer": "DOMAIN",
   "tags": ["release-bundle", "network-snapshot", "route-plan", "guidance"],
-  "purpose": "Reject partial runtime composition by validating the editor catalog, matcher corridor, DecisionZone, released guidance, and optional junction view against one active network snapshot and one exact RoutePlan.",
+  "purpose": "Reject partial runtime composition by validating the editor catalog, entry/recovery/egress runtime policy, matcher corridor, DecisionZone, released guidance, and optional junction view against one active network snapshot and one exact RoutePlan.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
@@ -73,6 +73,42 @@
                 "exit_facility_id": "test.exit.directional"
               }
             ]
+          }
+        ]
+      },
+      "navigation_runtime_policy": {
+        "runtime_policy_id": "test.runtime-policy.release-bundle-v1",
+        "network_snapshot_id": "test.snapshot.release-bundle-v1",
+        "route_plan_id": "test.plan.release-bundle",
+        "entry_transition": {
+          "facility_id": "test.entrance.directional",
+          "directed_edge_ids": [
+            "test.entry-transition.release-bundle.surface",
+            "test.entry-transition.release-bundle.ramp"
+          ],
+          "first_route_occurrence_id": "test.occurrence.approach"
+        },
+        "recovery_candidates": [
+          {
+            "target_occurrence_id": "test.occurrence.exit",
+            "recovery_occurrence_ids": [
+              "test.recovery.release-bundle.movement",
+              "test.recovery.release-bundle.edge"
+            ],
+            "released": true,
+            "stays_in_allowed_toll_domain": true
+          }
+        ],
+        "egress_options": [
+          {
+            "egress_option_id": "test.egress.release-bundle",
+            "first_eligible_occurrence_id": "test.occurrence.movement",
+            "exit_facility_id": "test.exit.directional",
+            "egress_occurrence_ids": [
+              "test.egress.release-bundle.movement",
+              "test.egress.release-bundle.edge"
+            ],
+            "released": true
           }
         ]
       },
@@ -306,6 +342,15 @@
       "matcher": "EQUALS",
       "expected": "test.plan.release-bundle",
       "rationale": "Corridor, DecisionZone, and guidance validation all bind to one RoutePlan."
+    },
+    {
+      "id": "runtime-policy-remains-exact",
+      "after": "validate-release-bundle",
+      "category": "SAFETY",
+      "subject": "release_bundle.runtime_policy_id",
+      "matcher": "EQUALS",
+      "expected": "test.runtime-policy.release-bundle-v1",
+      "rationale": "Entry, recovery, and egress policy must remain one RoutePlan-bound released value rather than adapter-supplied runtime defaults."
     },
     {
       "id": "movement-has-one-zone",

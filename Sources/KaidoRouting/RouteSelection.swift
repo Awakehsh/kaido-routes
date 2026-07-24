@@ -240,7 +240,7 @@ public enum EntranceRecommender {
   }
 }
 
-public struct RecoveryCandidate: Equatable, Sendable {
+public struct RecoveryCandidate: Codable, Equatable, Sendable {
   public let targetOccurrenceID: String
   public let recoveryOccurrenceIDs: [String]
   public let isReleased: Bool
@@ -256,6 +256,13 @@ public struct RecoveryCandidate: Equatable, Sendable {
     self.recoveryOccurrenceIDs = recoveryOccurrenceIDs
     self.isReleased = isReleased
     self.staysInAllowedTollDomain = staysInAllowedTollDomain
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case targetOccurrenceID = "target_occurrence_id"
+    case recoveryOccurrenceIDs = "recovery_occurrence_ids"
+    case isReleased = "released"
+    case staysInAllowedTollDomain = "stays_in_allowed_toll_domain"
   }
 }
 
@@ -286,7 +293,7 @@ public enum RecoveryPlanner {
   }
 }
 
-public struct EgressOption: Equatable, Sendable {
+public struct EgressOption: Codable, Equatable, Sendable {
   public let id: String
   public let firstEligibleOccurrenceID: String
   public let exitFacilityID: String
@@ -305,6 +312,14 @@ public struct EgressOption: Equatable, Sendable {
     self.exitFacilityID = exitFacilityID
     self.egressOccurrenceIDs = egressOccurrenceIDs
     self.isReleased = isReleased
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "egress_option_id"
+    case firstEligibleOccurrenceID = "first_eligible_occurrence_id"
+    case exitFacilityID = "exit_facility_id"
+    case egressOccurrenceIDs = "egress_occurrence_ids"
+    case isReleased = "released"
   }
 }
 

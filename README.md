@@ -250,20 +250,23 @@ identities. Matcher reset/restart clears temporal evidence without rewinding
 navigation progress. Its raw initializer is package-only.
 `KaidoProductNavigationRuntime` is the public admission path: it accepts one
 validated `KaidoProductRelease` and constructs the session from that release's
-exact RoutePlan, corridor, DecisionZones, and guidance while retaining the same
-released Route Atlas. It accepts no independent asset overrides. Entry
-transition, recovery, and egress policy are not yet distributed by the release
-artifact and therefore remain unavailable rather than receiving runtime
-defaults. The first app scene is now present, but Core Location callbacks
+exact RoutePlan, released entry/recovery/egress runtime policy, corridor,
+DecisionZones, and guidance while retaining the same released Route Atlas. It
+accepts no independent asset overrides. The first app scene is now present, but Core Location callbacks
 currently feed only the internal calibration harness. App composition,
 lifecycle persistence, background execution, and audio remain Apple-adapter
 work.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid
-`RoutePlan`, one locally valid reviewed editor catalog, one complete matcher
-corridor, occurrence-scoped DecisionZones and released guidance, and an optional
-registry of released junction views. It reuses the same runtime-composition
+`RoutePlan`, one locally valid reviewed editor catalog, one
+`ReleasedNavigationRuntimePolicy`, one complete matcher corridor,
+occurrence-scoped DecisionZones and released guidance, and an optional registry
+of released junction views. The runtime policy binds the directional entry
+transition, released in-domain recovery candidates targeting later RoutePlan
+occurrences only for `SAFE_REJOIN`, and released legal egress to the exact
+RoutePlan. Other recovery policies cannot carry rejoin candidates, and egress
+cannot replace the compiled exit. It reuses the same runtime-composition
 validation as `NavigationSession`, then adds whole-bundle coverage: every planned
 junction-movement occurrence needs exactly one DecisionZone and at least one
 released guidance definition. Embedded junction views must match one registry
@@ -272,9 +275,10 @@ distinct because coverage is keyed by occurrence ID. KR-D18 executes this
 boundary with synthetic data; it does not release a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
-`NavigationReleaseArtifact` serializes the exact bundle inputs together with a
-stable release identity, editor-catalog identity, dated source registry, and
-one released evidence record for every distributable asset. `NavigationRelease`
+`NavigationReleaseArtifact` schema 2.0 serializes the exact bundle inputs
+together with a stable release identity, editor-catalog identity, dated source registry, and
+one released evidence record for every distributable asset, including the
+runtime policy under the `RUNTIME_POLICY` role. `NavigationRelease`
 rejects unknown schemas, missing or orphaned evidence, unused sources,
 source-role drift, junction-view provenance drift, and evidence dated after the
 release before re-running the whole `NavigationReleaseBundle` gate. The codec
@@ -298,8 +302,8 @@ internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
 Neither independently valid artifact can authorize a product build by itself.
-`KaidoProductReleaseArtifact` contains one complete navigation artifact and one
-complete Route Atlas artifact. `KaidoProductRelease` revalidates both, requires
+`KaidoProductReleaseArtifact` schema 2.0 contains one complete navigation
+artifact and one complete Route Atlas artifact. `KaidoProductRelease` revalidates both, requires
 exact snapshot and RoutePlan identity, rejects navigation or atlas evidence
 newer than the product release, and requires released atlas topology to contain
 every initial edge, incoming approach, movement, and outgoing edge exposed by
@@ -453,8 +457,9 @@ hard properties that must remain proven as the product expands:
     snapshot, movement occurrence, lane, route-shield, Japanese-sign, and evidence
     drift fail closed before any adapter renders an inset.
 26. a navigation release bundle binds the active snapshot, RoutePlan, reviewed
-    editor catalog, matcher corridor, every movement occurrence's DecisionZone
-    and guidance, and any junction-view registry before runtime composition.
+    editor catalog, entry/recovery/egress runtime policy, matcher corridor,
+    every movement occurrence's DecisionZone and guidance, and any junction-view
+    registry before runtime composition.
 27. a Route Atlas exactly covers one reviewed topology slice, preserves every
     route occurrence, and rejects any visual connection absent from the graph.
 28. full-network geographic context remains permanently non-navigable and fails
@@ -470,7 +475,8 @@ hard properties that must remain proven as the product expands:
     evidence, and cover every released editor entity in atlas topology.
 32. external adapters cannot construct a navigation session from loose runtime
     assets; one validated product release owns the session and atlas identity,
-    while undistributed entry, recovery, or egress policy stays unavailable.
+    and its released runtime policy is the only source of entry transition,
+    recovery candidates, and legal egress.
 
 ## Repository map
 
@@ -525,13 +531,15 @@ python3 scripts/validate_e2e.py
 `swift test` executes the domain and simulation semantics in process. The CLI
 prints a result for every scenario and assertion. The Python validator remains
 an independent L0 check for the portable envelope, route-occurrence identity,
-event ordering, evidence references, and assertion references.
+event ordering, release-bound runtime policy, evidence references, and assertion
+references.
 `kaido-atlas validate-release --artifact <file>` decodes and validates a future
 versioned topology/layout release artifact through the same source-registry and
 graph-integrity gate; no real Shuto release artifact exists yet.
 `kaido-release validate-navigation --artifact <file>` equivalently validates a
-future navigation runtime artifact through its provenance registry and the
-whole-bundle gate; no real navigation release artifact exists yet.
+future navigation runtime artifact through its provenance registry,
+entry/recovery/egress policy, and the whole-bundle gate; no real navigation
+release artifact exists yet.
 `kaido-release validate-product --artifact <file>` revalidates both nested
 artifacts and their cross-artifact identity, chronology, and editor-atlas
 coverage; no real product release artifact exists yet.

@@ -33,7 +33,10 @@ highlight an active route, speak guidance, run location in the background, or
 expose a CarPlay scene. Those behaviors require a coherent released route
 bundle and device evidence. When that evidence exists, the app must construct
 `KaidoProductNavigationRuntime` from the joint product release; the package-only
-raw session initializer is not an adapter escape hatch.
+raw session initializer is not an adapter escape hatch. The navigation artifact
+must include one evidenced `ReleasedNavigationRuntimePolicy`; the app cannot
+supply or replace its entry transition, recovery candidates, or Finish egress.
+No real product release artifact exists in the app today.
 
 ## Entrance recommendation
 

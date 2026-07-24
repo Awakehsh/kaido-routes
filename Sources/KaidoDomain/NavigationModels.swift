@@ -43,7 +43,7 @@ public enum RouteCandidateResolution: String, Codable, Sendable {
   case resolved = "RESOLVED"
 }
 
-public struct EntryTransition: Equatable, Sendable {
+public struct EntryTransition: Codable, Equatable, Sendable {
   public let facilityID: String
   public let directedEdgeIDs: [String]
   public let firstRouteOccurrenceID: String?
@@ -56,6 +56,12 @@ public struct EntryTransition: Equatable, Sendable {
     self.facilityID = facilityID
     self.directedEdgeIDs = directedEdgeIDs
     self.firstRouteOccurrenceID = firstRouteOccurrenceID
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case facilityID = "facility_id"
+    case directedEdgeIDs = "directed_edge_ids"
+    case firstRouteOccurrenceID = "first_route_occurrence_id"
   }
 }
 

@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoNavigation
 import KaidoRouting
@@ -10,6 +11,7 @@ func navigationReleaseBundleAcceptsCoherentRepeatedOccurrences() throws {
     networkSnapshot: fixture.networkSnapshot,
     routePlan: fixture.routePlan,
     editorCatalog: fixture.editorCatalog,
+    runtimePolicy: fixture.runtimePolicy,
     matcherCorridor: fixture.matcherCorridor,
     decisionZones: fixture.decisionZones,
     releasedGuidance: fixture.releasedGuidance,
@@ -35,6 +37,7 @@ func navigationReleaseBundleRejectsMissingOccurrenceAssets() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones.filter {
         $0.movementOccurrenceID != missingOccurrenceID
@@ -69,6 +72,7 @@ func navigationReleaseBundleRejectsDuplicateMovementZones() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones + [duplicate],
       releasedGuidance: fixture.releasedGuidance,
@@ -95,6 +99,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: fixture.releasedGuidance,
@@ -126,6 +131,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: guidanceWithoutJunctionView,
@@ -143,6 +149,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: guidanceWithoutJunctionView,
@@ -162,6 +169,7 @@ func navigationReleaseBundleRejectsJunctionViewRegistryDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: fixture.releasedGuidance,
@@ -188,6 +196,7 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
       networkSnapshot: proposedSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: fixture.matcherCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: fixture.releasedGuidance,
@@ -212,6 +221,7 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
       networkSnapshot: fixture.networkSnapshot,
       routePlan: fixture.routePlan,
       editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
       matcherCorridor: driftedCorridor,
       decisionZones: fixture.decisionZones,
       releasedGuidance: fixture.releasedGuidance,
@@ -224,6 +234,184 @@ func navigationReleaseBundleRejectsSnapshotDrift() {
         .invalidRuntimeConfiguration(
           "matcher corridor network snapshot does not match"
         )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Released runtime policy binds entry, recovery, and egress to the RoutePlan")
+func navigationReleaseBundleRejectsIncompleteRuntimePolicy() {
+  let fixture = navigationReleaseBundleFixture()
+  let invalidPolicy = ReleasedNavigationRuntimePolicy(
+    id: fixture.runtimePolicy.id,
+    networkSnapshotID: fixture.networkSnapshot.id,
+    routePlanID: fixture.routePlan.id,
+    entryTransition: EntryTransition(
+      facilityID: "test.entrance.other",
+      directedEdgeIDs: [],
+      firstRouteOccurrenceID: nil
+    ),
+    recoveryCandidates: [],
+    egressOptions: []
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      runtimePolicy: invalidPolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected incomplete runtime policy to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(.invalidEntryTransition)
+      )
+    )
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(.missingReleasedRecovery)
+      )
+    )
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(.missingReleasedEgress)
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Released recovery must rejoin at a later RoutePlan occurrence")
+func navigationReleaseBundleRejectsUnusableRecoveryTarget() {
+  let fixture = navigationReleaseBundleFixture()
+  let invalidPolicy = ReleasedNavigationRuntimePolicy(
+    id: fixture.runtimePolicy.id,
+    networkSnapshotID: fixture.runtimePolicy.networkSnapshotID,
+    routePlanID: fixture.runtimePolicy.routePlanID,
+    entryTransition: fixture.runtimePolicy.entryTransition,
+    recoveryCandidates: [
+      RecoveryCandidate(
+        targetOccurrenceID: "test.occurrence.entry",
+        recoveryOccurrenceIDs: [
+          "test.recovery.invalid.movement",
+          "test.recovery.invalid.edge",
+        ],
+        isReleased: true,
+        staysInAllowedTollDomain: true
+      )
+    ],
+    egressOptions: fixture.runtimePolicy.egressOptions
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      runtimePolicy: invalidPolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected an unusable recovery target to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(
+          .invalidRecoveryCandidate("test.occurrence.entry")
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Released rejoin candidates require the RoutePlan SAFE_REJOIN policy")
+func navigationReleaseBundleRejectsUnexpectedRecoveryCandidates() {
+  let fixture = navigationReleaseBundleFixture()
+  let strictRoutePlan = RoutePlan(
+    id: fixture.routePlan.id,
+    networkSnapshotID: fixture.routePlan.networkSnapshotID,
+    entryFacilityID: fixture.routePlan.entryFacilityID,
+    exitFacilityID: fixture.routePlan.exitFacilityID,
+    recoveryPolicy: .strict,
+    actualDistanceKM: fixture.routePlan.actualDistanceKM,
+    occurrences: fixture.routePlan.occurrences
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: strictRoutePlan,
+      editorCatalog: fixture.editorCatalog,
+      runtimePolicy: fixture.runtimePolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected STRICT policy with rejoin candidates to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(.unexpectedReleasedRecovery)
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Released runtime egress cannot replace the compiled RoutePlan exit")
+func navigationReleaseBundleRejectsRuntimeEgressExitDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  let driftedPolicy = ReleasedNavigationRuntimePolicy(
+    id: fixture.runtimePolicy.id,
+    networkSnapshotID: fixture.runtimePolicy.networkSnapshotID,
+    routePlanID: fixture.runtimePolicy.routePlanID,
+    entryTransition: fixture.runtimePolicy.entryTransition,
+    recoveryCandidates: fixture.runtimePolicy.recoveryCandidates,
+    egressOptions: [
+      EgressOption(
+        id: "test.egress.other",
+        firstEligibleOccurrenceID: "test.occurrence.loop-edge-2",
+        exitFacilityID: "test.exit.other",
+        egressOccurrenceIDs: [
+          "test.egress.other.movement",
+          "test.egress.other.edge",
+        ],
+        isReleased: true
+      )
+    ]
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      runtimePolicy: driftedPolicy,
+      matcherCorridor: fixture.matcherCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected runtime egress exit drift to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidRuntimePolicy(.invalidEgressOption("test.egress.other"))
       )
     )
   } catch {
@@ -244,17 +432,56 @@ func navigationReleaseArtifactRoundTrips() throws {
   #expect(release.releaseID == artifact.releaseID)
   #expect(release.bundle.routePlan == fixture.routePlan)
   #expect(release.bundle.editorCatalog == fixture.editorCatalog)
+  #expect(release.bundle.runtimePolicy == fixture.runtimePolicy)
   #expect(release.bundle.matcherCorridor == fixture.matcherCorridor)
   #expect(release.bundle.decisionZones == fixture.decisionZones)
   #expect(release.bundle.releasedGuidance == fixture.releasedGuidance)
   #expect(release.bundle.junctionViews == fixture.junctionViews)
-  #expect(release.assetEvidence.count == 9)
+  #expect(release.assetEvidence.count == 10)
 
   let json = try #require(String(data: data, encoding: .utf8))
-  #expect(json.contains("\"schema_version\" : \"1.0\""))
+  #expect(json.contains("\"schema_version\" : \"2.0\""))
   #expect(json.contains("\"ja-JP\""))
   #expect(json.contains("\"zh-Hans\""))
   #expect(json.contains("\"en\""))
+}
+
+@Test("Navigation release artifact requires an evidenced runtime policy")
+func navigationReleaseArtifactRejectsMissingRuntimePolicy() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let valid = navigationReleaseArtifact(fixture)
+  let artifact = NavigationReleaseArtifact(
+    releaseID: valid.releaseID,
+    releasedAt: valid.releasedAt,
+    editorCatalogID: valid.editorCatalogID,
+    networkSnapshot: valid.networkSnapshot,
+    routePlan: valid.routePlan,
+    sourceRegistry: valid.sourceRegistry,
+    assetEvidence: valid.assetEvidence,
+    editorCatalog: valid.editorCatalog,
+    runtimePolicy: nil,
+    matcherCorridor: valid.matcherCorridor,
+    decisionZones: valid.decisionZones,
+    releasedGuidance: valid.releasedGuidance,
+    junctionViews: valid.junctionViews
+  )
+
+  let unvalidatedData = try JSONEncoder().encode(artifact)
+  do {
+    _ = try NavigationReleaseArtifactCodec.decode(unvalidatedData)
+    Issue.record("Expected a missing runtime policy to block release")
+  } catch NavigationReleaseError.invalid(let issues) {
+    #expect(issues.contains(.missingRuntimePolicy))
+    #expect(
+      issues.contains(
+        .orphanAssetEvidence(
+          "RUNTIME_POLICY:test.runtime-policy.release-bundle"
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
 }
 
 @Test("Navigation release artifact rejects schema and exact evidence coverage drift")
@@ -265,7 +492,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     !($0.role == .decisionZone && $0.assetID == "test.zone.loop-2")
   }
   let artifact = NavigationReleaseArtifact(
-    schemaVersion: "2.0",
+    schemaVersion: "3.0",
     releaseID: valid.releaseID,
     releasedAt: valid.releasedAt,
     editorCatalogID: valid.editorCatalogID,
@@ -274,6 +501,7 @@ func navigationReleaseArtifactRejectsSchemaAndCoverageDrift() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: missingEvidence,
     editorCatalog: valid.editorCatalog,
+    runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
     releasedGuidance: valid.releasedGuidance,
@@ -329,6 +557,7 @@ func navigationReleaseArtifactRejectsUnreleasedAndJunctionEvidenceDrift() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: driftedEvidence,
     editorCatalog: valid.editorCatalog,
+    runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
     releasedGuidance: valid.releasedGuidance,
@@ -379,6 +608,7 @@ func navigationReleaseArtifactRejectsFutureEvidence() {
     sourceRegistry: valid.sourceRegistry,
     assetEvidence: futureEvidence,
     editorCatalog: valid.editorCatalog,
+    runtimePolicy: valid.runtimePolicy,
     matcherCorridor: valid.matcherCorridor,
     decisionZones: valid.decisionZones,
     releasedGuidance: valid.releasedGuidance,
@@ -403,6 +633,7 @@ struct NavigationReleaseBundleFixture {
   let networkSnapshot: NetworkSnapshot
   let routePlan: RoutePlan
   let editorCatalog: ReviewedRouteEditorCatalog
+  let runtimePolicy: ReleasedNavigationRuntimePolicy
   let matcherCorridor: RouteMatcherCorridor
   let decisionZones: [DecisionZoneProgressDefinition]
   let releasedGuidance: [ReleasedGuidanceDefinition]
@@ -430,6 +661,13 @@ func navigationReleaseArtifact(
     NavigationReleaseAssetEvidence(
       role: .editorCatalog,
       assetID: "test.catalog.release-bundle",
+      state: .released,
+      checkedAt: "2026-07-23",
+      sourceReferenceIDs: [sourceID]
+    ),
+    NavigationReleaseAssetEvidence(
+      role: .runtimePolicy,
+      assetID: fixture.runtimePolicy.id,
       state: .released,
       checkedAt: "2026-07-23",
       sourceReferenceIDs: [sourceID]
@@ -485,6 +723,7 @@ func navigationReleaseArtifact(
     sourceRegistry: sourceRegistry,
     assetEvidence: evidence,
     editorCatalog: fixture.editorCatalog,
+    runtimePolicy: fixture.runtimePolicy,
     matcherCorridor: fixture.matcherCorridor,
     decisionZones: fixture.decisionZones,
     releasedGuidance: fixture.releasedGuidance,
@@ -562,6 +801,42 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
             destination: .exitFacility("test.exit")
           ),
         ]
+      )
+    ]
+  )
+  let runtimePolicy = ReleasedNavigationRuntimePolicy(
+    id: "test.runtime-policy.release-bundle",
+    networkSnapshotID: networkSnapshot.id,
+    routePlanID: routePlan.id,
+    entryTransition: EntryTransition(
+      facilityID: routePlan.entryFacilityID,
+      directedEdgeIDs: [
+        "test.entry-transition.surface",
+        "test.entry-transition.ramp",
+      ],
+      firstRouteOccurrenceID: routePlan.occurrences.first?.id
+    ),
+    recoveryCandidates: [
+      RecoveryCandidate(
+        targetOccurrenceID: "test.occurrence.loop-edge-2",
+        recoveryOccurrenceIDs: [
+          "test.recovery.release-bundle.movement",
+          "test.recovery.release-bundle.edge",
+        ],
+        isReleased: true,
+        staysInAllowedTollDomain: true
+      )
+    ],
+    egressOptions: [
+      EgressOption(
+        id: "test.egress.release-bundle",
+        firstEligibleOccurrenceID: "test.occurrence.loop-edge-2",
+        exitFacilityID: routePlan.exitFacilityID,
+        egressOccurrenceIDs: [
+          "test.egress.release-bundle.movement",
+          "test.egress.release-bundle.edge",
+        ],
+        isReleased: true
       )
     ]
   )
@@ -658,6 +933,7 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     networkSnapshot: networkSnapshot,
     routePlan: routePlan,
     editorCatalog: editorCatalog,
+    runtimePolicy: runtimePolicy,
     matcherCorridor: matcherCorridor,
     decisionZones: decisionZones,
     releasedGuidance: releasedGuidance,

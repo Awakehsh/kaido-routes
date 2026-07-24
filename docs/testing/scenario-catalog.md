@@ -25,15 +25,15 @@ should become scenarios when their layer is built.
 | KR-D15 | Text, voice, and reviewed spoken forms are complete in Japanese, Simplified Chinese, and English | P0 | Seeded |
 | KR-D16 | Current-location access chooses a compatible directional entrance rather than the nearest IC | P0 | Seeded |
 | KR-D17 | Entrance recommendation rejects unavailable or unknown timed approaches | P0 | Seeded |
-| KR-D18 | A navigation release bundle accepts only one coherent snapshot- and RoutePlan-bound asset set | P0 | Seeded |
+| KR-D18 | A navigation release bundle accepts only one coherent snapshot-, RoutePlan-, and runtime-policy-bound asset set | P0 | Seeded |
 | KR-D19 | A Route Atlas cannot add, omit, or rewire topology outside its reviewed snapshot-bound network slice | P0 | Seeded |
 | KR-D20 | Full-network Route Atlas context geometry can never become navigation authority | P0 | Seeded |
 | KR-D21 | An official-checked real K7 Northwest slice remains blocked until topology and layout are released | P0 | Seeded |
 | KR-D22 | An ODbL-isolated K7 one-way candidate preserves two reviewed divergences without gaining release authority | P0 | Seeded |
 | KR-D23 | Historic K7 corridor identity and completed surrounding works do not prove the current legal movement | P0 | Seeded |
 | KR-D24 | A Kaido-owned K7 schematic covers the reviewed expressway slice and stops before every unreviewed surface successor | P0 | Seeded |
-| KR-D25 | A versioned navigation release artifact preserves exact provenance and revalidates the whole runtime bundle after decoding | P0 | Seeded |
-| KR-D26 | A product release binds navigation and atlas identity, covers every released editor entity, and is required for runtime admission | P0 | Seeded |
+| KR-D25 | A versioned navigation release artifact evidences entry/recovery/egress policy and revalidates the whole runtime bundle after decoding | P0 | Seeded |
+| KR-D26 | A product release binds navigation policy and atlas identity, covers every released editor entity, and is required for runtime admission | P0 | Seeded |
 
 ## Navigation simulation
 

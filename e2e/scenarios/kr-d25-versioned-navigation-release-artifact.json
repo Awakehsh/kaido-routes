@@ -4,7 +4,7 @@
   "title": "Versioned navigation release artifact preserves one validated runtime bundle",
   "layer": "DOMAIN",
   "tags": ["release-artifact", "provenance", "network-snapshot", "route-plan"],
-  "purpose": "Require a distributable navigation artifact to carry exact released evidence for every editor, matcher, DecisionZone, and guidance asset, then decode through the same whole-bundle runtime gate.",
+  "purpose": "Require a distributable navigation artifact to carry exact released evidence for every editor, entry/recovery/egress runtime policy, matcher, DecisionZone, and guidance asset, then decode through the same whole-bundle runtime gate.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
@@ -56,6 +56,7 @@
           "source_reference_id": "test.source.navigation-artifact",
           "roles": [
             "EDITOR_CATALOG",
+            "RUNTIME_POLICY",
             "MATCHER_CORRIDOR",
             "DECISION_ZONE",
             "GUIDANCE"
@@ -71,6 +72,13 @@
         {
           "role": "EDITOR_CATALOG",
           "asset_id": "test.catalog.navigation-artifact-v1",
+          "state": "RELEASED",
+          "checked_at": "2026-07-24",
+          "source_reference_ids": ["test.source.navigation-artifact"]
+        },
+        {
+          "role": "RUNTIME_POLICY",
+          "asset_id": "test.runtime-policy.navigation-artifact-v1",
           "state": "RELEASED",
           "checked_at": "2026-07-24",
           "source_reference_ids": ["test.source.navigation-artifact"]
@@ -122,6 +130,42 @@
                 "exit_facility_id": "test.exit.navigation-artifact"
               }
             ]
+          }
+        ]
+      },
+      "navigation_runtime_policy": {
+        "runtime_policy_id": "test.runtime-policy.navigation-artifact-v1",
+        "network_snapshot_id": "test.snapshot.navigation-artifact-v1",
+        "route_plan_id": "test.plan.navigation-artifact",
+        "entry_transition": {
+          "facility_id": "test.entrance.navigation-artifact",
+          "directed_edge_ids": [
+            "test.entry-transition.navigation-artifact.surface",
+            "test.entry-transition.navigation-artifact.ramp"
+          ],
+          "first_route_occurrence_id": "test.occurrence.navigation-artifact.approach"
+        },
+        "recovery_candidates": [
+          {
+            "target_occurrence_id": "test.occurrence.navigation-artifact.exit",
+            "recovery_occurrence_ids": [
+              "test.recovery.navigation-artifact.movement",
+              "test.recovery.navigation-artifact.edge"
+            ],
+            "released": true,
+            "stays_in_allowed_toll_domain": true
+          }
+        ],
+        "egress_options": [
+          {
+            "egress_option_id": "test.egress.navigation-artifact",
+            "first_eligible_occurrence_id": "test.occurrence.navigation-artifact.movement",
+            "exit_facility_id": "test.exit.navigation-artifact",
+            "egress_occurrence_ids": [
+              "test.egress.navigation-artifact.movement",
+              "test.egress.navigation-artifact.edge"
+            ],
+            "released": true
           }
         ]
       },
@@ -233,13 +277,13 @@
       "id": "validate-versioned-artifact",
       "at_ms": 0,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "1.0"}
+      "payload": {"schema_version": "2.0"}
     },
     {
       "id": "reject-unknown-artifact-schema",
       "at_ms": 1,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "2.0"}
+      "payload": {"schema_version": "3.0"}
     }
   ],
   "then": [
@@ -258,7 +302,7 @@
       "category": "EVIDENCE",
       "subject": "release_artifact.schema_version",
       "matcher": "EQUALS",
-      "expected": "1.0",
+      "expected": "2.0",
       "rationale": "The decoded distribution unit retains the exact supported schema version."
     },
     {
@@ -309,6 +353,7 @@
       "matcher": "EQUALS",
       "expected": [
         "EDITOR_CATALOG:test.catalog.navigation-artifact-v1",
+        "RUNTIME_POLICY:test.runtime-policy.navigation-artifact-v1",
         "MATCHER_CORRIDOR:test.corridor.navigation-artifact-v1",
         "DECISION_ZONE:test.zone.navigation-artifact.exit",
         "GUIDANCE:test.prompt.navigation-artifact.exit"

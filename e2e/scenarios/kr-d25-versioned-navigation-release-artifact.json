@@ -356,19 +356,70 @@
   },
   "when": [
     {
-      "id": "validate-versioned-artifact",
+      "id": "author-versioned-artifact",
       "at_ms": 0,
+      "type": "NAVIGATION_RELEASE_ARTIFACT_AUTHORED",
+      "payload": {}
+    },
+    {
+      "id": "validate-versioned-artifact",
+      "at_ms": 1,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
       "payload": {"schema_version": "3.0"}
     },
     {
       "id": "reject-unknown-artifact-schema",
-      "at_ms": 1,
+      "at_ms": 2,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
       "payload": {"schema_version": "4.0"}
     }
   ],
   "then": [
+    {
+      "id": "authoring-whole-gate-passes",
+      "after": "author-versioned-artifact",
+      "category": "SAFETY",
+      "subject": "release_artifact.authoring_status",
+      "matcher": "EQUALS",
+      "expected": "PASS",
+      "rationale": "A draft and provenance configuration must pass the complete navigation release gate before an artifact can exist."
+    },
+    {
+      "id": "draft-schema-is-explicit",
+      "after": "author-versioned-artifact",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.draft_schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "Authoring never treats an unknown draft shape as current reviewed assets."
+    },
+    {
+      "id": "authoring-configuration-schema-is-explicit",
+      "after": "author-versioned-artifact",
+      "category": "EVIDENCE",
+      "subject": "release_artifact.authoring_configuration_schema_version",
+      "matcher": "EQUALS",
+      "expected": "1.0",
+      "rationale": "Release identity and provenance use a separate explicit authoring schema."
+    },
+    {
+      "id": "authoring-produces-current-artifact-schema",
+      "after": "author-versioned-artifact",
+      "category": "DOMAIN",
+      "subject": "release_artifact.schema_version",
+      "matcher": "EQUALS",
+      "expected": "3.0",
+      "rationale": "The author derives the supported distribution schema instead of copying a caller-selected artifact version."
+    },
+    {
+      "id": "authoring-preserves-route-plan",
+      "after": "author-versioned-artifact",
+      "category": "SAFETY",
+      "subject": "release_artifact.route_plan_id",
+      "matcher": "EQUALS",
+      "expected": "test.plan.navigation-artifact",
+      "rationale": "Assembly cannot optimize, migrate, or replace the reviewed RoutePlan."
+    },
     {
       "id": "versioned-artifact-passes",
       "after": "validate-versioned-artifact",

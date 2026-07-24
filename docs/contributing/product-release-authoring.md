@@ -5,15 +5,25 @@ independently released inputs and the one joint artifact consumed by the iPhone
 catalog. It does not author topology, a RoutePlan, guidance, editor choices, or
 road evidence.
 
-Do not use this command until both inputs independently pass:
+Build and validate the navigation input through its own authoring boundary;
+do not hand-edit the final artifact:
 
 ```sh
+swift run kaido-release build-navigation \
+  --draft <navigation-release-draft.json> \
+  --config <navigation-release-authoring.json> \
+  --output <navigation-release.json>
+
 swift run kaido-release validate-navigation \
   --artifact <navigation-release.json>
 
 swift run kaido-atlas validate-release \
   --artifact <route-atlas-release.json>
 ```
+
+See
+[`navigation-release-authoring.md`](navigation-release-authoring.md) for draft,
+provenance, and fail-before-write requirements.
 
 The Route Atlas input must contain released topology and layout evidence. The
 navigation input must contain its exact released editor catalog, three-locale

@@ -30,6 +30,12 @@ SAVED_ROUTE_LIFECYCLE_SCENARIO_PATH = (
     / "scenarios"
     / "kr-u19-saved-route-lifecycle.json"
 )
+NAVIGATION_RELEASE_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-d25-versioned-navigation-release-artifact.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -265,6 +271,59 @@ class ValidateSavedRouteLifecycleTests(unittest.TestCase):
         errors = self.validate_lifecycle(scenario)
 
         self.assertTrue(any("payload must be empty" in error for error in errors))
+
+
+class ValidateNavigationReleaseAuthoringTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            NAVIGATION_RELEASE_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_authoring(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(NAVIGATION_RELEASE_SCENARIO_PATH)
+        validator.validate_navigation_release_authoring_events(
+            validation,
+            scenario["given"],
+            scenario["when"],
+        )
+        return validation.errors
+
+    def test_navigation_release_authoring_event_is_valid(self) -> None:
+        self.assertEqual(self.validate_authoring(self.scenario), [])
+
+    def test_navigation_release_authoring_rejects_unknown_payload(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][0]["payload"] = {"promote_synthetic": True}
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any("payload has unsupported keys" in error for error in errors)
+        )
+
+    def test_navigation_release_authoring_requires_artifact_inputs(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        del scenario["given"]["inputs"]["navigation_release_asset_evidence"]
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any(
+                "requires navigation release artifact inputs" in error
+                for error in errors
+            )
+        )
+
+    def test_navigation_release_authoring_rejects_empty_schema(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][0]["payload"] = {"draft_schema_version": ""}
+
+        errors = self.validate_authoring(scenario)
+
+        self.assertTrue(
+            any("draft_schema_version must be non-empty" in error
+                for error in errors)
+        )
 
 
 if __name__ == "__main__":

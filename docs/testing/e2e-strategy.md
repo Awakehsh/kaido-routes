@@ -371,15 +371,17 @@ the portable scenario nor those tests promote their synthetic `ACTIVE` or
 `RELEASED` flags into real release evidence.
 
 KR-D25 takes the next distribution step without weakening that distinction.
-The runner constructs a `NavigationReleaseArtifact`, encodes and decodes it,
-requires exact released evidence coverage for every runtime asset role and
-identity—including `EDITOR_PRESENTATION` and `RUNTIME_POLICY`—and then re-runs
-`NavigationReleaseBundle`. A second event proves that an unknown artifact schema
-fails closed. Python independently checks the policy's snapshot, RoutePlan,
-entry, safe-rejoin, and compiled-exit bindings as well as the source registry,
-exact asset-evidence coverage, role compatibility, and embedded junction-view
-provenance. The fixture remains synthetic and does not establish real-road
-release eligibility.
+The runner first gives the immutable reviewed assets and separate provenance
+configuration to `NavigationReleaseAuthor`; only a complete
+`NavigationRelease` may produce the schema-3.0 artifact. It then encodes and
+decodes that artifact, requires exact released evidence coverage for every
+runtime asset role and identity—including `EDITOR_PRESENTATION` and
+`RUNTIME_POLICY`—and re-runs `NavigationReleaseBundle`. A final event proves
+that an unknown artifact schema fails closed. Python independently checks the
+authoring-event payload, policy snapshot, RoutePlan, entry, safe-rejoin, and
+compiled-exit bindings as well as source registry, exact asset-evidence
+coverage, role compatibility, and embedded junction-view provenance. The
+fixture remains synthetic and does not establish real-road release eligibility.
 
 KR-D26 crosses the two independently valid distribution boundaries without
 merging their authority. The runner builds and validates one navigation artifact

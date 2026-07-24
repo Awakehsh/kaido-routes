@@ -9,6 +9,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case outputExists(String)
   case decodeFailed(String, Error)
   case invalidNavigation([NavigationReleaseIssue])
+  case navigationAuthoring(NavigationReleaseAuthoringError)
   case invalidProduct([KaidoProductReleaseIssue])
   case productAuthoring(KaidoProductReleaseAuthoringError)
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
@@ -21,6 +22,10 @@ private enum CLIError: Error, CustomStringConvertible {
       """
       Usage:
         kaido-release validate-navigation --artifact <navigation-release.json>
+        kaido-release build-navigation \\
+          --draft <navigation-release-draft.json> \\
+          --config <navigation-release-authoring.json> \\
+          --output <navigation-release.json>
         kaido-release validate-product --artifact <product-release.json>
         kaido-release build-product \\
           --navigation-artifact <navigation-release.json> \\
@@ -55,6 +60,8 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidNavigation(let issues):
       "Navigation release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .navigationAuthoring(let error):
+      Self.navigationAuthoringDescription(error)
     case .invalidProduct(let issues):
       "Product release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
@@ -85,6 +92,22 @@ private enum CLIError: Error, CustomStringConvertible {
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .invalidProductRelease(let issues):
       "Product release authoring joint gate is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    }
+  }
+
+  private static func navigationAuthoringDescription(
+    _ error: NavigationReleaseAuthoringError
+  ) -> String {
+    switch error {
+    case .invalidDraft(let issues):
+      "Navigation release draft is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidConfiguration(let issues):
+      "Navigation release authoring configuration is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidRelease(let issues):
+      "Navigation release authoring whole gate is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     }
   }
@@ -141,6 +164,11 @@ private enum CLIError: Error, CustomStringConvertible {
 
 private enum Command {
   case validateNavigation(artifact: String)
+  case buildNavigation(
+    draft: String,
+    configuration: String,
+    output: String
+  )
   case validateProduct(artifact: String)
   case buildProduct(
     navigationArtifact: String,
@@ -185,6 +213,15 @@ private struct Arguments {
       try flags.require(exactly: ["--artifact"])
       command = .validateNavigation(
         artifact: try flags.value("--artifact")
+      )
+    case "build-navigation":
+      try flags.require(
+        exactly: ["--draft", "--config", "--output"]
+      )
+      command = .buildNavigation(
+        draft: try flags.value("--draft"),
+        configuration: try flags.value("--config"),
+        output: try flags.value("--output")
       )
     case "validate-product":
       try flags.require(exactly: ["--artifact"])
@@ -502,6 +539,42 @@ do {
     } catch NavigationReleaseError.invalid(let issues) {
       throw CLIError.invalidNavigation(issues)
     }
+  case .buildNavigation(
+    let draftPath,
+    let configurationPath,
+    let output
+  ):
+    let draft = try decode(
+      NavigationReleaseDraft.self,
+      path: draftPath
+    )
+    let configuration = try decode(
+      NavigationReleaseAuthoringConfiguration.self,
+      path: configurationPath
+    )
+    let artifact: NavigationReleaseArtifact
+    do {
+      artifact = try NavigationReleaseAuthor.buildArtifact(
+        draft: draft,
+        configuration: configuration
+      )
+    } catch let error as NavigationReleaseAuthoringError {
+      throw CLIError.navigationAuthoring(error)
+    }
+    let encoded: Data
+    do {
+      encoded = try NavigationReleaseArtifactCodec.encode(artifact)
+    } catch NavigationReleaseError.invalid(let issues) {
+      throw CLIError.invalidNavigation(issues)
+    }
+    let release = try NavigationReleaseArtifactCodec.decode(encoded)
+    try writeNew(encoded, path: output)
+    print(
+      "PASS: wrote navigation release \(release.releaseID) with "
+        + "\(release.assetEvidence.count) released asset records for "
+        + "\(release.bundle.routePlan.occurrences.count) RoutePlan "
+        + "occurrences; output \(output)"
+    )
   case .validateProduct(let artifact):
     let release = try decodeProductRelease(path: artifact)
     print(

@@ -476,7 +476,7 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 62 scenarios with 434 semantic assertions executable at L1/L2. KR-S16
+   current 62 scenarios with 439 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
@@ -498,8 +498,9 @@ gate.
    without migration or navigation authority; KR-U19 imports, renames, exports,
    and removes exact saved-route records while preserving the complete shared
    document and keeping release authority unavailable; KR-D25 round-trips one
-   provenance-covered navigation release
-   artifact and rejects unknown artifact schemas before runtime; KR-D26 keeps
+   provenance-covered navigation release from separate immutable draft and
+   provenance inputs, then rejects unknown artifact schemas before runtime;
+   KR-D26 keeps
    independently valid navigation and Route Atlas artifacts product-blocked
    until the atlas covers every released editor entity, then proves a blocked
    joint artifact cannot create a partial runtime identity; KR-D27 proves that

@@ -518,7 +518,13 @@ release date fail closed.
 `NavigationReleaseArtifactCodec` validates on encode and decode, and the
 resulting `NavigationRelease` always contains a freshly validated
 `NavigationReleaseBundle`; decoding never bypasses runtime identity checks.
-KR-D25 proves the version and provenance boundary with synthetic values only.
+`NavigationReleaseDraft` separately carries the immutable reviewed runtime
+assets, while `NavigationReleaseAuthoringConfiguration` carries explicit release
+identity and provenance. `NavigationReleaseAuthor` derives the current artifact
+schema, retains both inputs unchanged, and must construct a valid
+`NavigationRelease` before the CLI may create an output. It exposes no synthetic
+or evidence-promotion switch. KR-D25 proves authoring, version, and provenance
+boundaries with synthetic values only.
 
 `RouteAtlasRelease` is the separate renderer-neutral map-integrity gate. Its
 `RouteAtlasTopologySlice` is the separately released, dated graph truth for

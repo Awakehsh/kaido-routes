@@ -156,6 +156,8 @@ private struct ScenarioHarness {
       try validateNavigationReleaseBundle()
     case "NAVIGATION_RELEASE_ARTIFACT_VALIDATED":
       try validateNavigationReleaseArtifact(event.payload)
+    case "NAVIGATION_RELEASE_ARTIFACT_AUTHORED":
+      try authorNavigationReleaseArtifact(event.payload)
     case "PRODUCT_RELEASE_ARTIFACT_VALIDATED":
       try validateProductReleaseArtifact(event.payload)
     case "PRODUCT_RUNTIME_USE_EVALUATED":
@@ -994,6 +996,80 @@ private struct ScenarioHarness {
       adapterObservations["release_artifact.error_codes"] = .strings(
         Array(Set(issues.map(\.code))).sorted()
       )
+    }
+  }
+
+  private mutating func authorNavigationReleaseArtifact(
+    _ payload: [String: JSONValue]
+  ) throws {
+    let source = try navigationReleaseArtifact(
+      schemaVersion: NavigationReleaseArtifact.currentSchemaVersion
+    )
+    guard let runtimePolicy = source.runtimePolicy else {
+      throw ScenarioExecutionError.invalidInput(
+        "navigation_release.runtime_policy"
+      )
+    }
+    let draft = NavigationReleaseDraft(
+      schemaVersion: payload.string("draft_schema_version")
+        ?? NavigationReleaseDraft.currentSchemaVersion,
+      editorCatalogID: source.editorCatalogID,
+      networkSnapshot: source.networkSnapshot,
+      routePlan: source.routePlan,
+      editorCatalog: source.editorCatalog,
+      editorPresentationCatalog: source.editorPresentationCatalog,
+      runtimePolicy: runtimePolicy,
+      matcherCorridor: source.matcherCorridor,
+      decisionZones: source.decisionZones,
+      releasedGuidance: source.releasedGuidance,
+      junctionViews: source.junctionViews
+    )
+    let configuration = NavigationReleaseAuthoringConfiguration(
+      schemaVersion: payload.string("configuration_schema_version")
+        ?? NavigationReleaseAuthoringConfiguration.currentSchemaVersion,
+      releaseID: source.releaseID,
+      releasedAt: source.releasedAt,
+      sourceRegistry: source.sourceRegistry,
+      assetEvidence: source.assetEvidence
+    )
+
+    clearNavigationReleaseArtifactObservations()
+    adapterObservations["release_artifact.draft_schema_version"] =
+      .string(draft.schemaVersion)
+    adapterObservations[
+      "release_artifact.authoring_configuration_schema_version"
+    ] = .string(configuration.schemaVersion)
+    do {
+      let artifact = try NavigationReleaseAuthor.buildArtifact(
+        draft: draft,
+        configuration: configuration
+      )
+      let data = try NavigationReleaseArtifactCodec.encode(artifact)
+      let release = try NavigationReleaseArtifactCodec.decode(data)
+      publish(release)
+      adapterObservations["release_artifact.authoring_status"] =
+        .string("PASS")
+      adapterObservations["release_artifact.schema_version"] =
+        .string(artifact.schemaVersion)
+    } catch let error as NavigationReleaseAuthoringError {
+      adapterObservations["release_artifact.status"] = .string("BLOCKED")
+      adapterObservations["release_artifact.authoring_status"] =
+        .string("BLOCKED")
+      adapterObservations["release_artifact.error_codes"] = .strings(
+        navigationReleaseAuthoringErrorCodes(error)
+      )
+    }
+  }
+
+  private func navigationReleaseAuthoringErrorCodes(
+    _ error: NavigationReleaseAuthoringError
+  ) -> [String] {
+    switch error {
+    case .invalidDraft(let issues),
+      .invalidConfiguration(let issues):
+      issues.map(\.code).sorted()
+    case .invalidRelease(let issues):
+      Array(Set(issues.map(\.code))).sorted()
     }
   }
 

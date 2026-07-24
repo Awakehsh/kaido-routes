@@ -452,9 +452,15 @@ editor presentation under `EDITOR_PRESENTATION` and runtime policy under
 rejects unknown schemas, missing or orphaned evidence, unused sources,
 source-role drift, junction-view provenance drift, and evidence dated after the
 release before re-running the whole `NavigationReleaseBundle` gate. The codec
-validates on both encode and decode, and `kaido-release validate-navigation`
-exposes the same boundary to a release pipeline. KR-D25 proves this with
-synthetic data; no real navigation release artifact exists yet.
+validates on both encode and decode. `NavigationReleaseDraft` keeps the complete
+reviewed runtime asset set separate from release provenance;
+`NavigationReleaseAuthoringConfiguration` carries only explicit release
+identity plus the source registry and exact asset-evidence records.
+`kaido-release build-navigation` derives the current artifact schema, preserves
+both inputs unchanged, runs the whole gate before writing, and refuses
+overwrite. `validate-navigation` independently exposes the same boundary to a
+release pipeline. KR-D25 proves authoring, serialization, and unknown-schema
+rejection with synthetic data; no real navigation release artifact exists yet.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
@@ -801,8 +807,25 @@ release artifact exists yet.
 artifacts and their cross-artifact identity, chronology, and editor-atlas
 coverage; no real product release artifact exists yet.
 
-After the independent navigation and Route Atlas artifacts have passed their
-own release gates, assemble—not hand-edit—the joint product artifact:
+Build—not hand-edit—the navigation artifact from its independently reviewed
+draft and provenance configuration:
+
+```sh
+swift run kaido-release build-navigation \
+  --draft <navigation-release-draft.json> \
+  --config <navigation-release-authoring.json> \
+  --output <navigation-release.json>
+
+swift run kaido-release validate-navigation \
+  --artifact <navigation-release.json>
+```
+
+See
+[`docs/contributing/navigation-release-authoring.md`](docs/contributing/navigation-release-authoring.md)
+for exact input ownership and evidence requirements.
+
+After the navigation and Route Atlas artifacts have independently passed their
+release gates, assemble—not hand-edit—the joint product artifact:
 
 ```sh
 swift run kaido-release build-product \

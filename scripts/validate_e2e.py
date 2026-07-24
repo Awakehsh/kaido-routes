@@ -89,6 +89,7 @@ EVENT_TYPES = {
     "ROUTE_EDITOR_COMPILE_REQUESTED",
     "NAVIGATION_RELEASE_BUNDLE_VALIDATED",
     "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
+    "NAVIGATION_RELEASE_ARTIFACT_AUTHORED",
     "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
     "PRODUCT_RUNTIME_USE_EVALUATED",
     "PRODUCT_NAVIGATION_RUNTIME_CREATED",
@@ -1971,6 +1972,51 @@ def validate_navigation_release_artifact(
             v.add(f"orphan navigation release source: {source_id}")
 
 
+def validate_navigation_release_authoring_events(
+    v: Validation,
+    given: dict[str, Any],
+    events: Any,
+) -> None:
+    if not isinstance(events, list):
+        return
+    inputs = given.get("inputs")
+    has_artifact_inputs = (
+        isinstance(inputs, dict)
+        and "navigation_release_asset_evidence" in inputs
+    )
+    allowed_payload_keys = {
+        "draft_schema_version",
+        "configuration_schema_version",
+    }
+    for index, event in enumerate(events):
+        if (
+            not isinstance(event, dict)
+            or event.get("type")
+            != "NAVIGATION_RELEASE_ARTIFACT_AUTHORED"
+        ):
+            continue
+        if not has_artifact_inputs:
+            v.add(
+                f"when[{index}] NAVIGATION_RELEASE_ARTIFACT_AUTHORED "
+                "requires navigation release artifact inputs"
+            )
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        unsupported = sorted(payload.keys() - allowed_payload_keys)
+        if unsupported:
+            v.add(
+                f"when[{index}] NAVIGATION_RELEASE_ARTIFACT_AUTHORED "
+                "payload has unsupported keys: "
+                + ", ".join(unsupported)
+            )
+        for key, value in payload.items():
+            if key in allowed_payload_keys and (
+                not isinstance(value, str) or not value.strip()
+            ):
+                v.add(f"when[{index}].payload.{key} must be non-empty")
+
+
 def validate_product_release_artifact(
     v: Validation, given: dict[str, Any]
 ) -> None:
@@ -2497,6 +2543,11 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_navigation_runtime_policy(v, given)
         validate_entry_transition_admission(v, given, scenario["when"])
         validate_navigation_release_artifact(v, given)
+        validate_navigation_release_authoring_events(
+            v,
+            given,
+            scenario["when"],
+        )
         validate_product_release_artifact(v, given)
         validate_product_runtime_use_cases(v, given, scenario["when"])
         if not isinstance(given["inputs"], dict):

@@ -567,6 +567,18 @@ validated `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release can construct
 initializers are package-only, so application adapters can compare and consume
 the authority but cannot invent it.
 
+`KaidoProductReleaseAuthor` is the production assembly path into that outer
+envelope. It receives the two complete artifact values and explicit versioned
+release metadata, validates each nested gate independently, retains both inputs
+unchanged, fixes runtime use to `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE`, and
+then re-runs the complete joint validator. Configuration cannot opt into a
+synthetic scope or disable live input, so an unchanged preview artifact fails
+the production command. `kaido-release build-product` encodes only the validated
+result, creates a new file atomically, and refuses overwrite. Passing assembly
+does not establish that a licence or evidence label is true and does not replace
+independent provenance review, the App-catalog digest/role gate, or
+physical-device qualification.
+
 The iPhone distribution boundary adds `BundledProductReleaseCatalog` in front of
 the product codec. Its compile-time descriptors pin a safe bundle resource name,
 extension, SHA-256, expected release ID, and an explicit demo or foreground

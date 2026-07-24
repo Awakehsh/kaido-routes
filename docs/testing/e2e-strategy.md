@@ -383,6 +383,16 @@ released-road foreground case is eligible for the package-only authority used
 by the App controller. The fixture's non-synthetic labels are test values and
 do not claim a real release.
 
+Product release authoring is covered at the same platform-light layer without a
+new route-behavior event. Focused Swift tests pass independently valid
+released-road navigation and Route Atlas fixtures to
+`KaidoProductReleaseAuthor`, require exact unchanged nesting and foreground
+authority, and reject invalid metadata, synthetic input promotion, and
+cross-artifact editor coverage drift. The CLI then uses the same author, encodes
+through the production schema-5.0 codec, writes only a new output, and refuses
+overwrite. These tests prove deterministic assembly mechanics only; their
+test-labelled non-synthetic licences are not real release evidence.
+
 The internal iPhone target adds a local L3 composition check above KR-D26. One
 bundled `SYNTHETIC_TEST_ONLY` product artifact is decoded through the production
 codec before `KaidoProductNavigationRuntime` may exist. Unit tests exercise the

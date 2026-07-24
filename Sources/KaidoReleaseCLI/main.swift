@@ -7,8 +7,10 @@ private enum CLIError: Error, CustomStringConvertible {
   case readFailed(String, Error)
   case writeFailed(String, Error)
   case outputExists(String)
+  case decodeFailed(String, Error)
   case invalidNavigation([NavigationReleaseIssue])
   case invalidProduct([KaidoProductReleaseIssue])
+  case productAuthoring(KaidoProductReleaseAuthoringError)
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
 
@@ -19,15 +21,20 @@ private enum CLIError: Error, CustomStringConvertible {
       Usage:
         kaido-release validate-navigation --artifact <navigation-release.json>
         kaido-release validate-product --artifact <product-release.json>
-        kaido-release export-guidance-audio-worklist \
+        kaido-release build-product \\
+          --navigation-artifact <navigation-release.json> \\
+          --atlas-artifact <route-atlas-release.json> \\
+          --config <product-release-authoring.json> \\
+          --output <product-release.json>
+        kaido-release export-guidance-audio-worklist \\
           --product-artifact <product-release.json> --output <worklist.json>
-        kaido-release build-guidance-audio \
-          --product-artifact <product-release.json> \
-          --config <authoring-config.json> --resources <wav-directory> \
+        kaido-release build-guidance-audio \\
+          --product-artifact <product-release.json> \\
+          --config <authoring-config.json> --resources <wav-directory> \\
           --output <guidance-audio-release.json>
-        kaido-release validate-guidance-audio \
-          --product-artifact <product-release.json> \
-          --manifest <guidance-audio-release.json> \
+        kaido-release validate-guidance-audio \\
+          --product-artifact <product-release.json> \\
+          --manifest <guidance-audio-release.json> \\
           --resources <wav-directory>
       """
     case .readFailed(let path, let error):
@@ -36,17 +43,40 @@ private enum CLIError: Error, CustomStringConvertible {
       "Cannot write \(path): \(error)"
     case .outputExists(let path):
       "Refusing to overwrite existing output: \(path)"
+    case .decodeFailed(let path, let error):
+      "Cannot decode \(path): \(error)"
     case .invalidNavigation(let issues):
       "Navigation release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .invalidProduct(let issues):
       "Product release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .productAuthoring(let error):
+      Self.productAuthoringDescription(error)
     case .invalidGuidanceAudio(let issues):
       "Guidance audio release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
+    }
+  }
+
+  private static func productAuthoringDescription(
+    _ error: KaidoProductReleaseAuthoringError
+  ) -> String {
+    switch error {
+    case .invalidConfiguration(let issues):
+      "Product release authoring configuration is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidNavigationRelease(let issues):
+      "Product release authoring navigation input is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidRouteAtlasRelease(let issues):
+      "Product release authoring Route Atlas input is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidProductRelease(let issues):
+      "Product release authoring joint gate is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
     }
   }
 
@@ -77,6 +107,12 @@ private enum CLIError: Error, CustomStringConvertible {
 private enum Command {
   case validateNavigation(artifact: String)
   case validateProduct(artifact: String)
+  case buildProduct(
+    navigationArtifact: String,
+    routeAtlasArtifact: String,
+    configuration: String,
+    output: String
+  )
   case exportGuidanceAudioWorklist(
     productArtifact: String,
     output: String
@@ -112,6 +148,21 @@ private struct Arguments {
       try flags.require(exactly: ["--artifact"])
       command = .validateProduct(
         artifact: try flags.value("--artifact")
+      )
+    case "build-product":
+      try flags.require(
+        exactly: [
+          "--navigation-artifact",
+          "--atlas-artifact",
+          "--config",
+          "--output",
+        ]
+      )
+      command = .buildProduct(
+        navigationArtifact: try flags.value("--navigation-artifact"),
+        routeAtlasArtifact: try flags.value("--atlas-artifact"),
+        configuration: try flags.value("--config"),
+        output: try flags.value("--output")
       )
     case "export-guidance-audio-worklist":
       try flags.require(
@@ -239,6 +290,19 @@ private func decodeProductRelease(
   }
 }
 
+private func decode<T: Decodable>(
+  _ type: T.Type,
+  path: String
+) throws -> T {
+  do {
+    return try JSONDecoder().decode(type, from: read(path: path))
+  } catch let error as CLIError {
+    throw error
+  } catch {
+    throw CLIError.decodeFailed(path, error)
+  }
+}
+
 private func guidanceAudioResource(
   filename: String,
   directoryPath: String
@@ -319,6 +383,48 @@ do {
         + "authority "
         + (release.foregroundLiveInputAuthority == nil
           ? "DISABLED" : "ADMITTED")
+    )
+  case .buildProduct(
+    let navigationArtifactPath,
+    let routeAtlasArtifactPath,
+    let configurationPath,
+    let output
+  ):
+    let navigationArtifact = try decode(
+      NavigationReleaseArtifact.self,
+      path: navigationArtifactPath
+    )
+    let routeAtlasArtifact = try decode(
+      RouteAtlasReleaseArtifact.self,
+      path: routeAtlasArtifactPath
+    )
+    let configuration = try decode(
+      KaidoProductReleaseAuthoringConfiguration.self,
+      path: configurationPath
+    )
+    let artifact: KaidoProductReleaseArtifact
+    do {
+      artifact = try KaidoProductReleaseAuthor.buildArtifact(
+        navigationRelease: navigationArtifact,
+        routeAtlasRelease: routeAtlasArtifact,
+        configuration: configuration
+      )
+    } catch let error as KaidoProductReleaseAuthoringError {
+      throw CLIError.productAuthoring(error)
+    }
+    let encoded: Data
+    do {
+      encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
+    } catch KaidoProductReleaseError.invalid(let issues) {
+      throw CLIError.invalidProduct(issues)
+    }
+    try writeNew(encoded, path: output)
+    let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
+    print(
+      "PASS: wrote released-road product \(release.releaseID) binding "
+        + "navigation release \(release.navigation.releaseID) to Route Atlas "
+        + "\(release.routeAtlas.definition.id); foreground authority ADMITTED; "
+        + "output \(output)"
     )
   case .exportGuidanceAudioWorklist(
     let productArtifact,

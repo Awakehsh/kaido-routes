@@ -279,6 +279,238 @@ func releasedRoadProductMintsForegroundAuthority() throws {
   #expect(release.runtimeIdentity.matcherCorridorID == fixture.matcherCorridor.id)
 }
 
+@Test("Product author assembles only one exact released-road foreground artifact")
+func productReleaseAuthorBuildsReleasedRoadArtifact() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let navigationArtifact = productNavigationReleaseArtifact(
+    fixture,
+    licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+  )
+  let atlasArtifact = productRouteAtlasArtifact(
+    fixture,
+    includeIncomingApproach: true,
+    licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+  )
+  let configuration = KaidoProductReleaseAuthoringConfiguration(
+    releaseID: "test.product-release.authored",
+    releasedAt: "2026-07-24T12:30:00+09:00"
+  )
+
+  let configurationData =
+    try KaidoProductReleaseAuthoringConfigurationCodec.encode(
+      configuration
+    )
+  let repeatedConfigurationData =
+    try KaidoProductReleaseAuthoringConfigurationCodec.encode(
+      configuration
+    )
+  let decodedConfiguration =
+    try KaidoProductReleaseAuthoringConfigurationCodec.decode(
+      configurationData
+    )
+  let artifact = try KaidoProductReleaseAuthor.buildArtifact(
+    navigationRelease: navigationArtifact,
+    routeAtlasRelease: atlasArtifact,
+    configuration: decodedConfiguration
+  )
+  let encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
+  let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
+
+  #expect(configurationData == repeatedConfigurationData)
+  #expect(decodedConfiguration == configuration)
+  #expect(artifact.navigationRelease == navigationArtifact)
+  #expect(artifact.routeAtlasRelease == atlasArtifact)
+  #expect(
+    artifact.runtimeUse
+      == KaidoProductRuntimeUseDeclaration(
+        evidenceScope: .releasedRoad,
+        liveInputPolicy: .foregroundWhenInUse
+      )
+  )
+  #expect(release.releaseID == configuration.releaseID)
+  #expect(release.foregroundLiveInputAuthority != nil)
+}
+
+@Test("Product author never promotes synthetic inputs")
+func productReleaseAuthorRejectsSyntheticInputs() {
+  let fixture = navigationReleaseBundleFixture()
+  let configuration = KaidoProductReleaseAuthoringConfiguration(
+    releaseID: "test.product-release.no-synthetic-promotion",
+    releasedAt: "2026-07-24T12:30:00+09:00"
+  )
+
+  do {
+    _ = try KaidoProductReleaseAuthor.buildArtifact(
+      navigationRelease: navigationReleaseArtifact(fixture),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: true
+      ),
+      configuration: configuration
+    )
+    Issue.record("Expected synthetic inputs to fail released-road authoring")
+  } catch KaidoProductReleaseAuthoringError.invalidProductRelease(
+    let issues
+  ) {
+    #expect(
+      issues.contains {
+        $0.code == "PRODUCT_RUNTIME_SOURCE_SCOPE_MISMATCH"
+      }
+    )
+    #expect(
+      !issues.contains {
+        $0.code == "SYNTHETIC_PRODUCT_LIVE_INPUT_FORBIDDEN"
+      }
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Product author rechecks editor coverage across valid nested releases")
+func productReleaseAuthorRejectsJointCoverageDrift() {
+  let fixture = navigationReleaseBundleFixture()
+  let configuration = KaidoProductReleaseAuthoringConfiguration(
+    releaseID: "test.product-release.joint-drift",
+    releasedAt: "2026-07-24T12:30:00+09:00"
+  )
+
+  do {
+    _ = try KaidoProductReleaseAuthor.buildArtifact(
+      navigationRelease: productNavigationReleaseArtifact(
+        fixture,
+        licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+      ),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: false,
+        licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+      ),
+      configuration: configuration
+    )
+    Issue.record("Expected editor-atlas coverage drift to block authoring")
+  } catch KaidoProductReleaseAuthoringError.invalidProductRelease(
+    let issues
+  ) {
+    #expect(
+      issues.contains(
+        .missingAtlasEditorEntity(
+          .incomingApproach,
+          "test.approach.loop"
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Product author rejects invalid metadata before release assembly")
+func productReleaseAuthorRejectsInvalidConfiguration() {
+  let fixture = navigationReleaseBundleFixture()
+  let configuration = KaidoProductReleaseAuthoringConfiguration(
+    schemaVersion: "2.0",
+    releaseID: " ",
+    releasedAt: "not-a-date"
+  )
+
+  do {
+    _ = try KaidoProductReleaseAuthor.buildArtifact(
+      navigationRelease: navigationReleaseArtifact(fixture),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: true
+      ),
+      configuration: configuration
+    )
+    Issue.record("Expected invalid authoring metadata to fail")
+  } catch KaidoProductReleaseAuthoringError.invalidConfiguration(
+    let issues
+  ) {
+    #expect(
+      issues == [
+        .invalidConfigurationSchemaVersion,
+        .invalidReleaseIdentity,
+      ]
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Product author classifies invalid nested releases before the joint gate")
+func productReleaseAuthorRejectsInvalidNestedInputs() {
+  let fixture = navigationReleaseBundleFixture()
+  let validNavigation = productNavigationReleaseArtifact(
+    fixture,
+    licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+  )
+  let invalidNavigation = NavigationReleaseArtifact(
+    schemaVersion: "4.0",
+    releaseID: validNavigation.releaseID,
+    releasedAt: validNavigation.releasedAt,
+    editorCatalogID: validNavigation.editorCatalogID,
+    networkSnapshot: validNavigation.networkSnapshot,
+    routePlan: validNavigation.routePlan,
+    sourceRegistry: validNavigation.sourceRegistry,
+    assetEvidence: validNavigation.assetEvidence,
+    editorCatalog: validNavigation.editorCatalog,
+    editorPresentationCatalog: validNavigation.editorPresentationCatalog,
+    runtimePolicy: validNavigation.runtimePolicy,
+    matcherCorridor: validNavigation.matcherCorridor,
+    decisionZones: validNavigation.decisionZones,
+    releasedGuidance: validNavigation.releasedGuidance,
+    junctionViews: validNavigation.junctionViews
+  )
+  let validAtlas = productRouteAtlasArtifact(
+    fixture,
+    includeIncomingApproach: true,
+    licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+  )
+  let invalidAtlas = RouteAtlasReleaseArtifact(
+    schemaVersion: "2.0",
+    networkSnapshot: validAtlas.networkSnapshot,
+    routePlan: validAtlas.routePlan,
+    sourceRegistry: validAtlas.sourceRegistry,
+    topologySlice: validAtlas.topologySlice,
+    definition: validAtlas.definition
+  )
+  let configuration = KaidoProductReleaseAuthoringConfiguration(
+    releaseID: "test.product-release.invalid-nested-input",
+    releasedAt: "2026-07-24T12:30:00+09:00"
+  )
+
+  do {
+    _ = try KaidoProductReleaseAuthor.buildArtifact(
+      navigationRelease: invalidNavigation,
+      routeAtlasRelease: validAtlas,
+      configuration: configuration
+    )
+    Issue.record("Expected invalid navigation input to fail independently")
+  } catch KaidoProductReleaseAuthoringError.invalidNavigationRelease(
+    let issues
+  ) {
+    #expect(issues == [.invalidArtifactSchemaVersion])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+
+  do {
+    _ = try KaidoProductReleaseAuthor.buildArtifact(
+      navigationRelease: validNavigation,
+      routeAtlasRelease: invalidAtlas,
+      configuration: configuration
+    )
+    Issue.record("Expected invalid Route Atlas input to fail independently")
+  } catch KaidoProductReleaseAuthoringError.invalidRouteAtlasRelease(
+    let issues
+  ) {
+    #expect(issues == [.invalidArtifactSchemaVersion])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Released-road runtime scope rejects mixed synthetic sources")
 func releasedRoadRuntimeScopeRejectsSyntheticSources() {
   let evaluation = KaidoProductRuntimeUseEvaluator.evaluate(

@@ -452,6 +452,15 @@ must contain no synthetic source in either nested release; and only a valid
 `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` release mints the unforgeable
 six-part foreground authority consumed by the app.
 
+The release CLI also provides the production-only assembly path that will be
+used after both nested releases exist. `kaido-release build-product` accepts one
+independently valid navigation artifact, one independently valid Route Atlas
+artifact, and explicit release metadata. It fixes runtime use to
+`RELEASED_ROAD + FOREGROUND_WHEN_IN_USE`, rejects synthetic sources, re-runs the
+complete joint gate, writes atomically without overwrite, and emits the same
+schema-5.0 artifact consumed by the App catalog. It cannot convert the current
+review-only K7 candidate or bundled synthetic preview into a product release.
+
 The iPhone build adds a hash-bound catalog in front of that codec. A descriptor
 cannot promote a synthetic artifact into foreground navigation, and a released
 road descriptor is accepted only when production decode mints the exact
@@ -670,6 +679,10 @@ hard properties that must remain proven as the product expands:
     schema-5.0 joint product release with consistent released-road sources and
     explicit foreground policy can mint the exact runtime-bound foreground
     input token, while synthetic or mixed evidence fails closed.
+34. production product authoring retains both independently validated nested
+    artifacts unchanged, fixes released-road foreground runtime use, re-runs the
+    joint gate, and emits no file when validation fails or the output already
+    exists.
 
 ## Repository map
 
@@ -684,6 +697,7 @@ hard properties that must remain proven as the product expands:
 - [`docs/testing/navigation-engine-bakeoff.md`](docs/testing/navigation-engine-bakeoff.md): hard-gated comparison plan for surface routers and map matchers.
 - [`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md): evidence gates for route data.
 - [`docs/contributing/licensing.md`](docs/contributing/licensing.md): Apache-2.0 and third-party material boundaries.
+- [`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md): fail-closed assembly of validated navigation and Route Atlas releases.
 - [`e2e/`](e2e/README.md): portable, machine-readable behavior scenarios.
 - [`benchmarks/surface-routing/`](benchmarks/surface-routing/README.md): directional entrance fixtures and provider hard gates.
 - [`benchmarks/map-matching/`](benchmarks/map-matching/README.md): deterministic matcher replay fixtures, evaluator, and negative control.
@@ -736,7 +750,7 @@ grants release or navigation authority.
 ```sh
 python3 scripts/validate_k7_route_atlas_readiness.py \
   data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
-  --as-of 2026-07-24
+  --as-of 2026-07-25
 ```
 
 `kaido-release validate-navigation --artifact <file>` equivalently validates a
@@ -746,6 +760,24 @@ release artifact exists yet.
 `kaido-release validate-product --artifact <file>` revalidates both nested
 artifacts and their cross-artifact identity, chronology, and editor-atlas
 coverage; no real product release artifact exists yet.
+
+After the independent navigation and Route Atlas artifacts have passed their
+own release gates, assemble—not hand-edit—the joint product artifact:
+
+```sh
+swift run kaido-release build-product \
+  --navigation-artifact <navigation-release.json> \
+  --atlas-artifact <route-atlas-release.json> \
+  --config <product-release-authoring.json> \
+  --output <product-release.json>
+
+swift run kaido-release validate-product \
+  --artifact <product-release.json>
+```
+
+The authoring configuration contains only schema version, product release ID,
+and release timestamp. Runtime scope is intentionally not configurable. See
+[`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md).
 
 Offline guidance-audio authoring is executable without copying prompt records by
 hand:

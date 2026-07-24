@@ -1,25 +1,48 @@
 import KaidoPresentation
 import SwiftUI
 
+enum PreDriveReviewDisplayScope: Equatable {
+  case synthetic
+  case released
+}
+
 struct PreDriveReviewPanel: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: PreDriveReviewModel
   let navigationStartAvailable: Bool
+  let displayScope: PreDriveReviewDisplayScope
+  let releasedSnapshot: PreDriveReviewSnapshot?
+  let releasedErrorCode: String?
 
   init(
     model: PreDriveReviewModel,
-    navigationStartAvailable: Bool = false
+    navigationStartAvailable: Bool = false,
+    displayScope: PreDriveReviewDisplayScope = .synthetic,
+    releasedSnapshot: PreDriveReviewSnapshot? = nil,
+    releasedErrorCode: String? = nil
   ) {
     self.model = model
     self.navigationStartAvailable = navigationStartAvailable
+    self.displayScope = displayScope
+    self.releasedSnapshot = releasedSnapshot
+    self.releasedErrorCode = releasedErrorCode
   }
 
   @ViewBuilder
   var body: some View {
-    if let snapshot = model.snapshot {
-      review(snapshot)
-    } else if model.hasCompiledRoutePlan, let errorCode = model.lastErrorCode {
-      blocked(errorCode)
+    switch displayScope {
+    case .synthetic:
+      if let snapshot = model.snapshot {
+        review(snapshot)
+      } else if model.hasCompiledRoutePlan, let errorCode = model.lastErrorCode {
+        blocked(errorCode)
+      }
+    case .released:
+      if let releasedSnapshot {
+        review(releasedSnapshot)
+      } else if let releasedErrorCode {
+        blocked(releasedErrorCode)
+      }
     }
   }
 
@@ -58,10 +81,14 @@ struct PreDriveReviewPanel: View {
         .font(.system(size: 19, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.routeWhite)
 
-        Text("ROUTE FIRST · SYNTHETIC REVIEW")
-          .font(.system(size: 9, weight: .bold, design: .monospaced))
-          .tracking(0.75)
-          .foregroundStyle(KaidoTheme.muted)
+        Text(
+          displayScope == .released
+            ? "ROUTE FIRST · RELEASE-BOUND REVIEW"
+            : "ROUTE FIRST · SYNTHETIC REVIEW"
+        )
+        .font(.system(size: 9, weight: .bold, design: .monospaced))
+        .tracking(0.75)
+        .foregroundStyle(KaidoTheme.muted)
 
         Text(verbatim: snapshot.routePlanID)
           .font(.system(size: 8, weight: .medium, design: .monospaced))

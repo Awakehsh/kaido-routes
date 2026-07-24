@@ -253,6 +253,13 @@ compilation, and moving-time lockout. KR-U01 and KR-U02 remain the portable
 L1/L2 contracts; Simulator interaction and accessibility-tree inspection are
 local L3 evidence, not a CI field or release-data claim.
 
+The App's dormant foreground branch adds an L3 composition gate above those
+portable contracts. Model tests inject one valid foreground catalog entry,
+submit its exact recipe choices, require whole-RoutePlan equality, preserve
+occurrence progress across interface-locale changes, and reject a wrong choice
+without mutation. This does not add a new portable route behavior or claim that
+the currently bundled synthetic catalog is released road data.
+
 KR-U03 inserts `ParkedCorridorResolutionSession` before editor mutation. The
 portable runner submits a synthetic match containing only snapshot,
 decision-point, and candidate choice IDs. Moving-time submission, a choice
@@ -275,6 +282,12 @@ executes that same boundary rather than projecting loose scalars. App tests
 verify that actual distance changes with a duplicated lap while tariff distance
 does not, unconfirmed passage is not positive-open, unauthorized positive live
 state and invalid evidence fail closed, and undo removes the review.
+Released-authoring model tests additionally require a separately supplied
+session evidence set after exact release compilation. Missing, RoutePlan-drifted,
+or snapshot-drifted evidence leaves the released route compiled but blocks
+review and navigation; no synthetic review or injected mismatched release can
+authorize the journey. The default App composition intentionally supplies no
+such current evidence provider.
 
 The default iPhone product-journey shell has a separate app-state and XCUITest
 floor. App tests require Route Atlas → parked authoring → pre-drive review

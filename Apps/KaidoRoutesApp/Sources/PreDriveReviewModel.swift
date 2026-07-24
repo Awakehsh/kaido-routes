@@ -55,6 +55,23 @@ struct PreDriveReviewSnapshot: Equatable, Sendable {
   let officialQueryReference: String
   let ignoredNonActiveQuoteIDs: [String]
 
+  init(
+    routePlan: RoutePlan,
+    evaluation: PreDriveReviewEvaluation
+  ) {
+    let quote = evaluation.selectedTariffQuote
+    routePlanID = routePlan.id
+    occurrenceCount = routePlan.occurrences.count
+    presentation = evaluation.presentation
+    quoteID = quote.id
+    vehicleClass = quote.vehicleClass
+    tariffVersionID = quote.tariffVersionID
+    tariffVersionStatus = quote.tariffVersionStatus
+    checkedAt = quote.checkedAt
+    officialQueryReference = quote.officialQueryReference
+    ignoredNonActiveQuoteIDs = evaluation.ignoredNonActiveQuoteIDs
+  }
+
   var navigationStartAllowed: Bool {
     false
   }
@@ -104,18 +121,9 @@ final class PreDriveReviewModel: ObservableObject {
       routePlan: routePlan,
       evidence: fixture
     )
-    let quote = evaluation.selectedTariffQuote
     return PreDriveReviewSnapshot(
-      routePlanID: routePlan.id,
-      occurrenceCount: routePlan.occurrences.count,
-      presentation: evaluation.presentation,
-      quoteID: quote.id,
-      vehicleClass: quote.vehicleClass,
-      tariffVersionID: quote.tariffVersionID,
-      tariffVersionStatus: quote.tariffVersionStatus,
-      checkedAt: quote.checkedAt,
-      officialQueryReference: quote.officialQueryReference,
-      ignoredNonActiveQuoteIDs: evaluation.ignoredNonActiveQuoteIDs
+      routePlan: routePlan,
+      evaluation: evaluation
     )
   }
 }

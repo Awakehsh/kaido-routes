@@ -94,13 +94,16 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   func testExactSelectedReleaseCreatesUserStartedRuntimeAndEndsCleanly()
     async throws
   {
-    let composition = KaidoRoutesAppModel()
     let entry = try makeReleasedProductTestEntry()
+    let catalog = BundledProductReleaseCatalog(entries: [entry])
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: catalog,
+      releasedPreDriveEvidenceProvider: {
+        makeReleasedPreDriveEvidence(for: $0)
+      }
+    )
     let model = KaidoProductJourneyModel(
       composition: composition,
-      productReleaseSelectionProvider: { _ in
-        .selected(entry)
-      },
       navigationRuntimeFactory: {
         try ProductNavigationRuntimeModel(
           releasedEntry: $0,
@@ -113,10 +116,10 @@ final class KaidoProductJourneyModelTests: XCTestCase {
         )
       }
     )
-    composition.routeEditor.select(
-      choiceID: "preview.synthetic.choice.early-exit"
+    authorReleasedRoute(
+      try XCTUnwrap(composition.releasedRouteAuthoring),
+      entry: entry
     )
-    composition.routeEditor.compile()
     model.go(to: .review)
 
     XCTAssertTrue(model.canStartNavigation)
@@ -139,21 +142,24 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   }
 
   func testRuntimeConstructionFailureKeepsReviewFailClosed() throws {
-    let composition = KaidoRoutesAppModel()
     let entry = try makeReleasedProductTestEntry()
+    let catalog = BundledProductReleaseCatalog(entries: [entry])
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: catalog,
+      releasedPreDriveEvidenceProvider: {
+        makeReleasedPreDriveEvidence(for: $0)
+      }
+    )
     let model = KaidoProductJourneyModel(
       composition: composition,
-      productReleaseSelectionProvider: { _ in
-        .selected(entry)
-      },
       navigationRuntimeFactory: { _ in
         throw JourneyRuntimeTestError.constructionFailed
       }
     )
-    composition.routeEditor.select(
-      choiceID: "preview.synthetic.choice.early-exit"
+    authorReleasedRoute(
+      try XCTUnwrap(composition.releasedRouteAuthoring),
+      entry: entry
     )
-    composition.routeEditor.compile()
     model.go(to: .review)
 
     model.requestNavigationStart()
@@ -169,13 +175,16 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   func testRouteInvalidationTerminatesAnActiveReleasedRuntime()
     async throws
   {
-    let composition = KaidoRoutesAppModel()
     let entry = try makeReleasedProductTestEntry()
+    let catalog = BundledProductReleaseCatalog(entries: [entry])
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: catalog,
+      releasedPreDriveEvidenceProvider: {
+        makeReleasedPreDriveEvidence(for: $0)
+      }
+    )
     let model = KaidoProductJourneyModel(
       composition: composition,
-      productReleaseSelectionProvider: { _ in
-        .selected(entry)
-      },
       navigationRuntimeFactory: {
         try ProductNavigationRuntimeModel(
           releasedEntry: $0,
@@ -188,16 +197,16 @@ final class KaidoProductJourneyModelTests: XCTestCase {
         )
       }
     )
-    composition.routeEditor.select(
-      choiceID: "preview.synthetic.choice.early-exit"
+    let releasedAuthoring = try XCTUnwrap(
+      composition.releasedRouteAuthoring
     )
-    composition.routeEditor.compile()
+    authorReleasedRoute(releasedAuthoring, entry: entry)
     model.go(to: .review)
     model.requestNavigationStart()
     let runtime = try XCTUnwrap(model.navigationRuntime)
     await runtime.activate()
 
-    composition.routeEditor.undo()
+    releasedAuthoring.clearSelection()
 
     for _ in 0..<20 where model.navigationRuntime != nil {
       await Task.yield()
@@ -206,6 +215,56 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     XCTAssertEqual(model.lastBlocker, .routeReviewNotReady)
     XCTAssertNil(model.navigationRuntime)
     XCTAssertEqual(runtime.activation, .ended)
+  }
+
+  func testInjectedMismatchedReleaseCannotAuthorizeSyntheticRoute()
+    throws
+  {
+    let composition = KaidoRoutesAppModel()
+    let entry = try makeReleasedProductTestEntry()
+    let model = KaidoProductJourneyModel(
+      composition: composition,
+      productReleaseSelectionProvider: { _ in .selected(entry) }
+    )
+    composition.routeEditor.select(
+      choiceID: "preview.synthetic.choice.early-exit"
+    )
+    composition.routeEditor.compile()
+    model.go(to: .review)
+
+    XCTAssertFalse(model.canStartNavigation)
+    XCTAssertEqual(
+      model.navigationBlocker,
+      .routeReleaseAuthorityUnavailable
+    )
+  }
+
+  func testReleasedRouteWithoutPreDriveEvidenceCannotReachReview()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry()
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: BundledProductReleaseCatalog(entries: [entry])
+    )
+    let model = KaidoProductJourneyModel(composition: composition)
+    let releasedAuthoring = try XCTUnwrap(
+      composition.releasedRouteAuthoring
+    )
+
+    authorReleasedRoute(releasedAuthoring, entry: entry)
+    model.go(to: .review)
+
+    XCTAssertEqual(model.stage, .atlas)
+    XCTAssertFalse(model.routeReviewReady)
+    XCTAssertFalse(model.canStartNavigation)
+    XCTAssertEqual(
+      model.lastBlocker,
+      .releasedPreDriveEvidenceUnavailable
+    )
+    XCTAssertEqual(
+      model.navigationBlocker,
+      .releasedPreDriveEvidenceUnavailable
+    )
   }
 }
 

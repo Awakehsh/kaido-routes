@@ -41,8 +41,13 @@ input. Its bundled product-release catalog is a
 compile-time manifest: every resource is pinned to an exact filename, SHA-256,
 release ID, and `DEMO_ONLY` or `FOREGROUND_NAVIGATION` role before the production
 codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
-closed on zero or multiple released-road matches. The current manifest contains
-zero foreground releases and one synthetic demo. A separate
+closed on zero or multiple released-road matches. When a foreground entry is
+present, the journey replaces synthetic authoring with that release's localized
+editor recipe, requires every stable choice explicitly, retains its exact
+occurrence sequence, and admits review only after separately supplied current
+tariff and passage evidence evaluates against the same RoutePlan and network
+snapshot. The current manifest contains zero foreground releases and one
+synthetic demo, so that branch remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
 and has no audio authority. A synthetic driving-surface panel contrasts measured
@@ -274,15 +279,19 @@ matches every field and occurrence. The internal iPhone shell now composes the
 same session through a synthetic parked-only catalog. A separate release-bound
 iPhone adapter consumes the validated localized presentation catalog without
 raw-ID fallback and can replay only the exact recipe-owned choice and occurrence
-IDs before regaining the released RoutePlan. SwiftUI renders its immutable
-synthetic choices and lap candidates, preserves repeated occurrences, uses
-session-owned undo, and unlocks compilation only after an explicit exit. Its
-synthetic Canvas sends no geometry semantics to the editor; a fixed fixture
-returns two candidate choice IDs, and XCUITest proves a drag requires parked
-resolution before the editor advances. This is an adapter proof, not production
-snapping or released Shuto authoring data; real released editor catalogs and
-localized text, reviewed layout geometry, matching tolerances, topology
-rendering, and accessibility validation remain pending.
+IDs before regaining the released RoutePlan. If the bundled catalog contains a
+foreground release, `ReleasedProductRouteAuthoringModel` and its SwiftUI panel
+list only those entries, submit each recipe choice explicitly, and reject any
+compiled value that is not exactly the selected release's RoutePlan. The
+currently bundled synthetic editor still renders its immutable choices and lap
+candidates, preserves repeated occurrences, uses session-owned undo, and
+unlocks compilation only after an explicit exit. Its synthetic Canvas sends no
+geometry semantics to the editor; a fixed fixture returns two candidate choice
+IDs, and XCUITest proves a drag requires parked resolution before the editor
+advances. This is an adapter proof, not production snapping or released Shuto
+authoring data; the actual released editor catalog and localized text, reviewed
+layout geometry, matching tolerances, topology rendering, and physical-device
+accessibility validation remain pending.
 
 After exact compilation, the internal iPhone shell resolves actual distance from
 a same-snapshot synthetic reviewed-distance catalog and opens a KR-U04 pre-drive
@@ -291,7 +300,11 @@ one `ACTIVE` tariff record, and keeps actual route distance, tariff distance,
 toll evidence, and passage evidence visibly separate. A repeated lap increases
 actual distance without changing the independent tariff record. The fixture is
 synthetic, realtime passage remains unconfirmed, and navigation start stays
-locked because no released navigation bundle exists.
+locked because no released navigation bundle exists. The foreground-release
+branch uses the same evaluator through `ReleasedPreDriveReviewAdapter`; missing
+or drifting per-session evidence keeps the exact compiled released route in
+authoring and cannot fall back to the synthetic review. A current authorized
+evidence provider is not yet connected.
 
 The internal iPhone shell now also binds KR-U05 and KR-U11 through a synthetic
 guidance-language preview. Japanese, Simplified Chinese, and English interface

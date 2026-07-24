@@ -123,6 +123,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let routeAtlasAttributions: RouteAtlasAttributionCatalog
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
+  let releasedRouteAuthoring: ReleasedProductRouteAuthoringModel?
   let preDriveReview: PreDriveReviewModel
   let languageSettings: KaidoLanguageSettingsModel
   let guidanceVoiceSetup: GuidanceVoiceSetupModel
@@ -132,14 +133,27 @@ final class KaidoRoutesAppModel: ObservableObject {
   let locationCalibration: InternalLocationCalibrationModel
 
   private let guidanceVoicePreferenceStore: any GuidanceVoicePreferenceStoring
-  private var languageSettingsSubscription: AnyCancellable?
+  private var languageSettingsSubscriptions: Set<AnyCancellable> = []
 
-  init() {
+  init(
+    productReleaseCatalog injectedProductReleaseCatalog:
+      BundledProductReleaseCatalog? = nil,
+    releasedPreDriveEvidenceProvider:
+      @escaping ReleasedProductRouteAuthoringModel.EvidenceProvider = {
+        _ in nil
+      }
+  ) {
     do {
       let routeEditor = try ParkedRouteEditorModel()
       self.routeEditor = routeEditor
-      productReleaseCatalog =
-        try BundledProductReleaseCatalogLoader.bundledPreview()
+      let productReleaseCatalog: BundledProductReleaseCatalog
+      if let injectedProductReleaseCatalog {
+        productReleaseCatalog = injectedProductReleaseCatalog
+      } else {
+        productReleaseCatalog =
+          try BundledProductReleaseCatalogLoader.bundledPreview()
+      }
+      self.productReleaseCatalog = productReleaseCatalog
       routeAtlasAttributions = try RouteAtlasAttributionCatalog.bundled()
       entranceRecommendation = try EntranceRecommendationModel(
         routeEditor: routeEditor
@@ -147,6 +161,15 @@ final class KaidoRoutesAppModel: ObservableObject {
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       let languageSettings = KaidoLanguageSettingsModel()
       self.languageSettings = languageSettings
+      if productReleaseCatalog.foregroundNavigationEntries.isEmpty {
+        releasedRouteAuthoring = nil
+      } else {
+        releasedRouteAuthoring = try ReleasedProductRouteAuthoringModel(
+          entries: productReleaseCatalog.foregroundNavigationEntries,
+          locale: languageSettings.interfaceLocale,
+          evidenceProvider: releasedPreDriveEvidenceProvider
+        )
+      }
       let guidanceVoicePreferenceStore =
         UserDefaultsGuidanceVoicePreferenceStore()
       self.guidanceVoicePreferenceStore =
@@ -179,10 +202,20 @@ final class KaidoRoutesAppModel: ObservableObject {
       locationCalibration = try InternalLocationCalibrationModel(
         fixture: .bundled()
       )
-      languageSettingsSubscription =
-        languageSettings.objectWillChange.sink { [weak self] _ in
+      languageSettings.objectWillChange.sink { [weak self] _ in
+        self?.objectWillChange.send()
+      }
+      .store(in: &languageSettingsSubscriptions)
+      languageSettings.$interfaceLocale.sink { [weak self] locale in
+        self?.releasedRouteAuthoring?.updateLocale(locale)
+      }
+      .store(in: &languageSettingsSubscriptions)
+      if let releasedRouteAuthoring {
+        releasedRouteAuthoring.objectWillChange.sink { [weak self] _ in
           self?.objectWillChange.send()
         }
+        .store(in: &languageSettingsSubscriptions)
+      }
     } catch {
       preconditionFailure("Invalid internal app fixture: \(error)")
     }

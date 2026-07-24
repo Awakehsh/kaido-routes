@@ -27,6 +27,8 @@ enum KaidoProductJourneyBlocker: String, Equatable, Sendable {
   case routeReleaseAuthorityUnavailable =
     "ROUTE_RELEASE_AUTHORITY_UNAVAILABLE"
   case productReleaseAmbiguous = "PRODUCT_RELEASE_AMBIGUOUS"
+  case releasedPreDriveEvidenceUnavailable =
+    "RELEASED_PRE_DRIVE_EVIDENCE_UNAVAILABLE"
   case navigationRuntimeUnavailable = "NAVIGATION_RUNTIME_UNAVAILABLE"
 }
 
@@ -43,6 +45,7 @@ final class KaidoProductJourneyModel: ObservableObject {
     (BundledProductReleaseEntry) throws -> ProductNavigationRuntimeModel
   private var compositionSubscription: AnyCancellable?
   private var reviewSubscription: AnyCancellable?
+  private var releasedReviewSubscription: AnyCancellable?
 
   init(
     composition: KaidoRoutesAppModel = KaidoRoutesAppModel(),
@@ -71,29 +74,43 @@ final class KaidoProductJourneyModel: ObservableObject {
     reviewSubscription = composition.preDriveReview.$snapshot.sink {
       [weak self] snapshot in
       guard let self else { return }
+      guard composition.releasedRouteAuthoring == nil else { return }
       if snapshot == nil, stage.order >= KaidoProductJourneyStage.review.order {
-        stage = .authoring
-        lastBlocker = .routeReviewNotReady
-        if let navigationRuntime {
-          Task { [weak self, navigationRuntime] in
-            _ = await navigationRuntime.terminate()
-            guard
-              let self,
-              self.navigationRuntime === navigationRuntime
-            else {
-              return
-            }
-            self.navigationRuntime = nil
-          }
-        }
+        invalidateReview(blocker: .routeReviewNotReady)
       } else {
         objectWillChange.send()
       }
     }
+    releasedReviewSubscription =
+      composition.releasedRouteAuthoring?.$preDriveReviewSnapshot.sink {
+        [weak self] snapshot in
+        guard let self else { return }
+        if snapshot == nil,
+          stage.order >= KaidoProductJourneyStage.review.order
+        {
+          let blocker: KaidoProductJourneyBlocker =
+            composition.releasedRouteAuthoring?.compiledRoutePlan == nil
+            ? .routeReviewNotReady
+            : .releasedPreDriveEvidenceUnavailable
+          invalidateReview(blocker: blocker)
+        } else {
+          objectWillChange.send()
+        }
+      }
   }
 
   var routeReviewReady: Bool {
-    composition.preDriveReview.snapshot != nil
+    if let releasedRouteAuthoring = composition.releasedRouteAuthoring {
+      return releasedRouteAuthoring.reviewReady
+    }
+    return composition.preDriveReview.snapshot != nil
+  }
+
+  var compiledRoutePlan: RoutePlan? {
+    if let releasedRouteAuthoring = composition.releasedRouteAuthoring {
+      return releasedRouteAuthoring.compiledRoutePlan
+    }
+    return composition.routeEditor.compiledRoutePlan
   }
 
   var canStartNavigation: Bool {
@@ -107,13 +124,37 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   var productReleaseSelection: BundledProductReleaseSelection {
-    guard let routePlan = composition.routeEditor.compiledRoutePlan else {
+    guard let routePlan = compiledRoutePlan else {
       return .unavailable
     }
-    return productReleaseSelectionProvider(routePlan)
+    if let releasedRouteAuthoring = composition.releasedRouteAuthoring {
+      guard
+        let entry = releasedRouteAuthoring.selectedEntry,
+        entry.release.navigation.bundle.routePlan == routePlan,
+        releasedRouteAuthoring.reviewReady
+      else {
+        return .unavailable
+      }
+      return .selected(entry)
+    }
+    let selection = productReleaseSelectionProvider(routePlan)
+    if case .selected(let entry) = selection,
+      entry.release.navigation.bundle.routePlan != routePlan
+    {
+      return .unavailable
+    }
+    return selection
   }
 
   var navigationBlocker: KaidoProductJourneyBlocker? {
+    if let releasedRouteAuthoring = composition.releasedRouteAuthoring {
+      guard releasedRouteAuthoring.compiledRoutePlan != nil else {
+        return .routeReviewNotReady
+      }
+      guard releasedRouteAuthoring.preDriveReviewSnapshot != nil else {
+        return .releasedPreDriveEvidenceUnavailable
+      }
+    }
     guard routeReviewReady else {
       return .routeReviewNotReady
     }
@@ -193,7 +234,7 @@ final class KaidoProductJourneyModel: ObservableObject {
       lastBlocker = nil
     case .review:
       guard routeReviewReady else {
-        lastBlocker = .routeReviewNotReady
+        lastBlocker = navigationBlocker ?? .routeReviewNotReady
         return
       }
       stage = .review
@@ -205,7 +246,7 @@ final class KaidoProductJourneyModel: ObservableObject {
 
   func requestNavigationStart() {
     guard routeReviewReady else {
-      lastBlocker = .routeReviewNotReady
+      lastBlocker = navigationBlocker ?? .routeReviewNotReady
       return
     }
     guard case .selected(let entry) = productReleaseSelection else {
@@ -234,6 +275,23 @@ final class KaidoProductJourneyModel: ObservableObject {
     self.navigationRuntime = nil
     stage = .review
     lastBlocker = nil
+  }
+
+  private func invalidateReview(blocker: KaidoProductJourneyBlocker) {
+    stage = .authoring
+    lastBlocker = blocker
+    if let navigationRuntime {
+      Task { [weak self, navigationRuntime] in
+        _ = await navigationRuntime.terminate()
+        guard
+          let self,
+          self.navigationRuntime === navigationRuntime
+        else {
+          return
+        }
+        self.navigationRuntime = nil
+      }
+    }
   }
 
   static func reviewPreview() -> KaidoProductJourneyModel {

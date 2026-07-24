@@ -1,4 +1,6 @@
 import Foundation
+import KaidoDomain
+import KaidoPresentation
 
 @testable import KaidoRoutesApp
 
@@ -64,4 +66,45 @@ func makeReleasedProductTestEntry(
     throw ReleasedProductTestSupportError.invalidFixture
   }
   return entry
+}
+
+func makeReleasedPreDriveEvidence(
+  for entry: BundledProductReleaseEntry,
+  routePlanID: String? = nil,
+  networkSnapshotID: String? = nil
+) -> PreDriveReviewEvidence {
+  let routePlan = entry.release.navigation.bundle.routePlan
+  return PreDriveReviewEvidence(
+    evaluatedAt: "2026-07-25T12:00:00+09:00",
+    networkSnapshotID: networkSnapshotID ?? routePlan.networkSnapshotID,
+    routePlanID: routePlanID ?? routePlan.id,
+    passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+    tariffQuotes: [
+      TariffQuote(
+        id: "test.released-road.tariff.active",
+        entryFacilityID: routePlan.entryFacilityID,
+        exitFacilityID: routePlan.exitFacilityID,
+        vehicleClass: "STANDARD",
+        tariffVersionID: "test.released-road.tariff.v1",
+        tariffVersionStatus: .active,
+        tariffDistanceKM: 24.8,
+        estimatedAmountYen: 1_320,
+        evidenceStatus: .estimated,
+        checkedAt: "2026-07-25T11:30:00+09:00",
+        officialQueryReference: "https://search.shutoko.jp/"
+      )
+    ]
+  )
+}
+
+@MainActor
+func authorReleasedRoute(
+  _ model: ReleasedProductRouteAuthoringModel,
+  entry: BundledProductReleaseEntry
+) {
+  model.selectRelease(entry.release.releaseID)
+  while let step = model.currentStep {
+    model.selectReleasedChoice(step.choiceID)
+  }
+  model.compile()
 }

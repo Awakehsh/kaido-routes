@@ -196,19 +196,36 @@ struct KaidoProductJourneyView: View {
 
       ReviewBoundaryCard(
         symbol: "shield.lefthalf.filled",
-        title: copy.resolve(
-          japanese: "現在は合成ルートカタログを使用中",
-          simplifiedChinese: "当前使用合成路线目录",
-          english: "Synthetic route catalog in use"
-        ),
-        detail: copy.resolve(
-          japanese:
-            "マニフェストのハッシュと本番 codec は検証済みですが、実道路のリリースがないためナビ権限はありません。",
-          simplifiedChinese:
-            "清单哈希与生产 codec 已验证；没有真实道路发布包，不会获得导航权限。",
-          english:
-            "The manifest hash and production codec are validated; without a real-road release, navigation authority stays unavailable."
-        ),
+        title:
+          model.composition.releasedRouteAuthoring == nil
+          ? copy.resolve(
+            japanese: "現在は合成ルートカタログを使用中",
+            simplifiedChinese: "当前使用合成路线目录",
+            english: "Synthetic route catalog in use"
+          )
+          : copy.resolve(
+            japanese: "実道路リリースカタログを検証済み",
+            simplifiedChinese: "真实道路发布目录已验证",
+            english: "Real-road release catalog validated"
+          ),
+        detail:
+          model.composition.releasedRouteAuthoring == nil
+          ? copy.resolve(
+            japanese:
+              "マニフェストのハッシュと本番 codec は検証済みですが、実道路のリリースがないためナビ権限はありません。",
+            simplifiedChinese:
+              "清单哈希与生产 codec 已验证；没有真实道路发布包，不会获得导航权限。",
+            english:
+              "The manifest hash and production codec are validated; without a real-road release, navigation authority stays unavailable."
+          )
+          : copy.resolve(
+            japanese:
+              "次のステップでは選択したリリース自身の編集レシピと表示文だけを使用します。",
+            simplifiedChinese:
+              "下一步只使用所选发布包自身的编辑配方与显示文案。",
+            english:
+              "The next step uses only the selected release's own authoring recipe and presentation."
+          ),
         code:
           "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
           + " RELEASED ROAD · "
@@ -247,11 +264,19 @@ struct KaidoProductJourneyView: View {
         )
       )
 
-      EntranceRecommendationPanel(
-        model: model.composition.entranceRecommendation
-      )
+      if let releasedRouteAuthoring =
+        model.composition.releasedRouteAuthoring
+      {
+        ReleasedProductRouteAuthoringPanel(
+          model: releasedRouteAuthoring
+        )
+      } else {
+        EntranceRecommendationPanel(
+          model: model.composition.entranceRecommendation
+        )
 
-      ParkedRouteEditorPanel(model: model.composition.routeEditor)
+        ParkedRouteEditorPanel(model: model.composition.routeEditor)
+      }
 
       if model.routeReviewReady {
         ReviewBoundaryCard(
@@ -300,10 +325,23 @@ struct KaidoProductJourneyView: View {
         )
       )
 
-      PreDriveReviewPanel(
-        model: model.composition.preDriveReview,
-        navigationStartAvailable: model.canStartNavigation
-      )
+      if let releasedRouteAuthoring =
+        model.composition.releasedRouteAuthoring
+      {
+        PreDriveReviewPanel(
+          model: model.composition.preDriveReview,
+          navigationStartAvailable: model.canStartNavigation,
+          displayScope: .released,
+          releasedSnapshot:
+            releasedRouteAuthoring.preDriveReviewSnapshot,
+          releasedErrorCode: releasedRouteAuthoring.lastErrorCode
+        )
+      } else {
+        PreDriveReviewPanel(
+          model: model.composition.preDriveReview,
+          navigationStartAvailable: model.canStartNavigation
+        )
+      }
 
       GuidanceVoiceSetupPanel(
         model: model.composition.guidanceVoiceSetup,

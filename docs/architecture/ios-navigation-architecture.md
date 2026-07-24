@@ -607,18 +607,23 @@ existing output. A maintainer must still review and explicitly enroll the
 generated static symbol in the App manifest; no runtime scanning or automatic
 promotion is introduced.
 
-The default product journey queries only foreground releases by exact
-`RoutePlan` equality. Zero matches remain unavailable, and multiple matches
-remain ambiguous even when both artifacts independently validate. One exact
-match enables only an explicit user-start action. That action constructs
-`ProductNavigationRuntimeModel` from the selected entry, reuses the
-codec-minted live-input authority, and enters the navigation stage without
-starting Core Location. A second explicit action starts foreground location
-only after actor activation and When In Use authorization. Runtime construction
-failure stays in pre-drive review; ending navigation stops input and speech,
-removes the active checkpoint, and returns to review. The current build
-intentionally carries zero foreground releases and one synthetic demo, so this
-path remains dormant and never substitutes that demo for a user route.
+The default product journey exposes only foreground releases. When any exist,
+`ReleasedProductRouteAuthoringModel` replaces the synthetic editor and lets the
+user select one catalog entry and submit each release-owned recipe choice.
+`ReleasedRouteEditorAdapter` retains occurrence identity, and compilation must
+equal that release's whole `RoutePlan`. Review then requires separately injected
+session tariff and passage evidence to pass `ReleasedPreDriveReviewAdapter`
+against the exact RoutePlan and snapshot. Only that release-owned authoring and
+review pair enables an explicit user-start action. The action constructs
+`ProductNavigationRuntimeModel` from the selected entry, reuses the codec-minted
+live-input authority, and enters the navigation stage without starting Core
+Location. A second explicit action starts foreground location only after actor
+activation and When In Use authorization. Runtime construction failure stays in
+pre-drive review; route or evidence invalidation terminates an active runtime,
+and ending navigation stops input and speech, removes the active checkpoint, and
+returns to review. The current build intentionally carries zero foreground
+releases and one synthetic demo, so this path remains dormant and never
+substitutes that demo or its synthetic review for a user route.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
@@ -770,10 +775,12 @@ That is a development fact, not yet the minimum deployment target.
 - The default internal iPhone scene now sequences Route Atlas, parked authoring,
   pre-drive review, and a locked navigation stage through
   `KaidoProductJourneyModel`. This coordinator owns presentation stage only. It
-  observes the editor-owned compiled RoutePlan and review projection, returns to
-  authoring when that plan is invalidated, and cannot convert a structurally
-  valid synthetic release into navigation authority. The former all-panel
-  evidence workbench remains a launch-only internal surface.
+  selects the synthetic preview editor only when the catalog has no foreground
+  release. Otherwise it observes release-owned authoring and separately admitted
+  pre-drive evidence, returns to authoring when either becomes invalid, and
+  cannot convert a structurally valid synthetic or mismatched release into
+  navigation authority. The former all-panel evidence workbench remains a
+  launch-only internal surface.
 - The default journey owns one persisted interface-locale environment with exact
   Japanese, Simplified Chinese, and English app copy. The selection is visible
   and changes atlas, entrance explanation, parked editor, pre-drive review,
@@ -798,11 +805,13 @@ That is a development fact, not yet the minimum deployment target.
   or lap-candidate IDs. `KaidoRouting`, not the view tree, owns the current
   incoming approach, legal movement set, reviewed closed-sequence matching,
   fresh occurrence creation, grouped parked undo, and explicit exit completion.
-  A release may provide a validated `ReleasedRouteAuthoringRecipe`, but the UI
-  still submits each choice and cannot promote a partial or alternate authored
-  route back into the exact released RoutePlan.
-  KR-U01 and KR-U02 execute this pure boundary; the internal SwiftUI editor uses
-  a synthetic catalog and does not release real Shuto authoring data.
+  A release may provide a validated `ReleasedRouteAuthoringRecipe`;
+  `ReleasedProductRouteAuthoringModel` resolves its locale-complete option and
+  current step, but the UI still submits each choice and cannot promote a
+  partial or alternate authored route back into the exact released RoutePlan.
+  KR-U01 and KR-U02 execute this pure boundary; the currently bundled SwiftUI
+  editor still uses a synthetic catalog and does not release real Shuto
+  authoring data.
 - A freehand gesture is only adapter input. `ParkedCorridorResolutionSession`
   accepts a geometry match only when its snapshot, RoutePlan, current decision
   point, and candidate choice values still match `ExpertRouteEditorSnapshot`.
@@ -821,10 +830,13 @@ That is a development fact, not yet the minimum deployment target.
   rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays neutral.
   SwiftUI renders the resulting KR-U04 projection and cannot derive one distance
   from the other. `ReleasedPreDriveReviewAdapter` exposes the same evaluator for
-  one validated joint product release. The internal synthetic review keeps
-  navigation start locked. The journey shell can expose review only after this
-  projection exists; undo or any new edit removes the compiled plan and demotes
-  the shell back to authoring rather than retaining stale readiness.
+  one validated joint product release. Its evidence remains a separately
+  injected current-session input; missing or identity-drifted evidence cannot
+  fall back to the internal synthetic review. The journey shell can expose
+  review only after this exact projection exists; route or evidence invalidation
+  demotes the shell back to authoring and terminates an active runtime rather
+  than retaining stale readiness. The current build has no authorized session
+  evidence provider.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

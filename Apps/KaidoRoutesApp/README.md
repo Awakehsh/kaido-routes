@@ -45,22 +45,23 @@ name, and SHA-256 cannot drift through hand transcription. The generated static
 descriptor must still be reviewed and explicitly added to `previewManifest`;
 staging never becomes runtime resource discovery or automatic enrollment.
 
-The product journey searches only foreground entries and compares the whole
-compiled `RoutePlan`, including snapshot and occurrence order. No match remains
-release-blocked and multiple exact matches are an explicit ambiguity. One exact
-match enables the primary user action to construct only that entry's
-`ProductNavigationRuntimeModel`; the App then enters a release-keyed navigation
+The product journey exposes only foreground entries. If at least one exists,
+`ReleasedProductRouteAuthoringModel` replaces the synthetic editor, lists each
+release through its own locale-complete presentation, and submits every stable
+recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
+equal the selected release's whole `RoutePlan`, including snapshot and
+occurrence order. A separately injected session-evidence provider must then
+satisfy `ReleasedPreDriveReviewAdapter`; missing or drifting tariff and passage
+evidence keeps review and navigation locked. Only that exact route and review
+pair enables the primary user action to construct the selected entry's
+`ProductNavigationRuntimeModel`. The App then enters a release-keyed navigation
 surface while Core Location remains idle. A second explicit action starts
 foreground input only after actor activation and When In Use authorization.
 Runtime construction failure stays in review, and ending navigation stops input
 and speech, removes the active checkpoint, and returns to review. There is no
-ID-only or synthetic fallback. `ReleasedRouteEditorAdapter` likewise accepts
-only one decoded joint product release, resolves every recipe step through its
-exact locale-complete editor presentation, and submits only release-owned
-choice and occurrence IDs. It never substitutes raw IDs or compiles a different
-route. The current manifest contains `0 RELEASED ROAD · 1 DEMO`, so this adapter
-is covered at the consumption boundary but is not exposed as real road
-authoring.
+ID-only, injected mismatched-release, or synthetic-review fallback. The current
+manifest contains `0 RELEASED ROAD · 1 DEMO`, so the released authoring branch
+remains dormant and the default scene retains its synthetic preview.
 
 The current app deliberately composes only:
 
@@ -74,6 +75,9 @@ The current app deliberately composes only:
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
+- a dormant foreground-release authoring and pre-drive branch that retains
+  release-owned choices and occurrences and requires exact current session
+  evidence before review;
 - a parked three-language guidance-voice sound check that ranks installed Apple
   premium/enhanced/default voices, persists one exact preference per synthesis
   locale, and keeps audition authority separate from navigation speech;
@@ -97,16 +101,19 @@ The current app deliberately composes only:
 
 `KaidoProductJourneyModelTests` execute ordered advancement, no early review,
 compiled-route invalidation, backwards navigation, the exact catalog-backed
-release-authority blocker, user-started runtime creation and clean termination,
-and fail-closed construction errors. Product runtime tests require a foreground
-descriptor plus codec-minted authority, reject demo entries, keep synthetic
-trace input unavailable, and remove the checkpoint on termination. Catalog
-tests cover hash mutation before codec admission, role promotion, released-road
-authority, missing/corrupt assets, descriptor and identity drift, duplicate
-resources and release IDs, exact RoutePlan selection, and ambiguous matches.
-Released-editor adapter tests replay the bundled repeated occurrences through
-Simplified Chinese labels and reject a non-recipe choice without mutating the
-session.
+release-authority blocker, release-owned authoring through current pre-drive
+evidence, user-started runtime creation and clean termination, mismatched
+injected-release rejection, and fail-closed construction errors. Dedicated
+released-authoring tests cover exact route reconstruction, missing and drifting
+evidence, wrong-choice immutability, and locale changes without occurrence
+loss. Product runtime tests require a foreground descriptor plus codec-minted
+authority, reject demo entries, keep synthetic trace input unavailable, and
+remove the checkpoint on termination. Catalog tests cover hash mutation before
+codec admission, role promotion, released-road authority, missing/corrupt
+assets, descriptor and identity drift, duplicate resources and release IDs,
+exact RoutePlan selection, and ambiguous matches. Released-editor adapter tests
+replay the bundled repeated occurrences through Simplified Chinese labels and
+reject a non-recipe choice without mutating the session.
 `KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
 a locked navigation step, enters parked authoring through the primary action,
@@ -267,9 +274,15 @@ from route distance and never presents
 
 `ReleasedPreDriveReviewAdapter` applies the same evaluation to the RoutePlan
 owned by one validated `KaidoProductRelease`; tariff and passage evidence remain
-per-session inputs rather than frozen release assets. The bundled fixture is
-synthetic, and the navigation control remains locked because the app has no
-real-road product release plus current authorized session evidence.
+per-session inputs rather than frozen release assets.
+`ReleasedProductRouteAuthoringModel` requests that evidence only after the
+release-owned recipe compiles to the exact selected RoutePlan. Missing,
+snapshot-drifted, route-drifted, or rejected evidence keeps review unavailable;
+changing the interface locale rebuilds released labels without changing
+occurrence progress and reevaluates the evidence. The bundled fixture is
+synthetic, the default provider supplies no live evidence, and navigation
+remains locked because the app has no real-road product release plus current
+authorized session evidence.
 
 ## Guidance language preview
 

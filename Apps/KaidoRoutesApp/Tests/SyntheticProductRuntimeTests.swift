@@ -117,6 +117,18 @@ final class SyntheticProductRuntimeTests: XCTestCase {
     XCTAssertEqual(model.snapshot?.journeyPhase, .planning)
     XCTAssertFalse(try XCTUnwrap(model.snapshot).strictRouteAutoCommitAllowed)
     XCTAssertFalse(model.isRealRoadAuthority)
+    XCTAssertEqual(
+      model.foregroundNavigationLocationAuthority,
+      .blocked(
+        identity: model.foregroundNavigationRuntimeIdentity,
+        reason: .syntheticTestOnly
+      )
+    )
+    XCTAssertFalse(model.canConsumeForegroundNavigationLocations)
+    XCTAssertEqual(
+      model.foregroundNavigationLocationController.state,
+      .releaseBlocked(.syntheticTestOnly)
+    )
     XCTAssertNil(model.presentationProjection)
     XCTAssertEqual(model.presentationState, .awaitingGuidanceFrame)
 

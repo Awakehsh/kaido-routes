@@ -3,6 +3,12 @@ import SwiftUI
 struct SyntheticProductRuntimePanel: View {
   @Environment(\.scenePhase) private var scenePhase
   @ObservedObject var model: SyntheticProductRuntimeModel
+  @ObservedObject private var locationController: ForegroundNavigationLocationController
+
+  init(model: SyntheticProductRuntimeModel) {
+    self.model = model
+    locationController = model.foregroundNavigationLocationController
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
@@ -12,6 +18,7 @@ struct SyntheticProductRuntimePanel: View {
       actorState
       actorProjection
       lifecycleState
+      foregroundLocationState
       inputState
       speechState
       safetyNotice
@@ -27,6 +34,7 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityIdentifier("synthetic-product-runtime-panel")
     .task {
       await model.activate()
+      locationController.refreshRuntimeAvailability()
       if ProcessInfo.processInfo.arguments.contains(
         "-PRODUCT-RUNTIME-AUTO-TRACE"
       ) {
@@ -35,7 +43,7 @@ struct SyntheticProductRuntimePanel: View {
     }
     .onChange(of: scenePhase, initial: true) { _, newPhase in
       Task {
-        await model.handleScenePhase(newPhase.productRuntimePhase)
+        await handleScenePhase(newPhase.productRuntimePhase)
       }
     }
   }
@@ -251,6 +259,79 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityValue(model.inputState.label)
   }
 
+  private var foregroundLocationState: some View {
+    VStack(alignment: .leading, spacing: 9) {
+      HStack(alignment: .firstTextBaseline, spacing: 8) {
+        Text(locationController.state.label)
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .tracking(0.35)
+          .foregroundStyle(foregroundLocationColor)
+
+        Spacer()
+
+        Text("WHEN IN USE · FOREGROUND ONLY")
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+
+      Text(locationController.state.detail)
+        .font(.system(size: 10, weight: .medium))
+        .foregroundStyle(KaidoTheme.muted)
+
+      HStack(spacing: 8) {
+        RuntimeStateBadge(
+          label: "AUTH",
+          value: locationController.authorizationLabel
+        )
+        RuntimeStateBadge(
+          label: "ACCURACY",
+          value: locationController.accuracyAuthorizationLabel
+        )
+      }
+
+      HStack(spacing: 8) {
+        Button {
+          locationController.start()
+        } label: {
+          Label("启动前台定位", systemImage: "location.fill")
+            .font(.system(.caption, design: .rounded, weight: .black))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(KaidoTheme.positionCyan)
+        .disabled(!locationController.canStart)
+        .accessibilityIdentifier("product-runtime-start-live-location")
+
+        Button {
+          Task {
+            await locationController.stop()
+          }
+        } label: {
+          Label("停止", systemImage: "stop.fill")
+            .font(.system(.caption, design: .rounded, weight: .black))
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.signalAmber)
+        .disabled(!locationController.canStop)
+        .accessibilityIdentifier("product-runtime-stop-live-location")
+      }
+    }
+    .padding(11)
+    .background(KaidoTheme.asphalt.opacity(0.42))
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay(alignment: .leading) {
+      Rectangle()
+        .fill(foregroundLocationColor)
+        .frame(width: 2)
+        .padding(.vertical, 10)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-runtime-live-location")
+    .accessibilityValue(locationController.state.label)
+  }
+
   private var speechState: some View {
     HStack(alignment: .top, spacing: 10) {
       Image(systemName: speechSymbol)
@@ -290,7 +371,8 @@ struct SyntheticProductRuntimePanel: View {
 
       Text(
         "该文件完整通过产品发布门，但所有来源均为 SYNTHETIC_TEST_ONLY。"
-          + "当前 scene 未连接 CLLocationManager、后台定位或 CarPlay，"
+          + "其 live-input authority 不会构造 CLLocationManager；"
+          + "目标也没有后台定位或 CarPlay scene，"
           + "语音适配器也不会在没有一次性 prompt emission 时激活，"
           + "不可作为真实道路导航。"
       )
@@ -366,6 +448,17 @@ struct SyntheticProductRuntimePanel: View {
     }
   }
 
+  private var foregroundLocationColor: Color {
+    switch locationController.state {
+    case .running:
+      KaidoTheme.positionCyan
+    case .idle, .stopped, .awaitingAuthorization, .sceneInactive:
+      KaidoTheme.signalAmber
+    case .releaseBlocked, .runtimeUnavailable, .permissionDenied, .failed:
+      KaidoTheme.evidenceCoral
+    }
+  }
+
   private var speechSymbol: String {
     switch model.speechStatus {
     case .scheduled, .speaking:
@@ -378,6 +471,19 @@ struct SyntheticProductRuntimePanel: View {
       "speaker.slash"
     case .idle:
       "speaker"
+    }
+  }
+
+  private func handleScenePhase(
+    _ phase: SyntheticProductRuntimeScenePhase
+  ) async {
+    switch phase {
+    case .active:
+      await model.handleScenePhase(phase)
+      await locationController.handleScenePhase(phase)
+    case .inactive, .background:
+      await locationController.handleScenePhase(phase)
+      await model.handleScenePhase(phase)
     }
   }
 }

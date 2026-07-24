@@ -44,13 +44,19 @@ It requests when-in-use location only after the operator explicitly starts an
 internal calibration run with non-empty device and mount metadata. The product
 runtime panel constructs a real `NavigationSession`, but only from a complete
 joint release whose identities, sources, and licences are explicitly synthetic.
-The panel does not attach a `CLLocationManager`, display a live measured
-position, highlight an active route, run location in the background, or expose
-a CarPlay scene. Its Apple speech output remains idle without an actor-owned
-one-shot emission; synthetic test callbacks use an injected recording output
-rather than device audio. Real-road guidance still requires a coherent released
-route bundle, installed-voice and pronunciation review, and physical audio-route
-evidence.
+Its foreground-navigation controller does not construct a `CLLocationManager`
+unless a live-input authority matches the exact product release, navigation
+release, runtime policy, snapshot, RoutePlan, and matcher corridor. The bundled
+synthetic release always supplies a typed `SYNTHETIC_TEST_ONLY` blocker, so the
+panel requests no permission and displays no live measured position. An admitted
+controller would still require an explicit user start, When In Use authorization,
+an active scene, and an actor ready to accept input; inactive or background stops
+the source and drains the current callback before checkpointing. It never
+enables background location or exposes a CarPlay scene. Its Apple speech output
+remains idle without an actor-owned one-shot emission; synthetic test callbacks
+use an injected recording output rather than device audio. Real-road guidance
+still requires a coherent released product artifact, installed-voice and
+pronunciation review, and physical location/audio-route evidence.
 
 The app constructs `KaidoProductNavigationRuntime` from the joint product
 release; the package-only raw session initializer is not an adapter escape
@@ -64,7 +70,10 @@ entry as `CoreLocationObservationAdapter` → `NavigationSession.observe`. Only
 the actor's returned atomic snapshot is published. The default preview keeps
 this input disconnected, and tests prove ordered synthetic fixture callbacks
 without granting those callbacks real-road authority. No real product release
-artifact exists in the app today.
+artifact exists in the app today. Focused controller tests prove release-identity
+admission, explicit authorization, callback ordering, permission downgrade,
+scene stop without automatic resume, and distinct transient versus terminal
+Core Location failures.
 
 The main review scene also supplies one
 `FileNavigationSessionCheckpointStore` under Application Support. On

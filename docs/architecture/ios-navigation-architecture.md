@@ -336,8 +336,14 @@ CarPlay, and voice from the same frame. An update without a transient prompt
 emission may refresh the visual projection but cannot speak, while a missing or
 invalid frame exposes no driving surface. The panel's explicit fixed synthetic
 trace exercises that full path without attaching a location manager or creating
-UI-owned occurrence progress. Its default scene still has no location manager
-and keeps strict entry locked. Real-road live input, full-app focus and
+UI-owned occurrence progress. A separate foreground controller can construct an
+automotive `CLLocationManager` only after a release-bound live-input authority
+matches the actor's exact product release, navigation release, runtime policy,
+snapshot, RoutePlan, and matcher corridor. It requests When In Use authorization
+only after an explicit start, serializes callback batches, and stops plus drains
+the current callback before inactive/background checkpointing. The bundled
+synthetic scene supplies a typed authority blocker, constructs no manager, and
+keeps strict entry locked. Real-road released assets, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
 device-matrix layout, and physical display timing remain adapter work and device
 gates.
@@ -364,6 +370,9 @@ update used for speech scheduling. SwiftUI renders only that value; it does not
 recompute occurrence, movement, prompt, DecisionZone, sign, shield, lane, or
 distance semantics. A later update with the same active frame and no emission
 updates the display with `voice.shouldSpeak=false` and cannot replay the prompt.
+The foreground location controller owns only source lifecycle and ordered
+delivery; it feeds raw callback batches through the existing Apple adapters and
+never owns matching, occurrence progress, guidance, or presentation.
 
 `NavigationSessionCheckpoint` schema 1.0 is the process-restoration boundary.
 It stores only coordinate-free reducer state and binds it to the exact product
@@ -386,9 +395,11 @@ precede termination, while active resumes only future prompt delivery. A
 completed journey removes the active checkpoint on the next inactive/background
 lifecycle save. This is termination recovery, not background navigation: the
 target declares no location background mode and starts no
-`CLBackgroundActivitySession` or equivalent live location service. Real released
-assets, `CLLocationManager` navigation ownership, active background location,
-and production process/device evidence remain Apple boundaries.
+`CLBackgroundActivitySession` or equivalent background service. Foreground
+`CLLocationManager` ownership is implemented behind exact live-input authority,
+but the bundled synthetic release cannot construct it. Real released assets,
+active background navigation, and production process/device evidence remain
+Apple boundaries.
 
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor

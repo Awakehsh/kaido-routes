@@ -128,6 +128,18 @@ final class SyntheticProductRuntimeModel: ObservableObject {
   @Published private(set) var isDeterministicPreviewTraceRunning = false
 
   let fixture: SyntheticProductRuntimeFixture
+  lazy var foregroundNavigationLocationController: ForegroundNavigationLocationController = {
+    do {
+      return try ForegroundNavigationLocationController(
+        authority: foregroundNavigationLocationAuthority,
+        consumer: self
+      )
+    } catch {
+      preconditionFailure(
+        "Invalid product runtime location authority: \(error)"
+      )
+    }
+  }()
 
   private let runtime: KaidoProductNavigationRuntime
   private var observationAdapter: CoreLocationObservationAdapter
@@ -251,6 +263,13 @@ final class SyntheticProductRuntimeModel: ObservableObject {
 
   var isRealRoadAuthority: Bool {
     false
+  }
+
+  var foregroundNavigationLocationAuthority: ForegroundNavigationLocationAuthority {
+    .blocked(
+      identity: foregroundNavigationRuntimeIdentity,
+      reason: .syntheticTestOnly
+    )
   }
 
   var canRunDeterministicPreviewTrace: Bool {
@@ -629,5 +648,30 @@ final class SyntheticProductRuntimeModel: ObservableObject {
       return "CHECKPOINT_DECODE_FAILED"
     }
     return "CHECKPOINT_OPERATION_FAILED"
+  }
+}
+
+extension SyntheticProductRuntimeModel: ForegroundNavigationLocationConsuming {
+  var foregroundNavigationRuntimeIdentity: ForegroundNavigationRuntimeIdentity {
+    ForegroundNavigationRuntimeIdentity(
+      productReleaseID: productReleaseID,
+      navigationReleaseID: navigationReleaseID,
+      runtimePolicyID: runtime.entryTransitionAdmissionContext.runtimePolicyID,
+      networkSnapshotID: networkSnapshotID,
+      routePlanID: routePlanID,
+      matcherCorridorID:
+        runtime.entryTransitionAdmissionContext.matcherCorridorID
+    )
+  }
+
+  var canConsumeForegroundNavigationLocations: Bool {
+    isRealRoadAuthority && activation == .ready && acceptsLiveInput
+  }
+
+  func consumeForegroundNavigationLocations(
+    _ locations: [CLLocation],
+    receivedAt: Date
+  ) async {
+    await process(locations, receivedAt: receivedAt)
   }
 }

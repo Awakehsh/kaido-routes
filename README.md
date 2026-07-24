@@ -290,17 +290,23 @@ shared `NavigationPresentationProjection` for the SwiftUI phone surface,
 CarPlay semantics, and optional voice event. A persistent frame can refresh the
 visual projection without replaying speech; no active frame or a projection
 failure leaves the driving surface unavailable. The internal panel can execute
-one fixed synthetic adapter-to-actor trace, while the visible preview
-deliberately attaches no `CLLocationManager`. A versioned, coordinate-free
-navigation checkpoint now binds progress, recovery/egress state, and the prompt
-ledger to the exact product release, navigation release, runtime policy,
-snapshot, RoutePlan, and matcher corridor. SwiftUI scene changes stop speech and
-atomically save that checkpoint; restoration clears partial entry evidence,
-CarPlay ownership, position, matcher posterior, active presentation, and speech
-authority, then requires a fresh multi-fix matcher window. This is
-process-lifecycle recovery, not background navigation: no location background
-mode or active background location session is enabled. Real released assets and
-device lifecycle evidence remain Apple-integration gates.
+one fixed synthetic adapter-to-actor trace. A separate foreground location
+controller now owns When In Use authorization, automotive manager configuration,
+callback-order serialization, and scene shutdown. It requires an exact
+product/navigation/runtime-policy/snapshot/RoutePlan/matcher-corridor authority
+before constructing its `CLLocationManager`; the bundled
+`SYNTHETIC_TEST_ONLY` release therefore remains blocked without requesting
+permission. A versioned, coordinate-free navigation checkpoint now binds
+progress, recovery/egress state, and the prompt ledger to the exact product
+release, navigation release, runtime policy, snapshot, RoutePlan, and matcher
+corridor. SwiftUI scene changes stop the location source and drain its current
+callback before stopping speech and atomically saving that checkpoint.
+Restoration clears partial entry evidence, CarPlay ownership, position, matcher
+posterior, active presentation, and speech authority, then requires a fresh
+multi-fix matcher window. This is process-lifecycle recovery, not background
+navigation: no location background mode or active background location session
+is enabled. A real released product artifact and device lifecycle evidence
+remain Apple-integration gates.
 
 The pre-runtime release boundary is now explicit as well.
 `NavigationReleaseBundle` accepts only one active `NetworkSnapshot`, one valid

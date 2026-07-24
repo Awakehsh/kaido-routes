@@ -44,6 +44,21 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     ]
     XCTAssertTrue(lifecycle.waitForExistence(timeout: 2))
     XCTAssertEqual(lifecycle.value as? String, "FOREGROUND")
+
+    let liveLocation = reveal("product-runtime-live-location", in: app)
+    XCTAssertEqual(
+      liveLocation.value as? String,
+      "LIVE LOCATION BLOCKED"
+    )
+    XCTAssertFalse(
+      element("product-runtime-start-live-location", in: app).isEnabled
+    )
+    XCTAssertEqual(app.alerts.count, 0)
+
+    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    screenshot.name = "Synthetic live location authority blocked"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
   }
 
   func testSyntheticTraceRendersTheActorOwnedPhoneProjection() {

@@ -15,6 +15,7 @@ private enum CLIError: Error, CustomStringConvertible {
   case productAuthoring(KaidoProductReleaseAuthoringError)
   case invalidGuidanceAudio([GuidanceAudioReleaseIssue])
   case invalidPreDriveEvidence([PreDriveEvidenceBundleIssue])
+  case preDriveEvidenceAuthoring(PreDriveEvidenceAuthoringError)
   case guidanceAudioAuthoring(GuidanceAudioAuthoringError)
   case appBundleStaging(AppBundleReleaseStagingError)
 
@@ -47,6 +48,11 @@ private enum CLIError: Error, CustomStringConvertible {
         kaido-release validate-pre-drive-evidence \\
           --product-artifact <product-release.json> \\
           --manifest <pre-drive-evidence.json>
+        kaido-release build-pre-drive-evidence \\
+          --product-artifact <product-release.json> \\
+          --draft <pre-drive-evidence-draft.json> \\
+          --config <pre-drive-evidence-authoring.json> \\
+          --output <pre-drive-evidence.json>
         kaido-release prepare-app-bundle \\
           --product-artifact <product-release.json> \\
           --config <app-bundle-staging.json> \\
@@ -79,6 +85,8 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidPreDriveEvidence(let issues):
       "Pre-drive evidence bundle is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .preDriveEvidenceAuthoring(let error):
+      Self.preDriveEvidenceAuthoringDescription(error)
     case .guidanceAudioAuthoring(let error):
       Self.authoringDescription(error)
     case .appBundleStaging(let error):
@@ -140,6 +148,24 @@ private enum CLIError: Error, CustomStringConvertible {
       "Guidance audio resource is not valid PCM16 WAV: \(filename)"
     case .invalidRelease(let issues):
       "Guidance audio release is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    }
+  }
+
+  private static func preDriveEvidenceAuthoringDescription(
+    _ error: PreDriveEvidenceAuthoringError
+  ) -> String {
+    switch error {
+    case .foregroundProductRequired:
+      "Pre-drive evidence authoring requires a released-road foreground product"
+    case .invalidDraft(let issues):
+      "Pre-drive evidence draft is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidConfiguration(let issues):
+      "Pre-drive evidence authoring configuration is blocked:\n"
+        + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .invalidBundle(let issues):
+      "Pre-drive evidence authoring whole gate is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
     }
   }
@@ -210,6 +236,12 @@ private enum Command {
   case validatePreDriveEvidence(
     productArtifact: String,
     manifest: String
+  )
+  case buildPreDriveEvidence(
+    productArtifact: String,
+    draft: String,
+    configuration: String,
+    output: String
   )
   case prepareAppBundle(
     productArtifact: String,
@@ -307,6 +339,21 @@ private struct Arguments {
       command = .validatePreDriveEvidence(
         productArtifact: try flags.value("--product-artifact"),
         manifest: try flags.value("--manifest")
+      )
+    case "build-pre-drive-evidence":
+      try flags.require(
+        exactly: [
+          "--product-artifact",
+          "--draft",
+          "--config",
+          "--output",
+        ]
+      )
+      command = .buildPreDriveEvidence(
+        productArtifact: try flags.value("--product-artifact"),
+        draft: try flags.value("--draft"),
+        configuration: try flags.value("--config"),
+        output: try flags.value("--output")
       )
     case "prepare-app-bundle":
       let baseFlags: Set<String> = [
@@ -798,6 +845,57 @@ do {
     } catch PreDriveEvidenceBundleError.invalid(let issues) {
       throw CLIError.invalidPreDriveEvidence(issues)
     }
+  case .buildPreDriveEvidence(
+    let productArtifact,
+    let draftPath,
+    let configurationPath,
+    let output
+  ):
+    let release = try decodeProductRelease(path: productArtifact)
+    let draft = try decode(
+      PreDriveEvidenceBundleDraft.self,
+      path: draftPath
+    )
+    let configuration = try decode(
+      PreDriveEvidenceAuthoringConfiguration.self,
+      path: configurationPath
+    )
+    let manifest: PreDriveEvidenceBundleManifest
+    do {
+      manifest = try PreDriveEvidenceBundleAuthor.buildManifest(
+        productRelease: release,
+        draft: draft,
+        configuration: configuration
+      )
+    } catch let error as PreDriveEvidenceAuthoringError {
+      throw CLIError.preDriveEvidenceAuthoring(error)
+    }
+    let context = PreDriveEvidenceBundleContext(
+      productReleaseID: release.releaseID,
+      productReleasedAt: release.releasedAt,
+      navigationReleaseID: release.navigation.releaseID,
+      routePlan: release.navigation.bundle.routePlan,
+      evidenceScope: .releasedRoad
+    )
+    let encoded: Data
+    do {
+      encoded = try PreDriveEvidenceBundleCodec.encode(
+        manifest,
+        context: context
+      )
+    } catch PreDriveEvidenceBundleError.invalid(let issues) {
+      throw CLIError.invalidPreDriveEvidence(issues)
+    }
+    let bundle = try PreDriveEvidenceBundleCodec.decode(
+      encoded,
+      context: context
+    )
+    try writeNew(encoded, path: output)
+    print(
+      "PASS: wrote pre-drive evidence \(bundle.manifest.releaseID) with "
+        + "\(bundle.manifest.records.count) exact tariff profiles for "
+        + "\(release.releaseID); output \(output)"
+    )
   case .prepareAppBundle(
     let productArtifactPath,
     let configurationPath,

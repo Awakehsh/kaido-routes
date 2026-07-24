@@ -28,6 +28,52 @@ bundle release can authorize use early. It never reuses another vehicle class
 or payment path, and an expired record returns
 `PRE_DRIVE_EVIDENCE_EXPIRED`.
 
+## Author without copying product identity
+
+`kaido-release build-pre-drive-evidence` separates reviewed current evidence
+from release metadata and derives every product-owned identity.
+
+The schema-1.0 draft contains only:
+
+```text
+schema_version
+source_registry
+records
+```
+
+Each record retains its ID, validity window, source references, evaluation
+time, one vehicle/payment profile, passage evidence, and reviewed tariff
+values. A draft tariff quote deliberately has no entry facility, exit facility,
+vehicle class, or payment method. The draft root also has no product,
+navigation, snapshot, RoutePlan, evidence-scope, release-ID, or release-time
+field.
+
+The separate schema-1.0 authoring configuration contains only:
+
+```text
+schema_version
+release_id
+released_at
+```
+
+Build against the independently validated foreground product:
+
+```sh
+swift run kaido-release build-pre-drive-evidence \
+  --product-artifact <product-release.json> \
+  --draft <pre-drive-evidence-draft.json> \
+  --config <pre-drive-evidence-authoring.json> \
+  --output <pre-drive-evidence.json>
+```
+
+The author requires a codec-admitted
+`RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` product. It fixes the evidence scope
+to `RELEASED_ROAD`, derives the product/navigation/snapshot/RoutePlan and
+entry/exit identities, copies the record profile onto every quote, and runs the
+complete `PreDriveEvidenceBundle` gate before returning a manifest. There is no
+synthetic-mode or identity override. The CLI writes only after validation and
+refuses to overwrite an existing output.
+
 ## Validate before staging
 
 ```sh

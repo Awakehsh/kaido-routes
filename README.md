@@ -55,7 +55,10 @@ to the exact foreground product. It retains separate reviewed tariff and
 passage source roles, resolves only one exact vehicle/payment profile inside its
 declared validity window, and fails closed when missing, not yet valid, or
 expired. It does not fetch live services or claim realtime-open authority. The
-current manifest contains zero foreground releases and one
+release CLI now builds that manifest from a reviewed identity-free draft,
+deriving product, RoutePlan, entrance/exit, and quote-profile identity instead
+of accepting copied values. The current manifest contains zero foreground
+releases and one
 synthetic demo, so that branch remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
@@ -860,13 +863,20 @@ Validate separately reviewed current tariff and passage evidence against that
 exact product before App staging:
 
 ```sh
+swift run kaido-release build-pre-drive-evidence \
+  --product-artifact <product-release.json> \
+  --draft <pre-drive-evidence-draft.json> \
+  --config <pre-drive-evidence-authoring.json> \
+  --output <pre-drive-evidence.json>
+
 swift run kaido-release validate-pre-drive-evidence \
   --product-artifact <product-release.json> \
   --manifest <pre-drive-evidence.json>
 ```
 
-The bundle remains separate from versioned route authority and expires at
-runtime. See
+The author derives product, route, facility, and tariff-profile identity rather
+than accepting copied values. The bundle remains separate from versioned route
+authority and expires at runtime. See
 [`docs/contributing/pre-drive-evidence.md`](docs/contributing/pre-drive-evidence.md).
 
 After independent validation, prepare the exact Xcode-ready resources and

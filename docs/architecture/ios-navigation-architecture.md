@@ -866,7 +866,15 @@ That is a development fact, not yet the minimum deployment target.
   runtime expiry. The App catalog decodes it only beside the matching foreground
   product, and the released authoring model resolves it at the current time by
   default. Missing, not-yet-valid, expired, or unlisted profiles fail closed and
-  cannot reuse another record. Until a live authority contract exists, the
+  cannot reuse another record.
+  `PreDriveEvidenceBundleAuthor` now constructs that manifest from a
+  release-authority-free reviewed draft plus separate release metadata. The
+  exact product supplies product/navigation/snapshot/RoutePlan and
+  entrance/exit identity, while each record supplies its vehicle/payment
+  profile once; neither can be overridden per quote. The production CLI fixes
+  scope to `RELEASED_ROAD`, requires codec-minted foreground authority, and
+  writes no output before the whole bundle gate passes. Until a live authority
+  contract exists, the
   evaluator rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays
   neutral.
   SwiftUI renders the resulting KR-U04 projection and cannot derive one distance

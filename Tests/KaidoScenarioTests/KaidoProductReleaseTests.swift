@@ -1255,7 +1255,7 @@ private func productNavigationReleaseArtifact(
   )
 }
 
-private func appBundleReleasedProductData() throws -> Data {
+func appBundleReleasedProductData() throws -> Data {
   let fixture = navigationReleaseBundleFixture()
   let artifact = try KaidoProductReleaseAuthor.buildArtifact(
     navigationRelease: productNavigationReleaseArtifact(

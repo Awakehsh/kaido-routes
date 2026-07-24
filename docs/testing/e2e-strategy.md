@@ -425,6 +425,14 @@ identity/scope/profile drift, source-role completeness, and the same runtime
 validity boundary. The fixture is synthetic and cannot establish a current
 tariff, passage state, or released-road authority.
 
+Pre-drive evidence authoring is covered at the same platform-light package
+layer without adding a second portable behavior event. Focused tests require a
+codec-admitted foreground product, prove that draft JSON contains no product,
+route, facility, evidence-scope, or release identity, and verify that the
+author derives every quote profile and route-owned field before running the
+same KR-D29 bundle gate. Synthetic products, unknown input schemas, and invalid
+reviewed source coverage return no manifest.
+
 Product release authoring is covered at the same platform-light layer without a
 new route-behavior event. Focused Swift tests pass independently valid
 released-road navigation and Route Atlas fixtures to

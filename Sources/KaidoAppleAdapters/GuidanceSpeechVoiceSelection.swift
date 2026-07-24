@@ -15,6 +15,15 @@ public enum GuidanceSpeechVoiceQuality: Int, Equatable, Sendable {
       "PREMIUM"
     }
   }
+
+  public var isHigherQuality: Bool {
+    switch self {
+    case .enhanced, .premium:
+      true
+    case .defaultQuality:
+      false
+    }
+  }
 }
 
 public struct GuidanceSpeechVoiceCandidate: Equatable, Sendable {
@@ -126,29 +135,10 @@ public struct GuidanceSpeechProsody: Equatable, Sendable {
   public let preUtteranceDelay: TimeInterval
   public let postUtteranceDelay: TimeInterval
 
-  public static func navigation(languageCode: String) -> GuidanceSpeechProsody {
-    let language =
-      languageCode
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-      .replacingOccurrences(of: "_", with: "-")
-      .lowercased()
-      .split(separator: "-")
-      .first
-
-    let rate: Float
-    switch language {
-    case "ja":
-      rate = 0.46
-    case "zh":
-      rate = 0.47
-    case "en":
-      rate = 0.48
-    default:
-      rate = 0.48
-    }
+  public static func navigation(languageCode _: String) -> GuidanceSpeechProsody {
     return GuidanceSpeechProsody(
-      rate: rate,
-      pitchMultiplier: 0.98,
+      rate: 0.5,
+      pitchMultiplier: 1,
       preUtteranceDelay: 0.03,
       postUtteranceDelay: 0.02
     )

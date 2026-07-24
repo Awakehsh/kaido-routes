@@ -288,7 +288,8 @@ personal voices, and ranks premium, enhanced, then default quality. The locale's
 system default is only an equal-quality tie-break, so a generic accessibility
 character cannot displace a higher-quality normal voice. The chosen identifier,
 name, locale, and quality remain observable without granting speech authority.
-Short guidance uses conservative locale-specific rate and pitch values; these
+Short guidance keeps Apple's neutral rate and pitch; app-side tuning does not
+slow or lower compact voices in a way that exaggerates synthetic cadence. These
 values do not rewrite reviewed spoken content.
 The output
 uses `AVAudioSession.Mode.voicePrompt` with temporary `duckOthers` and
@@ -301,7 +302,8 @@ This implements scheduling and lifecycle ownership; pronunciation, output-route
 timing, interruption behavior on real phone/CarPlay hardware, and driver
 comprehension remain device evidence gates. The app cannot download an Apple
 voice asset; when a device has only default quality, the preview says so rather
-than claiming neural or enhanced synthesis.
+than claiming neural or enhanced synthesis, and exposes the device Spoken
+Content installation path after real voice resolution.
 
 `JunctionViewDefinition` is renderer-neutral data, not a retained provider image.
 It contains normalized approach, selected, and alternative paths; zero-based

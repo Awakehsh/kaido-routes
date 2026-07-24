@@ -370,9 +370,12 @@ replays it, and a missing installed voice remains a typed blocked state. They
 also exercise a deterministic installed-voice selector that excludes novelty
 and personal voices, requires the exact locale, ranks premium above enhanced
 above default quality, and uses the system default only as an equal-quality
-tie-break. Locale-specific navigation prosody is tested independently. The
-product-runtime UI test executes real Simulator voice discovery and exposes the
-selected name, locale, and quality; the current preview Simulator reports
+tie-break. Neutral Apple rate and pitch are tested independently so a compact
+voice is not made more mechanical by slow, lowered-pitch app tuning. The
+product-runtime UI test executes real Simulator voice discovery on its first
+admitted prompt and exposes the selected name, locale, and quality. A
+default-only result is marked as a basic fallback and names the iPhone Spoken
+Content voice installation path; the current preview Simulator reports
 `Kyoko / ja-JP / DEFAULT`, not an enhanced-voice qualification.
 They also save one background checkpoint, reconstruct a fresh runtime, retain
 occurrence/prompt identity, clear position/CarPlay state, and require LOW

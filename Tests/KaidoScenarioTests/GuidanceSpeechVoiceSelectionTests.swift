@@ -94,16 +94,23 @@ func speechVoiceSelectionUsesSystemDefaultTieBreak() throws {
   #expect(try #require(selected).identifier == "test.voice.system")
 }
 
-@Test("Navigation prosody is locale-specific and remains within Apple bounds")
-func navigationSpeechProsodyIsConservative() {
+@Test("Navigation prosody preserves Apple's neutral rate and pitch")
+func navigationSpeechProsodyUsesNeutralBaseline() {
   let japanese = GuidanceSpeechProsody.navigation(languageCode: "ja-JP")
   let chinese = GuidanceSpeechProsody.navigation(languageCode: "zh-CN")
   let english = GuidanceSpeechProsody.navigation(languageCode: "en-US")
 
-  #expect(japanese.rate == 0.46)
-  #expect(chinese.rate == 0.47)
-  #expect(english.rate == 0.48)
-  #expect(japanese.pitchMultiplier == 0.98)
+  #expect(japanese.rate == 0.5)
+  #expect(chinese.rate == 0.5)
+  #expect(english.rate == 0.5)
+  #expect(japanese.pitchMultiplier == 1)
   #expect(japanese.preUtteranceDelay == 0.03)
   #expect(japanese.postUtteranceDelay == 0.02)
+}
+
+@Test("Only enhanced and premium voices satisfy higher-quality readiness")
+func speechVoiceQualityReadinessIsExplicit() {
+  #expect(!GuidanceSpeechVoiceQuality.defaultQuality.isHigherQuality)
+  #expect(GuidanceSpeechVoiceQuality.enhanced.isHigherQuality)
+  #expect(GuidanceSpeechVoiceQuality.premium.isHigherQuality)
 }

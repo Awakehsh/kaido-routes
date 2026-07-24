@@ -401,9 +401,10 @@ fixtures, audio lifecycle, and the visible Japanese sign target. A device voice
 being installed is an environment fact, not a portable domain assertion. Pure
 package tests cover exact-locale filtering, novelty/personal exclusion,
 premium-enhanced-default ordering, deterministic system-default tie-breaking,
-and locale-specific navigation prosody. The iOS runtime test then reports the
-actual installed voice profile; a default-quality Simulator result is
-observability evidence, not enhanced acoustic qualification.
+explicit higher-quality readiness, and neutral Apple rate/pitch values. The iOS
+runtime test reports the actual installed voice profile after its first
+admitted prompt; a default-quality Simulator result is observability evidence,
+not enhanced acoustic qualification.
 
 ## Field-test protocol
 

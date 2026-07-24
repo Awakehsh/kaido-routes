@@ -366,6 +366,15 @@ struct SyntheticProductRuntimePanel: View {
           Text(voiceQualityDetail(voice.quality))
             .font(.system(size: 9, weight: .semibold))
             .foregroundStyle(KaidoTheme.muted.opacity(0.82))
+
+          if !voice.quality.isHigherQuality {
+            Text(
+              "iPhone：设置 → 辅助功能 → 朗读内容 → 声音 → 日语，"
+                + "下载增强或高级音色后，Kaido 会自动优先使用。"
+            )
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(KaidoTheme.signalAmber.opacity(0.9))
+          }
         }
 
         Text("一次性提示才可发声；中断结束不补播旧提示。")
@@ -506,11 +515,11 @@ struct SyntheticProductRuntimePanel: View {
   ) -> String {
     switch quality {
     case .premium:
-      "已使用设备上可用的 Premium voice。"
+      "设备已安装 Premium voice；当前优先使用该高质量音色。"
     case .enhanced:
-      "已使用设备上可用的 Enhanced voice。"
+      "设备已安装 Enhanced voice；当前优先使用该高质量音色。"
     case .defaultQuality:
-      "当前设备仅提供 Default voice；安装增强声音后会自动升级。"
+      "当前选择是基础音色，声学质量会明显偏机器感。"
     }
   }
 

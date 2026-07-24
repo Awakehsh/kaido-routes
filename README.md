@@ -178,10 +178,13 @@ turn-by-turn `voicePrompt` audio-session mode, temporary ducking, explicit
 interruption handling, and typed unavailable-voice/audio-session failures. It
 selects only an exact-locale installed voice, excludes novelty and personal
 voices, prefers premium over enhanced over default quality, and applies a
-conservative locale-specific navigation rate. The runtime panel exposes the
-actual selected voice and quality; the checked Simulator currently has only
-default-quality Japanese `Kyoko`, so enhanced/premium acoustic quality still
-requires the corresponding voice asset on a physical device. The synthetic
+neutral Apple rate and pitch so app-side tuning does not exaggerate compact
+voice cadence. After the first admitted prompt, the runtime panel exposes the
+actual selected voice and quality. A default-only result is visibly marked as a
+basic fallback with the device installation path; the checked Simulator
+currently has only default-quality Japanese `Kyoko`, so enhanced/premium
+acoustic quality still requires the corresponding voice asset on a physical
+device. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves

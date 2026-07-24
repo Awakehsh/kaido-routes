@@ -35,9 +35,11 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     XCTAssertTrue(speech.waitForExistence(timeout: 2))
     XCTAssertEqual(speech.value as? String, "IDLE")
 
-    XCTAssertTrue(
-      app.descendants(matching: .any)["product-runtime-safety"].exists
-    )
+    let safety = element("product-runtime-safety", in: app)
+    for _ in 0..<12 where !safety.exists {
+      app.swipeUp()
+    }
+    XCTAssertTrue(safety.exists)
 
     let lifecycle = app.descendants(matching: .any)[
       "product-runtime-lifecycle"

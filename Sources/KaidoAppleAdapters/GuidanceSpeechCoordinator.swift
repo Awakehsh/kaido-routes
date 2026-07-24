@@ -250,9 +250,8 @@ public final class GuidanceSpeechCoordinator {
     public static func preferredInstalledVoiceProfile(
       for languageCode: String
     ) -> GuidanceSpeechVoiceProfile? {
-      let defaultIdentifier =
-        AVSpeechSynthesisVoice(language: languageCode)?.identifier
-      let candidates = AVSpeechSynthesisVoice.speechVoices().map { voice in
+      let defaultVoice = AVSpeechSynthesisVoice(language: languageCode)
+      var candidates = AVSpeechSynthesisVoice.speechVoices().map { voice in
         let traits = traits(voice)
         return GuidanceSpeechVoiceCandidate(
           identifier: voice.identifier,
@@ -263,10 +262,27 @@ public final class GuidanceSpeechCoordinator {
           isPersonalVoice: traits.isPersonalVoice
         )
       }
+      if let defaultVoice,
+        !candidates.contains(where: {
+          $0.identifier == defaultVoice.identifier
+        })
+      {
+        let traits = traits(defaultVoice)
+        candidates.append(
+          GuidanceSpeechVoiceCandidate(
+            identifier: defaultVoice.identifier,
+            name: defaultVoice.name,
+            languageCode: defaultVoice.language,
+            quality: quality(defaultVoice.quality),
+            isNoveltyVoice: traits.isNoveltyVoice,
+            isPersonalVoice: traits.isPersonalVoice
+          )
+        )
+      }
       return GuidanceSpeechVoiceSelector.select(
         languageCode: languageCode,
         candidates: candidates,
-        systemDefaultIdentifier: defaultIdentifier
+        systemDefaultIdentifier: defaultVoice?.identifier
       )
     }
 

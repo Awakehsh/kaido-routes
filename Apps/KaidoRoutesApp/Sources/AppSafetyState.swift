@@ -143,6 +143,8 @@ final class KaidoRoutesAppModel: ObservableObject {
     savedRouteStore: (any SavedRouteLibraryStoring)? = nil,
     preDriveEvidenceUpdateStore:
       (any PreDriveEvidenceUpdateStoring)? = nil,
+    preDriveEvidenceUpdateFetcher:
+      (any PreDriveEvidenceUpdateFetching)? = nil,
     releasedPreDriveEvidenceProvider:
       ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil
   ) {
@@ -175,7 +177,8 @@ final class KaidoRoutesAppModel: ObservableObject {
       } else {
         let preDriveEvidenceUpdates = PreDriveEvidenceUpdateModel(
           entries: productReleaseCatalog.foregroundNavigationEntries,
-          store: preDriveEvidenceUpdateStore
+          store: preDriveEvidenceUpdateStore,
+          fetcher: preDriveEvidenceUpdateFetcher
         )
         self.preDriveEvidenceUpdates = preDriveEvidenceUpdates
         let evidenceProvider =

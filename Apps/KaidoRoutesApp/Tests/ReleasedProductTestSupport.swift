@@ -16,7 +16,9 @@ func makeReleasedProductTestEntry(
   includePreDriveEvidence: Bool = false,
   preDriveEvidencePaymentMethods: [ShutoPaymentMethod] = [.etc],
   preDriveEvidenceUpdateTrustKeys:
-    [PreDriveEvidenceUpdateTrustKey]? = nil
+    [PreDriveEvidenceUpdateTrustKey]? = nil,
+  preDriveEvidenceUpdateEndpoint:
+    PreDriveEvidenceUpdateEndpoint? = nil
 ) throws -> BundledProductReleaseEntry {
   guard
     let url = Bundle.main.url(
@@ -81,7 +83,9 @@ func makeReleasedProductTestEntry(
       )
     },
     preDriveEvidenceUpdateTrustKeys:
-      preDriveEvidenceUpdateTrustKeys
+      preDriveEvidenceUpdateTrustKeys,
+    preDriveEvidenceUpdateEndpoint:
+      preDriveEvidenceUpdateEndpoint
   )
   let catalog = try BundledProductReleaseCatalogLoader.load(
     descriptors: [descriptor],

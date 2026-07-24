@@ -19,6 +19,12 @@ enum PreDriveEvidenceUpdateModelError:
   case releaseIdentityReused =
     "PRE_DRIVE_EVIDENCE_UPDATE_RELEASE_IDENTITY_REUSED"
   case persistenceFailed = "PRE_DRIVE_EVIDENCE_UPDATE_PERSISTENCE_FAILED"
+  case refreshUnavailable =
+    "PRE_DRIVE_EVIDENCE_UPDATE_REFRESH_UNAVAILABLE"
+  case refreshInProgress =
+    "PRE_DRIVE_EVIDENCE_UPDATE_REFRESH_IN_PROGRESS"
+  case fetchedEnvelopeInvalid =
+    "PRE_DRIVE_EVIDENCE_UPDATE_FETCHED_ENVELOPE_INVALID"
 }
 
 protocol PreDriveEvidenceUpdateStoring: AnyObject {
@@ -120,6 +126,7 @@ final class FilePreDriveEvidenceUpdateStore:
 enum PreDriveEvidenceUpdateModelState: Equatable, Sendable {
   case unavailable
   case ready
+  case refreshing(productReleaseID: String)
   case installed(productReleaseID: String, evidenceReleaseID: String)
   case blocked(String)
 
@@ -129,6 +136,8 @@ enum PreDriveEvidenceUpdateModelState: Equatable, Sendable {
       "SIGNED UPDATE UNAVAILABLE"
     case .ready:
       "SIGNED UPDATE READY"
+    case .refreshing:
+      "SIGNED UPDATE REFRESHING"
     case .installed:
       "SIGNED UPDATE INSTALLED"
     case .blocked:
@@ -137,13 +146,14 @@ enum PreDriveEvidenceUpdateModelState: Equatable, Sendable {
   }
 }
 
-/// Owns imported current-evidence updates without changing release authority.
+/// Owns imported or explicitly fetched evidence without changing authority.
 ///
-/// The model tries every compile-time trusted foreground product and accepts
-/// exactly one signature plus whole-bundle match. Persistence occurs before an
-/// update becomes visible. A signed release cannot replace an equal or newer
-/// release, and once a newer release is effective the provider never falls
-/// back to older evidence for a missing or expired profile.
+/// Manual import tries every compile-time trusted foreground product. Explicit
+/// refresh uses only the selected product's pinned endpoint and trust registry.
+/// Both require an exact signature plus whole-bundle match. Persistence occurs
+/// before an update becomes visible. A signed release cannot replace an equal
+/// or newer release, and once a newer release is effective the provider never
+/// falls back to older evidence for a missing or expired profile.
 @MainActor
 final class PreDriveEvidenceUpdateModel: ObservableObject {
   @Published private(set) var state: PreDriveEvidenceUpdateModelState
@@ -151,12 +161,15 @@ final class PreDriveEvidenceUpdateModel: ObservableObject {
 
   private let entriesByReleaseID: [String: BundledProductReleaseEntry]
   private let store: (any PreDriveEvidenceUpdateStoring)?
+  private let fetcher: (any PreDriveEvidenceUpdateFetching)?
   private let currentDateProvider: () -> Date
   private var verifiedUpdatesByProductReleaseID: [String: VerifiedPreDriveEvidenceUpdate] = [:]
+  private var isRefreshing = false
 
   init(
     entries: [BundledProductReleaseEntry],
     store: (any PreDriveEvidenceUpdateStoring)?,
+    fetcher: (any PreDriveEvidenceUpdateFetching)? = nil,
     currentDateProvider: @escaping () -> Date = Date.init
   ) {
     entriesByReleaseID = Dictionary(
@@ -165,6 +178,9 @@ final class PreDriveEvidenceUpdateModel: ObservableObject {
       }
     )
     self.store = store
+    self.fetcher =
+      fetcher
+      ?? (try? URLSessionPreDriveEvidenceUpdateFetcher())
     self.currentDateProvider = currentDateProvider
     if entries.allSatisfy({
       $0.preDriveEvidenceUpdateTrustKeys.isEmpty
@@ -183,10 +199,24 @@ final class PreDriveEvidenceUpdateModel: ObservableObject {
   }
 
   var canImport: Bool {
-    guard store != nil else { return false }
+    guard store != nil, !isRefreshing else { return false }
     return entriesByReleaseID.values.contains {
       !$0.preDriveEvidenceUpdateTrustKeys.isEmpty
     }
+  }
+
+  func canRefresh(productReleaseID: String?) -> Bool {
+    guard
+      !isRefreshing,
+      store != nil,
+      fetcher != nil,
+      let productReleaseID,
+      let entry = entriesByReleaseID[productReleaseID]
+    else {
+      return false
+    }
+    return entry.preDriveEvidenceUpdateEndpoint != nil
+      && !entry.preDriveEvidenceUpdateTrustKeys.isEmpty
   }
 
   var trustedProductCount: Int {
@@ -196,6 +226,12 @@ final class PreDriveEvidenceUpdateModel: ObservableObject {
   }
 
   func importEnvelope(_ data: Data) {
+    guard !isRefreshing else {
+      state = .blocked(
+        PreDriveEvidenceUpdateModelError.refreshInProgress.rawValue
+      )
+      return
+    }
     guard canImport else {
       state = .blocked(
         PreDriveEvidenceUpdateModelError.trustUnavailable.rawValue
@@ -226,6 +262,67 @@ final class PreDriveEvidenceUpdateModel: ObservableObject {
     }
     let entry = match.entry
     let verified = match.update
+    installEnvelope(data, entry: entry, verified: verified)
+  }
+
+  func refresh(productReleaseID: String) async {
+    guard !isRefreshing else {
+      state = .blocked(
+        PreDriveEvidenceUpdateModelError.refreshInProgress.rawValue
+      )
+      return
+    }
+    guard
+      let entry = entriesByReleaseID[productReleaseID],
+      let endpoint = entry.preDriveEvidenceUpdateEndpoint,
+      !entry.preDriveEvidenceUpdateTrustKeys.isEmpty,
+      store != nil,
+      let fetcher
+    else {
+      state = .blocked(
+        PreDriveEvidenceUpdateModelError.refreshUnavailable.rawValue
+      )
+      return
+    }
+    isRefreshing = true
+    state = .refreshing(productReleaseID: productReleaseID)
+    defer {
+      isRefreshing = false
+    }
+    let data: Data
+    do {
+      data = try await fetcher.fetch(endpoint: endpoint)
+    } catch let error as PreDriveEvidenceUpdateFetchError {
+      state = .blocked(error.code)
+      return
+    } catch {
+      state = .blocked(
+        PreDriveEvidenceUpdateFetchError.network.code
+      )
+      return
+    }
+    let verified: VerifiedPreDriveEvidenceUpdate
+    do {
+      verified = try PreDriveEvidenceUpdateCodec.verify(
+        data,
+        productRelease: entry.release,
+        trustedKeys: entry.preDriveEvidenceUpdateTrustKeys
+      )
+    } catch {
+      state = .blocked(
+        PreDriveEvidenceUpdateModelError
+          .fetchedEnvelopeInvalid.rawValue
+      )
+      return
+    }
+    installEnvelope(data, entry: entry, verified: verified)
+  }
+
+  private func installEnvelope(
+    _ data: Data,
+    entry: BundledProductReleaseEntry,
+    verified: VerifiedPreDriveEvidenceUpdate
+  ) {
     guard isStrictlyNewer(verified, than: entry) else {
       return
     }

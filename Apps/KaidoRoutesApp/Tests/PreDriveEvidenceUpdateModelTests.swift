@@ -8,6 +8,171 @@ import XCTest
 
 @MainActor
 final class PreDriveEvidenceUpdateModelTests: XCTestCase {
+  func testExplicitHTTPSRefreshVerifiesPersistsAndPublishes() async throws {
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.app.pre-drive-evidence.refresh"
+    )
+    let endpoint = PreDriveEvidenceUpdateEndpoint(
+      url: "https://updates.kaido.test/evidence/released-road.json"
+    )
+    let entry = try makeReleasedProductTestEntry(
+      includePreDriveEvidence: true,
+      preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey],
+      preDriveEvidenceUpdateEndpoint: endpoint
+    )
+    let envelope = try makeSignedPreDriveEvidenceUpdate(
+      for: entry,
+      keyPair: keyPair,
+      releaseID: "test.pre-drive-evidence.refresh.v2",
+      releasedAt: "2026-07-25T13:00:00+09:00",
+      amountYen: 1_480
+    )
+    let fetcher = FixedPreDriveEvidenceUpdateFetcher(
+      response: .data(envelope)
+    )
+    let store = MemoryPreDriveEvidenceUpdateStore()
+    let now = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-25T13:30:00+09:00"
+      )
+    )
+    let model = PreDriveEvidenceUpdateModel(
+      entries: [entry],
+      store: store,
+      fetcher: fetcher,
+      currentDateProvider: { now }
+    )
+    var evidenceChangeCount = 0
+    model.evidenceDidChange = {
+      evidenceChangeCount += 1
+    }
+
+    XCTAssertTrue(
+      model.canRefresh(productReleaseID: entry.release.releaseID)
+    )
+    await model.refresh(productReleaseID: entry.release.releaseID)
+
+    let requestedEndpoints = await fetcher.requestedEndpoints()
+    XCTAssertEqual(requestedEndpoints, [endpoint])
+    XCTAssertEqual(
+      model.state,
+      .installed(
+        productReleaseID: entry.release.releaseID,
+        evidenceReleaseID: "test.pre-drive-evidence.refresh.v2"
+      )
+    )
+    XCTAssertEqual(store.values[entry.release.releaseID], envelope)
+    XCTAssertEqual(evidenceChangeCount, 1)
+    XCTAssertEqual(
+      try model.evidence(
+        for: entry,
+        session: preDriveEvidenceUpdateSession(for: entry)
+      )?.tariffQuotes.first?.estimatedAmountYen,
+      1_480
+    )
+  }
+
+  func testRefreshFailureNeverReplacesBundledEvidence() async throws {
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.app.pre-drive-evidence.refresh-failure"
+    )
+    let entry = try makeReleasedProductTestEntry(
+      includePreDriveEvidence: true,
+      preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey],
+      preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint(
+        url: "https://updates.kaido.test/evidence/failure.json"
+      )
+    )
+    let store = MemoryPreDriveEvidenceUpdateStore()
+    let now = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-25T13:30:00+09:00"
+      )
+    )
+    let invalidFetcher = FixedPreDriveEvidenceUpdateFetcher(
+      response: .data(Data("not-a-signed-envelope".utf8))
+    )
+    let invalidModel = PreDriveEvidenceUpdateModel(
+      entries: [entry],
+      store: store,
+      fetcher: invalidFetcher,
+      currentDateProvider: { now }
+    )
+
+    await invalidModel.refresh(
+      productReleaseID: entry.release.releaseID
+    )
+
+    XCTAssertEqual(
+      invalidModel.state,
+      .blocked(
+        PreDriveEvidenceUpdateModelError
+          .fetchedEnvelopeInvalid.rawValue
+      )
+    )
+    XCTAssertTrue(store.values.isEmpty)
+    XCTAssertEqual(
+      try invalidModel.evidence(
+        for: entry,
+        session: preDriveEvidenceUpdateSession(for: entry)
+      )?.tariffQuotes.first?.estimatedAmountYen,
+      1_320
+    )
+
+    let networkModel = PreDriveEvidenceUpdateModel(
+      entries: [entry],
+      store: store,
+      fetcher: FixedPreDriveEvidenceUpdateFetcher(
+        response: .failure(.timedOut)
+      ),
+      currentDateProvider: { now }
+    )
+    await networkModel.refresh(
+      productReleaseID: entry.release.releaseID
+    )
+    XCTAssertEqual(
+      networkModel.state,
+      .blocked(
+        PreDriveEvidenceUpdateFetchError.timedOut.code
+      )
+    )
+    XCTAssertTrue(store.values.isEmpty)
+  }
+
+  func testRefreshRequiresTheSelectedProductPinnedEndpoint()
+    async throws
+  {
+    let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+      keyID: "test.app.pre-drive-evidence.no-endpoint"
+    )
+    let entry = try makeReleasedProductTestEntry(
+      includePreDriveEvidence: true,
+      preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey]
+    )
+    let fetcher = FixedPreDriveEvidenceUpdateFetcher(
+      response: .failure(.network)
+    )
+    let model = PreDriveEvidenceUpdateModel(
+      entries: [entry],
+      store: MemoryPreDriveEvidenceUpdateStore(),
+      fetcher: fetcher
+    )
+
+    XCTAssertFalse(
+      model.canRefresh(productReleaseID: entry.release.releaseID)
+    )
+    await model.refresh(productReleaseID: entry.release.releaseID)
+
+    XCTAssertEqual(
+      model.state,
+      .blocked(
+        PreDriveEvidenceUpdateModelError.refreshUnavailable.rawValue
+      )
+    )
+    let requestedEndpoints = await fetcher.requestedEndpoints()
+    XCTAssertTrue(requestedEndpoints.isEmpty)
+  }
+
   func testFileStoreAtomicallyRoundTripsOneProductEnvelope() throws {
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent(
@@ -338,6 +503,38 @@ final class PreDriveEvidenceUpdateModelTests: XCTestCase {
       )?.tariffQuotes.first?.estimatedAmountYen,
       1_480
     )
+  }
+}
+
+private actor FixedPreDriveEvidenceUpdateFetcher:
+  PreDriveEvidenceUpdateFetching
+{
+  enum Response: Sendable {
+    case data(Data)
+    case failure(PreDriveEvidenceUpdateFetchError)
+  }
+
+  private let response: Response
+  private var endpoints: [PreDriveEvidenceUpdateEndpoint] = []
+
+  init(response: Response) {
+    self.response = response
+  }
+
+  func fetch(
+    endpoint: PreDriveEvidenceUpdateEndpoint
+  ) async throws -> Data {
+    endpoints.append(endpoint)
+    switch response {
+    case .data(let data):
+      return data
+    case .failure(let error):
+      throw error
+    }
+  }
+
+  func requestedEndpoints() -> [PreDriveEvidenceUpdateEndpoint] {
+    endpoints
   }
 }
 

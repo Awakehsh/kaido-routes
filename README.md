@@ -57,14 +57,16 @@ declared validity window, and fails closed when missing, not yet valid, or
 expired. It does not fetch live services or claim realtime-open authority. The
 release CLI now builds that manifest from a reviewed identity-free draft,
 deriving product, RoutePlan, entrance/exit, and quote-profile identity instead
-of accepting copied values. A schema-1.1 App staging descriptor may additionally
-pin public Ed25519 trust roots for manually imported evidence updates. The CLI
-generates an offline private/public key pair, signs exact validated manifest
-bytes, and validates the self-contained envelope. The App accepts exactly one
-trusted whole-product match, persists before publishing, rejects rollback and
-release-ID reuse, revalidates on restoration, and never falls back after a
-newer effective bundle loses or expires a profile. The current manifest
-contains zero foreground releases and one synthetic demo, so that branch
+of accepting copied values. A schema-1.2 App staging descriptor may
+additionally pin public Ed25519 trust roots and one exact credential-free HTTPS
+JSON endpoint for signed evidence updates. The CLI generates an offline
+private/public key pair, signs exact validated manifest bytes, and validates
+the self-contained envelope. The parked App can import that envelope locally or
+explicitly fetch it from the selected product's pinned endpoint. Both paths
+require the same whole-product signature validation, persist before publishing,
+reject rollback and release-ID reuse, revalidate on restoration, and never fall
+back after a newer effective bundle loses or expires a profile. The current
+manifest contains zero foreground releases and one synthetic demo, so that branch
 remains dormant. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only

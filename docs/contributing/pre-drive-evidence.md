@@ -127,7 +127,7 @@ swift run kaido-release generate-pre-drive-evidence-signing-key \
 The directory contains `private-key.bin` with mode `0600` and a public
 `trust-key.json`. Keep the private key outside the repository, App bundle,
 staging output, logs, backups shared with reviewers, and user-facing update
-files. Only the public trust descriptor belongs in the schema-1.1 App-bundle
+files. Only the public trust descriptor belongs in the schema-1.2 App-bundle
 staging configuration:
 
 ```json
@@ -138,9 +138,19 @@ staging configuration:
       "key_id": "<stable-key-id>",
       "public_key_base64": "<public-key-base64>"
     }
-  ]
+  ],
+  "pre_drive_evidence_update_endpoint": {
+    "url": "https://updates.example.org/kaido/<product-release-id>.json"
+  }
 }
 ```
+
+The endpoint is optional. When present, it is one compile-time reviewed,
+credential-free HTTPS JSON URL for that exact foreground product. The App
+fetches it only after the parked user explicitly requests a refresh. The
+transport rejects redirects, final-URL drift, non-200 responses, non-JSON
+content, credentials, cookies, caches, and envelopes above the codec limit.
+Manual local JSON import remains available when trust is enrolled.
 
 After authoring and validating a newer evidence manifest, sign its exact bytes:
 
@@ -163,15 +173,16 @@ product. The envelope signs a domain separator, key ID, and unmodified manifest
 bytes; its SHA-256 is checked before signature verification. Existing outputs
 are never overwritten.
 
-The parked App import tries every compile-time trusted foreground product and
-requires exactly one signature plus whole-bundle match. It rejects an equal or
-older release timestamp and any reused evidence release ID, persists the
-envelope before publishing it, and verifies it again on restoration. A future
-signed release waits until its own release time. Once a newer release is
-effective, an expired or missing profile fails closed instead of falling back
-to bundled evidence. Updating or revoking trust roots still requires a reviewed
-App release.
+The parked App import tries every compile-time trusted foreground product. An
+explicit endpoint refresh instead verifies only the selected product's pinned
+endpoint and trust registry. Both paths require the same signature plus
+whole-bundle match. They reject an equal or older release timestamp and any
+reused evidence release ID, persist the envelope before publishing it, and
+verify it again on restoration. A future signed release waits until its own
+release time. Once a newer release is effective, an expired or missing profile
+fails closed instead of falling back to bundled evidence. Updating an endpoint,
+rotating a key, or revoking trust still requires a reviewed App release.
 
-This boundary is deliberately manual and local. It does not fetch operator or
-traffic services, grant route or navigation authority, claim realtime passage,
-or establish that signed source claims are true.
+This boundary fetches only a project-controlled signed envelope. It does not
+integrate an operator or traffic service, grant route or navigation authority,
+claim realtime passage, or establish that signed source claims are true.

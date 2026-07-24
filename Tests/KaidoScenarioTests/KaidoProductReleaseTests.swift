@@ -543,6 +543,14 @@ func appBundleStagingPreparesForegroundProduct() throws {
   #expect(package == repeated)
   #expect(decodedConfiguration == configuration)
   #expect(decodedManifest == package.manifest)
+  #expect(
+    decodedConfiguration.schemaVersion
+      == AppBundleReleaseStagingConfiguration.currentSchemaVersion
+  )
+  #expect(
+    decodedManifest.schemaVersion
+      == AppBundleReleaseStagingManifest.currentSchemaVersion
+  )
   #expect(package.manifest.descriptor.role == .foregroundNavigation)
   #expect(
     package.manifest.descriptor.expectedReleaseID
@@ -595,10 +603,14 @@ func appBundleStagingPinsPreDriveEvidenceUpdateTrust() throws {
   let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
     keyID: "test.pre-drive-evidence.2026"
   )
+  let endpoint = PreDriveEvidenceUpdateEndpoint(
+    url: "https://updates.kaido.test/evidence/k7.json"
+  )
   let configuration = AppBundleReleaseStagingConfiguration(
     descriptorSymbol: "releasedK7WithEvidenceTrust",
     productResourceName: "k7-product",
-    preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey]
+    preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey],
+    preDriveEvidenceUpdateEndpoint: endpoint
   )
 
   let package = try AppBundleReleaseStagingAuthor.prepare(
@@ -617,6 +629,10 @@ func appBundleStagingPinsPreDriveEvidenceUpdateTrust() throws {
       == [keyPair.trustKey]
   )
   #expect(
+    package.manifest.descriptor.preDriveEvidenceUpdateEndpoint
+      == endpoint
+  )
+  #expect(
     sourceText.contains(
       "PreDriveEvidenceUpdateTrustKey("
     )
@@ -629,6 +645,16 @@ func appBundleStagingPinsPreDriveEvidenceUpdateTrust() throws {
   #expect(
     sourceText.contains(
       "publicKeyBase64: \"\(keyPair.trustKey.publicKeyBase64)\""
+    )
+  )
+  #expect(
+    sourceText.contains(
+      "PreDriveEvidenceUpdateEndpoint("
+    )
+  )
+  #expect(
+    sourceText.contains(
+      "url: \"https://updates.kaido.test/evidence/k7.json\""
     )
   )
 }
@@ -655,6 +681,55 @@ func appBundleStagingRejectsInvalidPreDriveEvidenceUpdateTrust() throws {
     Issue.record("Expected duplicate signed update trust to fail")
   } catch AppBundleReleaseStagingError.invalidConfiguration(let issues) {
     #expect(issues == [.invalidPreDriveEvidenceUpdateTrustKeys])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("App bundle staging rejects invalid or untrusted update endpoints")
+func appBundleStagingRejectsInvalidPreDriveEvidenceUpdateEndpoint()
+  throws
+{
+  let keyPair = try PreDriveEvidenceUpdateCodec.generateSigningKeyPair(
+    keyID: "test.pre-drive-evidence.endpoint"
+  )
+  let productData = try appBundleReleasedProductData()
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: AppBundleReleaseStagingConfiguration(
+        descriptorSymbol: "releasedK7WithHTTPUpdate",
+        productResourceName: "k7-product",
+        preDriveEvidenceUpdateTrustKeys: [keyPair.trustKey],
+        preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint(
+          url: "http://updates.kaido.test/evidence/k7.json"
+        )
+      ),
+      productArtifactData: productData
+    )
+    Issue.record("Expected a non-HTTPS update endpoint to fail")
+  } catch AppBundleReleaseStagingError.invalidConfiguration(let issues) {
+    #expect(issues == [.invalidPreDriveEvidenceUpdateEndpoint])
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: AppBundleReleaseStagingConfiguration(
+        descriptorSymbol: "releasedK7WithUntrustedUpdate",
+        productResourceName: "k7-product",
+        preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint(
+          url: "https://updates.kaido.test/evidence/k7.json"
+        )
+      ),
+      productArtifactData: productData
+    )
+    Issue.record("Expected an endpoint without trust roots to fail")
+  } catch AppBundleReleaseStagingError.invalidConfiguration(let issues) {
+    #expect(
+      issues == [.incompletePreDriveEvidenceUpdateConfiguration]
+    )
   } catch {
     Issue.record("Unexpected error: \(error)")
   }

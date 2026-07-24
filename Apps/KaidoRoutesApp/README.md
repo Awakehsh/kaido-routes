@@ -72,16 +72,19 @@ ID-only, injected mismatched-release, or synthetic-review fallback. The current
 manifest contains `0 RELEASED ROAD · 1 DEMO`, so the released authoring branch
 remains dormant and the default scene retains its synthetic preview.
 
-A foreground descriptor may also pin public Ed25519 keys for signed pre-drive
-evidence updates. The parked authoring and review stages expose a JSON importer
-only when both compile-time trust and the Application Support store exist. One
-envelope must verify against exactly one foreground product and the complete
-evidence bundle contract. The model rejects rollback and release-ID reuse,
-persists before publishing, verifies again after restart, and refreshes an
-already selected vehicle/payment review. A future release waits until its
-declared time; after activation, a missing or expired profile does not fall back
-to older bundled evidence. Import never changes product, RoutePlan, location,
-prompt, or navigation authority.
+A foreground descriptor may also pin public Ed25519 keys and one exact,
+credential-free HTTPS JSON endpoint for signed pre-drive evidence updates. The
+parked authoring and review stages expose manual JSON import when compile-time
+trust and the Application Support store exist, plus an explicit refresh action
+when the selected product also has a pinned endpoint. The bounded transport
+rejects redirects, final-URL drift, credentials, cookies, caches, non-JSON
+responses, and oversized envelopes. Both paths revalidate the complete evidence
+bundle contract. The model rejects rollback and release-ID reuse, persists
+before publishing, verifies again after restart, and refreshes an already
+selected vehicle/payment review. A future release waits until its declared
+time; after activation, a missing or expired profile does not fall back to older
+bundled evidence. Neither path changes product, RoutePlan, location, prompt, or
+navigation authority.
 
 The current app deliberately composes only:
 
@@ -98,9 +101,9 @@ The current app deliberately composes only:
 - a dormant foreground-release authoring and pre-drive branch that retains
   release-owned choices and occurrences and requires exact current session
   evidence before review;
-- a dormant signed pre-drive evidence importer whose public trust roots are
-  compile-time product descriptors and whose accepted envelope is atomically
-  retained under Application Support;
+- a dormant signed pre-drive evidence importer and explicit pinned-endpoint
+  refresher whose public trust roots are compile-time product descriptors and
+  whose accepted envelope is atomically retained under Application Support;
 - a parked three-language guidance-voice sound check that ranks installed Apple
   premium/enhanced/default voices, persists one exact preference per synthesis
   locale, and keeps audition authority separate from navigation speech;

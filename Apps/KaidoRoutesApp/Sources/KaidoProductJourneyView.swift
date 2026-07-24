@@ -283,7 +283,9 @@ struct KaidoProductJourneyView: View {
           model.composition.preDriveEvidenceUpdates
         {
           PreDriveEvidenceUpdatePanel(
-            model: preDriveEvidenceUpdates
+            model: preDriveEvidenceUpdates,
+            selectedProductReleaseID:
+              releasedRouteAuthoring.selectedEntry?.release.releaseID
           )
         }
       } else {
@@ -352,7 +354,9 @@ struct KaidoProductJourneyView: View {
           model.composition.preDriveEvidenceUpdates
         {
           PreDriveEvidenceUpdatePanel(
-            model: preDriveEvidenceUpdates
+            model: preDriveEvidenceUpdates,
+            selectedProductReleaseID:
+              releasedRouteAuthoring.selectedEntry?.release.releaseID
           )
         }
         PreDriveReviewPanel(

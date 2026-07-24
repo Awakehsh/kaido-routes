@@ -32,6 +32,7 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   let guidanceAudioRelease: GuidanceAudioRelease?
   let preDriveEvidenceBundle: PreDriveEvidenceBundle?
   let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]
+  let preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint?
   let encodedByteCount: Int
 
   fileprivate init(
@@ -41,6 +42,8 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
     preDriveEvidenceBundle: PreDriveEvidenceBundle?,
     preDriveEvidenceUpdateTrustKeys:
       [PreDriveEvidenceUpdateTrustKey],
+    preDriveEvidenceUpdateEndpoint:
+      PreDriveEvidenceUpdateEndpoint?,
     encodedByteCount: Int
   ) {
     self.descriptor = descriptor
@@ -49,6 +52,8 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
     self.preDriveEvidenceBundle = preDriveEvidenceBundle
     self.preDriveEvidenceUpdateTrustKeys =
       preDriveEvidenceUpdateTrustKeys
+    self.preDriveEvidenceUpdateEndpoint =
+      preDriveEvidenceUpdateEndpoint
     self.encodedByteCount = encodedByteCount
   }
 }
@@ -114,6 +119,9 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
   case preDriveEvidenceReleaseIdentityMismatch(String)
   case invalidPreDriveEvidenceUpdateTrust(String)
   case preDriveEvidenceUpdateTrustRoleMismatch(String)
+  case invalidPreDriveEvidenceUpdateEndpoint(String)
+  case preDriveEvidenceUpdateEndpointTrustMismatch(String)
+  case preDriveEvidenceUpdateEndpointRoleMismatch(String)
 
   var code: String {
     switch self {
@@ -165,6 +173,12 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
       "PRE_DRIVE_EVIDENCE_UPDATE_TRUST_INVALID"
     case .preDriveEvidenceUpdateTrustRoleMismatch:
       "PRE_DRIVE_EVIDENCE_UPDATE_TRUST_ROLE_MISMATCH"
+    case .invalidPreDriveEvidenceUpdateEndpoint:
+      "PRE_DRIVE_EVIDENCE_UPDATE_ENDPOINT_INVALID"
+    case .preDriveEvidenceUpdateEndpointTrustMismatch:
+      "PRE_DRIVE_EVIDENCE_UPDATE_ENDPOINT_TRUST_MISMATCH"
+    case .preDriveEvidenceUpdateEndpointRoleMismatch:
+      "PRE_DRIVE_EVIDENCE_UPDATE_ENDPOINT_ROLE_MISMATCH"
     }
   }
 }
@@ -272,6 +286,22 @@ enum BundledProductReleaseCatalogLoader {
             )
         }
       }
+      if let endpoint = descriptor.preDriveEvidenceUpdateEndpoint {
+        guard endpoint.validatedURL != nil else {
+          throw
+            BundledProductReleaseCatalogError
+            .invalidPreDriveEvidenceUpdateEndpoint(
+              descriptor.resourceFilename
+            )
+        }
+        guard descriptor.preDriveEvidenceUpdateTrustKeys != nil else {
+          throw
+            BundledProductReleaseCatalogError
+            .preDriveEvidenceUpdateEndpointTrustMismatch(
+              descriptor.resourceFilename
+            )
+        }
+      }
       guard resourceFilenames.insert(descriptor.resourceFilename).inserted else {
         throw BundledProductReleaseCatalogError.duplicateResource(
           descriptor.resourceFilename
@@ -316,6 +346,15 @@ enum BundledProductReleaseCatalogLoader {
         throw BundledProductReleaseCatalogError.releaseRoleMismatch(
           descriptor.resourceFilename
         )
+      }
+      if descriptor.preDriveEvidenceUpdateEndpoint != nil,
+        descriptor.role != .foregroundNavigation
+      {
+        throw
+          BundledProductReleaseCatalogError
+          .preDriveEvidenceUpdateEndpointRoleMismatch(
+            descriptor.resourceFilename
+          )
       }
       if descriptor.preDriveEvidenceUpdateTrustKeys != nil,
         descriptor.role != .foregroundNavigation
@@ -453,6 +492,8 @@ enum BundledProductReleaseCatalogLoader {
           preDriveEvidenceBundle: preDriveEvidenceBundle,
           preDriveEvidenceUpdateTrustKeys:
             descriptor.preDriveEvidenceUpdateTrustKeys ?? [],
+          preDriveEvidenceUpdateEndpoint:
+            descriptor.preDriveEvidenceUpdateEndpoint,
           encodedByteCount: data.count
         )
       )

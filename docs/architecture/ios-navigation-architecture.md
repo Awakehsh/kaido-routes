@@ -619,13 +619,15 @@ construction.
 `AppBundleReleaseStagingAuthor` is the package-time bridge into this boundary.
 It accepts only a production-decoded foreground product, optionally revalidates
 one complete exact-product guidance-audio release, retains all artifact bytes,
-optionally pins public Ed25519 pre-drive evidence update trust roots, and derives
-the shared descriptor values and per-resource audit hashes.
+optionally pins public Ed25519 pre-drive evidence update trust roots and one
+exact credential-free HTTPS JSON endpoint, and derives the shared descriptor
+values and per-resource audit hashes.
 `kaido-release prepare-app-bundle` writes those resources plus a generated
 compile-time descriptor into a new atomic staging directory. It refuses
 synthetic products, partial audio input, unsafe names, duplicate resources,
-invalid or duplicate trust keys, and existing output. Private signing keys are
-never staging inputs. A maintainer must still review and explicitly enroll the
+invalid or duplicate trust keys, an endpoint without trust, unsafe endpoint
+syntax, and existing output. Private signing keys are never staging inputs. A
+maintainer must still review and explicitly enroll the
 generated static symbol in the App manifest; no runtime scanning or automatic
 promotion is introduced.
 
@@ -882,17 +884,20 @@ That is a development fact, not yet the minimum deployment target.
   profile once; neither can be overridden per quote. The production CLI fixes
   scope to `RELEASED_ROAD`, requires codec-minted foreground authority, and
   writes no output before the whole bundle gate passes.
-  `PreDriveEvidenceUpdateCodec` adds a manual refresh boundary without changing
+  `PreDriveEvidenceUpdateCodec` adds a signed refresh boundary without changing
   product or RoutePlan authority. It signs exact validated manifest bytes with
   Ed25519 and verifies a domain separator, key ID, SHA-256, compile-time public
-  key, exact foreground product, and the whole evidence bundle. The App accepts
-  one unambiguous trusted product, rejects rollback and release-ID reuse,
+  key, exact foreground product, and the whole evidence bundle. The parked App
+  supports manual local import and an explicit refresh from one compile-time
+  pinned, credential-free HTTPS JSON endpoint for the selected product. The
+  bounded transport rejects redirects, final-URL drift, credentials, cookies,
+  caches, non-200 or non-JSON responses, and oversized envelopes; it cannot
+  bypass codec validation. The App rejects rollback and release-ID reuse,
   persists before publishing, and re-verifies on restoration. A future bundle
   cannot activate early, and once effective it cannot fall back to older
-  profiles. Trust rotation or revocation still requires an App release; no
-  network update transport exists. Until a live authority contract exists, the
-  evaluator rejects `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays
-  neutral.
+  profiles. Endpoint changes, trust rotation, or revocation still require an
+  App release. Until a live authority contract exists, the evaluator rejects
+  `REALTIME_CONFIRMED_PASSABLE`; realtime-unconfirmed stays neutral.
   SwiftUI renders the resulting KR-U04 projection and cannot derive one distance
   from the other. `ReleasedPreDriveReviewAdapter` exposes the same evaluator for
   one validated joint product release. Its evidence remains a separate
@@ -902,7 +907,7 @@ That is a development fact, not yet the minimum deployment target.
   demotes the shell back to authoring and terminates an active runtime rather
   than retaining stale readiness. The checked preview descriptor contains no
   released evidence bundle, so its visible branch remains dormant; a future
-  network refresh transport still requires independent authority, freshness,
+  operator-backed live refresh still requires independent authority, freshness,
   data-use, and failure-policy review.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the

@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct PreDriveEvidenceUpdatePanel: View {
   @ObservedObject var model: PreDriveEvidenceUpdateModel
+  let selectedProductReleaseID: String?
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
 
   @State private var isImporting = false
@@ -45,24 +46,67 @@ struct PreDriveEvidenceUpdatePanel: View {
         )
       }
 
-      Button {
-        isImporting = true
-      } label: {
-        Label(
-          copy.resolve(
-            japanese: "署名済み更新を読み込む",
-            simplifiedChinese: "导入签名更新",
-            english: "Import signed update"
-          ),
-          systemImage: "checkmark.shield.fill"
+      VStack(spacing: 8) {
+        if let selectedProductReleaseID,
+          model.canRefresh(
+            productReleaseID: selectedProductReleaseID
+          )
+            || model.state
+              == .refreshing(
+                productReleaseID: selectedProductReleaseID
+              )
+        {
+          Button {
+            Task {
+              await model.refresh(
+                productReleaseID: selectedProductReleaseID
+              )
+            }
+          } label: {
+            Label(
+              copy.resolve(
+                japanese: "署名済み証拠を更新",
+                simplifiedChinese: "刷新签名证据",
+                english: "Refresh signed evidence"
+              ),
+              systemImage: "arrow.clockwise.shield.fill"
+            )
+            .frame(maxWidth: .infinity)
+            .font(.system(size: 12, weight: .black))
+          }
+          .buttonStyle(.borderedProminent)
+          .tint(KaidoTheme.positionCyan)
+          .disabled(
+            !model.canRefresh(
+              productReleaseID: selectedProductReleaseID
+            )
+          )
+          .accessibilityIdentifier(
+            "pre-drive-evidence-update-refresh"
+          )
+        }
+
+        Button {
+          isImporting = true
+        } label: {
+          Label(
+            copy.resolve(
+              japanese: "署名済み更新を読み込む",
+              simplifiedChinese: "导入签名更新",
+              english: "Import signed update"
+            ),
+            systemImage: "checkmark.shield.fill"
+          )
+          .frame(maxWidth: .infinity)
+          .font(.system(size: 12, weight: .black))
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.positionCyan)
+        .disabled(!model.canImport)
+        .accessibilityIdentifier(
+          "pre-drive-evidence-update-import"
         )
-        .frame(maxWidth: .infinity)
-        .font(.system(size: 12, weight: .black))
       }
-      .buttonStyle(.borderedProminent)
-      .tint(KaidoTheme.positionCyan)
-      .disabled(!model.canImport)
-      .accessibilityIdentifier("pre-drive-evidence-update-import")
 
       Text(statusDetail)
         .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -105,6 +149,8 @@ struct PreDriveEvidenceUpdatePanel: View {
     switch model.state {
     case .ready, .installed:
       KaidoTheme.positionCyan
+    case .refreshing:
+      KaidoTheme.signalAmber
     case .unavailable:
       KaidoTheme.muted
     case .blocked:
@@ -128,6 +174,13 @@ struct PreDriveEvidenceUpdatePanel: View {
           "\(model.trustedProductCount) 个 product release 可接收签名更新。",
         english:
           "\(model.trustedProductCount) product release(s) accept signed updates."
+      )
+    case .refreshing(let productReleaseID):
+      copy.resolve(
+        japanese: "\(productReleaseID) の固定 HTTPS 取得先を確認中。",
+        simplifiedChinese: "正在检查 \(productReleaseID) 的固定 HTTPS 端点。",
+        english:
+          "Checking the pinned HTTPS endpoint for \(productReleaseID)."
       )
     case .installed(let productReleaseID, let evidenceReleaseID):
       "\(productReleaseID) · \(evidenceReleaseID)"

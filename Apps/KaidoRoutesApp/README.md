@@ -410,6 +410,20 @@ first:
 xcodebuild -downloadPlatform iOS
 ```
 
+## Physical-iPhone App baseline
+
+Use `scripts/run_ios_device_qualification.py` instead of changing the Simulator
+command when collecting physical-device App evidence. It rejects Simulator,
+offline or ambiguous destinations, dirty source, failed/skipped tests, unsafe
+tracked output, and existing evidence directories before a passing receipt can
+exist. Raw `.xcresult`, summary, and build logs remain in ignored private
+storage; the coordinate-free receipt excludes device identifier and name.
+
+This runner executes the current App unit/UI suite only. It does not qualify
+voice naturalness, pronunciation, real released-road content, positioning,
+CarPlay, or background navigation. See
+[`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
+
 ## Regenerate the Xcode project
 
 `project.yml` is the source for the generated project. XcodeGen 2.45.3 generated

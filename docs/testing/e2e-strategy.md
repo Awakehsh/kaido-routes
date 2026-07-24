@@ -448,6 +448,14 @@ test reports the actual installed voice profile after its first admitted prompt;
 the separate parked model tests use injected audio. A default-quality Simulator
 result is observability evidence, not enhanced acoustic qualification.
 
+The complete App scheme now has a separate physical-iPhone runner. It resolves
+one exact `xcdevice` entry, rejects Simulator/offline destinations and dirty
+source, requires zero failed/skipped/expected-failure tests in the physical
+`.xcresult`, and hashes the private evidence into a coordinate-free receipt.
+The receipt explicitly remains only an App physical-test baseline; it cannot
+assert road release, acoustic quality, pronunciation, location accuracy,
+CarPlay, or background navigation.
+
 ## Field-test protocol
 
 Field tests require a separate, dated test plan and safe roles:

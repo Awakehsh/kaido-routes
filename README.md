@@ -837,6 +837,21 @@ real-road navigation authority. See
 [`Apps/KaidoRoutesApp/README.md`](Apps/KaidoRoutesApp/README.md) for Xcode,
 Preview Canvas, regeneration, and test instructions.
 
+When an exact physical iPhone is online, run the complete App scheme through the
+fail-closed private-evidence runner:
+
+```sh
+python3 scripts/run_ios_device_qualification.py \
+  --device-id <private-device-identifier> \
+  --preflight-only
+```
+
+The full run requires a clean commit and a new ignored output directory, rejects
+Simulator and incomplete test results, and produces a coordinate-free receipt
+that explicitly grants no road, acoustic, CarPlay, or background-navigation
+authority. See
+[`docs/testing/ios-physical-device-qualification.md`](docs/testing/ios-physical-device-qualification.md).
+
 ## Safety
 
 Kaido Routes is for lawful route planning, driving assistance, and road-culture

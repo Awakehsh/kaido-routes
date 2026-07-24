@@ -416,6 +416,14 @@ interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
 device-matrix layout, and physical display timing remain adapter work and device
 gates.
 
+`run_ios_device_qualification.py` makes the first of those gates repeatable. It
+accepts only one exact online physical iPhone, binds the complete App scheme to
+a clean source commit, requires a zero-failure/zero-skip physical `.xcresult`,
+and hashes private raw evidence into a receipt without device ID, device name,
+coordinates, raw traces, audio, or paths. The receipt deliberately keeps
+acoustic, pronunciation, road, CarPlay, and background-navigation authority
+false; those remain separate exact-release reviews.
+
 `NavigationSession` now owns the executable runtime ordering of these pieces.
 One matcher observation produces one atomic update containing matcher diagnostics,
 the resulting `NavigationSnapshot`, bridge status, resolved progress when safe,

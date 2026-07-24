@@ -166,6 +166,11 @@ permitted-movement part of this road-level evidence gap. It does not name an
 official municipal road route. The exact road identity remains a separate
 official road-register review, and Route Atlas release still requires production
 schematic review, occurrence bindings, attribution, and the other release gates.
+The later topology review must bind the canonical SHA-256 of this exact private
+manifest; a different field manifest cannot inherit its approval. The subsequent
+layout approval depends on the current topology approval and must use a different
+reviewer. Merely changing topology or layout evidence state to `RELEASED` cannot
+replace either review.
 
 The tracked aggregate decision binds this template to the candidate and the
 separate road-register review:

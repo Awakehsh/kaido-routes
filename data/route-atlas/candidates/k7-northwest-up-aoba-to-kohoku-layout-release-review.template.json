@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.layout-release-review.2026-07-24",
+  "review_type": "LAYOUT_RELEASE_REVIEW",
+  "assessed_at": "2026-07-24",
+  "navigation_authority": false,
+  "target": {
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+    "topology_slice_id": "shutoko.topology.k7-northwest.osm-directed-candidate.2026-07-23",
+    "atlas_id": "shutoko.atlas.k7-northwest.schematic-layout-candidate.2026-07-23",
+    "layout_node_count": 16,
+    "layout_segment_count": 15,
+    "route_occurrence_binding_count": 13,
+    "rendered_surface_successor_count": 0
+  },
+  "artifact_bindings": [
+    {
+      "role": "ROUTE_ATLAS_CANDIDATE",
+      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json",
+      "content_sha256": "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+    },
+    {
+      "role": "SCHEMATIC_LAYOUT_SOURCE",
+      "repository_path": "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.json",
+      "content_sha256": "1b0c8463ca029288ebe5af05fc158525f8cdd838b4194b2d9ab9e0fa43768239"
+    },
+    {
+      "role": "SCHEMATIC_LAYOUT_SVG",
+      "repository_path": "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg",
+      "content_sha256": "9dafa2e15569e2cd2fad04f17af38c1d0a28d7d046e2de1bf4c5f48aaa2abd2b"
+    },
+    {
+      "role": "ATTRIBUTION_CATALOG",
+      "repository_path": "data/route-atlas/attribution/route-atlas-attribution-catalog.json",
+      "content_sha256": "feb7fc889b4b639a8898ecda57bc1f75070b14f5b0027d25ecdc89ccc8a5f0d2"
+    }
+  ],
+  "required_checks": {
+    "topology_release_review": "PENDING",
+    "layout_identity_and_coverage": "SATISFIED",
+    "endpoint_and_successor_geometry": "SATISFIED",
+    "surface_boundary_exclusion": "SATISFIED",
+    "attribution_presentation": "SATISFIED",
+    "independent_layout_review": "PENDING"
+  },
+  "decision": {
+    "status": "PENDING",
+    "reviewer_id": null,
+    "reviewer_role": "UNASSIGNED",
+    "reviewed_at": null,
+    "valid_through": null,
+    "blocker_codes": [
+      "TOPOLOGY_RELEASE_REVIEW_INCOMPLETE",
+      "INDEPENDENT_LAYOUT_REVIEW_INCOMPLETE"
+    ]
+  }
+}

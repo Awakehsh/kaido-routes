@@ -539,6 +539,14 @@ independent reviewer, an exact privacy allowlist, and no more than 31 days of
 validity. It refuses completed in-repository manifests outside ignored
 `research/`, exposes no raw media or location in its report, and still grants
 no Route Atlas release authority.
+The dated readiness package also binds exact pending topology and layout
+release-review records. A topology approval requires the current road identity,
+the completed field findings, the canonical digest of that private manifest,
+and all exact legal-successor checks. A layout approval depends on that current
+topology approval and must use a different reviewer. Each approval is valid for
+at most 31 days. Evidence state and review approval are conjunctive: changing a
+candidate to `RELEASED` without the matching current approval cannot satisfy the
+readiness gate.
 Both evidence states remain `CANDIDATE`; OSM community directionality plus
 current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime

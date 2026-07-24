@@ -63,6 +63,14 @@ EXPECTED_BINDING_PATHS = {
     "SCHEMATIC_LAYOUT_SOURCE": (
         "data/route-atlas/design/" "k7-northwest-up-schematic-layout-candidate.json"
     ),
+    "TOPOLOGY_RELEASE_REVIEW": (
+        "data/route-atlas/candidates/"
+        "k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json"
+    ),
+    "LAYOUT_RELEASE_REVIEW": (
+        "data/route-atlas/candidates/"
+        "k7-northwest-up-aoba-to-kohoku-layout-release-review.template.json"
+    ),
     "ROAD_REGISTER_REVIEW": (
         "data/route-atlas/candidates/"
         "k7-northwest-up-aoba-to-kohoku-road-register-review.json"
@@ -218,6 +226,112 @@ EXPECTED_ROAD_SUPPORTING_FINDINGS = {
             "that leave the same exit-terminal node."
         ),
     },
+}
+EXPECTED_TOPOLOGY_REVIEW_ID = (
+    "shutoko.k7-northwest.aoba-up-to-kohoku-up." "topology-release-review.2026-07-24"
+)
+EXPECTED_LAYOUT_REVIEW_ID = (
+    "shutoko.k7-northwest.aoba-up-to-kohoku-up." "layout-release-review.2026-07-24"
+)
+EXPECTED_TOPOLOGY_REVIEW_TARGET = {
+    "network_snapshot_id": EXPECTED_TARGET["network_snapshot_id"],
+    "route_plan_id": EXPECTED_TARGET["route_plan_id"],
+    "topology_slice_id": EXPECTED_TARGET["topology_slice_id"],
+    "exit_facility_id": EXPECTED_TARGET["exit_facility_id"],
+    "route_occurrence_count": 13,
+    "topology_edge_count": 15,
+    "source_adjacency_checkpoint_count": 14,
+    "source_successor_count": 19,
+}
+EXPECTED_LAYOUT_REVIEW_TARGET = {
+    "network_snapshot_id": EXPECTED_TARGET["network_snapshot_id"],
+    "route_plan_id": EXPECTED_TARGET["route_plan_id"],
+    "topology_slice_id": EXPECTED_TARGET["topology_slice_id"],
+    "atlas_id": EXPECTED_TARGET["atlas_id"],
+    "layout_node_count": 16,
+    "layout_segment_count": 15,
+    "route_occurrence_binding_count": 13,
+    "rendered_surface_successor_count": 0,
+}
+EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
+    "ROUTE_ATLAS_CANDIDATE": {
+        "repository_path": EXPECTED_BINDING_PATHS["ROUTE_ATLAS_CANDIDATE"],
+        "content_sha256": (
+            "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+        ),
+    },
+    "SOURCE_SUCCESSOR_AUDIT": {
+        "repository_path": EXPECTED_BINDING_PATHS["SOURCE_SUCCESSOR_AUDIT"],
+        "content_sha256": (
+            "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
+        ),
+    },
+    "ROAD_REGISTER_REVIEW": {
+        "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW"],
+        "content_sha256": (
+            "aa2edd8d08d0007388ab46de39721bf5dff81a1c6abb2e863af227b1e47d0d29"
+        ),
+    },
+    "FIELD_REVIEW_TEMPLATE": {
+        "repository_path": EXPECTED_BINDING_PATHS["FIELD_REVIEW_TEMPLATE"],
+        "content_sha256": (
+            "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
+        ),
+    },
+}
+EXPECTED_LAYOUT_REVIEW_BINDINGS = {
+    "ROUTE_ATLAS_CANDIDATE": {
+        "repository_path": EXPECTED_BINDING_PATHS["ROUTE_ATLAS_CANDIDATE"],
+        "content_sha256": (
+            "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+        ),
+    },
+    "SCHEMATIC_LAYOUT_SOURCE": {
+        "repository_path": EXPECTED_BINDING_PATHS["SCHEMATIC_LAYOUT_SOURCE"],
+        "content_sha256": (
+            "1b0c8463ca029288ebe5af05fc158525f8cdd838b4194b2d9ab9e0fa43768239"
+        ),
+    },
+    "SCHEMATIC_LAYOUT_SVG": {
+        "repository_path": (
+            "data/route-atlas/design/" "k7-northwest-up-schematic-layout-candidate.svg"
+        ),
+        "content_sha256": (
+            "9dafa2e15569e2cd2fad04f17af38c1d0a28d7d046e2de1bf4c5f48aaa2abd2b"
+        ),
+    },
+    "ATTRIBUTION_CATALOG": {
+        "repository_path": (
+            "data/route-atlas/attribution/" "route-atlas-attribution-catalog.json"
+        ),
+        "content_sha256": (
+            "feb7fc889b4b639a8898ecda57bc1f75070b14f5b0027d25ecdc89ccc8a5f0d2"
+        ),
+    },
+}
+MAX_RELEASE_REVIEW_VALIDITY_DAYS = 31
+EXPECTED_TOPOLOGY_REVIEW_KEYS = {
+    "schema_version",
+    "review_id",
+    "review_type",
+    "assessed_at",
+    "navigation_authority",
+    "target",
+    "artifact_bindings",
+    "required_checks",
+    "private_field_review_manifest_sha256",
+    "decision",
+}
+EXPECTED_LAYOUT_REVIEW_KEYS = {
+    "schema_version",
+    "review_id",
+    "review_type",
+    "assessed_at",
+    "navigation_authority",
+    "target",
+    "artifact_bindings",
+    "required_checks",
+    "decision",
 }
 EXPECTED_UNRESOLVED_SUCCESSOR = {
     "direction": "FORWARD",
@@ -729,6 +843,274 @@ def evaluate_road_register_review(
     return True, []
 
 
+def canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def validate_release_review_bindings(
+    review: dict[str, Any],
+    expected: dict[str, dict[str, str]],
+    repository_root: Path,
+    field: str,
+) -> None:
+    bindings = review.get("artifact_bindings")
+    if not isinstance(bindings, list):
+        raise ReadinessError(f"{field}.artifact_bindings must be an array")
+    actual: dict[str, dict[str, str]] = {}
+    for binding in bindings:
+        if not isinstance(binding, dict) or set(binding) != {
+            "role",
+            "repository_path",
+            "content_sha256",
+        }:
+            raise ReadinessError(f"{field} contains an invalid artifact binding")
+        role = binding.get("role")
+        if not isinstance(role, str):
+            raise ReadinessError(f"{field} binding role must be a string")
+        if role in actual:
+            raise ReadinessError(f"{field} contains duplicate binding {role!r}")
+        path_value = binding.get("repository_path")
+        digest = binding.get("content_sha256")
+        if (
+            not isinstance(path_value, str)
+            or not isinstance(digest, str)
+            or SHA256_PATTERN.fullmatch(digest) is None
+        ):
+            raise ReadinessError(f"{field} binding is invalid for {role!r}")
+        path = (repository_root / path_value).resolve()
+        try:
+            path.relative_to(repository_root)
+        except ValueError as error:
+            raise ReadinessError(f"{field} binding escapes the repository") from error
+        if sha256(path) != digest:
+            raise ReadinessError(f"{field} binding digest drifted for {role!r}")
+        actual[role] = {
+            "repository_path": path_value,
+            "content_sha256": digest,
+        }
+    if actual != expected:
+        raise ReadinessError(f"{field} artifact binding contract has drifted")
+
+
+def evaluate_release_review_decision(
+    decision: dict[str, Any],
+    as_of: date,
+    expected_reviewer_role: str,
+    field: str,
+) -> tuple[bool, str | None]:
+    if set(decision) != {
+        "status",
+        "reviewer_id",
+        "reviewer_role",
+        "reviewed_at",
+        "valid_through",
+        "blocker_codes",
+    }:
+        raise ReadinessError(f"{field} decision keys have drifted")
+    reviewer_id = require_nonempty(
+        decision.get("reviewer_id"),
+        f"{field}.decision.reviewer_id",
+    )
+    if decision.get("reviewer_role") != expected_reviewer_role:
+        raise ReadinessError(f"{field} reviewer role has drifted")
+    if decision.get("blocker_codes") != []:
+        raise ReadinessError(f"{field} approved decision retains blockers")
+    reviewed_at = parse_timestamp(
+        decision.get("reviewed_at"),
+        f"{field}.decision.reviewed_at",
+    )
+    valid_through = parse_iso_date(
+        decision.get("valid_through"),
+        f"{field}.decision.valid_through",
+    )
+    if reviewed_at.date() > as_of:
+        raise ReadinessError(f"{field} review time is in the future")
+    if valid_through < reviewed_at.date():
+        raise ReadinessError(f"{field} validity precedes review")
+    if (valid_through - reviewed_at.date()).days > MAX_RELEASE_REVIEW_VALIDITY_DAYS:
+        raise ReadinessError(f"{field} validity window is too long")
+    return valid_through >= as_of, reviewer_id
+
+
+def evaluate_topology_release_review(
+    review: dict[str, Any],
+    as_of: date,
+    repository_root: Path,
+    topology_state: str,
+    road_identity_complete: bool,
+    field_review_complete: bool,
+    field_review_manifest_sha256: str,
+) -> tuple[bool, str | None, str]:
+    decision = review.get("decision")
+    checks = review.get("required_checks")
+    if (
+        set(review) != EXPECTED_TOPOLOGY_REVIEW_KEYS
+        or review.get("schema_version") != "1.0"
+        or review.get("review_id") != EXPECTED_TOPOLOGY_REVIEW_ID
+        or review.get("review_type") != "TOPOLOGY_RELEASE_REVIEW"
+        or review.get("target") != EXPECTED_TOPOLOGY_REVIEW_TARGET
+        or review.get("navigation_authority") is not False
+        or not isinstance(decision, dict)
+        or not isinstance(checks, dict)
+    ):
+        raise ReadinessError("topology release review identity has drifted")
+    assessed_at = parse_iso_date(
+        review.get("assessed_at"),
+        "topology_release_review.assessed_at",
+    )
+    if assessed_at > as_of:
+        raise ReadinessError("topology release review is dated in the future")
+    validate_release_review_bindings(
+        review,
+        EXPECTED_TOPOLOGY_REVIEW_BINDINGS,
+        repository_root,
+        "topology_release_review",
+    )
+    status = decision.get("status")
+    if status == "PENDING":
+        if (
+            checks
+            != {
+                "candidate_structure": "SATISFIED",
+                "source_adjacency": "SATISFIED",
+                "current_road_identity": "PENDING",
+                "current_surface_field_review": "PENDING",
+                "exact_legal_successor_review": "PENDING",
+            }
+            or review.get("private_field_review_manifest_sha256") is not None
+            or decision
+            != {
+                "status": "PENDING",
+                "reviewer_id": None,
+                "reviewer_role": "UNASSIGNED",
+                "reviewed_at": None,
+                "valid_through": None,
+                "blocker_codes": [
+                    "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+                    "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+                    "INDEPENDENT_TOPOLOGY_REVIEW_INCOMPLETE",
+                ],
+            }
+        ):
+            raise ReadinessError("pending topology release review has drifted")
+        return False, None, status
+    if status != "APPROVED":
+        raise ReadinessError("topology release review status is invalid")
+    if (
+        topology_state != "RELEASED"
+        or not road_identity_complete
+        or not field_review_complete
+        or checks
+        != {
+            "candidate_structure": "SATISFIED",
+            "source_adjacency": "SATISFIED",
+            "current_road_identity": "SATISFIED",
+            "current_surface_field_review": "SATISFIED",
+            "exact_legal_successor_review": "SATISFIED",
+        }
+        or review.get("private_field_review_manifest_sha256")
+        != field_review_manifest_sha256
+    ):
+        raise ReadinessError("approved topology release prerequisites are incomplete")
+    current, reviewer_id = evaluate_release_review_decision(
+        decision,
+        as_of,
+        "INDEPENDENT_TOPOLOGY_REVIEWER",
+        "topology_release_review",
+    )
+    return current, reviewer_id, status
+
+
+def evaluate_layout_release_review(
+    review: dict[str, Any],
+    as_of: date,
+    repository_root: Path,
+    layout_state: str,
+    topology_review_complete: bool,
+    topology_review_status: str,
+    topology_reviewer_id: str | None,
+) -> tuple[bool, str | None, str]:
+    decision = review.get("decision")
+    checks = review.get("required_checks")
+    if (
+        set(review) != EXPECTED_LAYOUT_REVIEW_KEYS
+        or review.get("schema_version") != "1.0"
+        or review.get("review_id") != EXPECTED_LAYOUT_REVIEW_ID
+        or review.get("review_type") != "LAYOUT_RELEASE_REVIEW"
+        or review.get("target") != EXPECTED_LAYOUT_REVIEW_TARGET
+        or review.get("navigation_authority") is not False
+        or not isinstance(decision, dict)
+        or not isinstance(checks, dict)
+    ):
+        raise ReadinessError("layout release review identity has drifted")
+    assessed_at = parse_iso_date(
+        review.get("assessed_at"),
+        "layout_release_review.assessed_at",
+    )
+    if assessed_at > as_of:
+        raise ReadinessError("layout release review is dated in the future")
+    validate_release_review_bindings(
+        review,
+        EXPECTED_LAYOUT_REVIEW_BINDINGS,
+        repository_root,
+        "layout_release_review",
+    )
+    status = decision.get("status")
+    if status == "PENDING":
+        if checks != {
+            "topology_release_review": "PENDING",
+            "layout_identity_and_coverage": "SATISFIED",
+            "endpoint_and_successor_geometry": "SATISFIED",
+            "surface_boundary_exclusion": "SATISFIED",
+            "attribution_presentation": "SATISFIED",
+            "independent_layout_review": "PENDING",
+        } or decision != {
+            "status": "PENDING",
+            "reviewer_id": None,
+            "reviewer_role": "UNASSIGNED",
+            "reviewed_at": None,
+            "valid_through": None,
+            "blocker_codes": [
+                "TOPOLOGY_RELEASE_REVIEW_INCOMPLETE",
+                "INDEPENDENT_LAYOUT_REVIEW_INCOMPLETE",
+            ],
+        }:
+            raise ReadinessError("pending layout release review has drifted")
+        return False, None, status
+    if status != "APPROVED":
+        raise ReadinessError("layout release review status is invalid")
+    if (
+        layout_state != "RELEASED"
+        or topology_review_status != "APPROVED"
+        or checks
+        != {
+            "topology_release_review": "SATISFIED",
+            "layout_identity_and_coverage": "SATISFIED",
+            "endpoint_and_successor_geometry": "SATISFIED",
+            "surface_boundary_exclusion": "SATISFIED",
+            "attribution_presentation": "SATISFIED",
+            "independent_layout_review": "SATISFIED",
+        }
+    ):
+        raise ReadinessError("approved layout release prerequisites are incomplete")
+    current, reviewer_id = evaluate_release_review_decision(
+        decision,
+        as_of,
+        "INDEPENDENT_LAYOUT_REVIEWER",
+        "layout_release_review",
+    )
+    if reviewer_id == topology_reviewer_id:
+        raise ReadinessError("topology and layout reviews require different reviewers")
+    return current and topology_review_complete, reviewer_id, status
+
+
 def validate_distribution_review(
     review: dict[str, Any],
     as_of: date,
@@ -1022,6 +1404,34 @@ def evaluate(
     if field_report.get("route_release_authority") is not False:
         raise ReadinessError("surface field review cannot grant release authority")
     field_complete = field_report["field_review_complete"]
+    field_review_manifest_sha256 = canonical_sha256(field_review)
+
+    (
+        topology_review_complete,
+        topology_reviewer_id,
+        topology_review_status,
+    ) = evaluate_topology_release_review(
+        documents["TOPOLOGY_RELEASE_REVIEW"],
+        as_of,
+        repository_root,
+        topology_state,
+        road_identity_complete,
+        field_complete,
+        field_review_manifest_sha256,
+    )
+    (
+        layout_review_complete,
+        _layout_reviewer_id,
+        layout_review_status,
+    ) = evaluate_layout_release_review(
+        documents["LAYOUT_RELEASE_REVIEW"],
+        as_of,
+        repository_root,
+        layout_state,
+        topology_review_complete,
+        topology_review_status,
+        topology_reviewer_id,
+    )
 
     distribution_complete, distribution_blockers = evaluate_distribution(
         readiness,
@@ -1029,8 +1439,8 @@ def evaluate(
         as_of,
         repository_root,
     )
-    topology_released = topology_state == "RELEASED"
-    layout_released = layout_state == "RELEASED"
+    topology_released = topology_state == "RELEASED" and topology_review_complete
+    layout_released = layout_state == "RELEASED" and layout_review_complete
 
     blockers = list(road_blockers)
     if not field_complete:
@@ -1086,14 +1496,11 @@ def evaluate(
             if field_review_override is not None
             else "TRACKED_TEMPLATE"
         ),
-        "field_review_manifest_sha256": hashlib.sha256(
-            json.dumps(
-                field_review,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        ).hexdigest(),
+        "field_review_manifest_sha256": field_review_manifest_sha256,
+        "topology_release_review_status": topology_review_status,
+        "topology_release_review_current": topology_review_complete,
+        "layout_release_review_status": layout_review_status,
+        "layout_release_review_current": layout_review_complete,
         "distribution_review_id": EXPECTED_DISTRIBUTION_REVIEW_ID,
         "distribution_review_status": "TECHNICAL_REVIEW_COMPLETE",
         "realtime_status": realtime["status"],

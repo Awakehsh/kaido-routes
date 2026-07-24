@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.topology-release-review.2026-07-24",
+  "review_type": "TOPOLOGY_RELEASE_REVIEW",
+  "assessed_at": "2026-07-24",
+  "navigation_authority": false,
+  "target": {
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
+    "topology_slice_id": "shutoko.topology.k7-northwest.osm-directed-candidate.2026-07-23",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "route_occurrence_count": 13,
+    "topology_edge_count": 15,
+    "source_adjacency_checkpoint_count": 14,
+    "source_successor_count": 19
+  },
+  "artifact_bindings": [
+    {
+      "role": "ROUTE_ATLAS_CANDIDATE",
+      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json",
+      "content_sha256": "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+    },
+    {
+      "role": "SOURCE_SUCCESSOR_AUDIT",
+      "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json",
+      "content_sha256": "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
+    },
+    {
+      "role": "ROAD_REGISTER_REVIEW",
+      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-road-register-review.json",
+      "content_sha256": "aa2edd8d08d0007388ab46de39721bf5dff81a1c6abb2e863af227b1e47d0d29"
+    },
+    {
+      "role": "FIELD_REVIEW_TEMPLATE",
+      "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-surface-field-review.template.json",
+      "content_sha256": "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
+    }
+  ],
+  "required_checks": {
+    "candidate_structure": "SATISFIED",
+    "source_adjacency": "SATISFIED",
+    "current_road_identity": "PENDING",
+    "current_surface_field_review": "PENDING",
+    "exact_legal_successor_review": "PENDING"
+  },
+  "private_field_review_manifest_sha256": null,
+  "decision": {
+    "status": "PENDING",
+    "reviewer_id": null,
+    "reviewer_role": "UNASSIGNED",
+    "reviewed_at": null,
+    "valid_through": null,
+    "blocker_codes": [
+      "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+      "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+      "INDEPENDENT_TOPOLOGY_REVIEW_INCOMPLETE"
+    ]
+  }
+}

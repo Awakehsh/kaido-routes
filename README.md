@@ -445,13 +445,18 @@ layout evidence issues.
 A dated K7 pre-release package now binds that schematic candidate, the directed
 source review, the 14-checkpoint successor audit, the Kaido-authored layout
 source, an official road-register access review, the coordinate-free field
-template, and the ODbL technical distribution review by SHA-256. The
-distribution review in turn binds the derivative database, successor audit,
-reconstruction README, attribution catalog, SwiftUI implementation, and Xcode
-project source. Its independent validator derives four exact remaining blockers:
-current road identity, current field legality, and topology and layout release
-evidence. It reports the already proven structure, source adjacency, and ODbL
-distribution separately from those unresolved gates. Yokohama dates the online
+template, independent topology and layout review templates, and the ODbL
+technical distribution review by SHA-256. The topology review must bind the
+exact private field-manifest digest after the road and field gates pass. The
+layout review depends on that current topology review, uses a different
+reviewer, and both reviews expire after at most 31 days. A manual evidence-state
+change cannot satisfy either release gate. The distribution review in turn
+binds the derivative database, successor audit, reconstruction README,
+attribution catalog, SwiftUI implementation, and Xcode project source. Its
+independent validator derives four exact remaining blockers: current road
+identity, current field legality, and topology and layout release evidence. It
+reports the already proven structure, source adjacency, and ODbL distribution
+separately from those unresolved gates. Yokohama dates the online
 recognized-route map to 2026-07-03 and identifies the broader Kawamuki corridor
 as municipal Higashikatacho Route 342, while its official terms state that
 online material is not proof and direct latest legal-record review to the Road

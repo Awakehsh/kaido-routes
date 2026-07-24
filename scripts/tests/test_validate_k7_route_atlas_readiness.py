@@ -40,6 +40,14 @@ DISTRIBUTION_REVIEW_PATH = (
     REPOSITORY_ROOT / "data/route-atlas/osm-derived/"
     "k7-northwest-260721-distribution-review.json"
 )
+TOPOLOGY_REVIEW_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json"
+)
+LAYOUT_REVIEW_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-layout-release-review.template.json"
+)
 
 
 def load(path: Path) -> dict:
@@ -112,6 +120,16 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "REALTIME_UNCONFIRMED",
         )
         self.assertFalse(report["realtime_release_blocking"])
+        self.assertEqual(
+            report["topology_release_review_status"],
+            "PENDING",
+        )
+        self.assertFalse(report["topology_release_review_current"])
+        self.assertEqual(
+            report["layout_release_review_status"],
+            "PENDING",
+        )
+        self.assertFalse(report["layout_release_review_current"])
 
     def test_artifact_digest_drift_is_rejected(self) -> None:
         readiness = load(READINESS_PATH)
@@ -187,6 +205,157 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             r"^[0-9a-f]{64}$",
         )
         self.assertFalse(report["navigation_authority"])
+
+    def test_pending_topology_review_blocks_a_released_state(self) -> None:
+        field_review = completed_field_review()
+        complete, reviewer_id, status = validator.evaluate_topology_release_review(
+            load(TOPOLOGY_REVIEW_PATH),
+            date(2026, 7, 24),
+            REPOSITORY_ROOT,
+            "RELEASED",
+            True,
+            True,
+            validator.canonical_sha256(field_review),
+        )
+
+        self.assertFalse(complete)
+        self.assertIsNone(reviewer_id)
+        self.assertEqual(status, "PENDING")
+
+    def test_pending_layout_review_blocks_a_released_state(self) -> None:
+        complete, reviewer_id, status = validator.evaluate_layout_release_review(
+            load(LAYOUT_REVIEW_PATH),
+            date(2026, 7, 24),
+            REPOSITORY_ROOT,
+            "RELEASED",
+            True,
+            "APPROVED",
+            "topology-reviewer",
+        )
+
+        self.assertFalse(complete)
+        self.assertIsNone(reviewer_id)
+        self.assertEqual(status, "PENDING")
+
+    def test_release_review_binding_digest_drift_is_rejected(self) -> None:
+        review = load(TOPOLOGY_REVIEW_PATH)
+        review["artifact_bindings"][0]["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "binding digest drifted",
+        ):
+            validator.evaluate_topology_release_review(
+                review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+                "CANDIDATE",
+                False,
+                False,
+                validator.canonical_sha256(completed_field_review()),
+            )
+
+    def test_release_review_validity_cannot_exceed_31_days(self) -> None:
+        decision = {
+            "status": "APPROVED",
+            "reviewer_id": "independent-topology-reviewer",
+            "reviewer_role": "INDEPENDENT_TOPOLOGY_REVIEWER",
+            "reviewed_at": "2026-07-24T12:00:00+09:00",
+            "valid_through": "2026-08-25",
+            "blocker_codes": [],
+        }
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "validity window is too long",
+        ):
+            validator.evaluate_release_review_decision(
+                decision,
+                date(2026, 7, 24),
+                "INDEPENDENT_TOPOLOGY_REVIEWER",
+                "topology_release_review",
+            )
+
+    def test_approved_reviews_require_distinct_current_reviewers(self) -> None:
+        field_review = completed_field_review()
+        field_digest = validator.canonical_sha256(field_review)
+        topology_review = load(TOPOLOGY_REVIEW_PATH)
+        topology_review["required_checks"] = {
+            "candidate_structure": "SATISFIED",
+            "source_adjacency": "SATISFIED",
+            "current_road_identity": "SATISFIED",
+            "current_surface_field_review": "SATISFIED",
+            "exact_legal_successor_review": "SATISFIED",
+        }
+        topology_review["private_field_review_manifest_sha256"] = field_digest
+        topology_review["decision"] = {
+            "status": "APPROVED",
+            "reviewer_id": "independent-topology-reviewer",
+            "reviewer_role": "INDEPENDENT_TOPOLOGY_REVIEWER",
+            "reviewed_at": "2026-07-24T12:00:00+09:00",
+            "valid_through": "2026-08-24",
+            "blocker_codes": [],
+        }
+        topology_complete, topology_reviewer_id, _ = (
+            validator.evaluate_topology_release_review(
+                topology_review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+                "RELEASED",
+                True,
+                True,
+                field_digest,
+            )
+        )
+        self.assertTrue(topology_complete)
+
+        layout_review = load(LAYOUT_REVIEW_PATH)
+        layout_review["required_checks"] = {
+            "topology_release_review": "SATISFIED",
+            "layout_identity_and_coverage": "SATISFIED",
+            "endpoint_and_successor_geometry": "SATISFIED",
+            "surface_boundary_exclusion": "SATISFIED",
+            "attribution_presentation": "SATISFIED",
+            "independent_layout_review": "SATISFIED",
+        }
+        layout_review["decision"] = {
+            "status": "APPROVED",
+            "reviewer_id": topology_reviewer_id,
+            "reviewer_role": "INDEPENDENT_LAYOUT_REVIEWER",
+            "reviewed_at": "2026-07-24T14:00:00+09:00",
+            "valid_through": "2026-08-24",
+            "blocker_codes": [],
+        }
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "require different reviewers",
+        ):
+            validator.evaluate_layout_release_review(
+                layout_review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+                "RELEASED",
+                topology_complete,
+                "APPROVED",
+                topology_reviewer_id,
+            )
+
+        layout_review["decision"]["reviewer_id"] = "independent-layout-reviewer"
+        layout_complete, layout_reviewer_id, status = (
+            validator.evaluate_layout_release_review(
+                layout_review,
+                date(2026, 7, 24),
+                REPOSITORY_ROOT,
+                "RELEASED",
+                topology_complete,
+                "APPROVED",
+                topology_reviewer_id,
+            )
+        )
+        self.assertTrue(layout_complete)
+        self.assertEqual(layout_reviewer_id, "independent-layout-reviewer")
+        self.assertEqual(status, "APPROVED")
 
     def test_pending_road_register_review_stays_identity_blocked(
         self,

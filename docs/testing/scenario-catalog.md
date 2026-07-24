@@ -68,7 +68,7 @@ should become scenarios when their layer is built.
 | KR-U06 | Estimated topology position is visually distinct from measured position | P0 | Seeded |
 | KR-U07 | `REALTIME_UNCONFIRMED` cannot render as a green open-road state | P0 | Seeded |
 | KR-U08 | Driving mode requires no route editing in a decision zone | P0 | Seeded |
-| KR-U09 | Dynamic Type, VoiceOver, contrast, and route-shield recognition remain usable | P1 | Planned |
+| KR-U09 | Dynamic Type, VoiceOver, contrast, and route-shield recognition remain usable | P1 | Seeded |
 | KR-U10 | Phone and CarPlay surfaces agree on current occurrence and next movement | P0 | Seeded |
 | KR-U11 | UI and guidance-voice languages can be selected independently | P0 | Seeded |
 | KR-U12 | Finish drive names the planned exit before changing branch guidance | P0 | Seeded |

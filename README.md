@@ -152,10 +152,13 @@ expose no route editing, and Finish drive names its compiled exit first. KR-S17
 proves planning from resolved progress, KR-S18 proves the
 occurrence-scoped Swift matcher distance bridge through the same planner,
 ledger, and presentation projection, and KR-U14 proves the junction-view
-ownership boundary. Production corridor construction,
-DecisionZone calibration, production navigation-state SwiftUI rendering,
-CarPlay entitlement, accessibility validation, audio, and physical head-unit
-behavior remain unimplemented or unproven.
+ownership boundary. KR-U09 adds localized assistive labels for the same
+projection, non-color branch and lane cues, tested theme contrast, and an
+accessibility-size single-column SwiftUI layout for the synthetic driving/JCT
+panel. Production corridor construction, DecisionZone calibration, live
+navigation-state SwiftUI composition, CarPlay entitlement, full-app and device
+accessibility validation, audio, and physical head-unit behavior remain
+unimplemented or unproven.
 
 The entrance recommendation boundary now returns a structured selected facility,
 exact target carriageway, legal join occurrence, surface ETA, straight-line
@@ -205,8 +208,8 @@ the Japanese sign fails projection. The preview deliberately supplies no
 not full-app localization, pronunciation evidence, or an audio-lifecycle
 implementation.
 
-The internal iPhone shell also executes KR-U06, KR-U07, KR-U08, KR-U10, KR-U12,
-and KR-U14 through a four-state synthetic driving preview. Its degraded DecisionZone state
+The internal iPhone shell also executes KR-U06 through KR-U10, KR-U12, and
+KR-U14 through a four-state synthetic driving preview. Its degraded DecisionZone state
 feeds a stale LOW observation through `NavigationEngine`, so the shared
 projection renders an estimated marker, neutral realtime-unconfirmed status,
 unavailable route editing, and no phone-touch requirement. Its Finish state
@@ -218,8 +221,17 @@ difference explicit. Its junction-handoff state uses
 the same snapshot- and movement-occurrence-bound `JunctionViewDefinition` on the
 iPhone with Kaido-owned vectors and exact left-indexed lane semantics. The
 display labels the synthetic `RELEASED` value as a fixture-only release-gate
-input. This panel has no live location, active `NavigationSession`, released
-Shuto assets, audio authority, `CPMapTemplate`, or CarPlay scene.
+input. KR-U09 projects route shields, Japanese sign text, degraded status,
+selected branch, preferred lanes, and surface ownership into explicit
+Simplified Chinese accessibility labels. At accessibility Dynamic Type sizes,
+the panel uses single-column controls and vertical ownership rows; selected
+branches and preferred lanes add checkmark/text cues rather than relying on
+color. App tests enforce a 4.5:1 contrast floor for the actual critical theme
+tokens, and XCUITest exercises both standard and AXXXL Simulator content sizes.
+This is a synthetic panel baseline, not whole-app VoiceOver focus-order,
+Switch Control, localization, device, or CarPlay accessibility qualification.
+The panel has no live location, active `NavigationSession`, released Shuto
+assets, audio authority, `CPMapTemplate`, or CarPlay scene.
 
 The live pure-Swift composition boundary is also concrete. A `NavigationSession`
 actor owns one RoutePlan-bound matcher session and `NavigationEngine`, converts

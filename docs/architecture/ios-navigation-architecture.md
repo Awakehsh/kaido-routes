@@ -291,9 +291,13 @@ edge, complete version-bound corridor geometry, and reviewed DecisionZone entry
 offset agree. It never consumes the matcher's lateral residual as route distance.
 KR-S17 injects an already resolved scalar; KR-S18 executes the matcher bridge
 through planning, ledger, and projection. Production corridor construction and
-zone calibration remain data/field gates. Dynamic layout, accessibility,
-installed voice discovery, SwiftUI lifecycle, `CPMapTemplate`, audio routing,
-and physical display timing remain adapter work and device gates.
+zone calibration remain data/field gates. The synthetic driving/JCT panel now
+has a KR-U09 accessibility baseline: localized assistive projection, non-color
+branch/lane cues, actual theme-token contrast checks, and standard plus AXXXL
+Simulator UI tests. Live `NavigationSession` binding, full-app focus and
+interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
+device-matrix layout, and physical display timing remain adapter work and
+device gates.
 
 `NavigationSession` now owns the executable runtime ordering of these pieces.
 One matcher observation produces one atomic update containing matcher diagnostics,
@@ -514,7 +518,12 @@ That is a development fact, not yet the minimum deployment target.
   retain one occurrence, prompt, distance, maneuver, lane preparation, sign,
   shield, and definition; only `isPrimarySurface` changes. The iPhone labels
   this as fixture-only and has no `CPMapTemplate` or CarPlay scene. The panel is
-  not an active `NavigationSession` or released-route renderer.
+  not an active `NavigationSession` or released-route renderer. KR-U09 adds
+  localized assistive semantics to that same projection, a 4.5:1 tested
+  critical text contrast floor, non-color selected-path and preferred-lane
+  cues, and a single-column accessibility Dynamic Type layout. Local XCUITest
+  covers standard and AXXXL Simulator sizes; it is not full-app, device, or
+  CarPlay accessibility qualification.
 
 ### CarPlay
 

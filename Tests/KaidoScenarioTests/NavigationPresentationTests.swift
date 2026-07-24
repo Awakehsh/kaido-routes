@@ -411,6 +411,53 @@ func preDriveReviewRejectsInvalidScalars() {
   }
 }
 
+@Test("Accessibility projection preserves sign, shield, status, and non-color junction cues")
+func accessibilityProjectionKeepsCriticalNavigationSemantics() throws {
+  let junctionView = validJunctionView()
+  let projection = try NavigationPresentationProjector.project(
+    makePresentationRequest(
+      snapshot: NavigationSnapshot(
+        journeyPhase: .strictRoute,
+        currentOccurrenceID: "test.occurrence.anchor",
+        locationConfidence: .low
+      ),
+      networkSnapshotID: junctionView.networkSnapshotID,
+      drivingContext: PresentationDrivingContext(
+        isVehicleMoving: true,
+        isInsideDecisionZone: true
+      ),
+      guidanceFrame: validGuidanceFrame(junctionView: junctionView)
+    )
+  )
+
+  let chinese = NavigationAccessibilityProjector.project(
+    projection.iPhone,
+    locale: .simplifiedChinese
+  )
+  #expect(chinese.routeShieldLabels == ["路线盾牌 B"])
+  #expect(chinese.guidanceLabel.contains("日文路牌 B 湾岸線・横浜方面"))
+  #expect(chinese.markerLabel == "位置呈现，估算位置")
+  #expect(chinese.passageLabel == "实时通行，尚未确认")
+  #expect(chinese.routeEditingLabel == "路线编辑，决策区不可编辑")
+  #expect(chinese.junctionDiagramLabel?.contains("选中分支带有勾选标记") == true)
+  #expect(chinese.junctionLaneLabel?.contains("首选车道 1") == true)
+  #expect(chinese.selectedPathHasNonColorCue)
+  #expect(chinese.preferredLanesHaveNonColorCue)
+
+  let japanese = NavigationAccessibilityProjector.project(
+    projection.iPhone,
+    locale: .japanese
+  )
+  let english = NavigationAccessibilityProjector.project(
+    projection.iPhone,
+    locale: .english
+  )
+  #expect(japanese.routeShieldLabels == ["ルートシールド B"])
+  #expect(english.routeShieldLabels == ["Route shield B"])
+  #expect(english.junctionDiagramLabel?.contains("checkmark") == true)
+  #expect(english.junctionLaneLabel?.contains("Preferred lanes 1") == true)
+}
+
 private func makePresentationRequest(
   snapshot: NavigationSnapshot,
   networkSnapshotID: String? = nil,

@@ -1488,6 +1488,60 @@ private struct ScenarioHarness {
     )
     publish(projection.iPhone, prefix: "presentation.kernel.phone")
     publish(projection.carPlay, prefix: "presentation.kernel.carplay")
+    publish(
+      NavigationAccessibilityProjector.project(
+        projection.iPhone,
+        locale: projection.interfaceLocale
+      ),
+      prefix: "presentation.accessibility.phone"
+    )
+    publish(
+      NavigationAccessibilityProjector.project(
+        projection.carPlay,
+        locale: projection.interfaceLocale
+      ),
+      prefix: "presentation.accessibility.carplay"
+    )
+  }
+
+  private mutating func publish(
+    _ accessibility: NavigationAccessibilityPresentation,
+    prefix: String
+  ) {
+    adapterObservations["\(prefix).route_shield_labels"] = .strings(
+      accessibility.routeShieldLabels
+    )
+    adapterObservations["\(prefix).guidance_label"] = .string(
+      accessibility.guidanceLabel
+    )
+    adapterObservations["\(prefix).marker_label"] = .string(
+      accessibility.markerLabel
+    )
+    adapterObservations["\(prefix).passage_label"] = .string(
+      accessibility.passageLabel
+    )
+    adapterObservations["\(prefix).route_editing_label"] = .string(
+      accessibility.routeEditingLabel
+    )
+    adapterObservations["\(prefix).surface_ownership_label"] = .string(
+      accessibility.surfaceOwnershipLabel
+    )
+    adapterObservations["\(prefix).selected_path_has_non_color_cue"] = .bool(
+      accessibility.selectedPathHasNonColorCue
+    )
+    adapterObservations["\(prefix).preferred_lanes_have_non_color_cue"] = .bool(
+      accessibility.preferredLanesHaveNonColorCue
+    )
+    if let junctionDiagramLabel = accessibility.junctionDiagramLabel {
+      adapterObservations["\(prefix).junction_diagram_label"] = .string(
+        junctionDiagramLabel
+      )
+    }
+    if let junctionLaneLabel = accessibility.junctionLaneLabel {
+      adapterObservations["\(prefix).junction_lane_label"] = .string(
+        junctionLaneLabel
+      )
+    }
   }
 
   private mutating func publish(

@@ -85,6 +85,20 @@ targets:
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false
 
+  KaidoRoutesAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Apps/KaidoRoutesApp/UITests
+    dependencies:
+      - target: KaidoRoutesApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview.uitests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: KaidoRoutesApp
+        CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false
+
 schemes:
   KaidoRoutesApp:
     build:
@@ -92,11 +106,14 @@ schemes:
         KaidoRoutesApp: all
         KaidoRoutesAppTests:
           - test
+        KaidoRoutesAppUITests:
+          - test
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - KaidoRoutesAppTests
+        - KaidoRoutesAppUITests
     archive:
       config: Release

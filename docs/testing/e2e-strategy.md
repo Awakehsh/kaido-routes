@@ -189,11 +189,15 @@ CarPlay adapters independently without changing route semantics. CI injects
 surface candidates and sensor observations; it never calls live MapKit or waits
 for a real geofence.
 
-The platform-light `KaidoPresentation` adapter now executes KR-U04 through U08,
-KR-U10 through U12, and KR-U14. These scenarios verify semantic view values
+The platform-light `KaidoPresentation` adapter now executes KR-U04 through U12
+and KR-U14. These scenarios verify semantic view values
 shared by phone, CarPlay, and voice, including a structured occurrence-scoped
 guidance frame with prompt and anchor identity, stage, distance, decision point,
 maneuver, lane preparation, and an optional snapshot-bound junction inset.
+KR-U09 additionally projects route shields, Japanese sign text, degraded safety
+status, junction branch selection, preferred lanes, and surface ownership into
+localized assistive labels. It requires explicit non-color cues while retaining
+the realtime-unconfirmed no-positive-open rule.
 KR-U14 requires both visual surfaces to consume one released normalized
 path/lane/sign definition and rejects UI-authored junction semantics. KR-S17
 additionally injects a fresh route-resolved distance-to-DecisionZone observation
@@ -202,11 +206,14 @@ distinguishes a persistent active frame from the transient matching emission tha
 alone sets `voice.should_speak`. KR-S18
 starts with actual Swift matcher observations and proves that occurrence-bound
 along-edge progress, not lateral map-match residual or straight-line distance,
-becomes the DecisionZone scalar. These remain L1/L2 contract executions until
-production graph/zone data and real SwiftUI and `CPMapTemplate` adapters bind
-projections to accessibility-visible views in L3/L4; their `layer` records the
-intended final verification surface, not a claim that a simulator or head unit
-ran in CI.
+becomes the DecisionZone scalar. The portable scenarios remain L1/L2 contract
+executions; their `layer` records the intended final verification surface, not
+a claim that a simulator or head unit ran in CI. KR-U09 separately has local L3
+evidence from the actual internal SwiftUI panel: unit tests calculate the
+contrast of the theme tokens, and XCUITest inspects the accessibility tree at
+standard and AXXXL Simulator content sizes. This narrow panel evidence does not
+qualify full-app focus order, Switch Control, physical devices,
+`CPMapTemplate`, or a head unit.
 
 KR-U01 and KR-U02 execute the parked `ExpertRouteEditorSession` at L1/L2 even
 though their declared final surface is iPhone UI. The runner starts from an exact
@@ -242,8 +249,8 @@ no one-shot prompt emission, so `voice.should_speak` remains false and the panel
 cannot play audio. This does not verify full-app localization, pronunciation,
 the audio lifecycle, or released road guidance.
 
-The internal iPhone driving preview adds local L3 adapter evidence for KR-U06,
-KR-U07, KR-U08, KR-U10, KR-U12, and KR-U14. It executes one stale LOW observation and one
+The internal iPhone driving preview adds local L3 adapter evidence for KR-U06
+through KR-U10, KR-U12, and KR-U14. It executes one stale LOW observation and one
 released synthetic egress selection through `NavigationEngine`, then passes the
 resulting snapshots to `KaidoPresentation`. Focused app tests compare measured
 and estimated markers, require neutral realtime-unconfirmed passage and
@@ -253,9 +260,13 @@ It also executes ownership-only `connectCarPlay()`, requires phone and CarPlay
 to retain one occurrence-scoped frame and junction definition, and rejects an
 unreleased junction definition without replacing the prior valid state. The
 SwiftUI renderer consumes exact normalized paths and lane indices. The model
-supplies no prompt emission. This does not verify live location, production
-DecisionZones, final pixels, accessibility, `CPMapTemplate`, a CarPlay scene,
-physical hardware, or released road data.
+supplies no prompt emission. KR-U09 binds the same projection to localized
+assistive labels, a single-column accessibility-size layout, and non-color
+branch/lane cues. Focused tests verify a 4.5:1 theme-token contrast floor and
+the critical accessibility tree in both standard and AXXXL Simulator sizes.
+This does not verify live location, production DecisionZones, full-app
+accessibility, final pixels across the device matrix, `CPMapTemplate`, a
+CarPlay scene, physical hardware, or released road data.
 
 KR-U13 reuses `ROUTE_COMPILE_REQUESTED` to cross the direction-first entrance
 recommendation into an iPhone-intended explanation contract. The runner exposes

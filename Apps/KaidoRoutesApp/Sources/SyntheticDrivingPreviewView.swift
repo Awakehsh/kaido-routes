@@ -3,6 +3,7 @@ import KaidoPresentation
 import SwiftUI
 
 struct SyntheticDrivingPreviewPanel: View {
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @ObservedObject var model: SyntheticDrivingPreviewModel
 
   var body: some View {
@@ -40,40 +41,57 @@ struct SyntheticDrivingPreviewPanel: View {
         .stroke(KaidoTheme.positionCyan.opacity(0.35), lineWidth: 1)
     }
     .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("kr-u09-driving-panel")
+    .accessibilityValue(layoutMode.rawValue)
   }
 
+  @ViewBuilder
   private var header: some View {
-    HStack(alignment: .top) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text("行驶状态")
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
-
-        Text("DRIVING SURFACE · SYNTHETIC")
-          .font(.system(size: 9, weight: .bold, design: .monospaced))
-          .tracking(0.75)
-          .foregroundStyle(KaidoTheme.muted)
-
-        Text("仅执行投影合同，不接入实时定位或导航")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(KaidoTheme.muted)
+    if layoutMode == .accessibility {
+      VStack(alignment: .leading, spacing: 10) {
+        headerText
+        StatusCapsule(
+          title: "NO LIVE DATA",
+          color: KaidoTheme.positionCyan
+        )
       }
+    } else {
+      HStack(alignment: .top) {
+        headerText
+        Spacer()
+        StatusCapsule(
+          title: "NO LIVE DATA",
+          color: KaidoTheme.positionCyan
+        )
+      }
+    }
+  }
 
-      Spacer()
+  private var headerText: some View {
+    VStack(alignment: .leading, spacing: 3) {
+      Text("行驶状态")
+        .font(.system(.title3, design: .rounded, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
-      StatusCapsule(
-        title: "NO LIVE DATA",
-        color: KaidoTheme.positionCyan
-      )
+      Text("DRIVING SURFACE · SYNTHETIC")
+        .font(.system(.caption, design: .monospaced, weight: .bold))
+        .tracking(0.75)
+        .foregroundStyle(KaidoTheme.muted)
+
+      Text("仅执行投影合同，不接入实时定位或导航")
+        .font(.subheadline)
+        .foregroundStyle(KaidoTheme.muted)
     }
   }
 
   private var stateSelector: some View {
     LazyVGrid(
-      columns: [
-        GridItem(.flexible(), spacing: 6),
-        GridItem(.flexible(), spacing: 6),
-      ],
+      columns: Array(
+        repeating: GridItem(.flexible(), spacing: 6),
+        count: KaidoAccessibilityLayoutPolicy.selectorColumnCount(
+          for: dynamicTypeSize
+        )
+      ),
       spacing: 6
     ) {
       ForEach(SyntheticDrivingPreviewCase.allCases) { previewCase in
@@ -81,10 +99,11 @@ struct SyntheticDrivingPreviewPanel: View {
           model.select(previewCase)
         } label: {
           Text(caseLabel(previewCase))
-            .font(.system(size: 9, weight: .bold))
+            .font(.headline)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
-            .frame(height: 42)
+            .padding(.vertical, 10)
+            .frame(minHeight: 48)
             .foregroundStyle(
               model.selectedCase == previewCase
                 ? KaidoTheme.asphalt
@@ -102,69 +121,136 @@ struct SyntheticDrivingPreviewPanel: View {
           model.selectedCase == previewCase ? .isSelected : []
         )
         .accessibilityLabel("合成驾驶状态：\(caseAccessibilityLabel(previewCase))")
+        .accessibilityIdentifier("driving-state-\(previewCase.rawValue.lowercased())")
       }
     }
   }
 
+  @ViewBuilder
   private var guidanceCard: some View {
     let presentation = model.state.projection.iPhone
-    return VStack(alignment: .leading, spacing: 13) {
-      HStack(alignment: .top, spacing: 12) {
-        Text(presentation.routeShields.first ?? "—")
-          .font(.system(size: 20, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.asphalt)
-          .frame(width: 48, height: 38)
-          .background(KaidoTheme.signalAmber)
-          .clipShape(RoundedRectangle(cornerRadius: 10))
-          .accessibilityLabel(
-            "路线盾牌 \(presentation.routeShields.first ?? "未知")"
-          )
+    let accessibility = accessibilityPresentation
 
-        VStack(alignment: .leading, spacing: 3) {
-          Text(verbatim: presentation.japaneseSignText)
-            .font(.system(size: 17, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeWhite)
-
-          Text(presentation.localizedDisplayText)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(KaidoTheme.muted)
+    VStack(alignment: .leading, spacing: 13) {
+      if layoutMode == .accessibility {
+        VStack(alignment: .leading, spacing: 10) {
+          routeShieldBadge(presentation, accessibility: accessibility)
+          guidanceText(presentation)
+          distanceAndStage(presentation)
         }
-
-        Spacer(minLength: 2)
-
-        VStack(alignment: .trailing, spacing: 2) {
-          Text(distanceLabel(presentation.distanceMeters))
-            .font(.system(size: 18, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeWhite)
-
-          Text(verbatim: presentation.guidanceStage.rawValue)
-            .font(.system(size: 8, weight: .black, design: .monospaced))
-            .foregroundStyle(KaidoTheme.signalAmber)
+      } else {
+        HStack(alignment: .top, spacing: 12) {
+          routeShieldBadge(presentation, accessibility: accessibility)
+          guidanceText(presentation)
+          Spacer(minLength: 2)
+          distanceAndStage(presentation)
         }
       }
 
       Divider()
         .overlay(KaidoTheme.steel)
 
-      HStack {
-        Label(
-          presentation.localizedDecisionPointName,
-          systemImage: "arrow.triangle.branch"
-        )
-        .font(.system(size: 11, weight: .bold))
-        .foregroundStyle(KaidoTheme.routeWhite)
-
-        Spacer()
-
-        Text(verbatim: presentation.nextMovementOccurrenceID ?? "NO MOVEMENT")
-          .font(.system(size: 8, weight: .medium, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
-          .lineLimit(1)
+      if layoutMode == .accessibility {
+        VStack(alignment: .leading, spacing: 5) {
+          decisionPoint(presentation)
+          occurrenceID(presentation)
+        }
+      } else {
+        HStack {
+          decisionPoint(presentation)
+          Spacer()
+          occurrenceID(presentation)
+        }
       }
     }
     .padding(14)
     .background(KaidoTheme.asphalt.opacity(0.55))
     .clipShape(RoundedRectangle(cornerRadius: 16))
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(accessibility.guidanceLabel)
+    .accessibilityIdentifier("driving-guidance-card")
+  }
+
+  private func routeShieldBadge(
+    _ presentation: NavigationSurfacePresentation,
+    accessibility: NavigationAccessibilityPresentation
+  ) -> some View {
+    Text(presentation.routeShields.first ?? "—")
+      .font(.system(.title2, design: .rounded, weight: .black))
+      .foregroundStyle(KaidoTheme.asphalt)
+      .padding(.horizontal, 14)
+      .frame(minWidth: 48, minHeight: 44)
+      .background(KaidoTheme.signalAmber)
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .accessibilityLabel(
+        accessibility.routeShieldLabels.first ?? "路线盾牌未知"
+      )
+      .accessibilityIdentifier("driving-route-shield")
+  }
+
+  private func guidanceText(
+    _ presentation: NavigationSurfacePresentation
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 3) {
+      Text(verbatim: presentation.japaneseSignText)
+        .font(.system(.headline, design: .rounded, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Text(presentation.localizedDisplayText)
+        .font(.subheadline.weight(.bold))
+        .foregroundStyle(KaidoTheme.muted)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private func distanceAndStage(
+    _ presentation: NavigationSurfacePresentation
+  ) -> some View {
+    VStack(
+      alignment: layoutMode == .accessibility ? .leading : .trailing,
+      spacing: 2
+    ) {
+      Text(distanceLabel(presentation.distanceMeters))
+        .font(.system(.title3, design: .rounded, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
+
+      Text(verbatim: presentation.guidanceStage.rawValue)
+        .font(.system(.caption2, design: .monospaced, weight: .black))
+        .foregroundStyle(KaidoTheme.signalAmber)
+    }
+  }
+
+  private func decisionPoint(
+    _ presentation: NavigationSurfacePresentation
+  ) -> some View {
+    Label(
+      presentation.localizedDecisionPointName,
+      systemImage: "arrow.triangle.branch"
+    )
+    .font(.subheadline.weight(.bold))
+    .foregroundStyle(KaidoTheme.routeWhite)
+  }
+
+  private func occurrenceID(
+    _ presentation: NavigationSurfacePresentation
+  ) -> some View {
+    Text(verbatim: presentation.nextMovementOccurrenceID ?? "NO MOVEMENT")
+      .font(.system(.caption2, design: .monospaced, weight: .medium))
+      .foregroundStyle(KaidoTheme.muted)
+      .lineLimit(layoutMode == .accessibility ? 2 : 1)
+      .fixedSize(horizontal: false, vertical: true)
+  }
+
+  private var accessibilityPresentation: NavigationAccessibilityPresentation {
+    NavigationAccessibilityProjector.project(
+      model.state.projection.iPhone,
+      locale: .simplifiedChinese
+    )
+  }
+
+  private var layoutMode: KaidoAccessibilityLayoutMode {
+    KaidoAccessibilityLayoutPolicy.mode(for: dynamicTypeSize)
   }
 
   private var safetyGrid: some View {
@@ -183,7 +269,9 @@ struct SyntheticDrivingPreviewPanel: View {
       value: markerLabel(marker),
       detail: markerDetail(marker),
       color: markerColor(marker),
-      dashed: marker != .measured
+      dashed: marker != .measured,
+      accessibilityText: accessibilityPresentation.markerLabel,
+      accessibilityID: "driving-marker-status"
     )
   }
 
@@ -196,7 +284,9 @@ struct SyntheticDrivingPreviewPanel: View {
       detail: passage.evidence.rawValue,
       color: passage.usesPositiveOpenColor
         ? KaidoTheme.confirmedGreen
-        : KaidoTheme.signalAmber
+        : KaidoTheme.signalAmber,
+      accessibilityText: accessibilityPresentation.passageLabel,
+      accessibilityID: "driving-passage-status"
     )
   }
 
@@ -211,7 +301,9 @@ struct SyntheticDrivingPreviewPanel: View {
         : "无需触碰手机",
       color: presentation.routeEditingAvailability == .availableWhileParked
         ? KaidoTheme.confirmedGreen
-        : KaidoTheme.evidenceCoral
+        : KaidoTheme.evidenceCoral,
+      accessibilityText: accessibilityPresentation.routeEditingLabel,
+      accessibilityID: "driving-editing-status"
     )
   }
 
@@ -220,28 +312,28 @@ struct SyntheticDrivingPreviewPanel: View {
       HStack {
         VStack(alignment: .leading, spacing: 2) {
           Text("先确认结束出口")
-            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .font(.system(.caption, design: .monospaced, weight: .black))
             .tracking(0.5)
             .foregroundStyle(KaidoTheme.signalAmber)
 
           Text(finishDrive.localizedExitName)
-            .font(.system(size: 20, weight: .black, design: .rounded))
+            .font(.system(.title3, design: .rounded, weight: .black))
             .foregroundStyle(KaidoTheme.routeWhite)
         }
 
         Spacer()
 
         Image(systemName: "door.left.hand.open")
-          .font(.system(size: 22, weight: .bold))
+          .font(.title2.weight(.bold))
           .foregroundStyle(KaidoTheme.signalAmber)
       }
 
       Text("BEFORE BRANCH GUIDANCE")
-        .font(.system(size: 9, weight: .black, design: .monospaced))
+        .font(.system(.caption, design: .monospaced, weight: .black))
         .foregroundStyle(KaidoTheme.muted)
 
       Label("禁止掉头、倒车或反向行驶", systemImage: "arrow.uturn.backward.circle.fill")
-        .font(.system(size: 11, weight: .bold))
+        .font(.subheadline.weight(.bold))
         .foregroundStyle(KaidoTheme.evidenceCoral)
     }
     .padding(14)
@@ -374,51 +466,99 @@ struct SyntheticDrivingPreviewPanel: View {
 }
 
 private struct SafetyStatusRow: View {
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
   let icon: String
   let title: String
   let value: String
   let detail: String
   let color: Color
   var dashed = false
+  let accessibilityText: String
+  let accessibilityID: String
 
+  @ViewBuilder
   var body: some View {
-    HStack(spacing: 12) {
-      Image(systemName: icon)
-        .font(.system(size: 15, weight: .bold))
-        .foregroundStyle(color)
-        .frame(width: 34, height: 34)
-        .overlay {
-          Circle()
-            .stroke(
-              color.opacity(0.7),
-              style: StrokeStyle(
-                lineWidth: 1.5,
-                dash: dashed ? [3, 3] : []
-              )
-            )
+    if dynamicTypeSize.isAccessibilitySize {
+      VStack(alignment: .leading, spacing: 10) {
+        HStack(spacing: 12) {
+          statusIcon
+          statusText
         }
-
-      VStack(alignment: .leading, spacing: 2) {
-        Text(title)
-          .font(.system(size: 9, weight: .bold, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
-
-        Text(value)
-          .font(.system(size: 13, weight: .black))
-          .foregroundStyle(color)
+        detailText
       }
-
-      Spacer()
-
-      Text(verbatim: detail)
-        .font(.system(size: 8, weight: .medium, design: .monospaced))
-        .foregroundStyle(KaidoTheme.muted)
-        .multilineTextAlignment(.trailing)
+      .modifier(
+        SafetyStatusRowSurface(
+          accessibilityText: accessibilityText,
+          accessibilityID: accessibilityID
+        )
+      )
+    } else {
+      HStack(spacing: 12) {
+        statusIcon
+        statusText
+        Spacer()
+        detailText
+      }
+      .modifier(
+        SafetyStatusRowSurface(
+          accessibilityText: accessibilityText,
+          accessibilityID: accessibilityID
+        )
+      )
     }
-    .padding(11)
-    .background(KaidoTheme.asphalt.opacity(0.42))
-    .clipShape(RoundedRectangle(cornerRadius: 13))
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(title)：\(value)。\(detail)")
+  }
+
+  private var statusIcon: some View {
+    Image(systemName: icon)
+      .font(.headline.weight(.bold))
+      .foregroundStyle(color)
+      .frame(width: 38, height: 38)
+      .overlay {
+        Circle()
+          .stroke(
+            color.opacity(0.7),
+            style: StrokeStyle(
+              lineWidth: 1.5,
+              dash: dashed ? [3, 3] : []
+            )
+          )
+      }
+      .accessibilityHidden(true)
+  }
+
+  private var statusText: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(title)
+        .font(.system(.caption, design: .monospaced, weight: .bold))
+        .foregroundStyle(KaidoTheme.muted)
+
+      Text(value)
+        .font(.headline.weight(.black))
+        .foregroundStyle(color)
+    }
+  }
+
+  private var detailText: some View {
+    Text(verbatim: detail)
+      .font(.system(.caption2, design: .monospaced, weight: .medium))
+      .foregroundStyle(KaidoTheme.muted)
+      .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+      .fixedSize(horizontal: false, vertical: true)
+  }
+}
+
+private struct SafetyStatusRowSurface: ViewModifier {
+  let accessibilityText: String
+  let accessibilityID: String
+
+  func body(content: Content) -> some View {
+    content
+      .padding(11)
+      .background(KaidoTheme.asphalt.opacity(0.42))
+      .clipShape(RoundedRectangle(cornerRadius: 13))
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(accessibilityText)
+      .accessibilityIdentifier(accessibilityID)
   }
 }

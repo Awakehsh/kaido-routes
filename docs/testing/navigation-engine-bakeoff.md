@@ -476,17 +476,18 @@ gate.
 ## Execution order
 
 1. **Complete:** implement the pure Swift portable-scenario adapter and make the
-   current 53 scenarios with 336 semantic assertions executable at L1/L2. KR-S16
+   current 54 scenarios with 345 semantic assertions executable at L1/L2. KR-S16
    crosses the incremental matcher-to-navigation boundary; KR-S17 crosses
    resolved progress through frame planning, the prompt ledger, and projection;
    KR-S18 crosses HIGH Swift matcher along-edge progress through exact route
    geometry to that same guidance path without using lateral residual;
    KR-U01 crosses the parked expert-editor cursor and exact RoutePlan compilation
    boundary; KR-U02 adds reviewed closed-lap candidate matching, value
-   duplication with fresh occurrence IDs, and grouped undo; KR-U04 through U08,
+   duplication with fresh occurrence IDs, and grouped undo; KR-U04 through U09,
    KR-U10 through U12, and KR-U14 cross the shared presentation projection
    boundary, including one released junction-view definition shared by phone and
-   CarPlay; KR-U13 carries direction-first entrance selection and rejected-nearer
+   CarPlay and localized accessibility semantics with non-color branch/lane
+   cues; KR-U13 carries direction-first entrance selection and rejected-nearer
    reasons into an iPhone-intended explanation without giving UI ranking
    authority.
 2. **Complete for the first five graph-bound fixtures:** the fixture format,
@@ -582,12 +583,16 @@ gate.
     engine observation remains estimated and realtime-unconfirmed, a moving
     DecisionZone locks editing, and engine-owned Finish selection names one
     released synthetic exit before branch guidance. A fourth state crosses
-    KR-U10/KR-U14 by changing only engine-owned surface ownership and rendering
+    KR-U09/KR-U10/KR-U14 by changing only engine-owned surface ownership and rendering
     one immutable occurrence-bound junction definition with exact path and lane
-    values on iPhone; it does not instantiate CarPlay. Next add production
-    corridor/DecisionZone construction and calibration, then bind actual
-    `NavigationSession` state to the SwiftUI phone renderer and accessibility
-    tree, followed by the `CPMapTemplate` adapter and audio lifecycle.
+    values on iPhone. The same actual panel now projects localized accessibility
+    labels, non-color branch/lane cues, a tested 4.5:1 critical text contrast
+    floor, and a single-column accessibility Dynamic Type layout. Standard and
+    AXXXL local XCUITests cover this bounded panel; they do not instantiate
+    CarPlay or qualify the full app. Next add production corridor/DecisionZone
+    construction and calibration, then bind actual `NavigationSession` state to
+    the SwiftUI phone renderer, followed by full-app accessibility review, the
+    `CPMapTemplate` adapter, and audio lifecycle.
 11. **Partial complete:** the snapshot-bound `ExpertRouteEditorSession` exposes
     only legal choices for the exact incoming approach/JCT, creates fresh
     occurrences across cycles, locks moving-time interaction, supports grouped

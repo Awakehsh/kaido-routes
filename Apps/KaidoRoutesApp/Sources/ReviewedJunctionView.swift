@@ -3,6 +3,8 @@ import KaidoPresentation
 import SwiftUI
 
 struct ReviewedJunctionViewCard: View {
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
   let definition: JunctionViewDefinition
   let iPhone: NavigationSurfacePresentation
   let carPlay: NavigationSurfacePresentation
@@ -11,8 +13,12 @@ struct ReviewedJunctionViewCard: View {
     VStack(alignment: .leading, spacing: 14) {
       header
 
-      JunctionVectorDiagram(definition: definition)
-        .frame(height: 190)
+      JunctionVectorDiagram(
+        definition: definition,
+        accessibilityText:
+          phoneAccessibility.junctionDiagramLabel ?? "无路口示意"
+      )
+      .frame(height: dynamicTypeSize.isAccessibilitySize ? 250 : 190)
 
       laneLayout
       surfaceOwnership
@@ -26,53 +32,75 @@ struct ReviewedJunctionViewCard: View {
         .stroke(KaidoTheme.positionCyan.opacity(0.42), lineWidth: 1)
     }
     .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("reviewed-junction-card")
   }
 
+  @ViewBuilder
   private var header: some View {
-    HStack(alignment: .top, spacing: 12) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text("合成路口示意")
-          .font(.system(size: 15, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
-
-        Text("REVIEW CONTRACT · FIXTURE ONLY")
-          .font(.system(size: 8, weight: .black, design: .monospaced))
-          .tracking(0.55)
-          .foregroundStyle(KaidoTheme.positionCyan)
-
-        Text("几何、车道与分支均来自同一不可变定义")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(KaidoTheme.muted)
+    if dynamicTypeSize.isAccessibilitySize {
+      VStack(alignment: .leading, spacing: 10) {
+        headerText
+        routeShields
       }
+    } else {
+      HStack(alignment: .top, spacing: 12) {
+        headerText
+        Spacer()
+        routeShields
+      }
+    }
+  }
 
-      Spacer()
+  private var headerText: some View {
+    VStack(alignment: .leading, spacing: 3) {
+      Text("合成路口示意")
+        .font(.system(.headline, design: .rounded, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
-      HStack(spacing: 6) {
-        ForEach(definition.routeShields, id: \.self) { shield in
-          Text(verbatim: shield)
-            .font(.system(size: 14, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.asphalt)
-            .frame(width: 36, height: 30)
-            .background(KaidoTheme.signalAmber)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .accessibilityLabel("路线盾牌 \(shield)")
-        }
+      Text("REVIEW CONTRACT · FIXTURE ONLY")
+        .font(.system(.caption2, design: .monospaced, weight: .black))
+        .tracking(0.55)
+        .foregroundStyle(KaidoTheme.positionCyan)
+
+      Text("几何、车道与分支均来自同一不可变定义")
+        .font(.subheadline)
+        .foregroundStyle(KaidoTheme.muted)
+    }
+  }
+
+  private var routeShields: some View {
+    HStack(spacing: 6) {
+      ForEach(Array(definition.routeShields.enumerated()), id: \.offset) {
+        index,
+        shield in
+        Text(verbatim: shield)
+          .font(.system(.title3, design: .rounded, weight: .black))
+          .foregroundStyle(KaidoTheme.asphalt)
+          .padding(.horizontal, 12)
+          .frame(minWidth: 44, minHeight: 44)
+          .background(KaidoTheme.signalAmber)
+          .clipShape(RoundedRectangle(cornerRadius: 8))
+          .accessibilityLabel(
+            phoneAccessibility.routeShieldLabels[index]
+          )
+          .accessibilityIdentifier("junction-route-shield-\(index)")
       }
     }
   }
 
   private var laneLayout: some View {
     VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Text("车道 · 从左到右")
-          .font(.system(size: 9, weight: .black, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
-
-        Spacer()
-
-        Text("黄色 = 首选 · 白色 = 可用")
-          .font(.system(size: 8, weight: .medium))
-          .foregroundStyle(KaidoTheme.muted)
+      if dynamicTypeSize.isAccessibilitySize {
+        VStack(alignment: .leading, spacing: 3) {
+          laneTitle
+          laneLegend
+        }
+      } else {
+        HStack {
+          laneTitle
+          Spacer()
+          laneLegend
+        }
       }
 
       HStack(spacing: 6) {
@@ -81,8 +109,31 @@ struct ReviewedJunctionViewCard: View {
         }
       }
     }
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(laneAccessibilityLabel)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(phoneAccessibility.junctionLaneLabel ?? "无车道信息")
+    .accessibilityIdentifier("junction-lane-layout")
+  }
+
+  private var laneTitle: some View {
+    Text("车道 · 从左到右")
+      .font(.system(.caption, design: .monospaced, weight: .black))
+      .foregroundStyle(KaidoTheme.muted)
+  }
+
+  private var laneLegend: some View {
+    HStack(spacing: 5) {
+      Image(systemName: "checkmark.circle.fill")
+        .accessibilityHidden(true)
+      Text("首选")
+      Image(systemName: "arrow.up")
+        .accessibilityHidden(true)
+      Text("可用")
+      Image(systemName: "xmark")
+        .accessibilityHidden(true)
+      Text("不可用")
+    }
+    .font(.caption2.weight(.bold))
+    .foregroundStyle(KaidoTheme.muted)
   }
 
   private func laneCell(_ laneIndex: Int) -> some View {
@@ -92,48 +143,89 @@ struct ReviewedJunctionViewCard: View {
       isPreferred
       ? KaidoTheme.signalAmber
       : isAllowed ? KaidoTheme.routeWhite : KaidoTheme.steel
+    let icon =
+      isPreferred
+      ? "checkmark.circle.fill"
+      : isAllowed ? "arrow.up" : "xmark"
 
     return VStack(spacing: 4) {
-      Image(systemName: isAllowed ? "arrow.up" : "xmark")
-        .font(.system(size: 13, weight: .black))
+      Image(systemName: icon)
+        .font(.headline.weight(.black))
 
       Text("\(laneIndex + 1)")
-        .font(.system(size: 9, weight: .black, design: .monospaced))
+        .font(.system(.caption, design: .monospaced, weight: .black))
+
+      if dynamicTypeSize.isAccessibilitySize {
+        Text(laneStateLabel(isPreferred: isPreferred, isAllowed: isAllowed))
+          .font(.caption2.weight(.bold))
+      }
     }
-    .foregroundStyle(isAllowed ? KaidoTheme.asphalt : KaidoTheme.muted)
+    .foregroundStyle(isAllowed ? KaidoTheme.asphalt : KaidoTheme.routeWhite)
     .frame(maxWidth: .infinity)
-    .frame(height: 46)
+    .padding(.vertical, 8)
+    .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 82 : 52)
     .background(color)
     .clipShape(RoundedRectangle(cornerRadius: 9))
+  }
+
+  private func laneStateLabel(isPreferred: Bool, isAllowed: Bool) -> String {
+    if isPreferred {
+      return "首选"
+    }
+    if isAllowed {
+      return "可用"
+    }
+    return "不可用"
   }
 
   private var surfaceOwnership: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack {
         Text("共享投影")
-          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .font(.system(.caption, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.muted)
 
         Spacer()
 
         Text("NO CARPLAY SCENE")
-          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .font(.system(.caption2, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.evidenceCoral)
+          .accessibilityLabel("仅投影所有权，没有 CarPlay 场景")
+          .accessibilityIdentifier("junction-no-carplay-scene")
       }
 
-      HStack(spacing: 8) {
-        SurfaceOwnershipCell(
-          title: "iPhone",
-          status: iPhone.isPrimarySurface ? "PRIMARY" : "COMPANION",
-          isPrimary: iPhone.isPrimarySurface
-        )
-        SurfaceOwnershipCell(
-          title: "CarPlay",
-          status: carPlay.isPrimarySurface ? "PRIMARY" : "COMPANION",
-          isPrimary: carPlay.isPrimarySurface
-        )
+      if dynamicTypeSize.isAccessibilitySize {
+        VStack(spacing: 8) {
+          iPhoneOwnership
+          carPlayOwnership
+        }
+      } else {
+        HStack(spacing: 8) {
+          iPhoneOwnership
+          carPlayOwnership
+        }
       }
     }
+  }
+
+  private var iPhoneOwnership: some View {
+    SurfaceOwnershipCell(
+      title: "iPhone",
+      status: iPhone.isPrimarySurface ? "PRIMARY" : "COMPANION",
+      isPrimary: iPhone.isPrimarySurface,
+      accessibilityText: phoneAccessibility.surfaceOwnershipLabel,
+      accessibilityID: "junction-surface-iphone"
+    )
+  }
+
+  private var carPlayOwnership: some View {
+    SurfaceOwnershipCell(
+      title: "CarPlay",
+      status: carPlay.isPrimarySurface ? "PRIMARY" : "COMPANION",
+      isPrimary: carPlay.isPrimarySurface,
+      accessibilityText: carPlayAccessibility.surfaceOwnershipLabel,
+      accessibilityID: "junction-surface-carplay"
+    )
   }
 
   private var identityFooter: some View {
@@ -150,17 +242,19 @@ struct ReviewedJunctionViewCard: View {
 
       HStack {
         Text(verbatim: definition.evidence.state.rawValue)
-          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .font(.system(.caption2, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.positionCyan)
 
         Text("SYNTHETIC RELEASE-GATE VALUE")
-          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .font(.system(.caption2, design: .monospaced, weight: .black))
           .foregroundStyle(KaidoTheme.evidenceCoral)
+          .accessibilityLabel("合成发布门槛值，不是真实道路发布证据")
+          .accessibilityIdentifier("junction-synthetic-evidence-warning")
 
         Spacer()
 
         Text(verbatim: definition.evidence.checkedAt)
-          .font(.system(size: 8, weight: .medium, design: .monospaced))
+          .font(.system(.caption2, design: .monospaced, weight: .medium))
           .foregroundStyle(KaidoTheme.muted)
       }
     }
@@ -172,30 +266,39 @@ struct ReviewedJunctionViewCard: View {
   private func identityRow(title: String, value: String) -> some View {
     HStack(alignment: .firstTextBaseline, spacing: 8) {
       Text(title)
-        .font(.system(size: 8, weight: .black, design: .monospaced))
+        .font(.system(.caption2, design: .monospaced, weight: .black))
         .foregroundStyle(KaidoTheme.muted)
-        .frame(width: 88, alignment: .leading)
+        .frame(
+          width: dynamicTypeSize.isAccessibilitySize ? nil : 88,
+          alignment: .leading
+        )
 
       Text(verbatim: value)
-        .font(.system(size: 8, weight: .medium, design: .monospaced))
+        .font(.system(.caption2, design: .monospaced, weight: .medium))
         .foregroundStyle(KaidoTheme.routeWhite)
-        .lineLimit(1)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+        .fixedSize(horizontal: false, vertical: true)
     }
   }
 
-  private var laneAccessibilityLabel: String {
-    let allowed = definition.laneLayout.allowedLaneIndices.map { String($0 + 1) }
-      .joined(separator: "、")
-    let preferred = definition.laneLayout.preferredLaneIndices.map { String($0 + 1) }
-      .joined(separator: "、")
-    return
-      "共 \(definition.laneLayout.laneCount) 条车道，从左到右编号。"
-      + "可用车道 \(allowed)，首选车道 \(preferred)。"
+  private var phoneAccessibility: NavigationAccessibilityPresentation {
+    NavigationAccessibilityProjector.project(
+      iPhone,
+      locale: .simplifiedChinese
+    )
+  }
+
+  private var carPlayAccessibility: NavigationAccessibilityPresentation {
+    NavigationAccessibilityProjector.project(
+      carPlay,
+      locale: .simplifiedChinese
+    )
   }
 }
 
 private struct JunctionVectorDiagram: View {
   let definition: JunctionViewDefinition
+  let accessibilityText: String
 
   var body: some View {
     ZStack(alignment: .top) {
@@ -226,13 +329,14 @@ private struct JunctionVectorDiagram: View {
             )
           )
         }
+        drawSelectedPathMarker(context: context, size: size)
       }
       .padding(.horizontal, 34)
       .padding(.top, 28)
       .padding(.bottom, 16)
 
       Text(verbatim: definition.japaneseSignText)
-        .font(.system(size: 11, weight: .black, design: .rounded))
+        .font(.system(.subheadline, design: .rounded, weight: .black))
         .foregroundStyle(KaidoTheme.routeWhite)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -241,18 +345,12 @@ private struct JunctionVectorDiagram: View {
         .padding(.top, 9)
     }
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel(
-      "审查路口矢量示意。日文标志目标：\(definition.japaneseSignText)。"
-        + "高亮分支来自 \(selectedPathID)。"
-    )
+    .accessibilityLabel(accessibilityText)
+    .accessibilityIdentifier("junction-vector-diagram")
   }
 
   private var orderedPaths: [JunctionViewPath] {
     definition.paths.sorted { roleRank($0.role) < roleRank($1.role) }
-  }
-
-  private var selectedPathID: String {
-    definition.paths.first(where: { $0.role == .selected })?.id ?? "NONE"
   }
 
   private func roleRank(_ role: JunctionViewPathRole) -> Int {
@@ -276,21 +374,55 @@ private struct JunctionVectorDiagram: View {
       KaidoTheme.signalAmber
     }
   }
+
+  private func drawSelectedPathMarker(
+    context: GraphicsContext,
+    size: CGSize
+  ) {
+    guard
+      let endpoint = definition.paths.first(where: { $0.role == .selected })?
+        .points.last
+    else {
+      return
+    }
+    let renderedPoint = CGPoint(
+      x: endpoint.x * size.width,
+      y: endpoint.y * size.height
+    )
+    let markerRect = CGRect(
+      x: renderedPoint.x - 11,
+      y: renderedPoint.y - 11,
+      width: 22,
+      height: 22
+    )
+    context.fill(
+      Path(ellipseIn: markerRect),
+      with: .color(KaidoTheme.signalAmber)
+    )
+    context.draw(
+      Text("✓")
+        .font(.caption.weight(.black))
+        .foregroundStyle(KaidoTheme.asphalt),
+      at: renderedPoint
+    )
+  }
 }
 
 private struct SurfaceOwnershipCell: View {
   let title: String
   let status: String
   let isPrimary: Bool
+  let accessibilityText: String
+  let accessibilityID: String
 
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
       Text(title)
-        .font(.system(size: 10, weight: .black, design: .rounded))
+        .font(.system(.subheadline, design: .rounded, weight: .black))
         .foregroundStyle(KaidoTheme.routeWhite)
 
       Text(verbatim: status)
-        .font(.system(size: 8, weight: .black, design: .monospaced))
+        .font(.system(.caption, design: .monospaced, weight: .black))
         .foregroundStyle(
           isPrimary ? KaidoTheme.positionCyan : KaidoTheme.muted
         )
@@ -313,6 +445,7 @@ private struct SurfaceOwnershipCell: View {
         )
     }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(title) 投影状态：\(status)")
+    .accessibilityLabel(accessibilityText)
+    .accessibilityIdentifier(accessibilityID)
   }
 }

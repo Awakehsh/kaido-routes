@@ -1,0 +1,239 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U09",
+  "title": "Critical driving guidance retains accessible non-color semantics",
+  "layer": "IPHONE_UI",
+  "tags": ["accessibility", "dynamic-type", "voiceover", "route-shields"],
+  "purpose": "Keep route shields, Japanese sign text, degraded status, selected junction path, and preferred lanes available as structured labels and non-color cues before SwiftUI layout and VoiceOver binding.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The portable scenario verifies accessibility semantics, not Dynamic Type pixels, VoiceOver focus order, or a physical display.",
+      "Local XCUITest and Simulator checks are required to verify the SwiftUI binding and accessibility-size layout."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.accessibility-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-24T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.accessibility",
+      "network_snapshot_id": "test.snapshot.accessibility-v1",
+      "entry_facility_id": "test.entry",
+      "exit_facility_id": "test.exit",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.accessibility-approach",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.accessibility-approach"
+        },
+        {
+          "occurrence_id": "test.occurrence.accessibility-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.accessibility"
+        }
+      ]
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "ja-JP"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": true
+        },
+        "guidance": {
+          "prompt_id": "test.prompt.u09.prepare",
+          "anchor_id": "PREPARE",
+          "anchor_occurrence_id": "test.occurrence.accessibility-approach",
+          "movement_occurrence_id": "test.occurrence.accessibility-movement",
+          "decision_zone_id": "test.zone.accessibility",
+          "stage": "PREPARE",
+          "distance_meters": 600,
+          "decision_point_name_ja": "テストJCT",
+          "localized_decision_point_names": {
+            "ja-JP": "テストJCT",
+            "zh-Hans": "测试 JCT",
+            "en": "Test JCT"
+          },
+          "maneuver": "KEEP_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "左側を進み、B 湾岸線、横浜方面へ",
+              "spoken_forms": {"B": "ビー"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {"B": "B 路线"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {"B": "Route B"},
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          },
+          "junction_view": {
+            "view_id": "test.junction-view.accessibility",
+            "network_snapshot_id": "test.snapshot.accessibility-v1",
+            "movement_occurrence_id": "test.occurrence.accessibility-movement",
+            "paths": [
+              {
+                "path_id": "test.path.accessibility-approach",
+                "role": "APPROACH",
+                "points": [
+                  {"x": 0.5, "y": 1.0},
+                  {"x": 0.5, "y": 0.55}
+                ]
+              },
+              {
+                "path_id": "test.path.accessibility-selected",
+                "role": "SELECTED",
+                "points": [
+                  {"x": 0.5, "y": 0.55},
+                  {"x": 0.35, "y": 0.3},
+                  {"x": 0.15, "y": 0.05}
+                ]
+              },
+              {
+                "path_id": "test.path.accessibility-alternative",
+                "role": "ALTERNATIVE",
+                "points": [
+                  {"x": 0.5, "y": 0.55},
+                  {"x": 0.65, "y": 0.3},
+                  {"x": 0.85, "y": 0.05}
+                ]
+              }
+            ],
+            "lane_layout": {
+              "lane_count": 3,
+              "allowed_lane_indices": [0, 1],
+              "preferred_lane_indices": [0]
+            },
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "route_shields": ["B"],
+            "evidence": {
+              "state": "RELEASED",
+              "checked_at": "2026-07-24",
+              "source_reference_ids": ["test.source.accessibility-junction"]
+            }
+          }
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.accessibility",
+      "current_occurrence_id": "test.occurrence.accessibility-approach",
+      "location_confidence": "LOW"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "route-shield-readable",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.accessibility.phone.route_shield_labels",
+      "matcher": "EQUALS",
+      "expected": ["路线盾牌 B"],
+      "rationale": "The route shield remains a named recognition target instead of a visual-only badge."
+    },
+    {
+      "id": "japanese-sign-readable",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.accessibility.phone.guidance_label",
+      "matcher": "CONTAINS",
+      "expected": "日文路牌 B 湾岸線・横浜方面",
+      "rationale": "VoiceOver guidance retains the exact Japanese sign target."
+    },
+    {
+      "id": "estimated-position-named",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.accessibility.phone.marker_label",
+      "matcher": "EQUALS",
+      "expected": "位置呈现，估算位置",
+      "rationale": "Estimated position has a textual cue and cannot depend on marker color."
+    },
+    {
+      "id": "unconfirmed-passage-named",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.accessibility.phone.passage_label",
+      "matcher": "EQUALS",
+      "expected": "实时通行，尚未确认",
+      "rationale": "Realtime uncertainty remains explicit without relying on amber color."
+    },
+    {
+      "id": "editing-lock-named",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.accessibility.phone.route_editing_label",
+      "matcher": "EQUALS",
+      "expected": "路线编辑，决策区不可编辑",
+      "rationale": "The moving-time editing lock remains available to assistive technology."
+    },
+    {
+      "id": "selected-branch-non-color-cue",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.accessibility.phone.selected_path_has_non_color_cue",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The selected junction branch has a checkmark in addition to color and line weight."
+    },
+    {
+      "id": "preferred-lane-non-color-cue",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.accessibility.phone.preferred_lanes_have_non_color_cue",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "Preferred lanes use a distinct symbol and spoken label in addition to color."
+    },
+    {
+      "id": "lane-order-readable",
+      "after": "start",
+      "category": "UI",
+      "subject": "presentation.accessibility.phone.junction_lane_label",
+      "matcher": "CONTAINS",
+      "expected": "首选车道 1",
+      "rationale": "Zero-based stored lane identity becomes an explicit left-to-right spoken lane number."
+    },
+    {
+      "id": "unconfirmed-is-not-positive-open",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.uses_positive_open_color",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "Accessibility work cannot promote realtime-unconfirmed passage into a positive-open state."
+    }
+  ]
+}

@@ -1,15 +1,25 @@
 import SwiftUI
 
 enum KaidoTheme {
-  static let asphalt = Color(hex: 0x0E171C)
-  static let instrument = Color(hex: 0x162329)
-  static let steel = Color(hex: 0x31444B)
-  static let routeWhite = Color(hex: 0xEEF2F2)
-  static let signalAmber = Color(hex: 0xF0B641)
-  static let evidenceCoral = Color(hex: 0xF07D6D)
-  static let confirmedGreen = Color(hex: 0x6EC59B)
-  static let positionCyan = Color(hex: 0x5FC9D5)
-  static let muted = Color(hex: 0x91A1A7)
+  static let asphaltToken = KaidoColorToken(hex: 0x0E171C)
+  static let instrumentToken = KaidoColorToken(hex: 0x162329)
+  static let steelToken = KaidoColorToken(hex: 0x31444B)
+  static let routeWhiteToken = KaidoColorToken(hex: 0xEEF2F2)
+  static let signalAmberToken = KaidoColorToken(hex: 0xF0B641)
+  static let evidenceCoralToken = KaidoColorToken(hex: 0xF07D6D)
+  static let confirmedGreenToken = KaidoColorToken(hex: 0x6EC59B)
+  static let positionCyanToken = KaidoColorToken(hex: 0x5FC9D5)
+  static let mutedToken = KaidoColorToken(hex: 0x91A1A7)
+
+  static let asphalt = asphaltToken.color
+  static let instrument = instrumentToken.color
+  static let steel = steelToken.color
+  static let routeWhite = routeWhiteToken.color
+  static let signalAmber = signalAmberToken.color
+  static let evidenceCoral = evidenceCoralToken.color
+  static let confirmedGreen = confirmedGreenToken.color
+  static let positionCyan = positionCyanToken.color
+  static let muted = mutedToken.color
 }
 
 extension Color {

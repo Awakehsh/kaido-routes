@@ -102,7 +102,7 @@ or implement audio focus and lifecycle.
 
 ## Synthetic driving preview
 
-The KR-U06/KR-U07/KR-U08/KR-U10/KR-U12/KR-U14 panel consumes only
+The KR-U06/KR-U07/KR-U08/KR-U09/KR-U10/KR-U12/KR-U14 panel consumes only
 `NavigationPresentationProjection`. Its measured reference and degraded
 DecisionZone states make the `MEASURED` versus `ESTIMATED` marker treatment
 explicit. The degraded state comes from a stale LOW `LocationObservation`
@@ -126,7 +126,19 @@ branch or lane from prose. Its green road-status color is deliberately not used:
 ownership uses cyan, the selected branch uses amber, and the synthetic
 `RELEASED` evidence value is labeled fixture-only. This is synthetic adapter
 evidence, not a live `NavigationSession`, real position, released route,
-`CPMapTemplate`, CarPlay scene, final pixels, or accessibility qualification.
+`CPMapTemplate`, or CarPlay scene.
+
+KR-U09 adds a bounded accessibility baseline to this same actual panel.
+`NavigationAccessibilityProjector` supplies localized route-shield, guidance,
+marker, passage, editing, junction, lane, and surface-ownership labels without
+giving SwiftUI navigation authority. The selected path has a drawn checkmark,
+and every lane has a symbol plus a spoken state. Accessibility Dynamic Type
+switches the selector and surface ownership to one column. Unit tests calculate
+at least 4.5:1 contrast from the actual critical theme tokens; XCUITest launches
+the panel through `-KR-U09-ACCESSIBILITY-PREVIEW` and inspects its accessibility
+tree at standard and AXXXL Simulator sizes. This does not qualify the complete
+app, VoiceOver focus order, Switch Control, physical devices, or a CarPlay
+scene.
 
 ## Internal location calibration
 

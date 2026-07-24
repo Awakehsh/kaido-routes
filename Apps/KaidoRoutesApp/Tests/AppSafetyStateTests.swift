@@ -8,6 +8,7 @@ final class AppSafetyStateTests: XCTestCase {
 
     XCTAssertEqual(state.journeyPhase, "PLANNING")
     XCTAssertEqual(state.routeEditorContext, "PARKED")
+    XCTAssertTrue(state.isParkedInteractionContext)
     XCTAssertEqual(
       state.guidanceProgress,
       "INSUFFICIENT_MATCHER_EVIDENCE"

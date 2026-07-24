@@ -58,6 +58,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(stage.waitForExistence(timeout: 5))
     XCTAssertEqual(stage.value as? String, "REVIEW")
 
+    let voiceCheck = reveal(
+      "product-journey-voice-check",
+      in: app
+    )
+    XCTAssertTrue(voiceCheck.exists)
+    XCTAssertTrue(
+      element("voice-check-profile-menu", in: app).exists
+    )
+    XCTAssertTrue(
+      element("voice-check-status", in: app).exists
+    )
+    XCTAssertTrue(
+      element("voice-check-audition", in: app).isEnabled
+    )
+
     let blocker = reveal(
       "product-journey-navigation-blocker",
       in: app

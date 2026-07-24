@@ -208,6 +208,11 @@ struct KaidoProductJourneyView: View {
 
       PreDriveReviewPanel(model: model.composition.preDriveReview)
 
+      GuidanceVoiceSetupPanel(
+        model: model.composition.guidanceVoiceSetup,
+        isParked: model.composition.safety.isParkedInteractionContext
+      )
+
       ReviewBoundaryCard(
         symbol: "lock.shield.fill",
         title: "真实导航仍被发布门阻止",

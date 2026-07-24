@@ -23,8 +23,12 @@ a real joint product release grants authority. Returning to edit and
 invalidating the compiled route automatically removes review readiness. The
 original internal workbench remains available through a dedicated launch
 argument. The journey presents a synthetic directional-entrance recommendation,
-parked route authoring, and RoutePlan-bound pre-drive review without calling live
-location or surface routing. Its bundled product-release catalog is a
+parked route authoring, RoutePlan-bound pre-drive review, and a parked
+guidance-voice sound check without calling live location or surface routing.
+The sound check enumerates only installed exact-locale Apple voices, permits an
+explicit device-local preference, and plays one fixed Japanese sample through a
+separate output with no route, position, occurrence, or prompt-ledger input. Its
+bundled product-release catalog is a
 compile-time manifest: every resource is pinned to an exact filename, SHA-256,
 release ID, and `DEMO_ONLY` or `FOREGROUND_NAVIGATION` role before the production
 codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
@@ -189,7 +193,11 @@ actual selected voice and quality. A default-only result is visibly marked as a
 basic fallback with the device installation path; the checked Simulator
 currently has only default-quality Japanese `Kyoko`, so enhanced/premium
 acoustic quality still requires the corresponding voice asset on a physical
-device. The synthetic
+device. The pre-drive sound check exposes the same installed voice ranking,
+persists an explicit identifier or automatic highest-quality preference, and
+plays a fixed sample only while parked. The real one-shot output reads that
+preference only after an actor-owned prompt has been admitted; the independent
+audition output cannot create or consume a navigation prompt. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
 remains input-disconnected by default. Its explicit fixed synthetic trace proves

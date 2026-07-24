@@ -94,6 +94,107 @@ func speechVoiceSelectionUsesSystemDefaultTieBreak() throws {
   #expect(try #require(selected).identifier == "test.voice.system")
 }
 
+@Test("An eligible installed preference overrides automatic quality ranking")
+func speechVoiceSelectionHonorsExplicitPreference() throws {
+  let candidates = [
+    GuidanceSpeechVoiceCandidate(
+      identifier: "test.voice.premium",
+      name: "Premium",
+      languageCode: "ja-JP",
+      quality: .premium
+    ),
+    GuidanceSpeechVoiceCandidate(
+      identifier: "test.voice.enhanced",
+      name: "Enhanced",
+      languageCode: "ja-JP",
+      quality: .enhanced
+    ),
+  ]
+
+  let selected = GuidanceSpeechVoiceSelector.select(
+    languageCode: "ja-JP",
+    candidates: candidates,
+    systemDefaultIdentifier: nil,
+    preferredIdentifier: "test.voice.enhanced"
+  )
+
+  #expect(try #require(selected).identifier == "test.voice.enhanced")
+  #expect(selected?.quality == .enhanced)
+}
+
+@Test("A stale or ineligible preference falls back to the best installed voice")
+func speechVoiceSelectionRejectsStalePreference() throws {
+  let selected = GuidanceSpeechVoiceSelector.select(
+    languageCode: "ja-JP",
+    candidates: [
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.default",
+        name: "Default",
+        languageCode: "ja-JP",
+        quality: .defaultQuality
+      ),
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.premium",
+        name: "Premium",
+        languageCode: "ja-JP",
+        quality: .premium
+      ),
+    ],
+    systemDefaultIdentifier: "test.voice.default",
+    preferredIdentifier: "test.voice.removed"
+  )
+
+  #expect(try #require(selected).identifier == "test.voice.premium")
+}
+
+@Test("Ranked speech profiles are exact-locale, eligible, and identifier-unique")
+func speechVoiceSelectionProducesAuditableCatalog() {
+  let ranked = GuidanceSpeechVoiceSelector.rankedProfiles(
+    languageCode: "ja_JP",
+    candidates: [
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.enhanced",
+        name: "Enhanced",
+        languageCode: "ja-JP",
+        quality: .enhanced
+      ),
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.enhanced",
+        name: "Duplicate",
+        languageCode: "ja-JP",
+        quality: .defaultQuality
+      ),
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.default",
+        name: "Default",
+        languageCode: "ja-JP",
+        quality: .defaultQuality
+      ),
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.personal",
+        name: "Personal",
+        languageCode: "ja-JP",
+        quality: .premium,
+        isPersonalVoice: true
+      ),
+      GuidanceSpeechVoiceCandidate(
+        identifier: "test.voice.wrong-locale",
+        name: "Wrong locale",
+        languageCode: "en-US",
+        quality: .premium
+      ),
+    ],
+    systemDefaultIdentifier: "test.voice.default"
+  )
+
+  #expect(
+    ranked.map(\.identifier) == [
+      "test.voice.enhanced",
+      "test.voice.default",
+    ]
+  )
+}
+
 @Test("Navigation prosody preserves Apple's neutral rate and pitch")
 func navigationSpeechProsodyUsesNeutralBaseline() {
   let japanese = GuidanceSpeechProsody.navigation(languageCode: "ja-JP")

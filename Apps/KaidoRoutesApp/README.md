@@ -56,6 +56,9 @@ The current app deliberately composes only:
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
+- a parked Japanese guidance-voice sound check that ranks installed Apple
+  premium/enhanced/default voices, persists an exact preference, and keeps
+  audition authority separate from navigation speech;
 - an independent interface-language and guidance-voice text preview that keeps
   the Japanese sign target and route shield fixed;
 - a four-state synthetic driving preview for conservative position, passage,
@@ -79,8 +82,9 @@ RoutePlan selection, and ambiguous matches. `KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
 a locked navigation step, enters parked authoring through the primary action,
 and renders the exact release blocker in pre-drive review. The review screenshot
-is visual adapter evidence only; it does not qualify a physical device or real
-navigation.
+also requires the parked voice selector, quality state, and audition control.
+This is visual adapter evidence only; it does not qualify a physical device,
+acoustic quality, or real navigation.
 
 The SVG remains non-interactive. Attribution is not delegated to SVG text:
 `route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and
@@ -247,6 +251,28 @@ The separate product-runtime composition owns the implemented speech lifecycle;
 this language-selection panel intentionally remains unable to create speech
 authority.
 
+## Parked guidance-voice sound check
+
+The product journey's pre-drive stage owns a separate
+`GuidanceVoiceSetupModel`. It enumerates exact `ja-JP` voices already installed
+on the device, excludes novelty and personal voices through the shared selector,
+and orders premium, enhanced, then default quality. Automatic mode follows that
+order; an explicit installed identifier may be selected and is persisted in
+`UserDefaults`. A resolved non-empty catalog clears a stale identifier rather
+than silently naming a removed voice. A temporarily empty catalog does not erase
+the preference before Apple voice enumeration has resolved.
+
+The audition button is parked-only and always requests the fixed sample
+`この先、左側です。`. `AVSpeechVoiceAuditionOutput` owns its own synthesizer and
+audio lifecycle and receives no RoutePlan, occurrence, guidance frame, prompt,
+or ledger value. It therefore cannot authorize or consume navigation speech.
+The real `AVSpeechGuidanceOutput` reads the stored identifier only when the
+actor-owned one-shot command is admitted, and falls back to the best eligible
+installed voice if that preference is unavailable. The app cannot download
+Apple voice assets. A default-only device is told to install an enhanced or
+premium Japanese voice through iPhone Spoken Content settings and then return
+for a physical-device audition.
+
 ## Synthetic driving preview
 
 The KR-U06/KR-U07/KR-U08/KR-U09/KR-U10/KR-U12/KR-U14 panel consumes only
@@ -392,9 +418,12 @@ prompt, a duplicate callback does not schedule it again, an interruption never
 replays it, and a missing installed voice remains a typed blocked state. They
 also exercise a deterministic installed-voice selector that excludes novelty
 and personal voices, requires the exact locale, ranks premium above enhanced
-above default quality, and uses the system default only as an equal-quality
-tie-break. Neutral Apple rate and pitch are tested independently so a compact
-voice is not made more mechanical by slow, lowered-pitch app tuning. The
+above default quality, honors an eligible explicit identifier, rejects stale
+preferences, deduplicates the exposed catalog, and uses the system default only
+as an equal-quality tie-break. `GuidanceVoiceSetupModelTests` cover persistence,
+fixed-sample requests, moving-context lockout, lifecycle events, and cold empty
+voice enumeration. Neutral Apple rate and pitch are tested independently so a
+compact voice is not made more mechanical by slow, lowered-pitch app tuning. The
 product-runtime UI test executes real Simulator voice discovery on its first
 admitted prompt and exposes the selected name, locale, and quality. A
 default-only result is marked as a basic fallback and names the iPhone Spoken

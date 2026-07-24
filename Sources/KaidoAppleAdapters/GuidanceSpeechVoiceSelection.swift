@@ -81,12 +81,33 @@ public enum GuidanceSpeechVoiceSelector {
   public static func select(
     languageCode: String,
     candidates: [GuidanceSpeechVoiceCandidate],
-    systemDefaultIdentifier: String?
+    systemDefaultIdentifier: String?,
+    preferredIdentifier: String? = nil
   ) -> GuidanceSpeechVoiceProfile? {
-    let requestedLanguage = normalizedLanguageCode(languageCode)
-    guard !requestedLanguage.isEmpty else { return nil }
+    let profiles = rankedProfiles(
+      languageCode: languageCode,
+      candidates: candidates,
+      systemDefaultIdentifier: systemDefaultIdentifier
+    )
+    if let preferredIdentifier,
+      let preferred = profiles.first(where: {
+        $0.identifier == preferredIdentifier
+      })
+    {
+      return preferred
+    }
+    return profiles.first
+  }
 
-    let selected =
+  public static func rankedProfiles(
+    languageCode: String,
+    candidates: [GuidanceSpeechVoiceCandidate],
+    systemDefaultIdentifier: String?
+  ) -> [GuidanceSpeechVoiceProfile] {
+    let requestedLanguage = normalizedLanguageCode(languageCode)
+    guard !requestedLanguage.isEmpty else { return [] }
+
+    let rankedCandidates =
       candidates
       .filter {
         normalizedLanguageCode($0.languageCode) == requestedLanguage
@@ -109,15 +130,19 @@ public enum GuidanceSpeechVoiceSelector {
         }
         return lhs.identifier < rhs.identifier
       }
-      .first
 
-    guard let selected else { return nil }
-    return GuidanceSpeechVoiceProfile(
-      identifier: selected.identifier,
-      name: selected.name,
-      languageCode: selected.languageCode,
-      quality: selected.quality
-    )
+    var seenIdentifiers: Set<String> = []
+    return rankedCandidates.compactMap { candidate in
+      guard seenIdentifiers.insert(candidate.identifier).inserted else {
+        return nil
+      }
+      return GuidanceSpeechVoiceProfile(
+        identifier: candidate.identifier,
+        name: candidate.name,
+        languageCode: candidate.languageCode,
+        quality: candidate.quality
+      )
+    }
   }
 
   private static func normalizedLanguageCode(_ value: String) -> String {

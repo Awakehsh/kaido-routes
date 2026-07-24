@@ -174,15 +174,21 @@ public final class GuidanceSpeechCoordinator {
 
     private let synthesizer: AVSpeechSynthesizer
     private let audioSession: AVAudioSession
+    private let preferredVoiceIdentifierProvider: (String) -> String?
     private var identityByUtterance: [ObjectIdentifier: GuidanceSpeechIdentity] = [:]
     private var activeUtteranceID: ObjectIdentifier?
 
     public init(
       synthesizer: AVSpeechSynthesizer = AVSpeechSynthesizer(),
-      audioSession: AVAudioSession = .sharedInstance()
+      audioSession: AVAudioSession = .sharedInstance(),
+      preferredVoiceIdentifierProvider: @escaping (String) -> String? = {
+        _ in nil
+      }
     ) {
       self.synthesizer = synthesizer
       self.audioSession = audioSession
+      self.preferredVoiceIdentifierProvider =
+        preferredVoiceIdentifierProvider
       super.init()
       synthesizer.delegate = self
       NotificationCenter.default.addObserver(
@@ -202,7 +208,10 @@ public final class GuidanceSpeechCoordinator {
 
       guard
         let profile = Self.preferredInstalledVoiceProfile(
-          for: command.languageCode
+          for: command.languageCode,
+          preferredIdentifier: preferredVoiceIdentifierProvider(
+            command.languageCode
+          )
         ),
         let voice = AVSpeechSynthesisVoice(
           identifier: profile.identifier
@@ -248,8 +257,19 @@ public final class GuidanceSpeechCoordinator {
     }
 
     public static func preferredInstalledVoiceProfile(
-      for languageCode: String
+      for languageCode: String,
+      preferredIdentifier: String? = nil
     ) -> GuidanceSpeechVoiceProfile? {
+      installedVoiceProfiles(
+        for: languageCode,
+        preferredIdentifier: preferredIdentifier
+      ).first
+    }
+
+    public static func installedVoiceProfiles(
+      for languageCode: String,
+      preferredIdentifier: String? = nil
+    ) -> [GuidanceSpeechVoiceProfile] {
       let defaultVoice = AVSpeechSynthesisVoice(language: languageCode)
       var candidates = AVSpeechSynthesisVoice.speechVoices().map { voice in
         let traits = traits(voice)
@@ -279,11 +299,24 @@ public final class GuidanceSpeechCoordinator {
           )
         )
       }
-      return GuidanceSpeechVoiceSelector.select(
+      let ranked = GuidanceSpeechVoiceSelector.rankedProfiles(
         languageCode: languageCode,
         candidates: candidates,
         systemDefaultIdentifier: defaultVoice?.identifier
       )
+      guard
+        let preferredIdentifier,
+        let preferredIndex = ranked.firstIndex(where: {
+          $0.identifier == preferredIdentifier
+        }),
+        preferredIndex != ranked.startIndex
+      else {
+        return ranked
+      }
+      var preferredFirst = ranked
+      let preferred = preferredFirst.remove(at: preferredIndex)
+      preferredFirst.insert(preferred, at: preferredFirst.startIndex)
+      return preferredFirst
     }
 
     public func stop() {

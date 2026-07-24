@@ -281,6 +281,13 @@ compiled-route invalidation, and keep the bundled synthetic release blocked
 from navigation. XCUITest proves the default launch and primary authoring
 transition, while a deterministic review launch verifies the exact visible
 `ROUTE_RELEASE_AUTHORITY_UNAVAILABLE` blocker and disabled navigation action.
+That review launch also verifies the parked sound-check panel, installed-voice
+menu, quality status, and audition control without playing audio. Focused app
+tests inject the preference store, voice catalog, and audition output to prove
+exact identifier persistence, a fixed `ja-JP` sample, moving-context lockout,
+stale-preference handling, and lifecycle projection. These stay at L3 because
+Apple voice installation and audio output are environment facts, not portable
+route events.
 These are app-composition tests; existing portable domain scenarios remain the
 authority for editor legality, repeated occurrences, release validation, and
 navigation behavior.
@@ -414,10 +421,11 @@ fixtures, audio lifecycle, and the visible Japanese sign target. A device voice
 being installed is an environment fact, not a portable domain assertion. Pure
 package tests cover exact-locale filtering, novelty/personal exclusion,
 premium-enhanced-default ordering, deterministic system-default tie-breaking,
-explicit higher-quality readiness, and neutral Apple rate/pitch values. The iOS
-runtime test reports the actual installed voice profile after its first
-admitted prompt; a default-quality Simulator result is observability evidence,
-not enhanced acoustic qualification.
+explicit preferred-identifier selection, catalog deduplication, explicit
+higher-quality readiness, and neutral Apple rate/pitch values. The iOS runtime
+test reports the actual installed voice profile after its first admitted prompt;
+the separate parked model tests use injected audio. A default-quality Simulator
+result is observability evidence, not enhanced acoustic qualification.
 
 ## Field-test protocol
 

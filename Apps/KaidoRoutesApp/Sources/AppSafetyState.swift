@@ -14,6 +14,10 @@ struct AppSafetyState: Equatable, Sendable {
   let routeReleaseAuthority: Bool
   let measuredPositionAvailable: Bool
 
+  var isParkedInteractionContext: Bool {
+    routeEditorContext == RouteEditorInteractionContext.parked.rawValue
+  }
+
   static let preview = AppSafetyState(
     journeyPhase: JourneyPhase.planning.rawValue,
     routeEditorContext: RouteEditorInteractionContext.parked.rawValue,
@@ -88,6 +92,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let entranceRecommendation: EntranceRecommendationModel
   let routeEditor: ParkedRouteEditorModel
   let preDriveReview: PreDriveReviewModel
+  let guidanceVoiceSetup: GuidanceVoiceSetupModel
   let guidanceLanguagePreview: GuidanceLanguagePreviewModel
   let syntheticDrivingPreview: SyntheticDrivingPreviewModel
   let syntheticProductRuntime: SyntheticProductRuntimeModel
@@ -104,9 +109,20 @@ final class KaidoRoutesAppModel: ObservableObject {
         routeEditor: routeEditor
       )
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
+      let guidanceVoicePreferenceStore =
+        UserDefaultsGuidanceVoicePreferenceStore()
+      guidanceVoiceSetup = GuidanceVoiceSetupModel(
+        preferenceStore: guidanceVoicePreferenceStore
+      )
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
       syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
+      let guidanceSpeechOutput = AVSpeechGuidanceOutput(
+        preferredVoiceIdentifierProvider: {
+          guidanceVoicePreferenceStore.identifier(for: $0)
+        }
+      )
       syntheticProductRuntime = try SyntheticProductRuntimeModel(
+        speechOutput: guidanceSpeechOutput,
         checkpointStore:
           FileNavigationSessionCheckpointStore.applicationSupport()
       )

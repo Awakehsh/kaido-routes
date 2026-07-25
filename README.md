@@ -533,6 +533,20 @@ expressway matcher, re-enter the expressway, or manufacture that phase
 transition. KR-S20 is synthetic policy evidence only; App enrollment still
 requires real graph/provider, device, and held-out field evidence.
 
+The surface-egress matcher now has its own device-calibration boundary rather
+than borrowing the expressway report scope. One calibration window binds the
+exact product release, navigation release, JourneyPlan, runtime policy, network
+snapshot, RoutePlan, provider dataset, selected candidate, egress option, exit,
+handoff anchor, corridor, handoff occurrence, matcher/configuration, device
+configuration, and explicitly known field transport. The Core Location session
+executes the real observation-adapter-to-surface-matcher pipeline in callback
+order and retains raw coordinates only in an in-memory
+`PRIVATE_RAW_LOCATION` trace. Its public report is coordinate-free. Mixed
+scopes fail closed, any false HIGH edge or occurrence blocks the gate, and
+synthetic or software-simulated samples cannot satisfy the held-out statistical
+floor. This infrastructure does not enroll the App or qualify any device; no
+surface-egress field trace has been collected.
+
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
 topology slice, and separately released normalized layout. Layout nodes and topology edges

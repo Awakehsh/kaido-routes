@@ -567,6 +567,23 @@ KR-S20 executes this boundary with synthetic geometry. App enrollment remains
 blocked on real graph/provider output, physical-device profiling, and held-out
 field reliability evidence.
 
+Surface-egress calibration is a separate evidence domain from expressway
+matching. `SurfaceEgressMatcherCalibrationScope` binds the complete product,
+navigation, JourneyPlan, runtime-policy, graph, selected provider candidate,
+egress, handoff, corridor, occurrence, algorithm, configuration, device, and
+explicit field-transport identity. `CoreLocationSurfaceEgressMatcherCalibrationSession`
+owns a fresh `CoreLocationObservationAdapter`, `SurfaceEgressMatcherSession`,
+and in-memory recorder; it measures that exact pipeline in callback order and
+never consumes the live expressway matcher posterior. Raw coordinates remain
+only in `SurfaceEgressPrivateTrace`. The public
+`SurfaceEgressMatcherCalibrationReport` contains scalar counts, p95 timings, and
+reliability bins but no observation, device, mount, or head-unit detail. The
+evaluator rejects mixed scopes and collection methods, gives any incorrect HIGH
+edge or occurrence priority over every other gate status, and prevents
+synthetic or software-simulated samples from satisfying the held-out field
+floor. These types are profiling infrastructure, not App enrollment, field
+evidence, confidence qualification, or release approval.
+
 `NavigationReleaseArtifact` schema 6.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
 editor-catalog identity, a complete locale-exact editor presentation catalog,

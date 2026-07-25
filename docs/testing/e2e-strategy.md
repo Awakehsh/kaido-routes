@@ -357,6 +357,14 @@ rejects simulated evidence, and requires two forward exact-handoff observations
 before the actor enters `SURFACE_EGRESS`. Its coordinates and quality values are
 synthetic and do not qualify the App, a Core Location source, or field
 reliability.
+Focused platform-light and Apple-adapter tests cover the separate
+surface-egress calibration boundary. They require exact release, candidate,
+corridor, occurrence, matcher, device, and field-transport scope; exercise
+callback-order matching and receive-time reversal; verify false HIGH,
+synthetic, and simulated failure precedence; and assert that only the private
+trace contains coordinates and observation/device detail. This selects KR-S20
+as the underlying navigation behavior without adding a portable field-evidence
+claim.
 It also executes ownership-only `connectCarPlay()`, requires phone and CarPlay
 to retain one occurrence-scoped frame and junction definition, and rejects an
 unreleased junction definition without replacing the prior valid state. The

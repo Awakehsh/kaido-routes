@@ -106,7 +106,7 @@ public struct SurfaceEgressMatcherCorridor: Equatable, Sendable {
   }
 }
 
-public struct SurfaceEgressMatcherConfiguration: Equatable, Sendable {
+public struct SurfaceEgressMatcherConfiguration: Codable, Equatable, Sendable {
   public let minimumCandidateRadiusMeters: Double
   public let maximumCandidateRadiusMeters: Double
   public let accuracyRadiusMultiplier: Double
@@ -143,7 +143,7 @@ public struct SurfaceEgressMatcherConfiguration: Equatable, Sendable {
     self.progressRegressionTolerance = progressRegressionTolerance
   }
 
-  fileprivate var isValid: Bool {
+  var isValid: Bool {
     minimumCandidateRadiusMeters.isFinite
       && minimumCandidateRadiusMeters > 0
       && maximumCandidateRadiusMeters.isFinite
@@ -161,6 +161,22 @@ public struct SurfaceEgressMatcherConfiguration: Equatable, Sendable {
       && progressRegressionTolerance.isFinite
       && progressRegressionTolerance >= 0
   }
+
+  private enum CodingKeys: String, CodingKey {
+    case minimumCandidateRadiusMeters = "minimum_candidate_radius_meters"
+    case maximumCandidateRadiusMeters = "maximum_candidate_radius_meters"
+    case accuracyRadiusMultiplier = "accuracy_radius_multiplier"
+    case ambiguityMarginMeters = "ambiguity_margin_meters"
+    case maximumHighHorizontalAccuracyMeters =
+      "maximum_high_horizontal_accuracy_meters"
+    case staleObservationThresholdMilliseconds =
+      "stale_observation_threshold_ms"
+    case observationGapThresholdMilliseconds =
+      "observation_gap_threshold_ms"
+    case minimumFractionBeforeNextOccurrence =
+      "minimum_fraction_before_next_occurrence"
+    case progressRegressionTolerance = "progress_regression_tolerance"
+  }
 }
 
 public enum SurfaceEgressMatcherError: Error, Equatable, Sendable {
@@ -169,7 +185,7 @@ public enum SurfaceEgressMatcherError: Error, Equatable, Sendable {
   case invalidObservation
 }
 
-public struct SurfaceEgressMatcherEstimate: Equatable, Sendable {
+public struct SurfaceEgressMatcherEstimate: Codable, Equatable, Sendable {
   public let observationID: String?
   public let estimatedAtMilliseconds: Int
   public let corridorID: String
@@ -181,6 +197,46 @@ public struct SurfaceEgressMatcherEstimate: Equatable, Sendable {
   public let confidence: MatcherConfidence
   public let lateralDistanceMeters: Double?
   public let fractionAlongEdge: Double?
+
+  package init(
+    observationID: String?,
+    estimatedAtMilliseconds: Int,
+    corridorID: String,
+    directedEdgeID: String?,
+    occurrenceID: String?,
+    occurrenceIndex: Int?,
+    candidateEdgeIDs: [String],
+    candidateOccurrenceIDs: [String],
+    confidence: MatcherConfidence,
+    lateralDistanceMeters: Double?,
+    fractionAlongEdge: Double?
+  ) {
+    self.observationID = observationID
+    self.estimatedAtMilliseconds = estimatedAtMilliseconds
+    self.corridorID = corridorID
+    self.directedEdgeID = directedEdgeID
+    self.occurrenceID = occurrenceID
+    self.occurrenceIndex = occurrenceIndex
+    self.candidateEdgeIDs = candidateEdgeIDs
+    self.candidateOccurrenceIDs = candidateOccurrenceIDs
+    self.confidence = confidence
+    self.lateralDistanceMeters = lateralDistanceMeters
+    self.fractionAlongEdge = fractionAlongEdge
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case observationID = "observation_id"
+    case estimatedAtMilliseconds = "estimated_at_ms"
+    case corridorID = "corridor_id"
+    case directedEdgeID = "directed_edge_id"
+    case occurrenceID = "occurrence_id"
+    case occurrenceIndex = "occurrence_index"
+    case candidateEdgeIDs = "candidate_edge_ids"
+    case candidateOccurrenceIDs = "candidate_occurrence_ids"
+    case confidence
+    case lateralDistanceMeters = "lateral_distance_meters"
+    case fractionAlongEdge = "fraction_along_edge"
+  }
 }
 
 public struct SurfaceEgressMatcherDiagnostics: Equatable, Sendable {
@@ -197,6 +253,9 @@ public struct SurfaceEgressMatcherDiagnostics: Equatable, Sendable {
 /// along-edge progress. Stale, ambiguous, gapped, or regressing evidence never
 /// mutates accepted progress and cannot become HIGH.
 public struct SurfaceEgressMatcherSession: Sendable {
+  public static let algorithmID =
+    "surface-egress-occurrence-matcher-prototype-v1"
+
   public let corridor: SurfaceEgressMatcherCorridor
   public let configuration: SurfaceEgressMatcherConfiguration
 

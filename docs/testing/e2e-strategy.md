@@ -318,9 +318,11 @@ selector, locale-specific fixed sample, installed-voice menu, quality status,
 and audition control without playing audio. Focused app tests inject the
 preference store, voice catalog, and audition output to prove exact
 locale-scoped identifier persistence, `ja-JP` / `zh-CN` / `en-US` synthesis
-mapping, moving-context lockout, stale-preference handling, and lifecycle
-projection. These stay at L3 because Apple voice installation and audio output
-are environment facts, not portable route events.
+mapping, representative sample selection, moving-context lockout,
+stale-preference handling, lifecycle projection, higher-ranked candidate
+audition without preference mutation, explicit post-audition confirmation, and
+fail-closed resolved-voice drift. These stay at L3 because Apple voice
+installation and audio output are environment facts, not portable route events.
 These are app-composition tests; existing portable domain scenarios remain the
 authority for editor legality, repeated occurrences, release validation, and
 navigation behavior.
@@ -583,7 +585,9 @@ explicit preferred-identifier selection, catalog deduplication, explicit
 higher-quality readiness, and neutral Apple rate/pitch values. The iOS runtime
 test reports the actual installed voice profile after its first admitted prompt;
 the separate parked model tests use injected audio. A default-quality Simulator
-result is observability evidence, not enhanced acoustic qualification.
+result is observability evidence, not enhanced acoustic qualification. The
+candidate-audition tests prove selection authority and state transitions, not
+pronunciation, naturalness, or acoustic quality.
 
 The complete App scheme now has a separate physical-iPhone runner. It resolves
 one exact `xcdevice` entry, rejects Simulator/offline destinations and dirty

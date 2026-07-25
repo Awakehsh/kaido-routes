@@ -106,7 +106,8 @@ The current app deliberately composes only:
   whose accepted envelope is atomically retained under Application Support;
 - a parked three-language guidance-voice sound check that ranks installed Apple
   premium/enhanced/default voices, persists one exact preference per synthesis
-  locale, and keeps audition authority separate from navigation speech;
+  locale, can audition a higher-ranked installed candidate before explicit
+  confirmation, and keeps audition authority separate from navigation speech;
 - an independent interface-language and guidance-voice text preview that keeps
   the Japanese sign target and route shield fixed;
 - a four-state synthetic driving preview for conservative position, passage,
@@ -365,10 +366,16 @@ non-empty catalog clears a stale identifier rather than silently naming a
 removed voice. A temporarily empty catalog does not erase the preference before
 Apple voice enumeration has resolved.
 
-The audition button is parked-only and requests one fixed sample for the
-selected language. `AVSpeechVoiceAuditionOutput` owns its own synthesizer and
-audio lifecycle and receives no RoutePlan, occurrence, guidance frame, prompt,
-or ledger value. It therefore cannot authorize or consume navigation speech.
+The audition button is parked-only and requests one fixed representative
+route-shield/destination sample for the selected language. If an explicitly
+selected voice has a higher-ranked installed candidate, the model may audition
+that exact candidate without changing the current navigation preference. It
+persists the candidate only after the exact voice completes and the user
+explicitly confirms it; a resolved-voice mismatch blocks confirmation and
+suppresses subsequent callbacks from the rejected audition.
+`AVSpeechVoiceAuditionOutput` owns its own synthesizer and audio lifecycle and
+receives no RoutePlan, occurrence, guidance frame, prompt, or ledger value. It
+therefore cannot authorize or consume navigation speech.
 The real `AVSpeechGuidanceOutput` reads the same locale-scoped stored identifier
 only when the actor-owned one-shot command is admitted, and falls back to the
 best eligible installed voice if that preference is unavailable. The app cannot
@@ -542,7 +549,9 @@ above default quality, honors an eligible explicit identifier, rejects stale
 preferences, deduplicates the exposed catalog, and uses the system default only
 as an equal-quality tie-break. `GuidanceVoiceSetupModelTests` cover persistence,
 fixed-sample requests, moving-context lockout, lifecycle events, cold empty
-voice enumeration, independent three-language preferences, and locale switches.
+voice enumeration, independent three-language preferences, locale switches,
+exact higher-ranked candidate audition, explicit confirmation, and fail-closed
+resolved-voice drift.
 Neutral Apple rate and pitch are tested independently so a compact voice is not
 made more mechanical by slow, lowered-pitch app tuning. The product-runtime UI
 test executes real Simulator voice discovery on its first admitted prompt and

@@ -250,11 +250,15 @@ Simulator exposes only default-quality `Kyoko / ja-JP`,
 quality still requires the corresponding voice asset on a physical device.
 The pre-drive sound check exposes the same installed voice ranking, persists an
 explicit identifier or automatic highest-quality preference independently for
-each language, and plays a fixed sample only while parked. Release locales are
-translated to exact Apple synthesis locales (`ja-JP`, `zh-CN`, and `en-US`)
-before voice resolution. The real one-shot output reads that preference only
-after an actor-owned prompt has been admitted; the independent audition output
-cannot create or consume a navigation prompt. Apple voice is now also an
+each language, and plays a representative route-shield/destination sample only
+while parked. When an explicitly selected basic voice has a higher-ranked
+installed replacement, the sound check can audition that exact candidate
+without changing navigation; only a completed exact-candidate audition followed
+by explicit confirmation persists it. Resolution drift fails closed. Release
+locales are translated to exact Apple synthesis locales (`ja-JP`, `zh-CN`, and
+`en-US`) before voice resolution. The real one-shot output reads that preference
+only after an actor-owned prompt has been admitted; the independent audition
+output cannot create or consume a navigation prompt. Apple voice is now also an
 explicit fallback behind an optional offline guidance audio release. That
 release must cover every released guidance anchor occurrence in all three
 locales and bind each exact spoken string to a flat local PCM16 WAV resource,

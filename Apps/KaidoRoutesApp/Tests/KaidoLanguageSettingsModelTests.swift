@@ -61,15 +61,15 @@ final class KaidoLanguageSettingsModelTests: XCTestCase {
     XCTAssertEqual(KaidoReleaseLocale.english.speechLanguageCode, "en-US")
     XCTAssertEqual(
       KaidoReleaseLocale.japanese.guidanceAuditionText,
-      "この先、左側です。"
+      "左側を進み、ビー湾岸線、横浜方面へ。"
     )
     XCTAssertEqual(
       KaidoReleaseLocale.simplifiedChinese.guidanceAuditionText,
-      "前方请靠左行驶。"
+      "保持左侧，跟随 B 路线，横滨方向。"
     )
     XCTAssertEqual(
       KaidoReleaseLocale.english.guidanceAuditionText,
-      "Keep left ahead."
+      "Keep left for Route B toward Yokohama."
     )
   }
 }

@@ -14,6 +14,11 @@ struct GuidanceVoiceSetupPanel: View {
       sampleMonitor
       voiceSelection
       readiness
+      if let recommendedUpgradeProfile =
+        model.recommendedUpgradeProfile
+      {
+        recommendedUpgrade(recommendedUpgradeProfile)
+      }
       auditionButton
       if model.state.showsAuditionDetail {
         auditionStatus
@@ -282,6 +287,98 @@ struct GuidanceVoiceSetupPanel: View {
     .accessibilityLabel("\(readinessTitle)。\(readinessDetail)")
   }
 
+  private func recommendedUpgrade(
+    _ profile: GuidanceSpeechVoiceProfile
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Label {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "高品質の音声を試せます",
+              simplifiedChinese: "可以试听更高质量的声音",
+              english: "Try a higher-quality voice"
+            )
+          )
+          .font(.system(size: 12, weight: .black))
+
+          Text("\(profile.name) · \(profile.quality.label)")
+            .font(.system(size: 9, weight: .bold, design: .monospaced))
+        }
+      } icon: {
+        Image(systemName: "sparkles")
+      }
+      .foregroundStyle(KaidoTheme.signalAmber)
+
+      Text(
+        copy.resolve(
+          japanese:
+            "現在のナビ音声は変更せずに候補を試聴します。聞き終えてから明示的に使用してください。",
+          simplifiedChinese:
+            "先试听候选声音，不会改变当前导航声音；听完后再明确启用。",
+          english:
+            "Audition the candidate without changing navigation. Enable it explicitly only after listening."
+        )
+      )
+      .font(.system(size: 10, weight: .medium))
+      .foregroundStyle(KaidoTheme.muted)
+      .fixedSize(horizontal: false, vertical: true)
+
+      Button {
+        model.auditionRecommendedUpgrade(
+          isVehicleMoving: !isParked
+        )
+      } label: {
+        Label(
+          upgradeAuditionTitle(profile),
+          systemImage: "speaker.wave.2.fill"
+        )
+        .font(.system(size: 12, weight: .black))
+        .frame(maxWidth: .infinity)
+        .frame(height: 40)
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .background(KaidoTheme.positionCyan.opacity(0.22))
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+      }
+      .buttonStyle(.plain)
+      .disabled(!isParked || !model.canAudition)
+      .opacity(isParked && model.canAudition ? 1 : 0.55)
+      .accessibilityIdentifier("voice-check-upgrade-audition")
+
+      if model.canUseLastAuditionedUpgrade {
+        Button {
+          model.useLastAuditionedUpgrade()
+        } label: {
+          Label(
+            copy.resolve(
+              japanese: "この音声をナビで使用",
+              simplifiedChinese: "在导航中使用这个声音",
+              english: "Use this voice for navigation"
+            ),
+            systemImage: "checkmark.seal.fill"
+          )
+          .font(.system(size: 12, weight: .black))
+          .frame(maxWidth: .infinity)
+          .frame(height: 40)
+          .foregroundStyle(KaidoTheme.asphalt)
+          .background(KaidoTheme.confirmedGreen)
+          .clipShape(RoundedRectangle(cornerRadius: 11))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("voice-check-upgrade-confirm")
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.signalAmber.opacity(0.08))
+    .clipShape(RoundedRectangle(cornerRadius: 13))
+    .overlay {
+      RoundedRectangle(cornerRadius: 13)
+        .stroke(KaidoTheme.signalAmber.opacity(0.35), lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("voice-check-upgrade")
+  }
+
   private var auditionButton: some View {
     Button {
       model.audition(isVehicleMoving: !isParked)
@@ -403,6 +500,13 @@ struct GuidanceVoiceSetupPanel: View {
           "High-quality \(copy.languageName(model.selectedGuidanceLocale)) voice installed"
       )
     }
+    if model.recommendedUpgradeProfile != nil {
+      return copy.resolve(
+        japanese: "高品質の候補がインストール済み",
+        simplifiedChinese: "已安装更高质量的候选声音",
+        english: "A higher-quality candidate is installed"
+      )
+    }
     if model.profiles.isEmpty {
       return copy.resolve(
         japanese:
@@ -428,6 +532,18 @@ struct GuidanceVoiceSetupPanel: View {
         english: "Audition the voice on this iPhone to confirm its actual quality."
       )
     }
+    if let recommendedUpgradeProfile =
+      model.recommendedUpgradeProfile
+    {
+      return copy.resolve(
+        japanese:
+          "\(recommendedUpgradeProfile.name) を現在の設定を変えずに試聴し、確認後に使用できます。",
+        simplifiedChinese:
+          "可以先试听 \(recommendedUpgradeProfile.name)，当前设置不会改变；确认后再启用。",
+        english:
+          "Audition \(recommendedUpgradeProfile.name) without changing the current setting, then enable it after confirmation."
+      )
+    }
     return copy.resolve(
       japanese:
         "現在の DEFAULT は基本音声です。速度調整では高品質音声にはなりません。"
@@ -448,13 +564,19 @@ struct GuidanceVoiceSetupPanel: View {
   }
 
   private var readinessSymbol: String {
-    model.effectiveProfile?.quality.isHigherQuality == true
+    if model.recommendedUpgradeProfile != nil {
+      return "sparkles"
+    }
+    return model.effectiveProfile?.quality.isHigherQuality == true
       ? "checkmark.seal.fill"
       : "arrow.down.circle.fill"
   }
 
   private var readinessColor: Color {
-    model.effectiveProfile?.quality.isHigherQuality == true
+    if model.recommendedUpgradeProfile != nil {
+      return KaidoTheme.signalAmber
+    }
+    return model.effectiveProfile?.quality.isHigherQuality == true
       ? KaidoTheme.confirmedGreen
       : KaidoTheme.evidenceCoral
   }
@@ -488,9 +610,9 @@ struct GuidanceVoiceSetupPanel: View {
       )
     case .ready, .blocked:
       copy.resolve(
-        japanese: "ナビ音声を試聴",
-        simplifiedChinese: "试听导航声音",
-        english: "Audition guidance voice"
+        japanese: "現在のナビ音声を試聴",
+        simplifiedChinese: "试听当前导航声音",
+        english: "Audition current guidance voice"
       )
     }
   }
@@ -531,6 +653,24 @@ struct GuidanceVoiceSetupPanel: View {
       japanese: "最高品質を自動選択",
       simplifiedChinese: "自动选择最高质量",
       english: "Automatically select highest quality"
+    )
+  }
+
+  private func upgradeAuditionTitle(
+    _ profile: GuidanceSpeechVoiceProfile
+  ) -> String {
+    let auditioned =
+      model.lastAuditionedProfile?.identifier == profile.identifier
+    return copy.resolve(
+      japanese: auditioned
+        ? "\(profile.name) をもう一度試聴"
+        : "\(profile.name) を試聴",
+      simplifiedChinese: auditioned
+        ? "再次试听 \(profile.name)"
+        : "试听 \(profile.name)",
+      english: auditioned
+        ? "Audition \(profile.name) again"
+        : "Audition \(profile.name)"
     )
   }
 

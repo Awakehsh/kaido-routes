@@ -357,7 +357,12 @@ identity or text substitution.
 The parked pre-drive sound check is a separate Apple-adapter boundary.
 `GuidanceVoiceSetupModel` may select Japanese, Simplified Chinese, or English,
 persist a device-local installed-voice preference for each language, and always
-supplies the corresponding fixed sample.
+supplies the corresponding fixed representative route-shield/destination
+sample. If an explicit preference has a higher-ranked installed candidate, the
+model may audition that exact candidate without mutating navigation. Only an
+exact completed audition plus explicit user confirmation persists the
+candidate; resolved-voice drift fails closed and its later output callbacks
+cannot reopen confirmation.
 `AVSpeechVoiceAuditionOutput` receives only an exact locale, optional identifier,
 and sample text. It has no RoutePlan, occurrence, frame, emission, prompt, or
 ledger input, so audition cannot enter `GuidanceSpeechScheduler` or consume

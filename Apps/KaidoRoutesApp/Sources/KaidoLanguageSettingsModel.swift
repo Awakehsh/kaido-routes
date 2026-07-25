@@ -109,11 +109,11 @@ extension KaidoReleaseLocale {
   var guidanceAuditionText: String {
     switch self {
     case .japanese:
-      "この先、左側です。"
+      "左側を進み、ビー湾岸線、横浜方面へ。"
     case .simplifiedChinese:
-      "前方请靠左行驶。"
+      "保持左侧，跟随 B 路线，横滨方向。"
     case .english:
-      "Keep left ahead."
+      "Keep left for Route B toward Yokohama."
     }
   }
 }

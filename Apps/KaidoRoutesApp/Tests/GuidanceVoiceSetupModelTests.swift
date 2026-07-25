@@ -65,6 +65,119 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
     XCTAssertEqual(model.lastAuditionedProfile, Self.profiles[0])
   }
 
+  func testRecommendedUpgradeRequiresAuditionAndExplicitConfirmation() throws {
+    let premium = Self.profiles[0]
+    let basic = GuidanceSpeechVoiceProfile(
+      identifier: "test.voice.default",
+      name: "Basic",
+      languageCode: "ja-JP",
+      quality: .defaultQuality
+    )
+    let store = RecordingGuidanceVoicePreferenceStore(
+      identifier: basic.identifier
+    )
+    let output = RecordingGuidanceVoiceAuditionOutput()
+    let model = GuidanceVoiceSetupModel(
+      preferenceStore: store,
+      output: output,
+      profileProvider: { _ in [premium, basic] }
+    )
+    model.refreshProfiles()
+
+    XCTAssertEqual(model.selectedProfile, basic)
+    XCTAssertEqual(model.effectiveProfile, basic)
+    XCTAssertEqual(model.recommendedUpgradeProfile, premium)
+    XCTAssertFalse(model.canUseLastAuditionedUpgrade)
+
+    model.auditionRecommendedUpgrade()
+
+    let request = try XCTUnwrap(output.requests.first)
+    XCTAssertEqual(request.preferredVoiceIdentifier, premium.identifier)
+    XCTAssertEqual(model.upgradeAuditionProfile, premium)
+    XCTAssertEqual(model.selectedProfile, basic)
+    XCTAssertEqual(
+      store.identifier(for: GuidanceVoiceSetupModel.japaneseLanguageCode),
+      basic.identifier
+    )
+
+    output.eventHandler?(.didStart(premium))
+    output.eventHandler?(.didFinish(premium))
+
+    XCTAssertEqual(model.state, .completed(premium))
+    XCTAssertEqual(model.lastAuditionedProfile, premium)
+    XCTAssertEqual(model.effectiveProfile, basic)
+    XCTAssertTrue(model.canUseLastAuditionedUpgrade)
+    XCTAssertEqual(
+      store.identifier(for: GuidanceVoiceSetupModel.japaneseLanguageCode),
+      basic.identifier
+    )
+
+    model.useLastAuditionedUpgrade()
+
+    XCTAssertEqual(model.selectedProfile, premium)
+    XCTAssertEqual(model.effectiveProfile, premium)
+    XCTAssertNil(model.recommendedUpgradeProfile)
+    XCTAssertNil(model.upgradeAuditionProfile)
+    XCTAssertNil(model.lastAuditionedProfile)
+    XCTAssertEqual(model.state, .ready)
+    XCTAssertEqual(
+      store.identifier(for: GuidanceVoiceSetupModel.japaneseLanguageCode),
+      premium.identifier
+    )
+  }
+
+  func testRecommendedUpgradeFailsClosedOnResolvedVoiceDrift() {
+    let premium = Self.profiles[0]
+    let basic = GuidanceSpeechVoiceProfile(
+      identifier: "test.voice.default",
+      name: "Basic",
+      languageCode: "ja-JP",
+      quality: .defaultQuality
+    )
+    let store = RecordingGuidanceVoicePreferenceStore(
+      identifier: basic.identifier
+    )
+    let output = RecordingGuidanceVoiceAuditionOutput()
+    let model = GuidanceVoiceSetupModel(
+      preferenceStore: store,
+      output: output,
+      profileProvider: { _ in [premium, basic] }
+    )
+    model.refreshProfiles()
+    model.auditionRecommendedUpgrade()
+
+    output.eventHandler?(.didStart(basic))
+    output.eventHandler?(.didCancel(basic))
+
+    XCTAssertEqual(
+      model.state,
+      .blocked("VOICE_UPGRADE_RESOLUTION_DRIFT")
+    )
+    XCTAssertNil(model.upgradeAuditionProfile)
+    XCTAssertNil(model.lastAuditionedProfile)
+    XCTAssertFalse(model.canUseLastAuditionedUpgrade)
+    XCTAssertEqual(output.stopCallCount, 1)
+    XCTAssertEqual(
+      store.identifier(for: GuidanceVoiceSetupModel.japaneseLanguageCode),
+      basic.identifier
+    )
+  }
+
+  func testAutomaticHighestQualityNeedsNoUpgradeConfirmation() {
+    let model = GuidanceVoiceSetupModel(
+      preferenceStore: RecordingGuidanceVoicePreferenceStore(),
+      output: RecordingGuidanceVoiceAuditionOutput(),
+      profileProvider: { _ in Self.profiles }
+    )
+
+    model.refreshProfiles()
+
+    XCTAssertTrue(model.usesAutomaticSelection)
+    XCTAssertEqual(model.effectiveProfile, Self.profiles[0])
+    XCTAssertNil(model.recommendedUpgradeProfile)
+    XCTAssertFalse(model.canUseLastAuditionedUpgrade)
+  }
+
   func testMovingContextBlocksAuditionBeforeOutput() {
     let output = RecordingGuidanceVoiceAuditionOutput()
     let model = GuidanceVoiceSetupModel(
@@ -108,7 +221,10 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
     XCTAssertEqual(selectedLocale, .simplifiedChinese)
     XCTAssertEqual(model.selectedGuidanceLocale, .simplifiedChinese)
     XCTAssertEqual(model.languageCode, "zh-CN")
-    XCTAssertEqual(model.auditionText, "前方请靠左行驶。")
+    XCTAssertEqual(
+      model.auditionText,
+      "保持左侧，跟随 B 路线，横滨方向。"
+    )
     XCTAssertEqual(model.profiles, [chineseProfile])
     XCTAssertTrue(model.usesAutomaticSelection)
     XCTAssertEqual(output.stopCallCount, 1)

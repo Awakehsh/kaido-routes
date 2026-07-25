@@ -77,18 +77,21 @@ enum GuidanceVoiceSetupState: Equatable, Sendable {
 @MainActor
 final class GuidanceVoiceSetupModel: ObservableObject {
   static let japaneseLanguageCode = "ja-JP"
-  static let japaneseAuditionText = "この先、左側です。"
+  static let japaneseAuditionText =
+    KaidoReleaseLocale.japanese.guidanceAuditionText
 
   @Published private(set) var profiles: [GuidanceSpeechVoiceProfile] = []
   @Published private(set) var selectedGuidanceLocale: KaidoReleaseLocale
   @Published private(set) var selectedVoiceIdentifier: String?
   @Published private(set) var lastAuditionedProfile: GuidanceSpeechVoiceProfile?
+  @Published private(set) var upgradeAuditionProfile: GuidanceSpeechVoiceProfile?
   @Published private(set) var state: GuidanceVoiceSetupState = .ready
 
   private let preferenceStore: any GuidanceVoicePreferenceStoring
   private let output: any GuidanceVoiceAuditionOutput
   private let profileProvider: (String) -> [GuidanceSpeechVoiceProfile]
   private let guidanceLocaleDidChange: (KaidoReleaseLocale) -> Void
+  private var rejectedAuditionProfileIdentifier: String?
 
   init(
     guidanceLocale: KaidoReleaseLocale = .japanese,
@@ -132,7 +135,34 @@ final class GuidanceVoiceSetupModel: ObservableObject {
   }
 
   var effectiveProfile: GuidanceSpeechVoiceProfile? {
-    selectedProfile ?? lastAuditionedProfile ?? profiles.first
+    selectedProfile ?? profiles.first
+  }
+
+  var recommendedUpgradeProfile: GuidanceSpeechVoiceProfile? {
+    guard
+      let selectedProfile,
+      let highestRankedProfile = profiles.first,
+      highestRankedProfile.identifier != selectedProfile.identifier,
+      highestRankedProfile.quality.rawValue
+        > selectedProfile.quality.rawValue
+    else {
+      return nil
+    }
+    return highestRankedProfile
+  }
+
+  var canUseLastAuditionedUpgrade: Bool {
+    guard
+      case .completed(let completedProfile) = state,
+      let upgradeAuditionProfile,
+      let recommendedUpgradeProfile,
+      completedProfile == upgradeAuditionProfile,
+      upgradeAuditionProfile == recommendedUpgradeProfile,
+      lastAuditionedProfile == completedProfile
+    else {
+      return false
+    }
+    return true
   }
 
   var usesAutomaticSelection: Bool {
@@ -166,6 +196,12 @@ final class GuidanceVoiceSetupModel: ObservableObject {
   func refreshProfiles() {
     let refreshed = profileProvider(languageCode)
     profiles = refreshed
+    if let upgradeAuditionProfile,
+      !refreshed.contains(upgradeAuditionProfile)
+    {
+      self.upgradeAuditionProfile = nil
+      lastAuditionedProfile = nil
+    }
     guard let selectedVoiceIdentifier else { return }
     guard !refreshed.isEmpty else { return }
     guard
@@ -195,6 +231,8 @@ final class GuidanceVoiceSetupModel: ObservableObject {
     preferenceStore.setIdentifier(identifier, for: languageCode)
     selectedVoiceIdentifier = identifier
     lastAuditionedProfile = nil
+    upgradeAuditionProfile = nil
+    rejectedAuditionProfileIdentifier = nil
     state = .ready
   }
 
@@ -208,28 +246,70 @@ final class GuidanceVoiceSetupModel: ObservableObject {
       for: locale.speechLanguageCode
     )
     lastAuditionedProfile = nil
+    upgradeAuditionProfile = nil
+    rejectedAuditionProfileIdentifier = nil
     state = .ready
     refreshProfiles()
   }
 
   func audition(isVehicleMoving: Bool = false) {
+    beginAudition(
+      preferredVoiceIdentifier: selectedVoiceIdentifier,
+      upgradeProfile: nil,
+      isVehicleMoving: isVehicleMoving
+    )
+  }
+
+  func auditionRecommendedUpgrade(isVehicleMoving: Bool = false) {
+    guard let recommendedUpgradeProfile else {
+      state = .blocked("VOICE_UPGRADE_NOT_AVAILABLE")
+      return
+    }
+    beginAudition(
+      preferredVoiceIdentifier: recommendedUpgradeProfile.identifier,
+      upgradeProfile: recommendedUpgradeProfile,
+      isVehicleMoving: isVehicleMoving
+    )
+  }
+
+  func useLastAuditionedUpgrade() {
+    guard
+      canUseLastAuditionedUpgrade,
+      let upgradeAuditionProfile
+    else {
+      state = .blocked("VOICE_UPGRADE_CONFIRMATION_UNAVAILABLE")
+      return
+    }
+    selectVoice(identifier: upgradeAuditionProfile.identifier)
+  }
+
+  private func beginAudition(
+    preferredVoiceIdentifier: String?,
+    upgradeProfile: GuidanceSpeechVoiceProfile?,
+    isVehicleMoving: Bool
+  ) {
     guard !isVehicleMoving else {
       state = .blocked("VOICE_AUDITION_MOVING_CONTEXT")
       return
     }
     guard canAudition else { return }
+    rejectedAuditionProfileIdentifier = nil
+    upgradeAuditionProfile = upgradeProfile
+    lastAuditionedProfile = nil
     state = .preparing
     do {
       try output.audition(
         GuidanceVoiceAuditionRequest(
           languageCode: languageCode,
-          preferredVoiceIdentifier: selectedVoiceIdentifier,
+          preferredVoiceIdentifier: preferredVoiceIdentifier,
           spokenText: auditionText
         )
       )
     } catch let error as GuidanceVoiceAuditionOutputError {
+      upgradeAuditionProfile = nil
       state = .blocked(error.code.rawValue)
     } catch {
+      upgradeAuditionProfile = nil
       state = .blocked(
         GuidanceVoiceAuditionFailureCode
           .audioSessionActivationFailed.rawValue
@@ -248,18 +328,36 @@ final class GuidanceVoiceSetupModel: ObservableObject {
   }
 
   private func handle(_ event: GuidanceVoiceAuditionOutputEvent) {
+    let profile: GuidanceSpeechVoiceProfile
     switch event {
-    case .didStart(let profile):
-      retainResolvedProfile(profile)
-      lastAuditionedProfile = profile
+    case .didStart(let startedProfile):
+      profile = startedProfile
+    case .didFinish(let finishedProfile):
+      profile = finishedProfile
+    case .didCancel(let cancelledProfile):
+      profile = cancelledProfile
+    }
+    guard rejectedAuditionProfileIdentifier != profile.identifier else {
+      return
+    }
+    if let upgradeAuditionProfile,
+      profile.identifier != upgradeAuditionProfile.identifier
+    {
+      rejectedAuditionProfileIdentifier = profile.identifier
+      self.upgradeAuditionProfile = nil
+      lastAuditionedProfile = nil
+      state = .blocked("VOICE_UPGRADE_RESOLUTION_DRIFT")
+      output.stop()
+      return
+    }
+    retainResolvedProfile(profile)
+    lastAuditionedProfile = profile
+    switch event {
+    case .didStart:
       state = .speaking(profile)
-    case .didFinish(let profile):
-      retainResolvedProfile(profile)
-      lastAuditionedProfile = profile
+    case .didFinish:
       state = .completed(profile)
-    case .didCancel(let profile):
-      retainResolvedProfile(profile)
-      lastAuditionedProfile = profile
+    case .didCancel:
       state = .ready
     }
   }

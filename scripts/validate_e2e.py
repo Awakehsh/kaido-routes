@@ -100,6 +100,7 @@ EVENT_TYPES = {
     "NAVIGATION_STARTED",
     "LOCATION_UPDATED",
     "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+    "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
     "MATCHER_SESSION_STARTED",
     "MATCHER_OBSERVATION_RECEIVED",
     "MATCHER_SESSION_RESET",
@@ -2067,6 +2068,201 @@ def validate_entry_transition_admission(
             )
 
 
+def validate_surface_egress_matcher_admission(
+    v: Validation, given: dict[str, Any], events: Any
+) -> None:
+    inputs = given.get("inputs")
+    if not isinstance(inputs, dict) or "surface_egress_matcher_admission" not in inputs:
+        return
+    admission = inputs["surface_egress_matcher_admission"]
+    context = "given.inputs.surface_egress_matcher_admission"
+    required = {
+        "product_release_id",
+        "navigation_release_id",
+        "journey_plan_id",
+        "runtime_policy_id",
+        "handoff_anchor_id",
+        "corridor_id",
+        "provider_dataset_id",
+        "candidate_id",
+        "egress_option_id",
+        "exit_facility_id",
+        "occurrences",
+    }
+    if not v.require_keys(admission, required, context):
+        return
+    extra = sorted(set(admission) - required)
+    if extra:
+        v.add(f"{context} has unsupported keys: {', '.join(extra)}")
+    for field in required - {"occurrences"}:
+        if not isinstance(admission[field], str) or not admission[field].strip():
+            v.add(f"{context}.{field} must be non-empty")
+
+    options = inputs.get("precomputed_egress_options")
+    option = None
+    if isinstance(options, list):
+        option = next(
+            (
+                value
+                for value in options
+                if isinstance(value, dict)
+                and value.get("egress_option_id") == admission.get("egress_option_id")
+            ),
+            None,
+        )
+    if (
+        not isinstance(option, dict)
+        or option.get("released") is not True
+        or option.get("exit_facility_id") != admission.get("exit_facility_id")
+    ):
+        v.add(f"{context} must match one released precomputed egress option")
+
+    occurrences = admission["occurrences"]
+    if not isinstance(occurrences, list) or not occurrences:
+        v.add(f"{context}.occurrences must be a non-empty array")
+        return
+    occurrence_ids: set[str] = set()
+    geometry_by_edge: dict[str, Any] = {}
+    for index, occurrence in enumerate(occurrences):
+        occurrence_context = f"{context}.occurrences[{index}]"
+        occurrence_required = {
+            "occurrence_id",
+            "index",
+            "directed_edge_id",
+            "coordinates",
+        }
+        if not v.require_keys(occurrence, occurrence_required, occurrence_context):
+            continue
+        occurrence_extra = sorted(set(occurrence) - occurrence_required)
+        if occurrence_extra:
+            v.add(
+                f"{occurrence_context} has unsupported keys: "
+                + ", ".join(occurrence_extra)
+            )
+        occurrence_id = occurrence["occurrence_id"]
+        if not isinstance(occurrence_id, str) or not occurrence_id.strip():
+            v.add(f"{occurrence_context}.occurrence_id must be non-empty")
+        elif occurrence_id in occurrence_ids:
+            v.add(f"{occurrence_context}.occurrence_id must be unique")
+        else:
+            occurrence_ids.add(occurrence_id)
+        if occurrence["index"] != index:
+            v.add(f"{occurrence_context}.index must equal path order {index}")
+        edge_id = occurrence["directed_edge_id"]
+        if not isinstance(edge_id, str) or not edge_id.strip():
+            v.add(f"{occurrence_context}.directed_edge_id must be non-empty")
+        coordinates = occurrence["coordinates"]
+        if not isinstance(coordinates, list) or len(coordinates) < 2:
+            v.add(f"{occurrence_context}.coordinates must contain at least two points")
+            continue
+        for coordinate_index, coordinate in enumerate(coordinates):
+            coordinate_context = f"{occurrence_context}.coordinates[{coordinate_index}]"
+            if not isinstance(coordinate, dict) or set(coordinate) != {
+                "latitude",
+                "longitude",
+            }:
+                v.add(f"{coordinate_context} must contain latitude and longitude")
+                continue
+            latitude = coordinate["latitude"]
+            longitude = coordinate["longitude"]
+            if (
+                not isinstance(latitude, (int, float))
+                or isinstance(latitude, bool)
+                or not math.isfinite(latitude)
+                or latitude < -90
+                or latitude > 90
+                or not isinstance(longitude, (int, float))
+                or isinstance(longitude, bool)
+                or not math.isfinite(longitude)
+                or longitude < -180
+                or longitude > 180
+            ):
+                v.add(f"{coordinate_context} is invalid")
+        if isinstance(edge_id, str):
+            prior_geometry = geometry_by_edge.get(edge_id)
+            if prior_geometry is not None and prior_geometry != coordinates:
+                v.add(f"{occurrence_context} repeated edge geometry must be identical")
+            geometry_by_edge[edge_id] = coordinates
+
+    if not isinstance(events, list):
+        return
+    for index, event in enumerate(events):
+        if (
+            not isinstance(event, dict)
+            or event.get("type") != "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED"
+        ):
+            continue
+        payload = event.get("payload")
+        event_context = f"when[{index}].payload"
+        event_required = {
+            "observation_id",
+            "coordinate",
+            "horizontal_accuracy_m",
+            "course_degrees",
+            "speed_meters_per_second",
+            "source",
+        }
+        if not v.require_keys(payload, event_required, event_context):
+            continue
+        if (
+            not isinstance(payload["observation_id"], str)
+            or not payload["observation_id"].strip()
+        ):
+            v.add(f"{event_context}.observation_id must be non-empty")
+        coordinate = payload["coordinate"]
+        if not isinstance(coordinate, dict) or set(coordinate) != {
+            "latitude",
+            "longitude",
+        }:
+            v.add(f"{event_context}.coordinate must contain latitude and longitude")
+        else:
+            latitude = coordinate["latitude"]
+            longitude = coordinate["longitude"]
+            if (
+                not isinstance(latitude, (int, float))
+                or isinstance(latitude, bool)
+                or not math.isfinite(latitude)
+                or latitude < -90
+                or latitude > 90
+                or not isinstance(longitude, (int, float))
+                or isinstance(longitude, bool)
+                or not math.isfinite(longitude)
+                or longitude < -180
+                or longitude > 180
+            ):
+                v.add(f"{event_context}.coordinate is invalid")
+        for field in ("horizontal_accuracy_m", "speed_meters_per_second"):
+            value = payload[field]
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(value)
+                or value < 0
+                or (field == "horizontal_accuracy_m" and value == 0)
+            ):
+                v.add(f"{event_context}.{field} is invalid")
+        course = payload["course_degrees"]
+        if (
+            not isinstance(course, (int, float))
+            or isinstance(course, bool)
+            or not math.isfinite(course)
+            or course < 0
+            or course >= 360
+        ):
+            v.add(f"{event_context}.course_degrees is invalid")
+        if payload["source"] not in {
+            "PHONE",
+            "WIRED_CARPLAY",
+            "WIRELESS_CARPLAY",
+            "ACCESSORY",
+        }:
+            v.add(f"{event_context}.source is unknown")
+        if "is_simulated_by_software" in payload and not isinstance(
+            payload["is_simulated_by_software"], bool
+        ):
+            v.add(f"{event_context}.is_simulated_by_software must be boolean")
+
+
 def validate_navigation_release_artifact(
     v: Validation, given: dict[str, Any]
 ) -> None:
@@ -2925,6 +3121,9 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_released_guidance(v, given)
         validate_navigation_runtime_policy(v, given)
         validate_entry_transition_admission(v, given, scenario["when"])
+        validate_surface_egress_matcher_admission(
+            v, given, scenario["when"]
+        )
         validate_navigation_release_artifact(v, given)
         validate_navigation_release_authoring_events(
             v,

@@ -1,0 +1,280 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S20",
+  "title": "Only exact occurrence-bound surface egress evidence leaves the exit transition",
+  "layer": "SIMULATION",
+  "tags": [
+    "surface-egress",
+    "core-location",
+    "route-occurrence",
+    "release-identity",
+    "fail-closed"
+  ],
+  "purpose": "Retain the compiler-admitted ordinary-road geometry as a separate occurrence corridor and require two fresh, forward, non-simulated HIGH observations on its exact handoff occurrence before surface egress begins.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Coordinates, provider identity, and location quality are synthetic; this scenario proves deterministic policy only and does not establish a device or field reliability floor."
+    ],
+    "release_blockers": [
+      "Real graph-bound provider output, physical-device Core Location profiling, and held-out field reliability evidence remain required before App enrollment."
+    ]
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.surface-egress-matcher-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-25T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.surface-egress-matcher",
+      "network_snapshot_id": "test.snapshot.surface-egress-matcher-v1",
+      "entry_facility_id": "test.entry.surface-egress-matcher",
+      "exit_facility_id": "test.exit.default",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.route-occurrence.surface-egress-matcher",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.route-edge.surface-egress-matcher"
+        }
+      ]
+    },
+    "inputs": {
+      "precomputed_egress_options": [
+        {
+          "egress_option_id": "test.egress-option.surface-egress-matcher",
+          "first_eligible_occurrence_id": "test.route-occurrence.surface-egress-matcher",
+          "exit_facility_id": "test.exit.surface-egress-matcher",
+          "egress_occurrence_ids": [
+            "test.egress-route-movement.surface-egress-matcher",
+            "test.egress-route-edge.surface-egress-matcher"
+          ],
+          "released": true
+        }
+      ],
+      "surface_egress_matcher_admission": {
+        "product_release_id": "test.product-release.surface-egress-matcher",
+        "navigation_release_id": "test.navigation-release.surface-egress-matcher",
+        "journey_plan_id": "test.journey.surface-egress-matcher",
+        "runtime_policy_id": "test.runtime-policy.surface-egress-matcher",
+        "handoff_anchor_id": "test.handoff-anchor.surface-egress-matcher",
+        "corridor_id": "test.corridor.surface-egress-matcher",
+        "provider_dataset_id": "test.provider-dataset.surface-egress-matcher",
+        "candidate_id": "test.candidate.surface-egress-matcher",
+        "egress_option_id": "test.egress-option.surface-egress-matcher",
+        "exit_facility_id": "test.exit.surface-egress-matcher",
+        "occurrences": [
+          {
+            "occurrence_id": "test.surface-occurrence.0",
+            "index": 0,
+            "directed_edge_id": "test.surface-edge.repeated",
+            "coordinates": [
+              {
+                "latitude": 35.681,
+                "longitude": 139.761
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.761
+              }
+            ]
+          },
+          {
+            "occurrence_id": "test.surface-occurrence.1",
+            "index": 1,
+            "directed_edge_id": "test.surface-edge.loop",
+            "coordinates": [
+              {
+                "latitude": 35.68,
+                "longitude": 139.761
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.762
+              },
+              {
+                "latitude": 35.681,
+                "longitude": 139.762
+              },
+              {
+                "latitude": 35.681,
+                "longitude": 139.761
+              }
+            ]
+          },
+          {
+            "occurrence_id": "test.surface-occurrence.2",
+            "index": 2,
+            "directed_edge_id": "test.surface-edge.repeated",
+            "coordinates": [
+              {
+                "latitude": 35.681,
+                "longitude": 139.761
+              },
+              {
+                "latitude": 35.68,
+                "longitude": 139.761
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.surface-egress-matcher",
+      "current_occurrence_id": "test.route-occurrence.surface-egress-matcher"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "finish",
+      "at_ms": 1000,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "FINISH_DRIVE"
+      }
+    },
+    {
+      "id": "simulated-handoff",
+      "at_ms": 2000,
+      "type": "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "surface-egress.0",
+        "coordinate": {
+          "latitude": 35.6809,
+          "longitude": 139.761
+        },
+        "horizontal_accuracy_m": 3,
+        "course_degrees": 180,
+        "speed_meters_per_second": 8,
+        "source": "PHONE",
+        "is_simulated_by_software": true
+      }
+    },
+    {
+      "id": "first-real-handoff",
+      "at_ms": 3000,
+      "type": "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "surface-egress.1",
+        "coordinate": {
+          "latitude": 35.6807,
+          "longitude": 139.761
+        },
+        "horizontal_accuracy_m": 3,
+        "course_degrees": 180,
+        "speed_meters_per_second": 8,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "second-real-handoff",
+      "at_ms": 4000,
+      "type": "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "surface-egress.2",
+        "coordinate": {
+          "latitude": 35.6805,
+          "longitude": 139.761
+        },
+        "horizontal_accuracy_m": 3,
+        "course_degrees": 180,
+        "speed_meters_per_second": 8,
+        "source": "PHONE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "finish-activates-exact-exit",
+      "after": "finish",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "EXIT_TRANSITION",
+      "rationale": "Surface matching is ineligible until the released expressway egress plan reaches its exit transition."
+    },
+    {
+      "id": "repeated-geometry-remains-first-occurrence",
+      "after": "simulated-handoff",
+      "category": "DOMAIN",
+      "subject": "surface_egress.matcher.occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.surface-occurrence.0",
+      "rationale": "Geometry shared with a later repeated edge cannot skip the corridor's exact handoff occurrence."
+    },
+    {
+      "id": "simulated-evidence-rejected",
+      "after": "simulated-handoff",
+      "category": "SAFETY",
+      "subject": "surface_egress.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "SIMULATED_LOCATION",
+      "rationale": "Software simulation cannot satisfy the release-bound handoff gate."
+    },
+    {
+      "id": "simulated-evidence-does-not-enter-surface",
+      "after": "simulated-handoff",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "EXIT_TRANSITION",
+      "rationale": "A matcher result alone never changes journey phase."
+    },
+    {
+      "id": "first-real-fix-only-observes",
+      "after": "first-real-handoff",
+      "category": "SAFETY",
+      "subject": "surface_egress.admission.status",
+      "matcher": "EQUALS",
+      "expected": "OBSERVING",
+      "rationale": "One valid fix cannot prove forward continuity."
+    },
+    {
+      "id": "first-real-fix-is-high",
+      "after": "first-real-handoff",
+      "category": "EVIDENCE",
+      "subject": "surface_egress.matcher.confidence",
+      "matcher": "EQUALS",
+      "expected": "HIGH",
+      "rationale": "The synthetic fix is uniquely resolved to the handoff occurrence under the deterministic matcher thresholds."
+    },
+    {
+      "id": "second-real-fix-enters-surface",
+      "after": "second-real-handoff",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "SURFACE_EGRESS",
+      "rationale": "Two fresh, forward, exact-occurrence observations authorize the ordinary-road leg."
+    },
+    {
+      "id": "surface-entry-trigger-is-auditable",
+      "after": "second-real-handoff",
+      "category": "NAVIGATION",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "VERIFIED_SURFACE_EGRESS_HANDOFF",
+      "rationale": "The actor-owned engine records the only phase transition authority."
+    },
+    {
+      "id": "admission-reports-entered",
+      "after": "second-real-handoff",
+      "category": "EVIDENCE",
+      "subject": "surface_egress.admission.status",
+      "matcher": "EQUALS",
+      "expected": "SURFACE_EGRESS_ENTERED",
+      "rationale": "The portable runner exposes the exact admission result independently of matcher diagnostics."
+    }
+  ]
+}

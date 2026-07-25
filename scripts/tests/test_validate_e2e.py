@@ -48,6 +48,12 @@ PRE_DRIVE_EVIDENCE_BUNDLE_SCENARIO_PATH = (
     / "scenarios"
     / "kr-d29-pre-drive-evidence-bundle.json"
 )
+SURFACE_EGRESS_MATCHER_SCENARIO_PATH = (
+    REPOSITORY_ROOT
+    / "e2e"
+    / "scenarios"
+    / "kr-s20-surface-egress-matcher-handoff.json"
+)
 
 
 class ValidateExpertRouteEditorLapTests(unittest.TestCase):
@@ -463,6 +469,64 @@ class ValidateRouteAtlasReleaseAuthoringTests(unittest.TestCase):
                 "configuration_schema_version must be non-empty" in error
                 for error in errors
             )
+        )
+
+
+class ValidateSurfaceEgressMatcherAdmissionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.scenario = json.loads(
+            SURFACE_EGRESS_MATCHER_SCENARIO_PATH.read_text(encoding="utf-8")
+        )
+
+    def validate_admission(self, scenario: dict) -> list[str]:
+        validation = validator.Validation(SURFACE_EGRESS_MATCHER_SCENARIO_PATH)
+        validator.validate_surface_egress_matcher_admission(
+            validation,
+            scenario["given"],
+            scenario["when"],
+        )
+        return validation.errors
+
+    def test_exact_surface_egress_matcher_admission_is_valid(self) -> None:
+        self.assertEqual(self.validate_admission(self.scenario), [])
+        self.assertIn(
+            "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
+            validator.EVENT_TYPES,
+        )
+
+    def test_repeated_edge_geometry_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        admission = scenario["given"]["inputs"][
+            "surface_egress_matcher_admission"
+        ]
+        admission["occurrences"][2]["coordinates"][1]["longitude"] = 139.763
+
+        errors = self.validate_admission(scenario)
+
+        self.assertTrue(
+            any("repeated edge geometry must be identical" in error for error in errors)
+        )
+
+    def test_unreleased_exit_option_drift_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        option = scenario["given"]["inputs"]["precomputed_egress_options"][0]
+        option["released"] = False
+
+        errors = self.validate_admission(scenario)
+
+        self.assertTrue(
+            any("must match one released precomputed egress option" in error
+                for error in errors)
+        )
+
+    def test_invalid_observation_course_fails_validation(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        scenario["when"][2]["payload"]["course_degrees"] = 360
+
+        errors = self.validate_admission(scenario)
+
+        self.assertTrue(
+            any("course_degrees is invalid" in error for error in errors)
         )
 
 

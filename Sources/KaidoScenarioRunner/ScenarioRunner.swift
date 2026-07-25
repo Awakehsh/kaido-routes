@@ -60,6 +60,8 @@ private struct ScenarioHarness {
   var matcherSession: RouteMatcherSession?
   var matcherCorridor: RouteMatcherCorridor?
   var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
+  var surfaceEgressMatcherSession: SurfaceEgressMatcherSession?
+  var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   var routeEditorSession: ExpertRouteEditorSession?
   var routeEditorCorridorResolutionSession: ParkedCorridorResolutionSession?
   var routeAtlasRelease: RouteAtlasRelease?
@@ -78,6 +80,8 @@ private struct ScenarioHarness {
     matcherSession = nil
     matcherCorridor = nil
     entryTransitionAdmission = nil
+    surfaceEgressMatcherSession = nil
+    surfaceEgressAdmission = nil
     routeEditorSession = nil
     routeEditorCorridorResolutionSession = nil
     routeAtlasRelease = nil
@@ -122,6 +126,61 @@ private struct ScenarioHarness {
         )
       }
       entryTransitionAdmission = EntryTransitionEvidenceAdmission(context: context)
+    }
+    if let admissionValue = scenario.given.inputs.object(
+      "surface_egress_matcher_admission"
+    ) {
+      guard let routePlan = scenario.given.routePlan,
+        let selectedOption = configuration.egressOptions.first(where: {
+          $0.id == admissionValue.string("egress_option_id")
+        }),
+        selectedOption.isReleased
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "surface_egress_matcher_admission"
+        )
+      }
+      let corridor = try Self.surfaceEgressMatcherCorridor(
+        admissionValue,
+        networkSnapshotID: scenario.given.networkSnapshot.id,
+        routePlanID: routePlan.id
+      )
+      guard let handoffOccurrence = corridor.occurrences.first,
+        selectedOption.exitFacilityID == corridor.exitFacilityID
+      else {
+        throw ScenarioExecutionError.invalidInput(
+          "surface_egress_matcher_admission.handoff_occurrence"
+        )
+      }
+      let context = SurfaceEgressAdmissionContext(
+        productReleaseID: try admissionValue.requiredString(
+          "product_release_id"
+        ),
+        navigationReleaseID: try admissionValue.requiredString(
+          "navigation_release_id"
+        ),
+        journeyPlanID: try admissionValue.requiredString(
+          "journey_plan_id"
+        ),
+        runtimePolicyID: try admissionValue.requiredString(
+          "runtime_policy_id"
+        ),
+        networkSnapshotID: scenario.given.networkSnapshot.id,
+        routePlanID: routePlan.id,
+        egressOptionID: corridor.egressOptionID,
+        exitFacilityID: corridor.exitFacilityID,
+        handoffAnchorID: try admissionValue.requiredString(
+          "handoff_anchor_id"
+        ),
+        directedSurfaceEdgeID: handoffOccurrence.directedEdgeID,
+        matcherCorridor: corridor,
+        handoffOccurrenceID: handoffOccurrence.id
+      )
+      surfaceEgressMatcherSession = try SurfaceEgressMatcherSession(
+        corridor: corridor
+      )
+      surfaceEgressAdmission =
+        SurfaceEgressHandoffEvidenceAdmission(context: context)
     }
   }
 
@@ -185,6 +244,8 @@ private struct ScenarioHarness {
         ))
     case "ENTRY_TRANSITION_EVIDENCE_OBSERVED":
       try observeEntryTransitionEvidence(event)
+    case "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED":
+      try receiveSurfaceEgressMatcherObservation(event)
     case "MATCHER_SESSION_STARTED":
       try startMatcherSession(event.payload)
     case "MATCHER_OBSERVATION_RECEIVED":
@@ -298,6 +359,136 @@ private struct ScenarioHarness {
       adapterObservations["entry_transition.admission.accepted_edge_index"] = .integer(
         index
       )
+    }
+  }
+
+  private mutating func receiveSurfaceEgressMatcherObservation(
+    _ event: ScenarioEvent
+  ) throws {
+    guard var matcherSession = surfaceEgressMatcherSession,
+      var admission = surfaceEgressAdmission
+    else {
+      throw ScenarioExecutionError.missingInput(
+        "surface_egress_matcher_admission"
+      )
+    }
+    let payload = event.payload
+    guard let coordinate = payload.object("coordinate"),
+      let latitude = coordinate.double("latitude"),
+      let longitude = coordinate.double("longitude"),
+      let source = payload.string("source").flatMap(
+        MatcherLocationSource.init(rawValue:)
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput(
+        "surface_egress_matcher_observation"
+      )
+    }
+    let observation = RouteMatcherObservation(
+      id: try payload.requiredString("observation_id"),
+      observedAtMilliseconds:
+        payload.int("observed_at_ms") ?? event.atMilliseconds,
+      receivedAtMilliseconds:
+        payload.int("received_at_ms") ?? event.atMilliseconds,
+      coordinate: MatcherCoordinate(
+        latitude: latitude,
+        longitude: longitude
+      ),
+      horizontalAccuracyMeters: try requiredDouble(
+        payload,
+        key: "horizontal_accuracy_m"
+      ),
+      courseDegrees: payload.double("course_degrees"),
+      speedMetersPerSecond: payload.double(
+        "speed_meters_per_second"
+      ),
+      source: source
+    )
+    let estimate = try matcherSession.observe(observation)
+    surfaceEgressMatcherSession = matcherSession
+    let headingError = estimate.occurrenceID.flatMap {
+      occurrenceID -> Double? in
+      guard let course = observation.courseDegrees,
+        observation.speedMetersPerSecond.map({ $0 >= 2 }) == true,
+        let occurrence = admission.context.matcherCorridor.occurrences
+          .first(where: { $0.id == occurrenceID }),
+        let bearing = Self.closestSurfaceEgressBearing(
+          to: observation.coordinate,
+          on: occurrence.coordinates
+        )
+      else {
+        return nil
+      }
+      return Self.angularDifferenceDegrees(course, bearing)
+    }
+    let evidence = SurfaceEgressHandoffEvidence(
+      context: admission.context,
+      observationID: observation.id ?? "",
+      observedAtMilliseconds: observation.observedAtMilliseconds,
+      receivedAtMilliseconds: observation.receivedAtMilliseconds,
+      directedSurfaceEdgeID: estimate.directedEdgeID,
+      candidateEdgeIDs: estimate.candidateEdgeIDs,
+      surfaceOccurrenceID: estimate.occurrenceID,
+      candidateOccurrenceIDs: estimate.candidateOccurrenceIDs,
+      fractionAlongEdge: estimate.fractionAlongEdge,
+      confidence: estimate.confidence,
+      headingErrorDegrees: headingError,
+      isSimulatedBySoftware:
+        payload.bool("is_simulated_by_software") ?? false
+    )
+    let decision = admission.admit(
+      evidence,
+      snapshot: engine.snapshot
+    )
+    surfaceEgressAdmission = admission
+    if decision.status == .surfaceEgressEntered {
+      engine.activateSurfaceEgress()
+    }
+    publishSurfaceEgressMatcher(
+      estimate,
+      diagnostics: matcherSession.diagnostics,
+      decision: decision
+    )
+  }
+
+  private mutating func publishSurfaceEgressMatcher(
+    _ estimate: SurfaceEgressMatcherEstimate,
+    diagnostics: SurfaceEgressMatcherDiagnostics,
+    decision: SurfaceEgressHandoffDecision
+  ) {
+    for key in adapterObservations.keys.filter({
+      $0.hasPrefix("surface_egress.")
+    }) {
+      adapterObservations.removeValue(forKey: key)
+    }
+    adapterObservations["surface_egress.matcher.confidence"] =
+      .string(estimate.confidence.rawValue)
+    adapterObservations[
+      "surface_egress.matcher.candidate_edge_ids"
+    ] = .strings(estimate.candidateEdgeIDs)
+    adapterObservations[
+      "surface_egress.matcher.candidate_occurrence_ids"
+    ] = .strings(estimate.candidateOccurrenceIDs)
+    adapterObservations[
+      "surface_egress.matcher.accepted_observation_count"
+    ] = .integer(diagnostics.acceptedObservationCount)
+    if let edgeID = estimate.directedEdgeID {
+      adapterObservations["surface_egress.matcher.directed_edge_id"] =
+        .string(edgeID)
+    }
+    if let occurrenceID = estimate.occurrenceID {
+      adapterObservations["surface_egress.matcher.occurrence_id"] =
+        .string(occurrenceID)
+    }
+    if let fraction = estimate.fractionAlongEdge {
+      adapterObservations["surface_egress.matcher.fraction_along_edge"] =
+        .number(fraction)
+    }
+    adapterObservations["surface_egress.admission.status"] =
+      .string(decision.status.rawValue)
+    if let reason = decision.rejectionReason {
+      adapterObservations["surface_egress.admission.rejection_reason"] =
+        .string(reason.rawValue)
     }
   }
 
@@ -3188,6 +3379,116 @@ private struct ScenarioHarness {
         isReleased: option.bool("released") ?? false
       )
     }
+  }
+
+  private static func surfaceEgressMatcherCorridor(
+    _ value: [String: JSONValue],
+    networkSnapshotID: String,
+    routePlanID: String
+  ) throws -> SurfaceEgressMatcherCorridor {
+    let occurrenceValues =
+      value.array("occurrences") ?? []
+    let occurrences = try occurrenceValues.map { rawValue in
+      guard let occurrence = rawValue.objectValue else {
+        throw ScenarioExecutionError.invalidInput(
+          "surface_egress_matcher_admission.occurrences"
+        )
+      }
+      let coordinateValues = occurrence.array("coordinates") ?? []
+      let coordinates = try coordinateValues.map { rawCoordinate in
+        guard let coordinate = rawCoordinate.objectValue,
+          let latitude = coordinate.double("latitude"),
+          let longitude = coordinate.double("longitude")
+        else {
+          throw ScenarioExecutionError.invalidInput(
+            "surface_egress_matcher_admission.coordinates"
+          )
+        }
+        return MatcherCoordinate(
+          latitude: latitude,
+          longitude: longitude
+        )
+      }
+      guard let index = occurrence.int("index") else {
+        throw ScenarioExecutionError.invalidInput(
+          "surface_egress_matcher_admission.index"
+        )
+      }
+      return SurfaceEgressMatcherOccurrence(
+        id: try occurrence.requiredString("occurrence_id"),
+        index: index,
+        directedEdgeID: try occurrence.requiredString(
+          "directed_edge_id"
+        ),
+        coordinates: coordinates
+      )
+    }
+    return SurfaceEgressMatcherCorridor(
+      id: try value.requiredString("corridor_id"),
+      networkSnapshotID: networkSnapshotID,
+      routePlanID: routePlanID,
+      providerDatasetID: try value.requiredString(
+        "provider_dataset_id"
+      ),
+      candidateID: try value.requiredString("candidate_id"),
+      egressOptionID: try value.requiredString("egress_option_id"),
+      exitFacilityID: try value.requiredString("exit_facility_id"),
+      occurrences: occurrences
+    )
+  }
+
+  private static func closestSurfaceEgressBearing(
+    to point: MatcherCoordinate,
+    on coordinates: [MatcherCoordinate]
+  ) -> Double? {
+    var closestDistance = Double.infinity
+    var closestBearing: Double?
+    for (start, end) in zip(coordinates, coordinates.dropFirst()) {
+      let earthRadiusMeters = 6_371_000.0
+      let referenceLatitude =
+        (start.latitude + end.latitude + point.latitude) / 3
+      let latitudeScale = earthRadiusMeters * .pi / 180
+      let longitudeScale =
+        latitudeScale * cos(referenceLatitude * .pi / 180)
+      let segmentX =
+        (end.longitude - start.longitude) * longitudeScale
+      let segmentY =
+        (end.latitude - start.latitude) * latitudeScale
+      let pointX =
+        (point.longitude - start.longitude) * longitudeScale
+      let pointY =
+        (point.latitude - start.latitude) * latitudeScale
+      let squaredLength = segmentX * segmentX + segmentY * segmentY
+      let fraction =
+        squaredLength > 0
+        ? min(
+          1,
+          max(
+            0,
+            (pointX * segmentX + pointY * segmentY)
+              / squaredLength
+          )
+        ) : 0
+      let distance = hypot(
+        pointX - segmentX * fraction,
+        pointY - segmentY * fraction
+      )
+      if distance < closestDistance {
+        closestDistance = distance
+        let bearing = atan2(segmentX, segmentY) * 180 / .pi
+        closestBearing = bearing >= 0 ? bearing : bearing + 360
+      }
+    }
+    return closestBearing
+  }
+
+  private static func angularDifferenceDegrees(
+    _ lhs: Double,
+    _ rhs: Double
+  ) -> Double {
+    let difference =
+      abs(lhs - rhs).truncatingRemainder(dividingBy: 360)
+    return min(difference, 360 - difference)
   }
 
   private static func signGuidance(from inputs: [String: JSONValue]) -> SignGuidance {

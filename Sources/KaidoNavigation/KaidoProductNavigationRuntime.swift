@@ -119,6 +119,8 @@ public struct KaidoProductNavigationRuntime: Sendable {
     if let selectedEgressOptionID =
       journeyPlan.selectedEgressOptionID,
       let egressLeg = journeyPlan.egressLeg,
+      let egressMatcherCorridor = egressLeg.egressMatcherCorridor,
+      let handoffOccurrence = egressMatcherCorridor.occurrences.first,
       let definition = bundle.surfaceEgressDefinition,
       let policy = definition.policies.first(where: {
         $0.egressOptionID == selectedEgressOptionID
@@ -135,7 +137,9 @@ public struct KaidoProductNavigationRuntime: Sendable {
         exitFacilityID: policy.exitFacilityID,
         handoffAnchorID: policy.originAnchor.id,
         directedSurfaceEdgeID:
-          egressLeg.directedEdgeIDs.first ?? ""
+          egressLeg.directedEdgeIDs.first ?? "",
+        matcherCorridor: egressMatcherCorridor,
+        handoffOccurrenceID: handoffOccurrence.id
       )
     } else {
       surfaceEgressAdmissionContext = nil

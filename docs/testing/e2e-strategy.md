@@ -350,6 +350,13 @@ provider endpoint identity, graph hard gates, deterministic ranking, exact
 selected egress option, and two-observation `EXIT_TRANSITION` to
 `SURFACE_EGRESS` admission. No live provider, field trace, or device claim is
 made.
+KR-S20 additionally executes the compiler-retained surface geometry boundary:
+the portable runner builds an occurrence-ordered egress corridor, preserves a
+repeated directed edge as two identities, runs the separately scoped matcher,
+rejects simulated evidence, and requires two forward exact-handoff observations
+before the actor enters `SURFACE_EGRESS`. Its coordinates and quality values are
+synthetic and do not qualify the App, a Core Location source, or field
+reliability.
 It also executes ownership-only `connectCarPlay()`, requires phone and CarPlay
 to retain one occurrence-scoped frame and junction definition, and rejects an
 unreleased junction definition without replacing the prior valid state. The

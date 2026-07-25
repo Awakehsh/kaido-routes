@@ -463,7 +463,14 @@ public struct DirectedRoadGraphInspector:
       unmatchedSampleCount: unmatchedSampleCount,
       ambiguousDirectedEdgeIDs: uniqueIDs(ambiguousEdgeIDs),
       disconnectedDirectedEdgeIDs: disconnectedEdgeIDs,
-      resolvedPathEdgeIDs: inspectedEdges.map(\.id)
+      resolvedPathEdgeIDs: inspectedEdges.map(\.id),
+      resolvedPathOccurrences: inspectedEdges.enumerated().map {
+        SurfaceResolvedPathOccurrence(
+          index: $0.offset,
+          directedEdgeID: $0.element.id,
+          coordinates: $0.element.coordinates
+        )
+      }
     )
   }
 
@@ -492,7 +499,8 @@ public struct DirectedRoadGraphInspector:
       unmatchedSampleCount: nil,
       ambiguousDirectedEdgeIDs: nil,
       disconnectedDirectedEdgeIDs: nil,
-      resolvedPathEdgeIDs: nil
+      resolvedPathEdgeIDs: nil,
+      resolvedPathOccurrences: nil
     )
   }
 
@@ -739,7 +747,14 @@ public struct DirectedRoadGraphInspector:
       ambiguousDirectedEdgeIDs: [],
       disconnectedDirectedEdgeIDs: selectionMatchesEvidence
         ? [] : evidence.directedEdgeIDs,
-      resolvedPathEdgeIDs: evidence.directedEdgeIDs
+      resolvedPathEdgeIDs: evidence.directedEdgeIDs,
+      resolvedPathOccurrences: selectedEdges.enumerated().map {
+        SurfaceResolvedPathOccurrence(
+          index: $0.offset,
+          directedEdgeID: $0.element.id,
+          coordinates: $0.element.coordinates
+        )
+      }
     )
   }
 
@@ -756,7 +771,8 @@ public struct DirectedRoadGraphInspector:
       unmatchedSampleCount: nil,
       ambiguousDirectedEdgeIDs: [],
       disconnectedDirectedEdgeIDs: uniqueIDs(edgeIDs),
-      resolvedPathEdgeIDs: nil
+      resolvedPathEdgeIDs: nil,
+      resolvedPathOccurrences: nil
     )
   }
 

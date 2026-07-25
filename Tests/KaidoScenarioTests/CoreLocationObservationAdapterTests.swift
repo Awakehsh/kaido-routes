@@ -364,6 +364,109 @@
   }
 
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+  @Test("Apple surface egress adapter binds the exact occurrence corridor")
+  func coreLocationSurfaceEgressAdapterBindsOccurrenceEvidence() throws {
+    let start = MatcherCoordinate(
+      latitude: 35.6810,
+      longitude: 139.7610
+    )
+    let end = MatcherCoordinate(
+      latitude: 35.6800,
+      longitude: 139.7610
+    )
+    let first = SurfaceEgressMatcherOccurrence(
+      id: "test.surface-egress-occurrence.0",
+      index: 0,
+      directedEdgeID: "test.surface-egress-edge",
+      coordinates: [start, end]
+    )
+    let repeated = SurfaceEgressMatcherOccurrence(
+      id: "test.surface-egress-occurrence.2",
+      index: 2,
+      directedEdgeID: first.directedEdgeID,
+      coordinates: first.coordinates
+    )
+    let corridor = SurfaceEgressMatcherCorridor(
+      id: "test.surface-egress-corridor",
+      networkSnapshotID: "test.snapshot",
+      routePlanID: "test.route-plan",
+      providerDatasetID: "test.dataset",
+      candidateID: "test.candidate",
+      egressOptionID: "test.egress-option",
+      exitFacilityID: "test.exit",
+      occurrences: [
+        first,
+        SurfaceEgressMatcherOccurrence(
+          id: "test.surface-egress-occurrence.1",
+          index: 1,
+          directedEdgeID: "test.loop-edge",
+          coordinates: [
+            end,
+            MatcherCoordinate(
+              latitude: 35.6800,
+              longitude: 139.7620
+            ),
+            start,
+          ]
+        ),
+        repeated,
+      ]
+    )
+    let context = SurfaceEgressAdmissionContext(
+      productReleaseID: "test.product-release",
+      navigationReleaseID: "test.navigation-release",
+      journeyPlanID: "test.journey",
+      runtimePolicyID: "test.runtime-policy",
+      networkSnapshotID: corridor.networkSnapshotID,
+      routePlanID: corridor.routePlanID,
+      egressOptionID: corridor.egressOptionID,
+      exitFacilityID: corridor.exitFacilityID,
+      handoffAnchorID: "test.handoff-anchor",
+      directedSurfaceEdgeID: first.directedEdgeID,
+      matcherCorridor: corridor,
+      handoffOccurrenceID: first.id
+    )
+    var adapter = try CoreLocationSurfaceEgressAdapter(
+      context: context
+    )
+    let envelope = CoreLocationObservationEnvelope(
+      observation: RouteMatcherObservation(
+        id: "test.surface-location.1",
+        observedAtMilliseconds: 1_000,
+        receivedAtMilliseconds: 1_000,
+        coordinate: MatcherCoordinate(
+          latitude: 35.6808,
+          longitude: 139.7610
+        ),
+        horizontalAccuracyMeters: 3,
+        courseDegrees: 180,
+        speedMetersPerSecond: 8,
+        source: .phone
+      ),
+      provenance: CoreLocationObservationProvenance(
+        deliverySource: .deviceOrUndisclosed,
+        sourceInformationAvailable: true,
+        isSimulatedBySoftware: false,
+        carPlayConnectionContext: .disconnected,
+        matcherCalibrationCohort: .phone,
+        courseAccuracyDegrees: 2,
+        speedAccuracyMetersPerSecond: 1,
+        observationAgeMilliseconds: 0
+      )
+    )
+
+    let evidence = try adapter.adapt(envelope)
+
+    #expect(evidence.matcherCorridorID == corridor.id)
+    #expect(evidence.surfaceOccurrenceID == first.id)
+    #expect(evidence.surfaceOccurrenceID != repeated.id)
+    #expect(evidence.candidateOccurrenceIDs == [first.id])
+    #expect(evidence.directedSurfaceEdgeID == first.directedEdgeID)
+    #expect(evidence.confidence == .high)
+    #expect(evidence.headingErrorDegrees.map { $0 < 1 } == true)
+  }
+
+  @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   private func makeLocation(
     latitude: Double = 35.6800,
     longitude: Double = 139.7605,

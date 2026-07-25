@@ -15,6 +15,9 @@ public struct SurfaceEgressAdmissionContext: Equatable, Sendable {
   public let exitFacilityID: String
   public let handoffAnchorID: String
   public let directedSurfaceEdgeID: String
+  public let matcherCorridorID: String
+  public let matcherCorridor: SurfaceEgressMatcherCorridor
+  public let handoffOccurrenceID: String
 
   package init(
     productReleaseID: String,
@@ -26,7 +29,9 @@ public struct SurfaceEgressAdmissionContext: Equatable, Sendable {
     egressOptionID: String,
     exitFacilityID: String,
     handoffAnchorID: String,
-    directedSurfaceEdgeID: String
+    directedSurfaceEdgeID: String,
+    matcherCorridor: SurfaceEgressMatcherCorridor,
+    handoffOccurrenceID: String
   ) {
     self.productReleaseID = productReleaseID
     self.navigationReleaseID = navigationReleaseID
@@ -38,6 +43,9 @@ public struct SurfaceEgressAdmissionContext: Equatable, Sendable {
     self.exitFacilityID = exitFacilityID
     self.handoffAnchorID = handoffAnchorID
     self.directedSurfaceEdgeID = directedSurfaceEdgeID
+    matcherCorridorID = matcherCorridor.id
+    self.matcherCorridor = matcherCorridor
+    self.handoffOccurrenceID = handoffOccurrenceID
   }
 }
 
@@ -68,6 +76,9 @@ public struct SurfaceEgressHandoffEvidence: Equatable, Sendable {
   public let receivedAtMilliseconds: Int
   public let directedSurfaceEdgeID: String?
   public let candidateEdgeIDs: [String]
+  public let matcherCorridorID: String
+  public let surfaceOccurrenceID: String?
+  public let candidateOccurrenceIDs: [String]
   public let fractionAlongEdge: Double?
   public let confidence: MatcherConfidence
   public let headingErrorDegrees: Double?
@@ -81,6 +92,8 @@ public struct SurfaceEgressHandoffEvidence: Equatable, Sendable {
     receivedAtMilliseconds: Int,
     directedSurfaceEdgeID: String?,
     candidateEdgeIDs: [String],
+    surfaceOccurrenceID: String?,
+    candidateOccurrenceIDs: [String],
     fractionAlongEdge: Double?,
     confidence: MatcherConfidence,
     headingErrorDegrees: Double?,
@@ -102,6 +115,9 @@ public struct SurfaceEgressHandoffEvidence: Equatable, Sendable {
     self.receivedAtMilliseconds = receivedAtMilliseconds
     self.directedSurfaceEdgeID = directedSurfaceEdgeID
     self.candidateEdgeIDs = candidateEdgeIDs
+    matcherCorridorID = context.matcherCorridorID
+    self.surfaceOccurrenceID = surfaceOccurrenceID
+    self.candidateOccurrenceIDs = candidateOccurrenceIDs
     self.fractionAlongEdge = fractionAlongEdge
     self.confidence = confidence
     self.headingErrorDegrees = headingErrorDegrees
@@ -127,6 +143,8 @@ public enum SurfaceEgressHandoffRejectionReason:
   case insufficientConfidence = "INSUFFICIENT_CONFIDENCE"
   case ambiguousEdge = "AMBIGUOUS_EDGE"
   case unexpectedEdge = "UNEXPECTED_SURFACE_EGRESS_EDGE"
+  case ambiguousOccurrence = "AMBIGUOUS_SURFACE_EGRESS_OCCURRENCE"
+  case unexpectedOccurrence = "UNEXPECTED_SURFACE_EGRESS_OCCURRENCE"
   case invalidAlongEdgeProgress = "INVALID_ALONG_EDGE_PROGRESS"
   case nonForwardProgress = "NON_FORWARD_PROGRESS"
   case missingHeading = "MISSING_HEADING"
@@ -252,6 +270,14 @@ package struct SurfaceEgressHandoffEvidenceAdmission: Sendable {
     guard edgeID == context.directedSurfaceEdgeID else {
       return rejected(.unexpectedEdge)
     }
+    guard let occurrenceID = evidence.surfaceOccurrenceID,
+      evidence.candidateOccurrenceIDs == [occurrenceID]
+    else {
+      return rejected(.ambiguousOccurrence)
+    }
+    guard occurrenceID == context.handoffOccurrenceID else {
+      return rejected(.unexpectedOccurrence)
+    }
     guard let fraction = evidence.fractionAlongEdge,
       fraction.isFinite,
       (0...1).contains(fraction)
@@ -297,6 +323,7 @@ package struct SurfaceEgressHandoffEvidenceAdmission: Sendable {
       && evidence.egressOptionID == context.egressOptionID
       && evidence.exitFacilityID == context.exitFacilityID
       && evidence.handoffAnchorID == context.handoffAnchorID
+      && evidence.matcherCorridorID == context.matcherCorridorID
   }
 
   private func rejected(

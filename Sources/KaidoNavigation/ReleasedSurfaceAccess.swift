@@ -251,6 +251,7 @@ public struct JourneySurfaceLeg: Equatable, Sendable {
   public let exitFacilityID: String?
   public let joinOccurrenceID: String?
   public let directedEdgeIDs: [String]
+  public let egressMatcherCorridor: SurfaceEgressMatcherCorridor?
   public let distanceMeters: Double
   public let expectedTravelTimeSeconds: Double
 
@@ -442,6 +443,7 @@ public enum JourneyPlanCompiler {
       exitFacilityID: nil,
       joinOccurrenceID: request.selectedJoinOccurrenceID,
       directedEdgeIDs: directedEdgeIDs,
+      egressMatcherCorridor: nil,
       distanceMeters: candidate.distanceMeters,
       expectedTravelTimeSeconds: candidate.expectedTravelTimeSeconds
     )
@@ -555,6 +557,15 @@ public enum JourneyPlanCompiler {
     else {
       throw JourneyPlanCompilerError.invalidResolvedPath
     }
+    guard let resolvedOccurrences = inspection.resolvedPathOccurrences,
+      resolvedOccurrences.count == directedEdgeIDs.count,
+      resolvedOccurrences.map(\.index)
+        == Array(0..<resolvedOccurrences.count),
+      resolvedOccurrences.map(\.directedEdgeID) == directedEdgeIDs,
+      resolvedOccurrences.allSatisfy(\.isValid)
+    else {
+      throw JourneyPlanCompilerError.invalidResolvedPath
+    }
     if let selectedPathEvidence = candidate.selectedPathEvidence {
       guard
         selectedPathEvidence.networkSnapshotID
@@ -567,6 +578,34 @@ public enum JourneyPlanCompiler {
       }
     }
 
+    let journeyID =
+      "\(basePlan.id).return.\(request.egressOptionID).\(candidate.id)"
+    let matcherOccurrences = resolvedOccurrences.map { occurrence in
+      SurfaceEgressMatcherOccurrence(
+        id: "\(journeyID).surface-occurrence.\(occurrence.index)",
+        index: occurrence.index,
+        directedEdgeID: occurrence.directedEdgeID,
+        coordinates: occurrence.coordinates.map {
+          MatcherCoordinate(
+            latitude: $0.latitude,
+            longitude: $0.longitude
+          )
+        }
+      )
+    }
+    let egressMatcherCorridor = SurfaceEgressMatcherCorridor(
+      id: "\(journeyID).surface-egress-corridor",
+      networkSnapshotID: bundle.networkSnapshot.id,
+      routePlanID: bundle.routePlan.id,
+      providerDatasetID: providerIdentity.providerDatasetID,
+      candidateID: candidate.id,
+      egressOptionID: request.egressOptionID,
+      exitFacilityID: request.exitFacilityID,
+      occurrences: matcherOccurrences
+    )
+    guard egressMatcherCorridor.validationIssues.isEmpty else {
+      throw JourneyPlanCompilerError.invalidResolvedPath
+    }
     let egressLeg = JourneySurfaceLeg(
       role: .egress,
       networkSnapshotID: bundle.networkSnapshot.id,
@@ -578,12 +617,12 @@ public enum JourneyPlanCompiler {
       exitFacilityID: request.exitFacilityID,
       joinOccurrenceID: nil,
       directedEdgeIDs: directedEdgeIDs,
+      egressMatcherCorridor: egressMatcherCorridor,
       distanceMeters: candidate.distanceMeters,
       expectedTravelTimeSeconds: candidate.expectedTravelTimeSeconds
     )
     return JourneyPlan(
-      id:
-        "\(basePlan.id).return.\(request.egressOptionID).\(candidate.id)",
+      id: journeyID,
       productReleaseID: basePlan.productReleaseID,
       navigationReleaseID: basePlan.navigationReleaseID,
       networkSnapshotID: basePlan.networkSnapshotID,
@@ -792,6 +831,7 @@ extension JourneyPlan {
       || normalized(accessLeg.candidateID).isEmpty
       || normalized(accessLeg.originID).isEmpty
       || accessLeg.exitFacilityID != nil
+      || accessLeg.egressMatcherCorridor != nil
       || accessLeg.directedEdgeIDs.isEmpty
       || accessLeg.directedEdgeIDs.contains(where: { normalized($0).isEmpty })
       || !accessLeg.distanceMeters.isFinite
@@ -862,6 +902,7 @@ extension JourneyPlan {
       || normalized(egressLeg.originID).isEmpty
       || egressLeg.entranceFacilityID != nil
       || egressLeg.joinOccurrenceID != nil
+      || egressLeg.egressMatcherCorridor == nil
       || egressLeg.directedEdgeIDs.isEmpty
       || egressLeg.directedEdgeIDs.contains(where: {
         normalized($0).isEmpty
@@ -884,6 +925,21 @@ extension JourneyPlan {
         != returnTarget.directedSurfaceEdgeID
     {
       issues.append(.surfaceEgressReleaseMismatch)
+    }
+    if let corridor = egressLeg.egressMatcherCorridor {
+      if !corridor.validationIssues.isEmpty
+        || corridor.networkSnapshotID != bundle.networkSnapshot.id
+        || corridor.routePlanID != bundle.routePlan.id
+        || corridor.providerDatasetID
+          != definition.providerIdentity.providerDatasetID
+        || corridor.candidateID != egressLeg.candidateID
+        || corridor.egressOptionID != selectedEgressOptionID
+        || corridor.exitFacilityID != policy.exitFacilityID
+        || corridor.occurrences.map(\.directedEdgeID)
+          != egressLeg.directedEdgeIDs
+      {
+        issues.append(.surfaceEgressReleaseMismatch)
+      }
     }
   }
 

@@ -108,6 +108,14 @@ public actor NavigationSession {
         || context.routePlanID != routePlan.id
         || context.egressOptionID
           != navigationConfiguration.selectedEgressOptionID
+        || context.matcherCorridorID != context.matcherCorridor.id
+        || context.matcherCorridor.networkSnapshotID
+          != routePlan.networkSnapshotID
+        || context.matcherCorridor.routePlanID != routePlan.id
+        || context.matcherCorridor.egressOptionID
+          != context.egressOptionID
+        || context.matcherCorridor.exitFacilityID
+          != context.exitFacilityID
       {
         allIssues.append(
           "surface egress admission identity does not match runtime"
@@ -130,11 +138,24 @@ public actor NavigationSession {
         context.runtimePolicyID,
         context.handoffAnchorID,
         context.directedSurfaceEdgeID,
+        context.matcherCorridorID,
+        context.handoffOccurrenceID,
       ].contains(where: {
         $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       }) {
         allIssues.append(
           "surface egress admission release identity is invalid"
+        )
+      }
+      if !context.matcherCorridor.validationIssues.isEmpty
+        || context.matcherCorridor.occurrences.first?.id
+          != context.handoffOccurrenceID
+        || context.matcherCorridor.occurrences.first?.index != 0
+        || context.matcherCorridor.occurrences.first?.directedEdgeID
+          != context.directedSurfaceEdgeID
+      {
+        allIssues.append(
+          "surface egress handoff occurrence does not match runtime"
         )
       }
     }

@@ -521,10 +521,17 @@ must prove both the reviewed ordinary-road handoff edge and the frozen return
 edge through complete same-snapshot path identity; provider prose and array
 order have no authority. The completed `JourneyPlan` retains the unchanged
 RoutePlan and exact selected egress option. `FINISH_DRIVE` enters
-`EXIT_TRANSITION`; only two fresh HIGH, unambiguous, non-simulated observations
-with increasing progress on the exact release-bound handoff edge may enter
-`SURFACE_EGRESS`. No provider or UI can replace the return target, choose a
-different exit, re-enter the expressway, or manufacture that phase transition.
+`EXIT_TRANSITION`. The compiler also retains one immutable, ordered
+surface-egress geometry corridor whose repeated edge traversals remain distinct
+occurrences. A separate matcher pins initial evidence to occurrence zero and
+permits only forward occurrence progress. Only two fresh HIGH, unambiguous,
+non-simulated Core Location observations with increasing progress on the exact
+release-bound handoff occurrence may enter `SURFACE_EGRESS`; the actor rechecks
+the complete release, journey, corridor, occurrence, and edge identity. No
+provider or UI can replace the return target, choose a different exit, reuse the
+expressway matcher, re-enter the expressway, or manufacture that phase
+transition. KR-S20 is synthetic policy evidence only; App enrollment still
+requires real graph/provider, device, and held-out field evidence.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated

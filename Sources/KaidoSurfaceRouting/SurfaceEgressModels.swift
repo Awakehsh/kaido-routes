@@ -203,6 +203,41 @@ public struct SurfaceHandoffBindingObservation: Codable, Equatable, Sendable {
   }
 }
 
+/// One exact directed-edge occurrence and its graph-bound geometry.
+///
+/// Repeated directed edges remain separate occurrences. The index is path
+/// order, not an entity identity, and must never be deduplicated.
+public struct SurfaceResolvedPathOccurrence: Codable, Equatable, Sendable {
+  public let index: Int
+  public let directedEdgeID: String
+  public let coordinates: [SurfaceCoordinate]
+
+  public init(
+    index: Int,
+    directedEdgeID: String,
+    coordinates: [SurfaceCoordinate]
+  ) {
+    self.index = index
+    self.directedEdgeID = directedEdgeID
+    self.coordinates = coordinates
+  }
+
+  public var isValid: Bool {
+    index >= 0
+      && !directedEdgeID.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      ).isEmpty
+      && coordinates.count >= 2
+      && coordinates.allSatisfy(\.isValid)
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case index
+    case directedEdgeID = "directed_edge_id"
+    case coordinates
+  }
+}
+
 public struct SurfaceEgressCandidateInspection: Codable, Equatable, Sendable {
   public let networkSnapshotID: String?
   public let handoffBinding: SurfaceHandoffBindingObservation?
@@ -214,6 +249,7 @@ public struct SurfaceEgressCandidateInspection: Codable, Equatable, Sendable {
   public let ambiguousDirectedEdgeIDs: [String]?
   public let disconnectedDirectedEdgeIDs: [String]?
   public let resolvedPathEdgeIDs: [String]?
+  public let resolvedPathOccurrences: [SurfaceResolvedPathOccurrence]?
 
   public init(
     networkSnapshotID: String? = nil,
@@ -225,7 +261,8 @@ public struct SurfaceEgressCandidateInspection: Codable, Equatable, Sendable {
     unmatchedSampleCount: Int? = nil,
     ambiguousDirectedEdgeIDs: [String]? = nil,
     disconnectedDirectedEdgeIDs: [String]? = nil,
-    resolvedPathEdgeIDs: [String]? = nil
+    resolvedPathEdgeIDs: [String]? = nil,
+    resolvedPathOccurrences: [SurfaceResolvedPathOccurrence]? = nil
   ) {
     self.networkSnapshotID = networkSnapshotID
     self.handoffBinding = handoffBinding
@@ -237,6 +274,7 @@ public struct SurfaceEgressCandidateInspection: Codable, Equatable, Sendable {
     self.ambiguousDirectedEdgeIDs = ambiguousDirectedEdgeIDs
     self.disconnectedDirectedEdgeIDs = disconnectedDirectedEdgeIDs
     self.resolvedPathEdgeIDs = resolvedPathEdgeIDs
+    self.resolvedPathOccurrences = resolvedPathOccurrences
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -250,6 +288,7 @@ public struct SurfaceEgressCandidateInspection: Codable, Equatable, Sendable {
     case ambiguousDirectedEdgeIDs = "ambiguous_directed_edge_ids"
     case disconnectedDirectedEdgeIDs = "disconnected_directed_edge_ids"
     case resolvedPathEdgeIDs = "resolved_path_edge_ids"
+    case resolvedPathOccurrences = "resolved_path_occurrences"
   }
 }
 

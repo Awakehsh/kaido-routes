@@ -929,6 +929,42 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
     target: target,
     providerIdentity: access.providerIdentity
   )
+  let fastInspection = surfaceEgressInspection(
+    candidate: fast,
+    fixture: fixture,
+    policy: policy,
+    target: target
+  )
+  let missingOccurrenceGeometry = SurfaceEgressCandidateInspection(
+    networkSnapshotID: fastInspection.networkSnapshotID,
+    handoffBinding: fastInspection.handoffBinding,
+    returnTargetBinding: fastInspection.returnTargetBinding,
+    geometryBindingIsUnambiguous:
+      fastInspection.geometryBindingIsUnambiguous,
+    expresswayEdgeIDsAfterExit:
+      fastInspection.expresswayEdgeIDsAfterExit,
+    crossedTollDomainIDs: fastInspection.crossedTollDomainIDs,
+    unmatchedSampleCount: fastInspection.unmatchedSampleCount,
+    ambiguousDirectedEdgeIDs:
+      fastInspection.ambiguousDirectedEdgeIDs,
+    disconnectedDirectedEdgeIDs:
+      fastInspection.disconnectedDirectedEdgeIDs,
+    resolvedPathEdgeIDs: fastInspection.resolvedPathEdgeIDs
+  )
+  #expect(throws: JourneyPlanCompilerError.invalidResolvedPath) {
+    _ = try JourneyPlanCompiler.surfaceEgress(
+      release: release,
+      basePlan: basePlan,
+      request: surfaceEgressRequest(
+        basePlan: basePlan,
+        policy: policy,
+        target: target
+      ),
+      candidate: fast,
+      inspection: missingOccurrenceGeometry,
+      providerIdentity: access.providerIdentity
+    )
+  }
   let inspector = StubSurfaceEgressInspector(
     inspectionsByCandidateID: [
       slow.id: surfaceEgressInspection(
@@ -937,12 +973,7 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
         policy: policy,
         target: target
       ),
-      fast.id: surfaceEgressInspection(
-        candidate: fast,
-        fixture: fixture,
-        policy: policy,
-        target: target
-      ),
+      fast.id: fastInspection,
     ]
   )
   let planner = ReleasedSurfaceEgressPlanner(
@@ -970,6 +1001,21 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
         target.directedSurfaceEdgeID,
       ]
   )
+  let egressCorridor = try #require(
+    plan.egressLeg?.egressMatcherCorridor
+  )
+  #expect(
+    egressCorridor.occurrences.map(\.directedEdgeID)
+      == plan.egressLeg?.directedEdgeIDs
+  )
+  #expect(
+    egressCorridor.occurrences[0].id
+      != egressCorridor.occurrences[2].id
+  )
+  #expect(
+    egressCorridor.occurrences[0].coordinates
+      == egressCorridor.occurrences[2].coordinates
+  )
   #expect(plan.selectedEgressOptionID == policy.egressOptionID)
   #expect(plan.routePlanID == basePlan.routePlanID)
   #expect(plan.accessLeg == basePlan.accessLeg)
@@ -990,6 +1036,11 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
     journeyPlan: plan
   )
   let context = try #require(runtime.surfaceEgressAdmissionContext)
+  #expect(context.matcherCorridor == egressCorridor)
+  #expect(
+    context.handoffOccurrenceID
+      == egressCorridor.occurrences[0].id
+  )
   _ = await runtime.session.start()
   let finish = await runtime.session.finishDrive()
   #expect(finish.journeyPhase == .exitTransition)
@@ -1011,6 +1062,25 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
   #expect(simulated.status == .rejected)
   #expect(simulated.rejectionReason == .simulatedLocation)
   #expect(simulated.navigationSnapshot.journeyPhase == .exitTransition)
+
+  let repeatedOccurrence =
+    await runtime.session.observeSurfaceEgressHandoffEvidence(
+      surfaceEgressEvidence(
+        context: context,
+        id: "test.egress-handoff.later-occurrence",
+        at: 750,
+        fractionAlongEdge: 0.1,
+        occurrenceID: egressCorridor.occurrences[2].id
+      )
+    )
+  #expect(repeatedOccurrence.status == .rejected)
+  #expect(
+    repeatedOccurrence.rejectionReason == .unexpectedOccurrence
+  )
+  #expect(
+    repeatedOccurrence.navigationSnapshot.journeyPhase
+      == .exitTransition
+  )
 
   let first = await runtime.session.observeSurfaceEgressHandoffEvidence(
     surfaceEgressEvidence(
@@ -1048,6 +1118,135 @@ func surfaceReturnPlannerSelectsFastestReleasedPath() async throws {
     admitted.navigationSnapshot.lastPhaseTransitionTrigger
       == "VERIFIED_SURFACE_EGRESS_HANDOFF"
   )
+}
+
+@Test("Surface egress matcher preserves occurrence order across a repeated edge")
+func surfaceEgressMatcherPreservesRepeatedEdgeOccurrences() throws {
+  let a = MatcherCoordinate(latitude: 35.6800, longitude: 139.7600)
+  let b = MatcherCoordinate(latitude: 35.6800, longitude: 139.7610)
+  let c = MatcherCoordinate(latitude: 35.6810, longitude: 139.7610)
+  let d = MatcherCoordinate(latitude: 35.6810, longitude: 139.7600)
+  let corridor = SurfaceEgressMatcherCorridor(
+    id: "test.surface-egress.matcher-corridor",
+    networkSnapshotID: "test.snapshot",
+    routePlanID: "test.route-plan",
+    providerDatasetID: "test.dataset",
+    candidateID: "test.candidate",
+    egressOptionID: "test.egress-option",
+    exitFacilityID: "test.exit",
+    occurrences: [
+      SurfaceEgressMatcherOccurrence(
+        id: "test.surface-occurrence.0",
+        index: 0,
+        directedEdgeID: "test.edge.repeated",
+        coordinates: [a, b]
+      ),
+      SurfaceEgressMatcherOccurrence(
+        id: "test.surface-occurrence.1",
+        index: 1,
+        directedEdgeID: "test.edge.loop",
+        coordinates: [b, c, d, a]
+      ),
+      SurfaceEgressMatcherOccurrence(
+        id: "test.surface-occurrence.2",
+        index: 2,
+        directedEdgeID: "test.edge.repeated",
+        coordinates: [a, b]
+      ),
+    ]
+  )
+  let inconsistentRepeatedGeometry = SurfaceEgressMatcherCorridor(
+    id: corridor.id,
+    networkSnapshotID: corridor.networkSnapshotID,
+    routePlanID: corridor.routePlanID,
+    providerDatasetID: corridor.providerDatasetID,
+    candidateID: corridor.candidateID,
+    egressOptionID: corridor.egressOptionID,
+    exitFacilityID: corridor.exitFacilityID,
+    occurrences: [
+      corridor.occurrences[0],
+      corridor.occurrences[1],
+      SurfaceEgressMatcherOccurrence(
+        id: corridor.occurrences[2].id,
+        index: 2,
+        directedEdgeID: corridor.occurrences[2].directedEdgeID,
+        coordinates: [a, c]
+      ),
+    ]
+  )
+  #expect(
+    throws: SurfaceEgressMatcherError.invalidCorridor(
+      ["surface egress repeated edge geometry is inconsistent"]
+    )
+  ) {
+    _ = try SurfaceEgressMatcherSession(
+      corridor: inconsistentRepeatedGeometry
+    )
+  }
+  var session = try SurfaceEgressMatcherSession(corridor: corridor)
+
+  let first = try session.observe(
+    surfaceMatcherObservation(
+      id: "test.surface-fix.1",
+      at: 1_000,
+      latitude: 35.6800,
+      longitude: 139.7602
+    )
+  )
+  #expect(first.confidence == .high)
+  #expect(first.occurrenceID == "test.surface-occurrence.0")
+  #expect(first.candidateOccurrenceIDs == ["test.surface-occurrence.0"])
+
+  let stale = try session.observe(
+    surfaceMatcherObservation(
+      id: "test.surface-fix.stale",
+      observedAt: -9_000,
+      receivedAt: 1_100,
+      latitude: 35.6800,
+      longitude: 139.7604
+    )
+  )
+  #expect(stale.confidence == .low)
+  #expect(session.diagnostics.acceptedObservationCount == 1)
+
+  let laterRepeatedGeometry = try session.observe(
+    surfaceMatcherObservation(
+      id: "test.surface-fix.2",
+      at: 2_000,
+      latitude: 35.6800,
+      longitude: 139.7609
+    )
+  )
+  #expect(
+    laterRepeatedGeometry.occurrenceID
+      == "test.surface-occurrence.0"
+  )
+  #expect(laterRepeatedGeometry.confidence == .high)
+
+  let loop = try session.observe(
+    surfaceMatcherObservation(
+      id: "test.surface-fix.3",
+      at: 3_000,
+      latitude: 35.6803,
+      longitude: 139.7610,
+      courseDegrees: 0
+    )
+  )
+  #expect(loop.occurrenceID == "test.surface-occurrence.1")
+  #expect(loop.confidence == .high)
+
+  #expect(throws: SurfaceEgressMatcherError.invalidObservation) {
+    try session.observe(
+      surfaceMatcherObservation(
+        id: "test.surface-fix.reversed",
+        observedAt: 3_100,
+        receivedAt: 2_999,
+        latitude: 35.6804,
+        longitude: 139.7610,
+        courseDegrees: 0
+      )
+    )
+  }
 }
 
 @Test("Surface return planner keeps provider failures and malformed success explicit")
@@ -1392,6 +1591,31 @@ private func acceptedSurfaceAccessInput(
   )
 }
 
+private func surfaceMatcherObservation(
+  id: String,
+  at: Int? = nil,
+  observedAt: Int? = nil,
+  receivedAt: Int? = nil,
+  latitude: Double,
+  longitude: Double,
+  courseDegrees: Double = 90
+) -> RouteMatcherObservation {
+  let observed = observedAt ?? at ?? 0
+  return RouteMatcherObservation(
+    id: id,
+    observedAtMilliseconds: observed,
+    receivedAtMilliseconds: receivedAt ?? at ?? observed,
+    coordinate: MatcherCoordinate(
+      latitude: latitude,
+      longitude: longitude
+    ),
+    horizontalAccuracyMeters: 3,
+    courseDegrees: courseDegrees,
+    speedMetersPerSecond: 8,
+    source: .phone
+  )
+}
+
 private func surfaceEgressCandidate(
   id: String,
   travelTime: Double,
@@ -1425,6 +1649,28 @@ private func surfaceEgressCandidate(
   )
 }
 
+private func surfaceEgressRequest(
+  basePlan: JourneyPlan,
+  policy: SurfaceEgressPolicy,
+  target: JourneyReturnTarget
+) -> SurfaceEgressRouteRequest {
+  SurfaceEgressRouteRequest(
+    id: "\(basePlan.id).egress.\(policy.id)",
+    exitFacilityID: policy.exitFacilityID,
+    egressOptionID: policy.egressOptionID,
+    originAnchor: policy.originAnchor,
+    destinationAnchor: DirectedApproachAnchor(
+      id: target.id,
+      coordinate: target.coordinate,
+      directedSurfaceEdgeID: target.directedSurfaceEdgeID,
+      expectedBearingDegrees: target.expectedBearingDegrees,
+      bearingToleranceDegrees:
+        policy.returnTargetBearingToleranceDegrees,
+      maxTerminalDistanceMeters: policy.maxReturnTargetDistanceMeters
+    )
+  )
+}
+
 private func surfaceEgressInspection(
   candidate: SurfaceRouteCandidate,
   fixture: NavigationReleaseBundleFixture,
@@ -1451,8 +1697,40 @@ private func surfaceEgressInspection(
     expresswayEdgeIDsAfterExit: [],
     crossedTollDomainIDs: [],
     resolvedPathEdgeIDs:
-      candidate.selectedPathEvidence?.directedEdgeIDs
+      candidate.selectedPathEvidence?.directedEdgeIDs,
+    resolvedPathOccurrences: surfaceEgressResolvedOccurrences(
+      candidate: candidate,
+      policy: policy,
+      target: target
+    )
   )
+}
+
+private func surfaceEgressResolvedOccurrences(
+  candidate: SurfaceRouteCandidate,
+  policy: SurfaceEgressPolicy,
+  target: JourneyReturnTarget
+) -> [SurfaceResolvedPathOccurrence] {
+  let start = policy.originAnchor.coordinate
+  let loop = SurfaceCoordinate(
+    latitude: start.latitude - 0.0005,
+    longitude: start.longitude
+  )
+  let edgeIDs =
+    candidate.selectedPathEvidence?.directedEdgeIDs ?? []
+  let geometry = [
+    [start, loop],
+    [loop, start],
+    [start, loop],
+    [loop, target.coordinate],
+  ]
+  return zip(edgeIDs, geometry).enumerated().map {
+    SurfaceResolvedPathOccurrence(
+      index: $0.offset,
+      directedEdgeID: $0.element.0,
+      coordinates: $0.element.1
+    )
+  }
 }
 
 private func surfaceEgressEvidence(
@@ -1460,15 +1738,19 @@ private func surfaceEgressEvidence(
   id: String,
   at: Int,
   fractionAlongEdge: Double,
-  isSimulatedBySoftware: Bool = false
+  isSimulatedBySoftware: Bool = false,
+  occurrenceID: String? = nil
 ) -> SurfaceEgressHandoffEvidence {
-  SurfaceEgressHandoffEvidence(
+  let occurrenceID = occurrenceID ?? context.handoffOccurrenceID
+  return SurfaceEgressHandoffEvidence(
     context: context,
     observationID: id,
     observedAtMilliseconds: at,
     receivedAtMilliseconds: at,
     directedSurfaceEdgeID: context.directedSurfaceEdgeID,
     candidateEdgeIDs: [context.directedSurfaceEdgeID],
+    surfaceOccurrenceID: occurrenceID,
+    candidateOccurrenceIDs: [occurrenceID],
     fractionAlongEdge: fractionAlongEdge,
     confidence: .high,
     headingErrorDegrees: 5,

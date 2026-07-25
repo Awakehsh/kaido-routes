@@ -14,8 +14,8 @@ func portableScenariosExecute() throws {
     .appendingPathComponent("scenarios", isDirectory: true)
 
   let results = try ScenarioRunner().run(directory: directory)
-  #expect(results.count == 64)
-  #expect(results.reduce(0) { $0 + $1.assertionCount } == 454)
+  #expect(results.count == 65)
+  #expect(results.reduce(0) { $0 + $1.assertionCount } == 463)
 
   for result in results {
     let details = result.failures.map(\.description).joined(separator: "\n")

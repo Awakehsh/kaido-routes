@@ -819,6 +819,18 @@ func directedGraphInspectorPreservesRepeatedEgressEdges() async {
   )
 
   #expect(inspection.resolvedPathEdgeIDs == edgeIDs)
+  #expect(
+    inspection.resolvedPathOccurrences?.map(\.directedEdgeID)
+      == edgeIDs
+  )
+  #expect(
+    inspection.resolvedPathOccurrences?[0].coordinates
+      == inspection.resolvedPathOccurrences?[3].coordinates
+  )
+  #expect(
+    inspection.resolvedPathOccurrences?[0].index == 0
+      && inspection.resolvedPathOccurrences?[3].index == 3
+  )
   #expect(inspection.geometryBindingIsUnambiguous == true)
   #expect(result.disposition == .accepted)
 }

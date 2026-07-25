@@ -549,11 +549,23 @@ The completed return `JourneyPlan` fixes one exact egress option, and runtime
 configuration filters Finish behavior to that option instead of asking
 `EgressPlanner` to choose another released exit. `FINISH_DRIVE` activates the
 legal egress and enters `EXIT_TRANSITION`. `NavigationSession` enters
-`SURFACE_EGRESS` only after its release-bound handoff admission receives two
-fresh HIGH, non-simulated, singleton-edge observations with valid heading and
-increasing along-edge progress on the exact ordinary-road handoff edge. Partial
-or rejected handoff evidence is not checkpointed and cannot be supplied by UI
-state.
+`SURFACE_EGRESS` only after the compiler-retained
+`SurfaceEgressMatcherCorridor` and its separately scoped matcher resolve two
+fresh HIGH, non-simulated observations to the exact first surface occurrence
+with valid heading and increasing along-edge progress. The corridor retains
+graph geometry per ordered occurrence; repeated directed edges share exact
+geometry but keep different occurrence IDs. The first fix is pinned to
+occurrence zero, and later fixes may move only forward, so geometry cannot skip
+to a later repeated traversal. The Core Location adapter receives the complete
+release/runtime context and mints evidence; it neither shares the expressway
+matcher session nor infers identity from a fix. The actor independently checks
+product, navigation, journey, runtime-policy, snapshot, RoutePlan, egress
+option, exit, handoff anchor, corridor, occurrence, edge, time, confidence,
+heading, simulation provenance, and progress before changing phase. Partial or
+rejected evidence is not checkpointed and cannot be supplied by UI state.
+KR-S20 executes this boundary with synthetic geometry. App enrollment remains
+blocked on real graph/provider output, physical-device profiling, and held-out
+field reliability evidence.
 
 `NavigationReleaseArtifact` schema 6.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,

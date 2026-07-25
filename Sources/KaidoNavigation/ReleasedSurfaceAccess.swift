@@ -171,6 +171,26 @@ public struct JourneyPlan: Equatable, Sendable {
 
 }
 
+public enum JourneyPlanRuntimeAdmissionIssue: String, Hashable, Sendable {
+  case invalidIdentity = "INVALID_JOURNEY_PLAN_IDENTITY"
+  case releaseIdentityMismatch = "JOURNEY_PLAN_RELEASE_IDENTITY_MISMATCH"
+  case routeIdentityMismatch = "JOURNEY_PLAN_ROUTE_IDENTITY_MISMATCH"
+  case entryTransitionMismatch = "JOURNEY_PLAN_ENTRY_TRANSITION_MISMATCH"
+  case egressOptionsMismatch = "JOURNEY_PLAN_EGRESS_OPTIONS_MISMATCH"
+  case surfaceAccessNotReleased = "JOURNEY_PLAN_SURFACE_ACCESS_NOT_RELEASED"
+  case invalidSurfaceAccessLeg = "INVALID_JOURNEY_PLAN_SURFACE_ACCESS_LEG"
+  case surfaceAccessReleaseMismatch = "JOURNEY_PLAN_SURFACE_ACCESS_RELEASE_MISMATCH"
+  case finishPolicyNotReleased = "JOURNEY_PLAN_FINISH_POLICY_NOT_RELEASED"
+  case invalidFinishComposition = "INVALID_JOURNEY_PLAN_FINISH_COMPOSITION"
+  case surfaceEgressNotReleased = "JOURNEY_PLAN_SURFACE_EGRESS_NOT_RELEASED"
+  case invalidInitialPhase = "INVALID_JOURNEY_PLAN_INITIAL_PHASE"
+  case routeOnlyCompositionMismatch = "JOURNEY_PLAN_ROUTE_ONLY_COMPOSITION_MISMATCH"
+}
+
+public enum JourneyPlanRuntimeAdmissionError: Error, Equatable, Sendable {
+  case invalid([JourneyPlanRuntimeAdmissionIssue])
+}
+
 public enum JourneyPlanCompilerError: Error, Equatable, Sendable {
   case surfaceAccessNotReleased
   case invalidReleasedSurfaceAccess([ReleasedSurfaceAccessIssue])
@@ -301,7 +321,7 @@ public enum JourneyPlanCompiler {
       precomputedEgressOptions: bundle.runtimePolicy.egressOptions,
       selectedEgressOptionID: selectedEgressOptionID,
       egressLeg: nil,
-      initialPhase: .planning
+      initialPhase: .approachToEntry
     )
   }
 
@@ -360,6 +380,133 @@ public enum JourneyPlanCompiler {
   }
 
   private static func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
+extension JourneyPlan {
+  package func runtimeAdmissionIssues(
+    for release: KaidoProductRelease
+  ) -> [JourneyPlanRuntimeAdmissionIssue] {
+    let bundle = release.navigation.bundle
+    var issues: [JourneyPlanRuntimeAdmissionIssue] = []
+
+    if normalized(id).isEmpty {
+      issues.append(.invalidIdentity)
+    }
+    if productReleaseID != release.releaseID
+      || navigationReleaseID != release.navigation.releaseID
+    {
+      issues.append(.releaseIdentityMismatch)
+    }
+    if networkSnapshotID != bundle.networkSnapshot.id
+      || routePlanID != bundle.routePlan.id
+    {
+      issues.append(.routeIdentityMismatch)
+    }
+    if entryTransition != bundle.runtimePolicy.entryTransition {
+      issues.append(.entryTransitionMismatch)
+    }
+    if precomputedEgressOptions != bundle.runtimePolicy.egressOptions {
+      issues.append(.egressOptionsMismatch)
+    }
+    if egressLeg != nil {
+      issues.append(.surfaceEgressNotReleased)
+    }
+
+    if let accessLeg {
+      validateSurfaceAccessLeg(
+        accessLeg,
+        release: release,
+        issues: &issues
+      )
+    } else if self != JourneyPlanCompiler.routeOnly(release: release) {
+      issues.append(.routeOnlyCompositionMismatch)
+    }
+
+    validateFinishComposition(
+      release: release,
+      issues: &issues
+    )
+    return Array(Set(issues)).sorted { $0.rawValue < $1.rawValue }
+  }
+
+  private func validateSurfaceAccessLeg(
+    _ accessLeg: JourneySurfaceLeg,
+    release: KaidoProductRelease,
+    issues: inout [JourneyPlanRuntimeAdmissionIssue]
+  ) {
+    let bundle = release.navigation.bundle
+    guard let definition = bundle.surfaceAccessDefinition else {
+      issues.append(.surfaceAccessNotReleased)
+      return
+    }
+
+    if originID == nil
+      || normalized(originID ?? "").isEmpty
+      || originID != accessLeg.originID
+      || accessLeg.role != .access
+      || normalized(accessLeg.candidateID).isEmpty
+      || normalized(accessLeg.originID).isEmpty
+      || accessLeg.exitFacilityID != nil
+      || accessLeg.directedEdgeIDs.isEmpty
+      || accessLeg.directedEdgeIDs.contains(where: { normalized($0).isEmpty })
+      || !accessLeg.distanceMeters.isFinite
+      || accessLeg.distanceMeters < 0
+      || !accessLeg.expectedTravelTimeSeconds.isFinite
+      || accessLeg.expectedTravelTimeSeconds < 0
+    {
+      issues.append(.invalidSurfaceAccessLeg)
+    }
+
+    if accessLeg.networkSnapshotID != bundle.networkSnapshot.id
+      || accessLeg.providerIdentity != definition.providerIdentity
+      || accessLeg.destinationAnchorID
+        != definition.approachPolicy.destinationAnchor.id
+      || accessLeg.entranceFacilityID
+        != definition.approachPolicy.entranceFacilityID
+      || accessLeg.joinOccurrenceID != bundle.routePlan.occurrences.first?.id
+    {
+      issues.append(.surfaceAccessReleaseMismatch)
+    }
+    if initialPhase != .approachToEntry {
+      issues.append(.invalidInitialPhase)
+    }
+  }
+
+  private func validateFinishComposition(
+    release: KaidoProductRelease,
+    issues: inout [JourneyPlanRuntimeAdmissionIssue]
+  ) {
+    let bundle = release.navigation.bundle
+    if accessLeg != nil,
+      bundle.surfaceAccessDefinition?.allowedFinishPolicies.contains(
+        finishPolicy
+      ) != true
+    {
+      issues.append(.finishPolicyNotReleased)
+    }
+
+    switch finishPolicy {
+    case .fixedExit:
+      let expectedID = bundle.runtimePolicy.egressOptions.first(where: {
+        $0.isReleased && $0.exitFacilityID == bundle.routePlan.exitFacilityID
+      })?.id
+      if selectedEgressOptionID == nil
+        || selectedEgressOptionID != expectedID
+      {
+        issues.append(.invalidFinishComposition)
+      }
+    case .finishOnRequest:
+      if selectedEgressOptionID != nil {
+        issues.append(.invalidFinishComposition)
+      }
+    case .returnNearOrigin:
+      issues.append(.surfaceEgressNotReleased)
+    }
+  }
+
+  private func normalized(_ value: String) -> String {
     value.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }

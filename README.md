@@ -498,9 +498,15 @@ Provider failures, empty or duplicate candidate identities, graph ambiguity,
 dataset drift, and compiler rejection remain typed fail-closed outcomes. The
 result preserves repeated surface traversals and wraps the accepted leg around
 the unchanged RoutePlan, entry transition, and released egress options. The
-product runtime always exposes a route-only `JourneyPlan` when no surface
-candidate has been accepted. `RETURN_NEAR_ORIGIN` remains blocked until a
-reviewed surface-egress leg is released; no provider or UI can synthesize it.
+product runtime admits that compiler-minted plan only when every release,
+RoutePlan, entry, finish-policy, provider, and access-leg identity still
+matches. A fresh admitted access journey starts at `APPROACH_TO_ENTRY`; only
+the existing ordered release-bound entry evidence may enter `STRICT_ROUTE`.
+When no surface candidate has been accepted, the existing route-only runtime
+remains unchanged. Checkpoint schema 2.0 binds restoration to the exact
+`journey_plan_id`, so an access session cannot silently restore as route-only.
+`RETURN_NEAR_ORIGIN` remains blocked until a reviewed surface-egress leg is
+released; no provider or UI can synthesize it.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated

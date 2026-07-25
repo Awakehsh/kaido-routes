@@ -456,19 +456,21 @@ The foreground location controller owns only source lifecycle and ordered
 delivery; it feeds raw callback batches through the existing Apple adapters and
 never owns matching, occurrence progress, guidance, or presentation.
 
-`NavigationSessionCheckpoint` schema 1.0 is the process-restoration boundary.
+`NavigationSessionCheckpoint` schema 2.0 is the process-restoration boundary.
 It stores only coordinate-free reducer state and binds it to the exact product
-release, navigation release, runtime policy, network snapshot, RoutePlan, and
-matcher corridor. It does not persist coordinates, matcher posterior, partial
-entry-transition evidence, CarPlay connection, active guidance frame, or an
-audio queue. Restoration revalidates the whole identity, maps an interrupted
-entry transition back to `APPROACH_TO_ENTRY`, disconnects CarPlay, clears speech
-authority, and exposes active navigation as LOST/estimated with a pending
-reacquisition window. The first otherwise-HIGH matcher estimate may seed that
-window but is returned as LOW and cannot advance progress or emit guidance.
-Later fresh evidence must satisfy the ordinary multi-observation reacquisition
-policy. The emitted-prompt ledger remains in the checkpoint, so reconstruction
-cannot replay a prior prompt.
+release, navigation release, journey plan, runtime policy, network snapshot,
+RoutePlan, and matcher corridor. It does not persist coordinates, matcher
+posterior, partial entry-transition evidence, CarPlay connection, active
+guidance frame, or an audio queue. Restoration revalidates the whole identity,
+so a surface-access session cannot be reopened through the route-only runtime
+initializer. It maps an interrupted entry transition back to
+`APPROACH_TO_ENTRY`, disconnects CarPlay, clears speech authority, and exposes
+active navigation as LOST/estimated with a pending reacquisition window. The
+first otherwise-HIGH matcher estimate may seed that window but is returned as
+LOW and cannot advance progress or emit guidance. Later fresh evidence must
+satisfy the ordinary multi-observation reacquisition policy. The emitted-prompt
+ledger remains in the checkpoint, so reconstruction cannot replay a prior
+prompt.
 
 `FileNavigationSessionCheckpointStore` atomically replaces one JSON file under
 Application Support. The runtime panel observes `scenePhase`; inactive or
@@ -524,9 +526,11 @@ inspection with an unambiguous resolved edge sequence. A single accepted
 candidate becomes ready; multiple accepted alternatives require explicit
 selection and cannot inherit provider response order. The resulting
 `JourneyPlan` composes around the unchanged RoutePlan; provider guidance steps
-never enter released guidance authority. A route-only plan remains valid,
-while `RETURN_NEAR_ORIGIN` fails closed until reviewed surface-egress assets
-exist.
+never enter released guidance authority. `KaidoProductNavigationRuntime`
+revalidates the whole plan against that release before admitting it, starts a
+fresh access plan at `APPROACH_TO_ENTRY`, and retains the existing ordered
+entry-evidence gate for `STRICT_ROUTE`. A route-only plan remains valid, while
+`RETURN_NEAR_ORIGIN` fails closed until reviewed surface-egress assets exist.
 
 `NavigationReleaseArtifact` schema 5.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
@@ -1414,9 +1418,10 @@ returns a transient `GuidancePromptEmission`; the frame itself never means
 
 The live-session checkpoint is separate from graph storage and saved routes:
 
-- encode only coordinate-free navigation reducer state in schema 1.0;
+- encode only coordinate-free navigation reducer state in schema 2.0;
 - bind every checkpoint to the exact validated product/navigation release,
-  runtime policy, network snapshot, RoutePlan, and matcher corridor;
+  journey plan, runtime policy, network snapshot, RoutePlan, and matcher
+  corridor;
 - atomically replace one active-session file and delete it on the next lifecycle
   save after completion, or after an explicit discard;
 - never restore matcher posterior, a measured marker, partial entry continuity,

@@ -43,21 +43,57 @@ public struct KaidoProductNavigationRuntime: Sendable {
   }
 
   public init(release: KaidoProductRelease) throws {
-    try self.init(release: release, checkpoint: nil)
+    try self.init(
+      release: release,
+      journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
+      checkpoint: nil
+    )
+  }
+
+  public init(
+    release: KaidoProductRelease,
+    journeyPlan: JourneyPlan
+  ) throws {
+    try self.init(
+      release: release,
+      journeyPlan: journeyPlan,
+      checkpoint: nil
+    )
   }
 
   public init(
     release: KaidoProductRelease,
     checkpoint: NavigationSessionCheckpoint
   ) throws {
-    try self.init(release: release, checkpoint: Optional(checkpoint))
+    try self.init(
+      release: release,
+      journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
+      checkpoint: checkpoint
+    )
+  }
+
+  public init(
+    release: KaidoProductRelease,
+    journeyPlan: JourneyPlan,
+    checkpoint: NavigationSessionCheckpoint
+  ) throws {
+    try self.init(
+      release: release,
+      journeyPlan: journeyPlan,
+      checkpoint: Optional(checkpoint)
+    )
   }
 
   private init(
     release: KaidoProductRelease,
+    journeyPlan: JourneyPlan,
     checkpoint: NavigationSessionCheckpoint?
   ) throws {
     let bundle = release.navigation.bundle
+    let journeyPlanIssues = journeyPlan.runtimeAdmissionIssues(for: release)
+    guard journeyPlanIssues.isEmpty else {
+      throw JourneyPlanRuntimeAdmissionError.invalid(journeyPlanIssues)
+    }
     guard let firstRouteOccurrence = bundle.routePlan.occurrences.first,
       let firstRouteBinding = bundle.matcherCorridor.occurrences.first(where: {
         $0.id == firstRouteOccurrence.id && $0.index == firstRouteOccurrence.index
@@ -80,18 +116,28 @@ public struct KaidoProductNavigationRuntime: Sendable {
     )
     self.release = release
     self.entryTransitionAdmissionContext = entryTransitionAdmissionContext
-    journeyPlan = JourneyPlanCompiler.routeOnly(release: release)
+    self.journeyPlan = journeyPlan
     let initialSnapshot: NavigationSnapshot
     let initialMatcherOccurrenceID: String?
     let requiresRestorationReacquisition: Bool
     if let checkpoint {
-      initialSnapshot = try checkpoint.restoredSnapshot(for: release)
+      initialSnapshot = try checkpoint.restoredSnapshot(
+        for: release,
+        journeyPlan: journeyPlan
+      )
       initialMatcherOccurrenceID = initialSnapshot.currentOccurrenceID
       requiresRestorationReacquisition =
         checkpoint.requiresMatcherReacquisition
       origin = .restored
     } else {
-      initialSnapshot = NavigationSnapshot()
+      var snapshot = NavigationSnapshot(
+        journeyPhase: journeyPlan.initialPhase
+      )
+      if journeyPlan.accessLeg != nil {
+        snapshot.lastPhaseTransitionTrigger =
+          "RELEASED_SURFACE_ACCESS_PLAN_ADMITTED"
+      }
+      initialSnapshot = snapshot
       initialMatcherOccurrenceID = nil
       requiresRestorationReacquisition = false
       origin = .fresh
@@ -119,6 +165,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
   ) async throws -> NavigationSessionCheckpoint {
     try NavigationSessionCheckpoint.capture(
       release: release,
+      journeyPlan: journeyPlan,
       snapshot: await session.snapshot,
       savedAtMilliseconds: savedAtMilliseconds
     )

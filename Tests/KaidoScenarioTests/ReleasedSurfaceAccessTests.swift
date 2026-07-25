@@ -192,7 +192,7 @@ func journeyPlanPreservesAcceptedSurfacePathOccurrences() throws {
       == ["test.surface.edge-a", "test.surface.edge-b", "test.surface.edge-a"]
   )
   #expect(plan.accessLeg?.joinOccurrenceID == fixture.routePlan.occurrences.first?.id)
-  #expect(plan.initialPhase == .planning)
+  #expect(plan.initialPhase == .approachToEntry)
 }
 
 @Test("Rejected, ambiguous, or provider-drifted candidates cannot create a JourneyPlan")
@@ -625,6 +625,133 @@ func releasedSurfaceAccessPlannerRejectsDatasetDriftAtCompilation() async throws
   )
 }
 
+@Test("Product runtime admits one compiler-minted surface journey")
+func productRuntimeAdmitsReleasedSurfaceJourney() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let plan = try JourneyPlanCompiler.surfaceAccess(
+    release: release,
+    request: input.request,
+    candidate: input.candidate,
+    inspection: input.inspection,
+    providerIdentity: definition.providerIdentity,
+    finishPolicy: .finishOnRequest
+  )
+
+  let runtime = try KaidoProductNavigationRuntime(
+    release: release,
+    journeyPlan: plan
+  )
+  let initial = await runtime.session.snapshot
+  let started = await runtime.session.start()
+
+  #expect(runtime.journeyPlan == plan)
+  #expect(initial.journeyPhase == .approachToEntry)
+  #expect(
+    initial.lastPhaseTransitionTrigger
+      == "RELEASED_SURFACE_ACCESS_PLAN_ADMITTED"
+  )
+  #expect(started.journeyPhase == .approachToEntry)
+  #expect(
+    started.currentOccurrenceID
+      == fixture.routePlan.occurrences.first?.id
+  )
+  #expect(!started.strictRouteAutoCommitAllowed)
+  #expect(runtime.release.navigation.bundle.routePlan == fixture.routePlan)
+}
+
+@Test("Product runtime rejects a surface journey minted for another release")
+func productRuntimeRejectsSurfaceJourneyReleaseDrift() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let admittedRelease = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let otherRelease = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition,
+    releaseID: "test.product-release.surface-access.other"
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let otherPlan = try JourneyPlanCompiler.surfaceAccess(
+    release: otherRelease,
+    request: input.request,
+    candidate: input.candidate,
+    inspection: input.inspection,
+    providerIdentity: definition.providerIdentity,
+    finishPolicy: .finishOnRequest
+  )
+
+  do {
+    _ = try KaidoProductNavigationRuntime(
+      release: admittedRelease,
+      journeyPlan: otherPlan
+    )
+    Issue.record("Expected cross-release JourneyPlan admission to fail")
+  } catch JourneyPlanRuntimeAdmissionError.invalid(let issues) {
+    #expect(issues.contains(.releaseIdentityMismatch))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
+@Test("Surface journey checkpoint cannot restore as a route-only session")
+func surfaceJourneyCheckpointBindsJourneyIdentity() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let definition = releasedSurfaceAccessDefinition(fixture)
+  let release = try productRelease(
+    fixture,
+    surfaceAccessDefinition: definition
+  )
+  let input = acceptedSurfaceAccessInput(fixture, definition: definition)
+  let plan = try JourneyPlanCompiler.surfaceAccess(
+    release: release,
+    request: input.request,
+    candidate: input.candidate,
+    inspection: input.inspection,
+    providerIdentity: definition.providerIdentity,
+    finishPolicy: .finishOnRequest
+  )
+  let runtime = try KaidoProductNavigationRuntime(
+    release: release,
+    journeyPlan: plan
+  )
+  _ = await runtime.session.start()
+  let checkpoint = try await runtime.makeCheckpoint(
+    savedAtMilliseconds: 1_000
+  )
+  let data = try NavigationSessionCheckpointCodec.encode(checkpoint)
+  let decoded = try NavigationSessionCheckpointCodec.decode(data)
+
+  let restored = try KaidoProductNavigationRuntime(
+    release: release,
+    journeyPlan: plan,
+    checkpoint: decoded
+  )
+  #expect(checkpoint.journeyPlanID == plan.id)
+  #expect(restored.journeyPlan == plan)
+  #expect(restored.origin == .restored)
+  #expect(await restored.session.snapshot.journeyPhase == .approachToEntry)
+
+  do {
+    _ = try KaidoProductNavigationRuntime(
+      release: release,
+      checkpoint: decoded
+    )
+    Issue.record("Expected access checkpoint to reject route-only restoration")
+  } catch NavigationSessionCheckpointError.invalid(let issues) {
+    #expect(issues.contains(.identityMismatch("journey_plan_id")))
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 private struct SurfaceAccessInput {
   let request: SurfaceRouteRequest
   let candidate: SurfaceRouteCandidate
@@ -765,11 +892,12 @@ private func acceptedSurfaceAccessInput(
 
 private func productRelease(
   _ fixture: NavigationReleaseBundleFixture,
-  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition
+  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition,
+  releaseID: String = "test.product-release.surface-access"
 ) throws -> KaidoProductRelease {
   try KaidoProductRelease(
     artifact: KaidoProductReleaseArtifact(
-      releaseID: "test.product-release.surface-access",
+      releaseID: releaseID,
       releasedAt: "2026-07-24T12:00:00+09:00",
       navigationRelease: navigationReleaseArtifact(
         fixture,

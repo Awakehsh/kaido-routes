@@ -235,7 +235,12 @@ software-simulated evidence and a product-release identity mismatch remain
 rejected; and only fresh HIGH single-edge evidence with compatible heading in
 the exact reviewed order reaches `STRICT_ROUTE`. The fixture uses typed
 synthetic evidence and proves no Core Location device accuracy or production
-threshold.
+threshold. Focused runtime tests now enter the same scenario boundary from an
+admitted compiler-minted surface-access `JourneyPlan`: the fresh actor begins
+at `APPROACH_TO_ENTRY`, cross-release plans fail admission, and checkpoint
+schema 2.0 cannot reopen that access journey as route-only. This reuses KR-S19
+instead of adding a provider-shaped portable event that could bypass the real
+provider, graph-inspection, and compiler gates.
 
 KR-U01 and KR-U02 execute the parked `ExpertRouteEditorSession` at L1/L2 even
 though their declared final surface is iPhone UI. The runner starts from an exact

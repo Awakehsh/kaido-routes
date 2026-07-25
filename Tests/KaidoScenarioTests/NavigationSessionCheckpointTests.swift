@@ -23,6 +23,7 @@ func navigationCheckpointRestoresConservatively() async throws {
 
   let checkpoint = try NavigationSessionCheckpoint.capture(
     release: release,
+    journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
     snapshot: snapshot,
     savedAtMilliseconds: 2_000
   )
@@ -163,6 +164,7 @@ func navigationCheckpointRejectsReleaseDrift() throws {
   let drifted = NavigationSessionCheckpoint(
     productReleaseID: checkpoint.productReleaseID,
     navigationReleaseID: checkpoint.navigationReleaseID,
+    journeyPlanID: checkpoint.journeyPlanID,
     runtimePolicyID: checkpoint.runtimePolicyID,
     networkSnapshotID: checkpoint.networkSnapshotID,
     routePlanID: "test.plan.other",
@@ -189,9 +191,10 @@ func navigationCheckpointRejectsUnknownSchema() throws {
   let release = try checkpointProductRelease()
   let checkpoint = try checkpointForRelease(release)
   let unknown = NavigationSessionCheckpoint(
-    schemaVersion: "2.0",
+    schemaVersion: "999.0",
     productReleaseID: checkpoint.productReleaseID,
     navigationReleaseID: checkpoint.navigationReleaseID,
+    journeyPlanID: checkpoint.journeyPlanID,
     runtimePolicyID: checkpoint.runtimePolicyID,
     networkSnapshotID: checkpoint.networkSnapshotID,
     routePlanID: checkpoint.routePlanID,
@@ -221,10 +224,14 @@ func navigationCheckpointDropsPartialEntryEvidence() throws {
   snapshot.strictRouteAutoCommitAllowed = false
   let checkpoint = try NavigationSessionCheckpoint.capture(
     release: release,
+    journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
     snapshot: snapshot,
     savedAtMilliseconds: 1_000
   )
-  let restored = try checkpoint.restoredSnapshot(for: release)
+  let restored = try checkpoint.restoredSnapshot(
+    for: release,
+    journeyPlan: JourneyPlanCompiler.routeOnly(release: release)
+  )
 
   #expect(restored.journeyPhase == .approachToEntry)
   #expect(!restored.strictRouteAutoCommitAllowed)
@@ -283,6 +290,7 @@ private func checkpointForRelease(
   snapshot.strictRouteAutoCommitAllowed = true
   return try NavigationSessionCheckpoint.capture(
     release: release,
+    journeyPlan: JourneyPlanCompiler.routeOnly(release: release),
     snapshot: snapshot,
     savedAtMilliseconds: 2_000
   )

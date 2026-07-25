@@ -228,8 +228,11 @@ preserving the complete resolved directed-edge sequence including repeats and
 retaining the release-owned RoutePlan, entry transition, and egress options
 unchanged. Multiple accepted provider alternatives remain unselected until an
 explicit parked choice. Provider prose is not carried into navigation
-authority. `RETURN_NEAR_ORIGIN` remains unavailable until a reviewed
-surface-egress leg exists.
+authority. The product runtime revalidates that complete compiler output
+against the same release before admission. A fresh accepted access plan begins
+at `APPROACH_TO_ENTRY`, while checkpoint schema 2.0 prevents it from being
+restored as a route-only journey. `RETURN_NEAR_ORIGIN` remains unavailable
+until a reviewed surface-egress leg exists.
 
 Phase changes are evidence-based. A proximity region may create an entry
 candidate, but only matching the directed transition, heading, and continuous

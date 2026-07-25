@@ -64,9 +64,14 @@ every candidate against all six hard gates, and the package-scoped
 unambiguous directed-edge path. One accepted candidate is ready; multiple
 accepted alternatives require an explicit parked selection rather than using
 provider response order. Repeated path edges remain repeated.
-The product runtime exposes a route-only `JourneyPlan` when no access result has
-been accepted, so beginning near the entrance remains valid without fabricating
-a provider leg.
+`KaidoProductNavigationRuntime` accepts the selected compiler-minted plan only
+when its complete release, RoutePlan, entry transition, finish policy, provider,
+and access-leg composition still matches the same product release. A fresh
+access journey starts at `APPROACH_TO_ENTRY`; the existing ordered entry
+evidence remains the only automatic path into `STRICT_ROUTE`. Checkpoint schema
+2.0 binds restoration to the exact journey-plan ID. The product runtime still
+exposes a route-only `JourneyPlan` when no access result has been accepted, so
+beginning near the entrance remains valid without fabricating a provider leg.
 
 ## Exact access facilities
 

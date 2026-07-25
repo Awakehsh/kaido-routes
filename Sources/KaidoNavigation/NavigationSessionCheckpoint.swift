@@ -19,6 +19,7 @@ public enum NavigationSessionCheckpointIssue: Equatable, Hashable, Sendable {
   case invalidSafetyState
   case invalidRecoveryState
   case invalidEgressState
+  case journeyPlanPhaseMismatch
   case destinationRerouteUsed
 
   public var code: String {
@@ -57,6 +58,8 @@ public enum NavigationSessionCheckpointIssue: Equatable, Hashable, Sendable {
       "CHECKPOINT_RECOVERY_STATE_INVALID"
     case .invalidEgressState:
       "CHECKPOINT_EGRESS_STATE_INVALID"
+    case .journeyPlanPhaseMismatch:
+      "CHECKPOINT_JOURNEY_PLAN_PHASE_MISMATCH"
     case .destinationRerouteUsed:
       "CHECKPOINT_DESTINATION_REROUTE_FORBIDDEN"
     }
@@ -212,11 +215,12 @@ public struct NavigationSessionCheckpointState: Codable, Equatable, Sendable {
 
 /// Versioned, release-bound process-restoration envelope.
 public struct NavigationSessionCheckpoint: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.0"
+  public static let currentSchemaVersion = "2.0"
 
   public let schemaVersion: String
   public let productReleaseID: String
   public let navigationReleaseID: String
+  public let journeyPlanID: String
   public let runtimePolicyID: String
   public let networkSnapshotID: String
   public let routePlanID: String
@@ -228,6 +232,7 @@ public struct NavigationSessionCheckpoint: Codable, Equatable, Sendable {
     schemaVersion: String = NavigationSessionCheckpoint.currentSchemaVersion,
     productReleaseID: String,
     navigationReleaseID: String,
+    journeyPlanID: String,
     runtimePolicyID: String,
     networkSnapshotID: String,
     routePlanID: String,
@@ -238,6 +243,7 @@ public struct NavigationSessionCheckpoint: Codable, Equatable, Sendable {
     self.schemaVersion = schemaVersion
     self.productReleaseID = productReleaseID
     self.navigationReleaseID = navigationReleaseID
+    self.journeyPlanID = journeyPlanID
     self.runtimePolicyID = runtimePolicyID
     self.networkSnapshotID = networkSnapshotID
     self.routePlanID = routePlanID
@@ -250,6 +256,7 @@ public struct NavigationSessionCheckpoint: Codable, Equatable, Sendable {
     case schemaVersion = "schema_version"
     case productReleaseID = "product_release_id"
     case navigationReleaseID = "navigation_release_id"
+    case journeyPlanID = "journey_plan_id"
     case runtimePolicyID = "runtime_policy_id"
     case networkSnapshotID = "network_snapshot_id"
     case routePlanID = "route_plan_id"
@@ -298,6 +305,7 @@ public enum NavigationSessionCheckpointCodec {
     for (field, value) in [
       ("product_release_id", checkpoint.productReleaseID),
       ("navigation_release_id", checkpoint.navigationReleaseID),
+      ("journey_plan_id", checkpoint.journeyPlanID),
       ("runtime_policy_id", checkpoint.runtimePolicyID),
       ("network_snapshot_id", checkpoint.networkSnapshotID),
       ("route_plan_id", checkpoint.routePlanID),
@@ -325,6 +333,7 @@ public enum NavigationSessionCheckpointCodec {
 extension NavigationSessionCheckpoint {
   package static func capture(
     release: KaidoProductRelease,
+    journeyPlan: JourneyPlan,
     snapshot: NavigationSnapshot,
     savedAtMilliseconds: Int
   ) throws -> NavigationSessionCheckpoint {
@@ -332,6 +341,7 @@ extension NavigationSessionCheckpoint {
     let checkpoint = NavigationSessionCheckpoint(
       productReleaseID: release.releaseID,
       navigationReleaseID: release.navigation.releaseID,
+      journeyPlanID: journeyPlan.id,
       runtimePolicyID: bundle.runtimePolicy.id,
       networkSnapshotID: bundle.networkSnapshot.id,
       routePlanID: bundle.routePlan.id,
@@ -339,7 +349,10 @@ extension NavigationSessionCheckpoint {
       savedAtMilliseconds: savedAtMilliseconds,
       state: NavigationSessionCheckpointState(snapshot: snapshot)
     )
-    let issues = checkpoint.validationIssues(for: release)
+    let issues = checkpoint.validationIssues(
+      for: release,
+      journeyPlan: journeyPlan
+    )
     guard issues.isEmpty else {
       throw NavigationSessionCheckpointError.invalid(issues)
     }
@@ -347,9 +360,13 @@ extension NavigationSessionCheckpoint {
   }
 
   package func restoredSnapshot(
-    for release: KaidoProductRelease
+    for release: KaidoProductRelease,
+    journeyPlan: JourneyPlan
   ) throws -> NavigationSnapshot {
-    let issues = validationIssues(for: release)
+    let issues = validationIssues(
+      for: release,
+      journeyPlan: journeyPlan
+    )
     guard issues.isEmpty else {
       throw NavigationSessionCheckpointError.invalid(issues)
     }
@@ -441,7 +458,8 @@ extension NavigationSessionCheckpoint {
   }
 
   package func validationIssues(
-    for release: KaidoProductRelease
+    for release: KaidoProductRelease,
+    journeyPlan: JourneyPlan
   ) -> [NavigationSessionCheckpointIssue] {
     var issues: [NavigationSessionCheckpointIssue] = []
     let bundle = release.navigation.bundle
@@ -452,6 +470,7 @@ extension NavigationSessionCheckpoint {
         navigationReleaseID,
         release.navigation.releaseID
       ),
+      ("journey_plan_id", journeyPlanID, journeyPlan.id),
       ("runtime_policy_id", runtimePolicyID, bundle.runtimePolicy.id),
       ("network_snapshot_id", networkSnapshotID, bundle.networkSnapshot.id),
       ("route_plan_id", routePlanID, bundle.routePlan.id),
@@ -471,6 +490,9 @@ extension NavigationSessionCheckpoint {
     }
     if state.activeRoutePlanID != bundle.routePlan.id {
       issues.append(.activeRoutePlanMismatch)
+    }
+    if journeyPlan.accessLeg != nil, state.journeyPhase == .planning {
+      issues.append(.journeyPlanPhaseMismatch)
     }
 
     let occurrenceIDs = Set(bundle.routePlan.occurrences.map(\.id))

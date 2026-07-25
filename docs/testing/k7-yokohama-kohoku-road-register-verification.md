@@ -2,10 +2,12 @@
 
 ## Decision
 
-The current recognized-route identity of OSM way `776884422` remains
-unconfirmed. Yokohama's online map 66 is the correct `認定路線図` layer, but
-the City states that online road-register information is not proof and directs
-the latest legal-record review to the Road Survey Division counter.
+The current legal-record identity of OSM way `776884422` remains unconfirmed.
+Public official evidence now supports `東方町第356号線` as a high-confidence
+online identity candidate. Yokohama's online map 66 is the correct
+`認定路線図` layer, but the City states that online road-register information is
+not proof and directs the latest legal-record review to the Road Survey
+Division counter.
 
 A dated 2026-07-25 browser inspection selected the three source-adjacent
 features at the exact target. The online map displayed the southern feature
@@ -20,12 +22,15 @@ clear the gate. The exact counter record must independently confirm the
 `東方町第356号線` candidate, distinguish OSM way `776884422` from the two
 adjacent expressway successors, and provide a stable record reference.
 
-The 2023 City Council road-resolution package adds a later historic constraint:
-after the land-readjustment replotting, the City recognized Higashikatacho
-Routes 354 through 358 in the affected area and retired multiple older route
-segments. Its area-level reference map does not uniquely map OSM way
-`776884422` to any one route. It narrows the counter review but cannot replace
-the current map-66 record.
+The 2023 City Council road-resolution package adds an exact recognition
+constraint. After the land-readjustment replotting, the City recognized
+Higashikatacho Route 356 from `川向町272番の3地内` to
+`川向町430番の5地内`, alongside Routes 354, 355, 357, and 358, and retired
+multiple older route segments. Its reference map and exact endpoints align
+with the distinct lower branch selected as `東方町第356号線` in the current
+online map. Together these sources materially narrow the identity question,
+but they remain an online cross-source mapping rather than a current
+counter-record finding.
 
 ## Exact target
 
@@ -54,8 +59,9 @@ recognized-route record for map 66. Obtain enough record identity to determine:
 - why the other two successors cannot be substituted.
 
 The counter work must explicitly test the historic Higashikatacho Route 342
-description against the post-replotting Routes 354 through 358 rather than
-assuming that the 2020 corridor name survived as the exact current route.
+description against the post-replotting Routes 354 through 358 and the exact
+Route 356 endpoints rather than assuming that the 2020 corridor name survived
+as the exact current route.
 
 Map 67 is `平面図・補正図・別図・補正別図` and is not accepted as the recognized-
 route record. The online map may help locate the target, but it cannot replace

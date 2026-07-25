@@ -9,9 +9,12 @@ The pinned OSM extract is source-complete at the exit terminal. Yokohama's
 as the temporary passage then used inside the land-readjustment area. The
 current municipal project page reports that surrounding infrastructure work
 completed in March 2022 and the project ended on 2023-07-25. The final
-replotting map does not map this exact OSM way to a current road identity.
-Neither source establishes the way's current physical status, legal direction,
-or permitted movement from the K7 exit.
+replotting map alone does not map this exact OSM way to a current road identity.
+A 2026-07-25 inspection of the current recognized-route map selected this exact
+lower branch as `東方町第356号線`, consistent with the 2023 road-recognition
+resolution and its Route 356 endpoints. This is high-confidence online identity
+evidence, but it does not establish the way's current physical status, legal
+direction, or permitted movement from the K7 exit.
 
 The unresolved release code is:
 
@@ -58,10 +61,12 @@ signal. It is not a legal-direction claim.
   traffic direction. The checked PDF has SHA-256
   `58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9`.
 - [Yokohama City Council Bill 129 road-recognition resolution, submitted 2023-02-07](https://www.city.yokohama.lg.jp/shikai/kiroku/kekka/gianR05-1.files/r5_1_s129.pdf)
-  recognizes Higashikatacho Routes 354 through 358 after replotting in the
-  affected area. Its area-level reference map does not uniquely map OSM way
-  `776884422` to one route and states no current traffic direction. The checked
-  PDF has SHA-256
+  recognizes Higashikatacho Route 356 from `川向町272番の3地内` to
+  `川向町430番の5地内`, alongside Routes 354, 355, 357, and 358 after
+  replotting in the affected area. The exact endpoints and reference map align
+  with the lower branch selected as Route 356 in the current online
+  recognized-route map, but the resolution states no current traffic
+  direction. The checked PDF has SHA-256
   `99a6fc8dd09acad1b453ff5e65c7b80e29b36da832d495fc220ae4901c91f296`.
 - [Yokohama City road-register access page](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
   directs road-identity review to the official road-register system and warns

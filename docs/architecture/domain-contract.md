@@ -231,13 +231,23 @@ explicit parked choice. Provider prose is not carried into navigation
 authority. The product runtime revalidates that complete compiler output
 against the same release before admission. A fresh accepted access plan begins
 at `APPROACH_TO_ENTRY`, while checkpoint schema 2.0 prevents it from being
-restored as a route-only journey. `RETURN_NEAR_ORIGIN` remains unavailable
-until a reviewed surface-egress leg exists.
+restored as a route-only journey. `RETURN_NEAR_ORIGIN` requires a separately
+evidenced `ReleasedSurfaceEgressDefinition`. Its policy binds one exact released
+egress option and exit to an ordinary-road handoff anchor, while the accepted
+access result freezes the only permitted return coordinate, directed edge, and
+bearing. The egress planner recomputes graph and provider hard gates, preserves
+the complete directed-edge path including repeats, and ranks only compiled
+plans. Caller destinations, expressway re-entry, provider order, and provider
+prose have no authority.
 
 Phase changes are evidence-based. A proximity region may create an entry
 candidate, but only matching the directed transition, heading, and continuous
 forward progress may automatically commit `STRICT_ROUTE`. Low confidence keeps
 the journey in `ENTRY_TRANSITION` and cannot be hidden by a UI mode change.
+Finish activates one exact released egress and enters `EXIT_TRANSITION`.
+`SURFACE_EGRESS` requires two fresh HIGH singleton matches with valid heading
+and increasing along-edge progress on the release-bound ordinary-road handoff
+edge; UI state cannot manufacture that evidence.
 
 ## Route-first recovery and egress
 

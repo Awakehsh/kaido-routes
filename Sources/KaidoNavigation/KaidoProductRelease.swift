@@ -16,7 +16,7 @@ public enum ProductEditorAtlasEntityRole: String, Equatable, Sendable {
 /// artifact adds cross-artifact identity, authoring coverage, and an explicit
 /// runtime-use declaration.
 public struct KaidoProductReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "5.0"
+  public static let currentSchemaVersion = "6.0"
 
   public let schemaVersion: String
   public let releaseID: String

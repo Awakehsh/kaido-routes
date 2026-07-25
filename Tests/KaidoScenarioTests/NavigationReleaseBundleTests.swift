@@ -549,7 +549,7 @@ func navigationReleaseArtifactRoundTrips() throws {
   #expect(release.assetEvidence.count == 11)
 
   let json = try #require(String(data: data, encoding: .utf8))
-  #expect(json.contains("\"schema_version\" : \"5.0\""))
+  #expect(json.contains("\"schema_version\" : \"6.0\""))
   #expect(json.contains("\"ja-JP\""))
   #expect(json.contains("\"zh-Hans\""))
   #expect(json.contains("\"en\""))
@@ -756,7 +756,8 @@ struct NavigationReleaseBundleFixture {
 
 func navigationReleaseArtifact(
   _ fixture: NavigationReleaseBundleFixture,
-  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
+  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil,
+  surfaceEgressDefinition: ReleasedSurfaceEgressDefinition? = nil
 ) -> NavigationReleaseArtifact {
   let sourceID = "test.source.junction-view"
   let sourceRegistry = NavigationReleaseSourceRegistry(
@@ -846,6 +847,17 @@ func navigationReleaseArtifact(
       )
     )
   }
+  if let surfaceEgressDefinition {
+    evidence.append(
+      NavigationReleaseAssetEvidence(
+        role: .surfaceEgress,
+        assetID: surfaceEgressDefinition.id,
+        state: .released,
+        checkedAt: "2026-07-23",
+        sourceReferenceIDs: [sourceID]
+      )
+    )
+  }
 
   return NavigationReleaseArtifact(
     releaseID: "test.navigation-release.release-bundle.v1",
@@ -862,7 +874,8 @@ func navigationReleaseArtifact(
     decisionZones: fixture.decisionZones,
     releasedGuidance: fixture.releasedGuidance,
     junctionViews: fixture.junctionViews,
-    surfaceAccessDefinition: surfaceAccessDefinition
+    surfaceAccessDefinition: surfaceAccessDefinition,
+    surfaceEgressDefinition: surfaceEgressDefinition
   )
 }
 

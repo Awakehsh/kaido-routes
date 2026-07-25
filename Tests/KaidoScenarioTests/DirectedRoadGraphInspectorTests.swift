@@ -615,6 +615,214 @@ func directedGraphInspectorRejectsSnapshotMismatch() async throws {
   #expect(inspection.resolvedPathEdgeIDs == nil)
 }
 
+@Test("Directed graph inspector binds an exact ordinary-road egress")
+func directedGraphInspectorAcceptsReleasedEgress() async {
+  let graph = makeInspectorGraph()
+  let policy = makeInspectorEgressPolicy()
+  let request = makeInspectorEgressRequest(policy: policy)
+  let candidate = makeInspectorEgressCandidate(
+    request: request,
+    edgeIDs: [
+      "test.edge.surface-initial",
+      "test.edge.approach",
+    ]
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: graph
+  ).inspect(
+    candidate: candidate,
+    request: request,
+    policy: policy
+  )
+  let result = SurfaceEgressHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    policy: policy,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+
+  #expect(
+    inspection.handoffBinding?.directedSurfaceEdgeID
+      == "test.edge.surface-initial"
+  )
+  #expect(
+    inspection.returnTargetBinding?.directedSurfaceEdgeID
+      == "test.edge.approach"
+  )
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(inspection.expresswayEdgeIDsAfterExit == [])
+  #expect(inspection.crossedTollDomainIDs == [])
+  #expect(
+    inspection.resolvedPathEdgeIDs
+      == ["test.edge.surface-initial", "test.edge.approach"]
+  )
+  #expect(result.disposition == .accepted)
+}
+
+@Test("Directed graph egress inspection exposes expressway re-entry")
+func directedGraphInspectorRejectsEgressExpresswayReentry() async {
+  let policy = makeInspectorEgressPolicy()
+  let request = makeInspectorEgressRequest(policy: policy)
+  let graph = makeInspectorGraph(
+    initialKind: .expressway,
+    initialEdgeID: "test.edge.forbidden-expressway",
+    initialTollDomainID: "test.toll.external"
+  )
+  let candidate = makeInspectorEgressCandidate(
+    request: request,
+    edgeIDs: [
+      "test.edge.forbidden-expressway",
+      "test.edge.approach",
+    ]
+  )
+  let driftedPolicy = SurfaceEgressPolicy(
+    id: policy.id,
+    networkSnapshotID: policy.networkSnapshotID,
+    egressOptionID: policy.egressOptionID,
+    exitFacilityID: policy.exitFacilityID,
+    originAnchor: DirectedSurfaceHandoffAnchor(
+      id: policy.originAnchor.id,
+      coordinate: policy.originAnchor.coordinate,
+      directedSurfaceEdgeID: "test.edge.forbidden-expressway",
+      expectedBearingDegrees:
+        policy.originAnchor.expectedBearingDegrees,
+      bearingToleranceDegrees:
+        policy.originAnchor.bearingToleranceDegrees,
+      maxStartDistanceMeters:
+        policy.originAnchor.maxStartDistanceMeters
+    ),
+    returnTargetBearingToleranceDegrees:
+      policy.returnTargetBearingToleranceDegrees,
+    maxReturnTargetDistanceMeters:
+      policy.maxReturnTargetDistanceMeters,
+    forbiddenExpresswayEdgeIDs: [
+      "test.edge.forbidden-expressway"
+    ],
+    forbiddenTollDomainIDs: ["test.toll.external"]
+  )
+  let driftedRequest = SurfaceEgressRouteRequest(
+    id: request.id,
+    exitFacilityID: request.exitFacilityID,
+    egressOptionID: request.egressOptionID,
+    originAnchor: driftedPolicy.originAnchor,
+    destinationAnchor: request.destinationAnchor
+  )
+
+  let inspection = await DirectedRoadGraphInspector(
+    graph: graph
+  ).inspect(
+    candidate: candidate,
+    request: driftedRequest,
+    policy: driftedPolicy
+  )
+  let result = SurfaceEgressHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: driftedRequest,
+    policy: driftedPolicy,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+
+  #expect(
+    inspection.expresswayEdgeIDsAfterExit
+      == ["test.edge.forbidden-expressway"]
+  )
+  #expect(inspection.crossedTollDomainIDs == ["test.toll.external"])
+  #expect(
+    result.hardGates.first(where: {
+      $0.gate == .noExpresswayReentry
+    })?.status == .fail
+  )
+  #expect(result.disposition == .rejected)
+}
+
+@Test("Selected egress evidence preserves a repeated directed edge")
+func directedGraphInspectorPreservesRepeatedEgressEdges() async {
+  let loopNorth = SurfaceCoordinate(latitude: 35.0005, longitude: 139.0005)
+  let graph = SurfaceRoadGraphSnapshot(
+    networkSnapshotID: "test.snapshot.inspector-v1",
+    provenance: makeInspectorGraphProvenance(),
+    edges: [
+      SurfaceRoadEdge(
+        id: "test.edge.surface-initial",
+        fromNodeID: "test.node.origin",
+        toNodeID: "test.node.middle",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorOrigin, inspectorMiddle]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.loop-north",
+        fromNodeID: "test.node.middle",
+        toNodeID: "test.node.loop-north",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorMiddle, loopNorth]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.loop-return",
+        fromNodeID: "test.node.loop-north",
+        toNodeID: "test.node.origin",
+        kind: .ordinaryRoad,
+        coordinates: [loopNorth, inspectorOrigin]
+      ),
+      SurfaceRoadEdge(
+        id: "test.edge.approach",
+        fromNodeID: "test.node.middle",
+        toNodeID: "test.node.anchor",
+        kind: .ordinaryRoad,
+        coordinates: [inspectorMiddle, inspectorAnchor]
+      ),
+    ]
+  )
+  let policy = makeInspectorEgressPolicy()
+  let request = makeInspectorEgressRequest(policy: policy)
+  let edgeIDs = [
+    "test.edge.surface-initial",
+    "test.edge.loop-north",
+    "test.edge.loop-return",
+    "test.edge.surface-initial",
+    "test.edge.approach",
+  ]
+  let candidate = SurfaceRouteCandidate(
+    id: "test.surface-egress-candidate.repeated-edge",
+    providerID: "test.provider",
+    coordinates: [
+      inspectorOrigin,
+      inspectorMiddle,
+      loopNorth,
+      inspectorOrigin,
+      inspectorMiddle,
+      inspectorAnchor,
+    ],
+    steps: [],
+    distanceMeters: 250,
+    expectedTravelTimeSeconds: 60,
+    selectedPathEvidence: SurfaceSelectedPathEvidence(
+      networkSnapshotID: "test.snapshot.inspector-v1",
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: edgeIDs
+    )
+  )
+
+  let inspection = await DirectedRoadGraphInspector(graph: graph).inspect(
+    candidate: candidate,
+    request: request,
+    policy: policy
+  )
+  let result = SurfaceEgressHardGateEvaluator.evaluate(
+    candidate: candidate,
+    request: request,
+    policy: policy,
+    inspection: inspection,
+    expectedProviderID: "test.provider"
+  )
+
+  #expect(inspection.resolvedPathEdgeIDs == edgeIDs)
+  #expect(inspection.geometryBindingIsUnambiguous == true)
+  #expect(result.disposition == .accepted)
+}
+
 private let inspectorOrigin = SurfaceCoordinate(latitude: 35, longitude: 139)
 private let inspectorMiddle = SurfaceCoordinate(latitude: 35, longitude: 139.0005)
 private let inspectorAnchor = SurfaceCoordinate(latitude: 35, longitude: 139.001)
@@ -673,6 +881,71 @@ private func makeInspectorCandidate(
     hasHighways: false,
     hasTolls: false,
     selectedPathEvidence: selectedPathEvidence
+  )
+}
+
+private func makeInspectorEgressPolicy() -> SurfaceEgressPolicy {
+  SurfaceEgressPolicy(
+    id: "test.surface-egress-policy.inspector",
+    networkSnapshotID: "test.snapshot.inspector-v1",
+    egressOptionID: "test.egress.inspector",
+    exitFacilityID: "test.exit.inspector",
+    originAnchor: DirectedSurfaceHandoffAnchor(
+      id: "test.surface-handoff.inspector",
+      coordinate: inspectorOrigin,
+      directedSurfaceEdgeID: "test.edge.surface-initial",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 20,
+      maxStartDistanceMeters: 10
+    ),
+    returnTargetBearingToleranceDegrees: 20,
+    maxReturnTargetDistanceMeters: 10,
+    forbiddenExpresswayEdgeIDs: [
+      "test.edge.forbidden-expressway"
+    ],
+    forbiddenTollDomainIDs: ["test.toll.external"]
+  )
+}
+
+private func makeInspectorEgressRequest(
+  policy: SurfaceEgressPolicy
+) -> SurfaceEgressRouteRequest {
+  SurfaceEgressRouteRequest(
+    id: "test.surface-egress-request.inspector",
+    exitFacilityID: policy.exitFacilityID,
+    egressOptionID: policy.egressOptionID,
+    originAnchor: policy.originAnchor,
+    destinationAnchor: DirectedApproachAnchor(
+      id: "test.return-target.inspector",
+      coordinate: inspectorAnchor,
+      directedSurfaceEdgeID: "test.edge.approach",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 20,
+      maxTerminalDistanceMeters: 10
+    )
+  )
+}
+
+private func makeInspectorEgressCandidate(
+  request: SurfaceEgressRouteRequest,
+  edgeIDs: [String]
+) -> SurfaceRouteCandidate {
+  SurfaceRouteCandidate(
+    id: "test.surface-egress-candidate.inspector",
+    providerID: "test.provider",
+    coordinates: [
+      request.originAnchor.coordinate,
+      inspectorMiddle,
+      request.destinationAnchor.coordinate,
+    ],
+    steps: [],
+    distanceMeters: 92,
+    expectedTravelTimeSeconds: 20,
+    selectedPathEvidence: SurfaceSelectedPathEvidence(
+      networkSnapshotID: "test.snapshot.inspector-v1",
+      providerDatasetID: inspectorProviderDatasetID,
+      directedEdgeIDs: edgeIDs
+    )
   )
 }
 

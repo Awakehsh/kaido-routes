@@ -109,6 +109,39 @@ func osrmProviderExecutesBoundedProtocol() async throws {
   #expect(query["exclude"] == "motorway")
 }
 
+@Test("Bounded OSRM egress binds both directed endpoint identities")
+func osrmProviderExecutesBoundedEgressProtocol() async throws {
+  let transport = StubOSRMTransport(
+    responses: [
+      OSRMHTTPResponse(statusCode: 200, body: makeOSRMRouteResponse())
+    ]
+  )
+  let provider = try makeOSRMProvider(transport: transport)
+  let request = makeOSRMEgressRequest()
+
+  let response = await provider.egressRoutes(for: request)
+  guard case .success(let candidates) = response else {
+    Issue.record("Expected one translated OSRM egress candidate")
+    return
+  }
+  let recorded = await transport.recordedRequests()
+  let query = Dictionary(
+    uniqueKeysWithValues: recorded[0].queryItems.map {
+      ($0.name, $0.value)
+    }
+  )
+
+  #expect(
+    candidates[0].selectedPathEvidence?.directedEdgeIDs
+      == ["test.edge.1", "test.edge.2"]
+  )
+  #expect(query["bearings"] == "90,10;90,10")
+  #expect(
+    recorded[0].path
+      == "/route/v1/driving/139.0,35.0;139.002,35.0"
+  )
+}
+
 @Test("Bounded OSRM provider discloses no route")
 func osrmProviderDisclosesNoRoute() async throws {
   let body = try JSONSerialization.data(
@@ -380,6 +413,30 @@ private func makeOSRMFixture() -> EntranceProbeFixture {
         notes: "Synthetic OSRM route origin."
       )
     ]
+  )
+}
+
+private func makeOSRMEgressRequest() -> SurfaceEgressRouteRequest {
+  SurfaceEgressRouteRequest(
+    id: "test.egress-request.osrm",
+    exitFacilityID: "test.exit.osrm",
+    egressOptionID: "test.egress.osrm",
+    originAnchor: DirectedSurfaceHandoffAnchor(
+      id: "test.handoff.osrm",
+      coordinate: osrmCoordinates[0],
+      directedSurfaceEdgeID: "test.edge.1",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxStartDistanceMeters: 2
+    ),
+    destinationAnchor: DirectedApproachAnchor(
+      id: "test.return.osrm",
+      coordinate: osrmCoordinates[2],
+      directedSurfaceEdgeID: "test.edge.2",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxTerminalDistanceMeters: 2
+    )
   )
 }
 

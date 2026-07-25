@@ -176,6 +176,49 @@ func graphHopperProviderExecutesBoundedProtocol() async throws {
   #expect(routeRequest.queryItems.contains(.init(name: "profile", value: "car_surface")))
 }
 
+@Test("Bounded GraphHopper egress binds both directed endpoint identities")
+func graphHopperProviderExecutesBoundedEgressProtocol() async throws {
+  let transport = StubGraphHopperTransport(
+    responses: [
+      GraphHopperHTTPResponse(
+        statusCode: 200,
+        body: makeGraphHopperInfoResponse()
+      ),
+      GraphHopperHTTPResponse(
+        statusCode: 200,
+        body: makeGraphHopperRouteResponse()
+      ),
+    ]
+  )
+  let provider = try makeGraphHopperProvider(transport: transport)
+  let request = makeGraphHopperEgressRequest()
+
+  let response = await provider.egressRoutes(for: request)
+  guard case .success(let candidates) = response else {
+    Issue.record(
+      "Expected one translated GraphHopper egress candidate"
+    )
+    return
+  }
+  let requests = await transport.recordedRequests()
+  let routeRequest = requests[1]
+
+  #expect(
+    candidates[0].selectedPathEvidence?.directedEdgeIDs
+      == ["test.gh.edge.1", "test.gh.edge.2"]
+  )
+  #expect(
+    routeRequest.queryItems.filter {
+      $0.name == "heading"
+    }.map(\.value) == ["90.0", "90.0"]
+  )
+  #expect(
+    routeRequest.queryItems.filter {
+      $0.name == "point"
+    }.map(\.value) == ["35.0,139.0", "35.0,139.002"]
+  )
+}
+
 @Test("Bounded GraphHopper provider rejects terminal OSM way drift")
 func graphHopperProviderRejectsTerminalWayDrift() async throws {
   let transport = StubGraphHopperTransport(
@@ -267,6 +310,32 @@ private func makeGraphHopperProvider(
       ]
     ),
     transport: transport
+  )
+}
+
+private func makeGraphHopperEgressRequest()
+  -> SurfaceEgressRouteRequest
+{
+  SurfaceEgressRouteRequest(
+    id: "test.egress-request.graphhopper",
+    exitFacilityID: "test.exit.graphhopper",
+    egressOptionID: "test.egress.graphhopper",
+    originAnchor: DirectedSurfaceHandoffAnchor(
+      id: "test.handoff.graphhopper",
+      coordinate: graphHopperCoordinates[0],
+      directedSurfaceEdgeID: "test.gh.edge.1",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxStartDistanceMeters: 2
+    ),
+    destinationAnchor: DirectedApproachAnchor(
+      id: "test.return.graphhopper",
+      coordinate: graphHopperCoordinates[2],
+      directedSurfaceEdgeID: "test.gh.edge.2",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxTerminalDistanceMeters: 2
+    )
   )
 }
 

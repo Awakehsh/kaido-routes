@@ -46,6 +46,7 @@ public actor NavigationSession {
   private var engine: NavigationEngine
   private var matcherSession: RouteMatcherSession
   private var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
+  private var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
@@ -60,6 +61,7 @@ public actor NavigationSession {
     matcherSessionConfiguration: RouteMatcherSessionConfiguration = .init(),
     initialMatcherOccurrenceID: String? = nil,
     entryTransitionAdmissionContext: EntryTransitionAdmissionContext? = nil,
+    surfaceEgressAdmissionContext: SurfaceEgressAdmissionContext? = nil,
     requiresRestorationReacquisition: Bool = false
   ) throws {
     guard let routePlan = navigationConfiguration.routePlan else {
@@ -101,6 +103,41 @@ public actor NavigationSession {
         allIssues.append("entry transition first RoutePlan edge binding does not match")
       }
     }
+    if let context = surfaceEgressAdmissionContext {
+      if context.networkSnapshotID != routePlan.networkSnapshotID
+        || context.routePlanID != routePlan.id
+        || context.egressOptionID
+          != navigationConfiguration.selectedEgressOptionID
+      {
+        allIssues.append(
+          "surface egress admission identity does not match runtime"
+        )
+      }
+      let selectedOption = navigationConfiguration.egressOptions.first(
+        where: { $0.id == context.egressOptionID }
+      )
+      if selectedOption?.exitFacilityID != context.exitFacilityID
+        || selectedOption?.isReleased != true
+      {
+        allIssues.append(
+          "surface egress admission option is not released"
+        )
+      }
+      if [
+        context.productReleaseID,
+        context.navigationReleaseID,
+        context.journeyPlanID,
+        context.runtimePolicyID,
+        context.handoffAnchorID,
+        context.directedSurfaceEdgeID,
+      ].contains(where: {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      }) {
+        allIssues.append(
+          "surface egress admission release identity is invalid"
+        )
+      }
+    }
     allIssues = Array(Set(allIssues)).sorted()
     guard allIssues.isEmpty else {
       throw NavigationSessionConfigurationError.invalid(allIssues)
@@ -118,6 +155,9 @@ public actor NavigationSession {
     )
     entryTransitionAdmission = entryTransitionAdmissionContext.map {
       EntryTransitionEvidenceAdmission(context: $0)
+    }
+    surfaceEgressAdmission = surfaceEgressAdmissionContext.map {
+      SurfaceEgressHandoffEvidenceAdmission(context: $0)
     }
     matcherSession = try RouteAwareSwiftMatcher(
       configuration: matcherConfiguration
@@ -255,6 +295,33 @@ public actor NavigationSession {
       status: decision.status,
       rejectionReason: decision.rejectionReason,
       acceptedTransitionEdgeIndex: decision.acceptedTransitionEdgeIndex,
+      navigationSnapshot: engine.snapshot
+    )
+  }
+
+  /// Requires two fresh, forward, release-bound observations on the exact
+  /// ordinary-road handoff edge before leaving `EXIT_TRANSITION`.
+  public func observeSurfaceEgressHandoffEvidence(
+    _ evidence: SurfaceEgressHandoffEvidence
+  ) -> SurfaceEgressHandoffSessionUpdate {
+    guard var admission = surfaceEgressAdmission else {
+      return SurfaceEgressHandoffSessionUpdate(
+        status: .rejected,
+        rejectionReason: .runtimeNotReleaseAdmitted,
+        navigationSnapshot: engine.snapshot
+      )
+    }
+    let decision = admission.admit(
+      evidence,
+      snapshot: engine.snapshot
+    )
+    surfaceEgressAdmission = admission
+    if decision.status == .surfaceEgressEntered {
+      engine.activateSurfaceEgress()
+    }
+    return SurfaceEgressHandoffSessionUpdate(
+      status: decision.status,
+      rejectionReason: decision.rejectionReason,
       navigationSnapshot: engine.snapshot
     )
   }

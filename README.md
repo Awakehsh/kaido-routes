@@ -446,7 +446,12 @@ of released junction views. It may also carry one optional
 `ReleasedSurfaceAccessDefinition` bound to the exact snapshot, RoutePlan,
 directional entrance, first join occurrence, entry transition, compatible exit,
 finish-policy set, and one reviewed release-candidate provider/build identity.
-That identity pins the provider and adapter versions, network snapshot,
+It may additionally carry one `ReleasedSurfaceEgressDefinition` whose policies
+bind exact released egress-option and exit-facility pairs to reviewed
+ordinary-road handoff anchors, return-target tolerances, and explicit
+expressway/toll prohibitions. Surface egress cannot be released without a
+surface-access definition that permits `RETURN_NEAR_ORIGIN`.
+Each provider identity pins the provider and adapter versions, network snapshot,
 provider dataset, build manifest, engine build, validation profile, intended
 use, and declared data-retention review status. The runtime policy binds the directional entry
 transition, released in-domain recovery candidates targeting later RoutePlan
@@ -467,13 +472,14 @@ release. KR-D18 executes this boundary with synthetic data; it does not release
 a real route or dataset.
 
 The navigation bundle now also has a versioned distribution boundary.
-`NavigationReleaseArtifact` schema 5.0 serializes the exact bundle inputs
+`NavigationReleaseArtifact` schema 6.0 serializes the exact bundle inputs
 together with a stable release identity, editor-catalog identity, complete
 Japanese/Simplified-Chinese/English editor presentation, dated source registry,
 and one released evidence record for every distributable asset, including the
 editor presentation under `EDITOR_PRESENTATION` and runtime policy under
 `RUNTIME_POLICY`, plus `SURFACE_ACCESS` whenever that optional definition is
-present. `NavigationRelease`
+present and `SURFACE_EGRESS` whenever a return definition is present.
+`NavigationRelease`
 rejects unknown schemas, missing or orphaned evidence, unused sources,
 source-role drift, junction-view provenance drift, and evidence dated after the
 release before re-running the whole `NavigationReleaseBundle` gate. The codec
@@ -505,8 +511,20 @@ the existing ordered release-bound entry evidence may enter `STRICT_ROUTE`.
 When no surface candidate has been accepted, the existing route-only runtime
 remains unchanged. Checkpoint schema 2.0 binds restoration to the exact
 `journey_plan_id`, so an access session cannot silently restore as route-only.
-`RETURN_NEAR_ORIGIN` remains blocked until a reviewed surface-egress leg is
-released; no provider or UI can synthesize it.
+`RETURN_NEAR_ORIGIN` remains blocked unless that access result freezes an exact
+return target and `ReleasedSurfaceEgressPlanner` obtains an accepted egress
+candidate from a separately released policy. The planner queries every released
+exit policy independently, re-runs exit-side graph inspection and six egress
+hard gates, invokes the package-scoped compiler, then applies the
+release-owned `FASTEST_THEN_SHORTEST` ranking. OSRM, GraphHopper, and Valhalla
+must prove both the reviewed ordinary-road handoff edge and the frozen return
+edge through complete same-snapshot path identity; provider prose and array
+order have no authority. The completed `JourneyPlan` retains the unchanged
+RoutePlan and exact selected egress option. `FINISH_DRIVE` enters
+`EXIT_TRANSITION`; only two fresh HIGH, unambiguous, non-simulated observations
+with increasing progress on the exact release-bound handoff edge may enter
+`SURFACE_EGRESS`. No provider or UI can replace the return target, choose a
+different exit, re-enter the expressway, or manufacture that phase transition.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
@@ -530,7 +548,7 @@ internal consistency only: the repository still has no released real Shuto
 topology slice or production atlas layout.
 
 Neither independently valid artifact can authorize a product build by itself.
-`KaidoProductReleaseArtifact` schema 5.0 contains one complete navigation
+`KaidoProductReleaseArtifact` schema 6.0 contains one complete navigation
 artifact, one complete Route Atlas artifact, and an explicit `runtime_use`
 declaration. `KaidoProductRelease` revalidates both, requires
 exact snapshot and RoutePlan identity, requires a finite positive
@@ -556,7 +574,7 @@ independently valid navigation artifact, one independently valid Route Atlas
 artifact, and explicit release metadata. It fixes runtime use to
 `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE`, rejects synthetic sources, re-runs the
 complete joint gate, writes atomically without overwrite, and emits the same
-schema-5.0 artifact consumed by the App catalog. It cannot convert the current
+schema-6.0 artifact consumed by the App catalog. It cannot convert the current
 review-only K7 candidate or bundled synthetic preview into a product release.
 
 The iPhone build adds a hash-bound catalog in front of that codec. A descriptor
@@ -567,7 +585,7 @@ identity-drifted, duplicate, and ambiguous assets fail closed. The default
 journey selects only an exact compiled `RoutePlan`; it does not fall back by
 route ID or substitute the bundled demo. This app-distribution gate is covered
 at L3 rather than by a new portable scenario because it depends on Apple bundle
-resources, while schema-5.0 product semantics remain portable and
+resources, while schema-6.0 product semantics remain portable and
 codec-authoritative.
 
 The full-network recognition layer is now data-derived instead of hand drawn.
@@ -774,7 +792,7 @@ hard properties that must remain proven as the product expands:
     and its released runtime policy is the only source of entry transition,
     recovery candidates, and legal egress.
 33. structural release validity alone cannot enable live sensors; only one
-    schema-5.0 joint product release with consistent released-road sources and
+    schema-6.0 joint product release with consistent released-road sources and
     explicit foreground policy can mint the exact runtime-bound foreground
     input token, while synthetic or mixed evidence fails closed.
 34. production product authoring retains both independently validated nested

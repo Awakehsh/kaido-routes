@@ -79,7 +79,7 @@ The build:
 
 1. decodes and validates the complete navigation artifact;
 2. decodes and validates the complete Route Atlas artifact;
-3. retains both inputs unchanged in a schema-5.0 product artifact;
+3. retains both inputs unchanged in a schema-6.0 product artifact;
 4. requires exact snapshot and RoutePlan identity;
 5. requires a finite positive actual planned distance;
 6. checks product chronology and atlas coverage for every released editor

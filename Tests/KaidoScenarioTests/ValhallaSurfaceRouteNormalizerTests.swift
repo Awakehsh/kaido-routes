@@ -128,6 +128,54 @@ func valhallaProviderExecutesBoundedProtocol() async throws {
   #expect(traceJSON["encoded_polyline"] as? String == encodeValhallaPolyline6(valhallaCoordinates))
 }
 
+@Test("Bounded Valhalla egress binds both directed endpoint identities")
+func valhallaProviderExecutesBoundedEgressProtocol() async throws {
+  let transport = StubValhallaTransport(
+    responses: [
+      ValhallaHTTPResponse(
+        statusCode: 200,
+        body: makeValhallaRouteResponse()
+      ),
+      ValhallaHTTPResponse(
+        statusCode: 200,
+        body: makeValhallaTraceResponse()
+      ),
+    ]
+  )
+  let provider = try makeValhallaProvider(transport: transport)
+  let request = makeValhallaEgressRequest()
+
+  let response = await provider.egressRoutes(for: request)
+  guard case .success(let candidates) = response else {
+    Issue.record("Expected one translated Valhalla egress candidate")
+    return
+  }
+  let requests = await transport.recordedRequests()
+  let routeJSON = try #require(
+    JSONSerialization.jsonObject(with: requests[0].body)
+      as? [String: Any]
+  )
+  let locations = try #require(
+    routeJSON["locations"] as? [[String: Any]]
+  )
+
+  #expect(
+    candidates[0].selectedPathEvidence?.directedEdgeIDs
+      == ["test.edge.1", "test.edge.2"]
+  )
+  #expect(locations[0]["heading"] as? Int == 90)
+  #expect(locations[0]["heading_tolerance"] as? Int == 10)
+  #expect(
+    (locations[0]["node_snap_tolerance"] as? NSNumber)?
+      .doubleValue == 0
+  )
+  #expect(locations[1]["heading"] as? Int == 90)
+  #expect(
+    (locations[1]["node_snap_tolerance"] as? NSNumber)?
+      .doubleValue == 0
+  )
+}
+
 @Test("Bounded Valhalla provider discloses a no-route response")
 func valhallaProviderDisclosesNoRoute() async throws {
   let errorBody = try JSONSerialization.data(
@@ -187,6 +235,32 @@ private func makeValhallaProvider(
       ]
     ),
     transport: transport
+  )
+}
+
+private func makeValhallaEgressRequest()
+  -> SurfaceEgressRouteRequest
+{
+  SurfaceEgressRouteRequest(
+    id: "test.egress-request.valhalla",
+    exitFacilityID: "test.exit.valhalla",
+    egressOptionID: "test.egress.valhalla",
+    originAnchor: DirectedSurfaceHandoffAnchor(
+      id: "test.handoff.valhalla",
+      coordinate: valhallaCoordinates[0],
+      directedSurfaceEdgeID: "test.edge.1",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxStartDistanceMeters: 2
+    ),
+    destinationAnchor: DirectedApproachAnchor(
+      id: "test.return.valhalla",
+      coordinate: valhallaCoordinates[2],
+      directedSurfaceEdgeID: "test.edge.2",
+      expectedBearingDegrees: 90,
+      bearingToleranceDegrees: 10,
+      maxTerminalDistanceMeters: 2
+    )
   )
 }
 

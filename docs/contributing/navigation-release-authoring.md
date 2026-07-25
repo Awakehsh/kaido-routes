@@ -2,7 +2,7 @@
 
 `kaido-release build-navigation` is the production assembly boundary between
 reviewed navigation runtime assets, their reviewed provenance, and the
-schema-5.0 artifact consumed by the product-release pipeline. It does not
+schema-6.0 artifact consumed by the product-release pipeline. It does not
 derive topology, author a RoutePlan, create guidance, promote evidence, or
 select a synthetic mode.
 
@@ -24,7 +24,10 @@ The schema-1.0 draft contains the exact immutable runtime assets:
   movement;
 - the optional exact junction-view registry; and
 - the optional exact surface-access definition, including its reviewed
-  release-candidate provider/build identity.
+  release-candidate provider/build identity; and
+- the optional exact surface-egress definition, including released exit
+  policies, ordinary-road handoff anchors, and its independently pinned
+  provider/build identity.
 
 The root JSON keys are:
 
@@ -41,6 +44,7 @@ decision_zones
 released_guidance
 junction_views
 surface_access_definition
+surface_egress_definition
 ```
 
 The draft has no release ID, release time, source registry, or evidence state.
@@ -53,6 +57,13 @@ use, plus the provider's declared data-retention review status. The latter is
 an exact configuration identity, not a claim that future live responses were
 reviewed in advance. Runtime provider selection is not supplied by the App or
 CLI after release.
+
+When `surface_egress_definition` is present, surface access must also be
+present and must permit `RETURN_NEAR_ORIGIN`. Each policy must bind one unique
+released runtime egress option to the same exact exit facility, snapshot, and
+ordinary-road handoff anchor. Return-target coordinates and directed-edge
+identity are not authoring inputs here; runtime derives them only from the
+accepted surface-access candidate.
 
 ## Configuration
 
@@ -77,8 +88,9 @@ SHA-256 values, licences, and explicit asset roles as
 - matcher corridor;
 - every DecisionZone;
 - every guidance prompt;
-- every junction view; and
-- the surface-access definition when present.
+- every junction view;
+- the surface-access definition when present; and
+- the surface-egress definition when present.
 
 Every source must be used, every evidence record must resolve to a source whose
 role permits it, and neither source nor evidence review may postdate

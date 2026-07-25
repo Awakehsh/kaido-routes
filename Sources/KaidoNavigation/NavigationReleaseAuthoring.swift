@@ -24,6 +24,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
   public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
+  public let surfaceEgressDefinition: ReleasedSurfaceEgressDefinition?
 
   public init(
     schemaVersion: String = NavigationReleaseDraft.currentSchemaVersion,
@@ -37,7 +38,8 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition] = [],
-    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil,
+    surfaceEgressDefinition: ReleasedSurfaceEgressDefinition? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.editorCatalogID = editorCatalogID
@@ -51,6 +53,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
     self.surfaceAccessDefinition = surfaceAccessDefinition
+    self.surfaceEgressDefinition = surfaceEgressDefinition
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -66,6 +69,7 @@ public struct NavigationReleaseDraft: Codable, Equatable, Sendable {
     case releasedGuidance = "released_guidance"
     case junctionViews = "junction_views"
     case surfaceAccessDefinition = "surface_access_definition"
+    case surfaceEgressDefinition = "surface_egress_definition"
   }
 }
 
@@ -167,7 +171,8 @@ public enum NavigationReleaseAuthor {
       decisionZones: draft.decisionZones,
       releasedGuidance: draft.releasedGuidance,
       junctionViews: draft.junctionViews,
-      surfaceAccessDefinition: draft.surfaceAccessDefinition
+      surfaceAccessDefinition: draft.surfaceAccessDefinition,
+      surfaceEgressDefinition: draft.surfaceEgressDefinition
     )
     do {
       _ = try NavigationRelease(artifact: artifact)

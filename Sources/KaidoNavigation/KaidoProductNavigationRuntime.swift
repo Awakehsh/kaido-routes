@@ -15,6 +15,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
   public let release: KaidoProductRelease
   public let session: NavigationSession
   public let entryTransitionAdmissionContext: EntryTransitionAdmissionContext
+  public let surfaceEgressAdmissionContext: SurfaceEgressAdmissionContext?
   public let journeyPlan: JourneyPlan
   public let origin: KaidoProductNavigationRuntimeOrigin
 
@@ -114,8 +115,35 @@ public struct KaidoProductNavigationRuntime: Sendable {
       matcherCorridor: bundle.matcherCorridor,
       firstRouteDirectedEdgeID: firstRouteBinding.directedEdgeID
     )
+    let surfaceEgressAdmissionContext: SurfaceEgressAdmissionContext?
+    if let selectedEgressOptionID =
+      journeyPlan.selectedEgressOptionID,
+      let egressLeg = journeyPlan.egressLeg,
+      let definition = bundle.surfaceEgressDefinition,
+      let policy = definition.policies.first(where: {
+        $0.egressOptionID == selectedEgressOptionID
+      })
+    {
+      surfaceEgressAdmissionContext = SurfaceEgressAdmissionContext(
+        productReleaseID: release.releaseID,
+        navigationReleaseID: release.navigation.releaseID,
+        journeyPlanID: journeyPlan.id,
+        runtimePolicyID: bundle.runtimePolicy.id,
+        networkSnapshotID: bundle.networkSnapshot.id,
+        routePlanID: bundle.routePlan.id,
+        egressOptionID: selectedEgressOptionID,
+        exitFacilityID: policy.exitFacilityID,
+        handoffAnchorID: policy.originAnchor.id,
+        directedSurfaceEdgeID:
+          egressLeg.directedEdgeIDs.first ?? ""
+      )
+    } else {
+      surfaceEgressAdmissionContext = nil
+    }
     self.release = release
     self.entryTransitionAdmissionContext = entryTransitionAdmissionContext
+    self.surfaceEgressAdmissionContext =
+      surfaceEgressAdmissionContext
     self.journeyPlan = journeyPlan
     let initialSnapshot: NavigationSnapshot
     let initialMatcherOccurrenceID: String?
@@ -148,6 +176,7 @@ public struct KaidoProductNavigationRuntime: Sendable {
         entryTransition: bundle.runtimePolicy.entryTransition,
         recoveryCandidates: bundle.runtimePolicy.recoveryCandidates,
         egressOptions: bundle.runtimePolicy.egressOptions,
+        selectedEgressOptionID: journeyPlan.selectedEgressOptionID,
         releasedGuidance: bundle.releasedGuidance
       ),
       matcherCorridor: bundle.matcherCorridor,
@@ -155,6 +184,8 @@ public struct KaidoProductNavigationRuntime: Sendable {
       initialNavigationSnapshot: initialSnapshot,
       initialMatcherOccurrenceID: initialMatcherOccurrenceID,
       entryTransitionAdmissionContext: entryTransitionAdmissionContext,
+      surfaceEgressAdmissionContext:
+        surfaceEgressAdmissionContext,
       requiresRestorationReacquisition:
         requiresRestorationReacquisition
     )

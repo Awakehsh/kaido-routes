@@ -188,7 +188,8 @@ public struct DirectedRoadGraphInspectorConfiguration: Codable, Equatable, Senda
 /// deliberately fails closed when graph coverage, direction, or topology is
 /// unresolved.
 public struct DirectedRoadGraphInspector:
-  SurfaceCandidateInspector, SurfaceApproachCandidateInspector
+  SurfaceCandidateInspector, SurfaceApproachCandidateInspector,
+  SurfaceEgressCandidateInspector
 {
   public let graph: SurfaceRoadGraphSnapshot
   public let configuration: DirectedRoadGraphInspectorConfiguration
@@ -328,12 +329,165 @@ public struct DirectedRoadGraphInspector:
     )
   }
 
+  public func inspect(
+    candidate: SurfaceRouteCandidate,
+    request: SurfaceEgressRouteRequest,
+    policy: SurfaceEgressPolicy
+  ) async -> SurfaceEgressCandidateInspection {
+    guard graph.networkSnapshotID == policy.networkSnapshotID,
+      graph.isStructurallyValid,
+      measuredEdges.count == graph.edges.count,
+      configuration.isValid,
+      candidate.coordinates.count >= 2,
+      candidate.coordinates.allSatisfy(\.isValid),
+      let samples = routeSamples(for: candidate.coordinates),
+      let startHeading = samples.first?.headingDegrees,
+      let terminalHeading = samples.last?.headingDegrees
+    else {
+      return failedEgressInspection()
+    }
+
+    if let selectedPathEvidence = candidate.selectedPathEvidence {
+      return inspectSelectedEgressPath(
+        selectedPathEvidence,
+        candidate: candidate,
+        request: request,
+        policy: policy,
+        samples: samples,
+        startHeading: startHeading,
+        terminalHeading: terminalHeading
+      )
+    }
+
+    var matchesBySample = samples.map {
+      edgeMatches(
+        at: $0.coordinate,
+        headingDegrees: $0.headingDegrees,
+        measuredEdges: measuredEdges
+      )
+    }
+    let unmatchedSampleCount = matchesBySample.count { $0.isEmpty }
+    let startMatches = matchesBySample.first ?? []
+    let startMatch = preferredTerminalMatch(
+      matches: startMatches,
+      expectedEdgeID: request.originAnchor.directedSurfaceEdgeID
+    )
+    if let startMatch,
+      startMatch.edge.id == request.originAnchor.directedSurfaceEdgeID
+    {
+      matchesBySample[0] = [startMatch]
+    }
+    let terminalMatches = matchesBySample.last ?? []
+    let terminalMatch = preferredTerminalMatch(
+      matches: terminalMatches,
+      expectedEdgeID: request.destinationAnchor.directedSurfaceEdgeID
+    )
+    if let terminalMatch,
+      terminalMatch.edge.id
+        == request.destinationAnchor.directedSurfaceEdgeID
+    {
+      matchesBySample[matchesBySample.count - 1] = [terminalMatch]
+    }
+
+    let outgoingEdges = makeOutgoingEdges(from: graph.edges)
+    let selection = selectContinuousSequence(
+      samples: samples,
+      matchesBySample: matchesBySample,
+      outgoingEdges: outgoingEdges,
+      edgeLengths: edgeLengths
+    )
+    let pointwiseEdges = matchesBySample.compactMap { $0.first?.edge }
+    let matchedEdges = selection?.sampleEdges ?? pointwiseEdges
+    let matchedSequence = collapseAdjacentDuplicates(in: matchedEdges)
+    let fallbackResolvedEdges = resolveContinuousPath(
+      matchedSequence,
+      outgoingEdges: outgoingEdges
+    )
+    let inspectedEdges =
+      selection?.resolvedEdges ?? fallbackResolvedEdges ?? matchedSequence
+    let disconnectedEdgeIDs =
+      selection == nil
+      ? disconnectedEdgePairs(
+        in: matchedSequence,
+        outgoingEdges: outgoingEdges
+      ) : []
+    let ambiguousEdgeIDs =
+      selection?.ambiguousEdgeIDs
+      ?? pointwiseAmbiguousEdgeIDs(matchesBySample)
+    let selectedStartMatch = matchedEdges.first.flatMap { selectedEdge in
+      startMatches.first { $0.edge.id == selectedEdge.id }
+    }
+    let selectedTerminalMatch = matchedEdges.last.flatMap { selectedEdge in
+      terminalMatches.first { $0.edge.id == selectedEdge.id }
+    }
+    let handoffBinding = selectedStartMatch.map {
+      SurfaceHandoffBindingObservation(
+        anchorID: request.originAnchor.id,
+        directedSurfaceEdgeID: $0.edge.id,
+        startDistanceMeters: distanceMeters(
+          from: candidate.coordinates[0],
+          to: request.originAnchor.coordinate
+        ),
+        startBearingDegrees: startHeading
+      )
+    }
+    let returnTargetBinding = selectedTerminalMatch.map {
+      AnchorBindingObservation(
+        anchorID: request.destinationAnchor.id,
+        directedSurfaceEdgeID: $0.edge.id,
+        terminalDistanceMeters: distanceMeters(
+          from: candidate.coordinates[candidate.coordinates.count - 1],
+          to: request.destinationAnchor.coordinate
+        ),
+        terminalBearingDegrees: terminalHeading
+      )
+    }
+    let geometryIsUnambiguous =
+      unmatchedSampleCount == 0
+      && selection != nil
+      && ambiguousEdgeIDs.isEmpty
+      && handoffBinding != nil
+      && returnTargetBinding != nil
+
+    return SurfaceEgressCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
+      handoffBinding: handoffBinding,
+      returnTargetBinding: returnTargetBinding,
+      geometryBindingIsUnambiguous: geometryIsUnambiguous,
+      expresswayEdgeIDsAfterExit: geometryIsUnambiguous
+        ? uniqueIDs(
+          inspectedEdges.filter { $0.kind != .ordinaryRoad }.map(\.id)
+        ) : nil,
+      crossedTollDomainIDs: geometryIsUnambiguous
+        ? uniqueIDs(inspectedEdges.compactMap(\.tollDomainID)) : nil,
+      unmatchedSampleCount: unmatchedSampleCount,
+      ambiguousDirectedEdgeIDs: uniqueIDs(ambiguousEdgeIDs),
+      disconnectedDirectedEdgeIDs: disconnectedEdgeIDs,
+      resolvedPathEdgeIDs: inspectedEdges.map(\.id)
+    )
+  }
+
   private func failedInspection() -> SurfaceCandidateInspection {
     SurfaceCandidateInspection(
       networkSnapshotID: graph.networkSnapshotID,
       anchorBinding: nil,
       geometryBindingIsUnambiguous: false,
       expresswayEdgeIDsBeforeEntry: nil,
+      crossedTollDomainIDs: nil,
+      unmatchedSampleCount: nil,
+      ambiguousDirectedEdgeIDs: nil,
+      disconnectedDirectedEdgeIDs: nil,
+      resolvedPathEdgeIDs: nil
+    )
+  }
+
+  private func failedEgressInspection() -> SurfaceEgressCandidateInspection {
+    SurfaceEgressCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
+      handoffBinding: nil,
+      returnTargetBinding: nil,
+      geometryBindingIsUnambiguous: false,
+      expresswayEdgeIDsAfterExit: nil,
       crossedTollDomainIDs: nil,
       unmatchedSampleCount: nil,
       ambiguousDirectedEdgeIDs: nil,
@@ -354,8 +508,7 @@ public struct DirectedRoadGraphInspector:
       evidence.networkSnapshotID == policy.networkSnapshotID,
       !evidence.providerDatasetID.isEmpty,
       evidence.providerDatasetID == graph.provenance?.sourceDatasetID,
-      !evidence.directedEdgeIDs.isEmpty,
-      Set(evidence.directedEdgeIDs).count == evidence.directedEdgeIDs.count
+      !evidence.directedEdgeIDs.isEmpty
     else {
       return failedInspection()
     }
@@ -375,8 +528,11 @@ public struct DirectedRoadGraphInspector:
       )
     }
 
-    let selectedMeasuredEdges = selectedEdges.compactMap(MeasuredEdge.init(edge:))
-    guard selectedMeasuredEdges.count == selectedEdges.count else {
+    let uniqueSelectedEdges = uniqueEdgesByID(selectedEdges)
+    let selectedMeasuredEdges = uniqueSelectedEdges.compactMap(
+      MeasuredEdge.init(edge:)
+    )
+    guard selectedMeasuredEdges.count == uniqueSelectedEdges.count else {
       return invalidSelectedPathInspection(edgeIDs: evidence.directedEdgeIDs)
     }
     let selectedEdgeLengths = Dictionary(
@@ -404,7 +560,7 @@ public struct DirectedRoadGraphInspector:
     let selection = selectContinuousSequence(
       samples: samples,
       matchesBySample: matchesBySample,
-      outgoingEdges: makeOutgoingEdges(from: selectedEdges),
+      outgoingEdges: makeOutgoingEdges(from: uniqueSelectedEdges),
       edgeLengths: selectedEdgeLengths
     )
     let selectionMatchesEvidence =
@@ -442,6 +598,165 @@ public struct DirectedRoadGraphInspector:
       disconnectedDirectedEdgeIDs: selectionMatchesEvidence
         ? [] : evidence.directedEdgeIDs,
       resolvedPathEdgeIDs: evidence.directedEdgeIDs
+    )
+  }
+
+  private func inspectSelectedEgressPath(
+    _ evidence: SurfaceSelectedPathEvidence,
+    candidate: SurfaceRouteCandidate,
+    request: SurfaceEgressRouteRequest,
+    policy: SurfaceEgressPolicy,
+    samples: [RouteSample],
+    startHeading: Double,
+    terminalHeading: Double
+  ) -> SurfaceEgressCandidateInspection {
+    guard evidence.networkSnapshotID == graph.networkSnapshotID,
+      evidence.networkSnapshotID == policy.networkSnapshotID,
+      !evidence.providerDatasetID.isEmpty,
+      evidence.providerDatasetID == graph.provenance?.sourceDatasetID,
+      !evidence.directedEdgeIDs.isEmpty
+    else {
+      return failedEgressInspection()
+    }
+    let missingEdgeIDs = evidence.directedEdgeIDs.filter {
+      edgesByID[$0] == nil
+    }
+    guard missingEdgeIDs.isEmpty else {
+      return invalidSelectedEgressPathInspection(edgeIDs: missingEdgeIDs)
+    }
+    let selectedEdges = evidence.directedEdgeIDs.compactMap { edgesByID[$0] }
+    let disconnectedEdgeIDs = exactDisconnectedEdgeIDs(in: selectedEdges)
+    guard disconnectedEdgeIDs.isEmpty,
+      selectedEdges.first?.id
+        == request.originAnchor.directedSurfaceEdgeID,
+      selectedEdges.last?.id
+        == request.destinationAnchor.directedSurfaceEdgeID
+    else {
+      return invalidSelectedEgressPathInspection(
+        edgeIDs: disconnectedEdgeIDs.isEmpty
+          ? evidence.directedEdgeIDs : disconnectedEdgeIDs
+      )
+    }
+
+    let uniqueSelectedEdges = uniqueEdgesByID(selectedEdges)
+    let selectedMeasuredEdges = uniqueSelectedEdges.compactMap(
+      MeasuredEdge.init(edge:)
+    )
+    guard selectedMeasuredEdges.count == uniqueSelectedEdges.count else {
+      return invalidSelectedEgressPathInspection(
+        edgeIDs: evidence.directedEdgeIDs
+      )
+    }
+    let selectedEdgeLengths = Dictionary(
+      uniqueKeysWithValues: selectedMeasuredEdges.map {
+        ($0.edge.id, $0.lengthMeters)
+      }
+    )
+    var matchesBySample = samples.map {
+      edgeMatches(
+        at: $0.coordinate,
+        headingDegrees: $0.headingDegrees,
+        measuredEdges: selectedMeasuredEdges
+      )
+    }
+    let unmatchedSampleCount = matchesBySample.count { $0.isEmpty }
+    let startMatches = matchesBySample.first ?? []
+    let startMatch = preferredTerminalMatch(
+      matches: startMatches,
+      expectedEdgeID: request.originAnchor.directedSurfaceEdgeID
+    )
+    if let startMatch,
+      startMatch.edge.id == request.originAnchor.directedSurfaceEdgeID
+    {
+      matchesBySample[0] = [startMatch]
+    }
+    let terminalMatches = matchesBySample.last ?? []
+    let terminalMatch = preferredTerminalMatch(
+      matches: terminalMatches,
+      expectedEdgeID: request.destinationAnchor.directedSurfaceEdgeID
+    )
+    if let terminalMatch,
+      terminalMatch.edge.id
+        == request.destinationAnchor.directedSurfaceEdgeID
+    {
+      matchesBySample[matchesBySample.count - 1] = [terminalMatch]
+    }
+
+    let selection = selectContinuousSequence(
+      samples: samples,
+      matchesBySample: matchesBySample,
+      outgoingEdges: makeOutgoingEdges(from: uniqueSelectedEdges),
+      edgeLengths: selectedEdgeLengths
+    )
+    let selectionMatchesEvidence =
+      selection?.resolvedEdges.map(\.id) == evidence.directedEdgeIDs
+    let selectedStartMatch = startMatches.first {
+      $0.edge.id == request.originAnchor.directedSurfaceEdgeID
+    }
+    let selectedTerminalMatch = terminalMatches.first {
+      $0.edge.id == request.destinationAnchor.directedSurfaceEdgeID
+    }
+    let handoffBinding = selectedStartMatch.map {
+      SurfaceHandoffBindingObservation(
+        anchorID: request.originAnchor.id,
+        directedSurfaceEdgeID: $0.edge.id,
+        startDistanceMeters: distanceMeters(
+          from: candidate.coordinates[0],
+          to: request.originAnchor.coordinate
+        ),
+        startBearingDegrees: startHeading
+      )
+    }
+    let returnTargetBinding = selectedTerminalMatch.map {
+      AnchorBindingObservation(
+        anchorID: request.destinationAnchor.id,
+        directedSurfaceEdgeID: $0.edge.id,
+        terminalDistanceMeters: distanceMeters(
+          from: candidate.coordinates[candidate.coordinates.count - 1],
+          to: request.destinationAnchor.coordinate
+        ),
+        terminalBearingDegrees: terminalHeading
+      )
+    }
+    let geometryIsBound =
+      unmatchedSampleCount == 0
+      && selectionMatchesEvidence
+      && handoffBinding != nil
+      && returnTargetBinding != nil
+
+    return SurfaceEgressCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
+      handoffBinding: handoffBinding,
+      returnTargetBinding: returnTargetBinding,
+      geometryBindingIsUnambiguous: geometryIsBound,
+      expresswayEdgeIDsAfterExit: geometryIsBound
+        ? uniqueIDs(
+          selectedEdges.filter { $0.kind != .ordinaryRoad }.map(\.id)
+        ) : nil,
+      crossedTollDomainIDs: geometryIsBound
+        ? uniqueIDs(selectedEdges.compactMap(\.tollDomainID)) : nil,
+      unmatchedSampleCount: unmatchedSampleCount,
+      ambiguousDirectedEdgeIDs: [],
+      disconnectedDirectedEdgeIDs: selectionMatchesEvidence
+        ? [] : evidence.directedEdgeIDs,
+      resolvedPathEdgeIDs: evidence.directedEdgeIDs
+    )
+  }
+
+  private func invalidSelectedEgressPathInspection(
+    edgeIDs: [String]
+  ) -> SurfaceEgressCandidateInspection {
+    SurfaceEgressCandidateInspection(
+      networkSnapshotID: graph.networkSnapshotID,
+      handoffBinding: nil,
+      returnTargetBinding: nil,
+      geometryBindingIsUnambiguous: false,
+      expresswayEdgeIDsAfterExit: nil,
+      crossedTollDomainIDs: nil,
+      unmatchedSampleCount: nil,
+      ambiguousDirectedEdgeIDs: [],
+      disconnectedDirectedEdgeIDs: uniqueIDs(edgeIDs),
+      resolvedPathEdgeIDs: nil
     )
   }
 
@@ -826,6 +1141,13 @@ public struct DirectedRoadGraphInspector:
   private func uniqueIDs(_ ids: [String]) -> [String] {
     var seen: Set<String> = []
     return ids.filter { seen.insert($0).inserted }
+  }
+
+  private func uniqueEdgesByID(
+    _ edges: [SurfaceRoadEdge]
+  ) -> [SurfaceRoadEdge] {
+    var seen: Set<String> = []
+    return edges.filter { seen.insert($0.id).inserted }
   }
 }
 

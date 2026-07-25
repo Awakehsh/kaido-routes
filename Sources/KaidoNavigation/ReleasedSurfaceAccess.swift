@@ -125,6 +125,112 @@ public struct ReleasedSurfaceAccessDefinition: Codable, Equatable, Sendable {
   }
 }
 
+public enum SurfaceEgressSelectionPolicy: String, Codable, Sendable {
+  case fastestThenShortest = "FASTEST_THEN_SHORTEST"
+}
+
+public enum ReleasedSurfaceEgressIssue: String, Hashable, Sendable {
+  case invalidIdentity = "INVALID_RELEASED_SURFACE_EGRESS_IDENTITY"
+  case routePlanMismatch = "SURFACE_EGRESS_ROUTE_PLAN_MISMATCH"
+  case invalidProviderIdentity = "INVALID_RELEASED_SURFACE_EGRESS_PROVIDER_IDENTITY"
+  case providerSnapshotMismatch = "SURFACE_EGRESS_PROVIDER_NETWORK_SNAPSHOT_MISMATCH"
+  case invalidPolicies = "INVALID_RELEASED_SURFACE_EGRESS_POLICIES"
+  case policySnapshotMismatch = "SURFACE_EGRESS_POLICY_NETWORK_SNAPSHOT_MISMATCH"
+  case unknownEgressOption = "SURFACE_EGRESS_UNKNOWN_EGRESS_OPTION"
+  case exitFacilityMismatch = "SURFACE_EGRESS_EXIT_FACILITY_MISMATCH"
+  case surfaceAccessNotReleased = "SURFACE_EGRESS_ACCESS_NOT_RELEASED"
+  case returnPolicyNotReleased = "SURFACE_EGRESS_RETURN_POLICY_NOT_RELEASED"
+}
+
+/// Reviewed ordinary-road return constraints for exact released exit options.
+///
+/// The definition authorizes neither a destination-first reroute nor an
+/// expressway re-entry. A return request is derived from the accepted access
+/// leg and must pass one policy's complete surface hard gates.
+public struct ReleasedSurfaceEgressDefinition: Codable, Equatable, Sendable {
+  public let id: String
+  public let routePlanID: String
+  public let providerIdentity: SurfaceRouteProviderReleaseIdentity
+  public let selectionPolicy: SurfaceEgressSelectionPolicy
+  public let policies: [SurfaceEgressPolicy]
+
+  public init(
+    id: String,
+    routePlanID: String,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity,
+    selectionPolicy: SurfaceEgressSelectionPolicy = .fastestThenShortest,
+    policies: [SurfaceEgressPolicy]
+  ) {
+    self.id = id
+    self.routePlanID = routePlanID
+    self.providerIdentity = providerIdentity
+    self.selectionPolicy = selectionPolicy
+    self.policies = policies
+  }
+
+  public func validationIssues(
+    networkSnapshot: NetworkSnapshot,
+    routePlan: RoutePlan,
+    runtimePolicy: ReleasedNavigationRuntimePolicy
+  ) -> [ReleasedSurfaceEgressIssue] {
+    var issues: [ReleasedSurfaceEgressIssue] = []
+    if normalized(id).isEmpty {
+      issues.append(.invalidIdentity)
+    }
+    if routePlanID != routePlan.id {
+      issues.append(.routePlanMismatch)
+    }
+    if !providerIdentity.validationIssues.isEmpty {
+      issues.append(.invalidProviderIdentity)
+    }
+    if providerIdentity.networkSnapshotID != networkSnapshot.id {
+      issues.append(.providerSnapshotMismatch)
+    }
+    let policyIDs = policies.map(\.id)
+    let egressOptionIDs = policies.map(\.egressOptionID)
+    if policies.isEmpty
+      || policyIDs.contains(where: { normalized($0).isEmpty })
+      || Set(policyIDs).count != policyIDs.count
+      || Set(egressOptionIDs).count != egressOptionIDs.count
+      || policies.contains(where: { !$0.validationIssues.isEmpty })
+    {
+      issues.append(.invalidPolicies)
+    }
+
+    let optionsByID = Dictionary(
+      runtimePolicy.egressOptions.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
+    for policy in policies {
+      if policy.networkSnapshotID != networkSnapshot.id {
+        issues.append(.policySnapshotMismatch)
+      }
+      guard let option = optionsByID[policy.egressOptionID],
+        option.isReleased
+      else {
+        issues.append(.unknownEgressOption)
+        continue
+      }
+      if policy.exitFacilityID != option.exitFacilityID {
+        issues.append(.exitFacilityMismatch)
+      }
+    }
+    return Array(Set(issues)).sorted { $0.rawValue < $1.rawValue }
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case id = "surface_egress_definition_id"
+    case routePlanID = "route_plan_id"
+    case providerIdentity = "provider_identity"
+    case selectionPolicy = "selection_policy"
+    case policies
+  }
+
+  private func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+}
+
 public enum JourneySurfaceLegRole: String, Codable, Sendable {
   case access = "SURFACE_ACCESS"
   case egress = "SURFACE_EGRESS"
@@ -153,6 +259,17 @@ public struct JourneySurfaceLeg: Equatable, Sendable {
   }
 }
 
+/// Exact return target frozen from an accepted surface-access candidate.
+///
+/// The value is intentionally runtime-only. Checkpoint restoration requires
+/// the caller to present the same immutable JourneyPlan.
+public struct JourneyReturnTarget: Equatable, Sendable {
+  public let id: String
+  public let coordinate: SurfaceCoordinate
+  public let directedSurfaceEdgeID: String
+  public let expectedBearingDegrees: Double
+}
+
 /// One immutable product journey composition around the authoritative RoutePlan.
 public struct JourneyPlan: Equatable, Sendable {
   public let id: String
@@ -162,6 +279,7 @@ public struct JourneyPlan: Equatable, Sendable {
   public let routePlanID: String
   public let originID: String?
   public let accessLeg: JourneySurfaceLeg?
+  public let returnTarget: JourneyReturnTarget?
   public let entryTransition: EntryTransition
   public let finishPolicy: JourneyFinishPolicy
   public let precomputedEgressOptions: [EgressOption]
@@ -180,9 +298,12 @@ public enum JourneyPlanRuntimeAdmissionIssue: String, Hashable, Sendable {
   case surfaceAccessNotReleased = "JOURNEY_PLAN_SURFACE_ACCESS_NOT_RELEASED"
   case invalidSurfaceAccessLeg = "INVALID_JOURNEY_PLAN_SURFACE_ACCESS_LEG"
   case surfaceAccessReleaseMismatch = "JOURNEY_PLAN_SURFACE_ACCESS_RELEASE_MISMATCH"
+  case invalidReturnTarget = "INVALID_JOURNEY_PLAN_RETURN_TARGET"
   case finishPolicyNotReleased = "JOURNEY_PLAN_FINISH_POLICY_NOT_RELEASED"
   case invalidFinishComposition = "INVALID_JOURNEY_PLAN_FINISH_COMPOSITION"
   case surfaceEgressNotReleased = "JOURNEY_PLAN_SURFACE_EGRESS_NOT_RELEASED"
+  case invalidSurfaceEgressLeg = "INVALID_JOURNEY_PLAN_SURFACE_EGRESS_LEG"
+  case surfaceEgressReleaseMismatch = "JOURNEY_PLAN_SURFACE_EGRESS_RELEASE_MISMATCH"
   case invalidInitialPhase = "INVALID_JOURNEY_PLAN_INITIAL_PHASE"
   case routeOnlyCompositionMismatch = "JOURNEY_PLAN_ROUTE_ONLY_COMPOSITION_MISMATCH"
 }
@@ -194,10 +315,12 @@ public enum JourneyPlanRuntimeAdmissionError: Error, Equatable, Sendable {
 public enum JourneyPlanCompilerError: Error, Equatable, Sendable {
   case surfaceAccessNotReleased
   case invalidReleasedSurfaceAccess([ReleasedSurfaceAccessIssue])
+  case invalidReleasedSurfaceEgress([ReleasedSurfaceEgressIssue])
   case providerIdentityMismatch
   case invalidRequest([String])
   case inspectionSnapshotMismatch
   case candidateRejected([HardGateResult])
+  case egressCandidateRejected([SurfaceEgressHardGateResult])
   case invalidResolvedPath
   case selectedPathEvidenceMismatch
   case finishPolicyNotReleased(JourneyFinishPolicy)
@@ -217,6 +340,7 @@ public enum JourneyPlanCompiler {
       routePlanID: bundle.routePlan.id,
       originID: nil,
       accessLeg: nil,
+      returnTarget: nil,
       entryTransition: bundle.runtimePolicy.entryTransition,
       finishPolicy: .finishOnRequest,
       precomputedEgressOptions: bundle.runtimePolicy.egressOptions,
@@ -277,6 +401,19 @@ public enum JourneyPlanCompiler {
         throw JourneyPlanCompilerError.selectedPathEvidenceMismatch
       }
     }
+    guard
+      let returnBearing = initialBearingDegrees(
+        coordinates: candidate.coordinates
+      ), let returnEdgeID = directedEdgeIDs.first
+    else {
+      throw JourneyPlanCompilerError.invalidResolvedPath
+    }
+    let returnTarget = JourneyReturnTarget(
+      id: request.originID,
+      coordinate: request.origin,
+      directedSurfaceEdgeID: returnEdgeID,
+      expectedBearingDegrees: returnBearing
+    )
 
     let selectedEgressOptionID: String?
     switch finishPolicy {
@@ -291,7 +428,7 @@ public enum JourneyPlanCompiler {
     case .finishOnRequest:
       selectedEgressOptionID = nil
     case .returnNearOrigin:
-      throw JourneyPlanCompilerError.surfaceEgressNotReleased
+      selectedEgressOptionID = nil
     }
 
     let accessLeg = JourneySurfaceLeg(
@@ -316,6 +453,7 @@ public enum JourneyPlanCompiler {
       routePlanID: bundle.routePlan.id,
       originID: request.originID,
       accessLeg: accessLeg,
+      returnTarget: returnTarget,
       entryTransition: bundle.runtimePolicy.entryTransition,
       finishPolicy: finishPolicy,
       precomputedEgressOptions: bundle.runtimePolicy.egressOptions,
@@ -349,7 +487,9 @@ public enum JourneyPlanCompiler {
     guard definition.allowedFinishPolicies.contains(finishPolicy) else {
       throw JourneyPlanCompilerError.finishPolicyNotReleased(finishPolicy)
     }
-    if finishPolicy == .returnNearOrigin {
+    if finishPolicy == .returnNearOrigin,
+      bundle.surfaceEgressDefinition == nil
+    {
       throw JourneyPlanCompilerError.surfaceEgressNotReleased
     }
 
@@ -379,8 +519,206 @@ public enum JourneyPlanCompiler {
     return definition
   }
 
+  package static func surfaceEgress(
+    release: KaidoProductRelease,
+    basePlan: JourneyPlan,
+    request: SurfaceEgressRouteRequest,
+    candidate: SurfaceRouteCandidate,
+    inspection: SurfaceEgressCandidateInspection,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity
+  ) throws -> JourneyPlan {
+    let policy = try surfaceEgressPreflight(
+      release: release,
+      basePlan: basePlan,
+      request: request,
+      providerIdentity: providerIdentity
+    )
+    let bundle = release.navigation.bundle
+    guard inspection.networkSnapshotID == bundle.networkSnapshot.id else {
+      throw JourneyPlanCompilerError.inspectionSnapshotMismatch
+    }
+    let evaluation = SurfaceEgressHardGateEvaluator.evaluate(
+      candidate: candidate,
+      request: request,
+      policy: policy,
+      inspection: inspection,
+      expectedProviderID: providerIdentity.providerID
+    )
+    guard evaluation.isAccepted else {
+      throw JourneyPlanCompilerError.egressCandidateRejected(
+        evaluation.hardGates
+      )
+    }
+    guard let directedEdgeIDs = inspection.resolvedPathEdgeIDs,
+      !directedEdgeIDs.isEmpty,
+      !directedEdgeIDs.contains(where: { normalized($0).isEmpty })
+    else {
+      throw JourneyPlanCompilerError.invalidResolvedPath
+    }
+    if let selectedPathEvidence = candidate.selectedPathEvidence {
+      guard
+        selectedPathEvidence.networkSnapshotID
+          == bundle.networkSnapshot.id,
+        selectedPathEvidence.providerDatasetID
+          == providerIdentity.providerDatasetID,
+        selectedPathEvidence.directedEdgeIDs == directedEdgeIDs
+      else {
+        throw JourneyPlanCompilerError.selectedPathEvidenceMismatch
+      }
+    }
+
+    let egressLeg = JourneySurfaceLeg(
+      role: .egress,
+      networkSnapshotID: bundle.networkSnapshot.id,
+      providerIdentity: providerIdentity,
+      candidateID: candidate.id,
+      originID: request.originAnchor.id,
+      destinationAnchorID: request.destinationAnchor.id,
+      entranceFacilityID: nil,
+      exitFacilityID: request.exitFacilityID,
+      joinOccurrenceID: nil,
+      directedEdgeIDs: directedEdgeIDs,
+      distanceMeters: candidate.distanceMeters,
+      expectedTravelTimeSeconds: candidate.expectedTravelTimeSeconds
+    )
+    return JourneyPlan(
+      id:
+        "\(basePlan.id).return.\(request.egressOptionID).\(candidate.id)",
+      productReleaseID: basePlan.productReleaseID,
+      navigationReleaseID: basePlan.navigationReleaseID,
+      networkSnapshotID: basePlan.networkSnapshotID,
+      routePlanID: basePlan.routePlanID,
+      originID: basePlan.originID,
+      accessLeg: basePlan.accessLeg,
+      returnTarget: basePlan.returnTarget,
+      entryTransition: basePlan.entryTransition,
+      finishPolicy: .returnNearOrigin,
+      precomputedEgressOptions: basePlan.precomputedEgressOptions,
+      selectedEgressOptionID: request.egressOptionID,
+      egressLeg: egressLeg,
+      initialPhase: basePlan.initialPhase
+    )
+  }
+
+  package static func surfaceEgressPreflight(
+    release: KaidoProductRelease,
+    basePlan: JourneyPlan,
+    request: SurfaceEgressRouteRequest,
+    providerIdentity: SurfaceRouteProviderReleaseIdentity
+  ) throws -> SurfaceEgressPolicy {
+    let bundle = release.navigation.bundle
+    guard let definition = bundle.surfaceEgressDefinition else {
+      throw JourneyPlanCompilerError.surfaceEgressNotReleased
+    }
+    let definitionIssues = definition.validationIssues(
+      networkSnapshot: bundle.networkSnapshot,
+      routePlan: bundle.routePlan,
+      runtimePolicy: bundle.runtimePolicy
+    )
+    guard definitionIssues.isEmpty else {
+      throw JourneyPlanCompilerError.invalidReleasedSurfaceEgress(
+        definitionIssues
+      )
+    }
+    guard providerIdentity == definition.providerIdentity else {
+      throw JourneyPlanCompilerError.providerIdentityMismatch
+    }
+    guard basePlan.productReleaseID == release.releaseID,
+      basePlan.navigationReleaseID == release.navigation.releaseID,
+      basePlan.networkSnapshotID == bundle.networkSnapshot.id,
+      basePlan.routePlanID == bundle.routePlan.id,
+      basePlan.entryTransition == bundle.runtimePolicy.entryTransition,
+      basePlan.precomputedEgressOptions == bundle.runtimePolicy.egressOptions,
+      basePlan.finishPolicy == .returnNearOrigin,
+      basePlan.initialPhase == .approachToEntry,
+      let accessLeg = basePlan.accessLeg,
+      let returnTarget = basePlan.returnTarget,
+      let accessDefinition = bundle.surfaceAccessDefinition,
+      accessDefinition.allowedFinishPolicies.contains(.returnNearOrigin),
+      basePlan.originID == accessLeg.originID,
+      basePlan.originID == returnTarget.id,
+      accessLeg.role == .access,
+      accessLeg.networkSnapshotID == bundle.networkSnapshot.id,
+      accessLeg.providerIdentity == accessDefinition.providerIdentity,
+      accessLeg.destinationAnchorID
+        == accessDefinition.approachPolicy.destinationAnchor.id,
+      accessLeg.entranceFacilityID
+        == accessDefinition.approachPolicy.entranceFacilityID,
+      accessLeg.exitFacilityID == nil,
+      accessLeg.joinOccurrenceID
+        == bundle.routePlan.occurrences.first?.id,
+      accessLeg.directedEdgeIDs.first
+        == returnTarget.directedSurfaceEdgeID,
+      basePlan.egressLeg == nil,
+      basePlan.selectedEgressOptionID == nil
+    else {
+      throw JourneyPlanCompilerError.invalidRequest([
+        "INVALID_SURFACE_EGRESS_BASE_PLAN"
+      ])
+    }
+    guard
+      let policy = definition.policies.first(where: {
+        $0.egressOptionID == request.egressOptionID
+      })
+    else {
+      throw JourneyPlanCompilerError.invalidRequest([
+        "SURFACE_EGRESS_OPTION_NOT_RELEASED"
+      ])
+    }
+
+    let expectedDestinationAnchor = DirectedApproachAnchor(
+      id: returnTarget.id,
+      coordinate: returnTarget.coordinate,
+      directedSurfaceEdgeID: returnTarget.directedSurfaceEdgeID,
+      expectedBearingDegrees: returnTarget.expectedBearingDegrees,
+      bearingToleranceDegrees:
+        policy.returnTargetBearingToleranceDegrees,
+      maxTerminalDistanceMeters: policy.maxReturnTargetDistanceMeters
+    )
+    var requestIssues: [String] = []
+    if normalized(request.id).isEmpty {
+      requestIssues.append("INVALID_SURFACE_EGRESS_REQUEST_IDENTITY")
+    }
+    if request.exitFacilityID != policy.exitFacilityID
+      || request.egressOptionID != policy.egressOptionID
+    {
+      requestIssues.append("SURFACE_EGRESS_REQUEST_EXIT_MISMATCH")
+    }
+    if request.originAnchor != policy.originAnchor {
+      requestIssues.append("SURFACE_EGRESS_REQUEST_HANDOFF_MISMATCH")
+    }
+    if request.destinationAnchor != expectedDestinationAnchor {
+      requestIssues.append("SURFACE_EGRESS_REQUEST_RETURN_TARGET_MISMATCH")
+    }
+    guard requestIssues.isEmpty else {
+      throw JourneyPlanCompilerError.invalidRequest(requestIssues.sorted())
+    }
+    return policy
+  }
+
   private static func normalized(_ value: String) -> String {
     value.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private static func initialBearingDegrees(
+    coordinates: [SurfaceCoordinate]
+  ) -> Double? {
+    guard let origin = coordinates.first else { return nil }
+    for destination in coordinates.dropFirst()
+    where destination != origin {
+      let originLatitude = origin.latitude * .pi / 180
+      let destinationLatitude = destination.latitude * .pi / 180
+      let longitudeDelta =
+        (destination.longitude - origin.longitude) * .pi / 180
+      let y = sin(longitudeDelta) * cos(destinationLatitude)
+      let x =
+        cos(originLatitude) * sin(destinationLatitude)
+        - sin(originLatitude) * cos(destinationLatitude)
+        * cos(longitudeDelta)
+      let bearing = atan2(y, x) * 180 / .pi
+      return bearing >= 0 ? bearing : bearing + 360
+    }
+    return nil
   }
 }
 
@@ -410,9 +748,6 @@ extension JourneyPlan {
     if precomputedEgressOptions != bundle.runtimePolicy.egressOptions {
       issues.append(.egressOptionsMismatch)
     }
-    if egressLeg != nil {
-      issues.append(.surfaceEgressNotReleased)
-    }
 
     if let accessLeg {
       validateSurfaceAccessLeg(
@@ -420,8 +755,16 @@ extension JourneyPlan {
         release: release,
         issues: &issues
       )
+      validateReturnTarget(issues: &issues)
     } else if self != JourneyPlanCompiler.routeOnly(release: release) {
       issues.append(.routeOnlyCompositionMismatch)
+    }
+    if let egressLeg {
+      validateSurfaceEgressLeg(
+        egressLeg,
+        release: release,
+        issues: &issues
+      )
     }
 
     validateFinishComposition(
@@ -474,6 +817,76 @@ extension JourneyPlan {
     }
   }
 
+  private func validateReturnTarget(
+    issues: inout [JourneyPlanRuntimeAdmissionIssue]
+  ) {
+    guard let returnTarget else {
+      issues.append(.invalidReturnTarget)
+      return
+    }
+    if originID != returnTarget.id
+      || normalized(returnTarget.id).isEmpty
+      || !returnTarget.coordinate.isValid
+      || normalized(returnTarget.directedSurfaceEdgeID).isEmpty
+      || returnTarget.directedSurfaceEdgeID
+        != accessLeg?.directedEdgeIDs.first
+      || !returnTarget.expectedBearingDegrees.isFinite
+      || !(0..<360).contains(returnTarget.expectedBearingDegrees)
+    {
+      issues.append(.invalidReturnTarget)
+    }
+  }
+
+  private func validateSurfaceEgressLeg(
+    _ egressLeg: JourneySurfaceLeg,
+    release: KaidoProductRelease,
+    issues: inout [JourneyPlanRuntimeAdmissionIssue]
+  ) {
+    let bundle = release.navigation.bundle
+    guard let definition = bundle.surfaceEgressDefinition else {
+      issues.append(.surfaceEgressNotReleased)
+      return
+    }
+    guard let selectedEgressOptionID,
+      let policy = definition.policies.first(where: {
+        $0.egressOptionID == selectedEgressOptionID
+      }),
+      let returnTarget
+    else {
+      issues.append(.surfaceEgressReleaseMismatch)
+      return
+    }
+
+    if egressLeg.role != .egress
+      || normalized(egressLeg.candidateID).isEmpty
+      || normalized(egressLeg.originID).isEmpty
+      || egressLeg.entranceFacilityID != nil
+      || egressLeg.joinOccurrenceID != nil
+      || egressLeg.directedEdgeIDs.isEmpty
+      || egressLeg.directedEdgeIDs.contains(where: {
+        normalized($0).isEmpty
+      })
+      || !egressLeg.distanceMeters.isFinite
+      || egressLeg.distanceMeters < 0
+      || !egressLeg.expectedTravelTimeSeconds.isFinite
+      || egressLeg.expectedTravelTimeSeconds < 0
+    {
+      issues.append(.invalidSurfaceEgressLeg)
+    }
+    if egressLeg.networkSnapshotID != bundle.networkSnapshot.id
+      || egressLeg.providerIdentity != definition.providerIdentity
+      || egressLeg.originID != policy.originAnchor.id
+      || egressLeg.destinationAnchorID != returnTarget.id
+      || egressLeg.exitFacilityID != policy.exitFacilityID
+      || egressLeg.directedEdgeIDs.first
+        != policy.originAnchor.directedSurfaceEdgeID
+      || egressLeg.directedEdgeIDs.last
+        != returnTarget.directedSurfaceEdgeID
+    {
+      issues.append(.surfaceEgressReleaseMismatch)
+    }
+  }
+
   private func validateFinishComposition(
     release: KaidoProductRelease,
     issues: inout [JourneyPlanRuntimeAdmissionIssue]
@@ -497,12 +910,21 @@ extension JourneyPlan {
       {
         issues.append(.invalidFinishComposition)
       }
+      if egressLeg != nil {
+        issues.append(.invalidFinishComposition)
+      }
     case .finishOnRequest:
-      if selectedEgressOptionID != nil {
+      if selectedEgressOptionID != nil || egressLeg != nil {
         issues.append(.invalidFinishComposition)
       }
     case .returnNearOrigin:
-      issues.append(.surfaceEgressNotReleased)
+      if selectedEgressOptionID == nil
+        || egressLeg == nil
+        || returnTarget == nil
+        || bundle.surfaceEgressDefinition == nil
+      {
+        issues.append(.surfaceEgressNotReleased)
+      }
     }
   }
 

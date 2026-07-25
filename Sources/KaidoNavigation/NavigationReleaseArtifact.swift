@@ -12,6 +12,7 @@ public enum NavigationReleaseAssetRole: String, Codable, CaseIterable, Hashable,
   case guidance = "GUIDANCE"
   case junctionView = "JUNCTION_VIEW"
   case surfaceAccess = "SURFACE_ACCESS"
+  case surfaceEgress = "SURFACE_EGRESS"
 }
 
 public enum NavigationReleaseEvidenceState: String, Codable, Sendable {
@@ -140,7 +141,7 @@ public struct NavigationReleaseAssetEvidence: Codable, Equatable, Sendable {
 /// must construct `NavigationRelease`, which validates provenance coverage and
 /// reuses the complete `NavigationReleaseBundle` integrity gate.
 public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "5.0"
+  public static let currentSchemaVersion = "6.0"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -158,6 +159,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
   public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
+  public let surfaceEgressDefinition: ReleasedSurfaceEgressDefinition?
 
   public init(
     schemaVersion: String = NavigationReleaseArtifact.currentSchemaVersion,
@@ -175,7 +177,8 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition] = [],
-    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil,
+    surfaceEgressDefinition: ReleasedSurfaceEgressDefinition? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.releaseID = releaseID
@@ -193,6 +196,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
     self.surfaceAccessDefinition = surfaceAccessDefinition
+    self.surfaceEgressDefinition = surfaceEgressDefinition
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -212,6 +216,7 @@ public struct NavigationReleaseArtifact: Codable, Equatable, Sendable {
     case releasedGuidance = "released_guidance"
     case junctionViews = "junction_views"
     case surfaceAccessDefinition = "surface_access_definition"
+    case surfaceEgressDefinition = "surface_egress_definition"
   }
 }
 
@@ -330,7 +335,8 @@ public struct NavigationRelease: Equatable, Sendable {
           decisionZones: artifact.decisionZones,
           releasedGuidance: artifact.releasedGuidance,
           junctionViews: artifact.junctionViews,
-          surfaceAccessDefinition: artifact.surfaceAccessDefinition
+          surfaceAccessDefinition: artifact.surfaceAccessDefinition,
+          surfaceEgressDefinition: artifact.surfaceEgressDefinition
         )
       } catch NavigationReleaseBundleError.invalid(let bundleIssues) {
         issues.append(contentsOf: bundleIssues.map(NavigationReleaseIssue.invalidBundle))
@@ -426,6 +432,9 @@ public struct NavigationRelease: Equatable, Sendable {
     }
     if let definition = artifact.surfaceAccessDefinition {
       expect(.surfaceAccess, definition.id)
+    }
+    if let definition = artifact.surfaceEgressDefinition {
+      expect(.surfaceEgress, definition.id)
     }
     for (key, count) in expectedAssetCounts where count != 1 {
       issues.append(.duplicateArtifactAsset(key.description))

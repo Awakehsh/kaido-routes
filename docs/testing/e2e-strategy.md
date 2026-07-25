@@ -343,6 +343,13 @@ resulting snapshots to `KaidoPresentation`. Focused app tests compare measured
 and estimated markers, require neutral realtime-unconfirmed passage and
 DecisionZone editing lockout, and require Finish drive to name the engine's
 selected exit before branch guidance while retaining the reversal prohibition.
+The portable Finish scenario does not claim an ordinary-road handoff. Focused
+platform-light tests separately require a complete schema-6.0
+`SURFACE_EGRESS` release definition, frozen access-derived return target,
+provider endpoint identity, graph hard gates, deterministic ranking, exact
+selected egress option, and two-observation `EXIT_TRANSITION` to
+`SURFACE_EGRESS` admission. No live provider, field trace, or device claim is
+made.
 It also executes ownership-only `connectCarPlay()`, requires phone and CarPlay
 to retain one occurrence-scoped frame and junction definition, and rejects an
 unreleased junction definition without replacing the prior valid state. The
@@ -378,7 +385,7 @@ the portable scenario nor those tests promote their synthetic `ACTIVE` or
 KR-D25 takes the next distribution step without weakening that distinction.
 The runner first gives the immutable reviewed assets and separate provenance
 configuration to `NavigationReleaseAuthor`; only a complete
-`NavigationRelease` may produce the schema-5.0 artifact. It then encodes and
+`NavigationRelease` may produce the schema-6.0 artifact. It then encodes and
 decodes that artifact, requires exact released evidence coverage for every
 runtime asset role and identity—including `EDITOR_PRESENTATION` and
 `RUNTIME_POLICY`—and re-runs `NavigationReleaseBundle`. A final event proves
@@ -401,7 +408,7 @@ cannot expose a partial runtime identity. Every released value remains
 synthetic.
 
 KR-D27 separates structural product validity from sensor authority. A shared
-platform-light evaluator consumes the schema-5.0 `runtime_use` declaration and
+platform-light evaluator consumes the schema-6.0 `runtime_use` declaration and
 both nested source domains. Synthetic scope is valid only with live input
 disabled; released-road scope rejects every `SYNTHETIC_TEST_ONLY` source; and a
 valid released-road product with disabled input still mints no token. Only the
@@ -455,7 +462,7 @@ released-road navigation and Route Atlas fixtures to
 `KaidoProductReleaseAuthor`, require exact unchanged nesting and foreground
 authority, and reject invalid metadata, synthetic input promotion, and
 cross-artifact editor coverage drift. The CLI then uses the same author, encodes
-through the production schema-5.0 codec, writes only a new output, and refuses
+through the production schema-6.0 codec, writes only a new output, and refuses
 overwrite. These tests prove deterministic assembly mechanics only; their
 test-labelled non-synthetic licences are not real release evidence.
 

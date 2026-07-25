@@ -108,7 +108,10 @@ public enum OSRMSurfaceRouteProviderInitializationError: Error, Equatable, Senda
 /// OSM nodes. Kaido accepts the candidate only after `data_version` matches the
 /// manifest and every node pair maps to one exact graph edge. OSRM cannot
 /// author, optimize, recover, or mutate the active expressway `RoutePlan`.
-public struct OSRMSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
+public struct OSRMSurfaceRouteProvider:
+  ReleaseBoundSurfaceRouteProvider,
+  ReleaseBoundSurfaceEgressRouteProvider
+{
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -265,6 +268,93 @@ public struct OSRMSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
     }
   }
 
+  public func egressRoutes(
+    for request: SurfaceEgressRouteRequest
+  ) async -> SurfaceProviderResponse {
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: graph.edges.map { ($0.id, $0) }
+    )
+    guard request.originAnchor.isValid,
+      request.destinationAnchor.coordinate.isValid,
+      let originEdge = edgesByID[
+        request.originAnchor.directedSurfaceEdgeID
+      ],
+      let destinationEdge = edgesByID[
+        request.destinationAnchor.directedSurfaceEdgeID
+      ],
+      originEdge.kind == .ordinaryRoad,
+      destinationEdge.kind == .ordinaryRoad,
+      let terminalOSMNodeID = Self.osmNodeID(
+        from: destinationEdge.toNodeID
+      )
+    else {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .invalidRequest,
+          providerErrorCode: "EGRESS_IDENTITY_NOT_BOUND"
+        )
+      )
+    }
+
+    do {
+      let response = try await transport.get(makeHTTPRequest(request))
+      guard (200..<300).contains(response.statusCode) else {
+        return .failure(providerFailure(for: response))
+      }
+      let normalized = try normalizer.normalize(
+        routeResponseData: response.body,
+        candidateID: "\(request.id).osrm.primary"
+      )
+      guard
+        normalized.translationRequest.orderedOSMNodeIDs.last
+          == terminalOSMNodeID
+      else {
+        return .failure(
+          SurfaceProviderFailure(
+            kind: .server,
+            providerErrorCode: "TERMINAL_OSM_NODE_REJECTED"
+          )
+        )
+      }
+      let candidate = try normalized.translatedCandidate(
+        translator: translator
+      )
+      guard
+        candidate.selectedPathEvidence?.directedEdgeIDs.first
+          == originEdge.id,
+        candidate.selectedPathEvidence?.directedEdgeIDs.last
+          == destinationEdge.id
+      else {
+        return .failure(
+          SurfaceProviderFailure(
+            kind: .server,
+            providerErrorCode: "EGRESS_PATH_IDENTITY_REJECTED"
+          )
+        )
+      }
+      return .success([candidate])
+    } catch let failure as OSRMHTTPTransportFailure {
+      return .failure(providerFailure(for: failure))
+    } catch let error as OSRMSurfaceRouteNormalizationError {
+      return .failure(providerFailure(for: error))
+    } catch let error as OSMNodePathTranslationError {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .server,
+          providerErrorCode: "SELECTED_PATH_IDENTITY_REJECTED",
+          message: error.description
+        )
+      )
+    } catch {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .unknown,
+          providerErrorCode: "UNEXPECTED_ADAPTER_FAILURE"
+        )
+      )
+    }
+  }
+
   private func makeHTTPRequest(_ request: SurfaceRouteRequest) -> OSRMHTTPRequest {
     let origin = "\(request.origin.longitude),\(request.origin.latitude)"
     let destination =
@@ -292,6 +382,57 @@ public struct OSRMSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
       path: "/route/v1/driving/\(origin);\(destination)",
       queryItems: queryItems
     )
+  }
+
+  private func makeHTTPRequest(
+    _ request: SurfaceEgressRouteRequest
+  ) -> OSRMHTTPRequest {
+    let origin =
+      "\(request.originAnchor.coordinate.longitude),\(request.originAnchor.coordinate.latitude)"
+    let destination =
+      "\(request.destinationAnchor.coordinate.longitude),\(request.destinationAnchor.coordinate.latitude)"
+    let originBearing = Int(
+      request.originAnchor.expectedBearingDegrees.rounded()
+    )
+    let originTolerance = Int(
+      request.originAnchor.bearingToleranceDegrees.rounded()
+    )
+    let destinationBearing = Int(
+      request.destinationAnchor.expectedBearingDegrees.rounded()
+    )
+    let destinationTolerance = Int(
+      request.destinationAnchor.bearingToleranceDegrees.rounded()
+    )
+    var queryItems = [
+      OSRMHTTPQueryItem(name: "alternatives", value: "false"),
+      OSRMHTTPQueryItem(name: "steps", value: "true"),
+      OSRMHTTPQueryItem(name: "annotations", value: "nodes"),
+      OSRMHTTPQueryItem(name: "geometries", value: "geojson"),
+      OSRMHTTPQueryItem(name: "overview", value: "full"),
+      OSRMHTTPQueryItem(name: "continue_straight", value: "true"),
+      OSRMHTTPQueryItem(
+        name: "bearings",
+        value:
+          "\(originBearing),\(originTolerance);\(destinationBearing),\(destinationTolerance)"
+      ),
+    ]
+    if request.preferences.avoidHighways {
+      queryItems.append(
+        OSRMHTTPQueryItem(name: "exclude", value: "motorway")
+      )
+    } else if request.preferences.avoidTolls {
+      queryItems.append(OSRMHTTPQueryItem(name: "exclude", value: "toll"))
+    }
+    return OSRMHTTPRequest(
+      path: "/route/v1/driving/\(origin);\(destination)",
+      queryItems: queryItems
+    )
+  }
+
+  private static func osmNodeID(from graphNodeID: String) -> Int64? {
+    let prefix = "osm.node."
+    guard graphNodeID.hasPrefix(prefix) else { return nil }
+    return Int64(graphNodeID.dropFirst(prefix.count))
   }
 
   private func providerFailure(for response: OSRMHTTPResponse) -> SurfaceProviderFailure {

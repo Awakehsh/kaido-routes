@@ -773,7 +773,7 @@
       "route_plan_id" : "test.plan.release-bundle",
       "runtime_policy_id" : "test.runtime-policy.release-bundle"
     },
-    "schema_version" : "5.0",
+    "schema_version" : "6.0",
     "source_registry" : {
       "references" : [
         {
@@ -1165,5 +1165,5 @@
     "evidence_scope" : "SYNTHETIC_TEST_ONLY",
     "live_input_policy" : "DISABLED"
   },
-  "schema_version" : "5.0"
+  "schema_version" : "6.0"
 }

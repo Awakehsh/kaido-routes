@@ -16,6 +16,7 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
   case unknownRouteExit
   case invalidRuntimePolicy(NavigationRuntimePolicyIssue)
   case invalidSurfaceAccessDefinition([ReleasedSurfaceAccessIssue])
+  case invalidSurfaceEgressDefinition([ReleasedSurfaceEgressIssue])
   case invalidEntryTransitionCorridor(String)
   case invalidRuntimeConfiguration(String)
   case duplicateDecisionZoneForMovement(String)
@@ -55,6 +56,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
       issue.code
     case .invalidSurfaceAccessDefinition:
       "INVALID_SURFACE_ACCESS_DEFINITION"
+    case .invalidSurfaceEgressDefinition:
+      "INVALID_SURFACE_EGRESS_DEFINITION"
     case .invalidEntryTransitionCorridor:
       "INVALID_ENTRY_TRANSITION_CORRIDOR"
     case .invalidRuntimeConfiguration:
@@ -87,6 +90,8 @@ public enum NavigationReleaseBundleIssue: Equatable, Sendable {
     case .invalidRuntimePolicy(let issue):
       "RUNTIME_POLICY:\(issue.sortKey)"
     case .invalidSurfaceAccessDefinition(let details):
+      "\(code):\(details.map(\.rawValue).joined(separator: ","))"
+    case .invalidSurfaceEgressDefinition(let details):
       "\(code):\(details.map(\.rawValue).joined(separator: ","))"
     case .invalidEntryTransitionCorridor(let detail):
       "\(code):\(detail)"
@@ -135,6 +140,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let junctionViews: [JunctionViewDefinition]
   public let surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
+  public let surfaceEgressDefinition: ReleasedSurfaceEgressDefinition?
 
   public init(
     networkSnapshot: NetworkSnapshot,
@@ -146,7 +152,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition] = [],
-    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition? = nil,
+    surfaceEgressDefinition: ReleasedSurfaceEgressDefinition? = nil
   ) throws {
     let validation = Self.validation(
       networkSnapshot: networkSnapshot,
@@ -158,7 +165,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
       junctionViews: junctionViews,
-      surfaceAccessDefinition: surfaceAccessDefinition
+      surfaceAccessDefinition: surfaceAccessDefinition,
+      surfaceEgressDefinition: surfaceEgressDefinition
     )
     guard validation.issues.isEmpty else {
       throw NavigationReleaseBundleError.invalid(validation.issues)
@@ -180,6 +188,7 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     self.releasedGuidance = releasedGuidance
     self.junctionViews = junctionViews
     self.surfaceAccessDefinition = surfaceAccessDefinition
+    self.surfaceEgressDefinition = surfaceEgressDefinition
   }
 
   private static func validation(
@@ -192,7 +201,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     junctionViews: [JunctionViewDefinition],
-    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?
+    surfaceAccessDefinition: ReleasedSurfaceAccessDefinition?,
+    surfaceEgressDefinition: ReleasedSurfaceEgressDefinition?
   ) -> (
     issues: [NavigationReleaseBundleIssue],
     recipe: ReleasedRouteAuthoringRecipe?
@@ -272,6 +282,29 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
       )
       if !surfaceAccessIssues.isEmpty {
         issues.append(.invalidSurfaceAccessDefinition(surfaceAccessIssues))
+      }
+    }
+    if let surfaceEgressDefinition {
+      var surfaceEgressIssues = surfaceEgressDefinition.validationIssues(
+        networkSnapshot: networkSnapshot,
+        routePlan: routePlan,
+        runtimePolicy: runtimePolicy
+      )
+      if surfaceAccessDefinition == nil {
+        surfaceEgressIssues.append(.surfaceAccessNotReleased)
+      } else if surfaceAccessDefinition?.allowedFinishPolicies.contains(
+        .returnNearOrigin
+      ) != true {
+        surfaceEgressIssues.append(.returnPolicyNotReleased)
+      }
+      if !surfaceEgressIssues.isEmpty {
+        issues.append(
+          .invalidSurfaceEgressDefinition(
+            Array(Set(surfaceEgressIssues)).sorted {
+              $0.rawValue < $1.rawValue
+            }
+          )
+        )
       }
     }
 

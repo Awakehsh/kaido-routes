@@ -110,7 +110,10 @@ public enum ValhallaSurfaceRouteProviderInitializationError: Error, Equatable, S
 /// shape is then edge-walked, normalized, and translated onto the exact Kaido
 /// graph before a candidate is returned. This adapter cannot author or mutate
 /// the expressway RoutePlan.
-public struct ValhallaSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
+public struct ValhallaSurfaceRouteProvider:
+  ReleaseBoundSurfaceRouteProvider,
+  ReleaseBoundSurfaceEgressRouteProvider
+{
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -259,6 +262,107 @@ public struct ValhallaSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
     }
   }
 
+  public func egressRoutes(
+    for request: SurfaceEgressRouteRequest
+  ) async -> SurfaceProviderResponse {
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: graph.edges.map { ($0.id, $0) }
+    )
+    guard request.originAnchor.isValid,
+      request.destinationAnchor.coordinate.isValid,
+      let originEdge = edgesByID[
+        request.originAnchor.directedSurfaceEdgeID
+      ],
+      let destinationEdge = edgesByID[
+        request.destinationAnchor.directedSurfaceEdgeID
+      ],
+      originEdge.kind == .ordinaryRoad,
+      destinationEdge.kind == .ordinaryRoad,
+      let terminalOSMNodeID = Self.osmNodeID(
+        from: destinationEdge.toNodeID
+      )
+    else {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .invalidRequest,
+          providerErrorCode: "EGRESS_IDENTITY_NOT_BOUND"
+        )
+      )
+    }
+
+    do {
+      let routeRequest = try encodeRouteRequest(request)
+      let routeResponse = try await transport.post(
+        action: .route,
+        jsonBody: routeRequest
+      )
+      guard (200..<300).contains(routeResponse.statusCode) else {
+        return .failure(providerFailure(for: routeResponse))
+      }
+
+      let encodedShape = try normalizer.encodedRouteShape(
+        from: routeResponse.body
+      )
+      let traceRequest = try encodeTraceRequest(
+        encodedShape: encodedShape
+      )
+      let traceResponse = try await transport.post(
+        action: .traceAttributes,
+        jsonBody: traceRequest
+      )
+      guard (200..<300).contains(traceResponse.statusCode) else {
+        return .failure(providerFailure(for: traceResponse))
+      }
+
+      let normalized = try normalizer.normalize(
+        routeResponseData: routeResponse.body,
+        traceAttributesResponseData: traceResponse.body,
+        candidateID: "\(request.id).valhalla.primary",
+        terminalOSMNodeID: terminalOSMNodeID
+      )
+      let candidate = try normalized.translatedCandidate(graph: graph)
+      guard
+        candidate.selectedPathEvidence?.directedEdgeIDs.first
+          == originEdge.id,
+        candidate.selectedPathEvidence?.directedEdgeIDs.last
+          == destinationEdge.id
+      else {
+        return .failure(
+          SurfaceProviderFailure(
+            kind: .server,
+            providerErrorCode: "EGRESS_PATH_IDENTITY_REJECTED"
+          )
+        )
+      }
+      return .success([candidate])
+    } catch let failure as ValhallaHTTPTransportFailure {
+      return .failure(providerFailure(for: failure))
+    } catch let error as ValhallaSurfaceRouteNormalizationError {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .server,
+          providerErrorCode: "INVALID_VALHALLA_RESPONSE",
+          message: error.description
+        )
+      )
+    } catch let error as OSMSelectedPathTranslationError {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .server,
+          providerErrorCode: "SELECTED_PATH_IDENTITY_REJECTED",
+          message: error.description
+        )
+      )
+    } catch {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .unknown,
+          providerErrorCode: "UNEXPECTED_ADAPTER_FAILURE"
+        )
+      )
+    }
+  }
+
   private func encodeRouteRequest(_ request: SurfaceRouteRequest) throws -> Data {
     let payload = RouteRequestPayload(
       locations: [
@@ -280,6 +384,50 @@ public struct ValhallaSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
       language: configuration.narrativeLanguage.rawValue
     )
     return try jsonEncoder.encode(payload)
+  }
+
+  private func encodeRouteRequest(
+    _ request: SurfaceEgressRouteRequest
+  ) throws -> Data {
+    let payload = RouteRequestPayload(
+      locations: [
+        .init(
+          coordinate: request.originAnchor.coordinate,
+          heading: Int(
+            request.originAnchor.expectedBearingDegrees.rounded()
+          ) % 360,
+          headingTolerance: Int(
+            request.originAnchor.bearingToleranceDegrees.rounded()
+          ),
+          nodeSnapTolerance: 0
+        ),
+        .init(
+          coordinate: request.destinationAnchor.coordinate,
+          heading: Int(
+            request.destinationAnchor.expectedBearingDegrees.rounded()
+          ) % 360,
+          headingTolerance: Int(
+            request.destinationAnchor.bearingToleranceDegrees.rounded()
+          ),
+          nodeSnapTolerance: 0
+        ),
+      ],
+      costingOptions: .init(
+        auto: .init(
+          useHighways: request.preferences.avoidHighways ? 0 : 0.5,
+          useTolls: request.preferences.avoidTolls ? 0 : 0.5
+        )
+      ),
+      units: "kilometers",
+      language: configuration.narrativeLanguage.rawValue
+    )
+    return try jsonEncoder.encode(payload)
+  }
+
+  private static func osmNodeID(from graphNodeID: String) -> Int64? {
+    let prefix = "osm.node."
+    guard graphNodeID.hasPrefix(prefix) else { return nil }
+    return Int64(graphNodeID.dropFirst(prefix.count))
   }
 
   private func encodeTraceRequest(encodedShape: String) throws -> Data {

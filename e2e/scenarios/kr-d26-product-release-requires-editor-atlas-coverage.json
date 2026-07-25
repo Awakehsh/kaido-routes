@@ -506,7 +506,7 @@
       "id": "validate-navigation-release",
       "at_ms": 0,
       "type": "NAVIGATION_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "5.0"}
+      "payload": {"schema_version": "6.0"}
     },
     {
       "id": "validate-route-atlas-release",
@@ -518,13 +518,13 @@
       "id": "validate-product-release",
       "at_ms": 2,
       "type": "PRODUCT_RELEASE_ARTIFACT_VALIDATED",
-      "payload": {"schema_version": "5.0"}
+      "payload": {"schema_version": "6.0"}
     },
     {
       "id": "create-product-runtime",
       "at_ms": 3,
       "type": "PRODUCT_NAVIGATION_RUNTIME_CREATED",
-      "payload": {"schema_version": "5.0"}
+      "payload": {"schema_version": "6.0"}
     }
   ],
   "then": [

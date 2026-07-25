@@ -530,16 +530,40 @@ never enter released guidance authority. `KaidoProductNavigationRuntime`
 revalidates the whole plan against that release before admitting it, starts a
 fresh access plan at `APPROACH_TO_ENTRY`, and retains the existing ordered
 entry-evidence gate for `STRICT_ROUTE`. A route-only plan remains valid, while
-`RETURN_NEAR_ORIGIN` fails closed until reviewed surface-egress assets exist.
+`RETURN_NEAR_ORIGIN` fails closed until a separately evidenced
+`ReleasedSurfaceEgressDefinition` binds at least one released egress option to
+an exact exit facility and reviewed ordinary-road handoff anchor. The accepted
+access candidate freezes the only permitted return target from its original
+coordinate, first resolved edge, and initial bearing. `ReleasedSurfaceEgressPlanner`
+derives requests from that target, runs every released exit policy through a
+release-bound provider, `DirectedRoadGraphInspector`, the exit-side hard gates,
+and `JourneyPlanCompiler`, then applies the release-owned
+`FASTEST_THEN_SHORTEST` ranking. Complete selected-path identity must begin on
+the policy handoff edge and end on the frozen return edge; any expressway
+re-entry, forbidden toll domain, provider/dataset drift, caller-selected
+destination, or ambiguous graph binding fails closed. OSRM, GraphHopper, and
+Valhalla implement the same bounded role. Provider alternatives and prose
+remain non-authoritative.
 
-`NavigationReleaseArtifact` schema 5.0 is the Codable distribution envelope for
+The completed return `JourneyPlan` fixes one exact egress option, and runtime
+configuration filters Finish behavior to that option instead of asking
+`EgressPlanner` to choose another released exit. `FINISH_DRIVE` activates the
+legal egress and enters `EXIT_TRANSITION`. `NavigationSession` enters
+`SURFACE_EGRESS` only after its release-bound handoff admission receives two
+fresh HIGH, non-simulated, singleton-edge observations with valid heading and
+increasing along-edge progress on the exact ordinary-road handoff edge. Partial
+or rejected handoff evidence is not checkpointed and cannot be supplied by UI
+state.
+
+`NavigationReleaseArtifact` schema 6.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,
 editor-catalog identity, a complete locale-exact editor presentation catalog,
 and a source registry with HTTPS locations, pinned SHA-256 values, checked
 dates, licences, and explicit asset roles. Exactly one `RELEASED` evidence
 record must cover the editor catalog, editor presentation, runtime policy,
 matcher corridor, every DecisionZone, every guidance prompt, and every junction
-view, plus the optional surface-access definition when present. Unresolved
+view, plus the optional surface-access and surface-egress definitions when
+present. Unresolved
 or unused sources, missing or orphaned evidence, duplicate asset identities,
 role mismatch, junction-view provenance drift, and evidence checked after the
 release date fail closed.
@@ -589,7 +613,7 @@ proves internal
 consistency only; the repository still has no released real Shuto topology slice
 or reviewed production atlas layout.
 
-`KaidoProductReleaseArtifact` schema 5.0 is the outer distribution envelope a
+`KaidoProductReleaseArtifact` schema 6.0 is the outer distribution envelope a
 product build must consume. It embeds the complete navigation and Route Atlas
 artifacts plus an explicit `runtime_use` declaration rather than referencing two
 mutable release names. `KaidoProductRelease` first

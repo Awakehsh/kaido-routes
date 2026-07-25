@@ -7,6 +7,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let entryTransition: EntryTransition?
   public let recoveryCandidates: [RecoveryCandidate]
   public let egressOptions: [EgressOption]
+  public let selectedEgressOptionID: String?
   public let nextSign: SignGuidance
   public let guidanceAnchors: [GuidanceAnchorDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
@@ -18,6 +19,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     entryTransition: EntryTransition? = nil,
     recoveryCandidates: [RecoveryCandidate] = [],
     egressOptions: [EgressOption] = [],
+    selectedEgressOptionID: String? = nil,
     nextSign: SignGuidance = SignGuidance(),
     guidanceAnchors: [GuidanceAnchorDefinition] = [],
     releasedGuidance: [ReleasedGuidanceDefinition] = [],
@@ -28,6 +30,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     self.entryTransition = entryTransition
     self.recoveryCandidates = recoveryCandidates
     self.egressOptions = egressOptions
+    self.selectedEgressOptionID = selectedEgressOptionID
     self.nextSign = nextSign
     self.guidanceAnchors = guidanceAnchors
     self.releasedGuidance = releasedGuidance
@@ -345,9 +348,17 @@ public struct NavigationEngine: Sendable {
   public mutating func finishDrive() {
     guard let routePlan = configuration.routePlan else { return }
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
+    let eligibleOptions: [EgressOption]
+    if let selectedEgressOptionID = configuration.selectedEgressOptionID {
+      eligibleOptions = configuration.egressOptions.filter {
+        $0.id == selectedEgressOptionID
+      }
+    } else {
+      eligibleOptions = configuration.egressOptions
+    }
     guard
       let option = EgressPlanner.choose(
-        options: configuration.egressOptions,
+        options: eligibleOptions,
         routePlan: routePlan,
         from: currentIndex
       )
@@ -364,6 +375,20 @@ public struct NavigationEngine: Sendable {
     snapshot.egress.firstEligibleOccurrenceID = option.firstEligibleOccurrenceID
     appendUnique("U_TURN_OR_REVERSAL", to: &snapshot.egress.prohibitedActions)
     snapshot.finishConfirmationExitFacilityID = option.exitFacilityID
+    snapshot.journeyPhase = .exitTransition
+    snapshot.lastPhaseTransitionTrigger =
+      "RELEASED_EGRESS_PLAN_ACTIVATED"
+  }
+
+  package mutating func activateSurfaceEgress() {
+    guard snapshot.journeyPhase == .exitTransition,
+      snapshot.egress.status == .active
+    else {
+      return
+    }
+    snapshot.journeyPhase = .surfaceEgress
+    snapshot.lastPhaseTransitionTrigger =
+      "VERIFIED_SURFACE_EGRESS_HANDOFF"
   }
 
   private mutating func updateEntryTransition(

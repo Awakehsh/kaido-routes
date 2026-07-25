@@ -116,7 +116,10 @@ public enum GraphHopperSurfaceRouteProviderInitializationError: Error, Equatable
 /// keys and OSM way IDs must translate onto one exact Kaido edge path before a
 /// candidate can escape this adapter. GraphHopper does not own the expressway
 /// `RoutePlan`, recovery target, localized guidance, or driving-side truth.
-public struct GraphHopperSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider {
+public struct GraphHopperSurfaceRouteProvider:
+  ReleaseBoundSurfaceRouteProvider,
+  ReleaseBoundSurfaceEgressRouteProvider
+{
   public let metadata: SurfaceRouteProviderMetadata
   public let graph: SurfaceRoadGraphSnapshot
   public let manifest: SurfaceRoutingBuildManifest
@@ -309,6 +312,108 @@ public struct GraphHopperSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider 
     }
   }
 
+  public func egressRoutes(
+    for request: SurfaceEgressRouteRequest
+  ) async -> SurfaceProviderResponse {
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: graph.edges.map { ($0.id, $0) }
+    )
+    guard request.originAnchor.isValid,
+      request.destinationAnchor.coordinate.isValid,
+      request.preferences.avoidHighways,
+      request.preferences.avoidTolls,
+      let originEdge = edgesByID[
+        request.originAnchor.directedSurfaceEdgeID
+      ],
+      let destinationEdge = edgesByID[
+        request.destinationAnchor.directedSurfaceEdgeID
+      ],
+      originEdge.kind == .ordinaryRoad,
+      destinationEdge.kind == .ordinaryRoad,
+      let terminalOSMWayID = destinationEdge.sourceOSMWayID
+    else {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .invalidRequest,
+          providerErrorCode: "EGRESS_OR_PROFILE_NOT_BOUND"
+        )
+      )
+    }
+
+    do {
+      let infoResponse = try await transport.get(
+        GraphHopperHTTPRequest(path: "/info")
+      )
+      guard (200..<300).contains(infoResponse.statusCode) else {
+        return .failure(providerFailure(for: infoResponse))
+      }
+      let routeResponse = try await transport.get(
+        makeRouteRequest(request)
+      )
+      guard (200..<300).contains(routeResponse.statusCode) else {
+        return .failure(providerFailure(for: routeResponse))
+      }
+      let normalized = try normalizer.normalize(
+        infoResponseData: infoResponse.body,
+        routeResponseData: routeResponse.body,
+        candidateID: "\(request.id).graphhopper.primary"
+      )
+      guard
+        normalized.translationRequest.segmentIdentities.last?.osmWayID
+          == terminalOSMWayID
+      else {
+        return .failure(
+          SurfaceProviderFailure(
+            kind: .server,
+            providerErrorCode: "TERMINAL_OSM_WAY_REJECTED"
+          )
+        )
+      }
+      let candidate = try normalized.translatedCandidate(
+        translator: translator
+      )
+      guard
+        candidate.selectedPathEvidence?.directedEdgeIDs.first
+          == originEdge.id,
+        candidate.selectedPathEvidence?.directedEdgeIDs.last
+          == destinationEdge.id
+      else {
+        return .failure(
+          SurfaceProviderFailure(
+            kind: .server,
+            providerErrorCode: "EGRESS_PATH_IDENTITY_REJECTED"
+          )
+        )
+      }
+      return .success([candidate])
+    } catch let failure as GraphHopperHTTPTransportFailure {
+      return .failure(providerFailure(for: failure))
+    } catch let error as GraphHopperSurfaceRouteNormalizationError {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .server,
+          providerErrorCode: "INVALID_GRAPHHOPPER_RESPONSE",
+          message: error.description
+        )
+      )
+    } catch let error as OSMWayPointPathTranslationError {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .server,
+          providerErrorCode: "SELECTED_PATH_IDENTITY_REJECTED",
+          message: error.description
+        )
+      )
+    } catch {
+      return .failure(
+        SurfaceProviderFailure(
+          kind: .unknown,
+          providerErrorCode: "UNEXPECTED_ADAPTER_FAILURE"
+        )
+      )
+    }
+  }
+
   private func makeRouteRequest(_ request: SurfaceRouteRequest) -> GraphHopperHTTPRequest {
     let destinationHeading = request.destinationAnchor.expectedBearingDegrees
     return GraphHopperHTTPRequest(
@@ -332,6 +437,61 @@ public struct GraphHopperSurfaceRouteProvider: ReleaseBoundSurfaceRouteProvider 
         GraphHopperHTTPQueryItem(name: "heading", value: "NaN"),
         GraphHopperHTTPQueryItem(name: "heading", value: String(destinationHeading)),
         GraphHopperHTTPQueryItem(name: "heading_penalty", value: "300"),
+        GraphHopperHTTPQueryItem(name: "pass_through", value: "true"),
+        GraphHopperHTTPQueryItem(name: "details", value: "edge_key"),
+        GraphHopperHTTPQueryItem(name: "details", value: "osm_way_id"),
+        GraphHopperHTTPQueryItem(name: "details", value: "country"),
+        GraphHopperHTTPQueryItem(name: "details", value: "toll"),
+        GraphHopperHTTPQueryItem(name: "details", value: "road_class"),
+      ]
+    )
+  }
+
+  private func makeRouteRequest(
+    _ request: SurfaceEgressRouteRequest
+  ) -> GraphHopperHTTPRequest {
+    GraphHopperHTTPRequest(
+      path: "/route",
+      queryItems: [
+        GraphHopperHTTPQueryItem(
+          name: "point",
+          value:
+            "\(request.originAnchor.coordinate.latitude),\(request.originAnchor.coordinate.longitude)"
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "point",
+          value:
+            "\(request.destinationAnchor.coordinate.latitude),\(request.destinationAnchor.coordinate.longitude)"
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "profile",
+          value: configuration.profileName
+        ),
+        GraphHopperHTTPQueryItem(name: "locale", value: "ja"),
+        GraphHopperHTTPQueryItem(name: "instructions", value: "true"),
+        GraphHopperHTTPQueryItem(name: "calc_points", value: "true"),
+        GraphHopperHTTPQueryItem(
+          name: "points_encoded",
+          value: "false"
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "way_point_max_distance",
+          value: "0"
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "heading",
+          value: String(request.originAnchor.expectedBearingDegrees)
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "heading",
+          value: String(
+            request.destinationAnchor.expectedBearingDegrees
+          )
+        ),
+        GraphHopperHTTPQueryItem(
+          name: "heading_penalty",
+          value: "300"
+        ),
         GraphHopperHTTPQueryItem(name: "pass_through", value: "true"),
         GraphHopperHTTPQueryItem(name: "details", value: "edge_key"),
         GraphHopperHTTPQueryItem(name: "details", value: "osm_way_id"),

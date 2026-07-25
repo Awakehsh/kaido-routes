@@ -131,7 +131,7 @@ func kaidoProductReleaseRejectsSchemaAndChronologyDrift() {
     junctionViews: validNavigation.junctionViews
   )
   let artifact = KaidoProductReleaseArtifact(
-    schemaVersion: "6.0",
+    schemaVersion: "7.0",
     releaseID: "test.product-release.future-navigation",
     releasedAt: "2026-07-24T12:00:00+09:00",
     navigationRelease: futureNavigation,

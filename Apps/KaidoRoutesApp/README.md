@@ -179,7 +179,7 @@ joint release whose identities, sources, and licences are explicitly synthetic.
 Its foreground-navigation controller does not construct a `CLLocationManager`
 unless it receives the unforgeable live-input token minted by a validated joint
 product release for the exact product release, navigation release, runtime
-policy, snapshot, RoutePlan, and matcher corridor. The schema-5.0 bundled
+policy, snapshot, RoutePlan, and matcher corridor. The schema-6.0 bundled
 synthetic release declares `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and
 always supplies a typed blocker, so the panel requests no permission and
 displays no live measured position. An admitted

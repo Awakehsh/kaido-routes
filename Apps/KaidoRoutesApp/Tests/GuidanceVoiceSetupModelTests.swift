@@ -223,7 +223,7 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
     XCTAssertEqual(model.languageCode, "zh-CN")
     XCTAssertEqual(
       model.auditionText,
-      "保持左侧，跟随 B 路线，横滨方向。"
+      "保持左侧，跟随 B 路线 湾岸线，横滨方向。"
     )
     XCTAssertEqual(model.profiles, [chineseProfile])
     XCTAssertTrue(model.usesAutomaticSelection)

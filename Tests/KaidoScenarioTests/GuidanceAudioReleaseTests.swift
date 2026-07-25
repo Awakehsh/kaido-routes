@@ -45,6 +45,16 @@ func guidanceAudioReleaseResolvesExactCommands() throws {
     routePlanID: productRelease.navigation.bundle.routePlan.id
   )
   #expect(release.asset(matching: exact)?.record == record)
+  let exactWithRenderedSynthesis = GuidanceSpeechCommand(
+    identity: exact.identity,
+    routePlanID: exact.routePlanID,
+    languageCode: exact.languageCode,
+    spokenText: exact.spokenText,
+    synthesisText: "reviewed device synthesis form"
+  )
+  #expect(
+    release.asset(matching: exactWithRenderedSynthesis)?.record == record
+  )
 
   let textDrift = GuidanceSpeechCommand(
     identity: exact.identity,

@@ -89,7 +89,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertEqual(
       element("voice-check-sample", in: app).value as? String,
-      "左側を進み、ビー湾岸線、横浜方面へ。"
+      "左側を進み、ビー わんがんせん、横浜方面へ。"
     )
 
     let chineseVoice = element(
@@ -100,7 +100,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(chineseVoice.isSelected)
     XCTAssertEqual(
       element("voice-check-sample", in: app).value as? String,
-      "保持左侧，跟随 B 路线，横滨方向。"
+      "保持左侧，跟随 B 路线 湾岸线，横滨方向。"
     )
 
     let blocker = reveal(
@@ -167,7 +167,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertEqual(
       element("voice-check-sample", in: app).value as? String,
-      "左側を進み、ビー湾岸線、横浜方面へ。"
+      "左側を進み、ビー わんがんせん、横浜方面へ。"
     )
   }
 

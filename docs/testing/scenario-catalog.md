@@ -85,6 +85,7 @@ should become scenarios when their layer is built.
 | KR-U17 | A released Route Atlas overlay preserves actor-owned progress, context-only topology, and repeated route occurrences | P0 | Seeded |
 | KR-U18 | A saved occurrence-based route reopens only through one whole-RoutePlan-equal current release | P0 | Seeded |
 | KR-U19 | Import, rename, export, and exact-record deletion preserve shared route intent without granting release authority | P0 | Seeded |
+| KR-U20 | Reviewed spoken forms reach device synthesis without replacing released spoken text or Japanese sign identity | P0 | Seeded |
 
 ## Evidence and field verification
 

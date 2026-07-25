@@ -17,6 +17,8 @@ func speechSchedulerAdmitsOccurrencePromptOnce() throws {
     Issue.record("Expected first speech command, got \(firstResult)")
     return
   }
+  #expect(firstCommand.spokenText == "B 湾岸線へ")
+  #expect(firstCommand.synthesisText == "ビー わんがんせんへ")
 
   let duplicateResult = try scheduler.submit(first)
   #expect(duplicateResult == .suppressed(.duplicate))
@@ -241,8 +243,8 @@ private func speechProjection(
     localizedContent: [
       .japanese: LocalizedGuidanceContent(
         displayText: "左側を進む",
-        spokenText: "左側を進んでください",
-        spokenForms: ["B": "ビー"],
+        spokenText: "B 湾岸線へ",
+        spokenForms: ["B": "ビー", "湾岸線": "わんがんせん"],
         preservedJapaneseSignText: sign
       ),
       .simplifiedChinese: LocalizedGuidanceContent(

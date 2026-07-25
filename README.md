@@ -242,9 +242,15 @@ interruption handling, and typed unavailable-voice/audio-session failures. It
 selects only an exact-locale installed voice, excludes novelty and personal
 voices, prefers premium over enhanced over default quality, and applies a
 neutral Apple rate and pitch so app-side tuning does not exaggerate compact
-voice cadence. After the first admitted prompt, the runtime panel exposes the
-actual selected voice and quality. A default-only result is visibly marked as a
-basic fallback with the device installation path. The 2026-07-24 checked
+voice cadence. The presentation projection now carries the exact reviewed
+`spoken_forms` for the selected voice locale. A deterministic longest-first,
+non-cascading renderer produces a separate synthesis string and avoids
+duplicating an already expanded form such as `Route B`; the released
+`spoken_text` remains unchanged for audit and exact offline-audio lookup.
+`AVSpeechGuidanceOutput` alone consumes the rendered synthesis string. After
+the first admitted prompt, the runtime panel exposes the actual selected voice
+and quality. A default-only result is visibly marked as a basic fallback with
+the device installation path. The 2026-07-24 checked
 Simulator exposes only default-quality `Kyoko / ja-JP`,
 `Tingting / zh-CN`, and `Samantha / en-US`; enhanced or premium acoustic
 quality still requires the corresponding voice asset on a physical device.
@@ -268,7 +274,8 @@ also embeds one exact-WAV human review per asset; pronunciation,
 intelligibility, and audio quality must all pass before authoring. The entire
 audio release is rejected for missing, extra, corrupt, silent, future-reviewed,
 review-incomplete, or identity-drifted content. Runtime selection does not fuzz
-text or reuse another occurrence: an exact asset plays through `AVAudioPlayer`,
+the released spoken text or reuse another occurrence: an exact asset plays
+through `AVAudioPlayer`,
 while a lookup or playback-start failure uses the selected installed Apple
 voice. Interruption after recorded playback begins consumes the prompt without
 replaying it through fallback. The bundled product-release catalog can declare

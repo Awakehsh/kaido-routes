@@ -300,6 +300,14 @@ granting speech authority.
 Short guidance keeps Apple's neutral rate and pitch; app-side tuning does not
 slow or lower compact voices in a way that exaggerates synthetic cadence. These
 values do not rewrite reviewed spoken content.
+`NavigationVoicePresentation` separately preserves the exact released
+`spokenText`, its reviewed term-level `spokenForms`, and a derived
+`synthesisText`. `GuidanceSpokenFormRenderer` applies exact source terms
+longest-first against the original string, never cascades through replacement
+output, and leaves an already expanded surrounding form unchanged.
+`GuidanceSpeechCommand` carries both identities: exact offline-audio lookup
+continues to use `spokenText`, while `AVSpeechGuidanceOutput` alone passes
+`synthesisText` to Apple.
 The output
 uses `AVAudioSession.Mode.voicePrompt` with temporary `duckOthers` and
 `interruptSpokenAudioAndMixWithOthers`, activates audio only for an admitted
@@ -307,9 +315,10 @@ prompt, and deactivates with `notifyOthersOnDeactivation`. It observes Apple
 audio interruptions, cancels current synthesis, and deliberately does not
 resume stale navigation speech. Missing installed voices and audio-session
 configuration or activation failures remain typed, observable blocked states.
-This implements scheduling and lifecycle ownership; pronunciation, output-route
-timing, interruption behavior on real phone/CarPlay hardware, and driver
-comprehension remain device evidence gates. The app cannot download an Apple
+This implements reviewed-form delivery, scheduling, and lifecycle ownership;
+actual pronunciation, output-route timing, interruption behavior on real
+phone/CarPlay hardware, and driver comprehension remain device evidence gates.
+The app cannot download an Apple
 voice asset; when a device has only default quality, the preview says so rather
 than claiming neural or enhanced synthesis, and exposes the device Spoken
 Content installation path after real voice resolution.

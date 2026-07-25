@@ -327,10 +327,15 @@ LocalizedGuidanceBundle
 ```
 
 Proper names, route codes, and Japanese road terms need reviewed spoken forms per
-language. The implementation must enumerate device voices and select a matching
-BCP-47 language. It must not feed raw Japanese names to an unrelated voice and
-silently accept a wrong pronunciation. If a requested voice is unavailable, the
-app reports that before departure and preserves text guidance.
+language. The platform-light renderer now applies those exact forms
+longest-first without cascading replacements or duplicating an already expanded
+form. It retains the released spoken text separately for audit and offline-audio
+identity; only the Apple synthesis string changes. The implementation must
+enumerate device voices and select a matching BCP-47 language. It must not feed
+raw Japanese names to an unrelated voice and silently accept a wrong
+pronunciation. If a requested voice is unavailable, the app reports that before
+departure and preserves text guidance. KR-U20 proves the text boundary only;
+physical pronunciation remains unverified.
 
 ## First spike and acceptance boundary
 

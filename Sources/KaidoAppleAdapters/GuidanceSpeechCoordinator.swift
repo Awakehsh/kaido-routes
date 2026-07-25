@@ -245,7 +245,7 @@ public final class GuidanceSpeechCoordinator {
         throw GuidanceSpeechOutputError.audioSessionActivationFailed
       }
 
-      let utterance = AVSpeechUtterance(string: command.spokenText)
+      let utterance = AVSpeechUtterance(string: command.synthesisText)
       utterance.voice = voice
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: command.languageCode

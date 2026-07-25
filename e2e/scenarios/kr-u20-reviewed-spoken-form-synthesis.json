@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-U20",
+  "title": "Reviewed spoken forms reach synthesis without replacing released text",
+  "layer": "IPHONE_UI",
+  "tags": ["localization", "voice", "pronunciation", "sign"],
+  "purpose": "Feed reviewed Japanese route terms to device synthesis while preserving the exact released spoken-text and sign identities used by offline audio and visual guidance.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "This proves deterministic text rendering only; it does not verify installed voices, acoustic pronunciation, or driver comprehension."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.spoken-form-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-25T00:00:00+09:00"
+    },
+    "inputs": {
+      "presentation": {
+        "language_selection": {
+          "interface_locale": "ja-JP",
+          "guidance_voice_locale": "ja-JP"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": false,
+          "inside_decision_zone": false
+        },
+        "guidance": {
+          "prompt_id": "test.prompt.u20.prepare",
+          "anchor_id": "PREPARE",
+          "anchor_occurrence_id": "test.occurrence.u20-anchor",
+          "movement_occurrence_id": "test.occurrence.u20-b-yokohama",
+          "decision_zone_id": "test.zone.u20-tatsumi",
+          "stage": "PREPARE",
+          "distance_meters": 800,
+          "decision_point_name_ja": "辰巳JCT",
+          "localized_decision_point_names": {
+            "ja-JP": "辰巳JCT",
+            "zh-Hans": "辰巳 JCT",
+            "en": "Tatsumi JCT"
+          },
+          "maneuver": "KEEP_LEFT",
+          "lane_preparation": "USE_LEFT_LANES",
+          "route_shields": ["B"],
+          "japanese_sign_text": "B 湾岸線・横浜方面",
+          "localized_content": {
+            "ja-JP": {
+              "display_text": "左側を進み、B 湾岸線・横浜方面へ",
+              "spoken_text": "B 湾岸線、横浜方面へ",
+              "spoken_forms": {
+                "B": "ビー",
+                "湾岸線": "わんがんせん"
+              },
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "zh-Hans": {
+              "display_text": "保持左侧，跟随 B 湾岸线・横滨方向",
+              "spoken_text": "保持左侧，跟随 B 湾岸线，横滨方向",
+              "spoken_forms": {
+                "B": "B 路线"
+              },
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            },
+            "en": {
+              "display_text": "Keep left for Route B toward Yokohama",
+              "spoken_text": "Keep left for Route B toward Yokohama",
+              "spoken_forms": {
+                "B": "Route B"
+              },
+              "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+            }
+          }
+        }
+      }
+    },
+    "system_state": {}
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    }
+  ],
+  "then": [
+    {
+      "id": "release-text-remains-exact",
+      "after": "start",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.spoken_text",
+      "matcher": "EQUALS",
+      "expected": "B 湾岸線、横浜方面へ",
+      "rationale": "Exact released text remains the offline-audio lookup and audit identity."
+    },
+    {
+      "id": "reviewed-forms-reach-synthesis",
+      "after": "start",
+      "category": "NAVIGATION",
+      "subject": "presentation.kernel.voice.synthesis_text",
+      "matcher": "EQUALS",
+      "expected": "ビー わんがんせん、横浜方面へ",
+      "rationale": "The Apple synthesis boundary receives the reviewed route shield and road-name forms."
+    },
+    {
+      "id": "sign-remains-exact",
+      "after": "start",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.phone.japanese_sign_text",
+      "matcher": "EQUALS",
+      "expected": "B 湾岸線・横浜方面",
+      "rationale": "Pronunciation rendering cannot replace the physical Japanese sign target."
+    }
+  ]
+}

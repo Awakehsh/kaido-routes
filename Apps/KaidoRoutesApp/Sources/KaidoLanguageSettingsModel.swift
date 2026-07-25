@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import KaidoDomain
+import KaidoPresentation
 
 @MainActor
 protocol KaidoLanguagePreferenceStoring: AnyObject {
@@ -106,14 +107,32 @@ extension KaidoReleaseLocale {
     }
   }
 
-  var guidanceAuditionText: String {
+  var guidanceAuditionSpokenText: String {
     switch self {
     case .japanese:
-      "左側を進み、ビー湾岸線、横浜方面へ。"
+      "左側を進み、B 湾岸線、横浜方面へ。"
     case .simplifiedChinese:
-      "保持左侧，跟随 B 路线，横滨方向。"
+      "保持左侧，跟随 B 湾岸线，横滨方向。"
     case .english:
       "Keep left for Route B toward Yokohama."
     }
+  }
+
+  var guidanceAuditionSpokenForms: [String: String] {
+    switch self {
+    case .japanese:
+      ["B": "ビー", "湾岸線": "わんがんせん"]
+    case .simplifiedChinese:
+      ["B": "B 路线"]
+    case .english:
+      ["B": "Route B"]
+    }
+  }
+
+  var guidanceAuditionText: String {
+    GuidanceSpokenFormRenderer.render(
+      spokenText: guidanceAuditionSpokenText,
+      spokenForms: guidanceAuditionSpokenForms
+    )
   }
 }

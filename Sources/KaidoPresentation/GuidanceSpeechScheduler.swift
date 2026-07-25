@@ -21,17 +21,20 @@ public struct GuidanceSpeechCommand: Equatable, Sendable {
   public let routePlanID: String
   public let languageCode: String
   public let spokenText: String
+  public let synthesisText: String
 
   public init(
     identity: GuidanceSpeechIdentity,
     routePlanID: String,
     languageCode: String,
-    spokenText: String
+    spokenText: String,
+    synthesisText: String? = nil
   ) {
     self.identity = identity
     self.routePlanID = routePlanID
     self.languageCode = languageCode
     self.spokenText = spokenText
+    self.synthesisText = synthesisText ?? spokenText
   }
 }
 
@@ -119,7 +122,8 @@ public struct GuidanceSpeechScheduler: Sendable {
       identity: identity,
       routePlanID: expectedRoutePlanID,
       languageCode: languageCode,
-      spokenText: text
+      spokenText: text,
+      synthesisText: Self.normalized(projection.voice.synthesisText)
     )
     activeCommand = command
     state = .speaking(identity)

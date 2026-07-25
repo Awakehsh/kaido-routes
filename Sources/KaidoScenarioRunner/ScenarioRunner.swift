@@ -3040,6 +3040,9 @@ private struct ScenarioHarness {
     adapterObservations["presentation.kernel.voice.spoken_text"] = .string(
       projection.voice.spokenText
     )
+    adapterObservations["presentation.kernel.voice.synthesis_text"] = .string(
+      projection.voice.synthesisText
+    )
     adapterObservations["presentation.kernel.voice.prompt_id"] = .string(
       projection.voice.promptID
     )

@@ -212,6 +212,8 @@ public struct NavigationVoicePresentation: Equatable, Sendable {
   public let distanceMeters: Double
   public let maneuver: GuidanceManeuver
   public let spokenText: String
+  public let spokenForms: [String: String]
+  public let synthesisText: String
   public let shouldSpeak: Bool
 
   public init(
@@ -221,7 +223,8 @@ public struct NavigationVoicePresentation: Equatable, Sendable {
     distanceMeters: Double,
     maneuver: GuidanceManeuver,
     spokenText: String,
-    shouldSpeak: Bool
+    shouldSpeak: Bool,
+    spokenForms: [String: String] = [:]
   ) {
     self.locale = locale
     self.promptID = promptID
@@ -229,6 +232,11 @@ public struct NavigationVoicePresentation: Equatable, Sendable {
     self.distanceMeters = distanceMeters
     self.maneuver = maneuver
     self.spokenText = spokenText
+    self.spokenForms = spokenForms
+    synthesisText = GuidanceSpokenFormRenderer.render(
+      spokenText: spokenText,
+      spokenForms: spokenForms
+    )
     self.shouldSpeak = shouldSpeak
   }
 }

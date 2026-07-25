@@ -25,6 +25,7 @@ func presentationSurfacesShareNavigationTruth() throws {
   #expect(projection.interfaceLocale == .simplifiedChinese)
   #expect(projection.voice.locale == .english)
   #expect(projection.voice.spokenText == "Keep left for Route B toward Yokohama")
+  #expect(projection.voice.synthesisText == "Keep left for Route B toward Yokohama")
   #expect(projection.voice.promptID == "test.prompt.prepare")
   #expect(projection.voice.stage == .prepare)
   #expect(projection.voice.distanceMeters == 800)
@@ -249,6 +250,7 @@ func presentationNamesFinishExitFirst() throws {
   #expect(projection.iPhone.finishDrive?.localizedExitName == "芝公园出口")
   #expect(projection.carPlay.finishDrive == projection.iPhone.finishDrive)
   #expect(projection.voice.spokenText == "B 湾岸線、横浜方面へ")
+  #expect(projection.voice.synthesisText == "ビー わんがんせん、横浜方面へ")
   #expect(projection.iPhone.finishDrive?.announcementPriority == .beforeBranchGuidance)
 }
 

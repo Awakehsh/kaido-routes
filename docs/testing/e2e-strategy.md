@@ -203,8 +203,8 @@ CarPlay adapters independently without changing route semantics. CI injects
 surface candidates and sensor observations; it never calls live MapKit or waits
 for a real geofence.
 
-The platform-light `KaidoPresentation` adapter now executes KR-U04 through U12
-and KR-U14. These scenarios verify semantic view values
+The platform-light `KaidoPresentation` adapter now executes KR-U04 through U12,
+KR-U14, and KR-U20. These scenarios verify semantic view values
 shared by phone, CarPlay, and voice, including a structured occurrence-scoped
 guidance frame with prompt and anchor identity, stage, distance, decision point,
 maneuver, lane preparation, and an optional snapshot-bound junction inset.
@@ -220,7 +220,10 @@ distinguishes a persistent active frame from the transient matching emission tha
 alone sets `voice.should_speak`. KR-S18
 starts with actual Swift matcher observations and proves that occurrence-bound
 along-edge progress, not lateral map-match residual or straight-line distance,
-becomes the DecisionZone scalar. The portable scenarios remain L1/L2 contract
+becomes the DecisionZone scalar. KR-U20 keeps exact released `spoken_text`
+separate from a deterministic reviewed-form synthesis string and preserves the
+Japanese sign target; it grants no acoustic evidence. The portable scenarios
+remain L1/L2 contract
 executions; their `layer` records the intended final verification surface, not
 a claim that a simulator or head unit ran in CI. KR-U09 separately has local L3
 evidence from the actual internal SwiftUI panel: unit tests calculate the
@@ -493,8 +496,10 @@ real Apple observation adapter, ordered two-edge entry adapter, actor admission,
 and one post-entry matcher update, asserting only actor-returned snapshots. The
 same update's matching one-shot emission passes through the RoutePlan-bound
 speech scheduler into an injected output exactly once. Focused tests execute
-replacement-safe callback identity, interruption without catch-up replay, and a
-typed missing-voice failure. The real iOS output is compile- and launch-checked
+replacement-safe callback identity, interruption without catch-up replay,
+reviewed-form rendering without cascade or duplicate expansion, exact
+offline-audio lookup against unchanged release text, and a typed missing-voice
+failure. The real iOS output is compile- and launch-checked
 with Apple's `voicePrompt` audio-session configuration; acoustic output remains
 a device test. A launch-only XCUITest verifies that the visible preview starts
 in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
@@ -576,7 +581,9 @@ emission contract rather than adding a portable Apple-audio event, and grants no
 field evidence or real-road release authority.
 
 For localization, domain tests prove that all required bundles and spoken forms
-exist. Simulator or device tests separately prove voice discovery, pronunciation
+exist and that reviewed forms reach a separate Apple synthesis string without
+changing release text. Simulator or device tests separately prove voice
+discovery, pronunciation
 fixtures, audio lifecycle, and the visible Japanese sign target. A device voice
 being installed is an environment fact, not a portable domain assertion. Pure
 package tests cover exact-locale filtering, novelty/personal exclusion,

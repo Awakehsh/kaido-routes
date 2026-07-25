@@ -98,7 +98,8 @@ public enum NavigationPresentationProjector {
         distanceMeters: request.guidanceFrame.distanceMeters,
         maneuver: request.guidanceFrame.maneuver,
         spokenText: voiceContent.spokenText,
-        shouldSpeak: request.promptEmission != nil
+        shouldSpeak: request.promptEmission != nil,
+        spokenForms: voiceContent.spokenForms
       )
     )
   }

@@ -378,7 +378,11 @@ receives no RoutePlan, occurrence, guidance frame, prompt, or ledger value. It
 therefore cannot authorize or consume navigation speech.
 The real `AVSpeechGuidanceOutput` reads the same locale-scoped stored identifier
 only when the actor-owned one-shot command is admitted, and falls back to the
-best eligible installed voice if that preference is unavailable. The app cannot
+best eligible installed voice if that preference is unavailable. Its command
+keeps the exact released text for offline-audio matching while passing a
+separately rendered, reviewed-form synthesis string to Apple. Term replacement
+is longest-first and non-cascading, and does not duplicate a form already
+expanded in the spoken text. The app cannot
 download Apple voice assets. A default-only device is explicitly described as
 basic synthesis and is told to install an enhanced or premium voice through
 iPhone Spoken Content settings, then return for a physical-device audition.

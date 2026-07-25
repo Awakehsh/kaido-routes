@@ -8,18 +8,48 @@ public enum AppBundleProductReleaseRole: String, Codable, Equatable, Sendable {
   case foregroundNavigation = "FOREGROUND_NAVIGATION"
 }
 
+public struct AppBundleGuidanceAudioDisplayName:
+  Codable, Equatable, Sendable
+{
+  public let japanese: String
+  public let simplifiedChinese: String
+  public let english: String
+
+  public init(
+    japanese: String,
+    simplifiedChinese: String,
+    english: String
+  ) {
+    self.japanese = japanese
+    self.simplifiedChinese = simplifiedChinese
+    self.english = english
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case japanese
+    case simplifiedChinese = "simplified_chinese"
+    case english
+  }
+}
+
 public struct AppBundleGuidanceAudioReleaseDescriptor:
   Codable, Equatable, Sendable
 {
+  public let selectionID: String
+  public let displayName: AppBundleGuidanceAudioDisplayName
   public let manifestResourceName: String
   public let expectedManifestSHA256: String
   public let expectedReleaseID: String
 
   public init(
+    selectionID: String,
+    displayName: AppBundleGuidanceAudioDisplayName,
     manifestResourceName: String,
     expectedManifestSHA256: String,
     expectedReleaseID: String
   ) {
+    self.selectionID = selectionID
+    self.displayName = displayName
     self.manifestResourceName = manifestResourceName
     self.expectedManifestSHA256 = expectedManifestSHA256
     self.expectedReleaseID = expectedReleaseID
@@ -30,6 +60,8 @@ public struct AppBundleGuidanceAudioReleaseDescriptor:
   }
 
   private enum CodingKeys: String, CodingKey {
+    case selectionID = "selection_id"
+    case displayName = "display_name"
     case manifestResourceName = "manifest_resource_name"
     case expectedManifestSHA256 = "expected_manifest_sha256"
     case expectedReleaseID = "expected_release_id"
@@ -72,7 +104,7 @@ public struct AppBundleProductReleaseDescriptor:
   public let expectedSHA256: String
   public let expectedReleaseID: String
   public let role: AppBundleProductReleaseRole
-  public let guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor?
+  public let guidanceAudioChoices: [AppBundleGuidanceAudioReleaseDescriptor]
   public let preDriveEvidence: AppBundlePreDriveEvidenceDescriptor?
   public let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]?
   public let preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint?
@@ -83,7 +115,8 @@ public struct AppBundleProductReleaseDescriptor:
     expectedSHA256: String,
     expectedReleaseID: String,
     role: AppBundleProductReleaseRole,
-    guidanceAudio: AppBundleGuidanceAudioReleaseDescriptor? = nil,
+    guidanceAudioChoices:
+      [AppBundleGuidanceAudioReleaseDescriptor] = [],
     preDriveEvidence: AppBundlePreDriveEvidenceDescriptor? = nil,
     preDriveEvidenceUpdateTrustKeys:
       [PreDriveEvidenceUpdateTrustKey]? = nil,
@@ -95,7 +128,7 @@ public struct AppBundleProductReleaseDescriptor:
     self.expectedSHA256 = expectedSHA256
     self.expectedReleaseID = expectedReleaseID
     self.role = role
-    self.guidanceAudio = guidanceAudio
+    self.guidanceAudioChoices = guidanceAudioChoices
     self.preDriveEvidence = preDriveEvidence
     self.preDriveEvidenceUpdateTrustKeys =
       preDriveEvidenceUpdateTrustKeys
@@ -113,7 +146,7 @@ public struct AppBundleProductReleaseDescriptor:
     case expectedSHA256 = "expected_sha256"
     case expectedReleaseID = "expected_release_id"
     case role
-    case guidanceAudio = "guidance_audio"
+    case guidanceAudioChoices = "guidance_audio_choices"
     case preDriveEvidence = "pre_drive_evidence"
     case preDriveEvidenceUpdateTrustKeys =
       "pre_drive_evidence_update_trust_keys"
@@ -122,15 +155,39 @@ public struct AppBundleProductReleaseDescriptor:
   }
 }
 
+public struct AppBundleGuidanceAudioStagingOption:
+  Codable, Equatable, Sendable
+{
+  public let selectionID: String
+  public let displayName: AppBundleGuidanceAudioDisplayName
+  public let manifestResourceName: String
+
+  public init(
+    selectionID: String,
+    displayName: AppBundleGuidanceAudioDisplayName,
+    manifestResourceName: String
+  ) {
+    self.selectionID = selectionID
+    self.displayName = displayName
+    self.manifestResourceName = manifestResourceName
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case selectionID = "selection_id"
+    case displayName = "display_name"
+    case manifestResourceName = "manifest_resource_name"
+  }
+}
+
 public struct AppBundleReleaseStagingConfiguration:
   Codable, Equatable, Sendable
 {
-  public static let currentSchemaVersion = "1.2"
+  public static let currentSchemaVersion = "2.0"
 
   public let schemaVersion: String
   public let descriptorSymbol: String
   public let productResourceName: String
-  public let guidanceAudioManifestResourceName: String?
+  public let guidanceAudioOptions: [AppBundleGuidanceAudioStagingOption]
   public let preDriveEvidenceManifestResourceName: String?
   public let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]?
   public let preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint?
@@ -140,7 +197,8 @@ public struct AppBundleReleaseStagingConfiguration:
       AppBundleReleaseStagingConfiguration.currentSchemaVersion,
     descriptorSymbol: String,
     productResourceName: String,
-    guidanceAudioManifestResourceName: String? = nil,
+    guidanceAudioOptions:
+      [AppBundleGuidanceAudioStagingOption] = [],
     preDriveEvidenceManifestResourceName: String? = nil,
     preDriveEvidenceUpdateTrustKeys:
       [PreDriveEvidenceUpdateTrustKey]? = nil,
@@ -150,8 +208,7 @@ public struct AppBundleReleaseStagingConfiguration:
     self.schemaVersion = schemaVersion
     self.descriptorSymbol = descriptorSymbol
     self.productResourceName = productResourceName
-    self.guidanceAudioManifestResourceName =
-      guidanceAudioManifestResourceName
+    self.guidanceAudioOptions = guidanceAudioOptions
     self.preDriveEvidenceManifestResourceName =
       preDriveEvidenceManifestResourceName
     self.preDriveEvidenceUpdateTrustKeys =
@@ -164,8 +221,7 @@ public struct AppBundleReleaseStagingConfiguration:
     case schemaVersion = "schema_version"
     case descriptorSymbol = "descriptor_symbol"
     case productResourceName = "product_resource_name"
-    case guidanceAudioManifestResourceName =
-      "guidance_audio_manifest_resource_name"
+    case guidanceAudioOptions = "guidance_audio_options"
     case preDriveEvidenceManifestResourceName =
       "pre_drive_evidence_manifest_resource_name"
     case preDriveEvidenceUpdateTrustKeys =
@@ -181,7 +237,8 @@ public enum AppBundleReleaseStagingConfigurationIssue:
   case invalidSchemaVersion
   case invalidDescriptorSymbol
   case invalidProductResourceName
-  case invalidGuidanceAudioManifestResourceName
+  case invalidGuidanceAudioOption
+  case duplicateGuidanceAudioSelectionID
   case invalidPreDriveEvidenceManifestResourceName
   case invalidPreDriveEvidenceUpdateTrustKeys
   case invalidPreDriveEvidenceUpdateEndpoint
@@ -196,8 +253,10 @@ public enum AppBundleReleaseStagingConfigurationIssue:
       "INVALID_APP_BUNDLE_DESCRIPTOR_SYMBOL"
     case .invalidProductResourceName:
       "INVALID_APP_BUNDLE_PRODUCT_RESOURCE_NAME"
-    case .invalidGuidanceAudioManifestResourceName:
-      "INVALID_APP_BUNDLE_AUDIO_MANIFEST_RESOURCE_NAME"
+    case .invalidGuidanceAudioOption:
+      "INVALID_APP_BUNDLE_AUDIO_OPTION"
+    case .duplicateGuidanceAudioSelectionID:
+      "DUPLICATE_APP_BUNDLE_AUDIO_SELECTION_ID"
     case .invalidPreDriveEvidenceManifestResourceName:
       "INVALID_APP_BUNDLE_PRE_DRIVE_EVIDENCE_RESOURCE_NAME"
     case .invalidPreDriveEvidenceUpdateTrustKeys:
@@ -220,6 +279,7 @@ public enum AppBundleReleaseStagingError: Error, Equatable, Sendable {
   case guidanceAudioInputMismatch
   case invalidGuidanceAudioArtifact
   case invalidGuidanceAudioRelease([GuidanceAudioReleaseIssue])
+  case duplicateGuidanceAudioReleaseID(String)
   case preDriveEvidenceInputMismatch
   case invalidPreDriveEvidenceArtifact
   case invalidPreDriveEvidenceBundle([PreDriveEvidenceBundleIssue])
@@ -266,7 +326,7 @@ public struct AppBundleStagedResourceRecord:
 public struct AppBundleReleaseStagingManifest:
   Codable, Equatable, Sendable
 {
-  public static let currentSchemaVersion = "1.2"
+  public static let currentSchemaVersion = "2.0"
 
   public let schemaVersion: String
   public let descriptorSymbol: String
@@ -326,9 +386,11 @@ public enum AppBundleReleaseStagingAuthor {
   public static func prepare(
     configuration: AppBundleReleaseStagingConfiguration,
     productArtifactData: Data,
-    guidanceAudioManifestData: Data? = nil,
+    guidanceAudioManifestDataProvider: (
+      (String) throws -> Data?
+    )? = nil,
     guidanceAudioResourceProvider: (
-      (String) throws -> GuidanceAudioResource?
+      (String, String) throws -> GuidanceAudioResource?
     )? = nil,
     preDriveEvidenceManifestData: Data? = nil
   ) throws -> AppBundleReleaseStagingPackage {
@@ -357,13 +419,13 @@ public enum AppBundleReleaseStagingAuthor {
       throw AppBundleReleaseStagingError.foregroundProductRequired
     }
 
-    let hasAudioResourceName =
-      configuration.guidanceAudioManifestResourceName != nil
-    let hasAudioManifest = guidanceAudioManifestData != nil
+    let hasAudioOptions = !configuration.guidanceAudioOptions.isEmpty
+    let hasAudioManifestProvider =
+      guidanceAudioManifestDataProvider != nil
     let hasAudioProvider = guidanceAudioResourceProvider != nil
     guard
-      hasAudioResourceName == hasAudioManifest,
-      hasAudioManifest == hasAudioProvider
+      hasAudioOptions == hasAudioManifestProvider,
+      hasAudioManifestProvider == hasAudioProvider
     else {
       throw AppBundleReleaseStagingError.guidanceAudioInputMismatch
     }
@@ -375,64 +437,96 @@ public enum AppBundleReleaseStagingAuthor {
         data: productArtifactData
       )
     ]
-    var audioDescriptor: AppBundleGuidanceAudioReleaseDescriptor?
+    var audioDescriptors: [AppBundleGuidanceAudioReleaseDescriptor] = []
     var preDriveEvidenceDescriptor: AppBundlePreDriveEvidenceDescriptor?
 
-    if let audioResourceName =
-      configuration.guidanceAudioManifestResourceName,
-      let audioManifestData = guidanceAudioManifestData,
+    if let audioManifestProvider = guidanceAudioManifestDataProvider,
       let audioProvider = guidanceAudioResourceProvider
     {
-      var resourceCache: [String: GuidanceAudioResource] = [:]
-      let audioRelease: GuidanceAudioRelease
-      do {
-        audioRelease = try GuidanceAudioReleaseManifestCodec.decode(
-          audioManifestData,
-          productRelease: productRelease,
-          resourceProvider: { filename in
-            if let cached = resourceCache[filename] {
-              return cached
-            }
-            guard let resource = try audioProvider(filename) else {
-              return nil
-            }
-            resourceCache[filename] = resource
-            return resource
-          }
-        )
-      } catch GuidanceAudioReleaseError.invalid(let issues) {
-        throw AppBundleReleaseStagingError.invalidGuidanceAudioRelease(
-          issues
-        )
-      } catch {
-        throw AppBundleReleaseStagingError.invalidGuidanceAudioArtifact
-      }
-
-      stagedFiles.append(
-        AppBundleStagedFile(
-          relativePath: "Resources/\(audioResourceName).json",
-          data: audioManifestData
-        )
-      )
-      let audioFilenames = Set(
-        audioRelease.assets.map(\.record.resourceFilename)
-      ).sorted()
-      for filename in audioFilenames {
-        guard let resource = resourceCache[filename] else {
+      for option in configuration.guidanceAudioOptions {
+        guard
+          let audioManifestData = try audioManifestProvider(
+            option.manifestResourceName
+          )
+        else {
           throw AppBundleReleaseStagingError.invalidGuidanceAudioArtifact
         }
+        var resourceCache: [String: GuidanceAudioResource] = [:]
+        let audioRelease: GuidanceAudioRelease
+        do {
+          audioRelease = try GuidanceAudioReleaseManifestCodec.decode(
+            audioManifestData,
+            productRelease: productRelease,
+            resourceProvider: { filename in
+              if let cached = resourceCache[filename] {
+                return cached
+              }
+              guard
+                let resource = try audioProvider(
+                  option.selectionID,
+                  filename
+                )
+              else {
+                return nil
+              }
+              resourceCache[filename] = resource
+              return resource
+            }
+          )
+        } catch GuidanceAudioReleaseError.invalid(let issues) {
+          throw AppBundleReleaseStagingError.invalidGuidanceAudioRelease(
+            issues
+          )
+        } catch {
+          throw AppBundleReleaseStagingError.invalidGuidanceAudioArtifact
+        }
+
         stagedFiles.append(
           AppBundleStagedFile(
-            relativePath: "Resources/\(filename)",
-            data: resource.data
+            relativePath:
+              "Resources/\(option.manifestResourceName).json",
+            data: audioManifestData
+          )
+        )
+        let audioFilenames = Set(
+          audioRelease.assets.map(\.record.resourceFilename)
+        ).sorted()
+        for filename in audioFilenames {
+          guard let resource = resourceCache[filename] else {
+            throw AppBundleReleaseStagingError.invalidGuidanceAudioArtifact
+          }
+          stagedFiles.append(
+            AppBundleStagedFile(
+              relativePath:
+                "Resources/"
+                + stagedGuidanceAudioFilename(
+                  selectionID: option.selectionID,
+                  logicalFilename: filename
+                ),
+              data: resource.data
+            )
+          )
+        }
+        audioDescriptors.append(
+          AppBundleGuidanceAudioReleaseDescriptor(
+            selectionID: option.selectionID,
+            displayName: option.displayName,
+            manifestResourceName: option.manifestResourceName,
+            expectedManifestSHA256: sha256Hex(audioManifestData),
+            expectedReleaseID: audioRelease.manifest.releaseID
           )
         )
       }
-      audioDescriptor = AppBundleGuidanceAudioReleaseDescriptor(
-        manifestResourceName: audioResourceName,
-        expectedManifestSHA256: sha256Hex(audioManifestData),
-        expectedReleaseID: audioRelease.manifest.releaseID
-      )
+    }
+    var audioReleaseIDs: Set<String> = []
+    for descriptor in audioDescriptors {
+      guard audioReleaseIDs.insert(descriptor.expectedReleaseID).inserted
+      else {
+        throw
+          AppBundleReleaseStagingError.duplicateGuidanceAudioReleaseID(
+            descriptor.expectedReleaseID
+          )
+      }
     }
 
     let hasPreDriveEvidenceResourceName =
@@ -496,7 +590,7 @@ public enum AppBundleReleaseStagingAuthor {
       expectedSHA256: sha256Hex(productArtifactData),
       expectedReleaseID: productRelease.releaseID,
       role: .foregroundNavigation,
-      guidanceAudio: audioDescriptor,
+      guidanceAudioChoices: audioDescriptors,
       preDriveEvidence: preDriveEvidenceDescriptor,
       preDriveEvidenceUpdateTrustKeys:
         configuration.preDriveEvidenceUpdateTrustKeys,
@@ -509,8 +603,11 @@ public enum AppBundleReleaseStagingAuthor {
         kind: resourceKind(
           relativePath: file.relativePath,
           productResourceName: configuration.productResourceName,
-          audioManifestResourceName:
-            configuration.guidanceAudioManifestResourceName,
+          audioManifestResourceNames: Set(
+            configuration.guidanceAudioOptions.map(
+              \.manifestResourceName
+            )
+          ),
           preDriveEvidenceManifestResourceName:
             configuration.preDriveEvidenceManifestResourceName
         ),
@@ -566,11 +663,14 @@ public enum AppBundleReleaseStagingAuthor {
     if !isSafeResourceName(configuration.productResourceName) {
       issues.append(.invalidProductResourceName)
     }
-    if let audioResourceName =
-      configuration.guidanceAudioManifestResourceName,
-      !isSafeResourceName(audioResourceName)
-    {
-      issues.append(.invalidGuidanceAudioManifestResourceName)
+    var audioSelectionIDs: Set<String> = []
+    for option in configuration.guidanceAudioOptions {
+      if !isValidGuidanceAudioOption(option) {
+        issues.append(.invalidGuidanceAudioOption)
+      }
+      if !audioSelectionIDs.insert(option.selectionID).inserted {
+        issues.append(.duplicateGuidanceAudioSelectionID)
+      }
     }
     if let preDriveEvidenceResourceName =
       configuration.preDriveEvidenceManifestResourceName,
@@ -597,11 +697,14 @@ public enum AppBundleReleaseStagingAuthor {
         )
       }
     }
-    let resourceNames = [
-      configuration.productResourceName,
-      configuration.guidanceAudioManifestResourceName,
-      configuration.preDriveEvidenceManifestResourceName,
-    ].compactMap { $0 }
+    let resourceNames =
+      [
+        configuration.productResourceName,
+        configuration.preDriveEvidenceManifestResourceName,
+      ].compactMap { $0 }
+      + configuration.guidanceAudioOptions.map(
+        \.manifestResourceName
+      )
     if Set(resourceNames).count != resourceNames.count {
       issues.append(.duplicateManifestResourceName)
     }
@@ -611,16 +714,23 @@ public enum AppBundleReleaseStagingAuthor {
   private static func resourceKind(
     relativePath: String,
     productResourceName: String,
-    audioManifestResourceName: String?,
+    audioManifestResourceNames: Set<String>,
     preDriveEvidenceManifestResourceName: String?
   ) -> AppBundleStagedResourceKind {
     if relativePath == "Resources/\(productResourceName).json" {
       return .productRelease
     }
-    if let audioManifestResourceName,
-      relativePath == "Resources/\(audioManifestResourceName).json"
+    if relativePath.hasPrefix("Resources/"),
+      relativePath.hasSuffix(".json")
     {
-      return .guidanceAudioManifest
+      let resourceName = String(
+        relativePath
+          .dropFirst("Resources/".count)
+          .dropLast(".json".count)
+      )
+      if audioManifestResourceNames.contains(resourceName) {
+        return .guidanceAudioManifest
+      }
     }
     if let preDriveEvidenceManifestResourceName,
       relativePath
@@ -629,6 +739,43 @@ public enum AppBundleReleaseStagingAuthor {
       return .preDriveEvidenceManifest
     }
     return .guidanceAudioWave
+  }
+
+  private static func isValidGuidanceAudioOption(
+    _ option: AppBundleGuidanceAudioStagingOption
+  ) -> Bool {
+    let names = [
+      option.displayName.japanese,
+      option.displayName.simplifiedChinese,
+      option.displayName.english,
+    ]
+    return
+      isSafeSelectionID(option.selectionID)
+      && isSafeResourceName(option.manifestResourceName)
+      && names.allSatisfy {
+        !$0.isEmpty
+          && $0
+            == $0.trimmingCharacters(
+              in: .whitespacesAndNewlines
+            )
+      }
+  }
+
+  public static func stagedGuidanceAudioFilename(
+    selectionID: String,
+    logicalFilename: String
+  ) -> String {
+    "\(selectionID)--\(logicalFilename)"
+  }
+
+  private static func isSafeSelectionID(_ value: String) -> Bool {
+    !value.isEmpty
+      && value == value.trimmingCharacters(in: .whitespacesAndNewlines)
+      && value.allSatisfy {
+        $0.isASCII
+          && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_"
+            || $0 == ".")
+      }
   }
 
   private static func isSafeResourceName(_ value: String) -> Bool {
@@ -674,19 +821,26 @@ public enum AppBundleReleaseStagingAuthor {
     descriptor: AppBundleProductReleaseDescriptor,
     symbol: String
   ) -> String {
-    let audioSource: String
-    if let audio = descriptor.guidanceAudio {
-      audioSource =
-        """
-        AppBundleGuidanceAudioReleaseDescriptor(
-              manifestResourceName: \(swiftString(audio.manifestResourceName)),
-              expectedManifestSHA256: \(swiftString(audio.expectedManifestSHA256)),
-              expectedReleaseID: \(swiftString(audio.expectedReleaseID))
-            )
-        """
-    } else {
-      audioSource = "nil"
-    }
+    let audioSource =
+      descriptor.guidanceAudioChoices.isEmpty
+      ? "[]"
+      : "[\n"
+        + descriptor.guidanceAudioChoices.map { audio in
+          """
+              AppBundleGuidanceAudioReleaseDescriptor(
+                selectionID: \(swiftString(audio.selectionID)),
+                displayName: AppBundleGuidanceAudioDisplayName(
+                  japanese: \(swiftString(audio.displayName.japanese)),
+                  simplifiedChinese: \(swiftString(audio.displayName.simplifiedChinese)),
+                  english: \(swiftString(audio.displayName.english))
+                ),
+                manifestResourceName: \(swiftString(audio.manifestResourceName)),
+                expectedManifestSHA256: \(swiftString(audio.expectedManifestSHA256)),
+                expectedReleaseID: \(swiftString(audio.expectedReleaseID))
+              )
+          """
+        }.joined(separator: ",\n")
+        + "\n          ]"
     let preDriveEvidenceSource: String
     if let evidence = descriptor.preDriveEvidence {
       preDriveEvidenceSource =
@@ -742,7 +896,7 @@ public enum AppBundleReleaseStagingAuthor {
           expectedSHA256: \(swiftString(descriptor.expectedSHA256)),
           expectedReleaseID: \(swiftString(descriptor.expectedReleaseID)),
           role: .foregroundNavigation,
-          guidanceAudio: \(audioSource),
+          guidanceAudioChoices: \(audioSource),
           preDriveEvidence: \(preDriveEvidenceSource),
           preDriveEvidenceUpdateTrustKeys: \(preDriveEvidenceUpdateTrustSource),
           preDriveEvidenceUpdateEndpoint: \(preDriveEvidenceUpdateEndpointSource)

@@ -560,7 +560,7 @@ func appBundleStagingPreparesForegroundProduct() throws {
     package.manifest.descriptor.expectedSHA256
       == testSHA256Hex(productData)
   )
-  #expect(package.manifest.descriptor.guidanceAudio == nil)
+  #expect(package.manifest.descriptor.guidanceAudioChoices.isEmpty)
   #expect(
     package.manifest.resources
       == [
@@ -770,7 +770,12 @@ func appBundleStagingRejectsNonForegroundInput() throws {
       configuration: AppBundleReleaseStagingConfiguration(
         descriptorSymbol: "releasedK7AobaKohoku",
         productResourceName: "k7-aoba-kohoku-product-release",
-        guidanceAudioManifestResourceName: "k7-guidance-audio"
+        guidanceAudioOptions: [
+          appBundleGuidanceAudioOption(
+            selectionID: "calm",
+            manifestResourceName: "k7-guidance-audio"
+          )
+        ]
       ),
       productArtifactData: try appBundleReleasedProductData()
     )
@@ -799,10 +804,15 @@ func appBundleStagingRejectsNonForegroundInput() throws {
 @Test("App bundle staging validates configuration before artifact admission")
 func appBundleStagingRejectsInvalidConfiguration() throws {
   let configuration = AppBundleReleaseStagingConfiguration(
-    schemaVersion: "2.0",
+    schemaVersion: "3.0",
     descriptorSymbol: "class",
     productResourceName: "../product",
-    guidanceAudioManifestResourceName: "../product"
+    guidanceAudioOptions: [
+      appBundleGuidanceAudioOption(
+        selectionID: " calm ",
+        manifestResourceName: "../product"
+      )
+    ]
   )
 
   do {
@@ -818,7 +828,7 @@ func appBundleStagingRejectsInvalidConfiguration() throws {
           .invalidSchemaVersion,
           .invalidDescriptorSymbol,
           .invalidProductResourceName,
-          .invalidGuidanceAudioManifestResourceName,
+          .invalidGuidanceAudioOption,
           .duplicateManifestResourceName,
         ]
     )
@@ -879,19 +889,28 @@ func appBundleStagingPreparesGuidanceAudio() throws {
   let configuration = AppBundleReleaseStagingConfiguration(
     descriptorSymbol: "releasedK7WithAudio",
     productResourceName: "k7-product",
-    guidanceAudioManifestResourceName: "k7-guidance-audio"
+    guidanceAudioOptions: [
+      appBundleGuidanceAudioOption(
+        selectionID: "calm",
+        manifestResourceName: "k7-guidance-audio"
+      )
+    ]
   )
 
   let package = try AppBundleReleaseStagingAuthor.prepare(
     configuration: configuration,
     productArtifactData: productData,
-    guidanceAudioManifestData: manifestData,
-    guidanceAudioResourceProvider: { baseFixture.resources[$0] }
+    guidanceAudioManifestDataProvider: { _ in manifestData },
+    guidanceAudioResourceProvider: {
+      _,
+      filename in baseFixture.resources[filename]
+    }
   )
   let audioDescriptor = try #require(
-    package.manifest.descriptor.guidanceAudio
+    package.manifest.descriptor.guidanceAudioChoices.first
   )
 
+  #expect(audioDescriptor.selectionID == "calm")
   #expect(
     audioDescriptor.expectedReleaseID
       == "test.guidance-audio.app-bundle.v1"
@@ -909,6 +928,157 @@ func appBundleStagingPreparesGuidanceAudio() throws {
       $0.kind == .guidanceAudioWave
     }.count == Set(releasedRecords.map(\.resourceFilename)).count
   )
+}
+
+@Test("App bundle staging retains multiple independently selected audio packs")
+func appBundleStagingPreparesMultipleGuidanceAudioChoices() throws {
+  let productData = try appBundleReleasedProductData()
+  let productRelease = try KaidoProductReleaseArtifactCodec.decode(
+    productData
+  )
+  let baseFixture = guidanceAudioManifestFixture(productRelease)
+
+  func releasedRecords(
+    voiceID: String
+  ) -> [GuidanceAudioAssetRecord] {
+    let records = baseFixture.manifest.assets.map { record in
+      return GuidanceAudioAssetRecord(
+        key: record.key,
+        spokenText: record.spokenText,
+        spokenTextSHA256: record.spokenTextSHA256,
+        resourceFilename: record.resourceFilename,
+        audioSHA256: record.audioSHA256,
+        byteCount: record.byteCount,
+        sampleRateHz: record.sampleRateHz,
+        channelCount: record.channelCount,
+        durationMilliseconds: record.durationMilliseconds,
+        provenance: GuidanceAudioSynthesisProvenance(
+          evidenceScope: .releasedAsset,
+          generationMode: .localOpenWeight,
+          engineID: "test.engine",
+          engineVersion: "1.0.0",
+          modelID: "test/model",
+          modelRevision: String(repeating: "a", count: 40),
+          voiceID: voiceID,
+          licenceIdentifier: "Apache-2.0",
+          sourceURL: "https://example.com/test-guidance-audio",
+          generatedAt: "2026-07-24T13:00:00+09:00",
+          reviewedAt: "2026-07-24T14:00:00+09:00"
+        ),
+        review: record.review
+      )
+    }
+    return records
+  }
+
+  let calm = releasedRecords(voiceID: "calm")
+  let direct = releasedRecords(voiceID: "direct")
+  func manifest(
+    releaseID: String,
+    records: [GuidanceAudioAssetRecord]
+  ) throws -> Data {
+    try GuidanceAudioReleaseManifestCodec.encode(
+      GuidanceAudioReleaseManifest(
+        releaseID: releaseID,
+        releasedAt: "2026-07-24T15:00:00+09:00",
+        productReleaseID: productRelease.releaseID,
+        navigationReleaseID: productRelease.navigation.releaseID,
+        networkSnapshotID:
+          productRelease.navigation.bundle.networkSnapshot.id,
+        routePlanID: productRelease.navigation.bundle.routePlan.id,
+        assets: records
+      ),
+      productRelease: productRelease,
+      resourceProvider: { baseFixture.resources[$0] }
+    )
+  }
+  let calmManifest = try manifest(
+    releaseID: "test.guidance-audio.calm.v1",
+    records: calm
+  )
+  let directManifest = try manifest(
+    releaseID: "test.guidance-audio.direct.v1",
+    records: direct
+  )
+  let configuration = AppBundleReleaseStagingConfiguration(
+    descriptorSymbol: "releasedK7WithSelectableAudio",
+    productResourceName: "k7-product",
+    guidanceAudioOptions: [
+      appBundleGuidanceAudioOption(
+        selectionID: "calm",
+        manifestResourceName: "k7-guidance-audio-calm"
+      ),
+      appBundleGuidanceAudioOption(
+        selectionID: "direct",
+        manifestResourceName: "k7-guidance-audio-direct"
+      ),
+    ]
+  )
+
+  let package = try AppBundleReleaseStagingAuthor.prepare(
+    configuration: configuration,
+    productArtifactData: productData,
+    guidanceAudioManifestDataProvider: { resourceName in
+      switch resourceName {
+      case "k7-guidance-audio-calm":
+        calmManifest
+      case "k7-guidance-audio-direct":
+        directManifest
+      default:
+        nil
+      }
+    },
+    guidanceAudioResourceProvider: {
+      _,
+      filename in baseFixture.resources[filename]
+    }
+  )
+
+  #expect(
+    package.manifest.descriptor.guidanceAudioChoices.map(
+      \.selectionID
+    ) == ["calm", "direct"]
+  )
+  #expect(
+    package.manifest.resources.filter {
+      $0.kind == .guidanceAudioManifest
+    }.count == 2
+  )
+  #expect(
+    package.manifest.resources.filter {
+      $0.kind == .guidanceAudioWave
+    }.count == calm.count + direct.count
+  )
+  let logicalFilename = baseFixture.manifest.assets[0].resourceFilename
+  #expect(
+    package.files.contains {
+      $0.relativePath == "Resources/calm--\(logicalFilename)"
+    }
+  )
+  #expect(
+    package.files.contains {
+      $0.relativePath == "Resources/direct--\(logicalFilename)"
+    }
+  )
+
+  do {
+    _ = try AppBundleReleaseStagingAuthor.prepare(
+      configuration: configuration,
+      productArtifactData: productData,
+      guidanceAudioManifestDataProvider: { _ in calmManifest },
+      guidanceAudioResourceProvider: {
+        _,
+        filename in baseFixture.resources[filename]
+      }
+    )
+    Issue.record("Expected duplicate audio release identity to fail")
+  } catch AppBundleReleaseStagingError.duplicateGuidanceAudioReleaseID(
+    let releaseID
+  ) {
+    #expect(releaseID == "test.guidance-audio.calm.v1")
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
 }
 
 @Test("App bundle staging pins one exact current pre-drive evidence bundle")
@@ -1407,6 +1577,21 @@ private func productNavigationReleaseArtifact(
     decisionZones: artifact.decisionZones,
     releasedGuidance: artifact.releasedGuidance,
     junctionViews: artifact.junctionViews
+  )
+}
+
+private func appBundleGuidanceAudioOption(
+  selectionID: String,
+  manifestResourceName: String
+) -> AppBundleGuidanceAudioStagingOption {
+  AppBundleGuidanceAudioStagingOption(
+    selectionID: selectionID,
+    displayName: AppBundleGuidanceAudioDisplayName(
+      japanese: "落ち着き",
+      simplifiedChinese: "沉稳",
+      english: "Calm"
+    ),
+    manifestResourceName: manifestResourceName
   )
 }
 

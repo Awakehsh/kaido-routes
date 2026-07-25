@@ -367,7 +367,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
         finalChoiceTitle: finalChoiceTitle,
         decisionCount: adapter.steps.count,
         actualDistanceKM: actualDistanceKM,
-        hasGuidanceAudio: entry.guidanceAudioRelease != nil
+        hasGuidanceAudio: !entry.guidanceAudioChoices.isEmpty
       )
     }
     .sorted {

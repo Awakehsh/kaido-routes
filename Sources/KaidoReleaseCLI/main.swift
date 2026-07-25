@@ -74,7 +74,7 @@ private enum CLIError: Error, CustomStringConvertible {
         kaido-release prepare-app-bundle \\
           --product-artifact <product-release.json> \\
           --config <app-bundle-staging.json> \\
-          [--guidance-audio-manifest <guidance-audio-release.json> \\
+          [--guidance-audio-manifests <manifest-directory> \\
            --guidance-audio-resources <wav-directory>] \\
           [--pre-drive-evidence-manifest <pre-drive-evidence.json>] \\
           --output <new-staging-directory>
@@ -247,6 +247,8 @@ private enum CLIError: Error, CustomStringConvertible {
     case .invalidGuidanceAudioRelease(let issues):
       "App bundle staging guidance audio release is blocked:\n"
         + issues.map { "  \($0.code)" }.joined(separator: "\n")
+    case .duplicateGuidanceAudioReleaseID(let releaseID):
+      "App bundle staging guidance audio release ID is duplicated: \(releaseID)"
     case .preDriveEvidenceInputMismatch:
       "App bundle staging pre-drive evidence configuration and input do not agree"
     case .invalidPreDriveEvidenceArtifact:
@@ -325,7 +327,7 @@ private enum Command {
   case prepareAppBundle(
     productArtifact: String,
     configuration: String,
-    guidanceAudioManifest: String?,
+    guidanceAudioManifests: String?,
     guidanceAudioResources: String?,
     preDriveEvidenceManifest: String?,
     output: String
@@ -494,7 +496,7 @@ private struct Arguments {
         "--output",
       ]
       let audioFlags = baseFlags.union([
-        "--guidance-audio-manifest",
+        "--guidance-audio-manifests",
         "--guidance-audio-resources",
       ])
       let evidenceFlags = baseFlags.union([
@@ -503,31 +505,31 @@ private struct Arguments {
       let completeFlags = audioFlags.union([
         "--pre-drive-evidence-manifest"
       ])
-      let guidanceAudioManifest: String?
+      let guidanceAudioManifests: String?
       let guidanceAudioResources: String?
       let preDriveEvidenceManifest: String?
       if flags.matches(exactly: baseFlags) {
-        guidanceAudioManifest = nil
+        guidanceAudioManifests = nil
         guidanceAudioResources = nil
         preDriveEvidenceManifest = nil
       } else if flags.matches(exactly: audioFlags) {
-        guidanceAudioManifest = try flags.value(
-          "--guidance-audio-manifest"
+        guidanceAudioManifests = try flags.value(
+          "--guidance-audio-manifests"
         )
         guidanceAudioResources = try flags.value(
           "--guidance-audio-resources"
         )
         preDriveEvidenceManifest = nil
       } else if flags.matches(exactly: evidenceFlags) {
-        guidanceAudioManifest = nil
+        guidanceAudioManifests = nil
         guidanceAudioResources = nil
         preDriveEvidenceManifest = try flags.value(
           "--pre-drive-evidence-manifest"
         )
       } else {
         try flags.require(exactly: completeFlags)
-        guidanceAudioManifest = try flags.value(
-          "--guidance-audio-manifest"
+        guidanceAudioManifests = try flags.value(
+          "--guidance-audio-manifests"
         )
         guidanceAudioResources = try flags.value(
           "--guidance-audio-resources"
@@ -539,7 +541,7 @@ private struct Arguments {
       command = .prepareAppBundle(
         productArtifact: try flags.value("--product-artifact"),
         configuration: try flags.value("--config"),
-        guidanceAudioManifest: guidanceAudioManifest,
+        guidanceAudioManifests: guidanceAudioManifests,
         guidanceAudioResources: guidanceAudioResources,
         preDriveEvidenceManifest: preDriveEvidenceManifest,
         output: try flags.value("--output")
@@ -1195,7 +1197,7 @@ do {
   case .prepareAppBundle(
     let productArtifactPath,
     let configurationPath,
-    let guidanceAudioManifestPath,
+    let guidanceAudioManifestsDirectory,
     let guidanceAudioResources,
     let preDriveEvidenceManifestPath,
     let output
@@ -1205,9 +1207,6 @@ do {
       try AppBundleReleaseStagingConfigurationCodec.decode(
         read(path: configurationPath)
       )
-    let guidanceAudioManifestData = try guidanceAudioManifestPath.map {
-      try read(path: $0)
-    }
     let preDriveEvidenceManifestData =
       try preDriveEvidenceManifestPath.map {
         try read(path: $0)
@@ -1217,13 +1216,30 @@ do {
       package = try AppBundleReleaseStagingAuthor.prepare(
         configuration: configuration,
         productArtifactData: productArtifactData,
-        guidanceAudioManifestData: guidanceAudioManifestData,
+        guidanceAudioManifestDataProvider:
+          guidanceAudioManifestsDirectory.map { directory in
+            { resourceName in
+              let path =
+                URL(fileURLWithPath: directory, isDirectory: true)
+                .appendingPathComponent(
+                  "\(resourceName).json",
+                  isDirectory: false
+                ).path
+              return try read(path: path)
+            }
+          },
         guidanceAudioResourceProvider: guidanceAudioResources.map {
           resources in
-          {
-            try guidanceAudioResource(
-              filename: $0,
-              directoryPath: resources
+          { selectionID, filename in
+            let optionDirectory =
+              URL(fileURLWithPath: resources, isDirectory: true)
+              .appendingPathComponent(
+                selectionID,
+                isDirectory: true
+              ).path
+            return try guidanceAudioResource(
+              filename: filename,
+              directoryPath: optionDirectory
             )
           }
         },

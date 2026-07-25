@@ -5,12 +5,17 @@ import SwiftUI
 struct GuidanceVoiceSetupPanel: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: GuidanceVoiceSetupModel
+  @ObservedObject var audioSourceModel: GuidanceAudioSourceSetupModel
+  let releasedEntry: BundledProductReleaseEntry?
   let isParked: Bool
 
   var body: some View {
     VStack(alignment: .leading, spacing: 15) {
       header
       guidanceLanguageSelection
+      if releasedEntry != nil {
+        audioSourceSelection
+      }
       sampleMonitor
       voiceSelection
       readiness
@@ -36,10 +41,122 @@ struct GuidanceVoiceSetupPanel: View {
     .accessibilityIdentifier("product-journey-voice-check")
     .accessibilityValue(accessibilityValue)
     .onAppear {
+      audioSourceModel.configure(for: releasedEntry)
       model.refreshProfiles()
+    }
+    .onChange(of: releasedEntry?.release.releaseID) { _ in
+      audioSourceModel.configure(for: releasedEntry)
     }
     .onDisappear {
       model.stop()
+    }
+  }
+
+  private var audioSourceSelection: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(
+        copy.resolve(
+          japanese: "ナビ音色",
+          simplifiedChinese: "导航音色",
+          english: "GUIDANCE VOICE STYLE"
+        )
+      )
+      .font(.system(size: 9, weight: .black, design: .monospaced))
+      .tracking(0.65)
+      .foregroundStyle(KaidoTheme.muted)
+
+      Menu {
+        Button {
+          audioSourceModel.select(selectionID: nil)
+        } label: {
+          voiceMenuLabel(
+            title: deviceVoiceTitle,
+            detail: "APPLE · INSTALLED",
+            isSelected: audioSourceModel.usesDeviceVoice
+          )
+        }
+
+        ForEach(
+          audioSourceModel.choices,
+          id: \.selectionID
+        ) { choice in
+          Button {
+            audioSourceModel.select(
+              selectionID: choice.selectionID
+            )
+          } label: {
+            voiceMenuLabel(
+              title: displayName(choice.displayName),
+              detail: "REVIEWED · OFFLINE",
+              isSelected:
+                audioSourceModel.selectedSelectionID
+                == choice.selectionID
+            )
+          }
+        }
+      } label: {
+        HStack(spacing: 11) {
+          Image(systemName: "waveform.badge.plus")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(KaidoTheme.positionCyan)
+            .frame(width: 25)
+
+          VStack(alignment: .leading, spacing: 2) {
+            Text(audioSourceTitle)
+              .font(.system(size: 13, weight: .black))
+              .foregroundStyle(KaidoTheme.routeWhite)
+
+            Text(audioSourceDetail)
+              .font(.system(size: 8, weight: .black, design: .monospaced))
+              .foregroundStyle(KaidoTheme.positionCyan)
+          }
+
+          Spacer()
+
+          Image(systemName: "chevron.up.chevron.down")
+            .font(.system(size: 11, weight: .black))
+            .foregroundStyle(KaidoTheme.muted)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 50)
+        .background(KaidoTheme.asphalt.opacity(0.48))
+        .clipShape(RoundedRectangle(cornerRadius: 13))
+        .overlay {
+          RoundedRectangle(cornerRadius: 13)
+            .stroke(KaidoTheme.steel.opacity(0.75), lineWidth: 1)
+        }
+      }
+      .disabled(!isParked)
+      .opacity(isParked ? 1 : 0.55)
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "ナビ音色を選択",
+          simplifiedChinese: "选择导航音色",
+          english: "Choose guidance voice style"
+        )
+      )
+      .accessibilityValue("\(audioSourceTitle)，\(audioSourceDetail)")
+      .accessibilityIdentifier("voice-check-audio-source-menu")
+
+      Text(
+        copy.resolve(
+          japanese:
+            "端末音声または完全審査済みのオフライン音色を停車中に選びます。選択はナビ開始時に固定されます。",
+          simplifiedChinese:
+            "停车时可选择设备声音或已完整审核的离线音色；启程后本次导航会冻结该选择。",
+          english:
+            "Choose the device voice or a fully reviewed offline voice while parked. Navigation freezes the choice when it starts."
+        )
+      )
+      .font(.system(size: 9, weight: .medium))
+      .foregroundStyle(KaidoTheme.muted)
+      .fixedSize(horizontal: false, vertical: true)
+
+      if let code = audioSourceModel.lastErrorCode {
+        Text(code)
+          .font(.system(size: 8, weight: .bold, design: .monospaced))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+      }
     }
   }
 
@@ -136,9 +253,9 @@ struct GuidanceVoiceSetupPanel: View {
       HStack {
         Label(
           copy.resolve(
-            japanese: "固定ナビ例文",
-            simplifiedChinese: "固定导航样句",
-            english: "FIXED GUIDANCE SAMPLE"
+            japanese: "端末音声の固定例文",
+            simplifiedChinese: "设备声音固定样句",
+            english: "DEVICE VOICE SAMPLE"
           ),
           systemImage: "waveform"
         )
@@ -177,8 +294,8 @@ struct GuidanceVoiceSetupPanel: View {
       Text(
         copy.resolve(
           japanese: "インストール済み音声",
-          simplifiedChinese: "已安装声音",
-          english: "INSTALLED VOICES"
+          simplifiedChinese: "设备已安装声音",
+          english: "INSTALLED DEVICE VOICES"
         )
       )
       .font(.system(size: 9, weight: .black, design: .monospaced))
@@ -422,11 +539,11 @@ struct GuidanceVoiceSetupPanel: View {
     Label(
       copy.resolve(
         japanese:
-          "試聴には経路・位置・案内権限がありません。設定は実際のナビ案内が届いた時に使用するインストール済み音声だけを決めます。",
+          "試聴には経路・位置・案内権限がありません。ここでは端末音声だけを試聴します。オフライン音色は完全な審査済みリリースだけが選択肢に表示されます。",
         simplifiedChinese:
-          "试听没有路线、位置或提示权限；偏好只在真正的导航播报到达后决定使用哪个已安装音色。",
+          "试听没有路线、位置或提示权限；这里仅试听设备声音。离线音色只有在整套语料完整审核并随版本发布后才会出现在选项中。",
         english:
-          "Audition has no route, location, or prompt authority; the preference only selects an installed voice after a real navigation emission arrives."
+          "Audition has no route, location, or prompt authority and previews only the device voice. Offline styles appear only as complete reviewed releases."
       ),
       systemImage: "lock.shield"
     )
@@ -604,15 +721,15 @@ struct GuidanceVoiceSetupPanel: View {
       )
     case .completed:
       copy.resolve(
-        japanese: "ナビ音声をもう一度試聴",
-        simplifiedChinese: "再次试听导航声音",
-        english: "Audition guidance voice again"
+        japanese: "端末音声をもう一度試聴",
+        simplifiedChinese: "再次试听设备声音",
+        english: "Audition device voice again"
       )
     case .ready, .blocked:
       copy.resolve(
-        japanese: "現在のナビ音声を試聴",
-        simplifiedChinese: "试听当前导航声音",
-        english: "Audition current guidance voice"
+        japanese: "現在の端末音声を試聴",
+        simplifiedChinese: "试听当前设备声音",
+        english: "Audition current device voice"
       )
     }
   }
@@ -654,6 +771,40 @@ struct GuidanceVoiceSetupPanel: View {
       simplifiedChinese: "自动选择最高质量",
       english: "Automatically select highest quality"
     )
+  }
+
+  private var deviceVoiceTitle: String {
+    copy.resolve(
+      japanese: "端末音声",
+      simplifiedChinese: "设备声音",
+      english: "Device voice"
+    )
+  }
+
+  private var audioSourceTitle: String {
+    guard let choice = audioSourceModel.selectedChoice else {
+      return deviceVoiceTitle
+    }
+    return displayName(choice.displayName)
+  }
+
+  private var audioSourceDetail: String {
+    audioSourceModel.selectedChoice == nil
+      ? "APPLE · INSTALLED"
+      : "REVIEWED · OFFLINE"
+  }
+
+  private func displayName(
+    _ name: AppBundleGuidanceAudioDisplayName
+  ) -> String {
+    switch interfaceLocale {
+    case .japanese:
+      name.japanese
+    case .simplifiedChinese:
+      name.simplifiedChinese
+    case .english:
+      name.english
+    }
   }
 
   private func upgradeAuditionTitle(

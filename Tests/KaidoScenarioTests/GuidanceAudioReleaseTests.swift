@@ -157,6 +157,35 @@ func guidanceAudioReleaseRejectsRemoteResourceURL() throws {
   }
 }
 
+@Test("Bundle staging may map a reviewed logical WAV name to one physical file")
+func guidanceAudioReleaseAcceptsExplicitLogicalFilenameMapping() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+
+  let release = try GuidanceAudioRelease(
+    manifest: fixture.manifest,
+    productRelease: productRelease,
+    resourceProvider: { filename in
+      guard let source = fixture.resources[filename] else {
+        return nil
+      }
+      return GuidanceAudioResource(
+        url: source.url.deletingLastPathComponent()
+          .appendingPathComponent("calm--\(filename)"),
+        data: source.data,
+        logicalFilename: filename
+      )
+    }
+  )
+
+  #expect(release.assets.count == fixture.manifest.assets.count)
+  #expect(
+    release.assets.allSatisfy {
+      $0.resourceURL.lastPathComponent.hasPrefix("calm--")
+    }
+  )
+}
+
 @Test("Unsafe guidance resource names never reach the resource provider")
 func guidanceAudioReleaseRejectsUnsafeFilenameBeforeLookup() throws {
   let productRelease = try guidanceAudioProductRelease()

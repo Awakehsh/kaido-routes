@@ -22,7 +22,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertEqual(entry.descriptor.role, .demoOnly)
     XCTAssertGreaterThan(entry.encodedByteCount, 0)
     XCTAssertNil(entry.release.foregroundLiveInputAuthority)
-    XCTAssertNil(entry.guidanceAudioRelease)
+    XCTAssertTrue(entry.guidanceAudioChoices.isEmpty)
   }
 
   func testContentMutationFailsAtManifestHashBeforeCodecAdmission() throws {
@@ -477,6 +477,12 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
   func testDeclaredGuidanceAudioCannotSilentlyDisappear() throws {
     let data = try bundledPreviewData()
     let guidanceAudio = BundledGuidanceAudioReleaseDescriptor(
+      selectionID: "calm",
+      displayName: AppBundleGuidanceAudioDisplayName(
+        japanese: "落ち着き",
+        simplifiedChinese: "沉稳",
+        english: "Calm"
+      ),
       manifestResourceName: "test-guidance-audio",
       expectedManifestSHA256: String(repeating: "0", count: 64),
       expectedReleaseID: "test.guidance-audio.v1"
@@ -488,7 +494,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
         BundledProductReleaseCatalogLoader.sha256Hex(data),
       expectedReleaseID: "preview.synthetic.product-release.v1",
       role: .demoOnly,
-      guidanceAudio: guidanceAudio
+      guidanceAudioChoices: [guidanceAudio]
     )
 
     XCTAssertThrowsError(
@@ -498,6 +504,52 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
         $0 as? BundledProductReleaseCatalogError,
         .missingGuidanceAudioManifest(
           guidanceAudio.manifestFilename
+        )
+      )
+    }
+  }
+
+  func testGuidanceAudioChoicesRequireUniqueStableSelectionIDs() throws {
+    let data = try bundledPreviewData()
+    let first = BundledGuidanceAudioReleaseDescriptor(
+      selectionID: "calm",
+      displayName: AppBundleGuidanceAudioDisplayName(
+        japanese: "落ち着き",
+        simplifiedChinese: "沉稳",
+        english: "Calm"
+      ),
+      manifestResourceName: "test-guidance-audio-calm",
+      expectedManifestSHA256: String(repeating: "0", count: 64),
+      expectedReleaseID: "test.guidance-audio.calm"
+    )
+    let second = BundledGuidanceAudioReleaseDescriptor(
+      selectionID: "calm",
+      displayName: AppBundleGuidanceAudioDisplayName(
+        japanese: "直接",
+        simplifiedChinese: "直接",
+        english: "Direct"
+      ),
+      manifestResourceName: "test-guidance-audio-direct",
+      expectedManifestSHA256: String(repeating: "1", count: 64),
+      expectedReleaseID: "test.guidance-audio.direct"
+    )
+    let descriptor = BundledProductReleaseDescriptor(
+      resourceName: "synthetic-product-runtime-preview",
+      resourceExtension: "json",
+      expectedSHA256:
+        BundledProductReleaseCatalogLoader.sha256Hex(data),
+      expectedReleaseID: "preview.synthetic.product-release.v1",
+      role: .demoOnly,
+      guidanceAudioChoices: [first, second]
+    )
+
+    XCTAssertThrowsError(
+      try load(descriptor: descriptor, data: data)
+    ) {
+      XCTAssertEqual(
+        $0 as? BundledProductReleaseCatalogError,
+        .invalidGuidanceAudioDescriptor(
+          descriptor.resourceFilename
         )
       )
     }

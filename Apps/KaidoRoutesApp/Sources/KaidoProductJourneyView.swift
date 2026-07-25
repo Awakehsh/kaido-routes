@@ -388,6 +388,10 @@ struct KaidoProductJourneyView: View {
 
       GuidanceVoiceSetupPanel(
         model: model.composition.guidanceVoiceSetup,
+        audioSourceModel:
+          model.composition.guidanceAudioSourceSetup,
+        releasedEntry:
+          model.composition.releasedRouteAuthoring?.selectedEntry,
         isParked: model.composition.safety.isParkedInteractionContext
       )
 

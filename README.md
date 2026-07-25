@@ -37,7 +37,10 @@ The sound check independently selects Japanese, Simplified Chinese, or English,
 enumerates only installed exact-synthesis-locale Apple voices, keeps one
 device-local preference per language, and plays one fixed locale-specific sample
 through a separate output with no route, position, occurrence, or prompt-ledger
-input. Its bundled product-release catalog is a
+input. A real foreground product may additionally expose multiple independently
+complete reviewed offline voice packs. Device voice remains the default; a
+parked, product-scoped choice is frozen when navigation starts, and stale
+choices clear instead of being remapped. Its bundled product-release catalog is a
 compile-time manifest: every resource is pinned to an exact filename, SHA-256,
 release ID, and `DEMO_ONLY` or `FOREGROUND_NAVIGATION` role before the production
 codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
@@ -57,7 +60,7 @@ declared validity window, and fails closed when missing, not yet valid, or
 expired. It does not fetch live services or claim realtime-open authority. The
 release CLI now builds that manifest from a reviewed identity-free draft,
 deriving product, RoutePlan, entrance/exit, and quote-profile identity instead
-of accepting copied values. A schema-1.2 App staging descriptor may
+of accepting copied values. A schema-2.0 App staging descriptor may
 additionally pin public Ed25519 trust roots and one exact credential-free HTTPS
 JSON endpoint for signed evidence updates. The CLI generates an offline
 private/public key pair, signs exact validated manifest bytes, and validates
@@ -257,7 +260,11 @@ quality still requires the corresponding voice asset on a physical device.
 The pre-drive sound check exposes the same installed voice ranking, persists an
 explicit identifier or automatic highest-quality preference independently for
 each language, and plays a representative route-shield/destination sample only
-while parked. Audition and admitted navigation speech apply the same complete
+while parked. For a real foreground product, a separate parked menu selects the
+device voice or one of its independently complete, reviewed offline voice
+packs. The product-scoped selection is frozen when navigation starts; stale
+choices clear to device voice instead of silently switching packs. Audition and
+admitted navigation speech apply the same complete
 rate, pitch, pre-delay, and post-delay configuration, so the parked sample does
 not omit timing that the selected voice receives during navigation. When an
 explicitly selected basic voice has a higher-ranked
@@ -282,7 +289,9 @@ through `AVAudioPlayer`,
 while a lookup or playback-start failure uses the selected installed Apple
 voice. Interruption after recorded playback begins consumes the prompt without
 replaying it through fallback. The bundled product-release catalog can declare
-and hash-pin one such manifest; the current preview catalog declares none, and
+and hash-pin multiple such manifests with unique selection IDs, localized
+display names, and release IDs; runtime never mixes their assets. The current
+preview catalog declares none, and
 no audition output is presented as a reviewed release asset. The synthetic
 runtime panel exercises this boundary with injected output, retains the
 exact phone/CarPlay/voice projection constructed from one actor update, and
@@ -1027,7 +1036,7 @@ swift run kaido-release prepare-app-bundle \
   --output <new-staging-directory>
 ```
 
-An optional complete guidance-audio release and optional current pre-drive
+Zero or more complete guidance-audio releases and an optional current pre-drive
 evidence bundle may be supplied in the same run. Synthetic products fail before
 output, existing destinations are never overwritten, and the generated
 descriptor still requires an explicit reviewed addition to the App catalog. See

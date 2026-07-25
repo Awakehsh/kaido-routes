@@ -29,7 +29,7 @@ extension AppBundleProductReleaseDescriptor {
 struct BundledProductReleaseEntry: Equatable, Sendable {
   let descriptor: BundledProductReleaseDescriptor
   let release: KaidoProductRelease
-  let guidanceAudioRelease: GuidanceAudioRelease?
+  let guidanceAudioChoices: [BundledGuidanceAudioChoice]
   let preDriveEvidenceBundle: PreDriveEvidenceBundle?
   let preDriveEvidenceUpdateTrustKeys: [PreDriveEvidenceUpdateTrustKey]
   let preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint?
@@ -38,7 +38,7 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   fileprivate init(
     descriptor: BundledProductReleaseDescriptor,
     release: KaidoProductRelease,
-    guidanceAudioRelease: GuidanceAudioRelease?,
+    guidanceAudioChoices: [BundledGuidanceAudioChoice],
     preDriveEvidenceBundle: PreDriveEvidenceBundle?,
     preDriveEvidenceUpdateTrustKeys:
       [PreDriveEvidenceUpdateTrustKey],
@@ -48,13 +48,22 @@ struct BundledProductReleaseEntry: Equatable, Sendable {
   ) {
     self.descriptor = descriptor
     self.release = release
-    self.guidanceAudioRelease = guidanceAudioRelease
+    self.guidanceAudioChoices = guidanceAudioChoices
     self.preDriveEvidenceBundle = preDriveEvidenceBundle
     self.preDriveEvidenceUpdateTrustKeys =
       preDriveEvidenceUpdateTrustKeys
     self.preDriveEvidenceUpdateEndpoint =
       preDriveEvidenceUpdateEndpoint
     self.encodedByteCount = encodedByteCount
+  }
+}
+
+struct BundledGuidanceAudioChoice: Equatable, Sendable {
+  let descriptor: BundledGuidanceAudioReleaseDescriptor
+  let release: GuidanceAudioRelease
+
+  var selectionID: String {
+    descriptor.selectionID
   }
 }
 
@@ -193,8 +202,8 @@ enum BundledProductReleaseCatalogLoader {
   ) throws -> BundledProductReleaseCatalog {
     try load(
       descriptors: previewManifest,
-      guidanceAudioReleaseProvider: { descriptor, productRelease in
-        try loadGuidanceAudioRelease(
+      guidanceAudioChoicesProvider: { descriptor, productRelease in
+        try loadGuidanceAudioChoices(
           descriptor: descriptor,
           productRelease: productRelease,
           bundle: bundle
@@ -244,10 +253,10 @@ enum BundledProductReleaseCatalogLoader {
 
   static func load(
     descriptors: [BundledProductReleaseDescriptor],
-    guidanceAudioReleaseProvider: (
+    guidanceAudioChoicesProvider: (
       BundledProductReleaseDescriptor,
       KaidoProductRelease
-    ) throws -> GuidanceAudioRelease? = { _, _ in nil },
+    ) throws -> [BundledGuidanceAudioChoice] = { _, _ in [] },
     preDriveEvidenceDataProvider:
       (BundledProductReleaseDescriptor) throws -> Data? = { _ in nil },
     dataProvider: (BundledProductReleaseDescriptor) throws -> Data?
@@ -262,8 +271,24 @@ enum BundledProductReleaseCatalogLoader {
 
     for descriptor in descriptors {
       try validate(descriptor)
-      if let guidanceAudio = descriptor.guidanceAudio {
+      for guidanceAudio in descriptor.guidanceAudioChoices {
         try validate(guidanceAudio)
+      }
+      let audioSelectionIDs = descriptor.guidanceAudioChoices.map(
+        \.selectionID
+      )
+      let audioReleaseIDs = descriptor.guidanceAudioChoices.map(
+        \.expectedReleaseID
+      )
+      guard
+        Set(audioSelectionIDs).count == audioSelectionIDs.count,
+        Set(audioReleaseIDs).count == audioReleaseIDs.count
+      else {
+        throw
+          BundledProductReleaseCatalogError
+          .invalidGuidanceAudioDescriptor(
+            descriptor.resourceFilename
+          )
       }
       if let preDriveEvidence = descriptor.preDriveEvidence {
         try validate(preDriveEvidence)
@@ -307,10 +332,11 @@ enum BundledProductReleaseCatalogLoader {
           descriptor.resourceFilename
         )
       }
-      let auxiliaryManifestFilenames = [
-        descriptor.guidanceAudio?.manifestFilename,
-        descriptor.preDriveEvidence?.manifestFilename,
-      ].compactMap { $0 }
+      let auxiliaryManifestFilenames =
+        [
+          descriptor.preDriveEvidence?.manifestFilename
+        ].compactMap { $0 }
+        + descriptor.guidanceAudioChoices.map(\.manifestFilename)
       for filename in auxiliaryManifestFilenames {
         guard resourceFilenames.insert(filename).inserted else {
           throw BundledProductReleaseCatalogError.duplicateResource(
@@ -370,22 +396,44 @@ enum BundledProductReleaseCatalogLoader {
           release.releaseID
         )
       }
-      let guidanceAudioRelease = try guidanceAudioReleaseProvider(
+      let guidanceAudioChoices = try guidanceAudioChoicesProvider(
         descriptor,
         release
       )
-      if descriptor.guidanceAudio == nil, guidanceAudioRelease != nil {
+      let actualAudioSelectionIDs = guidanceAudioChoices.map(
+        \.selectionID
+      )
+      guard
+        Set(actualAudioSelectionIDs).count
+          == actualAudioSelectionIDs.count
+      else {
         throw
           BundledProductReleaseCatalogError
           .invalidGuidanceAudioRelease(descriptor.resourceFilename)
       }
-      if let guidanceAudio = descriptor.guidanceAudio {
-        guard let guidanceAudioRelease else {
+      for expected in descriptor.guidanceAudioChoices
+      where !actualAudioSelectionIDs.contains(expected.selectionID) {
+        throw
+          BundledProductReleaseCatalogError
+          .missingGuidanceAudioManifest(expected.manifestFilename)
+      }
+      guard
+        guidanceAudioChoices.count
+          == descriptor.guidanceAudioChoices.count
+      else {
+        throw
+          BundledProductReleaseCatalogError
+          .invalidGuidanceAudioRelease(descriptor.resourceFilename)
+      }
+      for choice in guidanceAudioChoices {
+        let guidanceAudio = choice.descriptor
+        let guidanceAudioRelease = choice.release
+        guard
+          descriptor.guidanceAudioChoices.contains(guidanceAudio)
+        else {
           throw
             BundledProductReleaseCatalogError
-            .missingGuidanceAudioManifest(
-              guidanceAudio.manifestFilename
-            )
+            .invalidGuidanceAudioRelease(descriptor.resourceFilename)
         }
         let audioManifest = guidanceAudioRelease.manifest
         guard
@@ -488,7 +536,9 @@ enum BundledProductReleaseCatalogLoader {
         BundledProductReleaseEntry(
           descriptor: descriptor,
           release: release,
-          guidanceAudioRelease: guidanceAudioRelease,
+          guidanceAudioChoices: guidanceAudioChoices.sorted {
+            $0.selectionID < $1.selectionID
+          },
           preDriveEvidenceBundle: preDriveEvidenceBundle,
           preDriveEvidenceUpdateTrustKeys:
             descriptor.preDriveEvidenceUpdateTrustKeys ?? [],
@@ -590,6 +640,9 @@ enum BundledProductReleaseCatalogLoader {
   private static func validate(
     _ descriptor: BundledGuidanceAudioReleaseDescriptor
   ) throws {
+    let selectionID = descriptor.selectionID.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
     let resourceName = descriptor.manifestResourceName
       .trimmingCharacters(in: .whitespacesAndNewlines)
     let releaseID = descriptor.expectedReleaseID
@@ -605,7 +658,28 @@ enum BundledProductReleaseCatalogLoader {
       && resourceName.allSatisfy {
         $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_"
       }
+    let isSafeSelectionID =
+      !selectionID.isEmpty
+      && selectionID.allSatisfy {
+        $0.isASCII
+          && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_"
+            || $0 == ".")
+      }
+    let displayNames = [
+      descriptor.displayName.japanese,
+      descriptor.displayName.simplifiedChinese,
+      descriptor.displayName.english,
+    ]
     guard
+      isSafeSelectionID,
+      selectionID == descriptor.selectionID,
+      displayNames.allSatisfy({
+        !$0.isEmpty
+          && $0
+            == $0.trimmingCharacters(
+              in: .whitespacesAndNewlines
+            )
+      }),
       isSafeResourceName,
       resourceName == descriptor.manifestResourceName,
       !releaseID.isEmpty,
@@ -618,14 +692,25 @@ enum BundledProductReleaseCatalogLoader {
     }
   }
 
-  private static func loadGuidanceAudioRelease(
+  private static func loadGuidanceAudioChoices(
     descriptor: BundledProductReleaseDescriptor,
     productRelease: KaidoProductRelease,
     bundle: Bundle
-  ) throws -> GuidanceAudioRelease? {
-    guard let guidanceAudio = descriptor.guidanceAudio else {
-      return nil
+  ) throws -> [BundledGuidanceAudioChoice] {
+    try descriptor.guidanceAudioChoices.map { guidanceAudio in
+      try loadGuidanceAudioChoice(
+        guidanceAudio,
+        productRelease: productRelease,
+        bundle: bundle
+      )
     }
+  }
+
+  private static func loadGuidanceAudioChoice(
+    _ guidanceAudio: BundledGuidanceAudioReleaseDescriptor,
+    productRelease: KaidoProductRelease,
+    bundle: Bundle
+  ) throws -> BundledGuidanceAudioChoice {
     guard
       let manifestURL = bundle.url(
         forResource: guidanceAudio.manifestResourceName,
@@ -662,14 +747,20 @@ enum BundledProductReleaseCatalogLoader {
         manifestData,
         productRelease: productRelease
       ) { filename in
+        let stagedFilename =
+          AppBundleReleaseStagingAuthor.stagedGuidanceAudioFilename(
+            selectionID: guidanceAudio.selectionID,
+            logicalFilename: filename
+          )
         let resourceURL = bundle.url(
-          forResource: (filename as NSString).deletingPathExtension,
-          withExtension: (filename as NSString).pathExtension
+          forResource: (stagedFilename as NSString).deletingPathExtension,
+          withExtension: (stagedFilename as NSString).pathExtension
         )
         guard let resourceURL else { return nil }
         return GuidanceAudioResource(
           url: resourceURL,
-          data: try Data(contentsOf: resourceURL)
+          data: try Data(contentsOf: resourceURL),
+          logicalFilename: filename
         )
       }
       guard release.manifest.releaseID == guidanceAudio.expectedReleaseID
@@ -680,7 +771,10 @@ enum BundledProductReleaseCatalogLoader {
             guidanceAudio.manifestFilename
           )
       }
-      return release
+      return BundledGuidanceAudioChoice(
+        descriptor: guidanceAudio,
+        release: release
+      )
     } catch let error as BundledProductReleaseCatalogError {
       throw error
     } catch {

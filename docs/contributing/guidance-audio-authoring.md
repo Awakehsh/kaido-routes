@@ -6,7 +6,12 @@ still owns RoutePlan, occurrence, guidance, and exactly-once prompt identity.
 
 This workflow creates one complete offline audio release from that authority.
 It is not a generic phrase cache and it cannot be used to add, rewrite, or
-deduplicate guidance.
+deduplicate guidance. One release is one selectable voice pack. To offer
+multiple voice styles, repeat the complete generation, exact-WAV review,
+authoring, and validation workflow with a new release ID for each pack. Keep
+each pack's deterministic WAV filenames unchanged and place the packs in
+separate staging resource directories. Do not combine partial A/B samples into
+a navigation option.
 
 ## Boundaries
 
@@ -149,6 +154,9 @@ occurrence, locale, text, hash, WAV, per-asset review, chronology, and
 provenance-scope identity. One invalid record blocks the whole pack.
 
 Only after this command passes and the device gates are complete may the App
-catalog declare the audio manifest filename, release ID, and manifest SHA-256
-beside the exact foreground product descriptor. Apple installed voice remains
-the safe playback-start fallback.
+catalog declare the audio manifest filename, release ID, manifest SHA-256,
+stable selection ID, and three-language display name beside the exact
+foreground product descriptor. The catalog may attach multiple independently
+complete packs to one product. The parked user must explicitly choose one;
+otherwise the installed Apple voice remains active. Apple also remains the safe
+playback-start fallback for a selected offline pack.

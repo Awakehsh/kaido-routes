@@ -334,6 +334,101 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
     XCTAssertNil(store.identifier(for: "ja_JP"))
   }
 
+  func testReleasedAudioStyleSelectionPersistsPerProduct() {
+    let store = RecordingGuidanceAudioSourcePreferenceStore(
+      selections: ["test.product": "direct"]
+    )
+    let model = GuidanceAudioSourceSetupModel(
+      preferenceStore: store
+    )
+    let choices = [
+      Self.audioChoice("calm"),
+      Self.audioChoice("direct"),
+    ]
+
+    model.configure(
+      productReleaseID: "test.product",
+      choices: choices
+    )
+
+    XCTAssertEqual(model.selectedSelectionID, "direct")
+    XCTAssertEqual(model.selectedChoice?.selectionID, "direct")
+    XCTAssertFalse(model.usesDeviceVoice)
+
+    model.select(selectionID: "calm")
+    XCTAssertEqual(model.selectedSelectionID, "calm")
+    XCTAssertEqual(store.selections["test.product"], "calm")
+
+    model.select(selectionID: nil)
+    XCTAssertTrue(model.usesDeviceVoice)
+    XCTAssertNil(store.selections["test.product"])
+  }
+
+  func testReleasedAudioStyleRejectsStaleOrUnknownSelection() {
+    let store = RecordingGuidanceAudioSourcePreferenceStore(
+      selections: ["test.product": "removed"]
+    )
+    let model = GuidanceAudioSourceSetupModel(
+      preferenceStore: store
+    )
+
+    model.configure(
+      productReleaseID: "test.product",
+      choices: [Self.audioChoice("calm")]
+    )
+
+    XCTAssertTrue(model.usesDeviceVoice)
+    XCTAssertNil(store.selections["test.product"])
+    XCTAssertEqual(
+      model.lastErrorCode,
+      "GUIDANCE_AUDIO_PREFERENCE_UNAVAILABLE"
+    )
+
+    model.select(selectionID: "unknown")
+    XCTAssertTrue(model.usesDeviceVoice)
+    XCTAssertEqual(
+      model.lastErrorCode,
+      "GUIDANCE_AUDIO_SELECTION_UNAVAILABLE"
+    )
+  }
+
+  func testUserDefaultsAudioSourcePreferenceIsProductScoped() {
+    let suiteName = "GuidanceAudioSourceSetupModelTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer {
+      defaults.removePersistentDomain(forName: suiteName)
+    }
+    let store = UserDefaultsGuidanceAudioSourcePreferenceStore(
+      defaults: defaults,
+      keyPrefix: "test.guidance-audio-source"
+    )
+
+    store.setSelectionID("calm", for: "product.a")
+    store.setSelectionID("direct", for: "product.b")
+
+    XCTAssertEqual(store.selectionID(for: "product.a"), "calm")
+    XCTAssertEqual(store.selectionID(for: "product.b"), "direct")
+    store.setSelectionID(nil, for: "product.a")
+    XCTAssertNil(store.selectionID(for: "product.a"))
+    XCTAssertEqual(store.selectionID(for: "product.b"), "direct")
+  }
+
+  private static func audioChoice(
+    _ selectionID: String
+  ) -> BundledGuidanceAudioReleaseDescriptor {
+    BundledGuidanceAudioReleaseDescriptor(
+      selectionID: selectionID,
+      displayName: AppBundleGuidanceAudioDisplayName(
+        japanese: selectionID,
+        simplifiedChinese: selectionID,
+        english: selectionID
+      ),
+      manifestResourceName: "audio-\(selectionID)",
+      expectedManifestSHA256: String(repeating: "a", count: 64),
+      expectedReleaseID: "test.audio.\(selectionID)"
+    )
+  }
+
   private static let profiles = [
     GuidanceSpeechVoiceProfile(
       identifier: "test.voice.premium",
@@ -348,6 +443,28 @@ final class GuidanceVoiceSetupModelTests: XCTestCase {
       quality: .enhanced
     ),
   ]
+}
+
+@MainActor
+private final class RecordingGuidanceAudioSourcePreferenceStore:
+  GuidanceAudioSourcePreferenceStoring
+{
+  fileprivate var selections: [String: String]
+
+  init(selections: [String: String] = [:]) {
+    self.selections = selections
+  }
+
+  func selectionID(for productReleaseID: String) -> String? {
+    selections[productReleaseID]
+  }
+
+  func setSelectionID(
+    _ selectionID: String?,
+    for productReleaseID: String
+  ) {
+    selections[productReleaseID] = selectionID
+  }
 }
 
 @MainActor

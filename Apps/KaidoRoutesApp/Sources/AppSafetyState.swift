@@ -129,12 +129,14 @@ final class KaidoRoutesAppModel: ObservableObject {
   let preDriveReview: PreDriveReviewModel
   let languageSettings: KaidoLanguageSettingsModel
   let guidanceVoiceSetup: GuidanceVoiceSetupModel
+  let guidanceAudioSourceSetup: GuidanceAudioSourceSetupModel
   let guidanceLanguagePreview: GuidanceLanguagePreviewModel
   let syntheticDrivingPreview: SyntheticDrivingPreviewModel
   let syntheticProductRuntime: SyntheticProductRuntimeModel
   let locationCalibration: InternalLocationCalibrationModel
 
   private let guidanceVoicePreferenceStore: any GuidanceVoicePreferenceStoring
+  private let guidanceAudioSourcePreferenceStore: any GuidanceAudioSourcePreferenceStoring
   private var languageSettingsSubscriptions: Set<AnyCancellable> = []
 
   init(
@@ -205,12 +207,19 @@ final class KaidoRoutesAppModel: ObservableObject {
         UserDefaultsGuidanceVoicePreferenceStore()
       self.guidanceVoicePreferenceStore =
         guidanceVoicePreferenceStore
+      let guidanceAudioSourcePreferenceStore =
+        UserDefaultsGuidanceAudioSourcePreferenceStore()
+      self.guidanceAudioSourcePreferenceStore =
+        guidanceAudioSourcePreferenceStore
       guidanceVoiceSetup = GuidanceVoiceSetupModel(
         guidanceLocale: languageSettings.guidanceVoiceLocale,
         preferenceStore: guidanceVoicePreferenceStore,
         guidanceLocaleDidChange: {
           languageSettings.selectGuidanceVoiceLocale($0)
         }
+      )
+      guidanceAudioSourceSetup = GuidanceAudioSourceSetupModel(
+        preferenceStore: guidanceAudioSourcePreferenceStore
       )
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
       syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
@@ -285,13 +294,27 @@ final class KaidoRoutesAppModel: ObservableObject {
       }
     )
     let speechOutput: any GuidanceSpeechOutput
-    if let guidanceAudioRelease = entry.guidanceAudioRelease {
+    let selectedAudioID =
+      guidanceAudioSourcePreferenceStore.selectionID(
+        for: entry.release.releaseID
+      )
+    if let selectedAudioID,
+      let choice = entry.guidanceAudioChoices.first(where: {
+        $0.selectionID == selectedAudioID
+      })
+    {
       speechOutput = ReleasedGuidanceAudioOutput(
-        release: guidanceAudioRelease,
+        release: choice.release,
         player: AVAudioPlayerGuidancePlayback(),
         fallback: fallback
       )
     } else {
+      if selectedAudioID != nil {
+        guidanceAudioSourcePreferenceStore.setSelectionID(
+          nil,
+          for: entry.release.releaseID
+        )
+      }
       speechOutput = fallback
     }
     return try ProductNavigationRuntimeModel(

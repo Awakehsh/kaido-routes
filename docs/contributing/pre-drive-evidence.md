@@ -127,7 +127,7 @@ swift run kaido-release generate-pre-drive-evidence-signing-key \
 The directory contains `private-key.bin` with mode `0600` and a public
 `trust-key.json`. Keep the private key outside the repository, App bundle,
 staging output, logs, backups shared with reviewers, and user-facing update
-files. Only the public trust descriptor belongs in the schema-1.2 App-bundle
+files. Only the public trust descriptor belongs in the schema-2.0 App-bundle
 staging configuration:
 
 ```json

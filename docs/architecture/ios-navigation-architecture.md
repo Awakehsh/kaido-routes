@@ -346,10 +346,16 @@ same temporary `voicePrompt` audio-session policy. A miss or playback-start
 failure falls back to `AVSpeechGuidanceOutput`; a failure after recorded audio
 has started is terminal and cannot replay the consumed prompt in another voice.
 The product-release catalog must explicitly declare and SHA-256-pin an audio
-manifest before the runtime composes this output. No audio release is present in
-the current preview catalog. Locally generated auditions are selection evidence
-only and cannot enter navigation unless they are reviewed, complete, declared,
-and packaged through this release gate.
+manifest before the runtime composes this output. A product may declare multiple
+independently complete packs. Each choice has one stable selection ID, localized
+display names, an exact audio release ID, and a manifest hash; duplicate or
+partial choices reject catalog construction. The parked user explicitly selects
+the installed device voice or one declared pack. That preference is scoped to
+the product release and frozen when its navigation runtime is created. A stale
+choice clears to the device voice instead of selecting another pack. No audio
+release is present in the current preview catalog. Locally generated auditions
+are selection evidence only and cannot enter navigation unless they are
+reviewed, complete, declared, and packaged through this release gate.
 
 `GuidanceAudioRecordingWorklistCodec` derives the complete immutable recording
 surface directly from one validated product release. It carries exact
@@ -382,6 +388,12 @@ interaction context and treats any other context as moving and blocked. The
 admitted navigation output reads the preference only while resolving a voice
 for a real `GuidanceSpeechCommand`; all scheduling, replacement, and
 exactly-once behavior remain unchanged.
+`GuidanceAudioSourceSetupModel` separately owns the product-scoped playback
+source choice. It never receives route progress or prompt authority. Its menu
+shows only the device voice and complete hash-bound packs already admitted by
+the selected foreground product. The fixed sound-check sample continues to
+audition the installed device voice; an offline pack does not claim an audition
+sample that its exact release did not contain.
 
 `JunctionViewDefinition` is renderer-neutral data, not a retained provider image.
 It contains normalized approach, selected, and alternative paths; zero-based
@@ -717,13 +729,15 @@ construction.
 
 `AppBundleReleaseStagingAuthor` is the package-time bridge into this boundary.
 It accepts only a production-decoded foreground product, optionally revalidates
-one complete exact-product guidance-audio release, retains all artifact bytes,
+multiple independently complete exact-product guidance-audio releases, retains
+all artifact bytes,
 optionally pins public Ed25519 pre-drive evidence update trust roots and one
 exact credential-free HTTPS JSON endpoint, and derives the shared descriptor
 values and per-resource audit hashes.
 `kaido-release prepare-app-bundle` writes those resources plus a generated
 compile-time descriptor into a new atomic staging directory. It refuses
-synthetic products, partial audio input, unsafe names, duplicate resources,
+synthetic products, partial audio input, unsafe names, duplicate selection IDs,
+release IDs, or resources,
 invalid or duplicate trust keys, an endpoint without trust, unsafe endpoint
 syntax, and existing output. Private signing keys are never staging inputs. A
 maintainer must still review and explicitly enroll the
@@ -1479,7 +1493,9 @@ identities, embeds the passed exact-WAV human review, and is hash-pinned by the
 bundled release catalog. Exact matches use recorded playback; absent or
 unstartable assets fall back to the installed Apple voice. A prompt that already
 began recorded playback is never replayed after an interruption or decoder
-failure.
+failure. Multiple such releases may be attached to one product as selectable
+voice packs, but each remains independently all-or-nothing. Runtime never mixes
+assets across packs.
 
 `ReleasedGuidanceDefinition` binds that identity to a reviewed trigger distance
 and immutable frame template. For one anchor occurrence, thresholds advance from

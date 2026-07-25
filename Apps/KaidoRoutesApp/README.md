@@ -38,10 +38,12 @@ entry must be `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE` and carry only the
 authority minted by production decode.
 
 `kaido-release prepare-app-bundle` can derive one exact foreground descriptor,
-copy the unchanged validated product and optional complete guidance-audio
-resources into an Xcode-ready staging directory, and emit an audit manifest.
-Any guidance-audio manifest is schema 1.2 and already contains a passed,
-hash-bound human review for every exact WAV.
+copy the unchanged validated product and zero or more complete guidance-audio
+packs into an Xcode-ready staging directory, and emit an audit manifest.
+Every guidance-audio manifest is schema 1.2 and already contains a passed,
+hash-bound human review for every exact WAV. App-bundle staging schema 2.0 gives
+each pack a stable selection ID, three-language display name, exact release ID,
+and manifest hash; duplicate or partial choices fail closed.
 The App and CLI share the descriptor value types, so release ID, role, resource
 name, and SHA-256 cannot drift through hand transcription. The generated static
 descriptor must still be reviewed and explicitly added to `previewManifest`;
@@ -366,6 +368,16 @@ non-empty catalog clears a stale identifier rather than silently naming a
 removed voice. A temporarily empty catalog does not erase the preference before
 Apple voice enumeration has resolved.
 
+For an admitted foreground product, `GuidanceAudioSourceSetupModel` also exposes
+a parked-only navigation voice-style menu. Device voice is the safe default.
+Any additional row is one independently complete, reviewed, hash-bound offline
+pack from that exact product descriptor. The choice persists per product release
+and is read once when the navigation runtime is created; a removed selection is
+cleared to device voice rather than remapped. The installed-voice menu remains
+available as the primary device selection and as playback-start fallback for a
+selected offline pack. The fixed sound check auditions the device voice only;
+it does not invent a sample outside an offline pack's reviewed manifest.
+
 The audition button is parked-only and requests one fixed representative
 route-shield/destination sample for the selected language. If an explicitly
 selected voice has a higher-ranked installed candidate, the model may audition
@@ -559,7 +571,9 @@ as an equal-quality tie-break. `GuidanceVoiceSetupModelTests` cover persistence,
 fixed-sample requests, moving-context lockout, lifecycle events, cold empty
 voice enumeration, independent three-language preferences, locale switches,
 exact higher-ranked candidate audition, explicit confirmation, and fail-closed
-resolved-voice drift. `GuidanceSpeechProsodyTests` proves that the shared Apple
+resolved-voice drift. They also cover product-scoped offline style selection,
+explicit device-voice reset, and stale-choice rejection.
+`GuidanceSpeechProsodyTests` proves that the shared Apple
 utterance configurator applies rate, pitch, pre-delay, and post-delay together.
 Neutral Apple rate and pitch are tested independently so a compact voice is not
 made more mechanical by slow, lowered-pitch app tuning. The product-runtime UI

@@ -10,6 +10,15 @@ protocol GuidanceVoicePreferenceStoring: AnyObject {
 }
 
 @MainActor
+protocol GuidanceAudioSourcePreferenceStoring: AnyObject {
+  func selectionID(for productReleaseID: String) -> String?
+  func setSelectionID(
+    _ selectionID: String?,
+    for productReleaseID: String
+  )
+}
+
+@MainActor
 final class UserDefaultsGuidanceVoicePreferenceStore:
   GuidanceVoicePreferenceStoring
 {
@@ -63,6 +72,165 @@ final class UserDefaultsGuidanceVoicePreferenceStore:
       .replacingOccurrences(of: "_", with: "-")
       .lowercased()
     return "\(keyPrefix).\(locale)"
+  }
+}
+
+@MainActor
+final class UserDefaultsGuidanceAudioSourcePreferenceStore:
+  GuidanceAudioSourcePreferenceStoring
+{
+  private let defaults: UserDefaults
+  private let keyPrefix: String
+
+  init(
+    defaults: UserDefaults = .standard,
+    keyPrefix: String = "app.kaidoroutes.guidance-audio-source"
+  ) {
+    self.defaults = defaults
+    self.keyPrefix = keyPrefix
+  }
+
+  func selectionID(for productReleaseID: String) -> String? {
+    guard
+      let selectionID = defaults.string(
+        forKey: key(for: productReleaseID)
+      )?.trimmingCharacters(in: .whitespacesAndNewlines),
+      !selectionID.isEmpty
+    else {
+      return nil
+    }
+    return selectionID
+  }
+
+  func setSelectionID(
+    _ selectionID: String?,
+    for productReleaseID: String
+  ) {
+    let normalized = selectionID?.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    guard let normalized, !normalized.isEmpty else {
+      defaults.removeObject(forKey: key(for: productReleaseID))
+      return
+    }
+    defaults.set(normalized, forKey: key(for: productReleaseID))
+  }
+
+  private func key(for productReleaseID: String) -> String {
+    let encoded = Data(productReleaseID.utf8).base64EncodedString()
+      .replacingOccurrences(of: "/", with: "_")
+      .replacingOccurrences(of: "+", with: "-")
+      .replacingOccurrences(of: "=", with: "")
+    return "\(keyPrefix).\(encoded)"
+  }
+}
+
+@MainActor
+final class GuidanceAudioSourceSetupModel: ObservableObject {
+  @Published private(set) var choices: [BundledGuidanceAudioReleaseDescriptor] = []
+  @Published private(set) var selectedSelectionID: String?
+  @Published private(set) var productReleaseID: String?
+  @Published private(set) var lastErrorCode: String?
+
+  private let preferenceStore: any GuidanceAudioSourcePreferenceStoring
+
+  init(
+    preferenceStore: any GuidanceAudioSourcePreferenceStoring =
+      UserDefaultsGuidanceAudioSourcePreferenceStore()
+  ) {
+    self.preferenceStore = preferenceStore
+  }
+
+  var usesDeviceVoice: Bool {
+    selectedSelectionID == nil
+  }
+
+  var selectedChoice: BundledGuidanceAudioReleaseDescriptor? {
+    guard let selectedSelectionID else { return nil }
+    return choices.first {
+      $0.selectionID == selectedSelectionID
+    }
+  }
+
+  func configure(for entry: BundledProductReleaseEntry?) {
+    guard let entry else {
+      configure(productReleaseID: nil, choices: [])
+      return
+    }
+    configure(
+      productReleaseID: entry.release.releaseID,
+      choices: entry.guidanceAudioChoices.map(\.descriptor)
+    )
+  }
+
+  func configure(
+    productReleaseID: String?,
+    choices: [BundledGuidanceAudioReleaseDescriptor]
+  ) {
+    guard let productReleaseID else {
+      self.choices = []
+      selectedSelectionID = nil
+      self.productReleaseID = nil
+      lastErrorCode = nil
+      return
+    }
+    let sortedChoices = choices.sorted {
+      $0.selectionID < $1.selectionID
+    }
+    guard
+      self.productReleaseID != productReleaseID
+        || self.choices != sortedChoices
+    else {
+      return
+    }
+    self.choices = sortedChoices
+    self.productReleaseID = productReleaseID
+    let persisted = preferenceStore.selectionID(
+      for: productReleaseID
+    )
+    guard let persisted else {
+      selectedSelectionID = nil
+      lastErrorCode = nil
+      return
+    }
+    guard
+      choices.contains(where: {
+        $0.selectionID == persisted
+      })
+    else {
+      preferenceStore.setSelectionID(
+        nil,
+        for: productReleaseID
+      )
+      selectedSelectionID = nil
+      lastErrorCode = "GUIDANCE_AUDIO_PREFERENCE_UNAVAILABLE"
+      return
+    }
+    selectedSelectionID = persisted
+    lastErrorCode = nil
+  }
+
+  func select(selectionID: String?) {
+    guard let productReleaseID else {
+      lastErrorCode = "GUIDANCE_AUDIO_PRODUCT_UNAVAILABLE"
+      return
+    }
+    if let selectionID {
+      guard
+        choices.contains(where: {
+          $0.selectionID == selectionID
+        })
+      else {
+        lastErrorCode = "GUIDANCE_AUDIO_SELECTION_UNAVAILABLE"
+        return
+      }
+    }
+    preferenceStore.setSelectionID(
+      selectionID,
+      for: productReleaseID
+    )
+    selectedSelectionID = selectionID
+    lastErrorCode = nil
   }
 }
 

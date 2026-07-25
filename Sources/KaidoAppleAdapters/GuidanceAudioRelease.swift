@@ -213,10 +213,21 @@ public struct GuidanceAudioReleaseManifest: Codable, Equatable, Sendable {
 public struct GuidanceAudioResource: Equatable, Sendable {
   public let url: URL
   public let data: Data
+  /// Manifest-owned name used for exact record validation.
+  ///
+  /// The App bundle may give two independently released packs distinct
+  /// physical filenames while preserving the reviewed logical filename in
+  /// each unchanged manifest.
+  public let logicalFilename: String
 
-  public init(url: URL, data: Data) {
+  public init(
+    url: URL,
+    data: Data,
+    logicalFilename: String? = nil
+  ) {
     self.url = url
     self.data = data
+    self.logicalFilename = logicalFilename ?? url.lastPathComponent
   }
 }
 
@@ -435,7 +446,7 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       if !resource.url.isFileURL {
         issues.append(.resourceURLInvalid(record.resourceFilename))
       }
-      if resource.url.lastPathComponent != record.resourceFilename {
+      if resource.logicalFilename != record.resourceFilename {
         issues.append(.resourceFilenameMismatch(record.resourceFilename))
       }
       if resource.data.count != record.byteCount {

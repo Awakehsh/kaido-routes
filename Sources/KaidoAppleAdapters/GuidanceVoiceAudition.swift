@@ -149,8 +149,7 @@ public protocol GuidanceVoiceAuditionOutput: AnyObject {
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: languageCode
       )
-      utterance.rate = prosody.rate
-      utterance.pitchMultiplier = prosody.pitchMultiplier
+      utterance.applyGuidanceProsody(prosody)
       let utteranceID = ObjectIdentifier(utterance)
       profileByUtterance[utteranceID] = profile
       activeUtteranceID = utteranceID

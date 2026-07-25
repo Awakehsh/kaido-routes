@@ -257,7 +257,10 @@ quality still requires the corresponding voice asset on a physical device.
 The pre-drive sound check exposes the same installed voice ranking, persists an
 explicit identifier or automatic highest-quality preference independently for
 each language, and plays a representative route-shield/destination sample only
-while parked. When an explicitly selected basic voice has a higher-ranked
+while parked. Audition and admitted navigation speech apply the same complete
+rate, pitch, pre-delay, and post-delay configuration, so the parked sample does
+not omit timing that the selected voice receives during navigation. When an
+explicitly selected basic voice has a higher-ranked
 installed replacement, the sound check can audition that exact candidate
 without changing navigation; only a completed exact-candidate audition followed
 by explicit confirmation persists it. Resolution drift fails closed. Release

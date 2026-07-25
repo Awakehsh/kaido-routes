@@ -299,7 +299,9 @@ The chosen identifier, name, locale, and quality remain observable without
 granting speech authority.
 Short guidance keeps Apple's neutral rate and pitch; app-side tuning does not
 slow or lower compact voices in a way that exaggerates synthetic cadence. These
-values do not rewrite reviewed spoken content.
+values do not rewrite reviewed spoken content. Parked audition and admitted
+navigation speech use the same utterance configurator for rate, pitch,
+pre-delay, and post-delay, so audition cannot silently differ in timing.
 `NavigationVoicePresentation` separately preserves the exact released
 `spokenText`, its reviewed term-level `spokenForms`, and a derived
 `synthesisText`. `GuidanceSpokenFormRenderer` applies exact source terms

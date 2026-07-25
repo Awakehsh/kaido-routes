@@ -250,10 +250,7 @@ public final class GuidanceSpeechCoordinator {
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: command.languageCode
       )
-      utterance.rate = prosody.rate
-      utterance.pitchMultiplier = prosody.pitchMultiplier
-      utterance.preUtteranceDelay = prosody.preUtteranceDelay
-      utterance.postUtteranceDelay = prosody.postUtteranceDelay
+      utterance.applyGuidanceProsody(prosody)
       let utteranceID = ObjectIdentifier(utterance)
       identityByUtterance[utteranceID] = command.identity
       activeUtteranceID = utteranceID

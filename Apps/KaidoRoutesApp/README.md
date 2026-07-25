@@ -376,6 +376,10 @@ suppresses subsequent callbacks from the rejected audition.
 `AVSpeechVoiceAuditionOutput` owns its own synthesizer and audio lifecycle and
 receives no RoutePlan, occurrence, guidance frame, prompt, or ledger value. It
 therefore cannot authorize or consume navigation speech.
+Audition and admitted navigation speech use one shared utterance configurator
+for rate, pitch, pre-delay, and post-delay. A parked comparison therefore does
+not silently omit timing that the same installed voice receives during
+navigation.
 The real `AVSpeechGuidanceOutput` reads the same locale-scoped stored identifier
 only when the actor-owned one-shot command is admitted, and falls back to the
 best eligible installed voice if that preference is unavailable. Its command
@@ -555,7 +559,8 @@ as an equal-quality tie-break. `GuidanceVoiceSetupModelTests` cover persistence,
 fixed-sample requests, moving-context lockout, lifecycle events, cold empty
 voice enumeration, independent three-language preferences, locale switches,
 exact higher-ranked candidate audition, explicit confirmation, and fail-closed
-resolved-voice drift.
+resolved-voice drift. `GuidanceSpeechProsodyTests` proves that the shared Apple
+utterance configurator applies rate, pitch, pre-delay, and post-delay together.
 Neutral Apple rate and pitch are tested independently so a compact voice is not
 made more mechanical by slow, lowered-pitch app tuning. The product-runtime UI
 test executes real Simulator voice discovery on its first admitted prompt and

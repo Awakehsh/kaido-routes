@@ -7,9 +7,18 @@ unconfirmed. Yokohama's online map 66 is the correct `認定路線図` layer, bu
 the City states that online road-register information is not proof and directs
 the latest legal-record review to the Road Survey Division counter.
 
-Historic corridor identity, an online map impression, or map 67 cannot clear
-this gate. The exact official record must distinguish OSM way `776884422` from
-the two named Kawamuki Line carriageways leaving the same exit-terminal node.
+A dated 2026-07-25 browser inspection selected the three source-adjacent
+features at the exact target. The online map displayed the southern feature
+corresponding to OSM way `776884422` as `東方町第356号線`, with an announcement
+date of 2023-03-15, and displayed the two east-west successor features as
+`高速横浜環状北西線`. The map's official currentness page dates the online
+`認定路線図` to 2026-07-03. This is a precise counter locator, not proof of the
+current legal record or a release finding.
+
+Historic corridor identity, this online feature selection, or map 67 cannot
+clear the gate. The exact counter record must independently confirm the
+`東方町第356号線` candidate, distinguish OSM way `776884422` from the two
+adjacent expressway successors, and provide a stable record reference.
 
 The 2023 City Council road-resolution package adds a later historic constraint:
 after the land-readjustment replotting, the City recognized Higashikatacho
@@ -56,6 +65,7 @@ Relevant official sources:
 
 - [Yokohama road-register access](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
 - [Yokohama recognized-route map 66 terms](https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=66)
+- [Yokohama recognized-route map currentness](https://wwwm.city.yokohama.lg.jp/yokohama-sp/yokohama-sp/Content/pages/up_date/5_michi/koushin.html)
 - [Yokohama road-name FAQ](https://www.city.yokohama.lg.jp/faq/kukyoku/doro/doro-chosa/20211014144003932.html)
 - [Yokohama City Council Bill 129 road-recognition resolution, submitted 2023-02-07](https://www.city.yokohama.lg.jp/shikai/kiroku/kekka/gianR05-1.files/r5_1_s129.pdf)
 

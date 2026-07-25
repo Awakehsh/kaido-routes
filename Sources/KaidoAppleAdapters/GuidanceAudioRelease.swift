@@ -26,6 +26,58 @@ public enum GuidanceAudioRedistributionDecision:
   case approvedForAppDistribution = "APPROVED_FOR_APP_DISTRIBUTION"
 }
 
+public enum GuidanceAudioModelArtifactKind:
+  String, Codable, Sendable
+{
+  case notApplicable = "NOT_APPLICABLE"
+  case originalCheckpoint = "ORIGINAL_CHECKPOINT"
+  case convertedCheckpoint = "CONVERTED_CHECKPOINT"
+}
+
+public struct GuidanceAudioConvertedModelLineage:
+  Codable, Equatable, Sendable
+{
+  public let upstreamModelID: String
+  public let upstreamModelRevision: String
+  public let upstreamLicenceIdentifier: String
+  public let upstreamSourceURL: String
+  public let conversionEngineID: String
+  public let conversionEngineVersion: String
+  public let conversionEngineRevision: String
+  public let conversionSourceURL: String
+
+  public init(
+    upstreamModelID: String,
+    upstreamModelRevision: String,
+    upstreamLicenceIdentifier: String,
+    upstreamSourceURL: String,
+    conversionEngineID: String,
+    conversionEngineVersion: String,
+    conversionEngineRevision: String,
+    conversionSourceURL: String
+  ) {
+    self.upstreamModelID = upstreamModelID
+    self.upstreamModelRevision = upstreamModelRevision
+    self.upstreamLicenceIdentifier = upstreamLicenceIdentifier
+    self.upstreamSourceURL = upstreamSourceURL
+    self.conversionEngineID = conversionEngineID
+    self.conversionEngineVersion = conversionEngineVersion
+    self.conversionEngineRevision = conversionEngineRevision
+    self.conversionSourceURL = conversionSourceURL
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case upstreamModelID = "upstream_model_id"
+    case upstreamModelRevision = "upstream_model_revision"
+    case upstreamLicenceIdentifier = "upstream_licence_identifier"
+    case upstreamSourceURL = "upstream_source_url"
+    case conversionEngineID = "conversion_engine_id"
+    case conversionEngineVersion = "conversion_engine_version"
+    case conversionEngineRevision = "conversion_engine_revision"
+    case conversionSourceURL = "conversion_source_url"
+  }
+}
+
 public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   public let evidenceScope: GuidanceAudioEvidenceScope
   public let generationMode: GuidanceAudioGenerationMode
@@ -33,11 +85,14 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   public let engineVersion: String
   public let modelID: String
   public let modelRevision: String
+  public let modelArtifactKind: GuidanceAudioModelArtifactKind
+  public let convertedModelLineage: GuidanceAudioConvertedModelLineage?
   public let voiceID: String
   public let licenceIdentifier: String
   public let sourceURL: String
   public let redistributionDecision: GuidanceAudioRedistributionDecision
   public let redistributionReviewID: String
+  public let redistributionReviewSHA256: String
   public let generatedAt: String
   public let reviewedAt: String
 
@@ -48,11 +103,14 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     engineVersion: String,
     modelID: String,
     modelRevision: String,
+    modelArtifactKind: GuidanceAudioModelArtifactKind,
+    convertedModelLineage: GuidanceAudioConvertedModelLineage?,
     voiceID: String,
     licenceIdentifier: String,
     sourceURL: String,
     redistributionDecision: GuidanceAudioRedistributionDecision,
     redistributionReviewID: String,
+    redistributionReviewSHA256: String,
     generatedAt: String,
     reviewedAt: String
   ) {
@@ -62,11 +120,14 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     self.engineVersion = engineVersion
     self.modelID = modelID
     self.modelRevision = modelRevision
+    self.modelArtifactKind = modelArtifactKind
+    self.convertedModelLineage = convertedModelLineage
     self.voiceID = voiceID
     self.licenceIdentifier = licenceIdentifier
     self.sourceURL = sourceURL
     self.redistributionDecision = redistributionDecision
     self.redistributionReviewID = redistributionReviewID
+    self.redistributionReviewSHA256 = redistributionReviewSHA256
     self.generatedAt = generatedAt
     self.reviewedAt = reviewedAt
   }
@@ -78,11 +139,14 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     case engineVersion = "engine_version"
     case modelID = "model_id"
     case modelRevision = "model_revision"
+    case modelArtifactKind = "model_artifact_kind"
+    case convertedModelLineage = "converted_model_lineage"
     case voiceID = "voice_id"
     case licenceIdentifier = "licence_identifier"
     case sourceURL = "source_url"
     case redistributionDecision = "redistribution_decision"
     case redistributionReviewID = "redistribution_review_id"
+    case redistributionReviewSHA256 = "redistribution_review_sha256"
     case generatedAt = "generated_at"
     case reviewedAt = "reviewed_at"
   }
@@ -182,7 +246,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
 /// optional at the product level, but once present it is all-or-nothing: a
 /// missing, extra, corrupt, or identity-drifted record rejects the whole pack.
 public struct GuidanceAudioReleaseManifest: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.3"
+  public static let currentSchemaVersion = "1.4"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -596,6 +660,7 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       required.allSatisfy({
         !$0.isEmpty && $0 == normalized($0)
       }),
+      isSHA256(provenance.redistributionReviewSHA256),
       let sourceURL = URL(string: provenance.sourceURL),
       sourceURL.scheme == "https",
       let generatedAt = parseISO8601(provenance.generatedAt),
@@ -630,6 +695,69 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       else {
         return false
       }
+      switch provenance.modelArtifactKind {
+      case .notApplicable:
+        return false
+      case .originalCheckpoint:
+        guard provenance.convertedModelLineage == nil else {
+          return false
+        }
+      case .convertedCheckpoint:
+        guard
+          let lineage = provenance.convertedModelLineage,
+          isValid(
+            lineage,
+            evidenceScope: provenance.evidenceScope
+          )
+        else {
+          return false
+        }
+      }
+    } else {
+      guard
+        provenance.modelArtifactKind == .notApplicable,
+        provenance.convertedModelLineage == nil
+      else {
+        return false
+      }
+    }
+    return true
+  }
+
+  private static func isValid(
+    _ lineage: GuidanceAudioConvertedModelLineage,
+    evidenceScope: GuidanceAudioEvidenceScope
+  ) -> Bool {
+    let required = [
+      lineage.upstreamModelID,
+      lineage.upstreamModelRevision,
+      lineage.upstreamLicenceIdentifier,
+      lineage.upstreamSourceURL,
+      lineage.conversionEngineID,
+      lineage.conversionEngineVersion,
+      lineage.conversionEngineRevision,
+      lineage.conversionSourceURL,
+    ]
+    guard
+      required.allSatisfy({
+        !$0.isEmpty && $0 == normalized($0)
+      }),
+      isImmutableOpenWeightRevision(lineage.upstreamModelRevision),
+      isImmutableOpenWeightRevision(lineage.conversionEngineRevision),
+      let upstreamSourceURL = URL(string: lineage.upstreamSourceURL),
+      upstreamSourceURL.scheme == "https",
+      lineage.upstreamSourceURL.contains(lineage.upstreamModelRevision),
+      let conversionSourceURL = URL(string: lineage.conversionSourceURL),
+      conversionSourceURL.scheme == "https",
+      lineage.conversionSourceURL.contains(
+        lineage.conversionEngineRevision
+      )
+    else {
+      return false
+    }
+    if evidenceScope == .releasedAsset {
+      return
+        lineage.upstreamLicenceIdentifier != "SYNTHETIC_TEST_ONLY"
     }
     return true
   }

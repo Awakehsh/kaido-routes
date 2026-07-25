@@ -828,10 +828,14 @@ temporary passage then used inside the land-readjustment area. A 2023 City
 Council resolution later recognizes Higashikatacho Routes 354 through 358
 inside the completed replotting area, but the area-level reference map does not
 uniquely map the target OSM way to one route. The online recognized-route map is
-dated 2026-07-03, but Yokohama states that online material is not proof and
-directs latest legal-record review to its counter. Neither source generation
-establishes the way's current identity, physical status, legal direction, or
-permitted exit movement. The derivative database preserves
+dated 2026-07-03. A 2026-07-25 browser inspection selected the exact three
+source-adjacent features and displayed the southern feature corresponding to
+way `776884422` as `東方町第356号線`, while the two east-west successors displayed
+as `高速横浜環状北西線`. Yokohama states that online material is not proof and
+directs latest legal-record review to its counter, so this narrows the exact
+counter request without establishing the way's current legal-record identity,
+physical status, legal direction, or permitted exit movement. The derivative
+database preserves
 257 route and alternative nodes, complete selected-way tags, parent PBF and
 bounded-extract hashes, extraction bounds, OSM timestamp, and reconstruction
 tooling. Its 13 route occurrences, 15 topology

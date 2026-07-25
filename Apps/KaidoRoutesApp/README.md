@@ -40,7 +40,7 @@ authority minted by production decode.
 `kaido-release prepare-app-bundle` can derive one exact foreground descriptor,
 copy the unchanged validated product and zero or more complete guidance-audio
 packs into an Xcode-ready staging directory, and emit an audit manifest.
-Every guidance-audio manifest is schema 1.3 and already contains a passed,
+Every guidance-audio manifest is schema 1.4 and already contains a passed,
 hash-bound human review for every exact WAV. App-bundle staging schema 2.0 gives
 each pack a stable selection ID, three-language display name, exact release ID,
 and manifest hash; duplicate or partial choices fail closed.

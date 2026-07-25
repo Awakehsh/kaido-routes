@@ -525,7 +525,7 @@ are L3-specific.
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject
 pending conclusions, changed audio hashes, rejected pronunciation, and invalid
-review chronology before a schema-1.3 manifest can be authored or admitted.
+review chronology before a schema-1.4 manifest can be authored or admitted.
 These deterministic checks prove review binding and fail-closed mechanics, not
 acoustic quality or human listening.
 

@@ -102,7 +102,7 @@ public struct GuidanceAudioLanguageProfile:
 public struct GuidanceAudioAuthoringConfiguration:
   Codable, Equatable, Sendable
 {
-  public static let currentSchemaVersion = "1.1"
+  public static let currentSchemaVersion = "1.2"
 
   public let schemaVersion: String
   public let releaseID: String

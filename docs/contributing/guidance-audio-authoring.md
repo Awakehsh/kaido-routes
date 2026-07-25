@@ -116,23 +116,60 @@ For a real release, replace every synthetic value with reviewed facts:
 - `evidence_scope` (`RELEASED_ASSET` for a released-road product);
 - generation mode (`LOCAL_OPEN_WEIGHT`, `CLOUD_PREGENERATED`, or
   `HUMAN_RECORDED`);
-- engine, model, immutable model revision, and voice identity;
+- engine, model, immutable model revision, model artifact kind, and voice
+  identity;
 - exact licence identifier and HTTPS source URL; and
 - `redistribution_decision=APPROVED_FOR_APP_DISTRIBUTION` plus a stable
-  organizational `redistribution_review_id`; and
+  organizational `redistribution_review_id` and the SHA-256 of that exact
+  review artifact; and
 - generation and locale-profile review timestamps no later than the audio
   release. Every per-WAV human review must occur after generation and no later
   than its locale-profile review.
 
 For `LOCAL_OPEN_WEIGHT`, `model_revision` must be a lowercase 40- or 64-digit
 hexadecimal revision, and `source_url` must point to a URL containing that exact
-revision. Mutable branches such as `main` are rejected. When the generation
-model is a converted checkpoint, the redistribution review must separately
-trace the exact converted artifact, conversion engine/version, declared
-licence, and upstream model lineage. A model-card licence label alone does not
-approve generated WAV distribution. If the exact conversion source or
-redistribution conclusion is unresolved, do not mark the decision approved and
-do not author the release.
+revision. Mutable branches such as `main` are rejected.
+`model_artifact_kind` must be `ORIGINAL_CHECKPOINT` or
+`CONVERTED_CHECKPOINT`; `NOT_APPLICABLE` is reserved for non-open-weight
+generation modes.
+
+A converted checkpoint additionally embeds `converted_model_lineage` with the
+exact upstream model ID, immutable upstream revision, upstream licence and
+revision URL, conversion engine ID/version, immutable conversion-engine
+revision, and conversion source URL. Both URLs must contain their corresponding
+revision. Original checkpoints must not carry conversion lineage, and converted
+checkpoints without complete lineage fail closed.
+
+The embedded shape is:
+
+```json
+{
+  "model_artifact_kind": "CONVERTED_CHECKPOINT",
+  "converted_model_lineage": {
+    "upstream_model_id": "organization/upstream-model",
+    "upstream_model_revision": "<40-or-64-lowercase-hex>",
+    "upstream_licence_identifier": "Apache-2.0",
+    "upstream_source_url": "https://host/organization/upstream-model/tree/<same-revision>",
+    "conversion_engine_id": "organization/converter",
+    "conversion_engine_version": "1.0.0",
+    "conversion_engine_revision": "<40-or-64-lowercase-hex>",
+    "conversion_source_url": "https://host/organization/converter/tree/<same-revision>"
+  },
+  "redistribution_review_id": "organization.review.stable-id",
+  "redistribution_review_sha256": "<64-lowercase-hex>"
+}
+```
+
+The current Qwen audition checkpoint remains audition-only: its model card
+names the upstream repository and `mlx-audio 0.3.0` but does not record the
+exact upstream revision supplied to the converter. Production generation must
+instead create a private conversion from an explicit immutable upstream
+revision with the converter's `--revision` option, retain the exact converter
+revision and package hashes in the redistribution review, and bind that review
+through `redistribution_review_sha256`. A model-card licence label alone does
+not approve generated WAV distribution. If the exact conversion source or
+organizational redistribution conclusion is unresolved, do not mark the
+decision approved and do not author the release.
 
 `SYNTHETIC_TEST_ONLY` provenance must instead use
 `redistribution_decision=SYNTHETIC_TEST_ONLY`; it cannot be promoted by editing
@@ -151,7 +188,7 @@ swift run kaido-release build-guidance-audio \
 
 The author derives every asset record from the product worklist, reads the local
 WAV, recalculates audio SHA-256 and byte count, parses PCM metadata, requires an
-exact complete passed review, embeds that review in schema 1.3, and runs the
+exact complete passed review, embeds that review in schema 1.4, and runs the
 whole `GuidanceAudioRelease` gate before writing a new manifest. It refuses to
 overwrite an existing output. A pending or rejected decision, invalid review
 chronology, missing record, or changed WAV fails before output.

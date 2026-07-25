@@ -247,11 +247,15 @@ func guidanceAudioReleaseRejectsFutureProvenance() throws {
     engineVersion: original.provenance.engineVersion,
     modelID: original.provenance.modelID,
     modelRevision: original.provenance.modelRevision,
+    modelArtifactKind: original.provenance.modelArtifactKind,
+    convertedModelLineage: original.provenance.convertedModelLineage,
     voiceID: original.provenance.voiceID,
     licenceIdentifier: original.provenance.licenceIdentifier,
     sourceURL: original.provenance.sourceURL,
     redistributionDecision: original.provenance.redistributionDecision,
     redistributionReviewID: original.provenance.redistributionReviewID,
+    redistributionReviewSHA256:
+      original.provenance.redistributionReviewSHA256,
     generatedAt: "2026-07-25T16:00:00+09:00",
     reviewedAt: "2026-07-25T17:00:00+09:00"
   )
@@ -295,7 +299,7 @@ func guidanceAudioReleaseRejectsFutureProvenance() throws {
 }
 
 @Test(
-  "Local open-weight audio requires immutable source and redistribution review"
+  "Local open-weight audio requires immutable source and review binding"
 )
 func guidanceAudioReleaseRejectsMutableOpenWeightProvenance() throws {
   let productRelease = try guidanceAudioProductRelease()
@@ -307,8 +311,13 @@ func guidanceAudioReleaseRejectsMutableOpenWeightProvenance() throws {
     sourceURL: String =
       "https://example.com/test-guidance-audio/tree/"
       + String(repeating: "a", count: 40),
+    modelArtifactKind: GuidanceAudioModelArtifactKind =
+      .originalCheckpoint,
+    convertedModelLineage: GuidanceAudioConvertedModelLineage? = nil,
     redistributionDecision: GuidanceAudioRedistributionDecision =
-      .syntheticTestOnly
+      .syntheticTestOnly,
+    redistributionReviewSHA256: String =
+      String(repeating: "b", count: 64)
   ) throws {
     let provenance = GuidanceAudioSynthesisProvenance(
       evidenceScope: original.provenance.evidenceScope,
@@ -317,11 +326,14 @@ func guidanceAudioReleaseRejectsMutableOpenWeightProvenance() throws {
       engineVersion: original.provenance.engineVersion,
       modelID: original.provenance.modelID,
       modelRevision: modelRevision,
+      modelArtifactKind: modelArtifactKind,
+      convertedModelLineage: convertedModelLineage,
       voiceID: original.provenance.voiceID,
       licenceIdentifier: original.provenance.licenceIdentifier,
       sourceURL: sourceURL,
       redistributionDecision: redistributionDecision,
       redistributionReviewID: original.provenance.redistributionReviewID,
+      redistributionReviewSHA256: redistributionReviewSHA256,
       generatedAt: original.provenance.generatedAt,
       reviewedAt: original.provenance.reviewedAt
     )
@@ -372,6 +384,114 @@ func guidanceAudioReleaseRejectsMutableOpenWeightProvenance() throws {
   try expectInvalid(
     redistributionDecision: .approvedForAppDistribution
   )
+  try expectInvalid(
+    redistributionReviewSHA256: "not-a-sha256"
+  )
+  try expectInvalid(
+    modelArtifactKind: .notApplicable
+  )
+  try expectInvalid(
+    modelArtifactKind: .convertedCheckpoint
+  )
+  let validLineage = GuidanceAudioConvertedModelLineage(
+    upstreamModelID: "test/upstream-model",
+    upstreamModelRevision: String(repeating: "c", count: 40),
+    upstreamLicenceIdentifier: "SYNTHETIC_TEST_ONLY",
+    upstreamSourceURL:
+      "https://example.com/test-upstream/tree/"
+      + String(repeating: "c", count: 40),
+    conversionEngineID: "test.converter",
+    conversionEngineVersion: "1.0.0",
+    conversionEngineRevision: String(repeating: "d", count: 40),
+    conversionSourceURL:
+      "https://example.com/test-converter/tree/"
+      + String(repeating: "d", count: 40)
+  )
+  try expectInvalid(
+    modelArtifactKind: .originalCheckpoint,
+    convertedModelLineage: validLineage
+  )
+  let mutableLineage = GuidanceAudioConvertedModelLineage(
+    upstreamModelID: validLineage.upstreamModelID,
+    upstreamModelRevision: "main",
+    upstreamLicenceIdentifier: validLineage.upstreamLicenceIdentifier,
+    upstreamSourceURL: "https://example.com/test-upstream/tree/main",
+    conversionEngineID: validLineage.conversionEngineID,
+    conversionEngineVersion: validLineage.conversionEngineVersion,
+    conversionEngineRevision: validLineage.conversionEngineRevision,
+    conversionSourceURL: validLineage.conversionSourceURL
+  )
+  try expectInvalid(
+    modelArtifactKind: .convertedCheckpoint,
+    convertedModelLineage: mutableLineage
+  )
+}
+
+@Test("Converted local model lineage is admitted only when fully immutable")
+func guidanceAudioReleaseAcceptsImmutableConvertedModelLineage() throws {
+  let productRelease = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(productRelease)
+  let original = try #require(fixture.manifest.assets.first)
+  let provenance = GuidanceAudioSynthesisProvenance(
+    evidenceScope: original.provenance.evidenceScope,
+    generationMode: .localOpenWeight,
+    engineID: original.provenance.engineID,
+    engineVersion: original.provenance.engineVersion,
+    modelID: original.provenance.modelID,
+    modelRevision: original.provenance.modelRevision,
+    modelArtifactKind: .convertedCheckpoint,
+    convertedModelLineage: GuidanceAudioConvertedModelLineage(
+      upstreamModelID: "test/upstream-model",
+      upstreamModelRevision: String(repeating: "c", count: 40),
+      upstreamLicenceIdentifier: "SYNTHETIC_TEST_ONLY",
+      upstreamSourceURL:
+        "https://example.com/test-upstream/tree/"
+        + String(repeating: "c", count: 40),
+      conversionEngineID: "test.converter",
+      conversionEngineVersion: "1.0.0",
+      conversionEngineRevision: String(repeating: "d", count: 40),
+      conversionSourceURL:
+        "https://example.com/test-converter/tree/"
+        + String(repeating: "d", count: 40)
+    ),
+    voiceID: original.provenance.voiceID,
+    licenceIdentifier: original.provenance.licenceIdentifier,
+    sourceURL: original.provenance.sourceURL,
+    redistributionDecision: original.provenance.redistributionDecision,
+    redistributionReviewID: original.provenance.redistributionReviewID,
+    redistributionReviewSHA256:
+      original.provenance.redistributionReviewSHA256,
+    generatedAt: original.provenance.generatedAt,
+    reviewedAt: original.provenance.reviewedAt
+  )
+  let converted = GuidanceAudioAssetRecord(
+    key: original.key,
+    spokenText: original.spokenText,
+    spokenTextSHA256: original.spokenTextSHA256,
+    resourceFilename: original.resourceFilename,
+    audioSHA256: original.audioSHA256,
+    byteCount: original.byteCount,
+    sampleRateHz: original.sampleRateHz,
+    channelCount: original.channelCount,
+    durationMilliseconds: original.durationMilliseconds,
+    provenance: provenance,
+    review: original.review
+  )
+  var records = fixture.manifest.assets
+  records[0] = converted
+  _ = try GuidanceAudioRelease(
+    manifest: GuidanceAudioReleaseManifest(
+      releaseID: fixture.manifest.releaseID,
+      releasedAt: fixture.manifest.releasedAt,
+      productReleaseID: fixture.manifest.productReleaseID,
+      navigationReleaseID: fixture.manifest.navigationReleaseID,
+      networkSnapshotID: fixture.manifest.networkSnapshotID,
+      routePlanID: fixture.manifest.routePlanID,
+      assets: records
+    ),
+    productRelease: productRelease,
+    resourceProvider: { fixture.resources[$0] }
+  )
 }
 
 @Test("Audio provenance scope must match the product runtime scope")
@@ -386,11 +506,15 @@ func guidanceAudioReleaseRejectsEvidenceScopeDrift() throws {
     engineVersion: original.provenance.engineVersion,
     modelID: original.provenance.modelID,
     modelRevision: original.provenance.modelRevision,
+    modelArtifactKind: original.provenance.modelArtifactKind,
+    convertedModelLineage: original.provenance.convertedModelLineage,
     voiceID: original.provenance.voiceID,
     licenceIdentifier: "Apache-2.0",
     sourceURL: original.provenance.sourceURL,
     redistributionDecision: .approvedForAppDistribution,
     redistributionReviewID: original.provenance.redistributionReviewID,
+    redistributionReviewSHA256:
+      original.provenance.redistributionReviewSHA256,
     generatedAt: original.provenance.generatedAt,
     reviewedAt: original.provenance.reviewedAt
   )
@@ -944,6 +1068,8 @@ func guidanceAudioManifestFixture(
             engineVersion: "1.0.0",
             modelID: "test/model",
             modelRevision: String(repeating: "a", count: 40),
+            modelArtifactKind: .originalCheckpoint,
+            convertedModelLineage: nil,
             voiceID: "test.voice.\(locale.rawValue)",
             licenceIdentifier: "SYNTHETIC_TEST_ONLY",
             sourceURL:
@@ -952,6 +1078,8 @@ func guidanceAudioManifestFixture(
             redistributionDecision: .syntheticTestOnly,
             redistributionReviewID:
               "test.redistribution-review.\(locale.rawValue)",
+            redistributionReviewSHA256:
+              String(repeating: "b", count: 64),
             generatedAt: "2026-07-24T13:00:00+09:00",
             reviewedAt: "2026-07-24T14:00:00+09:00"
           ),

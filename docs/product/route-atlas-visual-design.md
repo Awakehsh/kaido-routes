@@ -117,10 +117,11 @@ terminal it must disclose three source-adjacent motor-road ways, including the
 unnamed OSM way `776884422`. Its corridor was officially identified as the
 temporary passage at the 2020 opening. Yokohama now reports that surrounding
 infrastructure work completed in March 2022 and the project ended in July 2023,
-but the checked current page and final replotting map do not map the exact OSM
-way to a current road identity, legal direction, or permitted movement. The UI
-must not simplify this into two reviewed exits or display a production route
-through the unresolved way.
+and a dated 2026-07-25 online map-66 inspection displays the exact southern
+feature as `東方町第356号線`. Yokohama states that the online map is not proof,
+so the result is a counter locator rather than a current legal-record, legal-
+direction, or permitted-movement finding. The UI must not simplify this into
+two reviewed exits or display a production route through the unresolved way.
 
 ## First schematic layout candidate
 

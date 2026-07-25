@@ -864,7 +864,11 @@ func appBundleStagingPreparesGuidanceAudio() throws {
         modelRevision: String(repeating: "a", count: 40),
         voiceID: record.provenance.voiceID,
         licenceIdentifier: "Apache-2.0",
-        sourceURL: "https://example.com/test-guidance-audio",
+        sourceURL:
+          "https://example.com/test-guidance-audio/tree/"
+          + String(repeating: "a", count: 40),
+        redistributionDecision: .approvedForAppDistribution,
+        redistributionReviewID: "test.redistribution-review.released",
         generatedAt: "2026-07-24T13:00:00+09:00",
         reviewedAt: "2026-07-24T14:00:00+09:00"
       ),
@@ -961,7 +965,12 @@ func appBundleStagingPreparesMultipleGuidanceAudioChoices() throws {
           modelRevision: String(repeating: "a", count: 40),
           voiceID: voiceID,
           licenceIdentifier: "Apache-2.0",
-          sourceURL: "https://example.com/test-guidance-audio",
+          sourceURL:
+            "https://example.com/test-guidance-audio/tree/"
+            + String(repeating: "a", count: 40),
+          redistributionDecision: .approvedForAppDistribution,
+          redistributionReviewID:
+            "test.redistribution-review.\(voiceID)",
           generatedAt: "2026-07-24T13:00:00+09:00",
           reviewedAt: "2026-07-24T14:00:00+09:00"
         ),

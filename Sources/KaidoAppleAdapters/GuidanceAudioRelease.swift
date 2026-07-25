@@ -19,6 +19,13 @@ public enum GuidanceAudioEvidenceScope: String, Codable, Sendable {
   case releasedAsset = "RELEASED_ASSET"
 }
 
+public enum GuidanceAudioRedistributionDecision:
+  String, Codable, Sendable
+{
+  case syntheticTestOnly = "SYNTHETIC_TEST_ONLY"
+  case approvedForAppDistribution = "APPROVED_FOR_APP_DISTRIBUTION"
+}
+
 public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   public let evidenceScope: GuidanceAudioEvidenceScope
   public let generationMode: GuidanceAudioGenerationMode
@@ -29,6 +36,8 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
   public let voiceID: String
   public let licenceIdentifier: String
   public let sourceURL: String
+  public let redistributionDecision: GuidanceAudioRedistributionDecision
+  public let redistributionReviewID: String
   public let generatedAt: String
   public let reviewedAt: String
 
@@ -42,6 +51,8 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     voiceID: String,
     licenceIdentifier: String,
     sourceURL: String,
+    redistributionDecision: GuidanceAudioRedistributionDecision,
+    redistributionReviewID: String,
     generatedAt: String,
     reviewedAt: String
   ) {
@@ -54,6 +65,8 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     self.voiceID = voiceID
     self.licenceIdentifier = licenceIdentifier
     self.sourceURL = sourceURL
+    self.redistributionDecision = redistributionDecision
+    self.redistributionReviewID = redistributionReviewID
     self.generatedAt = generatedAt
     self.reviewedAt = reviewedAt
   }
@@ -68,6 +81,8 @@ public struct GuidanceAudioSynthesisProvenance: Codable, Equatable, Sendable {
     case voiceID = "voice_id"
     case licenceIdentifier = "licence_identifier"
     case sourceURL = "source_url"
+    case redistributionDecision = "redistribution_decision"
+    case redistributionReviewID = "redistribution_review_id"
     case generatedAt = "generated_at"
     case reviewedAt = "reviewed_at"
   }
@@ -167,7 +182,7 @@ public struct GuidanceAudioAssetRecord: Codable, Equatable, Sendable {
 /// optional at the product level, but once present it is all-or-nothing: a
 /// missing, extra, corrupt, or identity-drifted record rejects the whole pack.
 public struct GuidanceAudioReleaseManifest: Codable, Equatable, Sendable {
-  public static let currentSchemaVersion = "1.2"
+  public static let currentSchemaVersion = "1.3"
 
   public let schemaVersion: String
   public let releaseID: String
@@ -575,6 +590,7 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       provenance.voiceID,
       provenance.licenceIdentifier,
       provenance.sourceURL,
+      provenance.redistributionReviewID,
     ]
     guard
       required.allSatisfy({
@@ -589,6 +605,31 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
       reviewedAt <= releaseDate
     else {
       return false
+    }
+    switch provenance.evidenceScope {
+    case .syntheticTestOnly:
+      guard
+        provenance.redistributionDecision == .syntheticTestOnly,
+        provenance.licenceIdentifier == "SYNTHETIC_TEST_ONLY"
+      else {
+        return false
+      }
+    case .releasedAsset:
+      guard
+        provenance.redistributionDecision
+          == .approvedForAppDistribution,
+        provenance.licenceIdentifier != "SYNTHETIC_TEST_ONLY"
+      else {
+        return false
+      }
+    }
+    if provenance.generationMode == .localOpenWeight {
+      guard
+        isImmutableOpenWeightRevision(provenance.modelRevision),
+        provenance.sourceURL.contains(provenance.modelRevision)
+      else {
+        return false
+      }
     }
     return true
   }
@@ -632,6 +673,14 @@ public struct GuidanceAudioRelease: Equatable, Sendable {
     let digest = value.lowercased()
     return digest.count == 64
       && digest.allSatisfy {
+        ("0"..."9").contains($0) || ("a"..."f").contains($0)
+      }
+  }
+
+  private static func isImmutableOpenWeightRevision(_ value: String) -> Bool {
+    (value.count == 40 || value.count == 64)
+      && value == value.lowercased()
+      && value.allSatisfy {
         ("0"..."9").contains($0) || ("a"..."f").contains($0)
       }
   }

@@ -111,7 +111,7 @@ swift run kaido-release prepare-app-bundle \
   --output <new-staging-directory>
 ```
 
-Every complete schema-1.2 audio release is independently revalidated against
+Every complete schema-1.3 audio release is independently revalidated against
 the exact product. Every manifest WAV must retain its hash-bound passed human
 pronunciation, intelligibility, and audio-quality review. It is copied by its
 reviewed safe filename, and each generated choice descriptor pins its stable

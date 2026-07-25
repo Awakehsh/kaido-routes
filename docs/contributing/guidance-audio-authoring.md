@@ -118,9 +118,25 @@ For a real release, replace every synthetic value with reviewed facts:
   `HUMAN_RECORDED`);
 - engine, model, immutable model revision, and voice identity;
 - exact licence identifier and HTTPS source URL; and
+- `redistribution_decision=APPROVED_FOR_APP_DISTRIBUTION` plus a stable
+  organizational `redistribution_review_id`; and
 - generation and locale-profile review timestamps no later than the audio
   release. Every per-WAV human review must occur after generation and no later
   than its locale-profile review.
+
+For `LOCAL_OPEN_WEIGHT`, `model_revision` must be a lowercase 40- or 64-digit
+hexadecimal revision, and `source_url` must point to a URL containing that exact
+revision. Mutable branches such as `main` are rejected. When the generation
+model is a converted checkpoint, the redistribution review must separately
+trace the exact converted artifact, conversion engine/version, declared
+licence, and upstream model lineage. A model-card licence label alone does not
+approve generated WAV distribution. If the exact conversion source or
+redistribution conclusion is unresolved, do not mark the decision approved and
+do not author the release.
+
+`SYNTHETIC_TEST_ONLY` provenance must instead use
+`redistribution_decision=SYNTHETIC_TEST_ONLY`; it cannot be promoted by editing
+the evidence scope.
 
 ## 5. Build the manifest
 
@@ -135,7 +151,7 @@ swift run kaido-release build-guidance-audio \
 
 The author derives every asset record from the product worklist, reads the local
 WAV, recalculates audio SHA-256 and byte count, parses PCM metadata, requires an
-exact complete passed review, embeds that review in schema 1.2, and runs the
+exact complete passed review, embeds that review in schema 1.3, and runs the
 whole `GuidanceAudioRelease` gate before writing a new manifest. It refuses to
 overwrite an existing output. A pending or rejected decision, invalid review
 chronology, missing record, or changed WAV fails before output.

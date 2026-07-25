@@ -11,8 +11,10 @@
         "licence_identifier": "SYNTHETIC_TEST_ONLY",
         "model_id": "synthetic/test-model",
         "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "redistribution_decision": "SYNTHETIC_TEST_ONLY",
+        "redistribution_review_id": "synthetic.redistribution-review.ja",
         "reviewed_at": "2026-07-24T13:00:00+09:00",
-        "source_url": "https://example.com/synthetic-guidance-audio",
+        "source_url": "https://example.com/synthetic-guidance-audio/tree/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "voice_id": "synthetic.voice.ja"
       }
     },
@@ -27,8 +29,10 @@
         "licence_identifier": "SYNTHETIC_TEST_ONLY",
         "model_id": "synthetic/test-model",
         "model_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "redistribution_decision": "SYNTHETIC_TEST_ONLY",
+        "redistribution_review_id": "synthetic.redistribution-review.zh",
         "reviewed_at": "2026-07-24T13:00:00+09:00",
-        "source_url": "https://example.com/synthetic-guidance-audio",
+        "source_url": "https://example.com/synthetic-guidance-audio/tree/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "voice_id": "synthetic.voice.zh"
       }
     },
@@ -43,13 +47,15 @@
         "licence_identifier": "SYNTHETIC_TEST_ONLY",
         "model_id": "synthetic/test-model",
         "model_revision": "cccccccccccccccccccccccccccccccccccccccc",
+        "redistribution_decision": "SYNTHETIC_TEST_ONLY",
+        "redistribution_review_id": "synthetic.redistribution-review.en",
         "reviewed_at": "2026-07-24T13:00:00+09:00",
-        "source_url": "https://example.com/synthetic-guidance-audio",
+        "source_url": "https://example.com/synthetic-guidance-audio/tree/cccccccccccccccccccccccccccccccccccccccc",
         "voice_id": "synthetic.voice.en"
       }
     }
   ],
   "release_id": "synthetic.guidance-audio-release.example.v1",
   "released_at": "2026-07-24T14:00:00+09:00",
-  "schema_version": "1.0"
+  "schema_version": "1.1"
 }

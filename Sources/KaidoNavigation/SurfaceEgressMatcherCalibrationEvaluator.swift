@@ -194,6 +194,8 @@ public enum SurfaceEgressMatcherCalibrationEvaluator {
       adaptationP95Microseconds: percentile95(adaptationDurations),
       matcherP95Microseconds: matcherP95,
       pipelineP95Microseconds: percentile95(pipelineDurations),
+      minimumHeldOutSamplesPerCohort:
+        configuration.minimumHeldOutSamplesPerCohort,
       matcherP95BudgetMicroseconds: configuration.matcherP95BudgetMicroseconds,
       matcherP95BudgetMet: matcherP95.map {
         $0 <= configuration.matcherP95BudgetMicroseconds

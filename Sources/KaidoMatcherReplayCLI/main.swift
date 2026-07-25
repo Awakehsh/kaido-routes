@@ -8,7 +8,13 @@ struct KaidoMatcherReplayCLI {
   static func main() async {
     do {
       let arguments = Array(CommandLine.arguments.dropFirst())
-      if arguments.contains("--allow-live-valhalla") {
+      if arguments.first == "build-surface-egress-calibration-artifact" {
+        try runSurfaceEgressCalibrationBuild(arguments: arguments)
+      } else if arguments.first
+        == "validate-surface-egress-calibration-artifact"
+      {
+        try runSurfaceEgressCalibrationValidation(arguments: arguments)
+      } else if arguments.contains("--allow-live-valhalla") {
         try await runLiveValhalla(arguments: arguments)
       } else if arguments.first == "--swift-hmm" {
         try runSwiftHMM(arguments: arguments)
@@ -185,6 +191,135 @@ struct KaidoMatcherReplayCLI {
     }
   }
 
+  private static func runSurfaceEgressCalibrationBuild(
+    arguments: [String]
+  ) throws {
+    let arguments = try SurfaceCalibrationCLIArguments.parse(arguments)
+    guard
+      arguments.mode == .build,
+      let configurationPath = arguments.configurationPath,
+      let outputPath = arguments.outputPath
+    else {
+      throw CLIError.usage
+    }
+    let privateTraceData = try arguments.tracePaths.map(readPrivateData)
+    let annotationData = try readPrivateData(
+      at: arguments.annotationPath
+    )
+    let configurationData = try readPublicData(
+      at: configurationPath
+    )
+    let configuration: SurfaceEgressMatcherCalibrationAuthoringConfiguration
+    do {
+      configuration =
+        try SurfaceEgressMatcherCalibrationAuthoringConfigurationCodec
+        .decode(configurationData)
+    } catch {
+      throw CLIError.invalidSurfaceCalibrationConfiguration
+    }
+    let artifact: SurfaceEgressMatcherCalibrationArtifact
+    do {
+      artifact =
+        try SurfaceEgressMatcherCalibrationArtifactAuthor
+        .build(
+          privateTraceData: privateTraceData,
+          privateAnnotationSetData: annotationData,
+          configuration: configuration
+        )
+    } catch let error as SurfaceEgressMatcherCalibrationAuthoringError {
+      throw CLIError.surfaceCalibration(error.redactedCodes)
+    }
+    try writeNew(
+      SurfaceEgressMatcherCalibrationArtifactCodec.encode(artifact),
+      path: outputPath
+    )
+    print(surfaceCalibrationSummary("BUILT", artifact: artifact))
+  }
+
+  private static func runSurfaceEgressCalibrationValidation(
+    arguments: [String]
+  ) throws {
+    let arguments = try SurfaceCalibrationCLIArguments.parse(arguments)
+    guard
+      arguments.mode == .validate,
+      let artifactPath = arguments.artifactPath
+    else {
+      throw CLIError.usage
+    }
+    let privateTraceData = try arguments.tracePaths.map(readPrivateData)
+    let annotationData = try readPrivateData(
+      at: arguments.annotationPath
+    )
+    let artifactData = try readPublicData(at: artifactPath)
+    let artifact: SurfaceEgressMatcherCalibrationArtifact
+    do {
+      artifact =
+        try SurfaceEgressMatcherCalibrationArtifactAuthor
+        .validate(
+          artifactData: artifactData,
+          privateTraceData: privateTraceData,
+          privateAnnotationSetData: annotationData
+        )
+    } catch let error as SurfaceEgressMatcherCalibrationAuthoringError {
+      throw CLIError.surfaceCalibration(error.redactedCodes)
+    }
+    print(surfaceCalibrationSummary("VALID", artifact: artifact))
+  }
+
+  private static func surfaceCalibrationSummary(
+    _ status: String,
+    artifact: SurfaceEgressMatcherCalibrationArtifact
+  ) -> String {
+    "\(status) surface-egress calibration report "
+      + "\(artifact.report.reportID) "
+      + "gate=\(artifact.report.gateStatus.rawValue) "
+      + "traces=\(artifact.report.traceCount) "
+      + "entries=\(artifact.report.entryCount) "
+      + "navigation_authority=false release_approval=false"
+  }
+
+  private static func readPrivateData(at path: String) throws -> Data {
+    do {
+      return try Data(contentsOf: URL(fileURLWithPath: path))
+    } catch {
+      throw CLIError.privateInputReadFailed
+    }
+  }
+
+  private static func readPublicData(at path: String) throws -> Data {
+    do {
+      return try Data(contentsOf: URL(fileURLWithPath: path))
+    } catch {
+      throw CLIError.notFound(path)
+    }
+  }
+
+  private static func writeNew(_ data: Data, path: String) throws {
+    let outputURL = URL(fileURLWithPath: path)
+    guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+      throw CLIError.outputExists(path)
+    }
+    let temporaryURL = outputURL.deletingLastPathComponent()
+      .appendingPathComponent(
+        ".kaido-surface-calibration-\(UUID().uuidString).tmp"
+      )
+    defer {
+      try? FileManager.default.removeItem(at: temporaryURL)
+    }
+    do {
+      try data.write(to: temporaryURL, options: .atomic)
+      try FileManager.default.moveItem(
+        at: temporaryURL,
+        to: outputURL
+      )
+    } catch {
+      if FileManager.default.fileExists(atPath: outputURL.path) {
+        throw CLIError.outputExists(path)
+      }
+      throw CLIError.writeFailed(path)
+    }
+  }
+
   private static func fixtureURLs(at url: URL) throws -> [URL] {
     var isDirectory: ObjCBool = false
     guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
@@ -225,6 +360,12 @@ private enum CLIError: Error, CustomStringConvertible {
   case invalidRepeatCount(String)
   case invalidBaseURL(String)
   case unsupportedURLSessionPlatform
+  case duplicateArgument(String)
+  case privateInputReadFailed
+  case invalidSurfaceCalibrationConfiguration
+  case surfaceCalibration([String])
+  case outputExists(String)
+  case writeFailed(String)
 
   var description: String {
     switch self {
@@ -248,7 +389,150 @@ private enum CLIError: Error, CustomStringConvertible {
       "invalid Valhalla base URL: \(value)"
     case .unsupportedURLSessionPlatform:
       "live Valhalla replay requires URLSession on a supported Apple platform"
+    case .duplicateArgument(let flag):
+      "argument may be supplied only once: \(flag)"
+    case .privateInputReadFailed:
+      "private calibration input could not be read"
+    case .invalidSurfaceCalibrationConfiguration:
+      "surface-egress calibration authoring configuration could not be decoded"
+    case .surfaceCalibration(let codes):
+      "surface-egress calibration is blocked:\n"
+        + codes.map { "  \($0)" }.joined(separator: "\n")
+    case .outputExists(let path):
+      "output already exists: \(path)"
+    case .writeFailed(let path):
+      "output could not be written: \(path)"
     }
+  }
+}
+
+private struct SurfaceCalibrationCLIArguments {
+  enum Mode: Equatable {
+    case build
+    case validate
+  }
+
+  let mode: Mode
+  let tracePaths: [String]
+  let annotationPath: String
+  let configurationPath: String?
+  let artifactPath: String?
+  let outputPath: String?
+
+  static func parse(
+    _ arguments: [String]
+  ) throws -> SurfaceCalibrationCLIArguments {
+    guard let command = arguments.first else {
+      throw CLIError.usage
+    }
+    let mode: Mode
+    switch command {
+    case "build-surface-egress-calibration-artifact":
+      mode = .build
+    case "validate-surface-egress-calibration-artifact":
+      mode = .validate
+    default:
+      throw CLIError.usage
+    }
+    var tracePaths: [String] = []
+    var annotationPath: String?
+    var configurationPath: String?
+    var artifactPath: String?
+    var outputPath: String?
+    var index = 1
+    while index < arguments.count {
+      let flag = arguments[index]
+      switch flag {
+      case "--trace":
+        tracePaths.append(
+          try value(after: &index, in: arguments)
+        )
+      case "--annotations":
+        try assignOnce(
+          &annotationPath,
+          value: value(after: &index, in: arguments),
+          flag: flag
+        )
+      case "--config":
+        try assignOnce(
+          &configurationPath,
+          value: value(after: &index, in: arguments),
+          flag: flag
+        )
+      case "--artifact":
+        try assignOnce(
+          &artifactPath,
+          value: value(after: &index, in: arguments),
+          flag: flag
+        )
+      case "--output":
+        try assignOnce(
+          &outputPath,
+          value: value(after: &index, in: arguments),
+          flag: flag
+        )
+      default:
+        throw CLIError.unknownArgument(flag)
+      }
+      index += 1
+    }
+    guard !tracePaths.isEmpty else {
+      throw CLIError.missingArgument("--trace")
+    }
+    guard let annotationPath else {
+      throw CLIError.missingArgument("--annotations")
+    }
+    switch mode {
+    case .build:
+      guard
+        configurationPath != nil,
+        artifactPath == nil,
+        outputPath != nil
+      else {
+        throw CLIError.usage
+      }
+    case .validate:
+      guard
+        configurationPath == nil,
+        artifactPath != nil,
+        outputPath == nil
+      else {
+        throw CLIError.usage
+      }
+    }
+    return SurfaceCalibrationCLIArguments(
+      mode: mode,
+      tracePaths: tracePaths,
+      annotationPath: annotationPath,
+      configurationPath: configurationPath,
+      artifactPath: artifactPath,
+      outputPath: outputPath
+    )
+  }
+
+  private static func value(
+    after index: inout Int,
+    in arguments: [String]
+  ) throws -> String {
+    index += 1
+    guard
+      arguments.indices.contains(index),
+      !arguments[index].hasPrefix("--")
+    else {
+      throw CLIError.missingArgument(arguments[index - 1])
+    }
+    return arguments[index]
+  }
+
+  private static func assignOnce(
+    _ target: inout String?,
+    value: @autoclosure () throws -> String,
+    flag: String
+  ) throws {
+    guard target == nil else {
+      throw CLIError.duplicateArgument(flag)
+    }
+    target = try value()
   }
 }
 
@@ -373,6 +657,17 @@ private let usage = """
 
     kaido-matcher-replay --swift-hmm <fixture.json|fixture-directory> [--raw-local]
 
+    kaido-matcher-replay build-surface-egress-calibration-artifact \\
+      --trace <private-trace.json> [--trace <private-trace.json> ...] \\
+      --annotations <private-ground-truth.json> \\
+      --config <authoring-config.json> \\
+      --output <coordinate-free-artifact.json>
+
+    kaido-matcher-replay validate-surface-egress-calibration-artifact \\
+      --artifact <coordinate-free-artifact.json> \\
+      --trace <private-trace.json> [--trace <private-trace.json> ...] \\
+      --annotations <private-ground-truth.json>
+
     kaido-matcher-replay \\
       --fixture <matcher-fixture.json> \\
       --graph <directed-road-graph.json> \\
@@ -385,5 +680,7 @@ private let usage = """
   fails for nondeterminism or any named safety failure. Live mode is opt-in and
   writes a scalar-only local summary. Keep raw traces,
   provider responses, private graph-derived fixtures, and explicit `--raw-local`
-  output outside Git.
+  output outside Git. Surface-egress authoring reads private trace and annotation
+  bytes without printing them, binds their SHA-256 values into a coordinate-free
+  artifact, refuses overwrite, and requires the same private inputs to validate.
   """

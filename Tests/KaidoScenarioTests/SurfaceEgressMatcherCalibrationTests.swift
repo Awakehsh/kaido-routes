@@ -1,10 +1,10 @@
 import Foundation
+import KaidoAppleAdapters
 import KaidoNavigation
 import Testing
 
 #if canImport(CoreLocation)
   import CoreLocation
-  import KaidoAppleAdapters
 #endif
 
 @Test("Surface egress calibration report stays exact-scope and coordinate-free")
@@ -193,6 +193,266 @@ func surfaceEgressCalibrationRejectsMixedScopes() throws {
   }
 }
 
+@Test("Surface egress calibration authoring binds private bytes into a redacted artifact")
+func surfaceEgressCalibrationAuthoringBuildsRedactedArtifact() throws {
+  let admission = surfaceCalibrationAdmission()
+  let trace = try surfaceCalibrationTrace(
+    admission: admission,
+    traceID: "private-authoring-trace",
+    observationID: "private-authoring-observation"
+  )
+  let traceData = try sortedJSON(trace)
+  let annotationSet = SurfaceEgressGroundTruthAnnotationSet(
+    reviewID: "surface-review-2026-07-25",
+    reviewerID: "reviewer-independent-1",
+    reviewedAt: "2026-07-25T01:00:00Z",
+    evidenceMethod: .passengerObserved,
+    independentlyReviewed: true,
+    scope: trace.context.scope,
+    annotations: [
+      SurfaceEgressGroundTruthAnnotation(
+        observationID: "private-authoring-observation",
+        partition: .heldOut,
+        directedEdgeID: admission.directedSurfaceEdgeID,
+        occurrenceID: admission.handoffOccurrenceID
+      )
+    ]
+  )
+  let annotationData =
+    try SurfaceEgressGroundTruthAnnotationSetCodec.encode(annotationSet)
+  let configuration =
+    SurfaceEgressMatcherCalibrationAuthoringConfiguration(
+      reportID: "surface-public-report",
+      generatedAt: "2026-07-25T01:01:00Z",
+      minimumHeldOutSamplesPerCohort: 1,
+      matcherP95BudgetMicroseconds: 50_000
+    )
+
+  let artifact = try SurfaceEgressMatcherCalibrationArtifactAuthor.build(
+    privateTraceData: [traceData],
+    privateAnnotationSetData: annotationData,
+    configuration: configuration
+  )
+  let artifactData =
+    try SurfaceEgressMatcherCalibrationArtifactCodec.encode(artifact)
+  let artifactJSON = String(decoding: artifactData, as: UTF8.self)
+  let validated = try SurfaceEgressMatcherCalibrationArtifactAuthor.validate(
+    artifactData: artifactData,
+    privateTraceData: [traceData],
+    privateAnnotationSetData: annotationData
+  )
+
+  #expect(validated == artifact)
+  #expect(
+    artifact.report.schemaVersion
+      == SurfaceEgressMatcherCalibrationReport.currentSchemaVersion
+  )
+  #expect(artifact.report.gateStatus == .statisticalFloorMet)
+  #expect(artifact.report.minimumHeldOutSamplesPerCohort == 1)
+  #expect(artifact.privateTraceSHA256.count == 1)
+  #expect(artifact.privateTraceSHA256[0].count == 64)
+  #expect(
+    artifact.groundTruthReview.privateAnnotationSetSHA256.count == 64
+  )
+  #expect(!artifact.navigationAuthority)
+  #expect(!artifact.releaseApproval)
+  #expect(
+    SurfaceEgressMatcherCalibrationArtifactValidator.issues(
+      in: artifact
+    ).isEmpty
+  )
+  #expect(!artifactJSON.contains("latitude"))
+  #expect(!artifactJSON.contains("longitude"))
+  #expect(!artifactJSON.contains("observation_id"))
+  #expect(!artifactJSON.contains("private-authoring-observation"))
+  #expect(!artifactJSON.contains("private-authoring-trace"))
+  #expect(!artifactJSON.contains("private-surface-device"))
+  #expect(!artifactJSON.contains("private-surface-mount"))
+}
+
+@Test("Surface egress calibration authoring errors redact private identities")
+func surfaceEgressCalibrationAuthoringErrorsAreRedacted() {
+  let error = SurfaceEgressMatcherCalibrationAuthoringError.evaluation(
+    .invalidAnnotation("private-observation-id")
+  )
+
+  #expect(
+    error.redactedCodes
+      == ["SURFACE_EGRESS_CALIBRATION_EVALUATION_FAILED"]
+  )
+  #expect(
+    !error.redactedCodes.joined()
+      .contains("private-observation-id")
+  )
+}
+
+@Test("Surface egress calibration artifact revalidation rejects private input drift")
+func surfaceEgressCalibrationArtifactRejectsInputDrift() throws {
+  let admission = surfaceCalibrationAdmission()
+  let trace = try surfaceCalibrationTrace(
+    admission: admission,
+    traceID: "private-validation-trace",
+    observationID: "private-validation-observation"
+  )
+  let traceData = try sortedJSON(trace)
+  let annotationSet = SurfaceEgressGroundTruthAnnotationSet(
+    reviewID: "surface-review-validation",
+    reviewerID: "reviewer-independent-2",
+    reviewedAt: "2026-07-25T02:00:00Z",
+    evidenceMethod: .passengerObserved,
+    independentlyReviewed: true,
+    scope: trace.context.scope,
+    annotations: [
+      SurfaceEgressGroundTruthAnnotation(
+        observationID: "private-validation-observation",
+        partition: .heldOut,
+        directedEdgeID: admission.directedSurfaceEdgeID,
+        occurrenceID: admission.handoffOccurrenceID
+      )
+    ]
+  )
+  let annotationData =
+    try SurfaceEgressGroundTruthAnnotationSetCodec.encode(annotationSet)
+  let configuration =
+    SurfaceEgressMatcherCalibrationAuthoringConfiguration(
+      reportID: "surface-validation-report",
+      generatedAt: "2026-07-25T02:01:00Z",
+      minimumHeldOutSamplesPerCohort: 1
+    )
+  let artifact = try SurfaceEgressMatcherCalibrationArtifactAuthor.build(
+    privateTraceData: [traceData],
+    privateAnnotationSetData: annotationData,
+    configuration: configuration
+  )
+  let artifactData =
+    try SurfaceEgressMatcherCalibrationArtifactCodec.encode(artifact)
+  var byteDifferentTraceData = traceData
+  byteDifferentTraceData.append(0x0A)
+
+  #expect(
+    throws:
+      SurfaceEgressMatcherCalibrationAuthoringError
+      .artifactContentMismatch
+  ) {
+    try SurfaceEgressMatcherCalibrationArtifactAuthor.validate(
+      artifactData: artifactData,
+      privateTraceData: [byteDifferentTraceData],
+      privateAnnotationSetData: annotationData
+    )
+  }
+
+  let unauthorized = SurfaceEgressMatcherCalibrationArtifact(
+    generatedAt: artifact.generatedAt,
+    report: artifact.report,
+    privateTraceSHA256: artifact.privateTraceSHA256,
+    groundTruthReview: artifact.groundTruthReview,
+    navigationAuthority: true
+  )
+  #expect(
+    SurfaceEgressMatcherCalibrationArtifactValidator.issues(
+      in: unauthorized
+    ).contains(.navigationAuthorityPresent)
+  )
+}
+
+@Test("Surface egress calibration authoring requires independent scoped truth")
+func surfaceEgressCalibrationAuthoringRejectsUnreviewedTruth() throws {
+  let admission = surfaceCalibrationAdmission()
+  let trace = try surfaceCalibrationTrace(
+    admission: admission,
+    traceID: "private-review-trace",
+    observationID: "private-review-observation"
+  )
+  let traceData = try sortedJSON(trace)
+  let annotationSet = SurfaceEgressGroundTruthAnnotationSet(
+    reviewID: "surface-review-unreviewed",
+    reviewerID: "same-collector",
+    reviewedAt: "2026-07-25T03:00:00Z",
+    evidenceMethod: .passengerObserved,
+    independentlyReviewed: false,
+    scope: trace.context.scope,
+    annotations: [
+      SurfaceEgressGroundTruthAnnotation(
+        observationID: "private-review-observation",
+        partition: .heldOut,
+        directedEdgeID: admission.directedSurfaceEdgeID,
+        occurrenceID: admission.handoffOccurrenceID
+      )
+    ]
+  )
+  let annotationData =
+    try SurfaceEgressGroundTruthAnnotationSetCodec.encode(annotationSet)
+  let configuration =
+    SurfaceEgressMatcherCalibrationAuthoringConfiguration(
+      reportID: "surface-unreviewed-report",
+      generatedAt: "2026-07-25T03:01:00Z",
+      minimumHeldOutSamplesPerCohort: 1
+    )
+
+  #expect(
+    throws:
+      SurfaceEgressMatcherCalibrationAuthoringError.invalidAnnotationSet(
+        [.independentAnnotationReviewRequired]
+      )
+  ) {
+    try SurfaceEgressMatcherCalibrationArtifactAuthor.build(
+      privateTraceData: [traceData],
+      privateAnnotationSetData: annotationData,
+      configuration: configuration
+    )
+  }
+}
+
+@Test("Surface egress calibration authoring requires valid collection chronology")
+func surfaceEgressCalibrationAuthoringRejectsChronologyDrift() throws {
+  let admission = surfaceCalibrationAdmission()
+  let trace = try surfaceCalibrationTrace(
+    admission: admission,
+    traceID: "private-chronology-trace",
+    observationID: "private-chronology-observation"
+  )
+  let annotationSet = SurfaceEgressGroundTruthAnnotationSet(
+    reviewID: "surface-review-chronology",
+    reviewerID: "reviewer-independent-3",
+    reviewedAt: "1970-01-01T00:00:00Z",
+    evidenceMethod: .passengerObserved,
+    independentlyReviewed: true,
+    scope: trace.context.scope,
+    annotations: [
+      SurfaceEgressGroundTruthAnnotation(
+        observationID: "private-chronology-observation",
+        partition: .heldOut,
+        directedEdgeID: admission.directedSurfaceEdgeID,
+        occurrenceID: admission.handoffOccurrenceID
+      )
+    ]
+  )
+
+  #expect(
+    throws:
+      SurfaceEgressMatcherCalibrationAuthoringError.invalidAnnotationSet(
+        [
+          .annotationReviewBeforeCollection,
+          .traceCollectionAfterReport,
+        ]
+      )
+  ) {
+    try SurfaceEgressMatcherCalibrationArtifactAuthor.build(
+      privateTraceData: [sortedJSON(trace)],
+      privateAnnotationSetData:
+        SurfaceEgressGroundTruthAnnotationSetCodec.encode(
+          annotationSet
+        ),
+      configuration:
+        SurfaceEgressMatcherCalibrationAuthoringConfiguration(
+          reportID: "surface-chronology-report",
+          generatedAt: "1970-01-01T00:00:00Z",
+          minimumHeldOutSamplesPerCohort: 1
+        )
+    )
+  }
+}
+
 #if canImport(CoreLocation)
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
   @Test("Core Location surface egress calibration measures the exact matcher pipeline")
@@ -329,6 +589,12 @@ func surfaceEgressCalibrationRejectsMixedScopes() throws {
     }
   }
 #endif
+
+private func sortedJSON<Value: Encodable>(_ value: Value) throws -> Data {
+  let encoder = JSONEncoder()
+  encoder.outputFormatting = [.sortedKeys]
+  return try encoder.encode(value)
+}
 
 private func surfaceCalibrationAdmission(
   candidateID: String = "test.surface-candidate",

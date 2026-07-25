@@ -72,6 +72,58 @@ statistical-floor status is matcher evidence, not `FIELD_CHECKED` route approval
 the underlying lawful run and independent annotation still require privacy and
 source review.
 
+### Surface-egress matcher calibration artifact
+
+Surface-egress calibration is a separate evidence domain from expressway
+matching. Keep every `SurfaceEgressPrivateTrace` and
+`SurfaceEgressGroundTruthAnnotationSet` in ignored private storage. The
+annotation set must:
+
+- bind the exact same release, JourneyPlan, provider candidate, matcher
+  corridor, ordered occurrences, matcher configuration, device configuration,
+  and declared transport scope as every trace;
+- contain independently reviewed truth for matched observations only;
+- use an opaque reviewer ID and a review time after the latest private
+  observation but no later than artifact generation; and
+- use `SYNTHETIC_TEST` only when the traces use the same synthetic collection
+  classification.
+
+The authoring configuration is schema 1.0 and records only the report ID,
+generation time, minimum held-out sample floor per observed cohort, and matcher
+p95 budget. Build one coordinate-free artifact with:
+
+```sh
+swift run kaido-matcher-replay \
+  build-surface-egress-calibration-artifact \
+  --trace <private-trace-a.json> \
+  --trace <private-trace-b.json> \
+  --annotations <private-ground-truth.json> \
+  --config <authoring-config.json> \
+  --output <coordinate-free-artifact.json>
+```
+
+The command refuses to overwrite an output and prints only a scalar status. It
+hashes the exact bytes supplied for every private trace and the annotation set;
+JSON whitespace changes therefore constitute input drift. Before review,
+re-run the evaluator against those same private bytes:
+
+```sh
+swift run kaido-matcher-replay \
+  validate-surface-egress-calibration-artifact \
+  --artifact <coordinate-free-artifact.json> \
+  --trace <private-trace-a.json> \
+  --trace <private-trace-b.json> \
+  --annotations <private-ground-truth.json>
+```
+
+The artifact contains a schema-1.1 scalar report, sorted SHA-256 bindings, and
+an opaque ground-truth review summary. It must contain no coordinates,
+observation IDs, trace IDs, device model, mount, or head-unit detail, and must
+retain `navigation_authority=false` plus `release_approval=false`. A valid
+artifact may support matcher review only after privacy and source review. It
+does not make the route `FIELD_CHECKED`, calibrate production HIGH confidence,
+enroll the App, or approve a navigation release.
+
 Surface-road field review follows the same private-raw/public-claim boundary.
 The [K7 Yokohama Kohoku plan](../testing/k7-yokohama-kohoku-surface-field-verification.md)
 is the reference implementation: raw media and coordinates stay ignored,

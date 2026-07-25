@@ -575,14 +575,22 @@ explicit field-transport identity. `CoreLocationSurfaceEgressMatcherCalibrationS
 owns a fresh `CoreLocationObservationAdapter`, `SurfaceEgressMatcherSession`,
 and in-memory recorder; it measures that exact pipeline in callback order and
 never consumes the live expressway matcher posterior. Raw coordinates remain
-only in `SurfaceEgressPrivateTrace`. The public
-`SurfaceEgressMatcherCalibrationReport` contains scalar counts, p95 timings, and
-reliability bins but no observation, device, mount, or head-unit detail. The
-evaluator rejects mixed scopes and collection methods, gives any incorrect HIGH
-edge or occurrence priority over every other gate status, and prevents
-synthetic or software-simulated samples from satisfying the held-out field
-floor. These types are profiling infrastructure, not App enrollment, field
-evidence, confidence qualification, or release approval.
+only in `SurfaceEgressPrivateTrace`. The public schema-1.1
+`SurfaceEgressMatcherCalibrationReport` contains scalar counts, p95 timings,
+the exact evaluator floor and budget, and reliability bins but no observation,
+device, mount, or head-unit detail. The evaluator rejects mixed scopes and
+collection methods, gives any incorrect HIGH edge or occurrence priority over
+every other gate status, and prevents synthetic or software-simulated samples
+from satisfying the held-out field floor.
+`SurfaceEgressMatcherCalibrationArtifactAuthor` accepts exact private trace
+bytes and one exact-scope, independently reviewed private annotation set. It
+hashes those bytes into a coordinate-free schema-1.0 artifact, retains only an
+opaque reviewer identity and scalar review summary, and hard-codes both
+navigation authority and release approval to false. Independent validation
+requires the same private bytes and re-runs the evaluator; standalone structure
+validation never substitutes for that private replay. These types are
+profiling infrastructure, not App enrollment, field evidence, confidence
+qualification, or release approval.
 
 `NavigationReleaseArtifact` schema 6.0 is the Codable distribution envelope for
 those runtime inputs. It adds a stable release identity, release time,

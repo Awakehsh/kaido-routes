@@ -499,6 +499,8 @@ public struct SurfaceEgressGroundTruthAnnotation:
 public struct SurfaceEgressMatcherCalibrationReport:
   Codable, Equatable, Sendable
 {
+  public static let currentSchemaVersion = "1.1"
+
   public let schemaVersion: String
   public let reportID: String
   public let scope: SurfaceEgressMatcherCalibrationScope
@@ -516,6 +518,7 @@ public struct SurfaceEgressMatcherCalibrationReport:
   public let adaptationP95Microseconds: Int?
   public let matcherP95Microseconds: Int?
   public let pipelineP95Microseconds: Int?
+  public let minimumHeldOutSamplesPerCohort: Int
   public let matcherP95BudgetMicroseconds: Int
   public let matcherP95BudgetMet: Bool
   public let reliabilityBins: [MatcherReliabilityBin]
@@ -523,7 +526,8 @@ public struct SurfaceEgressMatcherCalibrationReport:
   public let probabilityCalibrationStatus: MatcherProbabilityCalibrationStatus
 
   public init(
-    schemaVersion: String = "1.0",
+    schemaVersion: String =
+      SurfaceEgressMatcherCalibrationReport.currentSchemaVersion,
     reportID: String,
     scope: SurfaceEgressMatcherCalibrationScope,
     collectionMethod: MatcherTraceCollectionMethod,
@@ -540,6 +544,7 @@ public struct SurfaceEgressMatcherCalibrationReport:
     adaptationP95Microseconds: Int?,
     matcherP95Microseconds: Int?,
     pipelineP95Microseconds: Int?,
+    minimumHeldOutSamplesPerCohort: Int,
     matcherP95BudgetMicroseconds: Int,
     matcherP95BudgetMet: Bool,
     reliabilityBins: [MatcherReliabilityBin],
@@ -563,6 +568,8 @@ public struct SurfaceEgressMatcherCalibrationReport:
     self.adaptationP95Microseconds = adaptationP95Microseconds
     self.matcherP95Microseconds = matcherP95Microseconds
     self.pipelineP95Microseconds = pipelineP95Microseconds
+    self.minimumHeldOutSamplesPerCohort =
+      minimumHeldOutSamplesPerCohort
     self.matcherP95BudgetMicroseconds = matcherP95BudgetMicroseconds
     self.matcherP95BudgetMet = matcherP95BudgetMet
     self.reliabilityBins = reliabilityBins
@@ -588,6 +595,8 @@ public struct SurfaceEgressMatcherCalibrationReport:
     case adaptationP95Microseconds = "adaptation_p95_us"
     case matcherP95Microseconds = "matcher_p95_us"
     case pipelineP95Microseconds = "pipeline_p95_us"
+    case minimumHeldOutSamplesPerCohort =
+      "minimum_held_out_samples_per_cohort"
     case matcherP95BudgetMicroseconds = "matcher_p95_budget_us"
     case matcherP95BudgetMet = "matcher_p95_budget_met"
     case reliabilityBins = "reliability_bins"

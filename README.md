@@ -544,8 +544,13 @@ order and retains raw coordinates only in an in-memory
 `PRIVATE_RAW_LOCATION` trace. Its public report is coordinate-free. Mixed
 scopes fail closed, any false HIGH edge or occurrence blocks the gate, and
 synthetic or software-simulated samples cannot satisfy the held-out statistical
-floor. This infrastructure does not enroll the App or qualify any device; no
-surface-egress field trace has been collected.
+floor. The matcher-replay CLI can turn exact private trace bytes plus one
+independently reviewed private ground-truth set into a coordinate-free,
+SHA-256-bound artifact, then re-run the evaluator against those same bytes.
+The artifact always declares `navigation_authority=false` and
+`release_approval=false`; its statistical floor does not enroll the App,
+qualify a device, or approve a route. No surface-egress field trace has been
+collected.
 
 The renderer-neutral Route Atlas integrity boundary is executable too.
 `RouteAtlasRelease` accepts one active snapshot, exact RoutePlan, released dated
@@ -872,6 +877,29 @@ swift run kaido-atlas validate \
   --context data/route-atlas/context/mlit-n06-2025-current-shuto-context.json
 python3 scripts/validate_e2e.py
 ```
+
+Private surface-egress calibration inputs may be converted into one
+coordinate-free review artifact without printing their contents:
+
+```sh
+swift run kaido-matcher-replay \
+  build-surface-egress-calibration-artifact \
+  --trace <private-trace.json> \
+  --annotations <private-ground-truth.json> \
+  --config <authoring-config.json> \
+  --output <coordinate-free-artifact.json>
+
+swift run kaido-matcher-replay \
+  validate-surface-egress-calibration-artifact \
+  --artifact <coordinate-free-artifact.json> \
+  --trace <private-trace.json> \
+  --annotations <private-ground-truth.json>
+```
+
+Multiple `--trace` arguments are allowed. Validation requires the exact same
+private bytes used for authoring; see
+[`docs/contributing/route-evidence.md`](docs/contributing/route-evidence.md)
+for the privacy and independent-review gates.
 
 `swift test` executes the domain and simulation semantics in process. The CLI
 prints a result for every scenario and assertion. The Python validator remains

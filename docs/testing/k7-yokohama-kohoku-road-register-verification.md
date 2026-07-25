@@ -11,6 +11,13 @@ Historic corridor identity, an online map impression, or map 67 cannot clear
 this gate. The exact official record must distinguish OSM way `776884422` from
 the two named Kawamuki Line carriageways leaving the same exit-terminal node.
 
+The 2023 City Council road-resolution package adds a later historic constraint:
+after the land-readjustment replotting, the City recognized Higashikatacho
+Routes 354 through 358 in the affected area and retired multiple older route
+segments. Its area-level reference map does not uniquely map OSM way
+`776884422` to any one route. It narrows the counter review but cannot replace
+the current map-66 record.
+
 ## Exact target
 
 | Field | Identity |
@@ -37,6 +44,10 @@ recognized-route record for map 66. Obtain enough record identity to determine:
   matches; and
 - why the other two successors cannot be substituted.
 
+The counter work must explicitly test the historic Higashikatacho Route 342
+description against the post-replotting Routes 354 through 358 rather than
+assuming that the 2020 corridor name survived as the exact current route.
+
 Map 67 is `平面図・補正図・別図・補正別図` and is not accepted as the recognized-
 route record. The online map may help locate the target, but it cannot replace
 the counter record for this release gate.
@@ -46,6 +57,7 @@ Relevant official sources:
 - [Yokohama road-register access](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
 - [Yokohama recognized-route map 66 terms](https://wwwm.city.yokohama.lg.jp/yokohama/PositionSelect?mid=66)
 - [Yokohama road-name FAQ](https://www.city.yokohama.lg.jp/faq/kukyoku/doro/doro-chosa/20211014144003932.html)
+- [Yokohama City Council Bill 129 road-recognition resolution, submitted 2023-02-07](https://www.city.yokohama.lg.jp/shikai/kiroku/kekka/gianR05-1.files/r5_1_s129.pdf)
 
 ## Private evidence package
 

@@ -808,13 +808,14 @@ and all three motor-road successors at the Kohoku terminal. Two are named
 one-way `川向線` ways; OSM way `776884422` is an unnamed `tertiary` way
 without an explicit `oneway` tag. Yokohama's 2020 opening notice identifies
 the broader Kawamuki corridor as municipal Higashikatacho Route 342 and the
-temporary passage then used inside the land-readjustment area. The online
-recognized-route map is dated 2026-07-03, but Yokohama states that online
-material is not proof and directs latest legal-record review to its counter.
-Neither those sources nor the final replotting map uniquely distinguishes the
-exact OSM way from the two named Kawamuki Line carriageways at the same terminal
-node. They therefore cannot establish its current identity, physical status,
-legal direction, or permitted exit movement. The derivative database preserves
+temporary passage then used inside the land-readjustment area. A 2023 City
+Council resolution later recognizes Higashikatacho Routes 354 through 358
+inside the completed replotting area, but the area-level reference map does not
+uniquely map the target OSM way to one route. The online recognized-route map is
+dated 2026-07-03, but Yokohama states that online material is not proof and
+directs latest legal-record review to its counter. Neither source generation
+establishes the way's current identity, physical status, legal direction, or
+permitted exit movement. The derivative database preserves
 257 route and alternative nodes, complete selected-way tags, parent PBF and
 bounded-extract hashes, extraction bounds, OSM timestamp, and reconstruction
 tooling. Its 13 route occurrences, 15 topology

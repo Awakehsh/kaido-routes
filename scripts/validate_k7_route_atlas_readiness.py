@@ -221,6 +221,22 @@ EXPECTED_ROAD_SOURCE_REFERENCES = {
         "checked_at": "2026-07-23",
         "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
     },
+    "yokohama.kawamuko-replotting-road-resolution.2023-02-07": {
+        "source_reference_id": (
+            "yokohama.kawamuko-replotting-road-resolution.2023-02-07"
+        ),
+        "authority_name": "City of Yokohama",
+        "source_url": (
+            "https://www.city.yokohama.lg.jp/shikai/kiroku/kekka/"
+            "gianR05-1.files/r5_1_s129.pdf"
+        ),
+        "content_sha256": (
+            "99a6fc8dd09acad1b453ff5e65c7b80e29b36da832d495fc220ae4901c91f296"
+        ),
+        "published_at": "2023-02-07",
+        "checked_at": "2026-07-25",
+        "licence_identifier": "GOVERNMENT_FACTUAL_REFERENCE_ONLY",
+    },
 }
 EXPECTED_ROAD_SUPPORTING_FINDINGS = {
     "official_exit_connection": {
@@ -235,13 +251,32 @@ EXPECTED_ROAD_SUPPORTING_FINDINGS = {
         "urban_plan_name_ja": "都市計画道路川向線",
         "source_reference_ids": ["yokohama.kawamuki-opening.2020-02-06"],
     },
+    "post_replotting_road_changes": {
+        "status": "AREA_LEVEL_ONLY",
+        "recognized_route_names_ja": [
+            "市道東方町第354号線",
+            "市道東方町第355号線",
+            "市道東方町第356号線",
+            "市道東方町第357号線",
+            "市道東方町第358号線",
+        ],
+        "finding": (
+            "The 2023 council resolution recognizes these five routes inside "
+            "the completed land-readjustment area, but its reference map does "
+            "not uniquely map OSM way 776884422 to any one route."
+        ),
+        "source_reference_ids": [
+            "yokohama.kawamuko-replotting-road-resolution.2023-02-07"
+        ],
+    },
     "exact_osm_way_mapping": {
         "status": "UNCONFIRMED",
-        "reason_code": "CORRIDOR_EVIDENCE_DOES_NOT_ISOLATE_EXACT_WAY",
+        "reason_code": "OFFICIAL_AREA_EVIDENCE_DOES_NOT_ISOLATE_EXACT_WAY",
         "reason": (
-            "The official corridor descriptions do not uniquely distinguish "
-            "OSM way 776884422 from the two named Kawamuki Line carriageways "
-            "that leave the same exit-terminal node."
+            "The historic corridor descriptions and the 2023 area-level "
+            "road-recognition map do not uniquely distinguish OSM way "
+            "776884422 from the other roads leaving the same exit-terminal "
+            "area."
         ),
     },
 }
@@ -287,7 +322,7 @@ EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
     "ROAD_REGISTER_REVIEW": {
         "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW"],
         "content_sha256": (
-            "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
+            "378c9348e1c511995068277ce2eafc991c65ea0a9665909ec0dcab8e5448572b"
         ),
     },
     "ROAD_REGISTER_REVIEW_TEMPLATE": {

@@ -57,6 +57,12 @@ signal. It is not a legal-direction claim.
   `776884422`, publish a current municipal road route number, or state the
   traffic direction. The checked PDF has SHA-256
   `58b5204c76d2667d08c2865a91530def93768c70781e9639f436d671d3479ba9`.
+- [Yokohama City Council Bill 129 road-recognition resolution, submitted 2023-02-07](https://www.city.yokohama.lg.jp/shikai/kiroku/kekka/gianR05-1.files/r5_1_s129.pdf)
+  recognizes Higashikatacho Routes 354 through 358 after replotting in the
+  affected area. Its area-level reference map does not uniquely map OSM way
+  `776884422` to one route and states no current traffic direction. The checked
+  PDF has SHA-256
+  `99a6fc8dd09acad1b453ff5e65c7b80e29b36da832d495fc220ae4901c91f296`.
 - [Yokohama City road-register access page](https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/tetsuzuki/daichosys.html)
   directs road-identity review to the official road-register system and warns
   that online data can lag.

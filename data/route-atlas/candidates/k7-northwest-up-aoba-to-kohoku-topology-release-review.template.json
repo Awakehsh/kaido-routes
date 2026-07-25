@@ -28,7 +28,7 @@
     {
       "role": "ROAD_REGISTER_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-road-register-review.json",
-      "content_sha256": "8ada39b0f476eb5d025fdd0f0c8f91c5cb2c07136bd11c24c810cfee85f4ff8f"
+      "content_sha256": "378c9348e1c511995068277ce2eafc991c65ea0a9665909ec0dcab8e5448572b"
     },
     {
       "role": "ROAD_REGISTER_REVIEW_TEMPLATE",

@@ -734,11 +734,12 @@ layout release evidence. It reports the already proven structure, source
 adjacency, and ODbL distribution separately from those unresolved gates.
 Yokohama dates the online
 recognized-route map to 2026-07-03 and identifies the broader Kawamuki corridor
-as municipal Higashikatacho Route 342, while its official terms state that
-online material is not proof and direct latest legal-record review to the Road
-Survey Division counter. That corridor-level identity does not uniquely
-distinguish OSM way `776884422` from the two named Kawamuki Line carriageways
-leaving the same terminal node. The tracked decision therefore remains
+historically as municipal Higashikatacho Route 342. A 2023 City Council
+resolution separately recognizes post-replotting Higashikatacho Routes 354
+through 358 in the affected area, but its area-level reference map cannot map
+OSM way `776884422` to one exact route. The official online-map terms also state
+that online material is not proof and direct latest legal-record review to the
+Road Survey Division counter. The tracked decision therefore remains
 `BLOCKED` and `navigation_authority=false`. A later completed private field or
 road-register review can clear only its own gate, and even a readiness `PASS`
 merely admits the candidate to the authoritative

@@ -471,6 +471,24 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "市道東方町第342号線",
         )
         self.assertEqual(
+            review["supporting_findings"]["post_replotting_road_changes"][
+                "recognized_route_names_ja"
+            ],
+            [
+                "市道東方町第354号線",
+                "市道東方町第355号線",
+                "市道東方町第356号線",
+                "市道東方町第357号線",
+                "市道東方町第358号線",
+            ],
+        )
+        self.assertEqual(
+            review["supporting_findings"]["post_replotting_road_changes"][
+                "status"
+            ],
+            "AREA_LEVEL_ONLY",
+        )
+        self.assertEqual(
             review["supporting_findings"]["exact_osm_way_mapping"]["status"],
             "UNCONFIRMED",
         )

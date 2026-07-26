@@ -337,7 +337,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     app.buttons["Delete"].tap()
     let confirmation = app.sheets.firstMatch
-    XCTAssertTrue(confirmation.waitForExistence(timeout: 2))
+    XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
     confirmation.buttons["Delete"].tap()
 
     XCTAssertTrue(

@@ -124,7 +124,7 @@ def completed_road_register_review() -> dict:
 
 
 class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
-    def test_tracked_candidate_has_exact_release_blockers(self) -> None:
+    def test_tracked_exit_handoff_candidate_has_exact_release_blockers(self) -> None:
         report = validator.evaluate(
             load(READINESS_PATH),
             date(2026, 7, 25),
@@ -139,18 +139,29 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             [
                 "ARTIFACT_BINDINGS",
                 "DIRECTED_CANDIDATE_STRUCTURE",
+                "EXIT_HANDOFF_BOUNDARY",
                 "ODBL_DISTRIBUTION",
                 "SOURCE_ADJACENCY",
+                "SURFACE_SUCCESSORS_EXCLUDED",
             ],
         )
         self.assertEqual(
             report["blocker_codes"],
             [
-                "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-                "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
                 "UNRELEASED_ATLAS_EVIDENCE",
                 "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
             ],
+        )
+        self.assertEqual(
+            report["future_surface_egress_blocker_codes"],
+            [
+                "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+                "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+            ],
+        )
+        self.assertEqual(
+            report["exit_handoff_boundary"],
+            validator.EXPECTED_EXIT_HANDOFF_BOUNDARY,
         )
         self.assertEqual(
             report["distribution_review_status"],
@@ -215,7 +226,19 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_candidate(candidate)
 
-    def test_complete_field_review_clears_only_its_gate(self) -> None:
+    def test_terminal_occurrence_drift_is_rejected(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        candidate["route_plan"]["occurrences"][-1]["entity_id"] = (
+            "shutoko.edge.unreviewed-surface"
+        )
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "terminal occurrence has drifted",
+        ):
+            validator.validate_candidate(candidate)
+
+    def test_complete_field_review_clears_only_its_future_scope_gate(self) -> None:
         readiness = load(READINESS_PATH)
 
         report = validator.evaluate(
@@ -227,13 +250,19 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
         self.assertNotIn(
             "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
-            report["blocker_codes"],
+            report["future_surface_egress_blocker_codes"],
         )
         self.assertEqual(
-            report["gate_states"]["CURRENT_SURFACE_FIELD_REVIEW"],
+            report["future_surface_egress_gate_states"][
+                "CURRENT_SURFACE_FIELD_REVIEW"
+            ],
             "SATISFIED",
         )
         self.assertIn(
+            "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+            report["future_surface_egress_blocker_codes"],
+        )
+        self.assertNotIn(
             "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
             report["blocker_codes"],
         )
@@ -247,7 +276,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         )
         self.assertFalse(report["navigation_authority"])
 
-    def test_complete_private_road_review_clears_only_identity_gate(
+    def test_complete_private_road_review_clears_only_future_identity_gate(
         self,
     ) -> None:
         report = validator.evaluate(
@@ -259,13 +288,17 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
         self.assertNotIn(
             "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-            report["blocker_codes"],
+            report["future_surface_egress_blocker_codes"],
         )
         self.assertEqual(
-            report["gate_states"]["CURRENT_ROAD_IDENTITY"],
+            report["future_surface_egress_gate_states"]["CURRENT_ROAD_IDENTITY"],
             "SATISFIED",
         )
         self.assertIn(
+            "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
+            report["future_surface_egress_blocker_codes"],
+        )
+        self.assertNotIn(
             "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
             report["blocker_codes"],
         )
@@ -281,15 +314,11 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         self.assertFalse(report["navigation_authority"])
 
     def test_pending_topology_review_blocks_a_released_state(self) -> None:
-        field_review = completed_field_review()
         complete, reviewer_id, status = validator.evaluate_topology_release_review(
             load(TOPOLOGY_REVIEW_PATH),
             date(2026, 7, 25),
             REPOSITORY_ROOT,
             "RELEASED",
-            True,
-            True,
-            validator.canonical_sha256(field_review),
         )
 
         self.assertFalse(complete)
@@ -324,9 +353,6 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "CANDIDATE",
-                False,
-                False,
-                validator.canonical_sha256(completed_field_review()),
             )
 
     def test_release_review_validity_cannot_exceed_31_days(self) -> None:
@@ -351,22 +377,14 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             )
 
     def test_approved_reviews_require_distinct_current_reviewers(self) -> None:
-        field_review = completed_field_review()
-        field_digest = validator.canonical_sha256(field_review)
-        road_register_review = completed_road_register_review()
-        road_register_digest = validator.canonical_sha256(road_register_review)
         topology_review = load(TOPOLOGY_REVIEW_PATH)
         topology_review["required_checks"] = {
             "candidate_structure": "SATISFIED",
             "source_adjacency": "SATISFIED",
-            "current_road_identity": "SATISFIED",
-            "current_surface_field_review": "SATISFIED",
-            "exact_legal_successor_review": "SATISFIED",
+            "exit_handoff_boundary": "SATISFIED",
+            "surface_successors_excluded": "SATISFIED",
+            "independent_topology_review": "SATISFIED",
         }
-        topology_review["private_road_register_review_manifest_sha256"] = (
-            road_register_digest
-        )
-        topology_review["private_field_review_manifest_sha256"] = field_digest
         topology_review["decision"] = {
             "status": "APPROVED",
             "reviewer_id": "independent-topology-reviewer",
@@ -375,29 +393,12 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "valid_through": "2026-08-24",
             "blocker_codes": [],
         }
-        with self.assertRaisesRegex(
-            validator.ReadinessError,
-            "prerequisites are incomplete",
-        ):
-            validator.evaluate_topology_release_review(
-                topology_review,
-                date(2026, 7, 25),
-                REPOSITORY_ROOT,
-                "RELEASED",
-                True,
-                True,
-                field_digest,
-            )
         topology_complete, topology_reviewer_id, _ = (
             validator.evaluate_topology_release_review(
                 topology_review,
                 date(2026, 7, 25),
                 REPOSITORY_ROOT,
                 "RELEASED",
-                True,
-                True,
-                field_digest,
-                road_register_digest,
             )
         )
         self.assertTrue(topology_complete)

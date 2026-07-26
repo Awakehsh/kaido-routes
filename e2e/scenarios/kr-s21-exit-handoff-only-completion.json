@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S21",
+  "title": "A route-only journey completes at its released exit handoff",
+  "layer": "SIMULATION",
+  "tags": ["completion", "exit", "handoff", "surface-egress"],
+  "purpose": "End guidance at the terminal expressway occurrence without inferring or activating an ordinary-road egress.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The route, exit, and handoff are synthetic and do not release a real road."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.exit-handoff-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-26T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.exit-handoff",
+      "network_snapshot_id": "test.snapshot.exit-handoff-v1",
+      "entry_facility_id": "test.entry.directional",
+      "exit_facility_id": "test.exit.directional",
+      "recovery_policy": "SAFE_EXIT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.expressway",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.expressway"
+        },
+        {
+          "occurrence_id": "test.occurrence.exit-terminal",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.exit-terminal"
+        }
+      ]
+    },
+    "inputs": {
+      "allows_user_confirmed_exit_handoff_completion": true,
+      "precomputed_egress_options": [
+        {
+          "egress_option_id": "test.egress.exit-handoff",
+          "first_eligible_occurrence_id": "test.occurrence.exit-terminal",
+          "exit_facility_id": "test.exit.directional",
+          "egress_occurrence_ids": ["test.occurrence.exit-terminal"],
+          "released": true
+        }
+      ]
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.exit-handoff",
+      "current_occurrence_id": "test.occurrence.exit-terminal",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "finish",
+      "at_ms": 0,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "FINISH_DRIVE"
+      }
+    },
+    {
+      "id": "confirm-exit-handoff",
+      "at_ms": 1000,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "COMPLETE_AT_EXIT_HANDOFF"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "released-exit-is-active-first",
+      "after": "finish",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "EXIT_TRANSITION",
+      "rationale": "Completion remains downstream of the released directional exit plan."
+    },
+    {
+      "id": "journey-completes",
+      "after": "confirm-exit-handoff",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "COMPLETED",
+      "rationale": "The explicit route-only handoff confirmation ends the composite journey."
+    },
+    {
+      "id": "completion-trigger-is-explicit",
+      "after": "confirm-exit-handoff",
+      "category": "SAFETY",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "USER_CONFIRMED_EXIT_HANDOFF_COMPLETED",
+      "rationale": "The reducer records user confirmation rather than fabricating a surface movement."
+    },
+    {
+      "id": "route-occurrences-are-complete",
+      "after": "confirm-exit-handoff",
+      "category": "DOMAIN",
+      "subject": "navigation.completed_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.expressway",
+        "test.occurrence.exit-terminal"
+      ],
+      "rationale": "Every ordered expressway occurrence remains counted through the terminal edge."
+    },
+    {
+      "id": "no-route-occurrence-remains",
+      "after": "confirm-exit-handoff",
+      "category": "DOMAIN",
+      "subject": "navigation.pending_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "The route-only plan has no pending expressway occurrence after completion."
+    },
+    {
+      "id": "surface-egress-is-never-entered",
+      "after": "confirm-exit-handoff",
+      "category": "SAFETY",
+      "subject": "journey.phase",
+      "matcher": "NOT_EQUALS",
+      "expected": "SURFACE_EGRESS",
+      "rationale": "Completing at the exit boundary cannot authorize navigation onto an ordinary road."
+    }
+  ]
+}

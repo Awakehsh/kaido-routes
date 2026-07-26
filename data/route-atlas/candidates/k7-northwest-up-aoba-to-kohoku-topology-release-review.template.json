@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.1",
-  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.topology-release-review.2026-07-24",
+  "schema_version": "2.0",
+  "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.exit-handoff-topology-release-review.2026-07-26",
   "review_type": "TOPOLOGY_RELEASE_REVIEW",
   "assessed_at": "2026-07-24",
   "navigation_authority": false,
@@ -12,7 +12,11 @@
     "route_occurrence_count": 13,
     "topology_edge_count": 15,
     "source_adjacency_checkpoint_count": 14,
-    "source_successor_count": 19
+    "source_successor_count": 19,
+    "release_scope": "EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE",
+    "terminal_route_occurrence_id": "shutoko.occurrence.k7-northwest.up.osm-way.734299106.12",
+    "terminal_topology_node_id": "osm.node.7473451738",
+    "rendered_surface_successor_count": 0
   },
   "artifact_bindings": [
     {
@@ -24,32 +28,15 @@
       "role": "SOURCE_SUCCESSOR_AUDIT",
       "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-successor-audit.json",
       "content_sha256": "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
-    },
-    {
-      "role": "ROAD_REGISTER_REVIEW",
-      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-road-register-review.json",
-      "content_sha256": "378c9348e1c511995068277ce2eafc991c65ea0a9665909ec0dcab8e5448572b"
-    },
-    {
-      "role": "ROAD_REGISTER_REVIEW_TEMPLATE",
-      "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-road-register-review.template.json",
-      "content_sha256": "09145e2327cc43695548b7ef7eb44f363e256556f7797c72d47c13ee6435bb8f"
-    },
-    {
-      "role": "FIELD_REVIEW_TEMPLATE",
-      "repository_path": "docs/testing/fixtures/k7-yokohama-kohoku-surface-field-review.template.json",
-      "content_sha256": "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
     }
   ],
   "required_checks": {
     "candidate_structure": "SATISFIED",
     "source_adjacency": "SATISFIED",
-    "current_road_identity": "PENDING",
-    "current_surface_field_review": "PENDING",
-    "exact_legal_successor_review": "PENDING"
+    "exit_handoff_boundary": "SATISFIED",
+    "surface_successors_excluded": "SATISFIED",
+    "independent_topology_review": "PENDING"
   },
-  "private_road_register_review_manifest_sha256": null,
-  "private_field_review_manifest_sha256": null,
   "decision": {
     "status": "PENDING",
     "reviewer_id": null,
@@ -57,8 +44,6 @@
     "reviewed_at": null,
     "valid_through": null,
     "blocker_codes": [
-      "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-      "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
       "INDEPENDENT_TOPOLOGY_REVIEW_INCOMPLETE"
     ]
   }

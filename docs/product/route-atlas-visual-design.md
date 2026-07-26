@@ -143,6 +143,14 @@ expected unreleased topology and layout evidence states. It advances production
 layout review; it does not release the current surface movement, field evidence,
 realtime state, or navigation authority.
 
+The first K7 product scope may therefore end at this terminal as an
+`EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE`. In that scope, the terminal RoutePlan
+occurrence and boundary bar are inside the candidate, while all three ordinary-
+road successors and `SURFACE_EGRESS` are outside it. The unresolved identity and
+field review for way `776884422` remain visible future-expansion gates; they are
+not treated as satisfied and cannot be reused as evidence for a later surface
+route. Topology and layout still require their own independent release reviews.
+
 ## Current sources
 
 - [Shuto Navi Map, current on 2026-07-01](https://www.shutoko.jp/use/network/navimap/)

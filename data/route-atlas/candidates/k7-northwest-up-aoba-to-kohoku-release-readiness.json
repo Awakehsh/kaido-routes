@@ -1,8 +1,8 @@
 {
-  "schema_version": "1.0",
-  "readiness_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.route-atlas-readiness.2026-07-24",
-  "assessed_at": "2026-07-24",
-  "scope": "ROUTE_ATLAS_CANDIDATE",
+  "schema_version": "2.0",
+  "readiness_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.exit-handoff-route-atlas-readiness.2026-07-26",
+  "assessed_at": "2026-07-25",
+  "scope": "EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE",
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
     "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.osm-directed-candidate",
@@ -12,6 +12,22 @@
     "route_occurrence_count": 13,
     "topology_edge_count": 15,
     "layout_segment_count": 15
+  },
+  "exit_handoff_boundary": {
+    "guidance_termination": "USER_CONFIRMED_EXIT_HANDOFF",
+    "terminal_route_occurrence_id": "shutoko.occurrence.k7-northwest.up.osm-way.734299106.12",
+    "terminal_topology_edge_id": "shutoko.topology-edge.osm-way.734299106.forward",
+    "terminal_topology_node_id": "osm.node.7473451738",
+    "surface_egress_released": false,
+    "excluded_surface_osm_way_ids": [
+      734299108,
+      734299111,
+      776884422
+    ],
+    "future_scope_gate_ids": [
+      "CURRENT_ROAD_IDENTITY",
+      "CURRENT_SURFACE_FIELD_REVIEW"
+    ]
   },
   "artifact_bindings": [
     {
@@ -37,7 +53,7 @@
     {
       "role": "TOPOLOGY_RELEASE_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json",
-      "content_sha256": "8342daa4b5c95165b1d077ac661b2fd670764068a21e5873c68114fca3c7de24"
+      "content_sha256": "f2c21c1fe9134b6b8fae5b21f260e518b4b644b2f924aadb236539fa79f27c48"
     },
     {
       "role": "LAYOUT_RELEASE_REVIEW",
@@ -85,20 +101,26 @@
     "satisfied_gate_ids": [
       "ARTIFACT_BINDINGS",
       "DIRECTED_CANDIDATE_STRUCTURE",
+      "EXIT_HANDOFF_BOUNDARY",
       "ODBL_DISTRIBUTION",
-      "SOURCE_ADJACENCY"
+      "SOURCE_ADJACENCY",
+      "SURFACE_SUCCESSORS_EXCLUDED"
     ],
     "blocked_gate_ids": [
-      "CURRENT_ROAD_IDENTITY",
-      "CURRENT_SURFACE_FIELD_REVIEW",
       "LAYOUT_RELEASE_EVIDENCE",
       "TOPOLOGY_RELEASE_EVIDENCE"
     ],
     "blocker_codes": [
-      "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-      "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
       "UNRELEASED_ATLAS_EVIDENCE",
       "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE"
+    ],
+    "future_surface_egress_gate_ids": [
+      "CURRENT_ROAD_IDENTITY",
+      "CURRENT_SURFACE_FIELD_REVIEW"
+    ],
+    "future_surface_egress_blocker_codes": [
+      "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
+      "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE"
     ]
   }
 }

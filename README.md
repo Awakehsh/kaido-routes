@@ -734,21 +734,30 @@ A dated K7 pre-release package now binds that schematic candidate, the directed
 source review, the 14-checkpoint successor audit, the Kaido-authored layout
 source, an official road-register access review, private coordinate-free
 road-register and field templates, independent topology and layout review
-templates, and the ODbL technical distribution review by SHA-256. The private
+templates, and the ODbL technical distribution review by SHA-256. Schema 2.0
+scopes the first candidate to the terminal Yokohama Kohoku exit handoff: the
+last expressway occurrence remains in the RoutePlan, all three ordinary-road
+successors are excluded, and no surface-egress definition or instruction is
+released. The platform-light reducer permits `COMPLETED` only after the exact
+released exit is active, progress is on that terminal occurrence, and the user
+confirms the handoff. The private
 road-register validator requires a current map-66 record obtained at the Road
 Survey Division counter, exact comparison of all three OSM successors,
 hash-bound private raw records, independent review, and at most 31 days of
 validity. It never embeds the record or copied map geometry. The topology
-review must bind the canonical digests of both exact private manifests after
-the road and field gates pass. The layout review depends on that current
-topology review, uses a different reviewer, and both reviews expire after at
-most 31 days. A manual evidence-state change cannot satisfy either release
-gate. The distribution review in turn binds the derivative database, successor
+review for the exit-only scope verifies the terminal boundary and excludes
+every surface successor. The road-register and field gates remain separately
+reported future work for any later `SURFACE_EGRESS` expansion; they are not
+silently marked complete. The layout review depends on that current topology
+review, uses a different reviewer, and both reviews expire after at most 31
+days. A manual evidence-state change cannot satisfy either release gate. The
+distribution review in turn binds the derivative database, successor
 audit, reconstruction README, attribution catalog, SwiftUI implementation, and
-Xcode project source. Its independent validator derives four exact remaining
-blockers: current road identity, current field legality, and topology and
-layout release evidence. It reports the already proven structure, source
-adjacency, and ODbL distribution separately from those unresolved gates.
+Xcode project source. Its validator separates two release blockers—topology
+and layout evidence—from the current road identity and field legality gates
+that apply only to future surface egress. It reports the already proven
+structure, source adjacency, terminal exclusion, and ODbL distribution
+separately.
 Yokohama dates the online
 recognized-route map to 2026-07-03 and identifies the broader Kawamuki corridor
 historically as municipal Higashikatacho Route 342. A 2023 City Council
@@ -756,10 +765,11 @@ resolution separately recognizes post-replotting Higashikatacho Routes 354
 through 358 in the affected area, but its area-level reference map cannot map
 OSM way `776884422` to one exact route. The official online-map terms also state
 that online material is not proof and direct latest legal-record review to the
-Road Survey Division counter. The tracked decision therefore remains
-`BLOCKED` and `navigation_authority=false`. A later completed private field or
-road-register review can clear only its own gate, and even a readiness `PASS`
-merely admits the candidate to the authoritative
+Road Survey Division counter. The tracked exit-only decision therefore remains
+`BLOCKED` with exactly `UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE` and
+`UNRELEASED_ATLAS_EVIDENCE`, and `navigation_authority=false`. A later
+completed private field or road-register review can clear only its future-
+scope gate, and even a readiness `PASS` merely admits the candidate to the authoritative
 `kaido-atlas validate-release` command.
 
 The feasibility core currently executes portable scenarios for the following
@@ -941,8 +951,10 @@ source-registry and graph-integrity gate. `validate-release --artifact <file>`
 independently decodes and validates that artifact; no real Shuto release
 artifact exists yet.
 The K7 readiness command is a stricter real-evidence preflight around the
-current hash-bound candidate inputs. Its expected exit is `BLOCKED`; it never
-grants release or navigation authority.
+current hash-bound exit-handoff candidate inputs. Its expected exit is
+`BLOCKED` until topology and layout evidence are independently released. It
+reports unresolved ordinary-road identity and field evidence under the future
+surface-egress scope and never grants release or navigation authority.
 
 ```sh
 python3 scripts/validate_k7_route_atlas_readiness.py \

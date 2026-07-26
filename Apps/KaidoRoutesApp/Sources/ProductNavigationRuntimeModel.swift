@@ -585,6 +585,9 @@ final class ProductNavigationRuntimeModel: ObservableObject {
   func terminate() async -> Bool {
     await foregroundNavigationLocationController.stop()
     speechCoordinator.stop()
+    if snapshot?.journeyPhase == .exitTransition {
+      snapshot = await runtime.session.completeAtExitHandoff()
+    }
     do {
       try checkpointStore?.remove()
     } catch {

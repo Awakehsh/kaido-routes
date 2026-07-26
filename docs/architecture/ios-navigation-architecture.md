@@ -858,13 +858,16 @@ successors, selection of exact way `776884422`, independent review, and a
 coordinate-free report. Online map inspection, map 67, historic corridor
 identity, raw copied geometry, and a nonexact mapping cannot satisfy it.
 The dated readiness package also binds exact pending topology and layout
-release-review records. A topology approval requires the current road identity,
-the completed field findings, the canonical digests of both private manifests,
-and all exact legal-successor checks. A layout approval depends on that current
-topology approval and must use a different reviewer. Each approval is valid for
-at most 31 days. Evidence state and review approval are conjunctive: changing a
-candidate to `RELEASED` without the matching current approval cannot satisfy
-the readiness gate.
+release-review records. Schema 2.0 scopes the first candidate to the exact
+Yokohama Kohoku exit handoff: the terminal expressway occurrence is retained,
+all three ordinary-road successors are excluded, and no `SURFACE_EGRESS` is
+released. The current road-register and field findings remain separate future-
+scope gates for any later surface-egress expansion; they are neither required
+nor treated as satisfied for this exit-only topology review. A layout approval
+depends on the current topology approval and must use a different reviewer.
+Each approval is valid for at most 31 days. Evidence state and review approval
+are conjunctive: changing a candidate to `RELEASED` without the matching
+current approval cannot satisfy the readiness gate.
 Both evidence states remain `CANDIDATE`; OSM community directionality plus
 current operator diagram agreement does not replace independent field/topology
 review, a released production layout, OSM attribution integration, or realtime

@@ -17,6 +17,12 @@ date of 2023-03-15, and displayed the two east-west successor features as
 `認定路線図` to 2026-07-03. This is a precise counter locator, not proof of the
 current legal record or a release finding.
 
+This review no longer blocks the first K7 exit-handoff-only scope. That scope
+ends guidance on the terminal expressway occurrence and releases no ordinary-
+road successor. The exact road-register identity remains mandatory for a later
+`SURFACE_EGRESS` expansion and is reported as a separate future-scope gate; it
+is not treated as satisfied.
+
 Historic corridor identity, this online feature selection, or map 67 cannot
 clear the gate. The exact counter record must independently confirm the
 `東方町第356号線` candidate, distinguish OSM way `776884422` from the two
@@ -147,8 +153,8 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-A passing private road-register review clears only
-`CURRENT_ROAD_IDENTITY_UNCONFIRMED`. It cannot clear field legality, topology,
-layout, realtime, or product-release gates. A later approved topology review
-must bind the canonical SHA-256 of both exact private manifests; neither review
-may inherit evidence from another file.
+A passing private road-register review clears only the future-scope
+`CURRENT_ROAD_IDENTITY_UNCONFIRMED` gate. It cannot clear field legality,
+exit-only topology, layout, realtime, or product-release gates, and it cannot
+authorize a surface route without a separately released surface-egress
+definition.

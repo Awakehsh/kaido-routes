@@ -131,22 +131,26 @@ python3 scripts/build_k7_schematic_layout_candidate.py \
 ## K7 release-readiness package
 
 `k7-northwest-up-aoba-to-kohoku-release-readiness.json` is the dated,
-hash-bound pre-release decision for the most advanced K7 candidate. It binds
-the schematic candidate, directed source review, exact successor audit,
+hash-bound pre-release decision for the most advanced K7 candidate. Schema 2.0
+ends this first scope at the exact terminal exit occurrence, excludes every
+ordinary-road successor, and releases no `SURFACE_EGRESS`. It binds the
+schematic candidate, directed source review, exact successor audit,
 project-authored layout source, official road-register source review,
 coordinate-free road-register and field-review templates, and separate
 topology and layout release-review templates without copying official map
-imagery or private evidence. The road-register schema requires a current
+imagery or private evidence. The road-register schema for a future surface-
+egress expansion requires a current
 map-66 record obtained at the Road Survey Division counter, exact comparison of
 all three surface successors, private raw-record hashes, independent review,
 and no more than 31 days of validity. Field schema 1.1 rejects extra manifest
 fields, raw media and location keys, unsafe collection, non-independent review,
 unbound raw hashes, and validity beyond 31 days. Completed in-repository
-manifests must remain under ignored `research/`. The topology review must bind
-the canonical SHA-256 of both exact private manifests used by the readiness
-run. The layout review depends on a current approved topology review and must
-name a different reviewer. Both release reviews use an exact schema and a
-maximum 31-day validity window. The readiness package also binds the ODbL
+manifests must remain under ignored `research/`. These two reviews remain
+future-scope gates and are not treated as satisfied. The exit-only topology
+review instead verifies the terminal occurrence and the exclusion of all
+surface successors. The layout review depends on a current approved topology
+review and must name a different reviewer. Both release reviews use an exact
+schema and a maximum 31-day validity window. The readiness package also binds the ODbL
 technical distribution review, which in turn binds the complete derivative
 database, reconstruction offer, app attribution catalog, native SwiftUI
 evidence strip, and Xcode project source.
@@ -186,22 +190,24 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-The command must return `BLOCKED` with four exact top-level blockers:
+The command must return `BLOCKED` with two exact top-level blockers:
 
 ```text
-CURRENT_ROAD_IDENTITY_UNCONFIRMED
-CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE
 UNRELEASED_ATLAS_EVIDENCE
 UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
 ```
+
+It separately reports `CURRENT_ROAD_IDENTITY_UNCONFIRMED` and
+`CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE` under the future surface-egress
+scope.
 
 The technical review clears only `ODBL_DISTRIBUTION`. It is not legal advice
 and cannot clear a road, topology, layout, realtime, or navigation gate.
 
 Private completed road-register and field manifests may be supplied with
 `--road-register-review` and `--field-review`; each can clear only its own
-gate. Changing topology or layout evidence to `RELEASED` without the respective
-current independent approval leaves the corresponding gate blocked. A
+future-scope gate. Changing topology or layout evidence to `RELEASED` without
+the respective current independent approval leaves the corresponding gate blocked. A
 readiness `PASS` would mean that the candidate may be submitted to
 `kaido-atlas validate-release`. The readiness report always keeps
 `navigation_authority=false`; only the authoritative Route Atlas and joint

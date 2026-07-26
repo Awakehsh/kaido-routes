@@ -2521,6 +2521,8 @@ private struct ScenarioHarness {
     switch try payload.requiredString("action") {
     case "FINISH_DRIVE":
       engine.finishDrive()
+    case "COMPLETE_AT_EXIT_HANDOFF":
+      engine.completeAtExitHandoff()
     case "OPEN_PRE_DRIVE_REVIEW":
       let inputs = scenario.given.inputs
       let planned = inputs.string("planned_status") ?? "UNKNOWN"
@@ -3315,7 +3317,10 @@ private struct ScenarioHarness {
       egressOptions: try egressOptions(from: given.inputs),
       nextSign: signGuidance(from: given.inputs),
       guidanceAnchors: try guidanceAnchors(from: given.inputs),
-      releasedGuidance: try releasedGuidance(from: given.inputs)
+      releasedGuidance: try releasedGuidance(from: given.inputs),
+      allowsUserConfirmedExitHandoffCompletion:
+        given.inputs.bool("allows_user_confirmed_exit_handoff_completion")
+        ?? false
     )
   }
 

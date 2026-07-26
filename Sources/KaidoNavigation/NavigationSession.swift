@@ -401,6 +401,17 @@ public actor NavigationSession {
     return engine.snapshot
   }
 
+  /// Applies the explicit route-only exit-handoff completion boundary.
+  ///
+  /// The reducer refuses completion unless the runtime configuration permits
+  /// it, the released exit is active, and progress is on the terminal
+  /// RoutePlan occurrence.
+  @discardableResult
+  public func completeAtExitHandoff() -> NavigationSnapshot {
+    engine.completeAtExitHandoff()
+    return engine.snapshot
+  }
+
   private func update(
     estimate: MatcherEstimate,
     guidanceProgressState: NavigationSessionGuidanceProgressState,

@@ -61,6 +61,8 @@ should become scenarios when their layer is built.
 | KR-S17 | Fresh resolved progress produces a non-regressing shared frame and one-shot voice emission | P0 | Seeded |
 | KR-S18 | HIGH Swift along-edge progress becomes occurrence-bound distance to a reviewed DecisionZone | P0 | Seeded |
 | KR-S19 | Release-bound multi-edge entrance evidence is required before strict-route admission | P0 | Seeded |
+| KR-S20 | A release-bound surface-egress matcher requires two fresh exact handoff observations before leaving the exit transition | P0 | Seeded |
+| KR-S21 | An exit-only journey completes at its exact released exit handoff without entering surface egress | P0 | Seeded |
 
 ## iPhone and CarPlay experience
 

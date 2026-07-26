@@ -4,6 +4,12 @@
 
 Do not publish a navigable Yokohama Kohoku surface schematic yet.
 
+The first K7 product scope may still end at the exact exit handoff because it
+does not render, match, speak, or navigate onto any ordinary-road successor.
+This field review is therefore a future `SURFACE_EGRESS` gate rather than a
+blocker for the exit-handoff-only Route Atlas. The unresolved finding remains
+explicit and cannot be described as passed.
+
 The pinned OSM extract is source-complete at the exit terminal. Yokohama's
 2020 opening notice identifies the corridor represented by OSM way `776884422`
 as the temporary passage then used inside the land-readjustment area. The
@@ -178,17 +184,15 @@ The report contains only the fixed target identity, scalar conclusions, file
 count, privacy classification, and blocker codes; it cannot reproduce media,
 coordinates, paths, reviewer identity, or device metadata.
 Field completion closes only the physical-status, legal-direction, and
-permitted-movement part of this road-level evidence gap. It does not name an
-official municipal road route. The exact road identity remains a separate
-official
+permitted-movement part of this future surface-egress evidence gap. It does not
+name an official municipal road route. The exact road identity remains a
+separate official
 [road-register review](k7-yokohama-kohoku-road-register-verification.md), and
-Route Atlas release still requires production schematic review, occurrence
-bindings, attribution, and the other release gates. The later topology review
-must bind the canonical SHA-256 of both exact private manifests; a different
-field or road-register manifest cannot inherit its approval. The subsequent
-layout approval depends on the current topology approval and must use a
-different reviewer. Merely changing topology or layout evidence state to
-`RELEASED` cannot replace either review.
+any later surface-egress release must bind both exact private manifests. The
+exit-only Route Atlas still requires production schematic review, occurrence
+bindings, attribution, and independent topology and layout reviews. Merely
+changing topology or layout evidence state to `RELEASED` cannot replace those
+reviews.
 
 The tracked aggregate decision binds this template to the candidate and the
 separate road-register review:
@@ -201,14 +205,15 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-Passing the field validator can clear only
-`CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE`. It cannot clear
+Passing the field validator can clear only the future-scope
+`CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE` gate. It cannot clear
 `CURRENT_ROAD_IDENTITY_UNCONFIRMED`, ODbL distribution work, or unreleased
-topology/layout evidence, and it never grants navigation authority.
+exit-only topology/layout evidence, and it never grants navigation authority.
 
 ## Acceptance
 
-The current movement may enter topology review only when:
+The current movement may enter a future surface-egress topology review only
+when:
 
 - all four observations are current and hash-bound;
 - safe collection fields pass;

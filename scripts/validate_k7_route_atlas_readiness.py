@@ -24,11 +24,12 @@ from validate_k7_road_register_review import (
 )
 
 
-EXPECTED_SCHEMA_VERSION = "1.0"
+EXPECTED_SCHEMA_VERSION = "2.0"
 EXPECTED_READINESS_ID = (
-    "shutoko.k7-northwest.aoba-up-to-kohoku-up." "route-atlas-readiness.2026-07-24"
+    "shutoko.k7-northwest.aoba-up-to-kohoku-up."
+    "exit-handoff-route-atlas-readiness.2026-07-26"
 )
-EXPECTED_SCOPE = "ROUTE_ATLAS_CANDIDATE"
+EXPECTED_SCOPE = "EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE"
 EXPECTED_TARGET = {
     "network_snapshot_id": (
         "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest"
@@ -52,6 +53,22 @@ EXPECTED_ROAD_TARGET = {
     "via_osm_node_id": 7473451738,
     "surface_osm_way_id": 776884422,
     "source_direction": "FORWARD",
+}
+EXPECTED_EXIT_HANDOFF_BOUNDARY = {
+    "guidance_termination": "USER_CONFIRMED_EXIT_HANDOFF",
+    "terminal_route_occurrence_id": (
+        "shutoko.occurrence.k7-northwest.up.osm-way.734299106.12"
+    ),
+    "terminal_topology_edge_id": (
+        "shutoko.topology-edge.osm-way.734299106.forward"
+    ),
+    "terminal_topology_node_id": "osm.node.7473451738",
+    "surface_egress_released": False,
+    "excluded_surface_osm_way_ids": [734299108, 734299111, 776884422],
+    "future_scope_gate_ids": [
+        "CURRENT_ROAD_IDENTITY",
+        "CURRENT_SURFACE_FIELD_REVIEW",
+    ],
 }
 EXPECTED_BINDING_PATHS = {
     "ROUTE_ATLAS_CANDIDATE": (
@@ -281,7 +298,8 @@ EXPECTED_ROAD_SUPPORTING_FINDINGS = {
     },
 }
 EXPECTED_TOPOLOGY_REVIEW_ID = (
-    "shutoko.k7-northwest.aoba-up-to-kohoku-up." "topology-release-review.2026-07-24"
+    "shutoko.k7-northwest.aoba-up-to-kohoku-up."
+    "exit-handoff-topology-release-review.2026-07-26"
 )
 EXPECTED_LAYOUT_REVIEW_ID = (
     "shutoko.k7-northwest.aoba-up-to-kohoku-up." "layout-release-review.2026-07-24"
@@ -295,6 +313,14 @@ EXPECTED_TOPOLOGY_REVIEW_TARGET = {
     "topology_edge_count": 15,
     "source_adjacency_checkpoint_count": 14,
     "source_successor_count": 19,
+    "release_scope": EXPECTED_SCOPE,
+    "terminal_route_occurrence_id": (
+        EXPECTED_EXIT_HANDOFF_BOUNDARY["terminal_route_occurrence_id"]
+    ),
+    "terminal_topology_node_id": (
+        EXPECTED_EXIT_HANDOFF_BOUNDARY["terminal_topology_node_id"]
+    ),
+    "rendered_surface_successor_count": 0,
 }
 EXPECTED_LAYOUT_REVIEW_TARGET = {
     "network_snapshot_id": EXPECTED_TARGET["network_snapshot_id"],
@@ -317,24 +343,6 @@ EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
         "repository_path": EXPECTED_BINDING_PATHS["SOURCE_SUCCESSOR_AUDIT"],
         "content_sha256": (
             "63b8f76d5f04c15aff80c688666de4a425f12b4f636c40ee0d36d8772b18e27e"
-        ),
-    },
-    "ROAD_REGISTER_REVIEW": {
-        "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW"],
-        "content_sha256": (
-            "378c9348e1c511995068277ce2eafc991c65ea0a9665909ec0dcab8e5448572b"
-        ),
-    },
-    "ROAD_REGISTER_REVIEW_TEMPLATE": {
-        "repository_path": EXPECTED_BINDING_PATHS["ROAD_REGISTER_REVIEW_TEMPLATE"],
-        "content_sha256": (
-            "09145e2327cc43695548b7ef7eb44f363e256556f7797c72d47c13ee6435bb8f"
-        ),
-    },
-    "FIELD_REVIEW_TEMPLATE": {
-        "repository_path": EXPECTED_BINDING_PATHS["FIELD_REVIEW_TEMPLATE"],
-        "content_sha256": (
-            "d16ce46aff643902df9c05815fd929ced64a79b788d470976a0ea2ad7a64abd2"
         ),
     },
 }
@@ -378,8 +386,6 @@ EXPECTED_TOPOLOGY_REVIEW_KEYS = {
     "target",
     "artifact_bindings",
     "required_checks",
-    "private_road_register_review_manifest_sha256",
-    "private_field_review_manifest_sha256",
     "decision",
 }
 EXPECTED_LAYOUT_REVIEW_KEYS = {
@@ -602,6 +608,19 @@ def validate_candidate(candidate: dict[str, Any]) -> tuple[str, str]:
         != list(range(len(bindings)))
     ):
         raise ReadinessError("Route Atlas candidate occurrence order has drifted")
+    terminal_occurrence = occurrences[-1]
+    terminal_binding = bindings[-1]
+    if (
+        terminal_occurrence.get("occurrence_id")
+        != EXPECTED_EXIT_HANDOFF_BOUNDARY["terminal_route_occurrence_id"]
+        or terminal_occurrence.get("entity_id")
+        != "shutoko.edge.osm-way.734299106.forward"
+        or terminal_binding.get("occurrence_id")
+        != terminal_occurrence.get("occurrence_id")
+        or terminal_binding.get("segment_id")
+        != "shutoko.schematic-segment.osm-way.734299106.forward"
+    ):
+        raise ReadinessError("Route Atlas candidate terminal occurrence has drifted")
     topology_evidence = topology.get("evidence")
     layout_evidence = definition.get("evidence")
     if (
@@ -1018,16 +1037,12 @@ def evaluate_topology_release_review(
     as_of: date,
     repository_root: Path,
     topology_state: str,
-    road_identity_complete: bool,
-    field_review_complete: bool,
-    field_review_manifest_sha256: str,
-    road_register_review_manifest_sha256: str | None = None,
 ) -> tuple[bool, str | None, str]:
     decision = review.get("decision")
     checks = review.get("required_checks")
     if (
         set(review) != EXPECTED_TOPOLOGY_REVIEW_KEYS
-        or review.get("schema_version") != "1.1"
+        or review.get("schema_version") != "2.0"
         or review.get("review_id") != EXPECTED_TOPOLOGY_REVIEW_ID
         or review.get("review_type") != "TOPOLOGY_RELEASE_REVIEW"
         or review.get("target") != EXPECTED_TOPOLOGY_REVIEW_TARGET
@@ -1055,12 +1070,10 @@ def evaluate_topology_release_review(
             != {
                 "candidate_structure": "SATISFIED",
                 "source_adjacency": "SATISFIED",
-                "current_road_identity": "PENDING",
-                "current_surface_field_review": "PENDING",
-                "exact_legal_successor_review": "PENDING",
+                "exit_handoff_boundary": "SATISFIED",
+                "surface_successors_excluded": "SATISFIED",
+                "independent_topology_review": "PENDING",
             }
-            or review.get("private_road_register_review_manifest_sha256") is not None
-            or review.get("private_field_review_manifest_sha256") is not None
             or decision
             != {
                 "status": "PENDING",
@@ -1069,8 +1082,6 @@ def evaluate_topology_release_review(
                 "reviewed_at": None,
                 "valid_through": None,
                 "blocker_codes": [
-                    "CURRENT_ROAD_IDENTITY_UNCONFIRMED",
-                    "CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE",
                     "INDEPENDENT_TOPOLOGY_REVIEW_INCOMPLETE",
                 ],
             }
@@ -1081,21 +1092,14 @@ def evaluate_topology_release_review(
         raise ReadinessError("topology release review status is invalid")
     if (
         topology_state != "RELEASED"
-        or not road_identity_complete
-        or not field_review_complete
         or checks
         != {
             "candidate_structure": "SATISFIED",
             "source_adjacency": "SATISFIED",
-            "current_road_identity": "SATISFIED",
-            "current_surface_field_review": "SATISFIED",
-            "exact_legal_successor_review": "SATISFIED",
+            "exit_handoff_boundary": "SATISFIED",
+            "surface_successors_excluded": "SATISFIED",
+            "independent_topology_review": "SATISFIED",
         }
-        or road_register_review_manifest_sha256 is None
-        or review.get("private_road_register_review_manifest_sha256")
-        != road_register_review_manifest_sha256
-        or review.get("private_field_review_manifest_sha256")
-        != field_review_manifest_sha256
     ):
         raise ReadinessError("approved topology release prerequisites are incomplete")
     current, reviewer_id = evaluate_release_review_decision(
@@ -1445,6 +1449,8 @@ def evaluate(
         or readiness.get("readiness_id") != EXPECTED_READINESS_ID
         or readiness.get("scope") != EXPECTED_SCOPE
         or readiness.get("target") != EXPECTED_TARGET
+        or readiness.get("exit_handoff_boundary")
+        != EXPECTED_EXIT_HANDOFF_BOUNDARY
     ):
         raise ReadinessError("release-readiness identity has drifted")
     assessed_at = parse_iso_date(
@@ -1524,10 +1530,6 @@ def evaluate(
         as_of,
         repository_root,
         topology_state,
-        road_identity_complete,
-        field_complete,
-        field_review_manifest_sha256,
-        road_register_review_manifest_sha256,
     )
     (
         layout_review_complete,
@@ -1552,9 +1554,7 @@ def evaluate(
     topology_released = topology_state == "RELEASED" and topology_review_complete
     layout_released = layout_state == "RELEASED" and layout_review_complete
 
-    blockers = list(road_blockers)
-    if not field_complete:
-        blockers.append("CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE")
+    blockers: list[str] = []
     if not topology_released:
         blockers.append("UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE")
     if not layout_released:
@@ -1566,12 +1566,24 @@ def evaluate(
         "ARTIFACT_BINDINGS": "SATISFIED",
         "DIRECTED_CANDIDATE_STRUCTURE": "SATISFIED",
         "SOURCE_ADJACENCY": "SATISFIED",
-        "CURRENT_ROAD_IDENTITY": ("SATISFIED" if road_identity_complete else "BLOCKED"),
-        "CURRENT_SURFACE_FIELD_REVIEW": ("SATISFIED" if field_complete else "BLOCKED"),
+        "EXIT_HANDOFF_BOUNDARY": "SATISFIED",
+        "SURFACE_SUCCESSORS_EXCLUDED": "SATISFIED",
         "TOPOLOGY_RELEASE_EVIDENCE": ("SATISFIED" if topology_released else "BLOCKED"),
         "LAYOUT_RELEASE_EVIDENCE": ("SATISFIED" if layout_released else "BLOCKED"),
         "ODBL_DISTRIBUTION": ("SATISFIED" if distribution_complete else "BLOCKED"),
     }
+    future_scope_gate_states = {
+        "CURRENT_ROAD_IDENTITY": (
+            "SATISFIED" if road_identity_complete else "BLOCKED"
+        ),
+        "CURRENT_SURFACE_FIELD_REVIEW": (
+            "SATISFIED" if field_complete else "BLOCKED"
+        ),
+    }
+    future_scope_blockers = list(road_blockers)
+    if not field_complete:
+        future_scope_blockers.append("CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE")
+    future_scope_blockers = sorted(set(future_scope_blockers))
     satisfied_gate_ids = sorted(
         gate_id for gate_id, status in gate_states.items() if status == "SATISFIED"
     )
@@ -1593,6 +1605,7 @@ def evaluate(
         "as_of": as_of.isoformat(),
         "scope": EXPECTED_SCOPE,
         "target": EXPECTED_TARGET,
+        "exit_handoff_boundary": EXPECTED_EXIT_HANDOFF_BOUNDARY,
         "status": ("READY_FOR_RELEASE_VALIDATION" if candidate_ready else "BLOCKED"),
         "candidate_ready_for_release_validation": candidate_ready,
         "navigation_authority": False,
@@ -1600,6 +1613,8 @@ def evaluate(
         "satisfied_gate_ids": satisfied_gate_ids,
         "blocked_gate_ids": blocked_gate_ids,
         "blocker_codes": blockers,
+        "future_surface_egress_gate_states": future_scope_gate_states,
+        "future_surface_egress_blocker_codes": future_scope_blockers,
         "road_register_review_blockers": road_register_report_blockers,
         "road_register_review_input": (
             "PRIVATE_OVERRIDE"
@@ -1634,6 +1649,8 @@ def evaluate(
         "satisfied_gate_ids": satisfied_gate_ids,
         "blocked_gate_ids": blocked_gate_ids,
         "blocker_codes": blockers,
+        "future_surface_egress_gate_ids": sorted(future_scope_gate_states),
+        "future_surface_egress_blocker_codes": future_scope_blockers,
     }
     if (
         field_review_override is None

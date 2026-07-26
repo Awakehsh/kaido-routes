@@ -295,12 +295,11 @@ struct ReleasedProductNavigationPanel: View {
       }
     } label: {
       Label(
-        copy.resolve(
-          japanese: "このナビを終了",
-          simplifiedChinese: "结束本次导航",
-          english: "End this navigation"
-        ),
-        systemImage: "xmark.circle.fill"
+        endNavigationLabel,
+        systemImage:
+          model.snapshot?.journeyPhase == .exitTransition
+          ? "checkmark.circle.fill"
+          : "xmark.circle.fill"
       )
       .font(.system(size: 13, weight: .black, design: .rounded))
       .frame(maxWidth: .infinity)
@@ -311,6 +310,21 @@ struct ReleasedProductNavigationPanel: View {
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("released-runtime-end")
+  }
+
+  private var endNavigationLabel: String {
+    if model.snapshot?.journeyPhase == .exitTransition {
+      return copy.resolve(
+        japanese: "出口引き継ぎ地点で完了",
+        simplifiedChinese: "在出口交接点完成",
+        english: "Complete at exit handoff"
+      )
+    }
+    return copy.resolve(
+      japanese: "このナビを終了",
+      simplifiedChinese: "结束本次导航",
+      english: "End this navigation"
+    )
   }
 
   private func identityRow(

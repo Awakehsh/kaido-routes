@@ -29,6 +29,12 @@ candidate files by hash, then feed an authoritative release validator only when
 all preflight gates are satisfied. The K7 readiness validator deliberately
 reuses KR-D22 through KR-D24 for Swift graph/release semantics rather than
 adding a route-specific field-evidence event to the pure runtime runner.
+Its schema-2.0 release scope ends at the exact Yokohama Kohoku exit handoff:
+the three ordinary-road successors remain excluded, and their road-register
+and field gates are reported separately as future `SURFACE_EGRESS` work rather
+than counted as blockers for the exit-only atlas. KR-S21 independently proves
+the platform-light `EXIT_TRANSITION` to `COMPLETED` reducer boundary without
+authorizing a surface movement.
 Its ODbL distribution gate is cross-layer evidence: L0 hash-validates the full
 derivative database, reconstruction README, machine-readable notices,
 attribution catalog, SwiftUI implementation, and Xcode resource declaration;

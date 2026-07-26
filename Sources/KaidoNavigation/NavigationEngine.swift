@@ -11,6 +11,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let nextSign: SignGuidance
   public let guidanceAnchors: [GuidanceAnchorDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
+  public let allowsUserConfirmedExitHandoffCompletion: Bool
   public let signalReacquisitionMinimumObservations: Int
   public let signalReacquisitionMaximumGapMilliseconds: Int
 
@@ -23,6 +24,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
     nextSign: SignGuidance = SignGuidance(),
     guidanceAnchors: [GuidanceAnchorDefinition] = [],
     releasedGuidance: [ReleasedGuidanceDefinition] = [],
+    allowsUserConfirmedExitHandoffCompletion: Bool = false,
     signalReacquisitionMinimumObservations: Int = 2,
     signalReacquisitionMaximumGapMilliseconds: Int = 5_000
   ) {
@@ -34,6 +36,8 @@ public struct NavigationConfiguration: Equatable, Sendable {
     self.nextSign = nextSign
     self.guidanceAnchors = guidanceAnchors
     self.releasedGuidance = releasedGuidance
+    self.allowsUserConfirmedExitHandoffCompletion =
+      allowsUserConfirmedExitHandoffCompletion
     self.signalReacquisitionMinimumObservations = max(
       2,
       signalReacquisitionMinimumObservations
@@ -82,7 +86,8 @@ public struct NavigationEngine: Sendable {
   }
 
   public mutating func start() {
-    guard snapshot.routeExecutable,
+    guard snapshot.journeyPhase != .completed,
+      snapshot.routeExecutable,
       let routePlan = configuration.routePlan
     else { return }
 
@@ -346,7 +351,9 @@ public struct NavigationEngine: Sendable {
   }
 
   public mutating func finishDrive() {
-    guard let routePlan = configuration.routePlan else { return }
+    guard snapshot.journeyPhase != .completed,
+      let routePlan = configuration.routePlan
+    else { return }
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
     let eligibleOptions: [EgressOption]
     if let selectedEgressOptionID = configuration.selectedEgressOptionID {
@@ -389,6 +396,39 @@ public struct NavigationEngine: Sendable {
     snapshot.journeyPhase = .surfaceEgress
     snapshot.lastPhaseTransitionTrigger =
       "VERIFIED_SURFACE_EGRESS_HANDOFF"
+  }
+
+  /// Completes a route-only journey only after the selected released exit and
+  /// the terminal RoutePlan occurrence are both current.
+  ///
+  /// This is an explicit user confirmation boundary. It does not infer an
+  /// ordinary-road movement, activate a surface matcher, or authorize
+  /// `SURFACE_EGRESS`.
+  public mutating func completeAtExitHandoff() {
+    guard configuration.allowsUserConfirmedExitHandoffCompletion,
+      let routePlan = configuration.routePlan,
+      let terminalOccurrence = routePlan.occurrences.last,
+      snapshot.journeyPhase == .exitTransition,
+      snapshot.egress.status == .active,
+      snapshot.egress.exitFacilityID == routePlan.exitFacilityID,
+      snapshot.currentOccurrenceID == terminalOccurrence.id,
+      snapshot.currentOccurrenceIndex == terminalOccurrence.index
+    else {
+      return
+    }
+
+    snapshot.journeyPhase = .completed
+    snapshot.lastPhaseTransitionTrigger =
+      "USER_CONFIRMED_EXIT_HANDOFF_COMPLETED"
+    snapshot.completedOccurrenceIDs = routePlan.occurrences
+      .filter { !snapshot.skippedOccurrenceIDs.contains($0.id) }
+      .map(\.id)
+    snapshot.pendingOccurrenceIDs = []
+    snapshot.currentOccurrenceID = nil
+    snapshot.currentOccurrenceIndex = nil
+    snapshot.strictRouteAutoCommitAllowed = false
+    snapshot.activeGuidanceFrame = nil
+    snapshot.guidancePlanningStatus = .inactive
   }
 
   private mutating func updateEntryTransition(

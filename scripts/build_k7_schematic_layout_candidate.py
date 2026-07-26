@@ -411,15 +411,16 @@ def build_scenario(
                     "All three source-adjacent surface ways are intentionally "
                     "unrendered beyond the exit terminal."
                 ),
+                (
+                    "Current surface-road identity, direction, and permitted "
+                    "movement remain unresolved and are required only for a "
+                    "future surface-egress expansion."
+                ),
             ],
             "release_blockers": [
                 (
                     "Topology and layout evidence remain CANDIDATE pending "
                     "independent release review."
-                ),
-                (
-                    "Current surface-road identity, direction, and permitted "
-                    "exit movement remain unresolved."
                 ),
             ],
         },

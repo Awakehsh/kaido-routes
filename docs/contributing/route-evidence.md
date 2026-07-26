@@ -137,8 +137,11 @@ Exact official road-register review uses an independent private package. The
 binds one current map-66 counter record by SHA-256, compares all three
 exit-terminal OSM successors, and publishes only a coordinate-free scalar
 report. Online map inspection, historic corridor identity, or an unbound
-record cannot name the exact current road. A later topology review must bind
-the canonical digests of both the private road-register and field manifests.
+record cannot name the exact current road. A later surface-egress topology
+review must bind the canonical digests of both the private road-register and
+field manifests. The K7 exit-handoff-only scope releases no ordinary-road
+successor and therefore reports these as future-scope gates rather than
+treating them as passed.
 
 Historic construction identity and current area completion must remain separate
 from current road-level identity. The K7 plan records the 2020

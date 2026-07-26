@@ -49,6 +49,14 @@ JourneyPhase
 parked near an entrance may begin at `ENTRY_TRANSITION`, and a user may choose to
 end guidance at the exit's surface handoff anchor.
 
+For a release explicitly scoped to exit-handoff completion, the reducer accepts
+that final transition only after a released egress targets the RoutePlan's exact
+directional exit, progress is on the terminal RoutePlan occurrence, and the user
+confirms completion. It then moves directly from `EXIT_TRANSITION` to
+`COMPLETED`. It does not enter `SURFACE_EGRESS`, select an ordinary-road
+successor, or mint surface-routing authority. A release with an ordinary-road
+egress leg continues to require the separate matcher-bound handoff.
+
 The current platform-light composition boundary is release-first.
 `ReleasedSurfaceAccessDefinition` carries one exact `SurfaceApproachPolicy` and
 one release-candidate provider/build identity; `NavigationReleaseBundle` admits

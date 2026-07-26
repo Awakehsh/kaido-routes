@@ -331,6 +331,73 @@ func unavailableRecoveryClearsStaleEgressAuthority() {
   #expect(engine.snapshot.finishConfirmationExitFacilityID == nil)
 }
 
+@Test("Exit handoff completion requires explicit scope and terminal route progress")
+func exitHandoffCompletionFailsClosedUntilTerminalProgress() {
+  let routePlan = testRoutePlan()
+  let egress = EgressOption(
+    id: "test.egress.exit-handoff",
+    firstEligibleOccurrenceID: "second",
+    exitFacilityID: routePlan.exitFacilityID,
+    egressOccurrenceIDs: ["second"],
+    isReleased: true
+  )
+  var blocked = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      egressOptions: [egress]
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "second",
+      locationConfidence: .high
+    )
+  )
+  blocked.finishDrive()
+  blocked.completeAtExitHandoff()
+  #expect(blocked.snapshot.journeyPhase == .exitTransition)
+
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      egressOptions: [egress],
+      allowsUserConfirmedExitHandoffCompletion: true
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+  engine.finishDrive()
+  engine.completeAtExitHandoff()
+  #expect(engine.snapshot.journeyPhase == .exitTransition)
+  #expect(engine.snapshot.currentOccurrenceID == "first")
+
+  engine.observeLocation(
+    LocationObservation(
+      expectedOccurrenceID: "second",
+      reportedConfidence: .high
+    )
+  )
+  engine.completeAtExitHandoff()
+
+  #expect(engine.snapshot.journeyPhase == .completed)
+  #expect(
+    engine.snapshot.lastPhaseTransitionTrigger
+      == "USER_CONFIRMED_EXIT_HANDOFF_COMPLETED"
+  )
+  #expect(engine.snapshot.completedOccurrenceIDs == ["first", "second"])
+  #expect(engine.snapshot.pendingOccurrenceIDs.isEmpty)
+  #expect(engine.snapshot.currentOccurrenceID == nil)
+  #expect(engine.snapshot.currentOccurrenceIndex == nil)
+  #expect(engine.snapshot.activeGuidanceFrame == nil)
+
+  engine.start()
+  engine.finishDrive()
+  #expect(engine.snapshot.journeyPhase == .completed)
+  #expect(engine.snapshot.currentOccurrenceID == nil)
+}
+
 @Test("CarPlay disconnect preserves shared navigation progress and prompt ledger")
 func carPlayDisconnectPreservesSharedNavigationState() {
   let routePlan = RoutePlan(

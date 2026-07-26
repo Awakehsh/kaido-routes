@@ -14,22 +14,31 @@ struct KaidoProductJourneyView: View {
       KaidoTheme.asphalt
         .ignoresSafeArea()
 
-      ScrollView {
-        VStack(spacing: 16) {
-          journeyHeader
-          KaidoInterfaceLanguagePicker(
-            model: model.composition.languageSettings
-          )
-          .frame(maxWidth: .infinity, alignment: .trailing)
-          routeProgress
-          stageContent
+      ScrollViewReader { proxy in
+        ScrollView {
+          VStack(spacing: 16) {
+            Color.clear
+              .frame(height: 0)
+              .id("product-journey-top")
+              .accessibilityHidden(true)
+            journeyHeader
+            KaidoInterfaceLanguagePicker(
+              model: model.composition.languageSettings
+            )
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            routeProgress
+            stageContent
+          }
+          .padding(.horizontal, 18)
+          .padding(.top, 8)
+          .padding(.bottom, 20)
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
+        .scrollIndicators(.hidden)
+        .accessibilityIdentifier("product-journey-scroll")
+        .onChange(of: model.stage) {
+          proxy.scrollTo("product-journey-top", anchor: .top)
+        }
       }
-      .scrollIndicators(.hidden)
-      .accessibilityIdentifier("product-journey-scroll")
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       if model.stage != .navigation {
@@ -203,11 +212,17 @@ struct KaidoProductJourneyView: View {
             simplifiedChinese: "当前使用合成路线目录",
             english: "Synthetic route catalog in use"
           )
-          : copy.resolve(
-            japanese: "実道路リリースカタログを検証済み",
-            simplifiedChinese: "真实道路发布目录已验证",
-            english: "Real-road release catalog validated"
-          ),
+          : model.usesDemoRehearsal
+            ? copy.resolve(
+              japanese: "運転リハーサル用カタログを検証済み",
+              simplifiedChinese: "驾驶演练目录已验证",
+              english: "Driving rehearsal catalog validated"
+            )
+            : copy.resolve(
+              japanese: "実道路リリースカタログを検証済み",
+              simplifiedChinese: "真实道路发布目录已验证",
+              english: "Real-road release catalog validated"
+            ),
         detail:
           model.composition.releasedRouteAuthoring == nil
           ? copy.resolve(
@@ -218,14 +233,23 @@ struct KaidoProductJourneyView: View {
             english:
               "The manifest hash and production codec are validated; without a real-road release, navigation authority stays unavailable."
           )
-          : copy.resolve(
-            japanese:
-              "次のステップでは選択したリリース自身の編集レシピと表示文だけを使用します。",
-            simplifiedChinese:
-              "下一步只使用所选发布包自身的编辑配方与显示文案。",
-            english:
-              "The next step uses only the selected release's own authoring recipe and presentation."
-          ),
+          : model.usesDemoRehearsal
+            ? copy.resolve(
+              japanese:
+                "同じ合成リリースが経路編集、出発前確認、actor 演習を所有します。実道路の位置情報には接続しません。",
+              simplifiedChinese:
+                "同一份合成发布包负责路线编排、行前确认和 actor 演练；不会连接真实道路定位。",
+              english:
+                "One synthetic release owns authoring, pre-drive review, and the actor rehearsal; it never attaches real-road location."
+            )
+            : copy.resolve(
+              japanese:
+                "次のステップでは選択したリリース自身の編集レシピと表示文だけを使用します。",
+              simplifiedChinese:
+                "下一步只使用所选发布包自身的编辑配方与显示文案。",
+              english:
+                "The next step uses only the selected release's own authoring recipe and presentation."
+            ),
         code:
           "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
           + " RELEASED ROAD · "
@@ -361,8 +385,9 @@ struct KaidoProductJourneyView: View {
         }
         PreDriveReviewPanel(
           model: model.composition.preDriveReview,
-          navigationStartAvailable: model.canStartNavigation,
-          displayScope: .released,
+          navigationStartAvailable: model.canEnterDrivingStage,
+          displayScope:
+            model.usesDemoRehearsal ? .rehearsal : .released,
           releasedSnapshot:
             releasedRouteAuthoring.preDriveReviewSnapshot,
           releasedErrorCode: releasedRouteAuthoring.lastErrorCode
@@ -415,6 +440,25 @@ struct KaidoProductJourneyView: View {
             code: "RELEASE KEY · READY",
             color: KaidoTheme.positionCyan
           )
+        } else if model.canStartRehearsal {
+          ReviewBoundaryCard(
+            symbol: "play.circle.fill",
+            title: copy.resolve(
+              japanese: "運転リハーサルを開始できます",
+              simplifiedChinese: "可以开始驾驶演练",
+              english: "Driving rehearsal is ready"
+            ),
+            detail: copy.resolve(
+              japanese:
+                "同じ RoutePlan と合成リリースから actor を起動します。固定入力だけを使用し、現在地権限は要求しません。",
+              simplifiedChinese:
+                "将从同一 RoutePlan 与合成发布包启动 actor；只使用固定输入，不请求当前位置权限。",
+              english:
+                "The actor starts from the same RoutePlan and synthetic release, uses only fixed input, and requests no location permission."
+            ),
+            code: "REHEARSAL RELEASE · READY",
+            color: KaidoTheme.positionCyan
+          )
         } else {
           ReviewBoundaryCard(
             symbol: "lock.shield.fill",
@@ -440,7 +484,9 @@ struct KaidoProductJourneyView: View {
       .accessibilityValue(
         model.canStartNavigation
           ? "RELEASE_KEY_READY"
-          : model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED"
+          : model.canStartRehearsal
+            ? "REHEARSAL_RELEASE_READY"
+            : model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED"
       )
     }
   }
@@ -454,6 +500,11 @@ struct KaidoProductJourneyView: View {
           await model.endNavigation()
         }
       )
+    } else if let rehearsalRuntime = model.rehearsalRuntime {
+      VStack(spacing: 14) {
+        rehearsalHeader
+        SyntheticProductRuntimePanel(model: rehearsalRuntime)
+      }
     } else {
       ReviewBoundaryCard(
         symbol: "exclamationmark.shield.fill",
@@ -473,6 +524,72 @@ struct KaidoProductJourneyView: View {
         color: KaidoTheme.evidenceCoral
       )
     }
+  }
+
+  private var rehearsalHeader: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text(
+            copy.resolve(
+              japanese: "運転リハーサル",
+              simplifiedChinese: "驾驶演练",
+              english: "Driving rehearsal"
+            )
+          )
+          .font(.system(size: 21, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text("FIXED TRACE · NO LIVE LOCATION")
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .tracking(0.65)
+            .foregroundStyle(KaidoTheme.evidenceCoral)
+        }
+
+        Spacer(minLength: 8)
+
+        Button {
+          Task {
+            await model.endRehearsal()
+          }
+        } label: {
+          Label(
+            copy.resolve(
+              japanese: "終了",
+              simplifiedChinese: "结束",
+              english: "End"
+            ),
+            systemImage: "xmark"
+          )
+          .font(.system(size: 11, weight: .black, design: .rounded))
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.routeWhite)
+        .accessibilityIdentifier("product-journey-end-rehearsal")
+      }
+
+      Text(
+        copy.resolve(
+          japanese:
+            "これは操作と案内の完全な演習です。固定トレースは実道路ナビの権限を付与しません。",
+          simplifiedChinese:
+            "这是完整的交互与引导演练；固定轨迹不会获得真实道路导航权限。",
+          english:
+            "This is a complete interaction and guidance rehearsal; the fixed trace grants no real-road navigation authority."
+        )
+      )
+      .font(.system(size: 12, weight: .semibold))
+      .foregroundStyle(KaidoTheme.muted)
+    }
+    .padding(16)
+    .background(KaidoTheme.evidenceCoral.opacity(0.08))
+    .clipShape(RoundedRectangle(cornerRadius: 18))
+    .overlay {
+      RoundedRectangle(cornerRadius: 18)
+        .stroke(KaidoTheme.evidenceCoral.opacity(0.42), lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-journey-rehearsal-header")
   }
 
   private var atlasModePicker: some View {
@@ -524,7 +641,9 @@ struct KaidoProductJourneyView: View {
           .font(.system(size: 10, weight: .semibold))
           .foregroundStyle(
             model.stage == .review
-              ? KaidoTheme.evidenceCoral
+              ? (model.canEnterDrivingStage
+                ? KaidoTheme.positionCyan
+                : KaidoTheme.evidenceCoral)
               : KaidoTheme.muted
           )
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -646,11 +765,17 @@ struct KaidoProductJourneyView: View {
           simplifiedChinese: "开始路线导航",
           english: "Start route navigation"
         )
-        : copy.resolve(
-          japanese: "ナビは未リリース",
-          simplifiedChinese: "导航尚未发布",
-          english: "Navigation not released"
-        )
+        : model.canStartRehearsal
+          ? copy.resolve(
+            japanese: "運転リハーサルを開始",
+            simplifiedChinese: "开始驾驶演练",
+            english: "Start driving rehearsal"
+          )
+          : copy.resolve(
+            japanese: "ナビは未リリース",
+            simplifiedChinese: "导航尚未发布",
+            english: "Navigation not released"
+          )
     case .navigation:
       copy.resolve(
         japanese: "ナビ実行中",
@@ -667,7 +792,11 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "checklist.checked"
     case .review:
-      model.canStartNavigation ? "key.horizontal.fill" : "lock.fill"
+      model.canStartNavigation
+        ? "key.horizontal.fill"
+        : model.canStartRehearsal
+          ? "play.circle.fill"
+          : "lock.fill"
     case .navigation:
       "location.fill"
     }
@@ -680,7 +809,11 @@ struct KaidoProductJourneyView: View {
     case .authoring:
       "REVIEW"
     case .review:
-      model.canStartNavigation ? "START" : "BLOCKED"
+      model.canStartNavigation
+        ? "START"
+        : model.canStartRehearsal
+          ? "REHEARSE"
+          : "BLOCKED"
     case .navigation:
       "ACTIVE"
     }
@@ -718,14 +851,23 @@ struct KaidoProductJourneyView: View {
           english:
             "The release is bound; foreground location still requires a separate action after actor startup."
         )
-        : copy.resolve(
-          japanese:
-            "実道路の統合リリースと実地適格性証拠がそろうまでナビは開始できません。",
-          simplifiedChinese:
-            "需要真实联合发布包和现场资格证据后才能开始导航。",
-          english:
-            "A real joint release and field qualification evidence are required before navigation can start."
-        )
+        : model.canStartRehearsal
+          ? copy.resolve(
+            japanese:
+              "合成リリースを固定済みです。次は同じ actor 境界を固定入力だけで演習します。",
+            simplifiedChinese:
+              "合成发布包已绑定；下一步用固定输入演练同一套 actor 边界。",
+            english:
+              "The synthetic release is bound; next, rehearse the same actor boundary with fixed input only."
+          )
+          : copy.resolve(
+            japanese:
+              "実道路の統合リリースと実地適格性証拠がそろうまでナビは開始できません。",
+            simplifiedChinese:
+              "需要真实联合发布包和现场资格证据后才能开始导航。",
+            english:
+              "A real joint release and field qualification evidence are required before navigation can start."
+          )
     case .navigation:
       nil
     }
@@ -789,7 +931,7 @@ struct KaidoProductJourneyView: View {
     if stage == .review, model.routeReviewReady {
       return .available
     }
-    if stage == .navigation, model.canStartNavigation {
+    if stage == .navigation, model.canEnterDrivingStage {
       return .available
     }
     return .locked

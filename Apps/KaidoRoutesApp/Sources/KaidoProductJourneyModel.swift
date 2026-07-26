@@ -41,12 +41,14 @@ final class KaidoProductJourneyModel: ObservableObject {
   @Published private(set) var stage: KaidoProductJourneyStage = .atlas
   @Published private(set) var lastBlocker: KaidoProductJourneyBlocker?
   @Published private(set) var navigationRuntime: ProductNavigationRuntimeModel?
+  @Published private(set) var rehearsalRuntime: ProductNavigationRuntimeModel?
 
   let composition: KaidoRoutesAppModel
 
   private let productReleaseSelectionProvider: (RoutePlan) -> BundledProductReleaseSelection
   private let navigationRuntimeFactory:
     (BundledProductReleaseEntry) throws -> ProductNavigationRuntimeModel
+  private let rehearsalRuntimeFactory: () throws -> ProductNavigationRuntimeModel
   private var compositionSubscription: AnyCancellable?
   private var reviewSubscription: AnyCancellable?
   private var releasedReviewSubscription: AnyCancellable?
@@ -57,7 +59,9 @@ final class KaidoProductJourneyModel: ObservableObject {
       ((RoutePlan) -> BundledProductReleaseSelection)? = nil,
     navigationRuntimeFactory:
       ((BundledProductReleaseEntry) throws -> ProductNavigationRuntimeModel)? =
-      nil
+      nil,
+    rehearsalRuntimeFactory:
+      (() throws -> ProductNavigationRuntimeModel)? = nil
   ) {
     self.composition = composition
     self.productReleaseSelectionProvider =
@@ -70,6 +74,11 @@ final class KaidoProductJourneyModel: ObservableObject {
       navigationRuntimeFactory
       ?? {
         try composition.makeForegroundNavigationRuntime(for: $0)
+      }
+    self.rehearsalRuntimeFactory =
+      rehearsalRuntimeFactory
+      ?? {
+        try composition.makeDemoRehearsalRuntime()
       }
     compositionSubscription = composition.objectWillChange.sink {
       [weak self] _ in
@@ -142,13 +151,39 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   var canStartNavigation: Bool {
-    guard routeReviewReady, navigationRuntime == nil else {
+    guard
+      routeReviewReady,
+      navigationRuntime == nil,
+      rehearsalRuntime == nil
+    else {
       return false
     }
-    if case .selected = productReleaseSelection {
-      return true
+    guard case .selected(let entry) = productReleaseSelection else {
+      return false
     }
-    return false
+    return entry.descriptor.role == .foregroundNavigation
+      && entry.release.foregroundLiveInputAuthority != nil
+  }
+
+  var canStartRehearsal: Bool {
+    guard
+      routeReviewReady,
+      navigationRuntime == nil,
+      rehearsalRuntime == nil,
+      case .selected(let entry) = productReleaseSelection
+    else {
+      return false
+    }
+    return entry.descriptor.role == .demoOnly
+      && entry.release.foregroundLiveInputAuthority == nil
+  }
+
+  var canEnterDrivingStage: Bool {
+    canStartNavigation || canStartRehearsal
+  }
+
+  var usesDemoRehearsal: Bool {
+    composition.releasedRouteAuthoring?.scope == .demoRehearsal
   }
 
   var productReleaseSelection: BundledProductReleaseSelection {
@@ -203,7 +238,7 @@ final class KaidoProductJourneyModel: ObservableObject {
     case .authoring:
       routeReviewReady
     case .review:
-      canStartNavigation
+      canEnterDrivingStage
     case .navigation:
       false
     }
@@ -273,12 +308,48 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   func requestNavigationStart() {
-    guard routeReviewReady else {
+    guard
+      routeReviewReady,
+      navigationRuntime == nil,
+      rehearsalRuntime == nil
+    else {
       lastBlocker = navigationBlocker ?? .routeReviewNotReady
       return
     }
     guard case .selected(let entry) = productReleaseSelection else {
       lastBlocker = navigationBlocker
+      return
+    }
+    if entry.descriptor.role == .demoOnly {
+      guard
+        entry.release.foregroundLiveInputAuthority == nil,
+        entry.release.releaseID
+          == SyntheticProductRuntimeFixture.expectedProductReleaseID
+      else {
+        lastBlocker = .navigationRuntimeUnavailable
+        return
+      }
+      do {
+        let runtime = try rehearsalRuntimeFactory()
+        guard
+          runtime.syntheticFixture != nil,
+          runtime.productReleaseID == entry.release.releaseID,
+          runtime.routePlanID == entry.release.navigation.bundle.routePlan.id
+        else {
+          lastBlocker = .navigationRuntimeUnavailable
+          return
+        }
+        rehearsalRuntime = runtime
+        stage = .navigation
+        lastBlocker = nil
+      } catch {
+        rehearsalRuntime = nil
+        lastBlocker = .navigationRuntimeUnavailable
+      }
+      return
+    }
+    guard entry.descriptor.role == .foregroundNavigation else {
+      lastBlocker = .routeReleaseAuthorityUnavailable
       return
     }
     do {
@@ -294,6 +365,7 @@ final class KaidoProductJourneyModel: ObservableObject {
   func saveCompiledRoute(named displayName: String) {
     let evidenceState: SharedRouteEvidenceState
     if case .selected(let entry) = productReleaseSelection,
+      entry.descriptor.role == .foregroundNavigation,
       entry.release.navigation.bundle.routePlan == compiledRoutePlan
     {
       evidenceState = .released
@@ -353,6 +425,20 @@ final class KaidoProductJourneyModel: ObservableObject {
     lastBlocker = nil
   }
 
+  func endRehearsal() async {
+    guard let rehearsalRuntime else {
+      lastBlocker = .navigationRuntimeUnavailable
+      return
+    }
+    guard await rehearsalRuntime.terminate() else {
+      lastBlocker = .navigationRuntimeUnavailable
+      return
+    }
+    self.rehearsalRuntime = nil
+    stage = .review
+    lastBlocker = nil
+  }
+
   private func invalidateReview(blocker: KaidoProductJourneyBlocker) {
     stage = .authoring
     lastBlocker = blocker
@@ -366,6 +452,18 @@ final class KaidoProductJourneyModel: ObservableObject {
           return
         }
         self.navigationRuntime = nil
+      }
+    }
+    if let rehearsalRuntime {
+      Task { [weak self, rehearsalRuntime] in
+        _ = await rehearsalRuntime.terminate()
+        guard
+          let self,
+          self.rehearsalRuntime === rehearsalRuntime
+        else {
+          return
+        }
+        self.rehearsalRuntime = nil
       }
     }
   }

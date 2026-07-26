@@ -30,17 +30,29 @@ struct ReleasedProductRouteAuthoringPanel: View {
     VStack(alignment: .leading, spacing: 12) {
       panelHeader(
         title: copy.resolve(
-          japanese: "リリース済み経路を選択",
-          simplifiedChinese: "选择已发布路线",
-          english: "Choose a released route"
+          japanese:
+            model.scope == .demoRehearsal
+            ? "演習経路を選択" : "リリース済み経路を選択",
+          simplifiedChinese:
+            model.scope == .demoRehearsal
+            ? "选择演练路线" : "选择已发布路线",
+          english:
+            model.scope == .demoRehearsal
+            ? "Choose a rehearsal route" : "Choose a released route"
         ),
         detail: copy.resolve(
           japanese:
-            "各候補は一つの検証済み RoutePlan と完全な編集レシピに固定されています。",
+            model.scope == .demoRehearsal
+            ? "各候補は一つの合成 RoutePlan と完全な編集レシピに固定され、実道路権限を持ちません。"
+            : "各候補は一つの検証済み RoutePlan と完全な編集レシピに固定されています。",
           simplifiedChinese:
-            "每个候选都绑定一份完整验证的 RoutePlan 与编辑配方。",
+            model.scope == .demoRehearsal
+            ? "每个选项都绑定一条合成 RoutePlan 与完整编辑配方，不具备真实道路权限。"
+            : "每个候选都绑定一份完整验证的 RoutePlan 与编辑配方。",
           english:
-            "Each option is bound to one fully validated RoutePlan and authoring recipe."
+            model.scope == .demoRehearsal
+            ? "Each option is pinned to one synthetic RoutePlan and complete authoring recipe, with no real-road authority."
+            : "Each option is bound to one fully validated RoutePlan and authoring recipe."
         )
       )
 
@@ -96,7 +108,10 @@ struct ReleasedProductRouteAuthoringPanel: View {
         .accessibilityLabel(
           "\(option.entranceTitle)；\(option.finalChoiceTitle)"
         )
-        .accessibilityValue("RELEASED_ROUTE_OPTION")
+        .accessibilityValue(
+          model.scope == .demoRehearsal
+            ? "REHEARSAL_ROUTE_OPTION" : "RELEASED_ROUTE_OPTION"
+        )
       }
     }
   }
@@ -188,9 +203,18 @@ struct ReleasedProductRouteAuthoringPanel: View {
           ReviewBoundaryCard(
             symbol: "checkmark.seal.fill",
             title: copy.resolve(
-              japanese: "リリース経路と出発前証拠が一致",
-              simplifiedChinese: "发布路线与行前证据一致",
-              english: "Released route and pre-drive evidence match"
+              japanese:
+                model.scope == .demoRehearsal
+                ? "演習経路と出発前設定が一致"
+                : "リリース経路と出発前証拠が一致",
+              simplifiedChinese:
+                model.scope == .demoRehearsal
+                ? "演练路线与行前设置一致"
+                : "发布路线与行前证据一致",
+              english:
+                model.scope == .demoRehearsal
+                ? "Rehearsal route and pre-drive settings match"
+                : "Released route and pre-drive evidence match"
             ),
             detail: copy.resolve(
               japanese:
@@ -200,7 +224,10 @@ struct ReleasedProductRouteAuthoringPanel: View {
               english:
                 "The selected vehicle class and payment method, compiled RoutePlan, tariff record, and passage state are bound to the same drive session."
             ),
-            code: "RELEASED PRE-DRIVE · READY",
+            code:
+              model.scope == .demoRehearsal
+              ? "REHEARSAL PRE-DRIVE · READY"
+              : "RELEASED PRE-DRIVE · READY",
             color: KaidoTheme.positionCyan
           )
           .accessibilityIdentifier("released-route-review-ready")
@@ -250,9 +277,15 @@ struct ReleasedProductRouteAuthoringPanel: View {
     } label: {
       Label(
         copy.resolve(
-          japanese: "リリース経路をコンパイル",
-          simplifiedChinese: "编译发布路线",
-          english: "Compile released route"
+          japanese:
+            model.scope == .demoRehearsal
+            ? "演習経路をコンパイル" : "リリース経路をコンパイル",
+          simplifiedChinese:
+            model.scope == .demoRehearsal
+            ? "编译演练路线" : "编译发布路线",
+          english:
+            model.scope == .demoRehearsal
+            ? "Compile rehearsal route" : "Compile released route"
         ),
         systemImage: "checkmark.seal.fill"
       )

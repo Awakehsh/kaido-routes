@@ -3,6 +3,7 @@ import SwiftUI
 
 enum PreDriveReviewDisplayScope: Equatable {
   case synthetic
+  case rehearsal
   case released
 }
 
@@ -37,7 +38,7 @@ struct PreDriveReviewPanel: View {
       } else if model.hasCompiledRoutePlan, let errorCode = model.lastErrorCode {
         blocked(errorCode)
       }
-    case .released:
+    case .rehearsal, .released:
       if let releasedSnapshot {
         review(releasedSnapshot)
       } else if let releasedErrorCode {
@@ -81,14 +82,10 @@ struct PreDriveReviewPanel: View {
         .font(.system(size: 19, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.routeWhite)
 
-        Text(
-          displayScope == .released
-            ? "ROUTE FIRST · RELEASE-BOUND REVIEW"
-            : "ROUTE FIRST · SYNTHETIC REVIEW"
-        )
-        .font(.system(size: 9, weight: .bold, design: .monospaced))
-        .tracking(0.75)
-        .foregroundStyle(KaidoTheme.muted)
+        Text(reviewScopeLabel)
+          .font(.system(size: 9, weight: .bold, design: .monospaced))
+          .tracking(0.75)
+          .foregroundStyle(KaidoTheme.muted)
 
         Text(verbatim: snapshot.routePlanID)
           .font(.system(size: 8, weight: .medium, design: .monospaced))
@@ -200,9 +197,13 @@ struct PreDriveReviewPanel: View {
           Link(destination: url) {
             Label(
               copy.resolve(
-                japanese: "公式照会",
-                simplifiedChinese: "官方查询",
-                english: "Official query"
+                japanese:
+                  displayScope == .rehearsal ? "演習参照" : "公式照会",
+                simplifiedChinese:
+                  displayScope == .rehearsal ? "演练参考" : "官方查询",
+                english:
+                  displayScope == .rehearsal
+                  ? "Rehearsal reference" : "Official query"
               ),
               systemImage: "arrow.up.right"
             )
@@ -264,11 +265,17 @@ struct PreDriveReviewPanel: View {
       )
       Text(
         navigationStartAvailable
-          ? copy.resolve(
-            japanese: "統合リリースを固定済み",
-            simplifiedChinese: "联合发布包已绑定",
-            english: "Joint release bound"
-          )
+          ? displayScope == .rehearsal
+            ? copy.resolve(
+              japanese: "演習リリースを固定済み",
+              simplifiedChinese: "演练发布包已绑定",
+              english: "Rehearsal release bound"
+            )
+            : copy.resolve(
+              japanese: "統合リリースを固定済み",
+              simplifiedChinese: "联合发布包已绑定",
+              english: "Joint release bound"
+            )
           : copy.resolve(
             japanese: "ナビリリースが未準備",
             simplifiedChinese: "导航发布包尚未具备",
@@ -296,11 +303,19 @@ struct PreDriveReviewPanel: View {
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
       navigationStartAvailable
-        ? copy.resolve(
-          japanese: "統合リリースを固定済みです。ユーザーがナビを開始できます。",
-          simplifiedChinese: "联合发布包已绑定，可以由用户开始导航",
-          english: "The joint release is bound and the user may start navigation."
-        )
+        ? displayScope == .rehearsal
+          ? copy.resolve(
+            japanese: "演習リリースを固定済みです。運転リハーサルを開始できます。",
+            simplifiedChinese: "演练发布包已绑定，可以开始驾驶演练",
+            english:
+              "The rehearsal release is bound and the driving rehearsal can start."
+          )
+          : copy.resolve(
+            japanese: "統合リリースを固定済みです。ユーザーがナビを開始できます。",
+            simplifiedChinese: "联合发布包已绑定，可以由用户开始导航",
+            english:
+              "The joint release is bound and the user may start navigation."
+          )
         : copy.resolve(
           japanese: "ナビリリースが未準備のため、ナビを開始できません。",
           simplifiedChinese: "导航发布包尚未具备，无法开始导航",
@@ -361,6 +376,17 @@ struct PreDriveReviewPanel: View {
 
   private func checkedDate(_ value: String) -> String {
     String(value.prefix(10))
+  }
+
+  private var reviewScopeLabel: String {
+    switch displayScope {
+    case .synthetic:
+      "ROUTE FIRST · SYNTHETIC REVIEW"
+    case .rehearsal:
+      "ROUTE FIRST · SYNTHETIC REHEARSAL"
+    case .released:
+      "ROUTE FIRST · RELEASE-BOUND REVIEW"
+    }
   }
 
   private func passageStyle(

@@ -142,6 +142,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   init(
     productReleaseCatalog injectedProductReleaseCatalog:
       BundledProductReleaseCatalog? = nil,
+    demoRehearsalEnabled: Bool = false,
     savedRouteStore: (any SavedRouteLibraryStoring)? = nil,
     preDriveEvidenceUpdateStore:
       (any PreDriveEvidenceUpdateStoring)? = nil,
@@ -173,10 +174,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       let languageSettings = KaidoLanguageSettingsModel()
       self.languageSettings = languageSettings
-      if productReleaseCatalog.foregroundNavigationEntries.isEmpty {
-        preDriveEvidenceUpdates = nil
-        releasedRouteAuthoring = nil
-      } else {
+      if !productReleaseCatalog.foregroundNavigationEntries.isEmpty {
         let preDriveEvidenceUpdates = PreDriveEvidenceUpdateModel(
           entries: productReleaseCatalog.foregroundNavigationEntries,
           store: preDriveEvidenceUpdateStore,
@@ -202,6 +200,19 @@ final class KaidoRoutesAppModel: ObservableObject {
           [weak releasedRouteAuthoring] in
           releasedRouteAuthoring?.evidenceSourceDidChange()
         }
+      } else if demoRehearsalEnabled,
+        !productReleaseCatalog.demoEntries.isEmpty
+      {
+        preDriveEvidenceUpdates = nil
+        releasedRouteAuthoring = try ReleasedProductRouteAuthoringModel(
+          entries: productReleaseCatalog.demoEntries,
+          locale: languageSettings.interfaceLocale,
+          scope: .demoRehearsal,
+          evidenceProvider: Self.demoRehearsalEvidence
+        )
+      } else {
+        preDriveEvidenceUpdates = nil
+        releasedRouteAuthoring = nil
       }
       let guidanceVoicePreferenceStore =
         UserDefaultsGuidanceVoicePreferenceStore()
@@ -274,6 +285,7 @@ final class KaidoRoutesAppModel: ObservableObject {
 
   static func production() -> KaidoRoutesAppModel {
     KaidoRoutesAppModel(
+      demoRehearsalEnabled: true,
       savedRouteStore: try? FileSavedRouteLibraryStore.applicationSupport(),
       preDriveEvidenceUpdateStore:
         try? FilePreDriveEvidenceUpdateStore.applicationSupport()
@@ -329,6 +341,73 @@ final class KaidoRoutesAppModel: ObservableObject {
       },
       checkpointStore:
         FileNavigationSessionCheckpointStore.applicationSupport()
+    )
+  }
+
+  func makeDemoRehearsalRuntime() throws -> ProductNavigationRuntimeModel {
+    let speechOutput = AVSpeechGuidanceOutput(
+      preferredVoiceIdentifierProvider: {
+        [guidanceVoicePreferenceStore] languageCode in
+        guidanceVoicePreferenceStore.identifier(for: languageCode)
+      }
+    )
+    return try ProductNavigationRuntimeModel(
+      speechOutput: speechOutput,
+      languageSelectionProvider: {
+        [languageSettings] in
+        NavigationLanguageSelection(
+          interfaceLocale: languageSettings.interfaceLocale,
+          guidanceVoiceLocale: languageSettings.guidanceVoiceLocale
+        )
+      }
+    )
+  }
+
+  private static func demoRehearsalEvidence(
+    entry: BundledProductReleaseEntry,
+    session: PreDriveReviewSession
+  ) -> PreDriveReviewEvidence {
+    let routePlan = entry.release.navigation.bundle.routePlan
+    let amount =
+      switch session.vehicleClass {
+      case .lightMotorcycle:
+        session.paymentMethod == .etc ? 720 : 760
+      case .standard:
+        session.paymentMethod == .etc ? 880 : 920
+      case .medium:
+        session.paymentMethod == .etc ? 1_040 : 1_100
+      case .large:
+        session.paymentMethod == .etc ? 1_420 : 1_500
+      case .extraLarge:
+        session.paymentMethod == .etc ? 2_360 : 2_480
+      }
+    return PreDriveReviewEvidence(
+      evaluatedAt: "2026-07-26T00:00:00+09:00",
+      networkSnapshotID: routePlan.networkSnapshotID,
+      routePlanID: routePlan.id,
+      vehicleClass: session.vehicleClass,
+      paymentMethod: session.paymentMethod,
+      passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+      tariffQuotes: [
+        TariffQuote(
+          id:
+            "preview.synthetic.rehearsal."
+            + "\(session.vehicleClass.rawValue.lowercased())."
+            + "\(session.paymentMethod.rawValue.lowercased())",
+          entryFacilityID: routePlan.entryFacilityID,
+          exitFacilityID: routePlan.exitFacilityID,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod,
+          tariffVersionID: "preview.synthetic.rehearsal.tariff.v1",
+          tariffVersionStatus: .active,
+          tariffDistanceKM: routePlan.actualDistanceKM ?? 27.4,
+          estimatedAmountYen: amount,
+          evidenceStatus: .estimated,
+          checkedAt: "2026-07-26T00:00:00+09:00",
+          officialQueryReference:
+            "https://example.com/kaido-routes/synthetic-rehearsal"
+        )
+      ]
     )
   }
 }

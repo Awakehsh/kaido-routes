@@ -11,16 +11,18 @@ The default scene is now an ordered product journey rather than the complete
 internal evidence workbench:
 
 1. the fixed north-up Route Atlas establishes recognition context;
-2. the user enters the existing parked `ExpertRouteEditorSession` adapter;
+2. the user enters the parked editor owned by the selected product release;
 3. only an exact compiled RoutePlan unlocks pre-drive review; and
-4. navigation remains locked until a real joint product release and runtime
-   authority exist.
+4. the bundled demo continues into a fixed-input actor driving rehearsal, while
+   real-road navigation remains locked until foreground authority exists.
 
 The journey coordinator owns UI stage only. It does not author topology,
 occurrence progress, a RoutePlan, passage status, or navigation authority.
 Returning to the editor and invalidating the compiled route immediately removes
 review readiness and returns the scene to authoring. A future stage cannot be
-selected early, and the bundled synthetic release can never unlock navigation.
+selected early. The bundled synthetic release can unlock only its own
+fresh-session rehearsal: it never mints live-input authority, requests location,
+or becomes a foreground navigation release.
 The former all-panel review workbench remains available with
 `-INTERNAL-REVIEW-HOME`; focused previews retain their existing launch
 arguments.
@@ -49,9 +51,10 @@ name, and SHA-256 cannot drift through hand transcription. The generated static
 descriptor must still be reviewed and explicitly added to `previewManifest`;
 staging never becomes runtime resource discovery or automatic enrollment.
 
-The product journey exposes only foreground entries. If at least one exists,
-`ReleasedProductRouteAuthoringModel` replaces the synthetic editor, lists each
-release through its own locale-complete presentation, and submits every stable
+The product journey prefers foreground entries when at least one exists.
+Otherwise it exposes the validated demo through the same release-owned authoring
+model for rehearsal only. `ReleasedProductRouteAuthoringModel` lists each
+release through its own locale-complete presentation and submits every stable
 recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
 equal the selected release's whole `RoutePlan`, including snapshot and
 occurrence order. An optional compile-time, hash-bound
@@ -70,9 +73,11 @@ surface while Core Location remains idle. A second explicit action starts
 foreground input only after actor activation and When In Use authorization.
 Runtime construction failure stays in review, and ending navigation stops input
 and speech, removes the active checkpoint, and returns to review. There is no
-ID-only, injected mismatched-release, or synthetic-review fallback. The current
-manifest contains `0 RELEASED ROAD · 1 DEMO`, so the released authoring branch
-remains dormant and the default scene retains its synthetic preview.
+ID-only or injected mismatched-release fallback. A demo review instead creates a
+new checkpoint-free `ProductNavigationRuntimeModel` from that exact decoded
+release and admits only the fixture-owned trace. The current manifest contains
+`0 RELEASED ROAD · 1 DEMO`, so the foreground branch remains dormant while the
+default scene completes the demo rehearsal.
 
 A foreground descriptor may also pin public Ed25519 keys and one exact,
 credential-free HTTPS JSON endpoint for signed pre-drive evidence updates. The
@@ -117,9 +122,9 @@ The current app deliberately composes only:
   occurrence-bound junction inset;
 - a complete `SYNTHETIC_TEST_ONLY` joint product-release fixture that is decoded
   through the production codec, constructs `KaidoProductNavigationRuntime`, and
-  publishes its actor-owned atomic snapshot into SwiftUI while strict entry
-  remains locked, with a RoutePlan-bound exactly-once speech adapter waiting for
-  a transient prompt emission;
+  now owns the default journey's authoring, pre-drive review, and fresh-session
+  actor rehearsal while strict entry remains locked, with a RoutePlan-bound
+  exactly-once speech adapter waiting for a transient prompt emission;
 - a release-bound Route Atlas journey overlay that keeps released topology as
   quiet context, renders planned or actor-owned passed/current/future/skipped
   occurrence tracks, preserves repeated traversals with separate ordinal
@@ -147,7 +152,8 @@ The current app deliberately composes only:
 compiled-route invalidation, backwards navigation, the exact catalog-backed
 release-authority blocker, release-owned authoring through current pre-drive
 evidence, user-started runtime creation and clean termination, mismatched
-injected-release rejection, and fail-closed construction errors. Dedicated
+injected-release rejection, the exact default demo rehearsal, and fail-closed
+construction errors. Dedicated
 released-authoring tests cover exact route reconstruction, missing and drifting
 evidence, wrong-choice immutability, and locale changes without occurrence
 loss. Product runtime tests require a foreground descriptor plus codec-minted
@@ -162,11 +168,12 @@ adapter tests replay the bundled repeated occurrences through Simplified
 Chinese labels and reject a non-recipe choice without mutating the session.
 `KaidoProductJourneyUITests` prove
 the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
-a locked navigation step, enters parked authoring through the primary action,
-and renders the exact release blocker in pre-drive review. The review screenshot
-also requires the parked voice selector, quality state, and audition control.
-This is visual adapter evidence only; it does not qualify a physical device,
-acoustic quality, or real navigation.
+a release-gated navigation step, completes the demo's repeated-occurrence
+recipe, renders its exact pre-drive status, constructs the actor rehearsal, runs
+the fixed trace, and keeps live location disabled. The review screenshot also
+requires the parked voice selector, quality state, and audition control. This is
+visual adapter evidence only; it does not qualify a physical device, acoustic
+quality, or real navigation.
 
 The SVG remains non-interactive. Attribution is not delegated to SVG text:
 `route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and
@@ -250,8 +257,9 @@ update through the actor. When that update returns one matching
 `GuidanceSpeechCoordinator`. Tests require one Japanese command, duplicate
 suppression, interruption without replay, a typed installed-voice failure, an
 atomic background checkpoint, and restoration without position or prompt replay.
-A launch-only UI test verifies that the default scene remains input-disconnected,
-entry-locked, lifecycle-foreground, and audio-idle.
+UI tests verify that the runtime remains input-disconnected and entry-locked at
+launch, and that the default product journey can reach the same actor through an
+explicit, fixed-trace rehearsal without enabling live location.
 
 ## Entrance recommendation
 

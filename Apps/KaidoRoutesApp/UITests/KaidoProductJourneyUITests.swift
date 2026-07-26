@@ -49,9 +49,85 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("product-journey-step-authoring", in: app).isSelected
     )
     XCTAssertTrue(
-      element("route-editor-current-decision", in: app)
+      element(
+        "released-route-option-preview.synthetic.product-release.v1",
+        in: app
+      )
+      .waitForExistence(timeout: 3)
+    )
+  }
+
+  func testDefaultJourneyCompletesActorBackedDrivingRehearsal() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let action = element("product-journey-primary-action", in: app)
+    XCTAssertTrue(action.waitForExistence(timeout: 5))
+    action.tap()
+
+    reveal(
+      "released-route-option-preview.synthetic.product-release.v1",
+      in: app
+    ).tap()
+    reveal("released-route-choice-test.choice.loop", in: app).tap()
+    reveal("released-route-choice-test.choice.loop", in: app).tap()
+    reveal("released-route-choice-test.choice.exit", in: app).tap()
+    reveal("released-route-compile", in: app).tap()
+    reveal("released-vehicle-class-STANDARD", in: app).tap()
+    reveal("released-payment-method-ETC", in: app).tap()
+
+    XCTAssertTrue(
+      element("released-route-review-ready", in: app)
         .waitForExistence(timeout: 3)
     )
+    XCTAssertTrue(action.isEnabled)
+    action.tap()
+
+    XCTAssertEqual(
+      element("product-journey-stage", in: app).value as? String,
+      "REVIEW"
+    )
+    XCTAssertEqual(
+      reveal("product-journey-navigation-blocker", in: app)
+        .value as? String,
+      "REHEARSAL_RELEASE_READY"
+    )
+    XCTAssertTrue(action.isEnabled)
+    action.tap()
+
+    XCTAssertTrue(
+      element("product-journey-rehearsal-header", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    let activation = reveal("product-runtime-activation", in: app)
+    XCTAssertEqual(activation.value as? String, "RUNTIME READY")
+
+    let runTrace = reveal("product-runtime-run-trace", in: app)
+    XCTAssertTrue(runTrace.isEnabled)
+    runTrace.tap()
+
+    let surface = element("product-runtime-driving-surface", in: app)
+    XCTAssertTrue(surface.waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      (surface.value as? String)?.contains("test.occurrence.entry") == true
+    )
+    XCTAssertFalse(
+      element("product-runtime-start-live-location", in: app).isEnabled
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Default journey driving rehearsal"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
   }
 
   func testReviewPreviewShowsTruthfulNavigationReleaseBlocker() {

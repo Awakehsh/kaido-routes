@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SyntheticProductRuntimePanel: View {
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: SyntheticProductRuntimeModel
   @ObservedObject private var locationController: ForegroundNavigationLocationController
 
@@ -55,9 +56,15 @@ struct SyntheticProductRuntimePanel: View {
   private var header: some View {
     HStack(alignment: .top) {
       VStack(alignment: .leading, spacing: 3) {
-        Text("产品运行时合成")
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          copy.resolve(
+            japanese: "製品ランタイム演習",
+            simplifiedChinese: "产品运行时演练",
+            english: "Product runtime rehearsal"
+          )
+        )
+        .font(.system(size: 19, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text("SYNTHETIC JOINT RELEASE · ACTOR OWNED")
           .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -102,11 +109,32 @@ struct SyntheticProductRuntimePanel: View {
 
   private var runtimeMetrics: some View {
     HStack(spacing: 0) {
-      Metric(value: "\(model.routeOccurrenceCount)", label: "路线步骤")
+      Metric(
+        value: "\(model.routeOccurrenceCount)",
+        label: copy.resolve(
+          japanese: "経路ステップ",
+          simplifiedChinese: "路线步骤",
+          english: "ROUTE STEPS"
+        )
+      )
       DividerMark()
-      Metric(value: "\(model.corridorEdgeCount)", label: "走廊边")
+      Metric(
+        value: "\(model.corridorEdgeCount)",
+        label: copy.resolve(
+          japanese: "コリドー辺",
+          simplifiedChinese: "走廊边",
+          english: "CORRIDOR EDGES"
+        )
+      )
       DividerMark()
-      Metric(value: "\(model.entryTransitionEdgeCount)", label: "入口边")
+      Metric(
+        value: "\(model.entryTransitionEdgeCount)",
+        label: copy.resolve(
+          japanese: "入口辺",
+          simplifiedChinese: "入口边",
+          english: "ENTRY EDGES"
+        )
+      )
     }
   }
 
@@ -222,25 +250,38 @@ struct SyntheticProductRuntimePanel: View {
           await model.runDeterministicPreviewTrace()
         }
       } label: {
-        Label("执行合成 actor 输入链", systemImage: "point.3.connected.trianglepath.dotted")
-          .font(.system(.subheadline, design: .rounded, weight: .black))
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 11)
-          .foregroundStyle(
-            model.canRunDeterministicPreviewTrace
-              ? KaidoTheme.asphalt
-              : KaidoTheme.muted
-          )
-          .background(
-            model.canRunDeterministicPreviewTrace
-              ? KaidoTheme.positionCyan
-              : KaidoTheme.steel.opacity(0.35)
-          )
-          .clipShape(RoundedRectangle(cornerRadius: 11))
+        Label(
+          copy.resolve(
+            japanese: "固定 actor 入力を実行",
+            simplifiedChinese: "执行固定 actor 输入链",
+            english: "Run the fixed actor trace"
+          ),
+          systemImage: "point.3.connected.trianglepath.dotted"
+        )
+        .font(.system(.subheadline, design: .rounded, weight: .black))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 11)
+        .foregroundStyle(
+          model.canRunDeterministicPreviewTrace
+            ? KaidoTheme.asphalt
+            : KaidoTheme.muted
+        )
+        .background(
+          model.canRunDeterministicPreviewTrace
+            ? KaidoTheme.positionCyan
+            : KaidoTheme.steel.opacity(0.35)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 11))
       }
       .buttonStyle(.plain)
       .disabled(!model.canRunDeterministicPreviewTrace)
-      .accessibilityLabel("执行合成 actor 输入链，不连接实时定位")
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "実時間位置情報に接続せず、固定 actor 入力を実行",
+          simplifiedChinese: "执行固定 actor 输入链，不连接实时定位",
+          english: "Run the fixed actor trace without live location"
+        )
+      )
       .accessibilityIdentifier("product-runtime-run-trace")
     }
     .accessibilityElement(children: .contain)
@@ -297,10 +338,17 @@ struct SyntheticProductRuntimePanel: View {
         Button {
           locationController.start()
         } label: {
-          Label("启动前台定位", systemImage: "location.fill")
-            .font(.system(.caption, design: .rounded, weight: .black))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+          Label(
+            copy.resolve(
+              japanese: "前景位置情報を開始",
+              simplifiedChinese: "启动前台定位",
+              english: "Start foreground location"
+            ),
+            systemImage: "location.fill"
+          )
+          .font(.system(.caption, design: .rounded, weight: .black))
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 10)
         }
         .buttonStyle(.borderedProminent)
         .tint(KaidoTheme.positionCyan)
@@ -312,9 +360,16 @@ struct SyntheticProductRuntimePanel: View {
             await locationController.stop()
           }
         } label: {
-          Label("停止", systemImage: "stop.fill")
-            .font(.system(.caption, design: .rounded, weight: .black))
-            .padding(.vertical, 10)
+          Label(
+            copy.resolve(
+              japanese: "停止",
+              simplifiedChinese: "停止",
+              english: "Stop"
+            ),
+            systemImage: "stop.fill"
+          )
+          .font(.system(.caption, design: .rounded, weight: .black))
+          .padding(.vertical, 10)
         }
         .buttonStyle(.bordered)
         .tint(KaidoTheme.signalAmber)
@@ -372,17 +427,30 @@ struct SyntheticProductRuntimePanel: View {
 
           if !voice.quality.isHigherQuality {
             Text(
-              "iPhone：设置 → 辅助功能 → 朗读内容 → 声音 → 日语，"
-                + "下载增强或高级音色后，Kaido 会自动优先使用。"
+              copy.resolve(
+                japanese:
+                  "iPhone の設定で拡張またはプレミアム音声をダウンロードすると、Kaido が優先して使用します。",
+                simplifiedChinese:
+                  "在 iPhone 设置中下载增强或高级声音后，Kaido 会自动优先使用。",
+                english:
+                  "Download an enhanced or premium voice in iPhone Settings and Kaido will prefer it automatically."
+              )
             )
             .font(.system(size: 9, weight: .semibold))
             .foregroundStyle(KaidoTheme.signalAmber.opacity(0.9))
           }
         }
 
-        Text("一次性提示才可发声；中断结束不补播旧提示。")
-          .font(.system(size: 9, weight: .semibold))
-          .foregroundStyle(KaidoTheme.muted.opacity(0.82))
+        Text(
+          copy.resolve(
+            japanese: "一回限りの案内だけを発話し、中断後に古い案内を再生しません。",
+            simplifiedChinese: "只有一次性提示可以发声；中断后不会补播旧提示。",
+            english:
+              "Only one-shot prompts may speak; interrupted prompts are never replayed."
+          )
+        )
+        .font(.system(size: 9, weight: .semibold))
+        .foregroundStyle(KaidoTheme.muted.opacity(0.82))
       }
     }
     .padding(11)
@@ -400,11 +468,14 @@ struct SyntheticProductRuntimePanel: View {
         .accessibilityHidden(true)
 
       Text(
-        "该文件完整通过产品发布门，但所有来源均为 SYNTHETIC_TEST_ONLY。"
-          + "其 live-input authority 不会构造 CLLocationManager；"
-          + "目标也没有后台定位或 CarPlay scene，"
-          + "语音适配器也不会在没有一次性 prompt emission 时激活，"
-          + "不可作为真实道路导航。"
+        copy.resolve(
+          japanese:
+            "この演習は製品の構成境界を通過しますが、すべての情報源は SYNTHETIC_TEST_ONLY です。リアルタイム位置情報、バックグラウンド位置情報、CarPlay は有効にならず、実道路ナビには使用できません。",
+          simplifiedChinese:
+            "这套演练通过产品组合边界，但所有来源均为 SYNTHETIC_TEST_ONLY。不会启用实时定位、后台定位或 CarPlay，也不能作为真实道路导航。",
+          english:
+            "This rehearsal passes the product composition boundary, but every source is SYNTHETIC_TEST_ONLY. Live location, background location, and CarPlay remain disabled, so it cannot serve as real-road navigation."
+        )
       )
       .font(.system(size: 10, weight: .semibold))
       .foregroundStyle(KaidoTheme.muted)
@@ -520,11 +591,23 @@ struct SyntheticProductRuntimePanel: View {
   ) -> String {
     switch quality {
     case .premium:
-      "设备已安装 Premium voice；当前优先使用该高质量音色。"
+      copy.resolve(
+        japanese: "Premium 音声を使用します。",
+        simplifiedChinese: "当前使用设备上的 Premium 声音。",
+        english: "Using the installed Premium voice."
+      )
     case .enhanced:
-      "设备已安装 Enhanced voice；当前优先使用该高质量音色。"
+      copy.resolve(
+        japanese: "拡張音声を使用します。",
+        simplifiedChinese: "当前使用设备上的增强声音。",
+        english: "Using the installed enhanced voice."
+      )
     case .defaultQuality:
-      "当前选择是基础音色，声学质量会明显偏机器感。"
+      copy.resolve(
+        japanese: "標準音声を使用します。",
+        simplifiedChinese: "当前使用设备上的基础声音。",
+        english: "Using the installed default voice."
+      )
     }
   }
 
@@ -539,6 +622,10 @@ struct SyntheticProductRuntimePanel: View {
       await locationController.handleScenePhase(phase)
       await model.handleScenePhase(phase)
     }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

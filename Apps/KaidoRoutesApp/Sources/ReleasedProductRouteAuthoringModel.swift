@@ -28,14 +28,29 @@ enum ReleasedProductRouteAuthoringError: String, Error, Equatable, Sendable {
   case preDriveEvidenceRejected = "RELEASED_PRE_DRIVE_EVIDENCE_REJECTED"
 }
 
-/// Release-owned authoring and pre-drive admission for foreground navigation.
+enum ReleasedProductRouteAuthoringScope: Equatable, Sendable {
+  case foregroundNavigation
+  case demoRehearsal
+
+  var requiredRole: BundledProductReleaseRole {
+    switch self {
+    case .foregroundNavigation:
+      .foregroundNavigation
+    case .demoRehearsal:
+      .demoOnly
+    }
+  }
+}
+
+/// Release-owned authoring and pre-drive admission.
 ///
 /// Every visible label comes from the selected product release. The user still
 /// submits each stable recipe choice explicitly, while the adapter retains all
 /// release-owned occurrence identities. A compiled route becomes review-ready
 /// only after the user explicitly selects a canonical Shuto vehicle class and
 /// payment method, and separately supplied session evidence evaluates against
-/// that exact product release, RoutePlan, and tariff profile.
+/// that exact product release, RoutePlan, and tariff profile. Demo rehearsal
+/// uses the same identity boundary but never grants foreground live input.
 @MainActor
 final class ReleasedProductRouteAuthoringModel: ObservableObject {
   typealias EvidenceProvider =
@@ -53,6 +68,8 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   @Published private(set) var preDriveReviewSnapshot: PreDriveReviewSnapshot?
   @Published private(set) var lastErrorCode: String?
 
+  let scope: ReleasedProductRouteAuthoringScope
+
   private let entriesByReleaseID: [String: BundledProductReleaseEntry]
   private let evidenceProvider: EvidenceProvider
   private var adapter: ReleasedRouteEditorAdapter?
@@ -61,6 +78,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   init(
     entries: [BundledProductReleaseEntry],
     locale: KaidoReleaseLocale,
+    scope: ReleasedProductRouteAuthoringScope = .foregroundNavigation,
     evidenceProvider: EvidenceProvider? = nil,
     currentDateProvider: @escaping () -> Date = Date.init
   ) throws {
@@ -68,12 +86,13 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     guard !entries.isEmpty,
       Set(releaseIDs).count == releaseIDs.count,
       entries.allSatisfy({
-        $0.descriptor.role == .foregroundNavigation
+        $0.descriptor.role == scope.requiredRole
           && $0.release.navigation.bundle.routePlan.actualDistanceKM != nil
       })
     else {
       throw ReleasedProductRouteAuthoringError.releaseUnavailable
     }
+    self.scope = scope
     entriesByReleaseID = Dictionary(
       uniqueKeysWithValues: entries.map { ($0.release.releaseID, $0) }
     )

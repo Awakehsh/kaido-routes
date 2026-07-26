@@ -18,13 +18,16 @@ links the local domain, routing, navigation, and presentation modules and render
 the tracked full-network and K7 Route Atlas assets. Its default launch is now one
 ordered route-first journey instead of the former vertically stacked evidence
 workbench: Route Atlas recognition leads to parked authoring, an exact compiled
-RoutePlan unlocks pre-drive review, and navigation remains visibly locked until
-a real joint product release grants authority. Returning to edit and
-invalidating the compiled route automatically removes review readiness. The
-original internal workbench remains available through a dedicated launch
-argument. The journey presents a synthetic directional-entrance recommendation,
-parked route authoring, RoutePlan-bound pre-drive review, and a parked
-guidance-voice sound check without calling live location or surface routing.
+RoutePlan unlocks pre-drive review, and the bundled demo continues into a
+fixed-input driving rehearsal backed by its exact joint product release and
+actor runtime. Real-road navigation and Core Location remain visibly locked
+until a foreground product release grants authority. Returning to edit and
+invalidating the compiled route automatically removes review and rehearsal
+readiness. The original internal workbench remains available through a
+dedicated launch argument. The journey presents a synthetic
+directional-entrance recommendation, parked route authoring, RoutePlan-bound
+pre-drive review, a parked guidance-voice sound check, and the actor rehearsal
+without calling live location or surface routing.
 Its visible, persisted interface selector switches the default journey among
 Japanese, Simplified Chinese, and English immediately. App-owned copy for the
 atlas, entrance explanation, parked editor, pre-drive review, voice setup, and
@@ -69,8 +72,10 @@ explicitly fetch it from the selected product's pinned endpoint. Both paths
 require the same whole-product signature validation, persist before publishing,
 reject rollback and release-ID reuse, revalidate on restoration, and never fall
 back after a newer effective bundle loses or expires a profile. The current
-manifest contains zero foreground releases and one synthetic demo, so that branch
-remains dormant. A separate
+manifest contains zero foreground releases and one synthetic demo, so the
+real-road branch remains dormant. The default demo path reuses that one release
+identity across authoring, pre-drive review, and a freshly constructed actor
+rehearsal; it never promotes `DEMO_ONLY` or mints live-input authority. A separate
 synthetic guidance panel lets interface and voice locales vary independently
 while retaining one Japanese sign target and route shield; it previews text only
 and has no audio authority. A synthetic driving-surface panel contrasts measured
@@ -78,10 +83,10 @@ and estimated markers, keeps realtime-unconfirmed passage neutral, locks route
 editing in a moving DecisionZone, executes a precomputed Finish-drive exit, and
 renders one immutable occurrence-bound junction definition with shared
 phone/CarPlay projection ownership.
-Another internal panel decodes one complete `SYNTHETIC_TEST_ONLY` joint product
-release, constructs `KaidoProductNavigationRuntime`, and publishes the actor's
-atomic planning snapshot into SwiftUI. Its strict-entry gate stays locked and
-its Core Location input stays disconnected by default. A renderer-neutral
+The rehearsal decodes one complete `SYNTHETIC_TEST_ONLY` joint product release,
+constructs `KaidoProductNavigationRuntime`, and publishes the actor's atomic
+snapshot into SwiftUI. Its strict-entry gate stays locked and its Core Location
+input stays disconnected. A renderer-neutral
 journey projection now converts only that exact validated Route Atlas release
 plus its optional actor snapshot into planned, passed, current, future, and
 skipped occurrence tracks. The SwiftUI overlay keeps all released topology as

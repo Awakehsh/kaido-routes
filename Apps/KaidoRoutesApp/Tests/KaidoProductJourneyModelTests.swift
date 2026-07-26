@@ -64,6 +64,50 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     )
   }
 
+  func testProductionDemoCompletesExactAuthoringReviewAndActorRehearsal()
+    async throws
+  {
+    let composition = KaidoRoutesAppModel(
+      demoRehearsalEnabled: true
+    )
+    let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
+    let entry = try XCTUnwrap(
+      composition.productReleaseCatalog.demoEntries.first
+    )
+    let model = KaidoProductJourneyModel(composition: composition)
+
+    XCTAssertEqual(authoring.scope, .demoRehearsal)
+    authorReleasedRoute(authoring, entry: entry)
+    model.go(to: .review)
+
+    XCTAssertTrue(model.routeReviewReady)
+    XCTAssertFalse(model.canStartNavigation)
+    XCTAssertTrue(model.canStartRehearsal)
+    XCTAssertTrue(model.canEnterDrivingStage)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .navigation)
+    XCTAssertNil(model.navigationRuntime)
+    let runtime = try XCTUnwrap(model.rehearsalRuntime)
+    XCTAssertEqual(runtime.productReleaseID, entry.release.releaseID)
+    XCTAssertEqual(
+      runtime.routePlanID,
+      entry.release.navigation.bundle.routePlan.id
+    )
+    XCTAssertFalse(runtime.isRealRoadAuthority)
+    XCTAssertNotNil(runtime.syntheticFixture)
+
+    await runtime.activate()
+    XCTAssertEqual(runtime.activation, .ready)
+
+    await model.endRehearsal()
+
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertNil(model.rehearsalRuntime)
+    XCTAssertNil(model.lastBlocker)
+  }
+
   func testInvalidatedCompiledRouteReturnsReviewToAuthoring() {
     let model = KaidoProductJourneyModel.reviewPreview()
 

@@ -102,8 +102,16 @@ final class FilePreDriveEvidenceUpdateStore:
       at: directoryURL,
       withIntermediateDirectories: true
     )
-    let resolvedDirectory = directoryURL.resolvingSymlinksInPath()
-    guard resolvedDirectory == directoryURL else {
+    let directoryValues = try directoryURL.resourceValues(
+      forKeys: [
+        .isDirectoryKey,
+        .isSymbolicLinkKey,
+      ]
+    )
+    guard
+      directoryValues.isDirectory == true,
+      directoryValues.isSymbolicLink != true
+    else {
       throw CocoaError(.fileWriteNoPermission)
     }
     try data.write(

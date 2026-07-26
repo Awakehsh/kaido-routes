@@ -265,9 +265,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let name = element("saved-route-name", in: app)
     name.tap()
     name.typeText("Night loop")
-    let returnKey = app.keyboards.buttons["return"]
-    XCTAssertTrue(returnKey.exists)
-    returnKey.tap()
+    name.typeText(XCUIKeyboardKey.return.rawValue)
 
     let save = reveal("saved-route-save", in: app)
     XCTAssertTrue(save.isEnabled)

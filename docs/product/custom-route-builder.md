@@ -40,6 +40,42 @@ combination, more than one matching approval, a stale snapshot, or missing and
 out-of-order components. Target duration remains a filter among approved
 variants; it never authorizes dynamic shortcut or movement generation.
 
+## Recommended route catalog
+
+The primary discovery surface includes both saved user routes and reviewed
+recommended routes. Recommendations are complete approved variants, not
+free-form marketing labels or provider-generated alternatives. Initial route
+families may include:
+
+- C1 inner and outer circuit variants;
+- reviewed multi-route C2 circuit variants;
+- Bayshore corridor variants;
+- PA-focused variants with exact directional access and return movements; and
+- short introductory variants with fewer high-load junction decisions.
+
+Names such as “C1 inner circuit” or “C2 circuit” are presentation labels. Every
+selectable card still resolves to one exact network snapshot, directional
+entrance, ordered movement sequence, optional directional PA occurrence, finish
+policy, and directional exit. The catalog may show an unavailable family for
+discovery, but it cannot offer navigation until one current approved variant
+matches the user's selections.
+
+The catalog is origin-aware. With explicit location permission, it evaluates
+the current coordinate; otherwise the user may enter or select an origin
+manually. It first applies the exact entrance hard filters described below and
+then ranks compatible variants using:
+
+- surface access ETA to the reviewed approach anchor;
+- compatibility with the route's allowed join occurrence;
+- expected route duration and actual distance;
+- junction load, tunnel exposure, and optional PA preference; and
+- fixed-exit, return-near-origin, or finish-on-request compatibility.
+
+The result explains the selected directional entrance and keeps rejected
+entrances available behind a concise “why not” action. A current address never
+rotates, splices, or invents a route variant. Precise origin coordinates are
+runtime input and are not embedded in a shared route document.
+
 ## Expert authoring
 
 The user selects an entrance facility. At each decision point, the editor shows

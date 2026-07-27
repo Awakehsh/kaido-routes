@@ -59,16 +59,19 @@ traffic control.
 9. **Entry and exit are explicit.** Current-location recommendations target an
    exact directional entrance. A cruise ends only through a legal planned exit
    sequence, never by reversing or accidentally leaving the expressway.
-10. **The route network stays visible.** On the supported Shuto network, the
-    primary driving surface keeps a stable schematic route atlas visible instead
-    of replacing route context with a rotating street basemap. The active
-    `RoutePlan`, current occurrence, passed and future occurrences, repeated
-    traversals, and positioning uncertainty remain distinguishable. A local
-    approach-aligned junction inset may clarify the next reviewed decision
-    without rotating or erasing the atlas. Simplification must preserve the
-    familiar relative placement and silhouette of the supported Shuto network
-    from current operator evidence; it must not become an arbitrary loop diagram
-    or copy the operator's map artwork.
+10. **One map control offers two projections.** The user may switch between a
+    geographic map and a rectilinear topology map while planning or driving;
+    the product does not force one projection by journey phase. The geographic
+    projection preserves local spatial context. The topology projection uses
+    horizontal, vertical, and diagonal segments to make route relationships,
+    directional IC facilities, JCT choices, and directional PA access legible.
+    Both projections preserve the active `RoutePlan`, eligible current
+    position, current occurrence, passed and future occurrences, repeated
+    traversals, and positioning uncertainty. A topology marker represents
+    route-bound progress, not geographic precision. A reviewed junction inset
+    may clarify the next decision. Neither projection nor its UI may create
+    route semantics, and Kaido-owned simplification must not copy operator
+    artwork.
 11. **Say only what helps now.** Interface copy is short, literal, and
     action-first. Driving surfaces state the current road, next legal movement,
     distance, and uncertainty without slogans, repeated reassurance, or internal
@@ -83,8 +86,9 @@ The smallest useful product is not the whole Shuto network. It is:
 - a small dated network snapshot;
 - a few fully checked entrance, movement, PA, and exit combinations;
 - one short central route and one tunnel-heavy outer route;
-- a persistent schematic atlas of the released network slice, without implying
-  that unsupported Shuto corridors are navigable or verified;
+- user-switchable geographic and rectilinear topology projections of the
+  released network slice, without implying that unsupported Shuto corridors are
+  navigable or verified;
 - pre-drive route review;
 - deterministic route execution with repeated occurrences;
 - current-location access to a small set of verified directional entrances;

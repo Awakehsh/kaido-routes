@@ -1,9 +1,13 @@
 import KaidoDomain
+import KaidoNavigation
+import KaidoPresentation
 import SwiftUI
 
 struct KaidoProductJourneyView: View {
   @StateObject private var model: KaidoProductJourneyModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var planningMode = ProductPlanningMode.guided
+  @State private var showsSavedRoutes = false
+  @State private var showsSettings = false
 
   init(model: KaidoProductJourneyModel = KaidoProductJourneyModel()) {
     _model = StateObject(wrappedValue: model)
@@ -11,1019 +15,690 @@ struct KaidoProductJourneyView: View {
 
   var body: some View {
     ZStack {
-      KaidoTheme.asphalt
+      stageBackground
         .ignoresSafeArea()
 
-      ScrollViewReader { proxy in
-        ScrollView {
-          VStack(spacing: 16) {
-            Color.clear
-              .frame(height: 0)
-              .id("product-journey-top")
-              .accessibilityHidden(true)
-            journeyHeader
-            KaidoInterfaceLanguagePicker(
-              model: model.composition.languageSettings
-            )
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            routeProgress
-            stageContent
+      if model.stage == .navigation {
+        driveStage
+      } else {
+        VStack(spacing: 0) {
+          parkedHeader
+
+          ScrollViewReader { proxy in
+            ScrollView {
+              Color.clear
+                .frame(height: 0)
+                .id("product-journey-top")
+                .accessibilityHidden(true)
+
+              stageContent
+                .padding(.horizontal, 18)
+                .padding(.top, 14)
+                .padding(.bottom, 112)
+            }
+            .scrollIndicators(.hidden)
+            .accessibilityIdentifier("product-journey-scroll")
+            .onChange(of: model.stage) {
+              proxy.scrollTo("product-journey-top", anchor: .top)
+            }
           }
-          .padding(.horizontal, 18)
-          .padding(.top, 8)
-          .padding(.bottom, 20)
-        }
-        .scrollIndicators(.hidden)
-        .accessibilityIdentifier("product-journey-scroll")
-        .onChange(of: model.stage) {
-          proxy.scrollTo("product-journey-top", anchor: .top)
         }
       }
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
-      if model.stage != .navigation {
-        actionDock
+      if model.stage == .authoring || model.stage == .review {
+        journeyActionDock
       }
     }
-    .environment(\.kaidoInterfaceLocale, interfaceLocale)
-    .preferredColorScheme(.dark)
-  }
-
-  private var journeyHeader: some View {
-    HStack(alignment: .top, spacing: 16) {
-      VStack(alignment: .leading, spacing: 4) {
-        Text("KAIDO ROUTES")
-          .font(.system(size: 24, weight: .black, design: .rounded))
-          .tracking(-0.8)
-          .foregroundStyle(KaidoTheme.routeWhite)
-
-        Text(
-          copy.resolve(
-            japanese: "道を選んでから、出発。",
-            simplifiedChinese: "先选路，再出发。",
-            english: "Choose the route, then drive."
-          )
-        )
-        .font(.system(size: 17, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.signalAmber)
-
-        Text(
-          copy.resolve(
-            japanese: "首都高速 · ルートファーストナビゲーション",
-            simplifiedChinese: "首都高速 · 路线优先导航",
-            english: "SHUTO EXPRESSWAY · ROUTE-FIRST NAVIGATION"
-          )
-        )
-        .font(.system(size: 9, weight: .bold, design: .monospaced))
-        .tracking(0.9)
-        .foregroundStyle(KaidoTheme.muted)
-      }
-
-      Spacer(minLength: 8)
-
-      VStack(alignment: .trailing, spacing: 6) {
-        StatusCapsule(
-          title: "REVIEW BUILD",
-          color: KaidoTheme.evidenceCoral
-        )
-
-        Text(stageCounter)
-          .font(.system(size: 10, weight: .black, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
-      }
-    }
-    .accessibilityElement(children: .combine)
-    .accessibilityIdentifier("product-journey-header")
-    .accessibilityLabel(
-      copy.resolve(
-        japanese:
-          "Kaido Routes。道を選んでから出発。現在のステップは\(stageTitle(model.stage))です。",
-        simplifiedChinese:
-          "Kaido Routes。先选路，再出发。当前步骤\(stageTitle(model.stage))。",
-        english:
-          "Kaido Routes. Choose the route, then drive. Current step: \(stageTitle(model.stage))."
-      )
+    .environment(
+      \.kaidoInterfaceLocale,
+      model.composition.languageSettings.interfaceLocale
     )
-  }
-
-  private var routeProgress: some View {
-    HStack(spacing: 0) {
-      ForEach(
-        Array(KaidoProductJourneyStage.allCases.enumerated()),
-        id: \.element.rawValue
-      ) { index, stage in
-        JourneyStageButton(
-          stage: stage,
-          title: stageShortTitle(stage),
-          symbol: stageSymbol(stage),
-          state: stageVisualState(stage)
-        ) {
-          changeStage(to: stage)
-        }
-
-        if index < KaidoProductJourneyStage.allCases.count - 1 {
-          Rectangle()
-            .fill(progressLineColor(after: stage))
-            .frame(height: 2)
-            .overlay {
-              if progressLineIsLocked(after: stage) {
-                HStack(spacing: 4) {
-                  ForEach(0..<3, id: \.self) { _ in
-                    Circle()
-                      .fill(KaidoTheme.steel)
-                      .frame(width: 3, height: 3)
-                  }
-                }
-              }
-            }
-            .accessibilityHidden(true)
-        }
-      }
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 13)
-    .background(KaidoTheme.instrument)
-    .clipShape(RoundedRectangle(cornerRadius: 16))
-    .overlay {
-      RoundedRectangle(cornerRadius: 16)
-        .stroke(KaidoTheme.steel.opacity(0.8), lineWidth: 1)
-    }
+    .preferredColorScheme(
+      model.stage == .navigation ? .dark : .light
+    )
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("product-journey-stage")
     .accessibilityValue(model.stage.rawValue)
+    .sheet(isPresented: $showsSavedRoutes) {
+      ProductSavedRoutesSheet(
+        model: model.composition.savedRouteLibrary,
+        openRoute: {
+          showsSavedRoutes = false
+          model.openSavedRoute($0)
+        }
+      )
+      .environment(
+        \.kaidoInterfaceLocale,
+        model.composition.languageSettings.interfaceLocale
+      )
+    }
+    .sheet(isPresented: $showsSettings) {
+      ProductSettingsSheet(
+        model: model.composition.languageSettings
+      )
+      .environment(
+        \.kaidoInterfaceLocale,
+        model.composition.languageSettings.interfaceLocale
+      )
+    }
+  }
+
+  private var parkedHeader: some View {
+    HStack(spacing: 12) {
+      if model.stage != .atlas {
+        Button {
+          withAnimation(.easeOut(duration: 0.18)) {
+            model.goBack()
+          }
+        } label: {
+          Image(systemName: "chevron.left")
+            .font(.system(size: 14, weight: .black))
+            .frame(width: 38, height: 38)
+            .foregroundStyle(KaidoTheme.ink)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "戻る",
+            simplifiedChinese: "返回",
+            english: "Back"
+          )
+        )
+        .accessibilityIdentifier("product-journey-back")
+      }
+
+      VStack(alignment: .leading, spacing: 1) {
+        Text("KAIDO")
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .tracking(1.1)
+          .foregroundStyle(KaidoTheme.routeGreen)
+
+        Text(stageTitle)
+          .font(.system(size: 20, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+      }
+
+      Spacer()
+
+      Button {
+        showsSettings = true
+      } label: {
+        Image(systemName: "slider.horizontal.3")
+          .font(.system(size: 15, weight: .bold))
+          .frame(width: 38, height: 38)
+          .foregroundStyle(KaidoTheme.ink)
+          .background(KaidoTheme.paperRaised)
+          .clipShape(Circle())
+          .overlay {
+            Circle()
+              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+          }
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "設定",
+          simplifiedChinese: "设置",
+          english: "Settings"
+        )
+      )
+      .accessibilityIdentifier("product-journey-settings")
+    }
+    .padding(.horizontal, 18)
+    .frame(height: 62)
+    .background(KaidoTheme.paper)
+    .overlay(alignment: .bottom) {
+      Rectangle()
+        .fill(KaidoTheme.paperDivider)
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-journey-header")
   }
 
   @ViewBuilder
   private var stageContent: some View {
     switch model.stage {
     case .atlas:
-      atlasStage
-        .transition(stageTransition)
+      ProductRoutesStage(
+        model: model,
+        showsSavedRoutes: $showsSavedRoutes
+      )
     case .authoring:
-      authoringStage
-        .transition(stageTransition)
+      ProductPlanStage(
+        model: model,
+        planningMode: $planningMode
+      )
     case .review:
-      reviewStage
-        .transition(stageTransition)
+      ProductReviewStage(model: model)
     case .navigation:
-      navigationStage
-        .transition(stageTransition)
-    }
-  }
-
-  private var atlasStage: some View {
-    VStack(spacing: 14) {
-      stageIntroduction(
-        eyebrow: copy.resolve(
-          japanese: "01 · 道路を選ぶ",
-          simplifiedChinese: "01 · 选择道路",
-          english: "01 · CHOOSE THE ROAD"
-        ),
-        title: copy.resolve(
-          japanese: "道路を知り、経路を組み立てる",
-          simplifiedChinese: "先认识道路，再设计路线",
-          english: "Recognize the road before authoring the route"
-        ),
-        detail: copy.resolve(
-          japanese:
-            "全体図は道路の識別だけに使います。リリース審査を通った有向トポロジーだけが経路に参加できます。",
-          simplifiedChinese:
-            "全网图只帮助识别；只有经过发布门的有向拓扑才能参与路线。",
-          english:
-            "The network atlas is for recognition only; only release-gated directed topology may enter a route."
-        )
-      )
-
-      atlasModePicker
-
-      RouteAtlasCard(
-        mode: model.composition.atlasMode,
-        attribution: model.composition.attribution(
-          for: model.composition.atlasMode
-        )
-      )
-
-      ReviewBoundaryCard(
-        symbol: "shield.lefthalf.filled",
-        title:
-          model.composition.releasedRouteAuthoring == nil
-          ? copy.resolve(
-            japanese: "現在は合成ルートカタログを使用中",
-            simplifiedChinese: "当前使用合成路线目录",
-            english: "Synthetic route catalog in use"
-          )
-          : model.usesDemoRehearsal
-            ? copy.resolve(
-              japanese: "運転リハーサル用カタログを検証済み",
-              simplifiedChinese: "驾驶演练目录已验证",
-              english: "Driving rehearsal catalog validated"
-            )
-            : copy.resolve(
-              japanese: "実道路リリースカタログを検証済み",
-              simplifiedChinese: "真实道路发布目录已验证",
-              english: "Real-road release catalog validated"
-            ),
-        detail:
-          model.composition.releasedRouteAuthoring == nil
-          ? copy.resolve(
-            japanese:
-              "マニフェストのハッシュと本番 codec は検証済みですが、実道路のリリースがないためナビ権限はありません。",
-            simplifiedChinese:
-              "清单哈希与生产 codec 已验证；没有真实道路发布包，不会获得导航权限。",
-            english:
-              "The manifest hash and production codec are validated; without a real-road release, navigation authority stays unavailable."
-          )
-          : model.usesDemoRehearsal
-            ? copy.resolve(
-              japanese:
-                "同じ合成リリースが経路編集、出発前確認、actor 演習を所有します。実道路の位置情報には接続しません。",
-              simplifiedChinese:
-                "同一份合成发布包负责路线编排、行前确认和 actor 演练；不会连接真实道路定位。",
-              english:
-                "One synthetic release owns authoring, pre-drive review, and the actor rehearsal; it never attaches real-road location."
-            )
-            : copy.resolve(
-              japanese:
-                "次のステップでは選択したリリース自身の編集レシピと表示文だけを使用します。",
-              simplifiedChinese:
-                "下一步只使用所选发布包自身的编辑配方与显示文案。",
-              english:
-                "The next step uses only the selected release's own authoring recipe and presentation."
-            ),
-        code:
-          "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
-          + " RELEASED ROAD · "
-          + "\(model.composition.productReleaseCatalog.demoEntries.count) DEMO",
-        color: KaidoTheme.evidenceCoral
-      )
-      .accessibilityIdentifier("product-journey-release-catalog")
-      .accessibilityValue(
-        "\(model.composition.productReleaseCatalog.foregroundNavigationEntries.count)"
-          + " RELEASED ROAD · "
-          + "\(model.composition.productReleaseCatalog.demoEntries.count) DEMO"
-      )
-
-      SavedRouteLibraryPanel(
-        model: model.composition.savedRouteLibrary,
-        openRecord: { recordID in
-          withAnimation(stageAnimation) {
-            model.openSavedRoute(recordID)
-          }
-        }
-      )
-    }
-  }
-
-  private var authoringStage: some View {
-    VStack(spacing: 14) {
-      stageIntroduction(
-        eyebrow: copy.resolve(
-          japanese: "02 · 経路を作る",
-          simplifiedChinese: "02 · 编排路线",
-          english: "02 · AUTHOR THE ROUTE"
-        ),
-        title: copy.resolve(
-          japanese: "選んだ順序のまま経路を保持",
-          simplifiedChinese: "路线按选择顺序保留",
-          english: "Preserve the route in authored order"
-        ),
-        detail: copy.resolve(
-          japanese:
-            "分岐、重複区間、明示した出口はすべて editor session が記録します。",
-          simplifiedChinese:
-            "每次分岔、重复路段和明确出口都由 editor session 记录。",
-          english:
-            "The editor session records every decision, repeated segment, and explicit exit."
-        )
-      )
-
-      if let releasedRouteAuthoring =
-        model.composition.releasedRouteAuthoring
-      {
-        ReleasedProductRouteAuthoringPanel(
-          model: releasedRouteAuthoring
-        )
-        if let preDriveEvidenceUpdates =
-          model.composition.preDriveEvidenceUpdates
-        {
-          PreDriveEvidenceUpdatePanel(
-            model: preDriveEvidenceUpdates,
-            selectedProductReleaseID:
-              releasedRouteAuthoring.selectedEntry?.release.releaseID
-          )
-        }
-      } else {
-        EntranceRecommendationPanel(
-          model: model.composition.entranceRecommendation
-        )
-
-        ParkedRouteEditorPanel(model: model.composition.routeEditor)
-      }
-
-      ReleasedRouteAtlasOverlayContainer(
-        presentation: model.routeAtlasOverlayPresentation
-      )
-
-      if model.routeReviewReady {
-        ReviewBoundaryCard(
-          symbol: "checkmark.seal.fill",
-          title: copy.resolve(
-            japanese: "出発前確認へ進めます",
-            simplifiedChinese: "路线已可进入行前确认",
-            english: "Route ready for pre-drive review"
-          ),
-          detail: copy.resolve(
-            japanese:
-              "コンパイル結果は全 occurrence を保持します。次のステップはこの経路だけを読み取ります。",
-            simplifiedChinese:
-              "编译结果保留全部 occurrence；下一步只读取这条路线。",
-            english:
-              "The compiled result preserves every occurrence; the next step reads only this route."
-          ),
-          code: "ROUTE PLAN READY",
-          color: KaidoTheme.positionCyan
-        )
-        .accessibilityIdentifier("product-journey-route-ready")
-      }
-    }
-  }
-
-  private var reviewStage: some View {
-    VStack(spacing: 14) {
-      stageIntroduction(
-        eyebrow: copy.resolve(
-          japanese: "03 · 出発前に確認",
-          simplifiedChinese: "03 · 行前确认",
-          english: "03 · REVIEW BEFORE DRIVING"
-        ),
-        title: copy.resolve(
-          japanese: "経路・料金根拠・通行状態を確認",
-          simplifiedChinese: "确认路线、费用证据与通行状态",
-          english: "Review route, toll evidence, and passage state"
-        ),
-        detail: copy.resolve(
-          japanese:
-            "実走予定距離と料金計算距離は別々に表示します。未確認のリアルタイム状態を通行可とは表示しません。",
-          simplifiedChinese:
-            "实际规划距离与计费距离分开；未确认实时状态不会显示为畅通。",
-          english:
-            "Planned distance stays separate from tariff distance; unconfirmed realtime state is never shown as open."
-        )
-      )
-
-      if let releasedRouteAuthoring =
-        model.composition.releasedRouteAuthoring
-      {
-        if let preDriveEvidenceUpdates =
-          model.composition.preDriveEvidenceUpdates
-        {
-          PreDriveEvidenceUpdatePanel(
-            model: preDriveEvidenceUpdates,
-            selectedProductReleaseID:
-              releasedRouteAuthoring.selectedEntry?.release.releaseID
-          )
-        }
-        PreDriveReviewPanel(
-          model: model.composition.preDriveReview,
-          navigationStartAvailable: model.canEnterDrivingStage,
-          displayScope:
-            model.usesDemoRehearsal ? .rehearsal : .released,
-          releasedSnapshot:
-            releasedRouteAuthoring.preDriveReviewSnapshot,
-          releasedErrorCode: releasedRouteAuthoring.lastErrorCode
-        )
-      } else {
-        PreDriveReviewPanel(
-          model: model.composition.preDriveReview,
-          navigationStartAvailable: model.canStartNavigation
-        )
-      }
-
-      ReleasedRouteAtlasOverlayContainer(
-        presentation: model.routeAtlasOverlayPresentation
-      )
-
-      SavedRouteSavePanel(
-        library: model.composition.savedRouteLibrary,
-        routePlan: model.compiledRoutePlan,
-        save: {
-          model.saveCompiledRoute(named: $0)
-        }
-      )
-
-      GuidanceVoiceSetupPanel(
-        model: model.composition.guidanceVoiceSetup,
-        audioSourceModel:
-          model.composition.guidanceAudioSourceSetup,
-        releasedEntry:
-          model.composition.releasedRouteAuthoring?.selectedEntry,
-        isParked: model.composition.safety.isParkedInteractionContext
-      )
-
-      Group {
-        if model.canStartNavigation {
-          ReviewBoundaryCard(
-            symbol: "key.horizontal.fill",
-            title: copy.resolve(
-              japanese: "リリース ID を固定済み。ユーザー開始待ち",
-              simplifiedChinese: "发布身份已绑定，等待用户启动",
-              english: "Release identity bound; waiting for user start"
-            ),
-            detail: copy.resolve(
-              japanese:
-                "次はこの統合リリースだけから actor を作成します。リアルタイム位置情報はナビ画面で別途開始します。",
-              simplifiedChinese:
-                "下一步只从这份联合发布包创建 actor；实时定位仍需进入导航页后单独启动。",
-              english:
-                "The actor will be created only from this joint release; foreground location still requires a separate action in navigation."
-            ),
-            code: "RELEASE KEY · READY",
-            color: KaidoTheme.positionCyan
-          )
-        } else if model.canStartRehearsal {
-          ReviewBoundaryCard(
-            symbol: "play.circle.fill",
-            title: copy.resolve(
-              japanese: "運転リハーサルを開始できます",
-              simplifiedChinese: "可以开始驾驶演练",
-              english: "Driving rehearsal is ready"
-            ),
-            detail: copy.resolve(
-              japanese:
-                "同じ RoutePlan と合成リリースから actor を起動します。固定入力だけを使用し、現在地権限は要求しません。",
-              simplifiedChinese:
-                "将从同一 RoutePlan 与合成发布包启动 actor；只使用固定输入，不请求当前位置权限。",
-              english:
-                "The actor starts from the same RoutePlan and synthetic release, uses only fixed input, and requests no location permission."
-            ),
-            code: "REHEARSAL RELEASE · READY",
-            color: KaidoTheme.positionCyan
-          )
-        } else {
-          ReviewBoundaryCard(
-            symbol: "lock.shield.fill",
-            title: copy.resolve(
-              japanese: "実道路ナビはリリース審査で停止中",
-              simplifiedChinese: "真实导航仍被发布门阻止",
-              english: "Real navigation remains release-gated"
-            ),
-            detail: copy.resolve(
-              japanese:
-                "このデモ経路には RELEASED_ROAD 権限、前景ライブ入力トークン、実地適格性証拠がありません。",
-              simplifiedChinese:
-                "这条演示路线没有 RELEASED_ROAD 权限、前台实时输入令牌和现场资格证据。",
-              english:
-                "This demo route has no RELEASED_ROAD authority, foreground live-input token, or field qualification evidence."
-            ),
-            code: model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED",
-            color: KaidoTheme.evidenceCoral
-          )
-        }
-      }
-      .accessibilityIdentifier("product-journey-navigation-blocker")
-      .accessibilityValue(
-        model.canStartNavigation
-          ? "RELEASE_KEY_READY"
-          : model.canStartRehearsal
-            ? "REHEARSAL_RELEASE_READY"
-            : model.navigationBlocker?.rawValue ?? "NAVIGATION BLOCKED"
-      )
+      EmptyView()
     }
   }
 
   @ViewBuilder
-  private var navigationStage: some View {
-    if let navigationRuntime = model.navigationRuntime {
-      ReleasedProductNavigationPanel(
-        model: navigationRuntime,
-        endNavigation: {
-          await model.endNavigation()
-        }
+  private var driveStage: some View {
+    if let runtime = model.activeRuntime {
+      ProductDriveStage(
+        model: model,
+        runtime: runtime
       )
-    } else if let rehearsalRuntime = model.rehearsalRuntime {
-      VStack(spacing: 14) {
-        rehearsalHeader
-        SyntheticProductRuntimePanel(model: rehearsalRuntime)
-      }
     } else {
-      ReviewBoundaryCard(
-        symbol: "exclamationmark.shield.fill",
-        title: copy.resolve(
-          japanese: "ナビランタイムを利用できません",
-          simplifiedChinese: "导航运行时不可用",
-          english: "Navigation runtime unavailable"
-        ),
-        detail: copy.resolve(
-          japanese:
-            "現在の統合リリースに対応する actor がないため、ナビ画面は閉じたままです。",
-          simplifiedChinese: "缺少当前联合发布包的 actor，导航页保持关闭。",
-          english:
-            "The actor for the current joint release is missing, so navigation remains closed."
-        ),
-        code: KaidoProductJourneyBlocker.navigationRuntimeUnavailable.rawValue,
-        color: KaidoTheme.evidenceCoral
-      )
+      VStack(spacing: 12) {
+        Image(systemName: "exclamationmark.triangle")
+        Text(
+          copy.resolve(
+            japanese: "ナビゲーションを開始できません",
+            simplifiedChinese: "无法开始导航",
+            english: "Navigation could not start"
+          )
+        )
+      }
+      .foregroundStyle(KaidoTheme.routeWhite)
     }
   }
 
-  private var rehearsalHeader: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .top, spacing: 12) {
-        VStack(alignment: .leading, spacing: 4) {
-          Text(
-            copy.resolve(
-              japanese: "運転リハーサル",
-              simplifiedChinese: "驾驶演练",
-              english: "Driving rehearsal"
-            )
-          )
-          .font(.system(size: 21, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
-
-          Text("FIXED TRACE · NO LIVE LOCATION")
-            .font(.system(size: 9, weight: .black, design: .monospaced))
-            .tracking(0.65)
-            .foregroundStyle(KaidoTheme.evidenceCoral)
+  private var journeyActionDock: some View {
+    HStack(spacing: 10) {
+      Button {
+        withAnimation(.easeOut(duration: 0.18)) {
+          model.goBack()
         }
-
-        Spacer(minLength: 8)
-
-        Button {
-          Task {
-            await model.endRehearsal()
+      } label: {
+        Image(systemName: "chevron.left")
+          .font(.system(size: 14, weight: .black))
+          .frame(width: 48, height: 50)
+          .foregroundStyle(KaidoTheme.ink)
+          .background(KaidoTheme.paperRaised)
+          .overlay {
+            Rectangle()
+              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
           }
-        } label: {
-          Label(
-            copy.resolve(
-              japanese: "終了",
-              simplifiedChinese: "结束",
-              english: "End"
-            ),
-            systemImage: "xmark"
-          )
-          .font(.system(size: 11, weight: .black, design: .rounded))
-        }
-        .buttonStyle(.bordered)
-        .tint(KaidoTheme.routeWhite)
-        .accessibilityIdentifier("product-journey-end-rehearsal")
       }
-
-      Text(
+      .buttonStyle(.plain)
+      .accessibilityLabel(
         copy.resolve(
-          japanese:
-            "これは操作と案内の完全な演習です。固定トレースは実道路ナビの権限を付与しません。",
-          simplifiedChinese:
-            "这是完整的交互与引导演练；固定轨迹不会获得真实道路导航权限。",
-          english:
-            "This is a complete interaction and guidance rehearsal; the fixed trace grants no real-road navigation authority."
+          japanese: "戻る",
+          simplifiedChinese: "返回",
+          english: "Back"
         )
       )
-      .font(.system(size: 12, weight: .semibold))
-      .foregroundStyle(KaidoTheme.muted)
-    }
-    .padding(16)
-    .background(KaidoTheme.evidenceCoral.opacity(0.08))
-    .clipShape(RoundedRectangle(cornerRadius: 18))
-    .overlay {
-      RoundedRectangle(cornerRadius: 18)
-        .stroke(KaidoTheme.evidenceCoral.opacity(0.42), lineWidth: 1)
-    }
-    .accessibilityElement(children: .contain)
-    .accessibilityIdentifier("product-journey-rehearsal-header")
-  }
 
-  private var atlasModePicker: some View {
-    HStack(spacing: 4) {
-      ForEach(RouteAtlasMode.allCases) { mode in
-        Button {
-          withAnimation(stageAnimation) {
-            model.composition.atlasMode = mode
-          }
-        } label: {
-          VStack(spacing: 3) {
-            Text(mode.label(for: interfaceLocale))
-              .font(.system(size: 12, weight: .black, design: .rounded))
-
-            Text(mode == .network ? "RECOGNITION" : "EVIDENCE")
-              .font(.system(size: 7, weight: .black, design: .monospaced))
-              .tracking(0.5)
-          }
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 9)
-          .foregroundStyle(
-            model.composition.atlasMode == mode
-              ? KaidoTheme.asphalt
-              : KaidoTheme.muted
-          )
-          .background(
-            model.composition.atlasMode == mode
-              ? KaidoTheme.routeWhite
-              : Color.clear
-          )
-          .clipShape(RoundedRectangle(cornerRadius: 9))
+      Button {
+        withAnimation(.easeOut(duration: 0.18)) {
+          model.advance()
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(
-          model.composition.atlasMode == mode ? .isSelected : []
+      } label: {
+        HStack {
+          Text(primaryActionTitle)
+          Spacer()
+          Image(systemName: "arrow.right")
+        }
+        .font(.system(size: 14, weight: .black, design: .rounded))
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .foregroundStyle(KaidoTheme.paperRaised)
+        .background(
+          primaryActionEnabled
+            ? KaidoTheme.routeGreen
+            : KaidoTheme.roadGray
         )
-        .accessibilityIdentifier("product-journey-atlas-\(mode.rawValue)")
       }
-    }
-    .padding(4)
-    .background(KaidoTheme.instrument)
-    .clipShape(RoundedRectangle(cornerRadius: 12))
-  }
-
-  private var actionDock: some View {
-    VStack(spacing: 8) {
-      if let guidance = actionGuidance {
-        Text(guidance)
-          .font(.system(size: 10, weight: .semibold))
-          .foregroundStyle(
-            model.stage == .review
-              ? (model.canEnterDrivingStage
-                ? KaidoTheme.positionCyan
-                : KaidoTheme.evidenceCoral)
-              : KaidoTheme.muted
-          )
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .accessibilityIdentifier("product-journey-action-guidance")
-      }
-
-      HStack(spacing: 10) {
-        if model.stage != .atlas {
-          Button {
-            changeStageBack()
-          } label: {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 14, weight: .black))
-              .frame(width: 44, height: 48)
-              .foregroundStyle(KaidoTheme.routeWhite)
-              .background(KaidoTheme.steel.opacity(0.72))
-              .clipShape(RoundedRectangle(cornerRadius: 13))
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel(
-            copy.resolve(
-              japanese: "\(previousStageTitle)に戻る",
-              simplifiedChinese: "返回\(previousStageTitle)",
-              english: "Back to \(previousStageTitle)"
-            )
-          )
-          .accessibilityIdentifier("product-journey-back")
-        }
-
-        Button {
-          advance()
-        } label: {
-          HStack(spacing: 9) {
-            Image(systemName: primaryActionSymbol)
-            Text(primaryActionTitle)
-            Spacer(minLength: 4)
-            Text(nextStageCode)
-              .font(.system(size: 8, weight: .black, design: .monospaced))
-              .tracking(0.4)
-          }
-          .font(.system(size: 14, weight: .black, design: .rounded))
-          .padding(.horizontal, 15)
-          .frame(maxWidth: .infinity)
-          .frame(height: 48)
-          .foregroundStyle(
-            model.canAdvance
-              ? KaidoTheme.asphalt
-              : KaidoTheme.muted
-          )
-          .background(
-            model.canAdvance
-              ? KaidoTheme.signalAmber
-              : KaidoTheme.steel.opacity(0.38)
-          )
-          .clipShape(RoundedRectangle(cornerRadius: 13))
-        }
-        .buttonStyle(.plain)
-        .disabled(!model.canAdvance)
-        .accessibilityIdentifier("product-journey-primary-action")
-        .accessibilityValue(model.canAdvance ? "AVAILABLE" : "BLOCKED")
-      }
+      .buttonStyle(.plain)
+      .disabled(!primaryActionEnabled)
+      .accessibilityIdentifier("product-journey-primary-action")
+      .accessibilityValue(
+        primaryActionEnabled ? "AVAILABLE" : "BLOCKED"
+      )
     }
     .padding(.horizontal, 18)
-    .padding(.top, 10)
-    .padding(.bottom, 8)
+    .padding(.vertical, 12)
     .background(.ultraThinMaterial)
     .overlay(alignment: .top) {
       Rectangle()
-        .fill(KaidoTheme.steel.opacity(0.85))
+        .fill(KaidoTheme.paperDivider)
         .frame(height: 1)
     }
   }
 
-  private func stageIntroduction(
-    eyebrow: String,
-    title: String,
-    detail: String
-  ) -> some View {
-    VStack(alignment: .leading, spacing: 7) {
-      Text(eyebrow)
-        .font(.system(size: 9, weight: .black, design: .monospaced))
-        .tracking(0.85)
-        .foregroundStyle(KaidoTheme.signalAmber)
-
-      Text(title)
-        .font(.system(size: 21, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.routeWhite)
-
-      Text(detail)
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(KaidoTheme.muted)
-        .fixedSize(horizontal: false, vertical: true)
+  private var primaryActionEnabled: Bool {
+    switch model.stage {
+    case .authoring:
+      model.routeReviewReady
+    case .review:
+      model.canEnterDrivingStage
+    case .atlas, .navigation:
+      false
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private var stageCounter: String {
-    String(format: "%02d / 04", model.stage.order + 1)
   }
 
   private var primaryActionTitle: String {
     switch model.stage {
-    case .atlas:
-      copy.resolve(
-        japanese: "経路作成を始める",
-        simplifiedChinese: "开始设计路线",
-        english: "Start authoring the route"
-      )
     case .authoring:
       copy.resolve(
         japanese: "出発前確認へ",
-        simplifiedChinese: "进入行前确认",
-        english: "Continue to pre-drive review"
+        simplifiedChinese: "查看行前确认",
+        english: "Review the journey"
       )
     case .review:
-      model.canStartNavigation
+      model.canStartRehearsal
         ? copy.resolve(
-          japanese: "ルートナビを開始",
-          simplifiedChinese: "开始路线导航",
-          english: "Start route navigation"
+          japanese: "演習を開始",
+          simplifiedChinese: "开始演练",
+          english: "Start rehearsal"
         )
-        : model.canStartRehearsal
-          ? copy.resolve(
-            japanese: "運転リハーサルを開始",
-            simplifiedChinese: "开始驾驶演练",
-            english: "Start driving rehearsal"
-          )
-          : copy.resolve(
-            japanese: "ナビは未リリース",
-            simplifiedChinese: "导航尚未发布",
-            english: "Navigation not released"
-          )
-    case .navigation:
-      copy.resolve(
-        japanese: "ナビ実行中",
-        simplifiedChinese: "导航运行中",
-        english: "Navigation active"
-      )
-    }
-  }
-
-  private var primaryActionSymbol: String {
-    switch model.stage {
-    case .atlas:
-      "point.topleft.down.to.point.bottomright.curvepath"
-    case .authoring:
-      "checklist.checked"
-    case .review:
-      model.canStartNavigation
-        ? "key.horizontal.fill"
-        : model.canStartRehearsal
-          ? "play.circle.fill"
-          : "lock.fill"
-    case .navigation:
-      "location.fill"
-    }
-  }
-
-  private var nextStageCode: String {
-    switch model.stage {
-    case .atlas:
-      "EDIT"
-    case .authoring:
-      "REVIEW"
-    case .review:
-      model.canStartNavigation
-        ? "START"
-        : model.canStartRehearsal
-          ? "REHEARSE"
-          : "BLOCKED"
-    case .navigation:
-      "ACTIVE"
-    }
-  }
-
-  private var actionGuidance: String? {
-    switch model.stage {
-    case .atlas:
-      copy.resolve(
-        japanese: "アトラスは道路識別用です。次は停車中の経路編集へ進みます。",
-        simplifiedChinese: "路线图用于识别；下一步进入停车编辑。",
-        english:
-          "The atlas is for road recognition; next, author the route while parked."
-      )
-    case .authoring where !model.routeReviewReady:
-      copy.resolve(
-        japanese: "明示する出口を選び、経路をコンパイルしてください。",
-        simplifiedChinese: "先选择明确出口，再编译路线。",
-        english: "Choose an explicit exit, then compile the route."
-      )
-    case .authoring:
-      copy.resolve(
-        japanese: "経路をコンパイル済みです。距離・料金・通行根拠を確認できます。",
-        simplifiedChinese: "路线已编译，可以核对距离、费用与通行证据。",
-        english:
-          "The route is compiled; distance, toll, and passage evidence are ready for review."
-      )
-    case .review:
-      model.canStartNavigation
-        ? copy.resolve(
-          japanese:
-            "リリースを固定済みです。actor 開始後も前景位置情報は別途開始します。",
-          simplifiedChinese:
-            "发布包已绑定；启动 actor 后仍需单独开启前台定位。",
-          english:
-            "The release is bound; foreground location still requires a separate action after actor startup."
+        : copy.resolve(
+          japanese: "ナビを開始",
+          simplifiedChinese: "开始导航",
+          english: "Start navigation"
         )
-        : model.canStartRehearsal
-          ? copy.resolve(
-            japanese:
-              "合成リリースを固定済みです。次は同じ actor 境界を固定入力だけで演習します。",
-            simplifiedChinese:
-              "合成发布包已绑定；下一步用固定输入演练同一套 actor 边界。",
-            english:
-              "The synthetic release is bound; next, rehearse the same actor boundary with fixed input only."
-          )
-          : copy.resolve(
-            japanese:
-              "実道路の統合リリースと実地適格性証拠がそろうまでナビは開始できません。",
-            simplifiedChinese:
-              "需要真实联合发布包和现场资格证据后才能开始导航。",
-            english:
-              "A real joint release and field qualification evidence are required before navigation can start."
-          )
-    case .navigation:
-      nil
+    case .atlas, .navigation:
+      ""
     }
   }
 
-  private var previousStageTitle: String {
+  private var stageTitle: String {
     switch model.stage {
-    case .atlas, .authoring:
-      stageTitle(.atlas)
-    case .review:
-      copy.resolve(
-        japanese: "経路編集",
-        simplifiedChinese: "路线编辑",
-        english: "Route authoring"
-      )
-    case .navigation:
-      stageTitle(.review)
-    }
-  }
-
-  private var stageAnimation: Animation? {
-    reduceMotion ? nil : .easeInOut(duration: 0.22)
-  }
-
-  private var stageTransition: AnyTransition {
-    reduceMotion
-      ? .identity
-      : .asymmetric(
-        insertion: .opacity.combined(with: .offset(x: 18)),
-        removal: .opacity.combined(with: .offset(x: -12))
-      )
-  }
-
-  private func changeStage(to stage: KaidoProductJourneyStage) {
-    withAnimation(stageAnimation) {
-      model.go(to: stage)
-    }
-  }
-
-  private func changeStageBack() {
-    withAnimation(stageAnimation) {
-      model.goBack()
-    }
-  }
-
-  private func advance() {
-    withAnimation(stageAnimation) {
-      model.advance()
-    }
-  }
-
-  private func stageVisualState(
-    _ stage: KaidoProductJourneyStage
-  ) -> JourneyStageVisualState {
-    if stage == model.stage {
-      return .current
-    }
-    if stage.order < model.stage.order {
-      return .completed
-    }
-    if stage == .review, model.routeReviewReady {
-      return .available
-    }
-    if stage == .navigation, model.canEnterDrivingStage {
-      return .available
-    }
-    return .locked
-  }
-
-  private func progressLineColor(
-    after stage: KaidoProductJourneyStage
-  ) -> Color {
-    stage.order < model.stage.order
-      ? KaidoTheme.signalAmber
-      : KaidoTheme.steel.opacity(0.55)
-  }
-
-  private func progressLineIsLocked(
-    after stage: KaidoProductJourneyStage
-  ) -> Bool {
-    stage.order >= model.stage.order
-  }
-
-  private func stageShortTitle(_ stage: KaidoProductJourneyStage) -> String {
-    switch stage {
     case .atlas:
       copy.resolve(
-        japanese: "道路",
-        simplifiedChinese: "选路",
-        english: "ATLAS"
+        japanese: "ルート",
+        simplifiedChinese: "路线",
+        english: "Routes"
       )
     case .authoring:
       copy.resolve(
-        japanese: "作成",
-        simplifiedChinese: "编辑",
-        english: "EDIT"
-      )
-    case .review:
-      copy.resolve(
-        japanese: "確認",
-        simplifiedChinese: "确认",
-        english: "REVIEW"
-      )
-    case .navigation:
-      copy.resolve(
-        japanese: "ナビ",
-        simplifiedChinese: "导航",
-        english: "DRIVE"
-      )
-    }
-  }
-
-  private func stageTitle(_ stage: KaidoProductJourneyStage) -> String {
-    switch stage {
-    case .atlas:
-      copy.resolve(
-        japanese: "ルートアトラス",
-        simplifiedChinese: "路线图",
-        english: "Route Atlas"
-      )
-    case .authoring:
-      copy.resolve(
-        japanese: "停車中の経路作成",
-        simplifiedChinese: "停车编辑",
-        english: "Parked authoring"
+        japanese: "ルート設計",
+        simplifiedChinese: "设计路线",
+        english: "Plan"
       )
     case .review:
       copy.resolve(
         japanese: "出発前確認",
-        simplifiedChinese: "行前确认",
-        english: "Pre-drive review"
+        simplifiedChinese: "出发前确认",
+        english: "Review"
       )
     case .navigation:
       copy.resolve(
-        japanese: "ルートナビ",
-        simplifiedChinese: "路线导航",
-        english: "Route navigation"
+        japanese: "走行",
+        simplifiedChinese: "行驶",
+        english: "Drive"
       )
     }
   }
 
-  private func stageSymbol(_ stage: KaidoProductJourneyStage) -> String {
-    switch stage {
-    case .atlas:
-      "map.fill"
-    case .authoring:
-      "point.3.connected.trianglepath.dotted"
-    case .review:
-      "checklist.checked"
-    case .navigation:
-      "location.fill"
+  private var stageBackground: Color {
+    model.stage == .navigation
+      ? KaidoTheme.asphalt
+      : KaidoTheme.paper
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(
+      locale: model.composition.languageSettings.interfaceLocale
+    )
+  }
+}
+
+private struct ProductRoutesStage: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: KaidoProductJourneyModel
+  @Binding var showsSavedRoutes: Bool
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 18) {
+      originControl
+
+      ProductMapProjectionPicker(
+        model: model.composition.productMapPresentation,
+        usesDarkStyle: false
+      )
+
+      ProductMapViewport(
+        mapModel: model.composition.productMapPresentation,
+        surfaceID: "routes",
+        presentation: model.discoveryRouteAtlasPresentation,
+        navigationSnapshot: nil,
+        positionEvidence: nil,
+        usesDarkStyle: false
+      )
+
+      entranceRecommendation
+      routeCatalog
+      routeActions
     }
   }
 
-  private var interfaceLocale: KaidoReleaseLocale {
-    model.composition.languageSettings.interfaceLocale
+  private var originControl: some View {
+    Button {
+    } label: {
+      HStack(spacing: 12) {
+        Image(systemName: "location.circle.fill")
+          .font(.system(size: 20))
+          .foregroundStyle(KaidoTheme.routeGreen)
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "ここから出発",
+              simplifiedChinese: "从这里出发",
+              english: "Start from here"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+
+          Text(
+            copy.resolve(
+              japanese: "港区虎ノ門 1 丁目付近",
+              simplifiedChinese: "港区虎之门 1 丁目附近",
+              english: "Near Toranomon 1-chome, Minato"
+            )
+          )
+          .font(.system(size: 14, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+        }
+
+        Spacer()
+
+        Image(systemName: "chevron.down")
+          .font(.system(size: 11, weight: .black))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+      .padding(.horizontal, 14)
+      .frame(height: 62)
+      .background(KaidoTheme.paperRaised)
+      .overlay {
+        Rectangle()
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("product-routes-origin")
+  }
+
+  private var entranceRecommendation: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "location.north.line.fill")
+        .foregroundStyle(KaidoTheme.paperRaised)
+        .frame(width: 30, height: 30)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(Circle())
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(recommendedEntranceTitle)
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+
+        Text(
+          copy.resolve(
+            japanese: "この経路に対応する方向入口",
+            simplifiedChinese: "与当前路线方向兼容",
+            english: "Compatible with this route direction"
+          )
+        )
+        .font(.system(size: 10, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+
+      Spacer()
+
+      VStack(alignment: .trailing, spacing: 1) {
+        Text(
+          copy.resolve(
+            japanese: "約 7 分",
+            simplifiedChinese: "约 7 分钟",
+            english: "About 7 min"
+          )
+        )
+        .font(.system(size: 12, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeGreenDeep)
+
+        Text(
+          copy.resolve(
+            japanese: "入口まで",
+            simplifiedChinese: "到入口",
+            english: "to entrance"
+          )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.paperRaised)
+    .overlay(alignment: .leading) {
+      Rectangle()
+        .fill(KaidoTheme.routeGreen)
+        .frame(width: 3)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-routes-recommendation")
+  }
+
+  private var routeCatalog: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        Text(
+          copy.resolve(
+            japanese: "おすすめ",
+            simplifiedChinese: "推荐",
+            english: "Recommended"
+          )
+        )
+        .font(.system(size: 18, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.ink)
+
+        Spacer()
+
+        Text(
+          copy.resolve(
+            japanese: "すべて",
+            simplifiedChinese: "全部",
+            english: "All"
+          )
+        )
+        .font(.system(size: 11, weight: .black))
+        .foregroundStyle(KaidoTheme.routeGreen)
+      }
+
+      if let authoring = model.composition.releasedRouteAuthoring {
+        ForEach(authoring.options) { option in
+          routeCard(option)
+        }
+      } else {
+        Text(
+          copy.resolve(
+            japanese: "現在利用できる経路はありません",
+            simplifiedChinese: "当前没有可用路线",
+            english: "No routes are currently available"
+          )
+        )
+        .font(.system(size: 13, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+        .padding(.vertical, 20)
+      }
+    }
+  }
+
+  private func routeCard(
+    _ option: ReleasedProductRouteOptionPresentation
+  ) -> some View {
+    Button {
+      withAnimation(.easeOut(duration: 0.18)) {
+        model.selectRouteForPlanning(option.productReleaseID)
+      }
+    } label: {
+      HStack(spacing: 13) {
+        VStack(spacing: 2) {
+          Text("C1")
+            .font(.system(size: 13, weight: .black, design: .rounded))
+          Text(
+            copy.resolve(
+              japanese: "内回り",
+              simplifiedChinese: "内环",
+              english: "INNER"
+            )
+          )
+          .font(.system(size: 7, weight: .black, design: .rounded))
+        }
+        .foregroundStyle(KaidoTheme.paperRaised)
+        .frame(width: 47, height: 47)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+        VStack(alignment: .leading, spacing: 5) {
+          HStack(spacing: 7) {
+            Text(routeName)
+              .font(.system(size: 15, weight: .black, design: .rounded))
+              .foregroundStyle(KaidoTheme.ink)
+
+            Text(
+              copy.resolve(
+                japanese: "演習",
+                simplifiedChinese: "演练",
+                english: "DEMO"
+              )
+            )
+            .font(.system(size: 7, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeGreen)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .overlay {
+              Capsule()
+                .stroke(KaidoTheme.routeGreen.opacity(0.5), lineWidth: 1)
+            }
+          }
+
+          Text(option.entranceTitle)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(KaidoTheme.quietText)
+            .lineLimit(1)
+
+          HStack(spacing: 12) {
+            Label(
+              copy.resolve(
+                japanese: "約 42 分",
+                simplifiedChinese: "约 42 分钟",
+                english: "About 42 min"
+              ),
+              systemImage: "clock"
+            )
+            Text(String(format: "%.1f km", option.actualDistanceKM))
+            Text(
+              copy.resolve(
+                japanese: "\(option.decisionCount) 分岐",
+                simplifiedChinese: "\(option.decisionCount) 个分岔",
+                english: "\(option.decisionCount) decisions"
+              )
+            )
+          }
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+
+        Spacer(minLength: 4)
+
+        Image(systemName: "chevron.right")
+          .font(.system(size: 11, weight: .black))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+      .padding(13)
+      .background(KaidoTheme.paperRaised)
+      .overlay(alignment: .leading) {
+        Rectangle()
+          .fill(KaidoTheme.signalAmber)
+          .frame(width: 3)
+      }
+      .overlay {
+        Rectangle()
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "product-route-option-\(option.productReleaseID)"
+    )
+    .accessibilityLabel(
+      "\(routeName), \(option.entranceTitle)"
+    )
+  }
+
+  private var routeActions: some View {
+    HStack(spacing: 10) {
+      Button {
+        withAnimation(.easeOut(duration: 0.18)) {
+          model.advance()
+        }
+      } label: {
+        actionTile(
+          title: copy.resolve(
+            japanese: "ルートを作る",
+            simplifiedChinese: "自己设计路线",
+            english: "Create route"
+          ),
+          symbol: "point.3.connected.trianglepath.dotted"
+        )
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("product-routes-create")
+
+      Button {
+        showsSavedRoutes = true
+      } label: {
+        actionTile(
+          title: copy.resolve(
+            japanese: "保存ルート",
+            simplifiedChinese: "我的路线",
+            english: "Saved routes"
+          ),
+          symbol: "bookmark"
+        )
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("product-routes-saved")
+    }
+  }
+
+  private func actionTile(
+    title: String,
+    symbol: String
+  ) -> some View {
+    HStack(spacing: 9) {
+      Image(systemName: symbol)
+      Text(title)
+      Spacer(minLength: 2)
+      Image(systemName: "chevron.right")
+        .font(.system(size: 9, weight: .black))
+    }
+    .font(.system(size: 12, weight: .black, design: .rounded))
+    .foregroundStyle(KaidoTheme.ink)
+    .padding(.horizontal, 12)
+    .frame(maxWidth: .infinity)
+    .frame(height: 54)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+  }
+
+  private var recommendedEntranceTitle: String {
+    model.composition.releasedRouteAuthoring?.options.first?.entranceTitle
+      ?? copy.resolve(
+        japanese: "対応入口を確認中",
+        simplifiedChinese: "正在确认兼容入口",
+        english: "Checking compatible entrance"
+      )
+  }
+
+  private var routeName: String {
+    copy.resolve(
+      japanese: "東京中心を一周",
+      simplifiedChinese: "东京核心一周",
+      english: "Tokyo core circuit"
+    )
   }
 
   private var copy: KaidoInterfaceText {
@@ -1031,92 +706,1301 @@ struct KaidoProductJourneyView: View {
   }
 }
 
-private enum JourneyStageVisualState {
-  case completed
-  case current
-  case available
-  case locked
+private enum ProductPlanningMode: String, CaseIterable, Identifiable {
+  case guided
+  case expert
+
+  var id: String { rawValue }
 }
 
-private struct JourneyStageButton: View {
-  let stage: KaidoProductJourneyStage
-  let title: String
-  let symbol: String
-  let state: JourneyStageVisualState
-  let action: () -> Void
+private struct ProductPlanStage: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: KaidoProductJourneyModel
+  @Binding var planningMode: ProductPlanningMode
 
   var body: some View {
-    Button(action: action) {
-      VStack(spacing: 5) {
-        ZStack {
-          Circle()
-            .fill(circleFill)
-            .frame(width: 31, height: 31)
+    VStack(alignment: .leading, spacing: 16) {
+      ProductMapProjectionPicker(
+        model: model.composition.productMapPresentation,
+        usesDarkStyle: false
+      )
 
-          Image(systemName: state == .completed ? "checkmark" : symbol)
-            .font(.system(size: 11, weight: .black))
-            .foregroundStyle(symbolColor)
+      ProductMapViewport(
+        mapModel: model.composition.productMapPresentation,
+        surfaceID: "plan",
+        presentation: mapPresentation,
+        navigationSnapshot: nil,
+        positionEvidence: nil,
+        usesDarkStyle: false
+      )
+
+      planningModePicker
+      editor
+    }
+  }
+
+  private var planningModePicker: some View {
+    HStack(spacing: 0) {
+      ForEach(ProductPlanningMode.allCases) { mode in
+        Button {
+          planningMode = mode
+        } label: {
+          Text(modeTitle(mode))
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .foregroundStyle(
+              planningMode == mode
+                ? KaidoTheme.paperRaised
+                : KaidoTheme.quietText
+            )
+            .background(
+              planningMode == mode
+                ? KaidoTheme.routeGreen
+                : KaidoTheme.paperRaised
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(
+          planningMode == mode ? .isSelected : []
+        )
+        .accessibilityIdentifier(
+          "product-plan-mode-\(mode.rawValue)"
+        )
+      }
+    }
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+  }
+
+  @ViewBuilder
+  private var editor: some View {
+    if let authoring = model.composition.releasedRouteAuthoring {
+      if authoring.hasSelection {
+        selectedRouteEditor(authoring)
+      } else {
+        routePicker(authoring)
+      }
+    } else {
+      Text(
+        copy.resolve(
+          japanese: "このプレビューで作成できる経路はありません",
+          simplifiedChinese: "当前预览没有可编辑路线",
+          english: "No editable route is available in this preview"
+        )
+      )
+      .font(.system(size: 13, weight: .bold))
+      .foregroundStyle(KaidoTheme.quietText)
+    }
+  }
+
+  private func routePicker(
+    _ authoring: ReleasedProductRouteAuthoringModel
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      sectionTitle(
+        copy.resolve(
+          japanese: "経路を選択",
+          simplifiedChinese: "选择路线",
+          english: "Choose a route"
+        )
+      )
+
+      ForEach(authoring.options) { option in
+        Button {
+          model.selectRouteForPlanning(option.productReleaseID)
+        } label: {
+          HStack {
+            VStack(alignment: .leading, spacing: 3) {
+              Text(option.entranceTitle)
+                .font(.system(size: 14, weight: .black, design: .rounded))
+              Text(option.finalChoiceTitle)
+                .font(.system(size: 11, weight: .bold))
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+          }
+          .foregroundStyle(KaidoTheme.ink)
+          .padding(13)
+          .background(KaidoTheme.paperRaised)
+          .overlay {
+            Rectangle()
+              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+          }
+        }
+        .buttonStyle(.plain)
+      }
+    }
+  }
+
+  private func selectedRouteEditor(
+    _ authoring: ReleasedProductRouteAuthoringModel
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text(model.selectedRouteOption?.entranceTitle ?? "")
+            .font(.system(size: 17, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.ink)
+          Text(
+            planningMode == .guided
+              ? copy.resolve(
+                japanese: "確認済みの順序で分岐を選びます",
+                simplifiedChinese: "按已审核顺序选择分岔",
+                english: "Choose the reviewed decisions in order"
+              )
+              : copy.resolve(
+                japanese: "現在の進入方向から合法な分岐だけを表示",
+                simplifiedChinese: "只显示当前来向的合法分岔",
+                english: "Only legal choices from the current approach"
+              )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
         }
 
-        Text(title)
-          .font(.system(size: 8, weight: .black, design: .monospaced))
-          .foregroundStyle(labelColor)
+        Spacer()
+
+        Button {
+          authoring.clearSelection()
+        } label: {
+          Text(
+            copy.resolve(
+              japanese: "変更",
+              simplifiedChinese: "更换",
+              english: "Change"
+            )
+          )
+          .font(.system(size: 10, weight: .black))
+          .foregroundStyle(KaidoTheme.routeGreen)
+        }
+        .buttonStyle(.plain)
       }
-      .frame(width: 48)
+
+      routeThread(authoring)
+
+      if let step = authoring.currentStep {
+        decisionStep(step, authoring: authoring)
+      } else if authoring.compiledRoutePlan == nil {
+        Button {
+          authoring.compile()
+        } label: {
+          Label(
+            copy.resolve(
+              japanese: "経路を確定",
+              simplifiedChinese: "确认路线",
+              english: "Confirm route"
+            ),
+            systemImage: "checkmark"
+          )
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .frame(maxWidth: .infinity)
+          .frame(height: 48)
+          .foregroundStyle(KaidoTheme.paperRaised)
+          .background(KaidoTheme.routeGreen)
+        }
+        .buttonStyle(.plain)
+        .disabled(!authoring.canCompile)
+        .accessibilityIdentifier("released-route-compile")
+      }
+
+      if authoring.compiledRoutePlan != nil {
+        tripSetup(authoring)
+      }
     }
-    .buttonStyle(.plain)
-    .disabled(state == .locked)
-    .accessibilityLabel(title)
-    .accessibilityValue(accessibilityState)
-    .accessibilityAddTraits(state == .current ? .isSelected : [])
-    .accessibilityRemoveTraits(
-      state == .current ? [] : .isSelected
+    .padding(14)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-plan-editor")
+  }
+
+  private func routeThread(
+    _ authoring: ReleasedProductRouteAuthoringModel
+  ) -> some View {
+    let occurrences = authoring.snapshot?.occurrences ?? []
+    return VStack(alignment: .leading, spacing: 7) {
+      HStack(spacing: 4) {
+        ForEach(Array(occurrences.enumerated()), id: \.offset) { _, _ in
+          Capsule()
+            .fill(KaidoTheme.routeGreen)
+            .frame(maxWidth: .infinity)
+            .frame(height: 5)
+        }
+
+        if occurrences.isEmpty {
+          Capsule()
+            .fill(KaidoTheme.roadGray)
+            .frame(maxWidth: .infinity)
+            .frame(height: 5)
+        }
+      }
+
+      HStack {
+        Text(
+          copy.resolve(
+            japanese: "入口",
+            simplifiedChinese: "入口",
+            english: "Entrance"
+          )
+        )
+        Spacer()
+        Text(
+          copy.resolve(
+            japanese: "\(occurrences.count) 区間",
+            simplifiedChinese: "\(occurrences.count) 个路段",
+            english: "\(occurrences.count) segments"
+          )
+        )
+      }
+      .font(.system(size: 9, weight: .black))
+      .foregroundStyle(KaidoTheme.quietText)
+    }
+  }
+
+  private func decisionStep(
+    _ step: ReleasedRouteEditorStepPresentation,
+    authoring: ReleasedProductRouteAuthoringModel
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 9) {
+      Text(step.decisionTitle)
+        .font(.system(size: 14, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.ink)
+
+      Button {
+        authoring.selectReleasedChoice(step.choiceID)
+      } label: {
+        HStack(spacing: 12) {
+          Image(systemName: "arrow.turn.up.right")
+            .font(.system(size: 17, weight: .black))
+            .frame(width: 38, height: 38)
+            .foregroundStyle(KaidoTheme.paperRaised)
+            .background(KaidoTheme.routeGreen)
+
+          VStack(alignment: .leading, spacing: 3) {
+            Text(step.choiceTitle)
+              .font(.system(size: 13, weight: .black))
+            Text(step.choiceDetail)
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(KaidoTheme.quietText)
+          }
+
+          Spacer()
+          Image(systemName: "plus")
+            .font(.system(size: 11, weight: .black))
+        }
+        .foregroundStyle(KaidoTheme.ink)
+        .padding(12)
+        .background(KaidoTheme.paper)
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("released-route-choice-\(step.choiceID)")
+    }
+  }
+
+  private func tripSetup(
+    _ authoring: ReleasedProductRouteAuthoringModel
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      sectionTitle(
+        copy.resolve(
+          japanese: "出発設定",
+          simplifiedChinese: "出发设置",
+          english: "Trip setup"
+        )
+      )
+
+      ScrollView(.horizontal) {
+        HStack(spacing: 7) {
+          ForEach(
+            authoring.availableVehicleClasses,
+            id: \.rawValue
+          ) { vehicleClass in
+            let selected =
+              authoring.selectedVehicleClass == vehicleClass
+            Button {
+              authoring.selectVehicleClass(vehicleClass)
+            } label: {
+              Text(vehicleClass.officialJapaneseLabel)
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(
+                  selected
+                    ? KaidoTheme.paperRaised
+                    : KaidoTheme.ink
+                )
+                .padding(.horizontal, 10)
+                .frame(height: 34)
+                .background(
+                  selected
+                    ? KaidoTheme.routeGreen
+                    : KaidoTheme.paper
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(
+              "released-vehicle-class-\(vehicleClass.rawValue)"
+            )
+            .accessibilityAddTraits(selected ? .isSelected : [])
+          }
+        }
+      }
+      .scrollIndicators(.hidden)
+
+      HStack(spacing: 8) {
+        ForEach(
+          authoring.availablePaymentMethods,
+          id: \.rawValue
+        ) { paymentMethod in
+          let selected =
+            authoring.selectedPaymentMethod == paymentMethod
+          Button {
+            authoring.selectPaymentMethod(paymentMethod)
+          } label: {
+            Text(paymentMethod.rawValue)
+              .font(.system(size: 11, weight: .black, design: .rounded))
+              .frame(maxWidth: .infinity)
+              .frame(height: 38)
+              .foregroundStyle(
+                selected
+                  ? KaidoTheme.paperRaised
+                  : KaidoTheme.ink
+              )
+              .background(
+                selected
+                  ? KaidoTheme.routeGreen
+                  : KaidoTheme.paper
+              )
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier(
+            "released-payment-method-\(paymentMethod.rawValue)"
+          )
+          .accessibilityAddTraits(selected ? .isSelected : [])
+        }
+      }
+
+      if authoring.reviewReady {
+        Label(
+          copy.resolve(
+            japanese: "出発前確認の準備ができました",
+            simplifiedChinese: "已可进入行前确认",
+            english: "Ready for pre-drive review"
+          ),
+          systemImage: "checkmark.circle.fill"
+        )
+        .font(.system(size: 11, weight: .black))
+        .foregroundStyle(KaidoTheme.routeGreen)
+        .accessibilityIdentifier("released-route-review-ready")
+      } else if authoring.compiledRoutePlan != nil {
+        Text(setupPrompt(authoring))
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+    }
+  }
+
+  private func setupPrompt(
+    _ authoring: ReleasedProductRouteAuthoringModel
+  ) -> String {
+    if authoring.selectedVehicleClass == nil {
+      return copy.resolve(
+        japanese: "車種を選択してください",
+        simplifiedChinese: "请选择车型",
+        english: "Choose a vehicle class"
+      )
+    }
+    if authoring.selectedPaymentMethod == nil {
+      return copy.resolve(
+        japanese: "支払方法を選択してください",
+        simplifiedChinese: "请选择支付方式",
+        english: "Choose a payment method"
+      )
+    }
+    return copy.resolve(
+      japanese: "現在の行前情報を確認できません",
+      simplifiedChinese: "当前行前信息不可用",
+      english: "Current pre-drive information is unavailable"
     )
-    .accessibilityIdentifier("product-journey-step-\(stage.rawValue.lowercased())")
   }
 
-  private var circleFill: Color {
-    switch state {
-    case .completed, .current:
-      KaidoTheme.signalAmber
-    case .available:
-      KaidoTheme.positionCyan
-    case .locked:
-      KaidoTheme.steel.opacity(0.55)
+  private func sectionTitle(_ title: String) -> some View {
+    Text(title)
+      .font(.system(size: 15, weight: .black, design: .rounded))
+      .foregroundStyle(KaidoTheme.ink)
+  }
+
+  private func modeTitle(_ mode: ProductPlanningMode) -> String {
+    switch mode {
+    case .guided:
+      copy.resolve(
+        japanese: "ガイド",
+        simplifiedChinese: "推荐",
+        english: "Guided"
+      )
+    case .expert:
+      copy.resolve(
+        japanese: "エキスパート",
+        simplifiedChinese: "专家",
+        english: "Expert"
+      )
     }
   }
 
-  private var symbolColor: Color {
-    switch state {
-    case .completed, .current, .available:
-      KaidoTheme.asphalt
-    case .locked:
-      KaidoTheme.muted
+  private var mapPresentation: ReleasedRouteAtlasOverlayPresentation {
+    switch model.routeAtlasOverlayPresentation {
+    case .unavailable:
+      model.discoveryRouteAtlasPresentation
+    case .ready, .blocked:
+      model.routeAtlasOverlayPresentation
     }
   }
 
-  private var labelColor: Color {
-    switch state {
-    case .current:
-      KaidoTheme.routeWhite
-    case .completed, .available:
-      KaidoTheme.signalAmber
-    case .locked:
-      KaidoTheme.muted
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+}
+
+private struct ProductReviewStage: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: KaidoProductJourneyModel
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      ProductMapProjectionPicker(
+        model: model.composition.productMapPresentation,
+        usesDarkStyle: false
+      )
+
+      ProductMapViewport(
+        mapModel: model.composition.productMapPresentation,
+        surfaceID: "review",
+        presentation: model.routeAtlasOverlayPresentation,
+        navigationSnapshot: nil,
+        positionEvidence: nil,
+        usesDarkStyle: false
+      )
+
+      journeySummary
+
+      if let snapshot = model.preDriveReviewSnapshot {
+        metrics(snapshot)
+        availability(snapshot)
+        voice
+      } else {
+        blocker
+      }
     }
   }
 
-  private var accessibilityState: String {
-    switch state {
-    case .completed:
-      "COMPLETED"
-    case .current:
-      "CURRENT"
-    case .available:
-      "AVAILABLE"
-    case .locked:
-      "LOCKED"
+  private var journeySummary: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 3) {
+          Text(
+            copy.resolve(
+              japanese: "東京中心を一周",
+              simplifiedChinese: "东京核心一周",
+              english: "Tokyo core circuit"
+            )
+          )
+          .font(.system(size: 21, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+
+          Text(
+            model.selectedRouteOption?.entranceTitle
+              ?? copy.resolve(
+                japanese: "選択した入口",
+                simplifiedChinese: "已选入口",
+                english: "Selected entrance"
+              )
+          )
+          .font(.system(size: 11, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+
+        Spacer()
+
+        Text("C1")
+          .font(.system(size: 15, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.paperRaised)
+          .frame(width: 44, height: 44)
+          .background(KaidoTheme.routeGreen)
+          .clipShape(RoundedRectangle(cornerRadius: 9))
+      }
+
+      HStack(spacing: 8) {
+        Image(systemName: "location.circle.fill")
+        Text(
+          copy.resolve(
+            japanese: "現在地",
+            simplifiedChinese: "当前位置",
+            english: "Current origin"
+          )
+        )
+        Image(systemName: "arrow.right")
+        Text(
+          model.selectedRouteOption?.entranceTitle
+            ?? copy.resolve(
+              japanese: "方向入口",
+              simplifiedChinese: "方向入口",
+              english: "Directional entrance"
+            )
+        )
+      }
+      .font(.system(size: 10, weight: .bold))
+      .foregroundStyle(KaidoTheme.quietText)
+
+      routeThread
     }
+    .padding(16)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-review-summary")
+  }
+
+  private var routeThread: some View {
+    HStack(spacing: 0) {
+      Circle()
+        .fill(KaidoTheme.routeGreen)
+        .frame(width: 9, height: 9)
+      Rectangle()
+        .fill(KaidoTheme.routeGreen)
+        .frame(height: 3)
+      Circle()
+        .fill(KaidoTheme.signalAmber)
+        .frame(width: 9, height: 9)
+      Rectangle()
+        .fill(KaidoTheme.routeGreen)
+        .frame(height: 3)
+      Circle()
+        .stroke(KaidoTheme.routeGreen, lineWidth: 3)
+        .frame(width: 11, height: 11)
+    }
+    .accessibilityHidden(true)
+  }
+
+  private func metrics(
+    _ snapshot: PreDriveReviewSnapshot
+  ) -> some View {
+    let presentation = snapshot.presentation
+    return VStack(spacing: 0) {
+      reviewRow(
+        title: copy.resolve(
+          japanese: "走行予定距離",
+          simplifiedChinese: "实际规划距离",
+          english: "Planned distance"
+        ),
+        value: String(
+          format: "%.1f km",
+          presentation.actualDistanceKM
+        )
+      )
+
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      reviewRow(
+        title: copy.resolve(
+          japanese: "料金計算距離",
+          simplifiedChinese: "计费距离",
+          english: "Tariff distance"
+        ),
+        value:
+          presentation.tariffDistanceKM.map {
+            String(format: "%.1f km", $0)
+          } ?? "—"
+      )
+
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      reviewRow(
+        title: copy.resolve(
+          japanese: "料金",
+          simplifiedChinese: "费用",
+          english: "Toll"
+        ),
+        value:
+          presentation.estimatedAmountYen.map {
+            "¥\($0)"
+          } ?? "—"
+      )
+
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      reviewRow(
+        title: copy.resolve(
+          japanese: "経路",
+          simplifiedChinese: "路线",
+          english: "Route"
+        ),
+        value: copy.resolve(
+          japanese: "\(snapshot.occurrenceCount) 区間",
+          simplifiedChinese: "\(snapshot.occurrenceCount) 个路段",
+          english: "\(snapshot.occurrenceCount) segments"
+        )
+      )
+    }
+    .padding(.horizontal, 14)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-review-metrics")
+  }
+
+  private func availability(
+    _ snapshot: PreDriveReviewSnapshot
+  ) -> some View {
+    HStack(alignment: .top, spacing: 11) {
+      Image(systemName: "exclamationmark.circle.fill")
+        .foregroundStyle(KaidoTheme.signalAmber)
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(
+          copy.resolve(
+            japanese: "リアルタイム通行状態は未確認",
+            simplifiedChinese: "实时通行状态尚未确认",
+            english: "Realtime passage is unconfirmed"
+          )
+        )
+        .font(.system(size: 12, weight: .black))
+        .foregroundStyle(KaidoTheme.ink)
+
+        Text(
+          copy.resolve(
+            japanese: "確認時刻：\(snapshot.checkedAt)",
+            simplifiedChinese: "检查时间：\(snapshot.checkedAt)",
+            english: "Checked: \(snapshot.checkedAt)"
+          )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+    }
+    .padding(13)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(KaidoTheme.signalAmber.opacity(0.12))
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-review-availability")
+  }
+
+  private var voice: some View {
+    HStack(spacing: 12) {
+      Image(systemName: "speaker.wave.2")
+        .foregroundStyle(KaidoTheme.routeGreen)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(
+          copy.resolve(
+            japanese: "案内音声",
+            simplifiedChinese: "引导语音",
+            english: "Guidance voice"
+          )
+        )
+        .font(.system(size: 11, weight: .black))
+        .foregroundStyle(KaidoTheme.ink)
+        Text(
+          model.composition.languageSettings.guidanceVoiceLocale
+            .nativeLanguageName
+        )
+        .font(.system(size: 10, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+      Spacer()
+      Image(systemName: "chevron.right")
+        .font(.system(size: 10, weight: .black))
+        .foregroundStyle(KaidoTheme.quietText)
+    }
+    .padding(13)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityIdentifier("product-review-voice")
+  }
+
+  private var blocker: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "lock.fill")
+      Text(
+        copy.resolve(
+          japanese: "出発前情報が揃っていません",
+          simplifiedChinese: "行前信息尚未齐全",
+          english: "Pre-drive information is incomplete"
+        )
+      )
+    }
+    .font(.system(size: 12, weight: .black))
+    .foregroundStyle(KaidoTheme.quietText)
+    .padding(14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(KaidoTheme.paperRaised)
+  }
+
+  private func reviewRow(
+    title: String,
+    value: String
+  ) -> some View {
+    HStack {
+      Text(title)
+        .font(.system(size: 11, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      Spacer()
+      Text(value)
+        .font(.system(size: 13, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.ink)
+    }
+    .frame(height: 48)
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+}
+
+private struct ProductDriveStage: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: KaidoProductJourneyModel
+  @ObservedObject var runtime: ProductNavigationRuntimeModel
+  @State private var isStartingRehearsal = false
+  @State private var showsFinishConfirmation = false
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 14) {
+        driveHeader
+        guidance
+
+        ProductMapProjectionPicker(
+          model: model.composition.productMapPresentation,
+          usesDarkStyle: true
+        )
+
+        ProductMapViewport(
+          mapModel: model.composition.productMapPresentation,
+          surfaceID: "drive",
+          presentation: runtime.routeAtlasOverlayPresentation,
+          navigationSnapshot: runtime.snapshot,
+          positionEvidence: runtime.topologyPositionEvidence,
+          usesDarkStyle: true
+        )
+
+        routeProgress
+        rehearsalControls
+      }
+      .padding(.horizontal, 16)
+      .padding(.top, 8)
+      .padding(.bottom, 30)
+    }
+    .scrollIndicators(.hidden)
+    .background(KaidoTheme.asphalt)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-drive-surface")
+    .task {
+      await runtime.activate()
+    }
+    .confirmationDialog(
+      copy.resolve(
+        japanese: "演習を終了しますか？",
+        simplifiedChinese: "结束本次演练？",
+        english: "End this rehearsal?"
+      ),
+      isPresented: $showsFinishConfirmation
+    ) {
+      Button(
+        copy.resolve(
+          japanese: "演習を終了",
+          simplifiedChinese: "结束演练",
+          english: "End rehearsal"
+        ),
+        role: .destructive
+      ) {
+        Task {
+          if runtime.isRealRoadAuthority {
+            await model.endNavigation()
+          } else {
+            await model.endRehearsal()
+          }
+        }
+      }
+      Button(
+        copy.resolve(
+          japanese: "続ける",
+          simplifiedChinese: "继续行驶",
+          english: "Continue driving"
+        ),
+        role: .cancel
+      ) {
+      }
+    }
+  }
+
+  private var driveHeader: some View {
+    HStack {
+      VStack(alignment: .leading, spacing: 1) {
+        Text("KAIDO")
+          .font(.system(size: 9, weight: .black, design: .rounded))
+          .tracking(1)
+          .foregroundStyle(KaidoTheme.signalAmber)
+
+        Text(
+          copy.resolve(
+            japanese: "走行",
+            simplifiedChinese: "行驶",
+            english: "Drive"
+          )
+        )
+        .font(.system(size: 20, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+      }
+
+      Spacer()
+
+      if !runtime.isRealRoadAuthority {
+        Text(
+          copy.resolve(
+            japanese: "演習",
+            simplifiedChinese: "演练",
+            english: "DEMO"
+          )
+        )
+        .font(.system(size: 8, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.signalAmber)
+        .padding(.horizontal, 9)
+        .frame(height: 26)
+        .overlay {
+          Capsule()
+            .stroke(KaidoTheme.signalAmber.opacity(0.6), lineWidth: 1)
+        }
+      }
+
+      Button {
+        showsFinishConfirmation = true
+      } label: {
+        Image(systemName: "xmark")
+          .font(.system(size: 13, weight: .black))
+          .frame(width: 38, height: 38)
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .background(KaidoTheme.instrument)
+          .clipShape(Circle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "演習を終了",
+          simplifiedChinese: "结束演练",
+          english: "End rehearsal"
+        )
+      )
+      .accessibilityIdentifier("product-drive-finish")
+    }
+  }
+
+  @ViewBuilder
+  private var guidance: some View {
+    if let projection = runtime.presentationProjection {
+      let phone = projection.iPhone
+      HStack(alignment: .top, spacing: 12) {
+        Text(phone.routeShields.first ?? "—")
+          .font(.system(size: 18, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.asphalt)
+          .frame(width: 48, height: 48)
+          .background(KaidoTheme.signalAmber)
+          .clipShape(RoundedRectangle(cornerRadius: 10))
+
+        VStack(alignment: .leading, spacing: 4) {
+          Text(distanceLabel(phone.distanceMeters))
+            .font(.system(size: 21, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text(phone.localizedDecisionPointName)
+            .font(.system(size: 16, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text(verbatim: phone.japaneseSignText)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(KaidoTheme.muted)
+        }
+
+        Spacer()
+
+        Image(systemName: maneuverSymbol(phone.maneuver))
+          .font(.system(size: 21, weight: .black))
+          .foregroundStyle(KaidoTheme.signalAmber)
+      }
+      .padding(14)
+      .background(KaidoTheme.instrument)
+      .clipShape(RoundedRectangle(cornerRadius: 16))
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("product-drive-guidance")
+    } else {
+      HStack(spacing: 12) {
+        Image(systemName: "arrow.up")
+          .font(.system(size: 21, weight: .black))
+          .foregroundStyle(KaidoTheme.signalAmber)
+          .frame(width: 44)
+
+        VStack(alignment: .leading, spacing: 3) {
+          Text(
+            copy.resolve(
+              japanese: "経路に沿って進みます",
+              simplifiedChinese: "沿所选路线前进",
+              english: "Follow the selected route"
+            )
+          )
+          .font(.system(size: 16, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text(
+            copy.resolve(
+              japanese: "次の分岐は位置確認後に表示",
+              simplifiedChinese: "确认位置后显示下一分岔",
+              english: "The next decision appears after position resolves"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.muted)
+        }
+      }
+      .padding(14)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(KaidoTheme.instrument)
+      .clipShape(RoundedRectangle(cornerRadius: 16))
+      .accessibilityIdentifier("product-drive-guidance-pending")
+    }
+  }
+
+  private var routeProgress: some View {
+    let currentIndex = runtime.snapshot?.currentOccurrenceIndex
+    let current =
+      currentIndex.map { min(runtime.routeOccurrenceCount, $0 + 1) } ?? 0
+    return VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text(
+          copy.resolve(
+            japanese: "経路進行",
+            simplifiedChinese: "路线进度",
+            english: "Route progress"
+          )
+        )
+        .font(.system(size: 10, weight: .black))
+        .foregroundStyle(KaidoTheme.routeWhite)
+
+        Spacer()
+
+        Text("\(current) / \(runtime.routeOccurrenceCount)")
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.muted)
+      }
+
+      GeometryReader { proxy in
+        ZStack(alignment: .leading) {
+          Capsule()
+            .fill(KaidoTheme.steel)
+          Capsule()
+            .fill(KaidoTheme.signalAmber)
+            .frame(
+              width:
+                proxy.size.width
+                * progressFraction(
+                  current: current,
+                  total: runtime.routeOccurrenceCount
+                )
+            )
+        }
+      }
+      .frame(height: 5)
+    }
+    .padding(12)
+    .background(KaidoTheme.instrument)
+    .clipShape(RoundedRectangle(cornerRadius: 13))
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-drive-progress")
+    .accessibilityValue("\(current) of \(runtime.routeOccurrenceCount)")
+  }
+
+  @ViewBuilder
+  private var rehearsalControls: some View {
+    if !runtime.isRealRoadAuthority {
+      VStack(spacing: 9) {
+        if runtime.canRunDeterministicPreviewTrace {
+          Button {
+            isStartingRehearsal = true
+            Task {
+              await runtime.runDeterministicPreviewTrace()
+              isStartingRehearsal = false
+            }
+          } label: {
+            Label(
+              copy.resolve(
+                japanese: "走行演習を開始",
+                simplifiedChinese: "开始行驶演练",
+                english: "Start driving rehearsal"
+              ),
+              systemImage: "play.fill"
+            )
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .foregroundStyle(KaidoTheme.asphalt)
+            .background(KaidoTheme.signalAmber)
+          }
+          .buttonStyle(.plain)
+          .disabled(isStartingRehearsal)
+          .accessibilityIdentifier("product-drive-start-rehearsal")
+        } else if runtime.canStepNavigationSimulation {
+          Button {
+            Task {
+              await runtime.stepNavigationSimulation()
+            }
+          } label: {
+            Label(
+              copy.resolve(
+                japanese: "次の区間へ",
+                simplifiedChinese: "前往下一段",
+                english: "Advance one segment"
+              ),
+              systemImage: "forward.frame.fill"
+            )
+            .font(.system(size: 12, weight: .black, design: .rounded))
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .foregroundStyle(KaidoTheme.routeWhite)
+            .background(KaidoTheme.routeGreenDeep)
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier("product-drive-next-segment")
+        }
+
+        Text(
+          copy.resolve(
+            japanese: "演習データを使用しています",
+            simplifiedChinese: "当前使用演练数据",
+            english: "This drive uses rehearsal data"
+          )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.muted)
+      }
+    }
+  }
+
+  private func distanceLabel(_ meters: Double) -> String {
+    if meters >= 1_000 {
+      return String(format: "%.1f km", meters / 1_000)
+    }
+    return "\(Int(meters.rounded())) m"
+  }
+
+  private func maneuverSymbol(_ maneuver: GuidanceManeuver) -> String {
+    switch maneuver {
+    case .keepLeft:
+      "arrow.up.left"
+    case .keepRight:
+      "arrow.up.right"
+    case .takeExitLeft, .mergeLeft:
+      "arrow.turn.up.left"
+    case .takeExitRight, .mergeRight:
+      "arrow.turn.up.right"
+    case .stayMainline:
+      "arrow.up"
+    }
+  }
+
+  private func progressFraction(
+    current: Int,
+    total: Int
+  ) -> Double {
+    guard total > 0 else { return 0 }
+    return min(1, max(0, Double(current) / Double(total)))
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+}
+
+private struct ProductSavedRoutesSheet: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: SavedRouteLibraryModel
+  let openRoute: (String) -> Void
+
+  var body: some View {
+    NavigationStack {
+      Group {
+        if model.records.isEmpty {
+          ContentUnavailableView(
+            copy.resolve(
+              japanese: "保存ルートはありません",
+              simplifiedChinese: "还没有保存路线",
+              english: "No saved routes"
+            ),
+            systemImage: "bookmark",
+            description: Text(
+              copy.resolve(
+                japanese: "設計した経路を保存すると、ここに表示されます。",
+                simplifiedChinese: "保存设计好的路线后，会显示在这里。",
+                english: "Routes you save after planning appear here."
+              )
+            )
+          )
+        } else {
+          List(model.records, id: \.id) { record in
+            VStack(alignment: .leading, spacing: 5) {
+              Text(record.displayName)
+                .font(.headline)
+              Text(
+                copy.resolve(
+                  japanese: "走行前に現在のリリース確認が必要です",
+                  simplifiedChinese: "行驶前需要重新确认当前版本",
+                  english: "Current release review is required before driving"
+                )
+              )
+              .font(.caption)
+              .foregroundStyle(.secondary)
+
+              Button {
+                openRoute(record.id)
+              } label: {
+                Text(
+                  copy.resolve(
+                    japanese: "停車中の編集で開く",
+                    simplifiedChinese: "在停车编辑器中打开",
+                    english: "Open in parked editor"
+                  )
+                )
+              }
+              .disabled(
+                !isSelectable(record)
+              )
+            }
+          }
+        }
+      }
+      .navigationTitle(
+        copy.resolve(
+          japanese: "保存ルート",
+          simplifiedChinese: "我的路线",
+          english: "Saved routes"
+        )
+      )
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button(
+            copy.resolve(
+              japanese: "完了",
+              simplifiedChinese: "完成",
+              english: "Done"
+            )
+          ) {
+            dismiss()
+          }
+        }
+      }
+    }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private func isSelectable(_ record: SavedRouteRecord) -> Bool {
+    if case .selected = model.availability(for: record) {
+      return true
+    }
+    return false
+  }
+}
+
+private struct ProductSettingsSheet: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: KaidoLanguageSettingsModel
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        Section(
+          copy.resolve(
+            japanese: "画面",
+            simplifiedChinese: "界面",
+            english: "Interface"
+          )
+        ) {
+          KaidoInterfaceLanguagePicker(model: model)
+        }
+
+        Section(
+          copy.resolve(
+            japanese: "案内音声",
+            simplifiedChinese: "引导语音",
+            english: "Guidance voice"
+          )
+        ) {
+          ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
+            Button {
+              model.selectGuidanceVoiceLocale(locale)
+            } label: {
+              HStack {
+                Text(locale.nativeLanguageName)
+                Spacer()
+                if model.guidanceVoiceLocale == locale {
+                  Image(systemName: "checkmark")
+                }
+              }
+            }
+            .accessibilityAddTraits(
+              model.guidanceVoiceLocale == locale ? .isSelected : []
+            )
+            .accessibilityIdentifier(
+              "product-settings-guidance-voice-\(locale.rawValue)"
+            )
+          }
+        }
+      }
+      .accessibilityIdentifier("product-settings")
+      .navigationTitle(
+        copy.resolve(
+          japanese: "設定",
+          simplifiedChinese: "设置",
+          english: "Settings"
+        )
+      )
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button(
+            copy.resolve(
+              japanese: "完了",
+              simplifiedChinese: "完成",
+              english: "Done"
+            )
+          ) {
+            dismiss()
+          }
+        }
+      }
+    }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

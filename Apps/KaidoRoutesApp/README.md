@@ -4,17 +4,29 @@ Status: internal SwiftUI preview app; not released navigation.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
 links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`, and
-`KaidoPresentation`, and `KaidoAppleAdapters` products and renders the tracked
-Route Atlas assets in one fixed north-up instrument.
+`KaidoPresentation`, and `KaidoAppleAdapters` products. The ordinary journey
+renders one shared map control with user-selected geographic and topology
+projections; tracked recognition and evidence assets remain in the internal
+workbench.
 
 The default scene is now an ordered product journey rather than the complete
 internal evidence workbench:
 
-1. the fixed north-up Route Atlas establishes recognition context;
-2. the user enters the parked editor owned by the selected product release;
-3. only an exact compiled RoutePlan unlocks pre-drive review; and
-4. the bundled demo continues into a fixed-input actor driving rehearsal, while
+1. Routes starts directly with origin, map, compatible directional entrance,
+   available route cards, create route, and saved routes;
+2. Plan submits only release-owned parked choices;
+3. only an exact compiled RoutePlan unlocks Review; and
+4. the bundled demo continues into Drive through its actor runtime, while
    real-road navigation remains locked until foreground authority exists.
+
+The `Map | Lines` choice persists across Routes, Plan, Review, and Drive.
+The topology renderer consumes only a validated
+`RouteAtlasJourneyProjection`, preserves repeated occurrences, and can draw a
+precise progress marker only from one exact HIGH matcher estimate admitted
+against the active RoutePlan and actor snapshot. LOW, LOST, ambiguous, stale,
+or identity-drifted evidence cannot create that marker. The synthetic
+geographic preview is presentation-only; a real-road geographic adapter that
+is not connected fails closed instead of drawing illustrative roads.
 
 The journey coordinator owns UI stage only. It does not author topology,
 occurrence progress, a RoutePlan, passage status, or navigation authority.
@@ -166,12 +178,13 @@ and trust-role isolation. Signed-update model tests cover persist-before-publish
 untrusted input, rollback, future activation, and restoration. Released-editor
 adapter tests replay the bundled repeated occurrences through Simplified
 Chinese labels and reject a non-recipe choice without mutating the session.
-`KaidoProductJourneyUITests` prove
-the default scene starts at Route Atlas, exposes `0 RELEASED ROAD · 1 DEMO` and
-a release-gated navigation step, completes the demo's repeated-occurrence
-recipe, renders its exact pre-drive status, constructs the actor rehearsal, runs
-the fixed trace, and keeps live location disabled. The review screenshot also
-requires the parked voice selector, quality state, and audition control. This is
+`KaidoProductJourneyUITests` prove the concise Routes launch omits rejected
+filler and internal K7/release state, the same map selection survives Routes,
+Plan, Review, and Drive, repeated occurrences remain visible, the exact demo
+recipe reaches actor-backed Drive, and the fixed trace produces an eligible
+topology marker. They also prove the release blocker stays fail closed without
+showing raw codes, interface and guidance-voice choices remain independent,
+and the evidence workbench requires its explicit launch argument. This is
 visual adapter evidence only; it does not qualify a physical device, acoustic
 quality, or real navigation.
 

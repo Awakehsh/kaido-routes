@@ -10,6 +10,15 @@ enum KaidoTheme {
   static let confirmedGreenToken = KaidoColorToken(hex: 0x6EC59B)
   static let positionCyanToken = KaidoColorToken(hex: 0x5FC9D5)
   static let mutedToken = KaidoColorToken(hex: 0x91A1A7)
+  static let paperToken = KaidoColorToken(hex: 0xF4F6F1)
+  static let paperRaisedToken = KaidoColorToken(hex: 0xFFFFFF)
+  static let inkToken = KaidoColorToken(hex: 0x142327)
+  static let routeGreenToken = KaidoColorToken(hex: 0x2F7258)
+  static let routeGreenDeepToken = KaidoColorToken(hex: 0x1E4D3D)
+  static let roadGrayToken = KaidoColorToken(hex: 0xAAB5B1)
+  static let quietTextToken = KaidoColorToken(hex: 0x5E6B68)
+  static let paperDividerToken = KaidoColorToken(hex: 0xD8DEDA)
+  static let surfaceWaterToken = KaidoColorToken(hex: 0xDDE9EC)
 
   static let asphalt = asphaltToken.color
   static let instrument = instrumentToken.color
@@ -20,6 +29,15 @@ enum KaidoTheme {
   static let confirmedGreen = confirmedGreenToken.color
   static let positionCyan = positionCyanToken.color
   static let muted = mutedToken.color
+  static let paper = paperToken.color
+  static let paperRaised = paperRaisedToken.color
+  static let ink = inkToken.color
+  static let routeGreen = routeGreenToken.color
+  static let routeGreenDeep = routeGreenDeepToken.color
+  static let roadGray = roadGrayToken.color
+  static let quietText = quietTextToken.color
+  static let paperDivider = paperDividerToken.color
+  static let surfaceWater = surfaceWaterToken.color
 }
 
 extension Color {

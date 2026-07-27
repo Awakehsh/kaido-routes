@@ -1,4 +1,5 @@
 import KaidoAppleAdapters
+import KaidoNavigation
 import SwiftUI
 
 struct SyntheticProductRuntimePanel: View {
@@ -18,6 +19,7 @@ struct SyntheticProductRuntimePanel: View {
       releaseIdentity
       runtimeMetrics
       actorState
+      simulationControls
       ReleasedRouteAtlasOverlayContainer(
         presentation: model.routeAtlasOverlayPresentation
       )
@@ -252,9 +254,9 @@ struct SyntheticProductRuntimePanel: View {
       } label: {
         Label(
           copy.resolve(
-            japanese: "固定 actor 入力を実行",
-            simplifiedChinese: "执行固定 actor 输入链",
-            english: "Run the fixed actor trace"
+            japanese: "入口アダプタのスモーク入力",
+            simplifiedChinese: "运行入口适配器冒烟输入",
+            english: "Run the entry-adapter smoke trace"
           ),
           systemImage: "point.3.connected.trianglepath.dotted"
         )
@@ -277,9 +279,9 @@ struct SyntheticProductRuntimePanel: View {
       .disabled(!model.canRunDeterministicPreviewTrace)
       .accessibilityLabel(
         copy.resolve(
-          japanese: "実時間位置情報に接続せず、固定 actor 入力を実行",
-          simplifiedChinese: "执行固定 actor 输入链，不连接实时定位",
-          english: "Run the fixed actor trace without live location"
+          japanese: "実時間位置情報に接続せず、入口アダプタのスモーク入力を実行",
+          simplifiedChinese: "运行入口适配器冒烟输入，不连接实时定位",
+          english: "Run the entry-adapter smoke trace without live location"
         )
       )
       .accessibilityIdentifier("product-runtime-run-trace")
@@ -287,6 +289,224 @@ struct SyntheticProductRuntimePanel: View {
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("product-runtime-presentation-state")
     .accessibilityValue(model.presentationState.label)
+  }
+
+  private var simulationControls: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "経路シミュレーション",
+              simplifiedChinese: "全程路线模拟",
+              english: "Full-route simulation"
+            )
+          )
+          .font(.system(size: 12, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+          Text("MATCHER → NAVIGATION SESSION → PRESENTATION")
+            .font(.system(size: 8, weight: .black, design: .monospaced))
+            .foregroundStyle(KaidoTheme.muted)
+        }
+
+        Spacer()
+
+        Text(model.simulationStatus?.state.rawValue ?? "UNAVAILABLE")
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(simulationColor)
+      }
+
+      if let status = model.simulationStatus {
+        ProgressView(value: status.progress)
+          .tint(KaidoTheme.positionCyan)
+
+        HStack(spacing: 8) {
+          RuntimeStateBadge(
+            label: "EVENTS",
+            value: "\(status.completedEventCount)/\(status.totalEventCount)"
+          )
+          RuntimeStateBadge(
+            label: "SPEED",
+            value: "\(status.speed.multiplier)×"
+          )
+          RuntimeStateBadge(
+            label: "FAULT",
+            value: model.simulationPreset.rawValue
+          )
+        }
+      }
+
+      HStack(spacing: 8) {
+        Button {
+          Task {
+            await model.playNavigationSimulation()
+          }
+        } label: {
+          Label(
+            copy.resolve(
+              japanese: "再生",
+              simplifiedChinese: "播放",
+              english: "Play"
+            ),
+            systemImage: "play.fill"
+          )
+          .font(.system(.caption, design: .rounded, weight: .black))
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 9)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(KaidoTheme.positionCyan)
+        .disabled(!model.canPlayNavigationSimulation)
+        .accessibilityIdentifier("product-runtime-simulation-play")
+
+        Button {
+          Task {
+            await model.pauseNavigationSimulation()
+          }
+        } label: {
+          Image(systemName: "pause.fill")
+            .font(.system(size: 12, weight: .black))
+            .padding(.vertical, 9)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.signalAmber)
+        .disabled(!model.canPauseNavigationSimulation)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "一時停止",
+            simplifiedChinese: "暂停",
+            english: "Pause"
+          )
+        )
+        .accessibilityIdentifier("product-runtime-simulation-pause")
+
+        Button {
+          Task {
+            await model.stepNavigationSimulation()
+          }
+        } label: {
+          Image(systemName: "forward.frame.fill")
+            .font(.system(size: 12, weight: .black))
+            .padding(.vertical, 9)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.routeWhite)
+        .disabled(!model.canStepNavigationSimulation)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "一ステップ進む",
+            simplifiedChinese: "单步前进",
+            english: "Step one event"
+          )
+        )
+        .accessibilityIdentifier("product-runtime-simulation-step")
+
+        Button {
+          Task {
+            await model.resetNavigationSimulation()
+          }
+        } label: {
+          Image(systemName: "arrow.counterclockwise")
+            .font(.system(size: 12, weight: .black))
+            .padding(.vertical, 9)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.muted)
+        .disabled(!model.canResetNavigationSimulation)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "シミュレーションをリセット",
+            simplifiedChinese: "重置模拟",
+            english: "Reset simulation"
+          )
+        )
+        .accessibilityIdentifier("product-runtime-simulation-reset")
+      }
+
+      HStack(spacing: 8) {
+        Menu {
+          ForEach(
+            ProductNavigationRuntimeSimulationPreset.allCases,
+            id: \.rawValue
+          ) { preset in
+            Button(simulationPresetLabel(preset)) {
+              Task {
+                await model.selectNavigationSimulationPreset(preset)
+              }
+            }
+          }
+        } label: {
+          Label(
+            simulationPresetLabel(model.simulationPreset),
+            systemImage: "waveform.path.ecg"
+          )
+          .font(.system(.caption2, design: .rounded, weight: .black))
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 8)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.evidenceCoral)
+        .accessibilityIdentifier("product-runtime-simulation-preset")
+
+        Menu {
+          ForEach(
+            NavigationDriveSimulationSpeed.allCases,
+            id: \.rawValue
+          ) { speed in
+            Button("\(speed.multiplier)×") {
+              Task {
+                await model.setNavigationSimulationSpeed(speed)
+              }
+            }
+          }
+        } label: {
+          Label(
+            "\(model.simulationStatus?.speed.multiplier ?? 1)×",
+            systemImage: "speedometer"
+          )
+          .font(.system(.caption2, design: .rounded, weight: .black))
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 8)
+        }
+        .buttonStyle(.bordered)
+        .tint(KaidoTheme.signalAmber)
+        .accessibilityIdentifier("product-runtime-simulation-speed")
+      }
+
+      Text(
+        copy.resolve(
+          japanese:
+            "入口承認を偽装せず、合成 strict-route seed から開始します。結果は実走証拠ではありません。",
+          simplifiedChinese:
+            "不伪造入口审批，从合成 strict-route seed 开始；结果不属于实车证据。",
+          english:
+            "Starts from a synthetic strict-route seed without forging entry admission; results are not field evidence."
+        )
+      )
+      .font(.system(size: 9, weight: .semibold))
+      .foregroundStyle(KaidoTheme.muted)
+
+      if let failure = model.simulationFailureCode {
+        Text(failure)
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+      }
+    }
+    .padding(12)
+    .background(KaidoTheme.asphalt.opacity(0.42))
+    .clipShape(RoundedRectangle(cornerRadius: 13))
+    .overlay(alignment: .leading) {
+      Rectangle()
+        .fill(simulationColor)
+        .frame(width: 2)
+        .padding(.vertical, 10)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-runtime-simulation")
+    .accessibilityValue(
+      model.simulationStatus?.state.rawValue ?? "UNAVAILABLE"
+    )
   }
 
   private var inputState: some View {
@@ -520,6 +740,50 @@ struct SyntheticProductRuntimePanel: View {
       KaidoTheme.positionCyan
     case .blocked:
       KaidoTheme.evidenceCoral
+    }
+  }
+
+  private var simulationColor: Color {
+    switch model.simulationStatus?.state {
+    case .playing:
+      KaidoTheme.positionCyan
+    case .paused, .ready:
+      KaidoTheme.signalAmber
+    case .completed:
+      KaidoTheme.routeWhite
+    case nil:
+      KaidoTheme.evidenceCoral
+    }
+  }
+
+  private func simulationPresetLabel(
+    _ preset: ProductNavigationRuntimeSimulationPreset
+  ) -> String {
+    switch preset {
+    case .clean:
+      copy.resolve(
+        japanese: "正常",
+        simplifiedChinese: "正常",
+        english: "Clean"
+      )
+    case .gpsDrift:
+      copy.resolve(
+        japanese: "GPS ドリフト",
+        simplifiedChinese: "GPS 漂移",
+        english: "GPS drift"
+      )
+    case .signalGap:
+      copy.resolve(
+        japanese: "信号中断",
+        simplifiedChinese: "信号中断",
+        english: "Signal gap"
+      )
+    case .poorAccuracy:
+      copy.resolve(
+        japanese: "低精度",
+        simplifiedChinese: "低精度",
+        english: "Poor accuracy"
+      )
     }
   }
 

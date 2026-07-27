@@ -1,0 +1,300 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S22",
+  "title": "Generic route-drive simulation preserves repeated occurrences and fail-closed gaps",
+  "layer": "SIMULATION",
+  "tags": ["simulation", "map-matching", "occurrence", "playback", "carplay"],
+  "purpose": "Exercise a complete deterministic RoutePlan trace through the matcher-to-navigation boundary without route-specific simulator logic, while preserving a repeated edge occurrence and refusing a branch commitment on the first post-gap observation.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The trace is generated synthetic input and does not prove device accuracy, live road state, legal movement evidence, or field reliability.",
+      "Playback speed is an adapter concern and cannot change the deterministic event timestamps asserted here."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.generic-drive-simulation-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-27T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.generic-drive-simulation",
+      "network_snapshot_id": "test.snapshot.generic-drive-simulation-v1",
+      "entry_facility_id": "test.entrance.generic",
+      "exit_facility_id": "test.exit.generic",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.edge-a.first",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.a"
+        },
+        {
+          "occurrence_id": "test.occurrence.turn",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.turn"
+        },
+        {
+          "occurrence_id": "test.occurrence.edge-a.second",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.a"
+        },
+        {
+          "occurrence_id": "test.occurrence.exit",
+          "index": 3,
+          "kind": "EDGE",
+          "entity_id": "test.edge.exit"
+        }
+      ]
+    },
+    "inputs": {
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.generic-drive-simulation",
+        "network_snapshot_id": "test.snapshot.generic-drive-simulation-v1",
+        "route_plan_id": "test.plan.generic-drive-simulation",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.a",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.76},
+              {"latitude": 35.68, "longitude": 139.761}
+            ],
+            "successor_edge_ids": ["test.edge.turn", "test.edge.exit"]
+          },
+          {
+            "directed_edge_id": "test.edge.turn",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.6802, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.a"]
+          },
+          {
+            "directed_edge_id": "test.edge.exit",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.68, "longitude": 139.762}
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.edge-a.first",
+            "index": 0,
+            "directed_edge_id": "test.edge.a"
+          },
+          {
+            "occurrence_id": "test.occurrence.turn",
+            "index": 1,
+            "directed_edge_id": "test.edge.turn"
+          },
+          {
+            "occurrence_id": "test.occurrence.edge-a.second",
+            "index": 2,
+            "directed_edge_id": "test.edge.a"
+          },
+          {
+            "occurrence_id": "test.occurrence.exit",
+            "index": 3,
+            "directed_edge_id": "test.edge.exit"
+          }
+        ]
+      },
+      "matcher_session_configuration": {
+        "ambiguity_margin_meters": 2,
+        "stale_observation_threshold_ms": 10000,
+        "observation_gap_threshold_ms": 10000,
+        "spatial_cell_size_meters": 50,
+        "maximum_active_states": 16,
+        "score_beam_width": 30
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.generic-drive-simulation",
+      "current_occurrence_id": "test.occurrence.edge-a.first",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start-navigation",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "start-matcher",
+      "at_ms": 0,
+      "type": "MATCHER_SESSION_STARTED",
+      "payload": {
+        "initial_occurrence_id": "test.occurrence.edge-a.first"
+      }
+    },
+    {
+      "id": "connect-carplay",
+      "at_ms": 500,
+      "type": "CARPLAY_CONNECTED",
+      "payload": {}
+    },
+    {
+      "id": "first-edge-early",
+      "at_ms": 1000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "first-edge-early",
+        "observed_at_ms": 1000,
+        "received_at_ms": 1000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7602},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "first-edge-late",
+      "at_ms": 2000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "first-edge-late",
+        "observed_at_ms": 2000,
+        "received_at_ms": 2000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7608},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "turn-confirmed",
+      "at_ms": 3000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "turn-confirmed",
+        "observed_at_ms": 3000,
+        "received_at_ms": 3000,
+        "coordinate": {"latitude": 35.6801, "longitude": 139.7611},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 39,
+        "speed_meters_per_second": 10,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "repeated-edge-early",
+      "at_ms": 4000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "repeated-edge-early",
+        "observed_at_ms": 4000,
+        "received_at_ms": 4000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7602},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "repeated-edge-late",
+      "at_ms": 5000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "repeated-edge-late",
+        "observed_at_ms": 5000,
+        "received_at_ms": 5000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7608},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "first-exit-post-gap",
+      "at_ms": 20000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "first-exit-post-gap",
+        "observed_at_ms": 20000,
+        "received_at_ms": 20000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7613},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    },
+    {
+      "id": "exit-confirmed",
+      "at_ms": 21000,
+      "type": "MATCHER_OBSERVATION_RECEIVED",
+      "payload": {
+        "observation_id": "exit-confirmed",
+        "observed_at_ms": 21000,
+        "received_at_ms": 21000,
+        "coordinate": {"latitude": 35.68, "longitude": 139.7618},
+        "horizontal_accuracy_meters": 3,
+        "course_degrees": 90,
+        "speed_meters_per_second": 15,
+        "source": "PHONE"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "projection-stays-with-carplay",
+      "after": "repeated-edge-late",
+      "category": "UI",
+      "subject": "presentation.active_surface",
+      "matcher": "EQUALS",
+      "expected": "CARPLAY",
+      "rationale": "Playback events cannot create an independent phone navigation state after projection ownership moves to CarPlay."
+    },
+    {
+      "id": "repeated-edge-is-a-distinct-occurrence",
+      "after": "repeated-edge-late",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.edge-a.second",
+      "rationale": "A repeated directed edge remains a fresh RoutePlan occurrence in the simulated drive."
+    },
+    {
+      "id": "first-post-gap-cannot-commit-exit",
+      "after": "first-exit-post-gap",
+      "category": "SAFETY",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.edge-a.second",
+      "rationale": "The first observation after a long signal gap seeds matcher state but cannot commit a later occurrence."
+    },
+    {
+      "id": "fresh-confirmation-reaches-terminal-occurrence",
+      "after": "exit-confirmed",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.exit",
+      "rationale": "A fresh follow-up observation may advance to the exact terminal RoutePlan occurrence."
+    },
+    {
+      "id": "simulation-never-requires-route-editing-while-moving",
+      "after": "exit-confirmed",
+      "category": "SAFETY",
+      "subject": "ui.requires_route_editing_while_moving",
+      "matcher": "EQUALS",
+      "expected": false,
+      "rationale": "The simulator exercises navigation output without introducing a moving-time route authoring path."
+    }
+  ]
+}

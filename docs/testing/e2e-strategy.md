@@ -368,6 +368,20 @@ rejects simulated evidence, and requires two forward exact-handoff observations
 before the actor enters `SURFACE_EGRESS`. Its coordinates and quality values are
 synthetic and do not qualify the App, a Core Location source, or field
 reliability.
+KR-S22 adds a route-independent whole-drive simulation boundary. The
+platform-light trace generator samples every ordered matcher-corridor
+occurrence, including repeated traversals, and may inject an
+occurrence-addressed coordinate offset, accuracy spike, receive delay, or
+signal gap. The actor controller supports deterministic play, pause, step,
+reset, and playback-speed selection; speed changes wall-clock delay only and
+never event timestamps or matcher input. It dispatches the trace through the
+real `RouteMatcherSession` and `NavigationSession`, activates Finish drive at
+the release-owned first eligible egress occurrence, and may complete only at
+the exact terminal exit handoff. The internal iPhone panel exposes these
+controls plus clean, GPS-drift, signal-gap, and poor-accuracy presets. The
+controller begins from an explicit synthetic strict-route seed instead of
+manufacturing entry-admission evidence, and neither its output nor Simulator
+interaction grants device, road, traffic, field, or release authority.
 Focused platform-light and Apple-adapter tests cover the separate
 surface-egress calibration boundary. They require exact release, candidate,
 corridor, occurrence, matcher, device, and field-transport scope; exercise

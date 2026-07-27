@@ -63,6 +63,7 @@ should become scenarios when their layer is built.
 | KR-S19 | Release-bound multi-edge entrance evidence is required before strict-route admission | P0 | Seeded |
 | KR-S20 | A release-bound surface-egress matcher requires two fresh exact handoff observations before leaving the exit transition | P0 | Seeded |
 | KR-S21 | An exit-only journey completes at its exact released exit handoff without entering surface egress | P0 | Seeded |
+| KR-S22 | A generic whole-route simulation preserves repeated occurrences and requires fresh confirmation after a signal gap | P0 | Seeded |
 
 ## iPhone and CarPlay experience
 

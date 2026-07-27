@@ -154,6 +154,41 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testFullRouteSimulationCanStepAndReset() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
+    app.launch()
+
+    let activation = element("product-runtime-activation", in: app)
+    XCTAssertTrue(activation.waitForExistence(timeout: 5))
+    XCTAssertEqual(activation.value as? String, "RUNTIME READY")
+
+    let simulation = element("product-runtime-simulation", in: app)
+    XCTAssertTrue(simulation.waitForExistence(timeout: 2))
+    XCTAssertEqual(simulation.value as? String, "READY")
+
+    let step = reveal("product-runtime-simulation-step", in: app)
+    XCTAssertTrue(step.isEnabled)
+    step.tap()
+
+    let paused = NSPredicate(format: "value == %@", "PAUSED")
+    expectation(for: paused, evaluatedWith: simulation)
+    waitForExpectations(timeout: 5)
+    XCTAssertTrue(
+      (element("product-runtime-snapshot", in: app).value as? String)?
+        .contains("STRICT_ROUTE") == true
+    )
+
+    let reset = reveal("product-runtime-simulation-reset", in: app)
+    XCTAssertTrue(reset.isEnabled)
+    reset.tap()
+
+    let ready = NSPredicate(format: "value == %@", "READY")
+    expectation(for: ready, evaluatedWith: simulation)
+    waitForExpectations(timeout: 5)
+  }
+
   private func element(
     _ identifier: String,
     in app: XCUIApplication
@@ -169,6 +204,9 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     XCTAssertTrue(target.waitForExistence(timeout: 2))
     for _ in 0..<8 where !target.isHittable {
       app.swipeUp()
+    }
+    for _ in 0..<12 where !target.isHittable {
+      app.swipeDown()
     }
     XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")
     return target

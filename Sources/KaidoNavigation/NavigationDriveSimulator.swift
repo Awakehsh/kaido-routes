@@ -1,0 +1,710 @@
+import Foundation
+import KaidoDomain
+import KaidoRouting
+
+/// Playback is deterministic: speed changes only the wall-clock delay used by
+/// an adapter and never changes observation timestamps or matcher input.
+public enum NavigationDriveSimulationSpeed: Int, CaseIterable, Sendable {
+  case realtime = 1
+  case fiveTimes = 5
+  case twentyTimes = 20
+
+  public var multiplier: Int {
+    rawValue
+  }
+}
+
+public enum NavigationDriveSimulationState: String, Equatable, Sendable {
+  case ready = "READY"
+  case playing = "PLAYING"
+  case paused = "PAUSED"
+  case completed = "COMPLETED"
+}
+
+public enum NavigationDriveSimulationEvidenceScope: String, Equatable, Sendable {
+  case syntheticTestOnly = "SYNTHETIC_TEST_ONLY"
+}
+
+public enum NavigationDriveSimulationError: Error, Equatable, Sendable {
+  case invalidConfiguration([String])
+  case invalidTrace([String])
+}
+
+public enum NavigationDriveSimulationAnomalyKind: Equatable, Sendable {
+  case horizontalAccuracyMeters(Double)
+  case coordinateOffsetMeters(north: Double, east: Double)
+  case receptionDelayMilliseconds(Int)
+  case signalGapBeforeMilliseconds(Int)
+}
+
+/// Targets one distinct RoutePlan occurrence and one generated sample.
+///
+/// Repeated traversals of the same directed edge remain independently
+/// addressable because the target is an occurrence ID, not an edge ID.
+public struct NavigationDriveSimulationAnomaly: Equatable, Sendable {
+  public let occurrenceID: String
+  public let sampleIndex: Int
+  public let kind: NavigationDriveSimulationAnomalyKind
+
+  public init(
+    occurrenceID: String,
+    sampleIndex: Int,
+    kind: NavigationDriveSimulationAnomalyKind
+  ) {
+    self.occurrenceID = occurrenceID
+    self.sampleIndex = sampleIndex
+    self.kind = kind
+  }
+}
+
+public struct NavigationDriveSimulationConfiguration: Equatable, Sendable {
+  public let startedAtMilliseconds: Int
+  public let observationIntervalMilliseconds: Int
+  public let sampleFractions: [Double]
+  public let horizontalAccuracyMeters: Double
+  public let speedMetersPerSecond: Double
+  public let source: MatcherLocationSource
+  public let anomalies: [NavigationDriveSimulationAnomaly]
+  public let completesAtExitHandoff: Bool
+
+  public init(
+    startedAtMilliseconds: Int = 1_000,
+    observationIntervalMilliseconds: Int = 1_000,
+    sampleFractions: [Double] = [0.15, 0.5, 0.85],
+    horizontalAccuracyMeters: Double = 3,
+    speedMetersPerSecond: Double = 15,
+    source: MatcherLocationSource = .phone,
+    anomalies: [NavigationDriveSimulationAnomaly] = [],
+    completesAtExitHandoff: Bool = false
+  ) {
+    self.startedAtMilliseconds = startedAtMilliseconds
+    self.observationIntervalMilliseconds = observationIntervalMilliseconds
+    self.sampleFractions = sampleFractions
+    self.horizontalAccuracyMeters = horizontalAccuracyMeters
+    self.speedMetersPerSecond = speedMetersPerSecond
+    self.source = source
+    self.anomalies = anomalies
+    self.completesAtExitHandoff = completesAtExitHandoff
+  }
+}
+
+public enum NavigationDriveSimulationAction: Equatable, Sendable {
+  case matcherObservation(RouteMatcherObservation)
+  case enterTunnel
+  case exitTunnel
+  case connectCarPlay
+  case disconnectCarPlay
+  case finishDrive
+  case completeAtExitHandoff
+}
+
+public struct NavigationDriveSimulationEvent: Equatable, Sendable {
+  public let id: String
+  public let atMilliseconds: Int
+  public let action: NavigationDriveSimulationAction
+
+  public init(
+    id: String,
+    atMilliseconds: Int,
+    action: NavigationDriveSimulationAction
+  ) {
+    self.id = id
+    self.atMilliseconds = atMilliseconds
+    self.action = action
+  }
+}
+
+public struct NavigationDriveSimulationTrace: Equatable, Sendable {
+  public let routePlanID: String
+  public let matcherCorridorID: String
+  public let events: [NavigationDriveSimulationEvent]
+
+  public init(
+    routePlanID: String,
+    matcherCorridorID: String,
+    events: [NavigationDriveSimulationEvent]
+  ) {
+    self.routePlanID = routePlanID
+    self.matcherCorridorID = matcherCorridorID
+    self.events = events
+  }
+
+  public var evidenceScope: NavigationDriveSimulationEvidenceScope {
+    .syntheticTestOnly
+  }
+
+  public var grantsNavigationAuthority: Bool {
+    false
+  }
+}
+
+public enum NavigationDriveSimulationTraceGenerator {
+  public static func generate(
+    routePlan: RoutePlan,
+    corridor: RouteMatcherCorridor,
+    egressOptions: [EgressOption] = [],
+    configuration: NavigationDriveSimulationConfiguration = .init()
+  ) throws -> NavigationDriveSimulationTrace {
+    let issues = validationIssues(
+      routePlan: routePlan,
+      corridor: corridor,
+      egressOptions: egressOptions,
+      configuration: configuration
+    )
+    guard issues.isEmpty else {
+      throw NavigationDriveSimulationError.invalidConfiguration(issues)
+    }
+
+    let edges = Dictionary(uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) })
+    let anomalies = Dictionary(
+      grouping: configuration.anomalies,
+      by: { SimulationSampleKey($0.occurrenceID, $0.sampleIndex) }
+    )
+    var events: [NavigationDriveSimulationEvent] = []
+    var observedAt = configuration.startedAtMilliseconds
+    var lastReceivedAt = configuration.startedAtMilliseconds
+    let finishOccurrenceIndex =
+      configuration.completesAtExitHandoff
+      ? egressOptions.compactMap {
+        routePlan.occurrence(id: $0.firstEligibleOccurrenceID)?.index
+      }.min()
+      : nil
+
+    for occurrence in corridor.occurrences.sorted(by: { $0.index < $1.index }) {
+      guard let edge = edges[occurrence.directedEdgeID] else { continue }
+      if occurrence.index == finishOccurrenceIndex {
+        events.append(
+          NavigationDriveSimulationEvent(
+            id: "simulation.finish-drive",
+            atMilliseconds: observedAt,
+            action: .finishDrive
+          )
+        )
+        observedAt += configuration.observationIntervalMilliseconds
+      }
+      for (sampleIndex, fraction) in configuration.sampleFractions.enumerated() {
+        let sampleKey = SimulationSampleKey(occurrence.id, sampleIndex)
+        let sampleAnomalies = anomalies[sampleKey] ?? []
+        let gap = sampleAnomalies.reduce(0) { partial, anomaly in
+          guard case .signalGapBeforeMilliseconds(let value) = anomaly.kind else {
+            return partial
+          }
+          return partial + value
+        }
+        observedAt += gap
+
+        var sample = coordinate(
+          along: edge.coordinates,
+          fraction: fraction
+        )
+        var accuracy = configuration.horizontalAccuracyMeters
+        var receptionDelay = 0
+        for anomaly in sampleAnomalies {
+          switch anomaly.kind {
+          case .horizontalAccuracyMeters(let value):
+            accuracy = value
+          case .coordinateOffsetMeters(let north, let east):
+            sample.coordinate = offset(
+              sample.coordinate,
+              northMeters: north,
+              eastMeters: east
+            )
+          case .receptionDelayMilliseconds(let value):
+            receptionDelay += value
+          case .signalGapBeforeMilliseconds:
+            break
+          }
+        }
+        let receivedAt = max(lastReceivedAt, observedAt + receptionDelay)
+        let observationID = "simulation.\(occurrence.index).\(sampleIndex)"
+        let observation = RouteMatcherObservation(
+          id: observationID,
+          observedAtMilliseconds: observedAt,
+          receivedAtMilliseconds: receivedAt,
+          coordinate: sample.coordinate,
+          horizontalAccuracyMeters: accuracy,
+          courseDegrees: sample.bearingDegrees,
+          speedMetersPerSecond: configuration.speedMetersPerSecond,
+          source: configuration.source
+        )
+        events.append(
+          NavigationDriveSimulationEvent(
+            id: observationID,
+            atMilliseconds: observedAt,
+            action: .matcherObservation(observation)
+          )
+        )
+        lastReceivedAt = receivedAt
+        observedAt += configuration.observationIntervalMilliseconds
+      }
+    }
+
+    if configuration.completesAtExitHandoff {
+      events.append(
+        NavigationDriveSimulationEvent(
+          id: "simulation.complete-exit-handoff",
+          atMilliseconds: observedAt,
+          action: .completeAtExitHandoff
+        )
+      )
+    }
+
+    return NavigationDriveSimulationTrace(
+      routePlanID: routePlan.id,
+      matcherCorridorID: corridor.id,
+      events: events
+    )
+  }
+
+  private static func validationIssues(
+    routePlan: RoutePlan,
+    corridor: RouteMatcherCorridor,
+    egressOptions: [EgressOption],
+    configuration: NavigationDriveSimulationConfiguration
+  ) -> [String] {
+    var issues: [String] = []
+    if corridor.routePlanID != routePlan.id {
+      issues.append("matcher corridor RoutePlan ID does not match")
+    }
+    if corridor.networkSnapshotID != routePlan.networkSnapshotID {
+      issues.append("matcher corridor network snapshot ID does not match")
+    }
+    if corridor.occurrences.map(\.id) != routePlan.occurrences.map(\.id) {
+      issues.append("matcher corridor occurrence order does not match RoutePlan")
+    }
+    issues.append(contentsOf: corridor.validationIssues)
+    if configuration.startedAtMilliseconds < 0 {
+      issues.append("simulation start time is negative")
+    }
+    if configuration.observationIntervalMilliseconds <= 0 {
+      issues.append("simulation observation interval is not positive")
+    }
+    if configuration.sampleFractions.count < 2
+      || configuration.sampleFractions.contains(where: {
+        !$0.isFinite || $0 <= 0 || $0 >= 1
+      })
+      || zip(
+        configuration.sampleFractions,
+        configuration.sampleFractions.dropFirst()
+      ).contains(where: { $0 >= $1 })
+    {
+      issues.append("simulation sample fractions are invalid")
+    }
+    if !configuration.horizontalAccuracyMeters.isFinite
+      || configuration.horizontalAccuracyMeters <= 0
+    {
+      issues.append("simulation horizontal accuracy is invalid")
+    }
+    if !configuration.speedMetersPerSecond.isFinite
+      || configuration.speedMetersPerSecond < 0
+    {
+      issues.append("simulation speed is invalid")
+    }
+    if configuration.completesAtExitHandoff,
+      !egressOptions.contains(where: {
+        $0.isReleased
+          && $0.exitFacilityID == routePlan.exitFacilityID
+          && routePlan.occurrence(id: $0.firstEligibleOccurrenceID) != nil
+      })
+    {
+      issues.append("simulation released egress option is missing")
+    }
+
+    let occurrenceIDs = Set(corridor.occurrences.map(\.id))
+    for anomaly in configuration.anomalies {
+      if !occurrenceIDs.contains(anomaly.occurrenceID) {
+        issues.append("simulation anomaly occurrence is unknown")
+      }
+      if !configuration.sampleFractions.indices.contains(anomaly.sampleIndex) {
+        issues.append("simulation anomaly sample index is invalid")
+      }
+      switch anomaly.kind {
+      case .horizontalAccuracyMeters(let value):
+        if !value.isFinite || value <= 0 {
+          issues.append("simulation anomaly accuracy is invalid")
+        }
+      case .coordinateOffsetMeters(let north, let east):
+        if !north.isFinite || !east.isFinite {
+          issues.append("simulation anomaly coordinate offset is invalid")
+        }
+      case .receptionDelayMilliseconds(let value),
+        .signalGapBeforeMilliseconds(let value):
+        if value < 0 {
+          issues.append("simulation anomaly time is negative")
+        }
+      }
+    }
+    return Array(Set(issues)).sorted()
+  }
+
+  private static func coordinate(
+    along coordinates: [MatcherCoordinate],
+    fraction: Double
+  ) -> SimulationCoordinateSample {
+    let segments = zip(coordinates, coordinates.dropFirst()).map {
+      (
+        start: $0,
+        end: $1,
+        length: matcherCoordinateDistanceMeters($0, $1)
+      )
+    }
+    let totalLength = segments.reduce(0) { $0 + $1.length }
+    var target = totalLength * fraction
+    for (index, segment) in segments.enumerated() {
+      if target <= segment.length || index == segments.count - 1 {
+        let segmentFraction =
+          segment.length > 0 ? min(1, max(0, target / segment.length)) : 0
+        return SimulationCoordinateSample(
+          coordinate: MatcherCoordinate(
+            latitude: segment.start.latitude
+              + (segment.end.latitude - segment.start.latitude) * segmentFraction,
+            longitude: segment.start.longitude
+              + (segment.end.longitude - segment.start.longitude) * segmentFraction
+          ),
+          bearingDegrees: bearing(
+            from: segment.start,
+            to: segment.end
+          )
+        )
+      }
+      target -= segment.length
+    }
+    return SimulationCoordinateSample(
+      coordinate: coordinates.last!,
+      bearingDegrees: bearing(
+        from: coordinates[coordinates.count - 2],
+        to: coordinates.last!
+      )
+    )
+  }
+
+  private static func bearing(
+    from start: MatcherCoordinate,
+    to end: MatcherCoordinate
+  ) -> Double {
+    let latitude1 = start.latitude * .pi / 180
+    let latitude2 = end.latitude * .pi / 180
+    let deltaLongitude = (end.longitude - start.longitude) * .pi / 180
+    let y = sin(deltaLongitude) * cos(latitude2)
+    let x =
+      cos(latitude1) * sin(latitude2)
+      - sin(latitude1) * cos(latitude2) * cos(deltaLongitude)
+    let degrees = atan2(y, x) * 180 / .pi
+    return degrees >= 0 ? degrees : degrees + 360
+  }
+
+  private static func offset(
+    _ coordinate: MatcherCoordinate,
+    northMeters: Double,
+    eastMeters: Double
+  ) -> MatcherCoordinate {
+    let earthRadiusMeters = 6_371_000.0
+    let latitudeRadians = coordinate.latitude * .pi / 180
+    let latitudeDelta = northMeters / earthRadiusMeters
+    let longitudeDelta =
+      eastMeters / max(1, earthRadiusMeters * cos(latitudeRadians))
+    return MatcherCoordinate(
+      latitude: coordinate.latitude + latitudeDelta * 180 / .pi,
+      longitude: coordinate.longitude + longitudeDelta * 180 / .pi
+    )
+  }
+}
+
+public struct NavigationDriveSimulationStatus: Equatable, Sendable {
+  public let state: NavigationDriveSimulationState
+  public let speed: NavigationDriveSimulationSpeed
+  public let completedEventCount: Int
+  public let totalEventCount: Int
+  public let lastEventID: String?
+
+  public var progress: Double {
+    guard totalEventCount > 0 else { return 0 }
+    return Double(completedEventCount) / Double(totalEventCount)
+  }
+
+  public var evidenceScope: NavigationDriveSimulationEvidenceScope {
+    .syntheticTestOnly
+  }
+
+  public var grantsNavigationAuthority: Bool {
+    false
+  }
+}
+
+public struct NavigationDriveSimulationStepResult: Equatable, Sendable {
+  public let event: NavigationDriveSimulationEvent
+  public let eventIndex: Int
+  public let navigationSnapshot: NavigationSnapshot
+  public let navigationUpdate: NavigationSessionUpdate?
+  public let status: NavigationDriveSimulationStatus
+}
+
+/// A synthetic-only controller around the real route matcher and
+/// `NavigationSession` reducer.
+///
+/// It seeds strict-route state explicitly instead of manufacturing
+/// release-bound entrance evidence. Its output is deterministic test evidence
+/// and never field, road, traffic, or release authority.
+public actor NavigationDriveSimulator {
+  public nonisolated let evidenceScope: NavigationDriveSimulationEvidenceScope = .syntheticTestOnly
+  public let releaseID: String
+  public let routePlanID: String
+  public let matcherCorridorID: String
+  public let trace: NavigationDriveSimulationTrace
+
+  public nonisolated var grantsNavigationAuthority: Bool {
+    false
+  }
+
+  private let release: KaidoProductRelease
+  private var session: NavigationSession
+  private var eventIndex = 0
+  private var state: NavigationDriveSimulationState = .ready
+  private var speed: NavigationDriveSimulationSpeed
+  private var lastEventID: String?
+  private var sessionStarted = false
+
+  public init(
+    release: KaidoProductRelease,
+    configuration: NavigationDriveSimulationConfiguration = .init(),
+    speed: NavigationDriveSimulationSpeed = .fiveTimes
+  ) throws {
+    let trace = try NavigationDriveSimulationTraceGenerator.generate(
+      routePlan: release.navigation.bundle.routePlan,
+      corridor: release.navigation.bundle.matcherCorridor,
+      egressOptions: release.navigation.bundle.runtimePolicy.egressOptions,
+      configuration: configuration
+    )
+    try self.init(release: release, trace: trace, speed: speed)
+  }
+
+  public init(
+    release: KaidoProductRelease,
+    trace: NavigationDriveSimulationTrace,
+    speed: NavigationDriveSimulationSpeed = .fiveTimes
+  ) throws {
+    let bundle = release.navigation.bundle
+    var issues: [String] = []
+    if trace.routePlanID != bundle.routePlan.id {
+      issues.append("simulation trace RoutePlan ID does not match release")
+    }
+    if trace.matcherCorridorID != bundle.matcherCorridor.id {
+      issues.append("simulation trace matcher corridor ID does not match release")
+    }
+    if trace.events.isEmpty {
+      issues.append("simulation trace is empty")
+    }
+    let eventIDs = trace.events.map(\.id)
+    if Set(eventIDs).count != eventIDs.count
+      || eventIDs.contains(where: {
+        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      })
+    {
+      issues.append("simulation event IDs are invalid")
+    }
+    if trace.events.contains(where: { $0.atMilliseconds < 0 })
+      || zip(trace.events, trace.events.dropFirst()).contains(where: {
+        $0.atMilliseconds > $1.atMilliseconds
+      })
+    {
+      issues.append("simulation event times are invalid")
+    }
+    guard issues.isEmpty else {
+      throw NavigationDriveSimulationError.invalidTrace(issues.sorted())
+    }
+
+    self.release = release
+    self.trace = trace
+    self.speed = speed
+    releaseID = release.releaseID
+    routePlanID = trace.routePlanID
+    matcherCorridorID = trace.matcherCorridorID
+    session = try Self.makeSession(release: release)
+  }
+
+  public var status: NavigationDriveSimulationStatus {
+    currentStatus
+  }
+
+  public var navigationSnapshot: NavigationSnapshot {
+    get async {
+      await session.snapshot
+    }
+  }
+
+  public func setSpeed(
+    _ speed: NavigationDriveSimulationSpeed
+  ) -> NavigationDriveSimulationStatus {
+    self.speed = speed
+    return currentStatus
+  }
+
+  public func play() -> NavigationDriveSimulationStatus {
+    guard state != .completed else { return currentStatus }
+    state = .playing
+    return currentStatus
+  }
+
+  public func pause() -> NavigationDriveSimulationStatus {
+    guard state != .completed else { return currentStatus }
+    state = .paused
+    return currentStatus
+  }
+
+  public func step() async throws -> NavigationDriveSimulationStepResult? {
+    guard state != .completed else { return nil }
+    state = .paused
+    return try await processNextEvent()
+  }
+
+  public func advanceIfPlaying() async throws
+    -> NavigationDriveSimulationStepResult?
+  {
+    guard state == .playing else { return nil }
+    return try await processNextEvent()
+  }
+
+  public func runToEnd() async throws -> [NavigationDriveSimulationStepResult] {
+    guard state != .completed else { return [] }
+    state = .playing
+    var results: [NavigationDriveSimulationStepResult] = []
+    while state == .playing {
+      guard let result = try await processNextEvent() else { break }
+      results.append(result)
+    }
+    return results
+  }
+
+  public func reset() async throws -> NavigationDriveSimulationStatus {
+    session = try Self.makeSession(release: release)
+    eventIndex = 0
+    state = .ready
+    lastEventID = nil
+    sessionStarted = false
+    _ = await startSessionIfNeeded()
+    return currentStatus
+  }
+
+  public func delayBeforeNextEventMilliseconds() -> Int? {
+    guard eventIndex < trace.events.count else { return nil }
+    let previousTime =
+      eventIndex == 0
+      ? trace.events[0].atMilliseconds
+      : trace.events[eventIndex - 1].atMilliseconds
+    let delta = max(
+      0,
+      trace.events[eventIndex].atMilliseconds - previousTime
+    )
+    return delta / speed.multiplier
+  }
+
+  private var currentStatus: NavigationDriveSimulationStatus {
+    NavigationDriveSimulationStatus(
+      state: state,
+      speed: speed,
+      completedEventCount: eventIndex,
+      totalEventCount: trace.events.count,
+      lastEventID: lastEventID
+    )
+  }
+
+  private func processNextEvent() async throws
+    -> NavigationDriveSimulationStepResult?
+  {
+    guard eventIndex < trace.events.count else {
+      state = .completed
+      return nil
+    }
+    _ = await startSessionIfNeeded()
+    let currentIndex = eventIndex
+    let event = trace.events[currentIndex]
+    let update: NavigationSessionUpdate?
+    let snapshot: NavigationSnapshot
+    switch event.action {
+    case .matcherObservation(let observation):
+      let result = try await session.observe(observation)
+      update = result
+      snapshot = result.navigationSnapshot
+    case .enterTunnel:
+      update = nil
+      snapshot = await session.enterTunnel()
+    case .exitTunnel:
+      update = nil
+      snapshot = await session.exitTunnel()
+    case .connectCarPlay:
+      update = nil
+      snapshot = await session.connectCarPlay()
+    case .disconnectCarPlay:
+      update = nil
+      snapshot = await session.disconnectCarPlay()
+    case .finishDrive:
+      update = nil
+      snapshot = await session.finishDrive()
+    case .completeAtExitHandoff:
+      update = nil
+      snapshot = await session.completeAtExitHandoff()
+    }
+    eventIndex += 1
+    lastEventID = event.id
+    if eventIndex == trace.events.count {
+      state = .completed
+    }
+    return NavigationDriveSimulationStepResult(
+      event: event,
+      eventIndex: currentIndex,
+      navigationSnapshot: snapshot,
+      navigationUpdate: update,
+      status: currentStatus
+    )
+  }
+
+  @discardableResult
+  private func startSessionIfNeeded() async -> NavigationSnapshot {
+    guard !sessionStarted else { return await session.snapshot }
+    sessionStarted = true
+    return await session.start()
+  }
+
+  private static func makeSession(
+    release: KaidoProductRelease
+  ) throws -> NavigationSession {
+    let bundle = release.navigation.bundle
+    let firstOccurrenceID = bundle.routePlan.occurrences.first?.id
+    var initialSnapshot = NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      activeRoutePlanID: bundle.routePlan.id,
+      currentOccurrenceID: firstOccurrenceID,
+      locationConfidence: .low
+    )
+    initialSnapshot.lastPhaseTransitionTrigger =
+      "SYNTHETIC_SIMULATION_STRICT_ROUTE_SEED"
+    return try NavigationSession(
+      navigationConfiguration: NavigationConfiguration(
+        routePlan: bundle.routePlan,
+        recoveryCandidates: bundle.runtimePolicy.recoveryCandidates,
+        egressOptions: bundle.runtimePolicy.egressOptions,
+        releasedGuidance: bundle.releasedGuidance,
+        allowsUserConfirmedExitHandoffCompletion: true
+      ),
+      matcherCorridor: bundle.matcherCorridor,
+      decisionZones: bundle.decisionZones,
+      initialNavigationSnapshot: initialSnapshot,
+      initialMatcherOccurrenceID: firstOccurrenceID
+    )
+  }
+}
+
+private struct SimulationSampleKey: Hashable {
+  let occurrenceID: String
+  let sampleIndex: Int
+
+  init(_ occurrenceID: String, _ sampleIndex: Int) {
+    self.occurrenceID = occurrenceID
+    self.sampleIndex = sampleIndex
+  }
+}
+
+private struct SimulationCoordinateSample {
+  var coordinate: MatcherCoordinate
+  let bearingDegrees: Double
+}

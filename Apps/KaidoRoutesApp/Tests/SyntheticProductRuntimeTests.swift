@@ -288,6 +288,62 @@ final class SyntheticProductRuntimeTests: XCTestCase {
   }
 
   @MainActor
+  func testFullRouteSimulationSupportsStepSpeedPresetAndReset() async throws {
+    let model = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: RecordingGuidanceSpeechOutput()
+    )
+    await model.activate()
+
+    XCTAssertEqual(model.simulationStatus?.state, .ready)
+    XCTAssertEqual(model.simulationStatus?.completedEventCount, 0)
+    XCTAssertTrue(model.canStepNavigationSimulation)
+
+    await model.stepNavigationSimulation()
+
+    XCTAssertEqual(model.simulationStatus?.state, .paused)
+    XCTAssertEqual(model.simulationStatus?.completedEventCount, 1)
+    XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
+    XCTAssertFalse(model.isRealRoadAuthority)
+
+    await model.setNavigationSimulationSpeed(.twentyTimes)
+    XCTAssertEqual(model.simulationStatus?.speed, .twentyTimes)
+
+    await model.selectNavigationSimulationPreset(.signalGap)
+    XCTAssertEqual(model.simulationPreset, .signalGap)
+    XCTAssertEqual(model.simulationStatus?.state, .ready)
+    XCTAssertEqual(model.simulationStatus?.completedEventCount, 0)
+    XCTAssertEqual(model.simulationStatus?.speed, .twentyTimes)
+
+    await model.resetNavigationSimulation()
+    XCTAssertEqual(model.simulationStatus?.state, .ready)
+    XCTAssertEqual(model.snapshot?.journeyPhase, .strictRoute)
+    XCTAssertNil(model.presentationProjection)
+  }
+
+  @MainActor
+  func testFullRouteSimulationRunsMatcherSessionToExitHandoff() async throws {
+    let model = try SyntheticProductRuntimeModel(
+      fixture: SyntheticProductRuntimeFixture.bundled(),
+      sourceEvidenceProvider: FixedSourceEvidenceProvider(isSimulated: false),
+      speechOutput: RecordingGuidanceSpeechOutput()
+    )
+    await model.activate()
+
+    await model.runNavigationSimulationToEnd()
+
+    XCTAssertEqual(model.simulationStatus?.state, .completed)
+    XCTAssertEqual(
+      model.simulationStatus?.completedEventCount,
+      model.simulationStatus?.totalEventCount
+    )
+    XCTAssertEqual(model.snapshot?.journeyPhase, .completed)
+    XCTAssertNil(model.snapshot?.currentOccurrenceID)
+    XCTAssertFalse(model.isRealRoadAuthority)
+  }
+
+  @MainActor
   func testLanguageSelectionProviderControlsOneAtomicProjection() async throws {
     let speechOutput = RecordingGuidanceSpeechOutput()
     let model = try SyntheticProductRuntimeModel(

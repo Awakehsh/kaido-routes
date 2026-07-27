@@ -172,13 +172,18 @@ from that topology; and all 13 RoutePlan occurrences remain separately bound.
 The layout stops at topology node `osm.node.7473451738`. It renders none of the
 three adjacent surface ways `734299108`, `734299111`, or `776884422`. A terminal
 bar communicates the evidence boundary without inventing a disconnected road
-or implying that the drive must stop there. The generated SVG carries OpenStreetMap
-attribution and remains `CANDIDATE`, non-selectable, and non-navigable.
+or implying that the drive must stop there. The generated SVG carries
+OpenStreetMap attribution and remains `CANDIDATE`, non-selectable, and
+non-navigable. The separate schema-1.0 Route Atlas artifact approved on
+2026-07-27 may be rendered only through a validated product composition; the
+candidate SVG itself never becomes authority.
 
-KR-D24 proves that the schematic has no structural release issue beyond the
-expected unreleased topology and layout evidence states. It advances production
-layout review; it does not release the current surface movement, field evidence,
-realtime state, or navigation authority.
+KR-D24 proves that the schematic candidate has no structural release issue
+beyond its expected unreleased topology and layout evidence states. Different
+independent topology and layout reviewers subsequently approved the exact
+exit-only scope, and the final renderer-neutral artifact passes
+`kaido-atlas validate-release`. It does not release surface movement, field
+evidence, realtime state, or navigation authority.
 
 The first K7 product scope may therefore end at this terminal as an
 `EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE`. In that scope, the terminal RoutePlan
@@ -186,7 +191,9 @@ occurrence and boundary bar are inside the candidate, while all three ordinary-
 road successors and `SURFACE_EGRESS` are outside it. The unresolved identity and
 field review for way `776884422` remain visible future-expansion gates; they are
 not treated as satisfied and cannot be reused as evidence for a later surface
-route. Topology and layout still require their own independent release reviews.
+route. Those independent reviews are complete for the exit-only Route Atlas
+artifact. They do not satisfy the future surface-egress road-identity or field
+gates.
 
 ## Current sources
 
@@ -199,3 +206,4 @@ route. Topology and layout still require their own independent release reviews.
 - [Full-network recognition reference](../../data/route-atlas/design/shuto-route-atlas-recognition-reference.svg)
 - [OSM-derived K7 candidate provenance](../../data/route-atlas/osm-derived/README.md)
 - [K7 schematic layout candidate](../../data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg)
+- [K7 Route Atlas release](../../data/route-atlas/releases/README.md)

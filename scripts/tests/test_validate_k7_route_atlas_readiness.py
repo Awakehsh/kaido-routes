@@ -46,11 +46,27 @@ DISTRIBUTION_REVIEW_PATH = (
 )
 TOPOLOGY_REVIEW_PATH = (
     REPOSITORY_ROOT / "data/route-atlas/candidates/"
-    "k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json"
+    "k7-northwest-up-aoba-to-kohoku-topology-release-review.json"
 )
 LAYOUT_REVIEW_PATH = (
     REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-layout-release-review.json"
+)
+TOPOLOGY_REVIEW_TEMPLATE_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
+    "k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json"
+)
+LAYOUT_REVIEW_TEMPLATE_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/candidates/"
     "k7-northwest-up-aoba-to-kohoku-layout-release-review.template.json"
+)
+RELEASE_DRAFT_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/releases/"
+    "k7-northwest-up-aoba-to-kohoku-route-atlas-release-draft.json"
+)
+RELEASE_AUTHORING_PATH = (
+    REPOSITORY_ROOT / "data/route-atlas/releases/"
+    "k7-northwest-up-aoba-to-kohoku-route-atlas-release-authoring.json"
 )
 
 
@@ -123,16 +139,41 @@ def completed_road_register_review() -> dict:
     return review
 
 
+def released_authoring(
+    candidate: dict,
+    topology_review: dict,
+    layout_review: dict,
+) -> dict:
+    return {
+        "schema_version": "1.0",
+        "source_registry": candidate["source_registry"],
+        "topology_evidence": {
+            "checked_at": topology_review["decision"]["reviewed_at"][:10],
+            "source_reference_ids": candidate["topology_slice"]["evidence"][
+                "source_reference_ids"
+            ],
+            "state": "RELEASED",
+        },
+        "layout_evidence": {
+            "checked_at": layout_review["decision"]["reviewed_at"][:10],
+            "source_reference_ids": candidate["definition"]["evidence"][
+                "source_reference_ids"
+            ],
+            "state": "RELEASED",
+        },
+    }
+
+
 class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
-    def test_tracked_exit_handoff_candidate_has_exact_release_blockers(self) -> None:
+    def test_tracked_exit_handoff_candidate_passes_all_release_gates(self) -> None:
         report = validator.evaluate(
             load(READINESS_PATH),
-            date(2026, 7, 25),
+            date(2026, 7, 27),
             REPOSITORY_ROOT,
         )
 
-        self.assertEqual(report["status"], "BLOCKED")
-        self.assertFalse(report["candidate_ready_for_release_validation"])
+        self.assertEqual(report["status"], "READY_FOR_RELEASE_VALIDATION")
+        self.assertTrue(report["candidate_ready_for_release_validation"])
         self.assertFalse(report["navigation_authority"])
         self.assertEqual(
             report["satisfied_gate_ids"],
@@ -140,18 +181,15 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 "ARTIFACT_BINDINGS",
                 "DIRECTED_CANDIDATE_STRUCTURE",
                 "EXIT_HANDOFF_BOUNDARY",
+                "LAYOUT_RELEASE_EVIDENCE",
                 "ODBL_DISTRIBUTION",
                 "SOURCE_ADJACENCY",
                 "SURFACE_SUCCESSORS_EXCLUDED",
+                "TOPOLOGY_RELEASE_EVIDENCE",
             ],
         )
-        self.assertEqual(
-            report["blocker_codes"],
-            [
-                "UNRELEASED_ATLAS_EVIDENCE",
-                "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE",
-            ],
-        )
+        self.assertEqual(report["blocked_gate_ids"], [])
+        self.assertEqual(report["blocker_codes"], [])
         self.assertEqual(
             report["future_surface_egress_blocker_codes"],
             [
@@ -174,14 +212,14 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         self.assertFalse(report["realtime_release_blocking"])
         self.assertEqual(
             report["topology_release_review_status"],
-            "PENDING",
+            "APPROVED",
         )
-        self.assertFalse(report["topology_release_review_current"])
+        self.assertTrue(report["topology_release_review_current"])
         self.assertEqual(
             report["layout_release_review_status"],
-            "PENDING",
+            "APPROVED",
         )
-        self.assertFalse(report["layout_release_review_current"])
+        self.assertTrue(report["layout_release_review_current"])
 
     def test_artifact_digest_drift_is_rejected(self) -> None:
         readiness = load(READINESS_PATH)
@@ -193,7 +231,26 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
+                REPOSITORY_ROOT,
+            )
+
+    def test_final_authoring_binding_digest_drift_is_rejected(self) -> None:
+        readiness = load(READINESS_PATH)
+        authoring_binding = next(
+            binding
+            for binding in readiness["artifact_bindings"]
+            if binding["role"] == "ROUTE_ATLAS_RELEASE_AUTHORING"
+        )
+        authoring_binding["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "artifact binding digest drifted",
+        ):
+            validator.evaluate(
+                readiness,
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
@@ -207,7 +264,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
@@ -226,6 +283,82 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_candidate(candidate)
 
+    def test_generated_candidate_promotion_is_rejected(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        candidate["topology_slice"]["evidence"]["state"] = "RELEASED"
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "must remain CANDIDATE",
+        ):
+            validator.validate_candidate(candidate)
+
+    def test_release_draft_must_be_exact_candidate_projection(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        topology_review = load(TOPOLOGY_REVIEW_PATH)
+        layout_review = load(LAYOUT_REVIEW_PATH)
+        draft = load(RELEASE_DRAFT_PATH)
+        draft["definition"]["segments"][0]["successor_segment_ids"] = []
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "exact candidate projection",
+        ):
+            validator.validate_release_inputs(
+                candidate,
+                draft,
+                released_authoring(candidate, topology_review, layout_review),
+                topology_review,
+                layout_review,
+            )
+
+    def test_release_authoring_source_registry_drift_is_rejected(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        topology_review = load(TOPOLOGY_REVIEW_PATH)
+        layout_review = load(LAYOUT_REVIEW_PATH)
+        authoring = released_authoring(candidate, topology_review, layout_review)
+        authoring["source_registry"] = {"references": []}
+
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "source registry has drifted",
+        ):
+            validator.validate_release_inputs(
+                candidate,
+                validator.release_draft_projection(candidate),
+                authoring,
+                topology_review,
+                layout_review,
+            )
+
+    def test_release_evidence_must_match_review_date_and_source_ids(self) -> None:
+        candidate = load(CANDIDATE_PATH)
+        topology_review = load(TOPOLOGY_REVIEW_PATH)
+        layout_review = load(LAYOUT_REVIEW_PATH)
+        for field, value in (
+            ("checked_at", "2026-07-26"),
+            ("source_reference_ids", ["unreviewed.source"]),
+        ):
+            with self.subTest(field=field):
+                authoring = released_authoring(
+                    candidate,
+                    topology_review,
+                    layout_review,
+                )
+                authoring["layout_evidence"][field] = value
+
+                with self.assertRaisesRegex(
+                    validator.ReadinessError,
+                    "not bound to its approved review",
+                ):
+                    validator.validate_release_inputs(
+                        candidate,
+                        validator.release_draft_projection(candidate),
+                        authoring,
+                        topology_review,
+                        layout_review,
+                    )
+
     def test_terminal_occurrence_drift_is_rejected(self) -> None:
         candidate = load(CANDIDATE_PATH)
         candidate["route_plan"]["occurrences"][-1]["entity_id"] = (
@@ -243,7 +376,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
         report = validator.evaluate(
             readiness,
-            date(2026, 7, 25),
+            date(2026, 7, 27),
             REPOSITORY_ROOT,
             completed_field_review(),
         )
@@ -281,7 +414,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     ) -> None:
         report = validator.evaluate(
             load(READINESS_PATH),
-            date(2026, 7, 25),
+            date(2026, 7, 27),
             REPOSITORY_ROOT,
             road_register_review_override=completed_road_register_review(),
         )
@@ -315,7 +448,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
     def test_pending_topology_review_blocks_a_released_state(self) -> None:
         complete, reviewer_id, status = validator.evaluate_topology_release_review(
-            load(TOPOLOGY_REVIEW_PATH),
+            load(TOPOLOGY_REVIEW_TEMPLATE_PATH),
             date(2026, 7, 25),
             REPOSITORY_ROOT,
             "RELEASED",
@@ -327,7 +460,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
 
     def test_pending_layout_review_blocks_a_released_state(self) -> None:
         complete, reviewer_id, status = validator.evaluate_layout_release_review(
-            load(LAYOUT_REVIEW_PATH),
+            load(LAYOUT_REVIEW_TEMPLATE_PATH),
             date(2026, 7, 25),
             REPOSITORY_ROOT,
             "RELEASED",
@@ -341,7 +474,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         self.assertEqual(status, "PENDING")
 
     def test_release_review_binding_digest_drift_is_rejected(self) -> None:
-        review = load(TOPOLOGY_REVIEW_PATH)
+        review = load(TOPOLOGY_REVIEW_TEMPLATE_PATH)
         review["artifact_bindings"][0]["content_sha256"] = "0" * 64
 
         with self.assertRaisesRegex(
@@ -376,8 +509,28 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
                 "topology_release_review",
             )
 
+    def test_release_review_expiry_is_not_current(self) -> None:
+        decision = {
+            "status": "APPROVED",
+            "reviewer_id": "independent-topology-reviewer",
+            "reviewer_role": "INDEPENDENT_TOPOLOGY_REVIEWER",
+            "reviewed_at": "2026-07-27T12:00:00+09:00",
+            "valid_through": "2026-08-26",
+            "blocker_codes": [],
+        }
+
+        current, reviewer_id = validator.evaluate_release_review_decision(
+            decision,
+            date(2026, 8, 27),
+            "INDEPENDENT_TOPOLOGY_REVIEWER",
+            "topology_release_review",
+        )
+
+        self.assertFalse(current)
+        self.assertEqual(reviewer_id, "independent-topology-reviewer")
+
     def test_approved_reviews_require_distinct_current_reviewers(self) -> None:
-        topology_review = load(TOPOLOGY_REVIEW_PATH)
+        topology_review = load(TOPOLOGY_REVIEW_TEMPLATE_PATH)
         topology_review["required_checks"] = {
             "candidate_structure": "SATISFIED",
             "source_adjacency": "SATISFIED",
@@ -403,7 +556,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         )
         self.assertTrue(topology_complete)
 
-        layout_review = load(LAYOUT_REVIEW_PATH)
+        layout_review = load(LAYOUT_REVIEW_TEMPLATE_PATH)
         layout_review["required_checks"] = {
             "topology_release_review": "SATISFIED",
             "layout_identity_and_coverage": "SATISFIED",
@@ -588,7 +741,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
@@ -652,13 +805,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
     def test_declared_decision_must_match_derived_result(self) -> None:
         readiness = load(READINESS_PATH)
-        readiness["expected_decision"]["blocker_codes"] = []
+        readiness["expected_decision"]["status"] = "BLOCKED"
 
         with self.assertRaisesRegex(
             validator.ReadinessError,
@@ -666,7 +819,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.evaluate(
                 readiness,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 

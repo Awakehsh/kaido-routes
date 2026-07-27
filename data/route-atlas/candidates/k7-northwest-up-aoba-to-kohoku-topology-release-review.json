@@ -2,7 +2,7 @@
   "schema_version": "2.0",
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.exit-handoff-topology-release-review.2026-07-26",
   "review_type": "TOPOLOGY_RELEASE_REVIEW",
-  "assessed_at": "2026-07-24",
+  "assessed_at": "2026-07-27",
   "navigation_authority": false,
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
@@ -35,16 +35,14 @@
     "source_adjacency": "SATISFIED",
     "exit_handoff_boundary": "SATISFIED",
     "surface_successors_excluded": "SATISFIED",
-    "independent_topology_review": "PENDING"
+    "independent_topology_review": "SATISFIED"
   },
   "decision": {
-    "status": "PENDING",
-    "reviewer_id": null,
-    "reviewer_role": "UNASSIGNED",
-    "reviewed_at": null,
-    "valid_through": null,
-    "blocker_codes": [
-      "INDEPENDENT_TOPOLOGY_REVIEW_INCOMPLETE"
-    ]
+    "status": "APPROVED",
+    "reviewer_id": "agent-topology-reviewer-6f4a2c9e",
+    "reviewer_role": "INDEPENDENT_TOPOLOGY_REVIEWER",
+    "reviewed_at": "2026-07-27T18:17:14+09:00",
+    "valid_through": "2026-08-26",
+    "blocker_codes": []
   }
 }

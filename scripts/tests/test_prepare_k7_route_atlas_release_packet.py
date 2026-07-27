@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -68,6 +69,34 @@ class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
                 REPOSITORY_ROOT / "artifacts/k7-atlas-review",
                 date(2026, 7, 27),
             )
+
+    def test_ready_tracked_release_does_not_block_candidate_packet(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "k7-atlas-review"
+            with mock.patch.object(
+                preparer.readiness_validator,
+                "evaluate",
+                return_value={
+                    "status": "READY_FOR_RELEASE_VALIDATION",
+                    "candidate_ready_for_release_validation": True,
+                    "blocker_codes": [],
+                    "navigation_authority": False,
+                },
+            ):
+                manifest = preparer.prepare(output, date(2026, 7, 27))
+
+            self.assertFalse(manifest["candidate_ready_for_release_validation"])
+            self.assertEqual(
+                manifest["expected_blocker_codes"],
+                preparer.EXPECTED_BLOCKERS,
+            )
+            authoring = json.loads(
+                (output / "route-atlas-release-authoring.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(authoring["topology_evidence"]["state"], "CANDIDATE")
+            self.assertEqual(authoring["layout_evidence"]["state"], "CANDIDATE")
 
     def test_candidate_promotion_is_rejected(self) -> None:
         candidate = preparer.load_object(preparer.CANDIDATE_PATH)

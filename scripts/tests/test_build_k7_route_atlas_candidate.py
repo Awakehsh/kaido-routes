@@ -62,6 +62,19 @@ class BuildK7RouteAtlasCandidateTests(unittest.TestCase):
             first["definition"]["segments"][0]["points"][0],
             self.context["paths"][-1]["points"][-1],
         )
+        self.assertEqual(
+            {
+                reference["source_reference_id"]
+                for reference in first["source_registry"]["references"]
+            },
+            set(builder.EXPECTED_SOURCE_CONTRACTS),
+        )
+        self.assertEqual(
+            self.catalog["naming_reconciliations"][0][
+                "operator_source_reference_id"
+            ],
+            builder.EXPECTED_RECONCILIATION_SOURCE_ID,
+        )
 
     def test_context_source_identity_drift_fails_closed(self) -> None:
         context = copy.deepcopy(self.context)
@@ -85,6 +98,80 @@ class BuildK7RouteAtlasCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(
             builder.CandidateBuildError,
             "review boundary is incomplete",
+        ):
+            builder.build(self.context, self.catalog, review)
+
+    def test_missing_required_stable_source_fails_closed(self) -> None:
+        review = copy.deepcopy(self.review)
+        review["source_references"] = [
+            reference
+            for reference in review["source_references"]
+            if reference["source_reference_id"]
+            != "shutoko.aoba-up-toll-map.2021-07-27"
+        ]
+        review["topology_evidence_source_ids"].remove(
+            "shutoko.aoba-up-toll-map.2021-07-27"
+        )
+
+        with self.assertRaisesRegex(
+            builder.CandidateBuildError,
+            "source IDs have drifted",
+        ):
+            builder.build(self.context, self.catalog, review)
+
+    def test_stable_source_hash_drift_fails_closed(self) -> None:
+        review = copy.deepcopy(self.review)
+        opening = next(
+            reference
+            for reference in review["source_references"]
+            if reference["source_reference_id"]
+            == builder.EXPECTED_RECONCILIATION_SOURCE_ID
+        )
+        opening["content_sha256"] = "0" * 64
+
+        with self.assertRaisesRegex(
+            builder.CandidateBuildError,
+            "source contract has drifted",
+        ):
+            builder.build(self.context, self.catalog, review)
+
+    def test_duplicate_reconciliation_url_and_hash_fails_closed(self) -> None:
+        review = copy.deepcopy(self.review)
+        opening = next(
+            reference
+            for reference in review["source_references"]
+            if reference["source_reference_id"]
+            == builder.EXPECTED_RECONCILIATION_SOURCE_ID
+        )
+        toll_map = next(
+            reference
+            for reference in review["source_references"]
+            if reference["source_reference_id"]
+            == "shutoko.aoba-up-toll-map.2021-07-27"
+        )
+        toll_map["source_url"] = opening["source_url"]
+        toll_map["content_sha256"] = opening["content_sha256"]
+
+        with self.assertRaisesRegex(
+            builder.CandidateBuildError,
+            "operator source identity has drifted",
+        ):
+            builder.validate_catalog(self.catalog, review)
+
+    def test_claim_cannot_expand_an_operator_source_role(self) -> None:
+        review = copy.deepcopy(self.review)
+        entry_claim = next(
+            claim
+            for claim in review["reviewed_claims"]
+            if claim["claim_id"] == "aoba-up-entrance-to-k7-northwest"
+        )
+        entry_claim["source_reference_ids"].append(
+            "shutoko.aoba-up-toll-map.2021-07-27"
+        )
+
+        with self.assertRaisesRegex(
+            builder.CandidateBuildError,
+            "reviewed claim sources have drifted",
         ):
             builder.build(self.context, self.catalog, review)
 

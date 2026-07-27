@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.osm-directed.2026-07-23",
-  "checked_at": "2026-07-23",
+  "checked_at": "2026-07-27",
   "database_id": "osm.geofabrik.kanto-260721.k7-northwest-directed",
   "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
   "network_effective_at": "2026-07-21T20:21:50Z",
@@ -135,14 +135,27 @@
       "attribution_url": "https://www.openstreetmap.org/copyright"
     },
     {
-      "source_reference_id": "shutoko.route.k7-northwest.2026-07-23",
+      "source_reference_id": "shutoko.k7-opening-attachment.2019-09-26",
       "roles": [
         "TOPOLOGY_EVIDENCE"
       ],
       "authority_name": "Metropolitan Expressway Company Limited",
-      "source_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
-      "content_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
-      "checked_at": "2026-07-23",
+      "source_url": "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/company/press/2019/09/26_besshi.pdf",
+      "content_sha256": "2174285d3c34693f5f8f7b2fd0d5630c1eadd7908eb155c6ebcd9ad1893c5a4e",
+      "published_at": "2019-09-26",
+      "checked_at": "2026-07-27",
+      "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
+    },
+    {
+      "source_reference_id": "shutoko.aoba-up-toll-map.2021-07-27",
+      "roles": [
+        "TOPOLOGY_EVIDENCE"
+      ],
+      "authority_name": "Metropolitan Expressway Company Limited",
+      "source_url": "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/updates/2021/07/0727_ryokinjyo2.pdf",
+      "content_sha256": "29079b4870dae2ff9369497c25631764e03f1c8438b13386edd7ee377d308404",
+      "published_at": "2021-07-27",
+      "checked_at": "2026-07-27",
       "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY"
     },
     {
@@ -218,7 +231,8 @@
   ],
   "topology_evidence_source_ids": [
     "osm.geofabrik.kanto-260721.k7-directed",
-    "shutoko.route.k7-northwest.2026-07-23",
+    "shutoko.k7-opening-attachment.2019-09-26",
+    "shutoko.aoba-up-toll-map.2021-07-27",
     "shutoko.guide.k7-aoba.2026-07-23",
     "shutoko.guide.k7-kohoku.2026-07-23",
     "yokohama.k7-northwest.brochure.2026-07-23",
@@ -230,6 +244,20 @@
     "osm.geofabrik.kanto-260721.k7-directed"
   ],
   "reviewed_claims": [
+    {
+      "claim_id": "k7-northwest-official-name-and-section",
+      "value": "The operator opening attachment formally names 高速神奈川7号横浜北西線 and identifies the Yokohama Aoba-to-Yokohama Kohoku section.",
+      "source_reference_ids": [
+        "shutoko.k7-opening-attachment.2019-09-26"
+      ]
+    },
+    {
+      "claim_id": "aoba-up-toll-plaza",
+      "value": "The operator toll map explicitly labels 横浜青葉（上り）料金所.",
+      "source_reference_ids": [
+        "shutoko.aoba-up-toll-map.2021-07-27"
+      ]
+    },
     {
       "claim_id": "aoba-entry-to-k7-northwest-up",
       "value": "The exact OSM one-way chain begins at the Yokohama Aoba toll-plaza split and joins K7 Northwest in the direction shown by the current operator entrance guide.",
@@ -253,8 +281,7 @@
         692798735
       ],
       "source_reference_ids": [
-        "osm.geofabrik.kanto-260721.k7-directed",
-        "shutoko.route.k7-northwest.2026-07-23"
+        "osm.geofabrik.kanto-260721.k7-directed"
       ]
     },
     {

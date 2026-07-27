@@ -764,12 +764,18 @@ resolution separately recognizes post-replotting Higashikatacho Routes 354
 through 358 in the affected area, but its area-level reference map cannot map
 OSM way `776884422` to one exact route. The official online-map terms also state
 that online material is not proof and direct latest legal-record review to the
-Road Survey Division counter. The tracked exit-only decision therefore remains
-`BLOCKED` with exactly `UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE` and
-`UNRELEASED_ATLAS_EVIDENCE`, and `navigation_authority=false`. A later
-completed private field or road-register review can clear only its future-
-scope gate, and even a readiness `PASS` merely admits the candidate to the authoritative
-`kaido-atlas validate-release` command.
+Road Survey Division counter. Two different independent reviewers approved the
+exact exit-only topology and layout on 2026-07-27. The deterministic final
+authoring inputs preserve the generated candidate as `CANDIDATE` while
+attaching separate `RELEASED` evidence, and the resulting schema-1.0 Route
+Atlas artifact passes the authoritative `kaido-atlas validate-release` command
+with 10 evidence sources, 15 directed topology edges, and 13 ordered
+occurrences. Readiness now satisfies all eight gates with no top-level blocker
+and still reports `navigation_authority=false`. A later completed private field
+or road-register review can clear only its future-surface-egress gate. The
+standalone Atlas release does not create the alternating movement/edge
+Navigation Release, guidance, matcher corridor, joint product release, or App
+enrollment.
 
 The feasibility core currently executes portable scenarios for the following
 hard properties that must remain proven as the product expands:

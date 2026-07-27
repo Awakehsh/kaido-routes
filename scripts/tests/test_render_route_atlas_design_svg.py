@@ -116,6 +116,18 @@ class RouteAtlasDesignRendererTests(unittest.TestCase):
         ):
             renderer.build_mark_group(self.context, catalog, self.layout)
 
+    def test_k7_northwest_stable_source_hash_drift_fails_closed(self) -> None:
+        catalog = copy.deepcopy(self.catalog)
+        catalog["naming_reconciliations"][0][
+            "operator_content_sha256"
+        ] = "0" * 64
+
+        with self.assertRaisesRegex(
+            renderer.DesignRenderError,
+            "K7 Northwest naming reconciliation has drifted",
+        ):
+            renderer.build_mark_group(self.context, catalog, self.layout)
+
     def test_k7_northwest_reconciliation_cannot_be_removed(self) -> None:
         catalog = copy.deepcopy(self.catalog)
         catalog["naming_reconciliations"] = []

@@ -25,9 +25,12 @@
       "context_source_record_id": "EA02_373001",
       "context_start_joint_ja": "横浜港北JCT",
       "context_end_joint_ja": "横浜青葉",
-      "operator_source_url": "https://www.shutoko.jp/use/network/map/route-k7ho/",
-      "operator_content_sha256": "87ef0e32be68546b166fadd09d02c273dfcfa2ab0a4aec729d3342e7d5b128b4",
-      "checked_at": "2026-07-23"
+      "operator_source_reference_id": "shutoko.k7-opening-attachment.2019-09-26",
+      "operator_source_url": "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/company/press/2019/09/26_besshi.pdf",
+      "operator_content_sha256": "2174285d3c34693f5f8f7b2fd0d5630c1eadd7908eb155c6ebcd9ad1893c5a4e",
+      "operator_source_published_at": "2019-09-26",
+      "checked_at": "2026-07-27",
+      "evidence_scope": "STABLE_HISTORICAL_FORMAL_NAMING_AND_CORRIDOR_ONLY"
     }
   ],
   "routes": [

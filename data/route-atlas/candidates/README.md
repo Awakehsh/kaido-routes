@@ -1,9 +1,9 @@
 # Route Atlas release candidates
 
-This directory contains real-source candidates that intentionally do not pass
-`RouteAtlasRelease`. A candidate may preserve reviewed identities and geometry
-without claiming that the remaining navigation and distribution gates are
-complete.
+This directory contains real-source generator outputs that intentionally remain
+`CANDIDATE` and do not pass `RouteAtlasRelease`. They are deterministic source
+and negative-control artifacts: an approved release is assembled separately
+under `../releases/` without mutating these files.
 
 ## K7 Northwest up direction
 
@@ -11,8 +11,12 @@ complete.
 
 - MLIT N06-2025 feature 1414 / record `EA02_373001`, including all 38 retained
   centerline vertices in reverse source order;
-- the current operator K7 Northwest route page;
-- the operator Yokohama Aoba junction/entrance guide; and
+- the stable 2019 operator opening attachment for the formal K7 Northwest name
+  and Yokohama Aoba-to-Yokohama Kohoku section;
+- the 2021 operator toll-plaza map for the explicit Yokohama Aoba up toll
+  plaza;
+- the operator Yokohama Aoba junction/entrance guide for the access movement;
+  and
 - the operator Yokohama Kohoku junction/exit guide.
 
 The candidate records one directed route occurrence from the exact Yokohama
@@ -35,6 +39,10 @@ python3 scripts/build_k7_route_atlas_candidate.py \
   --review data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-source-review.json \
   --output data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-candidate.json
 ```
+
+The legacy builder requires this exact source set and resolves the naming
+reconciliation through the opening attachment URL and SHA-256. The historical
+attachment does not establish 2026 currentness or realtime operating state.
 
 Release validation must fail with only:
 
@@ -83,9 +91,12 @@ corridor a historic temporary-passage identity. A current municipal page
 reports that surrounding infrastructure work completed in March 2022 and the
 project ended in July 2023; the final replotting map still does not map OSM way
 `776884422` to a current road identity or traffic direction. None relicenses the
-OSM database or becomes a layout asset. Both candidate evidence states
-therefore remain `CANDIDATE`, not `RELEASED`. Independent lawful road-level
-review, production layout release review, and realtime review remain open.
+OSM database or becomes a layout asset. Both generated candidate evidence
+states therefore remain `CANDIDATE`, not `RELEASED`. The 2026-07-27 independent
+topology review approved the exact exit-handoff-only expressway slice while
+retaining all ordinary-road successors outside scope. Current lawful road-level
+identity, field, and realtime review remain open only for future surface-egress
+expansion.
 In-product OpenStreetMap attribution and derivative-database distribution are
 implemented separately under a hash-bound technical review; that review grants
 no topology, layout, realtime, or navigation authority.
@@ -117,6 +128,11 @@ ways. OpenStreetMap attribution remains present. KR-D24 requires the artifact
 to fail release with only `UNRELEASED_ATLAS_EVIDENCE` and
 `UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE`.
 
+The separately bound independent layout review approved this exact candidate
+on 2026-07-27 after topology approval. The deterministic final inputs and the
+validated Route Atlas artifact live under `../releases/`; this generated
+candidate deliberately remains the negative fixture.
+
 Rebuild the layout artifact, scenario, and SVG:
 
 ```sh
@@ -131,13 +147,13 @@ python3 scripts/build_k7_schematic_layout_candidate.py \
 ## K7 release-readiness package
 
 `k7-northwest-up-aoba-to-kohoku-release-readiness.json` is the dated,
-hash-bound pre-release decision for the most advanced K7 candidate. Schema 2.0
+hash-bound release decision for the most advanced K7 candidate. Schema 2.0
 ends this first scope at the exact terminal exit occurrence, excludes every
 ordinary-road successor, and releases no `SURFACE_EGRESS`. It binds the
 schematic candidate, directed source review, exact successor audit,
 project-authored layout source, official road-register source review,
 coordinate-free road-register and field-review templates, and separate
-topology and layout release-review templates without copying official map
+topology and layout release reviews without copying official map
 imagery or private evidence. The road-register schema for a future surface-
 egress expansion requires a current
 map-66 record obtained at the Road Survey Division counter, exact comparison of
@@ -186,16 +202,13 @@ Validate the tracked decision:
 ```sh
 python3 scripts/validate_k7_route_atlas_readiness.py \
   data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-release-readiness.json \
-  --as-of 2026-07-25 \
+  --as-of 2026-07-27 \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-The command must return `BLOCKED` with two exact top-level blockers:
-
-```text
-UNRELEASED_ATLAS_EVIDENCE
-UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE
-```
+The command now returns `READY_FOR_RELEASE_VALIDATION` with all eight gates
+satisfied and no top-level blocker. It still reports
+`navigation_authority=false`.
 
 It separately reports `CURRENT_ROAD_IDENTITY_UNCONFIRMED` and
 `CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE` under the future surface-egress
@@ -224,12 +237,20 @@ invent the alternating movement/edge RoutePlan, released editor catalog,
 guidance, matcher corridor, or other assets required by a navigation and joint
 product release.
 
-Private completed road-register and field manifests may be supplied with
+The final, non-overwriting input builder consumes the two approved tracked
+reviews and creates the separate released authoring configuration:
+
+```sh
+python3 scripts/build_k7_route_atlas_release_inputs.py --as-of 2026-07-27
+```
+
+The resulting artifact under `../releases/` passes the authoritative
+`kaido-atlas validate-release` command. Private completed road-register and
+field manifests may still be supplied with
 `--road-register-review` and `--field-review`; each can clear only its own
 future-scope gate. Changing topology or layout evidence to `RELEASED` without
-the respective current independent approval leaves the corresponding gate blocked. A
-readiness `PASS` would mean that the candidate may be submitted to
-`kaido-atlas validate-release`. The readiness report always keeps
+the respective current independent approval leaves the corresponding gate
+blocked. The readiness report always keeps
 `navigation_authority=false`; only the authoritative Route Atlas and joint
 product release gates can grant product authority.
 

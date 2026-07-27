@@ -87,11 +87,19 @@ EXPECTED_BINDING_PATHS = {
     ),
     "TOPOLOGY_RELEASE_REVIEW": (
         "data/route-atlas/candidates/"
-        "k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json"
+        "k7-northwest-up-aoba-to-kohoku-topology-release-review.json"
     ),
     "LAYOUT_RELEASE_REVIEW": (
         "data/route-atlas/candidates/"
-        "k7-northwest-up-aoba-to-kohoku-layout-release-review.template.json"
+        "k7-northwest-up-aoba-to-kohoku-layout-release-review.json"
+    ),
+    "ROUTE_ATLAS_RELEASE_DRAFT": (
+        "data/route-atlas/releases/"
+        "k7-northwest-up-aoba-to-kohoku-route-atlas-release-draft.json"
+    ),
+    "ROUTE_ATLAS_RELEASE_AUTHORING": (
+        "data/route-atlas/releases/"
+        "k7-northwest-up-aoba-to-kohoku-route-atlas-release-authoring.json"
     ),
     "ROAD_REGISTER_REVIEW": (
         "data/route-atlas/candidates/"
@@ -336,7 +344,7 @@ EXPECTED_TOPOLOGY_REVIEW_BINDINGS = {
     "ROUTE_ATLAS_CANDIDATE": {
         "repository_path": EXPECTED_BINDING_PATHS["ROUTE_ATLAS_CANDIDATE"],
         "content_sha256": (
-            "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+            "83446ae1cf4ade133365e0b4bbc09d613986596d166bc320f587b694889b850b"
         ),
     },
     "SOURCE_SUCCESSOR_AUDIT": {
@@ -350,7 +358,7 @@ EXPECTED_LAYOUT_REVIEW_BINDINGS = {
     "ROUTE_ATLAS_CANDIDATE": {
         "repository_path": EXPECTED_BINDING_PATHS["ROUTE_ATLAS_CANDIDATE"],
         "content_sha256": (
-            "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+            "83446ae1cf4ade133365e0b4bbc09d613986596d166bc320f587b694889b850b"
         ),
     },
     "SCHEMATIC_LAYOUT_SOURCE": {
@@ -405,12 +413,6 @@ EXPECTED_UNRESOLVED_SUCCESSOR = {
     "reason_code": "CURRENT_ROAD_IDENTITY_AND_DIRECTION_UNCONFIRMED",
     "via_node_id": 7473451738,
     "way_id": 776884422,
-}
-ALLOWED_EVIDENCE_STATES = {
-    "CANDIDATE",
-    "OFFICIAL_CHECKED",
-    "FIELD_CHECKED",
-    "RELEASED",
 }
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
@@ -625,11 +627,13 @@ def validate_candidate(candidate: dict[str, Any]) -> tuple[str, str]:
     layout_evidence = definition.get("evidence")
     if (
         not isinstance(topology_evidence, dict)
-        or topology_evidence.get("state") not in ALLOWED_EVIDENCE_STATES
+        or topology_evidence.get("state") != "CANDIDATE"
         or not isinstance(layout_evidence, dict)
-        or layout_evidence.get("state") not in ALLOWED_EVIDENCE_STATES
+        or layout_evidence.get("state") != "CANDIDATE"
     ):
-        raise ReadinessError("Route Atlas evidence state is invalid")
+        raise ReadinessError(
+            "generated Route Atlas candidate evidence must remain CANDIDATE"
+        )
     references = source_registry.get("references")
     if not isinstance(references, list):
         raise ReadinessError("Route Atlas source registry is invalid")
@@ -714,8 +718,8 @@ def validate_directed_review(review: dict[str, Any]) -> str:
     ):
         raise ReadinessError("target legal-successor state has drifted")
     candidate_state = review.get("candidate_state")
-    if candidate_state not in ALLOWED_EVIDENCE_STATES:
-        raise ReadinessError("directed source review evidence state is invalid")
+    if candidate_state != "CANDIDATE":
+        raise ReadinessError("directed source review must remain CANDIDATE")
     return candidate_state
 
 
@@ -758,7 +762,7 @@ def validate_layout_source(layout: dict[str, Any]) -> str:
         or layout.get("network_snapshot_id") != EXPECTED_TARGET["network_snapshot_id"]
         or layout.get("route_plan_id") != EXPECTED_TARGET["route_plan_id"]
         or layout.get("topology_slice_id") != EXPECTED_TARGET["topology_slice_id"]
-        or layout.get("status") not in ALLOWED_EVIDENCE_STATES
+        or layout.get("status") != "CANDIDATE"
         or layout.get("navigation_authority") is not False
         or not isinstance(source, dict)
         or source.get("licence_identifier") != "Apache-2.0"
@@ -770,6 +774,118 @@ def validate_layout_source(layout: dict[str, Any]) -> str:
     ):
         raise ReadinessError("schematic layout source has drifted")
     return layout["status"]
+
+
+def release_draft_projection(candidate: dict[str, Any]) -> dict[str, Any]:
+    topology = candidate.get("topology_slice")
+    definition = candidate.get("definition")
+    if not isinstance(topology, dict) or not isinstance(definition, dict):
+        raise ReadinessError("Route Atlas candidate content is incomplete")
+    projected_topology = dict(topology)
+    projected_definition = dict(definition)
+    projected_topology.pop("evidence", None)
+    projected_definition.pop("evidence", None)
+    return {
+        "schema_version": "1.0",
+        "network_snapshot": candidate.get("network_snapshot"),
+        "route_plan": candidate.get("route_plan"),
+        "topology_slice": projected_topology,
+        "definition": projected_definition,
+    }
+
+
+def release_review_date(review: dict[str, Any], field: str) -> date:
+    decision = review.get("decision")
+    if not isinstance(decision, dict) or decision.get("status") != "APPROVED":
+        raise ReadinessError(f"{field} must contain an approved decision")
+    return parse_timestamp(
+        decision.get("reviewed_at"),
+        f"{field}.decision.reviewed_at",
+    ).date()
+
+
+def validate_release_inputs(
+    candidate: dict[str, Any],
+    draft: dict[str, Any],
+    authoring: dict[str, Any],
+    topology_review: dict[str, Any],
+    layout_review: dict[str, Any],
+) -> tuple[str, str]:
+    expected_draft = release_draft_projection(candidate)
+    if draft != expected_draft:
+        raise ReadinessError(
+            "Route Atlas release draft is not the exact candidate projection"
+        )
+    if set(authoring) != {
+        "schema_version",
+        "source_registry",
+        "topology_evidence",
+        "layout_evidence",
+    } or authoring.get("schema_version") != "1.0":
+        raise ReadinessError("Route Atlas release authoring contract has drifted")
+    if authoring.get("source_registry") != candidate.get("source_registry"):
+        raise ReadinessError(
+            "Route Atlas release authoring source registry has drifted"
+        )
+
+    candidate_topology = candidate["topology_slice"].get("evidence")
+    candidate_layout = candidate["definition"].get("evidence")
+    topology_evidence = authoring.get("topology_evidence")
+    layout_evidence = authoring.get("layout_evidence")
+    if not all(
+        isinstance(value, dict)
+        for value in (
+            candidate_topology,
+            candidate_layout,
+            topology_evidence,
+            layout_evidence,
+        )
+    ):
+        raise ReadinessError("Route Atlas release evidence is incomplete")
+    topology_reviewed_at = release_review_date(
+        topology_review,
+        "topology_release_review",
+    )
+    layout_reviewed_at = release_review_date(
+        layout_review,
+        "layout_release_review",
+    )
+    topology_reviewed_timestamp = parse_timestamp(
+        topology_review["decision"].get("reviewed_at"),
+        "topology_release_review.decision.reviewed_at",
+    )
+    layout_reviewed_timestamp = parse_timestamp(
+        layout_review["decision"].get("reviewed_at"),
+        "layout_release_review.decision.reviewed_at",
+    )
+    if layout_reviewed_timestamp < topology_reviewed_timestamp:
+        raise ReadinessError("layout review predates topology approval")
+
+    for field, released, generated, reviewed_at in (
+        (
+            "topology_evidence",
+            topology_evidence,
+            candidate_topology,
+            topology_reviewed_at,
+        ),
+        (
+            "layout_evidence",
+            layout_evidence,
+            candidate_layout,
+            layout_reviewed_at,
+        ),
+    ):
+        if (
+            set(released) != {"checked_at", "source_reference_ids", "state"}
+            or released.get("state") != "RELEASED"
+            or released.get("source_reference_ids")
+            != generated.get("source_reference_ids")
+            or released.get("checked_at") != reviewed_at.isoformat()
+        ):
+            raise ReadinessError(
+                f"Route Atlas release {field} is not bound to its approved review"
+            )
+    return topology_evidence["state"], layout_evidence["state"]
 
 
 def evaluate_road_register_review(
@@ -1461,7 +1577,7 @@ def evaluate(
         raise ReadinessError("release-readiness assessment is in the future")
 
     documents = load_bound_documents(readiness, repository_root)
-    topology_state, layout_state = validate_candidate(
+    candidate_topology_state, candidate_layout_state = validate_candidate(
         documents["ROUTE_ATLAS_CANDIDATE"]
     )
     directed_review_state = validate_directed_review(
@@ -1469,10 +1585,17 @@ def evaluate(
     )
     validate_successor_audit(documents["SOURCE_SUCCESSOR_AUDIT"])
     layout_source_state = validate_layout_source(documents["SCHEMATIC_LAYOUT_SOURCE"])
-    if directed_review_state != topology_state:
+    if directed_review_state != candidate_topology_state:
         raise ReadinessError("directed review and topology evidence states disagree")
-    if layout_source_state != layout_state:
+    if layout_source_state != candidate_layout_state:
         raise ReadinessError("layout source and atlas evidence states disagree")
+    topology_state, layout_state = validate_release_inputs(
+        documents["ROUTE_ATLAS_CANDIDATE"],
+        documents["ROUTE_ATLAS_RELEASE_DRAFT"],
+        documents["ROUTE_ATLAS_RELEASE_AUTHORING"],
+        documents["TOPOLOGY_RELEASE_REVIEW"],
+        documents["LAYOUT_RELEASE_REVIEW"],
+    )
     tracked_road_identity_complete, tracked_road_blockers = (
         evaluate_road_register_review(
             documents["ROAD_REGISTER_REVIEW"],

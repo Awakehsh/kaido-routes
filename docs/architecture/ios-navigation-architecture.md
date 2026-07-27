@@ -857,8 +857,8 @@ hash-bound private record, explicit comparison of all three exit-terminal OSM
 successors, selection of exact way `776884422`, independent review, and a
 coordinate-free report. Online map inspection, map 67, historic corridor
 identity, raw copied geometry, and a nonexact mapping cannot satisfy it.
-The dated readiness package also binds exact pending topology and layout
-release-review records. Schema 2.0 scopes the first candidate to the exact
+The dated readiness package binds exact topology and layout release-review
+records. Schema 2.0 scopes the first candidate to the exact
 Yokohama Kohoku exit handoff: the terminal expressway occurrence is retained,
 all three ordinary-road successors are excluded, and no `SURFACE_EGRESS` is
 released. The current road-register and field findings remain separate future-
@@ -867,21 +867,25 @@ nor treated as satisfied for this exit-only topology review. A layout approval
 depends on the current topology approval and must use a different reviewer.
 Each approval is valid for at most 31 days. Evidence state and review approval
 are conjunctive: changing a candidate to `RELEASED` without the matching
-current approval cannot satisfy the readiness gate.
-Both evidence states remain `CANDIDATE`; OSM community directionality plus
-current operator diagram agreement does not replace independent field/topology
-review, a released production layout, OSM attribution integration, or realtime
-review. KR-D22 preserves the directed-candidate boundary; KR-D23 preserves the
-separate source-complete versus legal-review boundary.
+current approval cannot satisfy the readiness gate. The generated candidate
+continues to carry two `CANDIDATE` states so deterministic rebuilds and
+KR-D22/KR-D23 remain negative controls. On 2026-07-27, different independent
+reviewers approved the exact exit-only topology and layout. A deterministic
+input builder projects immutable candidate content into a draft and derives a
+separate authoring configuration whose two `RELEASED` evidence dates match
+those approvals. The resulting schema-1.0 Route Atlas artifact passes
+`kaido-atlas validate-release`. It still grants no navigation, realtime, or
+surface-egress authority.
 
 The first Kaido-owned K7 schematic candidate replaces raw source geometry only
 in the layout definition. It covers the same 15 topology edges, preserves both
 expressway divergences and all 13 occurrence bindings, and carries a separate
 Apache-2.0 layout source record. The renderer visibly terminates at
 `osm.node.7473451738`; none of the three adjacent surface ways is present in
-the layout. KR-D24 proves that the resulting artifact has no structural release
-issue beyond the two intentional candidate evidence states. This advances
-production layout review without granting topology, surface-movement, or
+the layout. KR-D24 proves that the candidate artifact has no structural release
+issue beyond the two intentional candidate evidence states. The subsequent
+independent layout approval and final authoring artifact release only this
+renderer-neutral exit-handoff Atlas; they do not grant surface-movement or
 navigation authority.
 
 The local environment observed on 2026-07-22 is Xcode 26.3 with Swift 6.2.4.

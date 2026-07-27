@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "readiness_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.exit-handoff-route-atlas-readiness.2026-07-26",
-  "assessed_at": "2026-07-25",
+  "assessed_at": "2026-07-27",
   "scope": "EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE",
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
@@ -33,12 +33,12 @@
     {
       "role": "ROUTE_ATLAS_CANDIDATE",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-schematic-layout-candidate.json",
-      "content_sha256": "1d6c428a5f0f26c647fe935471238e04767e150970f845231c4c21e7db030977"
+      "content_sha256": "83446ae1cf4ade133365e0b4bbc09d613986596d166bc320f587b694889b850b"
     },
     {
       "role": "DIRECTED_SOURCE_REVIEW",
       "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-review.json",
-      "content_sha256": "68afa2e133f32f5da7b866bde2c99ef55014d629baa1c7aee0bbcdb68d766a40"
+      "content_sha256": "315919a2879b42daa3cd8b9fbc72647ae7790894f6338adc921bcba6b869ff02"
     },
     {
       "role": "SOURCE_SUCCESSOR_AUDIT",
@@ -52,13 +52,23 @@
     },
     {
       "role": "TOPOLOGY_RELEASE_REVIEW",
-      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-topology-release-review.template.json",
-      "content_sha256": "f2c21c1fe9134b6b8fae5b21f260e518b4b644b2f924aadb236539fa79f27c48"
+      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-topology-release-review.json",
+      "content_sha256": "55ef6d7a9152b6fef23c695ef9ce6fd421efe73020734af9df2894f58eb4bc8e"
     },
     {
       "role": "LAYOUT_RELEASE_REVIEW",
-      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-layout-release-review.template.json",
-      "content_sha256": "cfd5a08deed4c055c41fabaf4c4b09a919864e883ef898d3d2a9b61bfd92aa31"
+      "repository_path": "data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-layout-release-review.json",
+      "content_sha256": "a4980da2d5cad38caa8d2b2f2a9d078502b0bba3afe05d38e4571aed9ccba5b8"
+    },
+    {
+      "role": "ROUTE_ATLAS_RELEASE_DRAFT",
+      "repository_path": "data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-route-atlas-release-draft.json",
+      "content_sha256": "25aac9e364deadda29d707df006965ee0874975b3c6abf578f0792aa4d353c73"
+    },
+    {
+      "role": "ROUTE_ATLAS_RELEASE_AUTHORING",
+      "repository_path": "data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-route-atlas-release-authoring.json",
+      "content_sha256": "dcbe267fe21181611229f88315418d842971e87ef9133b36ede8c4ea18495ca5"
     },
     {
       "role": "ROAD_REGISTER_REVIEW",
@@ -95,25 +105,21 @@
     "release_blocking": false
   },
   "expected_decision": {
-    "status": "BLOCKED",
-    "candidate_ready_for_release_validation": false,
+    "status": "READY_FOR_RELEASE_VALIDATION",
+    "candidate_ready_for_release_validation": true,
     "navigation_authority": false,
     "satisfied_gate_ids": [
       "ARTIFACT_BINDINGS",
       "DIRECTED_CANDIDATE_STRUCTURE",
       "EXIT_HANDOFF_BOUNDARY",
+      "LAYOUT_RELEASE_EVIDENCE",
       "ODBL_DISTRIBUTION",
       "SOURCE_ADJACENCY",
-      "SURFACE_SUCCESSORS_EXCLUDED"
-    ],
-    "blocked_gate_ids": [
-      "LAYOUT_RELEASE_EVIDENCE",
+      "SURFACE_SUCCESSORS_EXCLUDED",
       "TOPOLOGY_RELEASE_EVIDENCE"
     ],
-    "blocker_codes": [
-      "UNRELEASED_ATLAS_EVIDENCE",
-      "UNRELEASED_ATLAS_TOPOLOGY_EVIDENCE"
-    ],
+    "blocked_gate_ids": [],
+    "blocker_codes": [],
     "future_surface_egress_gate_ids": [
       "CURRENT_ROAD_IDENTITY",
       "CURRENT_SURFACE_FIELD_REVIEW"

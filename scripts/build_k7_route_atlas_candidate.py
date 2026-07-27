@@ -18,6 +18,97 @@ EXPECTED_FEATURE_ID = "mlit.n06-2025.feature.1414"
 EXPECTED_RECORD_ID = "EA02_373001"
 EXPECTED_VERTEX_COUNT = 38
 EXPECTED_RECONCILED_ROUTE_ID = "shutoko.k7.yokohama-northwest"
+EXPECTED_RECONCILIATION_SOURCE_ID = (
+    "shutoko.k7-opening-attachment.2019-09-26"
+)
+EXPECTED_RECONCILIATION_EVIDENCE_SCOPE = (
+    "STABLE_HISTORICAL_FORMAL_NAMING_AND_CORRIDOR_ONLY"
+)
+EXPECTED_SOURCE_CONTRACTS: dict[str, dict[str, Any]] = {
+    "mlit.nlni.n06-2025.current-shuto": {
+        "roles": {"TOPOLOGY_EVIDENCE", "LAYOUT_EVIDENCE"},
+        "source_url": (
+            "https://nlftp.mlit.go.jp/ksj/gml/data/N06/N06-25/"
+            "N06-25_GML.zip"
+        ),
+        "content_sha256": (
+            "742c8785dfb2f900f167972abe00d5c36103365c0f9fb11dc8a883aa358ac23e"
+        ),
+        "checked_at": "2026-07-23",
+        "licence_identifier": "CC-BY-4.0",
+    },
+    EXPECTED_RECONCILIATION_SOURCE_ID: {
+        "roles": {"TOPOLOGY_EVIDENCE"},
+        "source_url": (
+            "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/"
+            "company/press/2019/09/26_besshi.pdf"
+        ),
+        "content_sha256": (
+            "2174285d3c34693f5f8f7b2fd0d5630c1eadd7908eb155c6ebcd9ad1893c5a4e"
+        ),
+        "published_at": "2019-09-26",
+        "checked_at": "2026-07-27",
+        "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY",
+    },
+    "shutoko.aoba-up-toll-map.2021-07-27": {
+        "roles": {"TOPOLOGY_EVIDENCE"},
+        "source_url": (
+            "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/"
+            "updates/2021/07/0727_ryokinjyo2.pdf"
+        ),
+        "content_sha256": (
+            "29079b4870dae2ff9369497c25631764e03f1c8438b13386edd7ee377d308404"
+        ),
+        "published_at": "2021-07-27",
+        "checked_at": "2026-07-27",
+        "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY",
+    },
+    "shutoko.guide.k7-aoba.2026-07-23": {
+        "roles": {"TOPOLOGY_EVIDENCE"},
+        "source_url": (
+            "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/"
+            "safety/branch_k7/info_aoba_200421.pdf"
+        ),
+        "content_sha256": (
+            "247e06d15b4391181f5f24c606369e730600abb4f97d649aa12cbd30e708d2d4"
+        ),
+        "checked_at": "2026-07-23",
+        "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY",
+    },
+    "shutoko.guide.k7-kohoku.2026-07-23": {
+        "roles": {"TOPOLOGY_EVIDENCE"},
+        "source_url": (
+            "https://www.shutoko.jp/-/media/pdf/responsive/customer/use/"
+            "safety/branch_k7/info_kohoku_200421.pdf"
+        ),
+        "content_sha256": (
+            "64d845c613d32280cb5a230cef7e768284460b86db3043d861b90df9a66c09b1"
+        ),
+        "checked_at": "2026-07-23",
+        "licence_identifier": "OPERATOR_FACTUAL_REFERENCE_ONLY",
+    },
+}
+EXPECTED_TOPOLOGY_SOURCE_IDS = frozenset(EXPECTED_SOURCE_CONTRACTS)
+EXPECTED_LAYOUT_SOURCE_IDS = frozenset(
+    {"mlit.nlni.n06-2025.current-shuto"}
+)
+EXPECTED_CLAIM_SOURCE_IDS = {
+    "k7-northwest-bounded-corridor": frozenset(
+        {
+            "mlit.nlni.n06-2025.current-shuto",
+            EXPECTED_RECONCILIATION_SOURCE_ID,
+        }
+    ),
+    "aoba-up-toll-plaza": frozenset(
+        {"shutoko.aoba-up-toll-map.2021-07-27"}
+    ),
+    "aoba-up-entrance-to-k7-northwest": frozenset(
+        {"shutoko.guide.k7-aoba.2026-07-23"}
+    ),
+    "k7-northwest-up-to-kohoku-up-exit": frozenset(
+        {"shutoko.guide.k7-kohoku.2026-07-23"}
+    ),
+}
 
 
 class CandidateBuildError(RuntimeError):
@@ -122,26 +213,39 @@ def validate_catalog(
         or reconciliation.get("context_source_feature_id")
         != EXPECTED_FEATURE_ID
         or reconciliation.get("context_source_record_id") != EXPECTED_RECORD_ID
+        or reconciliation.get("operator_source_reference_id")
+        != EXPECTED_RECONCILIATION_SOURCE_ID
+        or reconciliation.get("operator_source_url")
+        != EXPECTED_SOURCE_CONTRACTS[EXPECTED_RECONCILIATION_SOURCE_ID][
+            "source_url"
+        ]
+        or reconciliation.get("operator_content_sha256")
+        != EXPECTED_SOURCE_CONTRACTS[EXPECTED_RECONCILIATION_SOURCE_ID][
+            "content_sha256"
+        ]
+        or reconciliation.get("operator_source_published_at") != "2019-09-26"
+        or reconciliation.get("checked_at") != "2026-07-27"
+        or reconciliation.get("evidence_scope")
+        != EXPECTED_RECONCILIATION_EVIDENCE_SCOPE
     ):
         raise CandidateBuildError("K7 Northwest catalog reconciliation has drifted")
     if not isinstance(references, list):
         raise CandidateBuildError("candidate source registry is missing")
-    operator_reference = next(
-        (
-            reference
-            for reference in references
-            if isinstance(reference, dict)
-            and reference.get("source_reference_id")
-            == "shutoko.route.k7-northwest.2026-07-23"
-        ),
-        None,
-    )
+    operator_references = [
+        reference
+        for reference in references
+        if (
+            isinstance(reference, dict)
+            and reference.get("source_url")
+            == reconciliation.get("operator_source_url")
+            and reference.get("content_sha256")
+            == reconciliation.get("operator_content_sha256")
+        )
+    ]
     if (
-        operator_reference is None
-        or operator_reference.get("source_url")
-        != reconciliation.get("operator_source_url")
-        or operator_reference.get("content_sha256")
-        != reconciliation.get("operator_content_sha256")
+        len(operator_references) != 1
+        or operator_references[0].get("source_reference_id")
+        != reconciliation.get("operator_source_reference_id")
     ):
         raise CandidateBuildError(
             "K7 Northwest operator source identity has drifted"
@@ -186,11 +290,11 @@ def validated_review(review: dict[str, Any]) -> None:
     claims = review.get("reviewed_claims")
     if (
         not isinstance(references, list)
-        or len(references) != 4
         or not isinstance(topology_ids, list)
         or not isinstance(layout_ids, list)
         or not isinstance(claims, list)
-        or len(claims) != 3
+        or not all(isinstance(source_id, str) for source_id in topology_ids)
+        or not all(isinstance(source_id, str) for source_id in layout_ids)
     ):
         raise CandidateBuildError("candidate evidence coverage is incomplete")
     references_by_id: dict[str, dict[str, Any]] = {}
@@ -223,11 +327,32 @@ def validated_review(review: dict[str, Any]) -> None:
             ) from error
         reference_ids.add(reference_id)
         references_by_id[reference_id] = reference
+    if reference_ids != set(EXPECTED_SOURCE_CONTRACTS):
+        raise CandidateBuildError(
+            "candidate evidence source IDs have drifted"
+        )
+    for reference_id, expected in EXPECTED_SOURCE_CONTRACTS.items():
+        reference = references_by_id[reference_id]
+        if (
+            set(reference["roles"]) != expected["roles"]
+            or reference.get("source_url") != expected["source_url"]
+            or reference.get("content_sha256") != expected["content_sha256"]
+            or reference.get("checked_at") != expected["checked_at"]
+            or reference.get("licence_identifier")
+            != expected["licence_identifier"]
+            or (
+                "published_at" in expected
+                and reference.get("published_at") != expected["published_at"]
+            )
+        ):
+            raise CandidateBuildError(
+                f"candidate source contract has drifted: {reference_id}"
+            )
     if (
         len(set(topology_ids)) != len(topology_ids)
         or len(set(layout_ids)) != len(layout_ids)
-        or set(topology_ids) | set(layout_ids) != reference_ids
-        or not set(layout_ids).issubset(set(topology_ids))
+        or set(topology_ids) != EXPECTED_TOPOLOGY_SOURCE_IDS
+        or set(layout_ids) != EXPECTED_LAYOUT_SOURCE_IDS
         or any(
             "TOPOLOGY_EVIDENCE" not in references_by_id[source_id]["roles"]
             for source_id in topology_ids
@@ -256,6 +381,15 @@ def validated_review(review: dict[str, Any]) -> None:
         ):
             raise CandidateBuildError("candidate reviewed claim is invalid")
         claim_ids.add(claim_id)
+        if (
+            claim_id not in EXPECTED_CLAIM_SOURCE_IDS
+            or set(claim_sources) != EXPECTED_CLAIM_SOURCE_IDS[claim_id]
+        ):
+            raise CandidateBuildError(
+                f"candidate reviewed claim sources have drifted: {claim_id}"
+            )
+    if claim_ids != set(EXPECTED_CLAIM_SOURCE_IDS):
+        raise CandidateBuildError("candidate reviewed claim IDs have drifted")
 
 
 def build(

@@ -20,6 +20,19 @@ from render_route_atlas_context_svg import (
 
 
 MAXIMUM_ANCHOR_DISTANCE = 0.08
+K7_RECONCILIATION_SOURCE_ID = (
+    "shutoko.k7-opening-attachment.2019-09-26"
+)
+K7_RECONCILIATION_SOURCE_URL = (
+    "https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/"
+    "company/press/2019/09/26_besshi.pdf"
+)
+K7_RECONCILIATION_SOURCE_SHA256 = (
+    "2174285d3c34693f5f8f7b2fd0d5630c1eadd7908eb155c6ebcd9ad1893c5a4e"
+)
+K7_RECONCILIATION_EVIDENCE_SCOPE = (
+    "STABLE_HISTORICAL_FORMAL_NAMING_AND_CORRIDOR_ONLY"
+)
 
 
 class DesignRenderError(RuntimeError):
@@ -248,9 +261,12 @@ def validated_catalog(
     context_name = reconciliation.get("context_route_name_ja")
     feature_id = reconciliation.get("context_source_feature_id")
     record_id = reconciliation.get("context_source_record_id")
+    source_reference_id = reconciliation.get("operator_source_reference_id")
     source_url = reconciliation.get("operator_source_url")
     checksum = reconciliation.get("operator_content_sha256")
+    published_at = reconciliation.get("operator_source_published_at")
     checked_at = reconciliation.get("checked_at")
+    evidence_scope = reconciliation.get("evidence_scope")
     joint_names = (
         reconciliation.get("context_start_joint_ja"),
         reconciliation.get("context_end_joint_ja"),
@@ -271,11 +287,11 @@ def validated_catalog(
         or reconciled_route.get("context_route_name_ja") != context_name
         or context_name != "高速横浜環状北西線"
         or len(matching_paths) != 1
-        or not isinstance(source_url, str)
-        or not source_url.startswith("https://www.shutoko.jp/")
-        or not isinstance(checksum, str)
-        or len(checksum) != 64
-        or any(character not in "0123456789abcdef" for character in checksum)
+        or source_reference_id != K7_RECONCILIATION_SOURCE_ID
+        or source_url != K7_RECONCILIATION_SOURCE_URL
+        or checksum != K7_RECONCILIATION_SOURCE_SHA256
+        or published_at != "2019-09-26"
+        or evidence_scope != K7_RECONCILIATION_EVIDENCE_SCOPE
         or not all(isinstance(value, str) and value for value in joint_names)
     ):
         raise DesignRenderError("K7 Northwest naming reconciliation has drifted")

@@ -164,13 +164,9 @@ def prepare(output: Path, as_of: date) -> dict[str, Any]:
         )
     except readiness_validator.ReadinessError as error:
         raise ReleasePacketError(f"K7 readiness package is invalid: {error}") from error
-    if (
-        report.get("status") != "BLOCKED"
-        or report.get("blocker_codes") != EXPECTED_BLOCKERS
-        or report.get("navigation_authority") is not False
-    ):
+    if report.get("navigation_authority") is not False:
         raise ReleasePacketError(
-            "K7 readiness no longer has the exact review-only blocker set"
+            "K7 readiness unexpectedly grants navigation authority"
         )
 
     candidate = load_object(CANDIDATE_PATH)
@@ -302,10 +298,11 @@ https://www.google.com/maps/dir/?api=1&origin=35.544075%2C139.5406531&destinatio
 
 The official K7 facility and branch references are:
 
-- https://www.shutoko.jp/use/network/map/route-k7ho/
-- https://www.shutoko.jp/use/network/map/route-k7ho/yokohamaaoba/
-- https://www.shutoko.jp/use/network/map/route-k7ho/yokohamakohoku/
-- https://www.shutoko.jp/use/safety/branch_k7/
+- https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/company/press/2019/09/26_besshi.pdf
+- https://www.shutoko.co.jp/-/media/pdf/responsive/corporate/updates/2021/07/0727_ryokinjyo2.pdf
+- https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_aoba_200421.pdf
+- https://www.shutoko.jp/-/media/pdf/responsive/customer/use/safety/branch_k7/info_kohoku_200421.pdf
+- https://www.city.yokohama.lg.jp/kurashi/machizukuri-kankyo/doro/kousokudoro/kanjodouro.files/0006_20220315.pdf
 
 ## Fail-closed preflight
 

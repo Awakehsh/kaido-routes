@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "review_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.layout-release-review.2026-07-24",
   "review_type": "LAYOUT_RELEASE_REVIEW",
-  "assessed_at": "2026-07-24",
+  "assessed_at": "2026-07-27",
   "navigation_authority": false,
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
@@ -37,22 +37,19 @@
     }
   ],
   "required_checks": {
-    "topology_release_review": "PENDING",
+    "topology_release_review": "SATISFIED",
     "layout_identity_and_coverage": "SATISFIED",
     "endpoint_and_successor_geometry": "SATISFIED",
     "surface_boundary_exclusion": "SATISFIED",
     "attribution_presentation": "SATISFIED",
-    "independent_layout_review": "PENDING"
+    "independent_layout_review": "SATISFIED"
   },
   "decision": {
-    "status": "PENDING",
-    "reviewer_id": null,
-    "reviewer_role": "UNASSIGNED",
-    "reviewed_at": null,
-    "valid_through": null,
-    "blocker_codes": [
-      "TOPOLOGY_RELEASE_REVIEW_INCOMPLETE",
-      "INDEPENDENT_LAYOUT_REVIEW_INCOMPLETE"
-    ]
+    "status": "APPROVED",
+    "reviewer_id": "agent-layout-reviewer-91c8e4b7",
+    "reviewer_role": "INDEPENDENT_LAYOUT_REVIEWER",
+    "reviewed_at": "2026-07-27T18:27:05+09:00",
+    "valid_through": "2026-08-26",
+    "blocker_codes": []
   }
 }

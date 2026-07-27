@@ -191,6 +191,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
+      "-app.kaidoroutes.map-projection",
+      "topology",
     ]
     app.launch()
     return app

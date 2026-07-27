@@ -1,0 +1,50 @@
+{
+  "candidate_bindings": {
+    "actual_distance_km": 7.031167671,
+    "atlas_draft_sha256": "f7eee92538f24fc249bc6050081ad5ed0ada16b8d8cf1dfbd121a77d9083bd9e",
+    "navigation_draft_sha256": "18fa61dc33c802e28fb5d953077337f75122861bf8ac5e9f1ac9d7d51f0e5634",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "occurrence_ids": [
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4"
+    ],
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1"
+  },
+  "candidate_id": "k7-aoba-to-kohoku-navigation-v1",
+  "reviews": [
+    {
+      "blocker_codes": [],
+      "review_record_sha256": "9fa75ad542153ead73d4740b80bb0ddfa9a06a21bf7335e818b2805b55311c15",
+      "reviewed_at": "2026-07-27T21:28:41+09:00",
+      "reviewer_id": "agent-topology-reviewer-6f4a2c9e",
+      "reviewer_role": "INDEPENDENT_TOPOLOGY_REVIEWER",
+      "scope": "TOPOLOGY",
+      "status": "APPROVED",
+      "valid_through": "2026-08-26"
+    },
+    {
+      "blocker_codes": [],
+      "review_record_sha256": "c1a306dbd6f024a9e4043d2ce3b024558bdb3b5d5d1637d3c2f067d48ece4ad6",
+      "reviewed_at": "2026-07-27T21:26:30+09:00",
+      "reviewer_id": "agent-layout-reviewer-navigation-v2-4d3b79a1",
+      "reviewer_role": "INDEPENDENT_LAYOUT_REVIEWER",
+      "scope": "LAYOUT",
+      "status": "APPROVED",
+      "valid_through": "2026-08-26"
+    },
+    {
+      "blocker_codes": [],
+      "review_record_sha256": "6af6ff9a7ce6f78ba8d49723a70150d21aca84d6915348013c779c674803c0b6",
+      "reviewed_at": "2026-07-27T21:28:04+09:00",
+      "reviewer_id": "agent-navigation-guidance-reviewer-4d7c91a2",
+      "reviewer_role": "INDEPENDENT_NAVIGATION_GUIDANCE_REVIEWER",
+      "scope": "NAVIGATION_GUIDANCE",
+      "status": "APPROVED",
+      "valid_through": "2026-08-26"
+    }
+  ],
+  "schema_version": "1.0"
+}

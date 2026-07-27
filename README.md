@@ -23,8 +23,10 @@ bundled demo continues into an actor-backed driving rehearsal. One persisted
 preserves ordered and repeated occurrences and accepts a precise current-route
 marker only from exact HIGH route-bound progress evidence; LOW, LOST,
 ambiguous, or identity-drifted evidence stays estimated or unavailable.
-Real-road navigation and Core Location remain locked until a foreground
-product release grants authority. The full-network/K7 evidence workbench and
+The bundled catalog now contains one foreground K7 product release whose exact
+runtime may grant foreground Core Location authority only after release-owned
+route authoring and separately supplied current pre-drive evidence pass. No
+release starts location automatically. The full-network/K7 evidence workbench and
 calibration controls require a dedicated internal launch argument and do not
 appear in the ordinary product journey.
 Its visible, persisted interface selector switches the default journey among
@@ -71,8 +73,9 @@ explicitly fetch it from the selected product's pinned endpoint. Both paths
 require the same whole-product signature validation, persist before publishing,
 reject rollback and release-ID reuse, revalidate on restoration, and never fall
 back after a newer effective bundle loses or expires a profile. The current
-manifest contains zero foreground releases and one synthetic demo, so the
-real-road branch remains dormant. The default demo path reuses that one release
+manifest contains one foreground K7 release and one synthetic demo. The K7
+entry has no bundled current pre-drive evidence, so it fails closed at review
+instead of manufacturing tariff or passage status. The default demo path reuses that one release
 identity across authoring, pre-drive review, and a freshly constructed actor
 rehearsal; it never promotes `DEMO_ONLY` or mints live-input authority. A separate
 synthetic guidance panel lets interface and voice locales vary independently
@@ -113,9 +116,10 @@ emits only a coordinate-free non-release report, and rejects simulated locations
 by default. A machine-readable attribution catalog now drives a native evidence
 strip adjacent to every Route Atlas; the K7 strip visibly links OpenStreetMap
 credit and the ODbL 1.0 licence without making the SVG interactive. The app
-remains explicitly review-only: it has no real-road released
-route bundle, live measured-position display, real-road active-route highlight,
-qualified device voice, active background location session, or CarPlay scene. The
+retains a separate explicitly review-only evidence mode. The ordinary catalog
+now has one real-road released K7 route bundle, but it still has no qualified
+live measured-position display, device voice, active background location
+session, or CarPlay scene. The
 repository still has no production road database or released provider
 integration. It includes a
 bounded MapKit feasibility adapter, an offline directed-road graph inspector,
@@ -518,7 +522,9 @@ identity plus the source registry and exact asset-evidence records.
 both inputs unchanged, runs the whole gate before writing, and refuses
 overwrite. `validate-navigation` independently exposes the same boundary to a
 release pipeline. KR-D25 proves authoring, serialization, and unknown-schema
-rejection with synthetic data; no real navigation release artifact exists yet.
+rejection with synthetic data. The first real artifact is the independently
+reviewed K7 Aoba-to-Kohoku exit-handoff navigation release under
+`data/navigation/releases/`.
 
 `ReleasedSurfaceAccessPlanner` is the public platform-light composition path
 after release. It admits only a `ReleaseBoundSurfaceRouteProvider` whose exact
@@ -850,7 +856,9 @@ hard properties that must remain proven as the product expands:
     closed on source, licence, projection, coverage, geometry, or authority
     drift.
 29. a real official-checked directed atlas candidate remains blocked until both
-    its topology evidence and production layout are explicitly released.
+    its topology evidence and production layout are explicitly released; the K7
+    Aoba-to-Kohoku exit-handoff release satisfies this gate only for its exact
+    five-occurrence navigation-semantic scope.
 30. a versioned navigation artifact must resolve released, role-matched evidence
     for every runtime asset and survive the whole bundle gate after decoding;
     unknown schemas or provenance drift fail closed.
@@ -954,8 +962,9 @@ references.
 `kaido-atlas build-release --draft <file> --config <file> --output <file>`
 assembles reviewed content and separate release evidence only through the whole
 source-registry and graph-integrity gate. `validate-release --artifact <file>`
-independently decodes and validates that artifact; no real Shuto release
-artifact exists yet.
+independently decodes and validates that artifact. The repository contains
+separately validated real K7 exit-handoff Atlas artifacts; only the
+navigation-semantic five-occurrence variant matches the real navigation release.
 The K7 readiness command is a stricter real-evidence preflight around the
 current hash-bound exit-handoff candidate inputs. Its expected exit is
 `BLOCKED` until topology and layout evidence are independently released. It
@@ -969,12 +978,13 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
 ```
 
 `kaido-release validate-navigation --artifact <file>` equivalently validates a
-future navigation runtime artifact through its provenance registry,
-entry/recovery/egress policy, and the whole-bundle gate; no real navigation
-release artifact exists yet.
+navigation runtime artifact through its provenance registry,
+entry/recovery/egress policy, and the whole-bundle gate. The first real K7
+artifact is documented under `data/navigation/`.
 `kaido-release validate-product --artifact <file>` revalidates both nested
 artifacts and their cross-artifact identity, chronology, and editor-atlas
-coverage; no real product release artifact exists yet.
+coverage. The first joint K7 product artifact is documented under
+`data/product/`.
 
 Build—not hand-edit—the navigation artifact from its independently reviewed
 draft and provenance configuration:

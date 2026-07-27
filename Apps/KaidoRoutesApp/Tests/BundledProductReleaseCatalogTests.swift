@@ -8,21 +8,35 @@ import XCTest
 @testable import KaidoRoutesApp
 
 final class BundledProductReleaseCatalogTests: XCTestCase {
-  func testBundledManifestLoadsOnlyOneHashBoundDemoRelease() throws {
+  func testBundledManifestLoadsHashBoundDemoAndForegroundReleases() throws {
     let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
-    let entry = try XCTUnwrap(catalog.demoEntries.first)
+    let demo = try XCTUnwrap(catalog.demoEntries.first)
+    let foreground = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
 
-    XCTAssertEqual(catalog.entries.count, 1)
+    XCTAssertEqual(catalog.entries.count, 2)
     XCTAssertEqual(catalog.demoEntries.count, 1)
-    XCTAssertTrue(catalog.foregroundNavigationEntries.isEmpty)
+    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 1)
     XCTAssertEqual(
-      entry.release.releaseID,
+      demo.release.releaseID,
       "preview.synthetic.product-release.v1"
     )
-    XCTAssertEqual(entry.descriptor.role, .demoOnly)
-    XCTAssertGreaterThan(entry.encodedByteCount, 0)
-    XCTAssertNil(entry.release.foregroundLiveInputAuthority)
-    XCTAssertTrue(entry.guidanceAudioChoices.isEmpty)
+    XCTAssertEqual(demo.descriptor.role, .demoOnly)
+    XCTAssertGreaterThan(demo.encodedByteCount, 0)
+    XCTAssertNil(demo.release.foregroundLiveInputAuthority)
+    XCTAssertTrue(demo.guidanceAudioChoices.isEmpty)
+    XCTAssertEqual(
+      foreground.release.releaseID,
+      "shutoko.product.k7-aoba-to-kohoku.2026-07-27"
+    )
+    XCTAssertEqual(
+      foreground.release.navigation.bundle.routePlan.actualDistanceKM,
+      7.031167671
+    )
+    XCTAssertEqual(foreground.descriptor.role, .foregroundNavigation)
+    XCTAssertNotNil(foreground.release.foregroundLiveInputAuthority)
+    XCTAssertTrue(foreground.guidanceAudioChoices.isEmpty)
   }
 
   func testContentMutationFailsAtManifestHashBeforeCodecAdmission() throws {

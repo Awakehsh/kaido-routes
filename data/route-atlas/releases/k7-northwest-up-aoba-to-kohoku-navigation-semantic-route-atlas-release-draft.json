@@ -1,0 +1,422 @@
+{
+  "definition": {
+    "atlas_id": "shutoko.atlas.k7-northwest.navigation-semantic.2026-07-27",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "nodes": [
+      {
+        "point": {
+          "x": 0.7,
+          "y": 0.78
+        },
+        "topology_node_id": "osm.node.4435202077"
+      },
+      {
+        "point": {
+          "x": 0.88,
+          "y": 0.52
+        },
+        "topology_node_id": "osm.node.4741046930"
+      },
+      {
+        "point": {
+          "x": 0.12,
+          "y": 0.3
+        },
+        "topology_node_id": "osm.node.6441357525"
+      },
+      {
+        "point": {
+          "x": 0.68,
+          "y": 0.6
+        },
+        "topology_node_id": "osm.node.6988179578"
+      },
+      {
+        "point": {
+          "x": 0.72,
+          "y": 0.66
+        },
+        "topology_node_id": "osm.node.7299284526"
+      },
+      {
+        "point": {
+          "x": 0.88,
+          "y": 0.72
+        },
+        "topology_node_id": "osm.node.7299285384"
+      },
+      {
+        "point": {
+          "x": 0.64,
+          "y": 0.82
+        },
+        "topology_node_id": "osm.node.7308295746"
+      },
+      {
+        "point": {
+          "x": 0.78,
+          "y": 0.84
+        },
+        "topology_node_id": "osm.node.7473451738"
+      }
+    ],
+    "occurrence_bindings": [
+      {
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+        "occurrence_index": 0,
+        "segment_id": "shutoko.schematic-edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up"
+      },
+      {
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+        "occurrence_index": 1,
+        "segment_id": "shutoko.schematic-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit"
+      },
+      {
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+        "occurrence_index": 2,
+        "segment_id": "shutoko.schematic-edge.kohoku.shared-branch-to-exit-branch.up"
+      },
+      {
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "occurrence_index": 3,
+        "segment_id": "shutoko.schematic-movement.kohoku.shared-branch-to-kohoku-exit.up"
+      },
+      {
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4",
+        "occurrence_index": 4,
+        "segment_id": "shutoko.schematic-edge.kohoku-exit-ramp-to-directional-handoff.up"
+      }
+    ],
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1",
+    "segments": [
+      {
+        "from_node_id": "osm.node.6441357525",
+        "points": [
+          {
+            "x": 0.12,
+            "y": 0.3
+          },
+          {
+            "x": 0.15,
+            "y": 0.36
+          },
+          {
+            "x": 0.18,
+            "y": 0.4
+          },
+          {
+            "x": 0.24,
+            "y": 0.44
+          },
+          {
+            "x": 0.32,
+            "y": 0.48
+          },
+          {
+            "x": 0.44,
+            "y": 0.49
+          },
+          {
+            "x": 0.54,
+            "y": 0.52
+          },
+          {
+            "x": 0.61,
+            "y": 0.55
+          },
+          {
+            "x": 0.68,
+            "y": 0.6
+          }
+        ],
+        "segment_id": "shutoko.schematic-edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "successor_segment_ids": [
+          "shutoko.schematic-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+          "shutoko.schematic-segment.osm-way.686983567.forward"
+        ],
+        "to_node_id": "osm.node.6988179578",
+        "topology_edge_id": "shutoko.topology-edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up"
+      },
+      {
+        "from_node_id": "osm.node.6988179578",
+        "points": [
+          {
+            "x": 0.68,
+            "y": 0.6
+          },
+          {
+            "x": 0.72,
+            "y": 0.66
+          }
+        ],
+        "segment_id": "shutoko.schematic-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+        "successor_segment_ids": [
+          "shutoko.schematic-edge.kohoku.shared-branch-to-exit-branch.up"
+        ],
+        "to_node_id": "osm.node.7299284526",
+        "topology_edge_id": "shutoko.topology-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit"
+      },
+      {
+        "from_node_id": "osm.node.7299284526",
+        "points": [
+          {
+            "x": 0.72,
+            "y": 0.66
+          },
+          {
+            "x": 0.75,
+            "y": 0.68
+          },
+          {
+            "x": 0.74,
+            "y": 0.72
+          },
+          {
+            "x": 0.7,
+            "y": 0.78
+          }
+        ],
+        "segment_id": "shutoko.schematic-edge.kohoku.shared-branch-to-exit-branch.up",
+        "successor_segment_ids": [
+          "shutoko.schematic-movement.kohoku.shared-branch-to-kohoku-exit.up",
+          "shutoko.schematic-segment.osm-way.367046943.forward"
+        ],
+        "to_node_id": "osm.node.4435202077",
+        "topology_edge_id": "shutoko.topology-edge.kohoku.shared-branch-to-exit-branch.up"
+      },
+      {
+        "from_node_id": "osm.node.4435202077",
+        "points": [
+          {
+            "x": 0.7,
+            "y": 0.78
+          },
+          {
+            "x": 0.64,
+            "y": 0.82
+          }
+        ],
+        "segment_id": "shutoko.schematic-movement.kohoku.shared-branch-to-kohoku-exit.up",
+        "successor_segment_ids": [
+          "shutoko.schematic-edge.kohoku-exit-ramp-to-directional-handoff.up"
+        ],
+        "to_node_id": "osm.node.7308295746",
+        "topology_edge_id": "shutoko.topology-movement.kohoku.shared-branch-to-kohoku-exit.up"
+      },
+      {
+        "from_node_id": "osm.node.7308295746",
+        "points": [
+          {
+            "x": 0.64,
+            "y": 0.82
+          },
+          {
+            "x": 0.66,
+            "y": 0.88
+          },
+          {
+            "x": 0.73,
+            "y": 0.89
+          },
+          {
+            "x": 0.78,
+            "y": 0.88
+          },
+          {
+            "x": 0.78,
+            "y": 0.84
+          }
+        ],
+        "segment_id": "shutoko.schematic-edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "successor_segment_ids": [],
+        "to_node_id": "osm.node.7473451738",
+        "topology_edge_id": "shutoko.topology-edge.kohoku-exit-ramp-to-directional-handoff.up"
+      },
+      {
+        "from_node_id": "osm.node.6988179578",
+        "points": [
+          {
+            "x": 0.68,
+            "y": 0.6
+          },
+          {
+            "x": 0.78,
+            "y": 0.56
+          },
+          {
+            "x": 0.88,
+            "y": 0.52
+          }
+        ],
+        "segment_id": "shutoko.schematic-segment.osm-way.686983567.forward",
+        "successor_segment_ids": [],
+        "to_node_id": "osm.node.4741046930",
+        "topology_edge_id": "shutoko.topology-edge.osm-way.686983567.forward"
+      },
+      {
+        "from_node_id": "osm.node.4435202077",
+        "points": [
+          {
+            "x": 0.7,
+            "y": 0.78
+          },
+          {
+            "x": 0.79,
+            "y": 0.75
+          },
+          {
+            "x": 0.88,
+            "y": 0.72
+          }
+        ],
+        "segment_id": "shutoko.schematic-segment.osm-way.367046943.forward",
+        "successor_segment_ids": [],
+        "to_node_id": "osm.node.7299285384",
+        "topology_edge_id": "shutoko.topology-edge.osm-way.367046943.forward"
+      }
+    ],
+    "topology_slice_id": "shutoko.topology.k7-northwest.navigation-semantic.2026-07-27"
+  },
+  "network_snapshot": {
+    "effective_at": "2026-07-21T20:21:50Z",
+    "id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "status": "ACTIVE"
+  },
+  "route_plan": {
+    "actual_distance_km": 7.031167671,
+    "entry_facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "occurrences": [
+      {
+        "entity_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "index": 0,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+        "index": 1,
+        "kind": "JUNCTION_MOVEMENT",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "index": 2,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.movement.kohoku.shared-branch-to-kohoku-exit.up",
+        "index": 3,
+        "kind": "JUNCTION_MOVEMENT",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "index": 4,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4",
+        "toll_domain_id": "shutoko.toll-domain"
+      }
+    ],
+    "plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1",
+    "recovery_policy": "STRICT"
+  },
+  "schema_version": "1.0",
+  "topology_slice": {
+    "edges": [
+      {
+        "edge_id": "shutoko.topology-edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "from_node_id": "osm.node.6441357525",
+        "route_entity_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "successor_edge_ids": [
+          "shutoko.topology-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+          "shutoko.topology-edge.osm-way.686983567.forward"
+        ],
+        "to_node_id": "osm.node.6988179578"
+      },
+      {
+        "edge_id": "shutoko.topology-movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+        "from_node_id": "osm.node.6988179578",
+        "route_entity_id": "shutoko.movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+        "successor_edge_ids": [
+          "shutoko.topology-edge.kohoku.shared-branch-to-exit-branch.up"
+        ],
+        "to_node_id": "osm.node.7299284526"
+      },
+      {
+        "edge_id": "shutoko.topology-edge.kohoku.shared-branch-to-exit-branch.up",
+        "from_node_id": "osm.node.7299284526",
+        "route_entity_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "successor_edge_ids": [
+          "shutoko.topology-movement.kohoku.shared-branch-to-kohoku-exit.up",
+          "shutoko.topology-edge.osm-way.367046943.forward"
+        ],
+        "to_node_id": "osm.node.4435202077"
+      },
+      {
+        "edge_id": "shutoko.topology-movement.kohoku.shared-branch-to-kohoku-exit.up",
+        "from_node_id": "osm.node.4435202077",
+        "route_entity_id": "shutoko.movement.kohoku.shared-branch-to-kohoku-exit.up",
+        "successor_edge_ids": [
+          "shutoko.topology-edge.kohoku-exit-ramp-to-directional-handoff.up"
+        ],
+        "to_node_id": "osm.node.7308295746"
+      },
+      {
+        "edge_id": "shutoko.topology-edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "from_node_id": "osm.node.7308295746",
+        "route_entity_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "successor_edge_ids": [],
+        "to_node_id": "osm.node.7473451738"
+      },
+      {
+        "edge_id": "shutoko.topology-edge.osm-way.686983567.forward",
+        "from_node_id": "osm.node.6988179578",
+        "route_entity_id": "shutoko.edge.osm-way.686983567.forward",
+        "successor_edge_ids": [],
+        "to_node_id": "osm.node.4741046930"
+      },
+      {
+        "edge_id": "shutoko.topology-edge.osm-way.367046943.forward",
+        "from_node_id": "osm.node.4435202077",
+        "route_entity_id": "shutoko.edge.osm-way.367046943.forward",
+        "successor_edge_ids": [],
+        "to_node_id": "osm.node.7299285384"
+      }
+    ],
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "nodes": [
+      {
+        "node_id": "osm.node.4435202077"
+      },
+      {
+        "node_id": "osm.node.4741046930"
+      },
+      {
+        "node_id": "osm.node.6441357525"
+      },
+      {
+        "node_id": "osm.node.6988179578"
+      },
+      {
+        "node_id": "osm.node.7299284526"
+      },
+      {
+        "node_id": "osm.node.7299285384"
+      },
+      {
+        "node_id": "osm.node.7308295746"
+      },
+      {
+        "node_id": "osm.node.7473451738"
+      }
+    ],
+    "topology_slice_id": "shutoko.topology.k7-northwest.navigation-semantic.2026-07-27"
+  }
+}

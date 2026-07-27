@@ -1,0 +1,79 @@
+{
+  "candidate_bindings": {
+    "actual_distance_km": 7.031167671,
+    "atlas_draft_sha256": "f7eee92538f24fc249bc6050081ad5ed0ada16b8d8cf1dfbd121a77d9083bd9e",
+    "navigation_draft_sha256": "18fa61dc33c802e28fb5d953077337f75122861bf8ac5e9f1ac9d7d51f0e5634",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "occurrence_ids": [
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+      "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4"
+    ],
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1"
+  },
+  "candidate_id": "k7-aoba-to-kohoku-navigation-v1",
+  "input_bindings": {
+    "directed_database": {
+      "path": "data/route-atlas/osm-derived/k7-northwest-260721-directed-database.json",
+      "sha256": "f3b84117a6aec2c016ad9a3f362bd666e7ff1bd93a873e571398dbb517a21ef2"
+    },
+    "route_atlas_v1": {
+      "path": "data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-route-atlas-release.json",
+      "sha256": "ddf292769c3bb3cf13d3ac9d23ef36cb0c8a03ff471701ae9a9b05af4edc3d4a"
+    }
+  },
+  "prepared_at": "2026-07-27",
+  "primary_sources": [
+    {
+      "scope": "directional Yokohama Aoba K7 entrance",
+      "source_reference_id": "shutoko.guide.k7-aoba.2026-07-23"
+    },
+    {
+      "scope": "K7 up shared branch and Yokohama Kohoku exit-left movement",
+      "source_reference_id": "shutoko.guide.k7-kohoku.2026-07-23"
+    },
+    {
+      "scope": "K7 Aoba-to-Kohoku route identity and approximate line length",
+      "source_reference_id": "shutoko.k7-opening-attachment.2019-09-26"
+    },
+    {
+      "scope": "directed geometry, node identity, and branch alternatives",
+      "source_reference_id": "osm.geofabrik.kanto-260721.k7-directed"
+    }
+  ],
+  "release_boundaries": [
+    "No realtime passage claim.",
+    "No ordinary-road or SURFACE_EGRESS release.",
+    "No field matcher reliability claim.",
+    "No pronunciation, acoustic, background-location, or CarPlay qualification.",
+    "Review approval authorizes only the exact hash-bound static assets."
+  ],
+  "review_decisions": {
+    "layout": "PENDING",
+    "navigation_guidance": "PENDING",
+    "topology": "PENDING"
+  },
+  "review_scopes": {
+    "layout": [
+      "Every v2 segment is an exact concatenation of released v1 segment points.",
+      "Every topology node and edge has exactly one layout binding.",
+      "No coordinate contact creates a legal successor."
+    ],
+    "navigation_guidance": [
+      "Editor choices compile the exact five-occurrence RoutePlan.",
+      "Matcher geometry retains complete OSM nodes and both branch alternatives.",
+      "DecisionZone entry offset zero denotes the exact branch node.",
+      "Guidance preserves Japanese sign text and K7 in every locale.",
+      "The first action branches left from K7; the second takes the left exit branch."
+    ],
+    "topology": [
+      "EntryTransition ends at the first strict-route occurrence.",
+      "The five semantic occurrences preserve the exact selected OSM way order.",
+      "The two non-selected expressway alternatives remain explicit and non-authoring.",
+      "The terminal node excludes every ordinary-road successor."
+    ]
+  },
+  "schema_version": "1.0"
+}

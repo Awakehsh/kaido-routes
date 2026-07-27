@@ -7,7 +7,7 @@ import XCTest
 @MainActor
 final class KaidoProductJourneyModelTests: XCTestCase {
   func testJourneyStartsAtAtlasAndCannotSkipUncompiledRoute() {
-    let model = KaidoProductJourneyModel()
+    let model = makeUnreleasedJourneyModel()
 
     XCTAssertEqual(model.stage, .atlas)
     XCTAssertTrue(model.canAdvance)
@@ -20,7 +20,7 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   }
 
   func testExactCompiledRouteUnlocksReviewInOrder() throws {
-    let model = KaidoProductJourneyModel()
+    let model = makeUnreleasedJourneyModel()
 
     model.advance()
     XCTAssertEqual(model.stage, .authoring)
@@ -67,14 +67,12 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   func testProductionDemoCompletesExactAuthoringReviewAndActorRehearsal()
     async throws
   {
-    let composition = KaidoRoutesAppModel(
-      demoRehearsalEnabled: true
-    )
+    let model = KaidoProductJourneyModel.demoPreview()
+    let composition = model.composition
     let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
     let entry = try XCTUnwrap(
       composition.productReleaseCatalog.demoEntries.first
     )
-    let model = KaidoProductJourneyModel(composition: composition)
 
     XCTAssertEqual(authoring.scope, .demoRehearsal)
     authorReleasedRoute(authoring, entry: entry)
@@ -299,7 +297,9 @@ final class KaidoProductJourneyModelTests: XCTestCase {
   func testInjectedMismatchedReleaseCannotAuthorizeSyntheticRoute()
     throws
   {
-    let composition = KaidoRoutesAppModel()
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: BundledProductReleaseCatalog(entries: [])
+    )
     let entry = try makeReleasedProductTestEntry()
     let model = KaidoProductJourneyModel(
       composition: composition,
@@ -349,4 +349,13 @@ final class KaidoProductJourneyModelTests: XCTestCase {
 
 private enum JourneyRuntimeTestError: Error {
   case constructionFailed
+}
+
+@MainActor
+private func makeUnreleasedJourneyModel() -> KaidoProductJourneyModel {
+  KaidoProductJourneyModel(
+    composition: KaidoRoutesAppModel(
+      productReleaseCatalog: BundledProductReleaseCatalog(entries: [])
+    )
+  )
 }

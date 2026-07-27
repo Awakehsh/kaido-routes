@@ -531,12 +531,35 @@ final class KaidoProductJourneyModel: ObservableObject {
   }
 
   static func reviewPreview() -> KaidoProductJourneyModel {
-    let model = KaidoProductJourneyModel()
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: BundledProductReleaseCatalog(entries: [])
+    )
+    let model = KaidoProductJourneyModel(composition: composition)
     model.composition.routeEditor.select(
       choiceID: "preview.synthetic.choice.early-exit"
     )
     model.composition.routeEditor.compile()
     model.go(to: .review)
     return model
+  }
+
+  static func demoPreview() -> KaidoProductJourneyModel {
+    do {
+      let bundled = try BundledProductReleaseCatalogLoader.bundledPreview()
+      let demoCatalog = BundledProductReleaseCatalog(
+        entries: bundled.demoEntries
+      )
+      guard !demoCatalog.entries.isEmpty else {
+        preconditionFailure("Bundled demo product release is unavailable")
+      }
+      return KaidoProductJourneyModel(
+        composition: KaidoRoutesAppModel(
+          productReleaseCatalog: demoCatalog,
+          demoRehearsalEnabled: true
+        )
+      )
+    } catch {
+      preconditionFailure("Invalid bundled demo product release: \(error)")
+    }
   }
 }

@@ -39,3 +39,37 @@ swift run kaido-atlas validate-release \
 The CLI refuses to overwrite an existing artifact. A product build still
 requires an independently valid navigation release with the exact same
 snapshot and RoutePlan, followed by joint product authoring and App enrollment.
+
+## K7 navigation-semantic release
+
+The navigation-semantic release preserves the same reviewed exit-handoff road
+scope while replacing the source-way-only plan with the exact five-occurrence
+`EDGE → JUNCTION_MOVEMENT → EDGE → JUNCTION_MOVEMENT → EDGE` RoutePlan consumed
+by the navigation runtime. It includes seven topology edges: five planned
+entities and the two explicit expressway alternatives at Yokohama Kohoku. It
+does not add any ordinary-road successor or `SURFACE_EGRESS`.
+
+The topology, layout, and navigation/guidance drafts were hash-bound in one
+review packet and approved by three different reviewers. Rebuild the generated
+inputs only from a clean checkout where their non-overwriting destinations do
+not exist:
+
+```sh
+python3 scripts/build_k7_navigation_release_candidates.py
+python3 scripts/build_k7_navigation_release_inputs.py --as-of 2026-07-27
+```
+
+Build and validate the Atlas artifact:
+
+```sh
+swift run kaido-atlas build-release \
+  --draft data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-navigation-semantic-route-atlas-release-draft.json \
+  --config data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-navigation-semantic-route-atlas-release-authoring.json \
+  --output data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-navigation-semantic-route-atlas-release.json
+
+swift run kaido-atlas validate-release \
+  --artifact data/route-atlas/releases/k7-northwest-up-aoba-to-kohoku-navigation-semantic-route-atlas-release.json
+```
+
+The immutable artifact SHA-256 is
+`6497ea69853e35f2feb49705f4fd1694c8189a03384b5a46eab5f06bb0facda0`.

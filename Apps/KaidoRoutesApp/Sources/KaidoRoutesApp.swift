@@ -34,6 +34,12 @@ struct KaidoRoutesApp: App {
           model: .reviewPreview()
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-PRODUCT-JOURNEY-DEMO-PREVIEW"
+      ) {
+        KaidoProductJourneyView(
+          model: .demoPreview()
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-SAVED-ROUTE-LIBRARY-PREVIEW"
       ) {
         SavedRouteLibraryPreviewHost()

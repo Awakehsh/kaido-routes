@@ -173,7 +173,9 @@ endpoint exactly; only a foreground role may carry them.
 - Staging grants no release, route, location, prompt, audio, or navigation
   authority by itself.
 
-The first real App entry still requires real Route Atlas and navigation
-releases, reviewed localized editor data, current reviewed pre-drive evidence,
-an exact product release, and physical-device qualification. This command only
-prepares already-reviewed content for deliberate bundle inclusion.
+The first real K7 App entry now has real Route Atlas and navigation releases,
+reviewed localized editor data, an exact product release, explicit catalog
+enrollment, and a successful physical-iPhone build and install. Current
+reviewed pre-drive evidence and physical-device navigation qualification remain
+separate gates. This command only prepares already-reviewed content for
+deliberate bundle inclusion.

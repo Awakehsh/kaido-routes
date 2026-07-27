@@ -36,7 +36,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     throws
   {
     continueAfterFailure = false
-    let app = launchDefaultJourney()
+    let app = launchDemoJourney()
 
     let routesMap = element("product-map-routes", in: app)
     XCTAssertTrue(routesMap.waitForExistence(timeout: 5))
@@ -187,6 +187,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
   private func launchDefaultJourney() -> XCUIApplication {
     let app = XCUIApplication()
     app.launchArguments = [
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+      "-app.kaidoroutes.map-projection",
+      "topology",
+    ]
+    app.launch()
+    return app
+  }
+
+  private func launchDemoJourney() -> XCUIApplication {
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-PRODUCT-JOURNEY-DEMO-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",

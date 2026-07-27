@@ -194,7 +194,8 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
 
 enum BundledProductReleaseCatalogLoader {
   static let previewManifest: [BundledProductReleaseDescriptor] = [
-    .syntheticPreview
+    .syntheticPreview,
+    .releasedK7AobaKohoku,
   ]
 
   static func bundledPreview(

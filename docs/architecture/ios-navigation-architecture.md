@@ -5,8 +5,10 @@ with the first internal SwiftUI iPhone composition target now present. The app
 renders review-only Route Atlas assets and links the local domain, routing,
 navigation, presentation, and Apple-adapter modules. It composes a complete
 synthetic released `NavigationSession`, checkpoint lifecycle, and one-shot
-speech boundary, but has no real-road released session, active navigation
-`CLLocationManager`, background location service, or CarPlay scene. The current bake-off
+speech boundary. The App catalog additionally contains one real-road K7
+Aoba-to-Kohoku foreground release, but it still has no current bundled
+pre-drive evidence, qualified active navigation `CLLocationManager`, background
+location service, or CarPlay scene. The current bake-off
 selects Valhalla as the leading shared implementation behind the bounded
 surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
 subject to Apple-adapter, operations, and field evidence in
@@ -763,9 +765,10 @@ Location. A second explicit action starts foreground location only after actor
 activation and When In Use authorization. Runtime construction failure stays in
 pre-drive review; route or evidence invalidation terminates an active runtime,
 and ending navigation stops input and speech, removes the active checkpoint, and
-returns to review. The current build intentionally carries zero foreground
-releases and one synthetic demo, so this path remains dormant and never
-substitutes that demo or its synthetic review for a user route.
+returns to review. The current build carries one foreground K7 release and one
+synthetic demo. The foreground entry still remains locked at review without
+separately supplied current pre-drive evidence and never substitutes the demo
+or its synthetic review for the released route.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
@@ -1030,8 +1033,8 @@ That is a development fact, not yet the minimum deployment target.
   to the internal synthetic review. The journey shell can expose
   review only after this exact projection exists; route or evidence invalidation
   demotes the shell back to authoring and terminates an active runtime rather
-  than retaining stale readiness. The checked preview descriptor contains no
-  released evidence bundle, so its visible branch remains dormant; a future
+  than retaining stale readiness. The checked foreground K7 descriptor contains
+  no released evidence bundle, so its start action remains locked; a future
   operator-backed live refresh still requires independent authority, freshness,
   data-use, and failure-policy review.
 - A synthetic language-preview adapter independently selects the interface and

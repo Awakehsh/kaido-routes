@@ -1,6 +1,7 @@
 # Route Atlas visual design
 
-Status: design contract; no real Shuto topology is released.
+Status: accepted design contract with one exact real K7 exit-handoff topology
+release; broader Shuto coverage remains unreleased.
 
 ## Product role
 
@@ -140,7 +141,9 @@ coordinate, infer along-route progress, or claim measured position. A position
 marker remains subject to the independent fresh route-resolved evidence gate.
 KR-U17 exercises the projection with synthetic released flags, including a
 repeated segment and a context-only branch. The iPhone preview and its
-XCUITest render that synthetic proof; no real Shuto atlas or road is released.
+XCUITest render that synthetic proof. Separately, the real K7
+Aoba-to-Kohoku exit-handoff product binds the exact five-occurrence semantic
+Atlas release; this does not promote broader context or candidate geometry.
 
 The ODbL-isolated K7 directed candidate may appear only in an evidence view. Its
 13 one-way route occurrences and two immediate divergence alternatives improve

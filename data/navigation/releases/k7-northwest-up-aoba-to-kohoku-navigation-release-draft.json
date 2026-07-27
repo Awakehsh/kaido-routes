@@ -1,0 +1,1475 @@
+{
+  "decision_zones": [
+    {
+      "decision_zone_id": "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1",
+      "entry_offset_meters": 0,
+      "movement_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+      "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+      "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1"
+    },
+    {
+      "decision_zone_id": "shutoko.decision-zone.kohoku.exit-left-branch.v1",
+      "entry_offset_meters": 0,
+      "movement_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+      "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+      "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1"
+    }
+  ],
+  "editor_catalog": {
+    "decision_points": [
+      {
+        "choices": [
+          {
+            "choice_id": "shutoko.choice.kohoku.k7-up-to-shared-exit-corridor",
+            "destination": {
+              "decision_point_id": "shutoko.decision.kohoku.shared-corridor-exit-branch"
+            },
+            "movement_id": "shutoko.movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+            "movement_toll_domain_id": "shutoko.toll-domain",
+            "outgoing_edge_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+            "outgoing_edge_toll_domain_id": "shutoko.toll-domain"
+          }
+        ],
+        "decision_point_id": "shutoko.decision.kohoku.k7-up-shared-branch",
+        "incoming_approach_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "junction_complex_id": "shutoko.junction.yokohama-kohoku"
+      },
+      {
+        "choices": [
+          {
+            "choice_id": "shutoko.choice.kohoku.shared-corridor-to-exit",
+            "destination": {
+              "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up"
+            },
+            "movement_id": "shutoko.movement.kohoku.shared-branch-to-kohoku-exit.up",
+            "movement_toll_domain_id": "shutoko.toll-domain",
+            "outgoing_edge_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+            "outgoing_edge_toll_domain_id": "shutoko.toll-domain"
+          }
+        ],
+        "decision_point_id": "shutoko.decision.kohoku.shared-corridor-exit-branch",
+        "incoming_approach_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "junction_complex_id": "shutoko.junction.yokohama-kohoku"
+      }
+    ],
+    "entrances": [
+      {
+        "facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+        "first_decision_point_id": "shutoko.decision.kohoku.k7-up-shared-branch",
+        "initial_edge_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "initial_edge_toll_domain_id": "shutoko.toll-domain"
+      }
+    ],
+    "lap_templates": [],
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest"
+  },
+  "editor_catalog_id": "shutoko.editor-catalog.k7-aoba-to-kohoku.navigation-v1",
+  "editor_presentation_catalog": {
+    "choices": [
+      {
+        "choice_id": "shutoko.choice.kohoku.k7-up-to-shared-exit-corridor",
+        "detail": {
+          "en": "Branch left from K7 up",
+          "ja-JP": "K7上りから左へ分岐",
+          "zh-Hans": "从 K7 上行在左侧分岔"
+        },
+        "title": {
+          "en": "Toward Daisan-Keihin / Yokohama Kohoku Exit",
+          "ja-JP": "第三京浜・横浜港北出口へ",
+          "zh-Hans": "驶向第三京滨・横滨港北出口"
+        }
+      },
+      {
+        "choice_id": "shutoko.choice.kohoku.shared-corridor-to-exit",
+        "detail": {
+          "en": "Branch left instead of continuing to Daisan-Keihin",
+          "ja-JP": "第三京浜直進ではなく左へ分岐",
+          "zh-Hans": "不要直行第三京滨，在左侧分岔"
+        },
+        "title": {
+          "en": "Take Yokohama Kohoku Exit",
+          "ja-JP": "横浜港北出口へ",
+          "zh-Hans": "驶向横滨港北出口"
+        }
+      }
+    ],
+    "decision_points": [
+      {
+        "decision_point_id": "shutoko.decision.kohoku.k7-up-shared-branch",
+        "title": {
+          "en": "Yokohama Kohoku JCT Daisan-Keihin / exit branch",
+          "ja-JP": "横浜港北JCT 第三京浜・出口分岐",
+          "zh-Hans": "横滨港北 JCT 第三京滨・出口分岔"
+        }
+      },
+      {
+        "decision_point_id": "shutoko.decision.kohoku.shared-corridor-exit-branch",
+        "title": {
+          "en": "Yokohama Kohoku Exit branch",
+          "ja-JP": "横浜港北出口分岐",
+          "zh-Hans": "横滨港北出口分岔"
+        }
+      }
+    ],
+    "entrances": [
+      {
+        "facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+        "title": {
+          "en": "Yokohama Aoba Entrance (K7 up)",
+          "ja-JP": "横浜青葉入口（K7上り）",
+          "zh-Hans": "横滨青叶入口（K7 上行）"
+        }
+      }
+    ],
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "presentation_catalog_id": "shutoko.editor-presentation.k7-aoba-to-kohoku.navigation-v1"
+  },
+  "junction_views": [],
+  "matcher_corridor": {
+    "corridor_id": "shutoko.matcher-corridor.k7-aoba-to-kohoku.navigation-v1",
+    "edges": [
+      {
+        "coordinates": [
+          {
+            "latitude": 35.544075,
+            "longitude": 139.5406531
+          },
+          {
+            "latitude": 35.5439136,
+            "longitude": 139.5405582
+          },
+          {
+            "latitude": 35.5438165,
+            "longitude": 139.5404946
+          },
+          {
+            "latitude": 35.5433349,
+            "longitude": 139.5402106
+          },
+          {
+            "latitude": 35.5428682,
+            "longitude": 139.540013
+          },
+          {
+            "latitude": 35.5425258,
+            "longitude": 139.5398774
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.574920138.forward",
+        "successor_edge_ids": [
+          "shutoko.edge.osm-way.692426107.forward"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5425258,
+            "longitude": 139.5398774
+          },
+          {
+            "latitude": 35.5422837,
+            "longitude": 139.5397945
+          },
+          {
+            "latitude": 35.5420201,
+            "longitude": 139.5397124
+          },
+          {
+            "latitude": 35.5417237,
+            "longitude": 139.539641
+          },
+          {
+            "latitude": 35.5414082,
+            "longitude": 139.5395813
+          },
+          {
+            "latitude": 35.5409953,
+            "longitude": 139.5395156
+          },
+          {
+            "latitude": 35.5405492,
+            "longitude": 139.539462
+          },
+          {
+            "latitude": 35.5403235,
+            "longitude": 139.5394461
+          },
+          {
+            "latitude": 35.5398965,
+            "longitude": 139.5394257
+          },
+          {
+            "latitude": 35.5396671,
+            "longitude": 139.5394244
+          },
+          {
+            "latitude": 35.5394223,
+            "longitude": 139.5394471
+          },
+          {
+            "latitude": 35.5391471,
+            "longitude": 139.5394926
+          },
+          {
+            "latitude": 35.538848,
+            "longitude": 139.5395594
+          },
+          {
+            "latitude": 35.5380871,
+            "longitude": 139.5397817
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.692426107.forward",
+        "successor_edge_ids": [
+          "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5380871,
+            "longitude": 139.5397817
+          },
+          {
+            "latitude": 35.5375153,
+            "longitude": 139.539974
+          },
+          {
+            "latitude": 35.5371189,
+            "longitude": 139.5400872
+          },
+          {
+            "latitude": 35.5370195,
+            "longitude": 139.5401061
+          },
+          {
+            "latitude": 35.5366629,
+            "longitude": 139.5401331
+          },
+          {
+            "latitude": 35.5364034,
+            "longitude": 139.5402514
+          },
+          {
+            "latitude": 35.5361244,
+            "longitude": 139.5403868
+          },
+          {
+            "latitude": 35.5358541,
+            "longitude": 139.5405382
+          },
+          {
+            "latitude": 35.5355487,
+            "longitude": 139.5407119
+          },
+          {
+            "latitude": 35.5352216,
+            "longitude": 139.5409285
+          },
+          {
+            "latitude": 35.5335762,
+            "longitude": 139.5421086
+          },
+          {
+            "latitude": 35.5331857,
+            "longitude": 139.5424061
+          },
+          {
+            "latitude": 35.5326801,
+            "longitude": 139.5427936
+          },
+          {
+            "latitude": 35.532338,
+            "longitude": 139.5431008
+          },
+          {
+            "latitude": 35.5320079,
+            "longitude": 139.5434169
+          },
+          {
+            "latitude": 35.5317841,
+            "longitude": 139.5436648
+          },
+          {
+            "latitude": 35.5315555,
+            "longitude": 139.5439649
+          },
+          {
+            "latitude": 35.5312654,
+            "longitude": 139.544388
+          },
+          {
+            "latitude": 35.5311094,
+            "longitude": 139.5446478
+          },
+          {
+            "latitude": 35.5309825,
+            "longitude": 139.5448859
+          },
+          {
+            "latitude": 35.530839,
+            "longitude": 139.5451683
+          },
+          {
+            "latitude": 35.5307149,
+            "longitude": 139.5454435
+          },
+          {
+            "latitude": 35.5305968,
+            "longitude": 139.5457396
+          },
+          {
+            "latitude": 35.5304939,
+            "longitude": 139.5460045
+          },
+          {
+            "latitude": 35.5304017,
+            "longitude": 139.5462554
+          },
+          {
+            "latitude": 35.5301953,
+            "longitude": 139.5469261
+          },
+          {
+            "latitude": 35.5301192,
+            "longitude": 139.5472517
+          },
+          {
+            "latitude": 35.530055,
+            "longitude": 139.5475543
+          },
+          {
+            "latitude": 35.5300006,
+            "longitude": 139.5478931
+          },
+          {
+            "latitude": 35.52996,
+            "longitude": 139.5482028
+          },
+          {
+            "latitude": 35.5298793,
+            "longitude": 139.5489309
+          },
+          {
+            "latitude": 35.5288607,
+            "longitude": 139.5598301
+          },
+          {
+            "latitude": 35.5278644,
+            "longitude": 139.5704281
+          },
+          {
+            "latitude": 35.5277804,
+            "longitude": 139.5713425
+          },
+          {
+            "latitude": 35.5276958,
+            "longitude": 139.5720122
+          },
+          {
+            "latitude": 35.5276058,
+            "longitude": 139.572564
+          },
+          {
+            "latitude": 35.5275106,
+            "longitude": 139.5730319
+          },
+          {
+            "latitude": 35.5273787,
+            "longitude": 139.5735485
+          },
+          {
+            "latitude": 35.5272191,
+            "longitude": 139.5740832
+          },
+          {
+            "latitude": 35.5270046,
+            "longitude": 139.5746595
+          },
+          {
+            "latitude": 35.5267795,
+            "longitude": 139.5751851
+          },
+          {
+            "latitude": 35.5265669,
+            "longitude": 139.5756399
+          },
+          {
+            "latitude": 35.5263628,
+            "longitude": 139.5760131
+          },
+          {
+            "latitude": 35.5262328,
+            "longitude": 139.5762339
+          },
+          {
+            "latitude": 35.5260935,
+            "longitude": 139.5764727
+          },
+          {
+            "latitude": 35.5259506,
+            "longitude": 139.5766965
+          },
+          {
+            "latitude": 35.5257494,
+            "longitude": 139.5769747
+          },
+          {
+            "latitude": 35.5255721,
+            "longitude": 139.5772098
+          },
+          {
+            "latitude": 35.5252416,
+            "longitude": 139.5776147
+          },
+          {
+            "latitude": 35.5248393,
+            "longitude": 139.5780481
+          },
+          {
+            "latitude": 35.5244624,
+            "longitude": 139.5784095
+          },
+          {
+            "latitude": 35.524066,
+            "longitude": 139.578738
+          },
+          {
+            "latitude": 35.5237046,
+            "longitude": 139.5790101
+          },
+          {
+            "latitude": 35.5232497,
+            "longitude": 139.5793275
+          },
+          {
+            "latitude": 35.5222462,
+            "longitude": 139.5800062
+          },
+          {
+            "latitude": 35.5216715,
+            "longitude": 139.5804281
+          },
+          {
+            "latitude": 35.5211113,
+            "longitude": 139.580861
+          },
+          {
+            "latitude": 35.5203055,
+            "longitude": 139.5815207
+          },
+          {
+            "latitude": 35.5198099,
+            "longitude": 139.5819683
+          },
+          {
+            "latitude": 35.5190261,
+            "longitude": 139.5827485
+          },
+          {
+            "latitude": 35.5182173,
+            "longitude": 139.5836222
+          },
+          {
+            "latitude": 35.5178386,
+            "longitude": 139.5840553
+          },
+          {
+            "latitude": 35.517395,
+            "longitude": 139.5845884
+          },
+          {
+            "latitude": 35.5168989,
+            "longitude": 139.5852181
+          },
+          {
+            "latitude": 35.5167371,
+            "longitude": 139.5854424
+          },
+          {
+            "latitude": 35.51661,
+            "longitude": 139.585629
+          },
+          {
+            "latitude": 35.5164762,
+            "longitude": 139.5858356
+          },
+          {
+            "latitude": 35.5163285,
+            "longitude": 139.5860876
+          },
+          {
+            "latitude": 35.5161895,
+            "longitude": 139.5863477
+          },
+          {
+            "latitude": 35.5160779,
+            "longitude": 139.586591
+          },
+          {
+            "latitude": 35.515975,
+            "longitude": 139.5868344
+          },
+          {
+            "latitude": 35.5158799,
+            "longitude": 139.5870865
+          },
+          {
+            "latitude": 35.5157935,
+            "longitude": 139.587344
+          },
+          {
+            "latitude": 35.5157149,
+            "longitude": 139.5876094
+          },
+          {
+            "latitude": 35.5156473,
+            "longitude": 139.5878775
+          },
+          {
+            "latitude": 35.5155961,
+            "longitude": 139.588122
+          },
+          {
+            "latitude": 35.5155536,
+            "longitude": 139.5883692
+          },
+          {
+            "latitude": 35.5155183,
+            "longitude": 139.5886166
+          },
+          {
+            "latitude": 35.5154895,
+            "longitude": 139.5888881
+          },
+          {
+            "latitude": 35.5154712,
+            "longitude": 139.5891582
+          },
+          {
+            "latitude": 35.5154637,
+            "longitude": 139.5894498
+          },
+          {
+            "latitude": 35.5154633,
+            "longitude": 139.589725
+          },
+          {
+            "latitude": 35.5154738,
+            "longitude": 139.5900028
+          },
+          {
+            "latitude": 35.5154949,
+            "longitude": 139.5902499
+          },
+          {
+            "latitude": 35.5155313,
+            "longitude": 139.5904969
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "successor_edge_ids": [
+          "shutoko.edge.osm-way.686983570.forward",
+          "shutoko.edge.osm-way.686983567.forward"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5155313,
+            "longitude": 139.5904969
+          },
+          {
+            "latitude": 35.5156585,
+            "longitude": 139.5909795
+          },
+          {
+            "latitude": 35.5157694,
+            "longitude": 139.591407
+          },
+          {
+            "latitude": 35.5158802,
+            "longitude": 139.5917459
+          },
+          {
+            "latitude": 35.5159552,
+            "longitude": 139.5919191
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.686983570.forward",
+        "successor_edge_ids": [
+          "shutoko.edge.kohoku.shared-branch-to-exit-branch.up"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5159552,
+            "longitude": 139.5919191
+          },
+          {
+            "latitude": 35.5160519,
+            "longitude": 139.5920857
+          },
+          {
+            "latitude": 35.5161771,
+            "longitude": 139.5922509
+          },
+          {
+            "latitude": 35.5162739,
+            "longitude": 139.5923638
+          },
+          {
+            "latitude": 35.5163795,
+            "longitude": 139.5924701
+          },
+          {
+            "latitude": 35.5164764,
+            "longitude": 139.5925509
+          },
+          {
+            "latitude": 35.5165676,
+            "longitude": 139.5926117
+          },
+          {
+            "latitude": 35.5166602,
+            "longitude": 139.592655
+          },
+          {
+            "latitude": 35.5167671,
+            "longitude": 139.5926889
+          },
+          {
+            "latitude": 35.5168654,
+            "longitude": 139.5927056
+          },
+          {
+            "latitude": 35.5169706,
+            "longitude": 139.5927086
+          },
+          {
+            "latitude": 35.5170814,
+            "longitude": 139.592701
+          },
+          {
+            "latitude": 35.517188,
+            "longitude": 139.5926782
+          },
+          {
+            "latitude": 35.5172957,
+            "longitude": 139.5926407
+          },
+          {
+            "latitude": 35.5174091,
+            "longitude": 139.5925891
+          },
+          {
+            "latitude": 35.5174964,
+            "longitude": 139.5925366
+          },
+          {
+            "latitude": 35.5175858,
+            "longitude": 139.5924654
+          },
+          {
+            "latitude": 35.5176382,
+            "longitude": 139.5924172
+          },
+          {
+            "latitude": 35.5176858,
+            "longitude": 139.592369
+          },
+          {
+            "latitude": 35.5177265,
+            "longitude": 139.5923211
+          },
+          {
+            "latitude": 35.5177562,
+            "longitude": 139.5922785
+          },
+          {
+            "latitude": 35.5177827,
+            "longitude": 139.5922354
+          },
+          {
+            "latitude": 35.5178042,
+            "longitude": 139.5921902
+          },
+          {
+            "latitude": 35.5178222,
+            "longitude": 139.5921406
+          },
+          {
+            "latitude": 35.5178369,
+            "longitude": 139.5920904
+          },
+          {
+            "latitude": 35.5178491,
+            "longitude": 139.5920359
+          },
+          {
+            "latitude": 35.5178569,
+            "longitude": 139.5919788
+          },
+          {
+            "latitude": 35.5178598,
+            "longitude": 139.591914
+          },
+          {
+            "latitude": 35.5178578,
+            "longitude": 139.5918499
+          },
+          {
+            "latitude": 35.5178525,
+            "longitude": 139.5917876
+          },
+          {
+            "latitude": 35.5178423,
+            "longitude": 139.5917274
+          },
+          {
+            "latitude": 35.5178277,
+            "longitude": 139.5916729
+          },
+          {
+            "latitude": 35.5178099,
+            "longitude": 139.5916217
+          },
+          {
+            "latitude": 35.5177904,
+            "longitude": 139.5915725
+          },
+          {
+            "latitude": 35.517773,
+            "longitude": 139.5915368
+          },
+          {
+            "latitude": 35.5177491,
+            "longitude": 139.5914971
+          },
+          {
+            "latitude": 35.5170469,
+            "longitude": 139.59071
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "successor_edge_ids": [
+          "shutoko.edge.osm-way.686983572.forward",
+          "shutoko.edge.osm-way.367046943.forward"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5170469,
+            "longitude": 139.59071
+          },
+          {
+            "latitude": 35.5169877,
+            "longitude": 139.5906756
+          },
+          {
+            "latitude": 35.5169307,
+            "longitude": 139.5906505
+          },
+          {
+            "latitude": 35.5168664,
+            "longitude": 139.5906352
+          },
+          {
+            "latitude": 35.5168021,
+            "longitude": 139.590632
+          },
+          {
+            "latitude": 35.5167366,
+            "longitude": 139.5906416
+          },
+          {
+            "latitude": 35.5166765,
+            "longitude": 139.5906674
+          },
+          {
+            "latitude": 35.5166176,
+            "longitude": 139.5907036
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.686983572.forward",
+        "successor_edge_ids": [
+          "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up"
+        ]
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5166176,
+            "longitude": 139.5907036
+          },
+          {
+            "latitude": 35.5165653,
+            "longitude": 139.590756
+          },
+          {
+            "latitude": 35.5165219,
+            "longitude": 139.5908131
+          },
+          {
+            "latitude": 35.5164861,
+            "longitude": 139.5908809
+          },
+          {
+            "latitude": 35.5164609,
+            "longitude": 139.590955
+          },
+          {
+            "latitude": 35.5164455,
+            "longitude": 139.5910318
+          },
+          {
+            "latitude": 35.5164429,
+            "longitude": 139.591112
+          },
+          {
+            "latitude": 35.5164479,
+            "longitude": 139.5911908
+          },
+          {
+            "latitude": 35.5164673,
+            "longitude": 139.5912704
+          },
+          {
+            "latitude": 35.5164943,
+            "longitude": 139.5913406
+          },
+          {
+            "latitude": 35.5165305,
+            "longitude": 139.5914025
+          },
+          {
+            "latitude": 35.5165732,
+            "longitude": 139.5914536
+          },
+          {
+            "latitude": 35.5166244,
+            "longitude": 139.5915035
+          },
+          {
+            "latitude": 35.5167024,
+            "longitude": 139.591558
+          },
+          {
+            "latitude": 35.5167963,
+            "longitude": 139.5915964
+          },
+          {
+            "latitude": 35.5168659,
+            "longitude": 139.5916212
+          },
+          {
+            "latitude": 35.5169446,
+            "longitude": 139.5916437
+          },
+          {
+            "latitude": 35.5172243,
+            "longitude": 139.5917036
+          },
+          {
+            "latitude": 35.517292,
+            "longitude": 139.5917254
+          },
+          {
+            "latitude": 35.5173535,
+            "longitude": 139.5917572
+          },
+          {
+            "latitude": 35.5174112,
+            "longitude": 139.5917997
+          },
+          {
+            "latitude": 35.5174645,
+            "longitude": 139.5918553
+          },
+          {
+            "latitude": 35.5175095,
+            "longitude": 139.5919202
+          },
+          {
+            "latitude": 35.5175476,
+            "longitude": 139.5920002
+          },
+          {
+            "latitude": 35.5175748,
+            "longitude": 139.5920841
+          },
+          {
+            "latitude": 35.5175889,
+            "longitude": 139.5921792
+          },
+          {
+            "latitude": 35.5175909,
+            "longitude": 139.5922744
+          },
+          {
+            "latitude": 35.5175779,
+            "longitude": 139.5923664
+          },
+          {
+            "latitude": 35.5175534,
+            "longitude": 139.5924557
+          },
+          {
+            "latitude": 35.5175162,
+            "longitude": 139.5925381
+          },
+          {
+            "latitude": 35.5174692,
+            "longitude": 139.5926104
+          },
+          {
+            "latitude": 35.5174106,
+            "longitude": 139.5926735
+          },
+          {
+            "latitude": 35.5173455,
+            "longitude": 139.5927219
+          },
+          {
+            "latitude": 35.517275,
+            "longitude": 139.5927558
+          },
+          {
+            "latitude": 35.5172028,
+            "longitude": 139.5927717
+          },
+          {
+            "latitude": 35.5171307,
+            "longitude": 139.5927779
+          },
+          {
+            "latitude": 35.5170134,
+            "longitude": 139.5927807
+          },
+          {
+            "latitude": 35.5168541,
+            "longitude": 139.5927679
+          },
+          {
+            "latitude": 35.5167068,
+            "longitude": 139.5927429
+          },
+          {
+            "latitude": 35.5165622,
+            "longitude": 139.5927152
+          },
+          {
+            "latitude": 35.5164408,
+            "longitude": 139.5926827
+          },
+          {
+            "latitude": 35.5163355,
+            "longitude": 139.5926437
+          },
+          {
+            "latitude": 35.5162488,
+            "longitude": 139.5925992
+          },
+          {
+            "latitude": 35.5161695,
+            "longitude": 139.5925449
+          },
+          {
+            "latitude": 35.5160969,
+            "longitude": 139.5924731
+          },
+          {
+            "latitude": 35.5160299,
+            "longitude": 139.5923888
+          },
+          {
+            "latitude": 35.515983,
+            "longitude": 139.5923133
+          },
+          {
+            "latitude": 35.5159383,
+            "longitude": 139.5922268
+          },
+          {
+            "latitude": 35.5158837,
+            "longitude": 139.592102
+          },
+          {
+            "latitude": 35.5157929,
+            "longitude": 139.5918552
+          },
+          {
+            "latitude": 35.5156728,
+            "longitude": 139.5914994
+          },
+          {
+            "latitude": 35.5156008,
+            "longitude": 139.591245
+          },
+          {
+            "latitude": 35.5155462,
+            "longitude": 139.5910229
+          },
+          {
+            "latitude": 35.5154878,
+            "longitude": 139.5907575
+          },
+          {
+            "latitude": 35.5154468,
+            "longitude": 139.590503
+          },
+          {
+            "latitude": 35.5154117,
+            "longitude": 139.5902425
+          },
+          {
+            "latitude": 35.5153874,
+            "longitude": 139.5899886
+          },
+          {
+            "latitude": 35.5153693,
+            "longitude": 139.5897277
+          },
+          {
+            "latitude": 35.5153634,
+            "longitude": 139.589444
+          },
+          {
+            "latitude": 35.515365,
+            "longitude": 139.5892964
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "successor_edge_ids": []
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5155313,
+            "longitude": 139.5904969
+          },
+          {
+            "latitude": 35.5155844,
+            "longitude": 139.5908065
+          },
+          {
+            "latitude": 35.5156462,
+            "longitude": 139.5911108
+          },
+          {
+            "latitude": 35.515723,
+            "longitude": 139.5914269
+          },
+          {
+            "latitude": 35.5158001,
+            "longitude": 139.5916893
+          },
+          {
+            "latitude": 35.515875,
+            "longitude": 139.5919168
+          },
+          {
+            "latitude": 35.5160077,
+            "longitude": 139.592242
+          },
+          {
+            "latitude": 35.5161611,
+            "longitude": 139.5925646
+          },
+          {
+            "latitude": 35.5163028,
+            "longitude": 139.592828
+          },
+          {
+            "latitude": 35.5169981,
+            "longitude": 139.5940517
+          },
+          {
+            "latitude": 35.5174992,
+            "longitude": 139.5949621
+          },
+          {
+            "latitude": 35.517658,
+            "longitude": 139.5953015
+          },
+          {
+            "latitude": 35.5177588,
+            "longitude": 139.5955356
+          },
+          {
+            "latitude": 35.5178409,
+            "longitude": 139.5957354
+          },
+          {
+            "latitude": 35.5179036,
+            "longitude": 139.5959153
+          },
+          {
+            "latitude": 35.5179564,
+            "longitude": 139.5961039
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.686983567.forward",
+        "successor_edge_ids": []
+      },
+      {
+        "coordinates": [
+          {
+            "latitude": 35.5170469,
+            "longitude": 139.59071
+          },
+          {
+            "latitude": 35.5169919,
+            "longitude": 139.5906647
+          },
+          {
+            "latitude": 35.5169347,
+            "longitude": 139.5906288
+          },
+          {
+            "latitude": 35.5168737,
+            "longitude": 139.5905979
+          },
+          {
+            "latitude": 35.5168148,
+            "longitude": 139.5905761
+          },
+          {
+            "latitude": 35.5167525,
+            "longitude": 139.5905631
+          },
+          {
+            "latitude": 35.5166857,
+            "longitude": 139.5905604
+          },
+          {
+            "latitude": 35.5166123,
+            "longitude": 139.5905706
+          },
+          {
+            "latitude": 35.5165428,
+            "longitude": 139.5905941
+          },
+          {
+            "latitude": 35.5164798,
+            "longitude": 139.5906284
+          },
+          {
+            "latitude": 35.5164183,
+            "longitude": 139.590673
+          },
+          {
+            "latitude": 35.5163634,
+            "longitude": 139.5907324
+          },
+          {
+            "latitude": 35.516318,
+            "longitude": 139.5907996
+          },
+          {
+            "latitude": 35.5162802,
+            "longitude": 139.5908829
+          },
+          {
+            "latitude": 35.5162528,
+            "longitude": 139.59098
+          },
+          {
+            "latitude": 35.5162412,
+            "longitude": 139.5910851
+          },
+          {
+            "latitude": 35.5162433,
+            "longitude": 139.591193
+          },
+          {
+            "latitude": 35.5162612,
+            "longitude": 139.5913003
+          },
+          {
+            "latitude": 35.5162912,
+            "longitude": 139.5913963
+          },
+          {
+            "latitude": 35.5163295,
+            "longitude": 139.591483
+          },
+          {
+            "latitude": 35.5163776,
+            "longitude": 139.5915676
+          },
+          {
+            "latitude": 35.5164381,
+            "longitude": 139.5916506
+          },
+          {
+            "latitude": 35.516502,
+            "longitude": 139.5917192
+          },
+          {
+            "latitude": 35.5165808,
+            "longitude": 139.5917871
+          },
+          {
+            "latitude": 35.5166662,
+            "longitude": 139.5918439
+          },
+          {
+            "latitude": 35.5167838,
+            "longitude": 139.5919079
+          },
+          {
+            "latitude": 35.5169963,
+            "longitude": 139.5920022
+          },
+          {
+            "latitude": 35.5171453,
+            "longitude": 139.59207
+          },
+          {
+            "latitude": 35.5172055,
+            "longitude": 139.5921023
+          },
+          {
+            "latitude": 35.5172683,
+            "longitude": 139.5921464
+          },
+          {
+            "latitude": 35.5173273,
+            "longitude": 139.5921916
+          },
+          {
+            "latitude": 35.5173899,
+            "longitude": 139.5922367
+          },
+          {
+            "latitude": 35.5174529,
+            "longitude": 139.5922772
+          },
+          {
+            "latitude": 35.5175191,
+            "longitude": 139.5923139
+          }
+        ],
+        "directed_edge_id": "shutoko.edge.osm-way.367046943.forward",
+        "successor_edge_ids": []
+      }
+    ],
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "occurrences": [
+      {
+        "directed_edge_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "index": 0,
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0"
+      },
+      {
+        "directed_edge_id": "shutoko.edge.osm-way.686983570.forward",
+        "index": 1,
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1"
+      },
+      {
+        "directed_edge_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "index": 2,
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2"
+      },
+      {
+        "directed_edge_id": "shutoko.edge.osm-way.686983572.forward",
+        "index": 3,
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3"
+      },
+      {
+        "directed_edge_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "index": 4,
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4"
+      }
+    ],
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1"
+  },
+  "network_snapshot": {
+    "effective_at": "2026-07-21T20:21:50Z",
+    "id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "status": "ACTIVE"
+  },
+  "released_guidance": [
+    {
+      "anchor": {
+        "anchor_id": "PREPARE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+        "prompt_id": "shutoko.guidance.kohoku.k7-up-shared-branch.prepare.v1"
+      },
+      "frame_template": {
+        "decision_point_name_ja": "横浜港北JCT 第三京浜・出口分岐",
+        "decision_zone_id": "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1",
+        "lane_preparation": "USE_LEFT_LANES",
+        "localized_decision_point_names": {
+          "en": "Yokohama Kohoku JCT Daisan-Keihin / exit branch",
+          "ja-JP": "横浜港北JCT 第三京浜・出口分岐",
+          "zh-Hans": "横滨港北 JCT 第三京滨・出口分岔"
+        },
+        "maneuver": "TAKE_EXIT_LEFT",
+        "movement_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+        "presentation_source": {
+          "japanese_sign_text": "第三京浜・出口へ",
+          "localized_content": {
+            "en": {
+              "display_text": "Branch left for Daisan-Keihin / Yokohama Kohoku Exit",
+              "preserved_japanese_sign_text": "第三京浜・出口へ",
+              "spoken_forms": {
+                "K7": "Shuto Expressway Route K7"
+              },
+              "spoken_text": "Take the left branch for Daisan-Keihin and Yokohama Kohoku Exit"
+            },
+            "ja-JP": {
+              "display_text": "第三京浜・横浜港北出口方面へ左分岐",
+              "preserved_japanese_sign_text": "第三京浜・出口へ",
+              "spoken_forms": {
+                "K7": "ケーセブン"
+              },
+              "spoken_text": "左に分岐して、第三京浜と横浜港北出口方面へ進んでください"
+            },
+            "zh-Hans": {
+              "display_text": "左侧分岔驶向第三京滨・横滨港北出口",
+              "preserved_japanese_sign_text": "第三京浜・出口へ",
+              "spoken_forms": {
+                "K7": "首都高速神奈川七号横滨西北线"
+              },
+              "spoken_text": "请从左侧分岔，驶向第三京滨和横滨港北出口方向"
+            }
+          },
+          "route_shields": [
+            "K7"
+          ]
+        },
+        "stage": "PREPARE"
+      },
+      "trigger_distance_meters": 400
+    },
+    {
+      "anchor": {
+        "anchor_id": "PREPARE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+        "prompt_id": "shutoko.guidance.kohoku.exit-left-branch.prepare.v1"
+      },
+      "frame_template": {
+        "decision_point_name_ja": "横浜港北出口分岐",
+        "decision_zone_id": "shutoko.decision-zone.kohoku.exit-left-branch.v1",
+        "lane_preparation": "USE_LEFT_LANES",
+        "localized_decision_point_names": {
+          "en": "Yokohama Kohoku Exit branch",
+          "ja-JP": "横浜港北出口分岐",
+          "zh-Hans": "横滨港北出口分岔"
+        },
+        "maneuver": "TAKE_EXIT_LEFT",
+        "movement_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "presentation_source": {
+          "japanese_sign_text": "出口へ",
+          "localized_content": {
+            "en": {
+              "display_text": "Branch left for Yokohama Kohoku Exit",
+              "preserved_japanese_sign_text": "出口へ",
+              "spoken_forms": {
+                "K7": "Shuto Expressway Route K7"
+              },
+              "spoken_text": "Take the left branch for Yokohama Kohoku Exit"
+            },
+            "ja-JP": {
+              "display_text": "横浜港北出口へ左分岐",
+              "preserved_japanese_sign_text": "出口へ",
+              "spoken_forms": {
+                "K7": "ケーセブン"
+              },
+              "spoken_text": "左に分岐して、横浜港北出口へ進んでください"
+            },
+            "zh-Hans": {
+              "display_text": "左侧分岔驶向横滨港北出口",
+              "preserved_japanese_sign_text": "出口へ",
+              "spoken_forms": {
+                "K7": "首都高速神奈川七号横滨西北线"
+              },
+              "spoken_text": "请从左侧分岔，驶向横滨港北出口"
+            }
+          },
+          "route_shields": [
+            "K7"
+          ]
+        },
+        "stage": "PREPARE"
+      },
+      "trigger_distance_meters": 250
+    }
+  ],
+  "route_plan": {
+    "actual_distance_km": 7.031167671,
+    "entry_facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+    "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "occurrences": [
+      {
+        "entity_id": "shutoko.edge.k7-northwest.aoba-entry-to-kohoku-shared-branch.up",
+        "index": 0,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.movement.kohoku.k7-up-to-daisan-keihin-and-kohoku-exit",
+        "index": 1,
+        "kind": "JUNCTION_MOVEMENT",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.edge.kohoku.shared-branch-to-exit-branch.up",
+        "index": 2,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-corridor.2",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.movement.kohoku.shared-branch-to-kohoku-exit.up",
+        "index": 3,
+        "kind": "JUNCTION_MOVEMENT",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "toll_domain_id": "shutoko.toll-domain"
+      },
+      {
+        "entity_id": "shutoko.edge.kohoku-exit-ramp-to-directional-handoff.up",
+        "index": 4,
+        "kind": "EDGE",
+        "occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4",
+        "toll_domain_id": "shutoko.toll-domain"
+      }
+    ],
+    "plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1",
+    "recovery_policy": "STRICT"
+  },
+  "runtime_policy": {
+    "egress_options": [
+      {
+        "egress_occurrence_ids": [
+          "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+          "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-ramp.4"
+        ],
+        "egress_option_id": "shutoko.egress.kohoku.directional-exit-handoff.v1",
+        "exit_facility_id": "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+        "first_eligible_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "released": true
+      }
+    ],
+    "entry_transition": {
+      "directed_edge_ids": [
+        "shutoko.edge.osm-way.574920138.forward",
+        "shutoko.edge.osm-way.692426107.forward"
+      ],
+      "facility_id": "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+      "first_route_occurrence_id": "shutoko.occurrence.k7-navigation.aoba-to-kohoku.approach.0"
+    },
+    "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
+    "recovery_candidates": [],
+    "route_plan_id": "shutoko.plan.k7-northwest.aoba-up-to-kohoku-up.navigation-v1",
+    "runtime_policy_id": "shutoko.runtime-policy.k7-aoba-to-kohoku.navigation-v1"
+  },
+  "schema_version": "1.0"
+}

@@ -142,6 +142,8 @@ final class ProductNavigationRuntimeModel: ObservableObject {
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var presentationState: ProductNavigationRuntimePresentationState =
     .awaitingGuidanceFrame
+  @Published private(set) var topologyPositionEvidence:
+    ProductTopologyPositionEvidence?
   @Published private(set) var isDeterministicPreviewTraceRunning = false
   @Published private(set) var simulationStatus: NavigationDriveSimulationStatus?
   @Published private(set) var simulationPreset: ProductNavigationRuntimeSimulationPreset = .clean
@@ -646,6 +648,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     inputState = .disconnected
     presentationProjection = nil
     presentationState = .awaitingGuidanceFrame
+    topologyPositionEvidence = nil
     return true
   }
 
@@ -770,6 +773,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       inputState = .disconnected
       presentationProjection = nil
       presentationState = .awaitingGuidanceFrame
+      topologyPositionEvidence = nil
       simulationFailureCode = nil
     } catch {
       simulationFailureCode = Self.errorCode(error)
@@ -808,6 +812,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       inputState = .disconnected
       presentationProjection = nil
       presentationState = .awaitingGuidanceFrame
+      topologyPositionEvidence = nil
       simulationFailureCode = nil
     } catch {
       simulationFailureCode = Self.errorCode(error)
@@ -857,6 +862,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       case .strictRoute, .routeRecovery, .exitTransition, .surfaceEgress:
         let update = try await runtime.session.observe(envelope.observation)
         self.snapshot = update.navigationSnapshot
+        updateTopologyPositionEvidence(from: update)
         if lifecycleState == .restoredReacquisitionRequired,
           update.navigationSnapshot.signalReacquisitionStatus == .confirmed
         {
@@ -919,6 +925,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     snapshot = result.navigationSnapshot
     simulationStatus = result.status
     if let update = result.navigationUpdate {
+      updateTopologyPositionEvidence(from: update)
       inputState = .matcherUpdated(
         confidence: update.matcherEstimate.confidence,
         guidance: update.guidanceProgressState
@@ -928,6 +935,16 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       presentationProjection = nil
       presentationState = .awaitingGuidanceFrame
     }
+  }
+
+  private func updateTopologyPositionEvidence(
+    from update: NavigationSessionUpdate
+  ) {
+    topologyPositionEvidence = ProductTopologyPositionEvidence.admitted(
+      estimate: update.matcherEstimate,
+      snapshot: update.navigationSnapshot,
+      routePlan: release.navigation.bundle.routePlan
+    )
   }
 
   private var acceptsLiveInput: Bool {

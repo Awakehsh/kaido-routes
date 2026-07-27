@@ -4,20 +4,55 @@ Status: design contract; no real Shuto topology is released.
 
 ## Product role
 
-The Route Atlas is the persistent driving instrument for the supported Shuto
-network. It keeps the whole network in a stable north-up frame so the driver can
-understand where the active route sits without replacing that context with a
-rotating street basemap.
+The Route Atlas is the rectilinear topology projection of the supported Shuto
+network. It is not a static recognition image and it is not restricted to
+parked planning. One map control lets the user switch between this projection
+and a provider-backed geographic projection while planning or driving. The
+selected projection persists until the user changes it.
+
+The topology layout favors horizontal, vertical, and 45-degree segments with
+consistent spacing. It may distort geographic distance and curvature to make
+route relationships, junctions, and directional facilities legible. It does
+not distort directed connectivity, facility direction, route occurrence order,
+or the relative recognition structure of the released network.
 
 The atlas has one visual hierarchy:
 
 1. the released network stays visible as quiet context;
 2. route marks identify familiar corridors without copying operator artwork;
 3. the active `RoutePlan` is the strongest line;
-4. passed, current, future, and repeated occurrences remain distinct;
-5. a current-position marker appears only with eligible route-bound evidence;
-6. a local approach-aligned junction inset shows only the next reviewed
-   decision and never replaces or rotates the atlas.
+4. directional IC, JCT, and PA values appear only at a useful scale;
+5. passed, current, future, and repeated occurrences remain distinct;
+6. a current-position marker appears only with eligible route-bound evidence;
+7. a local approach-aligned junction inset shows only the next reviewed
+   decision and never authors or changes the route.
+
+The geographic map may show local roads, the reviewed surface leg, the current
+position, and the active route geometry. The topology map may show the same
+eligible current position projected onto the exact route occurrence. Its marker
+communicates route position and confidence rather than precise coordinates.
+Neither projection can infer or mutate an entrance, JCT movement, PA access,
+exit, or RoutePlan occurrence.
+
+## Interaction and semantic zoom
+
+The topology projection supports pinch zoom, pan, explicit zoom controls, reset
+to route, and accessible list alternatives in both parked and driving contexts.
+Zoom changes the information layer, not only the pixel scale:
+
+- **Network:** route codes, major JCTs, current origin area, and the selected
+  route family.
+- **Corridor:** all reviewed JCTs, compatible directional IC facilities,
+  directional PAs, and the exact highlighted route.
+- **Facility:** entrance or exit direction, facility number, ETC constraint,
+  legal join or leave movement, JCT branch choices, and PA access/return
+  direction.
+
+Selecting a route segment explains it without changing the route. Selecting a
+JCT or facility submits only a stable reviewed choice to the route editor. The
+map cannot snap a gesture directly into an unreviewed movement. When the visual
+surface becomes crowded, labels yield to the selected route and the next action;
+the same values remain available in the accessible route list.
 
 ## Recognition reference
 
@@ -52,13 +87,15 @@ drift reviewable; it does not promote context geometry into directed topology.
 
 ## Density
 
-Phone and CarPlay overview states show route codes, not full road names. Japanese
-road names remain available in pre-drive review and guidance sign targets.
-Repeated marks may identify a long ring or bay corridor, but every repeated mark
-must resolve to the same reviewed route entry.
+The network scale shows route codes, not every facility label. Japanese road
+names remain available in route detail, pre-drive review, and guidance sign
+targets. Repeated marks may identify a long ring or bay corridor, but every
+repeated mark must resolve to the same reviewed route entry.
 
-Minor geographic detail, entrances, exits, lane diagrams, and evidence prose do
-not compete with the full-network silhouette in the driving view.
+IC, JCT, and PA values appear progressively at corridor and facility scales.
+Lane diagrams appear only for the next reviewed driving decision. Evidence
+prose and implementation identifiers never compete with the map; concise
+availability or uncertainty states link to a separate evidence detail.
 
 ## Visual language
 

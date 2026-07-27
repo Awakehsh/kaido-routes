@@ -128,6 +128,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   let savedRouteLibrary: SavedRouteLibraryModel
   let preDriveReview: PreDriveReviewModel
   let languageSettings: KaidoLanguageSettingsModel
+  let productMapPresentation: ProductMapPresentationModel
   let guidanceVoiceSetup: GuidanceVoiceSetupModel
   let guidanceAudioSourceSetup: GuidanceAudioSourceSetupModel
   let guidanceLanguagePreview: GuidanceLanguagePreviewModel
@@ -149,7 +150,9 @@ final class KaidoRoutesAppModel: ObservableObject {
     preDriveEvidenceUpdateFetcher:
       (any PreDriveEvidenceUpdateFetching)? = nil,
     releasedPreDriveEvidenceProvider:
-      ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil
+      ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil,
+    productMapPreferenceStore:
+      (any ProductMapProjectionPreferenceStoring)? = nil
   ) {
     do {
       let routeEditor = try ParkedRouteEditorModel()
@@ -174,6 +177,12 @@ final class KaidoRoutesAppModel: ObservableObject {
       preDriveReview = PreDriveReviewModel(routeEditor: routeEditor)
       let languageSettings = KaidoLanguageSettingsModel()
       self.languageSettings = languageSettings
+      let productMapPresentation = ProductMapPresentationModel(
+        store:
+          productMapPreferenceStore
+          ?? UserDefaultsProductMapProjectionPreferenceStore()
+      )
+      self.productMapPresentation = productMapPresentation
       if !productReleaseCatalog.foregroundNavigationEntries.isEmpty {
         let preDriveEvidenceUpdates = PreDriveEvidenceUpdateModel(
           entries: productReleaseCatalog.foregroundNavigationEntries,
@@ -254,6 +263,10 @@ final class KaidoRoutesAppModel: ObservableObject {
         fixture: .bundled()
       )
       languageSettings.objectWillChange.sink { [weak self] _ in
+        self?.objectWillChange.send()
+      }
+      .store(in: &languageSettingsSubscriptions)
+      productMapPresentation.objectWillChange.sink { [weak self] _ in
         self?.objectWillChange.send()
       }
       .store(in: &languageSettingsSubscriptions)

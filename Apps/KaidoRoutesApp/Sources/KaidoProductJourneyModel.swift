@@ -150,6 +150,45 @@ final class KaidoProductJourneyModel: ObservableObject {
     }
   }
 
+  var discoveryRouteAtlasPresentation: ReleasedRouteAtlasOverlayPresentation {
+    guard let entry = productShellEntry else {
+      return .unavailable
+    }
+    do {
+      return .ready(
+        projection: try RouteAtlasJourneyProjector.project(
+          release: entry.release.routeAtlas
+        ),
+        isRealRoadAuthority:
+          entry.descriptor.role == .foregroundNavigation
+          && entry.release.foregroundLiveInputAuthority != nil
+      )
+    } catch {
+      return .blocked(releasedRouteAtlasOverlayErrorCode(error))
+    }
+  }
+
+  var activeRuntime: ProductNavigationRuntimeModel? {
+    navigationRuntime ?? rehearsalRuntime
+  }
+
+  var selectedRouteOption: ReleasedProductRouteOptionPresentation? {
+    guard
+      let authoring = composition.releasedRouteAuthoring,
+      let selectedReleaseID = authoring.selectedReleaseID
+    else {
+      return nil
+    }
+    return authoring.options.first {
+      $0.productReleaseID == selectedReleaseID
+    }
+  }
+
+  var preDriveReviewSnapshot: PreDriveReviewSnapshot? {
+    composition.releasedRouteAuthoring?.preDriveReviewSnapshot
+      ?? composition.preDriveReview.snapshot
+  }
+
   var canStartNavigation: Bool {
     guard
       routeReviewReady,
@@ -261,6 +300,21 @@ final class KaidoProductJourneyModel: ObservableObject {
     case .navigation:
       break
     }
+  }
+
+  func selectRouteForPlanning(_ productReleaseID: String) {
+    guard let authoring = composition.releasedRouteAuthoring else {
+      stage = .authoring
+      lastBlocker = nil
+      return
+    }
+    authoring.selectRelease(productReleaseID)
+    guard authoring.selectedReleaseID == productReleaseID else {
+      lastBlocker = .routeReviewNotReady
+      return
+    }
+    stage = .authoring
+    lastBlocker = nil
   }
 
   func goBack() {
@@ -466,6 +520,14 @@ final class KaidoProductJourneyModel: ObservableObject {
         self.rehearsalRuntime = nil
       }
     }
+  }
+
+  private var productShellEntry: BundledProductReleaseEntry? {
+    if let selected = composition.releasedRouteAuthoring?.selectedEntry {
+      return selected
+    }
+    return composition.productReleaseCatalog.foregroundNavigationEntries.first
+      ?? composition.productReleaseCatalog.demoEntries.first
   }
 
   static func reviewPreview() -> KaidoProductJourneyModel {

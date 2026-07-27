@@ -2,91 +2,66 @@ import XCTest
 
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
-  func testDefaultLaunchPresentsOrderedRouteFirstJourney() {
+  func testDefaultLaunchIsConciseAndExcludesInternalEvidenceUI() {
     continueAfterFailure = false
-    let app = XCUIApplication()
-    app.launchArguments = [
-      "-app.kaidoroutes.language.interface",
-      "zh-Hans",
-      "-app.kaidoroutes.language.guidance-voice",
-      "ja-JP",
-    ]
-    app.launch()
+    let app = launchDefaultJourney()
 
-    let shell = element("product-journey-scroll", in: app)
-    XCTAssertTrue(shell.waitForExistence(timeout: 5))
-
-    let stage = element("product-journey-stage", in: app)
-    XCTAssertEqual(stage.value as? String, "ATLAS")
-    XCTAssertEqual(
-      element("product-journey-step-atlas", in: app).value as? String,
-      "CURRENT"
+    XCTAssertTrue(
+      element("product-routes-origin", in: app)
+        .waitForExistence(timeout: 5)
     )
     XCTAssertEqual(
-      element("product-journey-step-navigation", in: app).value as? String,
-      "LOCKED"
+      element("product-journey-stage", in: app).value as? String,
+      "ATLAS"
     )
-    let k7Mode = element("product-journey-atlas-k7Evidence", in: app)
-    XCTAssertTrue(k7Mode.isEnabled)
-    k7Mode.tap()
-    XCTAssertTrue(k7Mode.isSelected)
     XCTAssertEqual(
-      reveal("product-journey-release-catalog", in: app).value as? String,
-      "0 RELEASED ROAD · 1 DEMO"
+      element("product-map-routes", in: app).value as? String,
+      "topology"
     )
+    XCTAssertTrue(element("product-routes-recommendation", in: app).exists)
+    XCTAssertTrue(element("product-routes-create", in: app).exists)
+    XCTAssertTrue(element("product-routes-saved", in: app).exists)
 
-    let action = element("product-journey-primary-action", in: app)
-    XCTAssertTrue(action.isEnabled)
-    XCTAssertEqual(action.value as? String, "AVAILABLE")
-    action.tap()
-
-    XCTAssertEqual(stage.value as? String, "AUTHORING")
-    XCTAssertEqual(action.value as? String, "BLOCKED")
+    XCTAssertFalse(app.staticTexts["根据当前位置"].exists)
+    XCTAssertFalse(app.staticTexts["今天想跑哪条路线？"].exists)
     XCTAssertFalse(
-      element("product-journey-step-atlas", in: app).isSelected
+      app.staticTexts["先选路线。我们再安排合适的方向入口。"].exists
     )
-    XCTAssertTrue(
-      element("product-journey-step-authoring", in: app).isSelected
-    )
-    XCTAssertTrue(
-      element(
-        "released-route-option-preview.synthetic.product-release.v1",
-        in: app
-      )
-      .waitForExistence(timeout: 3)
-    )
+    XCTAssertFalse(app.staticTexts["K7 证据"].exists)
+    XCTAssertFalse(app.staticTexts["PRODUCT RELEASE"].exists)
+    XCTAssertFalse(app.staticTexts["SNAPSHOT"].exists)
   }
 
-  func testDefaultJourneyCompletesActorBackedDrivingRehearsal() {
+  func testMapProjectionStaysSharedThroughRoutesPlanReviewAndDrive()
+    throws
+  {
     continueAfterFailure = false
-    let app = XCUIApplication()
-    app.launchArguments = [
-      "-app.kaidoroutes.language.interface",
-      "zh-Hans",
-      "-app.kaidoroutes.language.guidance-voice",
-      "ja-JP",
-    ]
-    app.launch()
+    let app = launchDefaultJourney()
 
-    let action = element("product-journey-primary-action", in: app)
-    XCTAssertTrue(action.waitForExistence(timeout: 5))
-    action.tap()
+    let routesMap = element("product-map-routes", in: app)
+    XCTAssertTrue(routesMap.waitForExistence(timeout: 5))
+    element("product-map-projection-geographic", in: app).tap()
+    XCTAssertEqual(routesMap.value as? String, "geographic")
 
     reveal(
-      "released-route-option-preview.synthetic.product-release.v1",
+      "product-route-option-preview.synthetic.product-release.v1",
       in: app
     ).tap()
-    reveal("released-route-choice-test.choice.loop", in: app).tap()
-    reveal("released-route-choice-test.choice.loop", in: app).tap()
-    reveal("released-route-choice-test.choice.exit", in: app).tap()
-    reveal("released-route-compile", in: app).tap()
-    reveal("released-vehicle-class-STANDARD", in: app).tap()
-    reveal("released-payment-method-ETC", in: app).tap()
 
+    let planMap = element("product-map-plan", in: app)
+    XCTAssertTrue(planMap.waitForExistence(timeout: 5))
+    XCTAssertEqual(planMap.value as? String, "geographic")
+
+    element("product-map-projection-topology", in: app).tap()
+    XCTAssertEqual(planMap.value as? String, "topology")
+    XCTAssertTrue(element("product-topology-map", in: app).exists)
     XCTAssertTrue(
-      element("released-route-review-ready", in: app)
-        .waitForExistence(timeout: 3)
+      element("product-topology-repeated-occurrences", in: app).exists
     )
+
+    authorDemoRoute(in: app)
+
+    let action = element("product-journey-primary-action", in: app)
     XCTAssertTrue(action.isEnabled)
     action.tap()
 
@@ -94,43 +69,48 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("product-journey-stage", in: app).value as? String,
       "REVIEW"
     )
-    XCTAssertEqual(
-      reveal("product-journey-navigation-blocker", in: app)
-        .value as? String,
-      "REHEARSAL_RELEASE_READY"
-    )
+    let reviewMap = element("product-map-review", in: app)
+    XCTAssertTrue(reviewMap.waitForExistence(timeout: 5))
+    XCTAssertEqual(reviewMap.value as? String, "topology")
+
     XCTAssertTrue(action.isEnabled)
     action.tap()
 
-    XCTAssertTrue(
-      element("product-journey-rehearsal-header", in: app)
-        .waitForExistence(timeout: 5)
-    )
-    let activation = reveal("product-runtime-activation", in: app)
-    XCTAssertEqual(activation.value as? String, "RUNTIME READY")
-
-    let runTrace = reveal("product-runtime-run-trace", in: app)
-    XCTAssertTrue(runTrace.isEnabled)
-    runTrace.tap()
-
-    let surface = element("product-runtime-driving-surface", in: app)
-    XCTAssertTrue(surface.waitForExistence(timeout: 5))
-    XCTAssertTrue(
-      (surface.value as? String)?.contains("test.occurrence.entry") == true
-    )
+    let driveMap = element("product-map-drive", in: app)
+    XCTAssertTrue(driveMap.waitForExistence(timeout: 5))
+    XCTAssertEqual(driveMap.value as? String, "topology")
     XCTAssertFalse(
-      element("product-runtime-start-live-location", in: app).isEnabled
+      element("product-topology-position-marker", in: app).exists
     )
+    XCTAssertTrue(
+      element("product-topology-position-estimated", in: app).exists
+        || element("product-topology-position-unavailable", in: app).exists
+    )
+
+    let start = reveal("product-drive-start-rehearsal", in: app)
+    XCTAssertTrue(start.isEnabled)
+    start.tap()
+
+    let marker = element("product-topology-position-marker", in: app)
+    XCTAssertTrue(marker.waitForExistence(timeout: 5))
+
+    element("product-map-projection-geographic", in: app).tap()
+    XCTAssertEqual(driveMap.value as? String, "geographic")
+    XCTAssertTrue(element("product-geographic-map", in: app).exists)
+
+    element("product-map-projection-topology", in: app).tap()
+    XCTAssertEqual(driveMap.value as? String, "topology")
+    XCTAssertTrue(marker.waitForExistence(timeout: 2))
 
     let screenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    screenshot.name = "Default journey driving rehearsal"
+    screenshot.name = "Shared topology projection with exact route position"
     screenshot.lifetime = .keepAlways
     add(screenshot)
   }
 
-  func testReviewPreviewShowsTruthfulNavigationReleaseBlocker() {
+  func testReviewPreviewKeepsNavigationFailClosedWithoutRawCodes() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -145,209 +125,88 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let stage = element("product-journey-stage", in: app)
     XCTAssertTrue(stage.waitForExistence(timeout: 5))
     XCTAssertEqual(stage.value as? String, "REVIEW")
-
-    let voiceCheck = reveal(
-      "product-journey-voice-check",
-      in: app
-    )
-    XCTAssertTrue(voiceCheck.exists)
-    XCTAssertTrue(
-      element("voice-check-profile-menu", in: app).exists
-    )
-    XCTAssertTrue(
-      element("voice-check-status", in: app).exists
-    )
-    XCTAssertTrue(
-      element("voice-check-audition", in: app).isEnabled
-    )
-    XCTAssertTrue(
-      element("voice-check-language-ja-JP", in: app).isSelected
-    )
-    XCTAssertEqual(
-      element("voice-check-sample", in: app).value as? String,
-      "左側を進み、ビー わんがんせん、横浜方面へ。"
-    )
-
-    let chineseVoice = element(
-      "voice-check-language-zh-Hans",
-      in: app
-    )
-    chineseVoice.tap()
-    XCTAssertTrue(chineseVoice.isSelected)
-    XCTAssertEqual(
-      element("voice-check-sample", in: app).value as? String,
-      "保持左侧，跟随 B 路线 湾岸线，横滨方向。"
-    )
-
-    let blocker = reveal(
-      "product-journey-navigation-blocker",
-      in: app
-    )
-    XCTAssertEqual(
-      blocker.value as? String,
-      "ROUTE_RELEASE_AUTHORITY_UNAVAILABLE"
-    )
+    XCTAssertTrue(element("product-review-summary", in: app).exists)
 
     let action = element("product-journey-primary-action", in: app)
     XCTAssertFalse(action.isEnabled)
     XCTAssertEqual(action.value as? String, "BLOCKED")
-
-    let screenshot = XCTAttachment(
-      screenshot: XCUIScreen.main.screenshot()
+    XCTAssertFalse(
+      app.staticTexts["ROUTE_RELEASE_AUTHORITY_UNAVAILABLE"].exists
     )
-    screenshot.name = "Route-first product journey review gate"
-    screenshot.lifetime = .keepAlways
-    add(screenshot)
+    XCTAssertFalse(app.staticTexts["SYNTHETIC_TEST_ONLY"].exists)
   }
 
-  func testInterfaceLanguageSwitchesWithoutChangingGuidanceVoice() {
+  func testSettingsKeepInterfaceAndGuidanceVoiceIndependent() {
+    continueAfterFailure = false
+    let app = launchDefaultJourney()
+
+    element("product-journey-settings", in: app).tap()
+    XCTAssertTrue(
+      element("product-settings", in: app)
+        .waitForExistence(timeout: 3)
+    )
+
+    let japaneseVoice = element(
+      "product-settings-guidance-voice-ja-JP",
+      in: app
+    )
+    XCTAssertTrue(japaneseVoice.isSelected)
+
+    let englishInterface = element(
+      "product-journey-interface-language-en",
+      in: app
+    )
+    englishInterface.tap()
+
+    XCTAssertTrue(englishInterface.isSelected)
+    XCTAssertTrue(japaneseVoice.isSelected)
+    XCTAssertEqual(
+      element("product-journey-interface-language", in: app)
+        .value as? String,
+      "en"
+    )
+  }
+
+  func testInternalEvidenceWorkbenchRequiresIntentionalLaunchArgument() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
-      "-PRODUCT-JOURNEY-REVIEW-PREVIEW",
+      "-INTERNAL-REVIEW-HOME",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    XCTAssertTrue(
+      app.buttons["K7 证据"].waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(app.staticTexts["REVIEW"].exists)
+    XCTAssertFalse(element("product-routes-origin", in: app).exists)
+  }
+
+  private func launchDefaultJourney() -> XCUIApplication {
+    let app = XCUIApplication()
+    app.launchArguments = [
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
     app.launch()
-
-    let header = element("product-journey-header", in: app)
-    XCTAssertTrue(header.waitForExistence(timeout: 5))
-    XCTAssertEqual(
-      header.label,
-      "Kaido Routes。先选路，再出发。当前步骤行前确认。"
-    )
-
-    let english = element(
-      "product-journey-interface-language-en",
-      in: app
-    )
-    XCTAssertTrue(english.exists)
-    english.tap()
-
-    XCTAssertTrue(english.isSelected)
-    XCTAssertEqual(
-      header.label,
-      "Kaido Routes. Choose the route, then drive. Current step: Pre-drive review."
-    )
-    XCTAssertEqual(
-      element("product-journey-interface-language", in: app).value as? String,
-      "en"
-    )
-
-    let voiceCheck = reveal("product-journey-voice-check", in: app)
-    XCTAssertTrue(voiceCheck.exists)
-    XCTAssertTrue(
-      element("voice-check-language-ja-JP", in: app).isSelected
-    )
-    XCTAssertEqual(
-      element("voice-check-sample", in: app).value as? String,
-      "左側を進み、ビー わんがんせん、横浜方面へ。"
-    )
+    return app
   }
 
-  func testSavedRouteLifecycleRemainsLocalAndReleaseGated() {
-    continueAfterFailure = false
-    let app = XCUIApplication()
-    app.launchArguments = [
-      "-SAVED-ROUTE-LIBRARY-PREVIEW",
-      "-app.kaidoroutes.language.interface",
-      "en",
-    ]
-    app.launch()
-
-    let stage = element("product-journey-stage", in: app)
-    XCTAssertTrue(stage.waitForExistence(timeout: 5))
-    XCTAssertEqual(stage.value as? String, "REVIEW")
-
-    _ = reveal("saved-route-save-panel", in: app)
-    let name = element("saved-route-name", in: app)
-    name.tap()
-    name.typeText("Night loop")
-    name.typeText(XCUIKeyboardKey.return.rawValue)
-
-    let save = reveal("saved-route-save", in: app)
-    XCTAssertTrue(save.isEnabled)
-    save.tap()
+  private func authorDemoRoute(in app: XCUIApplication) {
+    reveal("released-route-choice-test.choice.loop", in: app).tap()
+    reveal("released-route-choice-test.choice.loop", in: app).tap()
+    reveal("released-route-choice-test.choice.exit", in: app).tap()
+    reveal("released-route-compile", in: app).tap()
+    reveal("released-vehicle-class-STANDARD", in: app).tap()
+    app.swipeUp()
+    reveal("released-payment-method-ETC", in: app).tap()
     XCTAssertTrue(
-      element("saved-route-save-success", in: app)
-        .waitForExistence(timeout: 5)
-    )
-
-    element("product-journey-back", in: app).tap()
-    XCTAssertEqual(stage.value as? String, "AUTHORING")
-    element("product-journey-step-atlas", in: app).tap()
-    XCTAssertEqual(stage.value as? String, "ATLAS")
-
-    let library = reveal("saved-route-library", in: app)
-    XCTAssertTrue((library.value as? String)?.hasPrefix("1 RECORDS") == true)
-    let savedName = app.staticTexts["Night loop"]
-    XCTAssertTrue(savedName.exists)
-    for _ in 0..<8 where !savedName.isHittable {
-      app.swipeUp()
-    }
-    XCTAssertTrue(savedName.isHittable)
-    let open = app.buttons["Open in parked editor"]
-    XCTAssertTrue(open.exists)
-    XCTAssertFalse(open.isEnabled)
-    XCTAssertTrue(app.staticTexts["REVIEW REQUIRED"].exists)
-
-    let screenshot = XCTAttachment(
-      screenshot: XCUIScreen.main.screenshot()
-    )
-    screenshot.name = "Saved route remains release-gated"
-    screenshot.lifetime = .keepAlways
-    add(screenshot)
-
-    XCTAssertTrue(
-      element("saved-route-import", in: app).exists
-    )
-    XCTAssertTrue(app.buttons["Export"].exists)
-    let rename = app.buttons["Rename"]
-    XCTAssertTrue(rename.exists)
-    rename.tap()
-
-    let renameAlert = app.alerts["Rename route"]
-    XCTAssertTrue(renameAlert.waitForExistence(timeout: 2))
-    let renameField = renameAlert.textFields.firstMatch
-    XCTAssertTrue(renameField.exists)
-    renameField.tap()
-    renameField.typeText(
-      String(
-        repeating: XCUIKeyboardKey.delete.rawValue,
-        count: 32
-      )
-    )
-    renameField.typeText("Renamed night loop")
-    renameAlert.buttons["Save"].tap()
-
-    let renamed = app.staticTexts["Renamed night loop"]
-    XCTAssertTrue(renamed.waitForExistence(timeout: 2))
-    XCTAssertFalse(app.staticTexts["Night loop"].exists)
-    XCTAssertTrue(app.staticTexts["REVIEW REQUIRED"].exists)
-
-    let renamedScreenshot = XCTAttachment(
-      screenshot: XCUIScreen.main.screenshot()
-    )
-    renamedScreenshot.name =
-      "Renamed route preserves release gate"
-    renamedScreenshot.lifetime = .keepAlways
-    add(renamedScreenshot)
-
-    app.buttons["Delete"].tap()
-    let confirmation = app.sheets.firstMatch
-    XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
-    confirmation.buttons["Delete"].tap()
-
-    XCTAssertTrue(
-      element("saved-route-library-empty", in: app)
-        .waitForExistence(timeout: 2)
-    )
-    XCTAssertFalse(renamed.exists)
-    XCTAssertTrue(
-      (library.value as? String)?.hasPrefix("0 RECORDS")
-        == true
+      element("released-route-review-ready", in: app)
+        .waitForExistence(timeout: 3)
     )
   }
 
@@ -363,8 +222,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     in app: XCUIApplication
   ) -> XCUIElement {
     let target = element(identifier, in: app)
-    XCTAssertTrue(target.waitForExistence(timeout: 2))
-    for _ in 0..<8 where !target.isHittable {
+    XCTAssertTrue(
+      target.waitForExistence(timeout: 3),
+      "\(identifier) did not exist"
+    )
+    for _ in 0..<10 where !target.isHittable {
       app.swipeUp()
     }
     XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")

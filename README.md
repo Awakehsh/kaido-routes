@@ -14,20 +14,19 @@ Metropolitan Expressway Company Limited.
 
 This repository defines product, domain, evidence, and test contracts plus a
 pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
-links the local domain, routing, navigation, and presentation modules and renders
-the tracked full-network and K7 Route Atlas assets. Its default launch is now one
-ordered route-first journey instead of the former vertically stacked evidence
-workbench: Route Atlas recognition leads to parked authoring, an exact compiled
-RoutePlan unlocks pre-drive review, and the bundled demo continues into a
-fixed-input driving rehearsal backed by its exact joint product release and
-actor runtime. Real-road navigation and Core Location remain visibly locked
-until a foreground product release grants authority. Returning to edit and
-invalidating the compiled route automatically removes review and rehearsal
-readiness. The original internal workbench remains available through a
-dedicated launch argument. The journey presents a synthetic
-directional-entrance recommendation, parked route authoring, RoutePlan-bound
-pre-drive review, a parked guidance-voice sound check, and the actor rehearsal
-without calling live location or surface routing.
+links the local domain, routing, navigation, and presentation modules. Its
+default launch now follows the concise Routes → Plan → Review → Drive product
+journey: origin and a compatible directional entrance precede available route
+cards, parked release-owned choices compile one exact RoutePlan, and the
+bundled demo continues into an actor-backed driving rehearsal. One persisted
+`Map | Lines` control is shared by every stage. The topology projection
+preserves ordered and repeated occurrences and accepts a precise current-route
+marker only from exact HIGH route-bound progress evidence; LOW, LOST,
+ambiguous, or identity-drifted evidence stays estimated or unavailable.
+Real-road navigation and Core Location remain locked until a foreground
+product release grants authority. The full-network/K7 evidence workbench and
+calibration controls require a dedicated internal launch argument and do not
+appear in the ordinary product journey.
 Its visible, persisted interface selector switches the default journey among
 Japanese, Simplified Chinese, and English immediately. App-owned copy for the
 atlas, entrance explanation, parked editor, pre-drive review, voice setup, and
@@ -869,6 +868,7 @@ hard properties that must remain proven as the product expands:
 
 - [`docs/product/principles.md`](docs/product/principles.md): product promise and non-goals.
 - [`docs/product/custom-route-builder.md`](docs/product/custom-route-builder.md): curated and expert route-authoring model.
+- [`docs/product/iphone-product-experience.md`](docs/product/iphone-product-experience.md): concise iPhone information architecture, origin-aware recommendations, dual-map roles, and default journey.
 - [`docs/architecture/domain-contract.md`](docs/architecture/domain-contract.md): stable route and road-network concepts.
 - [`docs/architecture/journey-lifecycle.md`](docs/architecture/journey-lifecycle.md): surface access, entry recognition, recovery, and legal egress.
 - [`docs/architecture/ios-navigation-architecture.md`](docs/architecture/ios-navigation-architecture.md): accepted Swift, CarPlay, routing, matching, and provider boundaries.

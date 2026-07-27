@@ -204,6 +204,26 @@ scope.
 The technical review clears only `ODBL_DISTRIBUTION`. It is not legal advice
 and cannot clear a road, topology, layout, realtime, or navigation gate.
 
+Prepare a non-overwriting private packet for the two independent release
+reviews and the production Route Atlas authoring boundary:
+
+```sh
+python3 scripts/prepare_k7_route_atlas_release_packet.py \
+  --as-of 2026-07-27 \
+  --output research/evidence/k7-route-atlas-release-review-2026-07-27
+```
+
+The packet derives the exact schema-1.0 Route Atlas draft and authoring
+configuration, copies both pending review manifests, and binds every input by
+SHA-256. It intentionally preserves both evidence states as `CANDIDATE`.
+Running `kaido-atlas build-release` against the unreviewed packet must fail
+without writing an artifact. Google Maps may be used as coordinate-only
+corroboration during review, but it cannot replace the operator sources or
+either independent approval. This packet is Route Atlas-only; it does not
+invent the alternating movement/edge RoutePlan, released editor catalog,
+guidance, matcher corridor, or other assets required by a navigation and joint
+product release.
+
 Private completed road-register and field manifests may be supplied with
 `--road-register-review` and `--field-review`; each can clear only its own
 future-scope gate. Changing topology or layout evidence to `RELEASED` without

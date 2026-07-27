@@ -37,6 +37,14 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertEqual(foreground.descriptor.role, .foregroundNavigation)
     XCTAssertNotNil(foreground.release.foregroundLiveInputAuthority)
     XCTAssertTrue(foreground.guidanceAudioChoices.isEmpty)
+    XCTAssertEqual(
+      foreground.preDriveEvidenceBundle?.manifest.releaseID,
+      "shutoko.pre-drive.k7-aoba-to-kohoku.2026-07-27T2224+09"
+    )
+    XCTAssertEqual(
+      foreground.preDriveEvidenceBundle?.manifest.records.count,
+      10
+    )
   }
 
   func testContentMutationFailsAtManifestHashBeforeCodecAdmission() throws {

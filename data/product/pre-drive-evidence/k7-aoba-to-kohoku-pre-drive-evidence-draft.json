@@ -1,0 +1,349 @@
+{
+  "records": [
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "ETC",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 350,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.light_motorcycle.etc.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.light_motorcycle.etc.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "LIGHT_MOTORCYCLE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.light_motorcycle.etc.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.light_motorcycle",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "CASH",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 1590,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.light_motorcycle.cash.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.light_motorcycle.cash.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "LIGHT_MOTORCYCLE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.light_motorcycle.cash.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.light_motorcycle",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "ETC",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 400,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.standard.etc.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.standard.etc.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "STANDARD"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.standard.etc.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.standard",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "CASH",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 1950,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.standard.cash.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.standard.cash.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "STANDARD"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.standard.cash.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.standard",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "ETC",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 440,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.medium.etc.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.medium.etc.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "MEDIUM"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.medium.etc.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.medium",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "CASH",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 2310,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.medium.cash.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.medium.cash.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "MEDIUM"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.medium.cash.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.medium",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "ETC",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 550,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.large.etc.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.large.etc.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "LARGE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.large.etc.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.large",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "CASH",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 3110,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.large.cash.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.large.cash.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "LARGE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.large.cash.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.large",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "ETC",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 800,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.extra_large.etc.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.extra_large.etc.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "EXTRA_LARGE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.extra_large.etc.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.extra_large",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    },
+    {
+      "evidence": {
+        "evaluated_at": "2026-07-27T22:23:00+09:00",
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "payment_method": "CASH",
+        "tariff_quotes": [
+          {
+            "checked_at": "2026-07-27T22:21:00+09:00",
+            "estimated_amount_yen": 5080,
+            "official_query_reference": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89",
+            "quote_id": "shutoko.pre-drive-quote.k7-aoba-to-kohoku.extra_large.cash.2026-07-27",
+            "status": "VERIFIED_QUERY",
+            "tariff_distance_km": 7.1,
+            "tariff_version_id": "shutoko.tariff-query.k7-aoba-to-kohoku.extra_large.cash.2026-07-27",
+            "tariff_version_status": "ACTIVE"
+          }
+        ],
+        "vehicle_class": "EXTRA_LARGE"
+      },
+      "expires_at": "2026-07-28T00:00:00+09:00",
+      "record_id": "shutoko.pre-drive-record.k7-aoba-to-kohoku.extra_large.cash.2026-07-27",
+      "source_reference_ids": [
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.extra_large",
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27"
+      ],
+      "valid_from": "2026-07-27T22:24:00+09:00"
+    }
+  ],
+  "schema_version": "1.0",
+  "source_registry": [
+    {
+      "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+      "checked_at": "2026-07-27T22:21:00+09:00",
+      "content_sha256": "d81cf0b3a2831e4720ce429b9be231c52df6b87053b037771083852b79b0e20a",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "TARIFF_QUERY"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.light_motorcycle",
+      "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+    },
+    {
+      "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+      "checked_at": "2026-07-27T22:21:00+09:00",
+      "content_sha256": "7af96a9995f9da7330d2dcdbcfc555bb87576c83ae8b3ca601d9eb1ad5d5eb82",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "TARIFF_QUERY"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.standard",
+      "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+    },
+    {
+      "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+      "checked_at": "2026-07-27T22:21:00+09:00",
+      "content_sha256": "1465edabe1c5c2d0725587b1d08ed280d4d7a0346b7951610ffe50bf9c3764f8",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "TARIFF_QUERY"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.medium",
+      "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+    },
+    {
+      "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+      "checked_at": "2026-07-27T22:21:00+09:00",
+      "content_sha256": "67cd053d06f77064a551fd6ed3ac633b5e3382f826ce429753f5b6414f74dc45",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "TARIFF_QUERY"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.large",
+      "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+    },
+    {
+      "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+      "checked_at": "2026-07-27T22:21:00+09:00",
+      "content_sha256": "04c81f4e71455e057ea7cb2301c10d55ea4e2080171af2c7f56a559d95bdc2d9",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "TARIFF_QUERY"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.tariff.2026-07-27.extra_large",
+      "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+    },
+    {
+      "authority_name": "Shutoko Engineering Company Limited / mew-ti",
+      "checked_at": "2026-07-27T22:22:00+09:00",
+      "content_sha256": "d0ad1ed98d830dc36d41b9072bc077f0e2a673839541ea39e9f70d236381d619",
+      "reviewed_at": "2026-07-27T22:23:00+09:00",
+      "reviewer_id": "kaido.release-review.k7-pre-drive",
+      "roles": [
+        "PASSAGE_REVIEW"
+      ],
+      "source_reference_id": "shutoko.pre-drive-source.k7-aoba-to-kohoku.passage.2026-07-27",
+      "source_url": "https://search.shutoko-eng.jp/rtmap.html"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "descriptor_symbol": "releasedK7AobaKohoku",
   "guidance_audio_options": [],
-  "pre_drive_evidence_manifest_resource_name": null,
+  "pre_drive_evidence_manifest_resource_name": "k7-aoba-to-kohoku-pre-drive-evidence",
   "pre_drive_evidence_update_endpoint": null,
   "pre_drive_evidence_update_trust_keys": null,
   "product_resource_name": "k7-aoba-kohoku-product-release",

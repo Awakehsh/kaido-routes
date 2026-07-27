@@ -1,5 +1,6 @@
 import Combine
 import CoreGraphics
+import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
@@ -151,6 +152,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       (any PreDriveEvidenceUpdateFetching)? = nil,
     releasedPreDriveEvidenceProvider:
       ReleasedProductRouteAuthoringModel.EvidenceProvider? = nil,
+    currentDateProvider: @escaping () -> Date = Date.init,
     productMapPreferenceStore:
       (any ProductMapProjectionPreferenceStoring)? = nil
   ) {
@@ -187,7 +189,8 @@ final class KaidoRoutesAppModel: ObservableObject {
         let preDriveEvidenceUpdates = PreDriveEvidenceUpdateModel(
           entries: productReleaseCatalog.foregroundNavigationEntries,
           store: preDriveEvidenceUpdateStore,
-          fetcher: preDriveEvidenceUpdateFetcher
+          fetcher: preDriveEvidenceUpdateFetcher,
+          currentDateProvider: currentDateProvider
         )
         self.preDriveEvidenceUpdates = preDriveEvidenceUpdates
         let evidenceProvider =
@@ -202,7 +205,8 @@ final class KaidoRoutesAppModel: ObservableObject {
           try ReleasedProductRouteAuthoringModel(
             entries: productReleaseCatalog.foregroundNavigationEntries,
             locale: languageSettings.interfaceLocale,
-            evidenceProvider: evidenceProvider
+            evidenceProvider: evidenceProvider,
+            currentDateProvider: currentDateProvider
           )
         self.releasedRouteAuthoring = releasedRouteAuthoring
         preDriveEvidenceUpdates.evidenceDidChange = {
@@ -296,12 +300,29 @@ final class KaidoRoutesAppModel: ObservableObject {
     }
   }
 
-  static func production() -> KaidoRoutesAppModel {
+  static func production(
+    currentDateProvider: @escaping () -> Date = Date.init
+  ) -> KaidoRoutesAppModel {
     KaidoRoutesAppModel(
       demoRehearsalEnabled: true,
       savedRouteStore: try? FileSavedRouteLibraryStore.applicationSupport(),
       preDriveEvidenceUpdateStore:
-        try? FilePreDriveEvidenceUpdateStore.applicationSupport()
+        try? FilePreDriveEvidenceUpdateStore.applicationSupport(),
+      currentDateProvider: currentDateProvider
+    )
+  }
+
+  /// Deterministic L3 proof for the released K7 artifact and bundled evidence.
+  ///
+  /// This freezes only evidence freshness. Core Location keeps its production
+  /// simulated-input rejection, so this mode cannot become field evidence.
+  static func k7OperationalE2E() -> KaidoRoutesAppModel {
+    let fixedDate = ISO8601DateFormatter().date(
+      from: "2026-07-27T22:30:00+09:00"
+    )!
+    return KaidoRoutesAppModel(
+      demoRehearsalEnabled: false,
+      currentDateProvider: { fixedDate }
     )
   }
 

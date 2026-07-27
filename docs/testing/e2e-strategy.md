@@ -537,10 +537,38 @@ default authoring model only inside its validity window; missing, mutated, or
 expired evidence cannot fall back to injected values. Two independently valid
 released entries for the same exact plan produce an explicit ambiguity rather
 than an arbitrary choice. XCUITest exposes the current
-`0 RELEASED ROAD · 1 DEMO` catalog in the
+`1 RELEASED ROAD · 1 DEMO` catalog in the
 default journey. Product schema, release validity, and live-input authority
 remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
 are L3-specific.
+
+The K7 operational E2E composes these boundaries without copying the real
+release into a portable synthetic scenario:
+
+```sh
+python3 scripts/run_k7_operational_e2e.py
+```
+
+The command reconstructs the identity-free pre-drive draft from one dated,
+reviewed scalar source snapshot; authors and validates the exact navigation,
+navigation-semantic Route Atlas, joint product, and ten-profile pre-drive
+artifacts; and re-runs App staging in a temporary directory. It requires the
+generated draft, authoring configuration, evidence manifest, product resource,
+pre-drive resource, and compile-time Swift descriptor to match the tracked
+bytes exactly. Its focused L3 run then selects the real K7 foreground release,
+submits both release-owned junction choices, compiles the five-occurrence
+RoutePlan, selects `STANDARD + ETC`, verifies `¥400`, `7.1 km`, and
+`REALTIME_UNCONFIRMED`, starts the released navigation runtime, and requires the
+explicit foreground-location control to be available. The App launch injects
+`2026-07-27T22:30:00+09:00`, which is inside the reviewed bundle window; a
+companion model test proves the exclusive expiry boundary.
+
+This E2E makes no live request and cannot refresh the source review. Passing it
+does not claim that K7 is currently open, calibrate Core Location or DecisionZone
+timing, qualify pronunciation or physical audio routing, create a CarPlay scene,
+or replace passenger-observed field evidence. A new operational window still
+requires a separately reviewed official tariff query and neutral passage check
+before the deterministic authoring command can produce a new manifest.
 
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject

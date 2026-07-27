@@ -43,6 +43,14 @@ struct KaidoRoutesApp: App {
         "-SAVED-ROUTE-LIBRARY-PREVIEW"
       ) {
         SavedRouteLibraryPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-K7-OPERATIONAL-E2E"
+      ) {
+        KaidoProductJourneyView(
+          model: KaidoProductJourneyModel(
+            composition: .k7OperationalE2E()
+          )
+        )
       } else {
         KaidoProductJourneyView(
           model: KaidoProductJourneyModel(

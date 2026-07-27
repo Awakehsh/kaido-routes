@@ -10,9 +10,18 @@ struct ReleasedProductRouteOptionPresentation: Equatable, Identifiable, Sendable
   let navigationReleaseID: String
   let entranceTitle: String
   let finalChoiceTitle: String
+  let routeShields: [String]
   let decisionCount: Int
   let actualDistanceKM: Double
   let hasGuidanceAudio: Bool
+
+  var primaryRouteShield: String {
+    routeShields.first ?? "—"
+  }
+
+  var routeTitle: String {
+    "\(primaryRouteShield) · \(finalChoiceTitle)"
+  }
 }
 
 enum ReleasedProductRouteAuthoringError: String, Error, Equatable, Sendable {
@@ -384,6 +393,13 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
         navigationReleaseID: entry.release.navigation.releaseID,
         entranceTitle: adapter.entranceTitle,
         finalChoiceTitle: finalChoiceTitle,
+        routeShields: entry.release.navigation.bundle.releasedGuidance
+          .flatMap(\.frameTemplate.presentationSource.routeShields)
+          .reduce(into: []) { values, shield in
+            if !values.contains(shield) {
+              values.append(shield)
+            }
+          },
         decisionCount: adapter.steps.count,
         actualDistanceKM: actualDistanceKM,
         hasGuidanceAudio: !entry.guidanceAudioChoices.isEmpty

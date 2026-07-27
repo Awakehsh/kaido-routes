@@ -74,8 +74,10 @@ require the same whole-product signature validation, persist before publishing,
 reject rollback and release-ID reuse, revalidate on restoration, and never fall
 back after a newer effective bundle loses or expires a profile. The current
 manifest contains one foreground K7 release and one synthetic demo. The K7
-entry has no bundled current pre-drive evidence, so it fails closed at review
-instead of manufacturing tariff or passage status. The default demo path reuses that one release
+entry bundles one hash-bound, dated 2026-07-27 pre-drive evidence window with
+all five vehicle classes and separate ETC/cash profiles. It admits review only
+inside that embedded interval and fails closed after expiry instead of
+manufacturing tariff or passage status. The default demo path reuses that one release
 identity across authoring, pre-drive review, and a freshly constructed actor
 rehearsal; it never promotes `DEMO_ONLY` or mints live-input authority. A separate
 synthetic guidance panel lets interface and voice locales vary independently
@@ -930,6 +932,20 @@ swift run kaido-atlas validate \
   --context data/route-atlas/context/mlit-n06-2025-current-shuto-context.json
 python3 scripts/validate_e2e.py
 ```
+
+Run the exact K7 release-to-iPhone operational E2E separately:
+
+```sh
+python3 scripts/run_k7_operational_e2e.py
+```
+
+It regenerates the reviewed evidence inputs in a temporary directory, authors
+and validates the exact navigation, Route Atlas, product, pre-drive, and App
+staging artifacts, compares every staged resource and descriptor byte-for-byte,
+then runs the focused App model and XCUITest path on the `Kaido Routes Preview`
+Simulator. It performs no live network request. The UI path uses an injected
+time inside the reviewed evidence window so later CI runs prove deterministic
+expiry semantics without treating stale evidence as current road truth.
 
 Private surface-egress calibration inputs may be converted into one
 coordinate-free review artifact without printing their contents:

@@ -766,9 +766,11 @@ activation and When In Use authorization. Runtime construction failure stays in
 pre-drive review; route or evidence invalidation terminates an active runtime,
 and ending navigation stops input and speech, removes the active checkpoint, and
 returns to review. The current build carries one foreground K7 release and one
-synthetic demo. The foreground entry still remains locked at review without
-separately supplied current pre-drive evidence and never substitutes the demo
-or its synthetic review for the released route.
+synthetic demo. The foreground entry carries one dated, hash-bound K7
+pre-drive bundle with all ten canonical vehicle/payment profiles. It admits
+review only within that bundle's exact validity window, fails closed after
+expiry, and never substitutes the demo or its synthetic review for the
+released route.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
@@ -1034,9 +1036,9 @@ That is a development fact, not yet the minimum deployment target.
   review only after this exact projection exists; route or evidence invalidation
   demotes the shell back to authoring and terminates an active runtime rather
   than retaining stale readiness. The checked foreground K7 descriptor contains
-  no released evidence bundle, so its start action remains locked; a future
-  operator-backed live refresh still requires independent authority, freshness,
-  data-use, and failure-policy review.
+  one dated, hash-bound evidence bundle and locks again at its exclusive expiry;
+  a future operator-backed live refresh still requires independent authority,
+  freshness, data-use, and failure-policy review.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

@@ -532,13 +532,16 @@ private struct ProductRoutesStage: View {
     } label: {
       HStack(spacing: 13) {
         VStack(spacing: 2) {
-          Text("C1")
+          Text(option.primaryRouteShield)
             .font(.system(size: 13, weight: .black, design: .rounded))
           Text(
             copy.resolve(
-              japanese: "内回り",
-              simplifiedChinese: "内环",
-              english: "INNER"
+              japanese:
+                model.usesDemoRehearsal ? "演習" : "リリース",
+              simplifiedChinese:
+                model.usesDemoRehearsal ? "演练" : "发布",
+              english:
+                model.usesDemoRehearsal ? "DEMO" : "RELEASED"
             )
           )
           .font(.system(size: 7, weight: .black, design: .rounded))
@@ -550,24 +553,26 @@ private struct ProductRoutesStage: View {
 
         VStack(alignment: .leading, spacing: 5) {
           HStack(spacing: 7) {
-            Text(routeName)
+            Text(option.routeTitle)
               .font(.system(size: 15, weight: .black, design: .rounded))
               .foregroundStyle(KaidoTheme.ink)
 
-            Text(
-              copy.resolve(
-                japanese: "演習",
-                simplifiedChinese: "演练",
-                english: "DEMO"
+            if model.usesDemoRehearsal {
+              Text(
+                copy.resolve(
+                  japanese: "演習",
+                  simplifiedChinese: "演练",
+                  english: "DEMO"
+                )
               )
-            )
-            .font(.system(size: 7, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeGreen)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .overlay {
-              Capsule()
-                .stroke(KaidoTheme.routeGreen.opacity(0.5), lineWidth: 1)
+              .font(.system(size: 7, weight: .black, design: .rounded))
+              .foregroundStyle(KaidoTheme.routeGreen)
+              .padding(.horizontal, 6)
+              .padding(.vertical, 3)
+              .overlay {
+                Capsule()
+                  .stroke(KaidoTheme.routeGreen.opacity(0.5), lineWidth: 1)
+              }
             }
           }
 
@@ -577,14 +582,6 @@ private struct ProductRoutesStage: View {
             .lineLimit(1)
 
           HStack(spacing: 12) {
-            Label(
-              copy.resolve(
-                japanese: "約 42 分",
-                simplifiedChinese: "约 42 分钟",
-                english: "About 42 min"
-              ),
-              systemImage: "clock"
-            )
             Text(String(format: "%.1f km", option.actualDistanceKM))
             Text(
               copy.resolve(
@@ -621,7 +618,7 @@ private struct ProductRoutesStage: View {
       "product-route-option-\(option.productReleaseID)"
     )
     .accessibilityLabel(
-      "\(routeName), \(option.entranceTitle)"
+      "\(option.routeTitle), \(option.entranceTitle)"
     )
   }
 
@@ -691,14 +688,6 @@ private struct ProductRoutesStage: View {
         simplifiedChinese: "正在确认兼容入口",
         english: "Checking compatible entrance"
       )
-  }
-
-  private var routeName: String {
-    copy.resolve(
-      japanese: "東京中心を一周",
-      simplifiedChinese: "东京核心一周",
-      english: "Tokyo core circuit"
-    )
   }
 
   private var copy: KaidoInterfaceText {
@@ -1103,6 +1092,8 @@ private struct ProductPlanStage: View {
         Text(setupPrompt(authoring))
           .font(.system(size: 10, weight: .bold))
           .foregroundStyle(KaidoTheme.quietText)
+          .accessibilityIdentifier("released-route-authoring-blocker")
+          .accessibilityValue(authoring.lastErrorCode ?? "SELECTION_REQUIRED")
       }
     }
   }
@@ -1205,11 +1196,12 @@ private struct ProductReviewStage: View {
       HStack(alignment: .top) {
         VStack(alignment: .leading, spacing: 3) {
           Text(
-            copy.resolve(
-              japanese: "東京中心を一周",
-              simplifiedChinese: "东京核心一周",
-              english: "Tokyo core circuit"
-            )
+            model.selectedRouteOption?.routeTitle
+              ?? copy.resolve(
+                japanese: "選択した経路",
+                simplifiedChinese: "已选路线",
+                english: "Selected route"
+              )
           )
           .font(.system(size: 21, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.ink)
@@ -1228,7 +1220,7 @@ private struct ProductReviewStage: View {
 
         Spacer()
 
-        Text("C1")
+        Text(model.selectedRouteOption?.primaryRouteShield ?? "—")
           .font(.system(size: 15, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.paperRaised)
           .frame(width: 44, height: 44)
@@ -1476,10 +1468,22 @@ private struct ProductReviewStage: View {
 
 private struct ProductDriveStage: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @Environment(\.scenePhase) private var scenePhase
   @ObservedObject var model: KaidoProductJourneyModel
   @ObservedObject var runtime: ProductNavigationRuntimeModel
+  @ObservedObject private var locationController:
+    ForegroundNavigationLocationController
   @State private var isStartingRehearsal = false
   @State private var showsFinishConfirmation = false
+
+  init(
+    model: KaidoProductJourneyModel,
+    runtime: ProductNavigationRuntimeModel
+  ) {
+    self.model = model
+    self.runtime = runtime
+    locationController = runtime.foregroundNavigationLocationController
+  }
 
   var body: some View {
     ScrollView {
@@ -1502,18 +1506,27 @@ private struct ProductDriveStage: View {
         )
 
         routeProgress
+        if runtime.isRealRoadAuthority {
+          liveLocationControl
+        }
         rehearsalControls
       }
       .padding(.horizontal, 16)
       .padding(.top, 8)
       .padding(.bottom, 30)
+      .accessibilityElement(children: .contain)
+      .accessibilityIdentifier("product-drive-surface")
     }
     .scrollIndicators(.hidden)
     .background(KaidoTheme.asphalt)
-    .accessibilityElement(children: .contain)
-    .accessibilityIdentifier("product-drive-surface")
     .task {
       await runtime.activate()
+      locationController.refreshRuntimeAvailability()
+    }
+    .onChange(of: scenePhase, initial: true) { _, newPhase in
+      Task {
+        await handleScenePhase(newPhase.productRuntimePhase)
+      }
     }
     .confirmationDialog(
       copy.resolve(
@@ -1735,6 +1748,94 @@ private struct ProductDriveStage: View {
     .accessibilityValue("\(current) of \(runtime.routeOccurrenceCount)")
   }
 
+  private var liveLocationControl: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        Label(
+          copy.resolve(
+            japanese: "前景位置情報",
+            simplifiedChinese: "前台定位",
+            english: "Foreground location"
+          ),
+          systemImage: "location.fill"
+        )
+        .font(.system(size: 10, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+
+        Spacer()
+
+        Text(locationController.state.label)
+          .font(.system(size: 8, weight: .black, design: .monospaced))
+          .foregroundStyle(
+            locationController.state == .running
+              ? KaidoTheme.positionCyan
+              : KaidoTheme.muted
+          )
+          .accessibilityIdentifier("product-drive-location-state")
+          .accessibilityValue(locationController.state.label)
+      }
+
+      Text(locationStateDetail)
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.muted)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Button {
+        if locationController.canStop {
+          Task {
+            await locationController.stop()
+          }
+        } else {
+          locationController.start()
+        }
+      } label: {
+        Label(
+          locationController.canStop
+            ? copy.resolve(
+              japanese: "前景位置情報を停止",
+              simplifiedChinese: "停止前台定位",
+              english: "Stop foreground location"
+            )
+            : copy.resolve(
+              japanese: "前景位置情報を開始",
+              simplifiedChinese: "启动前台定位",
+              english: "Start foreground location"
+            ),
+          systemImage:
+            locationController.canStop
+            ? "location.slash.fill"
+            : "location.fill"
+        )
+        .font(.system(size: 12, weight: .black, design: .rounded))
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .foregroundStyle(
+          locationActionAvailable
+            ? KaidoTheme.asphalt
+            : KaidoTheme.muted
+        )
+        .background(
+          locationActionAvailable
+            ? KaidoTheme.signalAmber
+            : KaidoTheme.steel.opacity(0.38)
+        )
+      }
+      .buttonStyle(.plain)
+      .disabled(!locationActionAvailable)
+      .accessibilityIdentifier("product-drive-location-action")
+      .accessibilityValue(
+        locationController.canStop
+          ? "STOPPABLE"
+          : (locationController.canStart ? "AVAILABLE" : "BLOCKED")
+      )
+    }
+    .padding(12)
+    .background(KaidoTheme.instrument)
+    .clipShape(RoundedRectangle(cornerRadius: 13))
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-drive-live-location")
+  }
+
   @ViewBuilder
   private var rehearsalControls: some View {
     if !runtime.isRealRoadAuthority {
@@ -1833,6 +1934,72 @@ private struct ProductDriveStage: View {
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private var locationActionAvailable: Bool {
+    locationController.canStart || locationController.canStop
+  }
+
+  private var locationStateDetail: String {
+    switch locationController.state {
+    case .idle, .stopped:
+      copy.resolve(
+        japanese: "明示的に開始するまで位置情報は接続されません。",
+        simplifiedChinese: "只有明确启动后才会连接定位。",
+        english: "Location remains disconnected until you explicitly start it."
+      )
+    case .awaitingAuthorization:
+      copy.resolve(
+        japanese: "使用中の位置情報許可を待っています。",
+        simplifiedChinese: "正在等待使用期间定位授权。",
+        english: "Waiting for When In Use location authorization."
+      )
+    case .running:
+      copy.resolve(
+        japanese:
+          "前景更新はリリースに固定された actor に送られます。バックグラウンド位置情報は無効です。",
+        simplifiedChinese:
+          "前台更新会送入 release-bound actor；后台定位保持禁用。",
+        english:
+          "Foreground updates feed the release-bound actor; background location remains disabled."
+      )
+    case .sceneInactive:
+      copy.resolve(
+        japanese: "画面が非アクティブになったため位置情報を停止しました。",
+        simplifiedChinese: "界面进入非活动状态，定位已停止。",
+        english: "Location stopped because the scene became inactive."
+      )
+    case .permissionDenied:
+      copy.resolve(
+        japanese: "位置情報が拒否または制限されています。",
+        simplifiedChinese: "定位权限被拒绝或受限。",
+        english: "Location permission is denied or restricted."
+      )
+    case .releaseBlocked(let reason):
+      reason.rawValue
+    case .runtimeUnavailable:
+      copy.resolve(
+        japanese: "ナビゲーション actor の準備を待っています。",
+        simplifiedChinese: "正在等待导航 actor 就绪。",
+        english: "Waiting for the navigation actor to become ready."
+      )
+    case .failed(let code):
+      code
+    }
+  }
+
+  private func handleScenePhase(
+    _ phase: ProductNavigationRuntimeScenePhase
+  ) async {
+    switch phase {
+    case .active:
+      await runtime.handleScenePhase(phase)
+      await locationController.handleScenePhase(phase)
+      locationController.refreshRuntimeAvailability()
+    case .inactive, .background:
+      await locationController.handleScenePhase(phase)
+      await runtime.handleScenePhase(phase)
+    }
   }
 }
 

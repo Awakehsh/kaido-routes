@@ -11,7 +11,11 @@ extension AppBundleProductReleaseDescriptor {
     expectedReleaseID: "shutoko.product.k7-aoba-to-kohoku.2026-07-27",
     role: .foregroundNavigation,
     guidanceAudioChoices: [],
-    preDriveEvidence: nil,
+    preDriveEvidence: AppBundlePreDriveEvidenceDescriptor(
+      manifestResourceName: "k7-aoba-to-kohoku-pre-drive-evidence",
+      expectedManifestSHA256: "45a0ca02a6a4754418dd0e56f1eda476e339499ca454cc1dd2f1bbf0135b1349",
+      expectedReleaseID: "shutoko.pre-drive.k7-aoba-to-kohoku.2026-07-27T2224+09"
+    ),
     preDriveEvidenceUpdateTrustKeys: nil,
     preDriveEvidenceUpdateEndpoint: nil
   )

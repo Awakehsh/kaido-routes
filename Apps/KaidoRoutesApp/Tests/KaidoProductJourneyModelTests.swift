@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoPresentation
 import XCTest
@@ -208,6 +209,73 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     XCTAssertEqual(model.stage, .review)
     XCTAssertNil(model.navigationRuntime)
     XCTAssertNil(model.lastBlocker)
+  }
+
+  func testBundledK7EvidenceAuthorsReviewsAndStartsReleasedRuntime()
+    async throws
+  {
+    let composition = KaidoRoutesAppModel.k7OperationalE2E()
+    let entry = try XCTUnwrap(
+      composition.productReleaseCatalog.foregroundNavigationEntries.first
+    )
+    let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
+    let model = KaidoProductJourneyModel(composition: composition)
+
+    XCTAssertEqual(authoring.options.first?.primaryRouteShield, "K7")
+    authorReleasedRoute(authoring, entry: entry)
+
+    let review = try XCTUnwrap(authoring.preDriveReviewSnapshot)
+    XCTAssertEqual(review.vehicleClass, .standard)
+    XCTAssertEqual(review.paymentMethod, .etc)
+    XCTAssertEqual(review.presentation.estimatedAmountYen, 400)
+    XCTAssertEqual(review.presentation.tariffDistanceKM, 7.1)
+    XCTAssertEqual(review.presentation.tollEvidenceStatus, .verifiedQuery)
+    XCTAssertEqual(review.presentation.passage.tone, .unconfirmed)
+    XCTAssertFalse(review.presentation.passage.usesPositiveOpenColor)
+
+    model.go(to: .review)
+    XCTAssertTrue(model.canStartNavigation)
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .navigation)
+    let runtime = try XCTUnwrap(model.navigationRuntime)
+    XCTAssertTrue(runtime.isRealRoadAuthority)
+    XCTAssertNil(runtime.syntheticFixture)
+    await runtime.activate()
+    XCTAssertEqual(runtime.activation, .ready)
+
+    let location = runtime.foregroundNavigationLocationController
+    location.refreshRuntimeAvailability()
+    XCTAssertTrue(location.canStart)
+    XCTAssertEqual(location.state, .idle)
+
+    await model.endNavigation()
+    XCTAssertEqual(model.stage, .review)
+  }
+
+  func testBundledK7EvidenceExpiresWithoutFallback() throws {
+    let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
+    let expiredDate = try XCTUnwrap(
+      ISO8601DateFormatter().date(
+        from: "2026-07-28T00:00:00+09:00"
+      )
+    )
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: catalog,
+      currentDateProvider: { expiredDate }
+    )
+    let entry = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
+    let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
+
+    authorReleasedRoute(authoring, entry: entry)
+
+    XCTAssertNil(authoring.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      authoring.lastErrorCode,
+      "PRE_DRIVE_EVIDENCE_EXPIRED"
+    )
   }
 
   func testRuntimeConstructionFailureKeepsReviewFailClosed() throws {

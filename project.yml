@@ -44,6 +44,9 @@ targets:
       - path: data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json
         buildPhase: resources
         group: Internal Calibration
+      - path: data/product/pre-drive-evidence/k7-aoba-to-kohoku-pre-drive-evidence.json
+        buildPhase: resources
+        group: Product Release
     dependencies:
       - package: KaidoRoutesCore
         product: KaidoDomain

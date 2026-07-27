@@ -757,7 +757,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
@@ -773,7 +773,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 
@@ -789,7 +789,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         ):
             validator.validate_distribution_review(
                 review,
-                date(2026, 7, 25),
+                date(2026, 7, 27),
                 REPOSITORY_ROOT,
             )
 

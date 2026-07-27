@@ -175,7 +175,7 @@ endpoint exactly; only a foreground role may carry them.
 
 The first real K7 App entry now has real Route Atlas and navigation releases,
 reviewed localized editor data, an exact product release, explicit catalog
-enrollment, and a successful physical-iPhone build and install. Current
-reviewed pre-drive evidence and physical-device navigation qualification remain
-separate gates. This command only prepares already-reviewed content for
-deliberate bundle inclusion.
+enrollment, one dated hash-bound pre-drive evidence bundle, and a successful
+physical-iPhone build and install. A later current-evidence refresh and
+physical-device navigation qualification remain separate gates. This command
+only prepares already-reviewed content for deliberate bundle inclusion.

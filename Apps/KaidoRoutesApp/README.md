@@ -88,8 +88,10 @@ and speech, removes the active checkpoint, and returns to review. There is no
 ID-only or injected mismatched-release fallback. A demo review instead creates a
 new checkpoint-free `ProductNavigationRuntimeModel` from that exact decoded
 release and admits only the fixture-owned trace. The current manifest contains
-`0 RELEASED ROAD · 1 DEMO`, so the foreground branch remains dormant while the
-default scene completes the demo rehearsal.
+`1 RELEASED ROAD · 1 DEMO`. The K7 entry carries one dated, hash-bound evidence
+bundle with ten exact vehicle/payment profiles; it reaches the real foreground
+runtime only inside that validity window and fails closed after expiry. The
+demo remains a separate rehearsal path and cannot satisfy the released entry.
 
 A foreground descriptor may also pin public Ed25519 keys and one exact,
 credential-free HTTPS JSON endpoint for signed pre-drive evidence updates. The
@@ -117,9 +119,9 @@ The current app deliberately composes only:
   clearly synthetic reviewed catalog;
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
-- a dormant foreground-release authoring and pre-drive branch that retains
+- a foreground-release authoring and pre-drive branch that retains
   release-owned choices and occurrences and requires exact current session
-  evidence before review;
+  evidence before review, with one dated K7 bundle and fail-closed expiry;
 - a dormant signed pre-drive evidence importer and explicit pinned-endpoint
   refresher whose public trust roots are compile-time product descriptors and
   whose accepted envelope is atomically retained under Application Support;

@@ -184,6 +184,74 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertFalse(element("product-routes-origin", in: app).exists)
   }
 
+  func testK7OperationalEvidenceAuthorsReviewsAndStartsReleasedRuntime() {
+    continueAfterFailure = false
+    let app = launchK7OperationalJourney()
+    let releaseID = "shutoko.product.k7-aoba-to-kohoku.2026-07-27"
+
+    reveal("product-route-option-\(releaseID)", in: app).tap()
+    XCTAssertEqual(
+      element("product-journey-stage", in: app).value as? String,
+      "AUTHORING"
+    )
+
+    reveal(
+      "released-route-choice-shutoko.choice.kohoku.k7-up-to-shared-exit-corridor",
+      in: app
+    ).tap()
+    reveal(
+      "released-route-choice-shutoko.choice.kohoku.shared-corridor-to-exit",
+      in: app
+    ).tap()
+    reveal("released-route-compile", in: app).tap()
+    reveal("released-vehicle-class-STANDARD", in: app).tap()
+    app.swipeUp()
+    reveal("released-payment-method-ETC", in: app).tap()
+
+    XCTAssertTrue(
+      element("released-route-review-ready", in: app)
+        .waitForExistence(timeout: 3)
+    )
+    let action = element("product-journey-primary-action", in: app)
+    XCTAssertTrue(action.isEnabled)
+    action.tap()
+
+    XCTAssertEqual(
+      element("product-journey-stage", in: app).value as? String,
+      "REVIEW"
+    )
+    XCTAssertTrue(element("product-review-metrics", in: app).exists)
+    XCTAssertTrue(app.staticTexts["¥400"].exists)
+    XCTAssertTrue(element("product-review-availability", in: app).exists)
+    XCTAssertTrue(app.staticTexts["实时通行状态尚未确认"].exists)
+
+    XCTAssertTrue(action.isEnabled)
+    action.tap()
+
+    XCTAssertTrue(
+      element("product-drive-surface", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(
+      element("product-journey-stage", in: app).value as? String,
+      "NAVIGATION"
+    )
+    XCTAssertTrue(
+      reveal("product-drive-live-location", in: app).exists
+    )
+    let locationAction = reveal(
+      "product-drive-location-action",
+      in: app
+    )
+    XCTAssertTrue(locationAction.isEnabled)
+    XCTAssertEqual(locationAction.value as? String, "AVAILABLE")
+    XCTAssertEqual(
+      element("product-drive-progress", in: app).value as? String,
+      "1 of 5"
+    )
+    XCTAssertFalse(element("product-topology-position-marker", in: app).exists)
+  }
+
   private func launchDefaultJourney() -> XCUIApplication {
     let app = XCUIApplication()
     app.launchArguments = [
@@ -202,6 +270,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-PRODUCT-JOURNEY-DEMO-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+      "-app.kaidoroutes.map-projection",
+      "topology",
+    ]
+    app.launch()
+    return app
+  }
+
+  private func launchK7OperationalJourney() -> XCUIApplication {
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-K7-OPERATIONAL-E2E",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",

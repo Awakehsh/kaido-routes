@@ -33,13 +33,16 @@ Artifact SHA-256:
 
 The App bundle contains those exact bytes and a compile-time
 `FOREGROUND_NAVIGATION` descriptor pinned to the filename, release ID, and
-SHA-256. The generated staging configuration intentionally includes no
-pre-drive evidence, signed-update trust, update endpoint, or reviewed offline
-audio. Consequently the released route may be authored and inspected, but
-navigation start fails closed until separately reviewed, current tariff and
-passage evidence matches the exact session profile.
+SHA-256. The generated staging configuration additionally pins one dated,
+hash-bound pre-drive evidence manifest with all five vehicle classes and
+separate ETC and cash profiles. That evidence window ended at
+`2026-07-28T00:00:00+09:00`, so the App now fails closed until a new reviewed
+manifest matches the exact session profile. The descriptor intentionally
+includes no signed-update trust key, update endpoint, or reviewed offline
+audio.
 
 The exact App build was signed, built, and installed on the paired iPhone 13
-Pro on 2026-07-27. Installation is packaging evidence only. It is not live
-location, tunnel, junction-distance, pronunciation, physical-audio, background,
-CarPlay, or field-navigation qualification.
+Pro, then launched successfully after the device was unlocked on 2026-07-28.
+Installation and process launch are packaging and lifecycle evidence only. They
+are not live location, tunnel, junction-distance, pronunciation,
+physical-audio, background, CarPlay, or field-navigation qualification.

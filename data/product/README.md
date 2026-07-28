@@ -39,8 +39,23 @@ separate ETC and cash profiles. That evidence window ended at
 `2026-07-28T00:00:00+09:00`. The App now labels its values stale and does not
 use them as current toll or passage information, while the independently
 validated K7 route remains available. A current known closure or planned
-conflict still blocks start. The descriptor intentionally includes no
-signed-update trust key, update endpoint, or reviewed offline audio.
+conflict still blocks start. The descriptor intentionally includes no reviewed
+offline audio.
+
+The foreground descriptor now pins Ed25519 key
+`kaido.pre-drive.k7-aoba-kohoku.2026-01` and the exact credential-free endpoint:
+
+```text
+https://awakehsh.github.io/kaido-routes/updates/k7-aoba-to-kohoku-pre-drive-evidence-update.json
+```
+
+The tracked public trust descriptor is under
+`data/product/pre-drive-evidence/keys/`. The private key is generated into
+ignored private storage and must never enter the repository, App bundle, logs,
+or published update. The current endpoint envelope is separately signed over
+the reviewed 2026-07-28 tariff and passage snapshot. Its short validity window
+still applies after successful transport and signature verification; expiry
+does not fall back to the older bundled evidence or alter RoutePlan authority.
 
 The exact App build was signed, built, and installed on the paired iPhone 13
 Pro, then launched successfully after the device was unlocked on 2026-07-28.

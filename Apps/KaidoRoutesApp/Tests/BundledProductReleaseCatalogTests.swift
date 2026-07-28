@@ -45,6 +45,25 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       foreground.preDriveEvidenceBundle?.manifest.records.count,
       10
     )
+    XCTAssertEqual(
+      foreground.descriptor.preDriveEvidenceUpdateTrustKeys,
+      [
+        PreDriveEvidenceUpdateTrustKey(
+          keyID: "kaido.pre-drive.k7-aoba-kohoku.2026-01",
+          algorithm: .ed25519,
+          publicKeyBase64:
+            "71TezxLZ0+RfgnPaxgyECnTq2w42R5mk4llV/WYFJy8="
+        )
+      ]
+    )
+    XCTAssertEqual(
+      foreground.descriptor.preDriveEvidenceUpdateEndpoint,
+      PreDriveEvidenceUpdateEndpoint(
+        url:
+          "https://awakehsh.github.io/kaido-routes/updates/"
+          + "k7-aoba-to-kohoku-pre-drive-evidence-update.json"
+      )
+    )
   }
 
   func testContentMutationFailsAtManifestHashBeforeCodecAdmission() throws {

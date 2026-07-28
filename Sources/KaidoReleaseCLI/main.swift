@@ -702,6 +702,11 @@ private func writeNewSigningKeyDirectory(
   }
   do {
     try FileManager.default.createDirectory(
+      at: parentURL,
+      withIntermediateDirectories: true,
+      attributes: [.posixPermissions: 0o700]
+    )
+    try FileManager.default.createDirectory(
       at: temporaryURL,
       withIntermediateDirectories: false
     )

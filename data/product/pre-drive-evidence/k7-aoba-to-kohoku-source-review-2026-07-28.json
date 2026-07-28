@@ -1,0 +1,84 @@
+{
+  "expires_at": "2026-07-28T18:00:00+09:00",
+  "passage_review": {
+    "authority_name": "Shutoko Engineering Company Limited / mew-ti",
+    "checked_at": "2026-07-28T16:16:00+09:00",
+    "content_sha256": "a3ecfd59b97a69f0fab12a8006ce287e04fe10e5810d833238b633b5da8c1643",
+    "k7_northwest_restriction_count": 0,
+    "result": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+    "restriction_count": 16,
+    "source_url": "https://search.shutoko-eng.jp/rtmap.html"
+  },
+  "release_id": "shutoko.pre-drive.k7-aoba-to-kohoku.2026-07-28T1623+09",
+  "released_at": "2026-07-28T16:23:00+09:00",
+  "review_id": "shutoko.pre-drive-review.k7-aoba-to-kohoku.2026-07-28T1622+09",
+  "reviewed_at": "2026-07-28T16:22:00+09:00",
+  "reviewer_id": "kaido.release-review.k7-pre-drive",
+  "schema_version": "1.0",
+  "tariff_query": {
+    "authority_name": "East Nippon Expressway Company Limited / Drive Plaza",
+    "checked_at": "2026-07-28T16:20:00+09:00",
+    "destination_label": "Yokohama Kohoku",
+    "observations": [
+      {
+        "cash_yen": 1590,
+        "content_sha256": "e321f3a5228a7ca9e827bbcec8d437909e367f1fe8462120746426e8bc5027f9",
+        "distance_km": 7.1,
+        "etc2_yen": 350,
+        "etc_yen": 350,
+        "normal_duration_minutes": 8,
+        "official_label": "軽自動車等",
+        "traffic_duration_minutes": 8,
+        "vehicle_class": "LIGHT_MOTORCYCLE"
+      },
+      {
+        "cash_yen": 1950,
+        "content_sha256": "f1f033164b335d3dd8c79aed6009335f2bd4369436490bddc89c1b0575a2a1cb",
+        "distance_km": 7.1,
+        "etc2_yen": 400,
+        "etc_yen": 400,
+        "normal_duration_minutes": 8,
+        "official_label": "普通車",
+        "traffic_duration_minutes": 8,
+        "vehicle_class": "STANDARD"
+      },
+      {
+        "cash_yen": 2310,
+        "content_sha256": "82b357c9443dcb2722ec4f650a4b60cb4a5c9ac3aafb93305ef4b79b6707a33b",
+        "distance_km": 7.1,
+        "etc2_yen": 440,
+        "etc_yen": 440,
+        "normal_duration_minutes": 8,
+        "official_label": "中型車",
+        "traffic_duration_minutes": 8,
+        "vehicle_class": "MEDIUM"
+      },
+      {
+        "cash_yen": 3110,
+        "content_sha256": "e8b02790352581d3ae9389c486fea9c9ae9f8a8a12fa75bd347226ef7c6a4590",
+        "distance_km": 7.1,
+        "etc2_yen": 550,
+        "etc_yen": 550,
+        "normal_duration_minutes": 8,
+        "official_label": "大型車",
+        "traffic_duration_minutes": 8,
+        "vehicle_class": "LARGE"
+      },
+      {
+        "cash_yen": 5080,
+        "content_sha256": "a9b4ece36c575c731495a6233f9314a15a82724b7468f39c46538b364ad1edc1",
+        "distance_km": 7.1,
+        "etc2_yen": 800,
+        "etc_yen": 800,
+        "normal_duration_minutes": 8,
+        "official_label": "特大車",
+        "traffic_duration_minutes": 8,
+        "vehicle_class": "EXTRA_LARGE"
+      }
+    ],
+    "origin_label": "Yokohama Aoba",
+    "requested_departure_at": "2026-07-28T16:20:00+09:00",
+    "source_url": "https://www.driveplaza.com/dp/SearchQuick?arrivePlaceKana=%E6%A8%AA%E6%B5%9C%E6%B8%AF%E5%8C%97&startPlaceKana=%E6%A8%AA%E6%B5%9C%E9%9D%92%E8%91%89"
+  },
+  "valid_from": "2026-07-28T16:23:00+09:00"
+}

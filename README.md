@@ -87,7 +87,12 @@ manifest contains one foreground K7 release and one synthetic demo. The K7
 entry bundles one hash-bound, dated 2026-07-27 pre-drive evidence window with
 all five vehicle classes and separate ETC/cash profiles. It is shown as current
 only inside that embedded interval; after expiry the App labels it stale while
-keeping the released route available. The default demo path reuses that one release
+keeping the released route available. Its compile-time descriptor also pins one
+public Ed25519 trust key and the project-controlled GitHub Pages JSON endpoint.
+The endpoint currently serves a separately signed 2026-07-28 evidence envelope;
+the App still applies its declared validity window and never treats an expired
+envelope as current. The private signing key is not tracked. The default demo
+path reuses that one release
 identity across authoring, pre-drive review, and a freshly constructed actor
 rehearsal; it never promotes `DEMO_ONLY` or mints live-input authority. A separate
 synthetic guidance panel lets interface and voice locales vary independently

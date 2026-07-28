@@ -185,6 +185,28 @@ fails closed as current information instead of falling back to bundled
 evidence. Updating an endpoint, rotating a key, or revoking trust still requires
 a reviewed App release.
 
+## Rotate or revoke a signing key
+
+Key rotation is an overlapping App-release operation, not an endpoint-only
+change:
+
+1. generate a new key ID into a new offline directory and retain the old key;
+2. add the new public trust descriptor beside the old one in the schema-2.0
+   App-bundle staging configuration;
+3. stage, test, and distribute that reviewed App release before publishing an
+   envelope signed only by the new key;
+4. replace the endpoint envelope with one signed by the new key and verify the
+   exact public response through the App transport contract;
+5. keep the old public key enrolled for the declared migration interval; and
+6. remove the retired public key in a later reviewed App release.
+
+Never reuse a key ID or overwrite an offline key directory. A suspected private
+key compromise cannot be repaired by changing the endpoint envelope because
+installed Apps still trust the compiled public key. Stop using the key, publish
+no weaker fallback, and distribute a reviewed App release that removes it. The
+endpoint must remain signature-only and may safely become stale or unavailable
+while revocation ships.
+
 This boundary fetches only a project-controlled signed envelope. It does not
 integrate an operator or traffic service, grant route or navigation authority,
 claim realtime passage, or establish that signed source claims are true.

@@ -225,8 +225,19 @@ def validate_review(review: dict[str, Any]) -> None:
         raise EvidenceInputError("normalized passage digest drifted")
 
 
-def source_id(kind: str, suffix: str = "") -> str:
-    base = f"shutoko.pre-drive-source.k7-aoba-to-kohoku.{kind}.2026-07-27"
+def review_date(review: dict[str, Any]) -> str:
+    return parse_date_time(review["reviewed_at"], "reviewed_at").date().isoformat()
+
+
+def source_id(
+    review: dict[str, Any],
+    kind: str,
+    suffix: str = "",
+) -> str:
+    base = (
+        "shutoko.pre-drive-source.k7-aoba-to-kohoku."
+        f"{kind}.{review_date(review)}"
+    )
     return f"{base}.{suffix.lower()}" if suffix else base
 
 
@@ -247,6 +258,7 @@ def build_inputs(
             "reviewer_id": review["reviewer_id"],
             "roles": ["TARIFF_QUERY"],
             "source_reference_id": source_id(
+                review,
                 "tariff",
                 observation["vehicle_class"],
             ),
@@ -254,7 +266,7 @@ def build_inputs(
         }
         for observation in observations
     ]
-    passage_source_id = source_id("passage")
+    passage_source_id = source_id(review, "passage")
     source_registry.append(
         {
             "authority_name": passage["authority_name"],
@@ -271,10 +283,11 @@ def build_inputs(
     records: list[dict[str, Any]] = []
     for observation in observations:
         vehicle_class = observation["vehicle_class"]
-        tariff_source_id = source_id("tariff", vehicle_class)
+        tariff_source_id = source_id(review, "tariff", vehicle_class)
         for payment_method in PAYMENT_METHODS:
             amount_field = "etc_yen" if payment_method == "ETC" else "cash_yen"
             profile = f"{vehicle_class.lower()}.{payment_method.lower()}"
+            evidence_date = review_date(review)
             records.append(
                 {
                     "evidence": {
@@ -288,13 +301,13 @@ def build_inputs(
                                 "official_query_reference": tariff["source_url"],
                                 "quote_id": (
                                     "shutoko.pre-drive-quote."
-                                    f"k7-aoba-to-kohoku.{profile}.2026-07-27"
+                                    f"k7-aoba-to-kohoku.{profile}.{evidence_date}"
                                 ),
                                 "status": "VERIFIED_QUERY",
                                 "tariff_distance_km": observation["distance_km"],
                                 "tariff_version_id": (
                                     "shutoko.tariff-query."
-                                    f"k7-aoba-to-kohoku.{profile}.2026-07-27"
+                                    f"k7-aoba-to-kohoku.{profile}.{evidence_date}"
                                 ),
                                 "tariff_version_status": "ACTIVE",
                             }
@@ -304,7 +317,7 @@ def build_inputs(
                     "expires_at": review["expires_at"],
                     "record_id": (
                         "shutoko.pre-drive-record."
-                        f"k7-aoba-to-kohoku.{profile}.2026-07-27"
+                        f"k7-aoba-to-kohoku.{profile}.{evidence_date}"
                     ),
                     "source_reference_ids": [
                         tariff_source_id,

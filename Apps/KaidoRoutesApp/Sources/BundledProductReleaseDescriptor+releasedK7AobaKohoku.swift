@@ -16,7 +16,15 @@ extension AppBundleProductReleaseDescriptor {
       expectedManifestSHA256: "45a0ca02a6a4754418dd0e56f1eda476e339499ca454cc1dd2f1bbf0135b1349",
       expectedReleaseID: "shutoko.pre-drive.k7-aoba-to-kohoku.2026-07-27T2224+09"
     ),
-    preDriveEvidenceUpdateTrustKeys: nil,
-    preDriveEvidenceUpdateEndpoint: nil
+    preDriveEvidenceUpdateTrustKeys: [
+      PreDriveEvidenceUpdateTrustKey(
+        keyID: "kaido.pre-drive.k7-aoba-kohoku.2026-01",
+        algorithm: .ed25519,
+        publicKeyBase64: "71TezxLZ0+RfgnPaxgyECnTq2w42R5mk4llV/WYFJy8="
+      )
+    ],
+    preDriveEvidenceUpdateEndpoint: PreDriveEvidenceUpdateEndpoint(
+      url: "https://awakehsh.github.io/kaido-routes/updates/k7-aoba-to-kohoku-pre-drive-evidence-update.json"
+    )
   )
 }

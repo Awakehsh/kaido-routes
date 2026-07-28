@@ -856,18 +856,20 @@ public enum AppBundleReleaseStagingAuthor {
     }
     let preDriveEvidenceUpdateTrustSource: String
     if let trustKeys = descriptor.preDriveEvidenceUpdateTrustKeys {
+      let trustKeySources = trustKeys.map { trustKey in
+        [
+          "      PreDriveEvidenceUpdateTrustKey(",
+          "        keyID: \(swiftString(trustKey.keyID)),",
+          "        algorithm: .ed25519,",
+          "        publicKeyBase64: "
+            + swiftString(trustKey.publicKeyBase64),
+          "      )",
+        ].joined(separator: "\n")
+      }
       preDriveEvidenceUpdateTrustSource =
         "[\n"
-        + trustKeys.map { trustKey in
-          """
-              PreDriveEvidenceUpdateTrustKey(
-                keyID: \(swiftString(trustKey.keyID)),
-                algorithm: .ed25519,
-                publicKeyBase64: \(swiftString(trustKey.publicKeyBase64))
-              )
-          """
-        }.joined(separator: ",\n")
-        + "\n          ]"
+        + trustKeySources.joined(separator: ",\n")
+        + "\n    ]"
     } else {
       preDriveEvidenceUpdateTrustSource = "nil"
     }

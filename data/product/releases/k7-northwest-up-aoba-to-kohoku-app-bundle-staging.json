@@ -2,8 +2,16 @@
   "descriptor_symbol": "releasedK7AobaKohoku",
   "guidance_audio_options": [],
   "pre_drive_evidence_manifest_resource_name": "k7-aoba-to-kohoku-pre-drive-evidence",
-  "pre_drive_evidence_update_endpoint": null,
-  "pre_drive_evidence_update_trust_keys": null,
+  "pre_drive_evidence_update_endpoint": {
+    "url": "https://awakehsh.github.io/kaido-routes/updates/k7-aoba-to-kohoku-pre-drive-evidence-update.json"
+  },
+  "pre_drive_evidence_update_trust_keys": [
+    {
+      "algorithm": "ED25519",
+      "key_id": "kaido.pre-drive.k7-aoba-kohoku.2026-01",
+      "public_key_base64": "71TezxLZ0+RfgnPaxgyECnTq2w42R5mk4llV/WYFJy8="
+    }
+  ],
   "product_resource_name": "k7-aoba-kohoku-product-release",
   "schema_version": "2.0"
 }

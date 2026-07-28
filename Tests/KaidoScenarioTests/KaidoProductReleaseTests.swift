@@ -634,17 +634,15 @@ func appBundleStagingPinsPreDriveEvidenceUpdateTrust() throws {
   )
   #expect(
     sourceText.contains(
-      "PreDriveEvidenceUpdateTrustKey("
-    )
-  )
-  #expect(
-    sourceText.contains(
-      "keyID: \"test.pre-drive-evidence.2026\""
-    )
-  )
-  #expect(
-    sourceText.contains(
-      "publicKeyBase64: \"\(keyPair.trustKey.publicKeyBase64)\""
+      """
+          preDriveEvidenceUpdateTrustKeys: [
+            PreDriveEvidenceUpdateTrustKey(
+              keyID: "test.pre-drive-evidence.2026",
+              algorithm: .ed25519,
+              publicKeyBase64: "\(keyPair.trustKey.publicKeyBase64)"
+            )
+          ],
+      """
     )
   )
   #expect(

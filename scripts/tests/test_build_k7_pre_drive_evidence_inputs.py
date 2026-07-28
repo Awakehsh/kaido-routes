@@ -84,6 +84,39 @@ class BuildK7PreDriveEvidenceInputsTests(unittest.TestCase):
             7.1,
         )
 
+    def test_derives_all_evidence_ids_from_the_review_date(self) -> None:
+        review = reviewed_snapshot()
+        review["review_id"] = (
+            "shutoko.pre-drive-review.k7-aoba-to-kohoku."
+            "2026-07-28T1622+09"
+        )
+        review["release_id"] = (
+            "shutoko.pre-drive.k7-aoba-to-kohoku.2026-07-28T1623+09"
+        )
+        review["reviewed_at"] = "2026-07-28T16:22:00+09:00"
+        review["released_at"] = "2026-07-28T16:23:00+09:00"
+        review["valid_from"] = "2026-07-28T16:23:00+09:00"
+        review["expires_at"] = "2026-07-28T18:00:00+09:00"
+        review["tariff_query"]["checked_at"] = "2026-07-28T16:20:00+09:00"
+        review["tariff_query"][
+            "requested_departure_at"
+        ] = "2026-07-28T16:20:00+09:00"
+        review["passage_review"]["checked_at"] = "2026-07-28T16:16:00+09:00"
+        for observation in review["tariff_query"]["observations"]:
+            observation["content_sha256"] = builder.sha256_text(
+                builder.tariff_digest_input(review, observation)
+            )
+        review["passage_review"]["content_sha256"] = builder.sha256_text(
+            builder.passage_digest_input(review)
+        )
+
+        draft, authoring = builder.build_inputs(review)
+
+        self.assertEqual(authoring["release_id"], review["release_id"])
+        encoded = json.dumps(draft, sort_keys=True)
+        self.assertIn("2026-07-28", encoded)
+        self.assertNotIn("2026-07-27", encoded)
+
     def test_rejects_normalized_tariff_digest_drift(self) -> None:
         review = reviewed_snapshot()
         review["tariff_query"]["observations"][1]["etc_yen"] = 410

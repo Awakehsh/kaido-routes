@@ -109,6 +109,12 @@ time; after activation, a missing or expired profile does not fall back to older
 bundled evidence. Neither path changes product, RoutePlan, location, prompt, or
 navigation authority.
 
+The released K7 descriptor now enrolls one public key and the exact
+project-controlled GitHub Pages endpoint. Its published 2026-07-28 envelope is
+accepted only inside the envelope's own validity window. The corresponding
+private key remains ignored and outside the App; a future key rotation still
+requires a reviewed descriptor update.
+
 The current app deliberately composes only:
 
 - the 26-route full-network recognition reference;
@@ -125,7 +131,7 @@ The current app deliberately composes only:
   release-owned choices and occurrences, presents exact current session
   information when available, and warns without blocking after the dated K7
   bundle expires;
-- a dormant signed pre-drive evidence importer and explicit pinned-endpoint
+- an enrolled signed pre-drive evidence importer and explicit pinned-endpoint
   refresher whose public trust roots are compile-time product descriptors and
   whose accepted envelope is atomically retained under Application Support;
 - a parked three-language guidance-voice sound check that ranks installed Apple

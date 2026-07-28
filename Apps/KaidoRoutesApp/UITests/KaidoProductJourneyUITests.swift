@@ -308,9 +308,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertEqual(locationAction.value as? String, "AVAILABLE")
     locationAction.tap()
-    app.tap()
 
     let locationState = element("product-drive-location-state", in: app)
+    XCTAssertTrue(
+      acceptLocationPermissionIfNeeded(for: locationState),
+      "When In Use location permission was neither granted nor presented"
+    )
     XCTAssertTrue(
       waitForValue(
         "FOREGROUND LOCATION RUNNING",
@@ -510,6 +513,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
       }
     }
     return false
+  }
+
+  private func acceptLocationPermissionIfNeeded(
+    for locationState: XCUIElement
+  ) -> Bool {
+    if locationState.value as? String == "FOREGROUND LOCATION RUNNING" {
+      return true
+    }
+
+    let springboard = XCUIApplication(
+      bundleIdentifier: "com.apple.springboard"
+    )
+    let alert = springboard.alerts.firstMatch
+    guard alert.waitForExistence(timeout: 5) else {
+      return locationState.value as? String
+        == "FOREGROUND LOCATION RUNNING"
+    }
+    return acceptLocationPermission(in: alert)
   }
 
   private func waitForValue(

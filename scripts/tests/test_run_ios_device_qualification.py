@@ -314,6 +314,8 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
 
         self.assertIn(f"platform=iOS,id={DEVICE_ID}", command)
+        diagnostics_index = command.index("-collect-test-diagnostics")
+        self.assertEqual(command[diagnostics_index + 1], "never")
         self.assertIn("-allowProvisioningUpdates", command)
         self.assertIn("DEVELOPMENT_TEAM=ABCDE12345", command)
         self.assertIn("CODE_SIGN_STYLE=Automatic", command)

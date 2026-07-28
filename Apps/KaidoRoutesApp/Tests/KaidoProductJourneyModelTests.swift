@@ -219,7 +219,20 @@ final class KaidoProductJourneyModelTests: XCTestCase {
       composition.productReleaseCatalog.foregroundNavigationEntries.first
     )
     let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
-    let model = KaidoProductJourneyModel(composition: composition)
+    let model = KaidoProductJourneyModel(
+      composition: composition,
+      navigationRuntimeFactory: {
+        try ProductNavigationRuntimeModel(
+          releasedEntry: $0,
+          languageSelectionProvider: {
+            NavigationLanguageSelection(
+              interfaceLocale: .simplifiedChinese,
+              guidanceVoiceLocale: .japanese
+            )
+          }
+        )
+      }
+    )
 
     XCTAssertEqual(authoring.options.first?.primaryRouteShield, "K7")
     authorReleasedRoute(authoring, entry: entry)

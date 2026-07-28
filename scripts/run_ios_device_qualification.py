@@ -275,6 +275,8 @@ def xcodebuild_command(
         str(derived_data),
         "-resultBundlePath",
         str(result_bundle),
+        "-collect-test-diagnostics",
+        "never",
     ]
     if allow_provisioning_updates:
         command.append("-allowProvisioningUpdates")

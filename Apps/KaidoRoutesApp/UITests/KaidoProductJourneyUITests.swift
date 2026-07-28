@@ -416,6 +416,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-K7-OPERATIONAL-E2E",
+      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -431,6 +432,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-K7-EXPIRED-INFORMATION-E2E",
+      "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",

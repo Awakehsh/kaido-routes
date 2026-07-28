@@ -5,6 +5,23 @@ import SwiftUI
 
 @main
 struct KaidoRoutesApp: App {
+  init() {
+    #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains(
+        "-RESET-NAVIGATION-CHECKPOINT"
+      ) {
+        do {
+          try FileNavigationSessionCheckpointStore.applicationSupport()
+            .remove()
+        } catch {
+          preconditionFailure(
+            "Failed to reset E2E navigation checkpoint: \(error)"
+          )
+        }
+      }
+    #endif
+  }
+
   var body: some Scene {
     WindowGroup {
       if ProcessInfo.processInfo.arguments.contains(

@@ -1173,9 +1173,27 @@ python3 scripts/run_ios_device_qualification.py \
 The full run requires a clean commit and a new ignored output directory, rejects
 Simulator and incomplete test results, and produces a coordinate-free receipt
 only after the named released-K7 Core Location permission/start/stop test passes
-on the physical iPhone. It grants that lifecycle smoke only and explicitly
-grants no location-accuracy, road, acoustic, CarPlay, or background-navigation
-authority. See
+and the named Japanese, Simplified Chinese, and English voice-prompt lifecycle
+test passes on the physical iPhone. It grants those technical lifecycle smokes
+only and explicitly grants no location-accuracy, road, acoustic-quality,
+pronunciation, CarPlay, or background-navigation authority.
+
+If XCTest UI Automation cannot start, the independent App-hosted audio runner
+can collect the three-locale callback and physical output-route lifecycle
+without weakening the complete gate:
+
+```sh
+python3 scripts/run_ios_physical_audio_qualification.py \
+  --device-id <private-device-identifier> \
+  --device-configuration-id iphone13pro-speaker-audio-v1 \
+  --development-team <APPLE-TEAM-ID> \
+  --allow-provisioning-updates \
+  --output research/evidence/ios-physical-audio-2026-07-28-v1
+```
+
+Its receipt grants audio lifecycle smokes only. It cannot grant the complete App
+baseline or foreground-location smoke, and separately scoped receipts cannot be
+merged into that claim. See
 [`docs/testing/ios-physical-device-qualification.md`](docs/testing/ios-physical-device-qualification.md).
 
 ## Safety

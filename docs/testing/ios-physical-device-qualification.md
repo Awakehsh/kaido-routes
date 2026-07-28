@@ -84,6 +84,39 @@ The runner:
 A failed build retains its private log/result bundle for diagnosis but creates
 no passing receipt. Existing output is never overwritten.
 
+## Independent App-hosted audio run
+
+The complete App baseline remains the preferred gate because it binds the unit
+and UI suites, foreground Core Location lifecycle, and physical audio lifecycle
+to one commit and device configuration. If the device's XCTest UI Automation
+service cannot start, `scripts/run_ios_physical_audio_qualification.py` can
+collect the audio lifecycle independently without weakening or replacing that
+gate:
+
+```sh
+python3 scripts/run_ios_physical_audio_qualification.py \
+  --device-id <private-device-identifier> \
+  --device-configuration-id iphone13pro-speaker-audio-v1 \
+  --development-team <APPLE-TEAM-ID> \
+  --allow-provisioning-updates \
+  --output research/evidence/ios-physical-audio-2026-07-28-v1
+```
+
+This runner has the same physical-device, clean-commit, private-output,
+zero-failure, non-overwrite, and hash requirements as the complete runner. It
+runs exactly one App-hosted unit test. That test sequentially exercises
+installed Japanese, Simplified Chinese, and English voices, requires matching
+start/finish callbacks, verifies `.playback + .voicePrompt`, and records that
+the active physical output route is non-empty.
+
+Its schema 1.0
+`PRIVATE_COORDINATE_FREE_IOS_PHYSICAL_AUDIO_TEST` receipt grants only the
+installed-voice and physical audio-route lifecycle smokes. It explicitly keeps
+the complete App baseline and foreground-location smoke false. A previous
+foreground-location receipt and a later audio-only receipt remain two
+separately scoped facts; they must not be merged into a source-current complete
+App-baseline claim.
+
 ## Coordinate-free receipt
 
 `qualification-run.json` retains:
@@ -95,13 +128,14 @@ no passing receipt. Existing output is never overwritten.
 - an explicit authority matrix.
 
 It excludes the device identifier, device name, coordinates, raw location
-traces, raw audio, and filesystem paths. Its authority matrix records the exact
-foreground-location start/stop smoke as true while deliberately keeping
-the installed-voice lifecycle and physical audio-route lifecycle smokes true.
-It deliberately keeps location accuracy, road release, acoustic quality,
-pronunciation, CarPlay, and background navigation false. A callback and output
-port prove that the technical route was active; they do not prove that a person
-heard, understood, or approved the sound.
+traces, raw audio, and filesystem paths. The complete-run authority matrix
+records the exact foreground-location start/stop, installed-voice lifecycle,
+and physical audio-route lifecycle smokes as true. The independent audio-run
+matrix records only the latter two as true. Both deliberately keep location
+accuracy, road release, acoustic quality, pronunciation, CarPlay, and
+background navigation false. A callback and output port prove that the
+technical route was active; they do not prove that a person heard, understood,
+or approved the sound.
 
 ## Remaining device gates
 

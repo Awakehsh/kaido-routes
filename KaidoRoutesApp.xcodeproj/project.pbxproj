@@ -82,6 +82,7 @@
 		B2DBE8083202EE5532067344 /* KaidoProductJourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21EC9E55887FD44C8699F108 /* KaidoProductJourneyView.swift */; };
 		B49B9BD3E9BFE10360C5D215 /* KaidoProductJourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDEF1840C8F8A5A1F7DA57B /* KaidoProductJourneyUITests.swift */; };
 		B7269CF47D7E3EB171FA9147 /* ProductRuntimePreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */; };
+		B7A160BDF3FD3C2CD621CE3B /* PhysicalAudioQualificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E27C7476287603CC26C20B /* PhysicalAudioQualificationTests.swift */; };
 		BCA9818AA58EB47C0C6F715D /* SavedRouteLibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD2D2EDE8B84321C2C4F521 /* SavedRouteLibraryModel.swift */; };
 		BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */; };
 		C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */ = {isa = PBXBuildFile; fileRef = 64D7D57200F5A1FF4D631BC2 /* k7-northwest-260721-directed-database.json */; };
@@ -203,6 +204,7 @@
 		E94B8B69206BA8833AEDA899 /* SyntheticDrivingPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewView.swift; sourceTree = "<group>"; };
 		ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoTheme.swift; sourceTree = "<group>"; };
 		F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationView.swift; sourceTree = "<group>"; };
+		F1E27C7476287603CC26C20B /* PhysicalAudioQualificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationTests.swift; sourceTree = "<group>"; };
 		F3B53DC4DAC4186DC2F3FEEB /* SavedRouteLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRouteLibraryView.swift; sourceTree = "<group>"; };
 		F3FF46ABB2E0A6116F724448 /* KaidoInterfaceLocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalizationTests.swift; sourceTree = "<group>"; };
 		F4A724BED8E00B81DE3BD2B1 /* ReleasedProductNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductNavigationView.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 				0AF3E05CB94F3CEB3C71AAE6 /* KaidoLanguageSettingsModelTests.swift */,
 				F718989C373E79DA78630D0D /* KaidoProductJourneyModelTests.swift */,
 				93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */,
+				F1E27C7476287603CC26C20B /* PhysicalAudioQualificationTests.swift */,
 				FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */,
 				04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */,
 				E0933E1161E416A3A2A7E290 /* ProductMapPresentationTests.swift */,
@@ -561,6 +564,7 @@
 				4469DFB5FB77C587CB44E8AE /* KaidoLanguageSettingsModelTests.swift in Sources */,
 				3213A36BC77158EC02718D91 /* KaidoProductJourneyModelTests.swift in Sources */,
 				20F92188AD9C1E12C3DD80FE /* ParkedRouteEditorModelTests.swift in Sources */,
+				B7A160BDF3FD3C2CD621CE3B /* PhysicalAudioQualificationTests.swift in Sources */,
 				662B88AFA6B0F34490E16BC8 /* PreDriveEvidenceUpdateModelTests.swift in Sources */,
 				364EAB2BE5288A7F6CAF6CAB /* PreDriveReviewModelTests.swift in Sources */,
 				45563D5723E68ACEC71B4E62 /* ProductMapPresentationTests.swift in Sources */,

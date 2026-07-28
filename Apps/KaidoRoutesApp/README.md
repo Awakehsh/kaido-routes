@@ -587,6 +587,24 @@ naturalness, pronunciation, driver comprehension, current road conditions,
 CarPlay, or background navigation. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
+When the device's XCTest UI Automation service cannot start, use the narrower
+App-hosted audio runner without changing the complete baseline:
+
+```sh
+python3 scripts/run_ios_physical_audio_qualification.py \
+  --device-id <private-device-identifier> \
+  --device-configuration-id iphone13pro-speaker-audio-v1 \
+  --development-team <APPLE-TEAM-ID> \
+  --allow-provisioning-updates \
+  --output research/evidence/ios-physical-audio-2026-07-28-v1
+```
+
+It runs exactly one physical App-hosted test for the three installed locales,
+voice callbacks, `.playback + .voicePrompt`, and a non-empty output route. Its
+coordinate-free receipt grants those audio lifecycle smokes only. It does not
+grant the full App baseline or foreground-location smoke, and separate receipts
+must not be combined into a source-current complete-baseline claim.
+
 ## Regenerate the Xcode project
 
 `project.yml` is the source for the generated project. XcodeGen 2.45.3 generated

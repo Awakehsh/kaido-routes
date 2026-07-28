@@ -21,11 +21,15 @@ EXPECTED_PLATFORM = "com.apple.platform.iphoneos"
 EXPECTED_SUMMARY_PLATFORM = "iOS"
 EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
-RECEIPT_SCHEMA_VERSION = "1.1"
+RECEIPT_SCHEMA_VERSION = "1.2"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
     "testK7ForegroundLocationStartsAndStopsThroughCoreLocation()"
+)
+REQUIRED_PHYSICAL_AUDIO_TEST = (
+    "PhysicalAudioQualificationUITests/"
+    "testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()"
 )
 SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 SAFE_TEAM_PATTERN = re.compile(r"^[A-Z0-9]{5,20}$")
@@ -389,12 +393,16 @@ def validate_xcresult_summary(
     }
 
 
-def validate_required_foreground_location_test(payload: Any) -> str:
+def validate_required_test(
+    payload: Any,
+    node_identifier: str,
+    label: str,
+) -> str:
     matches: list[dict[str, Any]] = []
 
     def visit(value: Any) -> None:
         if isinstance(value, dict):
-            if value.get("nodeIdentifier") == REQUIRED_FOREGROUND_LOCATION_TEST:
+            if value.get("nodeIdentifier") == node_identifier:
                 matches.append(value)
             for nested in value.values():
                 visit(nested)
@@ -405,14 +413,29 @@ def validate_required_foreground_location_test(payload: Any) -> str:
     visit(payload)
     if len(matches) != 1:
         raise DeviceQualificationError(
-            "xcresult must contain exactly one required foreground-location "
-            "lifecycle test"
+            f"xcresult must contain exactly one required {label} test"
         )
     if matches[0].get("result") != "Passed":
         raise DeviceQualificationError(
-            "required foreground-location lifecycle test did not pass"
+            f"required {label} test did not pass"
         )
-    return REQUIRED_FOREGROUND_LOCATION_TEST
+    return node_identifier
+
+
+def validate_required_foreground_location_test(payload: Any) -> str:
+    return validate_required_test(
+        payload,
+        REQUIRED_FOREGROUND_LOCATION_TEST,
+        "foreground-location lifecycle",
+    )
+
+
+def validate_required_physical_audio_test(payload: Any) -> str:
+    return validate_required_test(
+        payload,
+        REQUIRED_PHYSICAL_AUDIO_TEST,
+        "physical-audio lifecycle",
+    )
 
 
 def build_receipt(
@@ -460,6 +483,8 @@ def build_receipt(
         "authority": {
             "app_physical_test_baseline": True,
             "foreground_location_start_stop_smoke": True,
+            "installed_voice_lifecycle_smoke": True,
+            "physical_audio_route_lifecycle_smoke": True,
             "road_release_authority": False,
             "location_accuracy_qualified": False,
             "acoustic_quality_qualified": False,
@@ -637,6 +662,7 @@ def main() -> int:
             "xcresult tests",
         )
         validate_required_foreground_location_test(tests)
+        validate_required_physical_audio_test(tests)
         tests_data = encoded_json(tests)
         write_bytes(output / "xcresult-tests.private.json", tests_data)
         receipt = build_receipt(

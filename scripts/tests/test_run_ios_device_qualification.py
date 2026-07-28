@@ -84,6 +84,15 @@ def passed_tests() -> dict:
                         ),
                         "nodeType": "Test Case",
                         "result": "Passed",
+                    },
+                    {
+                        "nodeIdentifier": (
+                            "PhysicalAudioQualificationUITests/"
+                            "testInstalledVoicesCompleteThroughTheVoicePrompt"
+                            "OutputRoute()"
+                        ),
+                        "nodeType": "Test Case",
+                        "result": "Passed",
                     }
                 ]
             }
@@ -223,6 +232,12 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         self.assertTrue(
             receipt["authority"]["foreground_location_start_stop_smoke"]
         )
+        self.assertTrue(
+            receipt["authority"]["installed_voice_lifecycle_smoke"]
+        )
+        self.assertTrue(
+            receipt["authority"]["physical_audio_route_lifecycle_smoke"]
+        )
         self.assertFalse(receipt["authority"]["road_release_authority"])
         self.assertFalse(receipt["authority"]["location_accuracy_qualified"])
         self.assertFalse(receipt["authority"]["acoustic_quality_qualified"])
@@ -262,6 +277,30 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             "exactly one required foreground-location",
         ):
             runner.validate_required_foreground_location_test(duplicate)
+
+    def test_required_physical_audio_test_must_pass_exactly_once(
+        self,
+    ) -> None:
+        self.assertEqual(
+            runner.validate_required_physical_audio_test(passed_tests()),
+            runner.REQUIRED_PHYSICAL_AUDIO_TEST,
+        )
+
+        missing = passed_tests()
+        missing["testNodes"][0]["children"].pop()
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "exactly one required physical-audio",
+        ):
+            runner.validate_required_physical_audio_test(missing)
+
+        failed = passed_tests()
+        failed["testNodes"][0]["children"][1]["result"] = "Failed"
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "physical-audio lifecycle test did not pass",
+        ):
+            runner.validate_required_physical_audio_test(failed)
 
     def test_xcresult_rejects_simulator_identity_failure_or_skip(self) -> None:
         device = runner.select_physical_ios_device(

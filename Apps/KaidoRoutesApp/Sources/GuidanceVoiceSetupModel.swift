@@ -552,7 +552,7 @@ final class GuidanceVoiceSetupModel: ObservableObject {
 }
 
 @MainActor
-private final class LazyAVSpeechVoiceAuditionOutput:
+final class LazyAVSpeechVoiceAuditionOutput:
   GuidanceVoiceAuditionOutput
 {
   var eventHandler: ((GuidanceVoiceAuditionOutputEvent) -> Void)? {

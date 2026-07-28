@@ -92,6 +92,8 @@
 		D02C21875A52789DE2EDDBFA /* KaidoAccessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 660C84EF22BF710C2FA21214 /* KaidoAccessibility.swift */; };
 		D0C12CA534255F589B0F78A9 /* PreDriveEvidenceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C950684F2E5CE4A081DA2D1 /* PreDriveEvidenceUpdateView.swift */; };
 		D7B4A656D7A476D41BA5AC93 /* InternalLocationCalibrationFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F61A93DD01F3113474B7EE /* InternalLocationCalibrationFixture.swift */; };
+		E0A2CC8BE79A4F15B337CE15 /* PhysicalAudioQualificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */; };
+		E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */; };
 		EB9E33B1837B9E11C01BE548 /* KaidoPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 55CA08F012ED78E3B6403A9D /* KaidoPresentation */; };
 		EDAC0E9181F85ED0E70DA712 /* ProductNavigationRuntimeModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */; };
 		EE2095C8B683BEBA65A3BC25 /* SyntheticDrivingPreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */; };
@@ -164,6 +166,7 @@
 		67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRuntimePreviewUITests.swift; sourceTree = "<group>"; };
 		7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalization.swift; sourceTree = "<group>"; };
 		797D999FF7F8C7A290AC65FA /* InternalLocationCalibrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationTests.swift; sourceTree = "<group>"; };
+		79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationView.swift; sourceTree = "<group>"; };
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
 		7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModel.swift; sourceTree = "<group>"; };
 		808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -183,6 +186,7 @@
 		A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "route-atlas-attribution-catalog.json"; path = "data/route-atlas/attribution/route-atlas-attribution-catalog.json"; sourceTree = "<group>"; };
 		A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNavigationRuntimeModelTests.swift; sourceTree = "<group>"; };
 		B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationModelTests.swift; sourceTree = "<group>"; };
+		B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationUITests.swift; sourceTree = "<group>"; };
 		B3512D6D318BE2C5B1E03B89 /* GuidanceVoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceVoiceSetupView.swift; sourceTree = "<group>"; };
 		C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewView.swift; sourceTree = "<group>"; };
 		CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapter.swift; sourceTree = "<group>"; };
@@ -339,6 +343,7 @@
 				5BDEF1840C8F8A5A1F7DA57B /* KaidoProductJourneyUITests.swift */,
 				40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */,
 				A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */,
+				B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */,
 				67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */,
 				F696441576DF5372272A07E3 /* RouteAtlasAttributionUITests.swift */,
 			);
@@ -378,6 +383,7 @@
 				2BF06B2DD377EF8D44AE6655 /* KaidoRoutesApp.swift */,
 				ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */,
 				41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */,
+				79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */,
 				655F7EDB9CF7F8649877603D /* PreDriveEvidenceUpdateModel.swift */,
 				4C950684F2E5CE4A081DA2D1 /* PreDriveEvidenceUpdateView.swift */,
 				28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */,
@@ -578,6 +584,7 @@
 				31C81EB5F6310D33857A24E1 /* KRU03CorridorUITests.swift in Sources */,
 				460FCC9B5E902926D2F69D3F /* KRU09AccessibilityUITests.swift in Sources */,
 				B49B9BD3E9BFE10360C5D215 /* KaidoProductJourneyUITests.swift in Sources */,
+				E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */,
 				B7269CF47D7E3EB171FA9147 /* ProductRuntimePreviewUITests.swift in Sources */,
 				378B198A2A9A48CCAF7D826F /* RouteAtlasAttributionUITests.swift in Sources */,
 			);
@@ -608,6 +615,7 @@
 				A88661D038F4E0054F18A0AA /* KaidoRoutesApp.swift in Sources */,
 				BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */,
 				0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */,
+				E0A2CC8BE79A4F15B337CE15 /* PhysicalAudioQualificationView.swift in Sources */,
 				A6E9B00C43F28C3DA3146446 /* PreDriveEvidenceUpdateModel.swift in Sources */,
 				D0C12CA534255F589B0F78A9 /* PreDriveEvidenceUpdateView.swift in Sources */,
 				60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */,

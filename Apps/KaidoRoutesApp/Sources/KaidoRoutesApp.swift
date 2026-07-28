@@ -41,6 +41,10 @@ struct KaidoRoutesApp: App {
       ) {
         ProductRuntimePreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-PHYSICAL-AUDIO-QUALIFICATION"
+      ) {
+        PhysicalAudioQualificationHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-INTERNAL-REVIEW-HOME"
       ) {
         RouteAtlasHomeView()

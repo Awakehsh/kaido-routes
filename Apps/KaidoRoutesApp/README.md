@@ -577,10 +577,14 @@ storage; the coordinate-free receipt excludes device identifier and name.
 The physical suite includes one exact released-K7 Core Location lifecycle:
 the user action requests When In Use permission, survives the system-dialog
 scene interruption, reaches foreground `RUNNING`, and explicitly stops. The
-runner requires that named test to pass and hashes the complete test tree. This
-proves physical permission/start/stop wiring only; it does not qualify location
-accuracy, matcher reliability, voice naturalness, pronunciation, current road
-conditions, CarPlay, or background navigation. See
+same suite now also plays parked Japanese, Simplified Chinese, and English
+samples through the real Apple voice-prompt session. It requires an installed
+exact-locale voice, start/finish callbacks, and a non-empty physical output
+route for every sample. The runner requires both named tests to pass and hashes
+the complete test tree. These are permission, callback, and route-lifecycle
+smokes only; they do not qualify location accuracy, matcher reliability, voice
+naturalness, pronunciation, driver comprehension, current road conditions,
+CarPlay, or background navigation. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
 ## Regenerate the Xcode project
@@ -651,6 +655,11 @@ exposes the selected name, locale, and quality. A default-only result is marked
 as a basic fallback and names the iPhone Spoken Content voice installation path;
 the current preview Simulator reports only default-quality voices, not an
 enhanced-voice qualification.
+`PhysicalAudioQualificationUITests` runs the separate parked-only technical
+harness through all three synthesis locales and requires exact start/finish
+callbacks plus the voice-prompt output route. The physical qualification runner
+requires that named case exactly once; the Simulator execution is only the
+deterministic adapter control.
 They also save one background checkpoint, reconstruct a fresh runtime, retain
 occurrence/prompt identity, clear position/CarPlay state, and require LOW
 reacquisition evidence without replay. Package tests independently cover

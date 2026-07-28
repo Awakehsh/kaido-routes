@@ -73,9 +73,13 @@ The runner:
    failures;
 6. requires the released-K7 Core Location permission/start/stop lifecycle UI
    test to appear exactly once and pass;
-7. hashes the complete `.xcresult` tree, canonical summary, canonical test
+7. requires the parked Japanese, Simplified Chinese, and English voice-prompt
+   lifecycle UI test to appear exactly once and pass with an installed voice,
+   start/finish callbacks, `.playback + .voicePrompt`, and a non-empty physical
+   output route for every sample;
+8. hashes the complete `.xcresult` tree, canonical summary, canonical test
    tree, and build log; and
-8. writes `qualification-run.json` only after the complete gate passes.
+9. writes `qualification-run.json` only after the complete gate passes.
 
 A failed build retains its private log/result bundle for diagnosis but creates
 no passing receipt. Existing output is never overwritten.
@@ -93,8 +97,11 @@ no passing receipt. Existing output is never overwritten.
 It excludes the device identifier, device name, coordinates, raw location
 traces, raw audio, and filesystem paths. Its authority matrix records the exact
 foreground-location start/stop smoke as true while deliberately keeping
-location accuracy, road release, acoustic quality, pronunciation, CarPlay, and
-background navigation false.
+the installed-voice lifecycle and physical audio-route lifecycle smokes true.
+It deliberately keeps location accuracy, road release, acoustic quality,
+pronunciation, CarPlay, and background navigation false. A callback and output
+port prove that the technical route was active; they do not prove that a person
+heard, understood, or approved the sound.
 
 ## Remaining device gates
 
@@ -107,7 +114,7 @@ dated evidence for:
 - VoiceOver focus order, Switch Control, and the supported Dynamic Type/device
   matrix;
 - foreground permission downgrade, interruption, matcher behavior under real
-  movement, audio output route, and no-replay behavior;
+  movement, Bluetooth/CarPlay route changes, and no-replay behavior;
 - the held-out matcher/location field plan; and
 - any later approved CarPlay configuration.
 

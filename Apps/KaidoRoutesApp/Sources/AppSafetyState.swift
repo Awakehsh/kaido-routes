@@ -326,6 +326,18 @@ final class KaidoRoutesAppModel: ObservableObject {
     )
   }
 
+  /// Deterministic L3 proof that stale dynamic information does not revoke the
+  /// independently validated K7 route or foreground runtime.
+  static func k7ExpiredInformationE2E() -> KaidoRoutesAppModel {
+    let fixedDate = ISO8601DateFormatter().date(
+      from: "2026-07-28T00:00:00+09:00"
+    )!
+    return KaidoRoutesAppModel(
+      demoRehearsalEnabled: false,
+      currentDateProvider: { fixedDate }
+    )
+  }
+
   func attribution(for mode: RouteAtlasMode) -> RouteAtlasAttribution {
     routeAtlasAttributions.attribution(for: mode)
   }

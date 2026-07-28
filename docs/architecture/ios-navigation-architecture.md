@@ -750,27 +750,29 @@ The default product journey exposes only foreground releases. When any exist,
 `ReleasedProductRouteAuthoringModel` replaces the synthetic editor and lets the
 user select one catalog entry and submit each release-owned recipe choice.
 `ReleasedRouteEditorAdapter` retains occurrence identity, and compilation must
-equal that release's whole `RoutePlan`. Review then requires separately injected
-session tariff and passage evidence to pass `ReleasedPreDriveReviewAdapter`.
-After compilation the user explicitly selects one canonical
-`ShutoVehicleClass` and one independent `ShutoPaymentMethod`; the provider
+equal that release's whole `RoutePlan`. Review becomes available after that
+exact compilation. The user may then select one canonical
+`ShutoVehicleClass` and one independent `ShutoPaymentMethod` for current toll
+information; the provider
 receives a `PreDriveReviewSession` bound to that exact RoutePlan, snapshot,
 class, and payment method. Its evidence envelope and every quote must match.
-Only that release-owned authoring, session, and review tuple enables an explicit
-user-start action.
+Only matching information may be presented as current, but missing or expired
+information does not own route authority. A current known closure or planned
+conflict still blocks the explicit user-start action.
 The action constructs
 `ProductNavigationRuntimeModel` from the selected entry, reuses the codec-minted
 live-input authority, and enters the navigation stage without starting Core
 Location. A second explicit action starts foreground location only after actor
 activation and When In Use authorization. Runtime construction failure stays in
-pre-drive review; route or evidence invalidation terminates an active runtime,
-and ending navigation stops input and speech, removes the active checkpoint, and
-returns to review. The current build carries one foreground K7 release and one
+pre-drive review; route invalidation or a newly admitted current closure
+terminates an active runtime. Ending navigation stops input and speech, removes
+the active checkpoint, and returns to review. The current build carries one
+foreground K7 release and one
 synthetic demo. The foreground entry carries one dated, hash-bound K7
 pre-drive bundle with all ten canonical vehicle/payment profiles. It admits
-review only within that bundle's exact validity window, fails closed after
-expiry, and never substitutes the demo or its synthetic review for the
-released route.
+current-information presentation only within that bundle's exact validity
+window, becomes a stale-information warning after expiry, and never substitutes
+the demo or its synthetic review for the released route.
 
 `RouteAtlasContextBundle` is a separate, permanently non-authoritative layer for
 full-network geographic recognition. Its only accepted navigation role is
@@ -945,10 +947,12 @@ That is a development fact, not yet the minimum deployment target.
   `KaidoProductJourneyModel`. This coordinator owns presentation stage only. It
   selects the synthetic preview editor only when the catalog has no foreground
   release. Otherwise it observes release-owned authoring and separately admitted
-  pre-drive evidence, returns to authoring when either becomes invalid, and
-  cannot convert a structurally valid synthetic or mismatched release into
-  navigation authority. The former all-panel evidence workbench remains a
-  launch-only internal surface.
+  pre-drive information. Route invalidation returns to authoring and terminates
+  an active runtime; missing or expired dynamic information remains a warning,
+  while a current known closure or planned conflict blocks start. The
+  coordinator cannot convert a structurally valid synthetic or mismatched
+  release into navigation authority. The former all-panel evidence workbench
+  remains a launch-only internal surface.
 - The default journey owns one persisted interface-locale environment with exact
   Japanese, Simplified Chinese, and English app copy. The selection is visible
   and changes atlas, entrance explanation, parked editor, pre-drive review,
@@ -1005,8 +1009,9 @@ That is a development fact, not yet the minimum deployment target.
   passage sources, one vehicle/payment profile per record, and an exclusive
   runtime expiry. The App catalog decodes it only beside the matching foreground
   product, and the released authoring model resolves it at the current time by
-  default. Missing, not-yet-valid, expired, or unlisted profiles fail closed and
-  cannot reuse another record.
+  default. Missing, not-yet-valid, expired, or unlisted profiles fail closed as
+  current information and cannot reuse another record, but do not revoke the
+  independently validated RoutePlan.
   `PreDriveEvidenceBundleAuthor` now constructs that manifest from a
   release-authority-free reviewed draft plus separate release metadata. The
   exact product supplies product/navigation/snapshot/RoutePlan and
@@ -1032,13 +1037,15 @@ That is a development fact, not yet the minimum deployment target.
   from the other. `ReleasedPreDriveReviewAdapter` exposes the same evaluator for
   one validated joint product release. Its evidence remains a separate
   current-session input; missing or identity-drifted evidence cannot fall back
-  to the internal synthetic review. The journey shell can expose
-  review only after this exact projection exists; route or evidence invalidation
-  demotes the shell back to authoring and terminates an active runtime rather
-  than retaining stale readiness. The checked foreground K7 descriptor contains
-  one dated, hash-bound evidence bundle and locks again at its exclusive expiry;
-  a future operator-backed live refresh still requires independent authority,
-  freshness, data-use, and failure-policy review.
+  to the internal synthetic review. The journey shell exposes review after the
+  exact release-owned RoutePlan compiles. It labels missing or expired dynamic
+  information without treating it as current, and it may display the last
+  bundled checked value as stale. Route invalidation demotes the shell back to
+  authoring; a current known closure or planned conflict blocks start and
+  terminates an active runtime. The checked foreground K7 descriptor contains
+  one dated, hash-bound evidence bundle whose expiry no longer revokes route
+  authority. A future operator-backed live refresh still requires independent
+  authority, freshness, data-use, and failure-policy review.
 - A synthetic language-preview adapter independently selects the interface and
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory

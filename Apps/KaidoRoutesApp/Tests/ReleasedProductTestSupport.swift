@@ -191,7 +191,9 @@ func makeReleasedPreDriveEvidence(
   vehicleClass: ShutoVehicleClass = .standard,
   quoteVehicleClass: ShutoVehicleClass? = nil,
   paymentMethod: ShutoPaymentMethod = .etc,
-  quotePaymentMethod: ShutoPaymentMethod? = nil
+  quotePaymentMethod: ShutoPaymentMethod? = nil,
+  passageEvidence: RoutePassageEvidence =
+    .noKnownConflictRealtimeUnconfirmed
 ) -> PreDriveReviewEvidence {
   let routePlan = entry.release.navigation.bundle.routePlan
   return PreDriveReviewEvidence(
@@ -200,7 +202,7 @@ func makeReleasedPreDriveEvidence(
     routePlanID: routePlanID ?? routePlan.id,
     vehicleClass: vehicleClass,
     paymentMethod: paymentMethod,
-    passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+    passageEvidence: passageEvidence,
     tariffQuotes: [
       TariffQuote(
         id: "test.released-road.tariff.active",

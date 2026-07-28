@@ -25,7 +25,7 @@ marker only from exact HIGH route-bound progress evidence; LOW, LOST,
 ambiguous, or identity-drifted evidence stays estimated or unavailable.
 The bundled catalog now contains one foreground K7 product release whose exact
 runtime may grant foreground Core Location authority only after release-owned
-route authoring and separately supplied current pre-drive evidence pass. No
+route authoring and whole-RoutePlan release selection pass. No
 release starts location automatically. The full-network/K7 evidence workbench and
 calibration controls require a dedicated internal launch argument and do not
 appear in the ordinary product journey.
@@ -51,17 +51,20 @@ codec runs. Navigation selection requires whole-`RoutePlan` equality and fails
 closed on zero or multiple released-road matches. When a foreground entry is
 present, the journey replaces synthetic authoring with that release's localized
 editor recipe, requires every stable choice explicitly, retains its exact
-occurrence sequence, and admits review only after separately supplied current
-tariff and passage evidence evaluates against the same RoutePlan and network
-snapshot. The user must first select one of the five canonical Shuto vehicle
-classes and select the ETC or cash tariff path independently; the evidence
-provider receives that exact session request, and its envelope plus every tariff
-quote must match both selections. The first operational provider is now an
+occurrence sequence, and admits review after the exact RoutePlan compiles.
+Vehicle class and ETC/cash selection are optional inputs for toll information,
+not route authority. When selected, the evidence provider receives that exact
+session request, and its envelope plus every tariff quote must match both
+selections before the App may present them as current. The first operational
+provider is now an
 optional compile-time, hash-bound schema-1.0 pre-drive evidence bundle attached
 to the exact foreground product. It retains separate reviewed tariff and
 passage source roles, resolves only one exact vehicle/payment profile inside its
-declared validity window, and fails closed when missing, not yet valid, or
-expired. It does not fetch live services or claim realtime-open authority. The
+declared validity window, and fails closed as current information when missing,
+not yet valid, or expired. Those states produce a warning and never revoke an
+independently validated RoutePlan. Known closure or planned-conflict information
+still blocks navigation start. It does not fetch live services or claim
+realtime-open authority. The
 release CLI now builds that manifest from a reviewed identity-free draft,
 deriving product, RoutePlan, entrance/exit, and quote-profile identity instead
 of accepting copied values. A schema-2.0 App staging descriptor may
@@ -75,9 +78,9 @@ reject rollback and release-ID reuse, revalidate on restoration, and never fall
 back after a newer effective bundle loses or expires a profile. The current
 manifest contains one foreground K7 release and one synthetic demo. The K7
 entry bundles one hash-bound, dated 2026-07-27 pre-drive evidence window with
-all five vehicle classes and separate ETC/cash profiles. It admits review only
-inside that embedded interval and fails closed after expiry instead of
-manufacturing tariff or passage status. The default demo path reuses that one release
+all five vehicle classes and separate ETC/cash profiles. It is shown as current
+only inside that embedded interval; after expiry the App labels it stale while
+keeping the released route available. The default demo path reuses that one release
 identity across authoring, pre-drive review, and a freshly constructed actor
 rehearsal; it never promotes `DEMO_ONLY` or mints live-input authority. A separate
 synthetic guidance panel lets interface and voice locales vary independently
@@ -109,8 +112,9 @@ grant navigation authority. A saved record may reopen only when its whole
 `RoutePlan` equals exactly one current foreground product release; zero,
 multiple, invalid, or snapshot-drifted matches remain visible but cannot leave
 the Route Atlas stage. Reopening selects that release's parked editor and still
-requires every release-owned choice, compilation, current pre-drive evidence,
-and explicit navigation start.
+requires every release-owned choice, exact compilation, and explicit navigation
+start. Current toll and passage information remains optional and separately
+labeled.
 The app also exposes an opt-in,
 foreground-only internal Core Location calibration harness bound to the exact
 review-only K7 ODbL candidate corridor. The harness keeps raw location in memory,
@@ -982,10 +986,11 @@ independently decodes and validates that artifact. The repository contains
 separately validated real K7 exit-handoff Atlas artifacts; only the
 navigation-semantic five-occurrence variant matches the real navigation release.
 The K7 readiness command is a stricter real-evidence preflight around the
-current hash-bound exit-handoff candidate inputs. Its expected exit is
-`BLOCKED` until topology and layout evidence are independently released. It
-reports unresolved ordinary-road identity and field evidence under the future
-surface-egress scope and never grants release or navigation authority.
+current hash-bound exit-handoff candidate inputs. Its current expected exit is
+`PASS` because topology and layout evidence have been independently released.
+That result admits the candidate only to the authoritative release validator.
+It reports unresolved ordinary-road identity and field evidence under the
+future surface-egress scope and never grants release or navigation authority.
 
 ```sh
 python3 scripts/validate_k7_route_atlas_readiness.py \
@@ -1037,8 +1042,8 @@ The authoring configuration contains only schema version, product release ID,
 and release timestamp. Runtime scope is intentionally not configurable. See
 [`docs/contributing/product-release-authoring.md`](docs/contributing/product-release-authoring.md).
 
-Validate separately reviewed current tariff and passage evidence against that
-exact product before App staging:
+Optionally validate separately reviewed current tariff and passage information
+against that exact product before App staging:
 
 ```sh
 swift run kaido-release build-pre-drive-evidence \
@@ -1070,7 +1075,8 @@ swift run kaido-release validate-pre-drive-evidence-update \
 
 The author derives product, route, facility, and tariff-profile identity rather
 than accepting copied values. The bundle remains separate from versioned route
-authority and expires at runtime. The signing private key remains offline and
+authority and expires only as current display information at runtime. The
+signing private key remains offline and
 outside the repository; only its public trust descriptor is staged into the
 App. See
 [`docs/contributing/pre-drive-evidence.md`](docs/contributing/pre-drive-evidence.md).

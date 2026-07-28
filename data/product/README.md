@@ -36,10 +36,11 @@ The App bundle contains those exact bytes and a compile-time
 SHA-256. The generated staging configuration additionally pins one dated,
 hash-bound pre-drive evidence manifest with all five vehicle classes and
 separate ETC and cash profiles. That evidence window ended at
-`2026-07-28T00:00:00+09:00`, so the App now fails closed until a new reviewed
-manifest matches the exact session profile. The descriptor intentionally
-includes no signed-update trust key, update endpoint, or reviewed offline
-audio.
+`2026-07-28T00:00:00+09:00`. The App now labels its values stale and does not
+use them as current toll or passage information, while the independently
+validated K7 route remains available. A current known closure or planned
+conflict still blocks start. The descriptor intentionally includes no
+signed-update trust key, update endpoint, or reviewed offline audio.
 
 The exact App build was signed, built, and installed on the paired iPhone 13
 Pro, then launched successfully after the device was unlocked on 2026-07-28.

@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "id": "KR-D29",
-  "title": "Hash-bound pre-drive evidence resolves only a fresh exact tariff profile",
+  "title": "Hash-bound pre-drive information expires without owning route authority",
   "layer": "DOMAIN",
   "tags": ["pre-drive", "evidence", "freshness", "release", "fail-closed"],
-  "purpose": "Keep dated tariff and passage evidence separate from the versioned product release while requiring exact product, RoutePlan, vehicle-class, payment-method, provenance, and validity-window agreement before pre-drive admission.",
+  "purpose": "Keep dated tariff and passage information separate from versioned route authority: only an exact fresh profile may be presented as current, while missing or expired information remains explicit and cannot by itself block an otherwise executable released route.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
@@ -139,8 +139,14 @@
       }
     },
     {
-      "id": "reject-missing-payment-profile",
+      "id": "start-with-expired-information",
       "at_ms": 2,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "reject-missing-payment-profile",
+      "at_ms": 3,
       "type": "PRE_DRIVE_EVIDENCE_BUNDLE_RESOLVED",
       "payload": {
         "product_release_id": "test.product.pre-drive-bundle",
@@ -206,6 +212,33 @@
       "matcher": "CONTAINS",
       "expected": "PRE_DRIVE_EVIDENCE_EXPIRED",
       "rationale": "The App can distinguish stale evidence from an absent release."
+    },
+    {
+      "id": "expired-information-does-not-own-route-authority",
+      "after": "start-with-expired-information",
+      "category": "SAFETY",
+      "subject": "route.executable",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "Tariff and realtime-information freshness cannot revoke an independently validated RoutePlan."
+    },
+    {
+      "id": "expired-information-does-not-block-start",
+      "after": "start-with-expired-information",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.pre-drive-bundle",
+      "rationale": "An executable released route can start while stale information remains visibly unavailable."
+    },
+    {
+      "id": "expired-information-remains-explicit-after-start",
+      "after": "start-with-expired-information",
+      "category": "EVIDENCE",
+      "subject": "pre_drive.bundle.status",
+      "matcher": "EQUALS",
+      "expected": "BLOCKED",
+      "rationale": "Starting navigation does not relabel expired tariff or passage information as current."
     },
     {
       "id": "missing-profile-blocks",

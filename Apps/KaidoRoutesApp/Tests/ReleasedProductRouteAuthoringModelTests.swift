@@ -42,7 +42,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     XCTAssertNil(model.lastErrorCode)
   }
 
-  func testMissingPreDriveEvidenceKeepsCompiledReleaseBlocked() throws {
+  func testMissingPreDriveInformationDoesNotBlockCompiledRelease() throws {
     let entry = try makeReleasedProductTestEntry()
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
@@ -55,7 +55,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
       model.compiledRoutePlan,
       entry.release.navigation.bundle.routePlan
     )
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -96,15 +96,25 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     )
     model.refreshPreDriveReview()
 
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
+    XCTAssertEqual(
+      model.referencePreDriveInformation?.expiresAt,
+      "2026-07-26T00:00:00+09:00"
+    )
+    XCTAssertEqual(
+      model.referencePreDriveInformation?.snapshot.presentation
+        .estimatedAmountYen,
+      1_320
+    )
+    XCTAssertTrue(model.hasExpiredReferencePreDriveInformation)
     XCTAssertEqual(
       model.lastErrorCode,
       PreDriveEvidenceResolutionError.expired.code
     )
   }
 
-  func testDriftedPreDriveEvidenceFailsClosed() throws {
+  func testDriftedPreDriveInformationIsNotPresentedAsCurrent() throws {
     let entry = try makeReleasedProductTestEntry()
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
@@ -121,7 +131,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
 
     authorReleasedRoute(model, entry: entry)
 
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -129,7 +139,9 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     )
   }
 
-  func testVehicleClassDriftedPreDriveEvidenceFailsClosed() throws {
+  func testVehicleClassDriftedInformationIsNotPresentedAsCurrent()
+    throws
+  {
     let entry = try makeReleasedProductTestEntry()
     let model = try ReleasedProductRouteAuthoringModel(
       entries: [entry],
@@ -146,7 +158,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
 
     authorReleasedRoute(model, entry: entry)
 
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -181,7 +193,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
     )
     XCTAssertNil(model.selectedVehicleClass)
     XCTAssertNil(model.selectedPaymentMethod)
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertEqual(requestCount, 0)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -276,7 +288,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
 
     authorReleasedRoute(model, entry: entry, vehicleClass: .standard)
 
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -305,7 +317,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
       paymentMethod: .etc
     )
 
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertNil(model.preDriveReviewSnapshot)
     XCTAssertEqual(
       model.lastErrorCode,
@@ -423,7 +435,7 @@ final class ReleasedProductRouteAuthoringModelTests: XCTestCase {
       model.compiledRoutePlan,
       entry.release.navigation.bundle.routePlan
     )
-    XCTAssertFalse(model.reviewReady)
+    XCTAssertTrue(model.reviewReady)
     XCTAssertEqual(
       model.lastErrorCode,
       ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue

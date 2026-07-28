@@ -51,6 +51,14 @@ struct KaidoRoutesApp: App {
             composition: .k7OperationalE2E()
           )
         )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-K7-EXPIRED-INFORMATION-E2E"
+      ) {
+        KaidoProductJourneyView(
+          model: KaidoProductJourneyModel(
+            composition: .k7ExpiredInformationE2E()
+          )
+        )
       } else {
         KaidoProductJourneyView(
           model: KaidoProductJourneyModel(

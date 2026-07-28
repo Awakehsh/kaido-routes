@@ -1184,10 +1184,16 @@ private struct ProductReviewStage: View {
       if let snapshot = model.preDriveReviewSnapshot {
         metrics(snapshot)
         availability(snapshot)
-        voice
+      } else if model.hasExpiredReferencePreDriveInformation,
+        let reference = model.referencePreDriveInformation
+      {
+        metrics(reference.snapshot)
+        staleInformation(reference)
       } else {
-        blocker
+        routeOnlyMetrics
+        unavailableInformation
       }
+      voice
     }
   }
 
@@ -1359,17 +1365,23 @@ private struct ProductReviewStage: View {
   private func availability(
     _ snapshot: PreDriveReviewSnapshot
   ) -> some View {
-    HStack(alignment: .top, spacing: 11) {
-      Image(systemName: "exclamationmark.circle.fill")
-        .foregroundStyle(KaidoTheme.signalAmber)
+    let tone = snapshot.presentation.passage.tone
+    return HStack(alignment: .top, spacing: 11) {
+      Image(
+        systemName:
+          tone == .blocked || tone == .warning
+          ? "exclamationmark.octagon.fill"
+          : "exclamationmark.circle.fill"
+      )
+      .foregroundStyle(
+        tone == .blocked || tone == .warning
+          ? KaidoTheme.evidenceCoral
+          : KaidoTheme.signalAmber
+      )
 
       VStack(alignment: .leading, spacing: 3) {
         Text(
-          copy.resolve(
-            japanese: "リアルタイム通行状態は未確認",
-            simplifiedChinese: "实时通行状态尚未确认",
-            english: "Realtime passage is unconfirmed"
-          )
+          passageTitle(tone)
         )
         .font(.system(size: 12, weight: .black))
         .foregroundStyle(KaidoTheme.ink)
@@ -1387,9 +1399,181 @@ private struct ProductReviewStage: View {
     }
     .padding(13)
     .frame(maxWidth: .infinity, alignment: .leading)
+    .background(
+      tone == .blocked || tone == .warning
+        ? KaidoTheme.evidenceCoral.opacity(0.12)
+        : KaidoTheme.signalAmber.opacity(0.12)
+    )
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier(
+      tone == .blocked || tone == .warning
+        ? "product-review-passage-blocker"
+        : "product-review-availability"
+    )
+  }
+
+  private var routeOnlyMetrics: some View {
+    let routePlan = model.compiledRoutePlan
+    return VStack(spacing: 0) {
+      reviewRow(
+        title: copy.resolve(
+          japanese: "走行予定距離",
+          simplifiedChinese: "实际规划距离",
+          english: "Planned distance"
+        ),
+        value:
+          routePlan?.actualDistanceKM.map {
+            String(format: "%.1f km", $0)
+          } ?? "—"
+      )
+
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      reviewRow(
+        title: copy.resolve(
+          japanese: "料金",
+          simplifiedChinese: "费用",
+          english: "Toll"
+        ),
+        value: copy.resolve(
+          japanese: "現在情報なし",
+          simplifiedChinese: "无当前信息",
+          english: "Not current"
+        )
+      )
+
+      Divider()
+        .overlay(KaidoTheme.paperDivider)
+
+      reviewRow(
+        title: copy.resolve(
+          japanese: "経路",
+          simplifiedChinese: "路线",
+          english: "Route"
+        ),
+        value: copy.resolve(
+          japanese: "\(routePlan?.occurrences.count ?? 0) 区間",
+          simplifiedChinese: "\(routePlan?.occurrences.count ?? 0) 个路段",
+          english: "\(routePlan?.occurrences.count ?? 0) segments"
+        )
+      )
+    }
+    .padding(.horizontal, 14)
+    .background(KaidoTheme.paperRaised)
+    .overlay {
+      Rectangle()
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-review-metrics")
+  }
+
+  private func staleInformation(
+    _ reference: ReleasedPreDriveInformationReference
+  ) -> some View {
+    HStack(alignment: .top, spacing: 11) {
+      Image(systemName: "clock.badge.exclamationmark.fill")
+        .foregroundStyle(KaidoTheme.signalAmber)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text(
+          copy.resolve(
+            japanese: "料金・通行情報は期限切れ",
+            simplifiedChinese: "费用与通行信息已过期",
+            english: "Toll and passage information has expired"
+          )
+        )
+        .font(.system(size: 12, weight: .black))
+        .foregroundStyle(KaidoTheme.ink)
+
+        Text(
+          copy.resolve(
+            japanese:
+              "最終確認：\(reference.snapshot.checkedAt) · 期限：\(reference.expiresAt)。経路は利用できます。現地の標識・規制・料金表示に従ってください。",
+            simplifiedChinese:
+              "最后检查：\(reference.snapshot.checkedAt) · 到期：\(reference.expiresAt)。路线仍可使用，请遵守现场标志、管制与收费信息。",
+            english:
+              "Last checked: \(reference.snapshot.checkedAt) · expired: \(reference.expiresAt). The route remains available; follow on-road signs, restrictions, and toll notices."
+          )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+    }
+    .padding(13)
+    .frame(maxWidth: .infinity, alignment: .leading)
     .background(KaidoTheme.signalAmber.opacity(0.12))
     .accessibilityElement(children: .combine)
-    .accessibilityIdentifier("product-review-availability")
+    .accessibilityIdentifier("product-review-information-stale")
+  }
+
+  private var unavailableInformation: some View {
+    HStack(alignment: .top, spacing: 11) {
+      Image(systemName: "info.circle.fill")
+        .foregroundStyle(KaidoTheme.signalAmber)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text(
+          copy.resolve(
+            japanese: "現在の料金・リアルタイム通行情報なし",
+            simplifiedChinese: "无当前费用与实时通行信息",
+            english: "No current toll or realtime passage information"
+          )
+        )
+        .font(.system(size: 12, weight: .black))
+        .foregroundStyle(KaidoTheme.ink)
+
+        Text(
+          copy.resolve(
+            japanese:
+              "検証済み経路は利用できます。現地の標識・規制・料金表示に従ってください。",
+            simplifiedChinese:
+              "已验证路线仍可使用，请遵守现场标志、管制与收费信息。",
+            english:
+              "The reviewed route remains available. Follow on-road signs, restrictions, and toll notices."
+          )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+    }
+    .padding(13)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(KaidoTheme.signalAmber.opacity(0.12))
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("product-review-information-unavailable")
+  }
+
+  private func passageTitle(
+    _ tone: RoutePassagePresentationTone
+  ) -> String {
+    switch tone {
+    case .blocked:
+      copy.resolve(
+        japanese: "既知の通行止め：ナビ開始不可",
+        simplifiedChinese: "已知封闭：无法开始导航",
+        english: "Known closure: navigation cannot start"
+      )
+    case .warning:
+      copy.resolve(
+        japanese: "計画上の通行競合：ナビ開始不可",
+        simplifiedChinese: "已知计划冲突：无法开始导航",
+        english: "Known planned conflict: navigation cannot start"
+      )
+    case .unconfirmed:
+      copy.resolve(
+        japanese: "リアルタイム通行状態は未確認",
+        simplifiedChinese: "实时通行状态尚未确认",
+        english: "Realtime passage is unconfirmed"
+      )
+    case .confirmedPassable:
+      copy.resolve(
+        japanese: "リアルタイム通行可能",
+        simplifiedChinese: "实时确认可通行",
+        english: "Realtime passage confirmed"
+      )
+    }
   }
 
   private var voice: some View {
@@ -1427,24 +1611,6 @@ private struct ProductReviewStage: View {
     .accessibilityIdentifier("product-review-voice")
   }
 
-  private var blocker: some View {
-    HStack(spacing: 10) {
-      Image(systemName: "lock.fill")
-      Text(
-        copy.resolve(
-          japanese: "出発前情報が揃っていません",
-          simplifiedChinese: "行前信息尚未齐全",
-          english: "Pre-drive information is incomplete"
-        )
-      )
-    }
-    .font(.system(size: 12, weight: .black))
-    .foregroundStyle(KaidoTheme.quietText)
-    .padding(14)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(KaidoTheme.paperRaised)
-  }
-
   private func reviewRow(
     title: String,
     value: String
@@ -1471,8 +1637,7 @@ private struct ProductDriveStage: View {
   @Environment(\.scenePhase) private var scenePhase
   @ObservedObject var model: KaidoProductJourneyModel
   @ObservedObject var runtime: ProductNavigationRuntimeModel
-  @ObservedObject private var locationController:
-    ForegroundNavigationLocationController
+  @ObservedObject private var locationController: ForegroundNavigationLocationController
   @State private var isStartingRehearsal = false
   @State private var showsFinishConfirmation = false
 

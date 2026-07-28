@@ -51,15 +51,23 @@ enum ReleasedProductRouteAuthoringScope: Equatable, Sendable {
   }
 }
 
-/// Release-owned authoring and pre-drive admission.
+struct ReleasedPreDriveInformationReference: Equatable, Sendable {
+  let snapshot: PreDriveReviewSnapshot
+  let validFrom: String
+  let expiresAt: String
+}
+
+/// Release-owned authoring and optional pre-drive information.
 ///
 /// Every visible label comes from the selected product release. The user still
 /// submits each stable recipe choice explicitly, while the adapter retains all
-/// release-owned occurrence identities. A compiled route becomes review-ready
-/// only after the user explicitly selects a canonical Shuto vehicle class and
-/// payment method, and separately supplied session evidence evaluates against
-/// that exact product release, RoutePlan, and tariff profile. Demo rehearsal
-/// uses the same identity boundary but never grants foreground live input.
+/// release-owned occurrence identities. An exact compiled route becomes
+/// review-ready independently from tariff and realtime-information freshness.
+/// When the user selects a vehicle class and payment method, current information
+/// still has to match the exact product, RoutePlan, and tariff profile before it
+/// may be presented as current. Missing or expired information remains explicit
+/// but does not create or revoke route authority. Demo rehearsal uses the same
+/// identity boundary but never grants foreground live input.
 @MainActor
 final class ReleasedProductRouteAuthoringModel: ObservableObject {
   typealias EvidenceProvider =
@@ -75,6 +83,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   @Published private(set) var selectedVehicleClass: ShutoVehicleClass?
   @Published private(set) var selectedPaymentMethod: ShutoPaymentMethod?
   @Published private(set) var preDriveReviewSnapshot: PreDriveReviewSnapshot?
+  @Published private(set) var referencePreDriveInformation: ReleasedPreDriveInformationReference?
   @Published private(set) var lastErrorCode: String?
 
   let scope: ReleasedProductRouteAuthoringScope
@@ -128,9 +137,19 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
   }
 
   var reviewReady: Bool {
-    compiledRoutePlan != nil && selectedVehicleClass != nil
-      && selectedPaymentMethod != nil
-      && preDriveReviewSnapshot != nil
+    compiledRoutePlan != nil
+  }
+
+  var hasBlockingCurrentPassageInformation: Bool {
+    guard let tone = preDriveReviewSnapshot?.presentation.passage.tone else {
+      return false
+    }
+    return tone == .blocked || tone == .warning
+  }
+
+  var hasExpiredReferencePreDriveInformation: Bool {
+    referencePreDriveInformation != nil
+      && lastErrorCode == PreDriveEvidenceResolutionError.expired.code
   }
 
   var availableVehicleClasses: [ShutoVehicleClass] {
@@ -165,6 +184,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       selectedVehicleClass = nil
       selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       lastErrorCode = nil
     } catch {
       resetSelection()
@@ -192,6 +212,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       selectedVehicleClass = nil
       selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       lastErrorCode = nil
     } catch {
       fail(.choiceRejected)
@@ -217,10 +238,12 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       selectedVehicleClass = nil
       selectedPaymentMethod = nil
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       refreshPreDriveReview()
     } catch {
       compiledRoutePlan = nil
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       fail(.routeIncomplete)
     }
   }
@@ -232,6 +255,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     }
     selectedVehicleClass = vehicleClass
     preDriveReviewSnapshot = nil
+    referencePreDriveInformation = nil
     refreshPreDriveReview()
   }
 
@@ -242,6 +266,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     }
     selectedPaymentMethod = paymentMethod
     preDriveReviewSnapshot = nil
+    referencePreDriveInformation = nil
     refreshPreDriveReview()
   }
 
@@ -252,16 +277,19 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       routePlan == entry.release.navigation.bundle.routePlan
     else {
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       fail(.routeIdentityMismatch)
       return
     }
     guard let selectedVehicleClass else {
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       fail(.vehicleClassRequired)
       return
     }
     guard let selectedPaymentMethod else {
       preDriveReviewSnapshot = nil
+      referencePreDriveInformation = nil
       fail(.paymentMethodRequired)
       return
     }
@@ -270,6 +298,11 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
       routePlanID: routePlan.id,
       vehicleClass: selectedVehicleClass,
       paymentMethod: selectedPaymentMethod
+    )
+    referencePreDriveInformation = Self.makeReferencePreDriveInformation(
+      entry: entry,
+      routePlan: routePlan,
+      session: session
     )
     do {
       guard let evidence = try evidenceProvider(entry, session) else {
@@ -365,6 +398,7 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
     selectedVehicleClass = nil
     selectedPaymentMethod = nil
     preDriveReviewSnapshot = nil
+    referencePreDriveInformation = nil
   }
 
   private func fail(_ error: ReleasedProductRouteAuthoringError) {
@@ -411,6 +445,40 @@ final class ReleasedProductRouteAuthoringModel: ObservableObject {
           == .orderedAscending
       }
       return $0.productReleaseID < $1.productReleaseID
+    }
+  }
+
+  private static func makeReferencePreDriveInformation(
+    entry: BundledProductReleaseEntry,
+    routePlan: RoutePlan,
+    session: PreDriveReviewSession
+  ) -> ReleasedPreDriveInformationReference? {
+    guard let bundle = entry.preDriveEvidenceBundle else {
+      return nil
+    }
+    let records = bundle.manifest.records.filter {
+      $0.evidence.vehicleClass == session.vehicleClass
+        && $0.evidence.paymentMethod == session.paymentMethod
+    }
+    guard records.count == 1, let record = records.first else {
+      return nil
+    }
+    do {
+      let evaluation = try PreDriveReviewEvaluator.evaluate(
+        routePlan: routePlan,
+        session: session,
+        evidence: record.evidence
+      )
+      return ReleasedPreDriveInformationReference(
+        snapshot: PreDriveReviewSnapshot(
+          routePlan: routePlan,
+          evaluation: evaluation
+        ),
+        validFrom: record.validFrom,
+        expiresAt: record.expiresAt
+      )
+    } catch {
+      return nil
     }
   }
 }

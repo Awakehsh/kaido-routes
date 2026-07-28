@@ -28,8 +28,7 @@ enum KaidoProductJourneyBlocker: String, Equatable, Sendable {
   case routeReleaseAuthorityUnavailable =
     "ROUTE_RELEASE_AUTHORITY_UNAVAILABLE"
   case productReleaseAmbiguous = "PRODUCT_RELEASE_AMBIGUOUS"
-  case releasedPreDriveEvidenceUnavailable =
-    "RELEASED_PRE_DRIVE_EVIDENCE_UNAVAILABLE"
+  case knownPassageConflict = "KNOWN_PASSAGE_CONFLICT"
   case navigationRuntimeUnavailable = "NAVIGATION_RUNTIME_UNAVAILABLE"
   case savedRouteUnavailable = "SAVED_ROUTE_RELEASE_UNAVAILABLE"
   case savedRouteAmbiguous = "SAVED_ROUTE_RELEASE_AMBIGUOUS"
@@ -51,6 +50,7 @@ final class KaidoProductJourneyModel: ObservableObject {
   private let rehearsalRuntimeFactory: () throws -> ProductNavigationRuntimeModel
   private var compositionSubscription: AnyCancellable?
   private var reviewSubscription: AnyCancellable?
+  private var releasedRouteSubscription: AnyCancellable?
   private var releasedReviewSubscription: AnyCancellable?
 
   init(
@@ -94,19 +94,30 @@ final class KaidoProductJourneyModel: ObservableObject {
         objectWillChange.send()
       }
     }
+    releasedRouteSubscription =
+      composition.releasedRouteAuthoring?.$compiledRoutePlan.sink {
+        [weak self] routePlan in
+        guard let self else { return }
+        if routePlan == nil,
+          stage.order >= KaidoProductJourneyStage.review.order
+        {
+          invalidateReview(blocker: .routeReviewNotReady)
+        } else {
+          objectWillChange.send()
+        }
+      }
     releasedReviewSubscription =
       composition.releasedRouteAuthoring?.$preDriveReviewSnapshot.sink {
         [weak self] snapshot in
         guard let self else { return }
-        if snapshot == nil,
-          stage.order >= KaidoProductJourneyStage.review.order
+        if let snapshot,
+          Self.hasBlockingPassageInformation(snapshot)
         {
-          let blocker: KaidoProductJourneyBlocker =
-            composition.releasedRouteAuthoring?.compiledRoutePlan == nil
-            ? .routeReviewNotReady
-            : .releasedPreDriveEvidenceUnavailable
-          invalidateReview(blocker: blocker)
+          enforcePassageBlock()
         } else {
+          if lastBlocker == .knownPassageConflict {
+            lastBlocker = nil
+          }
           objectWillChange.send()
         }
       }
@@ -189,9 +200,20 @@ final class KaidoProductJourneyModel: ObservableObject {
       ?? composition.preDriveReview.snapshot
   }
 
+  var referencePreDriveInformation: ReleasedPreDriveInformationReference? {
+    composition.releasedRouteAuthoring?.referencePreDriveInformation
+  }
+
+  var hasExpiredReferencePreDriveInformation: Bool {
+    composition.releasedRouteAuthoring?
+      .hasExpiredReferencePreDriveInformation == true
+  }
+
   var canStartNavigation: Bool {
     guard
       routeReviewReady,
+      composition.releasedRouteAuthoring?
+        .hasBlockingCurrentPassageInformation != true,
       navigationRuntime == nil,
       rehearsalRuntime == nil
     else {
@@ -253,8 +275,9 @@ final class KaidoProductJourneyModel: ObservableObject {
       guard releasedRouteAuthoring.compiledRoutePlan != nil else {
         return .routeReviewNotReady
       }
-      guard releasedRouteAuthoring.preDriveReviewSnapshot != nil else {
-        return .releasedPreDriveEvidenceUnavailable
+      guard !releasedRouteAuthoring.hasBlockingCurrentPassageInformation
+      else {
+        return .knownPassageConflict
       }
     }
     guard routeReviewReady else {
@@ -364,6 +387,8 @@ final class KaidoProductJourneyModel: ObservableObject {
   func requestNavigationStart() {
     guard
       routeReviewReady,
+      composition.releasedRouteAuthoring?
+        .hasBlockingCurrentPassageInformation != true,
       navigationRuntime == nil,
       rehearsalRuntime == nil
     else {
@@ -561,5 +586,45 @@ final class KaidoProductJourneyModel: ObservableObject {
     } catch {
       preconditionFailure("Invalid bundled demo product release: \(error)")
     }
+  }
+
+  private func enforcePassageBlock() {
+    lastBlocker = .knownPassageConflict
+    guard stage == .navigation else {
+      objectWillChange.send()
+      return
+    }
+    stage = .review
+    if let navigationRuntime {
+      Task { [weak self, navigationRuntime] in
+        _ = await navigationRuntime.terminate()
+        guard
+          let self,
+          self.navigationRuntime === navigationRuntime
+        else {
+          return
+        }
+        self.navigationRuntime = nil
+      }
+    }
+    if let rehearsalRuntime {
+      Task { [weak self, rehearsalRuntime] in
+        _ = await rehearsalRuntime.terminate()
+        guard
+          let self,
+          self.rehearsalRuntime === rehearsalRuntime
+        else {
+          return
+        }
+        self.rehearsalRuntime = nil
+      }
+    }
+  }
+
+  private static func hasBlockingPassageInformation(
+    _ snapshot: PreDriveReviewSnapshot
+  ) -> Bool {
+    let tone = snapshot.presentation.passage.tone
+    return tone == .blocked || tone == .warning
   }
 }

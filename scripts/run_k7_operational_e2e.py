@@ -373,17 +373,24 @@ def run_app_e2e(simulator_id: str, temporary_root: Path) -> None:
             "testBundledK7EvidenceAuthorsReviewsAndStartsReleasedRuntime",
             "-only-testing:KaidoRoutesAppTests/"
             "KaidoProductJourneyModelTests/"
-            "testBundledK7EvidenceExpiresWithoutFallback",
+            "testBundledK7InformationExpiresWithoutBlockingNavigation",
+            "-only-testing:KaidoRoutesAppTests/"
+            "KaidoProductJourneyModelTests/"
+            "testCurrentKnownClosureStillBlocksNavigationStart",
             "-only-testing:KaidoRoutesAppUITests/"
             "KaidoProductJourneyUITests/"
             "testK7OperationalEvidenceAuthorsReviewsAndStartsReleasedRuntime",
+            "-only-testing:KaidoRoutesAppUITests/"
+            "KaidoProductJourneyUITests/"
+            "testExpiredK7InformationWarnsWithoutBlockingReleasedRuntime",
             "CODE_SIGNING_ALLOWED=NO",
         ),
         label="run K7 release-to-navigation App E2E",
     )
     print(
         "PASS: K7 App E2E loaded the hash-bound release, resolved ¥400 and "
-        "7.1 km, retained realtime-unconfirmed status, entered the released "
+        "7.1 km, retained realtime-unconfirmed status, proved expiry warns "
+        "without blocking, kept known closure blocking, entered the released "
         "runtime, and exposed opt-in foreground location"
     )
 

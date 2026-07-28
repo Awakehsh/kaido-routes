@@ -170,13 +170,23 @@ struct ReleasedProductRouteAuthoringPanel: View {
 
         if let errorCode = model.lastErrorCode {
           ReviewBoundaryCard(
-            symbol: "exclamationmark.shield.fill",
+            symbol:
+              isInformationalPreDriveIssue(errorCode)
+              ? "info.circle.fill"
+              : "exclamationmark.shield.fill",
             title: blockedTitle(errorCode),
             detail: blockedDetail(errorCode),
             code: errorCode,
-            color: KaidoTheme.evidenceCoral
+            color:
+              isInformationalPreDriveIssue(errorCode)
+              ? KaidoTheme.signalAmber
+              : KaidoTheme.evidenceCoral
           )
-          .accessibilityIdentifier("released-route-authoring-blocker")
+          .accessibilityIdentifier(
+            isInformationalPreDriveIssue(errorCode)
+              ? "released-route-information-notice"
+              : "released-route-authoring-blocker"
+          )
 
           if canRefreshPreDriveEvidence(errorCode) {
             Button {
@@ -206,28 +216,34 @@ struct ReleasedProductRouteAuthoringPanel: View {
               japanese:
                 model.scope == .demoRehearsal
                 ? "演習経路と出発前設定が一致"
-                : "リリース経路と出発前証拠が一致",
+                : "リリース経路の準備が完了",
               simplifiedChinese:
                 model.scope == .demoRehearsal
                 ? "演练路线与行前设置一致"
-                : "发布路线与行前证据一致",
+                : "发布路线已准备完成",
               english:
                 model.scope == .demoRehearsal
                 ? "Rehearsal route and pre-drive settings match"
-                : "Released route and pre-drive evidence match"
+                : "Released route is ready"
             ),
             detail: copy.resolve(
               japanese:
-                "選択した車種区分と支払方法、コンパイル済み RoutePlan、料金記録、通行状態は同じ走行セッションに固定されています。",
+                model.preDriveReviewSnapshot == nil
+                ? "正確な RoutePlan は有効です。料金とリアルタイム通行情報は現在情報として扱わず、警告付きで確認画面へ進めます。"
+                : "正確な RoutePlan は有効です。選択した車種区分と支払方法に一致する現在の料金・通行情報も表示できます。",
               simplifiedChinese:
-                "所选车型与支付方式、编译 RoutePlan、计费记录与通行状态均已绑定同一行程会话。",
+                model.preDriveReviewSnapshot == nil
+                ? "精确 RoutePlan 有效。费用和实时通行信息不会被当作当前信息，仍可带警告进入确认页面。"
+                : "精确 RoutePlan 有效，也可显示与所选车型和支付方式匹配的当前费用及通行信息。",
               english:
-                "The selected vehicle class and payment method, compiled RoutePlan, tariff record, and passage state are bound to the same drive session."
+                model.preDriveReviewSnapshot == nil
+                ? "The exact RoutePlan is valid. Toll and realtime passage information is not treated as current, and review remains available with a warning."
+                : "The exact RoutePlan is valid, and current toll and passage information matches the selected vehicle and payment profile."
             ),
             code:
               model.scope == .demoRehearsal
               ? "REHEARSAL PRE-DRIVE · READY"
-              : "RELEASED PRE-DRIVE · READY",
+              : "RELEASED ROUTE · READY",
             color: KaidoTheme.positionCyan
           )
           .accessibilityIdentifier("released-route-review-ready")
@@ -388,11 +404,11 @@ struct ReleasedProductRouteAuthoringPanel: View {
         ),
         detail: copy.resolve(
           japanese:
-            "選択だけでは入口の利用可否を証明しません。経路ごとの証拠が必要です。",
+            "料金表示のために選択します。現在情報がなくても、検証済み経路そのものは失効しません。",
           simplifiedChinese:
-            "选择支付方式并不证明入口可用；仍需路线对应的当前证据。",
+            "该选择仅用于费用信息；即使没有当前信息，已验证路线本身也不会失效。",
           english:
-            "Selection does not prove entrance availability; current route-specific evidence is still required."
+            "This selection is used for toll information. Missing current information does not invalidate the reviewed route."
         )
       )
 
@@ -488,48 +504,48 @@ struct ReleasedProductRouteAuthoringPanel: View {
       == ReleasedProductRouteAuthoringError.vehicleClassRequired.rawValue
     {
       return copy.resolve(
-        japanese: "車種区分を選択してください",
-        simplifiedChinese: "请选择车型",
-        english: "Choose a vehicle class"
+        japanese: "料金表示には車種区分を選択",
+        simplifiedChinese: "选择车型以查看费用",
+        english: "Choose a vehicle class for toll information"
       )
     }
     if code
       == ReleasedProductRouteAuthoringError.paymentMethodRequired.rawValue
     {
       return copy.resolve(
-        japanese: "支払方法を選択してください",
-        simplifiedChinese: "请选择支付方式",
-        english: "Choose a payment method"
+        japanese: "料金表示には支払方法を選択",
+        simplifiedChinese: "选择支付方式以查看费用",
+        english: "Choose a payment method for toll information"
       )
     }
     if code
       == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
     {
       return copy.resolve(
-        japanese: "現在の出発前証拠がありません",
-        simplifiedChinese: "缺少当前行前证据",
-        english: "Current pre-drive evidence is unavailable"
+        japanese: "現在の料金・通行情報がありません",
+        simplifiedChinese: "当前费用与通行信息不可用",
+        english: "Current toll and passage information is unavailable"
       )
     }
     if code == PreDriveEvidenceResolutionError.expired.code {
       return copy.resolve(
-        japanese: "出発前証拠の有効期限が切れました",
-        simplifiedChinese: "行前证据已过期",
-        english: "Pre-drive evidence has expired"
+        japanese: "料金・通行情報の有効期限が切れました",
+        simplifiedChinese: "费用与通行信息已过期",
+        english: "Toll and passage information has expired"
       )
     }
     if code == PreDriveEvidenceResolutionError.notYetValid.code {
       return copy.resolve(
-        japanese: "出発前証拠はまだ有効ではありません",
-        simplifiedChinese: "行前证据尚未生效",
-        english: "Pre-drive evidence is not yet valid"
+        japanese: "料金・通行情報はまだ有効ではありません",
+        simplifiedChinese: "费用与通行信息尚未生效",
+        english: "Toll and passage information is not yet valid"
       )
     }
     if code == PreDriveEvidenceResolutionError.profileUnavailable.code {
       return copy.resolve(
-        japanese: "この料金区分の証拠がありません",
-        simplifiedChinese: "缺少该计费组合的证据",
-        english: "Evidence is unavailable for this tariff profile"
+        japanese: "この料金区分の現在情報がありません",
+        simplifiedChinese: "该计费组合没有当前信息",
+        english: "Current information is unavailable for this tariff profile"
       )
     }
     if isRejectedPreDriveEvidence(code) {
@@ -552,11 +568,11 @@ struct ReleasedProductRouteAuthoringPanel: View {
     {
       return copy.resolve(
         japanese:
-          "料金証拠を要求する前に、この走行の首都高車種区分を明示的に選択してください。",
+          "車種区分を選ぶと、この走行に対応する料金情報を確認できます。選択しなくても検証済み経路の確認へ進めます。",
         simplifiedChinese:
-          "请求计费证据前，请明确选择本次行程对应的首都高车型分类。",
+          "选择车型后可以查看本次行程对应的费用信息；不选择也可继续确认已验证路线。",
         english:
-          "Select this drive's Shuto vehicle class before requesting tariff evidence."
+          "Choose a Shuto vehicle class to view matching toll information. The reviewed route remains available without it."
       )
     }
     if code
@@ -564,11 +580,11 @@ struct ReleasedProductRouteAuthoringPanel: View {
     {
       return copy.resolve(
         japanese:
-          "料金証拠を要求する前に、この走行の ETC または現金を明示的に選択してください。",
+          "ETC または現金を選ぶと対応する料金情報を確認できます。選択しなくても検証済み経路の確認へ進めます。",
         simplifiedChinese:
-          "请求计费证据前，请明确选择本次行程使用 ETC 或现金。",
+          "选择 ETC 或现金后可以查看对应费用；不选择也可继续确认已验证路线。",
         english:
-          "Select ETC or cash for this drive before requesting tariff evidence."
+          "Choose ETC or cash to view matching toll information. The reviewed route remains available without it."
       )
     }
     if code
@@ -576,41 +592,41 @@ struct ReleasedProductRouteAuthoringPanel: View {
     {
       return copy.resolve(
         japanese:
-          "同じ RoutePlan に結び付く料金記録と通行状態が届くまで、ナビを開始しません。",
+          "現在の料金とリアルタイム通行情報は表示できません。経路は引き続き利用できますが、現地の標識・規制・料金表示に従ってください。",
         simplifiedChinese:
-          "在取得绑定同一 RoutePlan 的计费记录与通行状态前，不会启动导航。",
+          "当前费用和实时通行信息无法显示。路线仍可使用，请遵守现场标志、管制与收费信息。",
         english:
-          "Navigation stays locked until tariff and passage evidence for this exact RoutePlan is available."
+          "Current toll and realtime passage information cannot be shown. The route remains available; follow on-road signs, restrictions, and toll notices."
       )
     }
     if code == PreDriveEvidenceResolutionError.expired.code {
       return copy.resolve(
         japanese:
-          "期限切れの料金・通行証拠は使用しません。更新された証拠パッケージが必要です。",
+          "期限切れ情報は現在情報として使用しません。経路は引き続き利用できますが、現地の標識・規制・料金表示に従ってください。",
         simplifiedChinese:
-          "不会使用过期的计费与通行证据；需要更新后的证据包。",
+          "过期内容不会被当作当前信息。路线仍可使用，请遵守现场标志、管制与收费信息。",
         english:
-          "Expired tariff and passage evidence is never used. An updated evidence bundle is required."
+          "Expired toll and passage data is not treated as current. The route remains available; follow on-road signs, restrictions, and toll notices."
       )
     }
     if code == PreDriveEvidenceResolutionError.notYetValid.code {
       return copy.resolve(
         japanese:
-          "この証拠の有効期間が始まるまでナビを開始しません。",
+          "この情報はまだ現在情報として表示しません。検証済み経路の確認とナビ開始は引き続き利用できます。",
         simplifiedChinese:
-          "在该证据有效期开始前不会启动导航。",
+          "该信息暂不作为当前信息显示；仍可确认已验证路线并开始导航。",
         english:
-          "Navigation stays locked until this evidence validity window begins."
+          "This data is not yet shown as current information. The reviewed route and navigation start remain available."
       )
     }
     if code == PreDriveEvidenceResolutionError.profileUnavailable.code {
       return copy.resolve(
         japanese:
-          "選択した車種区分と支払方法に完全一致する証拠記録がありません。",
+          "選択した車種区分と支払方法に一致する現在の料金情報がありません。経路自体は引き続き利用できます。",
         simplifiedChinese:
-          "没有与所选车型和支付方式完全匹配的证据记录。",
+          "没有与所选车型和支付方式匹配的当前费用信息；路线本身仍可使用。",
         english:
-          "No evidence record exactly matches the selected vehicle class and payment method."
+          "No current toll information matches the selected vehicle and payment profile. The route itself remains available."
       )
     }
     if code
@@ -733,6 +749,16 @@ struct ReleasedProductRouteAuthoringPanel: View {
   private func canRefreshPreDriveEvidence(_ code: String) -> Bool {
     code
       == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
+      || isRejectedPreDriveEvidence(code)
+  }
+
+  private func isInformationalPreDriveIssue(_ code: String) -> Bool {
+    code
+      == ReleasedProductRouteAuthoringError.vehicleClassRequired.rawValue
+      || code
+        == ReleasedProductRouteAuthoringError.paymentMethodRequired.rawValue
+      || code
+        == ReleasedProductRouteAuthoringError.preDriveEvidenceUnavailable.rawValue
       || isRejectedPreDriveEvidence(code)
   }
 

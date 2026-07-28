@@ -72,14 +72,13 @@ equal the selected release's whole `RoutePlan`, including snapshot and
 occurrence order. An optional compile-time, hash-bound
 `PreDriveEvidenceBundle` is the default foreground session-evidence provider;
 tests may still inject one explicitly. The bundle must satisfy
-`ReleasedPreDriveReviewAdapter`. The user explicitly selects one of the
-five canonical Shuto vehicle classes and independently selects ETC or cash
-first; the provider receives that exact RoutePlan/snapshot/class/payment
-request. Missing, expired, not-yet-valid, or drifting tariff and passage
-evidence, a provider envelope
-for another selection, or any mixed-profile quote keeps review and navigation
-locked. Only that exact route, session, and review tuple enables the primary
-user action to construct the selected entry's
+`ReleasedPreDriveReviewAdapter` before its values may be labeled current. The
+user may select one of the five canonical Shuto vehicle classes and ETC or cash
+to request matching toll information. Missing, expired, not-yet-valid, or
+drifting tariff and passage information remains explicit, but does not revoke
+an exact compiled RoutePlan. Known closure or planned-conflict information
+still blocks navigation start. The exact route and release selection enables
+the primary user action to construct the selected entry's
 `ProductNavigationRuntimeModel`. The App then enters a release-keyed navigation
 surface while Core Location remains idle. A second explicit action starts
 foreground input only after actor activation and When In Use authorization.
@@ -89,8 +88,9 @@ ID-only or injected mismatched-release fallback. A demo review instead creates a
 new checkpoint-free `ProductNavigationRuntimeModel` from that exact decoded
 release and admits only the fixture-owned trace. The current manifest contains
 `1 RELEASED ROAD · 1 DEMO`. The K7 entry carries one dated, hash-bound evidence
-bundle with ten exact vehicle/payment profiles; it reaches the real foreground
-runtime only inside that validity window and fails closed after expiry. The
+bundle with ten exact vehicle/payment profiles; it is labeled current only
+inside that validity window and becomes an explicit stale-information warning
+after expiry without blocking the released runtime. The
 demo remains a separate rehearsal path and cannot satisfy the released entry.
 
 A foreground descriptor may also pin public Ed25519 keys and one exact,
@@ -120,8 +120,9 @@ The current app deliberately composes only:
 - a RoutePlan-bound pre-drive review with separate route, tariff, toll, and
   passage evidence;
 - a foreground-release authoring and pre-drive branch that retains
-  release-owned choices and occurrences and requires exact current session
-  evidence before review, with one dated K7 bundle and fail-closed expiry;
+  release-owned choices and occurrences, presents exact current session
+  information when available, and warns without blocking after the dated K7
+  bundle expires;
 - a dormant signed pre-drive evidence importer and explicit pinned-endpoint
   refresher whose public trust roots are compile-time product descriptors and
   whose accepted envelope is atomically retained under Application Support;
@@ -164,8 +165,9 @@ The current app deliberately composes only:
 
 `KaidoProductJourneyModelTests` execute ordered advancement, no early review,
 compiled-route invalidation, backwards navigation, the exact catalog-backed
-release-authority blocker, release-owned authoring through current pre-drive
-evidence, user-started runtime creation and clean termination, mismatched
+release-authority blocker, release-owned authoring with current, missing, and
+expired pre-drive information, known-closure blocking, user-started runtime
+creation and clean termination, mismatched
 injected-release rejection, the exact default demo rehearsal, and fail-closed
 construction errors. Dedicated
 released-authoring tests cover exact route reconstruction, missing and drifting
@@ -350,15 +352,14 @@ owned by one validated `KaidoProductRelease`; tariff and passage evidence remain
 per-session inputs rather than frozen release assets.
 `ReleasedProductRouteAuthoringModel` requests that evidence only after the
 release-owned recipe compiles to the exact selected RoutePlan and the user
-explicitly selects one of the five official categories plus ETC or cash.
+optionally selects one of the five official categories plus ETC or cash.
 Changing either selection invalidates the old review and issues a new exact
 session request. Missing, snapshot-drifted, route-drifted,
 vehicle-class-drifted, payment-method-drifted, or rejected evidence keeps review
-unavailable; changing the interface locale rebuilds released labels without
-changing occurrence progress and reevaluates the same selected tariff profile.
-The bundled fixture is synthetic, the default provider supplies no live
-evidence, and navigation remains locked because the app has no real-road product
-release plus current authorized session evidence.
+from being presented as current; it does not invalidate the released route.
+Changing the interface locale rebuilds released labels without changing
+occurrence progress and reevaluates the same selected tariff profile. The
+bundled fixture is synthetic and the default provider supplies no live evidence.
 
 ## Guidance language preview
 

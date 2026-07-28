@@ -109,8 +109,9 @@ cannot disappear, drift identity, or silently fall back to injected synthetic
 evidence.
 
 The compile-time descriptor must still be reviewed and explicitly enrolled.
-Bundled evidence is intentionally fail-closed and may expire before a later App
-release.
+Bundled evidence is intentionally fail-closed as current information and may
+expire before a later App release. Expiry must remain visible, but it does not
+revoke the independently validated RoutePlan or navigation release.
 
 ## Sign an update without republishing the App
 
@@ -180,8 +181,9 @@ whole-bundle match. They reject an equal or older release timestamp and any
 reused evidence release ID, persist the envelope before publishing it, and
 verify it again on restoration. A future signed release waits until its own
 release time. Once a newer release is effective, an expired or missing profile
-fails closed instead of falling back to bundled evidence. Updating an endpoint,
-rotating a key, or revoking trust still requires a reviewed App release.
+fails closed as current information instead of falling back to bundled
+evidence. Updating an endpoint, rotating a key, or revoking trust still requires
+a reviewed App release.
 
 This boundary fetches only a project-controlled signed envelope. It does not
 integrate an operator or traffic service, grant route or navigation authority,

@@ -474,8 +474,11 @@ release without leaving the App dependent on a test-injected closure. One
 schema-1.0 bundle binds the exact product/navigation/snapshot/RoutePlan
 identities, separate tariff and passage source roles, reviewed content hashes,
 one exact vehicle/payment profile, and an exclusive expiry. The runner resolves
-the fresh ETC record, then proves that expiry and a CASH selection fail with
-stable distinct codes. Swift tests cover deterministic codec round-trip,
+the fresh ETC record, then proves that expiry and a CASH selection fail as
+current information with stable distinct codes. It then starts the independently
+executable RoutePlan while retaining the explicit expired-information state.
+KR-S05 separately keeps a known required closure as a hard start blocker. Swift
+tests cover deterministic codec round-trip,
 identity/scope/profile drift, source-role completeness, and the same runtime
 validity boundary. The fixture is synthetic and cannot establish a current
 tariff, passage state, or released-road authority.
@@ -533,8 +536,9 @@ identity-drifted, role-drifted, and duplicate manifests; admit a test
 released-road entry only through a production-codec-minted authority; and
 require whole-`RoutePlan` equality. A declared pre-drive evidence manifest is
 also hash-pinned, production-decoded against that exact release, and used by the
-default authoring model only inside its validity window; missing, mutated, or
-expired evidence cannot fall back to injected values. Two independently valid
+default authoring model only inside its validity window. Missing, mutated, or
+expired information cannot fall back to injected values or be labeled current,
+but it does not revoke the exact released route. Two independently valid
 released entries for the same exact plan produce an explicit ambiguity rather
 than an arbitrary choice. XCUITest exposes the current
 `1 RELEASED ROAD · 1 DEMO` catalog in the
@@ -559,16 +563,20 @@ bytes exactly. Its focused L3 run then selects the real K7 foreground release,
 submits both release-owned junction choices, compiles the five-occurrence
 RoutePlan, selects `STANDARD + ETC`, verifies `¥400`, `7.1 km`, and
 `REALTIME_UNCONFIRMED`, starts the released navigation runtime, and requires the
-explicit foreground-location control to be available. The App launch injects
+explicit foreground-location control to be available. A second model and UI
+path freezes time at the exclusive expiry, keeps the old amount visibly stale,
+and still starts the same released runtime; a current known closure remains
+blocked. The fresh App launch injects
 `2026-07-27T22:30:00+09:00`, which is inside the reviewed bundle window; a
-companion model test proves the exclusive expiry boundary.
+companion launch injects `2026-07-28T00:00:00+09:00`.
 
 This E2E makes no live request and cannot refresh the source review. Passing it
 does not claim that K7 is currently open, calibrate Core Location or DecisionZone
 timing, qualify pronunciation or physical audio routing, create a CarPlay scene,
 or replace passenger-observed field evidence. A new operational window still
 requires a separately reviewed official tariff query and neutral passage check
-before the deterministic authoring command can produce a new manifest.
+before it may be displayed as current information; it is no longer a daily
+licence for route execution.
 
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject

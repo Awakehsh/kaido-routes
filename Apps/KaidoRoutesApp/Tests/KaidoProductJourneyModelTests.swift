@@ -253,7 +253,9 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     XCTAssertEqual(model.stage, .review)
   }
 
-  func testBundledK7EvidenceExpiresWithoutFallback() throws {
+  func testBundledK7InformationExpiresWithoutBlockingNavigation()
+    throws
+  {
     let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
     let expiredDate = try XCTUnwrap(
       ISO8601DateFormatter().date(
@@ -268,14 +270,64 @@ final class KaidoProductJourneyModelTests: XCTestCase {
       catalog.foregroundNavigationEntries.first
     )
     let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
+    let model = KaidoProductJourneyModel(composition: composition)
 
     authorReleasedRoute(authoring, entry: entry)
 
     XCTAssertNil(authoring.preDriveReviewSnapshot)
     XCTAssertEqual(
+      authoring.referencePreDriveInformation?.expiresAt,
+      "2026-07-28T00:00:00+09:00"
+    )
+    XCTAssertEqual(
       authoring.lastErrorCode,
       "PRE_DRIVE_EVIDENCE_EXPIRED"
     )
+    XCTAssertTrue(model.hasExpiredReferencePreDriveInformation)
+    model.go(to: .review)
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertTrue(model.routeReviewReady)
+    XCTAssertTrue(model.canStartNavigation)
+    XCTAssertNil(model.navigationBlocker)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .navigation)
+    XCTAssertNotNil(model.navigationRuntime)
+  }
+
+  func testCurrentKnownClosureStillBlocksNavigationStart() throws {
+    let entry = try makeReleasedProductTestEntry()
+    let composition = KaidoRoutesAppModel(
+      productReleaseCatalog: BundledProductReleaseCatalog(entries: [entry]),
+      releasedPreDriveEvidenceProvider: { entry, session in
+        makeReleasedPreDriveEvidence(
+          for: entry,
+          vehicleClass: session.vehicleClass,
+          paymentMethod: session.paymentMethod,
+          passageEvidence: .knownClosed
+        )
+      }
+    )
+    let model = KaidoProductJourneyModel(composition: composition)
+    let authoring = try XCTUnwrap(composition.releasedRouteAuthoring)
+
+    authorReleasedRoute(authoring, entry: entry)
+    model.go(to: .review)
+
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertEqual(
+      authoring.preDriveReviewSnapshot?.presentation.passage.tone,
+      .blocked
+    )
+    XCTAssertFalse(model.canStartNavigation)
+    XCTAssertEqual(model.navigationBlocker, .knownPassageConflict)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertNil(model.navigationRuntime)
+    XCTAssertEqual(model.lastBlocker, .knownPassageConflict)
   }
 
   func testRuntimeConstructionFailureKeepsReviewFailClosed() throws {
@@ -386,7 +438,7 @@ final class KaidoProductJourneyModelTests: XCTestCase {
     )
   }
 
-  func testReleasedRouteWithoutPreDriveEvidenceCannotReachReview()
+  func testReleasedRouteWithoutPreDriveInformationCanNavigateWithWarning()
     throws
   {
     let entry = try makeReleasedProductTestEntry()
@@ -398,20 +450,26 @@ final class KaidoProductJourneyModelTests: XCTestCase {
       composition.releasedRouteAuthoring
     )
 
-    authorReleasedRoute(releasedAuthoring, entry: entry)
+    authorReleasedRoute(
+      releasedAuthoring,
+      entry: entry,
+      vehicleClass: nil,
+      paymentMethod: nil
+    )
     model.go(to: .review)
 
-    XCTAssertEqual(model.stage, .atlas)
-    XCTAssertFalse(model.routeReviewReady)
-    XCTAssertFalse(model.canStartNavigation)
-    XCTAssertEqual(
-      model.lastBlocker,
-      .releasedPreDriveEvidenceUnavailable
-    )
-    XCTAssertEqual(
-      model.navigationBlocker,
-      .releasedPreDriveEvidenceUnavailable
-    )
+    XCTAssertEqual(model.stage, .review)
+    XCTAssertNil(releasedAuthoring.selectedVehicleClass)
+    XCTAssertNil(releasedAuthoring.selectedPaymentMethod)
+    XCTAssertTrue(model.routeReviewReady)
+    XCTAssertTrue(model.canStartNavigation)
+    XCTAssertNil(model.lastBlocker)
+    XCTAssertNil(model.navigationBlocker)
+
+    model.requestNavigationStart()
+
+    XCTAssertEqual(model.stage, .navigation)
+    XCTAssertNotNil(model.navigationRuntime)
   }
 }
 

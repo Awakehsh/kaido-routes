@@ -16,6 +16,8 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: true
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
 
 packages:
   KaidoRoutesCore:
@@ -60,7 +62,6 @@ targets:
         product: KaidoAppleAdapters
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview
         PRODUCT_NAME: KaidoRoutes
         PRODUCT_MODULE_NAME: KaidoRoutesApp
         GENERATE_INFOPLIST_FILE: true
@@ -75,6 +76,11 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: false
         CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]: false
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes
 
   KaidoRoutesAppTests:
     type: bundle.unit-test

@@ -44,7 +44,7 @@ struct GuidanceVoiceSetupPanel: View {
       audioSourceModel.configure(for: releasedEntry)
       model.refreshProfiles()
     }
-    .onChange(of: releasedEntry?.release.releaseID) { _ in
+    .onChange(of: releasedEntry?.release.releaseID) {
       audioSourceModel.configure(for: releasedEntry)
     }
     .onDisappear {

@@ -2306,6 +2306,78 @@ private struct ProductSettingsSheet: View {
             )
           }
         }
+
+        Section(
+          copy.resolve(
+            japanese: "プライバシーとデータ",
+            simplifiedChinese: "隐私与数据",
+            english: "Privacy & data"
+          )
+        ) {
+          Label {
+            VStack(alignment: .leading, spacing: 3) {
+              Text(
+                copy.resolve(
+                  japanese: "位置情報はこのデバイス内で処理されます",
+                  simplifiedChinese: "位置信息仅在此设备上处理",
+                  english: "Location is processed on this device"
+                )
+              )
+              .font(.body)
+
+              Text(
+                copy.resolve(
+                  japanese:
+                    "明示的にナビを開始した後だけ使用し、経路進捗をサーバーへ送信しません。",
+                  simplifiedChinese:
+                    "仅在你明确开始导航后使用，路线进度不会发送到服务器。",
+                  english:
+                    "Used only after you explicitly start navigation; route progress is not sent to a server."
+                )
+              )
+              .font(.caption)
+              .foregroundStyle(.secondary)
+            }
+          } icon: {
+            Image(systemName: "location.shield")
+          }
+          .accessibilityElement(children: .combine)
+          .accessibilityIdentifier("product-settings-location-privacy")
+
+          Link(destination: ProductPrivacyDisclosure.policyURL) {
+            Label(
+              copy.resolve(
+                japanese: "プライバシーポリシー",
+                simplifiedChinese: "隐私政策",
+                english: "Privacy policy"
+              ),
+              systemImage: "hand.raised"
+            )
+          }
+          .accessibilityIdentifier("product-settings-privacy-policy")
+        }
+
+        Section(
+          copy.resolve(
+            japanese: "このアプリについて",
+            simplifiedChinese: "关于",
+            english: "About"
+          )
+        ) {
+          LabeledContent(
+            copy.resolve(
+              japanese: "バージョン",
+              simplifiedChinese: "版本",
+              english: "Version"
+            ),
+            value: ProductPrivacyDisclosure.versionDescription()
+          )
+          .accessibilityElement(children: .combine)
+          .accessibilityIdentifier("product-settings-version")
+          .accessibilityValue(
+            ProductPrivacyDisclosure.versionDescription()
+          )
+        }
       }
       .accessibilityIdentifier("product-settings")
       .navigationTitle(

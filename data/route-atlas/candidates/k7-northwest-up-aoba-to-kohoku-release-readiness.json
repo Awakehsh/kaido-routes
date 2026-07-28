@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "readiness_id": "shutoko.k7-northwest.aoba-up-to-kohoku-up.exit-handoff-route-atlas-readiness.2026-07-26",
-  "assessed_at": "2026-07-27",
+  "assessed_at": "2026-07-28",
   "scope": "EXIT_HANDOFF_ONLY_ROUTE_ATLAS_CANDIDATE",
   "target": {
     "network_snapshot_id": "shutoko.candidate.osm-geofabrik-kanto-260721.k7-northwest",
@@ -88,7 +88,7 @@
     {
       "role": "ODBL_DISTRIBUTION_REVIEW",
       "repository_path": "data/route-atlas/osm-derived/k7-northwest-260721-distribution-review.json",
-      "content_sha256": "6faa823e1ae93bf590603626d26b00e458a44dea6bf562a2d900da4aa912c84b"
+      "content_sha256": "19ae3daa84665cf5a63cc9305afc6f17d76e899a5eedede8a8f01e99c74ea0f1"
     }
   ],
   "distribution_readiness": {

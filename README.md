@@ -12,8 +12,8 @@ Metropolitan Expressway Company Limited.
 
 ## Current status
 
-This repository defines product, domain, evidence, and test contracts plus a
-pure Swift feasibility core and an internal SwiftUI iPhone preview app. The app
+This repository contains the product, domain, evidence, and test contracts,
+the platform-light Swift core, and the SwiftUI iPhone product target. The app
 links the local domain, routing, navigation, and presentation modules. Its
 default launch now follows the concise Routes → Plan → Review → Drive product
 journey: origin and a compatible directional entrance precede available route
@@ -29,6 +29,13 @@ route authoring and whole-RoutePlan release selection pass. No
 release starts location automatically. The full-network/K7 evidence workbench and
 calibration controls require a dedicated internal launch argument and do not
 appear in the ordinary product journey.
+The target carries an explicit `1.0.0 (1)` release identity. Debug builds
+retain the internal `app.kaidoroutes.preview` identifier, while Release
+archives use `app.kaidoroutes`. Its bundled privacy manifest declares only the
+audited app-private preferences and elapsed-time APIs, reports no tracking or
+off-device collection, and Settings links to the public
+[privacy policy](PRIVACY.md). This does not grant device-position,
+field-reliability, acoustic, or CarPlay evidence.
 Its visible, persisted interface selector switches the default journey among
 Japanese, Simplified Chinese, and English immediately. App-owned copy for the
 atlas, entrance explanation, parked editor, pre-drive review, voice setup, and

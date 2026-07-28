@@ -165,6 +165,17 @@ final class KaidoProductJourneyUITests: XCTestCase {
         .value as? String,
       "en"
     )
+
+    XCTAssertTrue(
+      reveal("product-settings-location-privacy", in: app).exists
+    )
+    XCTAssertTrue(
+      reveal("product-settings-privacy-policy", in: app).exists
+    )
+    XCTAssertEqual(
+      reveal("product-settings-version", in: app).value as? String,
+      "1.0.0 (1)"
+    )
   }
 
   func testInternalEvidenceWorkbenchRequiresIntentionalLaunchArgument() {

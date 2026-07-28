@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "review_id": "shutoko.k7-northwest.osm-derived-distribution.2026-07-24",
-  "reviewed_at": "2026-07-27T22:45:00+09:00",
+  "reviewed_at": "2026-07-28T10:55:06+09:00",
   "reviewed_by": "Kaido Routes project technical review",
   "classification": "DERIVATIVE_DATABASE",
   "status": "TECHNICAL_REVIEW_COMPLETE",
@@ -76,7 +76,7 @@
     {
       "role": "APP_PROJECT_MANIFEST",
       "repository_path": "project.yml",
-      "content_sha256": "a41bc1b7e93c9d625b26b038ce1d33bf975d91080f0608620b6df576d35e3161"
+      "content_sha256": "cf44f1a629bd5c1ae6b346104127f4a3c98d3962594aa0000f833aabaf1e33a5"
     }
   ],
   "database_distribution": {

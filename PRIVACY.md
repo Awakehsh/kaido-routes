@@ -1,0 +1,62 @@
+# Kaido Routes Privacy Policy
+
+Effective date: July 28, 2026
+
+Kaido Routes is a route-first driving navigation app. This policy describes
+the behavior of the current open-source iPhone release.
+
+## Data collection
+
+Kaido Routes does not collect personal data, use advertising or analytics
+SDKs, create user accounts, or track people across apps or websites.
+
+When the user explicitly starts released-route navigation, the app may process
+precise location, heading, speed, accuracy, and timestamp observations on the
+device. These observations are used only to estimate progress on the selected
+route. They are not transmitted to the Kaido Routes project or retained in the
+navigation checkpoint.
+
+An internal calibration mode can keep raw location observations in memory
+during an explicitly started calibration session. Raw observations are not
+persisted by the app. Only a coordinate-free report can be exported
+deliberately by the tester.
+
+## Data stored on the device
+
+The app stores interface, voice, and map-display preferences in its private
+container. It may also store user-created route documents, coordinate-free
+navigation checkpoints, and signed pre-drive information imported by the
+user. This data stays in the app container unless the user deliberately
+exports a route document or calibration report.
+
+Deleting the app removes its private container. Location access can be revoked
+at any time in iOS Settings. The app does not require an account, so there is
+no server-side account or personal-data record to delete.
+
+## Network and external services
+
+The current bundled K7 release has no configured update endpoint and does not
+send location or route progress to a Kaido Routes server. Links to official
+road information, map-data attribution, licences, and this policy open
+external websites; those sites apply their own privacy practices.
+
+A later release that enables a signed-information endpoint or another network
+service must update this policy and its App Store privacy disclosures before
+distribution.
+
+## Required-reason APIs
+
+The bundled privacy manifest declares:
+
+- app-private `UserDefaults`, used for local preferences; and
+- system uptime, used only to measure elapsed time for in-app operations.
+
+Neither use is for fingerprinting or tracking.
+
+## Contact
+
+Privacy questions may be raised through the
+[Kaido Routes issue tracker](https://github.com/Awakehsh/kaido-routes/issues).
+Issues are public, so do not include precise locations or other personal
+information. For a private request, use the developer contact shown on the
+Kaido Routes App Store product page.

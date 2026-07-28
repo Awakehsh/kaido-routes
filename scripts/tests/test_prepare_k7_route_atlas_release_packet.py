@@ -29,7 +29,7 @@ class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "k7-atlas-review"
 
-            manifest = preparer.prepare(output, date(2026, 7, 27))
+            manifest = preparer.prepare(output, date(2026, 7, 28))
 
             self.assertEqual(
                 {path.name for path in output.iterdir()},
@@ -58,7 +58,7 @@ class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
                 preparer.ReleasePacketError,
                 "already exists",
             ):
-                preparer.prepare(output, date(2026, 7, 27))
+                preparer.prepare(output, date(2026, 7, 28))
 
     def test_nonignored_repository_output_is_rejected(self) -> None:
         with self.assertRaisesRegex(
@@ -67,7 +67,7 @@ class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
         ):
             preparer.prepare(
                 REPOSITORY_ROOT / "artifacts/k7-atlas-review",
-                date(2026, 7, 27),
+                date(2026, 7, 28),
             )
 
     def test_ready_tracked_release_does_not_block_candidate_packet(self) -> None:
@@ -83,7 +83,7 @@ class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
                     "navigation_authority": False,
                 },
             ):
-                manifest = preparer.prepare(output, date(2026, 7, 27))
+                manifest = preparer.prepare(output, date(2026, 7, 28))
 
             self.assertFalse(manifest["candidate_ready_for_release_validation"])
             self.assertEqual(

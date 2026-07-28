@@ -1,6 +1,8 @@
-# Kaido Routes iPhone preview shell
+# Kaido Routes iPhone app
 
-Status: internal SwiftUI preview app; not released navigation.
+Status: active iPhone product target with one released K7 route. Physical
+position accuracy, field reliability, acoustic output, background navigation,
+and CarPlay remain separately unqualified.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
 links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`, and
@@ -16,8 +18,8 @@ internal evidence workbench:
    available route cards, create route, and saved routes;
 2. Plan submits only release-owned parked choices;
 3. only an exact compiled RoutePlan unlocks Review; and
-4. the bundled demo continues into Drive through its actor runtime, while
-   real-road navigation remains locked until foreground authority exists.
+4. the released K7 route continues into Drive through its actor runtime and
+   starts foreground Core Location only after a second explicit user action.
 
 The `Map | Lines` choice persists across Routes, Plan, Review, and Drive.
 The topology renderer consumes only a validated
@@ -35,9 +37,9 @@ review readiness and returns the scene to authoring. A future stage cannot be
 selected early. The bundled synthetic release can unlock only its own
 fresh-session rehearsal: it never mints live-input authority, requests location,
 or becomes a foreground navigation release.
-The former all-panel review workbench remains available with
-`-INTERNAL-REVIEW-HOME`; focused previews retain their existing launch
-arguments.
+The former all-panel review workbench remains available only through
+development launch arguments such as `-INTERNAL-REVIEW-HOME`; focused previews
+retain their existing deterministic test arguments.
 
 ## Bundled product release catalog
 
@@ -523,6 +525,39 @@ first:
 ```sh
 xcodebuild -downloadPlatform iOS
 ```
+
+## Distribution archive
+
+`project.yml` assigns `app.kaidoroutes.preview` to Debug and
+`app.kaidoroutes` to Release. Both configurations carry marketing version
+`1.0.0` and build `1`. The Release app bundles `PrivacyInfo.xcprivacy`, whose
+current audited declaration is no tracking, no off-device data collection,
+app-private `UserDefaults` reason `CA92.1`, and elapsed-time reason `35F9.1`.
+Settings exposes the same on-device location boundary and links to the public
+[`PRIVACY.md`](../../PRIVACY.md).
+
+The structural Release archive can be reproduced without signing:
+
+```sh
+xcodegen generate
+xcodebuild archive \
+  -project KaidoRoutesApp.xcodeproj \
+  -scheme KaidoRoutesApp \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/KaidoRoutes.xcarchive \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+A local archive is not an App Store submission. Distribution still requires an
+App Store Connect record and authorized signing account, truthful App Privacy
+answers and privacy-policy URL, content-rights and age-rating answers,
+localized listing assets and support URL, export-compliance handling, upload,
+and App Review. Apple uses the bundle ID, version, and build from the uploaded
+bundle to associate it with the App Store record. See Apple's
+[upload guidance](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/),
+[app privacy guidance](https://developer.apple.com/app-store/app-privacy-details/),
+and [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/).
 
 ## Physical-iPhone App baseline
 

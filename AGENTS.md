@@ -1,132 +1,178 @@
 # Kaido Routes agent instructions
 
-## Communication and repository stage
+## Communication
 
-- Use Chinese for chat with the project owner. Use English for tracked documentation, code, commits, pull requests, issues, and public comments.
-- For substantial product or design summaries intended for the project owner, prefer a self-contained Chinese HTML file on the Desktop. Quick status and clarification may remain in chat.
-- Treat tracked English Markdown and machine-readable E2E scenarios as the authoritative agent and open-source project contract. A user-facing HTML file is a presentation snapshot: it must not introduce a product decision that is absent from the tracked contract, and it should link back to the relevant Markdown.
-- This repository is in product-contract and feasibility work with a platform-light Swift core. Do not start iPhone/CarPlay app targets, provider integration, or new dependencies unless the task explicitly asks for it.
-- Lead with verified outcomes. Never claim that a route, junction movement, toll, closure, test, or device behavior is verified without dated evidence.
+- Use Chinese with the project owner. Use English for tracked documentation,
+  code, commits, pull requests, issues, and public comments.
+- Lead with verified outcomes. Never claim that a route, movement, toll,
+  closure, test, device behavior, or field result was verified without dated
+  evidence.
+- Keep tracked English Markdown and executable scenarios authoritative. A
+  Chinese owner-facing HTML report is a presentation snapshot and must not add
+  decisions absent from the tracked contract.
+
+## Current stage and autonomous authority
+
+- This repository is in active product delivery. It has a real iPhone target,
+  a released K7 route, a joint navigation/atlas product artifact, and a
+  physical-device deployment path. Do not describe it as a feasibility-only
+  repository.
+- The project owner authorizes agents to modify repository rules, product
+  code, tests, data contracts, adapters, dependencies, and documentation when
+  needed to finish the product.
+- Work directly on `main`. Within Kaido scope, normal implementation,
+  dependency installation, deterministic data generation, simulator testing,
+  physical-device build/install/launch, commits, and pushes do not require a
+  separate approval checkpoint.
+- Continue from one completed milestone to the next highest-value executable
+  milestone. Do not stop merely because an old handoff called something a
+  future gate, or because a synthetic reviewer/team label is absent.
+- Automated review may be run by the implementing agent. Require a distinct
+  human or field reviewer only when the evidence itself is a human observation
+  or independent field measurement; never invent that evidence.
+- Pause only for a genuinely unavailable secret/account, unavoidable
+  third-party action, material spend, destructive target ambiguity, or a
+  product decision with materially different user outcomes that cannot be
+  inferred from the current contract.
+- App Store preparation or submission may proceed when the configured account,
+  listing, privacy answers, licences, and release evidence are available.
+  Never fabricate legal, privacy, field, or marketing claims to pass a gate.
 
 ## Context loading
 
-Use hybrid, just-in-time context loading:
-
-1. Read this file and `README.md` first.
-2. Read only the product, domain, or testing document relevant to the current task.
-3. For behavior changes, load the exact scenario under `e2e/scenarios/` before reading broad background material.
-4. Treat `research/` as a private, ignored discovery notebook. Do not load or quote it by default. A research task may inspect it, but findings must be rechecked before entering tracked assets.
-5. Prefer links and identifiers over copying large source documents into context.
-
-For a long handoff, preserve: objective, accepted decisions and reasons, files changed, actual verification, blockers, and next step. Drop raw command output and abandoned exploration.
+1. Read this file and the current Git state first.
+2. Read `README.md` and only the product, architecture, or test document needed
+   for the active milestone.
+3. For behavior changes, load the exact scenario under `e2e/scenarios/` before
+   broad background material.
+4. Treat `research/` as an ignored private notebook. Recheck any discovery
+   against current primary sources before promoting it into tracked assets.
+5. Preserve intentional dirty changes and prefer exact IDs, paths, hashes, and
+   runtime probes over inherited prose.
 
 ## Product invariants
 
-- The route is the product, not a by-product of a destination search.
+- The route is the product, not a by-product of destination search.
 - Model the road network as a time-versioned directed multigraph.
-- A junction choice is an incoming approach to a legal outgoing movement, not a pin named after a JCT.
-- Preserve repeated edges and movements as distinct route occurrences. Never deduplicate a route plan by entity ID or coordinate.
-- Entrances and exits are directional facilities. A shared place or IC name does not imply all movements exist.
-- Treat full, half, quarter, irregular, and unknown IC patterns as derived summaries. Routing uses exact directional entrance and exit facilities only.
-- Treat a PA as a directional subgraph with explicit access and return movements, not an unrestricted POI.
-- A journey may include a surface access leg and a surface egress leg, but its Shuto section remains an ordered route-first plan with explicit entry and exit transitions.
-- Wrong-route recovery searches for a legal later occurrence in the active route plan. It must not become a destination-first reroute or silently leave the expressway.
-- Finishing a cruise activates a legal, precomputed egress plan. It never means reversing, making a U-turn, or taking an arbitrary nearby exit.
-- Keep actual planned distance separate from tariff distance and toll evidence.
-- Keep `NO_KNOWN_CONFLICT` separate from `REALTIME_UNCONFIRMED`; neither means confirmed open.
-- Keep active, proposed, and retired topology and tariff versions separate.
-- Support Japanese, Simplified Chinese, and English in both displayed guidance and voice. UI language and guidance voice may be selected independently.
-- Preserve Japanese sign text and route shields in every locale. Localized text, romaji, and spoken forms are explanatory layers, not replacements.
-- Tunnel and stacked-road positioning must expose confidence and degraded mode; never render an estimated position as a precise measured fix.
-- Keep the product focused on lawful route planning, safe driving assistance, and road culture. Do not add speed, lap-time, racing, evasion, or unsafe interaction mechanics.
+- A junction choice is an incoming approach to a legal outgoing movement.
+- Preserve repeated edges and movements as distinct ordered occurrences.
+- Entrances, exits, and PA access/return movements are directional facilities.
+- Surface access and egress may surround the Shuto section, but providers
+  cannot author, mutate, optimize, recover, or erase its `RoutePlan`.
+- Wrong-route recovery searches only for a legal later occurrence in the
+  active plan. Finish drive uses the released exit/egress contract and never
+  invents a U-turn, reversal, or nearby exit.
+- Keep driven distance, tariff distance, toll information, and passage status
+  separate.
+- `NO_KNOWN_CONFLICT` and `REALTIME_UNCONFIRMED` never mean confirmed open.
+- Missing, expired, not-yet-valid, or profile-unavailable tariff/passage
+  information is an explicit warning, not route authority. A fresh matching
+  `KNOWN_CLOSED` or `PLANNED_CONFLICT` state blocks navigation.
+- Support Japanese, Simplified Chinese, and English. UI and voice language are
+  independent, while Japanese sign text and route shields remain visible.
+- Position confidence and degraded mode must be explicit, especially in
+  tunnels and stacked roads.
+- Keep the product lawful and safe. Do not add racing, speed, lap-time,
+  evasion, or unsafe interaction mechanics.
 
-## Navigation architecture boundaries
+## Architecture boundaries
 
-- `docs/architecture/ios-navigation-architecture.md` is the accepted direction for architecture spikes. Valhalla is the leading shared open-source implementation candidate behind the provider boundary, not RoutePlan authority. Keep OSRM and GraphHopper as independent executable controls and revisit the choice when broader coverage, matcher replay, operations, or field evidence contradicts it.
-- Keep domain, routing, and navigation policy in platform-light Swift modules. MapKit, Core Location, Core Motion, CarPlay, speech, and third-party engines are adapters and must not become domain dependencies.
-- Treat a MapKit or other provider result as a bounded surface-leg candidate. It cannot author, optimize, mutate, recover, or erase the active Shuto `RoutePlan`.
-- Geometry-only provider output cannot resolve vertically stacked roads. Accept `selected_path_evidence` only when the provider's complete OSM way/start-node/direction sequence has been translated onto the exact Kaido graph and its dataset ID matches graph provenance.
-- The shared-snapshot Valhalla translator, checksummed build-manifest validator, response normalizer, bounded provider, URLSession transport, and explicit live-probe CLI are implemented. Five private graph-bound entrance fixtures x three origins x three repeats passed 45/45 final surface-routing requests through the public adapter. Route destinations must carry the reviewed heading and tolerance with `node_snap_tolerance=0`. Valhalla remains a bounded surface provider and HMM comparison oracle; long-running operations, data-distribution review, broader coverage, and field evidence are still pending.
-- The independent OSRM surface baseline is also implemented. Its response must carry the manifest dataset ID, report left-side driving, and expose a complete `annotations=nodes` sequence whose every consecutive pair maps to exactly one Kaido directed edge. Parallel-pair ambiguity fails closed. The same private five-fixture window passed 45/45 final requests through the public URLSession adapter; its synthetic driving-side polygon is not release data.
-- The GraphHopper 11.0 baseline is implemented behind the same bounded role. Every call verifies `/info`, requires a non-epoch manifest road timestamp, disables geometry simplification at import and request time, and aligns `edge_key + osm_way_id + country` path details to one unique whole-path Kaido directed-edge sequence. Short local point-pair ambiguity is acceptable only when full-path continuity leaves one sequence; true parallel ambiguity fails closed. The same private five-fixture window passed 45/45 final requests. GraphHopper navigation prose and its hard-coded right-driving field are diagnostic only; Kaido owns Japanese driving-side and multilingual guidance.
-- The tracked matcher replay floor contains six synthetic fixtures and 23 observations with ground-truth occurrence intervals and branch decisions. `NearestEdgeNegativeControl` must reproduce each fixture's declared safety failures deterministically; passing that CLI means the negative control failed as expected, not that it is navigation-safe. Keep raw field traces and provider matcher responses ignored. Normalize Meili, Swift HMM, and later matcher results into `MatcherEstimate` before using the shared evaluator.
-- The manifest-bound `ValhallaMatcherReplayOracle` request, response normalizer, provider-edge translator, shared-evaluator bridge, and opt-in live CLI are implemented. It requires retained OSM begin/end node identity, preserves repeated edge traversals, and refuses non-increasing observation time. Valhalla 3.8.2 requires a node-category field such as `node.type` before its JSON serializer materializes the requested end OSM node. Meili match type is not calibrated confidence and carries no RoutePlan occurrence, so the bridge emits at most `LOW` and cannot authorize progress. The private same-snapshot controlled window produced repeat-identical 192/195 edge top-1 across 15 fixtures and 45 requests; three LOW misses at the Tomigaya entrance mouth and 0/195 occurrences are the first Swift-HMM comparison gate, not device-accuracy evidence.
-- `RouteAwareSwiftMatcher` is the first platform-light online Viterbi prototype. Its hidden state includes occurrence, geometry supplies candidates, forward occurrence order and along-edge progress constrain transitions, and stale, ambiguous, or first post-gap evidence cannot become `HIGH`. The tracked corpus is deterministic with 18/23 edge top-1, 21/21 occurrence, and zero named safety failures. On the same private window it produced 190/195 edge top-1 and 195/195 occurrence hypotheses; all five misses were LOW abstentions with no selected edge. `RouteMatcherSession` is fixture-independent, incremental, RoutePlan/snapshot/corridor-bound, spatially indexed, and state-bounded; KR-S16 executes its stale/post-gap/reset output through `NavigationEngine`. A HIGH Swift estimate exposes `fractionAlongEdge` separately from `distanceMeters`; the latter is lateral point-to-road residual and must never be used as remaining route or DecisionZone distance. `CoreLocationObservationAdapter` preserves timestamp, receive order, invalid-fix rejection, source-information evidence, and a separately declared CarPlay field context. Never infer wired or wireless transport from a connected CarPlay scene or from `isProducedByAccessory`; public Core Location only identifies software simulation and external-accessory production. `CoreLocationMatcherCalibrationSession` measures this boundary into an in-memory `PRIVATE_RAW_LOCATION` trace; only coordinate-free `MatcherCalibrationReport` output may be considered for tracking. Never merge different snapshot, matcher, device, or transport scopes, and never treat synthetic/software-simulated evidence as a field statistical-floor pass. Treat the matcher as the live direction, not a calibrated production engine. The next boundary is actual device profiling and held-out field reliability evidence before UI integration.
-- `KaidoDomain` owns released guidance semantics and `GuidanceFrame`; `GuidanceFramePlanner` in `KaidoNavigation` consumes only a fresh, route-resolved occurrence plus distance-to-DecisionZone observation. `GuidanceProgressBridge` may derive that observation only from HIGH matcher evidence bound to the exact snapshot, RoutePlan, occurrence, directed edge, complete corridor geometry, and reviewed DecisionZone entry offset; skipped occurrences and missing along-edge progress fail closed. It chooses the most actionable released anchor, preserves an emitted later stage across distance jitter, and skips obsolete catch-up prompts. `NavigationEngine` alone updates the occurrence-scoped ledger and returns a one-shot `GuidancePromptEmission`; restoration cannot replay it. `KaidoPresentation` requires that emission to match the current frame and ledger before `voice.shouldSpeak` becomes true. `GuidanceSpeechScheduler` then binds delivery to the exact RoutePlan and `prompt + anchor + anchor occurrence`, suppresses duplicate projection delivery, replaces stale in-flight speech with a newer prompt, and drops interrupted prompts without catch-up replay. `GuidanceSpeechCoordinator` connects it to `AVSpeechGuidanceOutput`, which uses Apple's `voicePrompt` audio mode, temporary ducking, explicit interruption handling, and typed missing-voice/session failures. Phone, CarPlay, and voice adapters never own occurrence progress or infer prompt, anchor occurrence, DecisionZone, stage, distance, decision point, maneuver, lane preparation, route shield, sign target, or localized content. KR-S17 executes planning from resolved progress; KR-S18 executes the Swift matcher distance bridge through planner, ledger, and projection; KR-U15 adds L3 speech lifecycle evidence. Production corridor construction, DecisionZone calibration, SwiftUI layout, accessibility, CarPlay entitlement, pronunciation, physical audio routing, and real hardware remain unproven.
-- Reviewed `spokenForms` reach Apple synthesis through the platform-light `GuidanceSpokenFormRenderer`, which applies exact terms longest-first against the original string without cascading or duplicating already expanded forms. `NavigationVoicePresentation` and `GuidanceSpeechCommand` preserve exact released `spokenText` separately from derived `synthesisText`: offline-audio lookup stays bound to the former, while only `AVSpeechGuidanceOutput` consumes the latter. KR-U20 proves this text boundary without granting acoustic or pronunciation evidence.
-- Interface locale and guidance-voice locale are independent projections of one validated `GuidanceFrame`. The default iPhone product journey persists and immediately applies one Japanese, Simplified Chinese, or English interface locale across app-owned atlas, entrance, parked-editor, pre-drive, voice-setup, and released-navigation copy without mutating the separately persisted guidance-voice locale. Release-owned editor and guidance semantics still come from exact locale-complete release catalogs; raw IDs and evidence codes never become translated fallback labels. Every locale must retain the same Japanese sign target and route shields. A preview without a matching one-shot `GuidancePromptEmission` must keep `voice.shouldSpeak=false` and cannot play audio. KR-U05 and KR-U11 execute the projection boundary; the internal evidence workbench remains only partially localized, and pronunciation/device evidence is still pending.
-- Conservative driving presentation consumes engine and projector output; SwiftUI cannot upgrade marker confidence, realtime passage, route-editing availability, surface occurrence identity, Finish-drive exit selection, junction geometry, or lane semantics. KR-U06, KR-U07, KR-U08, KR-U10, KR-U12, and KR-U14 execute this boundary through synthetic iPhone states only. `connectCarPlay()` changes projection ownership without creating a CarPlay scene; phone and CarPlay retain one occurrence-scoped frame and exact immutable `JunctionViewDefinition`. The renderer maps normalized paths and left-indexed lanes directly, labels synthetic `RELEASED` as fixture-only, and has no live `NavigationSession`, released road data, audio authority, `CPMapTemplate`, or physical head-unit evidence.
-- The strict compiler, occurrence progress, deviation recovery, legal egress, confidence policy, and structured guidance remain Kaido-owned behavior.
-- Do not add a commercial navigation SDK or production provider dependency before its bounded role, licence, data-use constraints, hard gates, and comparison fixtures are documented.
-- Keep the portable scenarios executable against the pure Swift core before building an iPhone screen. UI work consumes navigation snapshots; it does not define navigation semantics.
-- `EntranceRecommender` owns direction-first entrance selection. Its structured selection names the exact target carriageway, legal join occurrence, ETA, distance rank, and hard-filter reasons; rejected candidates retain their reason codes. Duplicate identities, invalid metrics, and invalid join identities reject the whole input. SwiftUI may localize and render this result but must not re-rank candidates, infer direction from labels, or turn proximity into compatibility. KR-U13 executes this boundary with synthetic data only.
-- `ExpertRouteEditorSession` in `KaidoRouting` owns the parked expert-authoring cursor. It starts from an exact directional entrance, exposes only the current reviewed incoming-approach/JCT choices, appends fresh movement and edge occurrences, permits reviewed cycles, and compiles only after an explicit directional exit. A reviewed lap template names one exact closed choice sequence; only an authored match becomes a candidate, duplication creates fresh occurrence values, and one undo removes the whole copied lap. `ParkedCorridorResolutionSession` may accept a geometry-adapter match only when its snapshot, current decision point, and candidate choice IDs exactly match the editor snapshot; zero or one candidates never author a route automatically, ambiguity requires an explicit parked choice, and the returned choice must still be submitted to the editor with fresh occurrence IDs. Moving-time edits, future-decision choices, stale corridor cursors, unclosed templates, stale lap candidates, duplicate occurrence IDs, invalid catalogs, and exitless catalogs fail closed. `ReviewedRouteEditorPresentationCatalog` must cover every reviewed entrance, decision point, and choice exactly in Japanese, Simplified Chinese, and English; missing, duplicate, partial, or orphaned labels block the whole release. SwiftUI may render editor and corridor snapshots and submit stable choice or lap-candidate IDs; it must not infer graph legality, corridor snapping, loop closure, labels, or mutate RoutePlan directly. The release-only iPhone adapter consumes one validated `KaidoProductRelease`, never falls back to raw IDs, and may replay only recipe-owned choice and occurrence IDs. KR-U01 through KR-U03 execute the editor boundary. The internal iPhone scene uses synthetic data; production gesture matching, real released catalogs and localized text, topology rendering, and full accessibility validation remain pending.
-- `RouteDistanceResolver` may derive `RoutePlan.actualDistanceKM` only from same-snapshot reviewed entity distances and must walk ordered occurrences so repeated traversals count again. Missing coverage, invalid scalars, snapshot drift, and non-positive totals fail closed. `PreDriveReviewEvaluator` binds per-session tariff and passage evidence to the exact snapshot, RoutePlan, directional entrance, and directional exit; validates every tariff quote; and requires exactly one active version. It cannot calculate toll from the route or accept `REALTIME_CONFIRMED_PASSABLE` until a separate live authority and freshness contract exists.
-- Pre-drive tariff and passage freshness is an optional information boundary, not RoutePlan or navigation authority. Missing, not-yet-valid, expired, or profile-unavailable information must remain explicit and must not block an otherwise exact released route. Only matching fresh information may be labeled current; a current `KNOWN_CLOSED` or `PLANNED_CONFLICT` state still blocks navigation start. Route, release, graph, or runtime identity failure remains fail-closed.
-- `NavigationSession` is the actor-owned live composition boundary after a RoutePlan is compiled. It serializes `RouteMatcherSession`, conservative matcher-to-`LocationObservation` projection, release-bound entry and surface-egress admission, `NavigationEngine`, `GuidanceProgressBridge`, prompt emission, CarPlay ownership, tunnel state, restrictions, recovery, and Finish drive. Its raw initializer is package-only; external adapters must receive it through `KaidoProductNavigationRuntime` from one validated `KaidoProductRelease`. Initialization must reject any RoutePlan, snapshot, corridor, DecisionZone, released-guidance, or selected-egress identity drift. Matcher reset or restart clears matcher evidence only and cannot rewind engine progress. `NavigationSessionCheckpoint` schema 2.0 additionally binds the exact `JourneyPlan` ID and persists only coordinate-free reducer state. Restoration clears matcher posterior, position, CarPlay connection, partial entry and surface-egress handoff evidence, active guidance frame, and speech authority; active navigation resumes with LOST/estimated state, and the first otherwise-HIGH matcher fix is exposed only as LOW while it seeds a fresh multi-observation reacquisition window. The emitted-prompt ledger survives, so process restoration cannot replay speech. `FileNavigationSessionCheckpointStore` atomically replaces one Application Support file; SwiftUI `scenePhase` stops speech and saves immediately on inactive/background, but this does not enable background location. Ordinary matcher evidence cannot advance an occurrence, schedule guidance, or fabricate entry-transition forward continuity before strict-route admission. `CoreLocationEntryTransitionAdapter` consumes the runtime's immutable release context and emits package-only evidence; the actor independently rejects identity drift, simulation, stale/replayed or reversed time, non-HIGH or ambiguous matches, missing/mismatched heading, and skipped edges before deriving ordered continuity. `FINISH_DRIVE` enters `EXIT_TRANSITION`; the compiler-retained `SurfaceEgressMatcherCorridor` preserves graph geometry by ordered occurrence, including repeated edges, and uses a separately scoped matcher pinned to occurrence zero. `CoreLocationSurfaceEgressAdapter` may mint evidence only from the exact runtime context; two fresh HIGH singleton-occurrence observations with valid heading and increasing progress on the exact handoff occurrence are required before `SURFACE_EGRESS`. The expressway matcher and UI cannot manufacture this evidence. `CoreLocationSurfaceEgressMatcherCalibrationSession` separately measures the exact Core Location-to-surface-matcher pipeline into an in-memory `PRIVATE_RAW_LOCATION` trace. Its coordinate-free report is bound to the complete release/candidate/corridor/occurrence, matcher/configuration, device, and explicitly declared transport scope; mixed scopes, incorrect HIGH results, synthetic evidence, and software simulation fail closed. The matcher-replay CLI authors a report only inside a hash-bound coordinate-free artifact from exact private trace bytes and one independently reviewed private ground-truth set; validation re-runs the evaluator against those same bytes, and the artifact always denies navigation and release authority. Never combine this report with expressway matcher calibration. KR-S20 is synthetic policy evidence; App enrollment still requires real graph/provider output, physical-device profiling, and held-out field reliability evidence. The internal iPhone scene decodes a complete `SYNTHETIC_TEST_ONLY` joint release, constructs the public runtime, binds Apple location adapters, the checkpoint store, and the speech coordinator, and publishes only actor-returned snapshots; its visible preview attaches no `CLLocationManager` and grants no real-road authority. The current heading/age thresholds remain uncalibrated until device field evidence. Real released assets, active background Core Location, installed-voice/pronunciation qualification, physical audio routing, and `CPMapTemplate` remain adapters or device gates.
-- A route-only journey may move from `EXIT_TRANSITION` directly to `COMPLETED` only when the active released exit matches the RoutePlan exit, progress is on the terminal occurrence, no surface-egress leg is admitted, and the user explicitly confirms the exit handoff. KR-S21 executes this boundary. The action cannot select an ordinary-road successor or enter `SURFACE_EGRESS`.
-- `NavigationReleaseBundle` is the pre-runtime whole-asset gate. It requires one active snapshot, exact RoutePlan, same-snapshot valid editor catalog, exact locale-complete editor presentation catalog, one exact `ReleasedNavigationRuntimePolicy`, complete matcher corridor, exactly one DecisionZone and at least one released guidance definition for every planned junction-movement occurrence, and an exact optional junction-view registry with no unregistered or orphaned values. The runtime policy binds the directional entry transition, released in-domain recovery candidates targeting later RoutePlan occurrences only for `SAFE_REJOIN`, and at least one released egress to the same snapshot and RoutePlan; all other recovery policies must carry no rejoin candidate, and egress cannot replace the compiled exit. An optional `ReleasedSurfaceAccessDefinition` binds one exact entrance/provider composition. An optional `ReleasedSurfaceEgressDefinition` may exist only with access that permits `RETURN_NEAR_ORIGIN`; each unique policy binds one released egress option and exit facility to a reviewed ordinary-road handoff anchor, same-snapshot provider/build identity, return-target tolerances, and expressway/toll prohibitions. It reuses `NavigationSession` runtime identity validation. Repeated graph entities are covered by occurrence ID, not entity ID. KR-D18 executes this boundary with synthetic release flags only; it does not release real road data.
-- `NavigationReleaseArtifact` schema 6.0 is the versioned distribution boundary around that bundle. `NavigationRelease` requires a stable release and editor-catalog identity, a dated HTTPS/SHA-256/licence source registry, and exactly one `RELEASED` role-matched evidence record for the editor catalog, editor presentation, runtime policy, matcher corridor, every DecisionZone, every guidance prompt, every junction view, and optional `SURFACE_ACCESS` and `SURFACE_EGRESS` definitions. Junction-view evidence must exactly match its embedded provenance, and neither sources nor asset evidence may postdate the navigation release. Encoding and decoding both re-run this provenance gate and the complete `NavigationReleaseBundle` validator; unknown schemas, missing or orphaned evidence, unused sources, and role drift fail closed. KR-D25 is synthetic serialization evidence only and does not release real navigation data.
-- `RouteAtlasRelease` is the renderer-neutral map-integrity gate. It requires one active snapshot, exact RoutePlan, one released dated topology slice, complete one-to-one topology-node and topology-edge layout coverage, unique route-entity identity, exact legal-successor translation, normalized endpoint-connected geometry, separate released dated layout evidence, and an ordered binding for every RoutePlan occurrence. Coordinate contact never creates a legal connection, arbitrary display labels are excluded, and repeated occurrences may bind the same segment without being deduplicated. KR-D19 proves that one visually invented connection blocks release. This is internal consistency only: no real Shuto atlas may be described as verified until a real released topology slice and reviewed layout evidence exist.
-- The K7 Route Atlas readiness package is a hash-bound L0 preflight, not an authority artifact. Schema 2.0 scopes the first candidate to the terminal Yokohama Kohoku exit handoff, retains the exact terminal RoutePlan occurrence, excludes all three ordinary-road successors, and releases no `SURFACE_EGRESS`. The current exact road identity and passenger-safe field review remain separate future-scope gates for any later surface-egress expansion; they are neither required nor treated as satisfied for the exit-only topology review. Those future reviews remain coordinate-free and private, and the package still requires the hash-bound technical ODbL review of the distributed database, reconstruction offer, machine-readable notices, and in-product native attribution. Historical Route 342 corridor evidence and the 2023 post-replotting recognition of Higashikatacho Routes 354 through 358 are area-level only. Online map 66 is location evidence only: a future surface release still requires a Road Survey Division counter record that distinguishes all three exit-terminal OSM successors and both route-identity generations. That technical review is not legal advice or road evidence. `REALTIME_UNCONFIRMED` remains neutral rather than calling the road open. A readiness `PASS` only admits the candidate to `kaido-atlas validate-release`; it never grants navigation authority.
-- `KaidoProductRelease` is the only joint product-authority gate. Its schema 6.0 artifact independently revalidates one `NavigationReleaseArtifact` and one `RouteAtlasReleaseArtifact`, then requires exact snapshot and RoutePlan equality, a finite positive actual route distance, non-future nested release/evidence dates, and Route Atlas topology coverage for every editor-catalog initial edge, incoming approach, movement, and outgoing edge. `KaidoProductReleaseAuthor` is the production assembly boundary after both nested artifacts pass independently: it accepts explicit reproducible release metadata, fixes runtime use to `RELEASED_ROAD + FOREGROUND_WHEN_IN_USE`, retains both inputs unchanged, rejects synthetic sources and joint drift, and emits no partial artifact. The CLI writes a new file atomically and refuses overwrite. A navigation or atlas artifact may pass alone without authorizing a product build. KR-D26 proves the joint fail-closed distinction with synthetic data; no real product release exists.
-- `KaidoProductNavigationRuntime` keeps the validated product release, released Route Atlas, exact `JourneyPlan`, and navigation session composition together. It accepts no caller-supplied RoutePlan, runtime policy, corridor, DecisionZone, guidance, or egress override. A compiler-admitted return plan filters Finish behavior to its exact released egress option and exposes a package-minted surface handoff context; provider/UI state cannot choose another exit or enter `SURFACE_EGRESS`. KR-D26 proves that a failed joint release cannot create even a partial runtime identity. The internal app's synthetic product-runtime fixture additionally proves the public composition path and atomic SwiftUI state binding at L3, while separate app safety checks require every source to remain explicitly synthetic.
+- `docs/architecture/ios-navigation-architecture.md` is the current detailed
+  architecture contract. Update it when the accepted design changes; do not
+  duplicate its implementation history in this file.
+- Keep domain, routing, matcher, navigation, and guidance policy in
+  platform-light Swift modules. MapKit, Core Location, Core Motion, CarPlay,
+  speech, network providers, and commercial/open-source engines are adapters.
+- `RoutePlan`, exact occurrence identity, `NavigationSession`, released
+  guidance, and the joint `KaidoProductRelease` remain Kaido-owned authority.
+  UI and provider output are projections or bounded candidates.
+- Geometry-only provider output cannot resolve vertically stacked roads.
+  Provider identity must translate onto the exact graph snapshot before it can
+  contribute selected-path evidence.
+- Valhalla is the leading shared surface/matcher implementation candidate.
+  OSRM and GraphHopper remain independent executable controls. Revisit this
+  choice when current coverage, operations, replay, licence, or field evidence
+  warrants it.
+- A commercial dependency is allowed when its bounded role, licence/data-use
+  terms, fallback, and executable comparison are documented and verified.
+- Synthetic fixtures prove deterministic behavior only. Signed build,
+  installation, and launch prove device deployment only. Neither substitutes
+  for passenger-safe field reliability, acoustic, tunnel, or CarPlay evidence.
 
-## Project licence language
+## Evidence, privacy, and licences
 
-- The repository is open-source software under the Apache License 2.0.
-- Apache-2.0 permits commercial and noncommercial use. Do not add a conflicting noncommercial restriction to project-authored material.
-- Keep required copyright, patent, attribution, and change notices when incorporating or redistributing Apache-licensed material.
-- The root licence does not override third-party data or asset terms. Keep separately licensed material identified and isolated.
+- For static road identity and legal movement claims, prefer: current operator
+  or government sources; current licensed/open structured data; independently
+  reviewed sign/video/passenger evidence; then community material for
+  discovery only.
+- Conflicting or stale topology/movement evidence blocks a new static road
+  release. Stale dynamic toll/passage information is shown as non-current and
+  does not revoke an already exact released route.
+- Keep snapshot, source, checked date, and verification state with every
+  releasable road or movement.
+- Keep raw coordinates and personal field traces private and ignored. Track
+  only coordinate-free, scope-bound reports when the contract permits them.
+- The project is Apache-2.0. Preserve required copyright, patent, attribution,
+  and change notices. Root licensing never overrides third-party data terms.
+- Do not commit copied operator maps/JCT images/logos, unlicensed JARTIC or
+  mew-ti payloads, raw third-party articles/screenshots, private field traces,
+  or OSM-derived databases without the deliberate ODbL distribution plan.
 
-## Evidence and data boundaries
+## Autonomous delivery workflow
 
-Use this evidence order for routing and safety claims:
+1. Observe current repository, runtime, device, and external dependency state.
+2. Define the user-visible outcome and the narrowest executable success
+   criteria.
+3. Add or select a deterministic scenario for behavior changes.
+4. Implement the complete vertical slice, including error and degraded states.
+5. Run the narrowest useful checks, then the full affected regression.
+6. Exercise the real App path on a simulator and connected device when
+   applicable; distinguish runtime proof from field proof.
+7. Update authoritative docs, commit with an English Conventional Commit
+   message, and push `main`.
+8. Continue to the next executable product gap without waiting for another
+   prompt. Stop only at a genuine external boundary and leave one exact
+   continuation command or artifact.
 
-1. Current operator or government source.
-2. Current licensed/open structured data with clear provenance.
-3. Independently reviewed sign, video, or passenger-observed field evidence.
-4. Community material for discovery only.
+Do not weaken a scenario merely to pass it. If current primary evidence or an
+intentional product decision changes the contract, update the scenario and
+contract explicitly.
 
-Every releasable route or movement must record its network snapshot, source references, checked date, and verification state. Conflicting or stale evidence blocks release.
+## Product-ready definition
 
-Do not commit:
-
-- Shuto Expressway maps, JCT images, videos, logos, or copied site design;
-- mew-ti or JARTIC payloads without an appropriate licence;
-- raw third-party articles, screenshots, or personal field traces;
-- OSM-derived databases without a deliberate ODbL and attribution plan;
-- anything under `research/`.
-
-## Development workflow
-
-For multi-step changes:
-
-1. Observe current repository and runtime state.
-2. State success criteria and the smallest relevant plan.
-3. Add or select a scenario that expresses the behavior.
-4. Make the smallest implementation change.
-5. Run the narrowest useful verification, then expand only when risk warrants it.
-6. Report exact commands and outcomes, including unrelated failures that affect the handoff.
-
-Do not weaken a scenario merely to make an implementation pass. If the scenario conflicts with a product decision or new primary evidence, surface the conflict and update the contract intentionally.
+- The default iPhone journey completes route selection/authoring, review,
+  navigation startup, degraded-state handling, finish, and restoration without
+  internal workbench knowledge.
+- Released runtime inputs are hash-bound to one exact product and route.
+- Critical interaction is accessible, localized, usable without network where
+  promised, and does not require unsafe touch while driving.
+- Deterministic core, App unit/UI, release-validation, and device smoke paths
+  pass from a clean checkout.
+- Known limitations are visible in-product and documented, but optional dynamic
+  information and absent future integrations do not masquerade as blockers.
+- “Product-ready” may be achieved before broader road coverage, CarPlay, or
+  field qualification. Those capabilities must remain honestly labeled until
+  their own evidence exists.
 
 ## E2E contract
 
-- `docs/testing/e2e-strategy.md` defines the test layers and workflow.
-- `e2e/schema/scenario.schema.json` defines the portable scenario envelope.
-- One scenario file should test one primary behavior.
-- CI scenarios must be deterministic and must not call live operator, map, toll, or traffic services.
-- Real routes may appear in tracked fixtures only when their evidence classification permits it. Otherwise use clearly synthetic IDs.
-- Field tests supplement deterministic tests; they never replace them.
-
-Run `python3 scripts/validate_e2e.py` after changing a scenario or schema.
-Run `swift test` and `swift run kaido-scenarios e2e/scenarios` after changing
-the Swift core or scenario semantics.
+- `docs/testing/e2e-strategy.md` defines layers and workflow.
+- `e2e/schema/scenario.schema.json` defines the portable envelope.
+- One scenario tests one primary behavior.
+- CI scenarios are deterministic and never call live map, operator, toll, or
+  traffic services.
+- Field tests supplement deterministic tests and never replace them.
+- Run `python3 scripts/validate_e2e.py` after scenario/schema changes.
+- Run `swift test` and `swift run kaido-scenarios e2e/scenarios` after Swift
+  core or scenario-semantic changes.
 
 ## Git
 
-- Preserve user changes and keep edits scoped to the request.
-- Never rewrite, amend, force-push, or alter existing commits unless explicitly asked.
-- Before committing, inspect repository status and use an English, specific Conventional Commit subject.
-- For `feat`, `fix`, `refactor`, `perf`, and `security` commits, include a body explaining why, impact, and verification. Documentation and chore-only commits may use a subject only.
+- Preserve unrelated user changes. Never rewrite, amend, or force-push unless
+  the owner explicitly requests history rewriting.
+- Inspect status before committing. Use a specific English Conventional Commit
+  subject.
+- `feat`, `fix`, `refactor`, `perf`, and `security` commits need a body that
+  states why, user/system impact, and verification.
+- Push completed milestones to `origin/main`; do not create process-only
+  branches or PRs unless collaboration or repository protection requires one.

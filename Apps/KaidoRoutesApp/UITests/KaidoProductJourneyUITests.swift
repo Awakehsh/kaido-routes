@@ -252,6 +252,75 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertFalse(element("product-topology-position-marker", in: app).exists)
   }
 
+  func testK7ForegroundLocationStartsAndStopsThroughCoreLocation() {
+    continueAfterFailure = false
+    let app = launchK7OperationalJourney()
+    let releaseID = "shutoko.product.k7-aoba-to-kohoku.2026-07-27"
+
+    reveal("product-route-option-\(releaseID)", in: app).tap()
+    reveal(
+      "released-route-choice-shutoko.choice.kohoku.k7-up-to-shared-exit-corridor",
+      in: app
+    ).tap()
+    reveal(
+      "released-route-choice-shutoko.choice.kohoku.shared-corridor-to-exit",
+      in: app
+    ).tap()
+    reveal("released-route-compile", in: app).tap()
+
+    let journeyAction = element("product-journey-primary-action", in: app)
+    XCTAssertTrue(journeyAction.isEnabled)
+    journeyAction.tap()
+    XCTAssertEqual(
+      element("product-journey-stage", in: app).value as? String,
+      "REVIEW"
+    )
+    XCTAssertTrue(journeyAction.isEnabled)
+    journeyAction.tap()
+
+    XCTAssertTrue(
+      element("product-drive-surface", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    let permissionMonitor = addUIInterruptionMonitor(
+      withDescription: "When In Use location permission"
+    ) { alert in
+      self.acceptLocationPermission(in: alert)
+    }
+    defer {
+      removeUIInterruptionMonitor(permissionMonitor)
+    }
+
+    let locationAction = reveal(
+      "product-drive-location-action",
+      in: app
+    )
+    XCTAssertEqual(locationAction.value as? String, "AVAILABLE")
+    locationAction.tap()
+    app.tap()
+
+    let locationState = element("product-drive-location-state", in: app)
+    XCTAssertTrue(
+      waitForValue(
+        "FOREGROUND LOCATION RUNNING",
+        on: locationState,
+        timeout: 15
+      )
+    )
+    XCTAssertEqual(locationAction.value as? String, "STOPPABLE")
+
+    locationAction.tap()
+
+    XCTAssertTrue(
+      waitForValue(
+        "FOREGROUND LOCATION STOPPED",
+        on: locationState,
+        timeout: 5
+      )
+    )
+    XCTAssertEqual(locationAction.value as? String, "AVAILABLE")
+  }
+
   func testExpiredK7InformationWarnsWithoutBlockingReleasedRuntime() {
     continueAfterFailure = false
     let app = launchK7ExpiredInformationJourney()
@@ -394,5 +463,56 @@ final class KaidoProductJourneyUITests: XCTestCase {
     }
     XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")
     return target
+  }
+
+  private func acceptLocationPermission(in alert: XCUIElement) -> Bool {
+    let preferredLabels = [
+      "Allow While Using App",
+      "Allow Once",
+      "Appの使用中は許可",
+      "一度だけ許可",
+      "使用 App 时允许",
+      "仅允许一次",
+      "使用 App 期間允許",
+      "允許一次",
+    ]
+    for label in preferredLabels {
+      let button = alert.buttons[label]
+      if button.exists {
+        button.tap()
+        return true
+      }
+    }
+
+    let deniedFragments = [
+      "don't allow",
+      "don’t allow",
+      "許可しない",
+      "不允许",
+      "不允許",
+    ]
+    for button in alert.buttons.allElementsBoundByIndex {
+      let label = button.label.lowercased()
+      if deniedFragments.allSatisfy({ !label.contains($0) }) {
+        button.tap()
+        return true
+      }
+    }
+    return false
+  }
+
+  private func waitForValue(
+    _ value: String,
+    on element: XCUIElement,
+    timeout: TimeInterval
+  ) -> Bool {
+    let expectation = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", value),
+      object: element
+    )
+    return XCTWaiter.wait(
+      for: [expectation],
+      timeout: timeout
+    ) == .completed
   }
 }

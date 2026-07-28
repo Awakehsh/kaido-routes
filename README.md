@@ -1160,7 +1160,9 @@ python3 scripts/run_ios_device_qualification.py \
 
 The full run requires a clean commit and a new ignored output directory, rejects
 Simulator and incomplete test results, and produces a coordinate-free receipt
-that explicitly grants no road, acoustic, CarPlay, or background-navigation
+only after the named released-K7 Core Location permission/start/stop test passes
+on the physical iPhone. It grants that lifecycle smoke only and explicitly
+grants no location-accuracy, road, acoustic, CarPlay, or background-navigation
 authority. See
 [`docs/testing/ios-physical-device-qualification.md`](docs/testing/ios-physical-device-qualification.md).
 

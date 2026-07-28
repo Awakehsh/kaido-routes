@@ -533,9 +533,13 @@ tracked output, and existing evidence directories before a passing receipt can
 exist. Raw `.xcresult`, summary, and build logs remain in ignored private
 storage; the coordinate-free receipt excludes device identifier and name.
 
-This runner executes the current App unit/UI suite only. It does not qualify
-voice naturalness, pronunciation, real released-road content, positioning,
-CarPlay, or background navigation. See
+The physical suite includes one exact released-K7 Core Location lifecycle:
+the user action requests When In Use permission, survives the system-dialog
+scene interruption, reaches foreground `RUNNING`, and explicitly stops. The
+runner requires that named test to pass and hashes the complete test tree. This
+proves physical permission/start/stop wiring only; it does not qualify location
+accuracy, matcher reliability, voice naturalness, pronunciation, current road
+conditions, CarPlay, or background navigation. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
 ## Regenerate the Xcode project

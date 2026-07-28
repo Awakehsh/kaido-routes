@@ -21,8 +21,12 @@ EXPECTED_PLATFORM = "com.apple.platform.iphoneos"
 EXPECTED_SUMMARY_PLATFORM = "iOS"
 EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
-RECEIPT_SCHEMA_VERSION = "1.0"
+RECEIPT_SCHEMA_VERSION = "1.1"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
+REQUIRED_FOREGROUND_LOCATION_TEST = (
+    "KaidoProductJourneyUITests/"
+    "testK7ForegroundLocationStartsAndStopsThroughCoreLocation()"
+)
 SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 SAFE_TEAM_PATTERN = re.compile(r"^[A-Z0-9]{5,20}$")
 
@@ -383,6 +387,32 @@ def validate_xcresult_summary(
     }
 
 
+def validate_required_foreground_location_test(payload: Any) -> str:
+    matches: list[dict[str, Any]] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            if value.get("nodeIdentifier") == REQUIRED_FOREGROUND_LOCATION_TEST:
+                matches.append(value)
+            for nested in value.values():
+                visit(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                visit(nested)
+
+    visit(payload)
+    if len(matches) != 1:
+        raise DeviceQualificationError(
+            "xcresult must contain exactly one required foreground-location "
+            "lifecycle test"
+        )
+    if matches[0].get("result") != "Passed":
+        raise DeviceQualificationError(
+            "required foreground-location lifecycle test did not pass"
+        )
+    return REQUIRED_FOREGROUND_LOCATION_TEST
+
+
 def build_receipt(
     source_commit: str,
     device_configuration_id: str,
@@ -390,6 +420,7 @@ def build_receipt(
     counts: dict[str, Any],
     xcresult_sha256: str,
     summary_sha256: str,
+    tests_sha256: str,
     log_sha256: str,
 ) -> dict[str, Any]:
     return {
@@ -413,6 +444,7 @@ def build_receipt(
         "evidence": {
             "xcresult_tree_sha256": xcresult_sha256,
             "xcresult_summary_sha256": summary_sha256,
+            "xcresult_tests_sha256": tests_sha256,
             "xcodebuild_log_sha256": log_sha256,
         },
         "privacy_contract": {
@@ -425,7 +457,9 @@ def build_receipt(
         },
         "authority": {
             "app_physical_test_baseline": True,
+            "foreground_location_start_stop_smoke": True,
             "road_release_authority": False,
+            "location_accuracy_qualified": False,
             "acoustic_quality_qualified": False,
             "pronunciation_qualified": False,
             "carplay_qualified": False,
@@ -586,6 +620,23 @@ def main() -> int:
         summary_data = encoded_json(summary)
         summary_path = output / "xcresult-summary.private.json"
         write_bytes(summary_path, summary_data)
+        tests = run_json_command(
+            [
+                "xcrun",
+                "xcresulttool",
+                "get",
+                "test-results",
+                "tests",
+                "--path",
+                str(result_bundle),
+                "--format",
+                "json",
+            ],
+            "xcresult tests",
+        )
+        validate_required_foreground_location_test(tests)
+        tests_data = encoded_json(tests)
+        write_bytes(output / "xcresult-tests.private.json", tests_data)
         receipt = build_receipt(
             source_commit=source_commit,
             device_configuration_id=configuration_id,
@@ -593,6 +644,7 @@ def main() -> int:
             counts=counts,
             xcresult_sha256=hash_directory(result_bundle),
             summary_sha256=hashlib.sha256(summary_data).hexdigest(),
+            tests_sha256=hashlib.sha256(tests_data).hexdigest(),
             log_sha256=hash_file(log_path),
         )
         receipt_data = encoded_json(receipt)

@@ -225,6 +225,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
   private let source: (any ForegroundNavigationLocationSource)?
   private var scenePhase: ProductNavigationRuntimeScenePhase = .active
   private var startRequested = false
+  private var pendingAuthorizationStart = false
   private var pendingBatches: [LocationBatch] = []
   private var drainTask: Task<Void, Never>?
   private var stateOperationID = 0
@@ -335,6 +336,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
     startRequested = true
     switch source.authorizationStatus {
     case .notDetermined:
+      pendingAuthorizationStart = true
       state = .awaitingAuthorization
       source.requestWhenInUseAuthorization()
     case .authorizedAlways, .authorizedWhenInUse:
@@ -366,6 +368,30 @@ final class ForegroundNavigationLocationController: ObservableObject {
     case .blocked(_, let reason):
       state = .releaseBlocked(reason)
     case .releasedProduct:
+      if pendingAuthorizationStart {
+        switch phase {
+        case .active:
+          switch source?.authorizationStatus {
+          case .authorizedAlways, .authorizedWhenInUse:
+            pendingAuthorizationStart = false
+            beginUpdates()
+          case .denied, .restricted:
+            pendingAuthorizationStart = false
+            startRequested = false
+            state = .permissionDenied
+          case .notDetermined:
+            state = .awaitingAuthorization
+          case nil:
+            failAndStop("LOCATION_SOURCE_MISSING")
+          @unknown default:
+            failAndStop("UNKNOWN_AUTHORIZATION_STATUS")
+          }
+        case .inactive, .background:
+          source?.stopUpdatingLocation()
+          state = .sceneInactive
+        }
+        return
+      }
       await quiesceLocationSource()
       guard operationID == stateOperationID else { return }
       switch phase {
@@ -395,6 +421,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
 
   private func quiesceLocationSource() async {
     startRequested = false
+    pendingAuthorizationStart = false
     source?.stopUpdatingLocation()
     pendingBatches.removeAll(keepingCapacity: true)
     let task = drainTask
@@ -455,6 +482,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
   private func failAndStop(_ code: String) {
     stateOperationID += 1
     startRequested = false
+    pendingAuthorizationStart = false
     source?.stopUpdatingLocation()
     pendingBatches.removeAll(keepingCapacity: true)
     drainTask?.cancel()
@@ -492,6 +520,11 @@ extension ForegroundNavigationLocationController:
   ) {
     switch source.authorizationStatus {
     case .authorizedAlways, .authorizedWhenInUse:
+      if pendingAuthorizationStart, scenePhase != .active {
+        state = .sceneInactive
+        return
+      }
+      pendingAuthorizationStart = false
       if startRequested {
         beginUpdates()
       } else if state == .permissionDenied, scenePhase == .active {
@@ -500,6 +533,7 @@ extension ForegroundNavigationLocationController:
     case .denied, .restricted:
       stateOperationID += 1
       startRequested = false
+      pendingAuthorizationStart = false
       source.stopUpdatingLocation()
       pendingBatches.removeAll(keepingCapacity: true)
       drainTask?.cancel()

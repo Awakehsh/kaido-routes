@@ -71,6 +71,26 @@ def passed_summary() -> dict:
     }
 
 
+def passed_tests() -> dict:
+    return {
+        "testNodes": [
+            {
+                "children": [
+                    {
+                        "nodeIdentifier": (
+                            "KaidoProductJourneyUITests/"
+                            "testK7ForegroundLocationStartsAndStopsThrough"
+                            "CoreLocation()"
+                        ),
+                        "nodeType": "Test Case",
+                        "result": "Passed",
+                    }
+                ]
+            }
+        ]
+    }
+
+
 class RunIOSDeviceQualificationTests(unittest.TestCase):
     def test_exact_online_physical_iphone_is_selected(self) -> None:
         device = runner.select_physical_ios_device(
@@ -188,7 +208,8 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             counts=counts,
             xcresult_sha256="b" * 64,
             summary_sha256="c" * 64,
-            log_sha256="d" * 64,
+            tests_sha256="d" * 64,
+            log_sha256="e" * 64,
         )
         encoded = json.dumps(receipt, sort_keys=True)
 
@@ -199,9 +220,48 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         self.assertTrue(receipt["device_scope"]["physical_device"])
         self.assertFalse(receipt["device_scope"]["simulator"])
         self.assertTrue(receipt["authority"]["app_physical_test_baseline"])
+        self.assertTrue(
+            receipt["authority"]["foreground_location_start_stop_smoke"]
+        )
         self.assertFalse(receipt["authority"]["road_release_authority"])
+        self.assertFalse(receipt["authority"]["location_accuracy_qualified"])
         self.assertFalse(receipt["authority"]["acoustic_quality_qualified"])
         self.assertFalse(receipt["authority"]["carplay_qualified"])
+        self.assertEqual(
+            receipt["evidence"]["xcresult_tests_sha256"],
+            "d" * 64,
+        )
+
+    def test_required_foreground_location_test_must_pass_exactly_once(
+        self,
+    ) -> None:
+        self.assertEqual(
+            runner.validate_required_foreground_location_test(passed_tests()),
+            runner.REQUIRED_FOREGROUND_LOCATION_TEST,
+        )
+
+        missing = {"testNodes": []}
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "exactly one required foreground-location",
+        ):
+            runner.validate_required_foreground_location_test(missing)
+
+        failed = passed_tests()
+        failed["testNodes"][0]["children"][0]["result"] = "Failed"
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "did not pass",
+        ):
+            runner.validate_required_foreground_location_test(failed)
+
+        duplicate = passed_tests()
+        duplicate["testNodes"].append(passed_tests()["testNodes"][0])
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "exactly one required foreground-location",
+        ):
+            runner.validate_required_foreground_location_test(duplicate)
 
     def test_xcresult_rejects_simulator_identity_failure_or_skip(self) -> None:
         device = runner.select_physical_ios_device(

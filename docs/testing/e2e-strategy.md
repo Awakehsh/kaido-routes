@@ -578,6 +578,14 @@ requires a separately reviewed official tariff query and neutral passage check
 before it may be displayed as current information; it is no longer a daily
 licence for route execution.
 
+The physical-iPhone App layer separately executes the released-K7 navigation
+path through the real `CLLocationManager`. Its named UI test accepts the system
+When In Use dialog, proves that the explicit start survives the temporary scene
+interruption, observes foreground `RUNNING`, and explicitly stops. The
+coordinate-free device runner requires that exact test to pass and hashes the
+test tree. This is lifecycle wiring evidence only, not coordinate accuracy,
+matcher reliability, or passenger-safe field evidence.
+
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject
 pending conclusions, changed audio hashes, rejected pronunciation, and invalid

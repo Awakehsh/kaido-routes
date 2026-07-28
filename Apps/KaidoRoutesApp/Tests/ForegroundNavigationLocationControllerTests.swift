@@ -163,6 +163,40 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   }
 
   @MainActor
+  func testAuthorizationPromptRoundTripPreservesOneExplicitStart() async throws {
+    let authority = try makeReleasedAuthority()
+    let identity = authority.runtimeIdentity
+    let consumer = RecordingLocationConsumer(identity: identity)
+    let source = FakeForegroundNavigationLocationSource(
+      authorizationStatus: .notDetermined
+    )
+    let controller = try ForegroundNavigationLocationController(
+      authority: .releasedProduct(authority),
+      consumer: consumer,
+      source: source
+    )
+
+    controller.start()
+    XCTAssertEqual(controller.state, .awaitingAuthorization)
+
+    await controller.handleScenePhase(.inactive)
+    XCTAssertEqual(controller.state, .sceneInactive)
+    XCTAssertEqual(source.startCount, 0)
+
+    source.deliverAuthorization(.authorizedWhenInUse)
+    XCTAssertEqual(controller.state, .sceneInactive)
+    XCTAssertEqual(source.startCount, 0)
+
+    await controller.handleScenePhase(.active)
+    XCTAssertEqual(controller.state, .running)
+    XCTAssertEqual(source.startCount, 1)
+
+    await controller.stop()
+    XCTAssertEqual(controller.state, .stopped)
+    XCTAssertEqual(source.stopCount, 2)
+  }
+
+  @MainActor
   func testSceneDepartureWaitsForTheCurrentActorCallbackBeforeCheckpointing()
     async throws
   {

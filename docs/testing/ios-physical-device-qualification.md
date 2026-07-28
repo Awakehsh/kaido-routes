@@ -71,8 +71,11 @@ The runner:
 4. requires exactly one physical-iOS result configuration;
 5. requires every reported test to pass with zero failures, skips, or expected
    failures;
-6. hashes the complete `.xcresult` tree, canonical summary, and build log; and
-7. writes `qualification-run.json` only after the complete gate passes.
+6. requires the released-K7 Core Location permission/start/stop lifecycle UI
+   test to appear exactly once and pass;
+7. hashes the complete `.xcresult` tree, canonical summary, canonical test
+   tree, and build log; and
+8. writes `qualification-run.json` only after the complete gate passes.
 
 A failed build retains its private log/result bundle for diagnosis but creates
 no passing receipt. Existing output is never overwritten.
@@ -84,13 +87,14 @@ no passing receipt. Existing output is never overwritten.
 - source commit, scheme, bundle identifier, and clean-worktree fact;
 - opaque configuration ID, iPhone model, iOS version, and physical-device fact;
 - exact total/pass/fail/skip counts and UTC interval;
-- SHA-256 values for the private result tree, summary, and log; and
+- SHA-256 values for the private result tree, summary, test tree, and log; and
 - an explicit authority matrix.
 
 It excludes the device identifier, device name, coordinates, raw location
-traces, raw audio, and filesystem paths. Its authority matrix deliberately
-keeps road release, acoustic quality, pronunciation, CarPlay, and background
-navigation false.
+traces, raw audio, and filesystem paths. Its authority matrix records the exact
+foreground-location start/stop smoke as true while deliberately keeping
+location accuracy, road release, acoustic quality, pronunciation, CarPlay, and
+background navigation false.
 
 ## Remaining device gates
 
@@ -102,8 +106,8 @@ dated evidence for:
 - Japanese, Simplified Chinese, and English pronunciation;
 - VoiceOver focus order, Switch Control, and the supported Dynamic Type/device
   matrix;
-- foreground location start/stop, permission downgrade, interruption, output
-  route, and no-replay behavior;
+- foreground permission downgrade, interruption, matcher behavior under real
+  movement, audio output route, and no-replay behavior;
 - the held-out matcher/location field plan; and
 - any later approved CarPlay configuration.
 

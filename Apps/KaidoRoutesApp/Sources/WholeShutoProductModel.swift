@@ -1,6 +1,8 @@
 import Combine
 import CoreLocation
 import Foundation
+import KaidoDomain
+import KaidoNavigation
 import KaidoRouting
 @preconcurrency import MapKit
 
@@ -53,12 +55,14 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
   case surfacePreview = "SURFACE_PREVIEW"
   case boundaryTransition = "BOUNDARY_TRANSITION"
   case networkPreview = "NETWORK_PREVIEW"
+  case networkDegraded = "NETWORK_DEGRADED"
   case tunnelEstimated = "TUNNEL_ESTIMATED"
+  case routeInterrupted = "ROUTE_INTERRUPTED"
   case completed = "COMPLETED"
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.0"
+  static let currentSchemaVersion = "1.1"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -71,6 +75,8 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let preference: ShutoRoutePreference
   let phase: WholeShutoJourneyPhase
   let progressFraction: Double
+  let runtimeOccurrenceID: String?
+  let runtimeFractionAlongOccurrence: Double?
   let mapMode: WholeShutoMapMode
   let accessRoute: WholeShutoSurfaceRoute?
   let egressRoute: WholeShutoSurfaceRoute?
@@ -181,16 +187,23 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var failureCode: String?
   @Published private(set) var isPlanning = false
   @Published private(set) var restoredFromCheckpoint = false
+  @Published private(set) var matcherConfidence: MatcherConfidence?
+  @Published private(set) var runtimeOccurrenceID: String?
+  @Published private(set) var runtimeJourneyPhase: JourneyPhase?
+  @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
 
   let database: ShutoNetworkDatabase
   let planner: ShutoRoutePlanner
 
   private let locationProvider: any C2NavigationCurrentLocationProviding
   private let placeResolver: any C2NavigationPlaceResolving
-  private let checkpointStore:
-    (any WholeShutoJourneyCheckpointStoring)?
+  private let checkpointStore: (any WholeShutoJourneyCheckpointStoring)?
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
+  private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
+  private var driveSimulator: NavigationDriveSimulator?
+  private var runtimeCoordinate: ShutoCoordinate?
+  private var runtimeFractionAlongOccurrence: Double?
 
   init(
     database: ShutoNetworkDatabase? = nil,
@@ -345,6 +358,12 @@ final class WholeShutoProductModel: ObservableObject {
     case .entryTransition, .exitTransition:
       return .boundaryTransition
     case .expressway:
+      if runtimeJourneyPhase == .routeRecovery {
+        return .routeInterrupted
+      }
+      guard matcherConfidence == .high, runtimeOccurrenceID != nil else {
+        return .networkDegraded
+      }
       guard let edge = activeExpresswayEdge,
         let way = waysByID[edge.wayID]
       else {
@@ -375,10 +394,11 @@ final class WholeShutoProductModel: ObservableObject {
     case .entryTransition:
       return selectedRoute?.coordinates.first
     case .expressway:
-      return interpolatedCoordinate(
-        in: selectedRoute?.coordinates ?? [],
-        fraction: progressFraction
-      )
+      return runtimeCoordinate
+        ?? interpolatedCoordinate(
+          in: selectedRoute?.coordinates ?? [],
+          fraction: progressFraction
+        )
     case .exitTransition:
       return selectedRoute?.coordinates.last
     case .surfaceEgress:
@@ -503,10 +523,35 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func startNavigationSimulation() {
-    guard phase == .review, selectedRoute != nil else { return }
+    guard phase == .review, let route = selectedRoute else { return }
+    do {
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      runtimeAssets = assets
+      driveSimulator = try NavigationDriveSimulator(
+        route: route,
+        runtimeAssets: assets,
+        configuration: NavigationDriveSimulationConfiguration(
+          sampleFractions: [0.15, 0.5, 0.85],
+          horizontalAccuracyMeters: 2
+        ),
+        speed: .twentyTimes
+      )
+    } catch {
+      failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
+      return
+    }
     phase = accessRoute == nil ? .entryTransition : .surfaceAccess
     progressFraction = 0
     isPlaying = true
+    matcherConfidence = nil
+    runtimeOccurrenceID = nil
+    runtimeJourneyPhase = nil
+    runtimeRecoveryStatus = nil
+    runtimeCoordinate = nil
+    runtimeFractionAlongOccurrence = nil
     restoredFromCheckpoint = false
     persistCheckpoint()
     startPlaybackLoop()
@@ -518,9 +563,14 @@ final class WholeShutoProductModel: ObservableObject {
     }
     isPlaying.toggle()
     if isPlaying {
-      restoredFromCheckpoint = false
-      persistCheckpoint()
-      startPlaybackLoop()
+      Task {
+        guard await restoreObservationReplayIfNeeded() else {
+          return
+        }
+        restoredFromCheckpoint = false
+        persistCheckpoint()
+        startPlaybackLoop()
+      }
     } else {
       playbackTask?.cancel()
       playbackTask = nil
@@ -531,7 +581,25 @@ final class WholeShutoProductModel: ObservableObject {
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
+    if phase == .expressway {
+      Task {
+        await stepObservationReplay()
+      }
+      return
+    }
     tick()
+  }
+
+  func advanceSimulationForTesting() async {
+    guard phase != .planning, phase != .review, phase != .completed else {
+      return
+    }
+    if phase == .expressway {
+      guard await restoreObservationReplayIfNeeded() else { return }
+      await stepObservationReplay()
+    } else {
+      tick()
+    }
   }
 
   func reset() {
@@ -548,12 +616,24 @@ final class WholeShutoProductModel: ObservableObject {
     isPlaying = false
     failureCode = nil
     mapMode = .network
+    matcherConfidence = nil
+    runtimeOccurrenceID = nil
+    runtimeJourneyPhase = nil
+    runtimeRecoveryStatus = nil
+    runtimeCoordinate = nil
+    runtimeFractionAlongOccurrence = nil
+    runtimeAssets = nil
+    driveSimulator = nil
     restoredFromCheckpoint = false
     try? checkpointStore?.remove()
   }
 
   private func startPlaybackLoop() {
     playbackTask?.cancel()
+    if phase == .expressway {
+      startObservationReplayLoop()
+      return
+    }
     playbackTask = Task { [weak self] in
       while !Task.isCancelled {
         try? await Task.sleep(for: .milliseconds(420))
@@ -571,7 +651,7 @@ final class WholeShutoProductModel: ObservableObject {
     case .entryTransition, .exitTransition:
       increment = 0.25
     case .expressway:
-      increment = 0.0125
+      return
     case .planning, .review, .completed:
       return
     }
@@ -602,6 +682,119 @@ final class WholeShutoProductModel: ObservableObject {
       try? checkpointStore?.remove()
     } else {
       persistCheckpoint()
+      if phase == .expressway, isPlaying {
+        startObservationReplayLoop()
+      }
+    }
+  }
+
+  private func startObservationReplayLoop() {
+    guard phase == .expressway, let driveSimulator else {
+      isPlaying = false
+      failureCode = "WHOLE_SHUTO_RUNTIME_MISSING"
+      return
+    }
+    playbackTask?.cancel()
+    playbackTask = Task { [weak self] in
+      _ = await driveSimulator.play()
+      while !Task.isCancelled {
+        let delay =
+          await driveSimulator.delayBeforeNextEventMilliseconds() ?? 0
+        if delay > 0 {
+          try? await Task.sleep(for: .milliseconds(delay))
+        }
+        guard !Task.isCancelled else { return }
+        do {
+          guard
+            let result = try await driveSimulator.advanceIfPlaying()
+          else {
+            break
+          }
+          self?.applyObservationReplayResult(result)
+          if result.status.state == .completed {
+            self?.completeExpresswayObservationReplay()
+            return
+          }
+        } catch {
+          self?.isPlaying = false
+          self?.failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+          return
+        }
+      }
+    }
+  }
+
+  private func stepObservationReplay() async {
+    guard phase == .expressway, let driveSimulator else {
+      failureCode = "WHOLE_SHUTO_RUNTIME_MISSING"
+      return
+    }
+    do {
+      guard let result = try await driveSimulator.step() else {
+        completeExpresswayObservationReplay()
+        return
+      }
+      applyObservationReplayResult(result)
+      if result.status.state == .completed {
+        completeExpresswayObservationReplay()
+      }
+    } catch {
+      isPlaying = false
+      failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+    }
+  }
+
+  private func applyObservationReplayResult(
+    _ result: NavigationDriveSimulationStepResult
+  ) {
+    guard let update = result.navigationUpdate else { return }
+    matcherConfidence = update.matcherEstimate.confidence
+    runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
+    runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
+    if update.navigationSnapshot.journeyPhase == .routeRecovery {
+      isPlaying = false
+      playbackTask?.cancel()
+      return
+    }
+    guard
+      let progress = runtimeAssets?.project(
+        update.matcherEstimate
+      ),
+      progress.routeProgressFraction >= progressFraction
+    else {
+      return
+    }
+    progressFraction = progress.routeProgressFraction
+    runtimeOccurrenceID = progress.occurrenceID
+    runtimeFractionAlongOccurrence =
+      progress.fractionAlongOccurrence
+    runtimeCoordinate = progress.coordinate
+    persistCheckpoint()
+  }
+
+  private func completeExpresswayObservationReplay() {
+    guard phase == .expressway else { return }
+    guard
+      matcherConfidence == .high,
+      runtimeJourneyPhase == .strictRoute,
+      runtimeOccurrenceID
+        == selectedRoute?.routePlan.occurrences.last?.id
+    else {
+      isPlaying = false
+      failureCode = "WHOLE_SHUTO_EXIT_HANDOFF_UNCONFIRMED"
+      return
+    }
+    progressFraction = 0
+    phase = .exitTransition
+    matcherConfidence = nil
+    runtimeJourneyPhase = nil
+    runtimeRecoveryStatus = nil
+    runtimeOccurrenceID = nil
+    runtimeFractionAlongOccurrence = nil
+    runtimeCoordinate = selectedRoute?.coordinates.last
+    persistCheckpoint()
+    if isPlaying {
+      startPlaybackLoop()
     }
   }
 
@@ -609,7 +802,16 @@ final class WholeShutoProductModel: ObservableObject {
     guard let route = selectedRoute, !route.edges.isEmpty else {
       return nil
     }
-    let target = route.distanceMeters
+    if let runtimeOccurrenceID,
+      let occurrence = route.routePlan.occurrence(
+        id: runtimeOccurrenceID
+      ),
+      route.edges.indices.contains(occurrence.index)
+    {
+      return route.edges[occurrence.index]
+    }
+    let target =
+      route.distanceMeters
       * min(1, max(0, progressFraction))
     var traversed = 0.0
     for edge in route.edges {
@@ -661,6 +863,58 @@ final class WholeShutoProductModel: ObservableObject {
     mapMode = checkpoint.mapMode
     isPlaying = false
     restoredFromCheckpoint = true
+    if checkpoint.phase == .expressway {
+      do {
+        let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+          database: database,
+          route: route
+        )
+        runtimeAssets = assets
+        driveSimulator = try NavigationDriveSimulator(
+          route: route,
+          runtimeAssets: assets,
+          configuration: NavigationDriveSimulationConfiguration(
+            sampleFractions: [0.15, 0.5, 0.85],
+            horizontalAccuracyMeters: 2
+          ),
+          speed: .twentyTimes
+        )
+        switch (
+          checkpoint.runtimeOccurrenceID,
+          checkpoint.runtimeFractionAlongOccurrence
+        ) {
+        case (nil, nil) where progressFraction == 0:
+          break
+        case (.some(let occurrenceID), .some(let fraction)):
+          guard
+            let occurrence = route.routePlan.occurrence(
+              id: occurrenceID
+            ),
+            route.edges.indices.contains(occurrence.index),
+            fraction.isFinite,
+            (0...1).contains(fraction)
+          else {
+            throw WholeShutoProductError.noExpresswayRoute
+          }
+          runtimeOccurrenceID = occurrenceID
+          runtimeFractionAlongOccurrence = fraction
+          let start = route.coordinates[occurrence.index]
+          let end = route.coordinates[occurrence.index + 1]
+          runtimeCoordinate = ShutoCoordinate(
+            latitude: start.latitude
+              + (end.latitude - start.latitude) * fraction,
+            longitude: start.longitude
+              + (end.longitude - start.longitude) * fraction
+          )
+        default:
+          throw WholeShutoProductError.noExpresswayRoute
+        }
+      } catch {
+        runtimeAssets = nil
+        driveSimulator = nil
+        failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
+      }
+    }
   }
 
   private func persistCheckpoint() {
@@ -681,11 +935,32 @@ final class WholeShutoProductModel: ObservableObject {
       preference: preference,
       phase: phase,
       progressFraction: progressFraction,
+      runtimeOccurrenceID: runtimeOccurrenceID,
+      runtimeFractionAlongOccurrence:
+        runtimeFractionAlongOccurrence,
       mapMode: mapMode,
       accessRoute: accessRoute,
       egressRoute: egressRoute
     )
     try? checkpointStore?.save(checkpoint)
+  }
+
+  private func restoreObservationReplayIfNeeded() async -> Bool {
+    guard phase == .expressway, restoredFromCheckpoint,
+      let runtimeOccurrenceID, let driveSimulator
+    else {
+      return true
+    }
+    do {
+      _ = try await driveSimulator.restore(
+        at: runtimeOccurrenceID
+      )
+      return true
+    } catch {
+      isPlaying = false
+      failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
+      return false
+    }
   }
 
   private func resolveOrigin() async throws -> WholeShutoPlace {

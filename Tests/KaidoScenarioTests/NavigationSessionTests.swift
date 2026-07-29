@@ -1,5 +1,6 @@
 import KaidoDomain
 import KaidoNavigation
+import KaidoRouting
 import Testing
 
 @Test("NavigationSession serializes matcher progress through guidance emission")
@@ -80,6 +81,160 @@ func navigationSessionRestartDoesNotRewind() async throws {
   #expect(carPlay.presentationSurface == .carPlay)
   #expect(phone.presentationSurface == .iPhone)
   #expect(phone.currentOccurrenceID == "test.occurrence.movement")
+}
+
+@Test("A HIGH off-plan matcher commit activates route-first recovery")
+func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
+  let routePlan = RoutePlan(
+    id: "test.plan.session-recovery",
+    networkSnapshotID: "test.snapshot.session-recovery",
+    entryFacilityID: "test.entrance",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(
+        id: "test.occurrence.approach",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.approach"
+      ),
+      RouteOccurrence(
+        id: "test.occurrence.planned-movement",
+        index: 1,
+        kind: .junctionMovement,
+        entityID: "test.edge.planned-movement"
+      ),
+      RouteOccurrence(
+        id: "test.occurrence.rejoin",
+        index: 2,
+        kind: .edge,
+        entityID: "test.edge.rejoin"
+      ),
+    ]
+  )
+  let corridor = RouteMatcherCorridor(
+    id: "test.corridor.session-recovery",
+    networkSnapshotID: routePlan.networkSnapshotID,
+    routePlanID: routePlan.id,
+    edges: [
+      RouteMatcherDirectedEdge(
+        id: "test.edge.approach",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.76),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.761),
+        ],
+        successorEdgeIDs: [
+          "test.edge.planned-movement",
+          "test.edge.wrong-branch",
+        ]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.planned-movement",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.761),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.762),
+        ],
+        successorEdgeIDs: ["test.edge.rejoin"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.rejoin",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.762),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.763),
+        ]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.wrong-branch",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.761),
+          MatcherCoordinate(latitude: 35.681, longitude: 139.761),
+        ]
+      ),
+    ],
+    occurrences: [
+      RouteMatcherOccurrence(
+        id: "test.occurrence.approach",
+        index: 0,
+        directedEdgeID: "test.edge.approach"
+      ),
+      RouteMatcherOccurrence(
+        id: "test.occurrence.planned-movement",
+        index: 1,
+        directedEdgeID: "test.edge.planned-movement"
+      ),
+      RouteMatcherOccurrence(
+        id: "test.occurrence.rejoin",
+        index: 2,
+        directedEdgeID: "test.edge.rejoin"
+      ),
+    ]
+  )
+  let session = try NavigationSession(
+    navigationConfiguration: NavigationConfiguration(
+      routePlan: routePlan,
+      recoveryCandidates: [
+        RecoveryCandidate(
+          targetOccurrenceID: "test.occurrence.rejoin",
+          recoveryOccurrenceIDs: ["test.edge.wrong-branch"],
+          isReleased: true,
+          staysInAllowedTollDomain: true
+        )
+      ]
+    ),
+    matcherCorridor: corridor,
+    decisionZones: [],
+    initialNavigationSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      activeRoutePlanID: routePlan.id,
+      currentOccurrenceID: "test.occurrence.approach",
+      locationConfidence: .high
+    ),
+    initialMatcherOccurrenceID: "test.occurrence.approach"
+  )
+  _ = await session.start()
+  _ = try await session.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.approach",
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.68,
+        longitude: 139.7605
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 90,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  let deviation = try await session.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.wrong-branch",
+      observedAtMilliseconds: 2_000,
+      receivedAtMilliseconds: 2_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.6808,
+        longitude: 139.761
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 0,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+
+  #expect(deviation.matcherEstimate.confidence == .high)
+  #expect(deviation.matcherEstimate.directedEdgeID == "test.edge.wrong-branch")
+  #expect(deviation.matcherEstimate.occurrenceID == nil)
+  #expect(deviation.navigationSnapshot.journeyPhase == .routeRecovery)
+  #expect(deviation.navigationSnapshot.currentOccurrenceID == "test.occurrence.approach")
+  #expect(deviation.navigationSnapshot.activeRoutePlanID == routePlan.id)
+  #expect(deviation.navigationSnapshot.recovery.status == .active)
+  #expect(
+    deviation.navigationSnapshot.recovery.chosenRejoinOccurrenceID
+      == "test.occurrence.rejoin"
+  )
+  #expect(deviation.navigationSnapshot.recovery.destinationRerouteUsed == false)
 }
 
 struct NavigationSessionFixture {

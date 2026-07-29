@@ -210,6 +210,9 @@ public actor NavigationSession {
       || engine.snapshot.journeyPhase == .routeRecovery
       || engine.snapshot.journeyPhase == .exitTransition
       || engine.snapshot.journeyPhase == .surfaceEgress
+    let detectsOffPlanDeviation =
+      engine.snapshot.journeyPhase == .strictRoute
+      || engine.snapshot.journeyPhase == .routeRecovery
 
     if requiresRestorationReacquisition {
       engine.observeLocation(
@@ -235,6 +238,19 @@ public actor NavigationSession {
         admitsOccurrenceProgress: admitsOccurrenceProgress
       )
     )
+    if detectsOffPlanDeviation,
+      estimate.confidence == .high,
+      estimate.occurrenceID == nil,
+      let directedEdgeID = estimate.directedEdgeID,
+      estimate.candidateEdgeIDs == [directedEdgeID]
+    {
+      engine.observeBranch(
+        BranchObservation(
+          observedMovementID: directedEdgeID,
+          confidence: .high
+        )
+      )
+    }
 
     guard admitsOccurrenceProgress else {
       return update(

@@ -1,0 +1,442 @@
+import Foundation
+import KaidoDomain
+import KaidoNavigation
+import KaidoRouting
+import Testing
+
+#if canImport(CoreLocation)
+  import CoreLocation
+  import KaidoAppleAdapters
+#endif
+
+@Suite("Whole Shuto observation runtime compiler")
+struct ShutoPlannedRouteRuntimeCompilerTests {
+  @Test("compiler preserves every selected edge occurrence and legal branch")
+  func compilesExactRouteMatcherCorridor() throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let route = try planner.plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    #expect(assets.routePlan == route.routePlan)
+    #expect(
+      assets.matcherCorridor.occurrences.map(\.id)
+        == route.routePlan.occurrences.map(\.id)
+    )
+    #expect(
+      assets.matcherCorridor.occurrences.map(\.directedEdgeID)
+        == route.edges.map(\.edgeID)
+    )
+    #expect(assets.matcherCorridor.edges.count > route.edges.count)
+    #expect(assets.matcherCorridor.validationIssues.isEmpty)
+
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: assets.matcherCorridor.edges.map {
+        ($0.id, $0)
+      }
+    )
+    for (current, next) in zip(route.edges, route.edges.dropFirst()) {
+      #expect(
+        corridorEdges[current.edgeID]?.successorEdgeIDs
+          .contains(next.edgeID) == true
+      )
+    }
+  }
+
+  @Test("only exact HIGH occurrence evidence projects route progress")
+  func projectsOnlyAdmittedRouteProgress() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let target = route.routePlan.occurrences[2]
+    let edge = route.edges[2]
+    let exact = MatcherEstimate(
+      observationID: "test.exact",
+      estimatedAtMilliseconds: 1_000,
+      directedEdgeID: edge.edgeID,
+      occurrenceID: target.id,
+      candidateEdgeIDs: [edge.edgeID],
+      confidence: .high,
+      distanceMeters: 1,
+      fractionAlongEdge: 0.5
+    )
+
+    let progress = try #require(assets.project(exact))
+    #expect(progress.occurrenceID == target.id)
+    #expect(progress.occurrenceIndex == target.index)
+    #expect(progress.fractionAlongOccurrence == 0.5)
+    #expect(progress.routeProgressFraction > 0)
+    #expect(progress.routeProgressFraction < 1)
+
+    let stale = MatcherEstimate(
+      observationID: "test.stale",
+      estimatedAtMilliseconds: 2_000,
+      directedEdgeID: edge.edgeID,
+      occurrenceID: target.id,
+      candidateEdgeIDs: [edge.edgeID],
+      confidence: .low,
+      distanceMeters: 1,
+      fractionAlongEdge: 0.75
+    )
+    #expect(assets.project(stale) == nil)
+
+    let ambiguous = MatcherEstimate(
+      observationID: "test.ambiguous",
+      estimatedAtMilliseconds: 3_000,
+      directedEdgeID: nil,
+      occurrenceID: target.id,
+      candidateEdgeIDs: [
+        edge.edgeID,
+        assets.matcherCorridor.edges.first {
+          $0.id != edge.edgeID
+        }!.id,
+      ],
+      confidence: .low,
+      distanceMeters: 1,
+      fractionAlongEdge: 0.9
+    )
+    #expect(assets.project(ambiguous) == nil)
+  }
+
+  @Test("compiler rejects route presentation data that differs from the graph")
+  func rejectsDriftedRoutePresentationData() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let drifted = ShutoPlannedRoute(
+      routePlan: route.routePlan,
+      entryFacility: route.entryFacility,
+      exitFacility: route.exitFacility,
+      edges: route.edges,
+      coordinates: route.coordinates,
+      routeIDsInOrder: route.routeIDsInOrder,
+      distanceMeters: route.distanceMeters + 1,
+      preference: route.preference
+    )
+
+    #expect(
+      throws:
+        ShutoPlannedRouteRuntimeCompilationError
+        .routeGeometryMismatch
+    ) {
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: drifted
+      )
+    }
+  }
+
+  @Test("deterministic whole-network observations drive the actor runtime")
+  func drivesActorRuntimeWithGeneratedObservations() async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let simulator = try NavigationDriveSimulator(
+      route: route,
+      runtimeAssets: assets,
+      configuration: NavigationDriveSimulationConfiguration(
+        sampleFractions: [0.2, 0.5, 0.8],
+        horizontalAccuracyMeters: 2
+      )
+    )
+
+    let results = try await simulator.runToEnd()
+    let admittedProgress = results.compactMap {
+      $0.navigationUpdate.flatMap {
+        assets.project($0.matcherEstimate)
+      }
+    }
+
+    #expect(!results.isEmpty)
+    #expect(!admittedProgress.isEmpty)
+    #expect(
+      zip(admittedProgress, admittedProgress.dropFirst()).allSatisfy {
+        $0.routeProgressFraction <= $1.routeProgressFraction
+      }
+    )
+    #expect(admittedProgress.last?.occurrenceIndex == route.edges.count - 1)
+    #expect((admittedProgress.last?.routeProgressFraction ?? 0) > 0.99)
+    #expect(
+      results.last?.navigationSnapshot.currentOccurrenceID
+        == route.routePlan.occurrences.last?.id
+    )
+  }
+
+  @Test("a whole-network off-plan edge cannot mutate the selected RoutePlan")
+  func wholeNetworkOffPlanCommitFailsClosed() async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: assets.matcherCorridor.edges.map {
+        ($0.id, $0)
+      }
+    )
+    let routeEdgeIDs = Set(route.edges.map(\.edgeID))
+    var deviationUpdate: NavigationSessionUpdate?
+    var deviationStartOccurrenceID: String?
+
+    search: for index in route.edges.indices.dropLast() {
+      let current = route.edges[index]
+      guard let matcherEdge = corridorEdges[current.edgeID] else {
+        continue
+      }
+      let alternativeIDs = matcherEdge.successorEdgeIDs
+        .filter { !routeEdgeIDs.contains($0) }
+        .sorted()
+      for alternativeID in alternativeIDs {
+        guard let alternative = corridorEdges[alternativeID] else {
+          continue
+        }
+        let startOccurrenceID = route.routePlan.occurrences[index].id
+        let session = try NavigationSession(
+          navigationConfiguration: NavigationConfiguration(
+            routePlan: route.routePlan
+          ),
+          matcherCorridor: assets.matcherCorridor,
+          decisionZones: [],
+          initialNavigationSnapshot: NavigationSnapshot(
+            journeyPhase: .strictRoute,
+            activeRoutePlanID: route.routePlan.id,
+            currentOccurrenceID: startOccurrenceID,
+            locationConfidence: .high
+          ),
+          initialMatcherOccurrenceID: startOccurrenceID
+        )
+        _ = await session.start()
+        _ = try await session.observe(
+          matcherObservation(
+            id: "test.whole-network.approach",
+            edge: matcherEdge,
+            fraction: 0.75,
+            observedAt: 1_000
+          )
+        )
+        for (sampleIndex, fraction) in [0.45, 0.85].enumerated() {
+          let update = try await session.observe(
+            matcherObservation(
+              id: "test.whole-network.deviation.\(sampleIndex)",
+              edge: alternative,
+              fraction: fraction,
+              observedAt: 2_000 + sampleIndex * 1_000
+            )
+          )
+          if update.matcherEstimate.confidence == .high,
+            update.matcherEstimate.directedEdgeID == alternativeID,
+            update.matcherEstimate.occurrenceID == nil
+          {
+            deviationUpdate = update
+            deviationStartOccurrenceID = startOccurrenceID
+            break search
+          }
+        }
+      }
+    }
+
+    let deviation = try #require(deviationUpdate)
+    #expect(deviation.navigationSnapshot.journeyPhase == .routeRecovery)
+    #expect(deviation.navigationSnapshot.recovery.status == .unavailable)
+    #expect(deviation.navigationSnapshot.recovery.routePlanID == route.routePlan.id)
+    #expect(deviation.navigationSnapshot.recovery.destinationRerouteUsed == false)
+    #expect(deviation.navigationSnapshot.activeRoutePlanID == route.routePlan.id)
+    #expect(
+      deviation.navigationSnapshot.currentOccurrenceID
+        == deviationStartOccurrenceID
+    )
+    #expect(
+      deviation.navigationSnapshot.completedOccurrenceIDs
+        == route.routePlan.occurrences
+        .filter {
+          $0.index
+            < (route.routePlan.occurrence(
+              id: deviationStartOccurrenceID ?? ""
+            )?.index ?? 0)
+        }
+        .map(\.id)
+    )
+  }
+
+  #if canImport(CoreLocation)
+    @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+    @Test("ordered Core Location samples drive exact whole-network progress")
+    func coreLocationTraceDrivesWholeNetworkRuntime() async throws {
+      let database = try loadWholeShutoDatabase()
+      let route = try ShutoRoutePlanner(database: database).plan(
+        entryFacilityID: "shuto.ic.3.shibuya",
+        exitFacilityID: "shuto.ic.k1.minatomirai"
+      )
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      let trace = try NavigationDriveSimulationTraceGenerator.generate(
+        routePlan: route.routePlan,
+        corridor: assets.matcherCorridor,
+        configuration: NavigationDriveSimulationConfiguration(
+          sampleFractions: [0.2, 0.5, 0.8],
+          horizontalAccuracyMeters: 2
+        )
+      )
+      let firstOccurrenceID = try #require(
+        route.routePlan.occurrences.first?.id
+      )
+      let session = try NavigationSession(
+        navigationConfiguration: NavigationConfiguration(
+          routePlan: route.routePlan
+        ),
+        matcherCorridor: assets.matcherCorridor,
+        decisionZones: [],
+        initialNavigationSnapshot: NavigationSnapshot(
+          journeyPhase: .strictRoute,
+          activeRoutePlanID: route.routePlan.id,
+          currentOccurrenceID: firstOccurrenceID,
+          locationConfidence: .low
+        ),
+        initialMatcherOccurrenceID: firstOccurrenceID
+      )
+      var adapter = try CoreLocationObservationAdapter(
+        sessionID: "test.whole-network.core-location",
+        simulatedLocationPolicy: .allowForTesting
+      )
+      _ = await session.start()
+      var admittedProgress: [ShutoRouteRuntimeProgress] = []
+      var acceptedObservationCount = 0
+
+      for event in trace.events {
+        guard case .matcherObservation(let source) = event.action else {
+          continue
+        }
+        let timestamp = Date(
+          timeIntervalSince1970:
+            Double(source.observedAtMilliseconds) / 1_000
+        )
+        let location = CLLocation(
+          coordinate: CLLocationCoordinate2D(
+            latitude: source.coordinate.latitude,
+            longitude: source.coordinate.longitude
+          ),
+          altitude: 0,
+          horizontalAccuracy: source.horizontalAccuracyMeters,
+          verticalAccuracy: -1,
+          course: source.courseDegrees ?? -1,
+          speed: source.speedMetersPerSecond ?? -1,
+          timestamp: timestamp
+        )
+        let receivedAt = Date(
+          timeIntervalSince1970:
+            Double(source.receivedAtMilliseconds) / 1_000
+        )
+        let adapted = adapter.adapt(
+          [location],
+          receivedAt: receivedAt
+        )
+        guard case .accepted(let envelope) = adapted[0] else {
+          Issue.record("Expected deterministic Core Location input to adapt")
+          continue
+        }
+        acceptedObservationCount += 1
+        let update = try await session.observe(envelope.observation)
+        if let progress = assets.project(update.matcherEstimate) {
+          admittedProgress.append(progress)
+        }
+      }
+
+      #expect(acceptedObservationCount == trace.events.count)
+      #expect(!admittedProgress.isEmpty)
+      #expect(
+        zip(admittedProgress, admittedProgress.dropFirst()).allSatisfy {
+          $0.routeProgressFraction <= $1.routeProgressFraction
+        }
+      )
+      #expect(
+        admittedProgress.last?.occurrenceID
+          == route.routePlan.occurrences.last?.id
+      )
+      #expect(
+        admittedProgress.last?.directedEdgeID
+          == route.edges.last?.edgeID
+      )
+      let snapshot = await session.snapshot
+      #expect(
+        snapshot.currentOccurrenceID
+          == route.routePlan.occurrences.last?.id
+      )
+      #expect(snapshot.activeRoutePlanID == route.routePlan.id)
+    }
+  #endif
+}
+
+private func loadWholeShutoDatabase() throws -> ShutoNetworkDatabase {
+  let repositoryRoot = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  let url =
+    repositoryRoot
+    .appendingPathComponent("data")
+    .appendingPathComponent("route-atlas")
+    .appendingPathComponent("osm-derived")
+    .appendingPathComponent("shuto-whole-network-20260728.json")
+  return try JSONDecoder().decode(
+    ShutoNetworkDatabase.self,
+    from: Data(contentsOf: url)
+  )
+}
+
+private func matcherObservation(
+  id: String,
+  edge: RouteMatcherDirectedEdge,
+  fraction: Double,
+  observedAt: Int
+) -> RouteMatcherObservation {
+  let start = edge.coordinates[0]
+  let end = edge.coordinates[edge.coordinates.count - 1]
+  let latitude =
+    start.latitude + (end.latitude - start.latitude) * fraction
+  let longitude =
+    start.longitude + (end.longitude - start.longitude) * fraction
+  let latitudeDelta = end.latitude - start.latitude
+  let longitudeDelta = end.longitude - start.longitude
+  let course =
+    atan2(longitudeDelta, latitudeDelta) * 180 / .pi
+  return RouteMatcherObservation(
+    id: id,
+    observedAtMilliseconds: observedAt,
+    receivedAtMilliseconds: observedAt,
+    coordinate: MatcherCoordinate(
+      latitude: latitude,
+      longitude: longitude
+    ),
+    horizontalAccuracyMeters: 1,
+    courseDegrees: course >= 0 ? course : course + 360,
+    speedMetersPerSecond: 15,
+    source: .phone
+  )
+}

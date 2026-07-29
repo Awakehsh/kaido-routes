@@ -6,14 +6,27 @@ network containing all 26 official route entries, 151 IC names, 39 JCTs, and
 19 PAs. It can rank directional entrances and exits for arbitrary coordinates,
 compile a Kaido-owned Shuto `RoutePlan`, render geographic and whole-network
 maps, and simulate surface access, entry, junction guidance, exit, and egress.
+The expressway simulation no longer advances route progress from a wall-clock
+timer. `ShutoPlannedRouteRuntimeCompiler` validates the exact selected
+facilities, graph edges, occurrence order, geometry, distance, route shields,
+and network snapshot, then compiles a route-aware matcher corridor containing
+the immutable route plus adjacent deviation edges. Generated observations and
+deterministically injected `CLLocation` samples both run through the existing
+matcher and actor-owned `NavigationSession`; only a unique HIGH occurrence
+commit projects progress. A unique HIGH off-plan edge enters route-first
+recovery, while the candidate whole-network dataset supplies no released
+rejoin and therefore fails closed as `NO_RELEASED_REJOIN`.
 An active simulation checkpoint restores only against the same network
-snapshot and exact entry/exit pair, paused at its saved phase and progress.
+snapshot and exact entry/exit pair, paused at its saved phase and, once
+admitted, exact occurrence and fraction. Matcher posterior is not restored.
 Each JCT retains the current operator detail-image URL and SHA-256 for audit;
 the generated inset remains route-level until a separately verified
 movement-specific lane-side definition exists.
 The previous C2 simulation and K7 release remain bounded regression fixtures;
 they are not product coverage limits. The app still has no qualified
-whole-network live matcher, background navigation service, or CarPlay scene.
+whole-network released-road live-input authority, attached continuous location
+manager, background navigation service, or CarPlay scene. The observation
+replay remains visibly labeled as a simulation.
 The current bake-off
 selects Valhalla as the leading shared implementation behind the bounded
 surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
@@ -1599,6 +1612,13 @@ The C2 simulation checkpoint is deliberately separate from this released
 live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
+
+The whole-Shuto simulation uses a separate schema-1.1 app checkpoint. It binds
+the same candidate network snapshot, directional entry and exit, selected
+preference, exact route occurrence, and fraction. Restoration is paused,
+recompiles the route/corridor from the bundled graph, discards matcher
+posterior, and resumes only after another HIGH replay observation. It is not
+schema-2.0 released-session evidence and cannot mint live-input authority.
 
 For the first small graph:
 

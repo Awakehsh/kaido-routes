@@ -725,8 +725,12 @@ struct WholeShutoProductView: View {
       return prefix + "边界转换 · 预演"
     case .networkPreview:
       return prefix + "路线位置 · 预演"
+    case .networkDegraded:
+      return prefix + "定位证据不足 · 未推进"
     case .tunnelEstimated:
       return prefix + "隧道位置推算 · 预演"
+    case .routeInterrupted:
+      return prefix + "路线中断 · 无已发布重入路线"
     case .completed:
       return "路线完成"
     case .unavailable:
@@ -738,7 +742,7 @@ struct WholeShutoProductView: View {
     switch model.positionState {
     case .completed:
       return KaidoTheme.confirmedGreen
-    case .tunnelEstimated:
+    case .networkDegraded, .tunnelEstimated, .routeInterrupted:
       return KaidoTheme.signalAmber
     default:
       return KaidoTheme.positionCyan

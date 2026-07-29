@@ -456,7 +456,7 @@ public actor NavigationDriveSimulator {
     false
   }
 
-  private let release: KaidoProductRelease
+  private let runtime: NavigationDriveSimulationRuntime
   private var session: NavigationSession
   private var eventIndex = 0
   private var state: NavigationDriveSimulationState = .ready
@@ -469,13 +469,14 @@ public actor NavigationDriveSimulator {
     configuration: NavigationDriveSimulationConfiguration = .init(),
     speed: NavigationDriveSimulationSpeed = .fiveTimes
   ) throws {
+    let runtime = NavigationDriveSimulationRuntime(release: release)
     let trace = try NavigationDriveSimulationTraceGenerator.generate(
-      routePlan: release.navigation.bundle.routePlan,
-      corridor: release.navigation.bundle.matcherCorridor,
-      egressOptions: release.navigation.bundle.runtimePolicy.egressOptions,
+      routePlan: runtime.routePlan,
+      corridor: runtime.matcherCorridor,
+      egressOptions: runtime.egressOptions,
       configuration: configuration
     )
-    try self.init(release: release, trace: trace, speed: speed)
+    try self.init(runtime: runtime, trace: trace, speed: speed)
   }
 
   public init(
@@ -483,12 +484,43 @@ public actor NavigationDriveSimulator {
     trace: NavigationDriveSimulationTrace,
     speed: NavigationDriveSimulationSpeed = .fiveTimes
   ) throws {
-    let bundle = release.navigation.bundle
+    try self.init(
+      runtime: NavigationDriveSimulationRuntime(release: release),
+      trace: trace,
+      speed: speed
+    )
+  }
+
+  /// Runs a selected whole-Shuto route through the real matcher and actor
+  /// reducer without manufacturing released-road or live-location authority.
+  public init(
+    route: ShutoPlannedRoute,
+    runtimeAssets: ShutoPlannedRouteRuntimeAssets,
+    configuration: NavigationDriveSimulationConfiguration = .init(),
+    speed: NavigationDriveSimulationSpeed = .fiveTimes
+  ) throws {
+    let runtime = NavigationDriveSimulationRuntime(
+      route: route,
+      runtimeAssets: runtimeAssets
+    )
+    let trace = try NavigationDriveSimulationTraceGenerator.generate(
+      routePlan: runtime.routePlan,
+      corridor: runtime.matcherCorridor,
+      configuration: configuration
+    )
+    try self.init(runtime: runtime, trace: trace, speed: speed)
+  }
+
+  private init(
+    runtime: NavigationDriveSimulationRuntime,
+    trace: NavigationDriveSimulationTrace,
+    speed: NavigationDriveSimulationSpeed
+  ) throws {
     var issues: [String] = []
-    if trace.routePlanID != bundle.routePlan.id {
+    if trace.routePlanID != runtime.routePlan.id {
       issues.append("simulation trace RoutePlan ID does not match release")
     }
-    if trace.matcherCorridorID != bundle.matcherCorridor.id {
+    if trace.matcherCorridorID != runtime.matcherCorridor.id {
       issues.append("simulation trace matcher corridor ID does not match release")
     }
     if trace.events.isEmpty {
@@ -513,13 +545,13 @@ public actor NavigationDriveSimulator {
       throw NavigationDriveSimulationError.invalidTrace(issues.sorted())
     }
 
-    self.release = release
+    self.runtime = runtime
     self.trace = trace
     self.speed = speed
-    releaseID = release.releaseID
+    releaseID = runtime.runtimeID
     routePlanID = trace.routePlanID
     matcherCorridorID = trace.matcherCorridorID
-    session = try Self.makeSession(release: release)
+    session = try Self.makeSession(runtime: runtime)
   }
 
   public var status: NavigationDriveSimulationStatus {
@@ -576,9 +608,39 @@ public actor NavigationDriveSimulator {
   }
 
   public func reset() async throws -> NavigationDriveSimulationStatus {
-    session = try Self.makeSession(release: release)
+    session = try Self.makeSession(runtime: runtime)
     eventIndex = 0
     state = .ready
+    lastEventID = nil
+    sessionStarted = false
+    _ = await startSessionIfNeeded()
+    return currentStatus
+  }
+
+  /// Restores only coordinate-free route occurrence identity.
+  ///
+  /// Matcher posterior is intentionally discarded. Playback resumes at the
+  /// first observation for the restored occurrence, which must reacquire a
+  /// HIGH estimate before callers admit new progress.
+  public func restore(
+    at occurrenceID: String
+  ) async throws -> NavigationDriveSimulationStatus {
+    guard
+      let occurrence = runtime.routePlan.occurrence(id: occurrenceID),
+      let firstEventIndex = trace.events.firstIndex(where: {
+        $0.id.hasPrefix("simulation.\(occurrence.index).")
+      })
+    else {
+      throw NavigationDriveSimulationError.invalidTrace([
+        "restored simulation occurrence is unavailable"
+      ])
+    }
+    session = try Self.makeSession(
+      runtime: runtime,
+      initialOccurrenceID: occurrenceID
+    )
+    eventIndex = firstEventIndex
+    state = .paused
     lastEventID = nil
     sessionStarted = false
     _ = await startSessionIfNeeded()
@@ -666,13 +728,15 @@ public actor NavigationDriveSimulator {
   }
 
   private static func makeSession(
-    release: KaidoProductRelease
+    runtime: NavigationDriveSimulationRuntime,
+    initialOccurrenceID: String? = nil
   ) throws -> NavigationSession {
-    let bundle = release.navigation.bundle
-    let firstOccurrenceID = bundle.routePlan.occurrences.first?.id
+    let firstOccurrenceID =
+      initialOccurrenceID
+      ?? runtime.routePlan.occurrences.first?.id
     var initialSnapshot = NavigationSnapshot(
       journeyPhase: .strictRoute,
-      activeRoutePlanID: bundle.routePlan.id,
+      activeRoutePlanID: runtime.routePlan.id,
       currentOccurrenceID: firstOccurrenceID,
       locationConfidence: .low
     )
@@ -680,17 +744,51 @@ public actor NavigationDriveSimulator {
       "SYNTHETIC_SIMULATION_STRICT_ROUTE_SEED"
     return try NavigationSession(
       navigationConfiguration: NavigationConfiguration(
-        routePlan: bundle.routePlan,
-        recoveryCandidates: bundle.runtimePolicy.recoveryCandidates,
-        egressOptions: bundle.runtimePolicy.egressOptions,
-        releasedGuidance: bundle.releasedGuidance,
+        routePlan: runtime.routePlan,
+        recoveryCandidates: runtime.recoveryCandidates,
+        egressOptions: runtime.egressOptions,
+        releasedGuidance: runtime.releasedGuidance,
         allowsUserConfirmedExitHandoffCompletion: true
       ),
-      matcherCorridor: bundle.matcherCorridor,
-      decisionZones: bundle.decisionZones,
+      matcherCorridor: runtime.matcherCorridor,
+      decisionZones: runtime.decisionZones,
       initialNavigationSnapshot: initialSnapshot,
       initialMatcherOccurrenceID: firstOccurrenceID
     )
+  }
+}
+
+private struct NavigationDriveSimulationRuntime: Sendable {
+  let runtimeID: String
+  let routePlan: RoutePlan
+  let matcherCorridor: RouteMatcherCorridor
+  let recoveryCandidates: [RecoveryCandidate]
+  let egressOptions: [EgressOption]
+  let decisionZones: [DecisionZoneProgressDefinition]
+  let releasedGuidance: [ReleasedGuidanceDefinition]
+
+  init(release: KaidoProductRelease) {
+    let bundle = release.navigation.bundle
+    runtimeID = release.releaseID
+    routePlan = bundle.routePlan
+    matcherCorridor = bundle.matcherCorridor
+    recoveryCandidates = bundle.runtimePolicy.recoveryCandidates
+    egressOptions = bundle.runtimePolicy.egressOptions
+    decisionZones = bundle.decisionZones
+    releasedGuidance = bundle.releasedGuidance
+  }
+
+  init(
+    route: ShutoPlannedRoute,
+    runtimeAssets: ShutoPlannedRouteRuntimeAssets
+  ) {
+    runtimeID = "synthetic.\(route.routePlan.id)"
+    routePlan = route.routePlan
+    matcherCorridor = runtimeAssets.matcherCorridor
+    recoveryCandidates = []
+    egressOptions = []
+    decisionZones = []
+    releasedGuidance = []
   }
 }
 

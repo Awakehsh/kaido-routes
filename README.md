@@ -24,7 +24,9 @@ internal review workbench.
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
 - The driving simulation covers surface access, entry, expressway travel,
-  junction prompts, exit, surface egress, and completion.
+  junction prompts, exit, surface egress, and completion. Expressway playback
+  runs generated observations through the route-aware matcher and actor-owned
+  navigation session; only an exact HIGH occurrence match can advance it.
 - During expressway travel the driver can switch between the normal geographic
   map and the whole-network line map. A route-derived junction inset appears
   only near a JCT.
@@ -74,8 +76,8 @@ The product distinguishes what is known from what is still unconfirmed:
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`.
 - The shipped driving flow is a clearly labeled simulation. Device launch and
-  deterministic routing do not claim tunnel, field, acoustic, or CarPlay
-  qualification.
+  deterministic Core Location injection do not attach a live location manager
+  or claim tunnel, field, acoustic, or CarPlay qualification.
 
 ## Build and run
 

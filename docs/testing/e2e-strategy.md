@@ -546,6 +546,15 @@ default journey. Product schema, release validity, and live-input authority
 remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
 are L3-specific.
 
+The focused C2 App suite uses deterministic place, location, and surface-route
+providers to execute the complete visual lifecycle without a live network:
+arbitrary endpoints, surface access, entry transition, all ordered C2 + B
+occurrences, automatic Kasai-right and Oi-left junction insets, tunnel
+degradation, exit transition, and surface egress. Model tests retain the exact
+checked operator facility coordinates. These checks prove composition and UI
+behavior only; they do not validate live MapKit output, release C2 route
+authority, or replace field qualification.
+
 The K7 operational E2E composes these boundaries without copying the real
 release into a portable synthetic scenario:
 

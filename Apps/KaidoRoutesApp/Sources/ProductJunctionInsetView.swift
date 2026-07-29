@@ -218,8 +218,7 @@ struct ProductJunctionInsetView: View {
           .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
           .minimumScaleFactor(0.8)
       }
-
-      Spacer(minLength: 0)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 9)

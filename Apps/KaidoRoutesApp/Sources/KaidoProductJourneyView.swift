@@ -8,6 +8,7 @@ struct KaidoProductJourneyView: View {
   @State private var planningMode = ProductPlanningMode.guided
   @State private var showsSavedRoutes = false
   @State private var showsSettings = false
+  @State private var showsC2Navigation = false
 
   init(model: KaidoProductJourneyModel = KaidoProductJourneyModel()) {
     _model = StateObject(wrappedValue: model)
@@ -77,6 +78,15 @@ struct KaidoProductJourneyView: View {
       ProductSettingsSheet(
         model: model.composition.languageSettings
       )
+      .environment(
+        \.kaidoInterfaceLocale,
+        model.composition.languageSettings.interfaceLocale
+      )
+    }
+    .fullScreenCover(isPresented: $showsC2Navigation) {
+      C2NavigationDemoView {
+        showsC2Navigation = false
+      }
       .environment(
         \.kaidoInterfaceLocale,
         model.composition.languageSettings.interfaceLocale
@@ -163,7 +173,10 @@ struct KaidoProductJourneyView: View {
     case .atlas:
       ProductRoutesStage(
         model: model,
-        showsSavedRoutes: $showsSavedRoutes
+        showsSavedRoutes: $showsSavedRoutes,
+        openC2Navigation: {
+          showsC2Navigation = true
+        }
       )
     case .authoring:
       ProductPlanStage(
@@ -345,10 +358,13 @@ private struct ProductRoutesStage: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: KaidoProductJourneyModel
   @Binding var showsSavedRoutes: Bool
+  let openC2Navigation: () -> Void
 
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
       originControl
+      destinationControl
+      routeCatalog
 
       ProductMapProjectionPicker(
         model: model.composition.productMapPresentation,
@@ -368,13 +384,13 @@ private struct ProductRoutesStage: View {
       )
 
       entranceRecommendation
-      routeCatalog
       routeActions
     }
   }
 
   private var originControl: some View {
     Button {
+      openC2Navigation()
     } label: {
       HStack(spacing: 12) {
         Image(systemName: "location.circle.fill")
@@ -384,9 +400,9 @@ private struct ProductRoutesStage: View {
         VStack(alignment: .leading, spacing: 2) {
           Text(
             copy.resolve(
-              japanese: "ここから出発",
-              simplifiedChinese: "从这里出发",
-              english: "Start from here"
+              japanese: "出発地",
+              simplifiedChinese: "出发地",
+              english: "Start"
             )
           )
           .font(.system(size: 10, weight: .bold))
@@ -394,9 +410,9 @@ private struct ProductRoutesStage: View {
 
           Text(
             copy.resolve(
-              japanese: "港区虎ノ門 1 丁目付近",
-              simplifiedChinese: "港区虎之门 1 丁目附近",
-              english: "Near Toranomon 1-chome, Minato"
+              japanese: "現在地または任意の住所",
+              simplifiedChinese: "当前位置或任意地址",
+              english: "Current location or any address"
             )
           )
           .font(.system(size: 14, weight: .black, design: .rounded))
@@ -419,6 +435,55 @@ private struct ProductRoutesStage: View {
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("product-routes-origin")
+  }
+
+  private var destinationControl: some View {
+    Button {
+      openC2Navigation()
+    } label: {
+      HStack(spacing: 12) {
+        Image(systemName: "flag.checkered")
+          .font(.system(size: 18, weight: .bold))
+          .foregroundStyle(KaidoTheme.evidenceCoral)
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "最終目的地",
+              simplifiedChinese: "最终目的地",
+              english: "Destination"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+
+          Text(
+            copy.resolve(
+              japanese: "住所または場所を選択",
+              simplifiedChinese: "选择任意地址或地点",
+              english: "Choose any address or place"
+            )
+          )
+          .font(.system(size: 14, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+        }
+
+        Spacer()
+
+        Image(systemName: "chevron.right")
+          .font(.system(size: 11, weight: .black))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+      .padding(.horizontal, 14)
+      .frame(height: 62)
+      .background(KaidoTheme.paperRaised)
+      .overlay {
+        Rectangle()
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("product-routes-destination")
   }
 
   private var entranceRecommendation: some View {
@@ -450,9 +515,9 @@ private struct ProductRoutesStage: View {
       VStack(alignment: .trailing, spacing: 1) {
         Text(
           copy.resolve(
-            japanese: "約 7 分",
-            simplifiedChinese: "约 7 分钟",
-            english: "About 7 min"
+            japanese: "地図で計算",
+            simplifiedChinese: "由地图计算",
+            english: "Map-calculated"
           )
         )
         .font(.system(size: 12, weight: .black, design: .rounded))
@@ -460,9 +525,9 @@ private struct ProductRoutesStage: View {
 
         Text(
           copy.resolve(
-            japanese: "入口まで",
-            simplifiedChinese: "到入口",
-            english: "to entrance"
+            japanese: "出発地の選択後",
+            simplifiedChinese: "选择出发地后",
+            english: "after origin"
           )
         )
         .font(.system(size: 9, weight: .bold))
@@ -507,22 +572,96 @@ private struct ProductRoutesStage: View {
       }
 
       if let authoring = model.composition.releasedRouteAuthoring {
+        c2RouteCard
+
         ForEach(authoring.options) { option in
           routeCard(option)
         }
       } else {
-        Text(
-          copy.resolve(
-            japanese: "現在利用できる経路はありません",
-            simplifiedChinese: "当前没有可用路线",
-            english: "No routes are currently available"
-          )
-        )
-        .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(KaidoTheme.quietText)
-        .padding(.vertical, 20)
+        c2RouteCard
       }
     }
+  }
+
+  private var c2RouteCard: some View {
+    Button {
+      openC2Navigation()
+    } label: {
+      HStack(spacing: 13) {
+        VStack(spacing: 2) {
+          Text("C2")
+            .font(.system(size: 13, weight: .black, design: .rounded))
+          Text("SIM")
+            .font(.system(size: 7, weight: .black, design: .rounded))
+        }
+        .foregroundStyle(KaidoTheme.paperRaised)
+        .frame(width: 47, height: 47)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+        VStack(alignment: .leading, spacing: 5) {
+          Text(
+            copy.resolve(
+              japanese: "C2 + B 完全周回",
+              simplifiedChinese: "C2 + B 完整环线",
+              english: "Complete C2 + B circuit"
+            )
+          )
+          .font(.system(size: 15, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+
+          Text(
+            copy.resolve(
+              japanese: "富ヶ谷入口（外回り）→ 初台南出口（外回り）",
+              simplifiedChinese: "富ヶ谷入口（外回）→ 初台南出口（外回）",
+              english:
+                "Tomigaya entrance (outer) → Hatsudai-minami exit (outer)"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+          .lineLimit(1)
+
+          HStack(spacing: 12) {
+            Text(
+              copy.resolve(
+                japanese: "全区間ナビ",
+                simplifiedChinese: "完整导航",
+                english: "End-to-end"
+              )
+            )
+            Text(
+              copy.resolve(
+                japanese: "葛西・大井 分岐",
+                simplifiedChinese: "葛西・大井分岔",
+                english: "Kasai + Oi splits"
+              )
+            )
+          }
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+
+        Spacer(minLength: 4)
+
+        Image(systemName: "chevron.right")
+          .font(.system(size: 11, weight: .black))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+      .padding(13)
+      .background(KaidoTheme.paperRaised)
+      .overlay(alignment: .leading) {
+        Rectangle()
+          .fill(KaidoTheme.signalAmber)
+          .frame(width: 3)
+      }
+      .overlay {
+        Rectangle()
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("product-route-option-c2-complete")
   }
 
   private func routeCard(
@@ -685,12 +824,11 @@ private struct ProductRoutesStage: View {
   }
 
   private var recommendedEntranceTitle: String {
-    model.composition.releasedRouteAuthoring?.options.first?.entranceTitle
-      ?? copy.resolve(
-        japanese: "対応入口を確認中",
-        simplifiedChinese: "正在确认兼容入口",
-        english: "Checking compatible entrance"
-      )
+    copy.resolve(
+      japanese: "選択した経路の方向別入口へ案内",
+      simplifiedChinese: "导航到所选路线对应方向的入口",
+      english: "Route to the selected directional entrance"
+    )
   }
 
   private var copy: KaidoInterfaceText {
@@ -2097,10 +2235,10 @@ private struct ProductDriveStage: View {
 
         Text(
           copy.resolve(
-            japanese: "選択した K7 ルートを地図上で自動再生します。実走行データではありません。",
-            simplifiedChinese: "在地图上自动播放所选 K7 路线，不代表真实道路状态。",
+            japanese: "選択した高速経路を地図上で自動再生します。実走行データではありません。",
+            simplifiedChinese: "在地图上自动播放所选高速路线，不代表真实道路状态。",
             english:
-              "Automatically plays the selected K7 route on the map; this is not live-road data."
+              "Automatically plays the selected expressway route on the map; this is not live-road data."
           )
         )
         .font(.system(size: 9, weight: .bold))
@@ -2137,9 +2275,9 @@ private struct ProductDriveStage: View {
     switch state {
     case .ready:
       copy.resolve(
-        japanese: "K7 シミュレーションを開始",
-        simplifiedChinese: "开始 K7 模拟导航",
-        english: "Start K7 simulation"
+        japanese: "経路シミュレーションを開始",
+        simplifiedChinese: "开始路线模拟导航",
+        english: "Start route simulation"
       )
     case .paused:
       copy.resolve(

@@ -17,21 +17,31 @@ the platform-light Swift core, and the SwiftUI iPhone product target. The app
 links the local domain, routing, navigation, and presentation modules. Its
 default launch now follows the concise Routes → Plan → Review → Drive product
 journey: origin and a compatible directional entrance precede available route
-cards, parked release-owned choices compile one exact RoutePlan, and the
-released K7 route continues into an explicit automatic driving simulation.
-One persisted `Map | Lines` control is shared by every stage. `Map` is the
-default and renders the released K7 matcher corridor over a real MapKit
-basemap; `Lines` remains the alternate topology projection. It labels the
+cards, and K7 is one ordinary released route rather than the product entry.
+The first end-to-end C2 simulation accepts the current position or any
+MapKit-resolvable origin and any final destination, calculates bounded ordinary
+road legs to the selected Tomigaya outer entrance and from the
+Hatsudai-minami outer exit, then plays the unchanged C2 + B occurrence sequence
+between them. The expressway surface provides a normal current-route map and a
+whole-route IC/JCT/PA view, with automatic right-branch guidance at Kasai and
+left-branch guidance at Oi. The operator facts and directional facilities were
+checked on 2026-07-29, but the C2 sequence is still a clearly labeled simulation,
+not a released `KaidoProductRelease`, live matcher, traffic claim, or field
+qualification. MapKit resolution and surface routing require its service to be
+available.
+
+One persisted `Map | Lines` control remains shared by the released-route
+journey. `Map` renders the selected released matcher corridor over a real MapKit
+basemap; `Lines` renders its alternate topology projection. It labels the
 selected release's route shield, directional entrance, selected JCT movements,
 PA count, and directional exit without claiming full-network coverage. The
 topology projection preserves ordered and repeated occurrences and accepts a
 precise current-route marker only from exact HIGH route-bound progress
 evidence; LOW, LOST, ambiguous, or identity-drifted evidence stays estimated
 or unavailable.
-An explicit `-C2-ROUTE-MAP-DEMO` preview stress-tests that same renderer with a
-dense completed-circuit design: C2 and the required westbound Bayshore section
-remain visually distinct, while compact labels keep 13 JCTs, one directional
-PA, entrance, and exit readable. It is design-only and cannot start navigation.
+`-C2-FULL-NAVIGATION-DEMO` opens the full C2 simulation directly. The separate
+`-C2-ROUTE-MAP-DEMO` preview stress-tests the same renderer without starting a
+journey.
 The bundled catalog now contains one foreground K7 product release whose exact
 runtime may grant foreground Core Location authority only after release-owned
 route authoring and whole-RoutePlan release selection pass. No

@@ -6,15 +6,17 @@ renders review-only Route Atlas assets and links the local domain, routing,
 navigation, presentation, and Apple-adapter modules. It composes a complete
 synthetic released `NavigationSession`, checkpoint lifecycle, and one-shot
 speech boundary. The App catalog additionally contains one real-road K7
-Aoba-to-Kohoku foreground release, but it still has no current bundled
-pre-drive evidence, qualified active navigation `CLLocationManager`, background
-location service, or CarPlay scene. The current bake-off
+Aoba-to-Kohoku foreground release. A separate C2 end-to-end simulation can
+request a one-shot current location and MapKit surface routes, but neither that
+request nor the simulated C2 highway sequence grants released live-navigation
+authority. The app still has no qualified C2 matcher, background location
+service, or CarPlay scene. The current bake-off
 selects Valhalla as the leading shared implementation behind the bounded
 surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
 subject to Apple-adapter, operations, and field evidence in
 `docs/testing/navigation-engine-bakeoff.md`.
 
-**Checked:** 2026-07-24
+**Checked:** 2026-07-29
 
 ## Decision summary
 
@@ -39,6 +41,10 @@ Use a hybrid architecture:
 8. Use Valhalla as the first shared open-source implementation candidate for
    bounded surface routing and the external HMM oracle, while retaining OSRM and
    GraphHopper as independent executable baselines.
+9. Let the product accept a current position or arbitrary resolvable address at
+   both ends of a selected Shuto route. The provider may calculate only the two
+   ordinary-road legs; it cannot select the directional entrance, replace the
+   route, or change its ordered movements.
 
 This is not a plan to recreate nationwide navigation. Kaido owns the small,
 safety-relevant Shuto subgraph and delegates bounded ordinary-road access and
@@ -576,6 +582,16 @@ re-entry, forbidden toll domain, provider/dataset drift, caller-selected
 destination, or ambiguous graph binding fails closed. OSRM, GraphHopper, and
 Valhalla implement the same bounded role. Provider alternatives and prose
 remain non-authoritative.
+
+The iPhone C2 demonstration exercises this product composition without
+promoting it to release authority. It resolves the origin and destination with
+MapKit, requests ordinary-road candidates around the selected Tomigaya outer
+entrance and Hatsudai-minami outer exit, and renders the fixed audited C2 + B
+occurrence sequence between those legs. Its automatic playback includes
+separate entry and exit transitions, Kasai and Oi junction insets, and an
+estimated-position tunnel state. It is intentionally labeled `SIMULATION`;
+without a released C2 graph, provider identity, `JourneyPlan`, matcher corridor,
+and field evidence, it cannot create a `KaidoProductNavigationRuntime`.
 
 The completed return `JourneyPlan` fixes one exact egress option, and runtime
 configuration filters Finish behavior to that option instead of asking

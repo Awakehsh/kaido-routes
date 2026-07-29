@@ -2,6 +2,120 @@ import XCTest
 
 @MainActor
 final class C2RouteMapDemoUITests: XCTestCase {
+  func testCompleteNavigationAcceptsAnyOriginAndDestination() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-C2-FULL-NAVIGATION-DEMO"]
+    app.launch()
+
+    let navigation = element("c2-full-navigation", in: app)
+    XCTAssertTrue(navigation.waitForExistence(timeout: 5))
+    XCTAssertEqual(navigation.value as? String, "PLANNING")
+
+    let origin = app.textFields["c2-navigation-origin"]
+    let destination = app.textFields["c2-navigation-destination"]
+    XCTAssertEqual(origin.value as? String, "東京都庁")
+    XCTAssertEqual(destination.value as? String, "東京駅")
+
+    let start = element("c2-navigation-start", in: app)
+    XCTAssertEqual(start.value as? String, "AVAILABLE")
+    start.tap()
+
+    let activePredicate = NSPredicate(
+      format:
+        "value != 'PLANNING' AND value != 'ROUTING' AND value != 'FAILED'"
+    )
+    let active = expectation(
+      for: activePredicate,
+      evaluatedWith: navigation
+    )
+    wait(for: [active], timeout: 5)
+    XCTAssertTrue(
+      element("c2-navigation-progress", in: app).exists
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "C2 complete navigation from arbitrary endpoints"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
+  func testVerifiedKasaiAndOiJunctionInsetsAppearAutomatically() {
+    continueAfterFailure = false
+
+    let kasaiApp = XCUIApplication()
+    kasaiApp.launchArguments = ["-C2-NAVIGATION-KASAI-PREVIEW"]
+    kasaiApp.launch()
+    let kasaiInset = element("product-junction-inset", in: kasaiApp)
+    XCTAssertTrue(kasaiInset.waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      (kasaiInset.value as? String)?.contains(
+        "demo.c2.kasai.outer-to-b-west"
+      ) == true
+    )
+    XCTAssertTrue(
+      (kasaiInset.value as? String)?.contains("9  横浜") == true
+    )
+
+    let kasaiScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    kasaiScreenshot.name = "C2 automatic Kasai right-branch inset"
+    kasaiScreenshot.lifetime = .keepAlways
+    add(kasaiScreenshot)
+    kasaiApp.terminate()
+
+    let oiApp = XCUIApplication()
+    oiApp.launchArguments = ["-C2-NAVIGATION-OI-PREVIEW"]
+    oiApp.launch()
+    let oiInset = element("product-junction-inset", in: oiApp)
+    XCTAssertTrue(oiInset.waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      (oiInset.value as? String)?.contains(
+        "demo.c2.oi.b-west-to-c2-outer"
+      ) == true
+    )
+    XCTAssertTrue(
+      oiInset.label.contains("500 m")
+    )
+    XCTAssertTrue(
+      (oiInset.value as? String)?.contains(
+        "中央環状線（外回り）"
+      ) == true
+    )
+    XCTAssertTrue(
+      (element("c2-navigation-guidance", in: oiApp).value as? String)?
+        .contains("大井 JCT 左分岔") == true
+    )
+
+    let oiScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    oiScreenshot.name = "C2 automatic Oi left-branch tunnel inset"
+    oiScreenshot.lifetime = .keepAlways
+    add(oiScreenshot)
+  }
+
+  func testExitHandoffReturnsToSurfaceNavigation() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-C2-NAVIGATION-EGRESS-PREVIEW"]
+    app.launch()
+
+    let navigation = element("c2-full-navigation", in: app)
+    XCTAssertTrue(navigation.waitForExistence(timeout: 5))
+    XCTAssertEqual(navigation.value as? String, "SURFACE_EGRESS")
+    XCTAssertTrue(
+      element("c2-navigation-surface-map", in: app).exists
+    )
+    XCTAssertTrue(
+      (element("c2-navigation-guidance", in: app).value as? String)?
+        .contains("SURFACE_EGRESS") == true
+    )
+  }
+
   func testCompletedC2CircuitDemoShowsItsWholeRouteStructure() {
     continueAfterFailure = false
     let app = XCUIApplication()

@@ -18,7 +18,8 @@ import SwiftUI
 /// - https://www.shutoko-sv.jp/pa/oi-westbound
 struct C2CompletedRouteDemoView: View {
   static let previewPresentation = C2CompletedRouteDemo.presentation
-  static let previewJunctionInset = C2CompletedRouteDemo.junctionInset
+  static let previewJunctionInset =
+    C2CompletedRouteDemo.kasaiJunctionInset
 
   private enum MapLayer: String, CaseIterable {
     case route
@@ -274,7 +275,9 @@ struct C2CompletedRouteDemoView: View {
   }
 }
 
-private enum C2CompletedRouteDemo {
+enum C2CompletedRouteDemo {
+  static let occurrenceCount = 16
+
   private struct Stop {
     let id: String
     let point: RouteAtlasPoint
@@ -319,7 +322,7 @@ private enum C2CompletedRouteDemo {
     }
   }
 
-  static let junctionInset = ProductJunctionInsetPresentation(
+  static let kasaiJunctionInset = ProductJunctionInsetPresentation(
     decisionZoneID: "demo.c2.kasai.outer-to-b-west",
     movementOccurrenceID: "demo.c2.occurrence.9",
     selectedBranch: .right,
@@ -327,6 +330,24 @@ private enum C2CompletedRouteDemo {
     japaneseSignText: "9  横浜",
     localizedInstruction: "葛西 JCT 右分岔，驶入 B 湾岸线西行（横浜方向）",
     routeShield: "B"
+  )
+
+  /// Current operator guidance says B westbound traffic takes the left branch
+  /// for C2 outer. The same official guidance lists advance signs at 2.5 km,
+  /// 500 m, 400 m, and about 300 m. This simulation uses the 500 m state.
+  ///
+  /// Checked 2026-07-29:
+  /// https://www.shutoko.jp/use/safety/branch/
+  static let oiJunctionInset = ProductJunctionInsetPresentation(
+    decisionZoneID: "demo.c2.oi.b-west-to-c2-outer",
+    movementOccurrenceID: "demo.c2.occurrence.13",
+    selectedBranch: .left,
+    distanceMeters: 500,
+    japaneseSignText:
+      "中央環状線（外回り） 3号渋谷線・中央道方面",
+    localizedInstruction:
+      "大井 JCT 左分岔，驶入 C2 外回（3号涩谷线、中央道方向）",
+    routeShield: "C2"
   )
 
   static let presentation: ProductTopologyMapPresentation = {
@@ -633,6 +654,74 @@ private enum C2CompletedRouteDemo {
       facilities: facilities
     )
   }()
+
+  static func navigationPresentation(
+    currentOccurrenceIndex: Int,
+    fraction: Double,
+    positionIsEstimated: Bool
+  ) -> ProductTopologyMapPresentation {
+    let index = min(
+      max(0, currentOccurrenceIndex),
+      presentation.orderedOccurrences.count - 1
+    )
+    let currentOccurrence = presentation.orderedOccurrences[index]
+    let occurrences = presentation.orderedOccurrences.map { occurrence in
+      let state: RouteAtlasJourneyOccurrenceState
+      if occurrence.occurrenceIndex < index {
+        state = .passed
+      } else if occurrence.occurrenceIndex == index {
+        state = .current
+      } else {
+        state = .future
+      }
+      return RouteAtlasJourneyOccurrence(
+        occurrenceID: occurrence.occurrenceID,
+        occurrenceIndex: occurrence.occurrenceIndex,
+        segmentID: occurrence.segmentID,
+        points: occurrence.points,
+        state: state,
+        repeatOrdinal: occurrence.repeatOrdinal,
+        repeatCount: occurrence.repeatCount
+      )
+    }
+    let projection = RouteAtlasJourneyProjection(
+      networkSnapshotID: presentation.projection.networkSnapshotID,
+      routePlanID: presentation.projection.routePlanID,
+      atlasID: presentation.projection.atlasID,
+      topologySliceID: presentation.projection.topologySliceID,
+      contextSegments: presentation.projection.contextSegments,
+      occurrences: occurrences,
+      attributions: presentation.projection.attributions,
+      currentOccurrenceID: currentOccurrence.occurrenceID
+    )
+    let evidence: ProductTopologyPositionEvidence? =
+      positionIsEstimated
+      ? nil
+      : ProductTopologyPositionEvidence(
+        routePlanID: projection.routePlanID,
+        occurrenceID: currentOccurrence.occurrenceID,
+        directedEdgeID: currentOccurrence.segmentID,
+        fractionAlongOccurrence: min(1, max(0, fraction)),
+        confidence: .high,
+        markerStyle: "MEASURED"
+      )
+    let resolved = ProductTopologyMapPresentation.make(
+      projection: projection,
+      evidence: evidence,
+      snapshot: nil,
+      facilities: presentation.facilities
+    )
+    guard positionIsEstimated else { return resolved }
+    return ProductTopologyMapPresentation(
+      projection: resolved.projection,
+      orderedOccurrences: resolved.orderedOccurrences,
+      position: .estimated(
+        occurrenceID: currentOccurrence.occurrenceID
+      ),
+      repeatedOccurrenceCount: resolved.repeatedOccurrenceCount,
+      facilities: resolved.facilities
+    )
+  }
 
   private static let contextSegments = [
     RouteAtlasJourneyContextSegment(

@@ -61,6 +61,34 @@ struct KaidoRoutesApp: App {
           model: .demoPreview()
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-NAVIGATION-KASAI-PREVIEW"
+      ) {
+        C2NavigationDemoView(
+          model: .preview(
+            phase: .expressway,
+            expresswayOccurrenceIndex: 9
+          )
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-NAVIGATION-OI-PREVIEW"
+      ) {
+        C2NavigationDemoView(
+          model: .preview(
+            phase: .expressway,
+            expresswayOccurrenceIndex: 13
+          )
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-NAVIGATION-EGRESS-PREVIEW"
+      ) {
+        C2NavigationDemoView(
+          model: .preview(phase: .surfaceEgress)
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-FULL-NAVIGATION-DEMO"
+      ) {
+        C2NavigationDemoView(model: .preview())
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-C2-ROUTE-MAP-DEMO"
       ) {
         C2CompletedRouteDemoView()

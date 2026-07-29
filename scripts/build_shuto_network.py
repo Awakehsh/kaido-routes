@@ -1,0 +1,957 @@
+#!/usr/bin/env python3
+"""Build a routable, directed whole-Shuto graph from a pinned OSM PBF.
+
+Official operator facts define the product's route, IC, JCT, and PA catalog.
+OpenStreetMap supplies candidate geometry and topology only. The generated
+database remains an ODbL derivative and is not relicensed as Apache-2.0.
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections import defaultdict, deque
+import hashlib
+import importlib.metadata
+import json
+import math
+from pathlib import Path
+import re
+import sys
+from typing import Any, Iterable
+
+
+ROUTE_RELATION_IDS = {
+    "C1": 4256008,
+    "C2": 4256077,
+    "Y": 4256119,
+    "B": 4256202,
+    "1_UENO": 4256217,
+    "1_HANEDA": 4256244,
+    "2": 4256339,
+    "3": 4256376,
+    "4": 4256522,
+    "5": 4256611,
+    "6_MUKOJIMA": 4256960,
+    "6_MISATO": 4256985,
+    "7": 4257465,
+    "9": 4257496,
+    "10": 4257498,
+    "11": 4257564,
+    "S1": 4258155,
+    "K1": 4258165,
+    "K2": 4258166,
+    "K3": 4259160,
+    "K5": 4259192,
+    "K6": 4259197,
+    "S2": 4259487,
+    "S5": 4259488,
+    "K7_YOKOHAMA_KITA": 10355798,
+    "K7_YOKOHAMA_HOKUSEI": 10732984,
+}
+ALLOWED_HIGHWAYS = {"motorway", "motorway_link"}
+FORBIDDEN_ACCESS = {"no", "private"}
+BOUNDS = {
+    "minimum_latitude": 35.15,
+    "maximum_latitude": 36.15,
+    "minimum_longitude": 139.10,
+    "maximum_longitude": 140.35,
+}
+EARTH_RADIUS_METERS = 6_371_000.0
+JUNCTION_OSM_NODE_OVERRIDES = {
+    # Current 1 Haneda mainline branch nodes at Showajima. The operator
+    # directory names the JCT; the pinned OSM nodes carry no junction name.
+    "昭和島JCT": [36610838, 36610850],
+}
+
+
+class NetworkBuildError(RuntimeError):
+    """Fail-closed source, catalog, topology, or geometry error."""
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--official-catalog", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--expected-input-sha256", required=True)
+    parser.add_argument("--source-uri", required=True)
+    parser.add_argument("--expected-pyosmium-version", default="4.3.1")
+    return parser.parse_args()
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_osmium(expected_version: str) -> Any:
+    try:
+        actual_version = importlib.metadata.version("osmium")
+        import osmium
+    except (ImportError, importlib.metadata.PackageNotFoundError) as error:
+        raise NetworkBuildError(
+            "pyosmium is required; install the pinned builder version"
+        ) from error
+    if actual_version != expected_version:
+        raise NetworkBuildError(
+            f"pyosmium version mismatch: {actual_version} != {expected_version}"
+        )
+    return osmium
+
+
+def entity_filter(osmium: Any, entity_type: Any) -> Any:
+    return osmium.filter.EntityFilter(entity_type)
+
+
+def load_catalog(path: Path) -> tuple[dict[str, Any], str]:
+    raw = path.read_bytes()
+    catalog = json.loads(raw)
+    if catalog.get("schema_version") != "1.0":
+        raise NetworkBuildError("unsupported official catalog schema")
+    route_ids = {
+        route["route_id"] for route in catalog.get("routes", [])
+    }
+    missing = set(ROUTE_RELATION_IDS) - route_ids
+    if missing:
+        raise NetworkBuildError(
+            "official catalog is missing routes: " + ", ".join(sorted(missing))
+        )
+    return catalog, hashlib.sha256(raw).hexdigest()
+
+
+def relation_snapshot(
+    osmium: Any,
+    input_path: Path,
+) -> tuple[
+    dict[str, dict[str, Any]],
+    dict[int, list[dict[str, str]]],
+    str,
+]:
+    relation_to_route = {
+        relation_id: route_id
+        for route_id, relation_id in ROUTE_RELATION_IDS.items()
+    }
+    routes: dict[str, dict[str, Any]] = {}
+    membership_by_way: dict[int, list[dict[str, str]]] = defaultdict(list)
+    processor = osmium.FileProcessor(str(input_path)).with_filter(
+        entity_filter(osmium, osmium.osm.RELATION)
+    )
+    source_snapshot_at = processor.header.get("osmosis_replication_timestamp")
+    if not source_snapshot_at:
+        raise NetworkBuildError("PBF has no replication timestamp")
+    for relation in processor:
+        route_id = relation_to_route.get(relation.id)
+        if route_id is None:
+            continue
+        tags = dict(relation.tags)
+        if tags.get("type") != "route" or tags.get("route") != "road":
+            raise NetworkBuildError(
+                f"OSM relation {relation.id} is no longer a road route"
+            )
+        routes[route_id] = {
+            "route_id": route_id,
+            "relation_id": relation.id,
+            "relation_version": relation.version,
+            "osm_name": tags.get("name"),
+            "osm_ref": tags.get("ref"),
+        }
+        for member in relation.members:
+            if member.type != "w":
+                continue
+            membership_by_way[member.ref].append(
+                {
+                    "route_id": route_id,
+                    "member_role": member.role or "",
+                }
+            )
+    missing = set(ROUTE_RELATION_IDS) - set(routes)
+    if missing:
+        raise NetworkBuildError(
+            "PBF is missing Shuto route relations: "
+            + ", ".join(sorted(missing))
+        )
+    return routes, membership_by_way, source_snapshot_at
+
+
+def is_in_bounds(latitude: float, longitude: float) -> bool:
+    return (
+        BOUNDS["minimum_latitude"]
+        <= latitude
+        <= BOUNDS["maximum_latitude"]
+        and BOUNDS["minimum_longitude"]
+        <= longitude
+        <= BOUNDS["maximum_longitude"]
+    )
+
+
+def scan_motorway_ways(
+    osmium: Any,
+    input_path: Path,
+    mainline_way_ids: set[int],
+    membership_by_way: dict[int, list[dict[str, str]]],
+) -> tuple[dict[int, dict[str, Any]], dict[int, tuple[float, float]]]:
+    ways: dict[int, dict[str, Any]] = {}
+    node_coordinates: dict[int, tuple[float, float]] = {}
+    expected_inactive_way_ids: set[int] = set()
+    processor = (
+        osmium.FileProcessor(str(input_path))
+        .with_filter(entity_filter(osmium, osmium.osm.WAY))
+        .with_locations()
+    )
+    for way in processor:
+        tags = dict(way.tags)
+        highway = tags.get("highway")
+        if (
+            highway == "construction"
+            and tags.get("construction") == "motorway"
+            and tags.get("motorcar") not in FORBIDDEN_ACCESS
+        ):
+            highway = "motorway"
+            tags["kaido:source_highway"] = "construction"
+            tags["highway"] = "motorway"
+        if way.id not in mainline_way_ids and highway != "motorway_link":
+            continue
+        if highway not in ALLOWED_HIGHWAYS:
+            if tags.get("abandoned:highway") == "motorway":
+                expected_inactive_way_ids.add(way.id)
+            continue
+        motorcar_access = tags.get("motorcar")
+        if motorcar_access in FORBIDDEN_ACCESS:
+            expected_inactive_way_ids.add(way.id)
+            continue
+        if motorcar_access is None and (
+            tags.get("motor_vehicle") in FORBIDDEN_ACCESS
+            or tags.get("access") in FORBIDDEN_ACCESS
+        ):
+            expected_inactive_way_ids.add(way.id)
+            continue
+        coordinates: list[tuple[int, float, float]] = []
+        for node in way.nodes:
+            if not node.location.valid():
+                raise NetworkBuildError(
+                    f"OSM way {way.id} has an unresolved node"
+                )
+            coordinates.append(
+                (node.ref, node.location.lat, node.location.lon)
+            )
+        if len(coordinates) < 2:
+            continue
+        if way.id not in mainline_way_ids and not any(
+            is_in_bounds(latitude, longitude)
+            for _, latitude, longitude in coordinates
+        ):
+            continue
+        ways[way.id] = {
+            "way_id": way.id,
+            "version": way.version,
+            "node_ids": [node_id for node_id, _, _ in coordinates],
+            "tags": tags,
+        }
+        for node_id, latitude, longitude in coordinates:
+            existing = node_coordinates.get(node_id)
+            coordinate = (latitude, longitude)
+            if existing is not None and existing != coordinate:
+                raise NetworkBuildError(
+                    f"coordinate drift for OSM node {node_id}"
+                )
+            node_coordinates[node_id] = coordinate
+
+    missing = mainline_way_ids - set(ways)
+    unavailable_only_missing = {
+        way_id
+        for way_id in missing
+        if {
+            membership["route_id"]
+            for membership in membership_by_way[way_id]
+        }
+        <= {"Y"}
+    }
+    unexpected_missing = (
+        missing - unavailable_only_missing - expected_inactive_way_ids
+    )
+    if unexpected_missing:
+        raise NetworkBuildError(
+            f"{len(unexpected_missing)} available Shuto relation ways "
+            "were not usable motorways: "
+            + ", ".join(str(value) for value in sorted(unexpected_missing))
+        )
+    return ways, node_coordinates
+
+
+def select_connected_links(
+    ways: dict[int, dict[str, Any]],
+    mainline_way_ids: set[int],
+) -> set[int]:
+    link_ids = set(ways) - mainline_way_ids
+    links_by_node: dict[int, set[int]] = defaultdict(set)
+    for way_id in link_ids:
+        for node_id in ways[way_id]["node_ids"]:
+            links_by_node[node_id].add(way_id)
+
+    selected = set(mainline_way_ids)
+    queue = deque(
+        node_id
+        for way_id in mainline_way_ids
+        for node_id in ways[way_id]["node_ids"]
+    )
+    visited_nodes: set[int] = set()
+    while queue:
+        node_id = queue.popleft()
+        if node_id in visited_nodes:
+            continue
+        visited_nodes.add(node_id)
+        for way_id in links_by_node.get(node_id, ()):
+            if way_id in selected:
+                continue
+            selected.add(way_id)
+            queue.extend(ways[way_id]["node_ids"])
+    return selected
+
+
+def normalize_member_role(role: str) -> list[str]:
+    value = role.lower()
+    directions: list[str] = []
+    mappings = [
+        ("inner", "内回り"),
+        ("outer", "外回り"),
+        ("east", "東行き"),
+        ("west", "西行き"),
+        ("north", "北行き"),
+        ("south", "南行き"),
+        ("inbound", "上り"),
+        ("outbound", "下り"),
+        ("up", "上り"),
+        ("down", "下り"),
+    ]
+    for token, direction in mappings:
+        if re.search(rf"\b{token}\b", value):
+            directions.append(direction)
+    return directions
+
+
+def propagate_membership(
+    ways: dict[int, dict[str, Any]],
+    selected_way_ids: set[int],
+    mainline_way_ids: set[int],
+    membership_by_way: dict[int, list[dict[str, str]]],
+) -> dict[int, list[dict[str, Any]]]:
+    memberships: dict[int, dict[str, set[str]]] = {}
+    ways_by_node: dict[int, set[int]] = defaultdict(set)
+    for way_id in selected_way_ids:
+        for node_id in ways[way_id]["node_ids"]:
+            ways_by_node[node_id].add(way_id)
+        memberships[way_id] = defaultdict(set)
+        for membership in membership_by_way.get(way_id, []):
+            route_id = membership["route_id"]
+            role = membership["member_role"]
+            memberships[way_id][route_id].update(
+                normalize_member_role(role)
+            )
+
+    queue = deque(
+        way_id
+        for way_id in selected_way_ids
+        if memberships[way_id]
+    )
+    while queue:
+        way_id = queue.popleft()
+        current = memberships[way_id]
+        for node_id in ways[way_id]["node_ids"]:
+            for neighbor_id in ways_by_node[node_id]:
+                if neighbor_id == way_id:
+                    continue
+                if neighbor_id in mainline_way_ids:
+                    continue
+                neighbor = memberships[neighbor_id]
+                changed = False
+                for route_id, directions in current.items():
+                    if route_id not in neighbor:
+                        neighbor[route_id] = set(directions)
+                        changed = True
+                if changed:
+                    queue.append(neighbor_id)
+
+    return {
+        way_id: [
+            {
+                "route_id": route_id,
+                "directions_ja": sorted(directions),
+            }
+            for route_id, directions in sorted(route_memberships.items())
+        ]
+        for way_id, route_memberships in memberships.items()
+    }
+
+
+def directions(tags: dict[str, str]) -> tuple[bool, bool]:
+    oneway = tags.get("oneway", "").lower()
+    if oneway == "-1":
+        return False, True
+    if oneway in {"yes", "true", "1"}:
+        return True, False
+    if tags.get("highway") == "motorway":
+        return True, False
+    return True, True
+
+
+def haversine_meters(
+    first: tuple[float, float],
+    second: tuple[float, float],
+) -> float:
+    latitude1, longitude1 = map(math.radians, first)
+    latitude2, longitude2 = map(math.radians, second)
+    latitude_delta = latitude2 - latitude1
+    longitude_delta = longitude2 - longitude1
+    value = (
+        math.sin(latitude_delta / 2) ** 2
+        + math.cos(latitude1)
+        * math.cos(latitude2)
+        * math.sin(longitude_delta / 2) ** 2
+    )
+    return (
+        2
+        * EARTH_RADIUS_METERS
+        * math.asin(min(1.0, math.sqrt(value)))
+    )
+
+
+def build_edges(
+    ways: dict[int, dict[str, Any]],
+    selected_way_ids: set[int],
+    node_coordinates: dict[int, tuple[float, float]],
+    memberships: dict[int, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    edges: list[dict[str, Any]] = []
+    for way_id in sorted(selected_way_ids):
+        way = ways[way_id]
+        forward, reverse = directions(way["tags"])
+        node_ids = way["node_ids"]
+        for index, (before, after) in enumerate(
+            zip(node_ids, node_ids[1:])
+        ):
+            length = haversine_meters(
+                node_coordinates[before],
+                node_coordinates[after],
+            )
+            common = {
+                "way_id": way_id,
+                "segment_index": index,
+                "kind": (
+                    "MAINLINE"
+                    if way_id in ROUTE_WAY_IDS
+                    else "LINK"
+                ),
+                "length_meters": round(length, 3),
+                "route_memberships": memberships[way_id],
+            }
+            if forward:
+                edges.append(
+                    {
+                        "edge_id": f"osm.{way_id}.{index}.forward",
+                        "from_node_id": before,
+                        "to_node_id": after,
+                        "direction": "forward",
+                        **common,
+                    }
+                )
+            if reverse:
+                edges.append(
+                    {
+                        "edge_id": f"osm.{way_id}.{index}.reverse",
+                        "from_node_id": after,
+                        "to_node_id": before,
+                        "direction": "reverse",
+                        **common,
+                    }
+                )
+    return edges
+
+
+def distance_to_segment(
+    point: tuple[float, float],
+    first: tuple[float, float],
+    second: tuple[float, float],
+) -> float:
+    latitude_scale = 111_132.0
+    longitude_scale = (
+        111_320.0 * math.cos(math.radians(point[0]))
+    )
+    px = (point[1] - first[1]) * longitude_scale
+    py = (point[0] - first[0]) * latitude_scale
+    sx = (second[1] - first[1]) * longitude_scale
+    sy = (second[0] - first[0]) * latitude_scale
+    denominator = sx * sx + sy * sy
+    if denominator == 0:
+        return math.hypot(px, py)
+    fraction = max(0.0, min(1.0, (px * sx + py * sy) / denominator))
+    return math.hypot(px - fraction * sx, py - fraction * sy)
+
+
+def membership_matches(
+    edge: dict[str, Any],
+    route_id: str,
+    official_directions: list[str],
+) -> bool:
+    for membership in edge["route_memberships"]:
+        if membership["route_id"] != route_id:
+            continue
+        candidate_directions = membership["directions_ja"]
+        return (
+            not official_directions
+            or not candidate_directions
+            or bool(set(official_directions) & set(candidate_directions))
+        )
+    return False
+
+
+def candidate_edges_for_facility(
+    facility: dict[str, Any],
+    edges: list[dict[str, Any]],
+    node_coordinates: dict[int, tuple[float, float]],
+    direction_key: str,
+) -> list[dict[str, Any]]:
+    point = (
+        facility["coordinate"]["latitude"],
+        facility["coordinate"]["longitude"],
+    )
+    route_id = facility["route_id"]
+    official_directions = facility[direction_key]
+    ranked: list[tuple[float, dict[str, Any]]] = []
+    for edge in edges:
+        if not membership_matches(
+            edge, route_id, official_directions
+        ):
+            continue
+        distance = distance_to_segment(
+            point,
+            node_coordinates[edge["from_node_id"]],
+            node_coordinates[edge["to_node_id"]],
+        )
+        if distance <= 750:
+            ranked.append((distance, edge))
+    ranked.sort(key=lambda item: (item[0], item[1]["edge_id"]))
+    if not ranked:
+        return []
+    link_candidates = [item for item in ranked if item[1]["kind"] == "LINK"]
+    selected = link_candidates[:12] if link_candidates else ranked[:12]
+    return [
+        {
+            "edge_id": edge["edge_id"],
+            "distance_meters": round(distance, 3),
+        }
+        for distance, edge in selected
+    ]
+
+
+def match_facilities(
+    catalog: dict[str, Any],
+    edges: list[dict[str, Any]],
+    node_coordinates: dict[int, tuple[float, float]],
+) -> list[dict[str, Any]]:
+    facilities: list[dict[str, Any]] = []
+    for official in catalog["directional_facilities"]:
+        entry_candidates = (
+            candidate_edges_for_facility(
+                official,
+                edges,
+                node_coordinates,
+                "entrance_directions",
+            )
+            if official["entrance_directions"]
+            and official["operational_status"] == "AVAILABLE"
+            else []
+        )
+        exit_candidates = (
+            candidate_edges_for_facility(
+                official,
+                edges,
+                node_coordinates,
+                "exit_directions",
+            )
+            if official["exit_directions"]
+            and official["operational_status"] == "AVAILABLE"
+            else []
+        )
+        facilities.append(
+            {
+                **official,
+                "entry_edge_candidates": entry_candidates,
+                "exit_edge_candidates": exit_candidates,
+                "geometry_match_state": (
+                    "CANDIDATE_MATCHED"
+                    if (
+                        (not official["entrance_directions"] or entry_candidates)
+                        and (
+                            not official["exit_directions"]
+                            or exit_candidates
+                        )
+                    )
+                    else "UNRESOLVED"
+                ),
+            }
+        )
+    return facilities
+
+
+def normalized_name(value: str) -> str:
+    return re.sub(
+        r"(ジャンクション|JCT|・|（.*?）|\s)",
+        "",
+        value,
+        flags=re.IGNORECASE,
+    )
+
+
+def selected_node_tags(
+    osmium: Any,
+    input_path: Path,
+    selected_node_ids: set[int],
+) -> dict[int, dict[str, str]]:
+    result: dict[int, dict[str, str]] = {}
+    processor = osmium.FileProcessor(str(input_path)).with_filter(
+        entity_filter(osmium, osmium.osm.NODE)
+    )
+    for node in processor:
+        if node.id not in selected_node_ids or not node.tags:
+            continue
+        result[node.id] = dict(node.tags)
+    return result
+
+
+def match_junctions(
+    catalog: dict[str, Any],
+    node_tags: dict[int, dict[str, str]],
+    node_coordinates: dict[int, tuple[float, float]],
+) -> list[dict[str, Any]]:
+    tagged_names: list[tuple[int, str]] = []
+    for node_id, tags in node_tags.items():
+        name = tags.get("name") or tags.get("name:ja") or ""
+        if name and (
+            tags.get("highway") == "motorway_junction"
+            or "JCT" in name
+            or "ジャンクション" in name
+        ):
+            tagged_names.append((node_id, name))
+
+    junctions: list[dict[str, Any]] = []
+    for official in catalog["junctions"]:
+        tokens = [
+            normalized_name(token)
+            for token in re.split(r"[・･]", official["name_ja"])
+            if normalized_name(token)
+        ]
+        matched_node_ids = sorted(
+            {
+                node_id
+                for node_id, osm_name in tagged_names
+                if any(
+                    token in normalized_name(osm_name)
+                    or normalized_name(osm_name) in token
+                    for token in tokens
+                )
+            }
+        )
+        if not matched_node_ids:
+            matched_node_ids = [
+                node_id
+                for node_id in JUNCTION_OSM_NODE_OVERRIDES.get(
+                    official["name_ja"], []
+                )
+                if node_id in node_coordinates
+            ]
+        coordinates = [
+            node_coordinates[node_id]
+            for node_id in matched_node_ids
+            if node_id in node_coordinates
+        ]
+        junctions.append(
+            {
+                **official,
+                "osm_node_ids": matched_node_ids,
+                "coordinate": (
+                    {
+                        "latitude": sum(value[0] for value in coordinates)
+                        / len(coordinates),
+                        "longitude": sum(value[1] for value in coordinates)
+                        / len(coordinates),
+                    }
+                    if coordinates
+                    else None
+                ),
+                "geometry_match_state": (
+                    "CANDIDATE_MATCHED"
+                    if coordinates
+                    else "UNRESOLVED"
+                ),
+            }
+        )
+    return junctions
+
+
+def compact_way(
+    way: dict[str, Any],
+    memberships: list[dict[str, Any]],
+    mainline_way_ids: set[int],
+) -> dict[str, Any]:
+    tags = way["tags"]
+    retained_tags = {
+        key: tags[key]
+        for key in (
+            "highway",
+            "name",
+            "name:ja",
+            "ref",
+            "oneway",
+            "destination",
+            "destination:ref",
+            "destination:lanes",
+            "lanes",
+            "tunnel",
+            "layer",
+            "construction",
+            "kaido:source_highway",
+            "note",
+        )
+        if key in tags
+    }
+    return {
+        "way_id": way["way_id"],
+        "version": way["version"],
+        "kind": (
+            "MAINLINE"
+            if way["way_id"] in mainline_way_ids
+            else "LINK"
+        ),
+        "node_ids": way["node_ids"],
+        "route_memberships": memberships,
+        "tags": retained_tags,
+    }
+
+
+ROUTE_WAY_IDS: set[int] = set()
+
+
+def build(arguments: argparse.Namespace) -> dict[str, Any]:
+    actual_sha = sha256(arguments.input)
+    if actual_sha != arguments.expected_input_sha256:
+        raise NetworkBuildError(
+            f"input SHA-256 mismatch: {actual_sha} "
+            f"!= {arguments.expected_input_sha256}"
+        )
+    catalog, catalog_sha = load_catalog(arguments.official_catalog)
+    osmium = load_osmium(arguments.expected_pyosmium_version)
+    routes, membership_by_way, source_snapshot_at = relation_snapshot(
+        osmium, arguments.input
+    )
+    relation_way_ids = set(membership_by_way)
+    ways, node_coordinates = scan_motorway_ways(
+        osmium,
+        arguments.input,
+        relation_way_ids,
+        membership_by_way,
+    )
+    mainline_way_ids = relation_way_ids & set(ways)
+    global ROUTE_WAY_IDS
+    ROUTE_WAY_IDS = mainline_way_ids
+    selected_way_ids = select_connected_links(ways, mainline_way_ids)
+    memberships = propagate_membership(
+        ways,
+        selected_way_ids,
+        mainline_way_ids,
+        membership_by_way,
+    )
+    selected_node_ids = {
+        node_id
+        for way_id in selected_way_ids
+        for node_id in ways[way_id]["node_ids"]
+    }
+    edges = build_edges(
+        ways,
+        selected_way_ids,
+        node_coordinates,
+        memberships,
+    )
+    node_tags = selected_node_tags(
+        osmium,
+        arguments.input,
+        selected_node_ids,
+    )
+    official_route_by_id = {
+        route["route_id"]: route for route in catalog["routes"]
+    }
+    return {
+        "schema_version": "1.0",
+        "database_id": (
+            "kaido.shuto.whole-network."
+            + source_snapshot_at[:10]
+        ),
+        "network_snapshot_id": (
+            "shuto-official-"
+            + catalog["checked_at"]
+            + "-osm-"
+            + source_snapshot_at[:10]
+        ),
+        "verification_state": (
+            "OFFICIAL_FACILITIES_OSM_GEOMETRY_CANDIDATE"
+        ),
+        "checked_at": catalog["checked_at"],
+        "sources": {
+            "official_catalog": {
+                "catalog_id": catalog["catalog_id"],
+                "sha256": catalog_sha,
+            },
+            "osm": {
+                "input_file": arguments.input.name,
+                "input_sha256": actual_sha,
+                "source_snapshot_at": source_snapshot_at,
+                "source_uri": arguments.source_uri,
+                "licence": "ODbL-1.0",
+                "attribution": "© OpenStreetMap contributors",
+                "builder": "pyosmium",
+                "builder_version": arguments.expected_pyosmium_version,
+            },
+        },
+        "limitations": [
+            (
+                "OSM geometry and topology are routing candidates, not "
+                "operator-authored lane or vertical-road authority."
+            ),
+            (
+                "Current traffic, passage, toll, and PA closure state remain "
+                "REALTIME_UNCONFIRMED without a current provider response."
+            ),
+            (
+                "Junction inset lane arrows require a separate reviewed "
+                "definition; generic graph geometry must not invent lanes."
+            ),
+        ],
+        "bounds": BOUNDS,
+        "routes": [
+            {
+                **routes[route_id],
+                "official_name_ja": official_route_by_id[route_id][
+                    "official_name_ja"
+                ],
+                "operational_status": official_route_by_id[route_id][
+                    "operational_status"
+                ],
+            }
+            for route_id in ROUTE_RELATION_IDS
+        ],
+        "nodes": [
+            {
+                "node_id": node_id,
+                "latitude": node_coordinates[node_id][0],
+                "longitude": node_coordinates[node_id][1],
+                "tags": node_tags.get(node_id, {}),
+            }
+            for node_id in sorted(selected_node_ids)
+        ],
+        "ways": [
+            compact_way(
+                ways[way_id],
+                memberships[way_id],
+                mainline_way_ids,
+            )
+            for way_id in sorted(selected_way_ids)
+        ],
+        "edges": edges,
+        "directional_facilities": match_facilities(
+            catalog,
+            edges,
+            node_coordinates,
+        ),
+        "junctions": match_junctions(
+            catalog,
+            node_tags,
+            node_coordinates,
+        ),
+        "parking_areas": catalog["parking_areas"],
+    }
+
+
+def validate(result: dict[str, Any]) -> None:
+    if len(result["routes"]) != len(ROUTE_RELATION_IDS):
+        raise NetworkBuildError("whole-network route count mismatch")
+    if len(result["nodes"]) < 2_000 or len(result["edges"]) < 2_000:
+        raise NetworkBuildError("whole-network graph is unexpectedly small")
+    edge_ids = [edge["edge_id"] for edge in result["edges"]]
+    if len(edge_ids) != len(set(edge_ids)):
+        raise NetworkBuildError("duplicate directed edge IDs")
+    route_ids = {
+        membership["route_id"]
+        for edge in result["edges"]
+        for membership in edge["route_memberships"]
+    }
+    missing_routes = set(ROUTE_RELATION_IDS) - route_ids - {"Y"}
+    if missing_routes:
+        raise NetworkBuildError(
+            "graph has no edges for: " + ", ".join(sorted(missing_routes))
+        )
+    unresolved_usable = [
+        facility["facility_id"]
+        for facility in result["directional_facilities"]
+        if facility["operational_status"] == "AVAILABLE"
+        and facility["geometry_match_state"] == "UNRESOLVED"
+    ]
+    if unresolved_usable:
+        raise NetworkBuildError(
+            "usable IC geometry matches unresolved: "
+            + ", ".join(unresolved_usable)
+        )
+    unresolved_junctions = [
+        junction["junction_id"]
+        for junction in result["junctions"]
+        if junction["geometry_match_state"] == "UNRESOLVED"
+    ]
+    if unresolved_junctions:
+        raise NetworkBuildError(
+            "JCT geometry matches unresolved: "
+            + ", ".join(unresolved_junctions)
+        )
+
+
+def main() -> int:
+    arguments = parse_arguments()
+    try:
+        result = build(arguments)
+        validate(result)
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
+        arguments.output.write_text(
+            json.dumps(
+                result,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    except (NetworkBuildError, OSError, ValueError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    matched_facilities = sum(
+        facility["geometry_match_state"] == "CANDIDATE_MATCHED"
+        for facility in result["directional_facilities"]
+    )
+    matched_junctions = sum(
+        junction["geometry_match_state"] == "CANDIDATE_MATCHED"
+        for junction in result["junctions"]
+    )
+    print(
+        "PASS: built whole-Shuto graph with "
+        f"{len(result['routes'])} routes, "
+        f"{len(result['ways'])} ways, "
+        f"{len(result['edges'])} directed edges, "
+        f"{matched_facilities}/"
+        f"{len(result['directional_facilities'])} IC matches, and "
+        f"{matched_junctions}/{len(result['junctions'])} JCT matches"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

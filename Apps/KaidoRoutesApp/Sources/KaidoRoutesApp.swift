@@ -15,6 +15,7 @@ struct KaidoRoutesApp: App {
             .remove()
           try FileC2NavigationSimulationCheckpointStore.applicationSupport()
             .remove()
+          try WholeShutoUserDefaultsCheckpointStore().remove()
         } catch {
           preconditionFailure(
             "Failed to reset E2E navigation checkpoint: \(error)"
@@ -108,6 +109,22 @@ struct KaidoRoutesApp: App {
       ) {
         C2CompletedRouteDemoView()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-ROUTE-PREVIEW"
+      ) {
+        WholeShutoProductPreviewHost(startsNavigation: false)
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoProductPreviewHost(startsNavigation: true)
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-JUNCTION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-LEGACY-PRODUCT-JOURNEY"
+      ) {
+        KaidoProductJourneyView()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-SAVED-ROUTE-LIBRARY-PREVIEW"
       ) {
         SavedRouteLibraryPreviewHost()
@@ -128,14 +145,37 @@ struct KaidoRoutesApp: App {
           )
         )
       } else {
-        KaidoProductJourneyView(
-          model: KaidoProductJourneyModel(
-            composition: .production()
-          ),
-          c2NavigationModel: .production()
-        )
+        WholeShutoProductView()
       }
     }
+  }
+}
+
+private struct WholeShutoJunctionPreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.prepareJunctionPreview()
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
+  }
+}
+
+private struct WholeShutoProductPreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init(startsNavigation: Bool) {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney(startsNavigation: startsNavigation)
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
   }
 }
 

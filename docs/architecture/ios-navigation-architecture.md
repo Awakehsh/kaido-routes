@@ -1,16 +1,20 @@
 # iOS navigation architecture direction
 
-**Status:** accepted and implemented for the platform-light feasibility core,
-with the first internal SwiftUI iPhone composition target now present. The app
-renders review-only Route Atlas assets and links the local domain, routing,
-navigation, presentation, and Apple-adapter modules. It composes a complete
-synthetic released `NavigationSession`, checkpoint lifecycle, and one-shot
-speech boundary. The App catalog additionally contains one real-road K7
-Aoba-to-Kohoku foreground release. A separate C2 end-to-end simulation can
-request a one-shot current location and MapKit surface routes, but neither that
-request nor the simulated C2 highway sequence grants released live-navigation
-authority. The app still has no qualified C2 matcher, background location
-service, or CarPlay scene. The current bake-off
+**Status:** accepted and implemented for the platform-light core and the
+whole-Shuto iPhone product shell. The default app now loads one dated directed
+network containing all 26 official route entries, 151 IC names, 39 JCTs, and
+19 PAs. It can rank directional entrances and exits for arbitrary coordinates,
+compile a Kaido-owned Shuto `RoutePlan`, render geographic and whole-network
+maps, and simulate surface access, entry, junction guidance, exit, and egress.
+An active simulation checkpoint restores only against the same network
+snapshot and exact entry/exit pair, paused at its saved phase and progress.
+Each JCT retains the current operator detail-image URL and SHA-256 for audit;
+the generated inset remains route-level until a separately verified
+movement-specific lane-side definition exists.
+The previous C2 simulation and K7 release remain bounded regression fixtures;
+they are not product coverage limits. The app still has no qualified
+whole-network live matcher, background navigation service, or CarPlay scene.
+The current bake-off
 selects Valhalla as the leading shared implementation behind the bounded
 surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
 subject to Apple-adapter, operations, and field evidence in
@@ -42,13 +46,19 @@ Use a hybrid architecture:
    bounded surface routing and the external HMM oracle, while retaining OSRM and
    GraphHopper as independent executable baselines.
 9. Let the product accept a current position or arbitrary resolvable address at
-   both ends of a selected Shuto route. The provider may calculate only the two
-   ordinary-road legs; it cannot select the directional entrance, replace the
-   route, or change its ordered movements.
+   both ends. Kaido ranks compatible directional entrances and exits and owns
+   the Shuto graph search. The provider may calculate only the two ordinary-road
+   legs; it cannot replace the route or change its ordered movements.
+10. Generate the distributable Shuto graph from pinned route relations plus
+    only connected motorway links. Join current operator route, IC-direction,
+    JCT, and PA facts without copying operator maps or images.
+11. Keep unavailable facilities in the catalog for honest display, but exclude
+    them from route search. The long-term-closed Yaesu Route is the first
+    concrete case.
 
 This is not a plan to recreate nationwide navigation. Kaido owns the small,
-safety-relevant Shuto subgraph and delegates bounded ordinary-road access and
-egress to a provider.
+safety-relevant whole-Shuto snapshot and delegates bounded ordinary-road access
+and egress to a provider.
 
 ## Why one navigation SDK is insufficient
 

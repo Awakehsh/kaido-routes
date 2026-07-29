@@ -2,87 +2,61 @@ import XCTest
 
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
-  func testDefaultLaunchMakesC2MapPrimaryAndKeepsK7AsAnOrdinaryRoute() {
+  func testDefaultLaunchMakesWholeShutoMapTheProduct() {
     continueAfterFailure = false
-    let app = launchProduct()
+    let app = XCUIApplication()
+    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT"]
+    app.launch()
 
     XCTAssertTrue(
-      element("product-routes-origin", in: app)
+      element("whole-shuto-product", in: app)
         .waitForExistence(timeout: 5)
     )
     XCTAssertEqual(
-      element("product-journey-stage", in: app).value as? String,
-      "ATLAS"
+      element("whole-shuto-product", in: app).value as? String,
+      "PLANNING"
     )
     XCTAssertTrue(
-      reveal("product-routes-c2-overview", in: app)
-        .waitForExistence(timeout: 5)
+      element("whole-shuto-network-map", in: app).exists
     )
     XCTAssertTrue(
-      element("product-routes-c2-map", in: app).exists
-    )
-    XCTAssertTrue(
-      element("product-routes-c2-map-route", in: app).isSelected
-    )
-
-    XCTAssertFalse(app.staticTexts["K7 证据"].exists)
-    XCTAssertFalse(app.staticTexts["PRODUCT RELEASE"].exists)
-    XCTAssertFalse(app.staticTexts["SNAPSHOT"].exists)
-
-    reveal("product-routes-c2-map-facilities", in: app).tap()
-    XCTAssertTrue(
-      element("product-routes-c2-map", in: app)
-        .waitForExistence(timeout: 3)
-    )
-    XCTAssertTrue(
-      element("product-routes-c2-map-facilities", in: app).isSelected
-    )
-    XCTAssertEqual(
-      element("product-topology-route-shield", in: app).label,
-      "C2"
-    )
-    XCTAssertEqual(
-      element("product-topology-route-shield-B", in: app).label,
-      "B"
-    )
-    XCTAssertEqual(
-      element("product-topology-facility-summary", in: app).value
-        as? String,
-      "entrance=1;junction=13;interchange=20;parking=1;exit=1"
-    )
-    XCTAssertTrue(
-      element(
-        "product-topology-landmark-entrance-"
-          + "demo.c2.entrance.tomigaya.outer",
-        in: app
-      ).exists
-    )
-    XCTAssertTrue(
-      element(
-        "product-topology-landmark-exit-"
-          + "demo.c2.exit.hatsudai-minami.outer",
-        in: app
-      ).exists
-    )
-    XCTAssertTrue(
-      element(
-        "product-topology-landmark-parkingArea-"
-          + "demo.c2.pa.oi-westbound",
-        in: app
-      ).exists
-    )
-
-    let releaseID = "shutoko.product.k7-aoba-to-kohoku.2026-07-27"
-    XCTAssertTrue(
-      reveal("product-route-option-\(releaseID)", in: app).exists
+      app.staticTexts["首都高全网导航"].exists
     )
 
     let topologyScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    topologyScreenshot.name = "C2 primary route and ordinary K7 catalog entry"
+    topologyScreenshot.name = "Whole Shuto default product map"
     topologyScreenshot.lifetime = .keepAlways
     add(topologyScreenshot)
+  }
+
+  func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {
+    continueAfterFailure = false
+    let routeApp = XCUIApplication()
+    routeApp.launchArguments = ["-WHOLE-SHUTO-ROUTE-PREVIEW"]
+    routeApp.launch()
+
+    let product = element("whole-shuto-product", in: routeApp)
+    XCTAssertTrue(product.waitForExistence(timeout: 5))
+    XCTAssertEqual(product.value as? String, "REVIEW")
+    XCTAssertTrue(element("whole-shuto-network-map", in: routeApp).exists)
+    XCTAssertTrue(
+      element("whole-shuto-start-simulation", in: routeApp).exists
+    )
+    routeApp.terminate()
+
+    let junctionApp = XCUIApplication()
+    junctionApp.launchArguments = ["-WHOLE-SHUTO-JUNCTION-PREVIEW"]
+    junctionApp.launch()
+    XCTAssertTrue(
+      element("whole-shuto-geographic-map", in: junctionApp)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-junction-inset", in: junctionApp)
+        .waitForExistence(timeout: 5)
+    )
   }
 
   func testReleasedK7RouteAutomaticallySimulatesAcrossTheMap() {
@@ -234,6 +208,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
   private func launchProduct() -> XCUIApplication {
     let app = XCUIApplication()
     app.launchArguments = [
+      "-LEGACY-PRODUCT-JOURNEY",
       "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",

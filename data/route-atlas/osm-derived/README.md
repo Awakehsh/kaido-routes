@@ -14,9 +14,48 @@ Licence and attribution references:
 - <https://opendatacommons.org/licenses/odbl/1-0/>
 - <https://osmfoundation.org/wiki/Licence/Attribution_Guidelines>
 
-The distributed K7 artifacts and C2 + B geographic route database carry the
-exact ODbL URI and OpenStreetMap attribution URI in machine-readable metadata.
-The root Apache-2.0 licence does not relicense this directory.
+The distributed whole-Shuto, K7, and C2 + B databases carry the exact ODbL URI
+and OpenStreetMap attribution URI in machine-readable metadata. The root
+Apache-2.0 licence does not relicense this directory.
+
+## Whole-Shuto directed network
+
+`shuto-whole-network-20260728.json` is the default iPhone product graph. It
+contains 26 official route entries, 2,491 selected OSM ways, 24,291 directed
+edges, 151 operator IC names, 39 JCTs, and 19 PAs.
+
+The builder starts from the 26 pinned Shuto route relations, then adds only
+connected `motorway_link` ways. It does not flood-fill into another
+expressway's mainline. Operator pages establish current route and directional
+facility facts; OSM supplies candidate geometry and topology. Every usable IC
+and every official JCT must match or generation fails. Each JCT also retains
+the URL and SHA-256 of its current operator detail image without redistributing
+the image. The three unmatched IC facts are the explicitly unavailable Yaesu
+Route facilities and have no routable candidates.
+
+Reconstruct it from the current operator fact catalog and the pinned Kanto PBF:
+
+```sh
+python3 -m venv /tmp/kaido-shuto-osmium
+/tmp/kaido-shuto-osmium/bin/pip install \
+  beautifulsoup4 \
+  osmium==4.3.1
+/tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_official_catalog.py \
+  --checked-at 2026-07-29 \
+  --output data/network/shuto-official-catalog-20260729.json
+/tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_network.py \
+  --input /path/to/kanto-260728.osm.pbf \
+  --official-catalog data/network/shuto-official-catalog-20260729.json \
+  --output data/route-atlas/osm-derived/shuto-whole-network-20260728.json \
+  --expected-input-sha256 \
+    4ebc009018467c3d9c4cdc5f1817a7d2bfeab243af0889700667f6be99fe4e52 \
+  --source-uri \
+    https://download.geofabrik.de/asia/japan/kanto-260728.osm.pbf
+```
+
+The database is a complete ODbL derivative offered in the repository. The
+operator catalog is a compact factual source record; it does not redistribute
+operator map or JCT image assets.
 
 ## C2 + B geographic route database
 

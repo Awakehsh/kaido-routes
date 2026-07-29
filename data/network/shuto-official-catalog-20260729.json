@@ -1,0 +1,3961 @@
+{
+  "authority": "SHUTOKO_OPERATOR_CURRENT_PAGES",
+  "catalog_id": "kaido.shuto.official-facts.2026-07-29",
+  "checked_at": "2026-07-29",
+  "directional_facilities": [
+    {
+      "coordinate": {
+        "latitude": 35.67808448,
+        "longitude": 139.7751474
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.takaracho",
+      "name_ja": "宝町",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/takaracho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たからちょう",
+      "route_id": "C1",
+      "source_sha256": "92333eb95a8771e2b5b7bcdc8d8a03a1d21ffe425c910ca69e9c82bbe965f6d2"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6747901,
+        "longitude": 139.7726476
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c1.kyoubashi",
+      "name_ja": "京橋",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/kyoubashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きょうばし",
+      "route_id": "C1",
+      "source_sha256": "2f3a40ee96be3c5da169904d53ae3cdd77d38ed69918a9d6e1b1e502e98e0143"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6702928,
+        "longitude": 139.774493
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.shintomicho",
+      "name_ja": "新富町",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/shintomicho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんとみちょう",
+      "route_id": "C1",
+      "source_sha256": "6abfd1e8b83864e0328d9d46625ed7f3ed2c200f0cf641d4abe324b42617b0f9"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.66803533,
+        "longitude": 139.7678518
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.ginza",
+      "name_ja": "銀座",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/ginza",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ぎんざ",
+      "route_id": "C1",
+      "source_sha256": "23658d78bc3ee9e4778d1253509d40847d87a39441bbe01e34ec63dd65527a4e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.66306694,
+        "longitude": 139.7624445
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c1.shiodome",
+      "name_ja": "汐留",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/shiodome",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しおどめ",
+      "route_id": "C1",
+      "source_sha256": "7bcf05c2a619cf9fef174eb772cd2fa03f71b7e2a3bd025cb5d4052d11519a63"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.65397486,
+        "longitude": 139.7478211
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.shibakouen",
+      "name_ja": "芝公園",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/shibakouen",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しばこうえん",
+      "route_id": "C1",
+      "source_sha256": "a4ce8ddfc00e01ac93b43a8edd1f6999e88b0845d986beccb37b8ef7767f4342"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.65930994,
+        "longitude": 139.7365665
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.iikura",
+      "name_ja": "飯倉",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/iikura",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いいくら",
+      "route_id": "C1",
+      "source_sha256": "25d7aea7f1168e4409bafe451e52e1774df0e23eebdf1d28bc8ce6511b4a2b19"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67407543,
+        "longitude": 139.7478533
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.kasumigaseki",
+      "name_ja": "霞が関",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/kasumigaseki",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かすみがせき",
+      "route_id": "C1",
+      "source_sha256": "bc691232df5cd74cc3611cbabb8b6685955179d77126f51e2ec4303105239c0d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68937846,
+        "longitude": 139.7509003
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.daikancho",
+      "name_ja": "代官町",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/daikancho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいかんちょう",
+      "route_id": "C1",
+      "source_sha256": "5706917138ae75aee501afe67a9f04ef7960a456a369c3a1472d098be4be052f"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68984901,
+        "longitude": 139.7535717
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c1.kitanomaru",
+      "name_ja": "北の丸",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/kitanomaru",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きたのまる",
+      "route_id": "C1",
+      "source_sha256": "b6c7d01aab1d6bd9275a87854d7d62312796952f28f93b9ec1457f4777b6d1ac"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68909961,
+        "longitude": 139.7644937
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c1.kandabashi",
+      "name_ja": "神田橋",
+      "official_page_route_slug": "route-c1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c1/kandabashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かんだばし",
+      "route_id": "C1",
+      "source_sha256": "b6fecda623ac0cf05540c2b85d1b10b79821b8cb3ebe90eb7c3041a74ac952fd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6848994,
+        "longitude": 139.7697079
+      },
+      "entrance_directions": [
+        "北行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "北行き"
+      ],
+      "facility_id": "shuto.ic.y.tokiwabashi",
+      "name_ja": "常盤橋",
+      "official_page_route_slug": "route-y",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-y/tokiwabashi",
+      "operational_status": "UNAVAILABLE",
+      "reading_ja": "ときわばし",
+      "route_id": "Y",
+      "source_sha256": "3275d297f093d49e0c597ca48e72f86ce3d86943d0f9947efe9852d759ca29ed"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6800715,
+        "longitude": 139.7686887
+      },
+      "entrance_directions": [
+        "北行き",
+        "南行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "北行き",
+        "南行き"
+      ],
+      "facility_id": "shuto.ic.y.yaesu",
+      "name_ja": "八重洲",
+      "official_page_route_slug": "route-y",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-y/yaesu",
+      "operational_status": "UNAVAILABLE",
+      "reading_ja": "やえす",
+      "route_id": "Y",
+      "source_sha256": "93a63424c7372b61e5fd799fafabc71a24c8b0148b23e09d20a4b5e1fa450a6d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67737855,
+        "longitude": 139.7663176
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "南行き"
+      ],
+      "facility_id": "shuto.ic.y.marunouchi",
+      "name_ja": "丸の内",
+      "official_page_route_slug": "route-y",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-y/marunouchi",
+      "operational_status": "UNAVAILABLE",
+      "reading_ja": "まるのうち",
+      "route_id": "Y",
+      "source_sha256": "5fd8c8c0d37c9d18d1cea8ff10e856bb59e430e2c3d4879a9a8a2714373e7c05"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68963987,
+        "longitude": 139.7755873
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-ueno.honcho",
+      "name_ja": "本町",
+      "official_page_route_slug": "route-1u",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1u/honcho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ほんちょう",
+      "route_id": "1_UENO",
+      "source_sha256": "8cf0eff3f884be9fb4174010f2c3a6c203245cbb965d7f6549e414f770f65788"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.71077685,
+        "longitude": 139.7765744
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-ueno.ueno",
+      "name_ja": "上野",
+      "official_page_route_slug": "route-1u",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1u/ueno",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "うえの",
+      "route_id": "1_UENO",
+      "source_sha256": "b1b4e5df9228faeec4c23f12b8763fc80a01fe9ba67a8b29174c891ffe261d19"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.71862556,
+        "longitude": 139.7828078
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-ueno.iriya",
+      "name_ja": "入谷",
+      "official_page_route_slug": "route-1u",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1u/iriya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いりや",
+      "route_id": "1_UENO",
+      "source_sha256": "d7eb13cfe1162e157256ccf589a3615712399797fbba9d87f7a102ec23214fa6"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64020837,
+        "longitude": 139.7539151
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.shibaura",
+      "name_ja": "芝浦",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/shibaura",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しばうら",
+      "route_id": "1_HANEDA",
+      "source_sha256": "0d7065e885e112dfb50f1d4187aa8da351d6378ae1263ba6cc5c77370c977155"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.59739416,
+        "longitude": 139.7424889
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.katsushima",
+      "name_ja": "勝島",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/katsushima",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かつしま",
+      "route_id": "1_HANEDA",
+      "source_sha256": "3c929510ee8a0d1dc3457d3a9609cd71c4b9d68ee3f3ba2b61eda6374f8081f5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.59178449,
+        "longitude": 139.739399
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.suzugamori",
+      "name_ja": "鈴ヶ森",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/suzugamori",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "すずがもり",
+      "route_id": "1_HANEDA",
+      "source_sha256": "675c1d5f18945d59ae8d2e0a56cef232bfb347ea02fd4d2539949905b643bc09"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.58093045,
+        "longitude": 139.7453749
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.heiwajima",
+      "name_ja": "平和島",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/heiwajima",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "へいわじま",
+      "route_id": "1_HANEDA",
+      "source_sha256": "f0d7cb7e8e22dfccea213231dd4955c66eadd99a5a929e52b3247007ec39b002"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.55632019,
+        "longitude": 139.7535932
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.kukounishi",
+      "name_ja": "空港西",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/kukounishi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "くうこうにし",
+      "route_id": "1_HANEDA",
+      "source_sha256": "cec4dac3328ba914973c93cc06e2453cd3fc9540cf07d87688d7aceaf37798dc"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.55176384,
+        "longitude": 139.7455466
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.1-haneda.haneda",
+      "name_ja": "羽田",
+      "official_page_route_slug": "route-1h",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-1h/haneda",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はねだ",
+      "route_id": "1_HANEDA",
+      "source_sha256": "0fc1f228ebfca1c529f987165fd36d843e0712b3877a0cedf20a3f86e818c019"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64660803,
+        "longitude": 139.7262025
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.2.tengenji",
+      "name_ja": "天現寺",
+      "official_page_route_slug": "route-2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-2/tengenji",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "てんげんじ",
+      "route_id": "2",
+      "source_sha256": "8080ead4b6610c31435430ca18409ddd541b1ef6d6daeca4c87930b7d3af31b8"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.63646772,
+        "longitude": 139.7177052
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.2.meguro",
+      "name_ja": "目黒",
+      "official_page_route_slug": "route-2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-2/meguro",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "めぐろ",
+      "route_id": "2",
+      "source_sha256": "aee8aa47e543f8558678715efac24385a84baa38cde80370e907d23914d894f9"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.61783166,
+        "longitude": 139.7178555
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.2.togoshi",
+      "name_ja": "戸越",
+      "official_page_route_slug": "route-2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-2/togoshi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とごし",
+      "route_id": "2",
+      "source_sha256": "f32bd6b69b80e7745a6c4105d7a51891685b38c01b145ab5c3614bb5ee211abc"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6190178,
+        "longitude": 139.7162676
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.2.ebara",
+      "name_ja": "荏原",
+      "official_page_route_slug": "route-2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-2/ebara",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "えばら",
+      "route_id": "2",
+      "source_sha256": "35c8f961cebf66c35669c266e2e5b15ce66f32583bf2c13857886cf9cc403114"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.65947556,
+        "longitude": 139.7207522
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.3.takagicho",
+      "name_ja": "高樹町",
+      "official_page_route_slug": "route-3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-3/takagicho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たかぎちょう",
+      "route_id": "3",
+      "source_sha256": "7e0f85372461f29d56c0b616ad046d4f6df7ea148fa57c2c4918df293fa2e69d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.65687781,
+        "longitude": 139.6994984
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.3.shibuya",
+      "name_ja": "渋谷",
+      "official_page_route_slug": "route-3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-3/shibuya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しぶや",
+      "route_id": "3",
+      "source_sha256": "a5edba30604801c2303de80f6299cfbfa436990253000752bac3cf5e5978c538"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64888354,
+        "longitude": 139.680959
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.3.ikejiri",
+      "name_ja": "池尻",
+      "official_page_route_slug": "route-3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-3/ikejiri",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いけじり",
+      "route_id": "3",
+      "source_sha256": "79a64762adb3a10d488835e4c0f7b8d9472acc4305f658df3c499d8ad2a7dc45"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64403602,
+        "longitude": 139.6724081
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.3.sangendyaya",
+      "name_ja": "三軒茶屋",
+      "official_page_route_slug": "route-3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-3/sangendyaya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "さんげんぢゃや",
+      "route_id": "3",
+      "source_sha256": "c98b8750a3d1d95f4f59c9ce2b5cf820408fa97a0a289a67d427ea04ffd5f95a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.62712844,
+        "longitude": 139.6276045
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.3.youga",
+      "name_ja": "用賀",
+      "official_page_route_slug": "route-3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-3/youga",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ようが",
+      "route_id": "3",
+      "source_sha256": "6b10c1794cab173505d2ee5eaade35dfc7841442989dd64a58a33f8c128c2f69"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68031552,
+        "longitude": 139.7171474
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.gaien",
+      "name_ja": "外苑",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/gaien",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "がいえん",
+      "route_id": "4",
+      "source_sha256": "89b83c5125655a34272a731a38120db44198420e1d2f7d0f2863ae26f769ce66"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67695151,
+        "longitude": 139.6932435
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.yoyogi",
+      "name_ja": "代々木",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/yoyogi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よよぎ",
+      "route_id": "4",
+      "source_sha256": "a41611b8b81e5d34e43c06d6a4401ec568a8df1c2571f1b3f0f94e7744c8d6b6"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68657254,
+        "longitude": 139.6915591
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.shinjuku",
+      "name_ja": "新宿",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/shinjuku",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんじゅく",
+      "route_id": "4",
+      "source_sha256": "a3753e32db78437e3ce2fbbe91ba2469cb5d5f1f345fe68f0ad736fef62fb77b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6798362,
+        "longitude": 139.6837485
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.4.hatsudai",
+      "name_ja": "初台",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/hatsudai",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はつだい",
+      "route_id": "4",
+      "source_sha256": "e849b1028de9465efb430f04589ed6886283cf9a7c85a99c238e435fc11260b8"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67683821,
+        "longitude": 139.6753263
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.hatagaya",
+      "name_ja": "幡ヶ谷",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/hatagaya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はたがや",
+      "route_id": "4",
+      "source_sha256": "1d65d86bfed1c95753953362c3285fa49756310840c804181b1f185ef4d69ed2"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6688285,
+        "longitude": 139.6475816
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.eifuku",
+      "name_ja": "永福",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/eifuku",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "えいふく",
+      "route_id": "4",
+      "source_sha256": "cbd459dab5f569d6dbf3e3b38ec9c6bfa1b38ac906d246630d136311da482d4b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67438047,
+        "longitude": 139.6202552
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.4.takaido",
+      "name_ja": "高井戸",
+      "official_page_route_slug": "route-4",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-4/takaido",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たかいど",
+      "route_id": "4",
+      "source_sha256": "c4481e15be9ba5da54930e4043fb74ed0ff6d28ab13c89255cc883c89ef0e051"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69145233,
+        "longitude": 139.7580993
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.5.hitotsubashi",
+      "name_ja": "一ツ橋",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/hitotsubashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひとつばし",
+      "route_id": "5",
+      "source_sha256": "2295a8d8e7c3ee28d453478caf199d21527fe4952b0b7659de275168d73fed43"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69735125,
+        "longitude": 139.7524559
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.nishikanda",
+      "name_ja": "西神田",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/nishikanda",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "にしかんだ",
+      "route_id": "5",
+      "source_sha256": "4c0ddeb89a35cdc82c3e0a5232e8f155d5f49d378c52cbf2c0cfb39b07be5f77"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.70405127,
+        "longitude": 139.7445917
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.5.iidabashi",
+      "name_ja": "飯田橋",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/iidabashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いいだばし",
+      "route_id": "5",
+      "source_sha256": "ffb7bc8d671e9cdc59d376cd8db6502ed763664dac16b81f873bb00765bc9a9e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7099057,
+        "longitude": 139.7270823
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.waseda",
+      "name_ja": "早稲田",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/waseda",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "わせだ",
+      "route_id": "5",
+      "source_sha256": "567878a85bca31f4314304c694d5d2d5ecdd0b2fbd6f1dda6c1906b82155317a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7193137,
+        "longitude": 139.7251403
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.gokokuji",
+      "name_ja": "護国寺",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/gokokuji",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ごこくじ",
+      "route_id": "5",
+      "source_sha256": "6bff74079308387dba3e72ce84a0cf8505c0055639f51b312f6c7a4c6812bca7"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.72884253,
+        "longitude": 139.7205377
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.higashiikebukuro",
+      "name_ja": "東池袋",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/higashiikebukuro",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひがしいけぶくろ",
+      "route_id": "5",
+      "source_sha256": "6c445672ccc99c7ac0e033c06c74db64a63b3490288d11cbfb826b54f56d555e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.74055602,
+        "longitude": 139.7078133
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.kitaikebukuro",
+      "name_ja": "北池袋",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/kitaikebukuro",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きたいけぶくろ",
+      "route_id": "5",
+      "source_sha256": "300cdc67284c30386582dc9f803e05930466bf7c96366a062a4ca93e3f0cf97a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.76083502,
+        "longitude": 139.7056031
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.itabashihoncho",
+      "name_ja": "板橋本町",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/itabashihoncho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いたばしほんちょう",
+      "route_id": "5",
+      "source_sha256": "8f6461dedc447869ad4fccb1970ad5d8d8feea9c4a513b7de4bc9d915812ffbf"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.77569487,
+        "longitude": 139.6804011
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.nakadai",
+      "name_ja": "中台",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/nakadai",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "なかだい",
+      "route_id": "5",
+      "source_sha256": "738e5122cb0e45bdd44488de67a83348af42e04237c80cc895e63b84dcd17318"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.78578702,
+        "longitude": 139.6480161
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.takashimadaira",
+      "name_ja": "高島平",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/takashimadaira",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たかしまだいら",
+      "route_id": "5",
+      "source_sha256": "7492976b437864e83ffb1ac82cc3d5689dfa4bcd2c722ac8fa2866f36fa7841f"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.80444911,
+        "longitude": 139.6487725
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.5.todaminami",
+      "name_ja": "戸田南",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/todaminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とだみなみ",
+      "route_id": "5",
+      "source_sha256": "8c8467080f09066f709c5038933ec0f0f7a935b9bd0f18d3b467746bafd6fffb"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.81946611,
+        "longitude": 139.6445668
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.5.toda",
+      "name_ja": "戸田",
+      "official_page_route_slug": "route-5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-5/toda",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とだ",
+      "route_id": "5",
+      "source_sha256": "2b9763eb20894b0b213d9cccca170cbd121f4fd9391b0c473849096a0eda0f13"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68045495,
+        "longitude": 139.7837627
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.hakozaki",
+      "name_ja": "箱崎",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/hakozaki",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はこざき",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "3bd02147de691b8b1b8aa797e9ce3f9e994b49c9b1b48e36814aaf054af327d0"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68384496,
+        "longitude": 139.787904
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.hamacho",
+      "name_ja": "浜町",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/hamacho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はまちょう",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "8951a39c6dd005dbf22e4d4cbcbfe4f3c11b5e6956aef9bc780a7dbcff3e8b1e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68353124,
+        "longitude": 139.7898567
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.kiyosubashi",
+      "name_ja": "清洲橋",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/kiyosubashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きよすばし",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "64279e2c7582043b513489d0ef04c45654ffb51c41e2aef9b643880ecb103f01"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.70744027,
+        "longitude": 139.7979248
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.komagata",
+      "name_ja": "駒形",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/komagata",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "こまがた",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "8f7a3627d204d9094ed2e5cad662178b7489d8bd8a5a14a1bdc69e3e144ac7ba"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7224843,
+        "longitude": 139.809984
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.mukoujima",
+      "name_ja": "向島",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/mukoujima",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "むこうじま",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "994ec196002f076a278db55d20702932071b29bbae9d27f8a4fff4c4ec05aedb"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7356444,
+        "longitude": 139.8147798
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-mukojima.tsutsumidori",
+      "name_ja": "堤通",
+      "official_page_route_slug": "route-6mu",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mu/tsutsumidori",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "つつみどおり",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "6c0ef54994ce84dd84b3e48b688bde0ba4eafeca1c76223f73cae7cde15c365f"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.77789706,
+        "longitude": 139.8240817
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-misato.kahei",
+      "name_ja": "加平",
+      "official_page_route_slug": "route-6mi",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mi/kahei",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かへい",
+      "route_id": "6_MISATO",
+      "source_sha256": "9bc9437d894406ce85abf619ff3a8cc9aae532ffde1659b889d0707f1c274e63"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.80367469,
+        "longitude": 139.8311305
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-misato.yashiominami",
+      "name_ja": "八潮南",
+      "official_page_route_slug": "route-6mi",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mi/yashiominami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "やしおみなみ",
+      "route_id": "6_MISATO",
+      "source_sha256": "982f1d24a98984c4eb2601d00d42cd2d491af85f0cb9c5449a39f066f67377a3"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.81343703,
+        "longitude": 139.8450887
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-misato.yashio",
+      "name_ja": "八潮",
+      "official_page_route_slug": "route-6mi",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mi/yashio",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "やしお",
+      "route_id": "6_MISATO",
+      "source_sha256": "480fc06833f1c6dccc9795937391e3efdc35b08b85da93d1e7dbb5ad5bf72a33"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.83644598,
+        "longitude": 139.8598409
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.6-misato.misato",
+      "name_ja": "三郷",
+      "official_page_route_slug": "route-6mi",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-6mi/misato",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "みさと",
+      "route_id": "6_MISATO",
+      "source_sha256": "a0f891e1b1e8a6ff4d7f87648343a525f6cb93df157b837c92c1630f8d475562"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69313405,
+        "longitude": 139.8143077
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.7.kinshicho",
+      "name_ja": "錦糸町",
+      "official_page_route_slug": "route-7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-7/kinshicho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きんしちょう",
+      "route_id": "7",
+      "source_sha256": "c6924498a51a51bf864763d22e8f66c1afc69c37c78d8c690fc31be79c29606e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69922452,
+        "longitude": 139.865216
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.7.komatsugawa",
+      "name_ja": "小松川",
+      "official_page_route_slug": "route-7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-7/komatsugawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "こまつがわ",
+      "route_id": "7",
+      "source_sha256": "7c2a0e0f529edc37a779b366f9d4f6394f66415fbb741e079fc76dc2cadca65c"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69746452,
+        "longitude": 139.8803544
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.7.ichinoe",
+      "name_ja": "一之江",
+      "official_page_route_slug": "route-7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-7/ichinoe",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いちのえ",
+      "route_id": "7",
+      "source_sha256": "be0b835129ceebc3e7a1254680a7b09969082324dddec13d2e5f44ea61aa3572"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6772914,
+        "longitude": 139.7931933
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.9.fukudumi",
+      "name_ja": "福住",
+      "official_page_route_slug": "route-9",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-9/fukudumi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ふくずみ",
+      "route_id": "9",
+      "source_sha256": "cca9b750e2fff90e1b85494999f59079516ab8e820d64f0cda0e3147260da59d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67214927,
+        "longitude": 139.8053062
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.9.kiba",
+      "name_ja": "木場",
+      "official_page_route_slug": "route-9",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-9/kiba",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きば",
+      "route_id": "9",
+      "source_sha256": "b48bd0eebdb17296fb5a7468a89460ee4f7b996688048f3ad9889343cc77a557"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.66394733,
+        "longitude": 139.8053491
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.9.shiohama",
+      "name_ja": "塩浜",
+      "official_page_route_slug": "route-9",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-9/shiohama",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しおはま",
+      "route_id": "9",
+      "source_sha256": "c4957b3e35a62a9ec0eb46a4956ca4b4c978eea1b5952e84436c6db25459375a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.65936224,
+        "longitude": 139.8051238
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.9.edagawa",
+      "name_ja": "枝川",
+      "official_page_route_slug": "route-9",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-9/edagawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "えだがわ",
+      "route_id": "9",
+      "source_sha256": "e4f2b3a3cc0affe43ade623019f925995abc5abc79284cf7f37dba56c736743c"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.654421,
+        "longitude": 139.782739
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.10.harumi",
+      "name_ja": "晴海",
+      "official_page_route_slug": "route-10",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-10/harumi/",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はるみ",
+      "route_id": "10",
+      "source_sha256": "bd0051730a987606ee5d3f5a23f4758e6d86420244657e195629b1cc01e887ae"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64655572,
+        "longitude": 139.790318
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.10.toyosu",
+      "name_ja": "豊洲",
+      "official_page_route_slug": "route-10",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-10/toyosu",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とよす",
+      "route_id": "10",
+      "source_sha256": "21ba1d5a2b6c1fb95b4e2a7959a4c6385ca551b4f69417a141d20c6f0b783331"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.63495921,
+        "longitude": 139.7773683
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.11.daiba",
+      "name_ja": "台場",
+      "official_page_route_slug": "route-11",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-11/daiba",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいば",
+      "route_id": "11",
+      "source_sha256": "5bcb6a4a916c3cecc74100a631e8628f9e181d60572bb82c2be5c70c8743c5cd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.60196,
+        "longitude": 139.755708
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.chukanooiminami",
+      "name_ja": "中環大井南",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/chukanooiminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ちゅうかんおおいみなみ",
+      "route_id": "C2",
+      "source_sha256": "f1184cdc04a53aafa0643a6243a37317c2076b8662ebf29d4504978d4fbef50b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.626277,
+        "longitude": 139.716193
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.gotanda",
+      "name_ja": "五反田",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/gotanda",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ごたんだ",
+      "route_id": "C2",
+      "source_sha256": "1845ed3af6f9906eb93938bb4830b80e22aa380d0bdb5317931152a6f11a4eaf"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.66378171,
+        "longitude": 139.6877503
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.tomigaya",
+      "name_ja": "富ヶ谷",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/tomigaya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とみがや",
+      "route_id": "C2",
+      "source_sha256": "1c1f434a56403bbe82fbdb087fe00d3d6569f0a9bd1c5a500a53a7318f3c34e4"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67511257,
+        "longitude": 139.6878147
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.hatsudaiminami",
+      "name_ja": "初台南",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/hatsudaiminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はつだいみなみ",
+      "route_id": "C2",
+      "source_sha256": "32d0107567c030734c9cf94a17776405760c567184a0f3742a3f045bfd629f24"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69335188,
+        "longitude": 139.6821821
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.nakanochoujabashi",
+      "name_ja": "中野長者橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/nakanochoujabashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "なかのちょうじゃばし",
+      "route_id": "C2",
+      "source_sha256": "bed98d5b69b03f83ceefb8c364b264b3d747cc6f262ea263aa08e60b10e1a7ba"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.72645607,
+        "longitude": 139.6956146
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.nishiikebukuro",
+      "name_ja": "西池袋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/nishiikebukuro",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "にしいけぶくろ",
+      "route_id": "C2",
+      "source_sha256": "1ec6f93aedffc26beb0ed97d99bb5fb593e7835e405962a184c55762cf6d6c5a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.73844859,
+        "longitude": 139.7041762
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.c2.takamatsu",
+      "name_ja": "高松",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/takamatsu",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たかまつ",
+      "route_id": "C2",
+      "source_sha256": "5a6148a55f3cfde0d00e5f1e08970e81c7f64bd6f1d3afcdf09f735787149db8"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.74910709,
+        "longitude": 139.7182095
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.shinitabashi",
+      "name_ja": "新板橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/shinitabashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんいたばし",
+      "route_id": "C2",
+      "source_sha256": "218f461d49acd144b290d3d7ffeeb4060e3642300114241efaa5700a50df2ca6"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.74814928,
+        "longitude": 139.7224045
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.c2.takinogawa",
+      "name_ja": "滝野川",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/takinogawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "たきのがわ",
+      "route_id": "C2",
+      "source_sha256": "9b3b23766c18aca1d15318574271653a81e72a8457d65b40e37e5927b13924fd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.755249,
+        "longitude": 139.742524
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.oujiminami",
+      "name_ja": "王子南",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/oujiminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "おうじみなみ",
+      "route_id": "C2",
+      "source_sha256": "b06799fbae8f67e986925bedb0712b7cce01ee14f8326e617c8f17e56898dc75"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7584234,
+        "longitude": 139.7382832
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.oujikita",
+      "name_ja": "王子北",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/oujikita",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "おうじきた",
+      "route_id": "C2",
+      "source_sha256": "41934b8623321460415de5c0a782218ce2b90004c8580f477b1388aabb7f84a0"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.760095,
+        "longitude": 139.7709739
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.oogioohashi",
+      "name_ja": "扇大橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/oogioohashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "おうぎおおはし",
+      "route_id": "C2",
+      "source_sha256": "dcc6b2c9c4d53a0713a145967eca96e09464ea979e6f58c3e2171b1767645a6d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.76160985,
+        "longitude": 139.8035789
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.senjushinbashi",
+      "name_ja": "千住新橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/senjushinbashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "せんじゅしんばし",
+      "route_id": "C2",
+      "source_sha256": "6631b9c05400f2a2cd09db3ed83c33dfe1428bb77ed478299011d66ba7a49781"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.75198917,
+        "longitude": 139.8230195
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.kosuge",
+      "name_ja": "小菅",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/kosuge",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "こすげ",
+      "route_id": "C2",
+      "source_sha256": "90751a5a961a4e80cde2550ec71556bca2b0feeb1f0d9b7812e1e61829880973"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.73405067,
+        "longitude": 139.8314202
+      },
+      "entrance_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り",
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.yotsugi",
+      "name_ja": "四つ木",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/yotsugi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よつぎ",
+      "route_id": "C2",
+      "source_sha256": "ad55971fd75618ff4cc4ef69b527fb2ce5578f2ad42894571520eb56fb5911e2"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.71483633,
+        "longitude": 139.8501956
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.hiraioohashi",
+      "name_ja": "平井大橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/hiraioohashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひらいおおはし",
+      "route_id": "C2",
+      "source_sha256": "adb1e23c4386b796d650da544c675db2122c194111023e3d5ba1b05b72196393"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.69922452,
+        "longitude": 139.865216
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": false,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.c2.chukankomatsugawa",
+      "name_ja": "中環小松川",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/chukankomatsugawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ちゅうかんこまつがわ",
+      "route_id": "C2",
+      "source_sha256": "ebf7b7d2ef8680b08e6446cfb7527f9793e398b25a60ebceac449e44ed08bd83"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.68814979,
+        "longitude": 139.8575771
+      },
+      "entrance_directions": [
+        "外回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "内回り"
+      ],
+      "facility_id": "shuto.ic.c2.funaboribashi",
+      "name_ja": "船堀橋",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/funaboribashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ふなぼりばし",
+      "route_id": "C2",
+      "source_sha256": "f468f062596788fb6b2001687a8817e00da2d435f1ff4e8de1c23d2dd1c3a74a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.66526353,
+        "longitude": 139.8528671
+      },
+      "entrance_directions": [
+        "内回り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "外回り"
+      ],
+      "facility_id": "shuto.ic.c2.seishincho",
+      "name_ja": "清新町",
+      "official_page_route_slug": "route-c2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-c2/seishincho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "せいしんちょう",
+      "route_id": "C2",
+      "source_sha256": "01f9a88e23a91354e109be8e1b0f42838c4922f100ef5b03b33c99d0efb9f1e1"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.7767481,
+        "longitude": 139.7488081
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s1.shikahamabashi",
+      "name_ja": "鹿浜橋",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/shikahamabashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しかはまばし",
+      "route_id": "S1",
+      "source_sha256": "9e587b0463cf7b7152549ffb923d72c81189903be5e96961a2e8a6ee6095b50b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.78929003,
+        "longitude": 139.7546017
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.s1.higashiryouke",
+      "name_ja": "東領家",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/higashiryouke",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひがしりょうけ",
+      "route_id": "S1",
+      "source_sha256": "cc1ee7c0fcf02a36c30e36566a5bad0967e1e8ea6b8bb40b0aaadbf02ea5413a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.79512079,
+        "longitude": 139.7602344
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s1.kaga",
+      "name_ja": "加賀",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/kaga",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かが",
+      "route_id": "S1",
+      "source_sha256": "c80aae4ae4f83ec40cd7585833c3523fec157cc31afde0813ab0c15c4c928015"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.80535404,
+        "longitude": 139.759419
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.s1.adachiiriya",
+      "name_ja": "足立入谷",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/adachiiriya",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "あだちいりや",
+      "route_id": "S1",
+      "source_sha256": "a09fefcf390a9e205cadc354f195187d74ff793e72cf5bed142915584d9f7287"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.8213887,
+        "longitude": 139.7598374
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s1.shingou",
+      "name_ja": "新郷",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/shingou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんごう",
+      "route_id": "S1",
+      "source_sha256": "93af61392c51bb74638357323ac243964e7d04a62061a217c611c939ec909424"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.83489776,
+        "longitude": 139.7558248
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s1.angyou",
+      "name_ja": "安行",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/angyou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "あんぎょう",
+      "route_id": "S1",
+      "source_sha256": "658aef82214be536eb80a7485bfecfec0b8ea67599b17abfa42261137f7d5377"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.84685654,
+        "longitude": 139.7397208
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s1.araijuku",
+      "name_ja": "新井宿",
+      "official_page_route_slug": "route-s1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s1/araijuku",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "あらいじゅく",
+      "route_id": "S1",
+      "source_sha256": "2b0fa1cfe6be6e5274c58f6064065d70da6c90ee938552acab49e54c3281694c"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.89645532,
+        "longitude": 139.6199441
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s2.shintoshinnishi",
+      "name_ja": "新都心西",
+      "official_page_route_slug": "route-s2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s2/shintoshinnishi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんとしんにし",
+      "route_id": "S2",
+      "source_sha256": "3f1fac7124a5f5a4aaa73241cc6838e550f958427341afc9c90c9cdf906e4ef8"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.89670737,
+        "longitude": 139.6434295
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s2.shintoshin",
+      "name_ja": "新都心",
+      "official_page_route_slug": "route-s2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s2/shintoshin",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんとしん",
+      "route_id": "S2",
+      "source_sha256": "01ec86dd4757733501681d37377a74e1b455e12539238609ee4b1128df127d47"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.89532546,
+        "longitude": 139.6633208
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s2.saitamaminuma",
+      "name_ja": "さいたま見沼",
+      "official_page_route_slug": "route-s2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s2/saitamaminuma",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "さいたまみぬま",
+      "route_id": "S2",
+      "source_sha256": "fae1b52340d74b8049d77dc5a5d6bc9c49c199171572b6a5a4d4f82ed00649c8"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.83541094,
+        "longitude": 139.6305335
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s5.urawaminami",
+      "name_ja": "浦和南",
+      "official_page_route_slug": "route-s5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s5/urawaminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "うらわみなみ",
+      "route_id": "S5",
+      "source_sha256": "fbf2f1f90583121f666770fd60ea2957bb6c902dca6eb9e77469edd506d1300b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.86842126,
+        "longitude": 139.6204805
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.s5.urawakita",
+      "name_ja": "浦和北",
+      "official_page_route_slug": "route-s5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s5/urawakita",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "うらわきた",
+      "route_id": "S5",
+      "source_sha256": "f7ae0202e756b290a7d280ad37378921990628d14fee3bbf3fc54fc2f988cbec"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.89014526,
+        "longitude": 139.6126699
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.s5.yono",
+      "name_ja": "与野",
+      "official_page_route_slug": "route-s5",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-s5/yono",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よの",
+      "route_id": "S5",
+      "source_sha256": "fcd258c85f594da50b6758f0a5bc2bfa84a42581c7707d002178c8b82a2081c1"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.67341305,
+        "longitude": 139.9284625
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.chidoricho",
+      "name_ja": "千鳥町",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/chidoricho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ちどりちょう",
+      "route_id": "B",
+      "source_sha256": "6d72d3fc20ef1116c04d1d9ba451772248a55f888d528157b76e7e6a4d7792bb"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.6404525,
+        "longitude": 139.8907185
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.urayasu",
+      "name_ja": "浦安",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/urayasu",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "うらやす",
+      "route_id": "B",
+      "source_sha256": "75f87ca69cb6de166de5d63dc8b4d0b90e20e86049059b7befc5dcb547826010"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.63645029,
+        "longitude": 139.8853004
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.b.maihama",
+      "name_ja": "舞浜",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/maihama",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "まいはま",
+      "route_id": "B",
+      "source_sha256": "5edef7e2a3ca5ef5d28aa150dde80cad19e7ec3ac749f2f46345d7d8c6661026"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64330364,
+        "longitude": 139.8664176
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.kasai",
+      "name_ja": "葛西",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/kasai",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "かさい",
+      "route_id": "B",
+      "source_sha256": "e4ca5a47c11d85b7f9dd4353a20192aa69f2bd1c309c85fc92ff8275428408f7"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.64713986,
+        "longitude": 139.8306262
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.shinkiba",
+      "name_ja": "新木場",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/shinkiba",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんきば",
+      "route_id": "B",
+      "source_sha256": "31c29434a1d9b5ed18bda7445d83a8faec07a54df7701e90684b4ba1624e9c3f"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.63643285,
+        "longitude": 139.7945559
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.ariake",
+      "name_ja": "有明",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/ariake",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ありあけ",
+      "route_id": "B",
+      "source_sha256": "4e50d9d3921abf39db4c5c5de2a7cf0f48e77e7f25eea8a50d9eb1bc728ce169"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.627625,
+        "longitude": 139.777652
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.rinkaihukutoshin",
+      "name_ja": "臨海副都心",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/rinkaihukutoshin",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "りんかいふくとしん",
+      "route_id": "B",
+      "source_sha256": "8877175015a6c6302a9b6867f53e04ef3d4fe879c42c8b942f6d7c2a037f02dd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.61124652,
+        "longitude": 139.755857
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.ooi",
+      "name_ja": "大井",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/ooi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "おおい",
+      "route_id": "B",
+      "source_sha256": "2efc3981d4e1df27953e02da95da418a6bfc1d8144cd154fcb92f65750058f6e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.5957017,
+        "longitude": 139.7552884
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.ooiminami",
+      "name_ja": "大井南",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/ooiminami",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "おおいみなみ",
+      "route_id": "B",
+      "source_sha256": "9d29b0cb6649cfd20c0520a59278d0cdd10952dd22bd7f3a03f355d77b93cafb"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.55481889,
+        "longitude": 139.7825289
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.kukouchuou",
+      "name_ja": "空港中央",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/kukouchuou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "くうこうちゅうおう",
+      "route_id": "B",
+      "source_sha256": "a175f5189e9423de99277f47f6650faf230c16c588f7385632c1aa6576a065fd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.54026708,
+        "longitude": 139.793365
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.wangankanpachi",
+      "name_ja": "湾岸環八",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/wangankanpachi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "わんがんかんぱち",
+      "route_id": "B",
+      "source_sha256": "c0bf60b5058df83f21ebc95e85ddc7b8d3c52c4b06b8ff899cc6774588e1a372"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.520194,
+        "longitude": 139.7880006
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.ukishima",
+      "name_ja": "浮島",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/ukishima",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "うきしま",
+      "route_id": "B",
+      "source_sha256": "740c185d3fb361d8d583e36c242d3d8c77af682084887f14511e98364cdc0546"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.49636871,
+        "longitude": 139.7543335
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.higashiogishima",
+      "name_ja": "東扇島",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/higashiogishima",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひがしおおぎしま",
+      "route_id": "B",
+      "source_sha256": "d7e466e5f05ea9bd17d09a176acfd6c6cc07f57603e9045330cf680ceb11d737"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.46098455,
+        "longitude": 139.6801651
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.daikokufutou",
+      "name_ja": "大黒ふ頭",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/daikokufutou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいこくふとう",
+      "route_id": "B",
+      "source_sha256": "634027166b9d83676d6e417e499c8d59947d06482291265796ad7d2a98d83879"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.43165195,
+        "longitude": 139.6706057
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.honmakifutou",
+      "name_ja": "本牧ふ頭",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/honmakifutou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ほんもくふとう",
+      "route_id": "B",
+      "source_sha256": "b0e2a15142b7578f28eb84e8b353e56f09bdfbb846acb163e9183315b1767447"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.418617,
+        "longitude": 139.670404
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.minamihonmokufutou",
+      "name_ja": "南本牧ふ頭",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/minamihonmokufutou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "みなみほんもくふとう",
+      "route_id": "B",
+      "source_sha256": "0989e0943aae03fc2d52d804eac4c85f20db63262607b42da7771fcda4fa3344"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.41295952,
+        "longitude": 139.6598554
+      },
+      "entrance_directions": [
+        "西行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.sankeien",
+      "name_ja": "三溪園",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/sankeien",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "さんけいえん",
+      "route_id": "B",
+      "source_sha256": "908c505ba714db18dba5f0b300ab4a3b56d93c35ea76f06aac794c952f6da5dd"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.39755992,
+        "longitude": 139.6175516
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.isogo",
+      "name_ja": "磯子",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/isogo",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いそご",
+      "route_id": "B",
+      "source_sha256": "904dfe46a6d9ce706dffa483a05e0a97253ae165d4ca4344b25986111f9a7cef"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.38420423,
+        "longitude": 139.6233988
+      },
+      "entrance_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き",
+        "東行き"
+      ],
+      "facility_id": "shuto.ic.b.sugita",
+      "name_ja": "杉田",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/sugita",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "すぎた",
+      "route_id": "B",
+      "source_sha256": "4ccf0b45f2ba7c1b4b54abde3c98d2f6edf72545f42140e4a057fca6620456bc"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.35956867,
+        "longitude": 139.6438801
+      },
+      "entrance_directions": [
+        "東行き"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "西行き"
+      ],
+      "facility_id": "shuto.ic.b.sachiura",
+      "name_ja": "幸浦",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/sachiura",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "さちうら",
+      "route_id": "B",
+      "source_sha256": "6794b8058c72bdcab0daf4ec0bcbd2c60a74cca2f769e51ed47e0d0210202b21"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.53778769,
+        "longitude": 139.7400856
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.daishi",
+      "name_ja": "大師",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/daishi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいし",
+      "route_id": "K1",
+      "source_sha256": "de964a37d4d7383dca6a1b0719e81ae7837fc6b726e8a5ec94bb07191b9f76c5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.51304191,
+        "longitude": 139.7178984
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.hamakawasaki",
+      "name_ja": "浜川崎",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/hamakawasaki",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はまかわさき",
+      "route_id": "K1",
+      "source_sha256": "420b25199a170e23ab1ac18b116ef253e5c5a74c3b97f73ea66ce63481c88dd5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.50407253,
+        "longitude": 139.7026098
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.k1.asada",
+      "name_ja": "浅田",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/asada",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "あさだ",
+      "route_id": "K1",
+      "source_sha256": "0de9fc22e7895623f2b5807a9f99803edefa2f0fe70de588ad0d39fa56e757e4"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.49839518,
+        "longitude": 139.6904433
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.shioiri",
+      "name_ja": "汐入",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/shioiri",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しおいり",
+      "route_id": "K1",
+      "source_sha256": "b7df7ccac9372a90dee42abcff346b7de514e897ad1e33a00d262e5c3e5cdf92"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.49135471,
+        "longitude": 139.6707237
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.k1.namamugi",
+      "name_ja": "生麦",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/namamugi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "なまむぎ",
+      "route_id": "K1",
+      "source_sha256": "a2253d5368584bcd1e2e4f2c039fb49055e7b3ef72d8782a46eef57cbe0a2726"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.48566773,
+        "longitude": 139.6557355
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.moriyacho",
+      "name_ja": "守屋町",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/moriyacho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "もりやちょう",
+      "route_id": "K1",
+      "source_sha256": "1c38050e4e3463fe36bbbd143304a979c5fe3745ef9d1997c69ac9ab23a80384"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.48482907,
+        "longitude": 139.6528172
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.koyasu",
+      "name_ja": "子安",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/koyasu",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "こやす",
+      "route_id": "K1",
+      "source_sha256": "7c345ce5c3307f37a0cef0e947453c485398ae5fdb8139b5586a92da0284b1a4"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.47603127,
+        "longitude": 139.6363056
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.higashikanagawa",
+      "name_ja": "東神奈川",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/higashikanagawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ひがしかながわ",
+      "route_id": "K1",
+      "source_sha256": "ecfa8537246623d3b4afbc07f0a30ed7332b343bcd7add7d0a2544295eac079d"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.46358865,
+        "longitude": 139.6238494
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.k1.yokohamaekihigashiguchi",
+      "name_ja": "横浜駅東口",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/yokohamaekihigashiguchi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまえきひがしぐち",
+      "route_id": "K1",
+      "source_sha256": "50d6ba4b0532b5ac038ca3e14519259a89973c08278180e67bd1e3eced512629"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.45588969,
+        "longitude": 139.6275401
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.minatomirai",
+      "name_ja": "みなとみらい",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/minatomirai",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "みなとみらい",
+      "route_id": "K1",
+      "source_sha256": "026dce2ea874c050fb7642fb56c2f9f6444a13367ff92d1df9b15e3bd9833d1e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.44222026,
+        "longitude": 139.6388698
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k1.yokohamakouen",
+      "name_ja": "横浜公園",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/yokohamakouen",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまこうえん",
+      "route_id": "K1",
+      "source_sha256": "9098825a355cfcb1e9657cc2e35f80dee3d2866829b9221978619a9b6e098b25"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.46837719,
+        "longitude": 139.6157384
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k2.yokohamaekinishiguchi",
+      "name_ja": "横浜駅西口",
+      "official_page_route_slug": "route-k2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k2/yokohamaekinishiguchi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまえきにしぐち",
+      "route_id": "K2",
+      "source_sha256": "c7e4efe24845210d0657888ebce10bed636d859af99db21a868a109925a8a94e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.47099853,
+        "longitude": 139.6057713
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k2.mitsuzawa",
+      "name_ja": "三ツ沢",
+      "official_page_route_slug": "route-k2",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k2/mitsuzawa",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "みつざわ",
+      "route_id": "K2",
+      "source_sha256": "78eef439d0e118b141057b2d2c03460f5286b86d2e0e77e8d823e8533e723788"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.44178322,
+        "longitude": 139.6593833
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k3.shinyamashita",
+      "name_ja": "新山下",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/shinyamashita",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんやました",
+      "route_id": "K3",
+      "source_sha256": "aa21d27fe0f2614fe73a9d42d0bb3c36afb89f0b95ddd16f7592c18cbdd55a34"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.4432167,
+        "longitude": 139.6568191
+      },
+      "entrance_directions": [],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.k3.yamashitacho",
+      "name_ja": "山下町",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/yamashitacho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "やましたちょう",
+      "route_id": "K3",
+      "source_sha256": "0e4b3f96bc80113b851a4902e6bd0ca518576e9482ff4d8a75d222db4b592ff5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.43937945,
+        "longitude": 139.6442556
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [],
+      "facility_id": "shuto.ic.k3.ishikawacho",
+      "name_ja": "石川町",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/ishikawacho",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "いしかわちょう",
+      "route_id": "K3",
+      "source_sha256": "4786d96f0d914d723ef6aa9ebf137cc6157146a955b66c3bf791761c07b74b6e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.43749135,
+        "longitude": 139.6247292
+      },
+      "entrance_directions": [
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り"
+      ],
+      "facility_id": "shuto.ic.k3.bandoubashi",
+      "name_ja": "阪東橋",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/bandoubashi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ばんどうばし",
+      "route_id": "K3",
+      "source_sha256": "7c29d223812e3a7fecd5063163cd6d620b63ba6d21b21978e29db818d4e2920e"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.43501752,
+        "longitude": 139.6140754
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k3.hananoki",
+      "name_ja": "花之木",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/hananoki",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "はなのき",
+      "route_id": "K3",
+      "source_sha256": "4ac0e10c45d5c8188861dbcdbc3d7f8814a407442235ac96e219224843ca371b"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.44006999,
+        "longitude": 139.5963407
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k3.nagata",
+      "name_ja": "永田",
+      "official_page_route_slug": "route-k3",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k3/nagata",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ながた",
+      "route_id": "K3",
+      "source_sha256": "322ed4cf6f67afe0bc1339920feeb6c789e93707b23bbc22f2158eb46439fd95"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.46098455,
+        "longitude": 139.6801651
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k5.daikokufutou",
+      "name_ja": "大黒ふ頭",
+      "official_page_route_slug": "route-b",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-b/daikokufutou",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいこくふとう",
+      "route_id": "K5",
+      "source_sha256": "634027166b9d83676d6e417e499c8d59947d06482291265796ad7d2a98d83879"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.53798848,
+        "longitude": 139.7567153
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k6.tonomachi",
+      "name_ja": "殿町",
+      "official_page_route_slug": "route-k6",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k6/tonomachi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "とのまち",
+      "route_id": "K6",
+      "source_sha256": "0091d6c30f7552fc0f25c2f78481a2cef64094e6efb9ccbd6fc8459099d9ad6a"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.53778769,
+        "longitude": 139.7400856
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k6.daishi",
+      "name_ja": "大師",
+      "official_page_route_slug": "route-k1",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k1/daishi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "だいし",
+      "route_id": "K6",
+      "source_sha256": "de964a37d4d7383dca6a1b0719e81ae7837fc6b726e8a5ec94bb07191b9f76c5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.491346,
+        "longitude": 139.663519
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-kita.kishiyanamamugi",
+      "name_ja": "岸谷生麦",
+      "official_page_route_slug": "route-k7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7/kishiyanamamugi",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "きしやなまむぎ",
+      "route_id": "K7_YOKOHAMA_KITA",
+      "source_sha256": "c575fcb634b78b3b525fd71183c53541f2cf201acc926992d27c65603af38f73"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.506812,
+        "longitude": 139.641137
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-kita.baba",
+      "name_ja": "馬場",
+      "official_page_route_slug": "route-k7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7/baba",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "ばば",
+      "route_id": "K7_YOKOHAMA_KITA",
+      "source_sha256": "5dacfb2ea2cee533284d05c9b1608e3030c19d586345076aedef1955aeaf1e56"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.515673,
+        "longitude": 139.607438
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": true,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-kita.shinyokohama",
+      "name_ja": "新横浜",
+      "official_page_route_slug": "route-k7",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7/shinyokohama",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "しんよこはま",
+      "route_id": "K7_YOKOHAMA_KITA",
+      "source_sha256": "82ceaec243745520804000c2d260abad34f9d4c968bbe022e966fc7d9b1450b5"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.518068,
+        "longitude": 139.592992
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-kita.yokohamakohoku",
+      "name_ja": "横浜港北",
+      "official_page_route_slug": "route-k7ho",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7ho/yokohamakohoku",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまこうほく",
+      "route_id": "K7_YOKOHAMA_KITA",
+      "source_sha256": "fe8b54d694653c824ed09f89729485482d0666dd5adebe2a539ee22f6727c3a0"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.518068,
+        "longitude": 139.592992
+      },
+      "entrance_directions": [
+        "上り",
+        "下り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "上り",
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-hokusei.yokohamakohoku",
+      "name_ja": "横浜港北",
+      "official_page_route_slug": "route-k7ho",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7ho/yokohamakohoku",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまこうほく",
+      "route_id": "K7_YOKOHAMA_HOKUSEI",
+      "source_sha256": "fe8b54d694653c824ed09f89729485482d0666dd5adebe2a539ee22f6727c3a0"
+    },
+    {
+      "coordinate": {
+        "latitude": 35.549312,
+        "longitude": 139.535711
+      },
+      "entrance_directions": [
+        "上り"
+      ],
+      "etc_only": false,
+      "exit_directions": [
+        "下り"
+      ],
+      "facility_id": "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+      "name_ja": "横浜青葉",
+      "official_page_route_slug": "route-k7ho",
+      "official_page_url": "https://www.shutoko.jp/use/network/map/route-k7ho/yokohamaaoba",
+      "operational_status": "AVAILABLE",
+      "reading_ja": "よこはまあおば",
+      "route_id": "K7_YOKOHAMA_HOKUSEI",
+      "source_sha256": "adde2aef6bdc7d8680c4f8de5f80336af2766927d2f4efbdd757c9639604bc99"
+    }
+  ],
+  "junctions": [
+    {
+      "junction_id": "shuto.jct.jct_shibaura",
+      "name_ja": "芝浦JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_shibaura",
+      "official_detail_sha256": "c190fee58d35efdaeb0ad62015c838131e00f4e7386cde2510e8aa1d83a1790c"
+    },
+    {
+      "junction_id": "shuto.jct.jct_hamasakibashi",
+      "name_ja": "浜崎橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_hamasakibashi",
+      "official_detail_sha256": "9991505f52afb8f1d4c7f9ee46956daa4afad92c55bfb9cc6ccc5cafd2ab82c7"
+    },
+    {
+      "junction_id": "shuto.jct.jct_shiodome",
+      "name_ja": "汐留JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_shiodome",
+      "official_detail_sha256": "3cf5adc8a4f5efbef2e1c03ab15537638cc0ac7929959d19fb4edb1c562ea931"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kyobashi",
+      "name_ja": "京橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kyobashi",
+      "official_detail_sha256": "6ca21c25e6564098b086cd80d2a732f2bab3d6844202f6edde0f5a36de134f02"
+    },
+    {
+      "junction_id": "shuto.jct.jct_edobashi",
+      "name_ja": "江戸橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_edobashi",
+      "official_detail_sha256": "a855321a4dbf059131cada07f5dfd0e073762b063034053807b25001956db975"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kandabashi",
+      "name_ja": "神田橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kandabashi",
+      "official_detail_sha256": "5f39a7f8278a158e2b483916da0f2984a4f14da67c8018910c8ece95775bcf38"
+    },
+    {
+      "junction_id": "shuto.jct.jct_takehashi",
+      "name_ja": "竹橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_takehashi",
+      "official_detail_sha256": "1c1d2a5ebd879002c6053bf0e556f7526d068350cd0ee798a370e23389a97ded"
+    },
+    {
+      "junction_id": "shuto.jct.jct_miyakezaka",
+      "name_ja": "三宅坂JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_miyakezaka",
+      "official_detail_sha256": "a4b648d1710a6658750171468b86d14df4c86d6031841135fddd87e7e2610c71"
+    },
+    {
+      "junction_id": "shuto.jct.jct_tanimachi",
+      "name_ja": "谷町JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_tanimachi",
+      "official_detail_sha256": "b7f8b5458757c825d2abf42f315bdb7d60e54debbb8a7420f49dd8a4646940fd"
+    },
+    {
+      "junction_id": "shuto.jct.jct_ichinohashi",
+      "name_ja": "一ノ橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_ichinohashi",
+      "official_detail_sha256": "f56355b8bf55596a73adc91f8fa2c83af02ace3089843c63fd7c7b469db7d34d"
+    },
+    {
+      "junction_id": "shuto.jct.jct_ishikawacho",
+      "name_ja": "石川町JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_ishikawacho",
+      "official_detail_sha256": "7f49d7d4ac190a0fdb160b216e95fee778d83b4869d3bee629345816a19e88dd"
+    },
+    {
+      "junction_id": "shuto.jct.jct_honmoku",
+      "name_ja": "本牧JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_honmoku",
+      "official_detail_sha256": "8d14238a40aaeaef7ec2c22904747f53f335173c99583595b2152e5df4dbc934"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kinkou",
+      "name_ja": "金港JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kinkou",
+      "official_detail_sha256": "dc2a994c6b95e83be9c44ab42c2ff85206696723d5e7c78cd189ce3960207061"
+    },
+    {
+      "junction_id": "shuto.jct.jct_daikoku",
+      "name_ja": "大黒JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_daikoku",
+      "official_detail_sha256": "4fcd99ab1e97a6a84f6c5c41e86c2b16247f5acd1b8c34e1e2e5397cf3c004eb"
+    },
+    {
+      "junction_id": "shuto.jct.jct_namamugi",
+      "name_ja": "生麦JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_namamugi",
+      "official_detail_sha256": "68ce0e28c3d83658d98c7bc68fef815ca0f3f7bed77e3bea72573ae2b0c5bd7c"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kawasaki",
+      "name_ja": "川崎浮島JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kawasaki",
+      "official_detail_sha256": "29eb925d30dec708acdc797dfc662d91769e80e18e80133b7c6f0bfbd2fba92c"
+    },
+    {
+      "junction_id": "shuto.jct.jct_daishi",
+      "name_ja": "大師JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_daishi",
+      "official_detail_sha256": "2888d66c9bb0f1edba8864802e5c91ced93b34bc190527afa1a2f4e07ca7e7be"
+    },
+    {
+      "junction_id": "shuto.jct.jct_showajima",
+      "name_ja": "昭和島JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_showajima",
+      "official_detail_sha256": "e602be49a3a2f5caf0edb4dad2b5a6aefaa5073338bd909440d451453a1704a6"
+    },
+    {
+      "junction_id": "shuto.jct.jct_tokai",
+      "name_ja": "東海JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_tokai",
+      "official_detail_sha256": "c3e400f7d241f86d628020e9bc8ace343f0d517cbdad993a5f0511443a7cd47a"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kasai",
+      "name_ja": "葛西JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kasai",
+      "official_detail_sha256": "5e52b43abc96875472405c2fe5c2ca492946356ac0c86460f1610051289aa7b2"
+    },
+    {
+      "junction_id": "shuto.jct.jct_tatsumi",
+      "name_ja": "辰巳JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_tatsumi",
+      "official_detail_sha256": "c4ea23ea7741c0f9f54b875e62b048256501d7df8aac183ce8961d2eaf1b3dda"
+    },
+    {
+      "junction_id": "shuto.jct.jct_hakozaki",
+      "name_ja": "箱崎JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_hakozaki",
+      "official_detail_sha256": "49f645e5cf96c1be9e7003e857d2cf4baed0c502daaca7b7469c41d1e8f43373"
+    },
+    {
+      "junction_id": "shuto.jct.jct_ryogoku",
+      "name_ja": "両国JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_ryogoku",
+      "official_detail_sha256": "720995e96dbb9e570a481e8918bd8b49bef2b7af9e79b4ab660eb6e1460ad66a"
+    },
+    {
+      "junction_id": "shuto.jct.jct_shinonome",
+      "name_ja": "東雲JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_shinonome",
+      "official_detail_sha256": "452e2ca3d124ec3f726b0c3643cedbbce3446b21e755f538b418616278cfa605"
+    },
+    {
+      "junction_id": "shuto.jct.jct_ariake",
+      "name_ja": "有明JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_ariake",
+      "official_detail_sha256": "0351ca02b8260a625334bc17931b57d35d19631b4305fab64e014daf0aad4c26"
+    },
+    {
+      "junction_id": "shuto.jct.jct_oi",
+      "name_ja": "大井JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_oi",
+      "official_detail_sha256": "4bfe3cb6117273ec547a62872b971a87fcc944fff70b3267022888612aacfc2b"
+    },
+    {
+      "junction_id": "shuto.jct.jct_ohashi",
+      "name_ja": "大橋JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_ohashi",
+      "official_detail_sha256": "5f27a01a763abd067d5bbd9108a6cd19368a31492b779f57cd045d5053e4dcaa"
+    },
+    {
+      "junction_id": "shuto.jct.jct_nishishinjuku",
+      "name_ja": "西新宿JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_nishishinjuku",
+      "official_detail_sha256": "377261189835d54ed378c7c5487cebf6c108a411449dad525dd975da6e9d1c20"
+    },
+    {
+      "junction_id": "shuto.jct.jct_itabashi_20180404",
+      "name_ja": "板橋JCT・熊野町JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_itabashi_20180404",
+      "official_detail_sha256": "4c1cb61e312e4b0d70eed1eb542d48c019de9e605d354cd85fdd7800babc80ba"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kouhoku",
+      "name_ja": "江北JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kouhoku",
+      "official_detail_sha256": "d168d950ee904e51e2332fb9e6c94cb9ffad6ef825b01df9e917d1db8e372d81"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kosugehorikiri_20180404",
+      "name_ja": "小菅JCT・堀切JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kosugehorikiri_20180404",
+      "official_detail_sha256": "3beba3e408064642b7641cfbac692f1c1f3fec6a0bce421e62c226c1ee6cf695"
+    },
+    {
+      "junction_id": "shuto.jct.jct_misato",
+      "name_ja": "三郷JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_misato",
+      "official_detail_sha256": "91fb8f7c0c83698dc3d055c2616dcf714d127be3a74f9d0b8d531f89798cbf48"
+    },
+    {
+      "junction_id": "shuto.jct.jct_bijyoki",
+      "name_ja": "美女木JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_bijyoki",
+      "official_detail_sha256": "767cb6d949fd9b7b33df66de2b10c9bc7782af72c3dfec944bd6305c8f29875f"
+    },
+    {
+      "junction_id": "shuto.jct.jct_nishiginza",
+      "name_ja": "西銀座JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_nishiginza",
+      "official_detail_sha256": "d64d40aa6a5659ffedc81b6545cacf9be4d64dcebf80d4e676fa63d899c0b989"
+    },
+    {
+      "junction_id": "shuto.jct.jct_kawaguchi",
+      "name_ja": "川口JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_kawaguchi",
+      "official_detail_sha256": "aef10ed1232a4ca8292015b1142bc171a6661a8eee28d8d45ad8b8937062b352"
+    },
+    {
+      "junction_id": "shuto.jct.jct_yokohamakohoku",
+      "name_ja": "横浜港北JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_yokohamakohoku",
+      "official_detail_sha256": "d8b31a419e631405171c37b4450051bdf25242c947301d57bcdda79e9e68faf2"
+    },
+    {
+      "junction_id": "shuto.jct.jct_yokohamaaoba",
+      "name_ja": "横浜青葉JCT",
+      "official_detail_media_type": "image/jpeg",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_yokohamaaoba",
+      "official_detail_sha256": "7a9f2de730083721537a0f4935d27b06e44e86cff98167aac2f2c0ac9b833db9"
+    },
+    {
+      "junction_id": "shuto.jct.jct_koya",
+      "name_ja": "高谷JCT",
+      "official_detail_media_type": "image/png",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_koya",
+      "official_detail_sha256": "03907dcd04d93fec6d7fa47bdefb35e6b678261a94361e4df0d3dc57d7a3aa09"
+    },
+    {
+      "junction_id": "shuto.jct.jct_komatsugawa",
+      "name_ja": "小松川JCT",
+      "official_detail_media_type": "image/png",
+      "official_detail_reference": "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_komatsugawa",
+      "official_detail_sha256": "a5119a85526658f19dda55b445114dd2b72a1ee0161a454b0f55712872c84abe"
+    }
+  ],
+  "limitations": [
+    "The catalog records route and facility facts only; operator maps and junction images are not redistributed.",
+    "Parking-area operating status is dynamic and remains REALTIME_UNCONFIRMED without a current provider response."
+  ],
+  "parking_areas": [
+    {
+      "base_name_ja": "平和島",
+      "coordinate": {
+        "latitude": 35.587273,
+        "longitude": 139.74165
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "平和島PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/heiwajima-inbound",
+      "official_route_name_ja": "羽田線",
+      "parking_area_id": "shuto.pa.heiwajima-inbound",
+      "route_id": "1_HANEDA",
+      "source_sha256": "3b9018f0a73ceed51a121094875d3f89ba06b18b21a57e30d7cc813e29a1e4e9"
+    },
+    {
+      "base_name_ja": "平和島",
+      "coordinate": {
+        "latitude": 35.584643535273095,
+        "longitude": 139.74109897620727
+      },
+      "direction_ja": "下り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "平和島PA（下り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/heiwajima-outbound",
+      "official_route_name_ja": "羽田線",
+      "parking_area_id": "shuto.pa.heiwajima-outbound",
+      "route_id": "1_HANEDA",
+      "source_sha256": "607a430a87f276790e4b058c8f26a387064360c0b50043caed07ba6c53fdc78b"
+    },
+    {
+      "base_name_ja": "用賀",
+      "coordinate": {
+        "latitude": 35.62642729999999,
+        "longitude": 139.63149070000003
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "用賀PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yoga",
+      "official_route_name_ja": "渋谷線",
+      "parking_area_id": "shuto.pa.yoga",
+      "route_id": "3",
+      "source_sha256": "b30978631747af4e30aff42833d7ac520438583d9d8bbe89934ef9dad1e54000"
+    },
+    {
+      "base_name_ja": "永福",
+      "coordinate": {
+        "latitude": 35.668227,
+        "longitude": 139.64372799999998
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "永福PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/eifuku",
+      "official_route_name_ja": "新宿線",
+      "parking_area_id": "shuto.pa.eifuku",
+      "route_id": "4",
+      "source_sha256": "b4a19cab16518a2cb606178ae71d5c8b0ab9b68e36cfac09986c4c9e5944a69f"
+    },
+    {
+      "base_name_ja": "代々木",
+      "coordinate": {
+        "latitude": 35.681270772587276,
+        "longitude": 139.6955821762912
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "代々木PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yoyogi",
+      "official_route_name_ja": "新宿線",
+      "parking_area_id": "shuto.pa.yoyogi",
+      "route_id": "4",
+      "source_sha256": "00bdeef913dd9b66ede9b18121e21963fbd06c011e89cd9417cce97e3c300fd8"
+    },
+    {
+      "base_name_ja": "志村",
+      "coordinate": {
+        "latitude": 35.774019224870564,
+        "longitude": 139.68257177621368
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "志村PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/shimura",
+      "official_route_name_ja": "池袋線",
+      "parking_area_id": "shuto.pa.shimura",
+      "route_id": "5",
+      "source_sha256": "58c2ec7d1ee155de211b86d639c99ca4c81a6ff1e2edc86f2e20273ebdcb09f5"
+    },
+    {
+      "base_name_ja": "南池袋",
+      "coordinate": {
+        "latitude": 35.723300127661155,
+        "longitude": 139.72028847621198
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "南池袋PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/minami-ikebukuro",
+      "official_route_name_ja": "池袋線",
+      "parking_area_id": "shuto.pa.minami-ikebukuro",
+      "route_id": "5",
+      "source_sha256": "4bf234b9566156bf5a42ab481ff28dbcfda8ad8f3dfb55fc9f10b82ea56c27f9"
+    },
+    {
+      "base_name_ja": "箱崎",
+      "coordinate": {
+        "latitude": 35.682373929910526,
+        "longitude": 139.78646957621058
+      },
+      "direction_ja": null,
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "箱崎PA",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/hakozaki",
+      "official_route_name_ja": "向島線",
+      "parking_area_id": "shuto.pa.hakozaki",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "41ae7e73c8c0deabfdf25f963e0ef9ed3ed67c4c618f5c3effec39d5b030295c"
+    },
+    {
+      "base_name_ja": "駒形",
+      "coordinate": {
+        "latitude": 35.70494422867038,
+        "longitude": 139.79404087621148
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "駒形PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/komagata",
+      "official_route_name_ja": "向島線",
+      "parking_area_id": "shuto.pa.komagata",
+      "route_id": "6_MUKOJIMA",
+      "source_sha256": "1bfe5f270da4a99100c7aa4c06b5462b4d3f26aa4181e5c0ac6549de5e353a3f"
+    },
+    {
+      "base_name_ja": "加平",
+      "coordinate": {
+        "latitude": 35.776809324717014,
+        "longitude": 139.8221448762138
+      },
+      "direction_ja": "下り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "加平PA（下り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/kahei",
+      "official_route_name_ja": "三郷線",
+      "parking_area_id": "shuto.pa.kahei",
+      "route_id": "6_MISATO",
+      "source_sha256": "28d3f74395d6cbbc8e3b08a208836dd7aa1451ef2060ddd2c3dfc2612bfe4bd3"
+    },
+    {
+      "base_name_ja": "八潮",
+      "coordinate": {
+        "latitude": 35.809778,
+        "longitude": 139.842306
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "八潮PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yashio",
+      "official_route_name_ja": "三郷線",
+      "parking_area_id": "shuto.pa.yashio",
+      "route_id": "6_MISATO",
+      "source_sha256": "99c9c222f3766871f77d9cf2a03d299414b3fba971c18ffa64daeb29282276c3"
+    },
+    {
+      "base_name_ja": "辰巳第一",
+      "coordinate": {
+        "latitude": 35.64336793205237,
+        "longitude": 139.80680717620928
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "辰巳第一PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/tatsumi-1",
+      "official_route_name_ja": "深川線",
+      "parking_area_id": "shuto.pa.tatsumi-1",
+      "route_id": "9",
+      "source_sha256": "6243ccc1c55fb83d9dbe05da87311f1de0db6aaaa73fee9198bcaa2114ae640d"
+    },
+    {
+      "base_name_ja": "辰巳第二",
+      "coordinate": {
+        "latitude": 35.6453722319424,
+        "longitude": 139.81322607620945
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "辰巳第二PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/tatsumi-2",
+      "official_route_name_ja": "深川線",
+      "parking_area_id": "shuto.pa.tatsumi-2",
+      "route_id": "9",
+      "source_sha256": "33b784c4925750dbf9544142d95a3d38e263292b4f999b5eaf6fe1ba577e1b09"
+    },
+    {
+      "base_name_ja": "芝浦",
+      "coordinate": {
+        "latitude": 35.644509231989744,
+        "longitude": 139.75496417620934
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "芝浦PA（上り）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/shibaura",
+      "official_route_name_ja": "台場線",
+      "parking_area_id": "shuto.pa.shibaura",
+      "route_id": "11",
+      "source_sha256": "281810af9575b793bf6c73f7f62a97a9dd62e51f2fea0aeb66727ab3d4e1679e"
+    },
+    {
+      "base_name_ja": "市川",
+      "coordinate": {
+        "latitude": 35.67720109999999,
+        "longitude": 139.92438746977538
+      },
+      "direction_ja": "西行き",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "市川PA（西行き）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/ichikawa",
+      "official_route_name_ja": "湾岸線",
+      "parking_area_id": "shuto.pa.ichikawa",
+      "route_id": "B",
+      "source_sha256": "625a399242484f2988c0cd43b73b5b1d35f1939777fa4f3d4615f234783d56b4"
+    },
+    {
+      "base_name_ja": "大井",
+      "coordinate": {
+        "latitude": 35.59403853475809,
+        "longitude": 139.75291957620763
+      },
+      "direction_ja": "西行き",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "大井PA（西行き）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/oi-westbound",
+      "official_route_name_ja": "湾岸線",
+      "parking_area_id": "shuto.pa.oi-westbound",
+      "route_id": "B",
+      "source_sha256": "42bcc56f1bdae0b21c9ff5855f114f92ca0fd99075ffa10b0ccef0b8e6e51596"
+    },
+    {
+      "base_name_ja": "大井",
+      "coordinate": {
+        "latitude": 35.592392,
+        "longitude": 139.755039
+      },
+      "direction_ja": "東行き",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "大井PA（東行き）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/oi-eastbound",
+      "official_route_name_ja": "湾岸線",
+      "parking_area_id": "shuto.pa.oi-eastbound",
+      "route_id": "B",
+      "source_sha256": "f62501de8dfca50b6f375c51d3c1c2bb9324f26f059471342bc32cb62cebcbdf"
+    },
+    {
+      "base_name_ja": "大黒",
+      "coordinate": {
+        "latitude": 35.46190944199005,
+        "longitude": 139.67793717623059
+      },
+      "direction_ja": null,
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "大黒PA",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/daikoku",
+      "official_route_name_ja": "湾岸線",
+      "parking_area_id": "shuto.pa.daikoku",
+      "route_id": "B",
+      "source_sha256": "cd6d61883399b9c6d2d9d058879cf021e089b0c16e234e35540ffa8990dfe4ab"
+    },
+    {
+      "base_name_ja": "川口",
+      "coordinate": {
+        "latitude": 35.849795,
+        "longitude": 139.7438
+      },
+      "direction_ja": "上り",
+      "dynamic_status": "REALTIME_UNCONFIRMED",
+      "name_ja": "川口PA（上り）（川口ハイウェイオアシス）",
+      "official_page_url": "https://www.shutoko-sv.jp/pa/kawaguchi",
+      "official_route_name_ja": "川口線",
+      "parking_area_id": "shuto.pa.kawaguchi",
+      "route_id": "S1",
+      "source_sha256": "1972baf861fed1a7d85fcfdbc415c32a679d8543b5e4576f283dc2e6393b4cd9"
+    }
+  ],
+  "routes": [
+    {
+      "official_name_ja": "高速都心環状線",
+      "operational_status": "AVAILABLE",
+      "route_id": "C1"
+    },
+    {
+      "official_name_ja": "高速八重洲線（長期通行止めのためご利用できません）",
+      "operational_status": "LONG_TERM_CLOSED",
+      "route_id": "Y"
+    },
+    {
+      "official_name_ja": "高速1号上野線",
+      "operational_status": "AVAILABLE",
+      "route_id": "1_UENO"
+    },
+    {
+      "official_name_ja": "高速1号羽田線",
+      "operational_status": "AVAILABLE",
+      "route_id": "1_HANEDA"
+    },
+    {
+      "official_name_ja": "高速2号目黒線",
+      "operational_status": "AVAILABLE",
+      "route_id": "2"
+    },
+    {
+      "official_name_ja": "高速3号渋谷線",
+      "operational_status": "AVAILABLE",
+      "route_id": "3"
+    },
+    {
+      "official_name_ja": "高速4号新宿線",
+      "operational_status": "AVAILABLE",
+      "route_id": "4"
+    },
+    {
+      "official_name_ja": "高速5号池袋線",
+      "operational_status": "AVAILABLE",
+      "route_id": "5"
+    },
+    {
+      "official_name_ja": "高速6号向島線",
+      "operational_status": "AVAILABLE",
+      "route_id": "6_MUKOJIMA"
+    },
+    {
+      "official_name_ja": "高速6号三郷線",
+      "operational_status": "AVAILABLE",
+      "route_id": "6_MISATO"
+    },
+    {
+      "official_name_ja": "高速7号小松川線",
+      "operational_status": "AVAILABLE",
+      "route_id": "7"
+    },
+    {
+      "official_name_ja": "高速9号深川線",
+      "operational_status": "AVAILABLE",
+      "route_id": "9"
+    },
+    {
+      "official_name_ja": "高速10号晴海線",
+      "operational_status": "AVAILABLE",
+      "route_id": "10"
+    },
+    {
+      "official_name_ja": "高速11号台場線",
+      "operational_status": "AVAILABLE",
+      "route_id": "11"
+    },
+    {
+      "official_name_ja": "高速中央環状線",
+      "operational_status": "AVAILABLE",
+      "route_id": "C2"
+    },
+    {
+      "official_name_ja": "高速川口線",
+      "operational_status": "AVAILABLE",
+      "route_id": "S1"
+    },
+    {
+      "official_name_ja": "高速埼玉新都心線",
+      "operational_status": "AVAILABLE",
+      "route_id": "S2"
+    },
+    {
+      "official_name_ja": "高速埼玉大宮線",
+      "operational_status": "AVAILABLE",
+      "route_id": "S5"
+    },
+    {
+      "official_name_ja": "高速湾岸線",
+      "operational_status": "AVAILABLE",
+      "route_id": "B"
+    },
+    {
+      "official_name_ja": "高速神奈川1号横羽線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K1"
+    },
+    {
+      "official_name_ja": "高速神奈川2号三ツ沢線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K2"
+    },
+    {
+      "official_name_ja": "高速神奈川3号狩場線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K3"
+    },
+    {
+      "official_name_ja": "高速神奈川5号大黒線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K5"
+    },
+    {
+      "official_name_ja": "高速神奈川6号川崎線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K6"
+    },
+    {
+      "official_name_ja": "高速神奈川7号横浜北線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K7_YOKOHAMA_KITA"
+    },
+    {
+      "official_name_ja": "高速神奈川7号横浜北西線",
+      "operational_status": "AVAILABLE",
+      "route_id": "K7_YOKOHAMA_HOKUSEI"
+    }
+  ],
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "role": "ROUTES_AND_DIRECTIONAL_IC",
+      "sha256": "ef2454017c4bda53b4c3c5a518e0d47d0faf786892dcae638c31cb6efdefd141",
+      "url": "https://www.shutoko.jp/use/network/map/"
+    },
+    {
+      "operator_as_of": "2026-07-01",
+      "role": "JUNCTION_DIRECTORY",
+      "sha256": "286514512a71984de3ad0a69e01f9354f9f72f7590842c205af4b2e5c8644859",
+      "url": "https://www.shutoko.jp/use/network/jct/"
+    },
+    {
+      "operator_as_of": "2024-12",
+      "role": "PARKING_AREA_DIRECTORY",
+      "sha256": "5254c83f1d9313235c8d84189c067452b4bae6ec0248d64d8bd6ead3f5cc9cc5",
+      "url": "https://www.shutoko.jp/use/pa/"
+    }
+  ]
+}

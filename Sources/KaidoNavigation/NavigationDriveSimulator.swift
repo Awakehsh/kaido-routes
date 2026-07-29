@@ -442,9 +442,11 @@ public struct NavigationDriveSimulationStepResult: Equatable, Sendable {
 /// A synthetic-only controller around the real route matcher and
 /// `NavigationSession` reducer.
 ///
-/// It seeds strict-route state explicitly instead of manufacturing
-/// release-bound entrance evidence. Its output is deterministic test evidence
-/// and never field, road, traffic, or release authority.
+/// A selected whole-Shuto route exercises the actor's ordered entry reducer
+/// through a package-only synthetic path before strict-route matching begins.
+/// It never manufactures release-bound entrance evidence. Its output is
+/// deterministic test evidence and never field, road, traffic, or release
+/// authority.
 public actor NavigationDriveSimulator {
   public nonisolated let evidenceScope: NavigationDriveSimulationEvidenceScope = .syntheticTestOnly
   public let releaseID: String
@@ -499,7 +501,7 @@ public actor NavigationDriveSimulator {
     configuration: NavigationDriveSimulationConfiguration = .init(),
     speed: NavigationDriveSimulationSpeed = .fiveTimes
   ) throws {
-    let runtime = NavigationDriveSimulationRuntime(
+    let runtime = try NavigationDriveSimulationRuntime(
       route: route,
       runtimeAssets: runtimeAssets
     )
@@ -684,7 +686,17 @@ public actor NavigationDriveSimulator {
     let snapshot: NavigationSnapshot
     switch event.action {
     case .matcherObservation(let observation):
-      let result = try await session.observe(observation)
+      let sessionSnapshot = await session.snapshot
+      let usesSyntheticEntryTransition =
+        runtime.syntheticEntryTransition != nil
+        && (sessionSnapshot.journeyPhase == .planning
+          || sessionSnapshot.journeyPhase == .approachToEntry
+          || sessionSnapshot.journeyPhase == .entryTransition)
+      let result =
+        usesSyntheticEntryTransition
+        ? try await session
+          .observeSyntheticSimulationEntryTransition(observation)
+        : try await session.observe(observation)
       update = result
       snapshot = result.navigationSnapshot
     case .enterTunnel:
@@ -731,20 +743,46 @@ public actor NavigationDriveSimulator {
     runtime: NavigationDriveSimulationRuntime,
     initialOccurrenceID: String? = nil
   ) throws -> NavigationSession {
-    let firstOccurrenceID =
-      initialOccurrenceID
-      ?? runtime.routePlan.occurrences.first?.id
-    var initialSnapshot = NavigationSnapshot(
-      journeyPhase: .strictRoute,
-      activeRoutePlanID: runtime.routePlan.id,
-      currentOccurrenceID: firstOccurrenceID,
-      locationConfidence: .low
-    )
-    initialSnapshot.lastPhaseTransitionTrigger =
-      "SYNTHETIC_SIMULATION_STRICT_ROUTE_SEED"
+    let firstOccurrenceID = runtime.routePlan.occurrences.first?.id
+    let initialSnapshot: NavigationSnapshot
+    let initialMatcherOccurrenceID: String?
+    if let initialOccurrenceID {
+      var restored = NavigationSnapshot(
+        journeyPhase: .strictRoute,
+        activeRoutePlanID: runtime.routePlan.id,
+        currentOccurrenceID: initialOccurrenceID,
+        locationConfidence: .low
+      )
+      restored.lastPhaseTransitionTrigger =
+        "SYNTHETIC_SIMULATION_STRICT_ROUTE_RESTORE"
+      initialSnapshot = restored
+      initialMatcherOccurrenceID = initialOccurrenceID
+    } else if runtime.syntheticEntryTransition != nil {
+      var pendingEntry = NavigationSnapshot(
+        journeyPhase: .planning,
+        activeRoutePlanID: runtime.routePlan.id,
+        locationConfidence: .low
+      )
+      pendingEntry.lastPhaseTransitionTrigger =
+        "SYNTHETIC_SIMULATION_ENTRY_PENDING"
+      initialSnapshot = pendingEntry
+      initialMatcherOccurrenceID = nil
+    } else {
+      var seeded = NavigationSnapshot(
+        journeyPhase: .strictRoute,
+        activeRoutePlanID: runtime.routePlan.id,
+        currentOccurrenceID: firstOccurrenceID,
+        locationConfidence: .low
+      )
+      seeded.lastPhaseTransitionTrigger =
+        "SYNTHETIC_SIMULATION_STRICT_ROUTE_SEED"
+      initialSnapshot = seeded
+      initialMatcherOccurrenceID = firstOccurrenceID
+    }
     return try NavigationSession(
       navigationConfiguration: NavigationConfiguration(
         routePlan: runtime.routePlan,
+        entryTransition: runtime.syntheticEntryTransition,
         recoveryCandidates: runtime.recoveryCandidates,
         egressOptions: runtime.egressOptions,
         releasedGuidance: runtime.releasedGuidance,
@@ -753,7 +791,7 @@ public actor NavigationDriveSimulator {
       matcherCorridor: runtime.matcherCorridor,
       decisionZones: runtime.decisionZones,
       initialNavigationSnapshot: initialSnapshot,
-      initialMatcherOccurrenceID: firstOccurrenceID
+      initialMatcherOccurrenceID: initialMatcherOccurrenceID
     )
   }
 }
@@ -766,6 +804,7 @@ private struct NavigationDriveSimulationRuntime: Sendable {
   let egressOptions: [EgressOption]
   let decisionZones: [DecisionZoneProgressDefinition]
   let releasedGuidance: [ReleasedGuidanceDefinition]
+  let syntheticEntryTransition: EntryTransition?
 
   init(release: KaidoProductRelease) {
     let bundle = release.navigation.bundle
@@ -776,12 +815,21 @@ private struct NavigationDriveSimulationRuntime: Sendable {
     egressOptions = bundle.runtimePolicy.egressOptions
     decisionZones = bundle.decisionZones
     releasedGuidance = bundle.releasedGuidance
+    syntheticEntryTransition = nil
   }
 
   init(
     route: ShutoPlannedRoute,
     runtimeAssets: ShutoPlannedRouteRuntimeAssets
-  ) {
+  ) throws {
+    guard route.edges.count >= 2,
+      route.routePlan.occurrences.count >= 2,
+      route.edges[0].edgeID != route.edges[1].edgeID
+    else {
+      throw NavigationDriveSimulationError.invalidConfiguration([
+        "whole-Shuto simulation entry requires two distinct ordered route edges"
+      ])
+    }
     runtimeID = "synthetic.\(route.routePlan.id)"
     routePlan = route.routePlan
     matcherCorridor = runtimeAssets.matcherCorridor
@@ -789,6 +837,15 @@ private struct NavigationDriveSimulationRuntime: Sendable {
     egressOptions = []
     decisionZones = []
     releasedGuidance = []
+    syntheticEntryTransition = EntryTransition(
+      facilityID: route.entryFacility.facilityID,
+      directedEdgeIDs: [
+        route.edges[0].edgeID,
+        route.edges[1].edgeID,
+      ],
+      firstRouteOccurrenceID:
+        route.routePlan.occurrences[1].id
+    )
   }
 }
 

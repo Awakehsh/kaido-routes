@@ -99,6 +99,18 @@ public struct NavigationEngine: Sendable {
     refreshPendingOccurrences()
   }
 
+  /// Keeps deterministic simulation provenance explicit after the synthetic
+  /// controller exercises the same ordered entry reducer.
+  package mutating func markSyntheticSimulationEntryTransition() {
+    guard snapshot.journeyPhase == .strictRoute,
+      snapshot.lastPhaseTransitionTrigger == "VERIFIED_ENTRY_CONTINUITY"
+    else {
+      return
+    }
+    snapshot.lastPhaseTransitionTrigger =
+      "SYNTHETIC_SIMULATION_ENTRY_CONTINUITY"
+  }
+
   public mutating func reachGuidanceAnchor(
     occurrenceID: String,
     anchorID: String
@@ -435,7 +447,11 @@ public struct NavigationEngine: Sendable {
     with observation: LocationObservation,
     confidence: LocationConfidence
   ) {
-    guard let transition = configuration.entryTransition,
+    guard
+      snapshot.journeyPhase == .planning
+        || snapshot.journeyPhase == .approachToEntry
+        || snapshot.journeyPhase == .entryTransition,
+      let transition = configuration.entryTransition,
       let directedEdgeID = observation.directedEdgeID,
       let position = transition.directedEdgeIDs.firstIndex(of: directedEdgeID),
       confidence == .high,

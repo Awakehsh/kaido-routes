@@ -24,9 +24,11 @@ internal review workbench.
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
 - The driving simulation covers surface access, entry, expressway travel,
-  junction prompts, exit, surface egress, and completion. Expressway playback
-  runs generated observations through the route-aware matcher and actor-owned
-  navigation session; only an exact HIGH occurrence match can advance it.
+  junction prompts, exit, surface egress, and completion. Entry and expressway
+  playback run generated observations through the route-aware matcher and
+  actor-owned navigation session. Entry requires ordered, unique HIGH
+  continuity on the selected directional entrance, and only an exact HIGH
+  occurrence match can advance expressway progress.
 - During expressway travel the driver can switch between the normal geographic
   map and the whole-network line map. A route-derived junction inset appears
   only near a JCT.

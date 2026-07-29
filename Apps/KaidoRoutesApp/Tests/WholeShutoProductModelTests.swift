@@ -51,7 +51,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.currentCoordinate, savedCoordinate)
   }
 
-  func testExpresswayCheckpointBeforeFirstObservationRestoresRuntime()
+  func testEntryCheckpointBeforeFirstObservationRestoresRuntime()
     async
   {
     let store = WholeShutoMemoryCheckpointStore()
@@ -59,7 +59,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.preparePreviewJourney()
     model.startNavigationSimulation()
     model.togglePlayback()
-    await advance(model, until: { $0.phase == .expressway })
+    await advance(model, until: { $0.phase == .entryTransition })
 
     XCTAssertEqual(model.progressFraction, 0)
     XCTAssertNil(model.runtimeOccurrenceID)
@@ -69,13 +69,18 @@ final class WholeShutoProductModelTests: XCTestCase {
       checkpointStore: store
     )
 
-    XCTAssertEqual(restored.phase, .expressway)
+    XCTAssertEqual(restored.phase, .entryTransition)
     XCTAssertTrue(restored.restoredFromCheckpoint)
     XCTAssertNil(restored.failureCode)
 
     await restored.advanceSimulationForTesting()
 
     XCTAssertEqual(restored.matcherConfidence, .high)
+    XCTAssertEqual(restored.phase, .entryTransition)
+    XCTAssertNil(restored.runtimeOccurrenceID)
+
+    await advance(restored, until: { $0.phase == .expressway })
+
     XCTAssertNotNil(restored.runtimeOccurrenceID)
     XCTAssertGreaterThan(restored.progressFraction, 0)
   }
@@ -98,7 +103,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.positionState, .tunnelEstimated)
   }
 
-  func testExpresswayWaitsForAdmittedObservationBeforeShowingProgress()
+  func testEntryTransitionRequiresOrderedObservationsBeforeExpressway()
     async
   {
     let model = WholeShutoProductModel(checkpointStore: nil)
@@ -106,15 +111,23 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.startNavigationSimulation()
     model.togglePlayback()
 
-    await advance(model, until: { $0.phase == .expressway })
+    await advance(model, until: { $0.phase == .entryTransition })
 
     XCTAssertEqual(model.progressFraction, 0)
     XCTAssertNil(model.runtimeOccurrenceID)
-    XCTAssertEqual(model.positionState, .networkDegraded)
+    XCTAssertEqual(model.positionState, .boundaryTransition)
+
+    for _ in 0..<3 {
+      await model.advanceSimulationForTesting()
+    }
+
+    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertEqual(model.phase, .entryTransition)
+    XCTAssertNil(model.runtimeOccurrenceID)
 
     await model.advanceSimulationForTesting()
 
-    XCTAssertEqual(model.matcherConfidence, .high)
+    XCTAssertEqual(model.phase, .expressway)
     XCTAssertNotNil(model.runtimeOccurrenceID)
     XCTAssertGreaterThan(model.progressFraction, 0)
   }

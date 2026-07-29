@@ -49,6 +49,7 @@ public actor NavigationSession {
   private var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
+  private let configuredEntryTransition: EntryTransition?
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
   private var requiresRestorationReacquisition: Bool
 
@@ -74,6 +75,15 @@ public actor NavigationSession {
       releasedGuidance: navigationConfiguration.releasedGuidance
     )
     var allIssues = issues
+    if let transition = navigationConfiguration.entryTransition {
+      allIssues.append(
+        contentsOf: EntryTransitionCorridorValidator.issues(
+          transition: transition,
+          routePlan: routePlan,
+          matcherCorridor: matcherCorridor
+        )
+      )
+    }
     if let context = entryTransitionAdmissionContext {
       if context.networkSnapshotID != routePlan.networkSnapshotID
         || context.routePlanID != routePlan.id
@@ -89,13 +99,6 @@ public actor NavigationSession {
       {
         allIssues.append("entry transition admission release identity is invalid")
       }
-      allIssues.append(
-        contentsOf: EntryTransitionCorridorValidator.issues(
-          transition: context.entryTransition,
-          routePlan: routePlan,
-          matcherCorridor: matcherCorridor
-        )
-      )
       let firstRouteDirectedEdgeID = matcherCorridor.occurrences.first(where: {
         $0.id == routePlan.occurrences.first?.id
       })?.directedEdgeID
@@ -166,6 +169,7 @@ public actor NavigationSession {
 
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
+    configuredEntryTransition = navigationConfiguration.entryTransition
     guidanceTargetByAnchorOccurrence = Self.guidanceTargets(
       decisionZones: decisionZones,
       releasedGuidance: navigationConfiguration.releasedGuidance
@@ -295,6 +299,83 @@ public actor NavigationSession {
         guidanceBridgeError: error
       )
     }
+  }
+
+  /// Exercises ordered entry continuity for the deterministic simulator only.
+  ///
+  /// The method is package-scoped, accepts no release evidence, and cannot be
+  /// called by the App or an Apple location adapter. Its snapshot remains
+  /// explicitly synthetic and grants no navigation or road authority.
+  package func observeSyntheticSimulationEntryTransition(
+    _ observation: RouteMatcherObservation
+  ) throws -> NavigationSessionUpdate {
+    let estimate = try matcherSession.observe(observation)
+    let eligiblePhase =
+      engine.snapshot.journeyPhase == .planning
+      || engine.snapshot.journeyPhase == .approachToEntry
+      || engine.snapshot.journeyPhase == .entryTransition
+    guard eligiblePhase, let transition = configuredEntryTransition else {
+      return update(
+        estimate: estimate,
+        guidanceProgressState: .notApplicable
+      )
+    }
+
+    guard estimate.confidence == .high,
+      let directedEdgeID = estimate.directedEdgeID,
+      estimate.candidateEdgeIDs == [directedEdgeID],
+      transition.directedEdgeIDs.contains(directedEdgeID),
+      observation.courseDegrees != nil
+    else {
+      engine.observeLocation(
+        Self.locationObservation(
+          from: estimate,
+          source: observation,
+          admitsOccurrenceProgress: false
+        )
+      )
+      return update(
+        estimate: estimate,
+        guidanceProgressState: .insufficientMatcherEvidence
+      )
+    }
+
+    let previousPhase = engine.snapshot.journeyPhase
+    let isFinalTransitionEdge =
+      directedEdgeID == transition.directedEdgeIDs.last
+    engine.observeLocation(
+      LocationObservation(
+        directedEdgeID: directedEdgeID,
+        observedAtMilliseconds: observation.observedAtMilliseconds,
+        reportedConfidence: .high,
+        horizontalAccuracyMeters:
+          observation.horizontalAccuracyMeters,
+        ageMilliseconds:
+          observation.receivedAtMilliseconds
+          - observation.observedAtMilliseconds,
+        headingMatches: true,
+        forwardContinuity: true,
+        reachableOccurrenceIDs:
+          isFinalTransitionEdge
+          ? Set(
+            [transition.firstRouteOccurrenceID].compactMap {
+              $0
+            }
+          )
+          : []
+      )
+    )
+    if previousPhase != .strictRoute,
+      engine.snapshot.journeyPhase == .strictRoute,
+      let firstOccurrenceID = transition.firstRouteOccurrenceID
+    {
+      engine.markSyntheticSimulationEntryTransition()
+      try matcherSession.restart(at: firstOccurrenceID)
+    }
+    return update(
+      estimate: estimate,
+      guidanceProgressState: .notApplicable
+    )
   }
 
   /// Applies release-bound, multi-observation entrance evidence.

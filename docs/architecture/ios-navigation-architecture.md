@@ -6,16 +6,19 @@ network containing all 26 official route entries, 151 IC names, 39 JCTs, and
 19 PAs. It can rank directional entrances and exits for arbitrary coordinates,
 compile a Kaido-owned Shuto `RoutePlan`, render geographic and whole-network
 maps, and simulate surface access, entry, junction guidance, exit, and egress.
-The expressway simulation no longer advances route progress from a wall-clock
-timer. `ShutoPlannedRouteRuntimeCompiler` validates the exact selected
+The entry and expressway simulation no longer advance from a wall-clock timer.
+`ShutoPlannedRouteRuntimeCompiler` validates the exact selected
 facilities, graph edges, occurrence order, geometry, distance, route shields,
 and network snapshot, then compiles a route-aware matcher corridor containing
 the immutable route plus adjacent deviation edges. Generated observations and
 deterministically injected `CLLocation` samples both run through the existing
-matcher and actor-owned `NavigationSession`; only a unique HIGH occurrence
-commit projects progress. A unique HIGH off-plan edge enters route-first
-recovery, while the candidate whole-network dataset supplies no released
-rejoin and therefore fails closed as `NO_RELEASED_REJOIN`.
+matcher and actor-owned `NavigationSession`. The simulator exercises ordered
+entry continuity through a package-only synthetic path that cannot be called by
+the App or an Apple adapter and grants no released-road authority. Ambiguous or
+degraded entrance evidence keeps the transition unconfirmed. After entry, only
+a unique HIGH occurrence commit projects progress. A unique HIGH off-plan edge
+enters route-first recovery, while the candidate whole-network dataset supplies
+no released rejoin and therefore fails closed as `NO_RELEASED_REJOIN`.
 An active simulation checkpoint restores only against the same network
 snapshot and exact entry/exit pair, paused at its saved phase and, once
 admitted, exact occurrence and fraction. Matcher posterior is not restored.
@@ -1613,12 +1616,16 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto simulation uses a separate schema-1.1 app checkpoint. It binds
+The whole-Shuto simulation uses a separate schema-1.2 app checkpoint. It binds
 the same candidate network snapshot, directional entry and exit, selected
-preference, exact route occurrence, and fraction. Restoration is paused,
-recompiles the route/corridor from the bundled graph, discards matcher
-posterior, and resumes only after another HIGH replay observation. It is not
-schema-2.0 released-session evidence and cannot mint live-input authority.
+preference, phase, and, after confirmed entry, exact route occurrence and
+fraction. An entry-transition checkpoint must retain zero route progress and no
+runtime occurrence or fraction. Restoration is paused, recompiles the
+route/corridor from the bundled graph, discards matcher posterior and partial
+entry continuity, and resumes from the first generated entrance observation.
+An expressway restore resumes at the saved occurrence but admits no new
+progress until another HIGH replay observation. It is not schema-2.0
+released-session evidence and cannot mint live-input authority.
 
 For the first small graph:
 

@@ -79,6 +79,42 @@ func entryTransitionRequiresOrderedContinuity() {
   #expect(engine.snapshot.currentOccurrenceID == "first")
 }
 
+@Test("Entry observations cannot move strict navigation back to entry")
+func entryObservationsCannotRegressStrictNavigation() {
+  let routePlan = testRoutePlan()
+  let transition = EntryTransition(
+    facilityID: "test.entry",
+    directedEdgeIDs: ["surface", "ramp"],
+    firstRouteOccurrenceID: "first"
+  )
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(
+      routePlan: routePlan,
+      entryTransition: transition
+    ),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      activeRoutePlanID: routePlan.id,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+
+  engine.observeLocation(
+    LocationObservation(
+      directedEdgeID: "ramp",
+      matchedOccurrenceID: "first",
+      candidateOccurrenceIDs: ["first"],
+      candidateResolution: .resolved,
+      reportedConfidence: .high,
+      headingMatches: true
+    )
+  )
+
+  #expect(engine.snapshot.journeyPhase == .strictRoute)
+  #expect(engine.snapshot.currentOccurrenceID == "first")
+}
+
 @Test("Post-tunnel reacquisition restarts when the evidence window is too old")
 func postTunnelReacquisitionRequiresATimelyWindow() {
   let routePlan = testRoutePlan()

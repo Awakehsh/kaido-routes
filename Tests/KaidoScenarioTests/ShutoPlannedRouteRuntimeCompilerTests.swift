@@ -145,6 +145,117 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
   func drivesActorRuntimeWithGeneratedObservations() async throws {
     let database = try loadWholeShutoDatabase()
     let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.c1.kyoubashi",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let simulator = try NavigationDriveSimulator(
+      route: route,
+      runtimeAssets: assets,
+      configuration: NavigationDriveSimulationConfiguration(
+        sampleFractions: [0.2, 0.5, 0.8],
+        horizontalAccuracyMeters: 2
+      )
+    )
+
+    let results = try await simulator.runToEnd()
+    let admittedProgress: [ShutoRouteRuntimeProgress] =
+      results.compactMap { result in
+        guard result.navigationSnapshot.journeyPhase == .strictRoute else {
+          return nil
+        }
+        return result.navigationUpdate.flatMap {
+          assets.project($0.matcherEstimate)
+        }
+      }
+
+    #expect(!results.isEmpty)
+    #expect(
+      results.contains {
+        $0.navigationSnapshot.journeyPhase == .entryTransition
+      }
+    )
+    let firstStrictRoute = try #require(
+      results.first {
+        $0.navigationSnapshot.journeyPhase == .strictRoute
+      }
+    )
+    #expect(
+      firstStrictRoute.navigationSnapshot.lastPhaseTransitionTrigger
+        == "SYNTHETIC_SIMULATION_ENTRY_CONTINUITY"
+    )
+    #expect(
+      firstStrictRoute.navigationSnapshot.completedOccurrenceIDs
+        .contains(route.routePlan.occurrences[0].id)
+    )
+    #expect(!admittedProgress.isEmpty)
+    #expect(
+      zip(admittedProgress, admittedProgress.dropFirst()).allSatisfy {
+        $0.routeProgressFraction <= $1.routeProgressFraction
+      }
+    )
+    #expect(admittedProgress.last?.occurrenceIndex == route.edges.count - 1)
+    #expect((admittedProgress.last?.routeProgressFraction ?? 0) > 0.99)
+    #expect(
+      results.last?.navigationSnapshot.currentOccurrenceID
+        == route.routePlan.occurrences.last?.id
+    )
+  }
+
+  @Test("degraded first-edge evidence cannot skip the selected entry")
+  func degradedEntryEvidenceFailsClosed() async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.c1.kyoubashi",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let firstOccurrenceID = try #require(
+      route.routePlan.occurrences.first?.id
+    )
+    let simulator = try NavigationDriveSimulator(
+      route: route,
+      runtimeAssets: assets,
+      configuration: NavigationDriveSimulationConfiguration(
+        sampleFractions: [0.2, 0.5, 0.8],
+        horizontalAccuracyMeters: 2,
+        anomalies: (0..<3).map {
+          NavigationDriveSimulationAnomaly(
+            occurrenceID: firstOccurrenceID,
+            sampleIndex: $0,
+            kind: .horizontalAccuracyMeters(150)
+          )
+        }
+      )
+    )
+
+    let results = try await simulator.runToEnd()
+
+    #expect(
+      results.allSatisfy {
+        $0.navigationSnapshot.journeyPhase != .strictRoute
+      }
+    )
+    #expect(
+      results.last?.navigationSnapshot.currentOccurrenceID
+        == route.routePlan.occurrences.first?.id
+    )
+    #expect(
+      results.last?.navigationSnapshot.completedOccurrenceIDs.isEmpty
+        == true
+    )
+  }
+
+  @Test("ambiguous first-edge evidence cannot enter the selected route")
+  func ambiguousEntryEvidenceFailsClosed() async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
       entryFacilityID: "shuto.ic.3.shibuya",
       exitFacilityID: "shuto.ic.k1.minatomirai"
     )
@@ -162,24 +273,15 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
 
     let results = try await simulator.runToEnd()
-    let admittedProgress = results.compactMap {
-      $0.navigationUpdate.flatMap {
-        assets.project($0.matcherEstimate)
-      }
-    }
 
-    #expect(!results.isEmpty)
-    #expect(!admittedProgress.isEmpty)
     #expect(
-      zip(admittedProgress, admittedProgress.dropFirst()).allSatisfy {
-        $0.routeProgressFraction <= $1.routeProgressFraction
+      results.allSatisfy {
+        $0.navigationSnapshot.journeyPhase != .strictRoute
       }
     )
-    #expect(admittedProgress.last?.occurrenceIndex == route.edges.count - 1)
-    #expect((admittedProgress.last?.routeProgressFraction ?? 0) > 0.99)
     #expect(
-      results.last?.navigationSnapshot.currentOccurrenceID
-        == route.routePlan.occurrences.last?.id
+      results.last?.navigationSnapshot.completedOccurrenceIDs.isEmpty
+        == true
     )
   }
 

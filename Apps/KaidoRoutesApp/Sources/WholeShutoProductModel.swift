@@ -62,7 +62,7 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.1"
+  static let currentSchemaVersion = "1.2"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -581,7 +581,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
-    if phase == .expressway {
+    if phase == .entryTransition || phase == .expressway {
       Task {
         await stepObservationReplay()
       }
@@ -594,7 +594,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
-    if phase == .expressway {
+    if phase == .entryTransition || phase == .expressway {
       guard await restoreObservationReplayIfNeeded() else { return }
       await stepObservationReplay()
     } else {
@@ -630,7 +630,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   private func startPlaybackLoop() {
     playbackTask?.cancel()
-    if phase == .expressway {
+    if phase == .entryTransition || phase == .expressway {
       startObservationReplayLoop()
       return
     }
@@ -648,9 +648,9 @@ final class WholeShutoProductModel: ObservableObject {
     switch phase {
     case .surfaceAccess, .surfaceEgress:
       increment = 0.04
-    case .entryTransition, .exitTransition:
+    case .exitTransition:
       increment = 0.25
-    case .expressway:
+    case .entryTransition, .expressway:
       return
     case .planning, .review, .completed:
       return
@@ -682,14 +682,19 @@ final class WholeShutoProductModel: ObservableObject {
       try? checkpointStore?.remove()
     } else {
       persistCheckpoint()
-      if phase == .expressway, isPlaying {
+      if phase == .entryTransition || phase == .expressway,
+        isPlaying
+      {
         startObservationReplayLoop()
       }
     }
   }
 
   private func startObservationReplayLoop() {
-    guard phase == .expressway, let driveSimulator else {
+    guard
+      phase == .entryTransition || phase == .expressway,
+      let driveSimulator
+    else {
       isPlaying = false
       failureCode = "WHOLE_SHUTO_RUNTIME_MISSING"
       return
@@ -725,7 +730,10 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func stepObservationReplay() async {
-    guard phase == .expressway, let driveSimulator else {
+    guard
+      phase == .entryTransition || phase == .expressway,
+      let driveSimulator
+    else {
       failureCode = "WHOLE_SHUTO_RUNTIME_MISSING"
       return
     }
@@ -756,6 +764,15 @@ final class WholeShutoProductModel: ObservableObject {
       playbackTask?.cancel()
       return
     }
+    if phase == .entryTransition {
+      guard update.navigationSnapshot.journeyPhase == .strictRoute else {
+        persistCheckpoint()
+        return
+      }
+      phase = .expressway
+      progressFraction = 0
+    }
+    guard phase == .expressway else { return }
     guard
       let progress = runtimeAssets?.project(
         update.matcherEstimate
@@ -773,7 +790,11 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func completeExpresswayObservationReplay() {
-    guard phase == .expressway else { return }
+    guard phase == .expressway else {
+      isPlaying = false
+      failureCode = "WHOLE_SHUTO_ENTRY_TRANSITION_UNCONFIRMED"
+      return
+    }
     guard
       matcherConfidence == .high,
       runtimeJourneyPhase == .strictRoute,
@@ -863,7 +884,9 @@ final class WholeShutoProductModel: ObservableObject {
     mapMode = checkpoint.mapMode
     isPlaying = false
     restoredFromCheckpoint = true
-    if checkpoint.phase == .expressway {
+    if checkpoint.phase == .entryTransition
+      || checkpoint.phase == .expressway
+    {
       do {
         let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
           database: database,
@@ -879,18 +902,23 @@ final class WholeShutoProductModel: ObservableObject {
           ),
           speed: .twentyTimes
         )
-        switch (
-          checkpoint.runtimeOccurrenceID,
-          checkpoint.runtimeFractionAlongOccurrence
-        ) {
-        case (nil, nil) where progressFraction == 0:
-          break
-        case (.some(let occurrenceID), .some(let fraction)):
+        if checkpoint.phase == .entryTransition {
           guard
+            checkpoint.runtimeOccurrenceID == nil,
+            checkpoint.runtimeFractionAlongOccurrence == nil,
+            progressFraction == 0
+          else {
+            throw WholeShutoProductError.noExpresswayRoute
+          }
+        } else {
+          guard
+            let occurrenceID = checkpoint.runtimeOccurrenceID,
             let occurrence = route.routePlan.occurrence(
               id: occurrenceID
             ),
             route.edges.indices.contains(occurrence.index),
+            let fraction =
+              checkpoint.runtimeFractionAlongOccurrence,
             fraction.isFinite,
             (0...1).contains(fraction)
           else {
@@ -906,8 +934,6 @@ final class WholeShutoProductModel: ObservableObject {
             longitude: start.longitude
               + (end.longitude - start.longitude) * fraction
           )
-        default:
-          throw WholeShutoProductError.noExpresswayRoute
         }
       } catch {
         runtimeAssets = nil

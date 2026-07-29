@@ -13,7 +13,7 @@ final class ProductMapPresentationTests: XCTestCase {
     let store = MemoryProductMapProjectionPreferenceStore()
     let first = ProductMapPresentationModel(store: store)
 
-    XCTAssertEqual(first.projection, .topology)
+    XCTAssertEqual(first.projection, .geographic)
 
     first.select(.geographic)
 
@@ -22,6 +22,74 @@ final class ProductMapPresentationTests: XCTestCase {
       ProductMapPresentationModel(store: store).projection,
       .geographic
     )
+  }
+
+  func testGeographicPresentationUsesEveryReleasedRouteOccurrence()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry()
+    let corridor = entry.release.navigation.bundle.matcherCorridor
+
+    let presentation = try XCTUnwrap(
+      ProductGeographicMapPresentation.make(
+        corridor: corridor,
+        evidence: nil
+      )
+    )
+
+    XCTAssertEqual(presentation.routePlanID, corridor.routePlanID)
+    XCTAssertEqual(
+      presentation.paths.map(\.id),
+      corridor.occurrences.sorted { $0.index < $1.index }.map(\.id)
+    )
+    XCTAssertEqual(
+      presentation.coordinateCount,
+      corridor.occurrences.reduce(0) { count, occurrence in
+        count
+          + (corridor.edges.first {
+            $0.id == occurrence.directedEdgeID
+          }?.coordinates.count ?? 0)
+      }
+    )
+    XCTAssertNotNil(presentation.startCoordinate)
+    XCTAssertNotNil(presentation.finishCoordinate)
+    XCTAssertNil(presentation.marker)
+  }
+
+  func testExactHighProgressPlacesTheMarkerOnTheGeographicRoute()
+    throws
+  {
+    let fixture = try positionFixture(confidence: .high)
+    let corridor = fixture.entry.release.navigation.bundle.matcherCorridor
+    let estimate = MatcherEstimate(
+      observationID: "test.position.geographic",
+      estimatedAtMilliseconds: 1_000,
+      directedEdgeID: fixture.occurrence.entityID,
+      occurrenceID: fixture.occurrence.id,
+      candidateEdgeIDs: [fixture.occurrence.entityID],
+      confidence: .high,
+      distanceMeters: 2,
+      fractionAlongEdge: 0.5
+    )
+    let evidence = try XCTUnwrap(
+      ProductTopologyPositionEvidence.admitted(
+        estimate: estimate,
+        snapshot: fixture.snapshot,
+        routePlan: fixture.routePlan
+      )
+    )
+
+    let presentation = try XCTUnwrap(
+      ProductGeographicMapPresentation.make(
+        corridor: corridor,
+        evidence: evidence
+      )
+    )
+    let marker = try XCTUnwrap(presentation.marker)
+
+    XCTAssertEqual(marker.occurrenceID, fixture.occurrence.id)
+    XCTAssertTrue((-90...90).contains(marker.coordinate.latitude))
+    XCTAssertTrue((-180...180).contains(marker.coordinate.longitude))
   }
 
   func testTopologyPresentationPreservesReleasedOccurrenceOrderAndRepeats()
@@ -214,6 +282,7 @@ final class ProductMapPresentationTests: XCTestCase {
     snapshot.routeCandidateResolution = .resolved
     snapshot.markerStyle = "MEASURED"
     return PositionFixture(
+      entry: entry,
       routePlan: routePlan,
       occurrence: occurrence,
       projection: projection,
@@ -238,6 +307,7 @@ private final class MemoryProductMapProjectionPreferenceStore:
 }
 
 private struct PositionFixture {
+  let entry: BundledProductReleaseEntry
   let routePlan: RoutePlan
   let occurrence: RouteOccurrence
   let projection: RouteAtlasJourneyProjection

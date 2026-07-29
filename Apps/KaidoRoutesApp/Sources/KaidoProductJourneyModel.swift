@@ -179,6 +179,28 @@ final class KaidoProductJourneyModel: ObservableObject {
     }
   }
 
+  var discoveryGeographicMapPresentation: ProductGeographicMapPresentation? {
+    guard let entry = productShellEntry else { return nil }
+    return ProductGeographicMapPresentation.make(
+      corridor: entry.release.navigation.bundle.matcherCorridor,
+      evidence: nil
+    )
+  }
+
+  var geographicMapPresentation: ProductGeographicMapPresentation? {
+    guard
+      let entry =
+        composition.releasedRouteAuthoring?.selectedEntry
+        ?? productShellEntry
+    else {
+      return nil
+    }
+    return ProductGeographicMapPresentation.make(
+      corridor: entry.release.navigation.bundle.matcherCorridor,
+      evidence: nil
+    )
+  }
+
   var activeRuntime: ProductNavigationRuntimeModel? {
     navigationRuntime ?? rehearsalRuntime
   }

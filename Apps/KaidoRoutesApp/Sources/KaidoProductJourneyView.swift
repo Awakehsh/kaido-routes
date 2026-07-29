@@ -359,6 +359,8 @@ private struct ProductRoutesStage: View {
         mapModel: model.composition.productMapPresentation,
         surfaceID: "routes",
         presentation: model.discoveryRouteAtlasPresentation,
+        geographicPresentation:
+          model.discoveryGeographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
         usesDarkStyle: false
@@ -718,6 +720,7 @@ private struct ProductPlanStage: View {
         mapModel: model.composition.productMapPresentation,
         surfaceID: "plan",
         presentation: mapPresentation,
+        geographicPresentation: model.geographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
         usesDarkStyle: false
@@ -1174,6 +1177,7 @@ private struct ProductReviewStage: View {
         mapModel: model.composition.productMapPresentation,
         surfaceID: "review",
         presentation: model.routeAtlasOverlayPresentation,
+        geographicPresentation: model.geographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
         usesDarkStyle: false
@@ -1638,7 +1642,7 @@ private struct ProductDriveStage: View {
   @ObservedObject var model: KaidoProductJourneyModel
   @ObservedObject var runtime: ProductNavigationRuntimeModel
   @ObservedObject private var locationController: ForegroundNavigationLocationController
-  @State private var isStartingRehearsal = false
+  @State private var isStartingSimulation = false
   @State private var showsFinishConfirmation = false
 
   init(
@@ -1665,16 +1669,21 @@ private struct ProductDriveStage: View {
           mapModel: model.composition.productMapPresentation,
           surfaceID: "drive",
           presentation: runtime.routeAtlasOverlayPresentation,
+          geographicPresentation: runtime.geographicMapPresentation,
           navigationSnapshot: runtime.snapshot,
           positionEvidence: runtime.topologyPositionEvidence,
           usesDarkStyle: true
         )
 
         routeProgress
-        if runtime.isRealRoadAuthority {
+        if !locationController.canStop {
+          simulationControls
+        }
+        if runtime.isRealRoadAuthority,
+          runtime.simulationStatus?.state == .ready
+        {
           liveLocationControl
         }
-        rehearsalControls
       }
       .padding(.horizontal, 16)
       .padding(.top, 8)
@@ -1865,9 +1874,15 @@ private struct ProductDriveStage: View {
   }
 
   private var routeProgress: some View {
-    let currentIndex = runtime.snapshot?.currentOccurrenceIndex
-    let current =
-      currentIndex.map { min(runtime.routeOccurrenceCount, $0 + 1) } ?? 0
+    let current: Int
+    if runtime.snapshot?.journeyPhase == .completed {
+      current = runtime.routeOccurrenceCount
+    } else {
+      current =
+        runtime.snapshot?.currentOccurrenceIndex.map {
+          min(runtime.routeOccurrenceCount, $0 + 1)
+        } ?? 0
+    }
     return VStack(alignment: .leading, spacing: 8) {
       HStack {
         Text(
@@ -2002,68 +2017,133 @@ private struct ProductDriveStage: View {
   }
 
   @ViewBuilder
-  private var rehearsalControls: some View {
-    if !runtime.isRealRoadAuthority {
-      VStack(spacing: 9) {
-        if runtime.canRunDeterministicPreviewTrace {
-          Button {
-            isStartingRehearsal = true
-            Task {
-              await runtime.runDeterministicPreviewTrace()
-              isStartingRehearsal = false
-            }
-          } label: {
-            Label(
-              copy.resolve(
-                japanese: "走行演習を開始",
-                simplifiedChinese: "开始行驶演练",
-                english: "Start driving rehearsal"
-              ),
-              systemImage: "play.fill"
-            )
-            .font(.system(size: 13, weight: .black, design: .rounded))
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .foregroundStyle(KaidoTheme.asphalt)
-            .background(KaidoTheme.signalAmber)
-          }
-          .buttonStyle(.plain)
-          .disabled(isStartingRehearsal)
-          .accessibilityIdentifier("product-drive-start-rehearsal")
-        } else if runtime.canStepNavigationSimulation {
+  private var simulationControls: some View {
+    if let status = runtime.simulationStatus {
+      VStack(alignment: .leading, spacing: 10) {
+        HStack {
+          Label(
+            copy.resolve(
+              japanese: "ルートシミュレーション",
+              simplifiedChinese: "路线模拟",
+              english: "Route simulation"
+            ),
+            systemImage: "car.fill"
+          )
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+
+          Spacer()
+
+          Text("\(status.completedEventCount) / \(status.totalEventCount)")
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .foregroundStyle(KaidoTheme.muted)
+        }
+
+        if runtime.canPauseNavigationSimulation {
           Button {
             Task {
-              await runtime.stepNavigationSimulation()
+              await runtime.pauseNavigationSimulation()
             }
           } label: {
-            Label(
-              copy.resolve(
-                japanese: "次の区間へ",
-                simplifiedChinese: "前往下一段",
-                english: "Advance one segment"
+            simulationButtonLabel(
+              title: copy.resolve(
+                japanese: "一時停止",
+                simplifiedChinese: "暂停模拟",
+                english: "Pause simulation"
               ),
-              systemImage: "forward.frame.fill"
+              systemImage: "pause.fill"
             )
-            .font(.system(size: 12, weight: .black, design: .rounded))
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .foregroundStyle(KaidoTheme.routeWhite)
-            .background(KaidoTheme.routeGreenDeep)
           }
           .buttonStyle(.plain)
-          .accessibilityIdentifier("product-drive-next-segment")
+          .accessibilityIdentifier("product-drive-pause-simulation")
+        } else {
+          Button {
+            Task {
+              isStartingSimulation = true
+              if status.state == .completed {
+                await runtime.resetNavigationSimulation()
+              }
+              await runtime.playNavigationSimulation()
+              isStartingSimulation = false
+            }
+          } label: {
+            simulationButtonLabel(
+              title: simulationActionTitle(for: status.state),
+              systemImage:
+                status.state == .completed
+                ? "arrow.counterclockwise"
+                : "play.fill"
+            )
+          }
+          .buttonStyle(.plain)
+          .disabled(
+            isStartingSimulation
+              || (!runtime.canPlayNavigationSimulation
+                && status.state != .completed)
+          )
+          .accessibilityIdentifier("product-drive-start-simulation")
         }
 
         Text(
           copy.resolve(
-            japanese: "演習データを使用しています",
-            simplifiedChinese: "当前使用演练数据",
-            english: "This drive uses rehearsal data"
+            japanese: "選択した K7 ルートを地図上で自動再生します。実走行データではありません。",
+            simplifiedChinese: "在地图上自动播放所选 K7 路线，不代表真实道路状态。",
+            english:
+              "Automatically plays the selected K7 route on the map; this is not live-road data."
           )
         )
         .font(.system(size: 9, weight: .bold))
         .foregroundStyle(KaidoTheme.muted)
+        .fixedSize(horizontal: false, vertical: true)
       }
+      .padding(12)
+      .background(KaidoTheme.instrument)
+      .clipShape(RoundedRectangle(cornerRadius: 13))
+      .accessibilityElement(children: .contain)
+      .accessibilityIdentifier("product-drive-simulation")
+      .accessibilityValue(
+        "\(status.state.rawValue) "
+          + "\(status.completedEventCount) of \(status.totalEventCount)"
+      )
+    }
+  }
+
+  private func simulationButtonLabel(
+    title: String,
+    systemImage: String
+  ) -> some View {
+    Label(title, systemImage: systemImage)
+      .font(.system(size: 13, weight: .black, design: .rounded))
+      .frame(maxWidth: .infinity)
+      .frame(height: 48)
+      .foregroundStyle(KaidoTheme.asphalt)
+      .background(KaidoTheme.signalAmber)
+  }
+
+  private func simulationActionTitle(
+    for state: NavigationDriveSimulationState
+  ) -> String {
+    switch state {
+    case .ready:
+      copy.resolve(
+        japanese: "K7 シミュレーションを開始",
+        simplifiedChinese: "开始 K7 模拟导航",
+        english: "Start K7 simulation"
+      )
+    case .paused:
+      copy.resolve(
+        japanese: "シミュレーションを再開",
+        simplifiedChinese: "继续模拟导航",
+        english: "Resume simulation"
+      )
+    case .completed:
+      copy.resolve(
+        japanese: "もう一度再生",
+        simplifiedChinese: "重新播放",
+        english: "Replay simulation"
+      )
+    case .playing:
+      ""
     }
   }
 

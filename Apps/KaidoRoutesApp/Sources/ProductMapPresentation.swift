@@ -25,7 +25,7 @@ final class UserDefaultsProductMapProjectionPreferenceStore:
 
   init(
     defaults: UserDefaults = .standard,
-    key: String = "app.kaidoroutes.map-projection"
+    key: String = "app.kaidoroutes.map-projection.v2"
   ) {
     self.defaults = defaults
     self.key = key
@@ -54,13 +54,157 @@ final class ProductMapPresentationModel: ObservableObject {
       UserDefaultsProductMapProjectionPreferenceStore()
   ) {
     self.store = store
-    projection = store.projection() ?? .topology
+    projection = store.projection() ?? .geographic
   }
 
   func select(_ projection: ProductMapProjection) {
     guard projection != self.projection else { return }
     store.setProjection(projection)
     self.projection = projection
+  }
+}
+
+struct ProductMapCoordinate: Equatable, Sendable {
+  let latitude: Double
+  let longitude: Double
+
+  init(_ coordinate: MatcherCoordinate) {
+    latitude = coordinate.latitude
+    longitude = coordinate.longitude
+  }
+}
+
+struct ProductGeographicRoutePath: Equatable, Identifiable, Sendable {
+  let id: String
+  let occurrenceIndex: Int
+  let coordinates: [ProductMapCoordinate]
+}
+
+struct ProductGeographicPositionMarker: Equatable, Sendable {
+  let occurrenceID: String
+  let coordinate: ProductMapCoordinate
+}
+
+struct ProductGeographicMapPresentation: Equatable, Sendable {
+  let routePlanID: String
+  let paths: [ProductGeographicRoutePath]
+  let marker: ProductGeographicPositionMarker?
+
+  var startCoordinate: ProductMapCoordinate? {
+    paths.first?.coordinates.first
+  }
+
+  var finishCoordinate: ProductMapCoordinate? {
+    paths.last?.coordinates.last
+  }
+
+  var coordinateCount: Int {
+    paths.reduce(0) { $0 + $1.coordinates.count }
+  }
+
+  static func make(
+    corridor: RouteMatcherCorridor,
+    evidence: ProductTopologyPositionEvidence?
+  ) -> ProductGeographicMapPresentation? {
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: corridor.edges.map { ($0.id, $0) }
+    )
+    let paths = corridor.occurrences
+      .sorted { $0.index < $1.index }
+      .compactMap { occurrence -> ProductGeographicRoutePath? in
+        guard
+          let edge = edgesByID[occurrence.directedEdgeID],
+          edge.coordinates.count >= 2
+        else {
+          return nil
+        }
+        return ProductGeographicRoutePath(
+          id: occurrence.id,
+          occurrenceIndex: occurrence.index,
+          coordinates: edge.coordinates.map(ProductMapCoordinate.init)
+        )
+      }
+    guard paths.count == corridor.occurrences.count else {
+      return nil
+    }
+
+    let marker: ProductGeographicPositionMarker?
+    if let evidence,
+      evidence.routePlanID == corridor.routePlanID,
+      let occurrence = corridor.occurrences.first(where: {
+        $0.id == evidence.occurrenceID
+          && $0.directedEdgeID == evidence.directedEdgeID
+      }),
+      let edge = edgesByID[occurrence.directedEdgeID],
+      let coordinate = coordinate(
+        along: edge.coordinates,
+        fraction: evidence.fractionAlongOccurrence
+      )
+    {
+      marker = ProductGeographicPositionMarker(
+        occurrenceID: occurrence.id,
+        coordinate: ProductMapCoordinate(coordinate)
+      )
+    } else {
+      marker = nil
+    }
+
+    return ProductGeographicMapPresentation(
+      routePlanID: corridor.routePlanID,
+      paths: paths,
+      marker: marker
+    )
+  }
+
+  private static func coordinate(
+    along coordinates: [MatcherCoordinate],
+    fraction: Double
+  ) -> MatcherCoordinate? {
+    guard let first = coordinates.first else { return nil }
+    guard coordinates.count > 1 else { return first }
+
+    let segments = zip(coordinates, coordinates.dropFirst()).map {
+      start, end in
+      (
+        start: start,
+        end: end,
+        length: planarDistance(from: start, to: end)
+      )
+    }
+    let totalLength = segments.reduce(0) { $0 + $1.length }
+    guard totalLength > 0 else { return first }
+
+    var remaining = min(1, max(0, fraction)) * totalLength
+    for segment in segments {
+      if remaining <= segment.length, segment.length > 0 {
+        let localFraction = remaining / segment.length
+        return MatcherCoordinate(
+          latitude:
+            segment.start.latitude
+            + (segment.end.latitude - segment.start.latitude)
+              * localFraction,
+          longitude:
+            segment.start.longitude
+            + (segment.end.longitude - segment.start.longitude)
+            * localFraction
+        )
+      }
+      remaining -= segment.length
+    }
+    return coordinates.last
+  }
+
+  private static func planarDistance(
+    from start: MatcherCoordinate,
+    to end: MatcherCoordinate
+  ) -> Double {
+    let latitudeScale = cos(
+      ((start.latitude + end.latitude) * 0.5) * .pi / 180
+    )
+    return hypot(
+      end.latitude - start.latitude,
+      (end.longitude - start.longitude) * latitudeScale
+    )
   }
 }
 

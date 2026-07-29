@@ -1,5 +1,6 @@
 import KaidoDomain
 import KaidoNavigation
+import MapKit
 import SwiftUI
 
 extension ProductMapProjection {
@@ -99,6 +100,7 @@ struct ProductMapViewport: View {
 
   let surfaceID: String
   let presentation: ReleasedRouteAtlasOverlayPresentation
+  let geographicPresentation: ProductGeographicMapPresentation?
   let navigationSnapshot: NavigationSnapshot?
   let positionEvidence: ProductTopologyPositionEvidence?
   let usesDarkStyle: Bool
@@ -165,9 +167,25 @@ struct ProductMapViewport: View {
 
   @ViewBuilder
   private var map: some View {
-    switch presentation {
-    case .ready(let projection, let isRealRoadAuthority):
-      if mapModel.projection == .topology {
+    if mapModel.projection == .geographic {
+      if let geographicPresentation {
+        ProductGeographicMapView(
+          presentation: geographicPresentation,
+          followsPosition: surfaceID == "drive",
+          usesDarkStyle: usesDarkStyle
+        )
+      } else {
+        mapUnavailable(
+          copy.resolve(
+            japanese: "この経路の地図はまだ利用できません",
+            simplifiedChinese: "这条路线的地图暂不可用",
+            english: "The map for this route is not available yet"
+          )
+        )
+      }
+    } else {
+      switch presentation {
+      case .ready(let projection, _):
         ProductTopologyMapView(
           presentation: ProductTopologyMapPresentation.make(
             projection: projection,
@@ -176,28 +194,15 @@ struct ProductMapViewport: View {
           ),
           usesDarkStyle: usesDarkStyle
         )
-      } else if isRealRoadAuthority {
+      case .unavailable, .blocked:
         mapUnavailable(
           copy.resolve(
-            japanese: "地理地図アダプタは未接続です",
-            simplifiedChinese: "地理地图适配器尚未连接",
-            english: "The geographic-map adapter is not connected"
+            japanese: "この経路の地図はまだ利用できません",
+            simplifiedChinese: "这条路线的地图暂不可用",
+            english: "The map for this route is not available yet"
           )
         )
-      } else {
-        ProductGeographicPreviewMap(
-          showsMeasuredPosition: positionEvidence != nil,
-          usesDarkStyle: usesDarkStyle
-        )
       }
-    case .unavailable, .blocked:
-      mapUnavailable(
-        copy.resolve(
-          japanese: "この経路の地図はまだ利用できません",
-          simplifiedChinese: "这条路线的地图暂不可用",
-          english: "The map for this route is not available yet"
-        )
-      )
     }
   }
 
@@ -217,10 +222,17 @@ struct ProductMapViewport: View {
   }
 
   private var scopeLabel: String {
-    copy.resolve(
-      japanese: "プレビュー表示",
-      simplifiedChinese: "演示视图",
-      english: "Preview view"
+    if surfaceID == "drive" {
+      return copy.resolve(
+        japanese: "ナビゲーション地図",
+        simplifiedChinese: "导航地图",
+        english: "Navigation map"
+      )
+    }
+    return copy.resolve(
+      japanese: "ルート地図",
+      simplifiedChinese: "路线地图",
+      english: "Route map"
     )
   }
 
@@ -628,173 +640,229 @@ struct ProductTopologyMapView: View {
   }
 }
 
-struct ProductGeographicPreviewMap: View {
+struct ProductGeographicMapView: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
 
-  let showsMeasuredPosition: Bool
+  let presentation: ProductGeographicMapPresentation
+  let followsPosition: Bool
   let usesDarkStyle: Bool
+  @State private var cameraPosition: MapCameraPosition
+
+  init(
+    presentation: ProductGeographicMapPresentation,
+    followsPosition: Bool,
+    usesDarkStyle: Bool
+  ) {
+    self.presentation = presentation
+    self.followsPosition = followsPosition
+    self.usesDarkStyle = usesDarkStyle
+    _cameraPosition = State(
+      initialValue: .region(Self.fullRouteRegion(for: presentation))
+    )
+  }
 
   var body: some View {
     ZStack(alignment: .topLeading) {
-      Canvas { context, size in
-        let water = Path { path in
-          path.move(to: CGPoint(x: 0, y: size.height * 0.72))
-          path.addLine(to: CGPoint(x: size.width, y: size.height * 0.55))
-          path.addLine(to: CGPoint(x: size.width, y: size.height))
-          path.addLine(to: CGPoint(x: 0, y: size.height))
-          path.closeSubpath()
-        }
-        context.fill(
-          water,
-          with: .color(
-            usesDarkStyle
-              ? KaidoTheme.steel.opacity(0.34)
-              : KaidoTheme.surfaceWater
+      Map(
+        position: $cameraPosition,
+        interactionModes: [.pan, .zoom, .rotate]
+      ) {
+        ForEach(presentation.paths) { routePath in
+          MapPolyline(
+            coordinates: routePath.coordinates.map(\.coreLocationCoordinate)
           )
-        )
-
-        for fraction in [0.18, 0.38, 0.68, 0.86] {
-          var road = Path()
-          road.move(to: CGPoint(x: size.width * fraction, y: 0))
-          road.addLine(
-            to: CGPoint(
-              x: size.width * (fraction - 0.12),
-              y: size.height
-            )
-          )
-          context.stroke(
-            road,
-            with: .color(
-              usesDarkStyle
-                ? KaidoTheme.steel
-                : KaidoTheme.roadGray.opacity(0.68)
-            ),
-            lineWidth: 2
-          )
-        }
-
-        var route = Path()
-        route.move(
-          to: CGPoint(x: size.width * 0.08, y: size.height * 0.68)
-        )
-        route.addCurve(
-          to: CGPoint(x: size.width * 0.92, y: size.height * 0.35),
-          control1: CGPoint(
-            x: size.width * 0.38,
-            y: size.height * 0.86
-          ),
-          control2: CGPoint(
-            x: size.width * 0.62,
-            y: size.height * 0.18
-          )
-        )
-        context.stroke(
-          route,
-          with: .color(
+          .stroke(
             usesDarkStyle
               ? KaidoTheme.signalAmber
-              : KaidoTheme.routeGreen
-          ),
-          style: StrokeStyle(
-            lineWidth: 6,
-            lineCap: .round,
-            lineJoin: .round
-          )
-        )
-
-        if showsMeasuredPosition {
-          let point = CGPoint(
-            x: size.width * 0.62,
-            y: size.height * 0.48
-          )
-          context.fill(
-            Path(
-              ellipseIn: CGRect(
-                x: point.x - 9,
-                y: point.y - 9,
-                width: 18,
-                height: 18
-              )
-            ),
-            with: .color(KaidoTheme.positionCyan.opacity(0.24))
-          )
-          context.fill(
-            Path(
-              ellipseIn: CGRect(
-                x: point.x - 4,
-                y: point.y - 4,
-                width: 8,
-                height: 8
-              )
-            ),
-            with: .color(KaidoTheme.positionCyan)
+              : KaidoTheme.routeGreen,
+            style: StrokeStyle(
+              lineWidth: usesDarkStyle ? 7 : 6,
+              lineCap: .round,
+              lineJoin: .round
+            )
           )
         }
-      }
-      .accessibilityHidden(true)
 
-      VStack(alignment: .leading, spacing: 2) {
-        Text(
-          copy.resolve(
-            japanese: "地理地図",
-            simplifiedChinese: "地理地图",
-            english: "Geographic map"
-          )
-        )
-        .font(.system(size: 13, weight: .black, design: .rounded))
-        Text(
-          copy.resolve(
-            japanese: "プレビュー用の道路表示",
-            simplifiedChinese: "演示道路视图",
-            english: "Preview road view"
-          )
-        )
-        .font(.system(size: 9, weight: .bold))
+        if let startCoordinate = presentation.startCoordinate {
+          Annotation(
+            copy.resolve(
+              japanese: "青葉入口",
+              simplifiedChinese: "青叶入口",
+              english: "Aoba entrance"
+            ),
+            coordinate: startCoordinate.coreLocationCoordinate,
+            anchor: .center
+          ) {
+            endpointMarker("A")
+              .accessibilityIdentifier("product-geographic-route-start")
+          }
+        }
+
+        if let finishCoordinate = presentation.finishCoordinate {
+          Annotation(
+            copy.resolve(
+              japanese: "港北出口",
+              simplifiedChinese: "港北出口",
+              english: "Kohoku exit"
+            ),
+            coordinate: finishCoordinate.coreLocationCoordinate,
+            anchor: .center
+          ) {
+            endpointMarker("K")
+              .accessibilityIdentifier("product-geographic-route-finish")
+          }
+        }
+
+        if let marker = presentation.marker {
+          Annotation(
+            copy.resolve(
+              japanese: "現在地",
+              simplifiedChinese: "当前位置",
+              english: "Current position"
+            ),
+            coordinate: marker.coordinate.coreLocationCoordinate,
+            anchor: .center
+          ) {
+            ZStack {
+              Circle()
+                .fill(KaidoTheme.positionCyan.opacity(0.24))
+                .frame(width: 34, height: 34)
+              Circle()
+                .fill(KaidoTheme.positionCyan)
+                .frame(width: 18, height: 18)
+                .overlay {
+                  Circle()
+                    .stroke(KaidoTheme.routeWhite, lineWidth: 3)
+                }
+            }
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+            .accessibilityIdentifier("product-geographic-position-marker")
+            .accessibilityValue(marker.occurrenceID)
+          }
+        }
       }
+      .mapStyle(
+        .standard(
+          elevation: .flat,
+          pointsOfInterest: .excludingAll,
+          showsTraffic: false
+        )
+      )
+      .onChange(of: presentation.marker) { _, marker in
+        guard followsPosition else { return }
+        withAnimation(.easeInOut(duration: 0.4)) {
+          cameraPosition =
+            marker.map {
+              .region(Self.followRegion(for: $0.coordinate))
+            }
+            ?? .region(Self.fullRouteRegion(for: presentation))
+        }
+      }
+
+      HStack(spacing: 8) {
+        Image(systemName: "map.fill")
+        Text(
+          copy.resolve(
+            japanese: "K7 ルート",
+            simplifiedChinese: "K7 路线",
+            english: "K7 route"
+          )
+        )
+      }
+      .font(.system(size: 10, weight: .black, design: .rounded))
       .foregroundStyle(
         usesDarkStyle ? KaidoTheme.routeWhite : KaidoTheme.ink
       )
-      .padding(12)
-
-      if showsMeasuredPosition {
-        VStack {
-          Spacer()
-          HStack {
-            Label(
-              copy.resolve(
-                japanese: "現在地",
-                simplifiedChinese: "当前位置",
-                english: "Current position"
-              ),
-              systemImage: "location.fill"
-            )
-            .accessibilityIdentifier("product-geographic-position-marker")
-            Spacer()
-          }
-          .font(.system(size: 9, weight: .black))
-          .foregroundStyle(
-            usesDarkStyle
-              ? KaidoTheme.routeWhite
-              : KaidoTheme.ink
-          )
-          .padding(.horizontal, 10)
-          .frame(height: 32)
-          .background(
-            usesDarkStyle
-              ? KaidoTheme.instrument.opacity(0.94)
-              : KaidoTheme.paperRaised.opacity(0.96)
-          )
-        }
-      }
+      .padding(.horizontal, 10)
+      .frame(height: 30)
+      .background(.ultraThinMaterial)
+      .clipShape(Capsule())
+      .padding(10)
     }
-    .background(
-      usesDarkStyle ? KaidoTheme.asphalt : KaidoTheme.paper
-    )
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("product-geographic-map")
+    .accessibilityValue(
+      "\(presentation.paths.count) route segments, "
+        + "\(presentation.coordinateCount) coordinates, "
+        + (presentation.marker == nil ? "route overview" : "position visible")
+    )
+  }
+
+  private func endpointMarker(_ label: String) -> some View {
+    Text(label)
+      .font(.system(size: 10, weight: .black, design: .rounded))
+      .foregroundStyle(KaidoTheme.routeWhite)
+      .frame(width: 24, height: 24)
+      .background(KaidoTheme.routeGreenDeep)
+      .clipShape(Circle())
+      .overlay {
+        Circle()
+          .stroke(KaidoTheme.routeWhite, lineWidth: 2)
+      }
+      .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+  }
+
+  private static func fullRouteRegion(
+    for presentation: ProductGeographicMapPresentation
+  ) -> MKCoordinateRegion {
+    let coordinates = presentation.paths.flatMap(\.coordinates)
+    guard
+      let minimumLatitude = coordinates.map(\.latitude).min(),
+      let maximumLatitude = coordinates.map(\.latitude).max(),
+      let minimumLongitude = coordinates.map(\.longitude).min(),
+      let maximumLongitude = coordinates.map(\.longitude).max()
+    else {
+      return MKCoordinateRegion(
+        center: CLLocationCoordinate2D(
+          latitude: 35.53,
+          longitude: 139.57
+        ),
+        span: MKCoordinateSpan(
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08
+        )
+      )
+    }
+    return MKCoordinateRegion(
+      center: CLLocationCoordinate2D(
+        latitude: (minimumLatitude + maximumLatitude) * 0.5,
+        longitude: (minimumLongitude + maximumLongitude) * 0.5
+      ),
+      span: MKCoordinateSpan(
+        latitudeDelta: max(
+          0.012,
+          (maximumLatitude - minimumLatitude) * 1.5
+        ),
+        longitudeDelta: max(
+          0.012,
+          (maximumLongitude - minimumLongitude) * 1.35
+        )
+      )
+    )
+  }
+
+  private static func followRegion(
+    for coordinate: ProductMapCoordinate
+  ) -> MKCoordinateRegion {
+    MKCoordinateRegion(
+      center: coordinate.coreLocationCoordinate,
+      span: MKCoordinateSpan(
+        latitudeDelta: 0.012,
+        longitudeDelta: 0.012
+      )
+    )
   }
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
+  }
+}
+
+extension ProductMapCoordinate {
+  fileprivate var coreLocationCoordinate: CLLocationCoordinate2D {
+    CLLocationCoordinate2D(
+      latitude: latitude,
+      longitude: longitude
+    )
   }
 }

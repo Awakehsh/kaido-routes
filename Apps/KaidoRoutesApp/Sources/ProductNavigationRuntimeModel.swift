@@ -142,8 +142,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var presentationState: ProductNavigationRuntimePresentationState =
     .awaitingGuidanceFrame
-  @Published private(set) var topologyPositionEvidence:
-    ProductTopologyPositionEvidence?
+  @Published private(set) var topologyPositionEvidence: ProductTopologyPositionEvidence?
   @Published private(set) var isDeterministicPreviewTraceRunning = false
   @Published private(set) var simulationStatus: NavigationDriveSimulationStatus?
   @Published private(set) var simulationPreset: ProductNavigationRuntimeSimulationPreset = .clean
@@ -268,15 +267,13 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       lifecycleState = .checkpointRejected(checkpointFailureCode)
       presentationState = .blocked(checkpointFailureCode)
     }
-    if syntheticFixture != nil {
-      driveSimulator = try NavigationDriveSimulator(
-        release: release,
-        configuration: Self.simulationConfiguration(
-          preset: .clean,
-          release: release
-        )
+    driveSimulator = try NavigationDriveSimulator(
+      release: release,
+      configuration: Self.simulationConfiguration(
+        preset: .clean,
+        release: release
       )
-    }
+    )
   }
 
   convenience init(
@@ -385,6 +382,13 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     } catch {
       return .blocked(releasedRouteAtlasOverlayErrorCode(error))
     }
+  }
+
+  var geographicMapPresentation: ProductGeographicMapPresentation? {
+    ProductGeographicMapPresentation.make(
+      corridor: release.navigation.bundle.matcherCorridor,
+      evidence: topologyPositionEvidence
+    )
   }
 
   var corridorEdgeCount: Int {

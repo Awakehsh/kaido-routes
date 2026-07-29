@@ -18,8 +18,10 @@ links the local domain, routing, navigation, and presentation modules. Its
 default launch now follows the concise Routes → Plan → Review → Drive product
 journey: origin and a compatible directional entrance precede available route
 cards, parked release-owned choices compile one exact RoutePlan, and the
-bundled demo continues into an actor-backed driving rehearsal. One persisted
-`Map | Lines` control is shared by every stage. The topology projection
+released K7 route continues into an explicit automatic driving simulation.
+One persisted `Map | Lines` control is shared by every stage. `Map` is the
+default and renders the released K7 matcher corridor over a real MapKit
+basemap; `Lines` remains the alternate topology projection. The topology projection
 preserves ordered and repeated occurrences and accepts a precise current-route
 marker only from exact HIGH route-bound progress evidence; LOW, LOST,
 ambiguous, or identity-drifted evidence stays estimated or unavailable.
@@ -29,6 +31,8 @@ route authoring and whole-RoutePlan release selection pass. No
 release starts location automatically. The full-network/K7 evidence workbench and
 calibration controls require a dedicated internal launch argument and do not
 appear in the ordinary product journey.
+The automatic route simulation is synthetic, user-started, and grants no
+live-road, traffic, position, or field-reliability authority.
 The target carries an explicit `1.0.0 (1)` release identity. Debug builds
 retain the internal `app.kaidoroutes.preview` identifier, while Release
 archives use `app.kaidoroutes`. Its bundled privacy manifest declares only the

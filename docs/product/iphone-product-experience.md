@@ -105,6 +105,11 @@ reviewed junction inset temporarily becomes the strongest visual when it helps
 the next decision. Low-confidence or tunnel positioning is shown as estimated
 without fabricating a precise marker.
 
+The geographic projection is the initial default and renders the released
+route over the system MapKit basemap. A user-started automatic route simulation
+may exercise the complete Drive presentation, including position and progress,
+but remains visibly synthetic and grants no live-road or passage authority.
+
 ## Entry, exit, and external maps
 
 The default journey stays inside Kaido. A bounded provider supplies the ordinary

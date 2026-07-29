@@ -22,13 +22,15 @@ internal evidence workbench:
    starts foreground Core Location only after a second explicit user action.
 
 The `Map | Lines` choice persists across Routes, Plan, Review, and Drive.
+`Map` is the default and draws every released K7 route occurrence from the
+matcher corridor over a MapKit basemap. Drive exposes one explicit automatic
+route simulation with pause, resume, and replay; it is synthetic and never
+claims live-road position or passage status.
 The topology renderer consumes only a validated
 `RouteAtlasJourneyProjection`, preserves repeated occurrences, and can draw a
 precise progress marker only from one exact HIGH matcher estimate admitted
 against the active RoutePlan and actor snapshot. LOW, LOST, ambiguous, stale,
-or identity-drifted evidence cannot create that marker. The synthetic
-geographic preview is presentation-only; a real-road geographic adapter that
-is not connected fails closed instead of drawing illustrative roads.
+or identity-drifted evidence cannot create that marker.
 
 The journey coordinator owns UI stage only. It does not author topology,
 occurrence progress, a RoutePlan, passage status, or navigation authority.

@@ -23,8 +23,13 @@ An active simulation checkpoint restores only against the same network
 snapshot and exact entry/exit pair, paused at its saved phase and, once
 admitted, exact occurrence and fraction. Matcher posterior is not restored.
 Each JCT retains the current operator detail-image URL and SHA-256 for audit;
-the generated inset remains route-level until a separately verified
-movement-specific lane-side definition exists.
+`ShutoJunctionGuidanceCompiler` now admits the first reviewed whole-network
+movement: Bayshore Route westbound to C2 outer at Oi JCT. Admission requires the
+exact network snapshot, adjacent incoming and outgoing edge IDs, shared OSM JCT
+node, route direction, occurrence order, and current operator-detail hash.
+Unreviewed route-label changes and nearest-JCT geometry produce no inset. The
+App renders the reviewed left branch, Japanese sign target, and shields as a
+Kaido vector; lane indices remain explicitly `NOT_RELEASED`.
 The previous C2 simulation and K7 release remain bounded regression fixtures;
 they are not product coverage limits. The app still has no qualified
 whole-network released-road live-input authority, attached continuous location
@@ -437,6 +442,15 @@ snapshot and movement occurrence. Only `RELEASED` evidence projects. Phone and
 CarPlay receive the same immutable value; the later Apple adapter may rasterize
 it for `CPManeuver.junctionImage` and map its lanes to supported CarPlay lane
 guidance APIs without owning or inferring road semantics.
+
+The whole-Shuto candidate network also supports narrower
+`ShutoJunctionMovementDefinition` values when branch direction and sign text are
+reviewed but lane indices are not. These definitions are snapshot-bound to one
+exact adjacent-edge transition and JCT node and never become
+`JunctionViewDefinition` or CarPlay lane guidance. The phone may render only
+their reviewed branch path, Japanese sign target, and shields while stating
+that lane indices are not released. Any source-hash, snapshot, direction, node,
+edge, or occurrence drift suppresses the inset.
 
 The projector fails closed when prompt, anchor occurrence, movement occurrence,
 or DecisionZone identity is absent; the frame does not belong to the current

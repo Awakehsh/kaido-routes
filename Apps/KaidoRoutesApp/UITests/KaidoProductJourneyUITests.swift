@@ -53,10 +53,15 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-geographic-map", in: junctionApp)
         .waitForExistence(timeout: 5)
     )
-    XCTAssertTrue(
-      element("whole-shuto-junction-inset", in: junctionApp)
-        .waitForExistence(timeout: 5)
+    let junctionInset = element(
+      "whole-shuto-junction-inset",
+      in: junctionApp
     )
+    XCTAssertTrue(junctionInset.waitForExistence(timeout: 5))
+    XCTAssertTrue(junctionInset.label.contains("大井JCT"))
+    XCTAssertTrue(junctionInset.label.contains("左分岔"))
+    XCTAssertTrue(junctionInset.label.contains("東名・中央道"))
+    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
   }
 
   func testReleasedK7RouteAutomaticallySimulatesAcrossTheMap() {

@@ -30,8 +30,13 @@ internal review workbench.
   continuity on the selected directional entrance, and only an exact HIGH
   occurrence match can advance expressway progress.
 - During expressway travel the driver can switch between the normal geographic
-  map and the whole-network line map. A route-derived junction inset appears
-  only near a JCT.
+  map and the whole-network line map. A junction inset appears only when an
+  exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
+  route-label changes and nearest-JCT geometry cannot create one.
+- The first reviewed whole-network movement is Bayshore Route westbound to C2
+  outer at Oi JCT. Its Kaido vector, left-branch instruction, Japanese sign
+  target, and route shields are operator-source-traceable. Lane indices remain
+  explicitly unreleased.
 - IC, JCT, and PA labels stay in Japanese. Product UI can continue to support
   Japanese, Simplified Chinese, and English independently from guidance voice.
 
@@ -70,9 +75,11 @@ The product distinguishes what is known from what is still unconfirmed:
 - OSM geometry and connectivity are candidate data under ODbL 1.0; they are not
   operator-authored lane or stacked-road authority.
 - The line map and junction inset are Kaido-generated vectors. Every JCT keeps
-  the current official detail-image URL and content hash for audit, but the
-  route-level inset does not copy that artwork or imply unverified left/right
-  lane assignment.
+  the current official detail-image URL and content hash for audit. Reviewed
+  movement guidance must also match the exact network snapshot, adjacent edge
+  IDs, shared JCT node, direction, and official content hash. The first Oi
+  definition authorizes a left branch and Japanese sign target, but does not
+  copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover

@@ -4,6 +4,33 @@ import XCTest
 
 @MainActor
 final class WholeShutoProductModelTests: XCTestCase {
+  func testJunctionPromptsRequireAnExactReviewedMovement() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+
+    model.preparePreviewJourney()
+
+    XCTAssertTrue(model.junctionPrompts.isEmpty)
+
+    model.prepareJunctionPreview()
+
+    let prompt = try? XCTUnwrap(model.junctionPrompts.only)
+    XCTAssertEqual(
+      prompt?.movementID,
+      "shuto.jct.oi.b-westbound-to-c2-outer"
+    )
+    XCTAssertEqual(prompt?.nameJA, "大井JCT")
+    XCTAssertEqual(prompt?.incomingRouteID, "B")
+    XCTAssertEqual(prompt?.outgoingRouteID, "C2")
+    XCTAssertEqual(prompt?.outgoingDirectionJA, "外回り")
+    XCTAssertEqual(prompt?.branchSide, .left)
+    XCTAssertEqual(prompt?.japaneseSignText, "東名・中央道")
+    XCTAssertEqual(prompt?.routeShields, ["C2", "3", "E1", "E20"])
+    XCTAssertEqual(prompt?.laneGuidanceState, .notReleased)
+    XCTAssertEqual(prompt?.checkedAt, "2026-07-29")
+    XCTAssertEqual(model.activeJunctionPrompt, prompt)
+    XCTAssertNil(model.failureCode)
+  }
+
   func testActiveJourneyRestoresPausedOnTheSameNetworkSnapshot()
     async throws
   {
@@ -150,6 +177,12 @@ final class WholeShutoProductModelTests: XCTestCase {
       file: file,
       line: line
     )
+  }
+}
+
+private extension Collection {
+  var only: Element? {
+    count == 1 ? first : nil
   }
 }
 

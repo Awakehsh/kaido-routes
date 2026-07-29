@@ -151,6 +151,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     public let officialDetailSHA256: String
     public let coordinate: ShutoCoordinate?
     public let geometryMatchState: String
+    public let osmNodeIDs: [Int64]
 
     private enum CodingKeys: String, CodingKey {
       case junctionID = "junction_id"
@@ -159,6 +160,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
       case officialDetailSHA256 = "official_detail_sha256"
       case coordinate
       case geometryMatchState = "geometry_match_state"
+      case osmNodeIDs = "osm_node_ids"
     }
   }
 
@@ -227,7 +229,8 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     guard Set(nodes.map(\.nodeID)).count == nodes.count,
       Set(edges.map(\.edgeID)).count == edges.count,
       Set(directionalFacilities.map(\.facilityID)).count
-        == directionalFacilities.count
+        == directionalFacilities.count,
+      Set(junctions.map(\.junctionID)).count == junctions.count
     else {
       throw ShutoNetworkError.duplicateIdentity
     }
@@ -237,6 +240,12 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
         && nodeIDs.contains($0.toNodeID)
     }) else {
       throw ShutoNetworkError.invalidEdge
+    }
+    guard junctions.allSatisfy({
+      !$0.osmNodeIDs.isEmpty
+        && $0.osmNodeIDs.allSatisfy(nodeIDs.contains)
+    }) else {
+      throw ShutoNetworkError.invalidJunction
     }
   }
 }
@@ -304,6 +313,7 @@ public enum ShutoNetworkError: Error, Equatable {
   case incompleteNetwork
   case duplicateIdentity
   case invalidEdge
+  case invalidJunction
   case facilityUnavailable
   case routeUnavailable
 }

@@ -39,14 +39,23 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
 }
 
 struct WholeShutoJunctionPrompt: Equatable, Identifiable, Sendable {
+  let movementID: String
   let nameJA: String
   let incomingRouteID: String
   let outgoingRouteID: String
+  let outgoingDirectionJA: String
+  let branchSide: ShutoJunctionBranchSide
+  let japaneseSignText: String
+  let routeShields: [String]
+  let laneGuidanceState: ShutoJunctionLaneGuidanceState
+  let checkedAt: String
   let coordinate: ShutoCoordinate
+  let incomingOccurrenceID: String
+  let outgoingOccurrenceID: String
   let progressFraction: Double
 
   var id: String {
-    "\(nameJA)|\(incomingRouteID)|\(outgoingRouteID)|\(progressFraction)"
+    "\(movementID)|\(outgoingOccurrenceID)"
   }
 }
 
@@ -252,92 +261,28 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var junctionPrompts: [WholeShutoJunctionPrompt] {
-    guard let route = selectedRoute, route.edges.count > 1 else {
-      return []
-    }
-    let total = max(route.distanceMeters, 1)
-    let nodesByID = Dictionary(
-      uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0.coordinate) }
-    )
-    var cumulativeDistances = [0.0]
-    for edge in route.edges {
-      cumulativeDistances.append(
-        cumulativeDistances.last! + edge.lengthMeters
+    guard let route = selectedRoute else { return [] }
+    return ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    ).map { match in
+      let definition = match.definition
+      return WholeShutoJunctionPrompt(
+        movementID: definition.id,
+        nameJA: match.junctionNameJA,
+        incomingRouteID: definition.incomingRouteID,
+        outgoingRouteID: definition.outgoingRouteID,
+        outgoingDirectionJA: definition.outgoingDirectionJA,
+        branchSide: definition.branchSide,
+        japaneseSignText: definition.japaneseSignText,
+        routeShields: definition.routeShields,
+        laneGuidanceState: definition.laneGuidanceState,
+        checkedAt: definition.checkedAt,
+        coordinate: match.coordinate,
+        incomingOccurrenceID: match.incomingOccurrenceID,
+        outgoingOccurrenceID: match.outgoingOccurrenceID,
+        progressFraction: match.progressFraction
       )
-    }
-    var distance = 0.0
-    var result: [WholeShutoJunctionPrompt] = []
-    var previousRouteID = primaryRouteID(route.edges[0])
-    for edge in route.edges {
-      let routeID = primaryRouteID(edge)
-      if let previousRouteID, let routeID, previousRouteID != routeID,
-        let coordinate = coordinate(for: edge.fromNodeID)
-      {
-        let junction = nearestJunction(to: coordinate)
-        result.append(
-          WholeShutoJunctionPrompt(
-            nameJA: junction?.nameJA ?? "\(previousRouteID) → \(routeID)",
-            incomingRouteID: previousRouteID,
-            outgoingRouteID: routeID,
-            coordinate: coordinate,
-            progressFraction: distance / total
-          )
-        )
-      }
-      if let routeID {
-        previousRouteID = routeID
-      }
-      distance += edge.lengthMeters
-    }
-
-    for junction in database.junctions {
-      guard let junctionCoordinate = junction.coordinate else { continue }
-      let nearest = route.edges.enumerated()
-        .compactMap { index, edge -> (Int, Double)? in
-          guard let before = nodesByID[edge.fromNodeID],
-            let after = nodesByID[edge.toNodeID]
-          else {
-            return nil
-          }
-          return (
-            index,
-            min(
-              Self.distance(junctionCoordinate, before),
-              Self.distance(junctionCoordinate, after)
-            )
-          )
-        }
-        .min { $0.1 < $1.1 }
-      guard let nearest, nearest.1 <= 220 else { continue }
-      let incomingIndex = max(0, nearest.0 - 1)
-      let outgoingIndex = min(route.edges.count - 1, nearest.0 + 2)
-      guard
-        let incoming = primaryRouteID(route.edges[incomingIndex]),
-        let outgoing =
-          primaryRouteID(route.edges[outgoingIndex])
-          ?? primaryRouteID(route.edges[nearest.0])
-      else {
-        continue
-      }
-      guard incoming != outgoing else { continue }
-      let fraction = cumulativeDistances[nearest.0] / total
-      if result.contains(where: {
-        abs($0.progressFraction - fraction) < 0.008
-      }) {
-        continue
-      }
-      result.append(
-        WholeShutoJunctionPrompt(
-          nameJA: junction.nameJA,
-          incomingRouteID: incoming,
-          outgoingRouteID: outgoing,
-          coordinate: junctionCoordinate,
-          progressFraction: fraction
-        )
-      )
-    }
-    return result.sorted {
-      $0.progressFraction < $1.progressFraction
     }
   }
 
@@ -449,12 +394,51 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func prepareJunctionPreview() {
-    preparePreviewJourney()
-    guard let prompt = junctionPrompts.first else { return }
-    phase = .expressway
-    progressFraction = max(0, prompt.progressFraction - 0.012)
-    isPlaying = false
-    mapMode = .geographic
+    do {
+      let route = try planner.plan(
+        entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
+        exitFacilityID: "shuto.ic.c2.hatsudaiminami"
+      )
+      let previewOrigin = WholeShutoPlace(
+        title: route.entryFacility.nameJA,
+        coordinate: route.entryFacility.coordinate
+      )
+      let previewDestination = WholeShutoPlace(
+        title: route.exitFacility.nameJA,
+        coordinate: route.exitFacility.coordinate
+      )
+      originQuery = previewOrigin.title
+      destinationQuery = previewDestination.title
+      origin = previewOrigin
+      destination = previewDestination
+      recommendations = [
+        ShutoRouteRecommendation(
+          route: route,
+          surfaceAccessDistanceMeters: 0,
+          surfaceEgressDistanceMeters: 0,
+          totalScoreMeters: route.distanceMeters
+        )
+      ]
+      selectedRecommendationIndex = 0
+      accessRoute = Self.previewSurfaceRoute(
+        from: previewOrigin.coordinate,
+        to: route.entryFacility.coordinate
+      )
+      egressRoute = Self.previewSurfaceRoute(
+        from: route.exitFacility.coordinate,
+        to: previewDestination.coordinate
+      )
+      guard let prompt = junctionPrompts.first else {
+        failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
+        return
+      }
+      phase = .expressway
+      progressFraction = max(0, prompt.progressFraction - 0.012)
+      isPlaying = false
+      mapMode = .geographic
+    } catch {
+      failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
+    }
   }
 
   func planJourney() {
@@ -1052,23 +1036,6 @@ final class WholeShutoProductModel: ObservableObject {
     _ edge: ShutoNetworkDatabase.Edge
   ) -> String? {
     edge.routeMemberships.first?.routeID
-  }
-
-  private func coordinate(for nodeID: Int64) -> ShutoCoordinate? {
-    database.nodes.first(where: { $0.nodeID == nodeID })?.coordinate
-  }
-
-  private func nearestJunction(
-    to coordinate: ShutoCoordinate
-  ) -> ShutoNetworkDatabase.Junction? {
-    database.junctions
-      .compactMap { junction -> (ShutoNetworkDatabase.Junction, Double)? in
-        guard let candidate = junction.coordinate else { return nil }
-        return (junction, Self.distance(coordinate, candidate))
-      }
-      .filter { $0.1 <= 450 }
-      .min { $0.1 < $1.1 }?
-      .0
   }
 
   private func interpolatedCoordinate(

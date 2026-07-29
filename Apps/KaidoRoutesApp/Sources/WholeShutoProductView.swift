@@ -1470,7 +1470,11 @@ private struct WholeShutoJunctionInset: View {
         Text("接近分岔 · \(prompt.nameJA)")
           .font(.system(size: 9, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.confirmedGreen)
-        Text("驶向 \(shieldLabel(prompt.outgoingRouteID))")
+        Text(
+          "\(branchLabel) · 驶向 "
+            + "\(shieldLabel(prompt.outgoingRouteID)) "
+            + "\(prompt.outgoingDirectionJA)"
+        )
           .font(.system(size: 19, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
         HStack(spacing: 6) {
@@ -1481,7 +1485,16 @@ private struct WholeShutoJunctionInset: View {
           Text(shieldLabel(prompt.outgoingRouteID))
             .junctionShield(color: routeColor(prompt.outgoingRouteID))
         }
-        Text("路线级提示 · 不表示左右车道")
+        Text(verbatim: prompt.japaneseSignText)
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+        Text(
+          prompt.routeShields.map(shieldLabel)
+            .joined(separator: " · ")
+        )
+        .font(.system(size: 8, weight: .bold, design: .monospaced))
+        .foregroundStyle(KaidoTheme.muted)
+        Text("\(laneGuidanceLabel) · \(prompt.checkedAt)")
           .font(.system(size: 8, weight: .bold))
           .foregroundStyle(KaidoTheme.muted)
       }
@@ -1498,9 +1511,29 @@ private struct WholeShutoJunctionInset: View {
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
       "\(prompt.nameJA)，从\(shieldLabel(prompt.incomingRouteID))"
-        + "驶向\(shieldLabel(prompt.outgoingRouteID))"
+        + "\(branchLabel)，驶向\(shieldLabel(prompt.outgoingRouteID))"
+        + "\(prompt.outgoingDirectionJA)，"
+        + "日文路牌\(prompt.japaneseSignText)，\(laneGuidanceLabel)"
     )
     .accessibilityIdentifier("whole-shuto-junction-inset")
+  }
+
+  private var branchLabel: String {
+    switch prompt.branchSide {
+    case .left:
+      "左分岔"
+    case .right:
+      "右分岔"
+    case .straight:
+      "直行"
+    }
+  }
+
+  private var laneGuidanceLabel: String {
+    switch prompt.laneGuidanceState {
+    case .notReleased:
+      "车道编号尚未发布"
+    }
   }
 
   private var junctionGraphic: some View {
@@ -1508,33 +1541,58 @@ private struct WholeShutoJunctionInset: View {
       let bottom = CGPoint(x: size.width / 2, y: size.height)
       let split = CGPoint(x: size.width / 2, y: size.height * 0.56)
       let left = CGPoint(x: size.width * 0.22, y: 12)
+      let straight = CGPoint(x: size.width / 2, y: 10)
       let right = CGPoint(x: size.width * 0.78, y: 12)
 
-      var leftPath = Path()
-      leftPath.move(to: bottom)
-      leftPath.addLine(to: split)
-      leftPath.addCurve(
-        to: left,
-        control1: CGPoint(x: size.width * 0.48, y: size.height * 0.35),
-        control2: CGPoint(x: size.width * 0.29, y: size.height * 0.25)
-      )
+      var approach = Path()
+      approach.move(to: bottom)
+      approach.addLine(to: split)
       context.stroke(
-        leftPath,
-        with: .color(KaidoTheme.steel),
+        approach,
+        with: .color(KaidoTheme.signalAmber),
         style: StrokeStyle(lineWidth: 8, lineCap: .round)
       )
 
-      var rightPath = Path()
-      rightPath.move(to: bottom)
-      rightPath.addLine(to: split)
-      rightPath.addCurve(
-        to: right,
-        control1: CGPoint(x: size.width * 0.53, y: size.height * 0.33),
-        control2: CGPoint(x: size.width * 0.70, y: size.height * 0.22)
-      )
+      func branchPath(to endpoint: CGPoint) -> Path {
+        var path = Path()
+        path.move(to: split)
+        path.addCurve(
+          to: endpoint,
+          control1: CGPoint(
+            x: split.x + (endpoint.x - split.x) * 0.18,
+            y: size.height * 0.37
+          ),
+          control2: CGPoint(
+            x: split.x + (endpoint.x - split.x) * 0.78,
+            y: size.height * 0.25
+          )
+        )
+        return path
+      }
+
+      let selectedEnd: CGPoint
+      let alternativeEnds: [CGPoint]
+      switch prompt.branchSide {
+      case .left:
+        selectedEnd = left
+        alternativeEnds = [straight]
+      case .right:
+        selectedEnd = right
+        alternativeEnds = [straight]
+      case .straight:
+        selectedEnd = straight
+        alternativeEnds = [left, right]
+      }
+      for endpoint in alternativeEnds {
+        context.stroke(
+          branchPath(to: endpoint),
+          with: .color(KaidoTheme.steel),
+          style: StrokeStyle(lineWidth: 7, lineCap: .round)
+        )
+      }
       context.stroke(
-        rightPath,
-        with: .color(KaidoTheme.steel),
+        branchPath(to: selectedEnd),
+        with: .color(KaidoTheme.signalAmber),
         style: StrokeStyle(lineWidth: 8, lineCap: .round)
       )
 
@@ -1544,8 +1602,8 @@ private struct WholeShutoJunctionInset: View {
           .foregroundStyle(KaidoTheme.routeWhite)
       )
       let cueFrame = CGRect(
-        x: size.width / 2 - 18,
-        y: 3,
+        x: selectedEnd.x - 18,
+        y: selectedEnd.y - 10,
         width: 36,
         height: 25
       )
@@ -1555,7 +1613,7 @@ private struct WholeShutoJunctionInset: View {
       )
       context.draw(
         routeCue,
-        at: CGPoint(x: size.width / 2, y: 15.5)
+        at: CGPoint(x: selectedEnd.x, y: selectedEnd.y + 2.5)
       )
     }
     .background(KaidoTheme.instrument)

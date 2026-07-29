@@ -137,6 +137,13 @@ final class ProductMapPresentationTests: XCTestCase {
     )
 
     XCTAssertEqual(facilities.routeShields, ["K7"])
+    XCTAssertEqual(facilities.routeSections.count, 1)
+    XCTAssertEqual(facilities.routeSections.first?.routeShield, "K7")
+    XCTAssertEqual(facilities.routeSections.first?.style, .primary)
+    XCTAssertEqual(
+      facilities.routeSections.first?.occurrenceIDs,
+      Set(entry.release.navigation.bundle.routePlan.occurrences.map(\.id))
+    )
     XCTAssertEqual(facilities.entranceCount, 1)
     XCTAssertEqual(facilities.junctionCount, 2)
     XCTAssertEqual(facilities.parkingAreaCount, 0)
@@ -201,6 +208,41 @@ final class ProductMapPresentationTests: XCTestCase {
       facilities.landmarks.filter { $0.kind == .junction }
         .map(\.occurrenceIndex),
       [1, 3, 5]
+    )
+  }
+
+  func testC2CompletedRouteDemoShowsTheC2AndBComposition() throws {
+    let presentation = C2CompletedRouteDemoView.previewPresentation
+    let facilities = try XCTUnwrap(presentation.facilities)
+
+    XCTAssertEqual(facilities.routeShields, ["C2", "B"])
+    XCTAssertEqual(
+      facilities.routeSections.map(\.style),
+      [.primary, .connector]
+    )
+    XCTAssertEqual(facilities.entranceCount, 1)
+    XCTAssertEqual(facilities.junctionCount, 13)
+    XCTAssertEqual(facilities.parkingAreaCount, 1)
+    XCTAssertEqual(facilities.exitCount, 1)
+    XCTAssertEqual(
+      facilities.landmarks.map(\.kind).filter {
+        $0 == .parkingArea
+      }.count,
+      1
+    )
+
+    let sectionOccurrenceIDs = Set(
+      facilities.routeSections.flatMap(\.occurrenceIDs)
+    )
+    XCTAssertEqual(
+      sectionOccurrenceIDs,
+      Set(presentation.orderedOccurrences.map(\.occurrenceID))
+    )
+    XCTAssertEqual(
+      presentation.orderedOccurrences
+        .filter(\.isRepeatedTraversal)
+        .map(\.repeatOrdinal),
+      [1, 2]
     )
   }
 

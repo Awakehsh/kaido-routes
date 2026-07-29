@@ -271,6 +271,7 @@ struct ProductTopologyMarker: Equatable, Sendable {
 enum ProductTopologyLandmarkKind: String, Equatable, Sendable {
   case entrance
   case junction
+  case parkingArea
   case exit
 }
 
@@ -283,8 +284,21 @@ struct ProductTopologyLandmark: Equatable, Identifiable, Sendable {
   let detail: RouteEditorLocalizedText?
 }
 
+enum ProductTopologyRouteSectionStyle: Equatable, Sendable {
+  case primary
+  case connector
+}
+
+struct ProductTopologyRouteSection: Equatable, Identifiable, Sendable {
+  let id: String
+  let routeShield: String
+  let occurrenceIDs: Set<String>
+  let style: ProductTopologyRouteSectionStyle
+}
+
 struct ProductTopologyFacilityPresentation: Equatable, Sendable {
   let routeShields: [String]
+  let routeSections: [ProductTopologyRouteSection]
   let landmarks: [ProductTopologyLandmark]
   let entranceCount: Int
   let junctionCount: Int
@@ -437,6 +451,17 @@ struct ProductTopologyFacilityPresentation: Equatable, Sendable {
 
     return ProductTopologyFacilityPresentation(
       routeShields: routeShields,
+      routeSections:
+        routeShields.count == 1
+        ? [
+          ProductTopologyRouteSection(
+            id: "released-route-\(routeShields[0])",
+            routeShield: routeShields[0],
+            occurrenceIDs: Set(routePlan.occurrences.map(\.id)),
+            style: .primary
+          )
+        ]
+        : [],
       landmarks: landmarks,
       entranceCount: 1,
       junctionCount: junctionLandmarks.count,

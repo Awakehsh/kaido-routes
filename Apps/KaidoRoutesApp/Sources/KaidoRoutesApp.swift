@@ -61,6 +61,10 @@ struct KaidoRoutesApp: App {
           model: .demoPreview()
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-ROUTE-MAP-DEMO"
+      ) {
+        C2CompletedRouteDemoView()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-SAVED-ROUTE-LIBRARY-PREVIEW"
       ) {
         SavedRouteLibraryPreviewHost()

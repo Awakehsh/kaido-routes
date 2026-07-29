@@ -32,15 +32,26 @@ prompt threshold. It preserves the released Japanese sign target and selected
 left or right branch, and clears with that guidance frame. The App generates
 the road scene and does not bundle operator photographs used for private visual
 comparison.
-`Lines` presents only the selected released route. It derives the K7 shield,
-directional entrance, two selected JCT movements, PA count, and directional
-exit from the validated product release. Localized facility cards use an
-evenly spaced two-column layout with leaders back to their exact Route Atlas
-points; they do not imply broader Shuto coverage. The topology renderer
-preserves repeated occurrences and can draw a precise progress marker only
-from one exact HIGH matcher estimate admitted against the active RoutePlan and
-actor snapshot. LOW, LOST, ambiguous, stale, or identity-drifted evidence
-cannot create that marker.
+`Lines` presents only the selected released route. It derives route shields,
+directional entrance, selected JCT movements, PA count, and directional exit
+from the validated product release; the current foreground catalog's K7 route
+is one ordinary instance of this generic path. Localized facility cards use
+leaders back to their exact Route Atlas points and do not imply broader Shuto
+coverage. The topology renderer preserves repeated occurrences and can draw a
+precise progress marker only from one exact HIGH matcher estimate admitted
+against the active RoutePlan and actor snapshot. LOW, LOST, ambiguous, stale,
+or identity-drifted evidence cannot create that marker.
+
+`-C2-ROUTE-MAP-DEMO` opens a dense-route design preview. It shows one complete
+Tomigaya-to-Hatsudai-minami circuit as green C2 sections plus the blue
+westbound Bayshore section required between Kasai and Oi, with 13 named JCTs
+and Oi PA (westbound). Directional entrance and exit names and the PA direction
+were checked on 2026-07-29 against the current operator
+[C2 facility table](https://www.shutoko.jp/use/network/map/route-c2/),
+[JCT map](https://www.shutoko.jp/use/network/jct/), and
+[Oi PA westbound page](https://www.shutoko-sv.jp/pa/oi-westbound). The layout
+is Kaido-generated, bundles no operator artwork, is visibly marked `DEMO`, and
+has no release or navigation authority.
 
 The journey coordinator owns UI stage only. It does not author topology,
 occurrence progress, a RoutePlan, passage status, or navigation authority.

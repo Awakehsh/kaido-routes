@@ -68,6 +68,12 @@ its exact Route Atlas point. A compact summary reports the entrance, JCT, PA,
 and exit counts. Facility names follow the interface locale while Japanese sign
 text and route shields remain available.
 
+Short routes may use larger sign-like facility cards. Dense circuits use
+compact labels around the selected route, keep the complete entrance and exit
+names in the header, and visually distinguish each required route section. A
+practical C2 circuit therefore exposes its C2 and Bayshore components instead
+of drawing a falsely self-contained C2 ring.
+
 Guided planning starts from one reviewed recommended template. It may change
 only approved parameters such as direction, lap count, duration band,
 directional PA occurrence, finish behavior, and compatible entrance or exit.

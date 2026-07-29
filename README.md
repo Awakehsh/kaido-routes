@@ -28,6 +28,10 @@ topology projection preserves ordered and repeated occurrences and accepts a
 precise current-route marker only from exact HIGH route-bound progress
 evidence; LOW, LOST, ambiguous, or identity-drifted evidence stays estimated
 or unavailable.
+An explicit `-C2-ROUTE-MAP-DEMO` preview stress-tests that same renderer with a
+dense completed-circuit design: C2 and the required westbound Bayshore section
+remain visually distinct, while compact labels keep 13 JCTs, one directional
+PA, entrance, and exit readable. It is design-only and cannot start navigation.
 The bundled catalog now contains one foreground K7 product release whose exact
 runtime may grant foreground Core Location authority only after release-owned
 route authoring and whole-RoutePlan release selection pass. No

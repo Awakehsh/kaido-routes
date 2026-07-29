@@ -5,6 +5,44 @@ import XCTest
 
 @MainActor
 final class C2NavigationDemoModelTests: XCTestCase {
+  func testPlanningRequiresParkedReviewBeforePlayback() async {
+    let model = C2NavigationDemoModel.preview()
+
+    await model.planJourney()
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertTrue(model.canStart)
+    XCTAssertEqual(model.surfaceDistanceMeters, 7_320)
+    XCTAssertEqual(model.surfaceTravelTimeSeconds, 1_520)
+
+    model.startPreparedNavigation()
+
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertTrue(model.isPlaying)
+    model.pause()
+  }
+
+  func testInactiveAppPausesUntilTheDriverExplicitlyResumes() async {
+    let model = C2NavigationDemoModel.preview()
+
+    await model.startNavigation()
+    XCTAssertTrue(model.isPlaying)
+
+    model.handleAppActiveState(isActive: false)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.suspensionReason, .appInactive)
+
+    model.handleAppActiveState(isActive: true)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.suspensionReason, .appInactive)
+
+    model.resume()
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertNil(model.suspensionReason)
+    model.pause()
+  }
+
   func testCompleteNavigationRunsFromSurfaceOriginThroughC2ToDestination()
     async
   {

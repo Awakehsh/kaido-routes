@@ -21,9 +21,22 @@ final class C2RouteMapDemoUITests: XCTestCase {
     XCTAssertEqual(start.value as? String, "AVAILABLE")
     start.tap()
 
+    let reviewPredicate = NSPredicate(format: "value == 'REVIEW'")
+    let review = expectation(
+      for: reviewPredicate,
+      evaluatedWith: navigation
+    )
+    wait(for: [review], timeout: 5)
+    XCTAssertTrue(
+      element("c2-navigation-review", in: app).exists
+    )
+    XCTAssertEqual(start.value as? String, "AVAILABLE")
+    start.tap()
+
     let activePredicate = NSPredicate(
       format:
-        "value != 'PLANNING' AND value != 'ROUTING' AND value != 'FAILED'"
+        "value != 'PLANNING' AND value != 'ROUTING' "
+        + "AND value != 'REVIEW' AND value != 'FAILED'"
     )
     let active = expectation(
       for: activePredicate,
@@ -40,6 +53,31 @@ final class C2RouteMapDemoUITests: XCTestCase {
     screenshot.name = "C2 complete navigation from arbitrary endpoints"
     screenshot.lifetime = .keepAlways
     add(screenshot)
+  }
+
+  func testKeyboardRouteActionStopsAtParkedReview() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-C2-FULL-NAVIGATION-DEMO"]
+    app.launch()
+
+    let navigation = element("c2-full-navigation", in: app)
+    XCTAssertTrue(navigation.waitForExistence(timeout: 5))
+
+    let destination = app.textFields["c2-navigation-destination"]
+    destination.tap()
+    destination.typeText("\n")
+
+    let reviewPredicate = NSPredicate(format: "value == 'REVIEW'")
+    let review = expectation(
+      for: reviewPredicate,
+      evaluatedWith: navigation
+    )
+    wait(for: [review], timeout: 5)
+    XCTAssertTrue(element("c2-navigation-review", in: app).exists)
+    XCTAssertFalse(
+      element("c2-navigation-progress", in: app).exists
+    )
   }
 
   func testVerifiedKasaiAndOiJunctionInsetsAppearAutomatically() {

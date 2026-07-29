@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
-  func testDefaultLaunchShowsTheReleasedK7RouteOnARealMap() {
+  func testDefaultLaunchMakesC2MapPrimaryAndKeepsK7AsAnOrdinaryRoute() {
     continueAfterFailure = false
     let app = launchProduct()
 
@@ -14,64 +14,73 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("product-journey-stage", in: app).value as? String,
       "ATLAS"
     )
-    XCTAssertEqual(
-      element("product-map-routes", in: app).value as? String,
-      "geographic"
-    )
-
-    let map = element("product-geographic-map", in: app)
-    XCTAssertTrue(map.waitForExistence(timeout: 5))
     XCTAssertTrue(
-      (map.value as? String)?.contains("195 coordinates") == true
+      reveal("product-routes-c2-overview", in: app)
+        .waitForExistence(timeout: 5)
     )
     XCTAssertTrue(
-      element("product-geographic-route-start", in: app).exists
+      element("product-routes-c2-map", in: app).exists
     )
     XCTAssertTrue(
-      element("product-geographic-route-finish", in: app).exists
+      element("product-routes-c2-map-route", in: app).isSelected
     )
 
     XCTAssertFalse(app.staticTexts["K7 证据"].exists)
     XCTAssertFalse(app.staticTexts["PRODUCT RELEASE"].exists)
     XCTAssertFalse(app.staticTexts["SNAPSHOT"].exists)
 
-    element("product-map-projection-topology", in: app).tap()
-    XCTAssertEqual(
-      element("product-map-routes", in: app).value as? String,
-      "topology"
+    reveal("product-routes-c2-map-facilities", in: app).tap()
+    XCTAssertTrue(
+      element("product-routes-c2-map", in: app)
+        .waitForExistence(timeout: 3)
     )
     XCTAssertTrue(
-      element("product-topology-map", in: app)
-        .waitForExistence(timeout: 3)
+      element("product-routes-c2-map-facilities", in: app).isSelected
     )
     XCTAssertEqual(
       element("product-topology-route-shield", in: app).label,
-      "K7"
+      "C2"
+    )
+    XCTAssertEqual(
+      element("product-topology-route-shield-B", in: app).label,
+      "B"
     )
     XCTAssertEqual(
       element("product-topology-facility-summary", in: app).value
         as? String,
-      "entrance=1;junction=2;interchange=0;parking=0;exit=1"
+      "entrance=1;junction=13;interchange=20;parking=1;exit=1"
     )
     XCTAssertTrue(
       element(
         "product-topology-landmark-entrance-"
-          + "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+          + "demo.c2.entrance.tomigaya.outer",
         in: app
       ).exists
     )
     XCTAssertTrue(
       element(
         "product-topology-landmark-exit-"
-          + "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+          + "demo.c2.exit.hatsudai-minami.outer",
         in: app
       ).exists
+    )
+    XCTAssertTrue(
+      element(
+        "product-topology-landmark-parkingArea-"
+          + "demo.c2.pa.oi-westbound",
+        in: app
+      ).exists
+    )
+
+    let releaseID = "shutoko.product.k7-aoba-to-kohoku.2026-07-27"
+    XCTAssertTrue(
+      reveal("product-route-option-\(releaseID)", in: app).exists
     )
 
     let topologyScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    topologyScreenshot.name = "Released K7 topology facility overview"
+    topologyScreenshot.name = "C2 primary route and ordinary K7 catalog entry"
     topologyScreenshot.lifetime = .keepAlways
     add(topologyScreenshot)
   }

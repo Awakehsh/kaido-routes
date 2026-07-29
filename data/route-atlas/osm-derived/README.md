@@ -14,9 +14,49 @@ Licence and attribution references:
 - <https://opendatacommons.org/licenses/odbl/1-0/>
 - <https://osmfoundation.org/wiki/Licence/Attribution_Guidelines>
 
-Both distributed K7 JSON artifacts also carry the exact ODbL URI and
-OpenStreetMap attribution URI in machine-readable metadata. The root
-Apache-2.0 licence does not relicense this directory.
+The distributed K7 artifacts and C2 + B geographic route database carry the
+exact ODbL URI and OpenStreetMap attribution URI in machine-readable metadata.
+The root Apache-2.0 licence does not relicense this directory.
+
+## C2 + B geographic route database
+
+`c2-b-20260729-geographic-route.json` is the bounded derivative database behind
+the normal geographic map in the C2 product journey. It retains every selected
+OSM node and way occurrence for:
+
+- C2 outer from Tomigaya toward the Kasai movement;
+- the directed Kasai C2-outer to B-west connector;
+- B west from Kasai through Tatsumi and Ariake to Oi; and
+- C2 outer from Oi through Ohashi to Hatsudai-minami.
+
+The generator pins C2 relation `4256077` version 44, B relation `4256202`
+version 55, exact directed checkpoint nodes, and the bounded Kasai movement
+extract. It fails if those versions drift, a checkpoint is unreachable, node
+coordinates disagree across inputs, or either OSM path boundary is more than
+25 meters from the current operator facility point. OSM supplies geometry
+only. Current operator pages establish the directional Tomigaya entrance and
+Hatsudai-minami exit, while the reviewed junction contract establishes the
+Kasai-right and Oi-left movements.
+
+The iPhone map visibly renders `© OpenStreetMap contributors · ODbL 1.0`
+adjacent to the produced work. This geographic candidate is not a live matcher,
+traffic assertion, or field qualification.
+
+Rebuild it from current API responses:
+
+```sh
+curl -o /tmp/kaido-c2-osm-full.json \
+  https://api.openstreetmap.org/api/0.6/relation/4256077/full.json
+curl -o /tmp/kaido-b-osm-full.json \
+  https://api.openstreetmap.org/api/0.6/relation/4256202/full.json
+curl -o /tmp/kaido-kasai-osm-map.json \
+  'https://api.openstreetmap.org/api/0.6/map.json?bbox=139.8460,35.6410,139.8620,35.6560'
+python3 scripts/build_c2_geographic_route.py \
+  --c2-source /tmp/kaido-c2-osm-full.json \
+  --b-source /tmp/kaido-b-osm-full.json \
+  --kasai-source /tmp/kaido-kasai-osm-map.json \
+  --output data/route-atlas/osm-derived/c2-b-20260729-geographic-route.json
+```
 
 ## K7 Northwest directed candidate database
 
@@ -46,13 +86,12 @@ It has no navigation authority and is not a complete interchange database.
 
 ## Public distribution and produced-work attribution
 
-The complete machine-readable derivative database is committed at
-`k7-northwest-260721-directed-database.json` in the public repository. The
-reconstruction instructions below provide the pinned parent PBF, checksums,
-bounded extraction parameters, tool version, and deterministic candidate
-builders. Recipients may therefore use either the distributed complete
-database or reconstruct the bounded derivative from the pinned source. No
-additional restriction is imposed on the ODbL database.
+The complete machine-readable derivative databases are committed in this
+directory. The reconstruction instructions provide the current API or pinned
+parent PBF inputs, checksums where applicable, bounded extraction parameters,
+and deterministic builders. Recipients may therefore use the distributed
+complete databases or reconstruct their bounded derivatives. No additional
+restriction is imposed on the ODbL databases.
 
 The iPhone target bundles
 `../attribution/route-atlas-attribution-catalog.json`. When the K7 produced

@@ -5,17 +5,23 @@ import SwiftUI
 
 struct C2NavigationDemoView: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @Environment(\.scenePhase) private var scenePhase
   @StateObject private var model: C2NavigationDemoModel
   @State private var mapLayer = C2NavigationMapLayer.route
+  @State private var showsEndConfirmation = false
   @FocusState private var focusedEndpoint: C2NavigationEndpoint?
 
+  private let geographicRoute: C2GeographicRoute?
   let dismiss: () -> Void
 
   init(
     model: C2NavigationDemoModel = C2NavigationDemoModel(),
+    geographicRoute: C2GeographicRoute? =
+      C2GeographicRouteCatalog.bundled,
     dismiss: @escaping () -> Void = {}
   ) {
     _model = StateObject(wrappedValue: model)
+    self.geographicRoute = geographicRoute
     self.dismiss = dismiss
   }
 
@@ -26,6 +32,7 @@ struct C2NavigationDemoView: View {
 
       if model.phase == .planning
         || model.phase == .routing
+        || model.phase == .review
         || model.phase == .failed
       {
         planningStage
@@ -43,6 +50,38 @@ struct C2NavigationDemoView: View {
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("c2-full-navigation")
     .accessibilityValue(model.phase.rawValue)
+    .onChange(of: scenePhase, initial: true) { _, phase in
+      model.handleAppActiveState(isActive: phase == .active)
+    }
+    .confirmationDialog(
+      copy.resolve(
+        japanese: "ナビゲーションを終了しますか？",
+        simplifiedChinese: "结束本次导航？",
+        english: "End this navigation?"
+      ),
+      isPresented: $showsEndConfirmation
+    ) {
+      Button(
+        copy.resolve(
+          japanese: "終了してルート一覧へ",
+          simplifiedChinese: "结束并返回路线列表",
+          english: "End and return to routes"
+        ),
+        role: .destructive
+      ) {
+        model.reset()
+        dismiss()
+      }
+      Button(
+        copy.resolve(
+          japanese: "ナビを続ける",
+          simplifiedChinese: "继续导航",
+          english: "Continue navigation"
+        ),
+        role: .cancel
+      ) {
+      }
+    }
   }
 
   private var planningStage: some View {
@@ -52,31 +91,48 @@ struct C2NavigationDemoView: View {
         endpointEditor
         routeContract
 
-        ProductTopologyMapView(
-          presentation: C2CompletedRouteDemo.presentation,
-          usesDarkStyle: false,
-          showsPositionStatus: false,
-          landmarkLabelMode: .route
-        )
-        .frame(height: 390)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay {
-          RoundedRectangle(cornerRadius: 14)
-            .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        planningMap
+          .frame(height: 390)
+          .clipShape(RoundedRectangle(cornerRadius: 14))
+          .overlay {
+            RoundedRectangle(cornerRadius: 14)
+              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+          }
+          .accessibilityIdentifier("c2-navigation-planning-map")
+
+        if model.phase == .review {
+          preparedJourneyReview
         }
-        .accessibilityIdentifier("c2-navigation-planning-map")
 
         if let failureCode = model.failureCode {
           failureNotice(failureCode)
         }
 
-        startButton
+        planningActions
       }
       .padding(.horizontal, 16)
       .padding(.top, 10)
       .padding(.bottom, 28)
     }
     .scrollIndicators(.hidden)
+  }
+
+  @ViewBuilder
+  private var planningMap: some View {
+    if let geographicRoute {
+      C2GeographicRouteMap(
+        route: geographicRoute,
+        progressFraction: nil,
+        usesDarkStyle: false
+      )
+    } else {
+      ProductTopologyMapView(
+        presentation: C2CompletedRouteDemo.presentation,
+        usesDarkStyle: false,
+        showsPositionStatus: false,
+        landmarkLabelMode: .route
+      )
+    }
   }
 
   private var planningHeader: some View {
@@ -88,11 +144,7 @@ struct C2NavigationDemoView: View {
           .foregroundStyle(KaidoTheme.routeGreen)
 
         Text(
-          copy.resolve(
-            japanese: "どこからでも、経路どおりに",
-            simplifiedChinese: "从任何地方，按选定路线走",
-            english: "Start anywhere. Keep your route."
-          )
+          planningTitle
         )
         .font(.system(size: 25, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.ink)
@@ -159,6 +211,8 @@ struct C2NavigationDemoView: View {
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("c2-navigation-endpoints")
+    .disabled(model.phase == .review || model.phase == .routing)
+    .opacity(model.phase == .review ? 0.72 : 1)
   }
 
   private func endpointRow(
@@ -198,7 +252,7 @@ struct C2NavigationDemoView: View {
             } else {
               focusedEndpoint = nil
               Task {
-                await model.startNavigation()
+                await model.planJourney()
               }
             }
           }
@@ -284,21 +338,50 @@ struct C2NavigationDemoView: View {
       .foregroundStyle(KaidoTheme.quietText)
   }
 
-  private var startButton: some View {
+  private var planningActions: some View {
+    HStack(spacing: 10) {
+      if model.phase == .review {
+        Button {
+          model.editJourney()
+        } label: {
+          Image(systemName: "pencil")
+            .font(.system(size: 14, weight: .black))
+            .frame(width: 52, height: 54)
+            .foregroundStyle(KaidoTheme.ink)
+            .background(KaidoTheme.paperRaised)
+            .overlay {
+              RoundedRectangle(cornerRadius: 12)
+                .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "出発地と目的地を編集",
+            simplifiedChinese: "修改出发地和目的地",
+            english: "Edit origin and destination"
+          )
+        )
+        .accessibilityIdentifier("c2-navigation-edit")
+      }
+
+      primaryPlanningButton
+    }
+  }
+
+  private var primaryPlanningButton: some View {
     Button {
       focusedEndpoint = nil
-      Task {
-        await model.startNavigation()
+      if model.phase == .review {
+        model.startPreparedNavigation()
+      } else {
+        Task {
+          await model.planJourney()
+        }
       }
     } label: {
       HStack {
-        Text(
-          copy.resolve(
-            japanese: "全区間ナビを開始",
-            simplifiedChinese: "开始完整导航模拟",
-            english: "Start complete navigation"
-          )
-        )
+        Text(primaryPlanningActionTitle)
         Spacer()
         Image(systemName: "arrow.right")
       }
@@ -308,17 +391,128 @@ struct C2NavigationDemoView: View {
       .frame(height: 54)
       .foregroundStyle(KaidoTheme.routeWhite)
       .background(
-        model.canStart
+        primaryPlanningActionEnabled
           ? KaidoTheme.routeGreen
           : KaidoTheme.roadGray
       )
+      .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .buttonStyle(.plain)
-    .disabled(!model.canStart)
+    .disabled(!primaryPlanningActionEnabled)
     .accessibilityIdentifier("c2-navigation-start")
     .accessibilityValue(
-      model.canStart ? "AVAILABLE" : "DESTINATION_REQUIRED"
+      primaryPlanningActionEnabled
+        ? "AVAILABLE"
+        : "DESTINATION_REQUIRED"
     )
+  }
+
+  private var preparedJourneyReview: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Label(
+          copy.resolve(
+            japanese: "ルート準備完了",
+            simplifiedChinese: "路线已准备完成",
+            english: "Journey ready"
+          ),
+          systemImage: "checkmark.circle.fill"
+        )
+        .font(.system(size: 13, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeGreenDeep)
+
+        Spacer()
+
+        if let duration = model.surfaceTravelTimeSeconds {
+          Text(
+            copy.resolve(
+              japanese: "一般道 約\(durationLabel(duration))",
+              simplifiedChinese: "地面道路约 \(durationLabel(duration))",
+              english: "Surface roads \(durationLabel(duration))"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+      }
+
+      reviewLeg(
+        symbol: "location.fill",
+        title: model.origin?.title ?? model.originQuery,
+        detail: surfaceLegDetail(model.accessRoute),
+        color: KaidoTheme.positionCyan
+      )
+      reviewLeg(
+        symbol: "point.3.connected.trianglepath.dotted",
+        title: copy.resolve(
+          japanese: "富ヶ谷 → C2・B → 初台南",
+          simplifiedChinese: "富ヶ谷 → C2・B → 初台南",
+          english: "Tomigaya → C2 · B → Hatsudai-minami"
+        ),
+        detail: copy.resolve(
+          japanese: "指定経路 · 葛西は右、大井は左",
+          simplifiedChinese: "固定路线 · 葛西向右，大井向左",
+          english: "Fixed route · right at Kasai, left at Oi"
+        ),
+        color: KaidoTheme.signalAmber
+      )
+      reviewLeg(
+        symbol: "flag.checkered",
+        title: model.destination?.title ?? model.destinationQuery,
+        detail: surfaceLegDetail(model.egressRoute),
+        color: KaidoTheme.evidenceCoral
+      )
+
+      Text(
+        copy.resolve(
+          japanese:
+            "高速区間は確認済み経路のシミュレーションです。実際の通行では現地の標識と規制に従ってください。",
+          simplifiedChinese:
+            "高速段是已核对路线的模拟。实际行驶必须遵守现场标志、管制和收费提示。",
+          english:
+            "The expressway leg is a reviewed route simulation. Follow current road signs, restrictions, and toll notices when driving."
+        )
+      )
+      .font(.system(size: 9, weight: .bold))
+      .foregroundStyle(KaidoTheme.quietText)
+      .padding(.top, 2)
+    }
+    .padding(14)
+    .background(KaidoTheme.paperRaised)
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+    .overlay {
+      RoundedRectangle(cornerRadius: 14)
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("c2-navigation-review")
+  }
+
+  private func reviewLeg(
+    symbol: String,
+    title: String,
+    detail: String,
+    color: Color
+  ) -> some View {
+    HStack(spacing: 11) {
+      Image(systemName: symbol)
+        .font(.system(size: 12, weight: .black))
+        .foregroundStyle(KaidoTheme.asphalt)
+        .frame(width: 30, height: 30)
+        .background(color)
+        .clipShape(Circle())
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title)
+          .font(.system(size: 12, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+          .lineLimit(1)
+        Text(detail)
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+      }
+      Spacer(minLength: 0)
+    }
   }
 
   private func failureNotice(_ code: String) -> some View {
@@ -370,6 +564,9 @@ struct C2NavigationDemoView: View {
     VStack(spacing: 10) {
       driveHeader
       guidanceCard
+      if let suspensionReason = model.suspensionReason {
+        suspensionNotice(suspensionReason)
+      }
 
       if model.phase == .expressway {
         mapLayerControl
@@ -534,14 +731,21 @@ struct C2NavigationDemoView: View {
         Color(white: 0.12)
       }
     case .expressway:
-      ProductTopologyMapView(
-        presentation: model.topologyPresentation,
-        usesDarkStyle: true,
-        showsPositionStatus: true,
-        landmarkLabelMode:
-          mapLayer == .facilities ? .facilities : .route
-      )
-    case .planning, .routing, .failed:
+      if mapLayer == .route, let geographicRoute {
+        C2GeographicRouteMap(
+          route: geographicRoute,
+          progressFraction: model.expresswayProgressFraction,
+          usesDarkStyle: true
+        )
+      } else {
+        ProductTopologyMapView(
+          presentation: model.topologyPresentation,
+          usesDarkStyle: true,
+          showsPositionStatus: true,
+          landmarkLabelMode: .facilities
+        )
+      }
+    case .planning, .routing, .review, .failed:
       Color.clear
     }
   }
@@ -650,7 +854,7 @@ struct C2NavigationDemoView: View {
       }
 
       Button {
-        model.reset()
+        showsEndConfirmation = true
       } label: {
         Image(systemName: "stop.fill")
           .font(.system(size: 12, weight: .black))
@@ -685,9 +889,65 @@ struct C2NavigationDemoView: View {
       .accessibilityIdentifier("c2-navigation-play-pause")
   }
 
+  private func suspensionNotice(
+    _ reason: C2NavigationSuspensionReason
+  ) -> some View {
+    HStack(spacing: 10) {
+      Image(systemName: "pause.circle.fill")
+        .font(.system(size: 18, weight: .black))
+        .foregroundStyle(KaidoTheme.signalAmber)
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(
+          copy.resolve(
+            japanese: "ナビゲーションは一時停止中",
+            simplifiedChinese: "导航已暂停",
+            english: "Navigation paused"
+          )
+        )
+        .font(.system(size: 11, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+
+        Text(
+          reason == .appInactive
+            ? copy.resolve(
+              japanese: "App が非アクティブになりました。現在位置を確認してから再開してください。",
+              simplifiedChinese: "App 曾进入后台。确认当前位置后再继续。",
+              english:
+                "The app became inactive. Confirm your position before resuming."
+            )
+            : copy.resolve(
+              japanese: "再開するまで経路進行は更新されません。",
+              simplifiedChinese: "继续之前不会更新路线进度。",
+              english: "Route progress will not update until you resume."
+            )
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.muted)
+      }
+
+      Spacer(minLength: 0)
+    }
+    .padding(11)
+    .background(KaidoTheme.instrument)
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .overlay(alignment: .leading) {
+      Rectangle()
+        .fill(KaidoTheme.signalAmber)
+        .frame(width: 3)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("c2-navigation-suspended")
+    .accessibilityValue(reason.rawValue)
+  }
+
   private func closeButton(usesDarkStyle: Bool) -> some View {
     Button {
-      dismiss()
+      if isDriving {
+        showsEndConfirmation = true
+      } else {
+        dismiss()
+      }
     } label: {
       Image(systemName: "xmark")
         .font(.system(size: 12, weight: .black))
@@ -723,12 +983,72 @@ struct C2NavigationDemoView: View {
     isDriving ? KaidoTheme.asphalt : KaidoTheme.paper
   }
 
+  private var planningTitle: String {
+    if model.phase == .review {
+      return copy.resolve(
+        japanese: "ルートを確認してから出発",
+        simplifiedChinese: "确认完整路线后再出发",
+        english: "Review the whole journey before driving"
+      )
+    }
+    return copy.resolve(
+      japanese: "どこからでも、経路どおりに",
+      simplifiedChinese: "从任何地方，按选定路线走",
+      english: "Start anywhere. Keep your route."
+    )
+  }
+
+  private var primaryPlanningActionEnabled: Bool {
+    model.phase == .review ? model.canStart : model.canPlan
+  }
+
+  private var primaryPlanningActionTitle: String {
+    if model.phase == .review {
+      return copy.resolve(
+        japanese: "このルートでナビを開始",
+        simplifiedChinese: "按这条路线开始导航",
+        english: "Start this navigation"
+      )
+    }
+    return copy.resolve(
+      japanese: "全区間ルートを計算",
+      simplifiedChinese: "计算完整路线",
+      english: "Calculate the complete journey"
+    )
+  }
+
+  private func surfaceLegDetail(
+    _ candidate: SurfaceRouteCandidate?
+  ) -> String {
+    guard let candidate else { return "—" }
+    return "\(distanceLabel(candidate.distanceMeters)) · "
+      + durationLabel(candidate.expectedTravelTimeSeconds)
+  }
+
+  private func durationLabel(_ seconds: Double) -> String {
+    let minutes = max(1, Int((seconds / 60).rounded()))
+    if minutes >= 60 {
+      let hours = minutes / 60
+      let remainder = minutes % 60
+      return copy.resolve(
+        japanese: "\(hours)時間\(remainder)分",
+        simplifiedChinese: "\(hours) 小时 \(remainder) 分钟",
+        english: "\(hours) hr \(remainder) min"
+      )
+    }
+    return copy.resolve(
+      japanese: "\(minutes)分",
+      simplifiedChinese: "\(minutes) 分钟",
+      english: "\(minutes) min"
+    )
+  }
+
   private var isDriving: Bool {
     switch model.phase {
     case .surfaceAccess, .entryTransition, .expressway,
       .exitTransition, .surfaceEgress, .completed:
       true
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       false
     }
   }
@@ -767,7 +1087,7 @@ struct C2NavigationDemoView: View {
         simplifiedChinese: "已到达",
         english: "Arrived"
       )
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       ""
     }
   }
@@ -786,7 +1106,7 @@ struct C2NavigationDemoView: View {
       (10...12).contains(model.expresswayOccurrenceIndex)
         ? "B"
         : "C2"
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       "—"
     }
   }
@@ -820,7 +1140,7 @@ struct C2NavigationDemoView: View {
       )
     case .surfaceAccess, .surfaceEgress:
       return phaseTitle
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       return ""
     }
   }
@@ -903,7 +1223,7 @@ struct C2NavigationDemoView: View {
       return model.destination?.title ?? ""
     case .completed:
       return model.destination?.title ?? ""
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       return ""
     }
   }
@@ -973,7 +1293,7 @@ struct C2NavigationDemoView: View {
       "arrow.turn.up.left"
     case .completed:
       "checkmark.circle.fill"
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       "arrow.up"
     }
   }

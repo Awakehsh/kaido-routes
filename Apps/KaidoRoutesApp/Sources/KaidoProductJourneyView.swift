@@ -354,37 +354,181 @@ struct KaidoProductJourneyView: View {
   }
 }
 
+private enum ProductRoutesC2MapLayer: String, CaseIterable, Identifiable {
+  case route
+  case facilities
+
+  var id: String { rawValue }
+}
+
 private struct ProductRoutesStage: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: KaidoProductJourneyModel
   @Binding var showsSavedRoutes: Bool
+  @State private var c2MapLayer = ProductRoutesC2MapLayer.route
   let openC2Navigation: () -> Void
 
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
       originControl
       destinationControl
+      c2RouteMap
       routeCatalog
-
-      ProductMapProjectionPicker(
-        model: model.composition.productMapPresentation,
-        usesDarkStyle: false
-      )
-
-      ProductMapViewport(
-        mapModel: model.composition.productMapPresentation,
-        surfaceID: "routes",
-        presentation: model.discoveryRouteAtlasPresentation,
-        geographicPresentation:
-          model.discoveryGeographicMapPresentation,
-        navigationSnapshot: nil,
-        positionEvidence: nil,
-        topologyFacilities: model.topologyFacilityPresentation,
-        usesDarkStyle: false
-      )
 
       entranceRecommendation
       routeActions
+    }
+  }
+
+  private var c2RouteMap: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "選択中の高速ルート",
+              simplifiedChinese: "当前高速路线",
+              english: "Selected expressway route"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .monospaced))
+          .foregroundStyle(KaidoTheme.routeGreenDeep)
+
+          Text("C2 + B")
+            .font(.system(size: 23, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.ink)
+        }
+
+        Spacer()
+
+        Text(
+          copy.resolve(
+            japanese: "富ヶ谷 → 初台南",
+            simplifiedChinese: "富ヶ谷 → 初台南",
+            english: "Tomigaya → Hatsudai-minami"
+          )
+        )
+        .font(.system(size: 9, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+
+      HStack(spacing: 4) {
+        ForEach(ProductRoutesC2MapLayer.allCases) { layer in
+          Button {
+            withAnimation(.easeOut(duration: 0.18)) {
+              c2MapLayer = layer
+            }
+          } label: {
+            Text(c2LayerTitle(layer))
+              .font(.system(size: 10, weight: .black, design: .rounded))
+              .frame(maxWidth: .infinity)
+              .frame(height: 34)
+              .foregroundStyle(
+                c2MapLayer == layer
+                  ? KaidoTheme.routeWhite
+                  : KaidoTheme.quietText
+              )
+              .background(
+                c2MapLayer == layer
+                  ? KaidoTheme.routeGreen
+                  : KaidoTheme.paperRaised
+              )
+          }
+          .buttonStyle(.plain)
+          .accessibilityIdentifier(
+            "product-routes-c2-map-\(layer.rawValue)"
+          )
+          .accessibilityAddTraits(
+            c2MapLayer == layer ? .isSelected : []
+          )
+        }
+      }
+      .padding(3)
+      .background(KaidoTheme.paperRaised)
+      .clipShape(RoundedRectangle(cornerRadius: 9))
+      .overlay {
+        RoundedRectangle(cornerRadius: 9)
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+
+      ZStack {
+        c2MapContent
+      }
+      .frame(height: 430)
+      .clipShape(RoundedRectangle(cornerRadius: 14))
+      .overlay {
+        RoundedRectangle(cornerRadius: 14)
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+      .accessibilityIdentifier("product-routes-c2-map")
+      .accessibilityValue(
+        c2MapLayer == .route ? "GEOGRAPHIC" : "FACILITIES"
+      )
+
+      Button {
+        openC2Navigation()
+      } label: {
+        HStack {
+          Text(
+            copy.resolve(
+              japanese: "任意の出発地・目的地でこのルートを使う",
+              simplifiedChinese: "使用任意起点和终点规划这条路线",
+              english: "Plan this route from any origin to any destination"
+            )
+          )
+          Spacer()
+          Image(systemName: "arrow.right")
+        }
+        .font(.system(size: 12, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("product-routes-plan-c2")
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("product-routes-c2-overview")
+  }
+
+  @ViewBuilder
+  private var c2MapContent: some View {
+    if c2MapLayer == .route,
+      let geographicRoute = C2GeographicRouteCatalog.bundled
+    {
+      C2GeographicRouteMap(
+        route: geographicRoute,
+        progressFraction: nil,
+        usesDarkStyle: false
+      )
+    } else {
+      ProductTopologyMapView(
+        presentation: C2CompletedRouteDemo.presentation,
+        usesDarkStyle: false,
+        showsPositionStatus: false,
+        landmarkLabelMode: .facilities
+      )
+    }
+  }
+
+  private func c2LayerTitle(
+    _ layer: ProductRoutesC2MapLayer
+  ) -> String {
+    switch layer {
+    case .route:
+      copy.resolve(
+        japanese: "走行ルート",
+        simplifiedChinese: "正常路线图",
+        english: "Route"
+      )
+    case .facilities:
+      copy.resolve(
+        japanese: "全体 · IC / JCT / PA",
+        simplifiedChinese: "整体图 · IC / JCT / PA",
+        english: "Overview · IC / JCT / PA"
+      )
     }
   }
 

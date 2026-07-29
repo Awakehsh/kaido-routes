@@ -587,11 +587,20 @@ The iPhone C2 demonstration exercises this product composition without
 promoting it to release authority. It resolves the origin and destination with
 MapKit, requests ordinary-road candidates around the selected Tomigaya outer
 entrance and Hatsudai-minami outer exit, and renders the fixed audited C2 + B
-occurrence sequence between those legs. Its automatic playback includes
-separate entry and exit transitions, Kasai and Oi junction insets, and an
-estimated-position tunnel state. It is intentionally labeled `SIMULATION`;
-without a released C2 graph, provider identity, `JourneyPlan`, matcher corridor,
-and field evidence, it cannot create a `KaidoProductNavigationRuntime`.
+occurrence sequence between those legs. Its normal map is no longer a relabeled
+topology: it renders the bounded ODbL
+`c2-b-20260729-geographic-route.json` database on MapKit, with pinned C2-outer,
+Kasai connector, B-west, Oi connector, and final C2-outer node/way lineage plus
+visible OSM attribution. The alternate overview remains Kaido-generated
+topology with directional IC/JCT/PA semantics. Planning and driving are separate:
+successful provider resolution enters a parked review that exposes both
+ordinary-road legs and the immutable expressway choices, and only a second
+explicit action starts playback. The driving lifecycle includes separate entry
+and exit transitions, Kasai and Oi junction insets, an estimated-position tunnel
+state, an App-inactive pause that requires explicit resume, and confirmed
+termination. It is intentionally labeled `SIMULATION`; without a released C2
+graph, provider identity, `JourneyPlan`, matcher corridor, and field evidence,
+it cannot create a `KaidoProductNavigationRuntime`.
 
 The completed return `JourneyPlan` fixes one exact egress option, and runtime
 configuration filters Finish behavior to that option instead of asking

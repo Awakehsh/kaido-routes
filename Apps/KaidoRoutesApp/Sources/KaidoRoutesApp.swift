@@ -61,6 +61,12 @@ struct KaidoRoutesApp: App {
           model: .demoPreview()
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-C2-NAVIGATION-REVIEW-PREVIEW"
+      ) {
+        C2NavigationDemoView(
+          model: .preview(phase: .review)
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-C2-NAVIGATION-KASAI-PREVIEW"
       ) {
         C2NavigationDemoView(

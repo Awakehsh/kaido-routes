@@ -8,6 +8,7 @@ import KaidoSurfaceRouting
 enum C2NavigationDemoPhase: String, Equatable, Sendable {
   case planning = "PLANNING"
   case routing = "ROUTING"
+  case review = "REVIEW"
   case surfaceAccess = "SURFACE_ACCESS"
   case entryTransition = "ENTRY_TRANSITION"
   case expressway = "EXPRESSWAY"
@@ -15,6 +16,11 @@ enum C2NavigationDemoPhase: String, Equatable, Sendable {
   case surfaceEgress = "SURFACE_EGRESS"
   case completed = "COMPLETED"
   case failed = "FAILED"
+}
+
+enum C2NavigationSuspensionReason: String, Equatable, Sendable {
+  case userPaused = "USER_PAUSED"
+  case appInactive = "APP_INACTIVE"
 }
 
 enum C2NavigationDemoHighwayInstruction: Equatable, Sendable {
@@ -204,6 +210,7 @@ final class C2NavigationDemoModel: ObservableObject {
   @Published private(set) var expresswayOccurrenceIndex = 0
   @Published private(set) var expresswayOccurrenceFraction = 0.0
   @Published private(set) var isPlaying = false
+  @Published private(set) var suspensionReason: C2NavigationSuspensionReason?
   @Published private(set) var failureCode: String?
 
   private let locationProvider: any C2NavigationCurrentLocationProviding
@@ -238,12 +245,31 @@ final class C2NavigationDemoModel: ObservableObject {
     playbackTask?.cancel()
   }
 
-  var canStart: Bool {
+  var canPlan: Bool {
     let destination = destinationQuery.trimmingCharacters(
       in: .whitespacesAndNewlines
     )
     return !destination.isEmpty
       && (phase == .planning || phase == .failed)
+  }
+
+  var canStart: Bool {
+    phase == .review
+      && origin != nil
+      && destination != nil
+      && accessRoute != nil
+      && egressRoute != nil
+  }
+
+  var surfaceDistanceMeters: Double? {
+    guard let accessRoute, let egressRoute else { return nil }
+    return accessRoute.distanceMeters + egressRoute.distanceMeters
+  }
+
+  var surfaceTravelTimeSeconds: Double? {
+    guard let accessRoute, let egressRoute else { return nil }
+    return accessRoute.expectedTravelTimeSeconds
+      + egressRoute.expectedTravelTimeSeconds
   }
 
   var activeSurfaceRoute: SurfaceRouteCandidate? {
@@ -252,7 +278,7 @@ final class C2NavigationDemoModel: ObservableObject {
       accessRoute
     case .exitTransition, .surfaceEgress, .completed:
       egressRoute
-    case .planning, .routing, .expressway, .failed:
+    case .planning, .routing, .review, .expressway, .failed:
       nil
     }
   }
@@ -310,7 +336,7 @@ final class C2NavigationDemoModel: ObservableObject {
 
   var journeyProgressFraction: Double {
     switch phase {
-    case .planning, .routing, .failed:
+    case .planning, .routing, .review, .failed:
       0
     case .surfaceAccess:
       0.18 * surfaceProgressFraction
@@ -331,10 +357,30 @@ final class C2NavigationDemoModel: ObservableObject {
     }
   }
 
-  func startNavigation() async {
-    guard canStart else { return }
+  var expresswayProgressFraction: Double {
+    guard phase == .expressway else {
+      return phase == .exitTransition
+        || phase == .surfaceEgress
+        || phase == .completed
+        ? 1
+        : 0
+    }
+    return min(
+      1,
+      max(
+        0,
+        (Double(expresswayOccurrenceIndex)
+          + expresswayOccurrenceFraction)
+          / Double(C2CompletedRouteDemo.occurrenceCount)
+      )
+    )
+  }
+
+  func planJourney() async {
+    guard canPlan else { return }
     stopPlayback()
     phase = .routing
+    suspensionReason = nil
     failureCode = nil
     do {
       let resolvedOrigin = try await resolveOrigin()
@@ -362,33 +408,54 @@ final class C2NavigationDemoModel: ObservableObject {
       destination = resolvedDestination
       accessRoute = accessCandidate
       egressRoute = egressCandidate
-      phase = .surfaceAccess
+      phase = .review
       surfaceProgressFraction = 0
       surfaceStepIndex = 0
       expresswayOccurrenceIndex = 0
       expresswayOccurrenceFraction = 0
       transitionTick = 0
-      resume()
     } catch {
       phase = .failed
       failureCode = Self.errorCode(error)
     }
   }
 
+  func startPreparedNavigation() {
+    guard canStart else { return }
+    phase = .surfaceAccess
+    surfaceProgressFraction = 0
+    surfaceStepIndex = 0
+    expresswayOccurrenceIndex = 0
+    expresswayOccurrenceFraction = 0
+    transitionTick = 0
+    suspensionReason = nil
+    resume()
+  }
+
+  /// Compatibility helper for deterministic tests and direct preview launch.
+  /// The product UI calls `planJourney()` and requires a separate parked start.
+  func startNavigation() async {
+    await planJourney()
+    startPreparedNavigation()
+  }
+
   func pause() {
     guard isPlaying else { return }
     stopPlayback()
+    suspensionReason = .userPaused
   }
 
   func resume() {
     guard phase != .planning,
       phase != .routing,
+      phase != .review,
       phase != .completed,
       phase != .failed,
       !isPlaying
     else {
       return
     }
+    suspensionReason = nil
     isPlaying = true
     playbackTask = Task { [weak self] in
       guard let self else { return }
@@ -417,7 +484,24 @@ final class C2NavigationDemoModel: ObservableObject {
     expresswayOccurrenceIndex = 0
     expresswayOccurrenceFraction = 0
     transitionTick = 0
+    suspensionReason = nil
     resume()
+  }
+
+  func editJourney() {
+    stopPlayback()
+    phase = .planning
+    accessRoute = nil
+    egressRoute = nil
+    origin = nil
+    destination = nil
+    surfaceProgressFraction = 0
+    surfaceStepIndex = 0
+    expresswayOccurrenceIndex = 0
+    expresswayOccurrenceFraction = 0
+    suspensionReason = nil
+    failureCode = nil
+    transitionTick = 0
   }
 
   func reset() {
@@ -431,8 +515,16 @@ final class C2NavigationDemoModel: ObservableObject {
     surfaceStepIndex = 0
     expresswayOccurrenceIndex = 0
     expresswayOccurrenceFraction = 0
+    suspensionReason = nil
     failureCode = nil
     transitionTick = 0
+  }
+
+  func handleAppActiveState(isActive: Bool) {
+    guard !isActive else { return }
+    guard isPlaying else { return }
+    stopPlayback()
+    suspensionReason = .appInactive
   }
 
   func advanceOneTickForTesting() {
@@ -474,7 +566,7 @@ final class C2NavigationDemoModel: ObservableObject {
       }
     case .surfaceEgress:
       advanceSurfaceRoute(nextPhase: .completed)
-    case .planning, .routing, .completed, .failed:
+    case .planning, .routing, .review, .completed, .failed:
       break
     }
   }

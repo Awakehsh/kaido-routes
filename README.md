@@ -17,18 +17,27 @@ the platform-light Swift core, and the SwiftUI iPhone product target. The app
 links the local domain, routing, navigation, and presentation modules. Its
 default launch now follows the concise Routes → Plan → Review → Drive product
 journey: origin and a compatible directional entrance precede available route
-cards, and K7 is one ordinary released route rather than the product entry.
+cards, and K7 is one ordinary released route rather than the product entry. The
+default Routes screen is map-first: the selected C2 + B route structure occupies
+the primary viewport, with an immediate `Route | Overview · IC/JCT/PA` choice
+before the remaining catalog. `Route` is now a geographic MapKit presentation
+of a bounded, direction-pinned OSM derivative database; `Overview` is the
+Kaido-generated topology. The geographic produced work carries visible
+OpenStreetMap and ODbL attribution.
 The first end-to-end C2 simulation accepts the current position or any
 MapKit-resolvable origin and any final destination, calculates bounded ordinary
 road legs to the selected Tomigaya outer entrance and from the
-Hatsudai-minami outer exit, then plays the unchanged C2 + B occurrence sequence
-between them. The expressway surface provides a normal current-route map and a
-whole-route IC/JCT/PA view, with automatic right-branch guidance at Kasai and
-left-branch guidance at Oi. The operator facts and directional facilities were
-checked on 2026-07-29, but the C2 sequence is still a clearly labeled simulation,
-not a released `KaidoProductRelease`, live matcher, traffic claim, or field
-qualification. MapKit resolution and surface routing require its service to be
-available.
+Hatsudai-minami outer exit, and requires a separate parked review before any
+playback begins. That review keeps the resolved endpoints, ordinary-road
+distance and duration, and fixed expressway choices visible together. The
+expressway surface provides a normal current-route map and a whole-route
+IC/JCT/PA view, with automatic right-branch guidance at Kasai and left-branch
+guidance at Oi. Leaving the App pauses progress and requires an explicit resume;
+stopping or closing an active drive requires confirmation. The operator facts
+and directional facilities were checked on 2026-07-29, but the C2 sequence is
+still a clearly labeled simulation, not a released `KaidoProductRelease`, live
+matcher, traffic claim, or field qualification. MapKit resolution and surface
+routing require its service to be available.
 
 One persisted `Map | Lines` control remains shared by the released-route
 journey. `Map` renders the selected released matcher corridor over a real MapKit
@@ -39,9 +48,9 @@ topology projection preserves ordered and repeated occurrences and accepts a
 precise current-route marker only from exact HIGH route-bound progress
 evidence; LOW, LOST, ambiguous, or identity-drifted evidence stays estimated
 or unavailable.
-`-C2-FULL-NAVIGATION-DEMO` opens the full C2 simulation directly. The separate
-`-C2-ROUTE-MAP-DEMO` preview stress-tests the same renderer without starting a
-journey.
+`-C2-FULL-NAVIGATION-DEMO` opens the full C2 simulation directly.
+`-C2-NAVIGATION-REVIEW-PREVIEW` opens its parked pre-drive review, while
+`-C2-ROUTE-MAP-DEMO` stress-tests the same renderer without starting a journey.
 The bundled catalog now contains one foreground K7 product release whose exact
 runtime may grant foreground Core Location authority only after release-owned
 route authoring and whole-RoutePlan release selection pass. No

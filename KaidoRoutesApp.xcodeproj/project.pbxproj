@@ -15,6 +15,8 @@
 		0916DE415E44498B53599BD9 /* ProductPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B612524090282FD210010B6 /* ProductPrivacyDisclosure.swift */; };
 		0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */; };
 		121F4BE9646F0D2D9455465A /* KaidoInterfaceLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */; };
+		17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */ = {isa = PBXBuildFile; fileRef = 5B5C29A887143CDA94BEEBFD /* c2-b-20260729-geographic-route.json */; };
+		19B05CDE221D814344D7ED46 /* C2GeographicRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */; };
 		1C7F2076FBD06953570E9B70 /* PreDriveReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */; };
 		1EEF3DE0296EB3523368FCDD /* ForegroundNavigationLocationControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F58FBDFA0C5C97DA1EC2E92A /* ForegroundNavigationLocationControllerTests.swift */; };
 		20F92188AD9C1E12C3DD80FE /* ParkedRouteEditorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */; };
@@ -25,6 +27,7 @@
 		273C7C828BA2F5F47A1E1B3B /* ProductMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2940C3E443E4E0CE8AECA910 /* ProductMapView.swift */; };
 		28F9B9A5B886A492D4673575 /* SavedRouteLibraryModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BCE0D5D6D140E232C6C0B6 /* SavedRouteLibraryModelTests.swift */; };
 		2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */ = {isa = PBXBuildFile; fileRef = FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */; };
+		2F41F54352B06B7840A72D1A /* C2GeographicRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB6D16129891A91DD1C2FE1C /* C2GeographicRouteTests.swift */; };
 		2F9142968F903E7BBDCA50D5 /* C2RouteMapDemoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7736D4DA384D6C8C19BC71A7 /* C2RouteMapDemoUITests.swift */; };
 		2FDD37296E5C36302AAC3131 /* InternalLocationCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE732385E8DADC1CA0B94A /* InternalLocationCalibrationView.swift */; };
 		31C81EB5F6310D33857A24E1 /* KRU03CorridorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40920CEB219F36B81701705B /* KRU03CorridorUITests.swift */; };
@@ -164,6 +167,7 @@
 		50368EEEA3BA63C029EE16C1 /* C2NavigationDemoModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoModel.swift; sourceTree = "<group>"; };
 		52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyStateTests.swift; sourceTree = "<group>"; };
 		5849DB86653A0BA14808142B /* SharedRouteFileDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedRouteFileDocument.swift; sourceTree = "<group>"; };
+		5B5C29A887143CDA94BEEBFD /* c2-b-20260729-geographic-route.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "c2-b-20260729-geographic-route.json"; path = "data/route-atlas/osm-derived/c2-b-20260729-geographic-route.json"; sourceTree = "<group>"; };
 		5B7738D0CC954922A7B094FA /* BundledProductReleaseCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledProductReleaseCatalogTests.swift; sourceTree = "<group>"; };
 		5BDEF1840C8F8A5A1F7DA57B /* KaidoProductJourneyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyUITests.swift; sourceTree = "<group>"; };
 		5CCF9EEB45DF49C522D09A07 /* SyntheticProductRuntimeFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeFixture.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 		A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KRU09AccessibilityUITests.swift; sourceTree = "<group>"; };
 		A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "route-atlas-attribution-catalog.json"; path = "data/route-atlas/attribution/route-atlas-attribution-catalog.json"; sourceTree = "<group>"; };
 		A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNavigationRuntimeModelTests.swift; sourceTree = "<group>"; };
+		AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2GeographicRoute.swift; sourceTree = "<group>"; };
 		B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationModelTests.swift; sourceTree = "<group>"; };
 		B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationUITests.swift; sourceTree = "<group>"; };
 		B3512D6D318BE2C5B1E03B89 /* GuidanceVoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceVoiceSetupView.swift; sourceTree = "<group>"; };
@@ -214,6 +219,7 @@
 		E43CF574213D741739759BCE /* C2CompletedRouteDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2CompletedRouteDemoView.swift; sourceTree = "<group>"; };
 		E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewedJunctionView.swift; sourceTree = "<group>"; };
 		E94B8B69206BA8833AEDA899 /* SyntheticDrivingPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewView.swift; sourceTree = "<group>"; };
+		EB6D16129891A91DD1C2FE1C /* C2GeographicRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2GeographicRouteTests.swift; sourceTree = "<group>"; };
 		ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoTheme.swift; sourceTree = "<group>"; };
 		F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationView.swift; sourceTree = "<group>"; };
 		F1E27C7476287603CC26C20B /* PhysicalAudioQualificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationTests.swift; sourceTree = "<group>"; };
@@ -273,6 +279,7 @@
 				0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */,
 				52CC52B3A30DFC40C3294463 /* AppSafetyStateTests.swift */,
 				5B7738D0CC954922A7B094FA /* BundledProductReleaseCatalogTests.swift */,
+				EB6D16129891A91DD1C2FE1C /* C2GeographicRouteTests.swift */,
 				724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */,
 				B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */,
 				F58FBDFA0C5C97DA1EC2E92A /* ForegroundNavigationLocationControllerTests.swift */,
@@ -338,6 +345,7 @@
 		6B3B439E1D0470243E47B602 /* Route Atlas */ = {
 			isa = PBXGroup;
 			children = (
+				5B5C29A887143CDA94BEEBFD /* c2-b-20260729-geographic-route.json */,
 				7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */,
 				A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */,
 				0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */,
@@ -383,6 +391,7 @@
 				4353A7C0060DDDFD297D330B /* BundledProductReleaseCatalog.swift */,
 				25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */,
 				E43CF574213D741739759BCE /* C2CompletedRouteDemoView.swift */,
+				AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */,
 				50368EEEA3BA63C029EE16C1 /* C2NavigationDemoModel.swift */,
 				0228E6D3EEAB4BF4FC7C99C6 /* C2NavigationDemoView.swift */,
 				F565A001D9C74EA1175DCEC8 /* EntranceRecommendationModel.swift */,
@@ -551,6 +560,7 @@
 			files = (
 				F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */,
 				476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */,
+				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
 				9FA9A38618E777012F472E10 /* k7-aoba-to-kohoku-pre-drive-evidence.json in Resources */,
 				C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */,
@@ -572,6 +582,7 @@
 				57829BA952B3751A1BFAE2F7 /* AccessibilityPresentationTests.swift in Sources */,
 				6C879BB72B505D94B55290C6 /* AppSafetyStateTests.swift in Sources */,
 				CABFBDC28C01E07693A64781 /* BundledProductReleaseCatalogTests.swift in Sources */,
+				2F41F54352B06B7840A72D1A /* C2GeographicRouteTests.swift in Sources */,
 				80E0AA92D99B7DF9256F968F /* C2NavigationDemoModelTests.swift in Sources */,
 				86F626BF00728796BE3E1ECC /* EntranceRecommendationModelTests.swift in Sources */,
 				1EEF3DE0296EB3523368FCDD /* ForegroundNavigationLocationControllerTests.swift in Sources */,
@@ -622,6 +633,7 @@
 				21F189731E350053A8A9D2A3 /* BundledProductReleaseCatalog.swift in Sources */,
 				50F7388D9A32451D365016AA /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift in Sources */,
 				B93BBE993A6AA7C24B8AE951 /* C2CompletedRouteDemoView.swift in Sources */,
+				19B05CDE221D814344D7ED46 /* C2GeographicRoute.swift in Sources */,
 				3F3E36BD310E368D7AA3DCC0 /* C2NavigationDemoModel.swift in Sources */,
 				BB5F2B6475BA2AB1152A3979 /* C2NavigationDemoView.swift in Sources */,
 				AF9AAC7098C384C0C7993A29 /* EntranceRecommendationModel.swift in Sources */,

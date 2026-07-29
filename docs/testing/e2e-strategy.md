@@ -548,12 +548,15 @@ are L3-specific.
 
 The focused C2 App suite uses deterministic place, location, and surface-route
 providers to execute the complete visual lifecycle without a live network:
-arbitrary endpoints, surface access, entry transition, all ordered C2 + B
-occurrences, automatic Kasai-right and Oi-left junction insets, tunnel
-degradation, exit transition, and surface egress. Model tests retain the exact
-checked operator facility coordinates. These checks prove composition and UI
-behavior only; they do not validate live MapKit output, release C2 route
-authority, or replace field qualification.
+arbitrary endpoints, parked pre-drive review, explicit navigation start,
+surface access, entry transition, all ordered C2 + B occurrences, automatic
+Kasai-right and Oi-left junction insets, tunnel degradation, App-inactive
+suspension with explicit resume, exit transition, and surface egress. The
+default-journey UI test additionally requires the C2 map to be primary while K7
+remains an ordinary catalog entry. Model tests retain the exact checked operator
+facility coordinates. These checks prove composition and UI behavior only; they
+do not validate live MapKit output, release C2 route authority, or replace field
+qualification.
 
 The K7 operational E2E composes these boundaries without copying the real
 release into a portable synthetic scenario:

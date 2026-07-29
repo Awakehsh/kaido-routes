@@ -84,6 +84,25 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(start.isEnabled)
     start.tap()
 
+    let junctionInset = element("product-junction-inset", in: app)
+    XCTAssertTrue(
+      junctionInset.waitForExistence(timeout: 12),
+      "The K7 DecisionZone did not present a junction inset"
+    )
+    XCTAssertTrue(
+      (junctionInset.value as? String)?.contains(
+        "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1"
+      ) == true
+    )
+    waitForJunctionInsetAnimation()
+
+    let junctionScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    junctionScreenshot.name = "Released K7 transient junction inset"
+    junctionScreenshot.lifetime = .keepAlways
+    add(junctionScreenshot)
+
     XCTAssertTrue(
       element("product-geographic-position-marker", in: app)
         .waitForExistence(timeout: 8)
@@ -92,7 +111,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       waitForValuePrefix(
         "COMPLETED",
         on: simulation,
-        timeout: 12
+        timeout: 25
       )
     )
     XCTAssertEqual(
@@ -188,5 +207,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
       for: [expectation],
       timeout: timeout
     ) == .completed
+  }
+
+  private func waitForJunctionInsetAnimation() {
+    let expectation = XCTestExpectation(
+      description: "Junction inset animation settled"
+    )
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      expectation.fulfill()
+    }
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [expectation], timeout: 1),
+      .completed
+    )
   }
 }

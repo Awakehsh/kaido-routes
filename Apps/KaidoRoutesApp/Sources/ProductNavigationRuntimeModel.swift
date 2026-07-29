@@ -272,7 +272,8 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       configuration: Self.simulationConfiguration(
         preset: .clean,
         release: release
-      )
+      ),
+      speed: .realtime
     )
   }
 
@@ -1021,6 +1022,7 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       )
     }
     return NavigationDriveSimulationConfiguration(
+      sampleFractions: [0.15, 0.5, 0.85, 0.94],
       anomalies: [anomaly].compactMap { $0 },
       completesAtExitHandoff: true
     )

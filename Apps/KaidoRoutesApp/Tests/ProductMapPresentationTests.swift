@@ -261,6 +261,80 @@ final class ProductMapPresentationTests: XCTestCase {
     XCTAssertEqual(runtime.snapshot, before)
   }
 
+  func testReleasedK7SimulationProjectsTwoTransientLeftJunctionInsets()
+    async throws
+  {
+    let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
+    let entry = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
+    let runtime = try ProductNavigationRuntimeModel(
+      releasedEntry: entry,
+      speechOutput: SilentProductMapSpeechOutput(),
+      languageSelectionProvider: {
+        NavigationLanguageSelection(
+          interfaceLocale: .simplifiedChinese,
+          guidanceVoiceLocale: .japanese
+        )
+      }
+    )
+    await runtime.activate()
+
+    var insetsByDecisionZone: [String: ProductJunctionInsetPresentation] = [:]
+    XCTAssertNil(
+      runtime.presentationProjection.flatMap {
+        ProductJunctionInsetPresentation(
+          $0.iPhone,
+          navigationSnapshot: runtime.snapshot
+        )
+      }
+    )
+    while runtime.simulationStatus?.state != .completed {
+      await runtime.stepNavigationSimulation()
+      if let surface = runtime.presentationProjection?.iPhone,
+        let inset = ProductJunctionInsetPresentation(
+          surface,
+          navigationSnapshot: runtime.snapshot
+        )
+      {
+        insetsByDecisionZone[inset.decisionZoneID] = inset
+      }
+    }
+
+    XCTAssertEqual(
+      Set(insetsByDecisionZone.keys),
+      [
+        "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1",
+        "shutoko.decision-zone.kohoku.exit-left-branch.v1",
+      ]
+    )
+    XCTAssertEqual(
+      Set(insetsByDecisionZone.values.map(\.selectedBranch)),
+      [.left]
+    )
+    XCTAssertEqual(
+      Set(insetsByDecisionZone.values.map(\.japaneseSignText)),
+      ["第三京浜・出口へ", "出口へ"]
+    )
+    XCTAssertLessThanOrEqual(
+      try XCTUnwrap(
+        insetsByDecisionZone[
+          "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1"
+        ]
+      ).distanceMeters,
+      400
+    )
+    XCTAssertLessThanOrEqual(
+      try XCTUnwrap(
+        insetsByDecisionZone[
+          "shutoko.decision-zone.kohoku.exit-left-branch.v1"
+        ]
+      ).distanceMeters,
+      250
+    )
+    XCTAssertNil(runtime.presentationProjection)
+  }
+
   private func positionFixture(
     confidence: LocationConfidence
   ) throws -> PositionFixture {

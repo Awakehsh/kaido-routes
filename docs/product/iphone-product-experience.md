@@ -101,14 +101,22 @@ The driver may switch between the geographic and topology projections at any
 time, but cannot edit the route while moving. Both show the active route and
 eligible current position. In topology view, the marker communicates the exact
 route occurrence and progress without implying geographic precision. A
-reviewed junction inset temporarily becomes the strongest visual when it helps
-the next decision. Low-confidence or tunnel positioning is shown as estimated
-without fabricating a precise marker.
+route-bound junction inset temporarily becomes the strongest visual when it
+helps the next decision. It overlays either projection and is never a third map
+mode. It appears only after a supported left or right DecisionZone frame crosses
+its released prompt threshold, then disappears after that frame clears. The
+normal guidance card may preview the reviewed instruction before that threshold.
+The inset preserves the released Japanese sign target, route shield, distance,
+and selected branch. It renders its own road scene; operator photographs may be
+used for private comparison but are never copied into the product.
+Low-confidence or tunnel positioning is shown as estimated without fabricating
+a precise marker.
 
 The geographic projection is the initial default and renders the released
 route over the system MapKit basemap. A user-started automatic route simulation
-may exercise the complete Drive presentation, including position and progress,
-but remains visibly synthetic and grants no live-road or passage authority.
+may exercise the complete Drive presentation at readable real-time pacing,
+including position, progress, and transient junction insets, but remains visibly
+synthetic and grants no live-road or passage authority.
 
 ## Entry, exit, and external maps
 

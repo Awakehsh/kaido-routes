@@ -1672,7 +1672,14 @@ private struct ProductDriveStage: View {
           geographicPresentation: runtime.geographicMapPresentation,
           navigationSnapshot: runtime.snapshot,
           positionEvidence: runtime.topologyPositionEvidence,
-          usesDarkStyle: true
+          usesDarkStyle: true,
+          junctionPresentation:
+            runtime.presentationProjection.flatMap {
+              ProductJunctionInsetPresentation(
+                $0.iPhone,
+                navigationSnapshot: runtime.snapshot
+              )
+            }
         )
 
         routeProgress

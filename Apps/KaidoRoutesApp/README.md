@@ -25,7 +25,13 @@ The `Map | Lines` choice persists across Routes, Plan, Review, and Drive.
 `Map` is the default and draws every released K7 route occurrence from the
 matcher corridor over a MapKit basemap. Drive exposes one explicit automatic
 route simulation with pause, resume, and replay; it is synthetic and never
-claims live-road position or passage status.
+claims live-road position or passage status. `Map` and `Lines` are the only map
+modes. A maneuver-derived junction inset may temporarily overlay either one
+after its active release-bound DecisionZone guidance frame crosses the released
+prompt threshold. It preserves the released Japanese sign target and selected
+left or right branch, and clears with that guidance frame. The App generates
+the road scene and does not bundle operator photographs used for private visual
+comparison.
 The topology renderer consumes only a validated
 `RouteAtlasJourneyProjection`, preserves repeated occurrences, and can draw a
 precise progress marker only from one exact HIGH matcher estimate admitted

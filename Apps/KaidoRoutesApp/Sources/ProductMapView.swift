@@ -104,11 +104,25 @@ struct ProductMapViewport: View {
   let navigationSnapshot: NavigationSnapshot?
   let positionEvidence: ProductTopologyPositionEvidence?
   let usesDarkStyle: Bool
+  var junctionPresentation: ProductJunctionInsetPresentation? = nil
 
   var body: some View {
     VStack(spacing: 0) {
-      map
-        .frame(minHeight: usesDarkStyle ? 300 : 258)
+      ZStack(alignment: .bottom) {
+        map
+
+        if let junctionPresentation {
+          ProductJunctionInsetView(presentation: junctionPresentation)
+            .padding(10)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .zIndex(1)
+        }
+      }
+      .frame(minHeight: usesDarkStyle ? 300 : 258)
+      .animation(
+        .easeOut(duration: 0.22),
+        value: junctionPresentation?.decisionZoneID
+      )
 
       HStack(spacing: 7) {
         Image(systemName: "circle.fill")

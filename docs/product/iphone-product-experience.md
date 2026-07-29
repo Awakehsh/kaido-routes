@@ -59,6 +59,15 @@ geographic projection and Kaido's rectilinear topology projection. The choice
 is not tied to journey phase and persists when navigation begins. A bottom sheet
 contains the current ordered route and the next legal action.
 
+The topology projection is an overview of the selected route, not a claim of
+full-network coverage. It shows route shields and release-bound directional
+entrance, selected JCT movement, and exit landmarks in route order, together
+with the released route's PA visit count. Facility labels may use an evenly
+spaced two-column layout for legibility, but a leader must return each label to
+its exact Route Atlas point. A compact summary reports the entrance, JCT, PA,
+and exit counts. Facility names follow the interface locale while Japanese sign
+text and route shields remain available.
+
 Guided planning starts from one reviewed recommended template. It may change
 only approved parameters such as direction, lap count, duration band,
 directional PA occurrence, finish behavior, and compatible entrance or exit.

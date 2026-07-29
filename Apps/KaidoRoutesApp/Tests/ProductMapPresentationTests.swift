@@ -123,6 +123,87 @@ final class ProductMapPresentationTests: XCTestCase {
     )
   }
 
+  func testReleasedK7TopologyFacilitiesAreBoundToExactAtlasPoints()
+    throws
+  {
+    let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
+    let entry = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
+    let facilities = try XCTUnwrap(
+      ProductTopologyFacilityPresentation.make(
+        release: entry.release
+      )
+    )
+
+    XCTAssertEqual(facilities.routeShields, ["K7"])
+    XCTAssertEqual(facilities.entranceCount, 1)
+    XCTAssertEqual(facilities.junctionCount, 2)
+    XCTAssertEqual(facilities.parkingAreaCount, 0)
+    XCTAssertEqual(facilities.exitCount, 1)
+    XCTAssertEqual(
+      facilities.landmarks.map(\.kind),
+      [.entrance, .junction, .junction, .exit]
+    )
+    XCTAssertEqual(
+      facilities.landmarks.map(\.id),
+      [
+        "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+        "shutoko.occurrence.k7-navigation.aoba-to-kohoku.shared-branch.1",
+        "shutoko.occurrence.k7-navigation.aoba-to-kohoku.exit-branch.3",
+        "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+      ]
+    )
+    XCTAssertEqual(
+      facilities.landmarks.map(\.point),
+      [
+        RouteAtlasPoint(x: 0.12, y: 0.3),
+        RouteAtlasPoint(x: 0.68, y: 0.6),
+        RouteAtlasPoint(x: 0.7, y: 0.78),
+        RouteAtlasPoint(x: 0.78, y: 0.84),
+      ]
+    )
+    XCTAssertEqual(
+      facilities.landmarks.compactMap {
+        $0.title.value(for: .simplifiedChinese)
+      },
+      [
+        "横滨青叶入口（K7 上行）",
+        "横滨港北 JCT 第三京滨・出口分岔",
+        "横滨港北出口分岔",
+        "驶向横滨港北出口",
+      ]
+    )
+  }
+
+  func testTopologyFacilitiesPreserveRepeatedDecisionOccurrences()
+    throws
+  {
+    let entry = try makeReleasedProductTestEntry()
+    let facilities = try XCTUnwrap(
+      ProductTopologyFacilityPresentation.make(
+        release: entry.release
+      )
+    )
+
+    XCTAssertEqual(facilities.junctionCount, 3)
+    XCTAssertEqual(
+      facilities.landmarks.map(\.id),
+      [
+        "test.entrance",
+        "test.occurrence.loop-movement-1",
+        "test.occurrence.loop-movement-2",
+        "test.occurrence.exit-movement",
+        "test.exit",
+      ]
+    )
+    XCTAssertEqual(
+      facilities.landmarks.filter { $0.kind == .junction }
+        .map(\.occurrenceIndex),
+      [1, 3, 5]
+    )
+  }
+
   func testTopologyGeometryPreservesEndpointsAndUsesOnlyOctilinearSegments() {
     let source = [
       RouteAtlasPoint(x: 0.1, y: 0.2),

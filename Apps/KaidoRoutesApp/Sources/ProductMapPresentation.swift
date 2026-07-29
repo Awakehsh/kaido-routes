@@ -2,6 +2,7 @@ import Combine
 import Foundation
 import KaidoDomain
 import KaidoNavigation
+import KaidoRouting
 
 enum ProductMapProjection: String, CaseIterable, Identifiable, Sendable {
   case geographic
@@ -267,16 +268,207 @@ struct ProductTopologyMarker: Equatable, Sendable {
   let repeatCount: Int
 }
 
+enum ProductTopologyLandmarkKind: String, Equatable, Sendable {
+  case entrance
+  case junction
+  case exit
+}
+
+struct ProductTopologyLandmark: Equatable, Identifiable, Sendable {
+  let id: String
+  let kind: ProductTopologyLandmarkKind
+  let occurrenceIndex: Int
+  let point: RouteAtlasPoint
+  let title: RouteEditorLocalizedText
+  let detail: RouteEditorLocalizedText?
+}
+
+struct ProductTopologyFacilityPresentation: Equatable, Sendable {
+  let routeShields: [String]
+  let landmarks: [ProductTopologyLandmark]
+  let entranceCount: Int
+  let junctionCount: Int
+  let parkingAreaCount: Int
+  let exitCount: Int
+
+  static func make(
+    release: KaidoProductRelease
+  ) -> ProductTopologyFacilityPresentation? {
+    let bundle = release.navigation.bundle
+    let routePlan = bundle.routePlan
+    let editorCatalog = bundle.editorCatalog
+    let presentationCatalog = bundle.editorPresentationCatalog
+    let definition = release.routeAtlas.definition
+    let bindingsByOccurrenceID = Dictionary(
+      uniqueKeysWithValues: definition.occurrenceBindings.map {
+        ($0.occurrenceID, $0)
+      }
+    )
+    let segmentsByID = Dictionary(
+      uniqueKeysWithValues: definition.segments.map { ($0.id, $0) }
+    )
+
+    func point(
+      for occurrence: RouteOccurrence,
+      endpoint: ProductTopologyLandmarkEndpoint
+    ) -> RouteAtlasPoint? {
+      guard
+        let binding = bindingsByOccurrenceID[occurrence.id],
+        let segment = segmentsByID[binding.segmentID]
+      else {
+        return nil
+      }
+      switch endpoint {
+      case .start:
+        return segment.points.first
+      case .end:
+        return segment.points.last
+      }
+    }
+
+    guard
+      let entrance = editorCatalog.entrances.first(where: {
+        $0.facilityID == routePlan.entryFacilityID
+      }),
+      let entranceOccurrence = routePlan.occurrence(
+        entityID: entrance.initialEdgeID
+      ),
+      let entrancePoint = point(
+        for: entranceOccurrence,
+        endpoint: .start
+      ),
+      let entrancePresentation =
+        presentationCatalog.entrances.first(where: {
+          $0.facilityID == routePlan.entryFacilityID
+        })
+    else {
+      return nil
+    }
+
+    var selectedDecisions: [ProductTopologySelectedDecision] = []
+    var junctionLandmarks: [ProductTopologyLandmark] = []
+    for step in bundle.routeAuthoringRecipe.steps {
+      guard
+        let movementOccurrence = routePlan.occurrence(
+          id: step.movementOccurrenceID
+        ),
+        let decisionPoint = editorCatalog.decisionPoints.first(where: {
+          $0.id == step.decisionPointID
+        }),
+        let selectedChoice = decisionPoint.choices.first(where: {
+          $0.id == step.choiceID
+        }),
+        let decisionPresentation =
+          presentationCatalog.decisionPoints.first(where: {
+            $0.decisionPointID == decisionPoint.id
+          }),
+        let choicePresentation =
+          presentationCatalog.choices.first(where: {
+            $0.choiceID == selectedChoice.id
+          }),
+        let decisionPoint = point(
+          for: movementOccurrence,
+          endpoint: .start
+        )
+      else {
+        continue
+      }
+
+      selectedDecisions.append(
+        ProductTopologySelectedDecision(
+          choice: selectedChoice,
+          presentation: choicePresentation
+        )
+      )
+      junctionLandmarks.append(
+        ProductTopologyLandmark(
+          id: movementOccurrence.id,
+          kind: .junction,
+          occurrenceIndex: movementOccurrence.index,
+          point: decisionPoint,
+          title: decisionPresentation.title,
+          detail: choicePresentation.title
+        )
+      )
+    }
+
+    let selectedExit = selectedDecisions.first { decision in
+      guard case .exitFacility(let facilityID) = decision.choice.destination
+      else {
+        return false
+      }
+      return facilityID == routePlan.exitFacilityID
+    }
+    guard
+      let selectedExit,
+      let exitOccurrence = routePlan.occurrences.last,
+      let exitPoint = point(for: exitOccurrence, endpoint: .end)
+    else {
+      return nil
+    }
+
+    var seenShields: Set<String> = []
+    let routeShields = bundle.releasedGuidance
+      .flatMap(\.frameTemplate.presentationSource.routeShields)
+      .filter { seenShields.insert($0).inserted }
+
+    let landmarks =
+      [
+        ProductTopologyLandmark(
+          id: routePlan.entryFacilityID,
+          kind: .entrance,
+          occurrenceIndex: entranceOccurrence.index,
+          point: entrancePoint,
+          title: entrancePresentation.title,
+          detail: nil
+        )
+      ]
+      + junctionLandmarks.sorted { $0.occurrenceIndex < $1.occurrenceIndex }
+      + [
+        ProductTopologyLandmark(
+          id: routePlan.exitFacilityID,
+          kind: .exit,
+          occurrenceIndex: exitOccurrence.index,
+          point: exitPoint,
+          title: selectedExit.presentation.title,
+          detail: nil
+        )
+      ]
+
+    return ProductTopologyFacilityPresentation(
+      routeShields: routeShields,
+      landmarks: landmarks,
+      entranceCount: 1,
+      junctionCount: junctionLandmarks.count,
+      parkingAreaCount:
+        routePlan.occurrences.filter { $0.kind == .paVisit }.count,
+      exitCount: 1
+    )
+  }
+}
+
+private enum ProductTopologyLandmarkEndpoint {
+  case start
+  case end
+}
+
+private struct ProductTopologySelectedDecision {
+  let choice: ReviewedRouteEditorChoice
+  let presentation: ReviewedRouteEditorChoicePresentation
+}
+
 struct ProductTopologyMapPresentation: Equatable, Sendable {
   let projection: RouteAtlasJourneyProjection
   let orderedOccurrences: [RouteAtlasJourneyOccurrence]
   let position: ProductTopologyPositionState
   let repeatedOccurrenceCount: Int
+  let facilities: ProductTopologyFacilityPresentation?
 
   static func make(
     projection: RouteAtlasJourneyProjection,
     evidence: ProductTopologyPositionEvidence?,
-    snapshot: NavigationSnapshot?
+    snapshot: NavigationSnapshot?,
+    facilities: ProductTopologyFacilityPresentation? = nil
   ) -> ProductTopologyMapPresentation {
     let orderedOccurrences = projection.occurrences.sorted {
       $0.occurrenceIndex < $1.occurrenceIndex
@@ -292,7 +484,8 @@ struct ProductTopologyMapPresentation: Equatable, Sendable {
       orderedOccurrences: orderedOccurrences,
       position: position,
       repeatedOccurrenceCount:
-        orderedOccurrences.filter(\.isRepeatedTraversal).count
+        orderedOccurrences.filter(\.isRepeatedTraversal).count,
+      facilities: facilities
     )
   }
 

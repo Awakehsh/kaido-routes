@@ -363,6 +363,7 @@ private struct ProductRoutesStage: View {
           model.discoveryGeographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
+        topologyFacilities: model.topologyFacilityPresentation,
         usesDarkStyle: false
       )
 
@@ -723,6 +724,7 @@ private struct ProductPlanStage: View {
         geographicPresentation: model.geographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
+        topologyFacilities: model.topologyFacilityPresentation,
         usesDarkStyle: false
       )
 
@@ -1180,6 +1182,7 @@ private struct ProductReviewStage: View {
         geographicPresentation: model.geographicMapPresentation,
         navigationSnapshot: nil,
         positionEvidence: nil,
+        topologyFacilities: model.topologyFacilityPresentation,
         usesDarkStyle: false
       )
 
@@ -1672,6 +1675,7 @@ private struct ProductDriveStage: View {
           geographicPresentation: runtime.geographicMapPresentation,
           navigationSnapshot: runtime.snapshot,
           positionEvidence: runtime.topologyPositionEvidence,
+          topologyFacilities: runtime.topologyFacilityPresentation,
           usesDarkStyle: true,
           junctionPresentation:
             runtime.presentationProjection.flatMap {

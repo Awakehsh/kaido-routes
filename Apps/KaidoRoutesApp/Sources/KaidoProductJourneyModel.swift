@@ -179,6 +179,12 @@ final class KaidoProductJourneyModel: ObservableObject {
     }
   }
 
+  var topologyFacilityPresentation: ProductTopologyFacilityPresentation? {
+    productShellEntry.flatMap {
+      ProductTopologyFacilityPresentation.make(release: $0.release)
+    }
+  }
+
   var discoveryGeographicMapPresentation: ProductGeographicMapPresentation? {
     guard let entry = productShellEntry else { return nil }
     return ProductGeographicMapPresentation.make(

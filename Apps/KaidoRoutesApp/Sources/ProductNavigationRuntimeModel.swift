@@ -392,6 +392,10 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     )
   }
 
+  var topologyFacilityPresentation: ProductTopologyFacilityPresentation? {
+    ProductTopologyFacilityPresentation.make(release: release)
+  }
+
   var corridorEdgeCount: Int {
     runtime.entryTransitionAdmissionContext.matcherCorridor.edges.count
   }

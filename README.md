@@ -21,10 +21,13 @@ cards, parked release-owned choices compile one exact RoutePlan, and the
 released K7 route continues into an explicit automatic driving simulation.
 One persisted `Map | Lines` control is shared by every stage. `Map` is the
 default and renders the released K7 matcher corridor over a real MapKit
-basemap; `Lines` remains the alternate topology projection. The topology projection
-preserves ordered and repeated occurrences and accepts a precise current-route
-marker only from exact HIGH route-bound progress evidence; LOW, LOST,
-ambiguous, or identity-drifted evidence stays estimated or unavailable.
+basemap; `Lines` remains the alternate topology projection. It labels the
+selected release's route shield, directional entrance, selected JCT movements,
+PA count, and directional exit without claiming full-network coverage. The
+topology projection preserves ordered and repeated occurrences and accepts a
+precise current-route marker only from exact HIGH route-bound progress
+evidence; LOW, LOST, ambiguous, or identity-drifted evidence stays estimated
+or unavailable.
 The bundled catalog now contains one foreground K7 product release whose exact
 runtime may grant foreground Core Location authority only after release-owned
 route authoring and whole-RoutePlan release selection pass. No

@@ -34,6 +34,46 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertFalse(app.staticTexts["K7 证据"].exists)
     XCTAssertFalse(app.staticTexts["PRODUCT RELEASE"].exists)
     XCTAssertFalse(app.staticTexts["SNAPSHOT"].exists)
+
+    element("product-map-projection-topology", in: app).tap()
+    XCTAssertEqual(
+      element("product-map-routes", in: app).value as? String,
+      "topology"
+    )
+    XCTAssertTrue(
+      element("product-topology-map", in: app)
+        .waitForExistence(timeout: 3)
+    )
+    XCTAssertEqual(
+      element("product-topology-route-shield", in: app).label,
+      "K7"
+    )
+    XCTAssertEqual(
+      element("product-topology-facility-summary", in: app).value
+        as? String,
+      "entrance=1;junction=2;parking=0;exit=1"
+    )
+    XCTAssertTrue(
+      element(
+        "product-topology-landmark-entrance-"
+          + "shutoko.entrance.yokohama-aoba.k7-northwest.up",
+        in: app
+      ).exists
+    )
+    XCTAssertTrue(
+      element(
+        "product-topology-landmark-exit-"
+          + "shutoko.exit.yokohama-kohoku.k7-northwest.up",
+        in: app
+      ).exists
+    )
+
+    let topologyScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    topologyScreenshot.name = "Released K7 topology facility overview"
+    topologyScreenshot.lifetime = .keepAlways
+    add(topologyScreenshot)
   }
 
   func testReleasedK7RouteAutomaticallySimulatesAcrossTheMap() {

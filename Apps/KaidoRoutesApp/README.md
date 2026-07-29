@@ -32,11 +32,15 @@ prompt threshold. It preserves the released Japanese sign target and selected
 left or right branch, and clears with that guidance frame. The App generates
 the road scene and does not bundle operator photographs used for private visual
 comparison.
-The topology renderer consumes only a validated
-`RouteAtlasJourneyProjection`, preserves repeated occurrences, and can draw a
-precise progress marker only from one exact HIGH matcher estimate admitted
-against the active RoutePlan and actor snapshot. LOW, LOST, ambiguous, stale,
-or identity-drifted evidence cannot create that marker.
+`Lines` presents only the selected released route. It derives the K7 shield,
+directional entrance, two selected JCT movements, PA count, and directional
+exit from the validated product release. Localized facility cards use an
+evenly spaced two-column layout with leaders back to their exact Route Atlas
+points; they do not imply broader Shuto coverage. The topology renderer
+preserves repeated occurrences and can draw a precise progress marker only
+from one exact HIGH matcher estimate admitted against the active RoutePlan and
+actor snapshot. LOW, LOST, ambiguous, stale, or identity-drifted evidence
+cannot create that marker.
 
 The journey coordinator owns UI stage only. It does not author topology,
 occurrence progress, a RoutePlan, passage status, or navigation authority.

@@ -103,6 +103,7 @@ struct ProductMapViewport: View {
   let geographicPresentation: ProductGeographicMapPresentation?
   let navigationSnapshot: NavigationSnapshot?
   let positionEvidence: ProductTopologyPositionEvidence?
+  let topologyFacilities: ProductTopologyFacilityPresentation?
   let usesDarkStyle: Bool
   var junctionPresentation: ProductJunctionInsetPresentation? = nil
 
@@ -204,9 +205,11 @@ struct ProductMapViewport: View {
           presentation: ProductTopologyMapPresentation.make(
             projection: projection,
             evidence: positionEvidence,
-            snapshot: navigationSnapshot
+            snapshot: navigationSnapshot,
+            facilities: topologyFacilities
           ),
-          usesDarkStyle: usesDarkStyle
+          usesDarkStyle: usesDarkStyle,
+          showsPositionStatus: surfaceID == "drive"
         )
       case .unavailable, .blocked:
         mapUnavailable(
@@ -260,6 +263,7 @@ struct ProductTopologyMapView: View {
 
   let presentation: ProductTopologyMapPresentation
   let usesDarkStyle: Bool
+  let showsPositionStatus: Bool
 
   var body: some View {
     ZStack(alignment: .topLeading) {
@@ -272,39 +276,50 @@ struct ProductTopologyMapView: View {
       }
       .accessibilityHidden(true)
 
-      HStack(alignment: .firstTextBaseline) {
-        VStack(alignment: .leading, spacing: 2) {
-          Text(
-            copy.resolve(
-              japanese: "路線図",
-              simplifiedChinese: "线路图",
-              english: "Route lines"
+      if let facilities = presentation.facilities {
+        GeometryReader { proxy in
+          ForEach(facilities.landmarks) { landmark in
+            let point = mapPoint(landmark.point, size: proxy.size)
+            let badgeCenter = landmarkBadgeCenter(
+              landmark,
+              facilities: facilities,
+              size: proxy.size
             )
-          )
-          .font(.system(size: 13, weight: .black, design: .rounded))
 
-          Text(
-            copy.resolve(
-              japanese:
-                "\(presentation.orderedOccurrences.count) 区間を順序どおり表示",
-              simplifiedChinese:
-                "按顺序显示 \(presentation.orderedOccurrences.count) 个路段",
-              english:
-                "\(presentation.orderedOccurrences.count) ordered route segments"
+            Path { path in
+              path.move(to: point)
+              path.addLine(to: badgeCenter)
+            }
+            .stroke(
+              primaryText.opacity(usesDarkStyle ? 0.36 : 0.24),
+              style: StrokeStyle(
+                lineWidth: 1,
+                lineCap: .round,
+                dash: [3, 3]
+              )
             )
-          )
-          .font(.system(size: 9, weight: .bold))
+
+            ProductTopologyLandmarkBadge(
+              landmark: landmark,
+              usesDarkStyle: usesDarkStyle
+            )
+            .position(badgeCenter)
+
+            Circle()
+              .fill(KaidoTheme.routeGreen)
+              .frame(width: 11, height: 11)
+              .overlay {
+                Circle()
+                  .stroke(KaidoTheme.paperRaised, lineWidth: 2)
+              }
+              .position(point)
+              .accessibilityHidden(true)
+          }
         }
-
-        Spacer()
-
-        Text("C1 · C2 · B")
-          .font(.system(size: 10, weight: .black, design: .rounded))
       }
-      .foregroundStyle(primaryText)
-      .padding(12)
 
-      positionStatus
+      topologyHeader
+      bottomChrome
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("product-topology-map")
@@ -314,64 +329,252 @@ struct ProductTopologyMapView: View {
     )
   }
 
-  private var positionStatus: some View {
+  private var topologyHeader: some View {
+    HStack(spacing: 9) {
+      if let routeShield = presentation.facilities?.routeShields.first {
+        Text(routeShield)
+          .font(.system(size: 14, weight: .black, design: .rounded))
+          .foregroundStyle(.white)
+          .frame(width: 40, height: 34)
+          .background(KaidoTheme.routeGreen)
+          .clipShape(RoundedRectangle(cornerRadius: 6))
+          .overlay {
+            RoundedRectangle(cornerRadius: 6)
+              .stroke(.white.opacity(0.92), lineWidth: 1.5)
+          }
+          .accessibilityIdentifier("product-topology-route-shield")
+      }
+
+      VStack(alignment: .leading, spacing: 2) {
+        Text(
+          copy.resolve(
+            japanese: "選択ルート全体",
+            simplifiedChinese: "所选路线全览",
+            english: "Selected route overview"
+          )
+        )
+        .font(.system(size: 11, weight: .black, design: .rounded))
+
+        Text(routeEndpointLabel)
+          .font(.system(size: 9, weight: .bold))
+          .lineLimit(1)
+          .minimumScaleFactor(0.68)
+      }
+
+      Spacer(minLength: 4)
+    }
+    .foregroundStyle(primaryText)
+    .padding(.horizontal, 10)
+    .frame(height: 52)
+    .background(
+      LinearGradient(
+        colors: [
+          statusBackground,
+          statusBackground.opacity(0.78),
+          .clear,
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+    )
+  }
+
+  private var bottomChrome: some View {
     VStack {
       Spacer()
 
-      HStack {
-        switch presentation.position {
-        case .measured(let marker):
-          Label(
-            copy.resolve(
-              japanese: "現在地 · 区間 \(marker.occurrenceIndex + 1)",
-              simplifiedChinese: "当前位置 · 第 \(marker.occurrenceIndex + 1) 段",
-              english: "Current position · segment \(marker.occurrenceIndex + 1)"
-            ),
-            systemImage: "location.fill"
-          )
-          .accessibilityIdentifier("product-topology-position-marker")
-        case .estimated:
-          Label(
-            copy.resolve(
-              japanese: "位置を推定中",
-              simplifiedChinese: "位置估算中",
-              english: "Position estimated"
-            ),
-            systemImage: "location.circle"
-          )
-          .accessibilityIdentifier("product-topology-position-estimated")
-        case .unavailable:
-          Label(
-            copy.resolve(
-              japanese: "現在地は未確定",
-              simplifiedChinese: "当前位置尚未确定",
-              english: "Current position unavailable"
-            ),
-            systemImage: "location.slash"
-          )
-          .accessibilityIdentifier("product-topology-position-unavailable")
-        }
-
-        Spacer()
-
-        if presentation.repeatedOccurrenceCount > 0 {
-          Label(
-            copy.resolve(
-              japanese: "反復を保持",
-              simplifiedChinese: "保留重复路段",
-              english: "Repeats retained"
-            ),
-            systemImage: "repeat"
-          )
-          .accessibilityIdentifier("product-topology-repeated-occurrences")
-        }
+      if let facilities = presentation.facilities {
+        facilitySummary(facilities)
       }
-      .font(.system(size: 9, weight: .black))
-      .foregroundStyle(primaryText)
-      .padding(.horizontal, 10)
-      .frame(height: 32)
-      .background(statusBackground)
+      if showsPositionStatus {
+        positionStatus
+      }
     }
+  }
+
+  private func facilitySummary(
+    _ facilities: ProductTopologyFacilityPresentation
+  ) -> some View {
+    HStack(spacing: 0) {
+      facilityMetric(
+        copy.resolve(
+          japanese: "入口",
+          simplifiedChinese: "入口",
+          english: "ENTRY"
+        ),
+        count: facilities.entranceCount
+      )
+      facilityMetric("JCT", count: facilities.junctionCount)
+      facilityMetric("PA", count: facilities.parkingAreaCount)
+      facilityMetric(
+        copy.resolve(
+          japanese: "出口",
+          simplifiedChinese: "出口",
+          english: "EXIT"
+        ),
+        count: facilities.exitCount
+      )
+    }
+    .frame(height: 32)
+    .background(statusBackground)
+    .overlay(alignment: .top) {
+      Rectangle()
+        .fill(
+          usesDarkStyle
+            ? KaidoTheme.steel.opacity(0.58)
+            : KaidoTheme.paperDivider
+        )
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityIdentifier("product-topology-facility-summary")
+    .accessibilityValue(
+      "entrance=\(facilities.entranceCount);"
+        + "junction=\(facilities.junctionCount);"
+        + "parking=\(facilities.parkingAreaCount);"
+        + "exit=\(facilities.exitCount)"
+    )
+  }
+
+  private func facilityMetric(
+    _ label: String,
+    count: Int
+  ) -> some View {
+    HStack(spacing: 4) {
+      Text(label)
+        .font(.system(size: 8, weight: .black, design: .rounded))
+      Text("\(count)")
+        .font(.system(size: 10, weight: .black, design: .monospaced))
+    }
+    .foregroundStyle(
+      count > 0 ? primaryText : primaryText.opacity(0.42)
+    )
+    .frame(maxWidth: .infinity)
+  }
+
+  private var positionStatus: some View {
+    HStack {
+      switch presentation.position {
+      case .measured(let marker):
+        Label(
+          copy.resolve(
+            japanese: "現在地 · 区間 \(marker.occurrenceIndex + 1)",
+            simplifiedChinese: "当前位置 · 第 \(marker.occurrenceIndex + 1) 段",
+            english: "Current position · segment \(marker.occurrenceIndex + 1)"
+          ),
+          systemImage: "location.fill"
+        )
+        .accessibilityIdentifier("product-topology-position-marker")
+      case .estimated:
+        Label(
+          copy.resolve(
+            japanese: "位置を推定中",
+            simplifiedChinese: "位置估算中",
+            english: "Position estimated"
+          ),
+          systemImage: "location.circle"
+        )
+        .accessibilityIdentifier("product-topology-position-estimated")
+      case .unavailable:
+        Label(
+          copy.resolve(
+            japanese: "現在地は未確定",
+            simplifiedChinese: "当前位置尚未确定",
+            english: "Current position unavailable"
+          ),
+          systemImage: "location.slash"
+        )
+        .accessibilityIdentifier("product-topology-position-unavailable")
+      }
+
+      Spacer()
+
+      if presentation.repeatedOccurrenceCount > 0 {
+        Label(
+          copy.resolve(
+            japanese: "反復を保持",
+            simplifiedChinese: "保留重复路段",
+            english: "Repeats retained"
+          ),
+          systemImage: "repeat"
+        )
+        .accessibilityIdentifier("product-topology-repeated-occurrences")
+      }
+    }
+    .font(.system(size: 9, weight: .black))
+    .foregroundStyle(primaryText)
+    .padding(.horizontal, 10)
+    .frame(height: 32)
+    .background(statusBackground)
+  }
+
+  private var routeEndpointLabel: String {
+    guard
+      let facilities = presentation.facilities,
+      let entrance = facilities.landmarks.first(where: {
+        $0.kind == .entrance
+      })?.title.value(for: interfaceLocale),
+      let exit = facilities.landmarks.first(where: {
+        $0.kind == .exit
+      })?.title.value(for: interfaceLocale)
+    else {
+      return copy.resolve(
+        japanese: "\(presentation.orderedOccurrences.count) 区間",
+        simplifiedChinese: "\(presentation.orderedOccurrences.count) 个路段",
+        english: "\(presentation.orderedOccurrences.count) route segments"
+      )
+    }
+    return "\(entrance) → \(exit)"
+  }
+
+  private func landmarkBadgeCenter(
+    _ landmark: ProductTopologyLandmark,
+    facilities: ProductTopologyFacilityPresentation,
+    size: CGSize
+  ) -> CGPoint {
+    let landmarks = facilities.landmarks.sorted {
+      $0.occurrenceIndex < $1.occurrenceIndex
+    }
+    let ordinal =
+      landmarks.firstIndex(where: { $0.id == landmark.id }) ?? 0
+    let firstRowY: CGFloat = 78
+    let lastRowY = max(
+      firstRowY,
+      size.height - plotBottomInset - 18
+    )
+    let rowStep =
+      (lastRowY - firstRowY)
+      / CGFloat(max(1, landmarks.count - 1))
+    let badgeHalfWidth: CGFloat = 74
+    let edgePadding: CGFloat = 10
+    let leftColumnX = edgePadding + badgeHalfWidth
+    let rightColumnX = size.width - edgePadding - badgeHalfWidth
+    return CGPoint(
+      x: ordinal.isMultiple(of: 2) ? rightColumnX : leftColumnX,
+      y: firstRowY + CGFloat(ordinal) * rowStep
+    )
+  }
+
+  private var plotBottomInset: CGFloat {
+    CGFloat(presentation.facilities == nil ? 0 : 32)
+      + CGFloat(showsPositionStatus ? 32 : 0)
+      + 10
+  }
+
+  private func mapPoint(
+    _ point: RouteAtlasPoint,
+    size: CGSize
+  ) -> CGPoint {
+    let horizontalInset: CGFloat = 16
+    let topInset: CGFloat = 52
+    return CGPoint(
+      x:
+        horizontalInset
+        + point.x * max(1, size.width - horizontalInset * 2),
+      y:
+        topInset
+        + point.y * max(1, size.height - topInset - plotBottomInset)
+    )
   }
 
   private var background: Color {
@@ -402,8 +605,8 @@ struct ProductTopologyMapView: View {
         ),
         with: .color(
           usesDarkStyle
-            ? KaidoTheme.steel.opacity(0.72)
-            : KaidoTheme.roadGray.opacity(0.72)
+            ? Color(hex: 0x675C94).opacity(0.7)
+            : Color(hex: 0x7167A4).opacity(0.52)
         ),
         style: StrokeStyle(
           lineWidth: 3,
@@ -467,10 +670,7 @@ struct ProductTopologyMapView: View {
       return
     }
     let point = offsetPoint(
-      CGPoint(
-        x: 18 + marker.point.x * max(1, size.width - 36),
-        y: 44 + marker.point.y * max(1, size.height - 92)
-      ),
+      mapPoint(marker.point, size: size),
       marker: marker,
       size: size
     )
@@ -514,12 +714,7 @@ struct ProductTopologyMapView: View {
     _ points: [RouteAtlasPoint],
     size: CGSize
   ) -> [CGPoint] {
-    points.map {
-      CGPoint(
-        x: 18 + $0.x * max(1, size.width - 36),
-        y: 44 + $0.y * max(1, size.height - 92)
-      )
-    }
+    points.map { mapPoint($0, size: size) }
   }
 
   private func path(for points: [CGPoint]) -> Path {
@@ -647,6 +842,90 @@ struct ProductTopologyMapView: View {
     case .planned, .passed, .future:
       StrokeStyle(lineWidth: 5, lineCap: .square, lineJoin: .miter)
     }
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
+  }
+}
+
+private struct ProductTopologyLandmarkBadge: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
+  let landmark: ProductTopologyLandmark
+  let usesDarkStyle: Bool
+
+  var body: some View {
+    HStack(spacing: 5) {
+      Text(kindLabel)
+        .font(.system(size: 7, weight: .black, design: .rounded))
+        .foregroundStyle(.white.opacity(0.86))
+        .padding(.horizontal, 4)
+        .frame(minHeight: 20)
+        .overlay {
+          RoundedRectangle(cornerRadius: 3)
+            .stroke(.white.opacity(0.72), lineWidth: 1)
+        }
+
+      Text(title)
+        .font(.system(size: 8.5, weight: .black, design: .rounded))
+        .foregroundStyle(.white)
+        .lineLimit(2)
+        .minimumScaleFactor(0.72)
+    }
+    .padding(5)
+    .frame(width: 148, alignment: .leading)
+    .background(KaidoTheme.routeGreen)
+    .clipShape(RoundedRectangle(cornerRadius: 5))
+    .overlay {
+      RoundedRectangle(cornerRadius: 5)
+        .stroke(.white.opacity(usesDarkStyle ? 0.82 : 0.96), lineWidth: 1)
+    }
+    .shadow(
+      color: .black.opacity(usesDarkStyle ? 0.34 : 0.16),
+      radius: 3,
+      y: 2
+    )
+    .accessibilityElement(children: .ignore)
+    .accessibilityIdentifier(
+      "product-topology-landmark-\(landmark.kind.rawValue)-\(landmark.id)"
+    )
+    .accessibilityLabel(accessibilityLabel)
+  }
+
+  private var title: String {
+    landmark.title.value(for: interfaceLocale)
+      ?? landmark.title.value(for: .japanese)
+      ?? ""
+  }
+
+  private var kindLabel: String {
+    switch landmark.kind {
+    case .entrance:
+      return copy.resolve(
+        japanese: "入口",
+        simplifiedChinese: "入口",
+        english: "IN"
+      )
+    case .junction:
+      return "JCT"
+    case .exit:
+      return copy.resolve(
+        japanese: "出口",
+        simplifiedChinese: "出口",
+        english: "OUT"
+      )
+    }
+  }
+
+  private var accessibilityLabel: String {
+    guard
+      let detail = landmark.detail?.value(for: interfaceLocale),
+      !detail.isEmpty
+    else {
+      return "\(kindLabel), \(title)"
+    }
+    return "\(kindLabel), \(title), \(detail)"
   }
 
   private var copy: KaidoInterfaceText {

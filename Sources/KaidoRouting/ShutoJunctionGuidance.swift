@@ -1,4 +1,5 @@
 import Foundation
+import KaidoDomain
 
 public enum ShutoJunctionBranchSide:
   String, Codable, Equatable, Sendable
@@ -43,6 +44,9 @@ public struct ShutoJunctionMovementDefinition:
   public let japaneseSignText: String
   public let routeShields: [String]
   public let laneGuidanceState: ShutoJunctionLaneGuidanceState
+  public let localizedJunctionNames: [KaidoReleaseLocale: String]
+  public let localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent]
+  public let commitTriggerDistanceMeters: Double
   public let checkedAt: String
   public let expectedJunctionDetailSHA256: String
   public let sources: [ShutoJunctionGuidanceSource]
@@ -62,6 +66,9 @@ public struct ShutoJunctionMovementDefinition:
     japaneseSignText: String,
     routeShields: [String],
     laneGuidanceState: ShutoJunctionLaneGuidanceState,
+    localizedJunctionNames: [KaidoReleaseLocale: String],
+    localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent],
+    commitTriggerDistanceMeters: Double,
     checkedAt: String,
     expectedJunctionDetailSHA256: String,
     sources: [ShutoJunctionGuidanceSource]
@@ -80,6 +87,9 @@ public struct ShutoJunctionMovementDefinition:
     self.japaneseSignText = japaneseSignText
     self.routeShields = routeShields
     self.laneGuidanceState = laneGuidanceState
+    self.localizedJunctionNames = localizedJunctionNames
+    self.localizedContent = localizedContent
+    self.commitTriggerDistanceMeters = commitTriggerDistanceMeters
     self.checkedAt = checkedAt
     self.expectedJunctionDetailSHA256 =
       expectedJunctionDetailSHA256
@@ -105,6 +115,33 @@ public enum ShutoJunctionMovementCatalog {
       japaneseSignText: "東名・中央道",
       routeShields: ["C2", "3", "E1", "E20"],
       laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "大井JCT",
+        .simplifiedChinese: "大井 JCT",
+        .english: "Oi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "左方向へ分岐し、C2 外回りへ",
+          spokenText:
+            "大井ジャンクションでは左方向へ分岐し、C2 外回りへ進んでください",
+          spokenForms: ["C2": "シーツー"],
+          preservedJapaneseSignText: "東名・中央道"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向左分岔，驶入 C2 外环",
+          spokenText: "在大井枢纽向左分岔，驶入 C2 外环",
+          spokenForms: ["C2": "C 二"],
+          preservedJapaneseSignText: "東名・中央道"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch left for the C2 Outer Loop",
+          spokenText: "At Oi Junction, branch left for the C2 Outer Loop",
+          spokenForms: ["C2": "C two"],
+          preservedJapaneseSignText: "東名・中央道"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
       checkedAt: "2026-07-29",
       expectedJunctionDetailSHA256:
         "4bfe3cb6117273ec547a62872b971a87f"
@@ -132,6 +169,52 @@ public enum ShutoJunctionMovementCatalog {
       ]
     )
   ]
+
+  public static func releasedDefinition(
+    database: ShutoNetworkDatabase,
+    incoming: ShutoNetworkDatabase.Edge,
+    outgoing: ShutoNetworkDatabase.Edge
+  ) -> ShutoJunctionMovementDefinition? {
+    let junctionsByID = Dictionary(
+      uniqueKeysWithValues: database.junctions.map {
+        ($0.junctionID, $0)
+      }
+    )
+    return released.first { definition in
+      guard
+        definition.networkSnapshotID == database.networkSnapshotID,
+        definition.incomingEdgeID == incoming.edgeID,
+        definition.outgoingEdgeID == outgoing.edgeID,
+        incoming.toNodeID == definition.junctionNodeID,
+        outgoing.fromNodeID == definition.junctionNodeID,
+        incoming.routeMemberships.contains(where: {
+          $0.routeID == definition.incomingRouteID
+            && $0.directionsJA.contains(
+              definition.incomingDirectionJA
+            )
+        }),
+        outgoing.routeMemberships.contains(where: {
+          $0.routeID == definition.outgoingRouteID
+        }),
+        let junction = junctionsByID[definition.junctionID],
+        junction.osmNodeIDs.contains(definition.junctionNodeID),
+        junction.officialDetailSHA256
+          == definition.expectedJunctionDetailSHA256,
+        Set(definition.localizedJunctionNames.keys)
+          == Set(KaidoReleaseLocale.allCases),
+        Set(definition.localizedContent.keys)
+          == Set(KaidoReleaseLocale.allCases),
+        definition.localizedContent.values.allSatisfy({
+          $0.preservedJapaneseSignText == definition.japaneseSignText
+        }),
+        definition.commitTriggerDistanceMeters.isFinite,
+        definition.commitTriggerDistanceMeters > 0
+      else {
+        return false
+      }
+      return true
+    }
+  }
 }
 
 public struct ShutoJunctionGuidanceMatch:
@@ -180,9 +263,22 @@ public enum ShutoJunctionGuidanceCompiler {
       route.edges.count == route.routePlan.occurrences.count,
       route.distanceMeters > 0,
       abs(route.distanceMeters - edgeDistance) < 0.01,
-      zip(route.edges, route.routePlan.occurrences).allSatisfy({
-        $0.0.edgeID == $0.1.entityID
-      })
+      zip(route.edges, route.routePlan.occurrences).enumerated()
+        .allSatisfy({
+          index, binding in
+          let (edge, occurrence) = binding
+          if edge.edgeID == occurrence.entityID {
+            return true
+          }
+          guard index > 0 else { return false }
+          return definitions.contains {
+            $0.id == occurrence.entityID
+              && $0.networkSnapshotID == database.networkSnapshotID
+              && $0.incomingEdgeID == route.edges[index - 1].edgeID
+              && $0.outgoingEdgeID == edge.edgeID
+              && occurrence.kind == .junctionMovement
+          }
+        })
     else {
       return []
     }
@@ -224,6 +320,18 @@ public enum ShutoJunctionGuidanceCompiler {
           junction.osmNodeIDs.contains(definition.junctionNodeID),
           junction.officialDetailSHA256
             == definition.expectedJunctionDetailSHA256,
+          definition.localizedJunctionNames[.japanese]
+            == junction.nameJA,
+          Set(definition.localizedJunctionNames.keys)
+            == Set(KaidoReleaseLocale.allCases),
+          Set(definition.localizedContent.keys)
+            == Set(KaidoReleaseLocale.allCases),
+          definition.localizedContent.values.allSatisfy({
+            $0.preservedJapaneseSignText
+              == definition.japaneseSignText
+          }),
+          definition.commitTriggerDistanceMeters.isFinite,
+          definition.commitTriggerDistanceMeters > 0,
           let node = nodesByID[definition.junctionNodeID]
         else {
           continue

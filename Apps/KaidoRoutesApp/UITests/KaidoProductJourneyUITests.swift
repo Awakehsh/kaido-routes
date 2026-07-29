@@ -62,6 +62,34 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("東名・中央道"))
     XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertEqual(
+      element("whole-shuto-guidance-speech", in: junctionApp).value
+        as? String,
+      "等待已审核提示"
+    )
+    junctionApp.terminate()
+
+    let navigationApp = XCUIApplication()
+    navigationApp.launchArguments = [
+      "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW"
+    ]
+    navigationApp.launch()
+    let actorJunctionInset = element(
+      "whole-shuto-junction-inset",
+      in: navigationApp
+    )
+    XCTAssertTrue(actorJunctionInset.waitForExistence(timeout: 10))
+    XCTAssertTrue(actorJunctionInset.label.contains("大井JCT"))
+    let speech = element(
+      "whole-shuto-guidance-speech",
+      in: navigationApp
+    )
+    XCTAssertTrue(speech.exists)
+    XCTAssertTrue(
+      ["已安排", "播报中", "已播报"].contains(
+        speech.value as? String ?? ""
+      )
+    )
   }
 
   func testReleasedK7RouteAutomaticallySimulatesAcrossTheMap() {

@@ -2483,6 +2483,10 @@ private struct ProductDriveStage: View {
 
   private func maneuverSymbol(_ maneuver: GuidanceManeuver) -> String {
     switch maneuver {
+    case .branchLeft:
+      "arrow.triangle.branch"
+    case .branchRight:
+      "arrow.triangle.branch"
     case .keepLeft:
       "arrow.up.left"
     case .keepRight:

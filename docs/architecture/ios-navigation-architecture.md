@@ -20,8 +20,9 @@ a unique HIGH occurrence commit projects progress. A unique HIGH off-plan edge
 enters route-first recovery, while the candidate whole-network dataset supplies
 no released rejoin and therefore fails closed as `NO_RELEASED_REJOIN`.
 An active simulation checkpoint restores only against the same network
-snapshot and exact entry/exit pair, paused at its saved phase and, once
-admitted, exact occurrence and fraction. Matcher posterior is not restored.
+snapshot and complete replanned `RoutePlan`, paused at its saved phase and,
+once admitted, exact occurrence and fraction. Matcher posterior is not
+restored.
 Each JCT retains the current operator detail-image URL and SHA-256 for audit;
 `ShutoJunctionGuidanceCompiler` now admits the first reviewed whole-network
 movement: Bayshore Route westbound to C2 outer at Oi JCT. Admission requires the
@@ -29,7 +30,11 @@ exact network snapshot, adjacent incoming and outgoing edge IDs, shared OSM JCT
 node, route direction, occurrence order, and current operator-detail hash.
 Unreviewed route-label changes and nearest-JCT geometry produce no inset. The
 App renders the reviewed left branch, Japanese sign target, and shields as a
-Kaido vector; lane indices remain explicitly `NOT_RELEASED`.
+Kaido vector; lane indices remain explicitly `NOT_RELEASED`. The planner
+promotes that exact outgoing edge occurrence to `JUNCTION_MOVEMENT`, and the
+whole-network runtime compiler creates its DecisionZone and released guidance.
+The screen and default speech output consume the same actor update and one-shot
+prompt identity.
 The previous C2 simulation and K7 release remain bounded regression fixtures;
 they are not product coverage limits. The app still has no qualified
 whole-network released-road live-input authority, attached continuous location
@@ -451,6 +456,16 @@ exact adjacent-edge transition and JCT node and never become
 their reviewed branch path, Japanese sign target, and shields while stating
 that lane indices are not released. Any source-hash, snapshot, direction, node,
 edge, or occurrence drift suppresses the inset.
+
+For the current candidate snapshot, only Bayshore Route westbound to C2 outer
+at Oi JCT is compiled into occurrence-owned guidance. The route planner
+promotes the exact reviewed outgoing edge occurrence to `JUNCTION_MOVEMENT`;
+`ShutoPlannedRouteRuntimeCompiler` then binds its incoming occurrence as the
+anchor and compiles one DecisionZone plus one commit-stage
+`ReleasedGuidanceDefinition`. The App projects phone and voice from the same
+`NavigationSessionUpdate`. A branch-left or branch-right maneuver describes the
+reviewed movement without implying lane preparation; lane preparation remains
+`NONE`, and every unreviewed transition remains silent and neutral.
 
 The projector fails closed when prompt, anchor occurrence, movement occurrence,
 or DecisionZone identity is absent; the frame does not belong to the current
@@ -1630,15 +1645,19 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto simulation uses a separate schema-1.2 app checkpoint. It binds
-the same candidate network snapshot, directional entry and exit, selected
-preference, phase, and, after confirmed entry, exact route occurrence and
-fraction. An entry-transition checkpoint must retain zero route progress and no
-runtime occurrence or fraction. Restoration is paused, recompiles the
-route/corridor from the bundled graph, discards matcher posterior and partial
-entry continuity, and resumes from the first generated entrance observation.
-An expressway restore resumes at the saved occurrence but admits no new
-progress until another HIGH replay observation. It is not schema-2.0
+The whole-Shuto simulation uses a separate schema-1.3 app checkpoint. It binds
+the same candidate network snapshot, the complete replanned `RoutePlan`,
+directional entry and exit, selected preference, phase, consumed output prompt
+IDs, and, after confirmed entry, exact route occurrence and fraction. A prior
+schema or any `RoutePlan` content drift is not restored. An entry-transition
+checkpoint must retain zero route progress and no runtime occurrence or
+fraction. Restoration is paused, recompiles the route/corridor from the bundled
+graph, discards matcher posterior and partial entry continuity, and resumes from
+the first generated entrance observation. An expressway restore resumes at the
+saved occurrence but admits no new progress until another HIGH replay
+observation. App inactive/background cancels replay, stops current speech, and
+saves consumed prompt IDs so reconstruction cannot repeat an admitted command.
+This is termination recovery, not background navigation. It is not schema-2.0
 released-session evidence and cannot mint live-input authority.
 
 For the first small graph:

@@ -51,6 +51,8 @@ public struct ShutoRouteRuntimeProgress: Equatable, Sendable {
 public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   public let routePlan: RoutePlan
   public let matcherCorridor: RouteMatcherCorridor
+  public let decisionZones: [DecisionZoneProgressDefinition]
+  public let releasedGuidance: [ReleasedGuidanceDefinition]
 
   private let routeEdges: [RouteMatcherDirectedEdge]
   private let routeEdgeLengthsMeters: [Double]
@@ -60,11 +62,15 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   package init(
     routePlan: RoutePlan,
     matcherCorridor: RouteMatcherCorridor,
+    decisionZones: [DecisionZoneProgressDefinition],
+    releasedGuidance: [ReleasedGuidanceDefinition],
     routeEdges: [RouteMatcherDirectedEdge],
     routeEdgeLengthsMeters: [Double]
   ) {
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
+    self.decisionZones = decisionZones
+    self.releasedGuidance = releasedGuidance
     self.routeEdges = routeEdges
     self.routeEdgeLengthsMeters = routeEdgeLengthsMeters
 
@@ -163,6 +169,22 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       throw ShutoPlannedRouteRuntimeCompilationError
         .facilityBindingMismatch
     }
+    let reviewedMovementByIndex = Dictionary(
+      uniqueKeysWithValues: route.edges.indices.dropFirst().compactMap {
+        index -> (Int, ShutoJunctionMovementDefinition)? in
+        guard
+          let definition =
+            ShutoJunctionMovementCatalog.releasedDefinition(
+              database: database,
+              incoming: route.edges[index - 1],
+              outgoing: route.edges[index]
+            )
+        else {
+          return nil
+        }
+        return (index, definition)
+      }
+    )
     guard
       route.edges.count == route.routePlan.occurrences.count,
       !route.edges.isEmpty,
@@ -170,8 +192,12 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         .allSatisfy({
           offset, binding in
           let (occurrence, edge) = binding
-          return occurrence.index == offset
-            && occurrence.entityID == edge.edgeID
+          guard occurrence.index == offset else { return false }
+          if let reviewedMovement = reviewedMovementByIndex[offset] {
+            return occurrence.kind == .junctionMovement
+              && occurrence.entityID == reviewedMovement.id
+          }
+          return occurrence.entityID == edge.edgeID
             && occurrence.kind
               == (edge.kind == "LINK" ? .junctionMovement : .edge)
         })
@@ -298,11 +324,76 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         )
       }
     )
+    let guidanceMatches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    )
+    let decisionZones = guidanceMatches.map { match in
+      DecisionZoneProgressDefinition(
+        id:
+          "\(match.definition.id)."
+          + "\(match.outgoingOccurrenceID).decision-zone",
+        networkSnapshotID: database.networkSnapshotID,
+        routePlanID: route.routePlan.id,
+        movementOccurrenceID: match.outgoingOccurrenceID,
+        entryOffsetMeters: 0
+      )
+    }
+    let zonesByMovementOccurrenceID = Dictionary(
+      uniqueKeysWithValues: decisionZones.map {
+        ($0.movementOccurrenceID, $0)
+      }
+    )
+    let releasedGuidance = guidanceMatches.compactMap {
+      match -> ReleasedGuidanceDefinition? in
+      guard
+        let decisionZone =
+          zonesByMovementOccurrenceID[match.outgoingOccurrenceID]
+      else {
+        return nil
+      }
+      let definition = match.definition
+      let maneuver: GuidanceManeuver
+      switch definition.branchSide {
+      case .left:
+        maneuver = .branchLeft
+      case .right:
+        maneuver = .branchRight
+      case .straight:
+        maneuver = .stayMainline
+      }
+      return ReleasedGuidanceDefinition(
+        anchor: GuidanceAnchorDefinition(
+          occurrenceID: match.incomingOccurrenceID,
+          anchorID: "COMMIT",
+          promptID:
+            "\(definition.id)."
+            + "\(match.outgoingOccurrenceID).commit"
+        ),
+        triggerDistanceMeters:
+          definition.commitTriggerDistanceMeters,
+        frameTemplate: GuidanceFrameTemplate(
+          movementOccurrenceID: match.outgoingOccurrenceID,
+          decisionZoneID: decisionZone.id,
+          stage: .commit,
+          decisionPointNameJapanese: match.junctionNameJA,
+          localizedDecisionPointNames:
+            definition.localizedJunctionNames,
+          maneuver: maneuver,
+          lanePreparation: .none,
+          presentationSource: GuidancePresentationSource(
+            routeShields: definition.routeShields,
+            japaneseSignText: definition.japaneseSignText,
+            localizedContent: definition.localizedContent
+          )
+        )
+      )
+    }
     let issues = NavigationRuntimeConfigurationValidator.issues(
       routePlan: route.routePlan,
       matcherCorridor: corridor,
-      decisionZones: [],
-      releasedGuidance: []
+      decisionZones: decisionZones,
+      releasedGuidance: releasedGuidance
     )
     guard issues.isEmpty else {
       throw
@@ -323,6 +414,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     return ShutoPlannedRouteRuntimeAssets(
       routePlan: route.routePlan,
       matcherCorridor: corridor,
+      decisionZones: decisionZones,
+      releasedGuidance: releasedGuidance,
       routeEdges: routeMatcherEdges,
       routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
     )

@@ -117,9 +117,13 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoProductPreviewHost(startsNavigation: true)
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost(startsNavigation: true)
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-JUNCTION-PREVIEW"
       ) {
-        WholeShutoJunctionPreviewHost()
+        WholeShutoJunctionPreviewHost(startsNavigation: false)
       } else if ProcessInfo.processInfo.arguments.contains(
         "-LEGACY-PRODUCT-JOURNEY"
       ) {
@@ -153,15 +157,26 @@ struct KaidoRoutesApp: App {
 
 private struct WholeShutoJunctionPreviewHost: View {
   @StateObject private var model: WholeShutoProductModel
+  private let startsNavigation: Bool
 
-  init() {
+  init(startsNavigation: Bool) {
     let model = WholeShutoProductModel(checkpointStore: nil)
-    model.prepareJunctionPreview()
+    model.prepareJunctionPreview(startsNavigation: startsNavigation)
+    if startsNavigation {
+      model.togglePlayback()
+    }
+    self.startsNavigation = startsNavigation
     _model = StateObject(wrappedValue: model)
   }
 
   var body: some View {
     WholeShutoProductView(model: model)
+      .task {
+        guard startsNavigation else { return }
+        for _ in 0..<1_000 where model.activeJunctionPrompt == nil {
+          await model.advanceSimulationForTesting()
+        }
+      }
   }
 }
 

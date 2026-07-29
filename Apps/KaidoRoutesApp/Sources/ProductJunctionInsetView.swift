@@ -53,9 +53,9 @@ struct ProductJunctionInsetPresentation: Equatable {
 
     let selectedBranch: SelectedBranch
     switch surface.maneuver {
-    case .keepLeft, .takeExitLeft, .mergeLeft:
+    case .branchLeft, .keepLeft, .takeExitLeft, .mergeLeft:
       selectedBranch = .left
-    case .keepRight, .takeExitRight, .mergeRight:
+    case .branchRight, .keepRight, .takeExitRight, .mergeRight:
       selectedBranch = .right
     case .stayMainline:
       return nil

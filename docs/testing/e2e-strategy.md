@@ -561,6 +561,19 @@ operator facility coordinates. These checks prove composition and UI behavior
 only; they do not validate live MapKit output, release C2 route authority, or
 replace field qualification.
 
+The focused whole-Shuto suite compiles the exact reviewed Oi adjacent-edge
+transition into one `JUNCTION_MOVEMENT` occurrence, DecisionZone, and
+commit-stage guidance frame. Package tests require one actor emission with
+`BRANCH_LEFT`, no lane preparation, and the unchanged Japanese sign target.
+App model tests require phone and Japanese speech to consume that same actor
+projection, reject schema or complete-`RoutePlan` checkpoint drift, and suppress
+the output prompt after background save and reconstruction. XCUITest launches
+both the static review and deterministic actor-driven navigation previews; the
+latter must reach the Oi inset through session observations and expose a
+scheduled, speaking, or consumed voice state. This is simulator composition and
+lifecycle evidence only. It does not attach continuous Core Location, qualify
+acoustics, authorize a live road, or prove background navigation.
+
 The K7 operational E2E composes these boundaries without copying the real
 release into a portable synthetic scenario:
 

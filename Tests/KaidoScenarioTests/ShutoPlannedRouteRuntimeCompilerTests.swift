@@ -205,6 +205,61 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
   }
 
+  @Test("reviewed Oi movement emits one actor-owned branch prompt")
+  func emitsReviewedOiMovementGuidanceExactlyOnce() async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
+      exitFacilityID: "shuto.ic.c2.hatsudaiminami"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    #expect(assets.decisionZones.count == 1)
+    #expect(assets.releasedGuidance.count == 1)
+    let decisionZone = try #require(assets.decisionZones.first)
+    let guidance = try #require(assets.releasedGuidance.first)
+    #expect(
+      route.routePlan.occurrence(
+        id: decisionZone.movementOccurrenceID
+      )?.kind == .junctionMovement
+    )
+    #expect(guidance.frameTemplate.maneuver == .branchLeft)
+    #expect(guidance.frameTemplate.lanePreparation == .none)
+    #expect(
+      guidance.frameTemplate.presentationSource.japaneseSignText
+        == "東名・中央道"
+    )
+
+    let simulator = try NavigationDriveSimulator(
+      route: route,
+      runtimeAssets: assets,
+      configuration: NavigationDriveSimulationConfiguration(
+        sampleFractions: [0.15, 0.5, 0.85],
+        horizontalAccuracyMeters: 2
+      )
+    )
+    let results = try await simulator.runToEnd()
+    let emissions = results.compactMap {
+      $0.navigationUpdate?.guidancePromptEmission
+    }
+
+    #expect(emissions.count == 1)
+    #expect(emissions.first?.promptID == guidance.anchor.promptID)
+    #expect(
+      results.compactMap {
+        $0.navigationUpdate?.navigationSnapshot.activeGuidanceFrame
+      }.contains {
+        $0.movementOccurrenceID
+          == decisionZone.movementOccurrenceID
+          && $0.maneuver == .branchLeft
+          && $0.lanePreparation == .none
+      }
+    )
+  }
+
   @Test("degraded first-edge evidence cannot skip the selected entry")
   func degradedEntryEvidenceFailsClosed() async throws {
     let database = try loadWholeShutoDatabase()

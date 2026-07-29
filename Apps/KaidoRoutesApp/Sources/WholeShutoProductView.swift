@@ -1,9 +1,11 @@
 import CoreLocation
+import KaidoAppleAdapters
 import KaidoRouting
 import MapKit
 import SwiftUI
 
 struct WholeShutoProductView: View {
+  @Environment(\.scenePhase) private var scenePhase
   @StateObject private var model: WholeShutoProductModel
   @State private var showsNetworkFacts = false
 
@@ -50,6 +52,9 @@ struct WholeShutoProductView: View {
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-product")
     .accessibilityValue(model.phase.rawValue)
+    .onChange(of: scenePhase, initial: true) { _, newPhase in
+      model.handleScenePhase(newPhase.productRuntimePhase)
+    }
   }
 
   @ViewBuilder
@@ -593,6 +598,16 @@ struct WholeShutoProductView: View {
           .lineLimit(2)
       }
       Spacer()
+      Image(systemName: speechStatusSymbol)
+        .font(.system(size: 13, weight: .bold))
+        .foregroundStyle(
+          speechStatusIsBlocked
+            ? KaidoTheme.signalAmber
+            : KaidoTheme.routeWhite
+        )
+        .accessibilityIdentifier("whole-shuto-guidance-speech")
+        .accessibilityLabel("导航语音")
+        .accessibilityValue(speechStatusLabel)
       if let routeID = activeRouteShield {
         Text(shieldLabel(routeID))
           .font(.system(size: 12, weight: .black, design: .rounded))
@@ -735,6 +750,49 @@ struct WholeShutoProductView: View {
       return "路线完成"
     case .unavailable:
       return ""
+    }
+  }
+
+  private var speechStatusSymbol: String {
+    switch model.speechStatus {
+    case .scheduled, .speaking:
+      "speaker.wave.2.fill"
+    case .interrupted, .failed, .invalidProjection:
+      "speaker.slash.fill"
+    case .idle, .suppressed, .stopped:
+      "speaker.fill"
+    }
+  }
+
+  private var speechStatusLabel: String {
+    switch model.speechStatus {
+    case .idle:
+      model.hasConsumedActiveGuidancePrompt
+        ? "已播报"
+        : "等待已审核提示"
+    case .scheduled:
+      "已安排"
+    case .speaking:
+      "播报中"
+    case .suppressed(let reason):
+      "未重复播报 · \(reason.rawValue)"
+    case .interrupted:
+      "已被系统中断"
+    case .stopped:
+      "已暂停"
+    case .failed(let code):
+      "不可用 · \(code.rawValue)"
+    case .invalidProjection:
+      "提示身份不一致"
+    }
+  }
+
+  private var speechStatusIsBlocked: Bool {
+    switch model.speechStatus {
+    case .interrupted, .failed, .invalidProjection:
+      true
+    case .idle, .scheduled, .speaking, .suppressed, .stopped:
+      false
     }
   }
 

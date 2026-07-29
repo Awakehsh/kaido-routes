@@ -1,8 +1,10 @@
 import Combine
 import CoreLocation
 import Foundation
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoPresentation
 import KaidoRouting
 @preconcurrency import MapKit
 
@@ -71,7 +73,7 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.2"
+  static let currentSchemaVersion = "1.3"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -81,11 +83,13 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let destination: WholeShutoPlace
   let entryFacilityID: String
   let exitFacilityID: String
+  let routePlan: RoutePlan
   let preference: ShutoRoutePreference
   let phase: WholeShutoJourneyPhase
   let progressFraction: Double
   let runtimeOccurrenceID: String?
   let runtimeFractionAlongOccurrence: Double?
+  let consumedGuidancePromptIDs: [String]?
   let mapMode: WholeShutoMapMode
   let accessRoute: WholeShutoSurfaceRoute?
   let egressRoute: WholeShutoSurfaceRoute?
@@ -200,6 +204,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var runtimeOccurrenceID: String?
   @Published private(set) var runtimeJourneyPhase: JourneyPhase?
   @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
+  @Published private(set) var presentationProjection: NavigationPresentationProjection?
+  @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
 
   let database: ShutoNetworkDatabase
   let planner: ShutoRoutePlanner
@@ -207,12 +213,17 @@ final class WholeShutoProductModel: ObservableObject {
   private let locationProvider: any C2NavigationCurrentLocationProviding
   private let placeResolver: any C2NavigationPlaceResolving
   private let checkpointStore: (any WholeShutoJourneyCheckpointStoring)?
+  private let speechOutput: any GuidanceSpeechOutput
+  private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
+  private var speechCoordinator: GuidanceSpeechCoordinator?
+  private var consumedGuidancePromptIDs: Set<String> = []
+  private var isStaticJunctionPreview = false
 
   init(
     database: ShutoNetworkDatabase? = nil,
@@ -223,7 +234,18 @@ final class WholeShutoProductModel: ObservableObject {
     placeResolver: any C2NavigationPlaceResolving =
       C2MapKitPlaceResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
-      WholeShutoUserDefaultsCheckpointStore()
+      WholeShutoUserDefaultsCheckpointStore(),
+    speechOutput: (any GuidanceSpeechOutput)? = nil,
+    languageSelectionProvider:
+      @escaping () -> NavigationLanguageSelection = {
+        let settings = UserDefaultsKaidoLanguagePreferenceStore()
+        return NavigationLanguageSelection(
+          interfaceLocale:
+            settings.interfaceLocale() ?? .simplifiedChinese,
+          guidanceVoiceLocale:
+            settings.guidanceVoiceLocale() ?? .japanese
+        )
+      }
   ) {
     let resolvedDatabase: ShutoNetworkDatabase
     do {
@@ -238,6 +260,8 @@ final class WholeShutoProductModel: ObservableObject {
     self.locationProvider = locationProvider
     self.placeResolver = placeResolver
     self.checkpointStore = checkpointStore
+    self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
+    self.languageSelectionProvider = languageSelectionProvider
     waysByID = Dictionary(
       uniqueKeysWithValues: resolvedDatabase.ways.map {
         ($0.wayID, $0)
@@ -288,10 +312,25 @@ final class WholeShutoProductModel: ObservableObject {
 
   var activeJunctionPrompt: WholeShutoJunctionPrompt? {
     guard phase == .expressway else { return nil }
-    return junctionPrompts.first {
-      let delta = $0.progressFraction - progressFraction
-      return delta >= 0 && delta <= 0.035
+    if isStaticJunctionPreview {
+      return junctionPrompts.first
     }
+    guard let surface = presentationProjection?.iPhone else {
+      return nil
+    }
+    return junctionPrompts.first {
+      $0.incomingOccurrenceID
+        == surface.guidanceAnchorOccurrenceID
+        && $0.outgoingOccurrenceID
+          == surface.nextMovementOccurrenceID
+    }
+  }
+
+  var hasConsumedActiveGuidancePrompt: Bool {
+    guard let promptID = presentationProjection?.voice.promptID else {
+      return false
+    }
+    return consumedGuidancePromptIDs.contains(promptID)
   }
 
   var positionState: WholeShutoPositionState {
@@ -393,7 +432,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  func prepareJunctionPreview() {
+  func prepareJunctionPreview(startsNavigation: Bool = false) {
     do {
       let route = try planner.plan(
         entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
@@ -432,6 +471,12 @@ final class WholeShutoProductModel: ObservableObject {
         failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
         return
       }
+      if startsNavigation {
+        phase = .review
+        startNavigationSimulation()
+        return
+      }
+      isStaticJunctionPreview = true
       phase = .expressway
       progressFraction = max(0, prompt.progressFraction - 0.012)
       isPlaying = false
@@ -523,6 +568,7 @@ final class WholeShutoProductModel: ObservableObject {
         ),
         speed: .twentyTimes
       )
+      try configureSpeech(for: route.routePlan.id)
     } catch {
       failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
       return
@@ -536,6 +582,9 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryStatus = nil
     runtimeCoordinate = nil
     runtimeFractionAlongOccurrence = nil
+    presentationProjection = nil
+    consumedGuidancePromptIDs = []
+    isStaticJunctionPreview = false
     restoredFromCheckpoint = false
     persistCheckpoint()
     startPlaybackLoop()
@@ -551,6 +600,7 @@ final class WholeShutoProductModel: ObservableObject {
         guard await restoreObservationReplayIfNeeded() else {
           return
         }
+        speechCoordinator?.resume()
         restoredFromCheckpoint = false
         persistCheckpoint()
         startPlaybackLoop()
@@ -558,6 +608,7 @@ final class WholeShutoProductModel: ObservableObject {
     } else {
       playbackTask?.cancel()
       playbackTask = nil
+      speechCoordinator?.stop()
     }
   }
 
@@ -566,6 +617,7 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     if phase == .entryTransition || phase == .expressway {
+      speechCoordinator?.resume()
       Task {
         await stepObservationReplay()
       }
@@ -579,6 +631,7 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     if phase == .entryTransition || phase == .expressway {
+      speechCoordinator?.resume()
       guard await restoreObservationReplayIfNeeded() else { return }
       await stepObservationReplay()
     } else {
@@ -589,6 +642,8 @@ final class WholeShutoProductModel: ObservableObject {
   func reset() {
     playbackTask?.cancel()
     playbackTask = nil
+    speechCoordinator?.stop()
+    speechCoordinator = nil
     phase = .planning
     origin = nil
     destination = nil
@@ -606,10 +661,29 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryStatus = nil
     runtimeCoordinate = nil
     runtimeFractionAlongOccurrence = nil
+    presentationProjection = nil
+    speechStatus = .idle
+    consumedGuidancePromptIDs = []
     runtimeAssets = nil
     driveSimulator = nil
+    isStaticJunctionPreview = false
     restoredFromCheckpoint = false
     try? checkpointStore?.remove()
+  }
+
+  func handleScenePhase(
+    _ scenePhase: ProductNavigationRuntimeScenePhase
+  ) {
+    switch scenePhase {
+    case .active:
+      speechCoordinator?.resume()
+    case .inactive, .background:
+      playbackTask?.cancel()
+      playbackTask = nil
+      isPlaying = false
+      speechCoordinator?.stop()
+      persistCheckpoint()
+    }
   }
 
   private func startPlaybackLoop() {
@@ -659,6 +733,7 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying = false
       playbackTask?.cancel()
       playbackTask = nil
+      speechCoordinator?.stop()
     case .planning, .review, .completed:
       break
     }
@@ -743,6 +818,7 @@ final class WholeShutoProductModel: ObservableObject {
     matcherConfidence = update.matcherEstimate.confidence
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
+    publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
       isPlaying = false
       playbackTask?.cancel()
@@ -773,6 +849,67 @@ final class WholeShutoProductModel: ObservableObject {
     persistCheckpoint()
   }
 
+  private func configureSpeech(for routePlanID: String) throws {
+    speechCoordinator?.stop()
+    let coordinator = try GuidanceSpeechCoordinator(
+      expectedRoutePlanID: routePlanID,
+      output: speechOutput
+    )
+    coordinator.statusDidChange = { [weak self] status in
+      self?.speechStatus = status
+    }
+    speechCoordinator = coordinator
+    speechStatus = .idle
+  }
+
+  private func publishPresentationAndScheduleSpeech(
+    from update: NavigationSessionUpdate
+  ) {
+    guard
+      phase == .entryTransition || phase == .expressway,
+      let frame = update.navigationSnapshot.activeGuidanceFrame
+    else {
+      presentationProjection = nil
+      return
+    }
+    do {
+      let projection = try NavigationPresentationProjector.project(
+        NavigationPresentationRequest(
+          snapshot: update.navigationSnapshot,
+          networkSnapshotID: database.networkSnapshotID,
+          guidanceFrame: frame,
+          promptEmission: update.guidancePromptEmission,
+          languages: languageSelectionProvider(),
+          passageEvidence: .noKnownConflictRealtimeUnconfirmed,
+          drivingContext: PresentationDrivingContext(
+            isVehicleMoving: true,
+            isInsideDecisionZone: true
+          )
+        )
+      )
+      presentationProjection = projection
+      guard let emission = update.guidancePromptEmission else {
+        return
+      }
+      guard
+        consumedGuidancePromptIDs.insert(emission.promptID).inserted
+      else {
+        speechStatus = .suppressed(.duplicate)
+        return
+      }
+      guard let speechCoordinator else {
+        speechStatus = .invalidProjection
+        return
+      }
+      speechStatus = speechCoordinator.submit(projection)
+    } catch {
+      presentationProjection = nil
+      if update.guidancePromptEmission != nil {
+        speechStatus = .invalidProjection
+      }
+    }
+  }
+
   private func completeExpresswayObservationReplay() {
     guard phase == .expressway else {
       isPlaying = false
@@ -797,6 +934,7 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeOccurrenceID = nil
     runtimeFractionAlongOccurrence = nil
     runtimeCoordinate = selectedRoute?.coordinates.last
+    presentationProjection = nil
     persistCheckpoint()
     if isPlaying {
       startPlaybackLoop()
@@ -840,7 +978,8 @@ final class WholeShutoProductModel: ObservableObject {
         entryFacilityID: checkpoint.entryFacilityID,
         exitFacilityID: checkpoint.exitFacilityID,
         preference: checkpoint.preference
-      )
+      ),
+      route.routePlan == checkpoint.routePlan
     else {
       return
     }
@@ -868,6 +1007,9 @@ final class WholeShutoProductModel: ObservableObject {
     mapMode = checkpoint.mapMode
     isPlaying = false
     restoredFromCheckpoint = true
+    consumedGuidancePromptIDs = Set(
+      checkpoint.consumedGuidancePromptIDs ?? []
+    )
     if checkpoint.phase == .entryTransition
       || checkpoint.phase == .expressway
     {
@@ -886,6 +1028,7 @@ final class WholeShutoProductModel: ObservableObject {
           ),
           speed: .twentyTimes
         )
+        try configureSpeech(for: route.routePlan.id)
         if checkpoint.phase == .entryTransition {
           guard
             checkpoint.runtimeOccurrenceID == nil,
@@ -920,6 +1063,8 @@ final class WholeShutoProductModel: ObservableObject {
           )
         }
       } catch {
+        speechCoordinator?.stop()
+        speechCoordinator = nil
         runtimeAssets = nil
         driveSimulator = nil
         failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
@@ -942,12 +1087,15 @@ final class WholeShutoProductModel: ObservableObject {
       destination: destination,
       entryFacilityID: route.entryFacility.facilityID,
       exitFacilityID: route.exitFacility.facilityID,
+      routePlan: route.routePlan,
       preference: preference,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,
       runtimeFractionAlongOccurrence:
         runtimeFractionAlongOccurrence,
+      consumedGuidancePromptIDs:
+        consumedGuidancePromptIDs.sorted(),
       mapMode: mapMode,
       accessRoute: accessRoute,
       egressRoute: egressRoute

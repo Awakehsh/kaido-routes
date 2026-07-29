@@ -830,13 +830,18 @@ private struct NavigationDriveSimulationRuntime: Sendable {
         "whole-Shuto simulation entry requires two distinct ordered route edges"
       ])
     }
+    guard runtimeAssets.routePlan == route.routePlan else {
+      throw NavigationDriveSimulationError.invalidConfiguration([
+        "whole-Shuto runtime assets do not match the selected route"
+      ])
+    }
     runtimeID = "synthetic.\(route.routePlan.id)"
     routePlan = route.routePlan
     matcherCorridor = runtimeAssets.matcherCorridor
     recoveryCandidates = []
     egressOptions = []
-    decisionZones = []
-    releasedGuidance = []
+    decisionZones = runtimeAssets.decisionZones
+    releasedGuidance = runtimeAssets.releasedGuidance
     syntheticEntryTransition = EntryTransition(
       facilityID: route.entryFacility.facilityID,
       directedEdgeIDs: [

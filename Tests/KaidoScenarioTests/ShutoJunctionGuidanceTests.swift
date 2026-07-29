@@ -57,6 +57,24 @@ struct ShutoJunctionGuidanceTests {
       match.outgoingOccurrenceID
         == route.routePlan.occurrences[incomingIndex + 1].id
     )
+    #expect(
+      route.routePlan.occurrences[incomingIndex + 1].kind
+        == .junctionMovement
+    )
+    #expect(
+      route.routePlan.occurrences[incomingIndex + 1].entityID
+        == definition.id
+    )
+    #expect(
+      definition.localizedContent[.simplifiedChinese]?.displayText
+        == "向左分岔，驶入 C2 外环"
+    )
+    #expect(
+      definition.localizedContent.values.allSatisfy {
+        $0.preservedJapaneseSignText == "東名・中央道"
+      }
+    )
+    #expect(definition.commitTriggerDistanceMeters == 100)
     #expect(match.progressFraction > 0)
     #expect(match.progressFraction < 1)
   }

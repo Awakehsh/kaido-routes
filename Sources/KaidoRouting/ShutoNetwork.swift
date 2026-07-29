@@ -554,11 +554,22 @@ public struct ShutoRoutePlanner: Sendable {
       $0 + $1.lengthMeters
     }
     let occurrences = routeEdges.enumerated().map { index, edge in
-      RouteOccurrence(
+      let reviewedMovement =
+        index > 0
+        ? ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: routeEdges[index - 1],
+          outgoing: edge
+        )
+        : nil
+      return RouteOccurrence(
         id: "shuto.\(index).\(edge.edgeID)",
         index: index,
-        kind: edge.kind == "LINK" ? .junctionMovement : .edge,
-        entityID: edge.edgeID,
+        kind:
+          reviewedMovement != nil || edge.kind == "LINK"
+          ? .junctionMovement
+          : .edge,
+        entityID: reviewedMovement?.id ?? edge.edgeID,
         tollDomainID: "shuto.toll-domain"
       )
     }

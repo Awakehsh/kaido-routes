@@ -140,6 +140,8 @@ public enum GuidancePromptStage: String, Codable, Sendable {
 
 public enum GuidanceManeuver: String, Codable, Sendable {
   case stayMainline = "STAY_MAINLINE"
+  case branchLeft = "BRANCH_LEFT"
+  case branchRight = "BRANCH_RIGHT"
   case keepLeft = "KEEP_LEFT"
   case keepRight = "KEEP_RIGHT"
   case takeExitLeft = "TAKE_EXIT_LEFT"

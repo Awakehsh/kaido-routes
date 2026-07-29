@@ -35,8 +35,10 @@ internal review workbench.
   route-label changes and nearest-JCT geometry cannot create one.
 - The first reviewed whole-network movement is Bayshore Route westbound to C2
   outer at Oi JCT. Its Kaido vector, left-branch instruction, Japanese sign
-  target, and route shields are operator-source-traceable. Lane indices remain
-  explicitly unreleased.
+  target, and route shields are operator-source-traceable. The exact outgoing
+  occurrence is compiled into actor-owned screen and one-shot speech guidance.
+  Lane indices remain explicitly unreleased, and unreviewed transitions remain
+  silent.
 - IC, JCT, and PA labels stay in Japanese. Product UI can continue to support
   Japanese, Simplified Chinese, and English independently from guidance voice.
 
@@ -111,6 +113,7 @@ Useful visual launch arguments:
 - `-WHOLE-SHUTO-ROUTE-PREVIEW`
 - `-WHOLE-SHUTO-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-JUNCTION-PREVIEW`
+- `-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW`
 - `-C2-FULL-NAVIGATION-DEMO` for the retained C2 deterministic fixture
 - `-K7-OPERATIONAL-E2E` for the retained K7 release fixture
 

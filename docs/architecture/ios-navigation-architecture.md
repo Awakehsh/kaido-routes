@@ -602,6 +602,18 @@ termination. It is intentionally labeled `SIMULATION`; without a released C2
 graph, provider identity, `JourneyPlan`, matcher corridor, and field evidence,
 it cannot create a `KaidoProductNavigationRuntime`.
 
+The C2 demonstration has a separate schema-1.0 app-private simulation
+checkpoint. It stores the resolved endpoints, accepted surface candidates,
+phase, step index, and ordered expressway occurrence progress in Application
+Support and binds them to the exact bundled geographic-route database ID.
+Relaunch restoration always enters a paused state and requires an explicit
+resume; completion and confirmed ending remove the file. Decode failure,
+database drift, invalid route boundaries, and explicit highway/toll candidates
+fail restoration and remain visible as a recoverable UI warning. This
+checkpoint may contain the user's local endpoint coordinates, is never bundled,
+tracked, exported, or treated as matcher evidence, and cannot create released
+navigation authority.
+
 The completed return `JourneyPlan` fixes one exact egress option, and runtime
 configuration filters Finish behavior to that option instead of asking
 `EgressPlanner` to choose another released exit. `FINISH_DRIVE` activates the
@@ -1572,6 +1584,11 @@ The live-session checkpoint is separate from graph storage and saved routes:
   CarPlay ownership, active audio, or a one-shot prompt emission; and
 - require a fresh multi-observation location window before measured progress
   resumes.
+
+The C2 simulation checkpoint is deliberately separate from this released
+live-session checkpoint. Its provider coordinates and playback index restore
+only local demonstration continuity, never a measured marker or release-owned
+state.
 
 For the first small graph:
 

@@ -5,7 +5,7 @@ import KaidoAppleAdapters
 import KaidoSurfaceRouting
 @preconcurrency import MapKit
 
-enum C2NavigationDemoPhase: String, Equatable, Sendable {
+enum C2NavigationDemoPhase: String, Codable, Equatable, Hashable, Sendable {
   case planning = "PLANNING"
   case routing = "ROUTING"
   case review = "REVIEW"
@@ -18,7 +18,7 @@ enum C2NavigationDemoPhase: String, Equatable, Sendable {
   case failed = "FAILED"
 }
 
-enum C2NavigationSuspensionReason: String, Equatable, Sendable {
+enum C2NavigationSuspensionReason: String, Codable, Equatable, Sendable {
   case userPaused = "USER_PAUSED"
   case appInactive = "APP_INACTIVE"
 }
@@ -32,7 +32,7 @@ enum C2NavigationDemoHighwayInstruction: Equatable, Sendable {
   case hatsudaiExit
 }
 
-struct C2NavigationResolvedPlace: Equatable, Sendable {
+struct C2NavigationResolvedPlace: Codable, Equatable, Sendable {
   let title: String
   let coordinate: SurfaceCoordinate
 }
@@ -212,11 +212,14 @@ final class C2NavigationDemoModel: ObservableObject {
   @Published private(set) var isPlaying = false
   @Published private(set) var suspensionReason: C2NavigationSuspensionReason?
   @Published private(set) var failureCode: String?
+  @Published private(set) var checkpointNoticeCode: String? = nil
+  @Published private(set) var restoredFromCheckpoint = false
 
   private let locationProvider: any C2NavigationCurrentLocationProviding
   private let placeResolver: any C2NavigationPlaceResolving
   private let surfaceProvider: any SurfaceRouteProvider
   private let playbackInterval: Duration
+  private let checkpointStore: (any C2NavigationSimulationCheckpointStoring)?
   private var playbackTask: Task<Void, Never>?
   private var transitionTick = 0
 
@@ -230,7 +233,9 @@ final class C2NavigationDemoModel: ObservableObject {
       C2MapKitPlaceResolver(),
     surfaceProvider: any SurfaceRouteProvider =
       MapKitSurfaceRouteProvider(),
-    playbackInterval: Duration = .milliseconds(450)
+    playbackInterval: Duration = .milliseconds(450),
+    checkpointStore:
+      (any C2NavigationSimulationCheckpointStoring)? = nil
   ) {
     self.originQuery = originQuery
     self.destinationQuery = destinationQuery
@@ -239,6 +244,8 @@ final class C2NavigationDemoModel: ObservableObject {
     self.placeResolver = placeResolver
     self.surfaceProvider = surfaceProvider
     self.playbackInterval = playbackInterval
+    self.checkpointStore = checkpointStore
+    restoreCheckpointIfAvailable()
   }
 
   deinit {
@@ -259,6 +266,15 @@ final class C2NavigationDemoModel: ObservableObject {
       && destination != nil
       && accessRoute != nil
       && egressRoute != nil
+  }
+
+  var hasRestorableJourney: Bool {
+    Self.checkpointablePhases.contains(phase)
+      && origin != nil
+      && destination != nil
+      && accessRoute != nil
+      && egressRoute != nil
+      && !isPlaying
   }
 
   var surfaceDistanceMeters: Double? {
@@ -382,6 +398,9 @@ final class C2NavigationDemoModel: ObservableObject {
     phase = .routing
     suspensionReason = nil
     failureCode = nil
+    checkpointNoticeCode = nil
+    restoredFromCheckpoint = false
+    removeCheckpoint()
     do {
       let resolvedOrigin = try await resolveOrigin()
       let resolvedDestination = try await placeResolver.resolve(
@@ -443,6 +462,7 @@ final class C2NavigationDemoModel: ObservableObject {
     guard isPlaying else { return }
     stopPlayback()
     suspensionReason = .userPaused
+    persistCheckpoint()
   }
 
   func resume() {
@@ -456,6 +476,8 @@ final class C2NavigationDemoModel: ObservableObject {
       return
     }
     suspensionReason = nil
+    restoredFromCheckpoint = false
+    persistCheckpoint()
     isPlaying = true
     playbackTask = Task { [weak self] in
       guard let self else { return }
@@ -485,6 +507,7 @@ final class C2NavigationDemoModel: ObservableObject {
     expresswayOccurrenceFraction = 0
     transitionTick = 0
     suspensionReason = nil
+    restoredFromCheckpoint = false
     resume()
   }
 
@@ -501,7 +524,10 @@ final class C2NavigationDemoModel: ObservableObject {
     expresswayOccurrenceFraction = 0
     suspensionReason = nil
     failureCode = nil
+    checkpointNoticeCode = nil
+    restoredFromCheckpoint = false
     transitionTick = 0
+    removeCheckpoint()
   }
 
   func reset() {
@@ -517,7 +543,10 @@ final class C2NavigationDemoModel: ObservableObject {
     expresswayOccurrenceFraction = 0
     suspensionReason = nil
     failureCode = nil
+    checkpointNoticeCode = nil
+    restoredFromCheckpoint = false
     transitionTick = 0
+    removeCheckpoint()
   }
 
   func handleAppActiveState(isActive: Bool) {
@@ -525,6 +554,7 @@ final class C2NavigationDemoModel: ObservableObject {
     guard isPlaying else { return }
     stopPlayback()
     suspensionReason = .appInactive
+    persistCheckpoint()
   }
 
   func advanceOneTickForTesting() {
@@ -569,6 +599,11 @@ final class C2NavigationDemoModel: ObservableObject {
     case .planning, .routing, .review, .completed, .failed:
       break
     }
+    if phase == .completed {
+      removeCheckpoint()
+    } else {
+      persistCheckpoint()
+    }
   }
 
   private func advanceSurfaceRoute(
@@ -593,6 +628,76 @@ final class C2NavigationDemoModel: ObservableObject {
     playbackTask?.cancel()
     playbackTask = nil
     isPlaying = false
+  }
+
+  private func restoreCheckpointIfAvailable() {
+    guard let checkpointStore else { return }
+    do {
+      guard let checkpoint = try checkpointStore.load() else {
+        return
+      }
+      originQuery = checkpoint.originQuery
+      destinationQuery = checkpoint.destinationQuery
+      origin = checkpoint.origin
+      destination = checkpoint.destination
+      accessRoute = checkpoint.accessRoute
+      egressRoute = checkpoint.egressRoute
+      phase = checkpoint.phase
+      surfaceProgressFraction = checkpoint.surfaceProgressFraction
+      surfaceStepIndex = checkpoint.surfaceStepIndex
+      expresswayOccurrenceIndex =
+        checkpoint.expresswayOccurrenceIndex
+      expresswayOccurrenceFraction =
+        checkpoint.expresswayOccurrenceFraction
+      transitionTick = checkpoint.transitionTick
+      suspensionReason = .appInactive
+      restoredFromCheckpoint = true
+    } catch {
+      checkpointNoticeCode = Self.checkpointErrorCode(error)
+      try? checkpointStore.remove()
+    }
+  }
+
+  private func persistCheckpoint() {
+    guard
+      let checkpointStore,
+      Self.checkpointablePhases.contains(phase),
+      let origin,
+      let destination,
+      let accessRoute,
+      let egressRoute
+    else {
+      return
+    }
+    do {
+      try checkpointStore.save(
+        C2NavigationSimulationCheckpoint(
+          originQuery: originQuery,
+          destinationQuery: destinationQuery,
+          origin: origin,
+          destination: destination,
+          accessRoute: accessRoute,
+          egressRoute: egressRoute,
+          phase: phase,
+          surfaceProgressFraction: surfaceProgressFraction,
+          surfaceStepIndex: surfaceStepIndex,
+          expresswayOccurrenceIndex: expresswayOccurrenceIndex,
+          expresswayOccurrenceFraction: expresswayOccurrenceFraction,
+          transitionTick: transitionTick
+        )
+      )
+      checkpointNoticeCode = nil
+    } catch {
+      checkpointNoticeCode = Self.checkpointErrorCode(error)
+    }
+  }
+
+  private func removeCheckpoint() {
+    do {
+      try checkpointStore?.remove()
+    } catch {
+      checkpointNoticeCode = Self.checkpointErrorCode(error)
+    }
   }
 
   private func resolveOrigin() async throws -> C2NavigationResolvedPlace {
@@ -694,6 +799,25 @@ final class C2NavigationDemoModel: ObservableObject {
     return "\(nsError.domain).\(nsError.code)"
   }
 
+  private static func checkpointErrorCode(
+    _ error: any Error
+  ) -> String {
+    if let error =
+      error as? C2NavigationSimulationCheckpointStoreError
+    {
+      return error.code
+    }
+    return "C2_CHECKPOINT_UNKNOWN_FAILURE"
+  }
+
+  private static let checkpointablePhases: Set<C2NavigationDemoPhase> = [
+    .surfaceAccess,
+    .entryTransition,
+    .expressway,
+    .exitTransition,
+    .surfaceEgress,
+  ]
+
   /// Current operator facility point, checked 2026-07-29:
   /// https://www.shutoko.jp/use/network/map/route-c2/tomigaya/
   nonisolated static let tomigayaEntranceCoordinate = SurfaceCoordinate(
@@ -711,6 +835,20 @@ final class C2NavigationDemoModel: ObservableObject {
 
 @MainActor
 extension C2NavigationDemoModel {
+  static func production() -> C2NavigationDemoModel {
+    do {
+      return C2NavigationDemoModel(
+        checkpointStore:
+          try FileC2NavigationSimulationCheckpointStore
+          .applicationSupport()
+      )
+    } catch {
+      let model = C2NavigationDemoModel()
+      model.checkpointNoticeCode = checkpointErrorCode(error)
+      return model
+    }
+  }
+
   static func preview(
     phase requestedPhase: C2NavigationDemoPhase = .planning,
     expresswayOccurrenceIndex: Int = 0
@@ -748,6 +886,16 @@ extension C2NavigationDemoModel {
       model.surfaceStepIndex =
         max(0, C2PreviewSurfaceRouteProvider.egressCandidate.steps.count - 1)
     }
+    return model
+  }
+
+  static func restoredPreview() -> C2NavigationDemoModel {
+    let model = preview(
+      phase: .expressway,
+      expresswayOccurrenceIndex: 9
+    )
+    model.suspensionReason = .appInactive
+    model.restoredFromCheckpoint = true
     return model
   }
 }

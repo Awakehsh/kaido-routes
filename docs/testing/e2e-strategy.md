@@ -551,12 +551,15 @@ providers to execute the complete visual lifecycle without a live network:
 arbitrary endpoints, parked pre-drive review, explicit navigation start,
 surface access, entry transition, all ordered C2 + B occurrences, automatic
 Kasai-right and Oi-left junction insets, tunnel degradation, App-inactive
-suspension with explicit resume, exit transition, and surface egress. The
-default-journey UI test additionally requires the C2 map to be primary while K7
-remains an ordinary catalog entry. Model tests retain the exact checked operator
-facility coordinates. These checks prove composition and UI behavior only; they
-do not validate live MapKit output, release C2 route authority, or replace field
-qualification.
+suspension with explicit resume, exit transition, and surface egress. Checkpoint
+tests require exact file round-trip, route-database drift rejection, and paused
+restoration at the same occurrence progress. The default-journey UI tests
+additionally require the C2 map to be primary while K7 remains an ordinary
+catalog entry, and require `Continue previous route` to open the restored drive
+without advancing until the user resumes. Model tests retain the exact checked
+operator facility coordinates. These checks prove composition and UI behavior
+only; they do not validate live MapKit output, release C2 route authority, or
+replace field qualification.
 
 The K7 operational E2E composes these boundaries without copying the real
 release into a portable synthetic scenario:

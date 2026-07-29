@@ -176,6 +176,35 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testHomeContinuesRestoredC2JourneyOnlyAfterExplicitResume() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-PRODUCT-JOURNEY-C2-RESTORE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let route = reveal("product-route-option-c2-complete", in: app)
+    XCTAssertEqual(route.value as? String, "RESTORABLE")
+    route.tap()
+
+    let navigation = element("c2-full-navigation", in: app)
+    XCTAssertTrue(navigation.waitForExistence(timeout: 5))
+    XCTAssertEqual(navigation.value as? String, "EXPRESSWAY")
+    XCTAssertEqual(
+      element("c2-navigation-suspended", in: app).value as? String,
+      "APP_INACTIVE"
+    )
+
+    app.buttons["c2-navigation-play-pause"].tap()
+
+    XCTAssertFalse(
+      element("c2-navigation-suspended", in: app).exists
+    )
+  }
+
   func testSettingsKeepInterfaceAndGuidanceVoiceIndependent() {
     continueAfterFailure = false
     let app = launchProduct()

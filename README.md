@@ -33,11 +33,14 @@ distance and duration, and fixed expressway choices visible together. The
 expressway surface provides a normal current-route map and a whole-route
 IC/JCT/PA view, with automatic right-branch guidance at Kasai and left-branch
 guidance at Oi. Leaving the App pauses progress and requires an explicit resume;
-stopping or closing an active drive requires confirmation. The operator facts
-and directional facilities were checked on 2026-07-29, but the C2 sequence is
-still a clearly labeled simulation, not a released `KaidoProductRelease`, live
-matcher, traffic claim, or field qualification. MapKit resolution and surface
-routing require its service to be available.
+relaunching restores the same locally saved simulation phase as paused, and the
+Routes screen offers `Continue previous route`. Completion or confirmed ending
+removes that private checkpoint. A checkpoint is bound to the exact bundled C2
+geographic database and cannot grant position or route authority. The operator
+facts and directional facilities were checked on 2026-07-29, but the C2
+sequence is still a clearly labeled simulation, not a released
+`KaidoProductRelease`, live matcher, traffic claim, or field qualification.
+MapKit resolution and surface routing require its service to be available.
 
 One persisted `Map | Lines` control remains shared by the released-route
 journey. `Map` renders the selected released matcher corridor over a real MapKit

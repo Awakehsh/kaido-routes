@@ -108,6 +108,13 @@ struct C2NavigationDemoView: View {
           failureNotice(failureCode)
         }
 
+        if let checkpointNoticeCode = model.checkpointNoticeCode {
+          checkpointNotice(
+            checkpointNoticeCode,
+            usesDarkStyle: false
+          )
+        }
+
         planningActions
       }
       .padding(.horizontal, 16)
@@ -567,6 +574,12 @@ struct C2NavigationDemoView: View {
       if let suspensionReason = model.suspensionReason {
         suspensionNotice(suspensionReason)
       }
+      if let checkpointNoticeCode = model.checkpointNoticeCode {
+        checkpointNotice(
+          checkpointNoticeCode,
+          usesDarkStyle: true
+        )
+      }
 
       if model.phase == .expressway {
         mapLayerControl
@@ -909,18 +922,27 @@ struct C2NavigationDemoView: View {
         .foregroundStyle(KaidoTheme.routeWhite)
 
         Text(
-          reason == .appInactive
+          model.restoredFromCheckpoint
             ? copy.resolve(
-              japanese: "App が非アクティブになりました。現在位置を確認してから再開してください。",
-              simplifiedChinese: "App 曾进入后台。确认当前位置后再继续。",
+              japanese:
+                "保存したシミュレーション位置を復元しました。現在位置を確認してから再開してください。",
+              simplifiedChinese:
+                "已恢复保存的模拟位置。确认当前位置后再继续。",
               english:
-                "The app became inactive. Confirm your position before resuming."
+                "Saved simulation progress was restored. Confirm your position before resuming."
             )
-            : copy.resolve(
-              japanese: "再開するまで経路進行は更新されません。",
-              simplifiedChinese: "继续之前不会更新路线进度。",
-              english: "Route progress will not update until you resume."
-            )
+            : reason == .appInactive
+              ? copy.resolve(
+                japanese: "App が非アクティブになりました。現在位置を確認してから再開してください。",
+                simplifiedChinese: "App 曾进入后台。确认当前位置后再继续。",
+                english:
+                  "The app became inactive. Confirm your position before resuming."
+              )
+              : copy.resolve(
+                japanese: "再開するまで経路進行は更新されません。",
+                simplifiedChinese: "继续之前不会更新路线进度。",
+                english: "Route progress will not update until you resume."
+              )
         )
         .font(.system(size: 9, weight: .bold))
         .foregroundStyle(KaidoTheme.muted)
@@ -939,6 +961,82 @@ struct C2NavigationDemoView: View {
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("c2-navigation-suspended")
     .accessibilityValue(reason.rawValue)
+  }
+
+  private func checkpointNotice(
+    _ code: String,
+    usesDarkStyle: Bool
+  ) -> some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: "externaldrive.badge.exclamationmark")
+        .font(.system(size: 16, weight: .black))
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(
+          checkpointNoticeTitle(code)
+        )
+        .font(.system(size: 11, weight: .black, design: .rounded))
+
+        Text(
+          checkpointNoticeDetail(code)
+        )
+        .font(.system(size: 9, weight: .bold))
+      }
+
+      Spacer(minLength: 0)
+    }
+    .foregroundStyle(
+      usesDarkStyle ? KaidoTheme.signalAmber : KaidoTheme.evidenceCoral
+    )
+    .padding(11)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(
+      usesDarkStyle
+        ? KaidoTheme.instrument
+        : KaidoTheme.evidenceCoral.opacity(0.08)
+    )
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("c2-navigation-checkpoint-warning")
+    .accessibilityValue(code)
+  }
+
+  private func checkpointNoticeTitle(_ code: String) -> String {
+    if isCheckpointRestoreFailure(code) {
+      return copy.resolve(
+        japanese: "前回のルートを復元できません",
+        simplifiedChinese: "无法恢复上次路线",
+        english: "Previous route could not be restored"
+      )
+    }
+    return copy.resolve(
+      japanese: "進行状況を保存できません",
+      simplifiedChinese: "无法保存路线进度",
+      english: "Route progress cannot be saved"
+    )
+  }
+
+  private func checkpointNoticeDetail(_ code: String) -> String {
+    if isCheckpointRestoreFailure(code) {
+      return copy.resolve(
+        japanese: "出発地と目的地を確認して、もう一度ルートを作成してください。",
+        simplifiedChinese: "请确认起点和终点，然后重新规划路线。",
+        english:
+          "Check the origin and destination, then plan the route again."
+      )
+    }
+    return copy.resolve(
+      japanese: "このまま利用できますが、App 終了後は再開できません。",
+      simplifiedChinese: "仍可继续使用，但关闭 App 后无法恢复。",
+      english:
+        "You can continue, but this route cannot be restored after the app closes."
+    )
+  }
+
+  private func isCheckpointRestoreFailure(_ code: String) -> Bool {
+    code == "C2_CHECKPOINT_READ_FAILED"
+      || code == "C2_CHECKPOINT_DECODE_FAILED"
+      || code == "C2_CHECKPOINT_INVALID"
   }
 
   private func closeButton(usesDarkStyle: Bool) -> some View {

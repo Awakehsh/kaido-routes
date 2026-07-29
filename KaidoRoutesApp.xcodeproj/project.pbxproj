@@ -13,6 +13,7 @@
 		044E1C5C296038C10575ECC8 /* ReleasedProductNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A724BED8E00B81DE3BD2B1 /* ReleasedProductNavigationView.swift */; };
 		058EB4C464380023B2A869AC /* ReleasedProductRouteAuthoringModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F89A1B8C8651E1A2BF58930 /* ReleasedProductRouteAuthoringModelTests.swift */; };
 		0916DE415E44498B53599BD9 /* ProductPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B612524090282FD210010B6 /* ProductPrivacyDisclosure.swift */; };
+		0D4F3963A1C0F79EB47E7E24 /* C2NavigationSimulationCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */; };
 		0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */; };
 		121F4BE9646F0D2D9455465A /* KaidoInterfaceLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */; };
 		17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */ = {isa = PBXBuildFile; fileRef = 5B5C29A887143CDA94BEEBFD /* c2-b-20260729-geographic-route.json */; };
@@ -57,6 +58,7 @@
 		57829BA952B3751A1BFAE2F7 /* AccessibilityPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */; };
 		596E9BAB3B8898BF6F376F66 /* ProductMapPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE65BD55093E129E001ACC7 /* ProductMapPresentation.swift */; };
 		60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */; };
+		63E970D570EA5576C405BC52 /* C2NavigationSimulationCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */; };
 		662B88AFA6B0F34490E16BC8 /* PreDriveEvidenceUpdateModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */; };
 		671E16E37ACA407EB59980C1 /* ReleasedProductRouteAuthoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A8B0425C0CC1F8FA065C1E /* ReleasedProductRouteAuthoringView.swift */; };
 		67BE02D40272923C0C3D4B92 /* ReleasedRouteEditorAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B0696C5C9D972F6340773F1 /* ReleasedRouteEditorAdapterTests.swift */; };
@@ -136,6 +138,8 @@
 		03F61A93DD01F3113474B7EE /* InternalLocationCalibrationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationFixture.swift; sourceTree = "<group>"; };
 		04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewModelTests.swift; sourceTree = "<group>"; };
 		0AF3E05CB94F3CEB3C71AAE6 /* KaidoLanguageSettingsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoLanguageSettingsModelTests.swift; sourceTree = "<group>"; };
+		0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationSimulationCheckpoint.swift; sourceTree = "<group>"; };
+		0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationSimulationCheckpointTests.swift; sourceTree = "<group>"; };
 		0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPresentationTests.swift; sourceTree = "<group>"; };
 		0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */ = {isa = PBXFileReference; name = "shuto-route-atlas-recognition-reference.svg"; path = "data/route-atlas/design/shuto-route-atlas-recognition-reference.svg"; sourceTree = "<group>"; };
 		108FBFE290E9B9049C3FF6EA /* ReleasedProductTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductTestSupport.swift; sourceTree = "<group>"; };
@@ -281,6 +285,7 @@
 				5B7738D0CC954922A7B094FA /* BundledProductReleaseCatalogTests.swift */,
 				EB6D16129891A91DD1C2FE1C /* C2GeographicRouteTests.swift */,
 				724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */,
+				0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */,
 				B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */,
 				F58FBDFA0C5C97DA1EC2E92A /* ForegroundNavigationLocationControllerTests.swift */,
 				143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */,
@@ -394,6 +399,7 @@
 				AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */,
 				50368EEEA3BA63C029EE16C1 /* C2NavigationDemoModel.swift */,
 				0228E6D3EEAB4BF4FC7C99C6 /* C2NavigationDemoView.swift */,
+				0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */,
 				F565A001D9C74EA1175DCEC8 /* EntranceRecommendationModel.swift */,
 				F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */,
 				63D67D82E005A335098814A4 /* ForegroundNavigationLocationController.swift */,
@@ -584,6 +590,7 @@
 				CABFBDC28C01E07693A64781 /* BundledProductReleaseCatalogTests.swift in Sources */,
 				2F41F54352B06B7840A72D1A /* C2GeographicRouteTests.swift in Sources */,
 				80E0AA92D99B7DF9256F968F /* C2NavigationDemoModelTests.swift in Sources */,
+				0D4F3963A1C0F79EB47E7E24 /* C2NavigationSimulationCheckpointTests.swift in Sources */,
 				86F626BF00728796BE3E1ECC /* EntranceRecommendationModelTests.swift in Sources */,
 				1EEF3DE0296EB3523368FCDD /* ForegroundNavigationLocationControllerTests.swift in Sources */,
 				9AB557C7D61A3F0F978EB360 /* GuidanceLanguagePreviewModelTests.swift in Sources */,
@@ -636,6 +643,7 @@
 				19B05CDE221D814344D7ED46 /* C2GeographicRoute.swift in Sources */,
 				3F3E36BD310E368D7AA3DCC0 /* C2NavigationDemoModel.swift in Sources */,
 				BB5F2B6475BA2AB1152A3979 /* C2NavigationDemoView.swift in Sources */,
+				63E970D570EA5576C405BC52 /* C2NavigationSimulationCheckpoint.swift in Sources */,
 				AF9AAC7098C384C0C7993A29 /* EntranceRecommendationModel.swift in Sources */,
 				9F8AB6CB19E6094A764D5647 /* EntranceRecommendationView.swift in Sources */,
 				B0D91D8DBF080BCD51A10B16 /* ForegroundNavigationLocationController.swift in Sources */,

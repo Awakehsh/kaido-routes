@@ -5,13 +5,20 @@ import SwiftUI
 
 struct KaidoProductJourneyView: View {
   @StateObject private var model: KaidoProductJourneyModel
+  @StateObject private var c2NavigationModel: C2NavigationDemoModel
   @State private var planningMode = ProductPlanningMode.guided
   @State private var showsSavedRoutes = false
   @State private var showsSettings = false
   @State private var showsC2Navigation = false
 
-  init(model: KaidoProductJourneyModel = KaidoProductJourneyModel()) {
+  init(
+    model: KaidoProductJourneyModel = KaidoProductJourneyModel(),
+    c2NavigationModel: C2NavigationDemoModel = C2NavigationDemoModel()
+  ) {
     _model = StateObject(wrappedValue: model)
+    _c2NavigationModel = StateObject(
+      wrappedValue: c2NavigationModel
+    )
   }
 
   var body: some View {
@@ -84,7 +91,7 @@ struct KaidoProductJourneyView: View {
       )
     }
     .fullScreenCover(isPresented: $showsC2Navigation) {
-      C2NavigationDemoView {
+      C2NavigationDemoView(model: c2NavigationModel) {
         showsC2Navigation = false
       }
       .environment(
@@ -173,6 +180,7 @@ struct KaidoProductJourneyView: View {
     case .atlas:
       ProductRoutesStage(
         model: model,
+        c2NavigationModel: c2NavigationModel,
         showsSavedRoutes: $showsSavedRoutes,
         openC2Navigation: {
           showsC2Navigation = true
@@ -364,6 +372,7 @@ private enum ProductRoutesC2MapLayer: String, CaseIterable, Identifiable {
 private struct ProductRoutesStage: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: KaidoProductJourneyModel
+  @ObservedObject var c2NavigationModel: C2NavigationDemoModel
   @Binding var showsSavedRoutes: Bool
   @State private var c2MapLayer = ProductRoutesC2MapLayer.route
   let openC2Navigation: () -> Void
@@ -470,11 +479,7 @@ private struct ProductRoutesStage: View {
       } label: {
         HStack {
           Text(
-            copy.resolve(
-              japanese: "任意の出発地・目的地でこのルートを使う",
-              simplifiedChinese: "使用任意起点和终点规划这条路线",
-              english: "Plan this route from any origin to any destination"
-            )
+            c2PrimaryActionTitle
           )
           Spacer()
           Image(systemName: "arrow.right")
@@ -767,13 +772,7 @@ private struct ProductRoutesStage: View {
           .lineLimit(1)
 
           HStack(spacing: 12) {
-            Text(
-              copy.resolve(
-                japanese: "全区間ナビ",
-                simplifiedChinese: "完整导航",
-                english: "End-to-end"
-              )
-            )
+            Text(c2JourneyStatusTitle)
             Text(
               copy.resolve(
                 japanese: "葛西・大井 分岐",
@@ -806,6 +805,11 @@ private struct ProductRoutesStage: View {
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("product-route-option-c2-complete")
+    .accessibilityValue(
+      c2NavigationModel.hasRestorableJourney
+        ? "RESTORABLE"
+        : "AVAILABLE"
+    )
   }
 
   private func routeCard(
@@ -972,6 +976,36 @@ private struct ProductRoutesStage: View {
       japanese: "選択した経路の方向別入口へ案内",
       simplifiedChinese: "导航到所选路线对应方向的入口",
       english: "Route to the selected directional entrance"
+    )
+  }
+
+  private var c2PrimaryActionTitle: String {
+    if c2NavigationModel.hasRestorableJourney {
+      return copy.resolve(
+        japanese: "前回のルートを続ける",
+        simplifiedChinese: "继续上次路线",
+        english: "Continue previous route"
+      )
+    }
+    return copy.resolve(
+      japanese: "任意の出発地・目的地でこのルートを使う",
+      simplifiedChinese: "使用任意起点和终点规划这条路线",
+      english: "Plan this route from any origin to any destination"
+    )
+  }
+
+  private var c2JourneyStatusTitle: String {
+    if c2NavigationModel.hasRestorableJourney {
+      return copy.resolve(
+        japanese: "一時停止中",
+        simplifiedChinese: "已暂停",
+        english: "Paused"
+      )
+    }
+    return copy.resolve(
+      japanese: "全区間ナビ",
+      simplifiedChinese: "完整导航",
+      english: "End-to-end"
     )
   }
 

@@ -13,6 +13,8 @@ struct KaidoRoutesApp: App {
         do {
           try FileNavigationSessionCheckpointStore.applicationSupport()
             .remove()
+          try FileC2NavigationSimulationCheckpointStore.applicationSupport()
+            .remove()
         } catch {
           preconditionFailure(
             "Failed to reset E2E navigation checkpoint: \(error)"
@@ -59,6 +61,13 @@ struct KaidoRoutesApp: App {
       ) {
         KaidoProductJourneyView(
           model: .demoPreview()
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-PRODUCT-JOURNEY-C2-RESTORE-PREVIEW"
+      ) {
+        KaidoProductJourneyView(
+          model: .demoPreview(),
+          c2NavigationModel: .restoredPreview()
         )
       } else if ProcessInfo.processInfo.arguments.contains(
         "-C2-NAVIGATION-REVIEW-PREVIEW"
@@ -122,7 +131,8 @@ struct KaidoRoutesApp: App {
         KaidoProductJourneyView(
           model: KaidoProductJourneyModel(
             composition: .production()
-          )
+          ),
+          c2NavigationModel: .production()
         )
       }
     }

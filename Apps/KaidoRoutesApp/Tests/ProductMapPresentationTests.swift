@@ -145,6 +145,7 @@ final class ProductMapPresentationTests: XCTestCase {
       Set(entry.release.navigation.bundle.routePlan.occurrences.map(\.id))
     )
     XCTAssertEqual(facilities.entranceCount, 1)
+    XCTAssertEqual(facilities.interchangeCount, 0)
     XCTAssertEqual(facilities.junctionCount, 2)
     XCTAssertEqual(facilities.parkingAreaCount, 0)
     XCTAssertEqual(facilities.exitCount, 1)
@@ -221,6 +222,7 @@ final class ProductMapPresentationTests: XCTestCase {
       [.primary, .connector]
     )
     XCTAssertEqual(facilities.entranceCount, 1)
+    XCTAssertEqual(facilities.interchangeCount, 20)
     XCTAssertEqual(facilities.junctionCount, 13)
     XCTAssertEqual(facilities.parkingAreaCount, 1)
     XCTAssertEqual(facilities.exitCount, 1)
@@ -229,6 +231,83 @@ final class ProductMapPresentationTests: XCTestCase {
         $0 == .parkingArea
       }.count,
       1
+    )
+    XCTAssertEqual(
+      facilities.landmarks
+        .first { $0.kind == .parkingArea }?
+        .title.value(for: .simplifiedChinese),
+      "大井 PA（西行 · 本路线不进入）"
+    )
+    XCTAssertEqual(
+      facilities.landmarks.filter { $0.kind == .interchange }.count,
+      20
+    )
+    XCTAssertEqual(
+      facilities.landmarks
+        .filter { $0.kind == .junction }
+        .map(\.id),
+      [
+        "demo.c2.junction.nishi-shinjuku",
+        "demo.c2.junction.kumanocho",
+        "demo.c2.junction.itabashi",
+        "demo.c2.junction.kohoku",
+        "demo.c2.junction.kosuge",
+        "demo.c2.junction.horikiri",
+        "demo.c2.junction.komatsugawa",
+        "demo.c2.junction.kasai",
+        "demo.c2.junction.tatsumi",
+        "demo.c2.junction.shinonome",
+        "demo.c2.junction.ariake",
+        "demo.c2.junction.oi",
+        "demo.c2.junction.ohashi",
+      ]
+    )
+    XCTAssertEqual(
+      facilities.landmarks
+        .filter { $0.kind == .interchange }
+        .compactMap { $0.title.value(for: .simplifiedChinese) },
+      [
+        "中野長者橋 IC · 入口",
+        "西池袋 IC · 出口",
+        "高松 IC · 入口",
+        "新板橋 IC · 出口",
+        "王子南 IC · 出口",
+        "王子北 IC · 入口",
+        "扇大橋 IC · 出入口",
+        "千住新橋 IC · 出入口",
+        "小菅 IC · 入口",
+        "四つ木 IC · 出入口",
+        "平井大橋 IC · 出口",
+        "船堀橋 IC · 入口",
+        "清新町 IC · 出口",
+        "葛西 IC · 出入口",
+        "新木場 IC · 出入口",
+        "有明 IC · 出口",
+        "临海副都心 IC · 入口",
+        "大井 IC · 出口",
+        "中環大井南 IC · 入口",
+        "五反田 IC · 入口",
+      ]
+    )
+
+    let junctionInset = C2CompletedRouteDemoView.previewJunctionInset
+    XCTAssertEqual(junctionInset.selectedBranch, .right)
+    XCTAssertNil(junctionInset.distanceMeters)
+    XCTAssertEqual(junctionInset.routeShield, "B")
+    XCTAssertEqual(junctionInset.japaneseSignText, "9  横浜")
+
+    XCTAssertEqual(presentation.orderedOccurrences.count, 16)
+    XCTAssertEqual(
+      facilities.routeSections
+        .first { $0.routeShield == "B" }?
+        .occurrenceIDs,
+      Set((9...12).map { "demo.c2.occurrence.\($0)" })
+    )
+    XCTAssertEqual(
+      facilities.landmarks
+        .first { $0.id == "demo.c2.junction.oi" }?
+        .occurrenceIndex,
+      13
     )
 
     let sectionOccurrenceIDs = Set(
@@ -441,18 +520,22 @@ final class ProductMapPresentationTests: XCTestCase {
     )
     XCTAssertLessThanOrEqual(
       try XCTUnwrap(
-        insetsByDecisionZone[
-          "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1"
-        ]
-      ).distanceMeters,
+        XCTUnwrap(
+          insetsByDecisionZone[
+            "shutoko.decision-zone.kohoku.k7-up-shared-branch.v1"
+          ]
+        ).distanceMeters
+      ),
       400
     )
     XCTAssertLessThanOrEqual(
       try XCTUnwrap(
-        insetsByDecisionZone[
-          "shutoko.decision-zone.kohoku.exit-left-branch.v1"
-        ]
-      ).distanceMeters,
+        XCTUnwrap(
+          insetsByDecisionZone[
+            "shutoko.decision-zone.kohoku.exit-left-branch.v1"
+          ]
+        ).distanceMeters
+      ),
       250
     )
     XCTAssertNil(runtime.presentationProjection)

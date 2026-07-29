@@ -270,6 +270,7 @@ struct ProductTopologyMarker: Equatable, Sendable {
 
 enum ProductTopologyLandmarkKind: String, Equatable, Sendable {
   case entrance
+  case interchange
   case junction
   case parkingArea
   case exit
@@ -301,6 +302,7 @@ struct ProductTopologyFacilityPresentation: Equatable, Sendable {
   let routeSections: [ProductTopologyRouteSection]
   let landmarks: [ProductTopologyLandmark]
   let entranceCount: Int
+  let interchangeCount: Int
   let junctionCount: Int
   let parkingAreaCount: Int
   let exitCount: Int
@@ -464,6 +466,7 @@ struct ProductTopologyFacilityPresentation: Equatable, Sendable {
         : [],
       landmarks: landmarks,
       entranceCount: 1,
+      interchangeCount: 0,
       junctionCount: junctionLandmarks.count,
       parkingAreaCount:
         routePlan.occurrences.filter { $0.kind == .paVisit }.count,

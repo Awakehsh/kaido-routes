@@ -51,7 +51,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertEqual(
       element("product-topology-facility-summary", in: app).value
         as? String,
-      "entrance=1;junction=2;parking=0;exit=1"
+      "entrance=1;junction=2;interchange=0;parking=0;exit=1"
     )
     XCTAssertTrue(
       element(

@@ -12,10 +12,28 @@ struct ProductJunctionInsetPresentation: Equatable {
   let decisionZoneID: String
   let movementOccurrenceID: String
   let selectedBranch: SelectedBranch
-  let distanceMeters: Double
+  let distanceMeters: Double?
   let japaneseSignText: String
   let localizedInstruction: String
   let routeShield: String?
+
+  init(
+    decisionZoneID: String,
+    movementOccurrenceID: String,
+    selectedBranch: SelectedBranch,
+    distanceMeters: Double?,
+    japaneseSignText: String,
+    localizedInstruction: String,
+    routeShield: String?
+  ) {
+    self.decisionZoneID = decisionZoneID
+    self.movementOccurrenceID = movementOccurrenceID
+    self.selectedBranch = selectedBranch
+    self.distanceMeters = distanceMeters
+    self.japaneseSignText = japaneseSignText
+    self.localizedInstruction = localizedInstruction
+    self.routeShield = routeShield
+  }
 
   init?(
     _ surface: NavigationSurfacePresentation,
@@ -157,13 +175,15 @@ struct ProductJunctionInsetView: View {
           .stroke(.white.opacity(0.9), lineWidth: 1.5)
       }
 
-      Text(distanceLabel)
-        .font(.system(size: 13, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.asphalt)
-        .padding(.horizontal, 9)
-        .frame(height: 34)
-        .background(KaidoTheme.routeWhite)
-        .clipShape(RoundedRectangle(cornerRadius: 5))
+      if let distanceLabel {
+        Text(distanceLabel)
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.asphalt)
+          .padding(.horizontal, 9)
+          .frame(height: 34)
+          .background(KaidoTheme.routeWhite)
+          .clipShape(RoundedRectangle(cornerRadius: 5))
+      }
     }
     .padding(.horizontal, 10)
     .padding(.top, 9)
@@ -206,24 +226,37 @@ struct ProductJunctionInsetView: View {
     .background(KaidoTheme.asphalt.opacity(0.92))
   }
 
-  private var distanceLabel: String {
-    if presentation.distanceMeters >= 1_000 {
+  private var distanceLabel: String? {
+    guard let distanceMeters = presentation.distanceMeters else {
+      return nil
+    }
+    if distanceMeters >= 1_000 {
       return String(
         format: "%.1f km",
-        presentation.distanceMeters / 1_000
+        distanceMeters / 1_000
       )
     }
-    return "\(Int(presentation.distanceMeters.rounded())) m"
+    return "\(Int(distanceMeters.rounded())) m"
   }
 
   private var accessibilityLabel: String {
-    copy.resolve(
+    if let distanceLabel {
+      return copy.resolve(
+        japanese:
+          "\(distanceLabel)先の分岐。標識は\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
+        simplifiedChinese:
+          "\(distanceLabel) 后进入分岔。路牌为\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
+        english:
+          "Junction in \(distanceLabel). Sign: \(presentation.japaneseSignText). \(presentation.localizedInstruction)"
+      )
+    }
+    return copy.resolve(
       japanese:
-        "\(distanceLabel)先の分岐。標識は\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
+        "前方の分岐。標識は\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
       simplifiedChinese:
-        "\(distanceLabel) 后进入分岔。路牌为\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
+        "前方分岔。路牌为\(presentation.japaneseSignText)。\(presentation.localizedInstruction)",
       english:
-        "Junction in \(distanceLabel). Sign: \(presentation.japaneseSignText). \(presentation.localizedInstruction)"
+        "Upcoming junction. Sign: \(presentation.japaneseSignText). \(presentation.localizedInstruction)"
     )
   }
 

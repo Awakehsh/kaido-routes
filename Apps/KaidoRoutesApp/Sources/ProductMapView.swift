@@ -258,12 +258,19 @@ struct ProductMapViewport: View {
   }
 }
 
+enum ProductTopologyLandmarkLabelMode: String, Equatable {
+  case all
+  case route
+  case facilities
+}
+
 struct ProductTopologyMapView: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
 
   let presentation: ProductTopologyMapPresentation
   let usesDarkStyle: Bool
   let showsPositionStatus: Bool
+  var landmarkLabelMode: ProductTopologyLandmarkLabelMode = .all
 
   var body: some View {
     ZStack(alignment: .topLeading) {
@@ -287,39 +294,37 @@ struct ProductTopologyMapView: View {
               size: proxy.size
             )
 
-            Path { path in
-              path.move(to: point)
-              path.addLine(to: labelCenter)
-            }
-            .stroke(
-              primaryText.opacity(usesDarkStyle ? 0.36 : 0.24),
-              style: StrokeStyle(
-                lineWidth: 1,
-                lineCap: .round,
-                dash: [3, 3]
-              )
-            )
-
-            if usesCompactLandmarks(facilities) {
-              compactLandmark(landmark)
-                .position(labelCenter)
-            } else {
-              ProductTopologyLandmarkBadge(
-                landmark: landmark,
-                usesDarkStyle: usesDarkStyle
-              )
-              .position(labelCenter)
-            }
-
-            Circle()
-              .fill(landmarkColor(landmark))
-              .frame(width: 11, height: 11)
-              .overlay {
-                Circle()
-                  .stroke(KaidoTheme.paperRaised, lineWidth: 2)
+            if shouldShowLabel(
+              landmark,
+              facilities: facilities
+            ) {
+              Path { path in
+                path.move(to: point)
+                path.addLine(to: labelCenter)
               }
+              .stroke(
+                primaryText.opacity(usesDarkStyle ? 0.36 : 0.24),
+                style: StrokeStyle(
+                  lineWidth: 1,
+                  lineCap: .round,
+                  dash: [3, 3]
+                )
+              )
+
+              if usesCompactLandmarks(facilities) {
+                compactLandmark(landmark)
+                  .position(labelCenter)
+              } else {
+                ProductTopologyLandmarkBadge(
+                  landmark: landmark,
+                  usesDarkStyle: usesDarkStyle
+                )
+                .position(labelCenter)
+              }
+            }
+
+            landmarkMarker(landmark)
               .position(point)
-              .accessibilityHidden(true)
           }
         }
       }
@@ -422,6 +427,7 @@ struct ProductTopologyMapView: View {
         count: facilities.entranceCount
       )
       facilityMetric("JCT", count: facilities.junctionCount)
+      facilityMetric("IC", count: facilities.interchangeCount)
       facilityMetric("PA", count: facilities.parkingAreaCount)
       facilityMetric(
         copy.resolve(
@@ -448,6 +454,7 @@ struct ProductTopologyMapView: View {
     .accessibilityValue(
       "entrance=\(facilities.entranceCount);"
         + "junction=\(facilities.junctionCount);"
+        + "interchange=\(facilities.interchangeCount);"
         + "parking=\(facilities.parkingAreaCount);"
         + "exit=\(facilities.exitCount)"
     )
@@ -571,6 +578,33 @@ struct ProductTopologyMapView: View {
         size: size,
         halfWidth: 56
       )
+    case .interchange:
+      if landmarkLabelMode == .facilities {
+        return facilityColumnLabelCenter(
+          landmark,
+          facilities: facilities,
+          size: size
+        )
+      }
+      let center = mapPoint(
+        RouteAtlasPoint(x: 0.5, y: 0.5),
+        size: size
+      )
+      let deltaX = point.x - center.x
+      let deltaY = point.y - center.y
+      let length = max(1, hypot(deltaX, deltaY))
+      let stagger =
+        landmark.occurrenceIndex.isMultiple(of: 2)
+        ? CGFloat(18)
+        : CGFloat(30)
+      return clampedLabelPoint(
+        CGPoint(
+          x: point.x + deltaX / length * stagger,
+          y: point.y + deltaY / length * stagger * 0.72
+        ),
+        size: size,
+        halfWidth: 36
+      )
     case .parkingArea:
       return clampedLabelPoint(
         CGPoint(x: point.x - 46, y: point.y + 50),
@@ -624,6 +658,34 @@ struct ProductTopologyMapView: View {
     )
   }
 
+  private func facilityColumnLabelCenter(
+    _ landmark: ProductTopologyLandmark,
+    facilities: ProductTopologyFacilityPresentation,
+    size: CGSize
+  ) -> CGPoint {
+    let interchanges = facilities.landmarks
+      .filter { $0.kind == .interchange }
+    let usesLeftColumn = landmark.point.x < 0.5
+    let column = interchanges.filter {
+      ($0.point.x < 0.5) == usesLeftColumn
+    }
+    let ordinal =
+      column.firstIndex(where: { $0.id == landmark.id }) ?? 0
+    let firstRowY: CGFloat = 92
+    let lastRowY = max(
+      firstRowY,
+      size.height - plotBottomInset - 74
+    )
+    let rowStep =
+      (lastRowY - firstRowY)
+      / CGFloat(max(1, column.count - 1))
+    let halfWidth: CGFloat = 53
+    return CGPoint(
+      x: usesLeftColumn ? halfWidth + 8 : size.width - halfWidth - 8,
+      y: firstRowY + CGFloat(ordinal) * rowStep
+    )
+  }
+
   private func clampedLabelPoint(
     _ point: CGPoint,
     size: CGSize,
@@ -644,11 +706,28 @@ struct ProductTopologyMapView: View {
     facilities.landmarks.count > 8
   }
 
+  private func shouldShowLabel(
+    _ landmark: ProductTopologyLandmark,
+    facilities: ProductTopologyFacilityPresentation
+  ) -> Bool {
+    guard usesCompactLandmarks(facilities) else { return true }
+    switch landmarkLabelMode {
+    case .all:
+      return true
+    case .route:
+      return landmark.kind != .interchange
+    case .facilities:
+      return landmark.kind == .interchange
+        || landmark.kind == .parkingArea
+    }
+  }
+
   private func compactLandmark(
     _ landmark: ProductTopologyLandmark
   ) -> some View {
     let isEndpoint =
       landmark.kind == .entrance || landmark.kind == .exit
+    let isInterchange = landmark.kind == .interchange
     return Text(
       landmark.title.value(for: interfaceLocale)
         ?? landmark.title.value(for: .japanese)
@@ -660,8 +739,8 @@ struct ProductTopologyMapView: View {
     .foregroundStyle(isEndpoint ? .white : primaryText)
     .padding(.horizontal, 5)
     .frame(
-      maxWidth: isEndpoint ? 112 : 80,
-      minHeight: 18
+      maxWidth: isEndpoint ? 112 : isInterchange ? 106 : 80,
+      minHeight: isInterchange ? 16 : 18
     )
     .background(
       isEndpoint ? KaidoTheme.routeGreen : statusBackground
@@ -676,6 +755,35 @@ struct ProductTopologyMapView: View {
           lineWidth: 1
         )
     }
+    .accessibilityHidden(true)
+  }
+
+  @ViewBuilder
+  private func landmarkMarker(
+    _ landmark: ProductTopologyLandmark
+  ) -> some View {
+    let isInterchange = landmark.kind == .interchange
+    Group {
+      if isInterchange {
+        RoundedRectangle(cornerRadius: 2)
+          .fill(landmarkColor(landmark))
+          .overlay {
+            RoundedRectangle(cornerRadius: 2)
+              .stroke(KaidoTheme.paperRaised, lineWidth: 1.5)
+          }
+      } else {
+        Circle()
+          .fill(landmarkColor(landmark))
+          .overlay {
+            Circle()
+              .stroke(KaidoTheme.paperRaised, lineWidth: 2)
+          }
+      }
+    }
+    .frame(
+      width: isInterchange ? 8 : 11,
+      height: isInterchange ? 8 : 11
+    )
     .accessibilityElement(children: .ignore)
     .accessibilityIdentifier(
       "product-topology-landmark-\(landmark.kind.rawValue)-\(landmark.id)"
@@ -690,9 +798,14 @@ struct ProductTopologyMapView: View {
   private func landmarkColor(
     _ landmark: ProductTopologyLandmark
   ) -> Color {
-    landmark.kind == .parkingArea
-      ? KaidoTheme.signalAmber
-      : KaidoTheme.routeGreen
+    switch landmark.kind {
+    case .parkingArea:
+      return KaidoTheme.signalAmber
+    case .interchange:
+      return Color(hex: 0x2F7F9D)
+    case .entrance, .junction, .exit:
+      return KaidoTheme.routeGreen
+    }
   }
 
   private func routeShieldColor(for routeShield: String) -> Color {
@@ -1068,11 +1181,7 @@ private struct ProductTopologyLandmarkBadge: View {
       radius: 3,
       y: 2
     )
-    .accessibilityElement(children: .ignore)
-    .accessibilityIdentifier(
-      "product-topology-landmark-\(landmark.kind.rawValue)-\(landmark.id)"
-    )
-    .accessibilityLabel(accessibilityLabel)
+    .accessibilityHidden(true)
   }
 
   private var title: String {
@@ -1089,6 +1198,8 @@ private struct ProductTopologyLandmarkBadge: View {
         simplifiedChinese: "入口",
         english: "IN"
       )
+    case .interchange:
+      return "IC"
     case .junction:
       return "JCT"
     case .parkingArea:

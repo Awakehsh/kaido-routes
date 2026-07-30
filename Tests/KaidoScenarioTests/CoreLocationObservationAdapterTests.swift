@@ -32,6 +32,8 @@
     #expect(envelope.provenance.carPlayConnectionContext == .connectedTransportUnknown)
     #expect(envelope.provenance.matcherCalibrationCohort == .phone)
     #expect(envelope.provenance.observationAgeMilliseconds == 1_000)
+    #expect(envelope.observation.courseAccuracyDegrees == 2)
+    #expect(envelope.observation.speedAccuracyMetersPerSecond == 1)
   }
 
   @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -175,7 +177,9 @@
     )
 
     #expect(envelope.observation.courseDegrees == nil)
+    #expect(envelope.observation.courseAccuracyDegrees == nil)
     #expect(envelope.observation.speedMetersPerSecond == nil)
+    #expect(envelope.observation.speedAccuracyMetersPerSecond == nil)
     #expect(envelope.provenance.courseAccuracyDegrees == nil)
     #expect(envelope.provenance.speedAccuracyMetersPerSecond == nil)
   }

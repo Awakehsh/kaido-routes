@@ -172,7 +172,9 @@ public struct RouteMatcherObservation: Equatable, Sendable {
   public let coordinate: MatcherCoordinate
   public let horizontalAccuracyMeters: Double
   public let courseDegrees: Double?
+  public let courseAccuracyDegrees: Double?
   public let speedMetersPerSecond: Double?
+  public let speedAccuracyMetersPerSecond: Double?
   public let source: MatcherLocationSource
 
   public init(
@@ -182,7 +184,9 @@ public struct RouteMatcherObservation: Equatable, Sendable {
     coordinate: MatcherCoordinate,
     horizontalAccuracyMeters: Double,
     courseDegrees: Double? = nil,
+    courseAccuracyDegrees: Double? = nil,
     speedMetersPerSecond: Double? = nil,
+    speedAccuracyMetersPerSecond: Double? = nil,
     source: MatcherLocationSource
   ) {
     self.id = id
@@ -191,7 +195,9 @@ public struct RouteMatcherObservation: Equatable, Sendable {
     self.coordinate = coordinate
     self.horizontalAccuracyMeters = horizontalAccuracyMeters
     self.courseDegrees = courseDegrees
+    self.courseAccuracyDegrees = courseAccuracyDegrees
     self.speedMetersPerSecond = speedMetersPerSecond
+    self.speedAccuracyMetersPerSecond = speedAccuracyMetersPerSecond
     self.source = source
   }
 
@@ -203,7 +209,11 @@ public struct RouteMatcherObservation: Equatable, Sendable {
       && receivedAtMilliseconds >= observedAtMilliseconds
       && !ageOverflow
       && courseDegrees.map { $0.isFinite && (0..<360).contains($0) } != false
+      && courseAccuracyDegrees.map { $0.isFinite && $0 >= 0 } != false
       && speedMetersPerSecond.map { $0.isFinite && $0 >= 0 } != false
+      && speedAccuracyMetersPerSecond.map {
+        $0.isFinite && $0 >= 0
+      } != false
   }
 }
 
@@ -752,7 +762,11 @@ private struct MatcherModel: Sendable {
           (observation.speedMetersPerSecond ?? 0) >= 2
         {
           let delta = angularDifferenceDegrees(course, measurement.bearingDegrees)
-          headingScore = -0.5 * pow(delta / configuration.headingSigmaDegrees, 2)
+          let headingSigma = max(
+            configuration.headingSigmaDegrees,
+            observation.courseAccuracyDegrees ?? 0
+          )
+          headingScore = -0.5 * pow(delta / headingSigma, 2)
         } else {
           headingScore = 0
         }
@@ -886,10 +900,21 @@ private struct MatcherModel: Sendable {
     let currentSpeed = observation.speedMetersPerSecond ?? previousSpeed
     let expectedDistance = (previousSpeed + currentSpeed) / 2 * elapsedSeconds
     guard expectedDistance > 0 else { return 0 }
+    let previousSpeedAccuracy =
+      previous.observation.speedAccuracyMetersPerSecond
+      ?? observation.speedAccuracyMetersPerSecond
+      ?? 0
+    let currentSpeedAccuracy =
+      observation.speedAccuracyMetersPerSecond
+      ?? previousSpeedAccuracy
+    let speedUncertaintyDistance =
+      (previousSpeedAccuracy + currentSpeedAccuracy) / 2
+      * elapsedSeconds
     let tolerance = max(
       10,
       observation.horizontalAccuracyMeters * 2,
-      expectedDistance * 0.75
+      expectedDistance * 0.75,
+      speedUncertaintyDistance * 2
     )
     return -abs(networkDistanceMeters - expectedDistance) / tolerance
   }
@@ -1127,7 +1152,10 @@ extension RouteMatcherObservation {
       coordinate: replayObservation.coordinate,
       horizontalAccuracyMeters: replayObservation.horizontalAccuracyMeters,
       courseDegrees: replayObservation.courseDegrees,
+      courseAccuracyDegrees: replayObservation.courseAccuracyDegrees,
       speedMetersPerSecond: replayObservation.speedMetersPerSecond,
+      speedAccuracyMetersPerSecond:
+        replayObservation.speedAccuracyMetersPerSecond,
       source: replayObservation.source
     )
   }

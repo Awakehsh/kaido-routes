@@ -143,6 +143,76 @@ func navigationDriveSimulationUsesRouteSpeedCadence() throws {
   }
 }
 
+@Test("Accuracy evaluation blocks a wrong HIGH match without hiding safe abstention")
+func navigationDriveAccuracyRejectsWrongHighConfidence() throws {
+  let release = try simulationProductRelease()
+  let bundle = release.navigation.bundle
+  let trace = try NavigationDriveSimulationTraceGenerator.generate(
+    routePlan: bundle.routePlan,
+    corridor: bundle.matcherCorridor,
+    configuration: NavigationDriveSimulationConfiguration(
+      timing: .routeSpeed,
+      completesAtExitHandoff: false
+    )
+  )
+  let exactEstimates = trace.sampleTruth.map {
+    MatcherEstimate(
+      observationID: $0.observationID,
+      estimatedAtMilliseconds: 0,
+      directedEdgeID: $0.directedEdgeID,
+      occurrenceID: $0.occurrenceID,
+      candidateEdgeIDs: [$0.directedEdgeID],
+      confidence: .high,
+      distanceMeters: 0,
+      fractionAlongEdge: $0.fractionAlongOccurrence
+    )
+  }
+  let thresholds = NavigationDriveAccuracyThresholds(
+    minimumSampleCount: 1,
+    minimumEdgeTop1Accuracy: 0,
+    minimumOccurrenceAccuracy: 0,
+    minimumHighConfidencePrecision: 1,
+    minimumHighConfidenceCoverage: 0,
+    maximumProgressErrorP95Meters: 1,
+    maximumBackwardProgressRegressionMeters: 1
+  )
+  let exactReport = try NavigationDriveAccuracyEvaluator.evaluate(
+    trace: trace,
+    corridor: bundle.matcherCorridor,
+    estimates: exactEstimates,
+    thresholds: thresholds
+  )
+  let firstTruth = try #require(trace.sampleTruth.first)
+  let otherTruth = try #require(
+    trace.sampleTruth.first {
+      $0.occurrenceID != firstTruth.occurrenceID
+    }
+  )
+  var unsafeEstimates = exactEstimates
+  unsafeEstimates[0] = MatcherEstimate(
+    observationID: firstTruth.observationID,
+    estimatedAtMilliseconds: 0,
+    directedEdgeID: otherTruth.directedEdgeID,
+    occurrenceID: otherTruth.occurrenceID,
+    candidateEdgeIDs: [otherTruth.directedEdgeID],
+    confidence: .high,
+    distanceMeters: 0,
+    fractionAlongEdge: otherTruth.fractionAlongOccurrence
+  )
+  let unsafeReport = try NavigationDriveAccuracyEvaluator.evaluate(
+    trace: trace,
+    corridor: bundle.matcherCorridor,
+    estimates: unsafeEstimates,
+    thresholds: thresholds
+  )
+
+  #expect(exactReport.gateStatus == .deterministicFloorMet)
+  #expect(exactReport.highConfidencePrecision == 1)
+  #expect(unsafeReport.unsafeHighConfidenceEdgeCount == 1)
+  #expect(unsafeReport.unsafeHighConfidenceOccurrenceCount == 1)
+  #expect(unsafeReport.gateStatus == .thresholdNotMet)
+}
+
 @Test("Simulation controller supports play pause step speed and reset")
 func navigationDriveSimulationControlsPlayback() async throws {
   let release = try simulationProductRelease()

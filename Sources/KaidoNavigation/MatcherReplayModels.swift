@@ -90,7 +90,9 @@ public struct MatcherReplayObservation: Codable, Equatable, Sendable {
   public let coordinate: MatcherCoordinate
   public let horizontalAccuracyMeters: Double
   public let courseDegrees: Double?
+  public let courseAccuracyDegrees: Double?
   public let speedMetersPerSecond: Double?
+  public let speedAccuracyMetersPerSecond: Double?
   public let source: MatcherLocationSource
 
   public init(
@@ -100,7 +102,9 @@ public struct MatcherReplayObservation: Codable, Equatable, Sendable {
     coordinate: MatcherCoordinate,
     horizontalAccuracyMeters: Double,
     courseDegrees: Double? = nil,
+    courseAccuracyDegrees: Double? = nil,
     speedMetersPerSecond: Double? = nil,
+    speedAccuracyMetersPerSecond: Double? = nil,
     source: MatcherLocationSource
   ) {
     self.id = id
@@ -109,7 +113,9 @@ public struct MatcherReplayObservation: Codable, Equatable, Sendable {
     self.coordinate = coordinate
     self.horizontalAccuracyMeters = horizontalAccuracyMeters
     self.courseDegrees = courseDegrees
+    self.courseAccuracyDegrees = courseAccuracyDegrees
     self.speedMetersPerSecond = speedMetersPerSecond
+    self.speedAccuracyMetersPerSecond = speedAccuracyMetersPerSecond
     self.source = source
   }
 
@@ -120,7 +126,9 @@ public struct MatcherReplayObservation: Codable, Equatable, Sendable {
     case coordinate
     case horizontalAccuracyMeters = "horizontal_accuracy_meters"
     case courseDegrees = "course_degrees"
+    case courseAccuracyDegrees = "course_accuracy_degrees"
     case speedMetersPerSecond = "speed_meters_per_second"
+    case speedAccuracyMetersPerSecond = "speed_accuracy_meters_per_second"
     case source
   }
 }

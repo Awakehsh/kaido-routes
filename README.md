@@ -32,6 +32,15 @@ internal review workbench.
   matcher and actor-owned navigation session. Entry requires ordered, unique
   HIGH continuity on the selected directional entrance, and only an exact HIGH
   occurrence match can advance expressway progress.
+- A deterministic whole-route accuracy suite retains exact occurrence,
+  directed-edge, fraction, and route-distance truth before adding noise. Three
+  representative whole-Shuto routes must keep wrong HIGH edge/occurrence
+  commits at zero. The clean profile must meet the default accuracy floor; an
+  eight-meter radial-drift profile must retain 100% HIGH occurrence precision,
+  at least 20% HIGH coverage, and at most 15 meters p95 route-progress error.
+- Live Core Location course and speed uncertainty now reach the matcher.
+  Uncertain course expands the heading model instead of being trusted like a
+  precise bearing, and speed uncertainty widens travel-distance tolerance.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
   geometry, exposes total remaining route distance and the next reviewed JCT

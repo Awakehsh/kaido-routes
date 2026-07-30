@@ -377,6 +377,76 @@ func routeMatcherSessionUsesCorridorSpatialIndex() throws {
   #expect(session.diagnostics.lastQueriedEdgeCount == 1)
 }
 
+@Test("Matcher weights heading by the reported Core Location course accuracy")
+func routeMatcherUsesCourseAccuracy() throws {
+  let eastbound = RouteMatcherDirectedEdge(
+    id: "eastbound",
+    coordinates: [
+      MatcherCoordinate(latitude: 35.6800, longitude: 139.7600),
+      MatcherCoordinate(latitude: 35.6800, longitude: 139.7610),
+    ]
+  )
+  let westbound = RouteMatcherDirectedEdge(
+    id: "westbound",
+    coordinates: Array(eastbound.coordinates.reversed())
+  )
+  let corridor = RouteMatcherCorridor(
+    id: "test.corridor.course-accuracy",
+    networkSnapshotID: "test.snapshot",
+    routePlanID: "test.plan",
+    edges: [eastbound, westbound],
+    occurrences: [
+      RouteMatcherOccurrence(
+        id: "eastbound-occurrence",
+        index: 0,
+        directedEdgeID: eastbound.id
+      )
+    ]
+  )
+  let coordinate = MatcherCoordinate(
+    latitude: 35.6800,
+    longitude: 139.7605
+  )
+  var overconfidentSession = try RouteAwareSwiftMatcher().makeSession(
+    corridor: corridor,
+    initialOccurrenceID: "eastbound-occurrence"
+  )
+  let overconfident = try overconfidentSession.observe(
+    RouteMatcherObservation(
+      id: "overconfident-course",
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: coordinate,
+      horizontalAccuracyMeters: 5,
+      courseDegrees: 270,
+      courseAccuracyDegrees: 2,
+      speedMetersPerSecond: 10,
+      source: .phone
+    )
+  )
+  var uncertainSession = try RouteAwareSwiftMatcher().makeSession(
+    corridor: corridor,
+    initialOccurrenceID: "eastbound-occurrence"
+  )
+  let uncertain = try uncertainSession.observe(
+    RouteMatcherObservation(
+      id: "uncertain-course",
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: coordinate,
+      horizontalAccuracyMeters: 5,
+      courseDegrees: 270,
+      courseAccuracyDegrees: 180,
+      speedMetersPerSecond: 10,
+      source: .phone
+    )
+  )
+
+  #expect(overconfident.occurrenceID == nil)
+  #expect(uncertain.occurrenceID == "eastbound-occurrence")
+  #expect(uncertain.confidence == .low)
+}
+
 @Test("Matcher session bounds repeated-occurrence active state growth")
 func routeMatcherSessionBoundsActiveStates() throws {
   let edge = RouteMatcherDirectedEdge(
@@ -521,7 +591,10 @@ private func routeMatcherObservation(
     coordinate: observation.coordinate,
     horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
     courseDegrees: observation.courseDegrees,
+    courseAccuracyDegrees: observation.courseAccuracyDegrees,
     speedMetersPerSecond: observation.speedMetersPerSecond,
+    speedAccuracyMetersPerSecond:
+      observation.speedAccuracyMetersPerSecond,
     source: observation.source
   )
 }

@@ -62,6 +62,45 @@ public struct NavigationDriveSimulationAnomaly: Equatable, Sendable {
   }
 }
 
+public enum NavigationDriveSimulationNoiseGenerator {
+  /// Produces a repeatable eight-direction coordinate drift around route truth.
+  ///
+  /// The pattern is deterministic so matcher changes can be compared without
+  /// random seeds or hidden fixture state.
+  public static func radialCoordinateDrift(
+    sampleTruth: [NavigationDriveSimulationSampleTruth],
+    magnitudeMeters: Double
+  ) throws -> [NavigationDriveSimulationAnomaly] {
+    guard magnitudeMeters.isFinite, magnitudeMeters > 0 else {
+      throw NavigationDriveSimulationError.invalidConfiguration([
+        "simulation coordinate drift magnitude is invalid"
+      ])
+    }
+    let diagonal = magnitudeMeters / sqrt(2)
+    let offsets = [
+      (north: 0.0, east: magnitudeMeters),
+      (north: diagonal, east: diagonal),
+      (north: magnitudeMeters, east: 0.0),
+      (north: diagonal, east: -diagonal),
+      (north: 0.0, east: -magnitudeMeters),
+      (north: -diagonal, east: -diagonal),
+      (north: -magnitudeMeters, east: 0.0),
+      (north: -diagonal, east: diagonal),
+    ]
+    return sampleTruth.enumerated().map { index, truth in
+      let offset = offsets[index % offsets.count]
+      return NavigationDriveSimulationAnomaly(
+        occurrenceID: truth.occurrenceID,
+        sampleIndex: truth.sampleIndex,
+        kind: .coordinateOffsetMeters(
+          north: offset.north,
+          east: offset.east
+        )
+      )
+    }
+  }
+}
+
 public struct NavigationDriveSimulationConfiguration: Equatable, Sendable {
   public let startedAtMilliseconds: Int
   public let observationIntervalMilliseconds: Int
@@ -125,19 +164,56 @@ public struct NavigationDriveSimulationEvent: Equatable, Sendable {
   }
 }
 
+/// Exact route-owned truth for one generated matcher observation.
+///
+/// Coordinate anomalies change only the observation. This record retains the
+/// selected RoutePlan occurrence and along-route position so deterministic
+/// accuracy evaluation can distinguish a plausible-looking replay from a
+/// correct matcher result.
+public struct NavigationDriveSimulationSampleTruth: Equatable, Sendable {
+  public let observationID: String
+  public let occurrenceID: String
+  public let occurrenceIndex: Int
+  public let directedEdgeID: String
+  public let sampleIndex: Int
+  public let fractionAlongOccurrence: Double
+  public let routeDistanceMeters: Double
+
+  public init(
+    observationID: String,
+    occurrenceID: String,
+    occurrenceIndex: Int,
+    directedEdgeID: String,
+    sampleIndex: Int,
+    fractionAlongOccurrence: Double,
+    routeDistanceMeters: Double
+  ) {
+    self.observationID = observationID
+    self.occurrenceID = occurrenceID
+    self.occurrenceIndex = occurrenceIndex
+    self.directedEdgeID = directedEdgeID
+    self.sampleIndex = sampleIndex
+    self.fractionAlongOccurrence = fractionAlongOccurrence
+    self.routeDistanceMeters = routeDistanceMeters
+  }
+}
+
 public struct NavigationDriveSimulationTrace: Equatable, Sendable {
   public let routePlanID: String
   public let matcherCorridorID: String
   public let events: [NavigationDriveSimulationEvent]
+  public let sampleTruth: [NavigationDriveSimulationSampleTruth]
 
   public init(
     routePlanID: String,
     matcherCorridorID: String,
-    events: [NavigationDriveSimulationEvent]
+    events: [NavigationDriveSimulationEvent],
+    sampleTruth: [NavigationDriveSimulationSampleTruth]
   ) {
     self.routePlanID = routePlanID
     self.matcherCorridorID = matcherCorridorID
     self.events = events
+    self.sampleTruth = sampleTruth
   }
 
   public var evidenceScope: NavigationDriveSimulationEvidenceScope {
@@ -174,6 +250,7 @@ public enum NavigationDriveSimulationTraceGenerator {
       by: { SimulationSampleKey($0.occurrenceID, $0.sampleIndex) }
     )
     var events: [NavigationDriveSimulationEvent] = []
+    var sampleTruth: [NavigationDriveSimulationSampleTruth] = []
     var observedAt = configuration.startedAtMilliseconds
     var lastReceivedAt = configuration.startedAtMilliseconds
     var distanceBeforeOccurrenceMeters = 0.0
@@ -247,6 +324,17 @@ public enum NavigationDriveSimulationTraceGenerator {
         }
         let receivedAt = max(lastReceivedAt, observedAt + receptionDelay)
         let observationID = "simulation.\(occurrence.index).\(sampleIndex)"
+        sampleTruth.append(
+          NavigationDriveSimulationSampleTruth(
+            observationID: observationID,
+            occurrenceID: occurrence.id,
+            occurrenceIndex: occurrence.index,
+            directedEdgeID: occurrence.directedEdgeID,
+            sampleIndex: sampleIndex,
+            fractionAlongOccurrence: fraction,
+            routeDistanceMeters: sampleDistanceMeters
+          )
+        )
         let observation = RouteMatcherObservation(
           id: observationID,
           observedAtMilliseconds: observedAt,
@@ -286,7 +374,8 @@ public enum NavigationDriveSimulationTraceGenerator {
     return NavigationDriveSimulationTrace(
       routePlanID: routePlan.id,
       matcherCorridorID: corridor.id,
-      events: events
+      events: events,
+      sampleTruth: sampleTruth
     )
   }
 

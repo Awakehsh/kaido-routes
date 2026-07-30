@@ -17,7 +17,14 @@ retains occurrence-scoped samples while adding intermediate samples so no
 selected-edge interval exceeds 30 meters. Its observation timestamps and
 courses derive from distance along that geometry at a 15 m/s reference speed;
 the explicit 20x playback multiplier changes only wall-clock delay. The
-simulator exercises ordered
+trace also retains exact generator-owned occurrence, edge, fraction, and
+along-route distance truth before any anomaly is applied.
+`NavigationDriveAccuracyEvaluator` compares every matcher result with that truth
+and reports diagnostic top-1 accuracy, HIGH precision and coverage, route
+progress p50/p95/maximum error, wrong HIGH commits, and backward progress.
+Low-confidence online hypotheses may revise near short edge boundaries; only
+HIGH estimates are navigation authority, so the deterministic gate separately
+requires zero wrong or backward HIGH commits. The simulator exercises ordered
 entry continuity through a package-only synthetic path that cannot be called by
 the App or an Apple adapter and grants no released-road authority. Ambiguous or
 degraded entrance evidence keeps the transition unconfirmed. After entry, only
@@ -329,8 +336,12 @@ matches, missing/mismatched heading, and skipped transition edges. It derives
 forward continuity from the accepted edge history and restarts route matching at
 the exact first occurrence only after strict-route entry. The current 45-degree
 heading and ten-second age gates are conservative implementation thresholds, not
-field-calibrated release values. KR-S19 executes the positive and fail-closed
-paths.
+field-calibrated release values. The Core Location adapter preserves
+`courseAccuracy` and `speedAccuracy` on the matcher observation as well as in
+calibration provenance. A reported course uncertainty larger than the baseline
+heading sigma reduces that bearing's emission weight, while speed uncertainty
+widens the time-distance transition tolerance. Invalid negative uncertainty
+remains absent evidence. KR-S19 executes the positive and fail-closed paths.
 
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
@@ -1755,7 +1766,7 @@ bounded role it may own.
 - Commercial SDK evaluation requires a separate cost, data-use, and licence
   review before code integration.
 
-## Sources checked 2026-07-24
+## Sources checked through 2026-07-30
 
 - [Apple MapKit for SwiftUI](https://developer.apple.com/documentation/mapkit/mapkit-for-swiftui)
 - [Apple `MKDirections.Request`](https://developer.apple.com/documentation/mapkit/mkdirections/request)
@@ -1769,6 +1780,8 @@ bounded role it may own.
 - [Apple external-accessory location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/isproducedbyaccessory)
 - [Apple software-simulation location source](https://developer.apple.com/documentation/corelocation/cllocationsourceinformation/issimulatedbysoftware)
 - [Apple location timestamp](https://developer.apple.com/documentation/corelocation/cllocation/timestamp)
+- [Apple horizontal location accuracy](https://developer.apple.com/documentation/corelocation/cllocation/horizontalaccuracy)
+- [Apple course accuracy](https://developer.apple.com/documentation/corelocation/cllocation/courseaccuracy)
 - [Apple Core Motion](https://developer.apple.com/documentation/coremotion/)
 - [Swift Testing](https://developer.apple.com/xcode/swift-testing/)
 - [Swift Package Manager](https://docs.swift.org/swiftpm/documentation/packagemanagerdocs/)
@@ -1779,6 +1792,7 @@ bounded role it may own.
 - [Valhalla route location heading and tolerance](https://valhalla.github.io/valhalla/api/turn-by-turn/api-reference/)
 - [Valhalla 3.8.2 node-snap configuration](https://github.com/valhalla/valhalla/blob/3.8.2/scripts/valhalla_build_config)
 - [Valhalla Meili map matching](https://valhalla.github.io/valhalla/meili/)
+- [Valhalla Meili matching configuration](https://valhalla.github.io/valhalla/meili/configuration/)
 - [Valhalla map-matching API](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [Valhalla `trace_attributes` and `edge_walk`](https://valhalla.github.io/valhalla/api/map-matching/api-reference/)
 - [OSRM backend and services](https://github.com/Project-OSRM/osrm-backend)
@@ -1793,4 +1807,6 @@ bounded role it may own.
 - [GraphHopper 11.0 navigation driving-side conversion](https://github.com/graphhopper/graphhopper/blob/69e50f6e2cfaf0a8e69752df9953ee5f1ac276a4/navigation/src/main/java/com/graphhopper/navigation/NavigateResponseConverter.java#L417)
 - [Osmium output header options](https://docs.osmcode.org/osmium/latest/osmium-output-headers.html)
 - [Newson and Krumm, HMM map matching](https://www.microsoft.com/research/publication/hidden-markov-map-matching-noise-sparseness/)
+- [Google road-snapped location updates](https://developers.google.com/maps/documentation/navigation/ios-sdk/reference/objc/Protocols/GMSRoadSnappedLocationProviderListener)
+- [Google route location simulation](https://developers.google.com/maps/documentation/navigation/ios-sdk/reference/objc/Classes/GMSLocationSimulator)
 - [Mapbox navigation pricing reference](https://www.mapbox.com/pricing)

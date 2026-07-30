@@ -65,10 +65,20 @@ extension MatcherReplayFixture {
       {
         issues.append("observation \(observation.id) has invalid course")
       }
+      if let courseAccuracy = observation.courseAccuracyDegrees,
+        !courseAccuracy.isFinite || courseAccuracy < 0
+      {
+        issues.append("observation \(observation.id) has invalid course accuracy")
+      }
       if let speed = observation.speedMetersPerSecond,
         !speed.isFinite || speed < 0
       {
         issues.append("observation \(observation.id) has invalid speed")
+      }
+      if let speedAccuracy = observation.speedAccuracyMetersPerSecond,
+        !speedAccuracy.isFinite || speedAccuracy < 0
+      {
+        issues.append("observation \(observation.id) has invalid speed accuracy")
       }
     }
 

@@ -207,6 +207,97 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
   }
 
+  @Test("Whole Shuto replay quantifies clean and urban-drift navigation accuracy")
+  func quantifiesWholeRouteNavigationAccuracy() async throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let routePairs = [
+      ("shuto.ic.c1.kyoubashi", "shuto.ic.k1.minatomirai"),
+      ("shuto.ic.b.rinkaihukutoshin", "shuto.ic.c2.hatsudaiminami"),
+      ("shuto.ic.b.urayasu", "shuto.ic.c2.funaboribashi"),
+    ]
+
+    for (entryFacilityID, exitFacilityID) in routePairs {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      let baseConfiguration = NavigationDriveSimulationConfiguration(
+        maximumSampleSpacingMeters: 30,
+        timing: .routeSpeed,
+        horizontalAccuracyMeters: 5,
+        speedMetersPerSecond: 15
+      )
+      let cleanReport = try await navigationAccuracyReport(
+        route: route,
+        assets: assets,
+        configuration: baseConfiguration
+      )
+      let baselineTrace = try NavigationDriveSimulationTraceGenerator.generate(
+        routePlan: route.routePlan,
+        corridor: assets.matcherCorridor,
+        configuration: baseConfiguration
+      )
+      let driftConfiguration = NavigationDriveSimulationConfiguration(
+        maximumSampleSpacingMeters: 30,
+        timing: .routeSpeed,
+        horizontalAccuracyMeters: 12,
+        speedMetersPerSecond: 15,
+        anomalies:
+          try NavigationDriveSimulationNoiseGenerator.radialCoordinateDrift(
+            sampleTruth: baselineTrace.sampleTruth,
+            magnitudeMeters: 8
+          )
+      )
+      let driftReport = try await navigationAccuracyReport(
+        route: route,
+        assets: assets,
+        configuration: driftConfiguration
+      )
+
+      #expect(
+        cleanReport.gateStatus == .deterministicFloorMet,
+        "\(entryFacilityID) clean: \(cleanReport)"
+      )
+      #expect(
+        driftReport.unsafeHighConfidenceEdgeCount == 0,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.unsafeHighConfidenceOccurrenceCount == 0,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.highConfidenceBackwardOccurrenceJumpCount == 0,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.highConfidencePrecision == 1,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.highConfidenceCoverage >= 0.20,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.edgeTop1Accuracy >= 0.56,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        driftReport.occurrenceAccuracy >= 0.64,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+      #expect(
+        (driftReport.progressErrorP95Meters ?? .infinity) <= 15,
+        "\(entryFacilityID) drift: \(driftReport)"
+      )
+    }
+  }
+
   @Test("both reviewed Tatsumi approaches emit one actor-owned prompt")
   func emitsReviewedTatsumiGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()
@@ -816,5 +907,32 @@ private func matcherObservation(
     courseDegrees: course >= 0 ? course : course + 360,
     speedMetersPerSecond: 15,
     source: .phone
+  )
+}
+
+private func navigationAccuracyReport(
+  route: ShutoPlannedRoute,
+  assets: ShutoPlannedRouteRuntimeAssets,
+  configuration: NavigationDriveSimulationConfiguration
+) async throws -> NavigationDriveAccuracyReport {
+  let trace = try NavigationDriveSimulationTraceGenerator.generate(
+    routePlan: route.routePlan,
+    corridor: assets.matcherCorridor,
+    configuration: configuration
+  )
+  var matcherSession = try RouteAwareSwiftMatcher().makeSession(
+    corridor: assets.matcherCorridor,
+    initialOccurrenceID: route.routePlan.occurrences.first?.id
+  )
+  let estimates = try trace.events.compactMap { event -> MatcherEstimate? in
+    guard case .matcherObservation(let observation) = event.action else {
+      return nil
+    }
+    return try matcherSession.observe(observation)
+  }
+  return try NavigationDriveAccuracyEvaluator.evaluate(
+    trace: trace,
+    corridor: assets.matcherCorridor,
+    estimates: estimates
   )
 }

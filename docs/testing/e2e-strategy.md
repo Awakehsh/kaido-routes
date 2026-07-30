@@ -385,6 +385,30 @@ controls plus clean, GPS-drift, signal-gap, and poor-accuracy presets. The
 controller begins from an explicit synthetic strict-route seed instead of
 manufacturing entry-admission evidence, and neither its output nor Simulator
 interaction grants device, road, traffic, field, or release authority.
+
+The generator retains coordinate-free truth for every matcher observation:
+exact RoutePlan occurrence, directed edge, fraction, and cumulative route
+distance. `NavigationDriveAccuracyEvaluator` joins estimates by observation ID
+and keeps diagnostic top-1 results separate from navigation-authoritative HIGH
+results. Its default clean floor requires at least 100 samples, at least 85%
+edge and occurrence top-1 accuracy, 100% HIGH occurrence precision, at least
+25% HIGH coverage, no wrong or backward HIGH commit, at most 15 meters p95
+route-progress error, and at most five meters of HIGH progress regression.
+
+The whole-Shuto accuracy regression executes three routes covering a
+cross-network journey, Oi, and Kasai. Each runs a clean trace and a repeatable
+eight-direction, eight-meter coordinate-drift trace with 12-meter reported
+horizontal accuracy. Clean traces must meet the default floor. Drift traces
+must retain zero wrong HIGH edge/occurrence commits, 100% HIGH occurrence
+precision, at least 20% HIGH coverage, at least 56% diagnostic edge top-1 and
+64% occurrence top-1 accuracy, and no more than 15 meters p95 progress error.
+These are deterministic regression floors, not field accuracy claims.
+
+Core Location adapter tests additionally require valid `courseAccuracy` and
+`speedAccuracy` to reach the matcher observation. A focused opposing-direction
+fixture proves that a highly uncertain course cannot overpower route continuity
+as if it were a precise bearing.
+
 Focused platform-light and Apple-adapter tests cover the separate
 surface-egress calibration boundary. They require exact release, candidate,
 corridor, occurrence, matcher, device, and field-transport scope; exercise

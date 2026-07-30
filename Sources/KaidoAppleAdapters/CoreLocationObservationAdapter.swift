@@ -231,6 +231,8 @@
       }
 
       let cohort = matcherCalibrationCohort(deliverySource: sourceEvidence.deliverySource)
+      let courseAccuracyDegrees = Self.courseAccuracy(for: location)
+      let speedAccuracyMetersPerSecond = Self.speedAccuracy(for: location)
       let observation = RouteMatcherObservation(
         id: observationID,
         observedAtMilliseconds: observedAtMilliseconds,
@@ -238,7 +240,10 @@
         coordinate: coordinate,
         horizontalAccuracyMeters: location.horizontalAccuracy,
         courseDegrees: Self.validCourse(location.course),
+        courseAccuracyDegrees: courseAccuracyDegrees,
         speedMetersPerSecond: Self.nonnegativeFinite(location.speed),
+        speedAccuracyMetersPerSecond:
+          speedAccuracyMetersPerSecond,
         source: cohort
       )
       let provenance = CoreLocationObservationProvenance(
@@ -247,8 +252,8 @@
         isSimulatedBySoftware: sourceEvidence.isSimulatedBySoftware,
         carPlayConnectionContext: carPlayConnectionContext,
         matcherCalibrationCohort: cohort,
-        courseAccuracyDegrees: Self.courseAccuracy(for: location),
-        speedAccuracyMetersPerSecond: Self.speedAccuracy(for: location),
+        courseAccuracyDegrees: courseAccuracyDegrees,
+        speedAccuracyMetersPerSecond: speedAccuracyMetersPerSecond,
         observationAgeMilliseconds: observationAgeMilliseconds
       )
       return .accepted(

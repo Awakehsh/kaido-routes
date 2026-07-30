@@ -46,9 +46,11 @@ entered name remains usable by the normal route-search action.
 Recommended, alternative, and custom choices appear only after a destination
 has been resolved. The route-choice row shows the recommended exact route first,
 the custom control second, and further alternatives after it. Each route option
-contains only its selection label, route shields, and distance. Custom expands
-into a map-anchored route editor rather than replacing the map with a separate
-home mode. It lets the parked user pin one nearby direction-valid entrance, one
+contains only its selection label, route shields, exact directional entrance
+and exit, and a distance explicitly scoped to the Shuto section. It never
+presents that distance as a full-journey comparison. Custom expands into a
+map-anchored route editor rather than replacing the map with a separate home
+mode. It lets the parked user pin one nearby direction-valid entrance, one
 nearby direction-valid exit, and a route style. The editor previews the concrete
 route shields and distance before **Use this route** applies a new exact
 `RoutePlan`. Opening or dismissing the editor never marks a draft as selected.

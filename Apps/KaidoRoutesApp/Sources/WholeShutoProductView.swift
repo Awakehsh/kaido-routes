@@ -811,8 +811,19 @@ struct WholeShutoProductView: View {
             .foregroundStyle(KaidoTheme.quietText)
         }
         Spacer()
-        Text(distanceLabel(model.selectedRoute?.distanceMeters ?? 0))
-          .font(.system(size: 20, weight: .black, design: .rounded))
+        VStack(alignment: .trailing, spacing: 1) {
+          Text(
+            copy.resolve(
+              japanese: "首都高",
+              simplifiedChinese: "首都高",
+              english: "SHUTO"
+            )
+          )
+          .font(.system(size: 8, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.quietText)
+          Text(distanceLabel(model.selectedRoute?.distanceMeters ?? 0))
+            .font(.system(size: 20, weight: .black, design: .rounded))
+        }
       }
       .foregroundStyle(KaidoTheme.ink)
 
@@ -1074,13 +1085,29 @@ struct WholeShutoProductView: View {
           .font(.system(size: 10, weight: .bold))
           .lineLimit(1)
           .minimumScaleFactor(0.72)
+        if let route = model.customRecommendation?.route {
+          Text(routeBoundarySummary(route))
+            .font(.system(size: 8, weight: .bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.58)
+            .opacity(0.72)
+          HStack(spacing: 4) {
+            Image(
+              systemName:
+                "point.topleft.down.to.point.bottomright.curvepath"
+            )
+            .font(.system(size: 8, weight: .black))
+            Text(expresswayDistanceLabel(route.distanceMeters))
+              .font(.system(size: 9, weight: .bold))
+          }
+        }
       }
       .foregroundStyle(
         model.isCustomRouteSelected
           ? KaidoTheme.routeWhite : KaidoTheme.ink
       )
       .padding(.horizontal, 12)
-      .frame(width: 124, height: 68, alignment: .leading)
+      .frame(width: 148, height: 82, alignment: .leading)
       .background(
         model.isCustomRouteSelected
           ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
@@ -1125,11 +1152,16 @@ struct WholeShutoProductView: View {
         .font(.system(size: 11, weight: .black, design: .rounded))
         .lineLimit(1)
         .minimumScaleFactor(0.56)
+        Text(routeBoundarySummary(route))
+          .font(.system(size: 8, weight: .bold))
+          .lineLimit(1)
+          .minimumScaleFactor(0.58)
+          .opacity(0.72)
         HStack(spacing: 4) {
           Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
             .font(.system(size: 8, weight: .black))
-          Text(distanceLabel(route.distanceMeters))
-            .font(.system(size: 10, weight: .bold))
+          Text(expresswayDistanceLabel(route.distanceMeters))
+            .font(.system(size: 9, weight: .bold))
         }
       }
       .foregroundStyle(
@@ -1138,7 +1170,7 @@ struct WholeShutoProductView: View {
           : KaidoTheme.ink
       )
       .padding(.horizontal, 12)
-      .frame(width: 150, height: 68, alignment: .leading)
+      .frame(width: 176, height: 82, alignment: .leading)
       .background(
         isSelected
           ? KaidoTheme.routeGreen
@@ -1613,7 +1645,9 @@ struct WholeShutoProductView: View {
     return
       route.routeIDsInOrder.map(shieldLabel).joined(separator: ", ")
       + "; "
-      + distanceLabel(route.distanceMeters)
+      + routeBoundarySummary(route)
+      + "; "
+      + expresswayDistanceLabel(route.distanceMeters)
   }
 
   private var customRouteCardDetail: String {
@@ -1638,7 +1672,24 @@ struct WholeShutoProductView: View {
       )
     }
     return
-      customRouteCardDetail + "; " + distanceLabel(route.distanceMeters)
+      customRouteCardDetail
+      + "; "
+      + routeBoundarySummary(route)
+      + "; "
+      + expresswayDistanceLabel(route.distanceMeters)
+  }
+
+  private func routeBoundarySummary(_ route: ShutoPlannedRoute) -> String {
+    "\(entryName(route.entryFacility.nameJA)) → "
+      + exitName(route.exitFacility.nameJA)
+  }
+
+  private func expresswayDistanceLabel(_ distanceMeters: Double) -> String {
+    copy.resolve(
+      japanese: "首都高 \(distanceLabel(distanceMeters))",
+      simplifiedChinese: "首都高 \(distanceLabel(distanceMeters))",
+      english: "SHUTO \(distanceLabel(distanceMeters))"
+    )
   }
 
   private var instructionSymbol: String {

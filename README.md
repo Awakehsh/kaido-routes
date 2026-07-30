@@ -20,10 +20,13 @@ internal review workbench.
   Kaido-owned Shuto path separate from bounded surface access and egress.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
-- Route choice keeps recommendations and exact customization together. Custom
-  selection pins one direction-valid entrance, one direction-valid exit, and a
-  route style, previews the resulting route thread, and applies its own
-  Kaido-owned `RoutePlan` without turning the map into another home surface.
+- Route choice keeps recommendations and exact customization together. Every
+  candidate identifies its directional entrance and exit and labels distance
+  as Shuto-only so a shorter expressway section is not presented as a shorter
+  full journey. Custom selection pins one direction-valid entrance, one
+  direction-valid exit, and a route style, previews the resulting route thread,
+  and applies its own Kaido-owned `RoutePlan` without turning the map into
+  another home surface.
 - Route choice leads to one parked route pass before simulation starts. It
   combines the bounded surface access and egress legs with the exact selected
   Shuto route, shows full-journey distance and a non-realtime preview duration,

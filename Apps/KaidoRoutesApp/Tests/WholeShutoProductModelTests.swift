@@ -7,6 +7,20 @@ import XCTest
 
 @MainActor
 final class WholeShutoProductModelTests: XCTestCase {
+  func testPlanningAndResetUseTheGeographicMap() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+
+    XCTAssertEqual(model.phase, .planning)
+    XCTAssertEqual(model.mapMode, .geographic)
+
+    model.preparePreviewJourney()
+    model.mapMode = .network
+    model.reset()
+
+    XCTAssertEqual(model.phase, .planning)
+    XCTAssertEqual(model.mapMode, .geographic)
+  }
+
   func testJunctionPromptsRequireAnExactReviewedMovement() {
     let model = WholeShutoProductModel(checkpointStore: nil)
 
@@ -675,8 +689,8 @@ final class WholeShutoProductModelTests: XCTestCase {
   }
 }
 
-private extension Collection {
-  var only: Element? {
+extension Collection {
+  fileprivate var only: Element? {
     count == 1 ? first : nil
   }
 }
@@ -700,8 +714,8 @@ private final class WholeShutoMemoryCheckpointStore:
   }
 }
 
-private extension WholeShutoJourneyCheckpoint {
-  func replacingRoutePlan(_ routePlan: RoutePlan) -> Self {
+extension WholeShutoJourneyCheckpoint {
+  fileprivate func replacingRoutePlan(_ routePlan: RoutePlan) -> Self {
     WholeShutoJourneyCheckpoint(
       schemaVersion: schemaVersion,
       networkSnapshotID: networkSnapshotID,

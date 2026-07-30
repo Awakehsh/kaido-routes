@@ -198,7 +198,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published var originQuery: String
   @Published var destinationQuery: String
   @Published var preference: ShutoRoutePreference = .recommended
-  @Published var mapMode: WholeShutoMapMode = .network
+  @Published var mapMode: WholeShutoMapMode = .geographic
   @Published private(set) var phase: WholeShutoJourneyPhase = .planning
   @Published private(set) var origin: WholeShutoPlace?
   @Published private(set) var destination: WholeShutoPlace?
@@ -902,7 +902,7 @@ final class WholeShutoProductModel: ObservableObject {
     progressFraction = 0
     isPlaying = false
     failureCode = nil
-    mapMode = .network
+    mapMode = .geographic
     matcherConfidence = nil
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil

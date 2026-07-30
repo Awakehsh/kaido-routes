@@ -23,19 +23,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "PLANNING"
     )
     XCTAssertTrue(
-      element("whole-shuto-network-map", in: app).exists
+      element("whole-shuto-geographic-map", in: app).exists
     )
+    XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
     XCTAssertTrue(
-      app.staticTexts["首都高全网导航"].exists
+      element("whole-shuto-destination-search", in: app).exists
     )
+    XCTAssertTrue(element("whole-shuto-plan-route", in: app).exists)
     assertMapFirstPlanningLayout(in: app)
 
-    let topologyScreenshot = XCTAttachment(
+    let homeScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    topologyScreenshot.name = "Whole Shuto default product map"
-    topologyScreenshot.lifetime = .keepAlways
-    add(topologyScreenshot)
+    homeScreenshot.name = "Whole Shuto route search home"
+    homeScreenshot.lifetime = .keepAlways
+    add(homeScreenshot)
   }
 
   func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {
@@ -53,7 +55,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let product = element("whole-shuto-product", in: routeApp)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
     XCTAssertEqual(product.value as? String, "REVIEW")
-    XCTAssertTrue(element("whole-shuto-network-map", in: routeApp).exists)
+    XCTAssertTrue(element("whole-shuto-geographic-map", in: routeApp).exists)
+    XCTAssertTrue(element("whole-shuto-route-selection", in: routeApp).exists)
+    XCTAssertTrue(element("whole-shuto-route-option-0", in: routeApp).exists)
+    let customizeRoute = element(
+      "whole-shuto-customize-route",
+      in: routeApp
+    )
+    XCTAssertTrue(customizeRoute.exists)
+    let routeSelectionScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    routeSelectionScreenshot.name = "Whole Shuto route selection"
+    routeSelectionScreenshot.lifetime = .keepAlways
+    add(routeSelectionScreenshot)
+    customizeRoute.tap()
+    XCTAssertTrue(
+      element("whole-shuto-route-customization", in: routeApp).exists
+    )
     XCTAssertTrue(
       element("whole-shuto-start-simulation", in: routeApp).exists
     )

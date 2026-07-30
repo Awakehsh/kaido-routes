@@ -13,7 +13,7 @@ provider cannot rewrite it.
 
 The iPhone product has four primary surfaces:
 
-1. **Routes:** current-origin recommendations, saved routes, and create route.
+1. **Routes:** current origin, destination search, and saved routes.
 2. **Plan:** an interactive map with geographic and topology projections,
    guided or expert authoring.
 3. **Review:** one concise journey summary and explicit start action.
@@ -30,27 +30,24 @@ The origin chip uses current location only after explicit permission. It also
 supports a manually entered origin and previously selected origins. If
 permission is denied, saved and manually selected routes remain available.
 
-The surface begins with the origin control, map, and recommended route list. It
-does not add a promotional headline or helper paragraph before those controls.
+The surface begins with the map, an explicit current-location control, one
+destination field, and one route-search action. It does not show an editorial,
+operator, creator, or community recommendation feed below those controls.
 
-The route feed has three groups:
+Recommended, alternative, and custom choices appear only after a destination
+has been resolved. The route-choice row shows the recommended exact route first,
+the custom control second, and further alternatives after it. Each route option
+contains only its selection label, route shields, and distance. Custom expands
+route preferences in place; it does not replace the map with a separate home
+mode.
 
-- **Recommended from here:** reviewed variants ranked after exact directional
-  entrance compatibility, then surface access ETA and user preferences.
-- **Kaido routes:** reviewed C1, C2-plus-boundary, Bayshore, PA-focused, and
-  introductory route families.
-- **My routes:** user-authored, saved, shared, and review-required routes.
-
-A recommended card shows only values that help selection:
-
-- friendly route name and route shields;
-- recommended directional entrance and access ETA;
-- route duration and actual distance;
-- direction, junction load, tunnel exposure, and optional PA;
-- finish behavior; and
-- one availability state.
-
-Technical provenance and rejected-entrance reasons remain one action away.
+Bounded third-party navigation providers may contribute candidate geometry,
+ranking, or comparison evidence to this route-choice stage. They do not create
+content cards, promotional route stories, or route authority. A candidate must
+translate onto the exact Kaido graph snapshot and ordered occurrences before it
+can become selectable. Required provider attribution and technical provenance
+remain in route details or the system map attribution surface rather than the
+primary route-choice row.
 
 ## Plan
 

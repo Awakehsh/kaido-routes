@@ -33,6 +33,10 @@ permission is denied, saved and manually selected routes remain available.
 The surface begins with the map, an explicit current-location control, one
 destination field, and one route-search action. It does not show an editorial,
 operator, creator, or community recommendation feed below those controls.
+Typing in the destination field presents a compact list of address and
+point-of-interest candidates. Selecting one resolves a single coordinate and
+places its destination marker on the map; if suggestions are unavailable, the
+entered name remains usable by the normal route-search action.
 
 Recommended, alternative, and custom choices appear only after a destination
 has been resolved. The route-choice row shows the recommended exact route first,

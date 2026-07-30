@@ -5,19 +5,27 @@ import KaidoRouting
 import MapKit
 import SwiftUI
 
+private enum WholeShutoPlanningField: Hashable {
+  case origin
+  case destination
+}
+
 struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
   @StateObject private var model: WholeShutoProductModel
   @StateObject private var languageSettings: KaidoLanguageSettingsModel
   @StateObject private var planningLocation: WholeShutoPlanningLocationController
+  @StateObject private var placeSearch: WholeShutoPlaceSearchController
   @State private var showsNetworkFacts = false
   @State private var showsLanguageSettings = false
   @State private var showsRouteCustomization = false
   @State private var showsManualOrigin = false
+  @FocusState private var focusedPlanningField: WholeShutoPlanningField?
 
   init(
     model: WholeShutoProductModel? = nil,
-    languageSettings: KaidoLanguageSettingsModel? = nil
+    languageSettings: KaidoLanguageSettingsModel? = nil,
+    placeSearch: WholeShutoPlaceSearchController? = nil
   ) {
     _model = StateObject(
       wrappedValue: model ?? WholeShutoProductModel()
@@ -27,6 +35,9 @@ struct WholeShutoProductView: View {
     )
     _planningLocation = StateObject(
       wrappedValue: WholeShutoPlanningLocationController()
+    )
+    _placeSearch = StateObject(
+      wrappedValue: placeSearch ?? WholeShutoPlaceSearchController()
     )
   }
 
@@ -82,6 +93,22 @@ struct WholeShutoProductView: View {
     }
     .onChange(of: isDriving) { _, newValue in
       planningLocation.setForeground(scenePhase == .active && !newValue)
+    }
+    .onChange(of: model.destinationQuery, initial: true) {
+      updateDestinationSearch()
+    }
+    .onChange(of: focusedPlanningField) { _, newField in
+      if newField == .destination {
+        updateDestinationSearch()
+      } else {
+        placeSearch.dismissResults()
+      }
+    }
+    .onChange(of: planningLocation.snapshot?.coordinate.latitude) {
+      updateDestinationSearch()
+    }
+    .onChange(of: planningLocation.snapshot?.coordinate.longitude) {
+      updateDestinationSearch()
     }
   }
 
@@ -300,7 +327,9 @@ struct WholeShutoProductView: View {
       HStack(spacing: 8) {
         planningLocationButton
         routeField(
-          symbol: "magnifyingglass",
+          symbol:
+            model.hasSelectedDestinationPreview
+            ? "checkmark" : "magnifyingglass",
           tint: KaidoTheme.routeGreen,
           label: copy.resolve(
             japanese: "目的地",
@@ -313,7 +342,8 @@ struct WholeShutoProductView: View {
             simplifiedChinese: "搜索目的地",
             english: "Search destination"
           ),
-          accessibilityIdentifier: "whole-shuto-destination-search"
+          accessibilityIdentifier: "whole-shuto-destination-search",
+          focus: .destination
         )
         .padding(.horizontal, 8)
         .background(KaidoTheme.paperRaised.opacity(0.94))
@@ -323,6 +353,8 @@ struct WholeShutoProductView: View {
             .stroke(KaidoTheme.paperDivider, lineWidth: 1)
         }
       }
+
+      destinationSearchResults
 
       if showsManualOrigin
         || planningLocation.state == .denied
@@ -342,7 +374,8 @@ struct WholeShutoProductView: View {
             simplifiedChinese: "输入出发地",
             english: "Enter origin"
           ),
-          accessibilityIdentifier: "whole-shuto-manual-origin"
+          accessibilityIdentifier: "whole-shuto-manual-origin",
+          focus: .origin
         )
         .padding(.horizontal, 8)
         .background(KaidoTheme.paperRaised.opacity(0.94))
@@ -370,6 +403,109 @@ struct WholeShutoProductView: View {
           in: .whitespacesAndNewlines
         ).isEmpty ? 0.45 : 1
       )
+    }
+  }
+
+  @ViewBuilder
+  private var destinationSearchResults: some View {
+    if focusedPlanningField == .destination {
+      switch placeSearch.state {
+      case .searching, .resolving:
+        HStack(spacing: 8) {
+          ProgressView()
+          Text(
+            placeSearch.state == .resolving
+              ? copy.resolve(
+                japanese: "目的地を確認中",
+                simplifiedChinese: "正在确认目的地",
+                english: "Confirming destination"
+              )
+              : copy.resolve(
+                japanese: "検索中",
+                simplifiedChinese: "正在搜索",
+                english: "Searching"
+              )
+          )
+          Spacer()
+        }
+        .font(.system(size: 11, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+        .padding(.horizontal, 12)
+        .frame(height: 36)
+        .accessibilityIdentifier("whole-shuto-place-search-progress")
+      case .results:
+        VStack(spacing: 0) {
+          ForEach(placeSearch.suggestions.prefix(4)) { suggestion in
+            Button {
+              selectDestinationSuggestion(suggestion)
+            } label: {
+              HStack(spacing: 10) {
+                Image(systemName: "mappin")
+                  .font(.system(size: 11, weight: .bold))
+                  .foregroundStyle(KaidoTheme.routeGreen)
+                  .frame(width: 24)
+                VStack(alignment: .leading, spacing: 1) {
+                  Text(suggestion.title)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(KaidoTheme.ink)
+                    .lineLimit(1)
+                  if !suggestion.subtitle.isEmpty {
+                    Text(suggestion.subtitle)
+                      .font(.system(size: 9, weight: .medium))
+                      .foregroundStyle(KaidoTheme.quietText)
+                      .lineLimit(1)
+                  }
+                }
+                Spacer()
+                Image(systemName: "arrow.up.left")
+                  .font(.system(size: 9, weight: .bold))
+                  .foregroundStyle(KaidoTheme.roadGray)
+              }
+              .padding(.horizontal, 10)
+              .frame(height: 46)
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+              suggestion.subtitle.isEmpty
+                ? suggestion.title
+                : "\(suggestion.title), \(suggestion.subtitle)"
+            )
+            .accessibilityIdentifier(
+              "whole-shuto-place-suggestion-\(suggestion.id)"
+            )
+
+            if suggestion.id != placeSearch.suggestions.prefix(4).last?.id {
+              Divider()
+                .padding(.leading, 44)
+            }
+          }
+        }
+        .background(KaidoTheme.paperRaised.opacity(0.97))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay {
+          RoundedRectangle(cornerRadius: 12)
+            .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        }
+      case .unavailable:
+        HStack(spacing: 7) {
+          Image(systemName: "wifi.exclamationmark")
+          Text(
+            copy.resolve(
+              japanese: "候補を取得できません。入力した名称で検索できます",
+              simplifiedChinese: "暂时无法获取建议，仍可按输入名称查找",
+              english: "Suggestions unavailable. Search the entered name"
+            )
+          )
+          Spacer()
+        }
+        .font(.system(size: 10, weight: .bold))
+        .foregroundStyle(KaidoTheme.signalAmber)
+        .accessibilityIdentifier("whole-shuto-place-search-unavailable")
+      case .idle:
+        EmptyView()
+      }
     }
   }
 
@@ -465,7 +601,8 @@ struct WholeShutoProductView: View {
     label: String,
     text: Binding<String>,
     prompt: String,
-    accessibilityIdentifier: String
+    accessibilityIdentifier: String,
+    focus: WholeShutoPlanningField
   ) -> some View {
     HStack(spacing: 10) {
       ZStack {
@@ -489,9 +626,12 @@ struct WholeShutoProductView: View {
           .lineLimit(1)
           .minimumScaleFactor(0.72)
           .textInputAutocapitalization(.never)
-          .submitLabel(.route)
+          .focused($focusedPlanningField, equals: focus)
+          .submitLabel(focus == .destination ? .route : .next)
           .onSubmit {
-            if !model.destinationQuery.isEmpty {
+            if focus == .origin {
+              focusedPlanningField = .destination
+            } else if !model.destinationQuery.isEmpty {
               model.planJourney()
             }
           }
@@ -1447,6 +1587,42 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private func updateDestinationSearch() {
+    guard
+      model.phase == .planning,
+      focusedPlanningField == .destination
+    else {
+      placeSearch.dismissResults()
+      return
+    }
+    if model.hasSelectedDestinationPreview {
+      placeSearch.dismissResults()
+      return
+    }
+    if model.destination != nil {
+      model.clearDestinationPreview()
+    }
+    placeSearch.clearSelection()
+    placeSearch.update(
+      query: model.destinationQuery,
+      near: planningLocation.snapshot?.coordinate
+    )
+  }
+
+  private func selectDestinationSuggestion(
+    _ suggestion: WholeShutoPlaceSuggestion
+  ) {
+    Task {
+      do {
+        let place = try await placeSearch.resolve(suggestion)
+        model.selectDestinationPreview(place)
+        focusedPlanningField = nil
+      } catch {
+        // The typed query remains available for the normal route-search path.
+      }
+    }
+  }
+
   private var planningLocationShortLabel: String {
     switch planningLocation.state {
     case .locating:
@@ -2198,6 +2374,7 @@ private struct WholeShutoGeographicMap: View {
             text: "B",
             color: KaidoTheme.evidenceCoral
           )
+          .accessibilityIdentifier("whole-shuto-selected-destination")
         }
       }
 

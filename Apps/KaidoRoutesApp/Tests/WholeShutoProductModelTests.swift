@@ -1,6 +1,7 @@
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoPresentation
+import KaidoRouting
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -19,6 +20,29 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(model.phase, .planning)
     XCTAssertEqual(model.mapMode, .geographic)
+  }
+
+  func testResolvedDestinationPreviewIsExplicitAndResettable() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    let destination = WholeShutoPlace(
+      title: "东京塔",
+      coordinate: ShutoCoordinate(
+        latitude: 35.658581,
+        longitude: 139.745433
+      )
+    )
+
+    model.selectDestinationPreview(destination)
+
+    XCTAssertEqual(model.destinationQuery, "东京塔")
+    XCTAssertEqual(model.destination, destination)
+    XCTAssertTrue(model.hasSelectedDestinationPreview)
+
+    model.clearDestinationPreview()
+
+    XCTAssertEqual(model.destinationQuery, "东京塔")
+    XCTAssertNil(model.destination)
+    XCTAssertFalse(model.hasSelectedDestinationPreview)
   }
 
   func testJunctionPromptsRequireAnExactReviewedMovement() {

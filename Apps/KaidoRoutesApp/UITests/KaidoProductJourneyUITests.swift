@@ -40,6 +40,53 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(homeScreenshot)
   }
 
+  func testDestinationSearchSelectsOneResolvedPlace() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-SEARCH-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let destination = app.textFields[
+      "whole-shuto-destination-search"
+    ]
+    XCTAssertTrue(destination.waitForExistence(timeout: 5))
+    destination.tap()
+    destination.typeText("东京")
+
+    let suggestion = app.buttons[
+      "whole-shuto-place-suggestion-preview.tokyo-tower"
+    ]
+    XCTAssertTrue(suggestion.waitForExistence(timeout: 5))
+
+    let suggestionsScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    suggestionsScreenshot.name = "Whole Shuto destination suggestions"
+    suggestionsScreenshot.lifetime = .keepAlways
+    add(suggestionsScreenshot)
+
+    suggestion.tap()
+
+    XCTAssertTrue(
+      element("whole-shuto-selected-destination", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(destination.value as? String, "东京塔")
+    XCTAssertTrue(app.buttons["whole-shuto-plan-route"].isEnabled)
+
+    let selectedDestinationScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    selectedDestinationScreenshot.name = "Whole Shuto selected destination"
+    selectedDestinationScreenshot.lifetime = .keepAlways
+    add(selectedDestinationScreenshot)
+  }
+
   func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {
     continueAfterFailure = false
     let routeApp = XCUIApplication()

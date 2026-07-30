@@ -235,6 +235,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
   private var isStaticJunctionPreview = false
+  private var selectedDestinationTitle: String?
 
   init(
     database: ShutoNetworkDatabase? = nil,
@@ -293,6 +294,12 @@ final class WholeShutoProductModel: ObservableObject {
 
   var selectedRoute: ShutoPlannedRoute? {
     selectedRecommendation?.route
+  }
+
+  var hasSelectedDestinationPreview: Bool {
+    phase == .planning
+      && destination != nil
+      && selectedDestinationTitle == destinationQuery
   }
 
   var junctionPrompts: [WholeShutoJunctionPrompt] {
@@ -560,10 +567,24 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func usePreviewPlaces() {
+    selectedDestinationTitle = nil
     origin = Self.previewOrigin
     destination = Self.previewDestination
     originQuery = Self.previewOrigin.title
     destinationQuery = Self.previewDestination.title
+  }
+
+  func selectDestinationPreview(_ place: WholeShutoPlace) {
+    guard phase == .planning else { return }
+    destination = place
+    destinationQuery = place.title
+    selectedDestinationTitle = place.title
+  }
+
+  func clearDestinationPreview() {
+    guard phase == .planning else { return }
+    destination = nil
+    selectedDestinationTitle = nil
   }
 
   func preparePreviewJourney(startsNavigation: Bool = false) {
@@ -895,6 +916,7 @@ final class WholeShutoProductModel: ObservableObject {
     phase = .planning
     origin = nil
     destination = nil
+    selectedDestinationTitle = nil
     recommendations = []
     selectedRecommendationIndex = 0
     accessRoute = nil
@@ -1409,6 +1431,9 @@ final class WholeShutoProductModel: ObservableObject {
     )
     guard !normalized.isEmpty else {
       throw WholeShutoProductError.destinationUnavailable
+    }
+    if selectedDestinationTitle == normalized, let destination {
+      return destination
     }
     let place = try await placeResolver.resolve(
       query: normalized,

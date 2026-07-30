@@ -1,6 +1,7 @@
 import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
+import KaidoRouting
 import SwiftUI
 
 @main
@@ -109,6 +110,10 @@ struct KaidoRoutesApp: App {
       ) {
         C2CompletedRouteDemoView()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-SEARCH-PREVIEW"
+      ) {
+        WholeShutoSearchPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -210,6 +215,51 @@ private enum WholeShutoJunctionPreviewMovement {
   case shinonomeWestbound
   case tatsumiEastbound
   case tatsumiWestbound
+}
+
+private struct WholeShutoSearchPreviewHost: View {
+  @StateObject private var model = WholeShutoProductModel(
+    checkpointStore: nil
+  )
+  @StateObject private var placeSearch = WholeShutoPlaceSearchController(
+    previewPlaces: [
+      (
+        WholeShutoPlaceSuggestion(
+          id: "preview.tokyo-tower",
+          title: "东京塔",
+          subtitle: "东京都港区芝公园"
+        ),
+        WholeShutoPlace(
+          title: "东京塔",
+          coordinate: ShutoCoordinate(
+            latitude: 35.658581,
+            longitude: 139.745433
+          )
+        )
+      ),
+      (
+        WholeShutoPlaceSuggestion(
+          id: "preview.tokyo-station",
+          title: "东京站",
+          subtitle: "东京都千代田区丸之内"
+        ),
+        WholeShutoPlace(
+          title: "东京站",
+          coordinate: ShutoCoordinate(
+            latitude: 35.681236,
+            longitude: 139.767125
+          )
+        )
+      ),
+    ]
+  )
+
+  var body: some View {
+    WholeShutoProductView(
+      model: model,
+      placeSearch: placeSearch
+    )
+  }
 }
 
 private struct WholeShutoJunctionPreviewHost: View {

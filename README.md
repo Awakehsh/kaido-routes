@@ -21,9 +21,12 @@ internal review workbench.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every
-  candidate identifies its directional entrance and exit and labels distance
-  as Shuto-only so a shorter expressway section is not presented as a shorter
-  full journey. Custom selection pins one direction-valid entrance, one
+  candidate identifies its directional entrance and exit. When the bounded
+  surface provider resolves both ordinary-road legs for every exact candidate,
+  the row uses those comparable ETAs for ordering and shows full-journey preview
+  time and distance. A partial provider result preserves deterministic Kaido
+  order and labels every card as Shuto-only rather than mixing incomparable
+  estimates. Custom selection pins one direction-valid entrance, one
   direction-valid exit, and a route style, previews the resulting route thread,
   and applies its own Kaido-owned `RoutePlan` without turning the map into
   another home surface.

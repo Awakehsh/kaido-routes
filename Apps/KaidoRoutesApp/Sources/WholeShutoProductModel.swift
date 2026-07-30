@@ -46,6 +46,11 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let instructions: [String]
 }
 
+struct WholeShutoRouteChoiceMetrics: Equatable, Sendable {
+  let totalDistanceMeters: Double
+  let expectedTravelTimeSeconds: Double
+}
+
 struct WholeShutoRouteProgressGeometry: Equatable, Sendable {
   let traveledCoordinates: [ShutoCoordinate]
   let remainingCoordinates: [ShutoCoordinate]
@@ -212,6 +217,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var recommendations: [ShutoRouteRecommendation] = []
   @Published private(set) var selectedRecommendationIndex = 0
   @Published private(set) var customRecommendation: ShutoRouteRecommendation?
+  @Published private(set) var routeChoiceMetricsByRoutePlanID:
+    [String: WholeShutoRouteChoiceMetrics] = [:]
   @Published private(set) var isCustomRouteSelected = false
   @Published private(set) var customEntryFacilityID: String?
   @Published private(set) var customExitFacilityID: String?
@@ -240,12 +247,15 @@ final class WholeShutoProductModel: ObservableObject {
   private let placeResolver: any C2NavigationPlaceResolving
   private let checkpointStore: (any WholeShutoJourneyCheckpointStoring)?
   private let surfaceRouteResolver: any WholeShutoSurfaceRouteResolving
+  private let routeChoiceEvaluator: WholeShutoSurfaceRouteChoiceEvaluator
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var surfaceRouteTask: Task<Void, Never>?
   private var surfaceRouteRequestID: UUID?
+  private var routeChoiceSurfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes] =
+    [:]
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
   private var runtimeCoordinate: ShutoCoordinate?
@@ -292,6 +302,9 @@ final class WholeShutoProductModel: ObservableObject {
     self.locationProvider = locationProvider
     self.placeResolver = placeResolver
     self.surfaceRouteResolver = surfaceRouteResolver
+    routeChoiceEvaluator = WholeShutoSurfaceRouteChoiceEvaluator(
+      resolver: surfaceRouteResolver
+    )
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
     self.languageSelectionProvider = languageSelectionProvider
@@ -319,6 +332,33 @@ final class WholeShutoProductModel: ObservableObject {
 
   var selectedRoute: ShutoPlannedRoute? {
     selectedRecommendation?.route
+  }
+
+  func routeChoiceMetrics(
+    at recommendationIndex: Int
+  ) -> WholeShutoRouteChoiceMetrics? {
+    guard recommendations.indices.contains(recommendationIndex) else {
+      return nil
+    }
+    return routeChoiceMetricsByRoutePlanID[
+      recommendations[recommendationIndex].route.routePlan.id
+    ]
+  }
+
+  var customRouteChoiceMetrics: WholeShutoRouteChoiceMetrics? {
+    guard
+      isCustomRouteSelected,
+      let recommendation = customRecommendation,
+      let accessRoute,
+      let egressRoute
+    else {
+      return nil
+    }
+    return Self.routeChoiceMetrics(
+      for: recommendation.route,
+      accessRoute: accessRoute,
+      egressRoute: egressRoute
+    )
   }
 
   var hasSelectedDestinationPreview: Bool {
@@ -732,6 +772,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func preparePreviewJourney(startsNavigation: Bool = false) {
     cancelSurfaceRouteResolution()
+    clearRouteChoiceEvaluation()
     clearCustomRouteSelection()
     usePreviewPlaces()
     do {
@@ -864,6 +905,7 @@ final class WholeShutoProductModel: ObservableObject {
     startsNavigation: Bool
   ) {
     cancelSurfaceRouteResolution()
+    clearRouteChoiceEvaluation()
     clearCustomRouteSelection()
     do {
       let route = try planner.plan(
@@ -924,6 +966,10 @@ final class WholeShutoProductModel: ObservableObject {
 
   func planJourney() {
     guard !isPlanning else { return }
+    cancelSurfaceRouteResolution()
+    clearRouteChoiceEvaluation()
+    accessRoute = nil
+    egressRoute = nil
     isPlanning = true
     failureCode = nil
     Task {
@@ -941,18 +987,35 @@ final class WholeShutoProductModel: ObservableObject {
         guard !routes.isEmpty else {
           throw WholeShutoProductError.noExpresswayRoute
         }
+        let evaluation = await routeChoiceEvaluator.evaluate(
+          recommendations: routes,
+          origin: resolvedOrigin.coordinate,
+          destination: resolvedDestination.coordinate
+        )
         origin = resolvedOrigin
         destination = resolvedDestination
-        recommendations = routes
+        recommendations = evaluation.recommendations
+        routeChoiceSurfaceRoutesByRoutePlanID =
+          evaluation.surfaceRoutesByRoutePlanID
+        routeChoiceMetricsByRoutePlanID =
+          evaluation.usesComparableProviderMetrics
+          ? Self.routeChoiceMetrics(
+            recommendations: evaluation.recommendations,
+            surfaceRoutesByRoutePlanID:
+              evaluation.surfaceRoutesByRoutePlanID
+          )
+          : [:]
         selectedRecommendationIndex = 0
         clearCustomRouteSelection()
         phase = .review
         progressFraction = 0
-        resolveSurfaceRoutes(
-          for: routes[0],
-          origin: resolvedOrigin,
-          destination: resolvedDestination
-        )
+        if !applyCachedSurfaceRoutes(for: evaluation.recommendations[0]) {
+          resolveSurfaceRoutes(
+            for: evaluation.recommendations[0],
+            origin: resolvedOrigin,
+            destination: resolvedDestination
+          )
+        }
         persistCheckpoint()
       } catch {
         failureCode = Self.failureCode(error)
@@ -970,6 +1033,10 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     preference = recommendation.route.preference
+    if applyCachedSurfaceRoutes(for: recommendation) {
+      persistCheckpoint()
+      return
+    }
     resolveSurfaceRoutes(
       for: recommendation,
       origin: origin,
@@ -1110,6 +1177,29 @@ final class WholeShutoProductModel: ObservableObject {
     isUpdatingSurfaceRoute = false
   }
 
+  @discardableResult
+  private func applyCachedSurfaceRoutes(
+    for recommendation: ShutoRouteRecommendation
+  ) -> Bool {
+    guard
+      let routes = routeChoiceSurfaceRoutesByRoutePlanID[
+        recommendation.route.routePlan.id
+      ]
+    else {
+      return false
+    }
+    cancelSurfaceRouteResolution()
+    accessRoute = routes.access
+    egressRoute = routes.egress
+    failureCode = nil
+    return true
+  }
+
+  private func clearRouteChoiceEvaluation() {
+    routeChoiceSurfaceRoutesByRoutePlanID = [:]
+    routeChoiceMetricsByRoutePlanID = [:]
+  }
+
   func startNavigationSimulation() {
     guard phase == .review, let route = selectedRoute else { return }
     guard isJourneyReadyForPreview else {
@@ -1221,6 +1311,7 @@ final class WholeShutoProductModel: ObservableObject {
     selectedDestinationTitle = nil
     recommendations = []
     selectedRecommendationIndex = 0
+    clearRouteChoiceEvaluation()
     clearCustomRouteSelection()
     accessRoute = nil
     egressRoute = nil
@@ -2014,6 +2105,48 @@ final class WholeShutoProductModel: ObservableObject {
       distanceMeters: distance,
       expectedTravelTimeSeconds: distance / 8.3,
       instructions: []
+    )
+  }
+
+  private static func routeChoiceMetrics(
+    recommendations: [ShutoRouteRecommendation],
+    surfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes]
+  ) -> [String: WholeShutoRouteChoiceMetrics] {
+    Dictionary(
+      uniqueKeysWithValues: recommendations.compactMap { recommendation in
+        let routePlanID = recommendation.route.routePlan.id
+        guard
+          let routes = surfaceRoutesByRoutePlanID[routePlanID]
+        else {
+          return nil
+        }
+        return (
+          routePlanID,
+          routeChoiceMetrics(
+            for: recommendation.route,
+            accessRoute: routes.access,
+            egressRoute: routes.egress
+          )
+        )
+      }
+    )
+  }
+
+  private static func routeChoiceMetrics(
+    for route: ShutoPlannedRoute,
+    accessRoute: WholeShutoSurfaceRoute,
+    egressRoute: WholeShutoSurfaceRoute
+  ) -> WholeShutoRouteChoiceMetrics {
+    WholeShutoRouteChoiceMetrics(
+      totalDistanceMeters:
+        accessRoute.distanceMeters
+        + route.distanceMeters
+        + egressRoute.distanceMeters,
+      expectedTravelTimeSeconds:
+        accessRoute.expectedTravelTimeSeconds
+        + route.distanceMeters
+        / simulationReferenceSpeedMetersPerSecond
+        + egressRoute.expectedTravelTimeSeconds
     )
   }
 

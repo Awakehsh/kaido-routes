@@ -100,6 +100,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-route-option-0", in: app).isSelected
     )
+    let recommendedRouteValue =
+      element("whole-shuto-route-option-0", in: app).value as? String
+    XCTAssertTrue(recommendedRouteValue?.contains("全程约") == true)
+    XCTAssertTrue(recommendedRouteValue?.contains("分钟") == true)
     let reviewJourney = app.buttons["whole-shuto-review-journey"]
     XCTAssertTrue(reviewJourney.isEnabled)
 
@@ -427,7 +431,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let customRouteValue = customizeRoute.value as? String ?? ""
     XCTAssertTrue(customRouteValue.contains("入口"))
     XCTAssertTrue(customRouteValue.contains("出口"))
-    XCTAssertTrue(customRouteValue.contains("首都高"))
+    XCTAssertTrue(customRouteValue.contains("全程约"))
+    XCTAssertTrue(customRouteValue.contains("分钟"))
     let reviewCustomRoute = routeApp.buttons[
       "whole-shuto-review-journey"
     ]

@@ -9,6 +9,129 @@ protocol WholeShutoSurfaceRouteResolving: Sendable {
   ) async -> WholeShutoSurfaceRoute?
 }
 
+struct WholeShutoRouteChoiceSurfaceRoutes: Equatable, Sendable {
+  let access: WholeShutoSurfaceRoute
+  let egress: WholeShutoSurfaceRoute
+}
+
+struct WholeShutoRouteChoiceEvaluation: Equatable, Sendable {
+  let recommendations: [ShutoRouteRecommendation]
+  let surfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes]
+  let usesComparableProviderMetrics: Bool
+}
+
+struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
+  private struct CandidateResult: Sendable {
+    let routePlanID: String
+    let surfaceRoutes: WholeShutoRouteChoiceSurfaceRoutes?
+  }
+
+  private static let surfaceScoreWeight = 1.25
+  private static let surfaceReferenceSpeedMetersPerSecond = 8.3
+
+  private let resolver: any WholeShutoSurfaceRouteResolving
+
+  init(resolver: any WholeShutoSurfaceRouteResolving) {
+    self.resolver = resolver
+  }
+
+  func evaluate(
+    recommendations: [ShutoRouteRecommendation],
+    origin: ShutoCoordinate,
+    destination: ShutoCoordinate
+  ) async -> WholeShutoRouteChoiceEvaluation {
+    let surfaceRoutesByRoutePlanID = await withTaskGroup(
+      of: CandidateResult.self,
+      returning: [
+        String: WholeShutoRouteChoiceSurfaceRoutes
+      ].self
+    ) { group in
+      for recommendation in recommendations {
+        group.addTask {
+          async let access = resolver.route(
+            from: origin,
+            to: recommendation.route.entryFacility.coordinate
+          )
+          async let egress = resolver.route(
+            from: recommendation.route.exitFacility.coordinate,
+            to: destination
+          )
+          let routes = await (access, egress)
+          let surfaceRoutes = routes.0.flatMap { accessRoute in
+            routes.1.map { egressRoute in
+              WholeShutoRouteChoiceSurfaceRoutes(
+                access: accessRoute,
+                egress: egressRoute
+              )
+            }
+          }
+          return CandidateResult(
+            routePlanID: recommendation.route.routePlan.id,
+            surfaceRoutes: surfaceRoutes
+          )
+        }
+      }
+
+      var results: [String: WholeShutoRouteChoiceSurfaceRoutes] = [:]
+      for await result in group {
+        if let surfaceRoutes = result.surfaceRoutes {
+          results[result.routePlanID] = surfaceRoutes
+        }
+      }
+      return results
+    }
+
+    guard
+      !recommendations.isEmpty,
+      surfaceRoutesByRoutePlanID.count == recommendations.count
+    else {
+      return WholeShutoRouteChoiceEvaluation(
+        recommendations: recommendations,
+        surfaceRoutesByRoutePlanID: surfaceRoutesByRoutePlanID,
+        usesComparableProviderMetrics: false
+      )
+    }
+
+    let refinedRecommendations = recommendations.map { recommendation in
+      guard
+        let routes = surfaceRoutesByRoutePlanID[
+          recommendation.route.routePlan.id
+        ]
+      else {
+        return recommendation
+      }
+      let originalSurfaceScore =
+        (recommendation.surfaceAccessDistanceMeters
+          + recommendation.surfaceEgressDistanceMeters) * Self.surfaceScoreWeight
+      let kaidoRouteScore =
+        recommendation.totalScoreMeters - originalSurfaceScore
+      let providerSurfaceScore =
+        (routes.access.expectedTravelTimeSeconds
+          + routes.egress.expectedTravelTimeSeconds)
+        * Self.surfaceReferenceSpeedMetersPerSecond
+        * Self.surfaceScoreWeight
+      return ShutoRouteRecommendation(
+        route: recommendation.route,
+        surfaceAccessDistanceMeters: routes.access.distanceMeters,
+        surfaceEgressDistanceMeters: routes.egress.distanceMeters,
+        totalScoreMeters: kaidoRouteScore + providerSurfaceScore
+      )
+    }
+    .sorted {
+      if $0.totalScoreMeters != $1.totalScoreMeters {
+        return $0.totalScoreMeters < $1.totalScoreMeters
+      }
+      return $0.route.routePlan.id < $1.route.routePlan.id
+    }
+
+    return WholeShutoRouteChoiceEvaluation(
+      recommendations: refinedRecommendations,
+      surfaceRoutesByRoutePlanID: surfaceRoutesByRoutePlanID,
+      usesComparableProviderMetrics: true
+    )
+  }
+}
+
 struct WholeShutoMapKitSurfaceRouteResolver:
   WholeShutoSurfaceRouteResolving,
   Sendable

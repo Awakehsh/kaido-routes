@@ -75,6 +75,108 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.failureCode)
   }
 
+  func testComparableSurfaceRoutesRefineChoiceWithoutChangingExactPlans()
+    async throws
+  {
+    let baseline = WholeShutoProductModel(checkpointStore: nil)
+    baseline.preparePreviewJourney()
+    let originalRecommendations = baseline.recommendations
+    let preferredRoute = try XCTUnwrap(
+      originalRecommendations.last?.route
+    )
+    let resolver = WholeShutoRankingSurfaceRouteResolver(
+      preferredEntry: preferredRoute.entryFacility.coordinate,
+      preferredExit: preferredRoute.exitFacility.coordinate
+    )
+    let model = WholeShutoProductModel(
+      database: baseline.database,
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: resolver,
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    model.selectDestinationPreview(
+      WholeShutoProductModel.previewDestination
+    )
+
+    model.planJourney()
+    for _ in 0..<1_000 where model.isPlanning {
+      await Task.yield()
+    }
+
+    XCTAssertFalse(model.isPlanning)
+    XCTAssertFalse(model.isUpdatingSurfaceRoute)
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertEqual(
+      model.recommendations.first?.route.routePlan.id,
+      preferredRoute.routePlan.id
+    )
+    XCTAssertEqual(
+      Set(model.recommendations.map(\.route.routePlan.id)),
+      Set(originalRecommendations.map(\.route.routePlan.id))
+    )
+    let originalPlans = Dictionary(
+      uniqueKeysWithValues: originalRecommendations.map {
+        ($0.route.routePlan.id, $0.route.routePlan)
+      }
+    )
+    for recommendation in model.recommendations {
+      XCTAssertEqual(
+        recommendation.route.routePlan,
+        originalPlans[recommendation.route.routePlan.id]
+      )
+      XCTAssertNotNil(
+        model.routeChoiceMetricsByRoutePlanID[
+          recommendation.route.routePlan.id
+        ]
+      )
+    }
+    XCTAssertEqual(
+      model.accessRoute?.coordinates.last,
+      preferredRoute.entryFacility.coordinate
+    )
+    XCTAssertEqual(
+      model.egressRoute?.coordinates.first,
+      preferredRoute.exitFacility.coordinate
+    )
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertNil(model.failureCode)
+  }
+
+  func testIncompleteSurfaceComparisonKeepsDeterministicKaidoOrder()
+    async throws
+  {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney()
+    let originalRecommendations = model.recommendations
+    let unavailableEntry = try XCTUnwrap(
+      originalRecommendations.last?.route.entryFacility.coordinate
+    )
+    let evaluator = WholeShutoSurfaceRouteChoiceEvaluator(
+      resolver: WholeShutoPartiallyUnavailableChoiceResolver(
+        unavailableEntry: unavailableEntry
+      )
+    )
+
+    let evaluation = await evaluator.evaluate(
+      recommendations: originalRecommendations,
+      origin: WholeShutoProductModel.previewOrigin.coordinate,
+      destination: WholeShutoProductModel.previewDestination.coordinate
+    )
+
+    XCTAssertFalse(evaluation.usesComparableProviderMetrics)
+    XCTAssertEqual(
+      evaluation.recommendations.map(\.route.routePlan.id),
+      originalRecommendations.map(\.route.routePlan.id)
+    )
+    XCTAssertLessThan(
+      evaluation.surfaceRoutesByRoutePlanID.count,
+      originalRecommendations.count
+    )
+  }
+
   func testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone()
     throws
   {
@@ -1091,6 +1193,63 @@ private actor WholeShutoRecoveringSurfaceRouteResolver:
       coordinates: [origin, destination],
       distanceMeters: 1_200,
       expectedTravelTimeSeconds: 180,
+      instructions: []
+    )
+  }
+}
+
+private actor WholeShutoRankingSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  private let preferredEntry: ShutoCoordinate
+  private let preferredExit: ShutoCoordinate
+
+  init(
+    preferredEntry: ShutoCoordinate,
+    preferredExit: ShutoCoordinate
+  ) {
+    self.preferredEntry = preferredEntry
+    self.preferredExit = preferredExit
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    let isPreferredLeg =
+      destination == preferredEntry || origin == preferredExit
+    let distanceMeters = isPreferredLeg ? 200.0 : 50_000.0
+    let expectedTravelTimeSeconds =
+      isPreferredLeg ? 20.0 : 20_000.0
+    return WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: distanceMeters,
+      expectedTravelTimeSeconds: expectedTravelTimeSeconds,
+      instructions: []
+    )
+  }
+}
+
+private actor WholeShutoPartiallyUnavailableChoiceResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  private let unavailableEntry: ShutoCoordinate
+
+  init(unavailableEntry: ShutoCoordinate) {
+    self.unavailableEntry = unavailableEntry
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    guard destination != unavailableEntry else {
+      return nil
+    }
+    return WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_000,
+      expectedTravelTimeSeconds: 120,
       instructions: []
     )
   }

@@ -1094,11 +1094,20 @@ struct WholeShutoProductView: View {
           HStack(spacing: 4) {
             Image(
               systemName:
-                "point.topleft.down.to.point.bottomright.curvepath"
+                model.customRouteChoiceMetrics == nil
+                ? "point.topleft.down.to.point.bottomright.curvepath"
+                : "clock"
             )
             .font(.system(size: 8, weight: .black))
-            Text(expresswayDistanceLabel(route.distanceMeters))
-              .font(.system(size: 9, weight: .bold))
+            Text(
+              routeChoiceComparisonLabel(
+                metrics: model.customRouteChoiceMetrics,
+                shutoDistanceMeters: route.distanceMeters
+              )
+            )
+            .font(.system(size: 9, weight: .bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
           }
         }
       }
@@ -1128,6 +1137,7 @@ struct WholeShutoProductView: View {
       model.selectRecommendation(at: index)
     } label: {
       let route = model.recommendations[index].route
+      let metrics = model.routeChoiceMetrics(at: index)
       let isSelected =
         index == model.selectedRecommendationIndex
         && !model.isCustomRouteSelected
@@ -1158,10 +1168,22 @@ struct WholeShutoProductView: View {
           .minimumScaleFactor(0.58)
           .opacity(0.72)
         HStack(spacing: 4) {
-          Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
-            .font(.system(size: 8, weight: .black))
-          Text(expresswayDistanceLabel(route.distanceMeters))
-            .font(.system(size: 9, weight: .bold))
+          Image(
+            systemName:
+              metrics == nil
+              ? "point.topleft.down.to.point.bottomright.curvepath"
+              : "clock"
+          )
+          .font(.system(size: 8, weight: .black))
+          Text(
+            routeChoiceComparisonLabel(
+              metrics: metrics,
+              shutoDistanceMeters: route.distanceMeters
+            )
+          )
+          .font(.system(size: 9, weight: .bold))
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
         }
       }
       .foregroundStyle(
@@ -1647,7 +1669,10 @@ struct WholeShutoProductView: View {
       + "; "
       + routeBoundarySummary(route)
       + "; "
-      + expresswayDistanceLabel(route.distanceMeters)
+      + routeChoiceComparisonLabel(
+        metrics: model.routeChoiceMetrics(at: index),
+        shutoDistanceMeters: route.distanceMeters
+      )
   }
 
   private var customRouteCardDetail: String {
@@ -1676,7 +1701,10 @@ struct WholeShutoProductView: View {
       + "; "
       + routeBoundarySummary(route)
       + "; "
-      + expresswayDistanceLabel(route.distanceMeters)
+      + routeChoiceComparisonLabel(
+        metrics: model.customRouteChoiceMetrics,
+        shutoDistanceMeters: route.distanceMeters
+      )
   }
 
   private func routeBoundarySummary(_ route: ShutoPlannedRoute) -> String {
@@ -1689,6 +1717,30 @@ struct WholeShutoProductView: View {
       japanese: "首都高 \(distanceLabel(distanceMeters))",
       simplifiedChinese: "首都高 \(distanceLabel(distanceMeters))",
       english: "SHUTO \(distanceLabel(distanceMeters))"
+    )
+  }
+
+  private func routeChoiceComparisonLabel(
+    metrics: WholeShutoRouteChoiceMetrics?,
+    shutoDistanceMeters: Double
+  ) -> String {
+    guard let metrics else {
+      return expresswayDistanceLabel(shutoDistanceMeters)
+    }
+    let minutes = max(
+      1,
+      Int(ceil(metrics.expectedTravelTimeSeconds / 60))
+    )
+    return copy.resolve(
+      japanese:
+        "全行程 約\(minutes)分 · "
+        + distanceLabel(metrics.totalDistanceMeters),
+      simplifiedChinese:
+        "全程约\(minutes)分钟 · "
+        + distanceLabel(metrics.totalDistanceMeters),
+      english:
+        "TOTAL ~\(minutes) MIN · "
+        + distanceLabel(metrics.totalDistanceMeters)
     )
   }
 

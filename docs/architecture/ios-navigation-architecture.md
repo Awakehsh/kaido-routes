@@ -114,8 +114,12 @@ Use a hybrid architecture:
    GraphHopper as independent executable baselines.
 9. Let the product accept a current position or arbitrary resolvable address at
    both ends. Kaido ranks compatible directional entrances and exits and owns
-   the Shuto graph search. The provider may calculate only the two ordinary-road
-   legs; it cannot replace the route or change its ordered movements.
+   the Shuto graph search. At route choice, the provider may calculate the two
+   ordinary-road legs for every exact Kaido candidate. A complete result set
+   may replace surface-distance proxies with provider ETA for ranking and may
+   supply comparable full-journey preview metrics. A partial result set retains
+   deterministic Kaido ordering and Shuto-only metrics. The provider cannot
+   replace a route or change its ordered movements.
 10. Generate the distributable Shuto graph from pinned route relations plus
     only connected motorway links. Join current operator route, IC-direction,
     JCT, and PA facts without copying operator maps or images.
@@ -1312,6 +1316,16 @@ Use a two-stage algorithm.
 
 The surface provider supplies candidate geometry and ETA. It does not decide
 that a facility is compatible.
+
+The iPhone route-choice adapter executes that boundary as a complete-set
+comparison. It evaluates access and egress concurrently for each already exact
+`ShutoRouteRecommendation`, retains each `RoutePlan` byte-for-byte, and replaces
+only the surface component of its ranking score. All candidates must resolve
+before provider metrics can reorder the row or appear as full-journey
+comparisons. Partial provider results may be cached for the selected journey,
+but they cannot be compared against unresolved candidates. MapKit is the
+default no-extra-credential implementation; other providers enter through the
+same surface boundary after account, licence, and executable qualification.
 
 `SurfaceApproachPolicy` is the provider-neutral release shape for those hard
 filters. Private entrance fixtures can project into it for bake-off execution,

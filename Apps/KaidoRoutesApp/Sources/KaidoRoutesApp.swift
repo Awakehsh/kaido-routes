@@ -119,6 +119,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoLocationDeniedPreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-SURFACE-FAILURE-PREVIEW"
+      ) {
+        WholeShutoSurfaceFailurePreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -329,6 +333,45 @@ private struct WholeShutoLocationDeniedPreviewHost: View {
       planningLocation: planningLocation,
       placeSearch: placeSearch
     )
+  }
+}
+
+private struct WholeShutoSurfaceFailurePreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoUnavailableSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.originQuery = "現在地"
+    model.selectCurrentOrigin(
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    model.selectDestinationPreview(
+      WholeShutoProductModel.previewDestination
+    )
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
+      .task {
+        guard model.phase == .planning, !model.isPlanning else { return }
+        model.planJourney()
+      }
+  }
+}
+
+private struct WholeShutoUnavailableSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving,
+  Sendable
+{
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    nil
   }
 }
 

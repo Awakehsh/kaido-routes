@@ -103,18 +103,30 @@ before the editor changes.
 
 ## Review
 
+Route choice and pre-drive review are two separate parked actions. Selecting a
+recommended, alternative, or custom route does not start navigation. Once both
+bounded surface legs have resolved for the latest exact route, one **Review
+journey** action opens a map-anchored route pass. Missing either leg keeps that
+action unavailable, exposes one retry action, and cannot be interpreted as a
+shorter journey.
+
 Review is a short journey summary, not an evidence report. It shows:
 
-- current origin to exact directional entrance;
+- current origin, resolved surface access, and exact directional entrance;
 - the ordered Shuto route, repeated laps, JCT decisions, and planned PA visits;
-- directional exit and optional surface egress destination;
-- actual planned distance, estimated duration, and separately sourced toll;
+- directional exit, resolved surface egress, and final destination;
+- full-journey planned distance and a preview duration that explicitly excludes
+  realtime traffic;
+- a separately sourced toll quote when current, or an explicit no-current-quote
+  state without inventing a tariff distance or amount;
 - current traffic or restriction availability with a timestamp; and
 - guidance language and voice.
 
 Only an actionable blocker expands automatically. Evidence sources and release
-identity remain in a secondary detail sheet. One primary button starts the exact
-reviewed journey.
+identity remain in a secondary detail sheet. A second explicit primary action
+starts the exact reviewed journey. The current implementation labels that action
+as a synthetic full-journey preview and discloses its 54 km/h reference trace
+and 20x playback rate.
 
 ## Drive
 

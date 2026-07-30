@@ -48,6 +48,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-WHOLE-SHUTO-SEARCH-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
     ]
     app.launch()
 
@@ -98,9 +100,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-route-option-0", in: app).isSelected
     )
-    XCTAssertTrue(
-      element("whole-shuto-start-simulation", in: app).isEnabled
-    )
+    let reviewJourney = app.buttons["whole-shuto-review-journey"]
+    XCTAssertTrue(reviewJourney.isEnabled)
 
     let plannedRoutesScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
@@ -108,6 +109,43 @@ final class KaidoProductJourneyUITests: XCTestCase {
     plannedRoutesScreenshot.name = "Whole Shuto planned destination routes"
     plannedRoutesScreenshot.lifetime = .keepAlways
     add(plannedRoutesScreenshot)
+
+    reviewJourney.tap()
+    XCTAssertTrue(
+      element("whole-shuto-journey-review", in: app)
+        .waitForExistence(timeout: 3)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-journey-total-distance", in: app).exists
+    )
+    XCTAssertTrue(
+      element("whole-shuto-journey-estimated-duration", in: app).exists
+    )
+    XCTAssertTrue(element("whole-shuto-access-leg", in: app).exists)
+    XCTAssertTrue(element("whole-shuto-expressway-leg", in: app).exists)
+    XCTAssertTrue(element("whole-shuto-egress-leg", in: app).exists)
+    XCTAssertEqual(
+      element("whole-shuto-passage-status", in: app).value as? String,
+      "REALTIME_UNCONFIRMED"
+    )
+    XCTAssertEqual(
+      element("whole-shuto-toll-status", in: app).value as? String,
+      "UNAVAILABLE"
+    )
+    XCTAssertEqual(
+      element("whole-shuto-guidance-language", in: app).value as? String,
+      "ja-JP"
+    )
+    XCTAssertTrue(
+      app.buttons["whole-shuto-start-simulation"].isEnabled
+    )
+
+    let reviewScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    reviewScreenshot.name = "Whole Shuto pre-drive journey review"
+    reviewScreenshot.lifetime = .keepAlways
+    add(reviewScreenshot)
   }
 
   func testDeniedLocationRequiresAManualOriginBeforeRouteSearch() {
@@ -143,6 +181,47 @@ final class KaidoProductJourneyUITests: XCTestCase {
     manualOriginScreenshot.name = "Whole Shuto manual origin required"
     manualOriginScreenshot.lifetime = .keepAlways
     add(manualOriginScreenshot)
+  }
+
+  func testUnavailableSurfaceLegsKeepJourneyReviewBlocked() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-SURFACE-FAILURE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let surfaceStatus = element(
+      "whole-shuto-surface-route-status",
+      in: app
+    )
+    XCTAssertTrue(surfaceStatus.waitForExistence(timeout: 5))
+    let unavailable = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "UNAVAILABLE"),
+      object: surfaceStatus
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [unavailable], timeout: 3),
+      .completed
+    )
+    XCTAssertTrue(
+      app.buttons["whole-shuto-retry-surface-route"].exists
+    )
+    XCTAssertFalse(
+      app.buttons["whole-shuto-review-journey"].exists
+    )
+    XCTAssertFalse(
+      app.buttons["whole-shuto-start-simulation"].exists
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Whole Shuto unavailable surface legs"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
   }
 
   func testWholeShutoArrivalHasOneClearFinishAction() {
@@ -338,13 +417,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
         .waitForExistence(timeout: 1)
     )
     XCTAssertTrue(customizeRoute.isSelected)
-    let startCustomRoute = routeApp.buttons[
-      "whole-shuto-start-simulation"
+    let reviewCustomRoute = routeApp.buttons[
+      "whole-shuto-review-journey"
     ]
-    XCTAssertTrue(startCustomRoute.exists)
+    XCTAssertTrue(reviewCustomRoute.exists)
     let customSurfaceRouteResolved = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "enabled == YES"),
-      object: startCustomRoute
+      object: reviewCustomRoute
     )
     XCTAssertEqual(
       XCTWaiter.wait(
@@ -352,6 +431,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
         timeout: 2
       ),
       .completed
+    )
+    reviewCustomRoute.tap()
+    XCTAssertTrue(
+      element("whole-shuto-journey-review", in: routeApp)
+        .waitForExistence(timeout: 3)
+    )
+    XCTAssertTrue(
+      (element("whole-shuto-expressway-leg", in: routeApp).value
+        as? String)?.contains("C1") == true
+    )
+    XCTAssertTrue(
+      routeApp.buttons["whole-shuto-start-simulation"].isEnabled
     )
 
     let appliedCustomScreenshot = XCTAttachment(
@@ -614,7 +705,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(done.waitForNonExistence(timeout: 3))
     waitForLayoutSettlement()
     XCTAssertTrue(
-      app.staticTexts["WHOLE-SHUTO ROUTES"]
+      app.staticTexts["WHOLE SHUTO"]
         .waitForExistence(timeout: 3)
     )
     assertMapFirstPlanningLayout(in: app)
@@ -640,7 +731,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     waitForLayoutSettlement()
 
     XCTAssertTrue(
-      app.staticTexts["首都高ルートナビ"]
+      app.staticTexts["首都高全体"]
         .waitForExistence(timeout: 3)
     )
     assertMapFirstPlanningLayout(in: app)

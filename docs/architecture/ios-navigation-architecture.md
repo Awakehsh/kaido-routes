@@ -127,6 +127,11 @@ Use a hybrid architecture:
     direction-valid exit, and route-cost style, but only the graph planner may
     emit the resulting ordered `RoutePlan`. Draft UI state has no route
     authority.
+13. Separate route selection from simulation start with one parked journey
+    review. The review is ready only when the latest exact `RoutePlan` and both
+    bounded surface legs are present. A missing access or egress result fails
+    closed with retry; it never skips directly to entry, exit, or a shorter
+    synthetic journey.
 
 This is not a plan to recreate nationwide navigation. Kaido owns the small,
 safety-relevant whole-Shuto snapshot and delegates bounded ordinary-road access

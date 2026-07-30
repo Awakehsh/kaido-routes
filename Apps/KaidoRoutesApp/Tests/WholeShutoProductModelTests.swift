@@ -101,6 +101,73 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.destination)
   }
 
+  func testJourneyReviewCombinesSurfaceAndExactShutoTiming() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+
+    model.preparePreviewJourney()
+
+    let route = try XCTUnwrap(model.selectedRoute)
+    let access = try XCTUnwrap(model.accessRoute)
+    let egress = try XCTUnwrap(model.egressRoute)
+    let expectedDuration =
+      access.expectedTravelTimeSeconds
+      + route.distanceMeters
+      / WholeShutoProductModel.simulationReferenceSpeedMetersPerSecond
+      + egress.expectedTravelTimeSeconds
+
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertEqual(
+      try XCTUnwrap(model.plannedPreviewDurationSeconds),
+      expectedDuration,
+      accuracy: 0.001
+    )
+    XCTAssertEqual(
+      try XCTUnwrap(model.plannedJourneyDistanceMeters),
+      access.distanceMeters + route.distanceMeters + egress.distanceMeters,
+      accuracy: 0.001
+    )
+  }
+
+  func testUnavailableSurfaceLegsBlockPreviewUntilRetrySucceeds() async {
+    let resolver = WholeShutoRecoveringSurfaceRouteResolver()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: resolver,
+      checkpointStore: nil
+    )
+    model.originQuery = "現在地"
+    model.selectCurrentOrigin(
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    model.selectDestinationPreview(
+      WholeShutoProductModel.previewDestination
+    )
+
+    model.planJourney()
+    for _ in 0..<100 where model.isPlanning || model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertFalse(model.isJourneyReadyForPreview)
+    XCTAssertEqual(model.failureCode, "SURFACE_ROUTE_UNAVAILABLE")
+
+    model.startNavigationSimulation()
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertFalse(model.isPlaying)
+
+    await resolver.setAvailable(true)
+    model.retrySurfaceRoutes()
+    for _ in 0..<100 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertNil(model.failureCode)
+    XCTAssertNotNil(model.accessRoute)
+    XCTAssertNotNil(model.egressRoute)
+  }
+
   func testLatestRouteSelectionOwnsSurfacePreviewAfterOutOfOrderResponses()
     async
   {
@@ -967,6 +1034,29 @@ private actor WholeShutoOutOfOrderSurfaceRouteResolver:
       try? await Task.sleep(nanoseconds: delay)
       return route
     }.value
+  }
+}
+
+private actor WholeShutoRecoveringSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  private var isAvailable = false
+
+  func setAvailable(_ isAvailable: Bool) {
+    self.isAvailable = isAvailable
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    guard isAvailable else { return nil }
+    return WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_200,
+      expectedTravelTimeSeconds: 180,
+      instructions: []
+    )
   }
 }
 

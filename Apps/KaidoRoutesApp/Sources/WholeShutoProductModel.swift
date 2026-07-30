@@ -502,6 +502,28 @@ final class WholeShutoProductModel: ObservableObject {
       + (egressRoute?.distanceMeters ?? 0)
   }
 
+  var plannedPreviewDurationSeconds: Double? {
+    guard
+      let route = selectedRoute,
+      let accessRoute,
+      let egressRoute
+    else {
+      return nil
+    }
+    return accessRoute.expectedTravelTimeSeconds
+      + route.distanceMeters
+      / Self.simulationReferenceSpeedMetersPerSecond
+      + egressRoute.expectedTravelTimeSeconds
+  }
+
+  var isJourneyReadyForPreview: Bool {
+    phase == .review
+      && selectedRoute != nil
+      && accessRoute != nil
+      && egressRoute != nil
+      && !isUpdatingSurfaceRoute
+  }
+
   var nextReviewedJunctionPrompt: WholeShutoJunctionPrompt? {
     guard
       phase == .surfaceAccess || phase == .entryTransition
@@ -968,6 +990,22 @@ final class WholeShutoProductModel: ObservableObject {
     return true
   }
 
+  func retrySurfaceRoutes() {
+    guard
+      phase == .review,
+      let recommendation = selectedRecommendation,
+      let origin,
+      let destination
+    else {
+      return
+    }
+    resolveSurfaceRoutes(
+      for: recommendation,
+      origin: origin,
+      destination: destination
+    )
+  }
+
   private func resolveSurfaceRoutes(
     for recommendation: ShutoRouteRecommendation,
     origin: WholeShutoPlace,
@@ -977,6 +1015,7 @@ final class WholeShutoProductModel: ObservableObject {
     accessRoute = nil
     egressRoute = nil
     isUpdatingSurfaceRoute = true
+    failureCode = nil
 
     let requestID = UUID()
     let routePlanID = recommendation.route.routePlan.id
@@ -1006,6 +1045,9 @@ final class WholeShutoProductModel: ObservableObject {
       self.accessRoute = resolvedRoutes.0
       self.egressRoute = resolvedRoutes.1
       self.isUpdatingSurfaceRoute = false
+      self.failureCode =
+        resolvedRoutes.0 == nil || resolvedRoutes.1 == nil
+        ? "SURFACE_ROUTE_UNAVAILABLE" : nil
       self.surfaceRouteRequestID = nil
       self.surfaceRouteTask = nil
       self.persistCheckpoint()
@@ -1021,6 +1063,12 @@ final class WholeShutoProductModel: ObservableObject {
 
   func startNavigationSimulation() {
     guard phase == .review, let route = selectedRoute else { return }
+    guard isJourneyReadyForPreview else {
+      if !isUpdatingSurfaceRoute {
+        failureCode = "SURFACE_ROUTE_UNAVAILABLE"
+      }
+      return
+    }
     do {
       let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,

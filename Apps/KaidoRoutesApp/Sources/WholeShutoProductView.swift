@@ -19,6 +19,7 @@ struct WholeShutoProductView: View {
   @State private var showsNetworkFacts = false
   @State private var showsLanguageSettings = false
   @State private var showsRouteCustomization = false
+  @State private var showsJourneyReview = false
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
   @State private var showsEndJourneyConfirmation = false
@@ -83,6 +84,12 @@ struct WholeShutoProductView: View {
     .preferredColorScheme(isDriving ? .dark : .light)
     .sheet(isPresented: $showsRouteCustomization) {
       WholeShutoCustomRouteSheet(model: model)
+    }
+    .sheet(isPresented: $showsJourneyReview) {
+      WholeShutoJourneyReviewView(
+        model: model,
+        languageSettings: languageSettings
+      )
     }
     .sheet(isPresented: $showsNetworkFacts) {
       WholeShutoNetworkFactsView(model: model)
@@ -839,68 +846,141 @@ struct WholeShutoProductView: View {
         )
       }
 
-      HStack(spacing: 8) {
-        VStack(alignment: .leading, spacing: 2) {
-          Text(
-            copy.resolve(
-              japanese: "現在の通行状況",
-              simplifiedChinese: "当前通行状态",
-              english: "CURRENT PASSAGE STATUS"
-            )
-          )
-          .font(.system(size: 8, weight: .black))
-          Text(
-            copy.resolve(
-              japanese: "リアルタイム未確認 · 出発前に確認してください",
-              simplifiedChinese: "尚未连接实时路况 · 出发前需确认",
-              english: "Realtime unconfirmed · Check before departure"
-            )
-          )
-          .font(.system(size: 10, weight: .bold))
-        }
-        .foregroundStyle(KaidoTheme.signalAmber)
-        Spacer()
-        Button {
-          model.startNavigationSimulation()
-        } label: {
-          HStack(spacing: 8) {
-            if model.isUpdatingSurfaceRoute {
-              ProgressView()
-                .tint(KaidoTheme.routeWhite)
-              Text(
-                copy.resolve(
-                  japanese: "ルートを確認中",
-                  simplifiedChinese: "正在确认路线",
-                  english: "CONFIRMING ROUTE"
-                )
-              )
-            } else {
-              Text(
-                copy.resolve(
-                  japanese: "全行程をプレビュー",
-                  simplifiedChinese: "开始完整预演",
-                  english: "PREVIEW FULL JOURNEY"
-                )
-              )
-              Image(systemName: "play.fill")
-            }
-          }
-          .font(.system(size: 12, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
-          .padding(.horizontal, 15)
-          .frame(height: 45)
-          .background(KaidoTheme.routeGreen)
-          .clipShape(RoundedRectangle(cornerRadius: 9))
-        }
-        .buttonStyle(.plain)
-        .disabled(model.isUpdatingSurfaceRoute)
-        .opacity(model.isUpdatingSurfaceRoute ? 0.78 : 1)
-        .accessibilityIdentifier("whole-shuto-start-simulation")
-      }
+      routeReviewAction
     }
     .padding(.horizontal, 16)
     .padding(.top, 22)
     .padding(.bottom, 12)
+  }
+
+  @ViewBuilder
+  private var routeReviewAction: some View {
+    if model.isUpdatingSurfaceRoute {
+      HStack(spacing: 10) {
+        ProgressView()
+          .tint(KaidoTheme.routeGreen)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "地上区間を確認中",
+              simplifiedChinese: "正在确认地面接驳",
+              english: "CONFIRMING SURFACE LEGS"
+            )
+          )
+          .font(.system(size: 11, weight: .black, design: .rounded))
+          Text(
+            copy.resolve(
+              japanese: "選択した入口と出口は変更しません",
+              simplifiedChinese: "不会更改已选择的入口和出口",
+              english: "The selected entry and exit stay fixed"
+            )
+          )
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+        Spacer()
+      }
+      .foregroundStyle(KaidoTheme.ink)
+      .padding(.horizontal, 14)
+      .frame(maxWidth: .infinity, minHeight: 48)
+      .background(KaidoTheme.paperRaised.opacity(0.92))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("whole-shuto-surface-route-status")
+      .accessibilityValue("RESOLVING")
+    } else if !model.isJourneyReadyForPreview {
+      HStack(spacing: 10) {
+        Image(systemName: "exclamationmark.triangle.fill")
+          .foregroundStyle(KaidoTheme.signalAmber)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "地上区間を確認できません",
+              simplifiedChinese: "无法确认地面接驳",
+              english: "SURFACE LEGS UNAVAILABLE"
+            )
+          )
+          .font(.system(size: 11, weight: .black, design: .rounded))
+          Text(
+            copy.resolve(
+              japanese: "通信を確認して再試行してください",
+              simplifiedChinese: "检查网络后重试",
+              english: "Check the connection and try again"
+            )
+          )
+          .font(.system(size: 9, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+        }
+        Spacer()
+        Button {
+          model.retrySurfaceRoutes()
+        } label: {
+          Text(
+            copy.resolve(
+              japanese: "再試行",
+              simplifiedChinese: "重试",
+              english: "RETRY"
+            )
+          )
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeGreen)
+          .padding(.horizontal, 12)
+          .frame(height: 34)
+          .background(KaidoTheme.routeGreen.opacity(0.1))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("whole-shuto-retry-surface-route")
+      }
+      .padding(.horizontal, 12)
+      .frame(maxWidth: .infinity, minHeight: 54)
+      .background(KaidoTheme.signalAmber.opacity(0.08))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .overlay {
+        RoundedRectangle(cornerRadius: 10)
+          .stroke(KaidoTheme.signalAmber.opacity(0.42), lineWidth: 1)
+      }
+      .accessibilityElement(children: .contain)
+      .accessibilityIdentifier("whole-shuto-surface-route-status")
+      .accessibilityValue("UNAVAILABLE")
+    } else {
+      Button {
+        showsJourneyReview = true
+      } label: {
+        HStack(spacing: 9) {
+          VStack(alignment: .leading, spacing: 1) {
+            Text(
+              copy.resolve(
+                japanese: "行程を確認",
+                simplifiedChinese: "确认行程",
+                english: "REVIEW JOURNEY"
+              )
+            )
+            .font(.system(size: 13, weight: .black, design: .rounded))
+            Text(
+              copy.resolve(
+                japanese: "入口・首都高・出口を確認して出発",
+                simplifiedChinese: "确认入口、首都高与出口后出发",
+                english: "Confirm entry, Shuto route, and exit"
+              )
+            )
+            .font(.system(size: 9, weight: .bold))
+            .opacity(0.76)
+          }
+          Spacer()
+          Image(systemName: "arrow.right")
+            .font(.system(size: 13, weight: .black))
+        }
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .padding(.horizontal, 15)
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("whole-shuto-review-journey")
+    }
   }
 
   private var routeSelection: some View {
@@ -1412,9 +1492,9 @@ struct WholeShutoProductView: View {
     }
     return model.phase == .review
       ? copy.resolve(
-        japanese: "ルート確認",
-        simplifiedChinese: "路线确认",
-        english: "ROUTE REVIEW"
+        japanese: "ルートを選択",
+        simplifiedChinese: "选择路线",
+        english: "CHOOSE A ROUTE"
       )
       : copy.resolve(
         japanese: "首都高全体",
@@ -3932,7 +4012,7 @@ extension ShutoCoordinate {
   }
 }
 
-private func shieldLabel(_ routeID: String) -> String {
+func shieldLabel(_ routeID: String) -> String {
   routeID
     .replacingOccurrences(of: "_HANEDA", with: "")
     .replacingOccurrences(of: "_UENO", with: "")
@@ -3942,7 +4022,7 @@ private func shieldLabel(_ routeID: String) -> String {
     .replacingOccurrences(of: "_YOKOHAMA_HOKUSEI", with: "")
 }
 
-private func routeColor(_ routeID: String) -> Color {
+func routeColor(_ routeID: String) -> Color {
   switch routeID {
   case "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5":
     return Color(hex: 0x2877B7)

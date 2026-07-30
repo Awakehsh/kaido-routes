@@ -24,6 +24,12 @@ internal review workbench.
   selection pins one direction-valid entrance, one direction-valid exit, and a
   route style, previews the resulting route thread, and applies its own
   Kaido-owned `RoutePlan` without turning the map into another home surface.
+- Route choice leads to one parked route pass before simulation starts. It
+  combines the bounded surface access and egress legs with the exact selected
+  Shuto route, shows full-journey distance and a non-realtime preview duration,
+  and keeps passage and toll information explicitly unconfirmed when no current
+  source exists. Missing either surface leg blocks review and start rather than
+  silently skipping that part of the journey.
 - Route occurrences remain ordered and distinct. Directed links represent
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
@@ -137,6 +143,8 @@ xcodebuild \
 
 Useful visual launch arguments:
 
+- `-WHOLE-SHUTO-SEARCH-PREVIEW`
+- `-WHOLE-SHUTO-SURFACE-FAILURE-PREVIEW`
 - `-WHOLE-SHUTO-ROUTE-PREVIEW`
 - `-WHOLE-SHUTO-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-ARRIVAL-PREVIEW`

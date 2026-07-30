@@ -145,6 +145,92 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(manualOriginScreenshot)
   }
 
+  func testWholeShutoArrivalHasOneClearFinishAction() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-ARRIVAL-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let product = element("whole-shuto-product", in: app)
+    XCTAssertTrue(product.waitForExistence(timeout: 5))
+    XCTAssertEqual(product.value as? String, "COMPLETED")
+    XCTAssertTrue(
+      element("whole-shuto-arrival-dock", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-arrival-destination", in: app)
+        .label.contains("横浜中華街")
+    )
+    XCTAssertTrue(
+      element("whole-shuto-arrival-distance", in: app).exists
+    )
+    XCTAssertFalse(
+      app.buttons["whole-shuto-preview-step"].exists
+    )
+    XCTAssertFalse(
+      app.buttons["whole-shuto-preview-playback"].exists
+    )
+
+    let arrivalScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    arrivalScreenshot.name = "Whole Shuto completed journey"
+    arrivalScreenshot.lifetime = .keepAlways
+    add(arrivalScreenshot)
+
+    app.buttons["whole-shuto-finish-journey"].tap()
+    XCTAssertTrue(
+      element("whole-shuto-planning-dock", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(product.value as? String, "PLANNING")
+    XCTAssertFalse(
+      element("whole-shuto-arrival-dock", in: app).exists
+    )
+  }
+
+  func testWholeShutoActivePreviewRequiresConfirmationToEnd() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-NAVIGATION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let product = element("whole-shuto-product", in: app)
+    let playback = app.buttons["whole-shuto-preview-playback"]
+    XCTAssertTrue(product.waitForExistence(timeout: 5))
+    XCTAssertTrue(playback.waitForExistence(timeout: 5))
+    XCTAssertEqual(playback.value as? String, "PLAYING")
+
+    let phaseBeforeEndRequest = product.value as? String
+    app.buttons["whole-shuto-end-journey"].tap()
+    let endAlert = app.alerts["结束本次预演？"]
+    XCTAssertTrue(endAlert.waitForExistence(timeout: 3))
+    XCTAssertEqual(product.value as? String, phaseBeforeEndRequest)
+    XCTAssertEqual(playback.value as? String, "PAUSED")
+
+    endAlert.buttons["继续预演"].tap()
+    XCTAssertFalse(endAlert.exists)
+    XCTAssertEqual(playback.value as? String, "PLAYING")
+
+    app.buttons["whole-shuto-end-journey"].tap()
+    XCTAssertTrue(endAlert.waitForExistence(timeout: 3))
+    endAlert.buttons["结束预演"].tap()
+    XCTAssertTrue(
+      element("whole-shuto-planning-dock", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(product.value as? String, "PLANNING")
+  }
+
   func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {
     continueAfterFailure = false
     let routeApp = XCUIApplication()

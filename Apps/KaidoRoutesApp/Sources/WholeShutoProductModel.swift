@@ -449,6 +449,13 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  var plannedJourneyDistanceMeters: Double? {
+    guard let route = selectedRoute else { return nil }
+    return (accessRoute?.distanceMeters ?? 0)
+      + route.distanceMeters
+      + (egressRoute?.distanceMeters ?? 0)
+  }
+
   var nextReviewedJunctionPrompt: WholeShutoJunctionPrompt? {
     guard
       phase == .surfaceAccess || phase == .entryTransition
@@ -635,6 +642,31 @@ final class WholeShutoProductModel: ObservableObject {
     } catch {
       failureCode = Self.failureCode(error)
     }
+  }
+
+  func prepareCompletedJourneyPreview() {
+    preparePreviewJourney()
+    guard phase == .review else { return }
+    playbackTask?.cancel()
+    playbackTask = nil
+    speechCoordinator?.stop()
+    speechCoordinator = nil
+    phase = .completed
+    progressFraction = 1
+    isPlaying = false
+    matcherConfidence = nil
+    runtimeOccurrenceID = nil
+    runtimeJourneyPhase = nil
+    runtimeRecoveryStatus = nil
+    runtimeCoordinate = destination?.coordinate
+    runtimeFractionAlongOccurrence = nil
+    presentationProjection = nil
+    speechStatus = .stopped
+    consumedGuidancePromptIDs = []
+    isStaticJunctionPreview = false
+    restoredFromCheckpoint = false
+    mapMode = .geographic
+    try? checkpointStore?.remove()
   }
 
   func prepareJunctionPreview(startsNavigation: Bool = false) {

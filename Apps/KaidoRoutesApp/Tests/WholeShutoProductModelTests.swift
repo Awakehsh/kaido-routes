@@ -75,6 +75,32 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.failureCode)
   }
 
+  func testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone()
+    throws
+  {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+
+    model.prepareCompletedJourneyPreview()
+
+    XCTAssertEqual(model.phase, .completed)
+    XCTAssertEqual(model.positionState, .completed)
+    XCTAssertEqual(model.currentCoordinate, model.destination?.coordinate)
+    XCTAssertEqual(model.remainingJourneyDistanceMeters, 0)
+    XCTAssertGreaterThan(
+      try XCTUnwrap(model.plannedJourneyDistanceMeters),
+      try XCTUnwrap(model.selectedRoute?.distanceMeters)
+    )
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertNil(store.checkpoint)
+
+    model.reset()
+
+    XCTAssertEqual(model.phase, .planning)
+    XCTAssertNil(model.selectedRoute)
+    XCTAssertNil(model.destination)
+  }
+
   func testLatestRouteSelectionOwnsSurfacePreviewAfterOutOfOrderResponses()
     async
   {

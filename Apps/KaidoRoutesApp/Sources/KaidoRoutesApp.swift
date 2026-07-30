@@ -127,6 +127,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoProductPreviewHost(startsNavigation: true)
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-ARRIVAL-PREVIEW"
+      ) {
+        WholeShutoArrivalPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW"
       ) {
         WholeShutoJunctionPreviewHost(
@@ -380,14 +384,45 @@ private struct WholeShutoJunctionPreviewHost: View {
 }
 
 private struct WholeShutoProductPreviewHost: View {
+  @Environment(\.scenePhase) private var scenePhase
   @StateObject private var model: WholeShutoProductModel
+  private let startsNavigation: Bool
 
   init(startsNavigation: Bool) {
     let model = WholeShutoProductModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil
     )
-    model.preparePreviewJourney(startsNavigation: startsNavigation)
+    model.preparePreviewJourney()
+    self.startsNavigation = startsNavigation
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
+      .task(id: scenePhase) {
+        guard
+          startsNavigation,
+          scenePhase == .active,
+          model.phase == .review
+        else {
+          return
+        }
+        await Task.yield()
+        model.startNavigationSimulation()
+      }
+  }
+}
+
+private struct WholeShutoArrivalPreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.prepareCompletedJourneyPreview()
     _model = StateObject(wrappedValue: model)
   }
 

@@ -144,6 +144,14 @@ a 54 km/h reference trace, and an explicitly displayed 20x wall-clock rate,
 including position, progress, and transient junction insets. It remains visibly
 synthetic and grants no live-road or passage authority.
 
+Leaving an active preview is a deliberate stop action. It pauses playback and
+requires confirmation before clearing progress and returning to route
+planning. Completion replaces playback controls with one arrival surface: the
+destination, full planned journey distance, directional entrance-to-exit
+summary, and one **Done** action. Done clears the completed journey and restores
+the destination-search surface; inactive playback controls never remain on the
+arrival screen.
+
 ## Entry, exit, and external maps
 
 The default journey stays inside Kaido. A bounded provider supplies the ordinary

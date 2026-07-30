@@ -21,6 +21,8 @@ struct WholeShutoProductView: View {
   @State private var showsRouteCustomization = false
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
+  @State private var showsEndJourneyConfirmation = false
+  @State private var resumesAfterEndJourneyCancellation = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
 
   init(
@@ -53,7 +55,9 @@ struct WholeShutoProductView: View {
         topBar
         Spacer(minLength: 0)
 
-        if isDriving {
+        if model.phase == .completed {
+          arrivalDock
+        } else if isDriving {
           drivingDock
         } else {
           planningDock
@@ -82,6 +86,45 @@ struct WholeShutoProductView: View {
     }
     .sheet(isPresented: $showsLanguageSettings) {
       WholeShutoLanguageSettingsView(model: languageSettings)
+    }
+    .alert(
+      copy.resolve(
+        japanese: "プレビューを終了しますか？",
+        simplifiedChinese: "结束本次预演？",
+        english: "End this preview?"
+      ),
+      isPresented: $showsEndJourneyConfirmation
+    ) {
+      Button(
+        copy.resolve(
+          japanese: "続ける",
+          simplifiedChinese: "继续预演",
+          english: "Continue preview"
+        ),
+        role: .cancel
+      ) {
+        resumeAfterEndJourneyCancellation()
+      }
+      Button(
+        copy.resolve(
+          japanese: "プレビューを終了",
+          simplifiedChinese: "结束预演",
+          english: "End preview"
+        ),
+        role: .destructive
+      ) {
+        resumesAfterEndJourneyCancellation = false
+        model.reset()
+      }
+    } message: {
+      Text(
+        copy.resolve(
+          japanese: "現在の進行状況は破棄され、ルート検索に戻ります。",
+          simplifiedChinese: "当前行程进度将被清除，并返回路线规划。",
+          english:
+            "Current journey progress will be cleared and route planning will reopen."
+        )
+      )
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-product")
@@ -142,21 +185,38 @@ struct WholeShutoProductView: View {
   private var topBar: some View {
     VStack(spacing: 8) {
       HStack(spacing: 10) {
-        if model.phase != .planning {
+        if model.phase != .planning && model.phase != .completed {
           Button {
-            model.reset()
+            if isActiveNavigation {
+              requestEndJourney()
+            } else {
+              model.reset()
+            }
           } label: {
-            Image(systemName: "chevron.left")
+            Image(
+              systemName: isActiveNavigation ? "xmark" : "chevron.left"
+            )
               .font(.system(size: 14, weight: .black))
               .frame(width: 38, height: 38)
           }
           .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
           .accessibilityLabel(
-            copy.resolve(
-              japanese: "経路計画に戻る",
-              simplifiedChinese: "返回路线规划",
-              english: "Back to route planning"
-            )
+            isActiveNavigation
+              ? copy.resolve(
+                japanese: "プレビューを終了",
+                simplifiedChinese: "结束预演",
+                english: "End preview"
+              )
+              : copy.resolve(
+                japanese: "経路計画に戻る",
+                simplifiedChinese: "返回路线规划",
+                english: "Back to route planning"
+              )
+          )
+          .accessibilityIdentifier(
+            isActiveNavigation
+              ? "whole-shuto-end-journey"
+              : "whole-shuto-back-to-planning"
           )
         }
 
@@ -216,7 +276,7 @@ struct WholeShutoProductView: View {
         }
       }
 
-      if isDriving {
+      if isActiveNavigation {
         instructionBanner
       }
     }
@@ -1164,6 +1224,7 @@ struct WholeShutoProductView: View {
           english: "Advance one step"
         )
       )
+      .accessibilityIdentifier("whole-shuto-preview-step")
 
       Button {
         model.togglePlayback()
@@ -1189,6 +1250,8 @@ struct WholeShutoProductView: View {
             english: "Resume preview"
           )
       )
+      .accessibilityIdentifier("whole-shuto-preview-playback")
+      .accessibilityValue(model.isPlaying ? "PLAYING" : "PAUSED")
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
@@ -1198,6 +1261,105 @@ struct WholeShutoProductView: View {
         .fill(KaidoTheme.steel)
         .frame(height: 1)
     }
+  }
+
+  private var arrivalDock: some View {
+    VStack(spacing: 13) {
+      HStack(spacing: 12) {
+        ZStack {
+          Circle()
+            .fill(KaidoTheme.confirmedGreen)
+            .frame(width: 46, height: 46)
+          Image(systemName: "checkmark")
+            .font(.system(size: 19, weight: .black))
+            .foregroundStyle(KaidoTheme.asphalt)
+        }
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "全行程プレビュー完了",
+              simplifiedChinese: "完整行程预演完成",
+              english: "FULL JOURNEY PREVIEW COMPLETE"
+            )
+          )
+          .font(.system(size: 9, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.confirmedGreen)
+          Text(
+            model.destination?.title
+              ?? copy.resolve(
+                japanese: "目的地",
+                simplifiedChinese: "目的地",
+                english: "Destination"
+              )
+          )
+          .font(.system(size: 22, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          .accessibilityIdentifier("whole-shuto-arrival-destination")
+        }
+
+        Spacer(minLength: 6)
+
+        Text(
+          distanceLabel(model.plannedJourneyDistanceMeters ?? 0)
+        )
+        .font(.system(size: 16, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "全行程",
+            simplifiedChinese: "完整行程",
+            english: "Full journey"
+          )
+        )
+        .accessibilityIdentifier("whole-shuto-arrival-distance")
+      }
+
+      HStack(spacing: 8) {
+        Image(systemName: "arrow.up.right")
+          .font(.system(size: 9, weight: .black))
+          .foregroundStyle(KaidoTheme.positionCyan)
+        Text(drivingBoundaryLabel)
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.muted)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+        Spacer()
+      }
+
+      Button {
+        model.reset()
+      } label: {
+        Text(
+          copy.resolve(
+            japanese: "完了",
+            simplifiedChinese: "完成",
+            english: "Done"
+          )
+        )
+        .font(.system(size: 13, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.asphalt)
+        .frame(maxWidth: .infinity)
+        .frame(height: 46)
+        .background(KaidoTheme.confirmedGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("whole-shuto-finish-journey")
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 14)
+    .padding(.bottom, 12)
+    .background(KaidoTheme.asphalt.opacity(0.97))
+    .overlay(alignment: .top) {
+      Rectangle()
+        .fill(KaidoTheme.steel)
+        .frame(height: 1)
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-arrival-dock")
   }
 
   private var instructionBanner: some View {
@@ -1259,7 +1421,38 @@ struct WholeShutoProductView: View {
     ![.planning, .review].contains(model.phase)
   }
 
+  private var isActiveNavigation: Bool {
+    isDriving && model.phase != .completed
+  }
+
+  private func requestEndJourney() {
+    resumesAfterEndJourneyCancellation = model.isPlaying
+    if model.isPlaying {
+      model.togglePlayback()
+    }
+    showsEndJourneyConfirmation = true
+  }
+
+  private func resumeAfterEndJourneyCancellation() {
+    defer { resumesAfterEndJourneyCancellation = false }
+    guard
+      resumesAfterEndJourneyCancellation,
+      isActiveNavigation,
+      !model.isPlaying
+    else {
+      return
+    }
+    model.togglePlayback()
+  }
+
   private var topTitle: String {
+    if model.phase == .completed {
+      return copy.resolve(
+        japanese: "行程完了",
+        simplifiedChinese: "行程完成",
+        english: "JOURNEY COMPLETE"
+      )
+    }
     if isDriving {
       return copy.resolve(
         japanese: "首都高ナビプレビュー",
@@ -2594,7 +2787,7 @@ private struct WholeShutoGeographicMap: View {
           : "FOLLOWING_ROUTE_HEADING"
     )
     .overlay(alignment: .trailing) {
-      if isDriving {
+      if isActiveNavigation {
         Button {
           followsRoute.toggle()
           if followsRoute {
@@ -2707,6 +2900,10 @@ private struct WholeShutoGeographicMap: View {
 
   private var isDriving: Bool {
     ![WholeShutoJourneyPhase.planning, .review].contains(model.phase)
+  }
+
+  private var isActiveNavigation: Bool {
+    isDriving && model.phase != .completed
   }
 
   private var displayedPosition: ShutoCoordinate? {

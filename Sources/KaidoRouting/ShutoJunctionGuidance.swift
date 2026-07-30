@@ -100,6 +100,150 @@ public struct ShutoJunctionMovementDefinition:
 public enum ShutoJunctionMovementCatalog {
   public static let released: [ShutoJunctionMovementDefinition] = [
     ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-07-28",
+      junctionID: "shuto.jct.jct_tatsumi",
+      junctionNodeID: 31_300_414,
+      incomingEdgeID: "osm.44882718.3.forward",
+      outgoingEdgeID: "osm.4854234.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "箱崎",
+      routeShields: ["9", "6"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "辰巳JCT",
+        .simplifiedChinese: "辰巳 JCT",
+        .english: "Tatsumi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "左方向へ分岐し、9号深川線 上りへ",
+          spokenText:
+            "辰巳ジャンクションでは左方向へ分岐し、9号深川線 上りへ進んでください",
+          spokenForms: ["9号深川線": "きゅうごうふかがわせん"],
+          preservedJapaneseSignText: "箱崎"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向左分岔，驶入 9 号深川线上行方向",
+          spokenText: "在辰巳枢纽向左分岔，驶入 9 号深川线上行方向",
+          spokenForms: ["9 号深川线": "九号深川线"],
+          preservedJapaneseSignText: "箱崎"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch left for Route 9 inbound",
+          spokenText: "At Tatsumi Junction, branch left for Route 9 inbound",
+          spokenForms: ["Route 9": "Route nine"],
+          preservedJapaneseSignText: "箱崎"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-07-30",
+      expectedJunctionDetailSHA256:
+        "c4ea23ea7741c0f9f54b875e62b04825"
+        + "6501d7df8aac183ce8961d2eaf1b3dda",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/guidance/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-9/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tatsumi",
+          contentSHA256:
+            "c4ea23ea7741c0f9f54b875e62b04825"
+            + "6501d7df8aac183ce8961d2eaf1b3dda"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tatsumi.b-westbound-to-9-inbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-07-28",
+      junctionID: "shuto.jct.jct_tatsumi",
+      junctionNodeID: 31_300_491,
+      incomingEdgeID: "osm.888066409.1.forward",
+      outgoingEdgeID: "osm.888066410.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "箱崎・銀座",
+      routeShields: ["9", "C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "辰巳JCT",
+        .simplifiedChinese: "辰巳 JCT",
+        .english: "Tatsumi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "左方向へ分岐し、9号深川線 上りへ",
+          spokenText:
+            "辰巳ジャンクションでは左方向へ分岐し、9号深川線 上りへ進んでください",
+          spokenForms: ["9号深川線": "きゅうごうふかがわせん"],
+          preservedJapaneseSignText: "箱崎・銀座"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向左分岔，驶入 9 号深川线上行方向",
+          spokenText: "在辰巳枢纽向左分岔，驶入 9 号深川线上行方向",
+          spokenForms: ["9 号深川线": "九号深川线"],
+          preservedJapaneseSignText: "箱崎・銀座"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch left for Route 9 inbound",
+          spokenText: "At Tatsumi Junction, branch left for Route 9 inbound",
+          spokenForms: ["Route 9": "Route nine"],
+          preservedJapaneseSignText: "箱崎・銀座"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-07-30",
+      expectedJunctionDetailSHA256:
+        "c4ea23ea7741c0f9f54b875e62b04825"
+        + "6501d7df8aac183ce8961d2eaf1b3dda",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/guidance/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-9/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tatsumi",
+          contentSHA256:
+            "c4ea23ea7741c0f9f54b875e62b04825"
+            + "6501d7df8aac183ce8961d2eaf1b3dda"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
       id: "shuto.jct.kasai.b-westbound-to-c2-inner",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-07-28",

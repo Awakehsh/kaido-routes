@@ -155,6 +155,46 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(screenshot)
   }
 
+  func testWholeShutoTatsumiGuidanceIsActorDriven() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-TATSUMI-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let junctionInset = element(
+      "whole-shuto-junction-inset",
+      in: app
+    )
+    XCTAssertTrue(junctionInset.waitForExistence(timeout: 10))
+    XCTAssertTrue(junctionInset.label.contains("辰巳 JCT"))
+    XCTAssertTrue(junctionInset.label.contains("左分岔"))
+    XCTAssertTrue(junctionInset.label.contains("箱崎"))
+    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    let speech = element(
+      "whole-shuto-guidance-speech",
+      in: app
+    )
+    XCTAssertTrue(speech.exists)
+    XCTAssertTrue(
+      ["已安排", "播报中", "已播报"].contains(
+        speech.value as? String ?? ""
+      )
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Whole Shuto actor-driven Tatsumi left branch"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
   func testWholeShutoInterfaceAndVoiceLanguagesRemainIndependent() {
     continueAfterFailure = false
     let app = XCUIApplication()

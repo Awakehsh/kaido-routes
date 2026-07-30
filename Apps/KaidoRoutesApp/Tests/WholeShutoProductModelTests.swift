@@ -92,6 +92,68 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.failureCode)
   }
 
+  func testTatsumiJunctionPromptsPreserveEachApproachSign() {
+    let cases:
+      [(
+        isEastbound: Bool,
+        movementID: String,
+        signText: String,
+        routeShields: [String]
+      )] = [
+        (
+          true,
+          "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
+          "箱崎",
+          ["9", "6"]
+        ),
+        (
+          false,
+          "shuto.jct.tatsumi.b-westbound-to-9-inbound",
+          "箱崎・銀座",
+          ["9", "C1"]
+        ),
+      ]
+
+    for testCase in cases {
+      let model = WholeShutoProductModel(checkpointStore: nil)
+      if testCase.isEastbound {
+        model.prepareTatsumiEastboundJunctionPreview()
+      } else {
+        model.prepareTatsumiWestboundJunctionPreview()
+      }
+
+      let prompt = try? XCTUnwrap(model.junctionPrompts.only)
+      XCTAssertEqual(prompt?.movementID, testCase.movementID)
+      XCTAssertEqual(prompt?.nameJA, "辰巳JCT")
+      XCTAssertEqual(prompt?.outgoingRouteID, "9")
+      XCTAssertEqual(prompt?.outgoingDirectionJA, "上り")
+      XCTAssertEqual(prompt?.branchSide, .left)
+      XCTAssertEqual(prompt?.japaneseSignText, testCase.signText)
+      XCTAssertEqual(prompt?.routeShields, testCase.routeShields)
+      XCTAssertEqual(prompt?.laneGuidanceState, .notReleased)
+      XCTAssertEqual(
+        prompt?.localizedContent[.japanese]?.displayText,
+        "左方向へ分岐し、9号深川線 上りへ"
+      )
+      XCTAssertEqual(
+        prompt?.localizedContent[.simplifiedChinese]?.displayText,
+        "向左分岔，驶入 9 号深川线上行方向"
+      )
+      XCTAssertEqual(
+        prompt?.localizedContent[.english]?.displayText,
+        "Branch left for Route 9 inbound"
+      )
+      XCTAssertTrue(
+        prompt?.localizedContent.values.allSatisfy {
+          $0.preservedJapaneseSignText == testCase.signText
+        } == true
+      )
+      XCTAssertEqual(prompt?.checkedAt, "2026-07-30")
+      XCTAssertEqual(model.activeJunctionPrompt, prompt)
+      XCTAssertNil(model.failureCode)
+    }
+  }
+
   func testActiveJourneyRestoresPausedOnTheSameNetworkSnapshot()
     async throws
   {
@@ -356,6 +418,48 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(
       model.activeJunctionPrompt?.movementID,
       "shuto.jct.kasai.b-westbound-to-c2-inner"
+    )
+  }
+
+  func testTatsumiJunctionSpeechIsActorOwned() async throws {
+    let output = WholeShutoRecordingSpeechOutput()
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      speechOutput: output,
+      languageSelectionProvider: Self.testLanguages
+    )
+    model.prepareTatsumiEastboundJunctionPreview(
+      startsNavigation: true
+    )
+    model.togglePlayback()
+
+    await advance(
+      model,
+      until: { _ in !output.commands.isEmpty },
+      maximumTicks: 1_000
+    )
+
+    let command = try XCTUnwrap(output.commands.only)
+    XCTAssertEqual(command.languageCode, "ja-JP")
+    XCTAssertTrue(command.spokenText.contains("辰巳ジャンクション"))
+    XCTAssertTrue(
+      command.synthesisText.contains("きゅうごうふかがわせん")
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.maneuver,
+      .branchLeft
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.lanePreparation,
+      GuidanceLanePreparation.none
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.japaneseSignText,
+      "箱崎"
+    )
+    XCTAssertEqual(
+      model.activeJunctionPrompt?.movementID,
+      "shuto.jct.tatsumi.b-eastbound-to-9-inbound"
     )
   }
 

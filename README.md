@@ -34,9 +34,10 @@ internal review workbench.
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
 - The reviewed whole-network movements are both Bayshore Route approaches to
-  Route 9 inbound at Tatsumi JCT, Bayshore Route westbound to C2 inner at
-  Kasai JCT, and Bayshore Route westbound to C2 outer at Oi JCT. Their Kaido
-  vectors, branch instructions, Japanese sign targets, and route shields are
+  Route 10 inbound at Shinonome JCT, both Bayshore Route approaches to Route 9
+  inbound at Tatsumi JCT, Bayshore Route westbound to C2 inner at Kasai JCT,
+  and Bayshore Route westbound to C2 outer at Oi JCT. Their Kaido vectors,
+  branch instructions, Japanese sign targets, and route shields are
   operator-source-traceable. Each exact outgoing occurrence compiles into
   actor-owned screen and one-shot speech guidance. Lane indices remain
   explicitly unreleased, and unreviewed transitions remain silent.
@@ -82,10 +83,10 @@ The product distinguishes what is known from what is still unconfirmed:
 - The line map and junction inset are Kaido-generated vectors. Every JCT keeps
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
-  IDs, shared JCT node, direction, and official content hash. The Tatsumi,
-  Kasai, and Oi definitions authorize left branches plus approach-specific
-  Japanese sign targets, but do not copy operator artwork or imply unreleased
-  lane numbers.
+  IDs, shared JCT node, direction, and official content hash. The Shinonome,
+  Tatsumi, Kasai, and Oi definitions authorize only their reviewed left or
+  right branch plus approach-specific Japanese sign target; they do not copy
+  operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
@@ -120,6 +121,8 @@ Useful visual launch arguments:
 - `-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-KASAI-JUNCTION-PREVIEW`
 - `-WHOLE-SHUTO-KASAI-JUNCTION-NAVIGATION-PREVIEW`
+- `-WHOLE-SHUTO-SHINONOME-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW`
+- `-WHOLE-SHUTO-SHINONOME-WESTBOUND-JUNCTION-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-TATSUMI-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-TATSUMI-WESTBOUND-JUNCTION-NAVIGATION-PREVIEW`
 - `-C2-FULL-NAVIGATION-DEMO` for the retained C2 deterministic fixture

@@ -5,6 +5,125 @@ import Testing
 
 @Suite("Whole Shuto junction guidance")
 struct ShutoJunctionGuidanceTests {
+  @Test("both exact Shinonome approaches preserve branch and sign")
+  func projectsExactShinonomeMovements() throws {
+    let database = try loadDatabase()
+    let cases:
+      [(
+        entryFacilityID: String,
+        movementID: String,
+        incomingDirectionJA: String,
+        incomingEdgeID: String,
+        outgoingEdgeID: String,
+        junctionNodeID: Int64,
+        branchSide: ShutoJunctionBranchSide,
+        signText: String,
+        localizedInstruction: String
+      )] = [
+        (
+          "shuto.ic.b.ooi",
+          "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+          "東行き",
+          "osm.888066406.1.forward",
+          "osm.40636701.0.forward",
+          493_584_435,
+          .left,
+          "豊洲",
+          "向左分岔，驶入 10 号晴海线上行方向"
+        ),
+        (
+          "shuto.ic.b.shinkiba",
+          "shuto.jct.shinonome.b-westbound-to-10-inbound",
+          "西行き",
+          "osm.678697940.1.forward",
+          "osm.44882717.0.forward",
+          569_015_558,
+          .right,
+          "晴海",
+          "向右分岔，驶入 10 号晴海线上行方向"
+        ),
+      ]
+
+    for testCase in cases {
+      let route = try ShutoRoutePlanner(database: database).plan(
+        entryFacilityID: testCase.entryFacilityID,
+        exitFacilityID: "shuto.ic.10.harumi"
+      )
+      let match = try #require(
+        ShutoJunctionGuidanceCompiler.compile(
+          database: database,
+          route: route
+        ).only
+      )
+      let definition = match.definition
+
+      #expect(match.junctionNameJA == "東雲JCT")
+      #expect(definition.id == testCase.movementID)
+      #expect(definition.junctionNodeID == testCase.junctionNodeID)
+      #expect(definition.incomingEdgeID == testCase.incomingEdgeID)
+      #expect(definition.outgoingEdgeID == testCase.outgoingEdgeID)
+      #expect(definition.incomingRouteID == "B")
+      #expect(
+        definition.incomingDirectionJA == testCase.incomingDirectionJA
+      )
+      #expect(definition.outgoingRouteID == "10")
+      #expect(definition.outgoingDirectionJA == "上り")
+      #expect(definition.branchSide == testCase.branchSide)
+      #expect(definition.japaneseSignText == testCase.signText)
+      #expect(definition.routeShields == ["10"])
+      #expect(definition.laneGuidanceState == .notReleased)
+      #expect(definition.checkedAt == "2026-07-30")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "452e2ca3d124ec3f726b0c3643cedbbc"
+          + "e3446b21e755f538b418616278cfa605"
+      )
+      #expect(
+        definition.sources.allSatisfy {
+          $0.url.hasPrefix("https://www.shutoko.jp/")
+        }
+      )
+
+      let incomingIndex = try #require(
+        route.edges.firstIndex {
+          $0.edgeID == definition.incomingEdgeID
+        }
+      )
+      #expect(
+        route.edges[incomingIndex + 1].edgeID
+          == definition.outgoingEdgeID
+      )
+      #expect(
+        match.incomingOccurrenceID
+          == route.routePlan.occurrences[incomingIndex].id
+      )
+      #expect(
+        match.outgoingOccurrenceID
+          == route.routePlan.occurrences[incomingIndex + 1].id
+      )
+      #expect(
+        route.routePlan.occurrences[incomingIndex + 1].kind
+          == .junctionMovement
+      )
+      #expect(
+        route.routePlan.occurrences[incomingIndex + 1].entityID
+          == definition.id
+      )
+      #expect(
+        definition.localizedContent[.simplifiedChinese]?.displayText
+          == testCase.localizedInstruction
+      )
+      #expect(
+        definition.localizedContent.values.allSatisfy {
+          $0.preservedJapaneseSignText == testCase.signText
+        }
+      )
+      #expect(definition.commitTriggerDistanceMeters == 100)
+      #expect(match.progressFraction > 0)
+      #expect(match.progressFraction < 1)
+    }
+  }
+
   @Test("both exact Tatsumi approaches preserve their reviewed signs")
   func projectsExactTatsumiMovements() throws {
     let database = try loadDatabase()

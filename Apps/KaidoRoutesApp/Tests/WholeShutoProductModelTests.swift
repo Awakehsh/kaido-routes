@@ -154,6 +154,66 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testShinonomeJunctionPromptsPreserveEachApproachBranchAndSign() {
+    let cases:
+      [(
+        isEastbound: Bool,
+        movementID: String,
+        isLeftBranch: Bool,
+        signText: String,
+        localizedInstruction: String
+      )] = [
+        (
+          true,
+          "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+          true,
+          "豊洲",
+          "向左分岔，驶入 10 号晴海线上行方向"
+        ),
+        (
+          false,
+          "shuto.jct.shinonome.b-westbound-to-10-inbound",
+          false,
+          "晴海",
+          "向右分岔，驶入 10 号晴海线上行方向"
+        ),
+      ]
+
+    for testCase in cases {
+      let model = WholeShutoProductModel(checkpointStore: nil)
+      if testCase.isEastbound {
+        model.prepareShinonomeEastboundJunctionPreview()
+      } else {
+        model.prepareShinonomeWestboundJunctionPreview()
+      }
+
+      let prompt = try? XCTUnwrap(model.junctionPrompts.only)
+      XCTAssertEqual(prompt?.movementID, testCase.movementID)
+      XCTAssertEqual(prompt?.nameJA, "東雲JCT")
+      XCTAssertEqual(prompt?.outgoingRouteID, "10")
+      XCTAssertEqual(prompt?.outgoingDirectionJA, "上り")
+      XCTAssertEqual(
+        prompt?.branchSide,
+        testCase.isLeftBranch ? .left : .right
+      )
+      XCTAssertEqual(prompt?.japaneseSignText, testCase.signText)
+      XCTAssertEqual(prompt?.routeShields, ["10"])
+      XCTAssertEqual(prompt?.laneGuidanceState, .notReleased)
+      XCTAssertEqual(
+        prompt?.localizedContent[.simplifiedChinese]?.displayText,
+        testCase.localizedInstruction
+      )
+      XCTAssertTrue(
+        prompt?.localizedContent.values.allSatisfy {
+          $0.preservedJapaneseSignText == testCase.signText
+        } == true
+      )
+      XCTAssertEqual(prompt?.checkedAt, "2026-07-30")
+      XCTAssertEqual(model.activeJunctionPrompt, prompt)
+      XCTAssertNil(model.failureCode)
+    }
+  }
+
   func testActiveJourneyRestoresPausedOnTheSameNetworkSnapshot()
     async throws
   {
@@ -460,6 +520,48 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(
       model.activeJunctionPrompt?.movementID,
       "shuto.jct.tatsumi.b-eastbound-to-9-inbound"
+    )
+  }
+
+  func testShinonomeRightBranchSpeechIsActorOwned() async throws {
+    let output = WholeShutoRecordingSpeechOutput()
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      speechOutput: output,
+      languageSelectionProvider: Self.testLanguages
+    )
+    model.prepareShinonomeWestboundJunctionPreview(
+      startsNavigation: true
+    )
+    model.togglePlayback()
+
+    await advance(
+      model,
+      until: { _ in !output.commands.isEmpty },
+      maximumTicks: 1_000
+    )
+
+    let command = try XCTUnwrap(output.commands.only)
+    XCTAssertEqual(command.languageCode, "ja-JP")
+    XCTAssertTrue(command.spokenText.contains("東雲ジャンクション"))
+    XCTAssertTrue(
+      command.synthesisText.contains("じゅうごうはるみせん")
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.maneuver,
+      .branchRight
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.lanePreparation,
+      GuidanceLanePreparation.none
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.japaneseSignText,
+      "晴海"
+    )
+    XCTAssertEqual(
+      model.activeJunctionPrompt?.movementID,
+      "shuto.jct.shinonome.b-westbound-to-10-inbound"
     )
   }
 

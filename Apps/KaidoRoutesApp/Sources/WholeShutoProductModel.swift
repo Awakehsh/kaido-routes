@@ -458,6 +458,30 @@ final class WholeShutoProductModel: ObservableObject {
     )
   }
 
+  func prepareShinonomeEastboundJunctionPreview(
+    startsNavigation: Bool = false
+  ) {
+    prepareJunctionPreview(
+      entryFacilityID: "shuto.ic.b.ooi",
+      exitFacilityID: "shuto.ic.10.harumi",
+      expectedMovementID:
+        "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+      startsNavigation: startsNavigation
+    )
+  }
+
+  func prepareShinonomeWestboundJunctionPreview(
+    startsNavigation: Bool = false
+  ) {
+    prepareJunctionPreview(
+      entryFacilityID: "shuto.ic.b.shinkiba",
+      exitFacilityID: "shuto.ic.10.harumi",
+      expectedMovementID:
+        "shuto.jct.shinonome.b-westbound-to-10-inbound",
+      startsNavigation: startsNavigation
+    )
+  }
+
   func prepareTatsumiEastboundJunctionPreview(
     startsNavigation: Bool = false
   ) {

@@ -131,6 +131,20 @@ struct KaidoRoutesApp: App {
           startsNavigation: true
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-SHINONOME-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost(
+          movement: .shinonomeEastbound,
+          startsNavigation: true
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-SHINONOME-WESTBOUND-JUNCTION-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost(
+          movement: .shinonomeWestbound,
+          startsNavigation: true
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-TATSUMI-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW"
       ) {
         WholeShutoJunctionPreviewHost(
@@ -192,6 +206,8 @@ struct KaidoRoutesApp: App {
 private enum WholeShutoJunctionPreviewMovement {
   case kasai
   case oi
+  case shinonomeEastbound
+  case shinonomeWestbound
   case tatsumiEastbound
   case tatsumiWestbound
 }
@@ -212,6 +228,14 @@ private struct WholeShutoJunctionPreviewHost: View {
       )
     case .oi:
       model.prepareJunctionPreview(startsNavigation: startsNavigation)
+    case .shinonomeEastbound:
+      model.prepareShinonomeEastboundJunctionPreview(
+        startsNavigation: startsNavigation
+      )
+    case .shinonomeWestbound:
+      model.prepareShinonomeWestboundJunctionPreview(
+        startsNavigation: startsNavigation
+      )
     case .tatsumiEastbound:
       model.prepareTatsumiEastboundJunctionPreview(
         startsNavigation: startsNavigation

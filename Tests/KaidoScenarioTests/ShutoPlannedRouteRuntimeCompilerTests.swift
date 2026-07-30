@@ -287,6 +287,88 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
+  @Test("both reviewed Shinonome approaches emit one actor-owned prompt")
+  func emitsReviewedShinonomeGuidanceExactlyOnce() async throws {
+    let database = try loadWholeShutoDatabase()
+    let cases:
+      [(
+        entryFacilityID: String,
+        movementID: String,
+        maneuver: GuidanceManeuver,
+        signText: String
+      )] = [
+        (
+          "shuto.ic.b.ooi",
+          "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+          .branchLeft,
+          "豊洲"
+        ),
+        (
+          "shuto.ic.b.shinkiba",
+          "shuto.jct.shinonome.b-westbound-to-10-inbound",
+          .branchRight,
+          "晴海"
+        ),
+      ]
+
+    for testCase in cases {
+      let route = try ShutoRoutePlanner(database: database).plan(
+        entryFacilityID: testCase.entryFacilityID,
+        exitFacilityID: "shuto.ic.10.harumi"
+      )
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+
+      #expect(assets.decisionZones.count == 1)
+      #expect(assets.releasedGuidance.count == 1)
+      let decisionZone = try #require(assets.decisionZones.first)
+      let guidance = try #require(assets.releasedGuidance.first)
+      #expect(
+        route.routePlan.occurrence(
+          id: decisionZone.movementOccurrenceID
+        )?.entityID == testCase.movementID
+      )
+      #expect(guidance.frameTemplate.maneuver == testCase.maneuver)
+      #expect(guidance.frameTemplate.lanePreparation == .none)
+      #expect(
+        guidance.frameTemplate.presentationSource.japaneseSignText
+          == testCase.signText
+      )
+      #expect(
+        guidance.frameTemplate.presentationSource.routeShields
+          == ["10"]
+      )
+
+      let simulator = try NavigationDriveSimulator(
+        route: route,
+        runtimeAssets: assets,
+        configuration: NavigationDriveSimulationConfiguration(
+          sampleFractions: [0.15, 0.5, 0.85],
+          horizontalAccuracyMeters: 2
+        )
+      )
+      let results = try await simulator.runToEnd()
+      let emissions = results.compactMap {
+        $0.navigationUpdate?.guidancePromptEmission
+      }
+
+      #expect(emissions.count == 1)
+      #expect(emissions.first?.promptID == guidance.anchor.promptID)
+      #expect(
+        results.compactMap {
+          $0.navigationUpdate?.navigationSnapshot.activeGuidanceFrame
+        }.contains {
+          $0.movementOccurrenceID
+            == decisionZone.movementOccurrenceID
+            && $0.maneuver == testCase.maneuver
+            && $0.lanePreparation == .none
+        }
+      )
+    }
+  }
+
   @Test("reviewed Oi movement emits one actor-owned branch prompt")
   func emitsReviewedOiMovementGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()

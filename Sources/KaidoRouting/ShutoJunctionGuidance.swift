@@ -100,6 +100,152 @@ public struct ShutoJunctionMovementDefinition:
 public enum ShutoJunctionMovementCatalog {
   public static let released: [ShutoJunctionMovementDefinition] = [
     ShutoJunctionMovementDefinition(
+      id: "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-07-28",
+      junctionID: "shuto.jct.jct_shinonome",
+      junctionNodeID: 493_584_435,
+      incomingEdgeID: "osm.888066406.1.forward",
+      outgoingEdgeID: "osm.40636701.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "10",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "豊洲",
+      routeShields: ["10"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "東雲JCT",
+        .simplifiedChinese: "东云 JCT",
+        .english: "Shinonome JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "左方向へ分岐し、10号晴海線 上りへ",
+          spokenText:
+            "東雲ジャンクションでは左方向へ分岐し、10号晴海線 上りへ進んでください",
+          spokenForms: ["10号晴海線": "じゅうごうはるみせん"],
+          preservedJapaneseSignText: "豊洲"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向左分岔，驶入 10 号晴海线上行方向",
+          spokenText: "在东云枢纽向左分岔，驶入 10 号晴海线上行方向",
+          spokenForms: ["10 号晴海线": "十号晴海线"],
+          preservedJapaneseSignText: "豊洲"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch left for Route 10 inbound",
+          spokenText:
+            "At Shinonome Junction, branch left for Route 10 inbound",
+          spokenForms: ["Route 10": "Route ten"],
+          preservedJapaneseSignText: "豊洲"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-07-30",
+      expectedJunctionDetailSHA256:
+        "452e2ca3d124ec3f726b0c3643cedbbc"
+        + "e3446b21e755f538b418616278cfa605",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/guidance/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-10/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_shinonome",
+          contentSHA256:
+            "452e2ca3d124ec3f726b0c3643cedbbc"
+            + "e3446b21e755f538b418616278cfa605"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.shinonome.b-westbound-to-10-inbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-07-28",
+      junctionID: "shuto.jct.jct_shinonome",
+      junctionNodeID: 569_015_558,
+      incomingEdgeID: "osm.678697940.1.forward",
+      outgoingEdgeID: "osm.44882717.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "10",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "晴海",
+      routeShields: ["10"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "東雲JCT",
+        .simplifiedChinese: "东云 JCT",
+        .english: "Shinonome JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "右方向へ分岐し、10号晴海線 上りへ",
+          spokenText:
+            "東雲ジャンクションでは右方向へ分岐し、10号晴海線 上りへ進んでください",
+          spokenForms: ["10号晴海線": "じゅうごうはるみせん"],
+          preservedJapaneseSignText: "晴海"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向右分岔，驶入 10 号晴海线上行方向",
+          spokenText: "在东云枢纽向右分岔，驶入 10 号晴海线上行方向",
+          spokenForms: ["10 号晴海线": "十号晴海线"],
+          preservedJapaneseSignText: "晴海"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch right for Route 10 inbound",
+          spokenText:
+            "At Shinonome Junction, branch right for Route 10 inbound",
+          spokenForms: ["Route 10": "Route ten"],
+          preservedJapaneseSignText: "晴海"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-07-30",
+      expectedJunctionDetailSHA256:
+        "452e2ca3d124ec3f726b0c3643cedbbc"
+        + "e3446b21e755f538b418616278cfa605",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/guidance/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-10/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_shinonome",
+          contentSHA256:
+            "452e2ca3d124ec3f726b0c3643cedbbc"
+            + "e3446b21e755f538b418616278cfa605"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-07-28",

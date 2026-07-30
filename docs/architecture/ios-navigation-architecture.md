@@ -35,6 +35,13 @@ promotes that exact outgoing edge occurrence to `JUNCTION_MOVEMENT`, and the
 whole-network runtime compiler creates its DecisionZone and released guidance.
 The screen and default speech output consume the same actor update and one-shot
 prompt identity.
+The default whole-Shuto shell owns persisted interface and guidance-voice
+selections as independent values. Interface selection localizes planning,
+review, simulation, network-fact, degraded-state, and accessibility copy.
+Actor projection reads the separately selected voice locale when it admits a
+reviewed prompt. Junction presentation localizes its explanatory text and JCT
+name while preserving the exact Japanese physical sign target and route
+shields.
 The previous C2 simulation and K7 release remain bounded regression fixtures;
 they are not product coverage limits. The app still has no qualified
 whole-network released-road live-input authority, attached continuous location

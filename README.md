@@ -39,8 +39,10 @@ internal review workbench.
   occurrence is compiled into actor-owned screen and one-shot speech guidance.
   Lane indices remain explicitly unreleased, and unreviewed transitions remain
   silent.
-- IC, JCT, and PA labels stay in Japanese. Product UI can continue to support
-  Japanese, Simplified Chinese, and English independently from guidance voice.
+- Map facility labels for IC, JCT, and PA, route shields, and physical sign
+  targets stay in Japanese. The default whole-network journey provides
+  persisted Japanese, Simplified Chinese, and English interface controls plus
+  an independently persisted guidance-voice language.
 
 The previous C2 and K7 artifacts remain useful deterministic fixtures. They are
 not the default product, do not constrain where a journey may start, and are not

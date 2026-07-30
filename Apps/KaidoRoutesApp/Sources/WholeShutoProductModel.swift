@@ -50,6 +50,8 @@ struct WholeShutoJunctionPrompt: Equatable, Identifiable, Sendable {
   let japaneseSignText: String
   let routeShields: [String]
   let laneGuidanceState: ShutoJunctionLaneGuidanceState
+  let localizedJunctionNames: [KaidoReleaseLocale: String]
+  let localizedContent: [KaidoReleaseLocale: LocalizedGuidanceContent]
   let checkedAt: String
   let coordinate: ShutoCoordinate
   let incomingOccurrenceID: String
@@ -227,7 +229,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   init(
     database: ShutoNetworkDatabase? = nil,
-    originQuery: String = "当前位置",
+    originQuery: String = "",
     destinationQuery: String = "",
     locationProvider: any C2NavigationCurrentLocationProviding =
       C2CoreLocationProvider(),
@@ -301,6 +303,8 @@ final class WholeShutoProductModel: ObservableObject {
         japaneseSignText: definition.japaneseSignText,
         routeShields: definition.routeShields,
         laneGuidanceState: definition.laneGuidanceState,
+        localizedJunctionNames: definition.localizedJunctionNames,
+        localizedContent: definition.localizedContent,
         checkedAt: definition.checkedAt,
         coordinate: match.coordinate,
         incomingOccurrenceID: match.incomingOccurrenceID,
@@ -1126,7 +1130,7 @@ final class WholeShutoProductModel: ObservableObject {
       do {
         let coordinate = try await locationProvider.currentCoordinate()
         return WholeShutoPlace(
-          title: "当前位置",
+          title: "現在地",
           coordinate: ShutoCoordinate(
             latitude: coordinate.latitude,
             longitude: coordinate.longitude

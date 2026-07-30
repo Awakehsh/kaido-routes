@@ -5,7 +5,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testDefaultLaunchMakesWholeShutoMapTheProduct() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT"]
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
 
     XCTAssertTrue(
@@ -22,6 +28,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       app.staticTexts["首都高全网导航"].exists
     )
+    assertMapFirstPlanningLayout(in: app)
 
     let topologyScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
@@ -34,7 +41,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {
     continueAfterFailure = false
     let routeApp = XCUIApplication()
-    routeApp.launchArguments = ["-WHOLE-SHUTO-ROUTE-PREVIEW"]
+    routeApp.launchArguments = [
+      "-WHOLE-SHUTO-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     routeApp.launch()
 
     let product = element("whole-shuto-product", in: routeApp)
@@ -47,7 +60,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
     routeApp.terminate()
 
     let junctionApp = XCUIApplication()
-    junctionApp.launchArguments = ["-WHOLE-SHUTO-JUNCTION-PREVIEW"]
+    junctionApp.launchArguments = [
+      "-WHOLE-SHUTO-JUNCTION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     junctionApp.launch()
     XCTAssertTrue(
       element("whole-shuto-geographic-map", in: junctionApp)
@@ -58,7 +77,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       in: junctionApp
     )
     XCTAssertTrue(junctionInset.waitForExistence(timeout: 5))
-    XCTAssertTrue(junctionInset.label.contains("大井JCT"))
+    XCTAssertTrue(junctionInset.label.contains("大井 JCT"))
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("東名・中央道"))
     XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
@@ -71,7 +90,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let navigationApp = XCUIApplication()
     navigationApp.launchArguments = [
-      "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW"
+      "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
     ]
     navigationApp.launch()
     let actorJunctionInset = element(
@@ -79,7 +102,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       in: navigationApp
     )
     XCTAssertTrue(actorJunctionInset.waitForExistence(timeout: 10))
-    XCTAssertTrue(actorJunctionInset.label.contains("大井JCT"))
+    XCTAssertTrue(actorJunctionInset.label.contains("大井 JCT"))
     let speech = element(
       "whole-shuto-guidance-speech",
       in: navigationApp
@@ -90,6 +113,82 @@ final class KaidoProductJourneyUITests: XCTestCase {
         speech.value as? String ?? ""
       )
     )
+  }
+
+  func testWholeShutoInterfaceAndVoiceLanguagesRemainIndependent() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let settings = element("whole-shuto-language-settings", in: app)
+    XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    settings.tap()
+
+    let englishInterface = element(
+      "whole-shuto-interface-language-en",
+      in: app
+    )
+    XCTAssertTrue(englishInterface.waitForExistence(timeout: 3))
+    englishInterface.tap()
+
+    let chineseVoice = element(
+      "whole-shuto-guidance-voice-language-zh-Hans",
+      in: app
+    )
+    XCTAssertTrue(chineseVoice.waitForExistence(timeout: 3))
+    chineseVoice.tap()
+
+    XCTAssertTrue(englishInterface.isSelected)
+    XCTAssertTrue(chineseVoice.isSelected)
+
+    let done = app.buttons["whole-shuto-language-settings-done"]
+    done.tap()
+    XCTAssertTrue(done.waitForNonExistence(timeout: 3))
+    waitForLayoutSettlement()
+    XCTAssertTrue(
+      app.staticTexts["WHOLE-SHUTO ROUTES"]
+        .waitForExistence(timeout: 3)
+    )
+    assertMapFirstPlanningLayout(in: app)
+
+    let englishScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    englishScreenshot.name = "Whole Shuto English interface"
+    englishScreenshot.lifetime = .keepAlways
+    add(englishScreenshot)
+
+    settings.tap()
+    let japaneseInterface = element(
+      "whole-shuto-interface-language-ja-JP",
+      in: app
+    )
+    XCTAssertTrue(japaneseInterface.waitForExistence(timeout: 3))
+    japaneseInterface.tap()
+    XCTAssertTrue(japaneseInterface.isSelected)
+    XCTAssertTrue(chineseVoice.isSelected)
+    done.tap()
+    XCTAssertTrue(done.waitForNonExistence(timeout: 3))
+    waitForLayoutSettlement()
+
+    XCTAssertTrue(
+      app.staticTexts["首都高ルートナビ"]
+        .waitForExistence(timeout: 3)
+    )
+    assertMapFirstPlanningLayout(in: app)
+    let japaneseScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    japaneseScreenshot.name = "Whole Shuto Japanese interface"
+    japaneseScreenshot.lifetime = .keepAlways
+    add(japaneseScreenshot)
   }
 
   func testReleasedK7RouteAutomaticallySimulatesAcrossTheMap() {
@@ -305,6 +404,35 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertEqual(
       XCTWaiter.wait(for: [expectation], timeout: 1),
       .completed
+    )
+  }
+
+  private func waitForLayoutSettlement() {
+    let expectation = XCTestExpectation(
+      description: "Localized product layout settled"
+    )
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      expectation.fulfill()
+    }
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [expectation], timeout: 1),
+      .completed
+    )
+  }
+
+  private func assertMapFirstPlanningLayout(
+    in app: XCUIApplication,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let dock = element("whole-shuto-planning-dock", in: app)
+    XCTAssertTrue(dock.exists, file: file, line: line)
+    XCTAssertGreaterThanOrEqual(
+      dock.frame.minY,
+      app.frame.midY,
+      "The planning dock must leave at least half of the screen for the network map.",
+      file: file,
+      line: line
     )
   }
 }

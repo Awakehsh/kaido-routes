@@ -1,5 +1,6 @@
 import CoreLocation
 import KaidoAppleAdapters
+import KaidoDomain
 import KaidoRouting
 import MapKit
 import SwiftUI
@@ -7,10 +8,20 @@ import SwiftUI
 struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
   @StateObject private var model: WholeShutoProductModel
+  @StateObject private var languageSettings: KaidoLanguageSettingsModel
   @State private var showsNetworkFacts = false
+  @State private var showsLanguageSettings = false
 
-  init(model: WholeShutoProductModel = WholeShutoProductModel()) {
-    _model = StateObject(wrappedValue: model)
+  init(
+    model: WholeShutoProductModel? = nil,
+    languageSettings: KaidoLanguageSettingsModel? = nil
+  ) {
+    _model = StateObject(
+      wrappedValue: model ?? WholeShutoProductModel()
+    )
+    _languageSettings = StateObject(
+      wrappedValue: languageSettings ?? KaidoLanguageSettingsModel()
+    )
   }
 
   var body: some View {
@@ -49,9 +60,16 @@ struct WholeShutoProductView: View {
     .sheet(isPresented: $showsNetworkFacts) {
       WholeShutoNetworkFactsView(model: model)
     }
+    .sheet(isPresented: $showsLanguageSettings) {
+      WholeShutoLanguageSettingsView(model: languageSettings)
+    }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-product")
     .accessibilityValue(model.phase.rawValue)
+    .environment(
+      \.kaidoInterfaceLocale,
+      languageSettings.interfaceLocale
+    )
     .onChange(of: scenePhase, initial: true) { _, newPhase in
       model.handleScenePhase(newPhase.productRuntimePhase)
     }
@@ -85,7 +103,13 @@ struct WholeShutoProductView: View {
               .frame(width: 38, height: 38)
           }
           .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
-          .accessibilityLabel("返回路线规划")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "経路計画に戻る",
+              simplifiedChinese: "返回路线规划",
+              english: "Back to route planning"
+            )
+          )
         }
 
         VStack(alignment: .leading, spacing: 0) {
@@ -100,6 +124,8 @@ struct WholeShutoProductView: View {
             .foregroundStyle(
               isDriving ? KaidoTheme.routeWhite : KaidoTheme.ink
             )
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
         }
 
         Spacer()
@@ -108,6 +134,23 @@ struct WholeShutoProductView: View {
 
         if !isDriving {
           Button {
+            showsLanguageSettings = true
+          } label: {
+            Image(systemName: "globe")
+              .font(.system(size: 14, weight: .black))
+              .frame(width: 38, height: 38)
+          }
+          .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "言語設定",
+              simplifiedChinese: "语言设置",
+              english: "Language settings"
+            )
+          )
+          .accessibilityIdentifier("whole-shuto-language-settings")
+
+          Button {
             showsNetworkFacts = true
           } label: {
             Image(systemName: "info")
@@ -115,7 +158,13 @@ struct WholeShutoProductView: View {
               .frame(width: 38, height: 38)
           }
           .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
-          .accessibilityLabel("全网数据说明")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "首都高全体データについて",
+              simplifiedChinese: "全网数据说明",
+              english: "Whole-network data information"
+            )
+          )
         }
       }
 
@@ -132,12 +181,20 @@ struct WholeShutoProductView: View {
       mapModeButton(
         .geographic,
         symbol: "map.fill",
-        label: "地图"
+        label: copy.resolve(
+          japanese: "地図",
+          simplifiedChinese: "地图",
+          english: "MAP"
+        )
       )
       mapModeButton(
         .network,
         symbol: "point.3.connected.trianglepath.dotted",
-        label: "全网"
+        label: copy.resolve(
+          japanese: "全体",
+          simplifiedChinese: "全网",
+          english: "NET"
+        )
       )
     }
     .padding(3)
@@ -210,23 +267,43 @@ struct WholeShutoProductView: View {
         .padding(.top, 8)
     }
     .shadow(color: .black.opacity(0.16), radius: 18, y: -3)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-planning-dock")
   }
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
       HStack {
         VStack(alignment: .leading, spacing: 2) {
-          Text("首都高全网导航")
-            .font(.system(size: 22, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.ink)
-          Text("任意地点出发 · 自动选择方向正确的入口与出口")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(KaidoTheme.quietText)
+          Text(
+            copy.resolve(
+              japanese: "首都高ルートナビ",
+              simplifiedChinese: "首都高全网导航",
+              english: "WHOLE-SHUTO ROUTES"
+            )
+          )
+          .font(.system(size: 22, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.ink)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+          Text(
+            copy.resolve(
+              japanese: "任意の地点から · 進行方向に合う入口と出口を選択",
+              simplifiedChinese: "任意地点出发 · 自动选择方向正确的入口与出口",
+              english: "Start anywhere · Direction-correct entry and exit"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(KaidoTheme.quietText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
         }
+        .layoutPriority(1)
         Spacer()
         Text("26 ROUTES")
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .foregroundStyle(KaidoTheme.routeGreenDeep)
+          .lineLimit(1)
           .padding(.horizontal, 8)
           .frame(height: 24)
           .background(KaidoTheme.confirmedGreen.opacity(0.18))
@@ -237,9 +314,17 @@ struct WholeShutoProductView: View {
         routeField(
           symbol: "location.fill",
           tint: KaidoTheme.positionCyan,
-          label: "出发地",
+          label: copy.resolve(
+            japanese: "出発地",
+            simplifiedChinese: "出发地",
+            english: "ORIGIN"
+          ),
           text: $model.originQuery,
-          prompt: "当前位置或地点"
+          prompt: copy.resolve(
+            japanese: "現在地または場所",
+            simplifiedChinese: "当前位置或地点",
+            english: "Current location or place"
+          )
         )
         HStack(spacing: 0) {
           Rectangle()
@@ -254,9 +339,17 @@ struct WholeShutoProductView: View {
         routeField(
           symbol: "flag.fill",
           tint: KaidoTheme.evidenceCoral,
-          label: "目的地",
+          label: copy.resolve(
+            japanese: "目的地",
+            simplifiedChinese: "目的地",
+            english: "DESTINATION"
+          ),
           text: $model.destinationQuery,
-          prompt: "输入任何目的地"
+          prompt: copy.resolve(
+            japanese: "目的地を入力",
+            simplifiedChinese: "输入任何目的地",
+            english: "Enter any destination"
+          )
         )
       }
       .padding(.horizontal, 10)
@@ -278,7 +371,13 @@ struct WholeShutoProductView: View {
               ProgressView()
                 .tint(.white)
             } else {
-              Text("规划路线")
+              Text(
+                copy.resolve(
+                  japanese: "ルートを検索",
+                  simplifiedChinese: "规划路线",
+                  english: "PLAN ROUTE"
+                )
+              )
               Spacer()
               Image(systemName: "arrow.right")
             }
@@ -302,7 +401,13 @@ struct WholeShutoProductView: View {
           Text(failureMessage(failureCode))
           Spacer()
           if failureCode == "LOCATION_UNAVAILABLE" {
-            Button("使用示例") {
+            Button(
+              copy.resolve(
+                japanese: "サンプルを使用",
+                simplifiedChinese: "使用示例",
+                english: "USE SAMPLE"
+              )
+            ) {
               model.usePreviewPlaces()
             }
             .font(.system(size: 10, weight: .black))
@@ -338,9 +443,13 @@ struct WholeShutoProductView: View {
         Text(label)
           .font(.system(size: 8, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.quietText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
         TextField(prompt, text: text)
           .font(.system(size: 14, weight: .bold))
           .foregroundStyle(KaidoTheme.ink)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
           .textInputAutocapitalization(.never)
           .submitLabel(.route)
           .onSubmit {
@@ -355,15 +464,43 @@ struct WholeShutoProductView: View {
 
   private var preferenceMenu: some View {
     Menu {
-      Button("推荐路线") { model.preference = .recommended }
-      Button("减少复杂分岔") { model.preference = .fewerJunctions }
-      Button("优先湾岸线") { model.preference = .preferBayshore }
+      Button(
+        copy.resolve(
+          japanese: "おすすめ",
+          simplifiedChinese: "推荐路线",
+          english: "Recommended"
+        )
+      ) { model.preference = .recommended }
+      Button(
+        copy.resolve(
+          japanese: "複雑な分岐を減らす",
+          simplifiedChinese: "减少复杂分岔",
+          english: "Fewer complex junctions"
+        )
+      ) { model.preference = .fewerJunctions }
+      Button(
+        copy.resolve(
+          japanese: "湾岸線を優先",
+          simplifiedChinese: "优先湾岸线",
+          english: "Prefer Bayshore Route"
+        )
+      ) { model.preference = .preferBayshore }
     } label: {
       VStack(alignment: .leading, spacing: 1) {
-        Text("路线偏好")
-          .font(.system(size: 8, weight: .black, design: .rounded))
+        Text(
+          copy.resolve(
+            japanese: "ルート設定",
+            simplifiedChinese: "路线偏好",
+            english: "ROUTE PREFERENCE"
+          )
+        )
+        .font(.system(size: 8, weight: .black, design: .rounded))
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
         HStack(spacing: 5) {
           Text(preferenceLabel)
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
           Image(systemName: "chevron.up.chevron.down")
             .font(.system(size: 8, weight: .black))
         }
@@ -406,15 +543,15 @@ struct WholeShutoProductView: View {
               } label: {
                 let route = model.recommendations[index].route
                 VStack(alignment: .leading, spacing: 3) {
-                  Text(index == 0 ? "推荐" : "备选 \(index)")
+                  Text(recommendationLabel(at: index))
                     .font(.system(size: 8, weight: .black))
                   Text(
                     route.routeIDsInOrder
                       .map(shieldLabel)
                       .joined(separator: " · ")
                   )
-                    .font(.system(size: 10, weight: .black, design: .rounded))
-                    .lineLimit(1)
+                  .font(.system(size: 10, weight: .black, design: .rounded))
+                  .lineLimit(1)
                   Text(distanceLabel(route.distanceMeters))
                     .font(.system(size: 9, weight: .bold))
                 }
@@ -442,10 +579,13 @@ struct WholeShutoProductView: View {
       HStack(spacing: 8) {
         routeBoundary(
           title: model.selectedRoute?.entryFacility.nameJA ?? "—",
-          detail:
-            (model.selectedRoute?.entryFacility.entranceDirections ?? [])
+          detail: (model.selectedRoute?.entryFacility.entranceDirections ?? [])
             .joined(separator: " / "),
-          label: "入口",
+          label: copy.resolve(
+            japanese: "入口",
+            simplifiedChinese: "入口",
+            english: "ENTRY"
+          ),
           tint: KaidoTheme.positionCyan
         )
         Image(systemName: "arrow.right")
@@ -453,20 +593,35 @@ struct WholeShutoProductView: View {
           .foregroundStyle(KaidoTheme.roadGray)
         routeBoundary(
           title: model.selectedRoute?.exitFacility.nameJA ?? "—",
-          detail:
-            (model.selectedRoute?.exitFacility.exitDirections ?? [])
+          detail: (model.selectedRoute?.exitFacility.exitDirections ?? [])
             .joined(separator: " / "),
-          label: "出口",
+          label: copy.resolve(
+            japanese: "出口",
+            simplifiedChinese: "出口",
+            english: "EXIT"
+          ),
           tint: KaidoTheme.evidenceCoral
         )
       }
 
       HStack(spacing: 8) {
         VStack(alignment: .leading, spacing: 2) {
-          Text("当前通行状态")
-            .font(.system(size: 8, weight: .black))
-          Text("尚未连接实时路况 · 出发前需确认")
-            .font(.system(size: 10, weight: .bold))
+          Text(
+            copy.resolve(
+              japanese: "現在の通行状況",
+              simplifiedChinese: "当前通行状态",
+              english: "CURRENT PASSAGE STATUS"
+            )
+          )
+          .font(.system(size: 8, weight: .black))
+          Text(
+            copy.resolve(
+              japanese: "リアルタイム未確認 · 出発前に確認してください",
+              simplifiedChinese: "尚未连接实时路况 · 出发前需确认",
+              english: "Realtime unconfirmed · Check before departure"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
         }
         .foregroundStyle(KaidoTheme.signalAmber)
         Spacer()
@@ -474,7 +629,13 @@ struct WholeShutoProductView: View {
           model.startNavigationSimulation()
         } label: {
           HStack(spacing: 8) {
-            Text("开始完整预演")
+            Text(
+              copy.resolve(
+                japanese: "全行程をプレビュー",
+                simplifiedChinese: "开始完整预演",
+                english: "PREVIEW FULL JOURNEY"
+              )
+            )
             Image(systemName: "play.fill")
           }
           .font(.system(size: 12, weight: .black, design: .rounded))
@@ -507,10 +668,18 @@ struct WholeShutoProductView: View {
         Text("\(label) · \(title)")
           .font(.system(size: 11, weight: .black, design: .rounded))
           .lineLimit(1)
-        Text(detail.isEmpty ? "方向由路线确定" : detail)
-          .font(.system(size: 8, weight: .bold))
-          .foregroundStyle(KaidoTheme.quietText)
-          .lineLimit(1)
+        Text(
+          detail.isEmpty
+            ? copy.resolve(
+              japanese: "進行方向はルートで確定",
+              simplifiedChinese: "方向由路线确定",
+              english: "Direction fixed by route"
+            )
+            : detail
+        )
+        .font(.system(size: 8, weight: .bold))
+        .foregroundStyle(KaidoTheme.quietText)
+        .lineLimit(1)
       }
     }
     .foregroundStyle(KaidoTheme.ink)
@@ -552,7 +721,13 @@ struct WholeShutoProductView: View {
           .frame(width: 42, height: 42)
       }
       .buttonStyle(WholeShutoCircleButtonStyle(isDriving: true))
-      .accessibilityLabel("前进一步")
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "一段階進む",
+          simplifiedChinese: "前进一步",
+          english: "Advance one step"
+        )
+      )
 
       Button {
         model.togglePlayback()
@@ -565,7 +740,19 @@ struct WholeShutoProductView: View {
           .clipShape(Circle())
       }
       .buttonStyle(.plain)
-      .accessibilityLabel(model.isPlaying ? "暂停预演" : "继续预演")
+      .accessibilityLabel(
+        model.isPlaying
+          ? copy.resolve(
+            japanese: "プレビューを一時停止",
+            simplifiedChinese: "暂停预演",
+            english: "Pause preview"
+          )
+          : copy.resolve(
+            japanese: "プレビューを再開",
+            simplifiedChinese: "继续预演",
+            english: "Resume preview"
+          )
+      )
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
@@ -606,7 +793,13 @@ struct WholeShutoProductView: View {
             : KaidoTheme.routeWhite
         )
         .accessibilityIdentifier("whole-shuto-guidance-speech")
-        .accessibilityLabel("导航语音")
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "音声案内",
+            simplifiedChinese: "导航语音",
+            english: "Guidance voice"
+          )
+        )
         .accessibilityValue(speechStatusLabel)
       if let routeID = activeRouteShield {
         Text(shieldLabel(routeID))
@@ -632,13 +825,33 @@ struct WholeShutoProductView: View {
 
   private var topTitle: String {
     if isDriving {
-      return "首都高导航预演"
+      return copy.resolve(
+        japanese: "首都高ナビプレビュー",
+        simplifiedChinese: "首都高导航预演",
+        english: "SHUTO NAVIGATION PREVIEW"
+      )
     }
-    return model.phase == .review ? "路线确认" : "首都高全网"
+    return model.phase == .review
+      ? copy.resolve(
+        japanese: "ルート確認",
+        simplifiedChinese: "路线确认",
+        english: "ROUTE REVIEW"
+      )
+      : copy.resolve(
+        japanese: "首都高全体",
+        simplifiedChinese: "首都高全网",
+        english: "WHOLE SHUTO"
+      )
   }
 
   private var routeSummaryTitle: String {
-    guard let route = model.selectedRoute else { return "路线" }
+    guard let route = model.selectedRoute else {
+      return copy.resolve(
+        japanese: "ルート",
+        simplifiedChinese: "路线",
+        english: "ROUTE"
+      )
+    }
     return route.routeIDsInOrder
       .map(shieldLabel)
       .joined(separator: "  →  ")
@@ -646,14 +859,45 @@ struct WholeShutoProductView: View {
 
   private var routeSummarySubtitle: String {
     guard let route = model.selectedRoute else { return "" }
-    return "\(route.entryFacility.nameJA)入口 → \(route.exitFacility.nameJA)出口"
+    return
+      "\(entryName(route.entryFacility.nameJA)) → "
+      + exitName(route.exitFacility.nameJA)
+  }
+
+  private func recommendationLabel(at index: Int) -> String {
+    index == 0
+      ? copy.resolve(
+        japanese: "おすすめ",
+        simplifiedChinese: "推荐",
+        english: "RECOMMENDED"
+      )
+      : copy.resolve(
+        japanese: "候補 \(index)",
+        simplifiedChinese: "备选 \(index)",
+        english: "OPTION \(index)"
+      )
   }
 
   private var preferenceLabel: String {
     switch model.preference {
-    case .recommended: "推荐"
-    case .fewerJunctions: "少分岔"
-    case .preferBayshore: "湾岸优先"
+    case .recommended:
+      copy.resolve(
+        japanese: "おすすめ",
+        simplifiedChinese: "推荐",
+        english: "Recommended"
+      )
+    case .fewerJunctions:
+      copy.resolve(
+        japanese: "分岐を減らす",
+        simplifiedChinese: "少分岔",
+        english: "Fewer junctions"
+      )
+    case .preferBayshore:
+      copy.resolve(
+        japanese: "湾岸線優先",
+        simplifiedChinese: "湾岸优先",
+        english: "Prefer Bayshore"
+      )
     }
   }
 
@@ -673,13 +917,48 @@ struct WholeShutoProductView: View {
 
   private var instructionKicker: String {
     switch model.phase {
-    case .surfaceAccess: "一般道路 · 前往入口"
-    case .entryTransition: "进入首都高"
+    case .surfaceAccess:
+      copy.resolve(
+        japanese: "一般道 · 入口へ",
+        simplifiedChinese: "一般道路 · 前往入口",
+        english: "SURFACE ROAD · TO ENTRY"
+      )
+    case .entryTransition:
+      copy.resolve(
+        japanese: "首都高へ進入",
+        simplifiedChinese: "进入首都高",
+        english: "ENTER SHUTO EXPRESSWAY"
+      )
     case .expressway:
-      model.activeJunctionPrompt == nil ? "继续行驶" : "接近分岔"
-    case .exitTransition: "驶出首都高"
-    case .surfaceEgress: "一般道路 · 前往目的地"
-    case .completed: "已到达"
+      model.activeJunctionPrompt == nil
+        ? copy.resolve(
+          japanese: "そのまま進む",
+          simplifiedChinese: "继续行驶",
+          english: "CONTINUE"
+        )
+        : copy.resolve(
+          japanese: "分岐に接近",
+          simplifiedChinese: "接近分岔",
+          english: "JUNCTION AHEAD"
+        )
+    case .exitTransition:
+      copy.resolve(
+        japanese: "首都高を退出",
+        simplifiedChinese: "驶出首都高",
+        english: "EXIT SHUTO EXPRESSWAY"
+      )
+    case .surfaceEgress:
+      copy.resolve(
+        japanese: "一般道 · 目的地へ",
+        simplifiedChinese: "一般道路 · 前往目的地",
+        english: "SURFACE ROAD · TO DESTINATION"
+      )
+    case .completed:
+      copy.resolve(
+        japanese: "到着",
+        simplifiedChinese: "已到达",
+        english: "ARRIVED"
+      )
     case .planning, .review: ""
     }
   }
@@ -688,22 +967,76 @@ struct WholeShutoProductView: View {
     guard let route = model.selectedRoute else { return "" }
     switch model.phase {
     case .surfaceAccess:
-      return "前往 \(route.entryFacility.nameJA)入口"
+      return copy.resolve(
+        japanese: "\(entryName(route.entryFacility.nameJA))へ進む",
+        simplifiedChinese: "前往 \(entryName(route.entryFacility.nameJA))",
+        english: "Continue to \(entryName(route.entryFacility.nameJA))"
+      )
     case .entryTransition:
-      return
-        "从 \(route.entryFacility.nameJA) 进入 "
-        + "\(route.routeIDsInOrder.first.map(shieldLabel) ?? "首都高")"
+      let routeLabel =
+        route.routeIDsInOrder.first.map(shieldLabel)
+        ?? copy.resolve(
+          japanese: "首都高",
+          simplifiedChinese: "首都高",
+          english: "Shuto Expressway"
+        )
+      return copy.resolve(
+        japanese: "\(route.entryFacility.nameJA)から \(routeLabel) へ",
+        simplifiedChinese:
+          "从 \(route.entryFacility.nameJA) 进入 \(routeLabel)",
+        english: "Enter \(routeLabel) from \(route.entryFacility.nameJA)"
+      )
     case .expressway:
       if let prompt = model.activeJunctionPrompt {
-        return "\(prompt.nameJA)：驶向 \(shieldLabel(prompt.outgoingRouteID))"
+        return prompt.localizedContent[languageSettings.interfaceLocale]?
+          .displayText
+          ?? "\(localizedJunctionName(prompt)): "
+          + shieldLabel(prompt.outgoingRouteID)
       }
-      return "沿 \(activeRouteShield.map(shieldLabel) ?? "当前路线") 继续"
+      let routeLabel =
+        activeRouteShield.map(shieldLabel)
+        ?? copy.resolve(
+          japanese: "現在のルート",
+          simplifiedChinese: "当前路线",
+          english: "the current route"
+        )
+      return copy.resolve(
+        japanese: "\(routeLabel)をそのまま進む",
+        simplifiedChinese: "沿 \(routeLabel) 继续",
+        english: "Continue on \(routeLabel)"
+      )
     case .exitTransition:
-      return "从 \(route.exitFacility.nameJA)出口 驶出"
+      return copy.resolve(
+        japanese: "\(exitName(route.exitFacility.nameJA))から退出",
+        simplifiedChinese: "从 \(exitName(route.exitFacility.nameJA))驶出",
+        english: "Leave from \(exitName(route.exitFacility.nameJA))"
+      )
     case .surfaceEgress:
-      return "继续前往 \(model.destination?.title ?? "目的地")"
+      let destination =
+        model.destination?.title
+        ?? copy.resolve(
+          japanese: "目的地",
+          simplifiedChinese: "目的地",
+          english: "destination"
+        )
+      return copy.resolve(
+        japanese: "\(destination)へ進む",
+        simplifiedChinese: "继续前往 \(destination)",
+        english: "Continue to \(destination)"
+      )
     case .completed:
-      return "已到达 \(model.destination?.title ?? "目的地")"
+      let destination =
+        model.destination?.title
+        ?? copy.resolve(
+          japanese: "目的地",
+          simplifiedChinese: "目的地",
+          english: "destination"
+        )
+      return copy.resolve(
+        japanese: "\(destination)に到着",
+        simplifiedChinese: "已到达 \(destination)",
+        english: "Arrived at \(destination)"
+      )
     case .planning, .review:
       return ""
     }
@@ -732,22 +1065,63 @@ struct WholeShutoProductView: View {
   }
 
   private var positionStatusLabel: String {
-    let prefix = model.restoredFromCheckpoint ? "已恢复 · " : ""
+    let prefix =
+      model.restoredFromCheckpoint
+      ? copy.resolve(
+        japanese: "復元済み · ",
+        simplifiedChinese: "已恢复 · ",
+        english: "RESTORED · "
+      )
+      : ""
     switch model.positionState {
     case .surfacePreview:
-      return prefix + "MapKit 一般道路 · 预演"
+      return prefix
+        + copy.resolve(
+          japanese: "MapKit 一般道 · プレビュー",
+          simplifiedChinese: "MapKit 一般道路 · 预演",
+          english: "MAPKIT SURFACE ROAD · PREVIEW"
+        )
     case .boundaryTransition:
-      return prefix + "边界转换 · 预演"
+      return prefix
+        + copy.resolve(
+          japanese: "境界移行 · プレビュー",
+          simplifiedChinese: "边界转换 · 预演",
+          english: "BOUNDARY TRANSITION · PREVIEW"
+        )
     case .networkPreview:
-      return prefix + "路线位置 · 预演"
+      return prefix
+        + copy.resolve(
+          japanese: "ルート位置 · プレビュー",
+          simplifiedChinese: "路线位置 · 预演",
+          english: "ROUTE POSITION · PREVIEW"
+        )
     case .networkDegraded:
-      return prefix + "定位证据不足 · 未推进"
+      return prefix
+        + copy.resolve(
+          japanese: "位置証拠不足 · 進行停止",
+          simplifiedChinese: "定位证据不足 · 未推进",
+          english: "INSUFFICIENT POSITION EVIDENCE · HELD"
+        )
     case .tunnelEstimated:
-      return prefix + "隧道位置推算 · 预演"
+      return prefix
+        + copy.resolve(
+          japanese: "トンネル位置推定 · プレビュー",
+          simplifiedChinese: "隧道位置推算 · 预演",
+          english: "TUNNEL POSITION ESTIMATE · PREVIEW"
+        )
     case .routeInterrupted:
-      return prefix + "路线中断 · 无已发布重入路线"
+      return prefix
+        + copy.resolve(
+          japanese: "ルート中断 · 公開済み復帰ルートなし",
+          simplifiedChinese: "路线中断 · 无已发布重入路线",
+          english: "ROUTE INTERRUPTED · NO RELEASED REENTRY"
+        )
     case .completed:
-      return "路线完成"
+      return copy.resolve(
+        japanese: "ルート完了",
+        simplifiedChinese: "路线完成",
+        english: "ROUTE COMPLETE"
+      )
     case .unavailable:
       return ""
     }
@@ -768,22 +1142,58 @@ struct WholeShutoProductView: View {
     switch model.speechStatus {
     case .idle:
       model.hasConsumedActiveGuidancePrompt
-        ? "已播报"
-        : "等待已审核提示"
+        ? copy.resolve(
+          japanese: "案内済み",
+          simplifiedChinese: "已播报",
+          english: "GUIDANCE SPOKEN"
+        )
+        : copy.resolve(
+          japanese: "審査済み案内を待機",
+          simplifiedChinese: "等待已审核提示",
+          english: "WAITING FOR REVIEWED GUIDANCE"
+        )
     case .scheduled:
-      "已安排"
+      copy.resolve(
+        japanese: "案内を予約",
+        simplifiedChinese: "已安排",
+        english: "GUIDANCE SCHEDULED"
+      )
     case .speaking:
-      "播报中"
+      copy.resolve(
+        japanese: "案内中",
+        simplifiedChinese: "播报中",
+        english: "SPEAKING"
+      )
     case .suppressed(let reason):
-      "未重复播报 · \(reason.rawValue)"
+      copy.resolve(
+        japanese: "重複案内なし · \(reason.rawValue)",
+        simplifiedChinese: "未重复播报 · \(reason.rawValue)",
+        english: "NOT REPEATED · \(reason.rawValue)"
+      )
     case .interrupted:
-      "已被系统中断"
+      copy.resolve(
+        japanese: "システムにより中断",
+        simplifiedChinese: "已被系统中断",
+        english: "INTERRUPTED BY SYSTEM"
+      )
     case .stopped:
-      "已暂停"
+      copy.resolve(
+        japanese: "停止中",
+        simplifiedChinese: "已暂停",
+        english: "STOPPED"
+      )
     case .failed(let code):
-      "不可用 · \(code.rawValue)"
+      copy.resolve(
+        japanese: "利用不可 · \(code.rawValue)",
+        simplifiedChinese: "不可用 · \(code.rawValue)",
+        english: "UNAVAILABLE · \(code.rawValue)"
+      )
     case .invalidProjection:
-      "提示身份不一致"
+      copy.resolve(
+        japanese: "案内IDが不一致",
+        simplifiedChinese: "提示身份不一致",
+        english: "GUIDANCE IDENTITY MISMATCH"
+      )
     }
   }
 
@@ -816,20 +1226,29 @@ struct WholeShutoProductView: View {
           * (1 - model.progressFraction)
       )
     case .entryTransition:
-      return "进入 \(route.routeIDsInOrder.first.map(shieldLabel) ?? "")"
+      let routeLabel = route.routeIDsInOrder.first.map(shieldLabel) ?? ""
+      return copy.resolve(
+        japanese: "\(routeLabel)へ進入",
+        simplifiedChinese: "进入 \(routeLabel)",
+        english: "ENTER \(routeLabel)"
+      )
     case .expressway:
       return distanceLabel(
         route.distanceMeters * (1 - model.progressFraction)
       )
     case .exitTransition:
-      return "\(route.exitFacility.nameJA)出口"
+      return exitName(route.exitFacility.nameJA)
     case .surfaceEgress:
       return distanceLabel(
         (model.egressRoute?.distanceMeters ?? 0)
           * (1 - model.progressFraction)
       )
     case .completed:
-      return "到达"
+      return copy.resolve(
+        japanese: "到着",
+        simplifiedChinese: "到达",
+        english: "ARRIVED"
+      )
     case .planning, .review:
       return ""
     }
@@ -837,7 +1256,9 @@ struct WholeShutoProductView: View {
 
   private var drivingBoundaryLabel: String {
     guard let route = model.selectedRoute else { return "" }
-    return "\(route.entryFacility.nameJA)入口 → \(route.exitFacility.nameJA)出口"
+    return
+      "\(entryName(route.entryFacility.nameJA)) → "
+      + exitName(route.exitFacility.nameJA)
   }
 
   private func distanceLabel(_ meters: Double) -> String {
@@ -850,14 +1271,57 @@ struct WholeShutoProductView: View {
   private func failureMessage(_ code: String) -> String {
     switch code {
     case "DESTINATION_REQUIRED":
-      return "请输入目的地"
+      return copy.resolve(
+        japanese: "目的地を入力してください",
+        simplifiedChinese: "请输入目的地",
+        english: "Enter a destination"
+      )
     case "LOCATION_UNAVAILABLE":
-      return "无法读取当前位置，也可输入出发地"
+      return copy.resolve(
+        japanese: "現在地を取得できません。出発地を入力できます",
+        simplifiedChinese: "无法读取当前位置，也可输入出发地",
+        english: "Current location unavailable; enter an origin"
+      )
     case "NO_SHUTO_ROUTE":
-      return "未找到方向合法的首都高路线"
+      return copy.resolve(
+        japanese: "進行方向が有効な首都高ルートが見つかりません",
+        simplifiedChinese: "未找到方向合法的首都高路线",
+        english: "No direction-valid Shuto route found"
+      )
     default:
-      return "地点或路线暂时无法解析"
+      return copy.resolve(
+        japanese: "場所またはルートを解決できません",
+        simplifiedChinese: "地点或路线暂时无法解析",
+        english: "Place or route could not be resolved"
+      )
     }
+  }
+
+  private func entryName(_ nameJA: String) -> String {
+    copy.resolve(
+      japanese: "\(nameJA)入口",
+      simplifiedChinese: "\(nameJA)入口",
+      english: "\(nameJA) entry"
+    )
+  }
+
+  private func exitName(_ nameJA: String) -> String {
+    copy.resolve(
+      japanese: "\(nameJA)出口",
+      simplifiedChinese: "\(nameJA)出口",
+      english: "\(nameJA) exit"
+    )
+  }
+
+  private func localizedJunctionName(
+    _ prompt: WholeShutoJunctionPrompt
+  ) -> String {
+    prompt.localizedJunctionNames[languageSettings.interfaceLocale]
+      ?? prompt.nameJA
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: languageSettings.interfaceLocale)
   }
 }
 
@@ -887,6 +1351,7 @@ private struct WholeShutoCircleButtonStyle: ButtonStyle {
 }
 
 private struct WholeShutoNetworkDiagram: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   let database: ShutoNetworkDatabase
   let selectedRoute: ShutoPlannedRoute?
   let currentCoordinate: ShutoCoordinate?
@@ -976,13 +1441,21 @@ private struct WholeShutoNetworkDiagram: View {
           context: &context,
           at: transform.point(selectedRoute.entryFacility.coordinate),
           color: KaidoTheme.positionCyan,
-          label: "入"
+          label: copy.resolve(
+            japanese: "入",
+            simplifiedChinese: "入",
+            english: "E"
+          )
         )
         marker(
           context: &context,
           at: transform.point(selectedRoute.exitFacility.coordinate),
           color: KaidoTheme.evidenceCoral,
-          label: "出"
+          label: copy.resolve(
+            japanese: "出",
+            simplifiedChinese: "出",
+            english: "X"
+          )
         )
       }
 
@@ -1085,8 +1558,14 @@ private struct WholeShutoNetworkDiagram: View {
         Text("SHUTO NETWORK")
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .tracking(0.8)
-        Text("线路关系图 · 非道路比例")
-          .font(.system(size: 7, weight: .bold))
+        Text(
+          copy.resolve(
+            japanese: "路線関係図 · 道路縮尺ではありません",
+            simplifiedChinese: "线路关系图 · 非道路比例",
+            english: "NETWORK DIAGRAM · NOT TO ROAD SCALE"
+          )
+        )
+        .font(.system(size: 7, weight: .bold))
       }
       .foregroundStyle(
         usesDarkStyle ? KaidoTheme.muted : KaidoTheme.quietText
@@ -1099,14 +1578,34 @@ private struct WholeShutoNetworkDiagram: View {
     }
     .accessibilityElement(children: .ignore)
     .accessibilityIdentifier("whole-shuto-network-map")
-    .accessibilityLabel("首都高全网线路图")
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: "首都高全体路線図",
+        simplifiedChinese: "首都高全网线路图",
+        english: "Whole-Shuto network map"
+      )
+    )
     .accessibilityValue(
       selectedRoute == nil
-        ? "26条路线"
+        ? copy.resolve(
+          japanese: "26路線",
+          simplifiedChinese: "26条路线",
+          english: "26 routes"
+        )
         : selectedRoute!.routeIDsInOrder
           .map(shieldLabel)
-          .joined(separator: "到")
+          .joined(
+            separator: copy.resolve(
+              japanese: "から",
+              simplifiedChinese: "到",
+              english: " to "
+            )
+          )
     )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   private func drawWater(
@@ -1142,7 +1641,9 @@ private struct WholeShutoNetworkDiagram: View {
     transform: DiagramTransform,
     nodeCoordinates: [Int64: ShutoCoordinate]
   ) {
-    let featured = ["C1", "C2", "B", "1_HANEDA", "3", "4", "5", "6_MUKOJIMA", "7", "K1", "K7_YOKOHAMA_KITA", "S1"]
+    let featured = [
+      "C1", "C2", "B", "1_HANEDA", "3", "4", "5", "6_MUKOJIMA", "7", "K1", "K7_YOKOHAMA_KITA", "S1",
+    ]
     for routeID in featured {
       let coordinates = database.ways
         .filter {
@@ -1231,6 +1732,7 @@ private struct DiagramTransform {
 }
 
 private struct WholeShutoGeographicMap: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   @State private var camera = MapCameraPosition.automatic
 
@@ -1278,20 +1780,34 @@ private struct WholeShutoGeographicMap: View {
         )
 
         Annotation(
-          "\(route.entryFacility.nameJA)入口",
+          facilityBoundaryName(
+            route.entryFacility.nameJA,
+            isEntry: true
+          ),
           coordinate: route.entryFacility.coordinate.mapCoordinate
         ) {
           WholeShutoMapMarker(
-            text: "入",
+            text: copy.resolve(
+              japanese: "入",
+              simplifiedChinese: "入",
+              english: "E"
+            ),
             color: KaidoTheme.positionCyan
           )
         }
         Annotation(
-          "\(route.exitFacility.nameJA)出口",
+          facilityBoundaryName(
+            route.exitFacility.nameJA,
+            isEntry: false
+          ),
           coordinate: route.exitFacility.coordinate.mapCoordinate
         ) {
           WholeShutoMapMarker(
-            text: "出",
+            text: copy.resolve(
+              japanese: "出",
+              simplifiedChinese: "出",
+              english: "X"
+            ),
             color: KaidoTheme.evidenceCoral
           )
         }
@@ -1356,7 +1872,14 @@ private struct WholeShutoGeographicMap: View {
       }
 
       if let current = model.currentCoordinate {
-        Annotation("当前位置", coordinate: current.mapCoordinate) {
+        Annotation(
+          copy.resolve(
+            japanese: "現在地",
+            simplifiedChinese: "当前位置",
+            english: "Current location"
+          ),
+          coordinate: current.mapCoordinate
+        ) {
           ZStack {
             Circle()
               .fill(Color.white)
@@ -1401,7 +1924,8 @@ private struct WholeShutoGeographicMap: View {
     guard isDriving, let current = model.currentCoordinate else {
       return Array(facilities.prefix(45))
     }
-    return facilities
+    return
+      facilities
       .map { ($0, geographicDistance($0.coordinate, current)) }
       .filter { $0.1 <= 3_000 }
       .sorted { $0.1 < $1.1 }
@@ -1438,6 +1962,28 @@ private struct WholeShutoGeographicMap: View {
 
   private var isDriving: Bool {
     ![WholeShutoJourneyPhase.planning, .review].contains(model.phase)
+  }
+
+  private func facilityBoundaryName(
+    _ nameJA: String,
+    isEntry: Bool
+  ) -> String {
+    if isEntry {
+      return copy.resolve(
+        japanese: "\(nameJA)入口",
+        simplifiedChinese: "\(nameJA)入口",
+        english: "\(nameJA) entry"
+      )
+    }
+    return copy.resolve(
+      japanese: "\(nameJA)出口",
+      simplifiedChinese: "\(nameJA)出口",
+      english: "\(nameJA) exit"
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   private func updateCamera() {
@@ -1517,6 +2063,7 @@ private struct WholeShutoFacilityLabel: View {
 }
 
 private struct WholeShutoJunctionInset: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   let prompt: WholeShutoJunctionPrompt
 
   var body: some View {
@@ -1525,14 +2072,16 @@ private struct WholeShutoJunctionInset: View {
         .frame(width: 112, height: 92)
 
       VStack(alignment: .leading, spacing: 4) {
-        Text("接近分岔 · \(prompt.nameJA)")
-          .font(.system(size: 9, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.confirmedGreen)
         Text(
-          "\(branchLabel) · 驶向 "
-            + "\(shieldLabel(prompt.outgoingRouteID)) "
-            + "\(prompt.outgoingDirectionJA)"
+          copy.resolve(
+            japanese: "分岐に接近 · \(localizedJunctionName)",
+            simplifiedChinese: "接近分岔 · \(localizedJunctionName)",
+            english: "JUNCTION AHEAD · \(localizedJunctionName)"
+          )
         )
+        .font(.system(size: 9, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.confirmedGreen)
+        Text(localizedDisplayText)
           .font(.system(size: 19, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
         HStack(spacing: 6) {
@@ -1568,10 +2117,7 @@ private struct WholeShutoJunctionInset: View {
     .shadow(color: .black.opacity(0.36), radius: 12, y: 5)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
-      "\(prompt.nameJA)，从\(shieldLabel(prompt.incomingRouteID))"
-        + "\(branchLabel)，驶向\(shieldLabel(prompt.outgoingRouteID))"
-        + "\(prompt.outgoingDirectionJA)，"
-        + "日文路牌\(prompt.japaneseSignText)，\(laneGuidanceLabel)"
+      accessibilitySummary
     )
     .accessibilityIdentifier("whole-shuto-junction-inset")
   }
@@ -1579,19 +2125,68 @@ private struct WholeShutoJunctionInset: View {
   private var branchLabel: String {
     switch prompt.branchSide {
     case .left:
-      "左分岔"
+      copy.resolve(
+        japanese: "左方向へ分岐",
+        simplifiedChinese: "左分岔",
+        english: "branch left"
+      )
     case .right:
-      "右分岔"
+      copy.resolve(
+        japanese: "右方向へ分岐",
+        simplifiedChinese: "右分岔",
+        english: "branch right"
+      )
     case .straight:
-      "直行"
+      copy.resolve(
+        japanese: "直進",
+        simplifiedChinese: "直行",
+        english: "continue straight"
+      )
     }
   }
 
   private var laneGuidanceLabel: String {
     switch prompt.laneGuidanceState {
     case .notReleased:
-      "车道编号尚未发布"
+      copy.resolve(
+        japanese: "車線番号は未公開",
+        simplifiedChinese: "车道编号尚未发布",
+        english: "Lane numbers not released"
+      )
     }
+  }
+
+  private var localizedJunctionName: String {
+    prompt.localizedJunctionNames[interfaceLocale] ?? prompt.nameJA
+  }
+
+  private var localizedDisplayText: String {
+    prompt.localizedContent[interfaceLocale]?.displayText
+      ?? "\(branchLabel) · \(shieldLabel(prompt.outgoingRouteID))"
+  }
+
+  private var accessibilitySummary: String {
+    copy.resolve(
+      japanese:
+        "\(localizedJunctionName)、"
+        + "\(shieldLabel(prompt.incomingRouteID))から\(branchLabel)、"
+        + "\(localizedDisplayText)、日本語標識\(prompt.japaneseSignText)、"
+        + laneGuidanceLabel,
+      simplifiedChinese:
+        "\(localizedJunctionName)，"
+        + "从\(shieldLabel(prompt.incomingRouteID))\(branchLabel)，"
+        + "\(localizedDisplayText)，日文路牌\(prompt.japaneseSignText)，"
+        + laneGuidanceLabel,
+      english:
+        "\(localizedJunctionName), from "
+        + "\(shieldLabel(prompt.incomingRouteID)), \(branchLabel), "
+        + "\(localizedDisplayText), Japanese sign "
+        + "\(prompt.japaneseSignText), \(laneGuidanceLabel)"
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   private var junctionGraphic: some View {
@@ -1679,45 +2274,252 @@ private struct WholeShutoJunctionInset: View {
   }
 }
 
+private struct WholeShutoLanguageSettingsView: View {
+  @ObservedObject var model: KaidoLanguageSettingsModel
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    NavigationStack {
+      List {
+        Section {
+          ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
+            languageButton(
+              locale,
+              selection: model.interfaceLocale
+            ) {
+              model.selectInterfaceLocale(locale)
+            }
+            .accessibilityIdentifier(
+              "whole-shuto-interface-language-\(locale.rawValue)"
+            )
+          }
+        } header: {
+          Text(
+            copy.resolve(
+              japanese: "画面表示",
+              simplifiedChinese: "界面语言",
+              english: "INTERFACE LANGUAGE"
+            )
+          )
+        } footer: {
+          Text(
+            copy.resolve(
+              japanese: "画面上の説明文と操作項目の言語を変更します。",
+              simplifiedChinese: "更改界面说明和操作项的语言。",
+              english: "Changes explanatory copy and controls."
+            )
+          )
+        }
+
+        Section {
+          ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
+            languageButton(
+              locale,
+              selection: model.guidanceVoiceLocale
+            ) {
+              model.selectGuidanceVoiceLocale(locale)
+            }
+            .accessibilityIdentifier(
+              "whole-shuto-guidance-voice-language-\(locale.rawValue)"
+            )
+          }
+        } header: {
+          Text(
+            copy.resolve(
+              japanese: "音声案内",
+              simplifiedChinese: "导航语音",
+              english: "GUIDANCE VOICE"
+            )
+          )
+        } footer: {
+          Text(
+            copy.resolve(
+              japanese: "画面表示とは独立して、審査済み音声案内の言語を選択します。",
+              simplifiedChinese: "独立于界面语言，选择已审核导航语音的语言。",
+              english:
+                "Selects reviewed spoken guidance independently from the interface."
+            )
+          )
+        }
+
+        Section {
+          Label(
+            copy.resolve(
+              japanese: "物理標識とルート番号は日本語のまま表示します。",
+              simplifiedChinese: "实体路牌和路线编号始终保留日文原文。",
+              english:
+                "Physical sign targets and route shields remain visible in Japanese."
+            ),
+            systemImage: "signpost.right"
+          )
+        }
+      }
+      .navigationTitle(
+        copy.resolve(
+          japanese: "言語設定",
+          simplifiedChinese: "语言设置",
+          english: "Language Settings"
+        )
+      )
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button(
+            copy.resolve(
+              japanese: "完了",
+              simplifiedChinese: "完成",
+              english: "Done"
+            )
+          ) {
+            dismiss()
+          }
+          .accessibilityIdentifier("whole-shuto-language-settings-done")
+        }
+      }
+    }
+  }
+
+  private func languageButton(
+    _ locale: KaidoReleaseLocale,
+    selection: KaidoReleaseLocale,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      HStack {
+        Text(copy.languageName(locale))
+        Spacer()
+        if locale == selection {
+          Image(systemName: "checkmark")
+            .fontWeight(.bold)
+            .foregroundStyle(KaidoTheme.routeGreen)
+        }
+      }
+    }
+    .foregroundStyle(KaidoTheme.ink)
+    .accessibilityAddTraits(locale == selection ? .isSelected : [])
+    .accessibilityValue(
+      locale == selection
+        ? copy.resolve(
+          japanese: "選択中",
+          simplifiedChinese: "已选择",
+          english: "Selected"
+        )
+        : copy.resolve(
+          japanese: "未選択",
+          simplifiedChinese: "未选择",
+          english: "Not selected"
+        )
+    )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: model.interfaceLocale)
+  }
+}
+
 private struct WholeShutoNetworkFactsView: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
     NavigationStack {
       List {
-        Section("全网范围") {
-          fact("路线", "\(model.database.routes.count)")
-          fact("IC 名称", "\(model.database.directionalFacilities.count)")
+        Section(
+          copy.resolve(
+            japanese: "全体範囲",
+            simplifiedChinese: "全网范围",
+            english: "NETWORK SCOPE"
+          )
+        ) {
+          fact(
+            copy.resolve(
+              japanese: "路線",
+              simplifiedChinese: "路线",
+              english: "Routes"
+            ),
+            "\(model.database.routes.count)"
+          )
+          fact(
+            copy.resolve(
+              japanese: "IC 名称",
+              simplifiedChinese: "IC 名称",
+              english: "IC names"
+            ),
+            "\(model.database.directionalFacilities.count)"
+          )
           fact("JCT", "\(model.database.junctions.count)")
           fact(
-            "JCT 官方详图索引",
+            copy.resolve(
+              japanese: "JCT 公式詳細図索引",
+              simplifiedChinese: "JCT 官方详图索引",
+              english: "Official JCT detail index"
+            ),
             "\(officialJunctionReferenceCount)"
               + " / \(model.database.junctions.count)"
           )
           fact("PA", "\(model.database.parkingAreas.count)")
-          fact("数据日期", model.database.checkedAt)
+          fact(
+            copy.resolve(
+              japanese: "データ確認日",
+              simplifiedChinese: "数据日期",
+              english: "Data checked"
+            ),
+            model.database.checkedAt
+          )
         }
 
-        Section("准确性边界") {
+        Section(
+          copy.resolve(
+            japanese: "精度の境界",
+            simplifiedChinese: "准确性边界",
+            english: "ACCURACY BOUNDARIES"
+          )
+        ) {
           Label(
-            "路线、IC 方向、JCT 与 PA 名单来自首都高当前官方页面。",
+            copy.resolve(
+              japanese: "路線、IC方向、JCT、PAの一覧は首都高の現行公式ページに基づきます。",
+              simplifiedChinese: "路线、IC 方向、JCT 与 PA 名单来自首都高当前官方页面。",
+              english:
+                "Route, directional IC, JCT, and PA lists come from current Shuto Expressway pages."
+            ),
             systemImage: "checkmark.seal"
           )
           Label(
-            "道路几何和连通为固定版本 OSM 候选，不代表官方车道级授权。",
+            copy.resolve(
+              japanese: "道路形状と接続は固定版OSM候補で、公式の車線単位の権限ではありません。",
+              simplifiedChinese: "道路几何和连通为固定版本 OSM 候选，不代表官方车道级授权。",
+              english:
+                "Road geometry and connectivity are fixed-version OSM candidates, not official lane-level authority."
+            ),
             systemImage: "point.3.connected.trianglepath.dotted"
           )
           Label(
-            "实时通行、临时封闭、收费与 PA 开放状态尚未确认。",
+            copy.resolve(
+              japanese: "リアルタイム通行、臨時通行止め、料金、PA営業状況は未確認です。",
+              simplifiedChinese: "实时通行、临时封闭、收费与 PA 开放状态尚未确认。",
+              english:
+                "Realtime passage, temporary closures, tolls, and PA availability are unconfirmed."
+            ),
             systemImage: "exclamationmark.triangle"
           )
         }
       }
-      .navigationTitle("首都高全网")
+      .navigationTitle(
+        copy.resolve(
+          japanese: "首都高全体",
+          simplifiedChinese: "首都高全网",
+          english: "Whole Shuto"
+        )
+      )
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
-          Button("完成") { dismiss() }
+          Button(
+            copy.resolve(
+              japanese: "完了",
+              simplifiedChinese: "完成",
+              english: "Done"
+            )
+          ) { dismiss() }
         }
       }
     }
@@ -1736,6 +2538,10 @@ private struct WholeShutoNetworkFactsView: View {
     model.database.junctions.filter {
       $0.officialDetailSHA256.count == 64
     }.count
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

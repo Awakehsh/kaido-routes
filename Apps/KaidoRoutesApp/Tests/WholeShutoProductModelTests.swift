@@ -29,6 +29,29 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(prompt?.japaneseSignText, "東名・中央道")
     XCTAssertEqual(prompt?.routeShields, ["C2", "3", "E1", "E20"])
     XCTAssertEqual(prompt?.laneGuidanceState, .notReleased)
+    XCTAssertEqual(prompt?.localizedJunctionNames[.japanese], "大井JCT")
+    XCTAssertEqual(
+      prompt?.localizedJunctionNames[.simplifiedChinese],
+      "大井 JCT"
+    )
+    XCTAssertEqual(prompt?.localizedJunctionNames[.english], "Oi JCT")
+    XCTAssertEqual(
+      prompt?.localizedContent[.japanese]?.displayText,
+      "左方向へ分岐し、C2 外回りへ"
+    )
+    XCTAssertEqual(
+      prompt?.localizedContent[.simplifiedChinese]?.displayText,
+      "向左分岔，驶入 C2 外环"
+    )
+    XCTAssertEqual(
+      prompt?.localizedContent[.english]?.displayText,
+      "Branch left for the C2 Outer Loop"
+    )
+    XCTAssertTrue(
+      prompt?.localizedContent.values.allSatisfy {
+        $0.preservedJapaneseSignText == "東名・中央道"
+      } == true
+    )
     XCTAssertEqual(prompt?.checkedAt, "2026-07-29")
     XCTAssertEqual(model.activeJunctionPrompt, prompt)
     XCTAssertNil(model.failureCode)
@@ -261,6 +284,45 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertTrue(restoredOutput.commands.isEmpty)
     XCTAssertEqual(restored.speechStatus, .suppressed(.duplicate))
+  }
+
+  func testReviewedJunctionKeepsInterfaceAndVoiceLanguagesIndependent()
+    async throws
+  {
+    let output = WholeShutoRecordingSpeechOutput()
+    let languages = NavigationLanguageSelection(
+      interfaceLocale: .english,
+      guidanceVoiceLocale: .simplifiedChinese
+    )
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      speechOutput: output,
+      languageSelectionProvider: { languages }
+    )
+    model.prepareJunctionPreview(startsNavigation: true)
+    model.togglePlayback()
+
+    await advance(
+      model,
+      until: { _ in !output.commands.isEmpty },
+      maximumTicks: 1_000
+    )
+
+    let projection = try XCTUnwrap(model.presentationProjection)
+    let command = try XCTUnwrap(output.commands.only)
+    XCTAssertEqual(projection.interfaceLocale, .english)
+    XCTAssertEqual(projection.iPhone.localizedDecisionPointName, "Oi JCT")
+    XCTAssertEqual(
+      projection.iPhone.localizedDisplayText,
+      "Branch left for the C2 Outer Loop"
+    )
+    XCTAssertEqual(projection.iPhone.japaneseSignText, "東名・中央道")
+    XCTAssertEqual(projection.carPlay.japaneseSignText, "東名・中央道")
+    XCTAssertEqual(projection.voice.locale, .simplifiedChinese)
+    XCTAssertEqual(projection.voice.spokenText, "在大井枢纽向左分岔，驶入 C2 外环")
+    XCTAssertEqual(command.languageCode, "zh-CN")
+    XCTAssertEqual(command.spokenText, projection.voice.spokenText)
+    XCTAssertTrue(command.synthesisText.contains("C 二"))
   }
 
   private func advance(

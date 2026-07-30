@@ -116,6 +116,41 @@ final class KaidoProductJourneyUITests: XCTestCase {
     routeSelectionScreenshot.name = "Whole Shuto route selection"
     routeSelectionScreenshot.lifetime = .keepAlways
     add(routeSelectionScreenshot)
+
+    let recommendedRoute = element(
+      "whole-shuto-route-option-0",
+      in: routeApp
+    )
+    let alternativeRoute = element(
+      "whole-shuto-route-option-1",
+      in: routeApp
+    )
+    XCTAssertTrue(recommendedRoute.isSelected)
+    alternativeRoute.tap()
+    XCTAssertTrue(alternativeRoute.isSelected)
+    XCTAssertFalse(recommendedRoute.isSelected)
+    let routeUpdateCompleted = XCTNSPredicateExpectation(
+      predicate: NSPredicate(
+        format: "NOT (value CONTAINS %@)",
+        "正在确认路线"
+      ),
+      object: alternativeRoute
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(
+        for: [routeUpdateCompleted],
+        timeout: 2
+      ),
+      .completed
+    )
+
+    let alternativeScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    alternativeScreenshot.name = "Whole Shuto selected alternative"
+    alternativeScreenshot.lifetime = .keepAlways
+    add(alternativeScreenshot)
+
     customizeRoute.tap()
     XCTAssertTrue(
       element("whole-shuto-route-customization", in: routeApp).exists

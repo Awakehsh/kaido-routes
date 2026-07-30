@@ -317,7 +317,10 @@ private struct WholeShutoProductPreviewHost: View {
   @StateObject private var model: WholeShutoProductModel
 
   init(startsNavigation: Bool) {
-    let model = WholeShutoProductModel(checkpointStore: nil)
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
     model.preparePreviewJourney(startsNavigation: startsNavigation)
     _model = StateObject(wrappedValue: model)
   }

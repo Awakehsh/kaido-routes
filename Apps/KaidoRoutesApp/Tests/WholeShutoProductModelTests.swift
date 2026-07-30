@@ -45,6 +45,55 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(model.hasSelectedDestinationPreview)
   }
 
+  func testLatestRouteSelectionOwnsSurfacePreviewAfterOutOfOrderResponses()
+    async
+  {
+    let resolver = WholeShutoOutOfOrderSurfaceRouteResolver()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: resolver,
+      checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    XCTAssertGreaterThanOrEqual(model.recommendations.count, 3)
+
+    let slowRoute = model.recommendations[1].route
+    let latestRoute = model.recommendations[2].route
+    await resolver.configure(
+      slowEntry: slowRoute.entryFacility.coordinate,
+      slowExit: slowRoute.exitFacility.coordinate
+    )
+
+    model.selectRecommendation(at: 1)
+    XCTAssertTrue(model.isUpdatingSurfaceRoute)
+    XCTAssertNil(model.accessRoute)
+    XCTAssertNil(model.egressRoute)
+
+    model.selectRecommendation(at: 2)
+    try? await Task.sleep(nanoseconds: 80_000_000)
+
+    XCTAssertEqual(model.selectedRecommendationIndex, 2)
+    XCTAssertFalse(model.isUpdatingSurfaceRoute)
+    XCTAssertEqual(
+      model.accessRoute?.coordinates.last,
+      latestRoute.entryFacility.coordinate
+    )
+    XCTAssertEqual(
+      model.egressRoute?.coordinates.first,
+      latestRoute.exitFacility.coordinate
+    )
+
+    try? await Task.sleep(nanoseconds: 180_000_000)
+
+    XCTAssertEqual(
+      model.accessRoute?.coordinates.last,
+      latestRoute.entryFacility.coordinate
+    )
+    XCTAssertEqual(
+      model.egressRoute?.coordinates.first,
+      latestRoute.exitFacility.coordinate
+    )
+  }
+
   func testJunctionPromptsRequireAnExactReviewedMovement() {
     let model = WholeShutoProductModel(checkpointStore: nil)
 
@@ -735,6 +784,39 @@ private final class WholeShutoMemoryCheckpointStore:
 
   func remove() throws {
     checkpoint = nil
+  }
+}
+
+private actor WholeShutoOutOfOrderSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  private var slowEntry: ShutoCoordinate?
+  private var slowExit: ShutoCoordinate?
+
+  func configure(
+    slowEntry: ShutoCoordinate,
+    slowExit: ShutoCoordinate
+  ) {
+    self.slowEntry = slowEntry
+    self.slowExit = slowExit
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    let isSlow = destination == slowEntry || origin == slowExit
+    let delay: UInt64 = isSlow ? 180_000_000 : 20_000_000
+    let route = WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: Double(delay),
+      expectedTravelTimeSeconds: 1,
+      instructions: []
+    )
+    return await Task.detached {
+      try? await Task.sleep(nanoseconds: delay)
+      return route
+    }.value
   }
 }
 

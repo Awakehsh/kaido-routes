@@ -6,7 +6,6 @@ import KaidoDomain
 import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
-@preconcurrency import MapKit
 
 enum WholeShutoJourneyPhase:
   String, Codable, Equatable, Sendable
@@ -210,6 +209,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var isPlaying = false
   @Published private(set) var failureCode: String?
   @Published private(set) var isPlanning = false
+  @Published private(set) var isUpdatingSurfaceRoute = false
   @Published private(set) var restoredFromCheckpoint = false
   @Published private(set) var matcherConfidence: MatcherConfidence?
   @Published private(set) var runtimeOccurrenceID: String?
@@ -224,10 +224,13 @@ final class WholeShutoProductModel: ObservableObject {
   private let locationProvider: any C2NavigationCurrentLocationProviding
   private let placeResolver: any C2NavigationPlaceResolving
   private let checkpointStore: (any WholeShutoJourneyCheckpointStoring)?
+  private let surfaceRouteResolver: any WholeShutoSurfaceRouteResolving
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
+  private var surfaceRouteTask: Task<Void, Never>?
+  private var surfaceRouteRequestID: UUID?
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
   private var runtimeCoordinate: ShutoCoordinate?
@@ -245,6 +248,8 @@ final class WholeShutoProductModel: ObservableObject {
       C2CoreLocationProvider(),
     placeResolver: any C2NavigationPlaceResolving =
       C2MapKitPlaceResolver(),
+    surfaceRouteResolver: any WholeShutoSurfaceRouteResolving =
+      WholeShutoMapKitSurfaceRouteResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
       WholeShutoUserDefaultsCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
@@ -271,6 +276,7 @@ final class WholeShutoProductModel: ObservableObject {
     self.destinationQuery = destinationQuery
     self.locationProvider = locationProvider
     self.placeResolver = placeResolver
+    self.surfaceRouteResolver = surfaceRouteResolver
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
     self.languageSelectionProvider = languageSelectionProvider
@@ -284,6 +290,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   deinit {
     playbackTask?.cancel()
+    surfaceRouteTask?.cancel()
   }
 
   var selectedRecommendation: ShutoRouteRecommendation? {
@@ -588,6 +595,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func preparePreviewJourney(startsNavigation: Bool = false) {
+    cancelSurfaceRouteResolution()
     usePreviewPlaces()
     do {
       recommendations = try planner.recommend(
@@ -693,6 +701,7 @@ final class WholeShutoProductModel: ObservableObject {
     expectedMovementID: String,
     startsNavigation: Bool
   ) {
+    cancelSurfaceRouteResolution()
     do {
       let route = try planner.plan(
         entryFacilityID: entryFacilityID,
@@ -775,16 +784,11 @@ final class WholeShutoProductModel: ObservableObject {
         selectedRecommendationIndex = 0
         phase = .review
         progressFraction = 0
-        async let access = Self.surfaceRoute(
-          from: resolvedOrigin.coordinate,
-          to: routes[0].route.entryFacility.coordinate
+        resolveSurfaceRoutes(
+          for: routes[0],
+          origin: resolvedOrigin,
+          destination: resolvedDestination
         )
-        async let egress = Self.surfaceRoute(
-          from: routes[0].route.exitFacility.coordinate,
-          to: resolvedDestination.coordinate
-        )
-        accessRoute = await access
-        egressRoute = await egress
         persistCheckpoint()
       } catch {
         failureCode = Self.failureCode(error)
@@ -800,19 +804,62 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       return
     }
-    Task {
-      async let access = Self.surfaceRoute(
+    resolveSurfaceRoutes(
+      for: recommendation,
+      origin: origin,
+      destination: destination
+    )
+  }
+
+  private func resolveSurfaceRoutes(
+    for recommendation: ShutoRouteRecommendation,
+    origin: WholeShutoPlace,
+    destination: WholeShutoPlace
+  ) {
+    cancelSurfaceRouteResolution()
+    accessRoute = nil
+    egressRoute = nil
+    isUpdatingSurfaceRoute = true
+
+    let requestID = UUID()
+    let routePlanID = recommendation.route.routePlan.id
+    let entry = recommendation.route.entryFacility.coordinate
+    let exit = recommendation.route.exitFacility.coordinate
+    let resolver = surfaceRouteResolver
+    surfaceRouteRequestID = requestID
+    surfaceRouteTask = Task { [weak self] in
+      async let access = resolver.route(
         from: origin.coordinate,
-        to: recommendation.route.entryFacility.coordinate
+        to: entry
       )
-      async let egress = Self.surfaceRoute(
-        from: recommendation.route.exitFacility.coordinate,
+      async let egress = resolver.route(
+        from: exit,
         to: destination.coordinate
       )
-      accessRoute = await access
-      egressRoute = await egress
-      persistCheckpoint()
+      let resolvedRoutes = await (access, egress)
+
+      guard
+        !Task.isCancelled,
+        let self,
+        self.surfaceRouteRequestID == requestID,
+        self.selectedRoute?.routePlan.id == routePlanID
+      else {
+        return
+      }
+      self.accessRoute = resolvedRoutes.0
+      self.egressRoute = resolvedRoutes.1
+      self.isUpdatingSurfaceRoute = false
+      self.surfaceRouteRequestID = nil
+      self.surfaceRouteTask = nil
+      self.persistCheckpoint()
     }
+  }
+
+  private func cancelSurfaceRouteResolution() {
+    surfaceRouteTask?.cancel()
+    surfaceRouteTask = nil
+    surfaceRouteRequestID = nil
+    isUpdatingSurfaceRoute = false
   }
 
   func startNavigationSimulation() {
@@ -911,6 +958,7 @@ final class WholeShutoProductModel: ObservableObject {
   func reset() {
     playbackTask?.cancel()
     playbackTask = nil
+    cancelSurfaceRouteResolution()
     speechCoordinator?.stop()
     speechCoordinator = nil
     phase = .planning
@@ -1620,44 +1668,6 @@ final class WholeShutoProductModel: ObservableObject {
       .truncatingRemainder(dividingBy: 360)
   }
 
-  private static func surfaceRoute(
-    from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
-  ) async -> WholeShutoSurfaceRoute? {
-    let request = MKDirections.Request()
-    request.source = mapItem(origin)
-    request.destination = mapItem(destination)
-    request.transportType = .automobile
-    request.requestsAlternateRoutes = false
-    request.highwayPreference = .avoid
-    request.tollPreference = .avoid
-    do {
-      guard
-        let route = try await MKDirections(request: request)
-          .calculate().routes.first
-      else {
-        return nil
-      }
-      let points = route.polyline.points()
-      return WholeShutoSurfaceRoute(
-        coordinates: (0..<route.polyline.pointCount).map {
-          let coordinate = points[$0].coordinate
-          return ShutoCoordinate(
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude
-          )
-        },
-        distanceMeters: route.distance,
-        expectedTravelTimeSeconds: route.expectedTravelTime,
-        instructions: route.steps.map(\.instructions).filter {
-          !$0.isEmpty
-        }
-      )
-    } catch {
-      return nil
-    }
-  }
-
   private static func previewSurfaceRoute(
     from origin: ShutoCoordinate,
     to destination: ShutoCoordinate
@@ -1668,26 +1678,6 @@ final class WholeShutoProductModel: ObservableObject {
       distanceMeters: distance,
       expectedTravelTimeSeconds: distance / 8.3,
       instructions: []
-    )
-  }
-
-  private static func mapItem(
-    _ coordinate: ShutoCoordinate
-  ) -> MKMapItem {
-    let location = CLLocation(
-      latitude: coordinate.latitude,
-      longitude: coordinate.longitude
-    )
-    if #available(iOS 26.0, *) {
-      return MKMapItem(location: location, address: nil)
-    }
-    return MKMapItem(
-      placemark: MKPlacemark(
-        coordinate: CLLocationCoordinate2D(
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude
-        )
-      )
     )
   }
 

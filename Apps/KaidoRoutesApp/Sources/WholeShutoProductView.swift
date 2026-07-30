@@ -772,14 +772,26 @@ struct WholeShutoProductView: View {
           model.startNavigationSimulation()
         } label: {
           HStack(spacing: 8) {
-            Text(
-              copy.resolve(
-                japanese: "全行程をプレビュー",
-                simplifiedChinese: "开始完整预演",
-                english: "PREVIEW FULL JOURNEY"
+            if model.isUpdatingSurfaceRoute {
+              ProgressView()
+                .tint(KaidoTheme.routeWhite)
+              Text(
+                copy.resolve(
+                  japanese: "ルートを確認中",
+                  simplifiedChinese: "正在确认路线",
+                  english: "CONFIRMING ROUTE"
+                )
               )
-            )
-            Image(systemName: "play.fill")
+            } else {
+              Text(
+                copy.resolve(
+                  japanese: "全行程をプレビュー",
+                  simplifiedChinese: "开始完整预演",
+                  english: "PREVIEW FULL JOURNEY"
+                )
+              )
+              Image(systemName: "play.fill")
+            }
           }
           .font(.system(size: 12, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
@@ -789,6 +801,8 @@ struct WholeShutoProductView: View {
           .clipShape(RoundedRectangle(cornerRadius: 9))
         }
         .buttonStyle(.plain)
+        .disabled(model.isUpdatingSurfaceRoute)
+        .opacity(model.isUpdatingSurfaceRoute ? 0.78 : 1)
         .accessibilityIdentifier("whole-shuto-start-simulation")
       }
     }
@@ -798,25 +812,53 @@ struct WholeShutoProductView: View {
   }
 
   private var routeSelection: some View {
-    ScrollView(.horizontal) {
-      HStack(spacing: 7) {
-        if !model.recommendations.isEmpty {
-          routeSelectionButton(at: 0)
+    ScrollViewReader { proxy in
+      ScrollView(.horizontal) {
+        HStack(spacing: 7) {
+          if !model.recommendations.isEmpty {
+            routeSelectionButton(at: 0)
+              .id(routeSelectionScrollID(at: 0))
+          }
+
+          routeCustomizationButton
+            .id("whole-shuto-route-customization-choice")
+
+          ForEach(
+            model.recommendations.indices.dropFirst(),
+            id: \.self
+          ) { index in
+            routeSelectionButton(at: index)
+              .id(routeSelectionScrollID(at: index))
+          }
         }
-
-        routeCustomizationButton
-
-        ForEach(
-          model.recommendations.indices.dropFirst(),
-          id: \.self
-        ) { index in
-          routeSelectionButton(at: index)
+        .padding(.horizontal, 1)
+        .scrollTargetLayout()
+      }
+      .scrollIndicators(.hidden)
+      .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
+      .onChange(of: model.selectedRecommendationIndex) { _, index in
+        withAnimation(.easeOut(duration: 0.2)) {
+          proxy.scrollTo(
+            routeSelectionScrollID(at: index),
+            anchor: .center
+          )
         }
       }
-      .padding(.horizontal, 1)
+      .onChange(of: showsRouteCustomization) { _, isPresented in
+        guard isPresented else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+          proxy.scrollTo(
+            "whole-shuto-route-customization-choice",
+            anchor: .center
+          )
+        }
+      }
+      .accessibilityIdentifier("whole-shuto-route-selection")
     }
-    .scrollIndicators(.hidden)
-    .accessibilityIdentifier("whole-shuto-route-selection")
+  }
+
+  private func routeSelectionScrollID(at index: Int) -> String {
+    "whole-shuto-route-choice-\(index)"
   }
 
   private var routeCustomizationButton: some View {
@@ -826,26 +868,30 @@ struct WholeShutoProductView: View {
       }
     } label: {
       VStack(alignment: .leading, spacing: 3) {
-        Text(
-          copy.resolve(
-            japanese: "カスタム",
-            simplifiedChinese: "自定义",
-            english: "CUSTOM"
+        HStack {
+          Text(
+            copy.resolve(
+              japanese: "カスタム",
+              simplifiedChinese: "自定义",
+              english: "CUSTOM"
+            )
           )
-        )
-        .font(.system(size: 8, weight: .black))
-        Image(systemName: "slider.horizontal.3")
-          .font(.system(size: 14, weight: .bold))
+          Spacer()
+          Image(systemName: "slider.horizontal.3")
+            .font(.system(size: 12, weight: .bold))
+        }
+        .font(.system(size: 9, weight: .black))
         Text(preferenceLabel)
-          .font(.system(size: 9, weight: .bold))
+          .font(.system(size: 10, weight: .bold))
           .lineLimit(1)
+          .minimumScaleFactor(0.72)
       }
       .foregroundStyle(
         showsRouteCustomization
           ? KaidoTheme.routeWhite : KaidoTheme.ink
       )
-      .padding(.horizontal, 11)
-      .frame(width: 92, height: 58, alignment: .leading)
+      .padding(.horizontal, 12)
+      .frame(width: 104, height: 68, alignment: .leading)
       .background(
         showsRouteCustomization
           ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
@@ -862,30 +908,46 @@ struct WholeShutoProductView: View {
       model.selectRecommendation(at: index)
     } label: {
       let route = model.recommendations[index].route
-      VStack(alignment: .leading, spacing: 3) {
-        Text(recommendationLabel(at: index))
-          .font(.system(size: 8, weight: .black))
+      let isSelected =
+        index == model.selectedRecommendationIndex
+          && !showsRouteCustomization
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 5) {
+          Text(recommendationLabel(at: index))
+          Spacer()
+          if isSelected && model.isUpdatingSurfaceRoute {
+            ProgressView()
+              .controlSize(.mini)
+              .tint(KaidoTheme.routeWhite)
+          } else if isSelected {
+            Image(systemName: "checkmark.circle.fill")
+          }
+        }
+        .font(.system(size: 9, weight: .black))
         Text(
           route.routeIDsInOrder
             .map(shieldLabel)
             .joined(separator: " · ")
         )
-        .font(.system(size: 10, weight: .black, design: .rounded))
+        .font(.system(size: 11, weight: .black, design: .rounded))
         .lineLimit(1)
-        Text(distanceLabel(route.distanceMeters))
-          .font(.system(size: 9, weight: .bold))
+        .minimumScaleFactor(0.56)
+        HStack(spacing: 4) {
+          Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+            .font(.system(size: 8, weight: .black))
+          Text(distanceLabel(route.distanceMeters))
+            .font(.system(size: 10, weight: .bold))
+        }
       }
       .foregroundStyle(
-        index == model.selectedRecommendationIndex
-          && !showsRouteCustomization
+        isSelected
           ? KaidoTheme.routeWhite
           : KaidoTheme.ink
       )
-      .padding(.horizontal, 11)
-      .frame(width: 112, height: 58, alignment: .leading)
+      .padding(.horizontal, 12)
+      .frame(width: 150, height: 68, alignment: .leading)
       .background(
-        index == model.selectedRecommendationIndex
-          && !showsRouteCustomization
+        isSelected
           ? KaidoTheme.routeGreen
           : KaidoTheme.paperRaised
       )
@@ -897,6 +959,18 @@ struct WholeShutoProductView: View {
       index == model.selectedRecommendationIndex
         && !showsRouteCustomization
         ? .isSelected : []
+    )
+    .accessibilityValue(
+      model.isUpdatingSurfaceRoute
+        && index == model.selectedRecommendationIndex
+        ? routeSelectionAccessibilityValue(at: index)
+          + "; "
+          + copy.resolve(
+            japanese: "ルートを確認中",
+            simplifiedChinese: "正在确认路线",
+            english: "CONFIRMING ROUTE"
+          )
+        : routeSelectionAccessibilityValue(at: index)
     )
   }
 
@@ -1149,6 +1223,17 @@ struct WholeShutoProductView: View {
         simplifiedChinese: "备选 \(index)",
         english: "OPTION \(index)"
       )
+  }
+
+  private func routeSelectionAccessibilityValue(at index: Int) -> String {
+    guard model.recommendations.indices.contains(index) else {
+      return ""
+    }
+    let route = model.recommendations[index].route
+    return
+      route.routeIDsInOrder.map(shieldLabel).joined(separator: ", ")
+      + "; "
+      + distanceLabel(route.distanceMeters)
   }
 
   private var preferenceLabel: String {

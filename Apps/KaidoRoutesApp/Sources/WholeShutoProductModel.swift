@@ -516,6 +516,55 @@ final class WholeShutoProductModel: ObservableObject {
       + egressRoute.expectedTravelTimeSeconds
   }
 
+  var remainingPreviewDurationSeconds: Double? {
+    guard
+      let route = selectedRoute,
+      let accessRoute,
+      let egressRoute
+    else {
+      return nil
+    }
+    let expresswayDuration =
+      route.distanceMeters
+      / Self.simulationReferenceSpeedMetersPerSecond
+    switch phase {
+    case .planning, .review:
+      return accessRoute.expectedTravelTimeSeconds
+        + expresswayDuration
+        + egressRoute.expectedTravelTimeSeconds
+    case .surfaceAccess:
+      return accessRoute.expectedTravelTimeSeconds * remainingProgress
+        + expresswayDuration
+        + egressRoute.expectedTravelTimeSeconds
+    case .entryTransition:
+      return expresswayDuration
+        + egressRoute.expectedTravelTimeSeconds
+    case .expressway:
+      return expresswayDuration * remainingProgress
+        + egressRoute.expectedTravelTimeSeconds
+    case .exitTransition:
+      return egressRoute.expectedTravelTimeSeconds
+    case .surfaceEgress:
+      return egressRoute.expectedTravelTimeSeconds * remainingProgress
+    case .completed:
+      return 0
+    }
+  }
+
+  var journeyProgressFraction: Double {
+    guard
+      let plannedDistance = plannedJourneyDistanceMeters,
+      let remainingDistance = remainingJourneyDistanceMeters,
+      plannedDistance > 0
+    else {
+      return phase == .completed ? 1 : 0
+    }
+    return min(
+      1,
+      max(0, (plannedDistance - remainingDistance) / plannedDistance)
+    )
+  }
+
   var isJourneyReadyForPreview: Bool {
     phase == .review
       && selectedRoute != nil

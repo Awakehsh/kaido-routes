@@ -138,6 +138,14 @@ The driving surface prioritizes:
 4. whole-route progress; and
 5. one safe finish action.
 
+The next reviewed decision is the primary visual even before its actor-owned
+voice or junction-inset threshold is reached. Its distance is the largest
+number on the driving surface, while the selected movement text and outgoing
+route shield remain directly adjacent. The lower instrument strip carries the
+non-realtime reference time remaining, full-journey distance remaining, and one
+continuous route-thread progress rail. It must not promote the route's total
+remaining distance above the next decision distance.
+
 The driver may switch between the geographic and topology projections at any
 time, but cannot edit the route while moving. Both show the active route and
 eligible current position. In topology view, the marker communicates the exact

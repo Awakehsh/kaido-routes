@@ -475,6 +475,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("東名・中央道"))
     XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertTrue(
+      element("whole-shuto-guidance-instruction", in: junctionApp)
+        .label.contains("向左分岔")
+    )
     XCTAssertEqual(
       element("whole-shuto-guidance-speech", in: junctionApp).value
         as? String,
@@ -502,6 +506,29 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-next-junction", in: navigationApp)
         .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-guidance-card", in: navigationApp).exists
+    )
+    XCTAssertFalse(
+      element("whole-shuto-guidance-distance", in: navigationApp)
+        .label.isEmpty
+    )
+    XCTAssertFalse(
+      element("whole-shuto-guidance-instruction", in: navigationApp)
+        .label.isEmpty
+    )
+    XCTAssertTrue(
+      element("whole-shuto-journey-remaining-time", in: navigationApp)
+        .exists
+    )
+    let journeyProgress = element(
+      "whole-shuto-journey-progress",
+      in: navigationApp
+    )
+    XCTAssertTrue(journeyProgress.exists)
+    XCTAssertTrue(
+      (journeyProgress.value as? String)?.hasSuffix("%") == true
     )
     let positionState = element(
       "whole-shuto-position-state",

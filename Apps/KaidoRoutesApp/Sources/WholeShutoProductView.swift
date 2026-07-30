@@ -1204,7 +1204,7 @@ struct WholeShutoProductView: View {
 
   private var drivingDock: some View {
     HStack(spacing: 10) {
-      VStack(alignment: .leading, spacing: 2) {
+      VStack(alignment: .leading, spacing: 5) {
         HStack(spacing: 6) {
           Circle()
             .fill(positionStatusColor)
@@ -1215,22 +1215,26 @@ struct WholeShutoProductView: View {
             .accessibilityIdentifier("whole-shuto-position-state")
             .accessibilityValue(model.positionState.rawValue)
         }
-        Text(drivingDistanceLabel)
-          .font(.system(size: 20, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
+
         HStack(spacing: 6) {
+          Text(remainingReferenceTimeLabel)
+            .font(.system(size: 19, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+            .accessibilityIdentifier(
+              "whole-shuto-journey-remaining-time"
+            )
+          Text("·")
+            .foregroundStyle(KaidoTheme.muted)
           Text(journeyRemainingLabel)
             .accessibilityIdentifier("whole-shuto-journey-remaining")
-          if let nextJunctionDistanceLabel {
-            Text("·")
-            Text(nextJunctionDistanceLabel)
-              .accessibilityIdentifier("whole-shuto-next-junction")
-          }
         }
         .font(.system(size: 9, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.confirmedGreen)
         .lineLimit(1)
         .minimumScaleFactor(0.72)
+
+        journeyProgressRail
+
         Text(drivingBoundaryLabel)
           .font(.system(size: 9, weight: .bold))
           .foregroundStyle(KaidoTheme.muted)
@@ -1291,6 +1295,45 @@ struct WholeShutoProductView: View {
         .fill(KaidoTheme.steel)
         .frame(height: 1)
     }
+  }
+
+  private var journeyProgressRail: some View {
+    GeometryReader { geometry in
+      let progress = model.journeyProgressFraction
+      let width = max(0, geometry.size.width)
+      let completedWidth = width * progress
+
+      ZStack(alignment: .leading) {
+        Capsule()
+          .fill(KaidoTheme.steel)
+          .frame(height: 4)
+        Capsule()
+          .fill(KaidoTheme.confirmedGreen)
+          .frame(width: completedWidth, height: 4)
+        Circle()
+          .fill(KaidoTheme.routeWhite)
+          .frame(width: 8, height: 8)
+          .overlay {
+            Circle()
+              .stroke(KaidoTheme.confirmedGreen, lineWidth: 2)
+          }
+          .offset(x: min(max(0, completedWidth - 4), max(0, width - 8)))
+      }
+      .frame(height: 8)
+    }
+    .frame(height: 8)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: "全行程の進捗",
+        simplifiedChinese: "全程进度",
+        english: "Journey progress"
+      )
+    )
+    .accessibilityIdentifier("whole-shuto-journey-progress")
+    .accessibilityValue(
+      "\(Int((model.journeyProgressFraction * 100).rounded()))%"
+    )
   }
 
   private var arrivalDock: some View {
@@ -1393,58 +1436,83 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionBanner: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: 13) {
       ZStack {
-        RoundedRectangle(cornerRadius: 9)
+        RoundedRectangle(cornerRadius: 11)
           .fill(KaidoTheme.routeGreen)
-          .frame(width: 48, height: 48)
+          .frame(width: 56, height: 70)
         Image(systemName: instructionSymbol)
-          .font(.system(size: 22, weight: .black))
+          .font(.system(size: 25, weight: .black))
           .foregroundStyle(KaidoTheme.routeWhite)
       }
-      VStack(alignment: .leading, spacing: 2) {
+
+      VStack(alignment: .leading, spacing: 1) {
         Text(instructionKicker)
-          .font(.system(size: 8, weight: .black, design: .rounded))
+          .font(.system(size: 9, weight: .black, design: .rounded))
           .tracking(0.5)
           .foregroundStyle(KaidoTheme.confirmedGreen)
-        Text(instructionTitle)
-          .font(.system(size: 16, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
-          .lineLimit(2)
-      }
-      Spacer()
-      Image(systemName: speechStatusSymbol)
-        .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(
-          speechStatusIsBlocked
-            ? KaidoTheme.signalAmber
-            : KaidoTheme.routeWhite
-        )
-        .accessibilityIdentifier("whole-shuto-guidance-speech")
-        .accessibilityLabel(
-          copy.resolve(
-            japanese: "音声案内",
-            simplifiedChinese: "导航语音",
-            english: "Guidance voice"
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+          .accessibilityIdentifier(
+            nextJunctionDistanceLabel == nil
+              ? "whole-shuto-guidance-kicker"
+              : "whole-shuto-next-junction"
           )
-        )
-        .accessibilityValue(speechStatusLabel)
-      if let routeID = activeRouteShield {
-        Text(shieldLabel(routeID))
-          .font(.system(size: 12, weight: .black, design: .rounded))
+
+        Text(primaryGuidanceDistanceLabel)
+          .font(.system(size: 28, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
-          .frame(minWidth: 38, minHeight: 30)
-          .background(routeColor(routeID))
-          .clipShape(RoundedRectangle(cornerRadius: 6))
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+          .accessibilityIdentifier("whole-shuto-guidance-distance")
+
+        Text(instructionTitle)
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .lineLimit(1)
+          .minimumScaleFactor(0.68)
+          .accessibilityIdentifier("whole-shuto-guidance-instruction")
+      }
+
+      Spacer()
+
+      VStack(spacing: 8) {
+        Image(systemName: speechStatusSymbol)
+          .font(.system(size: 13, weight: .bold))
+          .foregroundStyle(
+            speechStatusIsBlocked
+              ? KaidoTheme.signalAmber
+              : KaidoTheme.routeWhite
+          )
+          .accessibilityIdentifier("whole-shuto-guidance-speech")
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "音声案内",
+              simplifiedChinese: "导航语音",
+              english: "Guidance voice"
+            )
+          )
+          .accessibilityValue(speechStatusLabel)
+
+        if let routeID = activeRouteShield {
+          Text(shieldLabel(routeID))
+            .font(.system(size: 12, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+            .frame(minWidth: 42, minHeight: 32)
+            .background(routeColor(routeID))
+            .clipShape(RoundedRectangle(cornerRadius: 7))
+        }
       }
     }
-    .padding(8)
+    .padding(10)
     .background(KaidoTheme.asphalt.opacity(0.94))
-    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .clipShape(RoundedRectangle(cornerRadius: 15))
     .overlay {
-      RoundedRectangle(cornerRadius: 12)
+      RoundedRectangle(cornerRadius: 15)
         .stroke(KaidoTheme.steel, lineWidth: 1)
     }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-guidance-card")
   }
 
   private var isDriving: Bool {
@@ -1578,7 +1646,7 @@ struct WholeShutoProductView: View {
     case .surfaceAccess: "arrow.turn.up.right"
     case .entryTransition: "arrow.up.right"
     case .expressway:
-      model.activeJunctionPrompt == nil
+      displayedJunctionPrompt == nil
         ? "arrow.up" : "arrow.triangle.branch"
     case .exitTransition: "arrow.up.right"
     case .surfaceEgress: "arrow.turn.up.left"
@@ -1655,7 +1723,7 @@ struct WholeShutoProductView: View {
         english: "Enter \(routeLabel) from \(route.entryFacility.nameJA)"
       )
     case .expressway:
-      if let prompt = model.activeJunctionPrompt {
+      if let prompt = displayedJunctionPrompt {
         return prompt.localizedContent[languageSettings.interfaceLocale]?
           .displayText
           ?? "\(localizedJunctionName(prompt)): "
@@ -1710,8 +1778,14 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private var displayedJunctionPrompt: WholeShutoJunctionPrompt? {
+    guard model.phase == .expressway else { return nil }
+    return model.activeJunctionPrompt
+      ?? model.nextReviewedJunctionPrompt
+  }
+
   private var activeRouteShield: String? {
-    if let prompt = model.activeJunctionPrompt {
+    if let prompt = displayedJunctionPrompt {
       return prompt.outgoingRouteID
     }
     if model.phase == .expressway, let routeID = model.activeRouteID {
@@ -1893,7 +1967,7 @@ struct WholeShutoProductView: View {
     }
   }
 
-  private var drivingDistanceLabel: String {
+  private var primaryGuidanceDistanceLabel: String {
     guard let route = model.selectedRoute else { return "—" }
     switch model.phase {
     case .surfaceAccess:
@@ -1902,18 +1976,24 @@ struct WholeShutoProductView: View {
           * (1 - model.progressFraction)
       )
     case .entryTransition:
-      let routeLabel = route.routeIDsInOrder.first.map(shieldLabel) ?? ""
       return copy.resolve(
-        japanese: "\(routeLabel)へ進入",
-        simplifiedChinese: "进入 \(routeLabel)",
-        english: "ENTER \(routeLabel)"
+        japanese: "まもなく",
+        simplifiedChinese: "现在",
+        english: "NOW"
       )
     case .expressway:
+      if let distance = model.distanceToNextReviewedJunctionMeters {
+        return distanceLabel(distance)
+      }
       return distanceLabel(
         route.distanceMeters * (1 - model.progressFraction)
       )
     case .exitTransition:
-      return exitName(route.exitFacility.nameJA)
+      return copy.resolve(
+        japanese: "まもなく",
+        simplifiedChinese: "现在",
+        english: "NOW"
+      )
     case .surfaceEgress:
       return distanceLabel(
         (model.egressRoute?.distanceMeters ?? 0)
@@ -1928,6 +2008,27 @@ struct WholeShutoProductView: View {
     case .planning, .review:
       return ""
     }
+  }
+
+  private var remainingReferenceTimeLabel: String {
+    guard let seconds = model.remainingPreviewDurationSeconds else {
+      return "—"
+    }
+    let minutes = max(0, Int(ceil(seconds / 60)))
+    if minutes < 60 {
+      return copy.resolve(
+        japanese: "残り約 \(minutes) 分",
+        simplifiedChinese: "约 \(minutes) 分钟",
+        english: "ABOUT \(minutes) MIN"
+      )
+    }
+    let hours = minutes / 60
+    let remainder = minutes % 60
+    return copy.resolve(
+      japanese: "残り約 \(hours) 時間 \(remainder) 分",
+      simplifiedChinese: "约 \(hours) 小时 \(remainder) 分钟",
+      english: "ABOUT \(hours) HR \(remainder) MIN"
+    )
   }
 
   private var drivingBoundaryLabel: String {

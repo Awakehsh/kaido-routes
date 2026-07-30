@@ -126,6 +126,42 @@ final class WholeShutoProductModelTests: XCTestCase {
       access.distanceMeters + route.distanceMeters + egress.distanceMeters,
       accuracy: 0.001
     )
+    XCTAssertEqual(
+      try XCTUnwrap(model.remainingPreviewDurationSeconds),
+      expectedDuration,
+      accuracy: 0.001
+    )
+    XCTAssertEqual(model.journeyProgressFraction, 0, accuracy: 0.001)
+  }
+
+  func testJourneyProgressIncludesSurfaceAndExpresswayLegs() async throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney()
+
+    let plannedDistance = try XCTUnwrap(model.plannedJourneyDistanceMeters)
+    let plannedDuration = try XCTUnwrap(model.plannedPreviewDurationSeconds)
+
+    model.startNavigationSimulation()
+    model.togglePlayback()
+    await model.advanceSimulationForTesting()
+
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.progressFraction, 0.04, accuracy: 0.001)
+    XCTAssertGreaterThan(model.journeyProgressFraction, 0)
+    XCTAssertLessThan(model.journeyProgressFraction, 1)
+    XCTAssertLessThan(
+      try XCTUnwrap(model.remainingJourneyDistanceMeters),
+      plannedDistance
+    )
+    XCTAssertLessThan(
+      try XCTUnwrap(model.remainingPreviewDurationSeconds),
+      plannedDuration
+    )
+
+    model.prepareCompletedJourneyPreview()
+
+    XCTAssertEqual(model.journeyProgressFraction, 1, accuracy: 0.001)
+    XCTAssertEqual(model.remainingPreviewDurationSeconds, 0)
   }
 
   func testUnavailableSurfaceLegsBlockPreviewUntilRetrySucceeds() async {

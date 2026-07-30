@@ -53,10 +53,13 @@ internal review workbench.
   precise bearing, and speed uncertainty widens travel-distance tolerance.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
-  geometry, exposes total remaining route distance and the next reviewed JCT
-  distance, and provides an explicit free-browse/follow control. Degraded,
-  interrupted, and tunnel-estimated states return to north-up instead of
-  inventing a route heading.
+  geometry, makes the next reviewed decision and its distance the dominant
+  guidance, and keeps full-journey reference time, distance, and route-thread
+  progress together in the lower instrument strip. The next reviewed movement
+  may be shown before its decision-zone threshold, while junction insets and
+  one-shot speech remain actor-triggered. An explicit free-browse/follow
+  control remains available. Degraded, interrupted, and tunnel-estimated states
+  return to north-up instead of inventing a route heading.
 - During expressway travel the driver can switch between the normal geographic
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;

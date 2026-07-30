@@ -85,6 +85,64 @@ final class KaidoProductJourneyUITests: XCTestCase {
     selectedDestinationScreenshot.name = "Whole Shuto selected destination"
     selectedDestinationScreenshot.lifetime = .keepAlways
     add(selectedDestinationScreenshot)
+
+    app.buttons["whole-shuto-plan-route"].tap()
+    XCTAssertTrue(
+      element("whole-shuto-route-selection", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertEqual(
+      element("whole-shuto-product", in: app).value as? String,
+      "REVIEW"
+    )
+    XCTAssertTrue(
+      element("whole-shuto-route-option-0", in: app).isSelected
+    )
+    XCTAssertTrue(
+      element("whole-shuto-start-simulation", in: app).isEnabled
+    )
+
+    let plannedRoutesScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    plannedRoutesScreenshot.name = "Whole Shuto planned destination routes"
+    plannedRoutesScreenshot.lifetime = .keepAlways
+    add(plannedRoutesScreenshot)
+  }
+
+  func testDeniedLocationRequiresAManualOriginBeforeRouteSearch() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-WHOLE-SHUTO-LOCATION-DENIED-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launch()
+
+    let origin = app.textFields["whole-shuto-manual-origin"]
+    let destination = app.textFields[
+      "whole-shuto-destination-search"
+    ]
+    let planRoute = app.buttons["whole-shuto-plan-route"]
+    XCTAssertTrue(origin.waitForExistence(timeout: 5))
+    XCTAssertTrue(destination.exists)
+    XCTAssertFalse(planRoute.isEnabled)
+
+    destination.tap()
+    destination.typeText("东京塔")
+    XCTAssertFalse(planRoute.isEnabled)
+
+    origin.tap()
+    origin.typeText("东京站")
+    XCTAssertTrue(planRoute.isEnabled)
+
+    let manualOriginScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    manualOriginScreenshot.name = "Whole Shuto manual origin required"
+    manualOriginScreenshot.lifetime = .keepAlways
+    add(manualOriginScreenshot)
   }
 
   func testWholeShutoRouteAndJunctionPreviewAreMapFirst() {

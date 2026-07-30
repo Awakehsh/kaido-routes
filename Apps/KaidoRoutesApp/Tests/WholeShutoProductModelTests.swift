@@ -2,6 +2,7 @@ import KaidoAppleAdapters
 import KaidoDomain
 import KaidoPresentation
 import KaidoRouting
+import KaidoSurfaceRouting
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -43,6 +44,35 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.destinationQuery, "东京塔")
     XCTAssertNil(model.destination)
     XCTAssertFalse(model.hasSelectedDestinationPreview)
+  }
+
+  func testMeasuredCurrentOriginPlansWithoutASecondLocationRequest() async {
+    let locationProvider = WholeShutoUnexpectedLocationProvider()
+    let model = WholeShutoProductModel(
+      locationProvider: locationProvider,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    model.selectDestinationPreview(
+      WholeShutoProductModel.previewDestination
+    )
+
+    model.planJourney()
+    for _ in 0..<100 where model.isPlanning {
+      await Task.yield()
+    }
+
+    XCTAssertFalse(model.isPlanning)
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertEqual(
+      model.origin?.coordinate,
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    XCTAssertEqual(locationProvider.requestCount, 0)
+    XCTAssertNil(model.failureCode)
   }
 
   func testLatestRouteSelectionOwnsSurfacePreviewAfterOutOfOrderResponses()
@@ -817,6 +847,18 @@ private actor WholeShutoOutOfOrderSurfaceRouteResolver:
       try? await Task.sleep(nanoseconds: delay)
       return route
     }.value
+  }
+}
+
+@MainActor
+private final class WholeShutoUnexpectedLocationProvider:
+  C2NavigationCurrentLocationProviding
+{
+  private(set) var requestCount = 0
+
+  func currentCoordinate() async throws -> SurfaceCoordinate {
+    requestCount += 1
+    throw C2NavigationDemoError.locationUnavailable
   }
 }
 

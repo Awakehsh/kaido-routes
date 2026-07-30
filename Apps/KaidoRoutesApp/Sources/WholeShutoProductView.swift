@@ -20,11 +20,13 @@ struct WholeShutoProductView: View {
   @State private var showsLanguageSettings = false
   @State private var showsRouteCustomization = false
   @State private var showsManualOrigin = false
+  @State private var waitsForPlanningLocation = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
 
   init(
     model: WholeShutoProductModel? = nil,
     languageSettings: KaidoLanguageSettingsModel? = nil,
+    planningLocation: WholeShutoPlanningLocationController? = nil,
     placeSearch: WholeShutoPlaceSearchController? = nil
   ) {
     _model = StateObject(
@@ -34,7 +36,8 @@ struct WholeShutoProductView: View {
       wrappedValue: languageSettings ?? KaidoLanguageSettingsModel()
     )
     _planningLocation = StateObject(
-      wrappedValue: WholeShutoPlanningLocationController()
+      wrappedValue:
+        planningLocation ?? WholeShutoPlanningLocationController()
     )
     _placeSearch = StateObject(
       wrappedValue: placeSearch ?? WholeShutoPlaceSearchController()
@@ -105,10 +108,15 @@ struct WholeShutoProductView: View {
       }
     }
     .onChange(of: planningLocation.snapshot?.coordinate.latitude) {
+      handlePlanningLocationUpdate()
       updateDestinationSearch()
     }
     .onChange(of: planningLocation.snapshot?.coordinate.longitude) {
+      handlePlanningLocationUpdate()
       updateDestinationSearch()
+    }
+    .onChange(of: planningLocation.state) {
+      handlePlanningLocationUpdate()
     }
   }
 
@@ -394,14 +402,10 @@ struct WholeShutoProductView: View {
         )
       )
       .disabled(
-        model.destinationQuery.trimmingCharacters(
-          in: .whitespacesAndNewlines
-        ).isEmpty
+        !canSubmitRoutePlan
       )
       .opacity(
-        model.destinationQuery.trimmingCharacters(
-          in: .whitespacesAndNewlines
-        ).isEmpty ? 0.45 : 1
+        canSubmitRoutePlan ? 1 : 0.45
       )
     }
   }
@@ -511,8 +515,18 @@ struct WholeShutoProductView: View {
 
   private var planningLocationButton: some View {
     Button {
-      showsManualOrigin = false
       model.originQuery = ""
+      if let snapshot = planningLocation.snapshot {
+        showsManualOrigin = false
+        model.selectCurrentOrigin(snapshot.coordinate)
+      } else if planningLocation.state == .denied
+        || planningLocation.state == .unavailable
+      {
+        showsManualOrigin = true
+        focusedPlanningField = .origin
+      } else {
+        showsManualOrigin = false
+      }
       planningLocation.requestCurrentLocation()
     } label: {
       VStack(spacing: 3) {
@@ -545,12 +559,25 @@ struct WholeShutoProductView: View {
 
   private func planRouteButton(title: String) -> some View {
     Button {
-      model.planJourney()
+      beginRoutePlanning()
     } label: {
-      HStack {
-        if model.isPlanning {
+      HStack(spacing: 8) {
+        if model.isPlanning || waitsForPlanningLocation {
           ProgressView()
             .tint(.white)
+          Text(
+            waitsForPlanningLocation
+              ? copy.resolve(
+                japanese: "現在地を確認中",
+                simplifiedChinese: "正在定位",
+                english: "LOCATING"
+              )
+              : copy.resolve(
+                japanese: "ルートを検索中",
+                simplifiedChinese: "正在查找路线",
+                english: "FINDING ROUTES"
+              )
+          )
         } else {
           Text(title)
           Spacer()
@@ -566,8 +593,70 @@ struct WholeShutoProductView: View {
       .clipShape(RoundedRectangle(cornerRadius: 10))
     }
     .buttonStyle(.plain)
-    .disabled(model.isPlanning)
+    .disabled(model.isPlanning || waitsForPlanningLocation)
     .accessibilityIdentifier("whole-shuto-plan-route")
+  }
+
+  private var canSubmitRoutePlan: Bool {
+    let hasDestination = !model.destinationQuery.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    ).isEmpty
+    let hasRequiredManualOrigin =
+      !(showsManualOrigin
+        || planningLocation.state == .denied
+        || planningLocation.state == .unavailable)
+      || !model.originQuery.trimmingCharacters(
+        in: .whitespacesAndNewlines
+      ).isEmpty
+    return hasDestination
+      && hasRequiredManualOrigin
+      && !model.isPlanning
+      && !waitsForPlanningLocation
+  }
+
+  private func beginRoutePlanning() {
+    focusedPlanningField = nil
+    placeSearch.dismissResults()
+
+    guard model.usesCurrentLocationOrigin else {
+      model.planJourney()
+      return
+    }
+    if let snapshot = planningLocation.snapshot {
+      model.selectCurrentOrigin(snapshot.coordinate)
+      model.planJourney()
+      return
+    }
+    if model.origin != nil {
+      model.planJourney()
+      return
+    }
+
+    waitsForPlanningLocation = true
+    planningLocation.requestCurrentLocation()
+    handlePlanningLocationUpdate()
+  }
+
+  private func handlePlanningLocationUpdate() {
+    if let snapshot = planningLocation.snapshot,
+      planningLocation.state == .measured
+    {
+      model.selectCurrentOrigin(snapshot.coordinate)
+      guard waitsForPlanningLocation else { return }
+      waitsForPlanningLocation = false
+      model.planJourney()
+      return
+    }
+
+    guard waitsForPlanningLocation else { return }
+    switch planningLocation.state {
+    case .denied, .unavailable:
+      waitsForPlanningLocation = false
+      showsManualOrigin = true
+      focusedPlanningField = .origin
+    case .idle, .permissionRequired, .locating, .measured:
+      break
+    }
   }
 
   @ViewBuilder

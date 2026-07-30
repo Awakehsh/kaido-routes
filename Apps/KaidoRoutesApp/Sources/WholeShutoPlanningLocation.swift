@@ -29,20 +29,36 @@ final class WholeShutoPlanningLocationController:
   @Published private(set) var snapshot: WholeShutoPlanningLocationSnapshot?
 
   private let manager: CLLocationManager
+  private let previewState: WholeShutoPlanningLocationState?
   private var wantsLocation = false
   private var isForeground = true
 
-  init(manager: CLLocationManager = CLLocationManager()) {
+  init(
+    manager: CLLocationManager = CLLocationManager(),
+    previewState: WholeShutoPlanningLocationState? = nil,
+    previewSnapshot: WholeShutoPlanningLocationSnapshot? = nil
+  ) {
     self.manager = manager
+    let resolvedPreviewState =
+      previewSnapshot == nil ? previewState : .measured
+    self.previewState = resolvedPreviewState
+    snapshot = previewSnapshot
+    state = resolvedPreviewState ?? .idle
     super.init()
     manager.delegate = self
     manager.desiredAccuracy = kCLLocationAccuracyBest
     manager.distanceFilter = 5
-    updateAuthorizationState()
+    if resolvedPreviewState == nil {
+      updateAuthorizationState()
+    }
   }
 
   func requestCurrentLocation() {
     wantsLocation = true
+    if let previewState {
+      state = previewState
+      return
+    }
     updateAuthorizationState()
     switch manager.authorizationStatus {
     case .notDetermined:
@@ -59,6 +75,9 @@ final class WholeShutoPlanningLocationController:
 
   func setForeground(_ foreground: Bool) {
     isForeground = foreground
+    if previewState != nil {
+      return
+    }
     if foreground {
       updateAuthorizationState()
       startIfEligible()
@@ -69,11 +88,16 @@ final class WholeShutoPlanningLocationController:
 
   func stop() {
     wantsLocation = false
+    if let previewState {
+      state = previewState
+      return
+    }
     manager.stopUpdatingLocation()
     updateAuthorizationState()
   }
 
   func locationManagerDidChangeAuthorization(_: CLLocationManager) {
+    guard previewState == nil else { return }
     updateAuthorizationState()
     startIfEligible()
   }
@@ -82,6 +106,7 @@ final class WholeShutoPlanningLocationController:
     _: CLLocationManager,
     didUpdateLocations locations: [CLLocation]
   ) {
+    guard previewState == nil else { return }
     guard
       let location = locations.last(where: {
         $0.horizontalAccuracy >= 0
@@ -107,6 +132,7 @@ final class WholeShutoPlanningLocationController:
   }
 
   func locationManager(_: CLLocationManager, didFailWithError _: Error) {
+    guard previewState == nil else { return }
     state = snapshot == nil ? .unavailable : .measured
   }
 

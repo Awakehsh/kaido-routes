@@ -29,6 +29,11 @@ appear in the default product journey.
 The origin chip uses current location only after explicit permission. It also
 supports a manually entered origin and previously selected origins. If
 permission is denied, saved and manually selected routes remain available.
+Route search reuses the measured coordinate shown by the origin chip. If a
+measurement is still pending, the search action shows that it is locating and
+continues automatically when the coordinate arrives; it does not start a
+second hidden location request. A denied or unavailable location exposes and
+focuses the manual origin before route search can continue.
 
 The surface begins with the map, an explicit current-location control, one
 destination field, and one route-search action. It does not show an editorial,

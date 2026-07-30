@@ -309,6 +309,10 @@ final class WholeShutoProductModel: ObservableObject {
       && selectedDestinationTitle == destinationQuery
   }
 
+  var usesCurrentLocationOrigin: Bool {
+    Self.isCurrentLocationQuery(originQuery)
+  }
+
   var junctionPrompts: [WholeShutoJunctionPrompt] {
     guard let route = selectedRoute else { return [] }
     return ShutoJunctionGuidanceCompiler.compile(
@@ -586,6 +590,14 @@ final class WholeShutoProductModel: ObservableObject {
     destination = place
     destinationQuery = place.title
     selectedDestinationTitle = place.title
+  }
+
+  func selectCurrentOrigin(_ coordinate: ShutoCoordinate) {
+    guard phase == .planning, usesCurrentLocationOrigin else { return }
+    origin = WholeShutoPlace(
+      title: "現在地",
+      coordinate: coordinate
+    )
   }
 
   func clearDestinationPreview() {
@@ -1445,6 +1457,9 @@ final class WholeShutoProductModel: ObservableObject {
 
   private func resolveOrigin() async throws -> WholeShutoPlace {
     if Self.isCurrentLocationQuery(originQuery) {
+      if let origin {
+        return origin
+      }
       do {
         let coordinate = try await locationProvider.currentCoordinate()
         return WholeShutoPlace(

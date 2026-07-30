@@ -2,6 +2,7 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoRouting
+import KaidoSurfaceRouting
 import SwiftUI
 
 @main
@@ -114,6 +115,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoSearchPreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-LOCATION-DENIED-PREVIEW"
+      ) {
+        WholeShutoLocationDeniedPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -218,45 +223,106 @@ private enum WholeShutoJunctionPreviewMovement {
 }
 
 private struct WholeShutoSearchPreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+  @StateObject private var planningLocation:
+    WholeShutoPlanningLocationController
+  @StateObject private var placeSearch: WholeShutoPlaceSearchController
+
+  init() {
+    let coordinate = WholeShutoSearchPreviewLocationProvider.coordinate
+    _model = StateObject(
+      wrappedValue: WholeShutoProductModel(
+        locationProvider: WholeShutoSearchPreviewLocationProvider(),
+        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+        checkpointStore: nil
+      )
+    )
+    _planningLocation = StateObject(
+      wrappedValue: WholeShutoPlanningLocationController(
+        previewSnapshot: WholeShutoPlanningLocationSnapshot(
+          coordinate: ShutoCoordinate(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude
+          ),
+          horizontalAccuracyMeters: 6,
+          courseDegrees: nil,
+          measuredAt: Date(timeIntervalSince1970: 0)
+        )
+      )
+    )
+    _placeSearch = StateObject(
+      wrappedValue: WholeShutoPlaceSearchController(
+        previewPlaces: [
+          (
+            WholeShutoPlaceSuggestion(
+              id: "preview.tokyo-tower",
+              title: "东京塔",
+              subtitle: "东京都港区芝公园"
+            ),
+            WholeShutoPlace(
+              title: "东京塔",
+              coordinate: ShutoCoordinate(
+                latitude: 35.658581,
+                longitude: 139.745433
+              )
+            )
+          ),
+          (
+            WholeShutoPlaceSuggestion(
+              id: "preview.tokyo-station",
+              title: "东京站",
+              subtitle: "东京都千代田区丸之内"
+            ),
+            WholeShutoPlace(
+              title: "东京站",
+              coordinate: ShutoCoordinate(
+                latitude: 35.681236,
+                longitude: 139.767125
+              )
+            )
+          ),
+        ]
+      )
+    )
+  }
+
+  var body: some View {
+    WholeShutoProductView(
+      model: model,
+      planningLocation: planningLocation,
+      placeSearch: placeSearch
+    )
+  }
+}
+
+@MainActor
+private final class WholeShutoSearchPreviewLocationProvider:
+  C2NavigationCurrentLocationProviding
+{
+  nonisolated static let coordinate = SurfaceCoordinate(
+    latitude: 35.681236,
+    longitude: 139.767125
+  )
+
+  func currentCoordinate() async throws -> SurfaceCoordinate {
+    Self.coordinate
+  }
+}
+
+private struct WholeShutoLocationDeniedPreviewHost: View {
   @StateObject private var model = WholeShutoProductModel(
     checkpointStore: nil
   )
+  @StateObject private var planningLocation =
+    WholeShutoPlanningLocationController(previewState: .denied)
   @StateObject private var placeSearch = WholeShutoPlaceSearchController(
-    previewPlaces: [
-      (
-        WholeShutoPlaceSuggestion(
-          id: "preview.tokyo-tower",
-          title: "东京塔",
-          subtitle: "东京都港区芝公园"
-        ),
-        WholeShutoPlace(
-          title: "东京塔",
-          coordinate: ShutoCoordinate(
-            latitude: 35.658581,
-            longitude: 139.745433
-          )
-        )
-      ),
-      (
-        WholeShutoPlaceSuggestion(
-          id: "preview.tokyo-station",
-          title: "东京站",
-          subtitle: "东京都千代田区丸之内"
-        ),
-        WholeShutoPlace(
-          title: "东京站",
-          coordinate: ShutoCoordinate(
-            latitude: 35.681236,
-            longitude: 139.767125
-          )
-        )
-      ),
-    ]
+    previewPlaces: []
   )
 
   var body: some View {
     WholeShutoProductView(
       model: model,
+      planningLocation: planningLocation,
       placeSearch: placeSearch
     )
   }

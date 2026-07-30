@@ -150,6 +150,100 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  func testCustomRoutePinsExactDirectionalEntryAndExit() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    model.prepareCustomRouteDraft()
+
+    let entryID = "shuto.ic.c1.takaracho"
+    let exitID = "shuto.ic.k1.yokohamakouen"
+    XCTAssertTrue(
+      model.customEntryCandidates.contains {
+        $0.facilityID == entryID
+      }
+    )
+    XCTAssertTrue(
+      model.customExitCandidates.contains {
+        $0.facilityID == exitID
+      }
+    )
+
+    model.selectCustomEntry(facilityID: entryID)
+    model.selectCustomExit(facilityID: exitID)
+    model.selectCustomPreference(.fewerJunctions)
+
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, entryID)
+    XCTAssertEqual(draft.exitFacility.facilityID, exitID)
+    XCTAssertEqual(draft.preference, .fewerJunctions)
+    XCTAssertTrue(model.canApplyCustomRoute)
+    XCTAssertTrue(model.applyCustomRoute())
+
+    XCTAssertTrue(model.isCustomRouteSelected)
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
+    XCTAssertEqual(model.selectedRoute?.entryFacility.facilityID, entryID)
+    XCTAssertEqual(model.selectedRoute?.exitFacility.facilityID, exitID)
+
+    for _ in 0..<100 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    XCTAssertFalse(model.isUpdatingSurfaceRoute)
+    XCTAssertEqual(
+      model.accessRoute?.coordinates.last,
+      draft.entryFacility.coordinate
+    )
+    XCTAssertEqual(
+      model.egressRoute?.coordinates.first,
+      draft.exitFacility.coordinate
+    )
+
+    model.selectRecommendation(at: 0)
+
+    XCTAssertFalse(model.isCustomRouteSelected)
+    XCTAssertNotEqual(model.selectedRoute?.routePlan, draft.routePlan)
+  }
+
+  func testCustomRouteSelectionSourceRestoresWithItsExactRoute() async throws {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+    model.preparePreviewJourney()
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.c1.takaracho")
+    model.selectCustomExit(facilityID: "shuto.ic.k1.yokohamakouen")
+    model.selectCustomPreference(.fewerJunctions)
+    XCTAssertTrue(model.applyCustomRoute())
+
+    for _ in 0..<100 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    let selectedPlan = try XCTUnwrap(model.selectedRoute?.routePlan)
+    XCTAssertEqual(store.checkpoint?.routeSelectionSource, .custom)
+
+    let restored = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertTrue(restored.isCustomRouteSelected)
+    XCTAssertEqual(restored.selectedRoute?.routePlan, selectedPlan)
+    XCTAssertEqual(
+      restored.customEntryFacilityID,
+      "shuto.ic.c1.takaracho"
+    )
+    XCTAssertEqual(
+      restored.customExitFacilityID,
+      "shuto.ic.k1.yokohamakouen"
+    )
+    XCTAssertEqual(restored.customPreference, .fewerJunctions)
+  }
+
   func testJunctionPromptsRequireAnExactReviewedMovement() {
     let model = WholeShutoProductModel(checkpointStore: nil)
 
@@ -901,6 +995,7 @@ extension WholeShutoJourneyCheckpoint {
       exitFacilityID: exitFacilityID,
       routePlan: routePlan,
       preference: preference,
+      routeSelectionSource: routeSelectionSource,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,

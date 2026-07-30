@@ -122,6 +122,11 @@ Use a hybrid architecture:
 11. Keep unavailable facilities in the catalog for honest display, but exclude
     them from route search. The long-term-closed Yaesu Route is the first
     concrete case.
+12. Keep recommendation and customization in the same route-choice stage.
+    Whole-network customization may pin an exact direction-valid entrance,
+    direction-valid exit, and route-cost style, but only the graph planner may
+    emit the resulting ordered `RoutePlan`. Draft UI state has no route
+    authority.
 
 This is not a plan to recreate nationwide navigation. Kaido owns the small,
 safety-relevant whole-Shuto snapshot and delegates bounded ordinary-road access
@@ -1697,20 +1702,23 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto simulation uses a separate schema-1.3 app checkpoint. It binds
+The whole-Shuto simulation uses a separate schema-1.4 app checkpoint. It binds
 the same candidate network snapshot, the complete replanned `RoutePlan`,
-directional entry and exit, selected preference, phase, consumed output prompt
-IDs, and, after confirmed entry, exact route occurrence and fraction. A prior
-schema or any `RoutePlan` content drift is not restored. An entry-transition
-checkpoint must retain zero route progress and no runtime occurrence or
-fraction. Restoration is paused, recompiles the route/corridor from the bundled
-graph, discards matcher posterior and partial entry continuity, and resumes from
-the first generated entrance observation. An expressway restore resumes at the
-saved occurrence but admits no new progress until another HIGH replay
-observation. App inactive/background cancels replay, stops current speech, and
-saves consumed prompt IDs so reconstruction cannot repeat an admitted command.
-This is termination recovery, not background navigation. It is not schema-2.0
-released-session evidence and cannot mint live-input authority.
+directional entry and exit, selected preference, recommendation-or-custom
+selection source, phase, consumed output prompt IDs, and, after confirmed entry,
+exact route occurrence and fraction. A custom review restores the custom
+selection only after its exact plan is reconstructed; the source flag cannot
+substitute for `RoutePlan` equality. A prior schema or any `RoutePlan` content
+drift is not restored. An entry-transition checkpoint must retain zero route
+progress and no runtime occurrence or fraction. Restoration is paused,
+recompiles the route/corridor from the bundled graph, discards matcher posterior
+and partial entry continuity, and resumes from the first generated entrance
+observation. An expressway restore resumes at the saved occurrence but admits no
+new progress until another HIGH replay observation. App inactive/background
+cancels replay, stops current speech, and saves consumed prompt IDs so
+reconstruction cannot repeat an admitted command. This is termination recovery,
+not background navigation. It is not schema-2.0 released-session evidence and
+cannot mint live-input authority.
 
 For the first small graph:
 

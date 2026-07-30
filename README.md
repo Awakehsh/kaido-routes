@@ -20,6 +20,10 @@ internal review workbench.
   Kaido-owned Shuto path separate from bounded surface access and egress.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
+- Route choice keeps recommendations and exact customization together. Custom
+  selection pins one direction-valid entrance, one direction-valid exit, and a
+  route style, previews the resulting route thread, and applies its own
+  Kaido-owned `RoutePlan` without turning the map into another home surface.
 - Route occurrences remain ordered and distinct. Directed links represent
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.

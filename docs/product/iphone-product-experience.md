@@ -47,11 +47,16 @@ Recommended, alternative, and custom choices appear only after a destination
 has been resolved. The route-choice row shows the recommended exact route first,
 the custom control second, and further alternatives after it. Each route option
 contains only its selection label, route shields, and distance. Custom expands
-route preferences in place; it does not replace the map with a separate home
-mode. Selecting another option immediately clears any stale access or egress
-preview. While the replacement surface legs resolve, the new option remains
-selected and the journey start action stays unavailable; only the latest
-selection may publish resolved surface legs.
+into a map-anchored route editor rather than replacing the map with a separate
+home mode. It lets the parked user pin one nearby direction-valid entrance, one
+nearby direction-valid exit, and a route style. The editor previews the concrete
+route shields and distance before **Use this route** applies a new exact
+`RoutePlan`. Opening or dismissing the editor never marks a draft as selected.
+Selecting another option immediately clears any stale access or egress preview.
+While the replacement surface legs resolve, the new option remains selected and
+the journey start action stays unavailable; only the latest selection may
+publish resolved surface legs. A selected custom route restores as custom only
+when its exact snapshot-bound plan can be reconstructed.
 
 Bounded third-party navigation providers may contribute candidate geometry,
 ranking, or comparison evidence to this route-choice stage. They do not create

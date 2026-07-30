@@ -297,11 +297,69 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     customizeRoute.tap()
     XCTAssertTrue(
-      element("whole-shuto-route-customization", in: routeApp).exists
+      element("whole-shuto-route-customization", in: routeApp)
+        .waitForExistence(timeout: 3)
     )
-    XCTAssertTrue(
-      element("whole-shuto-start-simulation", in: routeApp).exists
+    let customEntry = routeApp.buttons[
+      "whole-shuto-custom-entry-shuto.ic.c1.takaracho"
+    ]
+    let customExit = routeApp.buttons[
+      "whole-shuto-custom-exit-shuto.ic.k1.yokohamakouen"
+    ]
+    XCTAssertTrue(customEntry.waitForExistence(timeout: 3))
+    XCTAssertTrue(customExit.waitForExistence(timeout: 3))
+    customEntry.tap()
+    customExit.tap()
+    let fewerJunctions = routeApp.buttons[
+      "whole-shuto-custom-preference-fewer_junctions"
+    ]
+    XCTAssertTrue(fewerJunctions.exists)
+    fewerJunctions.tap()
+    XCTAssertEqual(
+      element("whole-shuto-custom-route-preview", in: routeApp).value
+        as? String,
+      "AVAILABLE"
     )
+
+    let customRouteScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    customRouteScreenshot.name = "Whole Shuto exact custom route"
+    customRouteScreenshot.lifetime = .keepAlways
+    add(customRouteScreenshot)
+
+    let applyCustomRoute = routeApp.buttons[
+      "whole-shuto-apply-custom-route"
+    ]
+    XCTAssertTrue(applyCustomRoute.isEnabled)
+    applyCustomRoute.tap()
+    XCTAssertFalse(
+      element("whole-shuto-route-customization", in: routeApp)
+        .waitForExistence(timeout: 1)
+    )
+    XCTAssertTrue(customizeRoute.isSelected)
+    let startCustomRoute = routeApp.buttons[
+      "whole-shuto-start-simulation"
+    ]
+    XCTAssertTrue(startCustomRoute.exists)
+    let customSurfaceRouteResolved = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "enabled == YES"),
+      object: startCustomRoute
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(
+        for: [customSurfaceRouteResolved],
+        timeout: 2
+      ),
+      .completed
+    )
+
+    let appliedCustomScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    appliedCustomScreenshot.name = "Whole Shuto selected custom route"
+    appliedCustomScreenshot.lifetime = .keepAlways
+    add(appliedCustomScreenshot)
     routeApp.terminate()
 
     let junctionApp = XCUIApplication()

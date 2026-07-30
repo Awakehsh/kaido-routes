@@ -27,6 +27,13 @@ enum WholeShutoMapMode:
   case network = "NETWORK"
 }
 
+enum WholeShutoRouteSelectionSource:
+  String, Codable, Equatable, Sendable
+{
+  case recommended = "RECOMMENDED"
+  case custom = "CUSTOM"
+}
+
 struct WholeShutoPlace: Codable, Equatable, Sendable {
   let title: String
   let coordinate: ShutoCoordinate
@@ -79,7 +86,7 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.3"
+  static let currentSchemaVersion = "1.4"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -91,6 +98,7 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let exitFacilityID: String
   let routePlan: RoutePlan
   let preference: ShutoRoutePreference
+  let routeSelectionSource: WholeShutoRouteSelectionSource
   let phase: WholeShutoJourneyPhase
   let progressFraction: Double
   let runtimeOccurrenceID: String?
@@ -203,6 +211,13 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var destination: WholeShutoPlace?
   @Published private(set) var recommendations: [ShutoRouteRecommendation] = []
   @Published private(set) var selectedRecommendationIndex = 0
+  @Published private(set) var customRecommendation: ShutoRouteRecommendation?
+  @Published private(set) var isCustomRouteSelected = false
+  @Published private(set) var customEntryFacilityID: String?
+  @Published private(set) var customExitFacilityID: String?
+  @Published private(set) var customPreference: ShutoRoutePreference =
+    .recommended
+  @Published private(set) var customDraftRoute: ShutoPlannedRoute?
   @Published private(set) var accessRoute: WholeShutoSurfaceRoute?
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
@@ -294,7 +309,10 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var selectedRecommendation: ShutoRouteRecommendation? {
-    recommendations.indices.contains(selectedRecommendationIndex)
+    if isCustomRouteSelected {
+      return customRecommendation
+    }
+    return recommendations.indices.contains(selectedRecommendationIndex)
       ? recommendations[selectedRecommendationIndex]
       : nil
   }
@@ -307,6 +325,34 @@ final class WholeShutoProductModel: ObservableObject {
     phase == .planning
       && destination != nil
       && selectedDestinationTitle == destinationQuery
+  }
+
+  var customEntryCandidates: [ShutoNetworkDatabase.Facility] {
+    rankedCustomFacilities(
+      from: origin?.coordinate,
+      selectedFacilityID: customEntryFacilityID,
+      isEligible: \.canEnter
+    )
+  }
+
+  var customExitCandidates: [ShutoNetworkDatabase.Facility] {
+    rankedCustomFacilities(
+      from: destination?.coordinate,
+      selectedFacilityID: customExitFacilityID,
+      isEligible: \.canExit
+    )
+  }
+
+  var customEntryFacility: ShutoNetworkDatabase.Facility? {
+    facility(id: customEntryFacilityID)
+  }
+
+  var customExitFacility: ShutoNetworkDatabase.Facility? {
+    facility(id: customExitFacilityID)
+  }
+
+  var canApplyCustomRoute: Bool {
+    customDraftRoute != nil
   }
 
   var usesCurrentLocationOrigin: Bool {
@@ -615,6 +661,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func preparePreviewJourney(startsNavigation: Bool = false) {
     cancelSurfaceRouteResolution()
+    clearCustomRouteSelection()
     usePreviewPlaces()
     do {
       recommendations = try planner.recommend(
@@ -746,6 +793,7 @@ final class WholeShutoProductModel: ObservableObject {
     startsNavigation: Bool
   ) {
     cancelSurfaceRouteResolution()
+    clearCustomRouteSelection()
     do {
       let route = try planner.plan(
         entryFacilityID: entryFacilityID,
@@ -826,6 +874,7 @@ final class WholeShutoProductModel: ObservableObject {
         destination = resolvedDestination
         recommendations = routes
         selectedRecommendationIndex = 0
+        clearCustomRouteSelection()
         phase = .review
         progressFraction = 0
         resolveSurfaceRoutes(
@@ -843,16 +892,80 @@ final class WholeShutoProductModel: ObservableObject {
   func selectRecommendation(at index: Int) {
     guard recommendations.indices.contains(index) else { return }
     selectedRecommendationIndex = index
+    isCustomRouteSelected = false
     guard let origin, let destination,
       let recommendation = selectedRecommendation
     else {
       return
     }
+    preference = recommendation.route.preference
     resolveSurfaceRoutes(
       for: recommendation,
       origin: origin,
       destination: destination
     )
+  }
+
+  func prepareCustomRouteDraft() {
+    guard phase == .review, let route = selectedRoute else { return }
+    let draft = customRecommendation?.route ?? route
+    customEntryFacilityID = draft.entryFacility.facilityID
+    customExitFacilityID = draft.exitFacility.facilityID
+    customPreference = draft.preference
+    refreshCustomRouteDraft()
+  }
+
+  func selectCustomEntry(facilityID: String) {
+    guard facility(id: facilityID)?.canEnter == true else { return }
+    customEntryFacilityID = facilityID
+    refreshCustomRouteDraft()
+  }
+
+  func selectCustomExit(facilityID: String) {
+    guard facility(id: facilityID)?.canExit == true else { return }
+    customExitFacilityID = facilityID
+    refreshCustomRouteDraft()
+  }
+
+  func selectCustomPreference(_ preference: ShutoRoutePreference) {
+    customPreference = preference
+    refreshCustomRouteDraft()
+  }
+
+  @discardableResult
+  func applyCustomRoute() -> Bool {
+    guard
+      phase == .review,
+      let origin,
+      let destination,
+      let route = customDraftRoute
+    else {
+      return false
+    }
+    let accessDistance = Self.distance(
+      origin.coordinate,
+      route.entryFacility.coordinate
+    )
+    let egressDistance = Self.distance(
+      route.exitFacility.coordinate,
+      destination.coordinate
+    )
+    let recommendation = ShutoRouteRecommendation(
+      route: route,
+      surfaceAccessDistanceMeters: accessDistance,
+      surfaceEgressDistanceMeters: egressDistance,
+      totalScoreMeters: route.distanceMeters + accessDistance + egressDistance
+    )
+    customRecommendation = recommendation
+    isCustomRouteSelected = true
+    preference = route.preference
+    failureCode = nil
+    resolveSurfaceRoutes(
+      for: recommendation,
+      origin: origin,
+      destination: destination
+    )
+    return true
   }
 
   private func resolveSurfaceRoutes(
@@ -1011,6 +1124,7 @@ final class WholeShutoProductModel: ObservableObject {
     selectedDestinationTitle = nil
     recommendations = []
     selectedRecommendationIndex = 0
+    clearCustomRouteSelection()
     accessRoute = nil
     egressRoute = nil
     progressFraction = 0
@@ -1352,15 +1466,29 @@ final class WholeShutoProductModel: ObservableObject {
     origin = checkpoint.origin
     destination = checkpoint.destination
     preference = checkpoint.preference
-    recommendations = [
-      ShutoRouteRecommendation(
-        route: route,
-        surfaceAccessDistanceMeters: accessDistance,
-        surfaceEgressDistanceMeters: egressDistance,
-        totalScoreMeters:
-          route.distanceMeters + accessDistance + egressDistance
-      )
-    ]
+    let restoredRecommendation = ShutoRouteRecommendation(
+      route: route,
+      surfaceAccessDistanceMeters: accessDistance,
+      surfaceEgressDistanceMeters: egressDistance,
+      totalScoreMeters:
+        route.distanceMeters + accessDistance + egressDistance
+    )
+    if checkpoint.routeSelectionSource == .custom {
+      recommendations =
+        (try? planner.recommend(
+          from: checkpoint.origin.coordinate,
+          to: checkpoint.destination.coordinate
+        )) ?? []
+      customRecommendation = restoredRecommendation
+      isCustomRouteSelected = true
+      customEntryFacilityID = route.entryFacility.facilityID
+      customExitFacilityID = route.exitFacility.facilityID
+      customPreference = route.preference
+      customDraftRoute = route
+    } else {
+      recommendations = [restoredRecommendation]
+      clearCustomRouteSelection()
+    }
     selectedRecommendationIndex = 0
     accessRoute = checkpoint.accessRoute
     egressRoute = checkpoint.egressRoute
@@ -1454,7 +1582,9 @@ final class WholeShutoProductModel: ObservableObject {
       entryFacilityID: route.entryFacility.facilityID,
       exitFacilityID: route.exitFacility.facilityID,
       routePlan: route.routePlan,
-      preference: preference,
+      preference: route.preference,
+      routeSelectionSource:
+        isCustomRouteSelected ? .custom : .recommended,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,
@@ -1550,6 +1680,68 @@ final class WholeShutoProductModel: ObservableObject {
     C2NavigationDemoModel.currentLocationTokens.contains(
       query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     )
+  }
+
+  private func refreshCustomRouteDraft() {
+    guard
+      let entryFacilityID = customEntryFacilityID,
+      let exitFacilityID = customExitFacilityID,
+      entryFacilityID != exitFacilityID
+    else {
+      customDraftRoute = nil
+      return
+    }
+    customDraftRoute = try? planner.plan(
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      preference: customPreference
+    )
+  }
+
+  private func clearCustomRouteSelection() {
+    customRecommendation = nil
+    isCustomRouteSelected = false
+    customEntryFacilityID = nil
+    customExitFacilityID = nil
+    customPreference = .recommended
+    customDraftRoute = nil
+  }
+
+  private func facility(
+    id: String?
+  ) -> ShutoNetworkDatabase.Facility? {
+    guard let id else { return nil }
+    return database.directionalFacilities.first {
+      $0.facilityID == id
+    }
+  }
+
+  private func rankedCustomFacilities(
+    from coordinate: ShutoCoordinate?,
+    selectedFacilityID: String?,
+    isEligible: KeyPath<ShutoNetworkDatabase.Facility, Bool>
+  ) -> [ShutoNetworkDatabase.Facility] {
+    guard let coordinate else { return [] }
+    let ranked = database.directionalFacilities
+      .filter { $0[keyPath: isEligible] }
+      .sorted {
+        let leftDistance = Self.distance(coordinate, $0.coordinate)
+        let rightDistance = Self.distance(coordinate, $1.coordinate)
+        if leftDistance != rightDistance {
+          return leftDistance < rightDistance
+        }
+        return $0.facilityID < $1.facilityID
+      }
+    var result = Array(ranked.prefix(8))
+    if let selectedFacilityID,
+      !result.contains(where: { $0.facilityID == selectedFacilityID }),
+      let selected = ranked.first(where: {
+        $0.facilityID == selectedFacilityID
+      })
+    {
+      result.append(selected)
+    }
+    return result
   }
 
   private func primaryRouteID(

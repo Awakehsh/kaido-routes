@@ -81,6 +81,9 @@ struct WholeShutoProductView: View {
       value: model.activeJunctionPrompt
     )
     .preferredColorScheme(isDriving ? .dark : .light)
+    .sheet(isPresented: $showsRouteCustomization) {
+      WholeShutoCustomRouteSheet(model: model)
+    }
     .sheet(isPresented: $showsNetworkFacts) {
       WholeShutoNetworkFactsView(model: model)
     }
@@ -790,62 +793,6 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(accessibilityIdentifier)
   }
 
-  private var preferenceMenu: some View {
-    Menu {
-      Button(
-        copy.resolve(
-          japanese: "おすすめ",
-          simplifiedChinese: "推荐路线",
-          english: "Recommended"
-        )
-      ) { model.preference = .recommended }
-      Button(
-        copy.resolve(
-          japanese: "複雑な分岐を減らす",
-          simplifiedChinese: "减少复杂分岔",
-          english: "Fewer complex junctions"
-        )
-      ) { model.preference = .fewerJunctions }
-      Button(
-        copy.resolve(
-          japanese: "湾岸線を優先",
-          simplifiedChinese: "优先湾岸线",
-          english: "Prefer Bayshore Route"
-        )
-      ) { model.preference = .preferBayshore }
-    } label: {
-      VStack(alignment: .leading, spacing: 1) {
-        Text(
-          copy.resolve(
-            japanese: "ルート設定",
-            simplifiedChinese: "路线偏好",
-            english: "ROUTE PREFERENCE"
-          )
-        )
-        .font(.system(size: 8, weight: .black, design: .rounded))
-        .lineLimit(1)
-        .minimumScaleFactor(0.72)
-        HStack(spacing: 5) {
-          Text(preferenceLabel)
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-          Image(systemName: "chevron.up.chevron.down")
-            .font(.system(size: 8, weight: .black))
-        }
-        .font(.system(size: 11, weight: .black, design: .rounded))
-      }
-      .foregroundStyle(KaidoTheme.ink)
-      .padding(.horizontal, 12)
-      .frame(width: 126, height: 48, alignment: .leading)
-      .background(KaidoTheme.paperRaised.opacity(0.92))
-      .clipShape(RoundedRectangle(cornerRadius: 10))
-      .overlay {
-        RoundedRectangle(cornerRadius: 10)
-          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
-      }
-    }
-  }
-
   private var routeReview: some View {
     VStack(spacing: 11) {
       HStack(alignment: .firstTextBaseline) {
@@ -863,10 +810,6 @@ struct WholeShutoProductView: View {
       .foregroundStyle(KaidoTheme.ink)
 
       routeSelection
-
-      if showsRouteCustomization {
-        routeCustomization
-      }
 
       HStack(spacing: 8) {
         routeBoundary(
@@ -1002,6 +945,15 @@ struct WholeShutoProductView: View {
           )
         }
       }
+      .onChange(of: model.isCustomRouteSelected) { _, isSelected in
+        guard isSelected else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+          proxy.scrollTo(
+            "whole-shuto-route-customization-choice",
+            anchor: .center
+          )
+        }
+      }
       .accessibilityIdentifier("whole-shuto-route-selection")
     }
   }
@@ -1012,9 +964,8 @@ struct WholeShutoProductView: View {
 
   private var routeCustomizationButton: some View {
     Button {
-      withAnimation(.easeOut(duration: 0.18)) {
-        showsRouteCustomization.toggle()
-      }
+      model.prepareCustomRouteDraft()
+      showsRouteCustomization = true
     } label: {
       VStack(alignment: .leading, spacing: 3) {
         HStack {
@@ -1026,29 +977,42 @@ struct WholeShutoProductView: View {
             )
           )
           Spacer()
-          Image(systemName: "slider.horizontal.3")
-            .font(.system(size: 12, weight: .bold))
+          if model.isCustomRouteSelected && model.isUpdatingSurfaceRoute {
+            ProgressView()
+              .controlSize(.mini)
+              .tint(KaidoTheme.routeWhite)
+          } else if model.isCustomRouteSelected {
+            Image(systemName: "checkmark.circle.fill")
+              .font(.system(size: 12, weight: .bold))
+          } else {
+            Image(systemName: "slider.horizontal.3")
+              .font(.system(size: 12, weight: .bold))
+          }
         }
         .font(.system(size: 9, weight: .black))
-        Text(preferenceLabel)
+        Text(customRouteCardDetail)
           .font(.system(size: 10, weight: .bold))
           .lineLimit(1)
           .minimumScaleFactor(0.72)
       }
       .foregroundStyle(
-        showsRouteCustomization
+        model.isCustomRouteSelected
           ? KaidoTheme.routeWhite : KaidoTheme.ink
       )
       .padding(.horizontal, 12)
-      .frame(width: 104, height: 68, alignment: .leading)
+      .frame(width: 124, height: 68, alignment: .leading)
       .background(
-        showsRouteCustomization
+        model.isCustomRouteSelected
           ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
       )
       .clipShape(RoundedRectangle(cornerRadius: 9))
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("whole-shuto-customize-route")
+    .accessibilityAddTraits(
+      model.isCustomRouteSelected ? .isSelected : []
+    )
+    .accessibilityValue(customRouteCardAccessibilityValue)
   }
 
   private func routeSelectionButton(at index: Int) -> some View {
@@ -1059,7 +1023,7 @@ struct WholeShutoProductView: View {
       let route = model.recommendations[index].route
       let isSelected =
         index == model.selectedRecommendationIndex
-          && !showsRouteCustomization
+        && !model.isCustomRouteSelected
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 5) {
           Text(recommendationLabel(at: index))
@@ -1106,7 +1070,7 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier("whole-shuto-route-option-\(index)")
     .accessibilityAddTraits(
       index == model.selectedRecommendationIndex
-        && !showsRouteCustomization
+        && !model.isCustomRouteSelected
         ? .isSelected : []
     )
     .accessibilityValue(
@@ -1121,20 +1085,6 @@ struct WholeShutoProductView: View {
           )
         : routeSelectionAccessibilityValue(at: index)
     )
-  }
-
-  private var routeCustomization: some View {
-    HStack(spacing: 8) {
-      preferenceMenu
-      planRouteButton(
-        title: copy.resolve(
-          japanese: "ルートを更新",
-          simplifiedChinese: "更新路线",
-          english: "Update routes"
-        )
-      )
-    }
-    .accessibilityIdentifier("whole-shuto-route-customization")
   }
 
   private func routeBoundary(
@@ -1518,27 +1468,29 @@ struct WholeShutoProductView: View {
       + distanceLabel(route.distanceMeters)
   }
 
-  private var preferenceLabel: String {
-    switch model.preference {
-    case .recommended:
-      copy.resolve(
-        japanese: "おすすめ",
-        simplifiedChinese: "推荐",
-        english: "Recommended"
-      )
-    case .fewerJunctions:
-      copy.resolve(
-        japanese: "分岐を減らす",
-        simplifiedChinese: "少分岔",
-        english: "Fewer junctions"
-      )
-    case .preferBayshore:
-      copy.resolve(
-        japanese: "湾岸線優先",
-        simplifiedChinese: "湾岸优先",
-        english: "Prefer Bayshore"
+  private var customRouteCardDetail: String {
+    guard let route = model.customRecommendation?.route else {
+      return copy.resolve(
+        japanese: "入口・出口を指定",
+        simplifiedChinese: "指定入口和出口",
+        english: "Choose entry and exit"
       )
     }
+    return route.routeIDsInOrder
+      .map(shieldLabel)
+      .joined(separator: " · ")
+  }
+
+  private var customRouteCardAccessibilityValue: String {
+    guard let route = model.customRecommendation?.route else {
+      return copy.resolve(
+        japanese: "未設定",
+        simplifiedChinese: "尚未设置",
+        english: "Not configured"
+      )
+    }
+    return
+      customRouteCardDetail + "; " + distanceLabel(route.distanceMeters)
   }
 
   private var instructionSymbol: String {
@@ -2109,6 +2061,442 @@ struct WholeShutoProductView: View {
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: languageSettings.interfaceLocale)
+  }
+}
+
+private struct WholeShutoCustomRouteSheet: View {
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+  @ObservedObject var model: WholeShutoProductModel
+
+  var body: some View {
+    VStack(spacing: 0) {
+      header
+
+      ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+          draftRouteThread
+          facilitySelector(
+            title: copy.resolve(
+              japanese: "入口",
+              simplifiedChinese: "入口",
+              english: "ENTRY"
+            ),
+            tint: KaidoTheme.positionCyan,
+            candidates: model.customEntryCandidates,
+            selectedFacilityID: model.customEntryFacilityID,
+            usesEntranceDirection: true,
+            identifierPrefix: "whole-shuto-custom-entry"
+          ) {
+            model.selectCustomEntry(facilityID: $0)
+          }
+          facilitySelector(
+            title: copy.resolve(
+              japanese: "出口",
+              simplifiedChinese: "出口",
+              english: "EXIT"
+            ),
+            tint: KaidoTheme.evidenceCoral,
+            candidates: model.customExitCandidates,
+            selectedFacilityID: model.customExitFacilityID,
+            usesEntranceDirection: false,
+            identifierPrefix: "whole-shuto-custom-exit"
+          ) {
+            model.selectCustomExit(facilityID: $0)
+          }
+          preferenceSelector
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 16)
+      }
+      .scrollIndicators(.hidden)
+
+      applyButton
+    }
+    .background(KaidoTheme.paper)
+    .presentationDetents([.height(520), .large])
+    .presentationDragIndicator(.hidden)
+    .presentationCornerRadius(26)
+    .presentationBackground(KaidoTheme.paper)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-route-customization")
+  }
+
+  private var header: some View {
+    HStack(alignment: .top, spacing: 12) {
+      VStack(alignment: .leading, spacing: 3) {
+        Text(
+          copy.resolve(
+            japanese: "ルートをカスタマイズ",
+            simplifiedChinese: "自定义路线",
+            english: "CUSTOM ROUTE"
+          )
+        )
+        .font(.system(size: 21, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.ink)
+
+        Text(
+          copy.resolve(
+            japanese: "進行方向が有効な入口・出口とルート傾向を選択",
+            simplifiedChinese: "选择方向合法的入口、出口和路线取向",
+            english: "Choose a direction-valid entry, exit, and route style"
+          )
+        )
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(KaidoTheme.quietText)
+      }
+
+      Spacer()
+
+      Button {
+        dismiss()
+      } label: {
+        Image(systemName: "xmark")
+          .font(.system(size: 13, weight: .black))
+          .foregroundStyle(KaidoTheme.ink)
+          .frame(width: 36, height: 36)
+          .background(KaidoTheme.paperRaised)
+          .clipShape(Circle())
+          .overlay {
+            Circle()
+              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+          }
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "閉じる",
+          simplifiedChinese: "关闭",
+          english: "Close"
+        )
+      )
+      .accessibilityIdentifier("whole-shuto-custom-route-close")
+    }
+    .padding(.horizontal, 18)
+    .padding(.top, 18)
+    .padding(.bottom, 14)
+  }
+
+  private var draftRouteThread: some View {
+    HStack(spacing: 9) {
+      routeEndpoint(
+        model.customEntryFacility?.nameJA ?? "—",
+        tint: KaidoTheme.positionCyan
+      )
+
+      VStack(spacing: 4) {
+        HStack(spacing: 3) {
+          Rectangle()
+            .fill(KaidoTheme.routeGreen)
+            .frame(height: 3)
+          Image(systemName: "arrowtriangle.right.fill")
+            .font(.system(size: 8, weight: .black))
+            .foregroundStyle(KaidoTheme.routeGreen)
+        }
+        Text(draftRouteShieldLabel)
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeGreenDeep)
+          .lineLimit(1)
+          .minimumScaleFactor(0.62)
+      }
+
+      routeEndpoint(
+        model.customExitFacility?.nameJA ?? "—",
+        tint: KaidoTheme.evidenceCoral
+      )
+    }
+    .padding(12)
+    .background(KaidoTheme.paperRaised)
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+    .overlay {
+      RoundedRectangle(cornerRadius: 14)
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("whole-shuto-custom-route-preview")
+    .accessibilityValue(
+      model.customDraftRoute == nil ? "UNAVAILABLE" : "AVAILABLE"
+    )
+  }
+
+  private func routeEndpoint(
+    _ title: String,
+    tint: Color
+  ) -> some View {
+    HStack(spacing: 5) {
+      Circle()
+        .fill(tint)
+        .frame(width: 8, height: 8)
+      Text(title)
+        .font(.system(size: 10, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.ink)
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+    }
+    .frame(maxWidth: 96, alignment: .leading)
+  }
+
+  private func facilitySelector(
+    title: String,
+    tint: Color,
+    candidates: [ShutoNetworkDatabase.Facility],
+    selectedFacilityID: String?,
+    usesEntranceDirection: Bool,
+    identifierPrefix: String,
+    onSelect: @escaping (String) -> Void
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 7) {
+      Text(title)
+        .font(.system(size: 9, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.quietText)
+
+      ScrollView(.horizontal) {
+        HStack(spacing: 8) {
+          ForEach(candidates) { facility in
+            let isSelected =
+              facility.facilityID == selectedFacilityID
+            Button {
+              onSelect(facility.facilityID)
+            } label: {
+              VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                  Text(shieldLabel(facility.routeID))
+                    .font(.system(size: 9, weight: .black, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .frame(height: 19)
+                    .background(routeColor(facility.routeID))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+
+                  Spacer()
+
+                  if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                      .font(.system(size: 11, weight: .black))
+                      .foregroundStyle(tint)
+                  }
+                }
+
+                Text(facility.nameJA)
+                  .font(.system(size: 13, weight: .black))
+                  .foregroundStyle(KaidoTheme.ink)
+                  .lineLimit(1)
+
+                Text(
+                  facilityDirection(
+                    facility,
+                    usesEntranceDirection: usesEntranceDirection
+                  )
+                )
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(KaidoTheme.quietText)
+                .lineLimit(1)
+              }
+              .padding(.horizontal, 10)
+              .frame(width: 124, height: 64, alignment: .leading)
+              .background(
+                isSelected ? tint.opacity(0.13) : KaidoTheme.paperRaised
+              )
+              .clipShape(RoundedRectangle(cornerRadius: 11))
+              .overlay {
+                RoundedRectangle(cornerRadius: 11)
+                  .stroke(
+                    isSelected ? tint : KaidoTheme.paperDivider,
+                    lineWidth: isSelected ? 2 : 1
+                  )
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+              "\(facility.nameJA), \(shieldLabel(facility.routeID)), "
+                + facilityDirection(
+                  facility,
+                  usesEntranceDirection: usesEntranceDirection
+                )
+            )
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityIdentifier(
+              "\(identifierPrefix)-\(facility.facilityID)"
+            )
+          }
+        }
+      }
+      .scrollIndicators(.hidden)
+    }
+  }
+
+  private var preferenceSelector: some View {
+    VStack(alignment: .leading, spacing: 7) {
+      Text(
+        copy.resolve(
+          japanese: "ルート傾向",
+          simplifiedChinese: "路线取向",
+          english: "ROUTE STYLE"
+        )
+      )
+      .font(.system(size: 9, weight: .black, design: .rounded))
+      .foregroundStyle(KaidoTheme.quietText)
+
+      HStack(spacing: 7) {
+        ForEach(ShutoRoutePreference.allCases, id: \.rawValue) { preference in
+          let isSelected = model.customPreference == preference
+          Button {
+            model.selectCustomPreference(preference)
+          } label: {
+            Text(preferenceLabel(preference))
+              .font(.system(size: 10, weight: .black, design: .rounded))
+              .foregroundStyle(
+                isSelected ? KaidoTheme.routeWhite : KaidoTheme.ink
+              )
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
+              .frame(maxWidth: .infinity)
+              .frame(height: 38)
+              .background(
+                isSelected
+                  ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
+              )
+              .clipShape(RoundedRectangle(cornerRadius: 9))
+              .overlay {
+                RoundedRectangle(cornerRadius: 9)
+                  .stroke(
+                    isSelected
+                      ? KaidoTheme.routeGreenDeep : KaidoTheme.paperDivider,
+                    lineWidth: 1
+                  )
+              }
+          }
+          .buttonStyle(.plain)
+          .accessibilityAddTraits(isSelected ? .isSelected : [])
+          .accessibilityIdentifier(
+            "whole-shuto-custom-preference-\(preference.rawValue.lowercased())"
+          )
+        }
+      }
+    }
+  }
+
+  private var applyButton: some View {
+    VStack(spacing: 7) {
+      if model.customDraftRoute == nil {
+        Text(
+          copy.resolve(
+            japanese: "この入口と出口を結ぶ有効なルートはありません",
+            simplifiedChinese: "所选入口与出口之间没有方向合法的路线",
+            english: "No direction-valid route connects this entry and exit"
+          )
+        )
+        .font(.system(size: 10, weight: .bold))
+        .foregroundStyle(KaidoTheme.signalAmber)
+      }
+
+      Button {
+        if model.applyCustomRoute() {
+          dismiss()
+        }
+      } label: {
+        HStack(spacing: 8) {
+          Text(
+            copy.resolve(
+              japanese: "このルートを使用",
+              simplifiedChinese: "使用这条路线",
+              english: "USE THIS ROUTE"
+            )
+          )
+          Spacer()
+          if let route = model.customDraftRoute {
+            Text(distanceLabel(route.distanceMeters))
+              .font(.system(size: 11, weight: .black, design: .rounded))
+          }
+          Image(systemName: "arrow.right")
+        }
+        .font(.system(size: 13, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 48)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+      }
+      .buttonStyle(.plain)
+      .disabled(!model.canApplyCustomRoute)
+      .opacity(model.canApplyCustomRoute ? 1 : 0.42)
+      .accessibilityIdentifier("whole-shuto-apply-custom-route")
+    }
+    .padding(.horizontal, 18)
+    .padding(.top, 10)
+    .padding(.bottom, 12)
+    .background(.ultraThinMaterial)
+    .overlay(alignment: .top) {
+      Rectangle()
+        .fill(KaidoTheme.paperDivider)
+        .frame(height: 1)
+    }
+  }
+
+  private var draftRouteShieldLabel: String {
+    guard let route = model.customDraftRoute else {
+      return copy.resolve(
+        japanese: "経路なし",
+        simplifiedChinese: "无可用路线",
+        english: "NO ROUTE"
+      )
+    }
+    return route.routeIDsInOrder
+      .map(shieldLabel)
+      .joined(separator: " · ")
+  }
+
+  private func facilityDirection(
+    _ facility: ShutoNetworkDatabase.Facility,
+    usesEntranceDirection: Bool
+  ) -> String {
+    let directions =
+      usesEntranceDirection
+      ? facility.entranceDirections : facility.exitDirections
+    return directions.isEmpty
+      ? copy.resolve(
+        japanese: "ルートで方向確定",
+        simplifiedChinese: "方向由路线确定",
+        english: "Direction fixed by route"
+      )
+      : directions.joined(separator: " / ")
+  }
+
+  private func preferenceLabel(
+    _ preference: ShutoRoutePreference
+  ) -> String {
+    switch preference {
+    case .recommended:
+      copy.resolve(
+        japanese: "おすすめ",
+        simplifiedChinese: "推荐",
+        english: "Recommended"
+      )
+    case .fewerJunctions:
+      copy.resolve(
+        japanese: "分岐を減らす",
+        simplifiedChinese: "少分岔",
+        english: "Fewer junctions"
+      )
+    case .preferBayshore:
+      copy.resolve(
+        japanese: "湾岸線優先",
+        simplifiedChinese: "湾岸优先",
+        english: "Prefer Bayshore"
+      )
+    }
+  }
+
+  private func distanceLabel(_ meters: Double) -> String {
+    meters >= 1_000
+      ? String(format: "%.1f km", meters / 1_000)
+      : "\(Int(max(0, meters).rounded())) m"
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 }
 

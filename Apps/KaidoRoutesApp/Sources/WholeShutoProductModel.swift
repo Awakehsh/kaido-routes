@@ -437,10 +437,37 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func prepareJunctionPreview(startsNavigation: Bool = false) {
+    prepareJunctionPreview(
+      entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
+      exitFacilityID: "shuto.ic.c2.hatsudaiminami",
+      expectedMovementID:
+        "shuto.jct.oi.b-westbound-to-c2-outer",
+      startsNavigation: startsNavigation
+    )
+  }
+
+  func prepareKasaiJunctionPreview(
+    startsNavigation: Bool = false
+  ) {
+    prepareJunctionPreview(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.c2.funaboribashi",
+      expectedMovementID:
+        "shuto.jct.kasai.b-westbound-to-c2-inner",
+      startsNavigation: startsNavigation
+    )
+  }
+
+  private func prepareJunctionPreview(
+    entryFacilityID: String,
+    exitFacilityID: String,
+    expectedMovementID: String,
+    startsNavigation: Bool
+  ) {
     do {
       let route = try planner.plan(
-        entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
-        exitFacilityID: "shuto.ic.c2.hatsudaiminami"
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
       )
       let previewOrigin = WholeShutoPlace(
         title: route.entryFacility.nameJA,
@@ -471,7 +498,11 @@ final class WholeShutoProductModel: ObservableObject {
         from: route.exitFacility.coordinate,
         to: previewDestination.coordinate
       )
-      guard let prompt = junctionPrompts.first else {
+      guard
+        let prompt = junctionPrompts.first(where: {
+          $0.movementID == expectedMovementID
+        })
+      else {
         failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
         return
       }

@@ -57,6 +57,41 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.failureCode)
   }
 
+  func testKasaiJunctionPromptRequiresTheExactReviewedMovement() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+
+    model.prepareKasaiJunctionPreview()
+
+    let prompt = try? XCTUnwrap(model.junctionPrompts.only)
+    XCTAssertEqual(
+      prompt?.movementID,
+      "shuto.jct.kasai.b-westbound-to-c2-inner"
+    )
+    XCTAssertEqual(prompt?.nameJA, "葛西JCT")
+    XCTAssertEqual(prompt?.incomingRouteID, "B")
+    XCTAssertEqual(prompt?.outgoingRouteID, "C2")
+    XCTAssertEqual(prompt?.outgoingDirectionJA, "内回り")
+    XCTAssertEqual(prompt?.branchSide, .left)
+    XCTAssertEqual(prompt?.japaneseSignText, "東北道・常磐道")
+    XCTAssertEqual(prompt?.routeShields, ["C2", "E4", "E6", "6"])
+    XCTAssertEqual(prompt?.laneGuidanceState, .notReleased)
+    XCTAssertEqual(
+      prompt?.localizedContent[.japanese]?.displayText,
+      "左方向へ分岐し、C2 内回りへ"
+    )
+    XCTAssertEqual(
+      prompt?.localizedContent[.simplifiedChinese]?.displayText,
+      "向左分岔，驶入 C2 内环"
+    )
+    XCTAssertEqual(
+      prompt?.localizedContent[.english]?.displayText,
+      "Branch left for the C2 Inner Loop"
+    )
+    XCTAssertEqual(prompt?.checkedAt, "2026-07-30")
+    XCTAssertEqual(model.activeJunctionPrompt, prompt)
+    XCTAssertNil(model.failureCode)
+  }
+
   func testActiveJourneyRestoresPausedOnTheSameNetworkSnapshot()
     async throws
   {
@@ -284,6 +319,44 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertTrue(restoredOutput.commands.isEmpty)
     XCTAssertEqual(restored.speechStatus, .suppressed(.duplicate))
+  }
+
+  func testKasaiJunctionSpeechIsActorOwned() async throws {
+    let output = WholeShutoRecordingSpeechOutput()
+    let model = WholeShutoProductModel(
+      checkpointStore: nil,
+      speechOutput: output,
+      languageSelectionProvider: Self.testLanguages
+    )
+    model.prepareKasaiJunctionPreview(startsNavigation: true)
+    model.togglePlayback()
+
+    await advance(
+      model,
+      until: { _ in !output.commands.isEmpty },
+      maximumTicks: 1_000
+    )
+
+    let command = try XCTUnwrap(output.commands.only)
+    XCTAssertEqual(command.languageCode, "ja-JP")
+    XCTAssertTrue(command.spokenText.contains("葛西ジャンクション"))
+    XCTAssertTrue(command.synthesisText.contains("シーツー"))
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.maneuver,
+      .branchLeft
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.lanePreparation,
+      GuidanceLanePreparation.none
+    )
+    XCTAssertEqual(
+      model.presentationProjection?.iPhone.japaneseSignText,
+      "東北道・常磐道"
+    )
+    XCTAssertEqual(
+      model.activeJunctionPrompt?.movementID,
+      "shuto.jct.kasai.b-westbound-to-c2-inner"
+    )
   }
 
   func testReviewedJunctionKeepsInterfaceAndVoiceLanguagesIndependent()

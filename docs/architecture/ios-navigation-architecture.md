@@ -24,17 +24,18 @@ snapshot and complete replanned `RoutePlan`, paused at its saved phase and,
 once admitted, exact occurrence and fraction. Matcher posterior is not
 restored.
 Each JCT retains the current operator detail-image URL and SHA-256 for audit;
-`ShutoJunctionGuidanceCompiler` now admits the first reviewed whole-network
-movement: Bayshore Route westbound to C2 outer at Oi JCT. Admission requires the
-exact network snapshot, adjacent incoming and outgoing edge IDs, shared OSM JCT
-node, route direction, occurrence order, and current operator-detail hash.
-Unreviewed route-label changes and nearest-JCT geometry produce no inset. The
-App renders the reviewed left branch, Japanese sign target, and shields as a
-Kaido vector; lane indices remain explicitly `NOT_RELEASED`. The planner
-promotes that exact outgoing edge occurrence to `JUNCTION_MOVEMENT`, and the
-whole-network runtime compiler creates its DecisionZone and released guidance.
-The screen and default speech output consume the same actor update and one-shot
-prompt identity.
+`ShutoJunctionGuidanceCompiler` now admits two reviewed whole-network
+movements: Bayshore Route westbound to C2 inner at Kasai JCT and to C2 outer at
+Oi JCT. Admission requires the exact network snapshot, adjacent incoming and
+outgoing edge IDs, shared OSM JCT node, route direction, occurrence order, and
+current operator-detail hash. Unreviewed route-label changes and nearest-JCT
+geometry produce no inset. The App renders the reviewed Kasai or Oi left
+branch, Japanese sign target, and shields as a Kaido vector; lane
+indices remain explicitly `NOT_RELEASED`. The planner promotes each exact
+outgoing edge occurrence to `JUNCTION_MOVEMENT`, and the whole-network runtime
+compiler creates its DecisionZone and released guidance. The screen and
+default speech output consume the same actor update and one-shot prompt
+identity.
 The default whole-Shuto shell owns persisted interface and guidance-voice
 selections as independent values. Interface selection localizes planning,
 review, simulation, network-fact, degraded-state, and accessibility copy.
@@ -464,15 +465,17 @@ their reviewed branch path, Japanese sign target, and shields while stating
 that lane indices are not released. Any source-hash, snapshot, direction, node,
 edge, or occurrence drift suppresses the inset.
 
-For the current candidate snapshot, only Bayshore Route westbound to C2 outer
-at Oi JCT is compiled into occurrence-owned guidance. The route planner
-promotes the exact reviewed outgoing edge occurrence to `JUNCTION_MOVEMENT`;
-`ShutoPlannedRouteRuntimeCompiler` then binds its incoming occurrence as the
-anchor and compiles one DecisionZone plus one commit-stage
-`ReleasedGuidanceDefinition`. The App projects phone and voice from the same
-`NavigationSessionUpdate`. A branch-left or branch-right maneuver describes the
-reviewed movement without implying lane preparation; lane preparation remains
-`NONE`, and every unreviewed transition remains silent and neutral.
+For the current candidate snapshot, Bayshore Route westbound to C2 inner at
+Kasai JCT and to C2 outer at Oi JCT compile into occurrence-owned guidance. The
+route planner promotes each exact reviewed outgoing edge occurrence to
+`JUNCTION_MOVEMENT`; `ShutoPlannedRouteRuntimeCompiler` then binds its incoming
+occurrence as the anchor and compiles one DecisionZone plus one commit-stage
+`ReleasedGuidanceDefinition` for that occurrence. Kasai projects
+`BRANCH_LEFT` with the preserved `東北道・常磐道` sign target, while Oi projects
+`BRANCH_LEFT` with `東名・中央道`. The App projects phone and voice from the
+same `NavigationSessionUpdate`. Neither movement implies lane preparation;
+lane preparation remains `NONE`, and every unreviewed transition remains
+silent and neutral.
 
 The projector fails closed when prompt, anchor occurrence, movement occurrence,
 or DecisionZone identity is absent; the frame does not belong to the current

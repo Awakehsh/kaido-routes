@@ -5,6 +5,80 @@ import Testing
 
 @Suite("Whole Shuto junction guidance")
 struct ShutoJunctionGuidanceTests {
+  @Test("exact Kasai movement projects reviewed branch and sign guidance")
+  func projectsExactKasaiMovement() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.c2.funaboribashi"
+    )
+
+    let match = try #require(
+      ShutoJunctionGuidanceCompiler.compile(
+        database: database,
+        route: route
+      ).only
+    )
+    let definition = match.definition
+
+    #expect(match.junctionNameJA == "葛西JCT")
+    #expect(
+      definition.id == "shuto.jct.kasai.b-westbound-to-c2-inner"
+    )
+    #expect(definition.incomingRouteID == "B")
+    #expect(definition.incomingDirectionJA == "西行き")
+    #expect(definition.outgoingRouteID == "C2")
+    #expect(definition.outgoingDirectionJA == "内回り")
+    #expect(definition.branchSide == .left)
+    #expect(definition.japaneseSignText == "東北道・常磐道")
+    #expect(definition.routeShields == ["C2", "E4", "E6", "6"])
+    #expect(definition.laneGuidanceState == .notReleased)
+    #expect(definition.checkedAt == "2026-07-30")
+    #expect(
+      definition.sources.allSatisfy {
+        $0.url.hasPrefix("https://www.shutoko.jp/")
+      }
+    )
+
+    let incomingIndex = try #require(
+      route.edges.firstIndex {
+        $0.edgeID == definition.incomingEdgeID
+      }
+    )
+    #expect(
+      route.edges[incomingIndex + 1].edgeID
+        == definition.outgoingEdgeID
+    )
+    #expect(
+      match.incomingOccurrenceID
+        == route.routePlan.occurrences[incomingIndex].id
+    )
+    #expect(
+      match.outgoingOccurrenceID
+        == route.routePlan.occurrences[incomingIndex + 1].id
+    )
+    #expect(
+      route.routePlan.occurrences[incomingIndex + 1].kind
+        == .junctionMovement
+    )
+    #expect(
+      route.routePlan.occurrences[incomingIndex + 1].entityID
+        == definition.id
+    )
+    #expect(
+      definition.localizedContent[.simplifiedChinese]?.displayText
+        == "向左分岔，驶入 C2 内环"
+    )
+    #expect(
+      definition.localizedContent.values.allSatisfy {
+        $0.preservedJapaneseSignText == "東北道・常磐道"
+      }
+    )
+    #expect(definition.commitTriggerDistanceMeters == 100)
+    #expect(match.progressFraction > 0)
+    #expect(match.progressFraction < 1)
+  }
+
   @Test("exact Oi movement projects reviewed branch and sign guidance")
   func projectsExactOiMovement() throws {
     let database = try loadDatabase()

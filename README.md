@@ -33,12 +33,12 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The first reviewed whole-network movement is Bayshore Route westbound to C2
-  outer at Oi JCT. Its Kaido vector, left-branch instruction, Japanese sign
-  target, and route shields are operator-source-traceable. The exact outgoing
-  occurrence is compiled into actor-owned screen and one-shot speech guidance.
-  Lane indices remain explicitly unreleased, and unreviewed transitions remain
-  silent.
+- The reviewed whole-network movements are Bayshore Route westbound to C2
+  inner at Kasai JCT and to C2 outer at Oi JCT. Their Kaido vectors,
+  branch instructions, Japanese sign targets, and route shields are
+  operator-source-traceable. Each exact outgoing occurrence compiles into
+  actor-owned screen and one-shot speech guidance. Lane indices remain
+  explicitly unreleased, and unreviewed transitions remain silent.
 - Map facility labels for IC, JCT, and PA, route shields, and physical sign
   targets stay in Japanese. The default whole-network journey provides
   persisted Japanese, Simplified Chinese, and English interface controls plus
@@ -81,8 +81,8 @@ The product distinguishes what is known from what is still unconfirmed:
 - The line map and junction inset are Kaido-generated vectors. Every JCT keeps
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
-  IDs, shared JCT node, direction, and official content hash. The first Oi
-  definition authorizes a left branch and Japanese sign target, but does not
+  IDs, shared JCT node, direction, and official content hash. The Kasai and Oi
+  definitions authorize left branches plus Japanese sign targets, but do not
   copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
@@ -116,6 +116,8 @@ Useful visual launch arguments:
 - `-WHOLE-SHUTO-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-JUNCTION-PREVIEW`
 - `-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW`
+- `-WHOLE-SHUTO-KASAI-JUNCTION-PREVIEW`
+- `-WHOLE-SHUTO-KASAI-JUNCTION-NAVIGATION-PREVIEW`
 - `-C2-FULL-NAVIGATION-DEMO` for the retained C2 deterministic fixture
 - `-K7-OPERATIONAL-E2E` for the retained K7 release fixture
 

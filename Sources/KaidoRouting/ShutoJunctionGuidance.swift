@@ -100,6 +100,79 @@ public struct ShutoJunctionMovementDefinition:
 public enum ShutoJunctionMovementCatalog {
   public static let released: [ShutoJunctionMovementDefinition] = [
     ShutoJunctionMovementDefinition(
+      id: "shuto.jct.kasai.b-westbound-to-c2-inner",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-07-28",
+      junctionID: "shuto.jct.jct_kasai",
+      junctionNodeID: 8_256_670_336,
+      incomingEdgeID: "osm.888066413.1.forward",
+      outgoingEdgeID: "osm.4857053.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .left,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "E6", "6"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "葛西JCT",
+        .simplifiedChinese: "葛西 JCT",
+        .english: "Kasai JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "左方向へ分岐し、C2 内回りへ",
+          spokenText:
+            "葛西ジャンクションでは左方向へ分岐し、C2 内回りへ進んでください",
+          spokenForms: ["C2": "シーツー"],
+          preservedJapaneseSignText: "東北道・常磐道"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "向左分岔，驶入 C2 内环",
+          spokenText: "在葛西枢纽向左分岔，驶入 C2 内环",
+          spokenForms: ["C2": "C 二"],
+          preservedJapaneseSignText: "東北道・常磐道"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Branch left for the C2 Inner Loop",
+          spokenText:
+            "At Kasai Junction, branch left for the C2 Inner Loop",
+          spokenForms: ["C2": "C two"],
+          preservedJapaneseSignText: "東北道・常磐道"
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-07-30",
+      expectedJunctionDetailSHA256:
+        "5e52b43abc96875472405c2fe5c2ca49"
+        + "2946356ac0c86460f1610051289aa7b2",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/guidance/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c2/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_kasai",
+          contentSHA256:
+            "5e52b43abc96875472405c2fe5c2ca49"
+            + "2946356ac0c86460f1610051289aa7b2"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
       id: "shuto.jct.oi.b-westbound-to-c2-outer",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-07-28",
@@ -167,7 +240,7 @@ public enum ShutoJunctionMovementCatalog {
             + "cc944fff70b3267022888612aacfc2b"
         ),
       ]
-    )
+    ),
   ]
 
   public static func releasedDefinition(

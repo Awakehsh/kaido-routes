@@ -561,24 +561,25 @@ operator facility coordinates. These checks prove composition and UI behavior
 only; they do not validate live MapKit output, release C2 route authority, or
 replace field qualification.
 
-The focused whole-Shuto suite compiles the exact reviewed Oi adjacent-edge
-transition into one `JUNCTION_MOVEMENT` occurrence, DecisionZone, and
-commit-stage guidance frame. Package tests require one actor emission with
-`BRANCH_LEFT`, no lane preparation, and the unchanged Japanese sign target.
-App model tests require phone and Japanese speech to consume that same actor
-projection, reject schema or complete-`RoutePlan` checkpoint drift, and suppress
-the output prompt after background save and reconstruction. A separate model
-case projects English phone copy and Chinese speech from the same prompt while
-requiring the Japanese sign target to remain byte-identical. XCUITest launches
-the static review and deterministic actor-driven navigation previews, then
-uses the default whole-Shuto language sheet to switch Simplified Chinese,
-English, and Japanese interface copy without changing the independently
-selected voice. The actor preview must reach the Oi inset through session
-observations and expose a scheduled, speaking, or consumed voice state. These
-tests retain screenshots for all three default-product interface languages.
-This is simulator composition and lifecycle evidence only. It does not attach
-continuous Core Location, qualify acoustics, authorize a live road, or prove
-background navigation.
+The focused whole-Shuto suite compiles the exact reviewed Kasai and Oi
+adjacent-edge transitions into occurrence-owned `JUNCTION_MOVEMENT`,
+DecisionZone, and commit-stage guidance values. Package tests require one actor
+emission per tested route: `BRANCH_LEFT` at Kasai and at Oi,
+both with no lane preparation and unchanged Japanese sign targets. App model
+tests require phone and Japanese speech to consume those actor projections,
+reject schema or complete-`RoutePlan` checkpoint drift, and suppress the Oi
+output prompt after background save and reconstruction. A separate model case
+projects English phone copy and Chinese speech from the Oi prompt while
+requiring its Japanese sign target to remain byte-identical. XCUITest launches
+the static Oi review and deterministic actor-driven Oi and Kasai navigation
+previews, then uses the default whole-Shuto language sheet to switch Simplified
+Chinese, English, and Japanese interface copy without changing the
+independently selected voice. Each actor preview must reach its inset through
+session observations and expose a scheduled, speaking, or consumed voice
+state. These tests retain the default-product language screenshots and a
+Kasai left-branch screenshot. This is simulator composition and lifecycle
+evidence only. It does not attach continuous Core Location, qualify acoustics,
+authorize a live road, or prove background navigation.
 
 The K7 operational E2E composes these boundaries without copying the real
 release into a portable synthetic scenario:

@@ -119,11 +119,31 @@ struct KaidoRoutesApp: App {
       } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW"
       ) {
-        WholeShutoJunctionPreviewHost(startsNavigation: true)
+        WholeShutoJunctionPreviewHost(
+          movement: .oi,
+          startsNavigation: true
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-KASAI-JUNCTION-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost(
+          movement: .kasai,
+          startsNavigation: true
+        )
       } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-JUNCTION-PREVIEW"
       ) {
-        WholeShutoJunctionPreviewHost(startsNavigation: false)
+        WholeShutoJunctionPreviewHost(
+          movement: .oi,
+          startsNavigation: false
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-KASAI-JUNCTION-PREVIEW"
+      ) {
+        WholeShutoJunctionPreviewHost(
+          movement: .kasai,
+          startsNavigation: false
+        )
       } else if ProcessInfo.processInfo.arguments.contains(
         "-LEGACY-PRODUCT-JOURNEY"
       ) {
@@ -155,13 +175,28 @@ struct KaidoRoutesApp: App {
   }
 }
 
+private enum WholeShutoJunctionPreviewMovement {
+  case kasai
+  case oi
+}
+
 private struct WholeShutoJunctionPreviewHost: View {
   @StateObject private var model: WholeShutoProductModel
   private let startsNavigation: Bool
 
-  init(startsNavigation: Bool) {
+  init(
+    movement: WholeShutoJunctionPreviewMovement,
+    startsNavigation: Bool
+  ) {
     let model = WholeShutoProductModel(checkpointStore: nil)
-    model.prepareJunctionPreview(startsNavigation: startsNavigation)
+    switch movement {
+    case .kasai:
+      model.prepareKasaiJunctionPreview(
+        startsNavigation: startsNavigation
+      )
+    case .oi:
+      model.prepareJunctionPreview(startsNavigation: startsNavigation)
+    }
     if startsNavigation {
       model.togglePlayback()
     }

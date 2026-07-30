@@ -44,6 +44,23 @@ Actor projection reads the separately selected voice locale when it admits a
 reviewed prompt. Junction presentation localizes its explanatory text and JCT
 name while preserving the exact Japanese physical sign target and route
 shields.
+Simulation start changes the default projection from the whole-network planning
+diagram to the geographic driving map. In ordinary high-confidence states the
+camera follows a route-derived bearing with a pitched driving view; traveled
+and remaining Shuto geometry are separate projections of the exact occurrence
+progress. The HUD derives whole-journey remaining distance and the next
+reviewed-JCT distance from the selected route and surface legs. It never treats
+those simulated distances as live traffic or ETA. A driver can explicitly
+switch between route following and free map browsing. Network-degraded,
+route-interrupted, and tunnel-estimated states suppress the derived heading and
+use a north-up camera rather than fabricating directional evidence.
+The interaction was cross-checked on 2026-07-30 against Google Navigation
+SDK's documented
+[follow, overview/free, and recenter camera behavior](https://developers.google.com/maps/documentation/navigation/ios-sdk/camera)
+plus its
+[traveled-path and remaining-route information](https://developers.google.com/maps/documentation/navigation/ios-sdk/get-route-info).
+Those documents are UX references only; Google Maps supplies no Kaido road,
+movement, route, or runtime authority.
 The previous C2 simulation and K7 release remain bounded regression fixtures;
 they are not product coverage limits. The app still has no qualified
 whole-network released-road live-input authority, attached continuous location
@@ -55,7 +72,7 @@ surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
 subject to Apple-adapter, operations, and field evidence in
 `docs/testing/navigation-engine-bakeoff.md`.
 
-**Checked:** 2026-07-29
+**Checked:** 2026-07-30
 
 ## Decision summary
 

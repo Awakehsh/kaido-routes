@@ -29,6 +29,12 @@ internal review workbench.
   actor-owned navigation session. Entry requires ordered, unique HIGH
   continuity on the selected directional entrance, and only an exact HIGH
   occurrence match can advance expressway progress.
+- Starting the simulation opens the geographic driving map with a
+  direction-following camera. The map separates traveled and remaining Shuto
+  geometry, exposes total remaining route distance and the next reviewed JCT
+  distance, and provides an explicit free-browse/follow control. Degraded,
+  interrupted, and tunnel-estimated states return to north-up instead of
+  inventing a route heading.
 - During expressway travel the driver can switch between the normal geographic
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;

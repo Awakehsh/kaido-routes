@@ -97,6 +97,18 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "ja-JP",
     ]
     navigationApp.launch()
+    XCTAssertTrue(
+      element("whole-shuto-geographic-map", in: navigationApp)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-journey-remaining", in: navigationApp)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-next-junction", in: navigationApp)
+        .waitForExistence(timeout: 5)
+    )
     let actorJunctionInset = element(
       "whole-shuto-junction-inset",
       in: navigationApp
@@ -113,6 +125,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
         speech.value as? String ?? ""
       )
     )
+    let navigationScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    navigationScreenshot.name = "Whole Shuto route-following simulation"
+    navigationScreenshot.lifetime = .keepAlways
+    add(navigationScreenshot)
+
+    let followingControl = element(
+      "whole-shuto-route-following-control",
+      in: navigationApp
+    )
+    XCTAssertTrue(followingControl.waitForExistence(timeout: 3))
+    XCTAssertEqual(followingControl.value as? String, "FOLLOWING")
+    followingControl.tap()
+    XCTAssertEqual(followingControl.value as? String, "FREE")
+    element("whole-shuto-geographic-map", in: navigationApp).swipeLeft()
+    followingControl.tap()
+    XCTAssertEqual(followingControl.value as? String, "FOLLOWING")
   }
 
   func testWholeShutoKasaiGuidanceIsActorDriven() {

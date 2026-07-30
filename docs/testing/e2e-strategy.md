@@ -579,7 +579,10 @@ actor-driven Oi, Kasai, Shinonome, and Tatsumi navigation previews, then uses
 the default whole-Shuto language sheet to switch Simplified Chinese, English,
 and Japanese interface copy without changing the independently selected
 voice. Each actor preview must reach its inset through session observations
-and expose a scheduled, speaking, or consumed voice state. These tests retain
+and expose a scheduled, speaking, or consumed voice state. The Oi actor preview
+also requires the geographic driving map, total remaining distance, next
+reviewed-JCT distance, and the accessible follow/free/follow camera control,
+and retains a screenshot of that complete driving surface. These tests retain
 the default-product language screenshots plus Kasai and Tatsumi left-branch
 screenshots and a Shinonome right-branch screenshot. This is simulator
 composition and lifecycle evidence only. It does not attach continuous Core

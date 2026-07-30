@@ -40,6 +40,11 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let instructions: [String]
 }
 
+struct WholeShutoRouteProgressGeometry: Equatable, Sendable {
+  let traveledCoordinates: [ShutoCoordinate]
+  let remainingCoordinates: [ShutoCoordinate]
+}
+
 struct WholeShutoJunctionPrompt: Equatable, Identifiable, Sendable {
   let movementID: String
   let nameJA: String
@@ -399,6 +404,157 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  var remainingJourneyDistanceMeters: Double? {
+    guard let route = selectedRoute else { return nil }
+    let accessDistance = accessRoute?.distanceMeters ?? 0
+    let egressDistance = egressRoute?.distanceMeters ?? 0
+    switch phase {
+    case .planning, .review:
+      return accessDistance + route.distanceMeters + egressDistance
+    case .surfaceAccess:
+      return accessDistance * remainingProgress
+        + route.distanceMeters + egressDistance
+    case .entryTransition:
+      return route.distanceMeters + egressDistance
+    case .expressway:
+      return route.distanceMeters * remainingProgress + egressDistance
+    case .exitTransition:
+      return egressDistance
+    case .surfaceEgress:
+      return egressDistance * remainingProgress
+    case .completed:
+      return 0
+    }
+  }
+
+  var nextReviewedJunctionPrompt: WholeShutoJunctionPrompt? {
+    guard
+      phase == .surfaceAccess || phase == .entryTransition
+        || phase == .expressway
+    else {
+      return nil
+    }
+    if let activeJunctionPrompt {
+      return activeJunctionPrompt
+    }
+    let currentExpresswayProgress =
+      phase == .expressway ? progressFraction : 0
+    return junctionPrompts.first {
+      $0.progressFraction > currentExpresswayProgress
+    }
+  }
+
+  var distanceToNextReviewedJunctionMeters: Double? {
+    guard
+      let route = selectedRoute,
+      let prompt = nextReviewedJunctionPrompt
+    else {
+      return nil
+    }
+    let routeDistance =
+      route.distanceMeters
+      * max(
+        0,
+        prompt.progressFraction
+          - (phase == .expressway ? progressFraction : 0)
+      )
+    if phase == .surfaceAccess {
+      return (accessRoute?.distanceMeters ?? 0) * remainingProgress
+        + routeDistance
+    }
+    return routeDistance
+  }
+
+  var routeProgressGeometry: WholeShutoRouteProgressGeometry? {
+    guard let route = selectedRoute, !route.coordinates.isEmpty else {
+      return nil
+    }
+    switch phase {
+    case .planning, .review, .surfaceAccess, .entryTransition:
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: [route.coordinates[0]],
+        remainingCoordinates: route.coordinates
+      )
+    case .expressway:
+      if let runtimeOccurrenceID,
+        let occurrence = route.routePlan.occurrence(
+          id: runtimeOccurrenceID
+        ),
+        let fraction = runtimeFractionAlongOccurrence
+      {
+        return Self.split(
+          route.coordinates,
+          afterVertexAt: occurrence.index,
+          segmentFraction: fraction
+        )
+      }
+      return Self.split(
+        route.coordinates,
+        distanceFraction: progressFraction
+      )
+    case .exitTransition, .surfaceEgress, .completed:
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: route.coordinates,
+        remainingCoordinates: [route.coordinates.last!]
+      )
+    }
+  }
+
+  var navigationHeadingDegrees: Double? {
+    switch positionState {
+    case .surfacePreview, .boundaryTransition, .networkPreview:
+      break
+    case .unavailable, .networkDegraded, .tunnelEstimated,
+      .routeInterrupted, .completed:
+      return nil
+    }
+    guard let current = currentCoordinate else { return nil }
+    let target: ShutoCoordinate?
+    switch phase {
+    case .surfaceAccess:
+      target = lookAheadCoordinate(
+        in: accessRoute?.coordinates ?? [],
+        fraction: progressFraction
+      )
+    case .entryTransition:
+      target = lookAheadCoordinate(
+        in: selectedRoute?.coordinates ?? [],
+        fraction: 0
+      )
+    case .expressway:
+      target = routeProgressGeometry?.remainingCoordinates.dropFirst().first
+    case .exitTransition:
+      target = lookAheadCoordinate(
+        in: egressRoute?.coordinates ?? [],
+        fraction: 0
+      )
+    case .surfaceEgress:
+      target = lookAheadCoordinate(
+        in: egressRoute?.coordinates ?? [],
+        fraction: progressFraction
+      )
+    case .planning, .review, .completed:
+      target = nil
+    }
+    guard let target, Self.distance(current, target) > 1 else {
+      return nil
+    }
+    return Self.bearing(from: current, to: target)
+  }
+
+  var navigationCameraDistanceMeters: Double {
+    switch phase {
+    case .surfaceAccess, .surfaceEgress:
+      return 2_400
+    case .entryTransition, .exitTransition:
+      return 2_000
+    case .expressway:
+      return 3_600
+    case .planning, .review, .completed:
+      return 13_000
+    }
+  }
+
   func usePreviewPlaces() {
     origin = Self.previewOrigin
     destination = Self.previewDestination
@@ -669,6 +825,7 @@ final class WholeShutoProductModel: ObservableObject {
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
     restoredFromCheckpoint = false
+    mapMode = .geographic
     persistCheckpoint()
     startPlaybackLoop()
   }
@@ -1299,6 +1456,131 @@ final class WholeShutoProductModel: ObservableObject {
       traversed += segment
     }
     return coordinates.last
+  }
+
+  private var remainingProgress: Double {
+    1 - min(1, max(0, progressFraction))
+  }
+
+  private func lookAheadCoordinate(
+    in coordinates: [ShutoCoordinate],
+    fraction: Double
+  ) -> ShutoCoordinate? {
+    interpolatedCoordinate(
+      in: coordinates,
+      fraction: min(1, max(0, fraction) + 0.025)
+    )
+  }
+
+  private static func split(
+    _ coordinates: [ShutoCoordinate],
+    distanceFraction: Double
+  ) -> WholeShutoRouteProgressGeometry {
+    guard let first = coordinates.first else {
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: [],
+        remainingCoordinates: []
+      )
+    }
+    guard coordinates.count > 1 else {
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: [first],
+        remainingCoordinates: [first]
+      )
+    }
+    let clamped = min(1, max(0, distanceFraction))
+    if clamped == 0 {
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: [first],
+        remainingCoordinates: coordinates
+      )
+    }
+    if clamped == 1 {
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: coordinates,
+        remainingCoordinates: [coordinates.last!]
+      )
+    }
+    let segmentDistances = zip(
+      coordinates,
+      coordinates.dropFirst()
+    ).map(distance)
+    let target = segmentDistances.reduce(0, +) * clamped
+    var traversed = 0.0
+    for index in segmentDistances.indices {
+      let segmentDistance = segmentDistances[index]
+      if traversed + segmentDistance >= target {
+        let fraction =
+          segmentDistance == 0
+          ? 0 : (target - traversed) / segmentDistance
+        return split(
+          coordinates,
+          afterVertexAt: index,
+          segmentFraction: fraction
+        )
+      }
+      traversed += segmentDistance
+    }
+    return WholeShutoRouteProgressGeometry(
+      traveledCoordinates: coordinates,
+      remainingCoordinates: [coordinates.last!]
+    )
+  }
+
+  private static func split(
+    _ coordinates: [ShutoCoordinate],
+    afterVertexAt index: Int,
+    segmentFraction: Double
+  ) -> WholeShutoRouteProgressGeometry {
+    guard
+      coordinates.indices.contains(index),
+      coordinates.indices.contains(index + 1)
+    else {
+      return WholeShutoRouteProgressGeometry(
+        traveledCoordinates: coordinates,
+        remainingCoordinates: coordinates.last.map { [$0] } ?? []
+      )
+    }
+    let fraction = min(1, max(0, segmentFraction))
+    let before = coordinates[index]
+    let after = coordinates[index + 1]
+    let splitCoordinate = ShutoCoordinate(
+      latitude:
+        before.latitude + (after.latitude - before.latitude) * fraction,
+      longitude:
+        before.longitude + (after.longitude - before.longitude) * fraction
+    )
+    var traveled = Array(coordinates[...index])
+    if traveled.last != splitCoordinate {
+      traveled.append(splitCoordinate)
+    }
+    var remaining = [splitCoordinate]
+    if splitCoordinate == after {
+      remaining = Array(coordinates[(index + 1)...])
+    } else {
+      remaining.append(contentsOf: coordinates[(index + 1)...])
+    }
+    return WholeShutoRouteProgressGeometry(
+      traveledCoordinates: traveled,
+      remainingCoordinates: remaining
+    )
+  }
+
+  private static func bearing(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) -> Double {
+    let originLatitude = origin.latitude * .pi / 180
+    let destinationLatitude = destination.latitude * .pi / 180
+    let longitudeDelta =
+      (destination.longitude - origin.longitude) * .pi / 180
+    let y = sin(longitudeDelta) * cos(destinationLatitude)
+    let x =
+      cos(originLatitude) * sin(destinationLatitude)
+      - sin(originLatitude) * cos(destinationLatitude)
+      * cos(longitudeDelta)
+    return (atan2(y, x) * 180 / .pi + 360)
+      .truncatingRemainder(dividingBy: 360)
   }
 
   private static func surfaceRoute(

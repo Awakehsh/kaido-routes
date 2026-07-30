@@ -353,6 +353,45 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
 
     XCTAssertEqual(model.positionState, .tunnelEstimated)
+    XCTAssertNil(model.navigationHeadingDegrees)
+  }
+
+  func testSimulationStartsOnTheGeographicMapWithRouteProgressTelemetry()
+    async throws
+  {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.prepareKasaiJunctionPreview(startsNavigation: true)
+    model.togglePlayback()
+
+    let initialRemaining = try XCTUnwrap(
+      model.remainingJourneyDistanceMeters
+    )
+    XCTAssertEqual(model.mapMode, .geographic)
+    XCTAssertGreaterThan(initialRemaining, 0)
+    XCTAssertNotNil(model.nextReviewedJunctionPrompt)
+    XCTAssertNotNil(model.distanceToNextReviewedJunctionMeters)
+
+    await advance(
+      model,
+      until: {
+        $0.phase == .expressway
+          && $0.positionState == .networkPreview
+          && $0.progressFraction > 0
+      },
+      maximumTicks: 1_000
+    )
+
+    let geometry = try XCTUnwrap(model.routeProgressGeometry)
+    let current = try XCTUnwrap(model.currentCoordinate)
+    XCTAssertGreaterThan(geometry.traveledCoordinates.count, 1)
+    XCTAssertGreaterThan(geometry.remainingCoordinates.count, 1)
+    XCTAssertEqual(geometry.traveledCoordinates.last, current)
+    XCTAssertEqual(geometry.remainingCoordinates.first, current)
+    XCTAssertNotNil(model.navigationHeadingDegrees)
+    XCTAssertLessThan(
+      try XCTUnwrap(model.remainingJourneyDistanceMeters),
+      initialRemaining
+    )
   }
 
   func testEntryTransitionRequiresOrderedObservationsBeforeExpressway()

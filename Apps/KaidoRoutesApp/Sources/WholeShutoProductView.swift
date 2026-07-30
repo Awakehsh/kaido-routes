@@ -705,6 +705,19 @@ struct WholeShutoProductView: View {
         Text(drivingDistanceLabel)
           .font(.system(size: 20, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
+        HStack(spacing: 6) {
+          Text(journeyRemainingLabel)
+            .accessibilityIdentifier("whole-shuto-journey-remaining")
+          if let nextJunctionDistanceLabel {
+            Text("·")
+            Text(nextJunctionDistanceLabel)
+              .accessibilityIdentifier("whole-shuto-next-junction")
+          }
+        }
+        .font(.system(size: 9, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.confirmedGreen)
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
         Text(drivingBoundaryLabel)
           .font(.system(size: 9, weight: .bold))
           .foregroundStyle(KaidoTheme.muted)
@@ -931,11 +944,7 @@ struct WholeShutoProductView: View {
       )
     case .expressway:
       model.activeJunctionPrompt == nil
-        ? copy.resolve(
-          japanese: "そのまま進む",
-          simplifiedChinese: "继续行驶",
-          english: "CONTINUE"
-        )
+        ? upcomingJunctionKicker
         : copy.resolve(
           japanese: "分岐に接近",
           simplifiedChinese: "接近分岔",
@@ -1259,6 +1268,42 @@ struct WholeShutoProductView: View {
     return
       "\(entryName(route.entryFacility.nameJA)) → "
       + exitName(route.exitFacility.nameJA)
+  }
+
+  private var journeyRemainingLabel: String {
+    let remaining = distanceLabel(
+      model.remainingJourneyDistanceMeters ?? 0
+    )
+    return copy.resolve(
+      japanese: "全行程残り \(remaining)",
+      simplifiedChinese: "全程剩余 \(remaining)",
+      english: "TOTAL \(remaining)"
+    )
+  }
+
+  private var nextJunctionDistanceLabel: String? {
+    guard
+      let prompt = model.nextReviewedJunctionPrompt,
+      let distance = model.distanceToNextReviewedJunctionMeters
+    else {
+      return nil
+    }
+    return "\(localizedJunctionName(prompt)) \(distanceLabel(distance))"
+  }
+
+  private var upcomingJunctionKicker: String {
+    guard let nextJunctionDistanceLabel else {
+      return copy.resolve(
+        japanese: "そのまま進む",
+        simplifiedChinese: "继续行驶",
+        english: "CONTINUE"
+      )
+    }
+    return copy.resolve(
+      japanese: "次 · \(nextJunctionDistanceLabel)",
+      simplifiedChinese: "下一处 · \(nextJunctionDistanceLabel)",
+      english: "NEXT · \(nextJunctionDistanceLabel)"
+    )
   }
 
   private func distanceLabel(_ meters: Double) -> String {
@@ -1735,6 +1780,7 @@ private struct WholeShutoGeographicMap: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   @State private var camera = MapCameraPosition.automatic
+  @State private var followsRoute = true
 
   var body: some View {
     Map(position: $camera) {
@@ -1767,17 +1813,48 @@ private struct WholeShutoGeographicMap: View {
             lineJoin: .round
           )
         )
-        MapPolyline(
-          coordinates: route.coordinates.map(\.mapCoordinate)
-        )
-        .stroke(
-          KaidoTheme.routeGreen,
-          style: StrokeStyle(
-            lineWidth: 7,
-            lineCap: .round,
-            lineJoin: .round
+        if let progress = model.routeProgressGeometry {
+          if progress.traveledCoordinates.count > 1 {
+            MapPolyline(
+              coordinates:
+                progress.traveledCoordinates.map(\.mapCoordinate)
+            )
+            .stroke(
+              KaidoTheme.muted,
+              style: StrokeStyle(
+                lineWidth: 7,
+                lineCap: .round,
+                lineJoin: .round
+              )
+            )
+          }
+          if progress.remainingCoordinates.count > 1 {
+            MapPolyline(
+              coordinates:
+                progress.remainingCoordinates.map(\.mapCoordinate)
+            )
+            .stroke(
+              KaidoTheme.routeGreen,
+              style: StrokeStyle(
+                lineWidth: 7,
+                lineCap: .round,
+                lineJoin: .round
+              )
+            )
+          }
+        } else {
+          MapPolyline(
+            coordinates: route.coordinates.map(\.mapCoordinate)
           )
-        )
+          .stroke(
+            KaidoTheme.routeGreen,
+            style: StrokeStyle(
+              lineWidth: 7,
+              lineCap: .round,
+              lineJoin: .round
+            )
+          )
+        }
 
         Annotation(
           facilityBoundaryName(
@@ -1885,9 +1962,16 @@ private struct WholeShutoGeographicMap: View {
               .fill(Color.white)
               .frame(width: 27, height: 27)
               .shadow(radius: 4)
-            Image(systemName: "location.north.fill")
-              .font(.system(size: 13, weight: .black))
-              .foregroundStyle(KaidoTheme.positionCyan)
+            Image(
+              systemName:
+                model.navigationHeadingDegrees == nil
+                ? "circle.fill" : "location.north.fill"
+            )
+            .font(.system(size: 13, weight: .black))
+            .foregroundStyle(KaidoTheme.positionCyan)
+            .rotationEffect(
+              .degrees(model.navigationHeadingDegrees ?? 0)
+            )
           }
         }
       }
@@ -1900,6 +1984,50 @@ private struct WholeShutoGeographicMap: View {
     .mapControls {
       MapCompass()
     }
+    .accessibilityIdentifier("whole-shuto-geographic-map")
+    .accessibilityValue(
+      !followsRoute
+        ? "FREE"
+        : model.navigationHeadingDegrees == nil
+          ? "FOLLOWING_NORTH_UP_NO_HEADING"
+          : "FOLLOWING_ROUTE_HEADING"
+    )
+    .overlay(alignment: .trailing) {
+      if isDriving {
+        Button {
+          followsRoute.toggle()
+          if followsRoute {
+            updateCamera(force: true)
+          }
+        } label: {
+          Image(
+            systemName:
+              followsRoute
+              ? "arrow.up.left.and.arrow.down.right"
+              : "location.fill"
+          )
+          .font(.system(size: 15, weight: .black))
+          .frame(width: 44, height: 44)
+        }
+        .buttonStyle(WholeShutoCircleButtonStyle(isDriving: true))
+        .accessibilityLabel(
+          followsRoute
+            ? copy.resolve(
+              japanese: "地図を自由に見る",
+              simplifiedChinese: "自由浏览地图",
+              english: "Browse map freely"
+            )
+            : copy.resolve(
+              japanese: "ルート追従に戻る",
+              simplifiedChinese: "回到路线跟随",
+              english: "Resume route following"
+            )
+        )
+        .accessibilityIdentifier("whole-shuto-route-following-control")
+        .accessibilityValue(followsRoute ? "FOLLOWING" : "FREE")
+        .padding(.trailing, 14)
+      }
+    }
     .onAppear {
       updateCamera()
     }
@@ -1909,7 +2037,12 @@ private struct WholeShutoGeographicMap: View {
     .onChange(of: model.currentCoordinate?.latitude) {
       updateCamera()
     }
-    .accessibilityIdentifier("whole-shuto-geographic-map")
+    .onChange(of: model.currentCoordinate?.longitude) {
+      updateCamera()
+    }
+    .onChange(of: model.progressFraction) {
+      updateCamera()
+    }
   }
 
   private var visibleRouteIDs: Set<String> {
@@ -1986,19 +2119,33 @@ private struct WholeShutoGeographicMap: View {
     KaidoInterfaceText(locale: interfaceLocale)
   }
 
-  private func updateCamera() {
+  private func updateCamera(force: Bool = false) {
+    guard force || followsRoute else { return }
     guard isDriving, let current = model.currentCoordinate else {
+      followsRoute = true
       camera = .automatic
       return
     }
     withAnimation(.easeOut(duration: 0.35)) {
-      camera = .region(
-        MKCoordinateRegion(
-          center: current.mapCoordinate,
-          latitudinalMeters: 13_000,
-          longitudinalMeters: 13_000
+      if let heading = model.navigationHeadingDegrees {
+        camera = .camera(
+          MapCamera(
+            centerCoordinate: current.mapCoordinate,
+            distance: model.navigationCameraDistanceMeters,
+            heading: heading,
+            pitch: 45
+          )
         )
-      )
+      } else {
+        camera = .camera(
+          MapCamera(
+            centerCoordinate: current.mapCoordinate,
+            distance: model.navigationCameraDistanceMeters,
+            heading: 0,
+            pitch: 0
+          )
+        )
+      }
     }
   }
 

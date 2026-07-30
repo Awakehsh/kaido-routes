@@ -1,3 +1,4 @@
+import Foundation
 import KaidoNavigation
 import Testing
 
@@ -72,6 +73,74 @@ func navigationDriveSimulationInjectsTargetedAnomalies() throws {
   )
   #expect(targetEvent.atMilliseconds - previousEvent.atMilliseconds == 16_000)
   #expect(trace.routePlanID == bundle.routePlan.id)
+}
+
+@Test("Route-speed simulation densifies long edges and keeps time aligned with displacement")
+func navigationDriveSimulationUsesRouteSpeedCadence() throws {
+  let release = try simulationProductRelease()
+  let bundle = release.navigation.bundle
+  let firstOccurrence = try #require(
+    bundle.matcherCorridor.occurrences.first
+  )
+  let trace = try NavigationDriveSimulationTraceGenerator.generate(
+    routePlan: bundle.routePlan,
+    corridor: bundle.matcherCorridor,
+    configuration: NavigationDriveSimulationConfiguration(
+      sampleFractions: [0.25, 0.75],
+      maximumSampleSpacingMeters: 20,
+      timing: .routeSpeed,
+      speedMetersPerSecond: 10,
+      completesAtExitHandoff: false
+    )
+  )
+  let observations: [RouteMatcherObservation] = trace.events.compactMap {
+    guard case .matcherObservation(let observation) = $0.action,
+      $0.id.hasPrefix("simulation.\(firstOccurrence.index).")
+    else {
+      return nil
+    }
+    return observation
+  }
+  let connectedObservations: [RouteMatcherObservation] =
+    trace.events.compactMap {
+      guard case .matcherObservation(let observation) = $0.action,
+        $0.id.hasPrefix("simulation.0.")
+          || $0.id.hasPrefix("simulation.1.")
+      else {
+        return nil
+      }
+      return observation
+    }
+
+  #expect(observations.count > 2)
+  #expect(
+    zip(
+      connectedObservations,
+      connectedObservations.dropFirst()
+    ).allSatisfy {
+      testDistance($0.coordinate, $1.coordinate) <= 20.5
+    }
+  )
+  for (previous, current) in zip(
+    observations,
+    observations.dropFirst()
+  ) {
+    let distanceMeters = testDistance(
+      previous.coordinate,
+      current.coordinate
+    )
+    let elapsedMilliseconds =
+      current.observedAtMilliseconds
+      - previous.observedAtMilliseconds
+    let expectedElapsedMilliseconds =
+      distanceMeters / 10 * 1_000
+    let timingDifference =
+      abs(Double(elapsedMilliseconds) - expectedElapsedMilliseconds)
+    #expect(distanceMeters <= 20.5)
+    #expect(elapsedMilliseconds > 0)
+    #expect(timingDifference < 2)
+    #expect(current.speedMetersPerSecond == 10)
+  }
 }
 
 @Test("Simulation controller supports play pause step speed and reset")
@@ -158,4 +227,22 @@ private func simulationProductRelease() throws -> KaidoProductRelease {
       )
     )
   )
+}
+
+private func testDistance(
+  _ first: MatcherCoordinate,
+  _ second: MatcherCoordinate
+) -> Double {
+  let earthRadiusMeters = 6_371_000.0
+  let latitude1 = first.latitude * .pi / 180
+  let latitude2 = second.latitude * .pi / 180
+  let latitudeDelta = latitude2 - latitude1
+  let longitudeDelta =
+    (second.longitude - first.longitude) * .pi / 180
+  let haversine =
+    pow(sin(latitudeDelta / 2), 2)
+    + cos(latitude1) * cos(latitude2)
+    * pow(sin(longitudeDelta / 2), 2)
+  return 2 * earthRadiusMeters
+    * atan2(sqrt(haversine), sqrt(1 - haversine))
 }

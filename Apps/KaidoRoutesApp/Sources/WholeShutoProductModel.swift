@@ -176,6 +176,10 @@ enum WholeShutoNetworkCatalog {
 
 @MainActor
 final class WholeShutoProductModel: ObservableObject {
+  static let simulationReferenceSpeedMetersPerSecond = 15.0
+  static let simulationPlaybackSpeed: NavigationDriveSimulationSpeed =
+    .twentyTimes
+
   static let previewOrigin = WholeShutoPlace(
     title: "東京駅",
     coordinate: ShutoCoordinate(
@@ -803,9 +807,13 @@ final class WholeShutoProductModel: ObservableObject {
         runtimeAssets: assets,
         configuration: NavigationDriveSimulationConfiguration(
           sampleFractions: [0.15, 0.5, 0.85],
-          horizontalAccuracyMeters: 2
+          maximumSampleSpacingMeters: 30,
+          timing: .routeSpeed,
+          horizontalAccuracyMeters: 2,
+          speedMetersPerSecond:
+            Self.simulationReferenceSpeedMetersPerSecond
         ),
-        speed: .twentyTimes
+        speed: Self.simulationPlaybackSpeed
       )
       try configureSpeech(for: route.routePlan.id)
     } catch {
@@ -1264,9 +1272,13 @@ final class WholeShutoProductModel: ObservableObject {
           runtimeAssets: assets,
           configuration: NavigationDriveSimulationConfiguration(
             sampleFractions: [0.15, 0.5, 0.85],
-            horizontalAccuracyMeters: 2
+            maximumSampleSpacingMeters: 30,
+            timing: .routeSpeed,
+            horizontalAccuracyMeters: 2,
+            speedMetersPerSecond:
+              Self.simulationReferenceSpeedMetersPerSecond
           ),
-          speed: .twentyTimes
+          speed: Self.simulationPlaybackSpeed
         )
         try configureSpeech(for: route.routePlan.id)
         if checkpoint.phase == .entryTransition {

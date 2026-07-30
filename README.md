@@ -25,9 +25,12 @@ internal review workbench.
   facts remain distinguishable from OSM topology.
 - The driving simulation covers surface access, entry, expressway travel,
   junction prompts, exit, surface egress, and completion. Entry and expressway
-  playback run generated observations through the route-aware matcher and
-  actor-owned navigation session. Entry requires ordered, unique HIGH
-  continuity on the selected directional entrance, and only an exact HIGH
+  playback follow the selected network geometry with a maximum 30-meter sample
+  spacing. Observation timestamps, course, and the visible position all derive
+  from the same 54 km/h reference trace before the explicit 20x presentation
+  speed is applied. Every observation still runs through the route-aware
+  matcher and actor-owned navigation session. Entry requires ordered, unique
+  HIGH continuity on the selected directional entrance, and only an exact HIGH
   occurrence match can advance expressway progress.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto

@@ -109,6 +109,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-next-junction", in: navigationApp)
         .waitForExistence(timeout: 5)
     )
+    let positionState = element(
+      "whole-shuto-position-state",
+      in: navigationApp
+    )
+    XCTAssertTrue(positionState.waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      positionState.label.contains("模拟 54 km/h · 20×")
+    )
     let actorJunctionInset = element(
       "whole-shuto-junction-inset",
       in: navigationApp

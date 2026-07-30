@@ -374,7 +374,10 @@ occurrence, including repeated traversals, and may inject an
 occurrence-addressed coordinate offset, accuracy spike, receive delay, or
 signal gap. The actor controller supports deterministic play, pause, step,
 reset, and playback-speed selection; speed changes wall-clock delay only and
-never event timestamps or matcher input. It dispatches the trace through the
+never event timestamps or matcher input. The trace generator also supports an
+opt-in route-speed cadence that densifies long geometry without removing the
+occurrence-scoped samples, then derives observation time from along-route
+distance and one explicit reference speed. It dispatches the trace through the
 real `RouteMatcherSession` and `NavigationSession`, activates Finish drive at
 the release-owned first eligible egress occurrence, and may complete only at
 the exact terminal exit handoff. The internal iPhone panel exposes these

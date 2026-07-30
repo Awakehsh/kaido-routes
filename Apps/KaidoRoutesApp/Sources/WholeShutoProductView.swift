@@ -1100,9 +1100,9 @@ struct WholeShutoProductView: View {
     case .networkPreview:
       return prefix
         + copy.resolve(
-          japanese: "ルート位置 · プレビュー",
-          simplifiedChinese: "路线位置 · 预演",
-          english: "ROUTE POSITION · PREVIEW"
+          japanese: "ルート再生 · 模擬 \(simulationReplayParametersLabel)",
+          simplifiedChinese: "路线回放 · 模拟 \(simulationReplayParametersLabel)",
+          english: "ROUTE REPLAY · SIMULATED \(simulationReplayParametersLabel)"
         )
     case .networkDegraded:
       return prefix
@@ -1114,9 +1114,9 @@ struct WholeShutoProductView: View {
     case .tunnelEstimated:
       return prefix
         + copy.resolve(
-          japanese: "トンネル位置推定 · プレビュー",
-          simplifiedChinese: "隧道位置推算 · 预演",
-          english: "TUNNEL POSITION ESTIMATE · PREVIEW"
+          japanese: "トンネル位置推定 · 模擬 \(simulationReplayParametersLabel)",
+          simplifiedChinese: "隧道位置推算 · 模拟 \(simulationReplayParametersLabel)",
+          english: "TUNNEL ESTIMATE · SIMULATED \(simulationReplayParametersLabel)"
         )
     case .routeInterrupted:
       return prefix
@@ -1213,6 +1213,14 @@ struct WholeShutoProductView: View {
     case .idle, .scheduled, .speaking, .suppressed, .stopped:
       false
     }
+  }
+
+  private var simulationReplayParametersLabel: String {
+    let speedKilometersPerHour = Int(
+      (WholeShutoProductModel.simulationReferenceSpeedMetersPerSecond * 3.6).rounded()
+    )
+    return "\(speedKilometersPerHour) km/h · "
+      + "\(WholeShutoProductModel.simulationPlaybackSpeed.multiplier)×"
   }
 
   private var positionStatusColor: Color {

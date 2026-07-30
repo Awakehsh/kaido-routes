@@ -21,6 +21,11 @@ public enum NavigationDriveSimulationState: String, Equatable, Sendable {
   case completed = "COMPLETED"
 }
 
+public enum NavigationDriveSimulationTiming: String, Equatable, Sendable {
+  case fixedObservationInterval = "FIXED_OBSERVATION_INTERVAL"
+  case routeSpeed = "ROUTE_SPEED"
+}
+
 public enum NavigationDriveSimulationEvidenceScope: String, Equatable, Sendable {
   case syntheticTestOnly = "SYNTHETIC_TEST_ONLY"
 }
@@ -61,6 +66,8 @@ public struct NavigationDriveSimulationConfiguration: Equatable, Sendable {
   public let startedAtMilliseconds: Int
   public let observationIntervalMilliseconds: Int
   public let sampleFractions: [Double]
+  public let maximumSampleSpacingMeters: Double?
+  public let timing: NavigationDriveSimulationTiming
   public let horizontalAccuracyMeters: Double
   public let speedMetersPerSecond: Double
   public let source: MatcherLocationSource
@@ -71,6 +78,8 @@ public struct NavigationDriveSimulationConfiguration: Equatable, Sendable {
     startedAtMilliseconds: Int = 1_000,
     observationIntervalMilliseconds: Int = 1_000,
     sampleFractions: [Double] = [0.15, 0.5, 0.85],
+    maximumSampleSpacingMeters: Double? = nil,
+    timing: NavigationDriveSimulationTiming = .fixedObservationInterval,
     horizontalAccuracyMeters: Double = 3,
     speedMetersPerSecond: Double = 15,
     source: MatcherLocationSource = .phone,
@@ -80,6 +89,8 @@ public struct NavigationDriveSimulationConfiguration: Equatable, Sendable {
     self.startedAtMilliseconds = startedAtMilliseconds
     self.observationIntervalMilliseconds = observationIntervalMilliseconds
     self.sampleFractions = sampleFractions
+    self.maximumSampleSpacingMeters = maximumSampleSpacingMeters
+    self.timing = timing
     self.horizontalAccuracyMeters = horizontalAccuracyMeters
     self.speedMetersPerSecond = speedMetersPerSecond
     self.source = source
@@ -139,6 +150,8 @@ public struct NavigationDriveSimulationTrace: Equatable, Sendable {
 }
 
 public enum NavigationDriveSimulationTraceGenerator {
+  private static let maximumGeneratedSamplesPerOccurrence = 100_000
+
   public static func generate(
     routePlan: RoutePlan,
     corridor: RouteMatcherCorridor,
@@ -163,6 +176,8 @@ public enum NavigationDriveSimulationTraceGenerator {
     var events: [NavigationDriveSimulationEvent] = []
     var observedAt = configuration.startedAtMilliseconds
     var lastReceivedAt = configuration.startedAtMilliseconds
+    var distanceBeforeOccurrenceMeters = 0.0
+    var previousSampleDistanceMeters: Double?
     let finishOccurrenceIndex =
       configuration.completesAtExitHandoff
       ? egressOptions.compactMap {
@@ -172,6 +187,11 @@ public enum NavigationDriveSimulationTraceGenerator {
 
     for occurrence in corridor.occurrences.sorted(by: { $0.index < $1.index }) {
       guard let edge = edges[occurrence.directedEdgeID] else { continue }
+      let edgeLengthMeters = distance(along: edge.coordinates)
+      let sampleFractions = sampleFractions(
+        along: edge.coordinates,
+        configuration: configuration
+      )
       if occurrence.index == finishOccurrenceIndex {
         events.append(
           NavigationDriveSimulationEvent(
@@ -182,7 +202,17 @@ public enum NavigationDriveSimulationTraceGenerator {
         )
         observedAt += configuration.observationIntervalMilliseconds
       }
-      for (sampleIndex, fraction) in configuration.sampleFractions.enumerated() {
+      for (sampleIndex, fraction) in sampleFractions.enumerated() {
+        let sampleDistanceMeters =
+          distanceBeforeOccurrenceMeters + edgeLengthMeters * fraction
+        if configuration.timing == .routeSpeed,
+          let previousSampleDistanceMeters
+        {
+          let travelMilliseconds =
+            (sampleDistanceMeters - previousSampleDistanceMeters)
+            / configuration.speedMetersPerSecond * 1_000
+          observedAt += max(1, Int(travelMilliseconds.rounded()))
+        }
         let sampleKey = SimulationSampleKey(occurrence.id, sampleIndex)
         let sampleAnomalies = anomalies[sampleKey] ?? []
         let gap = sampleAnomalies.reduce(0) { partial, anomaly in
@@ -235,8 +265,12 @@ public enum NavigationDriveSimulationTraceGenerator {
           )
         )
         lastReceivedAt = receivedAt
-        observedAt += configuration.observationIntervalMilliseconds
+        previousSampleDistanceMeters = sampleDistanceMeters
+        if configuration.timing == .fixedObservationInterval {
+          observedAt += configuration.observationIntervalMilliseconds
+        }
       }
+      distanceBeforeOccurrenceMeters += edgeLengthMeters
     }
 
     if configuration.completesAtExitHandoff {
@@ -263,6 +297,10 @@ public enum NavigationDriveSimulationTraceGenerator {
     configuration: NavigationDriveSimulationConfiguration
   ) -> [String] {
     var issues: [String] = []
+    let edgesByID = Dictionary(
+      corridor.edges.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
     if corridor.routePlanID != routePlan.id {
       issues.append("matcher corridor RoutePlan ID does not match")
     }
@@ -290,6 +328,24 @@ public enum NavigationDriveSimulationTraceGenerator {
     {
       issues.append("simulation sample fractions are invalid")
     }
+    if let maximumSampleSpacingMeters =
+      configuration.maximumSampleSpacingMeters,
+      !maximumSampleSpacingMeters.isFinite
+        || maximumSampleSpacingMeters <= 0
+    {
+      issues.append("simulation maximum sample spacing is invalid")
+    }
+    if let maximumSampleSpacingMeters =
+      configuration.maximumSampleSpacingMeters,
+      maximumSampleSpacingMeters.isFinite,
+      maximumSampleSpacingMeters > 0,
+      corridor.edges.contains(where: {
+        ceil(distance(along: $0.coordinates) / maximumSampleSpacingMeters)
+          > Double(maximumGeneratedSamplesPerOccurrence)
+      })
+    {
+      issues.append("simulation maximum sample spacing creates excessive samples")
+    }
     if !configuration.horizontalAccuracyMeters.isFinite
       || configuration.horizontalAccuracyMeters <= 0
     {
@@ -299,6 +355,31 @@ public enum NavigationDriveSimulationTraceGenerator {
       || configuration.speedMetersPerSecond < 0
     {
       issues.append("simulation speed is invalid")
+    }
+    if configuration.timing == .routeSpeed,
+      configuration.speedMetersPerSecond <= 0
+    {
+      issues.append("route-speed simulation requires positive speed")
+    }
+    if configuration.timing == .routeSpeed,
+      configuration.speedMetersPerSecond > 0
+    {
+      let routeDistanceMeters = corridor.occurrences.reduce(0.0) {
+        partial, occurrence in
+        partial
+          + (edgesByID[occurrence.directedEdgeID].map {
+            distance(along: $0.coordinates)
+          } ?? 0)
+      }
+      let traceDurationMilliseconds =
+        routeDistanceMeters / configuration.speedMetersPerSecond * 1_000
+      if !traceDurationMilliseconds.isFinite
+        || traceDurationMilliseconds
+          > Double(Int.max)
+          - Double(max(0, configuration.startedAtMilliseconds))
+      {
+        issues.append("route-speed simulation duration is invalid")
+      }
     }
     if configuration.completesAtExitHandoff,
       !egressOptions.contains(where: {
@@ -311,11 +392,24 @@ public enum NavigationDriveSimulationTraceGenerator {
     }
 
     let occurrenceIDs = Set(corridor.occurrences.map(\.id))
+    let occurrencesByID = Dictionary(
+      corridor.occurrences.map { ($0.id, $0) },
+      uniquingKeysWith: { first, _ in first }
+    )
     for anomaly in configuration.anomalies {
       if !occurrenceIDs.contains(anomaly.occurrenceID) {
         issues.append("simulation anomaly occurrence is unknown")
       }
-      if !configuration.sampleFractions.indices.contains(anomaly.sampleIndex) {
+      let generatedFractions =
+        occurrencesByID[anomaly.occurrenceID]
+        .flatMap { edgesByID[$0.directedEdgeID] }
+        .map {
+          sampleFractions(
+            along: $0.coordinates,
+            configuration: configuration
+          )
+        } ?? []
+      if !generatedFractions.indices.contains(anomaly.sampleIndex) {
         issues.append("simulation anomaly sample index is invalid")
       }
       switch anomaly.kind {
@@ -335,6 +429,44 @@ public enum NavigationDriveSimulationTraceGenerator {
       }
     }
     return Array(Set(issues)).sorted()
+  }
+
+  private static func sampleFractions(
+    along coordinates: [MatcherCoordinate],
+    configuration: NavigationDriveSimulationConfiguration
+  ) -> [Double] {
+    guard
+      let maximumSpacing =
+        configuration.maximumSampleSpacingMeters,
+      maximumSpacing.isFinite,
+      maximumSpacing > 0
+    else {
+      return configuration.sampleFractions
+    }
+    let edgeLength = distance(along: coordinates)
+    let requestedSampleCount = ceil(edgeLength / maximumSpacing)
+    guard requestedSampleCount.isFinite,
+      requestedSampleCount
+        <= Double(maximumGeneratedSamplesPerOccurrence)
+    else {
+      return configuration.sampleFractions
+    }
+    let sampleCount = max(1, Int(requestedSampleCount))
+    let evenlySpacedFractions =
+      (0..<sampleCount).map {
+        (Double($0) + 0.5) / Double(sampleCount)
+      }
+    return Array(
+      Set(configuration.sampleFractions + evenlySpacedFractions)
+    ).sorted()
+  }
+
+  private static func distance(
+    along coordinates: [MatcherCoordinate]
+  ) -> Double {
+    zip(coordinates, coordinates.dropFirst()).reduce(0) {
+      $0 + matcherCoordinateDistanceMeters($1.0, $1.1)
+    }
   }
 
   private static func coordinate(

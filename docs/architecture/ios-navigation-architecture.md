@@ -12,7 +12,12 @@ facilities, graph edges, occurrence order, geometry, distance, route shields,
 and network snapshot, then compiles a route-aware matcher corridor containing
 the immutable route plus adjacent deviation edges. Generated observations and
 deterministically injected `CLLocation` samples both run through the existing
-matcher and actor-owned `NavigationSession`. The simulator exercises ordered
+matcher and actor-owned `NavigationSession`. The whole-Shuto product trace
+retains occurrence-scoped samples while adding intermediate samples so no
+selected-edge interval exceeds 30 meters. Its observation timestamps and
+courses derive from distance along that geometry at a 15 m/s reference speed;
+the explicit 20x playback multiplier changes only wall-clock delay. The
+simulator exercises ordered
 entry continuity through a package-only synthetic path that cannot be called by
 the App or an Apple adapter and grants no released-road authority. Ambiguous or
 degraded entrance evidence keeps the transition unconfirmed. After entry, only
@@ -54,6 +59,9 @@ those simulated distances as live traffic or ETA. A driver can explicitly
 switch between route following and free map browsing. Network-degraded,
 route-interrupted, and tunnel-estimated states suppress the derived heading and
 use a north-up camera rather than fabricating directional evidence.
+The position-state label exposes the 54 km/h simulated reference speed and 20x
+playback rate. They are replay parameters, not observed speed, a speed-limit
+claim, live traffic, or ETA.
 The interaction was cross-checked on 2026-07-30 against Google Navigation
 SDK's documented
 [follow, overview/free, and recenter camera behavior](https://developers.google.com/maps/documentation/navigation/ios-sdk/camera)

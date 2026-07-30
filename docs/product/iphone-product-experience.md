@@ -129,8 +129,10 @@ a precise marker.
 
 The geographic projection is the initial default and renders the released
 route over the system MapKit basemap. A user-started automatic route simulation
-may exercise the complete Drive presentation at readable real-time pacing,
-including position, progress, and transient junction insets, but remains visibly
+may exercise the complete Drive presentation along the selected route geometry.
+The current whole-Shuto replay uses at most 30 meters between generated samples,
+a 54 km/h reference trace, and an explicitly displayed 20x wall-clock rate,
+including position, progress, and transient junction insets. It remains visibly
 synthetic and grants no live-road or passage authority.
 
 ## Entry, exit, and external maps

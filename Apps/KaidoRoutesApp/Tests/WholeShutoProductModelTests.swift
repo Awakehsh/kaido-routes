@@ -416,7 +416,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.phase, .entryTransition)
     XCTAssertNil(model.runtimeOccurrenceID)
 
-    await model.advanceSimulationForTesting()
+    await advance(
+      model,
+      until: { $0.phase == .expressway },
+      maximumTicks: 1_000
+    )
 
     XCTAssertEqual(model.phase, .expressway)
     XCTAssertNotNil(model.runtimeOccurrenceID)

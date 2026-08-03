@@ -177,19 +177,42 @@ struct WholeShutoProductView: View {
   @ViewBuilder
   private var map: some View {
     if model.mapMode == .network {
-      WholeShutoNetworkDiagram(
-        database: model.database,
-        selectedRoute: model.selectedRoute,
-        currentCoordinate: isDriving ? model.currentCoordinate : nil,
-        usesDarkStyle: isDriving,
-        visibleBottomFraction:
-          isDriving ? 0.92 : 0.66
-      )
+      if let layout = model.trackMapLayout,
+        let route = model.selectedRoute
+      {
+        WholeShutoTrackMapView(
+          layout: layout,
+          spans: model.trackMapSpans,
+          entryFacilityID: route.routePlan.entryFacilityID,
+          currentCoordinate: isDriving ? model.currentCoordinate : nil,
+          isPositionEstimated: isTrackMapPositionEstimated,
+          usesDarkStyle: isDriving,
+          visibleBottomFraction: isDriving ? 0.92 : 0.66
+        )
+      } else {
+        WholeShutoNetworkDiagram(
+          database: model.database,
+          selectedRoute: model.selectedRoute,
+          currentCoordinate: isDriving ? model.currentCoordinate : nil,
+          usesDarkStyle: isDriving,
+          visibleBottomFraction:
+            isDriving ? 0.92 : 0.66
+        )
+      }
     } else {
       WholeShutoGeographicMap(
         model: model,
         planningLocation: planningLocation.snapshot
       )
+    }
+  }
+
+  private var isTrackMapPositionEstimated: Bool {
+    switch model.positionState {
+    case .tunnelEstimated, .networkDegraded, .routeInterrupted:
+      return true
+    default:
+      return false
     }
   }
 

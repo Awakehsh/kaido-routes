@@ -277,6 +277,9 @@ final class WholeShutoProductModel: ObservableObject {
   private var consumedGuidancePromptIDs: Set<String> = []
   private var isStaticJunctionPreview = false
   private var selectedDestinationTitle: String?
+  private var trackMapCacheKey: String?
+  private var trackMapCacheLayout: RouteTrackMapLayout?
+  private var trackMapCacheSpans: [WholeShutoTrackMapSpan] = []
 
   init(
     database: ShutoNetworkDatabase? = nil,
@@ -414,6 +417,120 @@ final class WholeShutoProductModel: ObservableObject {
 
   var usesCurrentLocationOrigin: Bool {
     Self.isCurrentLocationQuery(originQuery)
+  }
+
+  /// Whole-route track map layout, computed once per exact route plan in
+  /// the fixed design space; the view scales it uniformly.
+  var trackMapLayout: RouteTrackMapLayout? {
+    resolveTrackMap()?.layout
+  }
+
+  var trackMapSpans: [WholeShutoTrackMapSpan] {
+    resolveTrackMap()?.spans ?? []
+  }
+
+  private func resolveTrackMap() -> (
+    layout: RouteTrackMapLayout, spans: [WholeShutoTrackMapSpan]
+  )? {
+    guard let route = selectedRoute else { return nil }
+    if trackMapCacheKey == route.routePlan.id,
+      let layout = trackMapCacheLayout
+    {
+      return (layout, trackMapCacheSpans)
+    }
+    let memberRouteIDs = Set(route.routeIDsInOrder)
+    var facilities: [RouteTrackMapLayout.FacilityInput] = []
+    for facility in database.directionalFacilities
+    where memberRouteIDs.contains(facility.routeID) {
+      facilities.append(
+        RouteTrackMapLayout.FacilityInput(
+          id: facility.facilityID,
+          nameJA: facility.nameJA,
+          kind: .interchange,
+          coordinate: RouteTrackMapLayout.GeoPoint(
+            latitude: facility.coordinate.latitude,
+            longitude: facility.coordinate.longitude
+          )
+        )
+      )
+    }
+    for junction in database.junctions {
+      guard let coordinate = junction.coordinate else { continue }
+      facilities.append(
+        RouteTrackMapLayout.FacilityInput(
+          id: junction.junctionID,
+          nameJA: junction.nameJA,
+          kind: .junction,
+          coordinate: RouteTrackMapLayout.GeoPoint(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude
+          )
+        )
+      )
+    }
+    for parkingArea in database.parkingAreas
+    where memberRouteIDs.contains(parkingArea.routeID ?? "") {
+      facilities.append(
+        RouteTrackMapLayout.FacilityInput(
+          id: parkingArea.parkingAreaID,
+          nameJA: parkingArea.nameJA,
+          kind: .parkingArea,
+          coordinate: RouteTrackMapLayout.GeoPoint(
+            latitude: parkingArea.coordinate.latitude,
+            longitude: parkingArea.coordinate.longitude
+          )
+        )
+      )
+    }
+    guard
+      let layout = RouteTrackMapLayout.make(
+        routeCoordinates: route.coordinates.map {
+          RouteTrackMapLayout.GeoPoint(
+            latitude: $0.latitude,
+            longitude: $0.longitude
+          )
+        },
+        facilities: facilities
+      )
+    else {
+      return nil
+    }
+    var spans: [WholeShutoTrackMapSpan] = []
+    let totalMeters = route.distanceMeters
+    var cursorMeters = 0.0
+    var currentID: String?
+    var spanStart = 0.0
+    for edge in route.edges {
+      let ids = Set(edge.routeMemberships.map(\.routeID))
+      let id = ids.contains("B") && !ids.contains("C2") ? "B" : "MAIN"
+      if id != currentID {
+        if let current = currentID {
+          spans.append(
+            WholeShutoTrackMapSpan(
+              routeID: current,
+              startFraction: spanStart,
+              endFraction: cursorMeters / totalMeters
+            )
+          )
+        }
+        currentID = id
+        spanStart = cursorMeters / totalMeters
+      }
+      cursorMeters += edge.lengthMeters
+    }
+    if let current = currentID {
+      spans.append(
+        WholeShutoTrackMapSpan(
+          routeID: current,
+          startFraction: spanStart,
+          endFraction: 1
+        )
+      )
+    }
+    trackMapCacheKey = route.routePlan.id
+    trackMapCacheLayout = layout
+    trackMapCacheSpans = spans
+    return (layout, spans)
   }
 
   var junctionPrompts: [WholeShutoJunctionPrompt] {

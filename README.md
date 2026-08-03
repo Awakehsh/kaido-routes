@@ -78,6 +78,15 @@ internal review workbench.
   one-shot speech remain actor-triggered. An explicit free-browse/follow
   control remains available. Degraded, interrupted, and tunnel-estimated states
   return to north-up instead of inventing a route heading.
+- With a route selected, the second map presentation is the whole-route track
+  map: the entire selected route in one readable frame with every on-route
+  IC, JCT, and PA always labeled, component routes visually distinct (the
+  Bayshore leg of a C2 circuit renders in its own color), travel-direction
+  chevrons, and an explicit entrance mark. While driving, the current
+  position renders above every other layer with a travel-direction indicator;
+  nearby labels yield to it, and estimated positioning changes its appearance
+  instead of hiding it. Without a selected route the whole-network line map
+  remains the network presentation.
 - During expressway travel the driver can switch between the normal geographic
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
@@ -164,6 +173,8 @@ xcodebuild \
 
 Useful visual launch arguments:
 
+- `-WHOLE-SHUTO-TRACK-MAP-PREVIEW`
+- `-WHOLE-SHUTO-TRACK-MAP-NAVIGATION-PREVIEW`
 - `-WHOLE-SHUTO-SEARCH-PREVIEW`
 - `-WHOLE-SHUTO-SURFACE-FAILURE-PREVIEW`
 - `-WHOLE-SHUTO-ROUTE-PREVIEW`

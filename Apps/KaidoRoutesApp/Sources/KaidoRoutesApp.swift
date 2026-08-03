@@ -123,6 +123,14 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoSurfaceFailurePreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-TRACK-MAP-PREVIEW"
+      ) {
+        WholeShutoTrackMapPreviewHost(startsNavigation: false)
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-TRACK-MAP-NAVIGATION-PREVIEW"
+      ) {
+        WholeShutoTrackMapPreviewHost(startsNavigation: true)
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -422,6 +430,45 @@ private struct WholeShutoJunctionPreviewHost: View {
         for _ in 0..<1_000 where model.activeJunctionPrompt == nil {
           await model.advanceSimulationForTesting()
         }
+      }
+  }
+}
+
+private struct WholeShutoTrackMapPreviewHost: View {
+  @Environment(\.scenePhase) private var scenePhase
+  @StateObject private var model: WholeShutoProductModel
+  private let startsNavigation: Bool
+
+  init(startsNavigation: Bool) {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // Circuit review near Hatsudai with the track map presentation active.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c2InnerWithBayshore)
+    model.selectCircuitLaps(2)
+    model.startCircuitJourney()
+    model.mapMode = .network
+    self.startsNavigation = startsNavigation
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
+      .task(id: scenePhase) {
+        guard
+          startsNavigation,
+          scenePhase == .active,
+          model.phase == .review
+        else {
+          return
+        }
+        await Task.yield()
+        model.startNavigationSimulation()
+        model.mapMode = .network
       }
   }
 }

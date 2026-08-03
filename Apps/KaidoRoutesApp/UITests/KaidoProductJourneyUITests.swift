@@ -57,6 +57,38 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(homeScreenshot)
   }
 
+  func testTrackMapPresentsWholeCircuitInOneFrame() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-TRACK-MAP-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    // The circuit review opens on the whole-route track map: one frame,
+    // no zoom, replacing the semantic-zoom network diagram.
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: app)
+        .waitForExistence(timeout: 8)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-review-journey", in: app)
+        .waitForExistence(timeout: 8)
+    )
+
+    let trackMapScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    trackMapScreenshot.name = "Whole-route track map"
+    trackMapScreenshot.lifetime = .keepAlways
+    add(trackMapScreenshot)
+  }
+
   func testCircuitSelectionOffersEntrancesAndLaps() {
     continueAfterFailure = false
     let app = XCUIApplication()

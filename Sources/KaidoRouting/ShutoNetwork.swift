@@ -331,11 +331,11 @@ public struct ShutoRoutePlanner: Sendable {
     }
   }
 
-  private let database: ShutoNetworkDatabase
-  private let nodesByID: [Int64: ShutoNetworkDatabase.Node]
-  private let edgesByID: [String: ShutoNetworkDatabase.Edge]
-  private let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
-  private let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
+  let database: ShutoNetworkDatabase
+  let nodesByID: [Int64: ShutoNetworkDatabase.Node]
+  let edgesByID: [String: ShutoNetworkDatabase.Edge]
+  let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
+  let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
 
   public init(database: ShutoNetworkDatabase) throws {
     try database.validate()
@@ -548,6 +548,24 @@ public struct ShutoRoutePlanner: Sendable {
         result.append(edge)
       }
     }
+    return assemblePlannedRoute(
+      routeEdges: routeEdges,
+      planID:
+        "shuto.\(entryFacility.facilityID)."
+        + "\(exitFacility.facilityID).\(preference.rawValue.lowercased())",
+      entryFacility: entryFacility,
+      exitFacility: exitFacility,
+      preference: preference
+    )
+  }
+
+  func assemblePlannedRoute(
+    routeEdges: [ShutoNetworkDatabase.Edge],
+    planID: String,
+    entryFacility: ShutoNetworkDatabase.Facility,
+    exitFacility: ShutoNetworkDatabase.Facility,
+    preference: ShutoRoutePreference
+  ) -> ShutoPlannedRoute {
     let coordinates = routeCoordinates(routeEdges)
     let routeIDs = orderedRouteIDs(routeEdges)
     let distanceMeters = routeEdges.reduce(0) {
@@ -574,9 +592,7 @@ public struct ShutoRoutePlanner: Sendable {
       )
     }
     let routePlan = RoutePlan(
-      id:
-        "shuto.\(entryFacility.facilityID)."
-        + "\(exitFacility.facilityID).\(preference.rawValue.lowercased())",
+      id: planID,
       networkSnapshotID: database.networkSnapshotID,
       entryFacilityID: entryFacility.facilityID,
       exitFacilityID: exitFacility.facilityID,
@@ -596,7 +612,7 @@ public struct ShutoRoutePlanner: Sendable {
     )
   }
 
-  private func edgeCost(
+  func edgeCost(
     _ edge: ShutoNetworkDatabase.Edge,
     preference: ShutoRoutePreference
   ) -> Double {
@@ -633,7 +649,7 @@ public struct ShutoRoutePlanner: Sendable {
     }
   }
 
-  private func routeCoordinates(
+  func routeCoordinates(
     _ edges: [ShutoNetworkDatabase.Edge]
   ) -> [ShutoCoordinate] {
     guard let first = edges.first,
@@ -645,7 +661,7 @@ public struct ShutoRoutePlanner: Sendable {
       + edges.compactMap { nodesByID[$0.toNodeID]?.coordinate }
   }
 
-  private func orderedRouteIDs(
+  func orderedRouteIDs(
     _ edges: [ShutoNetworkDatabase.Edge]
   ) -> [String] {
     var result: [String] = []
@@ -661,7 +677,7 @@ public struct ShutoRoutePlanner: Sendable {
     return result
   }
 
-  private static func distance(
+  static func distance(
     _ first: ShutoCoordinate,
     _ second: ShutoCoordinate
   ) -> Double {
@@ -679,7 +695,7 @@ public struct ShutoRoutePlanner: Sendable {
   }
 }
 
-private struct MinHeap<Element: Comparable> {
+struct MinHeap<Element: Comparable> {
   private var values: [Element] = []
 
   var isEmpty: Bool { values.isEmpty }

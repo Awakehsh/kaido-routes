@@ -53,6 +53,12 @@ and repeated laps — must render through the same pipeline.
    The position marker is route-bound progress with explicit confidence;
    tunnel or low-confidence positioning is shown as estimated and never
    fabricates precision. Before activation every occurrence is planned-state.
+   While driving, the current position is the most prominent point element on
+   the track map: it renders above every other layer, is never occluded by
+   labels, leaders, or facility marks (nearby labels yield), stays clearly
+   visible at arm's length against both route colors, and carries a travel
+   direction indicator. Its estimated/degraded state changes its appearance
+   explicitly rather than shrinking or hiding it.
 8. **Direction is visible.** Travel-direction chevrons mark the remaining
    path.
 9. **Uncertainty is visible.** Toll and passage information renders its

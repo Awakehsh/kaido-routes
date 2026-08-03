@@ -91,6 +91,17 @@ final class KaidoProductJourneyUITests: XCTestCase {
         )
       ).firstMatch.exists
     )
+    // Tariff bands from the dated evidence appear asynchronously; the
+    // interface shows nothing until a band is actually computed.
+    XCTAssertTrue(
+      app.descendants(matching: .any).matching(
+        NSPredicate(
+          format: "identifier BEGINSWITH %@",
+          "whole-shuto-circuit-tariff-"
+        )
+      ).firstMatch.waitForExistence(timeout: 10)
+    )
+
     element("whole-shuto-circuit-laps-increase", in: app).tap()
     let lapsUpdated = expectation(
       for: NSPredicate(format: "value == %@", "2"),

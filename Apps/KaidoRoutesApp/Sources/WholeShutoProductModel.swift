@@ -235,6 +235,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
   @Published private(set) var isCircuitRouteSelected = false
+  @Published private(set) var circuitTariffBandsByFacilityID:
+    [String: ShutoTariffBand] = [:]
   @Published private(set) var accessRoute: WholeShutoSurfaceRoute?
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
@@ -263,6 +265,7 @@ final class WholeShutoProductModel: ObservableObject {
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var surfaceRouteTask: Task<Void, Never>?
+  private var circuitTariffTask: Task<Void, Never>?
   private var surfaceRouteRequestID: UUID?
   private var routeChoiceSurfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes] =
     [:]
@@ -329,6 +332,7 @@ final class WholeShutoProductModel: ObservableObject {
   deinit {
     playbackTask?.cancel()
     surfaceRouteTask?.cancel()
+    circuitTariffTask?.cancel()
   }
 
   var selectedRecommendation: ShutoRouteRecommendation? {
@@ -1085,6 +1089,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
     circuitEntryFacilityID =
       circuitEntranceCandidates.first?.facilityID
+    resolveCircuitTariffBands()
   }
 
   func clearCircuitDraft() {
@@ -1093,10 +1098,13 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func clearCircuitPlanningDraft() {
+    circuitTariffTask?.cancel()
+    circuitTariffTask = nil
     selectedCircuit = nil
     circuitEntranceCandidates = []
     circuitEntryFacilityID = nil
     circuitLaps = 1
+    circuitTariffBandsByFacilityID = [:]
   }
 
   func selectCircuitEntrance(facilityID: String) {
@@ -1126,6 +1134,44 @@ final class WholeShutoProductModel: ObservableObject {
     {
       circuitEntryFacilityID =
         circuitEntranceCandidates.first?.facilityID
+    }
+    resolveCircuitTariffBands()
+  }
+
+  /// Resolves tariff bands for the leading entrance candidates off the main
+  /// actor. A band appears only once computed from the dated ACTIVE evidence;
+  /// until then the interface shows nothing rather than inventing an amount.
+  private func resolveCircuitTariffBands() {
+    circuitTariffTask?.cancel()
+    circuitTariffBandsByFacilityID = [:]
+    guard let circuit = selectedCircuit else { return }
+    let planner = planner
+    let candidateIDs = circuitEntranceCandidates.prefix(3).map(\.facilityID)
+    circuitTariffTask = Task.detached(priority: .userInitiated) {
+      [weak self] in
+      var bands: [String: ShutoTariffBand] = [:]
+      for entryID in candidateIDs {
+        if Task.isCancelled { return }
+        guard
+          let exit = try? planner.circuitExitCandidates(
+            for: circuit,
+            afterEntering: entryID
+          ).first,
+          let band = try? planner.tariffBand(
+            entryFacilityID: entryID,
+            exitFacilityID: exit.facilityID,
+            evidence: .etcNormalCarActive
+          )
+        else { continue }
+        bands[entryID] = band
+      }
+      let resolved = bands
+      await MainActor.run { [weak self] in
+        guard let self, !Task.isCancelled,
+          self.selectedCircuit?.circuitID == circuit.circuitID
+        else { return }
+        self.circuitTariffBandsByFacilityID = resolved
+      }
     }
   }
 

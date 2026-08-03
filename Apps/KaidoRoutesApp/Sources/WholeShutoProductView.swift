@@ -629,6 +629,20 @@ struct WholeShutoProductView: View {
             .clipShape(Capsule())
         }
         Spacer()
+        if let band =
+          model.circuitTariffBandsByFacilityID[facility.facilityID]
+        {
+          Text(circuitTariffText(band))
+            .font(.system(size: 10.5, weight: .bold))
+            .monospacedDigit()
+            .foregroundStyle(
+              circuitTariffIsMinimum(band)
+                ? KaidoTheme.routeGreen : Color.secondary
+            )
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-tariff-\(facility.facilityID)"
+            )
+        }
       }
       .contentShape(Rectangle())
     }
@@ -636,6 +650,34 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(
       "whole-shuto-circuit-entrance-\(facility.facilityID)"
     )
+  }
+
+  private func circuitTariffIsMinimum(_ band: ShutoTariffBand) -> Bool {
+    if case .minimum = band { return true }
+    return false
+  }
+
+  private func circuitTariffText(_ band: ShutoTariffBand) -> String {
+    switch band {
+    case .minimum(let yen):
+      return copy.resolve(
+        japanese: "¥\(yen)・最低料金帯",
+        simplifiedChinese: "¥\(yen)·最低费用档",
+        english: "¥\(yen) MIN BAND"
+      )
+    case .estimated(let yen):
+      return copy.resolve(
+        japanese: "目安 ¥\(yen)",
+        simplifiedChinese: "约 ¥\(yen)",
+        english: "≈ ¥\(yen)"
+      )
+    case .maximum(let yen):
+      return copy.resolve(
+        japanese: "¥\(yen)・上限",
+        simplifiedChinese: "¥\(yen)·上限",
+        english: "¥\(yen) CAP"
+      )
+    }
   }
 
   private var optionalDestinationDivider: some View {

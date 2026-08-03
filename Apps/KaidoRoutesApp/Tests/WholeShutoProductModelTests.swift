@@ -48,6 +48,25 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  func testCircuitEntranceTariffBandsResolveFromDatedEvidence() async {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+
+    model.selectCircuit(.c2InnerWithBayshore)
+    for _ in 0..<200 where model.circuitTariffBandsByFacilityID.isEmpty {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    // The Hatsudai-minami pairing exits at Tomigaya just ahead, so the
+    // tariff distance stays in the minimum band regardless of laps.
+    XCTAssertEqual(
+      model.circuitTariffBandsByFacilityID["shuto.ic.c2.hatsudaiminami"],
+      .minimum(yen: 300)
+    )
+  }
+
   func testCircuitJourneyIsARoundTripThroughTheReviewGate() async {
     let model = WholeShutoProductModel(
       locationProvider: WholeShutoUnexpectedLocationProvider(),

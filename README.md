@@ -23,8 +23,13 @@ internal review workbench.
   Selecting a circuit recommends direction-valid entrances nearest the
   current origin, offers a 1–3 lap count, plans the whole circuit as one
   ordered occurrence sequence with a forward-ranked exit, and runs it as a
-  round trip through the normal review gate. Destination search remains an
-  optional continuation below the circuit choices.
+  round trip through the normal review gate. Entrance candidates show their
+  tariff band from dated ACTIVE evidence (normal car, ETC): the minimum band
+  is asserted only with a distance safety margin, mid-range amounts stay
+  explicit estimates, and nothing is shown until a band is computed. Because
+  the tariff uses the shortest all-Shuto path between entry and exit, lap
+  count never changes the band. Destination search remains an optional
+  continuation below the circuit choices.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

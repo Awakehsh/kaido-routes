@@ -11,12 +11,40 @@
   Chinese owner-facing HTML report is a presentation snapshot and must not add
   decisions absent from the tracked contract.
 
+## Product direction and audience
+
+- The primary audience is driving enthusiasts and visiting drivers who come to
+  experience Japanese expressway driving culture on the Shuto network. This
+  motivation guides design and prioritization but never appears in user-facing
+  copy, marketing claims, or scenario prose; the product speaks neutrally
+  about routes, entrances, and drives.
+- The home experience is route-first: the user chooses the route experience
+  (route family, saved route, template, or exact custom route) before anything
+  else. Destination search is an optional continuation of a journey, never the
+  primary entry point.
+- After the user chooses a route, the product recommends direction-valid
+  entrances reachable from the current origin and shows the tariff band of
+  each entrance/exit pairing from dated tariff evidence. The Shuto tariff uses
+  the shortest all-Shuto path between entry and exit, so lap count never
+  changes the quoted band. Lap count is a first-class route parameter,
+  including legal JCT joins from radial routes onto loop routes.
+- Two map presentations serve the journey: a provider-backed geographic
+  driving map, and a Kaido-owned whole-route track map that keeps the entire
+  selected route readable in one frame with every on-route IC, JCT, and PA
+  labeled. The track map supersedes the earlier semantic-zoom topology design.
+- The retained C2 and K7 artifacts are deterministic fixtures and regression
+  anchors, not delivery tracks. Do not resume K7-specific evidence, field, or
+  release work without an explicit owner request.
+- No speed, lap-time, ranking, racing, or enforcement-evasion mechanics.
+  Stylized route presentation is allowed; competitive or performance framing
+  is not.
+
 ## Current stage and autonomous authority
 
 - This repository is in active product delivery. It has a real iPhone target,
-  a released K7 route, a joint navigation/atlas product artifact, and a
-  physical-device deployment path. Do not describe it as a feasibility-only
-  repository.
+  a bundled whole-Shuto network snapshot, a joint navigation/atlas product
+  artifact, and a physical-device deployment path. Do not describe it as a
+  feasibility-only repository.
 - The project owner authorizes agents to modify repository rules, product
   code, tests, data contracts, adapters, dependencies, and documentation when
   needed to finish the product.
@@ -25,15 +53,20 @@
   physical-device build/install/launch, commits, and pushes do not require a
   separate approval checkpoint.
 - Continue from one completed milestone to the next highest-value executable
-  milestone. Do not stop merely because an old handoff called something a
-  future gate, or because a synthetic reviewer/team label is absent.
+  milestone, where value means a user-visible outcome for the audience in
+  "Product direction and audience". Evidence envelopes, release machinery,
+  qualification harnesses, and other process artifacts are support work, not
+  milestones; do not expand them beyond what an active user-facing milestone
+  needs. Do not stop merely because an old handoff called something a future
+  gate, or because a synthetic reviewer/team label is absent.
 - Automated review may be run by the implementing agent. Require a distinct
   human or field reviewer only when the evidence itself is a human observation
   or independent field measurement; never invent that evidence.
 - Pause only for a genuinely unavailable secret/account, unavoidable
-  third-party action, material spend, destructive target ambiguity, or a
-  product decision with materially different user outcomes that cannot be
-  inferred from the current contract.
+  third-party action, material spend, destructive target ambiguity, a product
+  decision with materially different user outcomes that cannot be inferred
+  from the current contract, or a new multi-session workstream that "Product
+  direction and audience" does not cover.
 - App Store preparation or submission may proceed when the configured account,
   listing, privacy answers, licences, and release evidence are available.
   Never fabricate legal, privacy, field, or marketing claims to pass a gate.
@@ -108,6 +141,11 @@
 - Conflicting or stale topology/movement evidence blocks a new static road
   release. Stale dynamic toll/passage information is shown as non-current and
   does not revoke an already exact released route.
+- Per-route evidence gates govern navigation-grade claims: reviewed movements,
+  junction insets, spoken guidance, and released navigation authority.
+  Planning and selection over the bundled whole-network snapshot rely on the
+  snapshot's own coverage and identity gates and do not require per-route
+  field or legal-record investigation.
 - Keep snapshot, source, checked date, and verification state with every
   releasable road or movement.
 - Keep raw coordinates and personal field traces private and ignored. Track

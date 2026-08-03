@@ -1,7 +1,12 @@
 # Route Atlas visual design
 
-Status: accepted design contract with one exact real K7 exit-handoff topology
-release; broader Shuto coverage remains unreleased.
+Status: superseded in direction on 2026-08-03. The semantic-zoom rectilinear
+topology model described below is replaced by the whole-route track map defined
+in `docs/product/principles.md` (principle 10) and
+`docs/product/iphone-product-experience.md`; this document awaits a track-map
+rewrite alongside that design work. Its licensing, recognition-reference,
+release-gate, and journey-overlay facts remain current. The K7 sections record
+a retained historical fixture, not an active delivery track.
 
 ## Product role
 

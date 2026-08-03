@@ -56,22 +56,32 @@ traffic control.
 8. **Recovery preserves the route.** A missed movement finds a safe legal path to
    a later occurrence in the selected route; it does not replace the drive with
    destination-first navigation.
-9. **Entry and exit are explicit.** Current-location recommendations target an
-   exact directional entrance. A cruise ends only through a legal planned exit
-   sequence, never by reversing or accidentally leaving the expressway.
-10. **One map control offers two projections.** The user may switch between a
-    geographic map and a rectilinear topology map while planning or driving;
-    the product does not force one projection by journey phase. The geographic
-    projection preserves local spatial context. The topology projection uses
-    horizontal, vertical, and diagonal segments to make route relationships,
-    directional IC facilities, JCT choices, and directional PA access legible.
-    Both projections preserve the active `RoutePlan`, eligible current
-    position, current occurrence, passed and future occurrences, repeated
-    traversals, and positioning uncertainty. A topology marker represents
-    route-bound progress, not geographic precision. A reviewed junction inset
-    may clarify the next decision. Neither projection nor its UI may create
-    route semantics, and Kaido-owned simplification must not copy operator
-    artwork.
+9. **Entry and exit are explicit — and priced.** After the user chooses a
+   route, current-location recommendations target exact direction-valid
+   entrances compatible with that route. Each entrance/exit pairing shows its
+   tariff band from dated tariff evidence, or an explicit no-current-quote
+   state; because the Shuto tariff uses the shortest all-Shuto path between
+   entry and exit, lap count never changes the quoted band. A cruise ends only
+   through a legal planned exit sequence, never by reversing or accidentally
+   leaving the expressway.
+10. **One map control offers two presentations.** The user may switch between
+    a provider-backed geographic driving map and the Kaido-owned whole-route
+    track map while planning or driving; the product does not force one
+    presentation by journey phase. The geographic map preserves local spatial
+    context during surface access, entry, and egress. The track map keeps the
+    entire selected route readable in one frame — one stylized continuous
+    route line in the manner of a circuit diagram, with every on-route
+    directional IC, JCT, and PA labeled at all times, so the whole drive is
+    legible at a glance without zooming. Track-map orientation and proportion
+    may be adjusted for legibility and need not be north-up, but directed
+    connectivity, facility direction, and route occurrence order are never
+    distorted. Both presentations preserve the active `RoutePlan`, eligible
+    current position, current occurrence, passed and future occurrences,
+    repeated traversals, and positioning uncertainty. A track-map marker
+    represents route-bound progress, not geographic precision. A reviewed
+    junction inset may clarify the next decision. Neither presentation nor its
+    UI may create route semantics, and Kaido-owned simplification must not
+    copy operator artwork.
 11. **Say only what helps now.** Interface copy is short, literal, and
     action-first. Driving surfaces state the current road, next legal movement,
     distance, and uncertainty without slogans, repeated reassurance, or internal
@@ -79,27 +89,25 @@ traffic control.
     pre-drive and evidence views instead of competing with the next driving
     decision.
 
-## First product slice
+## Product shape today and the route-first realignment
 
-The smallest useful product is not the whole Shuto network. It is:
+The whole-Shuto planning layer is released: a bundled dated network snapshot
+covering all 26 official routes with directional IC facilities, JCTs, and PAs;
+deterministic route search and exact custom selection; fail-closed surface
+access and egress legs; pre-drive review; and a clearly labeled driving
+simulation. Navigation-grade guidance remains movement-by-movement: only
+reviewed junction movements produce insets and speech, and that coverage grows
+after evidence review rather than shipping a visually complete but unevenly
+verified guidance layer.
 
-- a small dated network snapshot;
-- a few fully checked entrance, movement, PA, and exit combinations;
-- one short central route and one tunnel-heavy outer route;
-- user-switchable geographic and rectilinear topology projections of the
-  released network slice, without implying that unsupported Shuto corridors are
-  navigable or verified;
-- pre-drive route review;
-- deterministic route execution with repeated occurrences;
-- current-location access to a small set of verified directional entrances;
-- automatic entry-phase recognition with a low-confidence fallback;
-- safe route rejoin and a precomputed finish-drive egress plan;
-- explicit degraded positioning;
-- Japanese, Simplified Chinese, and English text and voice guidance;
-- planned-conflict warnings and honest real-time uncertainty.
+The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 
-Coverage should grow movement by movement after evidence review rather than
-shipping a visually complete but unevenly verified map.
+1. a route-first home: the user chooses the route experience before anything
+   else, and destination search becomes an optional continuation;
+2. entrance recommendation from the current origin with tariff bands,
+   including legal radial-to-loop joins and adjustable lap count;
+3. the whole-route track map replacing the semantic-zoom topology projection;
+4. clear, always-visible facility labeling on the selected route.
 
 ## Non-goals for the first implementation
 

@@ -3207,6 +3207,9 @@ private struct WholeShutoNetworkDiagram: View {
       drawWater(context: &context, size: size)
 
       let nodeCoordinates = nodesByID
+      // Track-map visual language: one quiet casing pass under all routes,
+      // then calm solid route colors on top.
+      var wayPaths: [(path: Path, routeID: String)] = []
       for way in database.ways where way.kind == "MAINLINE" {
         let points = way.nodeIDs.compactMap {
           nodeCoordinates[$0].map(transform.point)
@@ -3217,14 +3220,33 @@ private struct WholeShutoNetworkDiagram: View {
         for point in points.dropFirst() {
           path.addLine(to: point)
         }
-        let routeID = way.routeMemberships.first?.routeID ?? ""
+        wayPaths.append(
+          (path, way.routeMemberships.first?.routeID ?? "")
+        )
+      }
+      for way in wayPaths {
         context.stroke(
-          path,
+          way.path,
           with: .color(
-            routeColor(routeID).opacity(usesDarkStyle ? 0.50 : 0.62)
+            usesDarkStyle
+              ? Color(red: 0.11, green: 0.14, blue: 0.2)
+              : Color(red: 0.85, green: 0.87, blue: 0.9)
           ),
           style: StrokeStyle(
-            lineWidth: usesDarkStyle ? 2.5 : 2.2,
+            lineWidth: 4.2,
+            lineCap: .round,
+            lineJoin: .round
+          )
+        )
+      }
+      for way in wayPaths {
+        context.stroke(
+          way.path,
+          with: .color(
+            routeColor(way.routeID).opacity(usesDarkStyle ? 0.78 : 0.88)
+          ),
+          style: StrokeStyle(
+            lineWidth: 2.3,
             lineCap: .round,
             lineJoin: .round
           )
@@ -3304,42 +3326,24 @@ private struct WholeShutoNetworkDiagram: View {
         )
       }
 
-      for facility in database.directionalFacilities
-      where facility.operationalStatus == "AVAILABLE" {
-        let point = transform.point(facility.coordinate)
-        context.fill(
-          Path(
-            ellipseIn: CGRect(
-              x: point.x - 1.6,
-              y: point.y - 1.6,
-              width: 3.2,
-              height: 3.2
-            )
-          ),
-          with: .color(
-            usesDarkStyle
-              ? KaidoTheme.muted.opacity(0.72)
-              : KaidoTheme.quietText.opacity(0.52)
-          )
-        )
-      }
-
+      // The network scale shows route identity, not every facility: IC dots
+      // move to the selected-route track map, and PA marks stay quiet.
       for parkingArea in database.parkingAreas {
         let point = transform.point(parkingArea.coordinate)
         let frame = CGRect(
-          x: point.x - 4.5,
-          y: point.y - 4.5,
-          width: 9,
-          height: 9
+          x: point.x - 3.4,
+          y: point.y - 3.4,
+          width: 6.8,
+          height: 6.8
         )
         context.fill(
-          Path(roundedRect: frame, cornerRadius: 2),
-          with: .color(KaidoTheme.signalAmber)
+          Path(roundedRect: frame, cornerRadius: 1.8),
+          with: .color(KaidoTheme.signalAmber.opacity(0.82))
         )
         context.draw(
           context.resolve(
             Text("P")
-              .font(.system(size: 5, weight: .black))
+              .font(.system(size: 4.4, weight: .black))
               .foregroundStyle(KaidoTheme.asphalt)
           ),
           at: point
@@ -3469,6 +3473,9 @@ private struct WholeShutoNetworkDiagram: View {
     let featured = [
       "C1", "C2", "B", "1_HANEDA", "3", "4", "5", "6_MUKOJIMA", "7", "K1", "K7_YOKOHAMA_KITA", "S1",
     ]
+    // Anchor each shield mid-route, then push overlapping shields apart so
+    // the central cluster stays readable.
+    var placements: [(routeID: String, point: CGPoint)] = []
     for routeID in featured {
       let coordinates = database.ways
         .filter {
@@ -3479,10 +3486,33 @@ private struct WholeShutoNetworkDiagram: View {
         .compactMap { nodeCoordinates[$0] }
       guard !coordinates.isEmpty else { continue }
       let coordinate = coordinates[coordinates.count / 2]
-      let point = transform.point(coordinate)
-      let label = shieldLabel(routeID)
+      placements.append(
+        (routeID, transform.point(coordinate))
+      )
+    }
+    let minimumShieldGap = 24.0
+    for index in placements.indices {
+      var point = placements[index].point
+      for earlier in placements[..<index] {
+        let dx = point.x - earlier.point.x
+        let dy = point.y - earlier.point.y
+        let distance = (dx * dx + dy * dy).squareRoot()
+        if distance < minimumShieldGap {
+          let push = minimumShieldGap - distance
+          if distance > 0.001 {
+            point.x += dx / distance * push
+            point.y += dy / distance * push
+          } else {
+            point.y -= minimumShieldGap
+          }
+        }
+      }
+      placements[index].point = point
+    }
+    for placement in placements {
+      let point = placement.point
       let resolved = context.resolve(
-        Text(label)
+        Text(shieldLabel(placement.routeID))
           .font(.system(size: 7, weight: .black, design: .rounded))
           .foregroundStyle(Color.white)
       )
@@ -3492,9 +3522,16 @@ private struct WholeShutoNetworkDiagram: View {
         width: 22,
         height: 16
       )
-      context.fill(
-        Path(roundedRect: frame, cornerRadius: 4),
-        with: .color(routeColor(routeID))
+      let shield = Path(roundedRect: frame, cornerRadius: 4)
+      context.fill(shield, with: .color(routeColor(placement.routeID)))
+      context.stroke(
+        shield,
+        with: .color(
+          usesDarkStyle
+            ? KaidoTheme.asphalt.opacity(0.9)
+            : Color.white.opacity(0.9)
+        ),
+        style: StrokeStyle(lineWidth: 1.2)
       )
       context.draw(resolved, at: point)
     }

@@ -135,6 +135,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoLinearTrackMapPreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-NETWORK-BROWSE-PREVIEW"
+      ) {
+        WholeShutoNetworkBrowsePreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -435,6 +439,24 @@ private struct WholeShutoJunctionPreviewHost: View {
           await model.advanceSimulationForTesting()
         }
       }
+  }
+}
+
+private struct WholeShutoNetworkBrowsePreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // No selection: the whole-network browse diagram is the network mode.
+    model.mapMode = .network
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
   }
 }
 

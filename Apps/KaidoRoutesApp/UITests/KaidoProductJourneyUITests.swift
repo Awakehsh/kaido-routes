@@ -26,6 +26,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-geographic-map", in: app).exists
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
+    // Route first: circuit experiences lead the planning dock and the
+    // destination search remains available as an optional continuation.
+    XCTAssertTrue(
+      element("whole-shuto-circuit-experiences", in: app).exists
+    )
+    XCTAssertTrue(
+      element(
+        "whole-shuto-circuit-option-shuto.circuit.c2-inner-bayshore",
+        in: app
+      ).exists
+    )
+    XCTAssertTrue(
+      element(
+        "whole-shuto-circuit-option-shuto.circuit.c1-inner",
+        in: app
+      ).exists
+    )
     XCTAssertTrue(
       element("whole-shuto-destination-search", in: app).exists
     )
@@ -35,9 +52,55 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let homeScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    homeScreenshot.name = "Whole Shuto route search home"
+    homeScreenshot.name = "Whole Shuto route-first home"
     homeScreenshot.lifetime = .keepAlways
     add(homeScreenshot)
+  }
+
+  func testCircuitSelectionOffersEntrancesAndLaps() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let circuitCard = element(
+      "whole-shuto-circuit-option-shuto.circuit.c2-inner-bayshore",
+      in: app
+    )
+    XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
+    circuitCard.tap()
+
+    // The panel offers direction-valid entrances, a lap control, and one
+    // start action; a lap change is reflected before any journey starts.
+    let lapsValue = element("whole-shuto-circuit-laps", in: app)
+    XCTAssertTrue(lapsValue.waitForExistence(timeout: 5))
+    XCTAssertTrue(
+      element("whole-shuto-start-circuit", in: app).exists
+    )
+    XCTAssertTrue(
+      app.descendants(matching: .any).matching(
+        NSPredicate(
+          format: "identifier BEGINSWITH %@",
+          "whole-shuto-circuit-entrance-"
+        )
+      ).firstMatch.exists
+    )
+    element("whole-shuto-circuit-laps-increase", in: app).tap()
+    let lapsUpdated = expectation(
+      for: NSPredicate(format: "value == %@", "2"),
+      evaluatedWith: lapsValue
+    )
+    wait(for: [lapsUpdated], timeout: 5)
+
+    // Dismissing the draft returns to the circuit cards.
+    element("whole-shuto-circuit-close", in: app).tap()
+    XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
   }
 
   func testDestinationSearchSelectsOneResolvedPlace() {

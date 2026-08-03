@@ -18,6 +18,13 @@ internal review workbench.
   directional IC facilities, JCTs, and PAs.
 - The geographic map shows the selected route on MapKit and keeps the exact
   Kaido-owned Shuto path separate from bounded surface access and egress.
+- The home is route-first: circuit experiences (the C2 inner loop closed by
+  the Bayshore Route, and the C1 inner loop) lead the planning surface.
+  Selecting a circuit recommends direction-valid entrances nearest the
+  current origin, offers a 1–3 lap count, plans the whole circuit as one
+  ordered occurrence sequence with a forward-ranked exit, and runs it as a
+  round trip through the normal review gate. Destination search remains an
+  optional continuation below the circuit choices.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

@@ -23,6 +23,109 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .geographic)
   }
 
+  func testCircuitSelectionRecommendsDirectionValidEntrancesFromOrigin() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    // Near Hatsudai, west side of the C2 loop.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+
+    model.selectCircuit(.c2InnerWithBayshore)
+
+    XCTAssertEqual(
+      model.selectedCircuit?.circuitID,
+      "shuto.circuit.c2-inner-bayshore"
+    )
+    XCTAssertEqual(model.circuitLaps, 1)
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      "shuto.ic.c2.hatsudaiminami"
+    )
+    XCTAssertTrue(
+      model.circuitEntranceCandidates.allSatisfy {
+        $0.entranceDirections.contains("内回り")
+      }
+    )
+  }
+
+  func testCircuitJourneyIsARoundTripThroughTheReviewGate() async {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    let origin = ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    model.selectCurrentOrigin(origin)
+    model.selectCircuit(.c2InnerWithBayshore)
+    model.selectCircuitLaps(2)
+
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertNil(model.failureCode)
+    // Round trip: the origin doubles as the destination.
+    XCTAssertEqual(model.destination?.coordinate, origin)
+    XCTAssertNotNil(model.accessRoute)
+    XCTAssertNotNil(model.egressRoute)
+    guard let route = model.selectedRoute else {
+      return XCTFail("Circuit journey selected no route")
+    }
+    // Two laps of the ~56 km circuit.
+    XCTAssertGreaterThan(route.distanceMeters, 100_000)
+    XCTAssertEqual(
+      route.routePlan.entryFacilityID,
+      "shuto.ic.c2.hatsudaiminami"
+    )
+    XCTAssertEqual(
+      Set(route.routePlan.occurrences.map(\.id)).count,
+      route.routePlan.occurrences.count
+    )
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+  }
+
+  func testCircuitJourneyRestoresFromCheckpointAsCircuit() async {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c2InnerWithBayshore)
+    model.selectCircuitLaps(2)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    let expectedRoutePlanID = model.selectedRoute?.routePlan.id
+    XCTAssertNotNil(expectedRoutePlanID)
+
+    let restored = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertTrue(restored.isCircuitRouteSelected)
+    XCTAssertEqual(restored.circuitLaps, 2)
+    XCTAssertEqual(
+      restored.selectedCircuit?.circuitID,
+      "shuto.circuit.c2-inner-bayshore"
+    )
+    XCTAssertEqual(
+      restored.selectedRoute?.routePlan.id,
+      expectedRoutePlanID
+    )
+  }
+
   func testResolvedDestinationPreviewIsExplicitAndResettable() {
     let model = WholeShutoProductModel(checkpointStore: nil)
     let destination = WholeShutoPlace(
@@ -1288,7 +1391,9 @@ extension WholeShutoJourneyCheckpoint {
       consumedGuidancePromptIDs: consumedGuidancePromptIDs,
       mapMode: mapMode,
       accessRoute: accessRoute,
-      egressRoute: egressRoute
+      egressRoute: egressRoute,
+      circuitID: circuitID,
+      circuitLaps: circuitLaps
     )
   }
 }

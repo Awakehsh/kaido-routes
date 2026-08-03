@@ -32,6 +32,7 @@ enum WholeShutoRouteSelectionSource:
 {
   case recommended = "RECOMMENDED"
   case custom = "CUSTOM"
+  case circuit = "CIRCUIT"
 }
 
 struct WholeShutoPlace: Codable, Equatable, Sendable {
@@ -91,7 +92,7 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.4"
+  static let currentSchemaVersion = "1.5"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -112,6 +113,8 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let mapMode: WholeShutoMapMode
   let accessRoute: WholeShutoSurfaceRoute?
   let egressRoute: WholeShutoSurfaceRoute?
+  let circuitID: String?
+  let circuitLaps: Int?
 }
 
 @MainActor
@@ -225,6 +228,13 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var customPreference: ShutoRoutePreference =
     .recommended
   @Published private(set) var customDraftRoute: ShutoPlannedRoute?
+  @Published private(set) var selectedCircuit: ShutoCircuitDefinition?
+  @Published private(set) var circuitEntranceCandidates:
+    [ShutoNetworkDatabase.Facility] = []
+  @Published private(set) var circuitEntryFacilityID: String?
+  @Published private(set) var circuitLaps = 1
+  @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
+  @Published private(set) var isCircuitRouteSelected = false
   @Published private(set) var accessRoute: WholeShutoSurfaceRoute?
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
@@ -322,6 +332,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var selectedRecommendation: ShutoRouteRecommendation? {
+    if isCircuitRouteSelected {
+      return circuitRecommendation
+    }
     if isCustomRouteSelected {
       return customRecommendation
     }
@@ -1007,6 +1020,8 @@ final class WholeShutoProductModel: ObservableObject {
           : [:]
         selectedRecommendationIndex = 0
         clearCustomRouteSelection()
+        clearCircuitRouteSelection()
+        clearCircuitPlanningDraft()
         phase = .review
         progressFraction = 0
         if !applyCachedSurfaceRoutes(for: evaluation.recommendations[0]) {
@@ -1027,6 +1042,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard recommendations.indices.contains(index) else { return }
     selectedRecommendationIndex = index
     isCustomRouteSelected = false
+    clearCircuitRouteSelection()
     guard let origin, let destination,
       let recommendation = selectedRecommendation
     else {
@@ -1042,6 +1058,149 @@ final class WholeShutoProductModel: ObservableObject {
       origin: origin,
       destination: destination
     )
+  }
+
+  var bundledCircuits: [ShutoCircuitDefinition] {
+    ShutoCircuitDefinition.bundled
+  }
+
+  var circuitEntryFacility: ShutoNetworkDatabase.Facility? {
+    facility(id: circuitEntryFacilityID)
+  }
+
+  var canStartCircuitJourney: Bool {
+    phase == .planning
+      && selectedCircuit != nil
+      && circuitEntryFacilityID != nil
+      && origin != nil
+  }
+
+  func selectCircuit(_ circuit: ShutoCircuitDefinition) {
+    guard phase == .planning else { return }
+    selectedCircuit = circuit
+    circuitLaps = 1
+    circuitEntranceCandidates = planner.circuitEntranceCandidates(
+      for: circuit,
+      origin: origin?.coordinate
+    )
+    circuitEntryFacilityID =
+      circuitEntranceCandidates.first?.facilityID
+  }
+
+  func clearCircuitDraft() {
+    guard phase == .planning else { return }
+    clearCircuitPlanningDraft()
+  }
+
+  private func clearCircuitPlanningDraft() {
+    selectedCircuit = nil
+    circuitEntranceCandidates = []
+    circuitEntryFacilityID = nil
+    circuitLaps = 1
+  }
+
+  func selectCircuitEntrance(facilityID: String) {
+    guard
+      circuitEntranceCandidates.contains(
+        where: { $0.facilityID == facilityID }
+      )
+    else { return }
+    circuitEntryFacilityID = facilityID
+  }
+
+  func selectCircuitLaps(_ laps: Int) {
+    guard (1...3).contains(laps) else { return }
+    circuitLaps = laps
+  }
+
+  func refreshCircuitEntrances() {
+    guard let circuit = selectedCircuit else { return }
+    circuitEntranceCandidates = planner.circuitEntranceCandidates(
+      for: circuit,
+      origin: origin?.coordinate
+    )
+    if circuitEntryFacilityID == nil
+      || !circuitEntranceCandidates.contains(
+        where: { $0.facilityID == circuitEntryFacilityID }
+      )
+    {
+      circuitEntryFacilityID =
+        circuitEntranceCandidates.first?.facilityID
+    }
+  }
+
+  /// Starts the circuit journey as a round trip: the origin doubles as the
+  /// destination, the exit is the first direction-valid exit after the
+  /// chosen entrance, and the usual fail-closed surface-leg flow follows.
+  @discardableResult
+  func startCircuitJourney() -> Bool {
+    guard
+      phase == .planning,
+      let circuit = selectedCircuit,
+      let entryFacilityID = circuitEntryFacilityID,
+      let origin
+    else {
+      return false
+    }
+    do {
+      let exits = try planner.circuitExitCandidates(
+        for: circuit,
+        afterEntering: entryFacilityID
+      )
+      guard let exitFacility = exits.first else {
+        failureCode = "NO_SHUTO_ROUTE"
+        return false
+      }
+      let route = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacility.facilityID,
+        laps: circuitLaps
+      )
+      cancelSurfaceRouteResolution()
+      clearRouteChoiceEvaluation()
+      clearCustomRouteSelection()
+      recommendations = []
+      selectedRecommendationIndex = 0
+      let roundTripDestination = origin
+      destination = roundTripDestination
+      destinationQuery = roundTripDestination.title
+      selectedDestinationTitle = roundTripDestination.title
+      let accessDistance = Self.distance(
+        origin.coordinate,
+        route.entryFacility.coordinate
+      )
+      let egressDistance = Self.distance(
+        route.exitFacility.coordinate,
+        roundTripDestination.coordinate
+      )
+      let recommendation = ShutoRouteRecommendation(
+        route: route,
+        surfaceAccessDistanceMeters: accessDistance,
+        surfaceEgressDistanceMeters: egressDistance,
+        totalScoreMeters:
+          route.distanceMeters + accessDistance + egressDistance
+      )
+      circuitRecommendation = recommendation
+      isCircuitRouteSelected = true
+      preference = route.preference
+      phase = .review
+      failureCode = nil
+      resolveSurfaceRoutes(
+        for: recommendation,
+        origin: origin,
+        destination: roundTripDestination
+      )
+      return true
+    } catch {
+      failureCode = Self.failureCode(error)
+      return false
+    }
+  }
+
+  private func clearCircuitRouteSelection() {
+    circuitRecommendation = nil
+    isCircuitRouteSelected = false
   }
 
   func prepareCustomRouteDraft() {
@@ -1096,6 +1255,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
     customRecommendation = recommendation
     isCustomRouteSelected = true
+    clearCircuitRouteSelection()
     preference = route.preference
     failureCode = nil
     resolveSurfaceRoutes(
@@ -1313,6 +1473,8 @@ final class WholeShutoProductModel: ObservableObject {
     selectedRecommendationIndex = 0
     clearRouteChoiceEvaluation()
     clearCustomRouteSelection()
+    clearCircuitRouteSelection()
+    clearCircuitPlanningDraft()
     accessRoute = nil
     egressRoute = nil
     progressFraction = 0
@@ -1637,12 +1799,37 @@ final class WholeShutoProductModel: ObservableObject {
         == WholeShutoJourneyCheckpoint.currentSchemaVersion,
       checkpoint.networkSnapshotID == database.networkSnapshotID,
       checkpoint.phase != .planning,
-      checkpoint.phase != .completed,
-      let route = try? planner.plan(
+      checkpoint.phase != .completed
+    else {
+      return
+    }
+    var restoredCircuit: ShutoCircuitDefinition?
+    let replanned: ShutoPlannedRoute?
+    if checkpoint.routeSelectionSource == .circuit {
+      guard
+        let circuit = ShutoCircuitDefinition.bundled.first(
+          where: { $0.circuitID == checkpoint.circuitID }
+        ),
+        let laps = checkpoint.circuitLaps
+      else {
+        return
+      }
+      restoredCircuit = circuit
+      replanned = try? planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: checkpoint.entryFacilityID,
+        exitFacilityID: checkpoint.exitFacilityID,
+        laps: laps,
+        preference: checkpoint.preference
+      )
+    } else {
+      replanned = try? planner.plan(
         entryFacilityID: checkpoint.entryFacilityID,
         exitFacilityID: checkpoint.exitFacilityID,
         preference: checkpoint.preference
-      ),
+      )
+    }
+    guard let route = replanned,
       route.routePlan == checkpoint.routePlan
     else {
       return
@@ -1661,7 +1848,8 @@ final class WholeShutoProductModel: ObservableObject {
       totalScoreMeters:
         route.distanceMeters + accessDistance + egressDistance
     )
-    if checkpoint.routeSelectionSource == .custom {
+    switch checkpoint.routeSelectionSource {
+    case .custom:
       recommendations =
         (try? planner.recommend(
           from: checkpoint.origin.coordinate,
@@ -1673,7 +1861,15 @@ final class WholeShutoProductModel: ObservableObject {
       customExitFacilityID = route.exitFacility.facilityID
       customPreference = route.preference
       customDraftRoute = route
-    } else {
+    case .circuit:
+      recommendations = []
+      clearCustomRouteSelection()
+      selectedCircuit = restoredCircuit
+      circuitLaps = checkpoint.circuitLaps ?? 1
+      circuitEntryFacilityID = route.entryFacility.facilityID
+      circuitRecommendation = restoredRecommendation
+      isCircuitRouteSelected = true
+    case .recommended:
       recommendations = [restoredRecommendation]
       clearCustomRouteSelection()
     }
@@ -1772,7 +1968,9 @@ final class WholeShutoProductModel: ObservableObject {
       routePlan: route.routePlan,
       preference: route.preference,
       routeSelectionSource:
-        isCustomRouteSelected ? .custom : .recommended,
+        isCircuitRouteSelected
+        ? .circuit
+        : isCustomRouteSelected ? .custom : .recommended,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,
@@ -1782,7 +1980,10 @@ final class WholeShutoProductModel: ObservableObject {
         consumedGuidancePromptIDs.sorted(),
       mapMode: mapMode,
       accessRoute: accessRoute,
-      egressRoute: egressRoute
+      egressRoute: egressRoute,
+      circuitID:
+        isCircuitRouteSelected ? selectedCircuit?.circuitID : nil,
+      circuitLaps: isCircuitRouteSelected ? circuitLaps : nil
     )
     try? checkpointStore?.save(checkpoint)
   }

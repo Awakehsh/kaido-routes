@@ -22,6 +22,7 @@ struct WholeShutoProductView: View {
   @State private var showsJourneyReview = false
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
+  @State private var waitsForCircuitLocation = false
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
@@ -391,6 +392,10 @@ struct WholeShutoProductView: View {
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
+      circuitExperienceSection
+
+      optionalDestinationDivider
+
       journeySearchComposer
 
       routeFailureBanner
@@ -398,6 +403,286 @@ struct WholeShutoProductView: View {
     .padding(.horizontal, 16)
     .padding(.top, 22)
     .padding(.bottom, 14)
+  }
+
+  /// The home leads with the route experience, not a destination field.
+  private var circuitExperienceSection: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text(
+        copy.resolve(
+          japanese: "ルートを選ぶ",
+          simplifiedChinese: "选择路线",
+          english: "CHOOSE A ROUTE"
+        )
+      )
+      .font(.system(size: 11, weight: .bold))
+      .foregroundStyle(.secondary)
+
+      if let circuit = model.selectedCircuit {
+        selectedCircuitPanel(circuit)
+      } else {
+        HStack(spacing: 10) {
+          ForEach(model.bundledCircuits) { circuit in
+            circuitCard(circuit)
+          }
+        }
+      }
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-circuit-experiences")
+  }
+
+  private func circuitCard(
+    _ circuit: ShutoCircuitDefinition
+  ) -> some View {
+    Button {
+      model.selectCircuit(circuit)
+      if let snapshot = planningLocation.snapshot {
+        model.selectCurrentOrigin(snapshot.coordinate)
+        model.refreshCircuitEntrances()
+      } else {
+        planningLocation.requestCurrentLocation()
+      }
+    } label: {
+      VStack(alignment: .leading, spacing: 5) {
+        Image(systemName: "arrow.triangle.capsulepath")
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(KaidoTheme.routeGreen)
+        Text(circuit.displayNameJA)
+          .font(.system(size: 12.5, weight: .bold))
+          .multilineTextAlignment(.leading)
+          .lineLimit(2)
+        Text(
+          copy.resolve(
+            japanese: "周回ルート",
+            simplifiedChinese: "环线路线",
+            english: "CIRCUIT"
+          )
+        )
+        .font(.system(size: 9.5, weight: .semibold))
+        .foregroundStyle(.secondary)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(10)
+      .background(KaidoTheme.paperRaised.opacity(0.94))
+      .clipShape(RoundedRectangle(cornerRadius: 12))
+      .overlay {
+        RoundedRectangle(cornerRadius: 12)
+          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+      }
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "whole-shuto-circuit-option-\(circuit.circuitID)"
+    )
+  }
+
+  private func selectedCircuitPanel(
+    _ circuit: ShutoCircuitDefinition
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        Text(circuit.displayNameJA)
+          .font(.system(size: 14, weight: .bold))
+        Spacer()
+        Button {
+          model.clearCircuitDraft()
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+            .font(.system(size: 16))
+            .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("whole-shuto-circuit-close")
+      }
+
+      Text(
+        copy.resolve(
+          japanese: "入口を選ぶ",
+          simplifiedChinese: "选择入口",
+          english: "ENTRANCE"
+        )
+      )
+      .font(.system(size: 10, weight: .bold))
+      .foregroundStyle(.secondary)
+
+      ForEach(
+        Array(model.circuitEntranceCandidates.prefix(3)),
+        id: \.facilityID
+      ) { facility in
+        circuitEntranceRow(facility)
+      }
+
+      HStack(spacing: 10) {
+        Text(
+          copy.resolve(
+            japanese: "周回数",
+            simplifiedChinese: "圈数",
+            english: "LAPS"
+          )
+        )
+        .font(.system(size: 12, weight: .semibold))
+        Spacer()
+        Button {
+          model.selectCircuitLaps(model.circuitLaps - 1)
+        } label: {
+          Image(systemName: "minus.circle")
+            .font(.system(size: 20))
+        }
+        .buttonStyle(.plain)
+        .disabled(model.circuitLaps <= 1)
+        .accessibilityIdentifier("whole-shuto-circuit-laps-decrease")
+        Text("×\(model.circuitLaps)")
+          .font(.system(size: 15, weight: .bold))
+          .monospacedDigit()
+          .accessibilityIdentifier("whole-shuto-circuit-laps")
+          .accessibilityValue("\(model.circuitLaps)")
+        Button {
+          model.selectCircuitLaps(model.circuitLaps + 1)
+        } label: {
+          Image(systemName: "plus.circle")
+            .font(.system(size: 20))
+        }
+        .buttonStyle(.plain)
+        .disabled(model.circuitLaps >= 3)
+        .accessibilityIdentifier("whole-shuto-circuit-laps-increase")
+      }
+
+      Button {
+        beginCircuitJourney()
+      } label: {
+        HStack(spacing: 8) {
+          if waitsForCircuitLocation {
+            ProgressView()
+              .tint(.white)
+            Text(
+              copy.resolve(
+                japanese: "現在地を確認中",
+                simplifiedChinese: "正在定位",
+                english: "LOCATING"
+              )
+            )
+          } else {
+            Text(
+              copy.resolve(
+                japanese: "このルートで行く",
+                simplifiedChinese: "使用此路线",
+                english: "Use this route"
+              )
+            )
+            Spacer()
+            Image(systemName: "arrow.right")
+          }
+        }
+        .font(.system(size: 13, weight: .bold))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 48)
+        .background(KaidoTheme.routeGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+      }
+      .buttonStyle(.plain)
+      .disabled(
+        model.circuitEntryFacilityID == nil || waitsForCircuitLocation
+      )
+      .opacity(
+        model.circuitEntryFacilityID == nil ? 0.45 : 1
+      )
+      .accessibilityIdentifier("whole-shuto-start-circuit")
+    }
+    .padding(12)
+    .background(KaidoTheme.paperRaised.opacity(0.94))
+    .clipShape(RoundedRectangle(cornerRadius: 14))
+    .overlay {
+      RoundedRectangle(cornerRadius: 14)
+        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+  }
+
+  private func circuitEntranceRow(
+    _ facility: ShutoNetworkDatabase.Facility
+  ) -> some View {
+    let isSelected = model.circuitEntryFacilityID == facility.facilityID
+    return Button {
+      model.selectCircuitEntrance(facilityID: facility.facilityID)
+    } label: {
+      HStack(spacing: 8) {
+        Image(
+          systemName: isSelected ? "circle.inset.filled" : "circle"
+        )
+        .font(.system(size: 14))
+        .foregroundStyle(
+          isSelected ? KaidoTheme.routeGreen : Color.secondary
+        )
+        Text(facility.nameJA)
+          .font(.system(size: 13, weight: .semibold))
+        Text(facility.entranceDirections.joined(separator: "・"))
+          .font(.system(size: 10.5, weight: .semibold))
+          .foregroundStyle(.secondary)
+        if facility.etcOnly {
+          Text("ETC")
+            .font(.system(size: 9, weight: .bold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(KaidoTheme.roadGray.opacity(0.25))
+            .clipShape(Capsule())
+        }
+        Spacer()
+      }
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier(
+      "whole-shuto-circuit-entrance-\(facility.facilityID)"
+    )
+  }
+
+  private var optionalDestinationDivider: some View {
+    HStack(spacing: 8) {
+      Rectangle()
+        .fill(KaidoTheme.paperDivider)
+        .frame(height: 1)
+      Text(
+        copy.resolve(
+          japanese: "または目的地へ",
+          simplifiedChinese: "或者：去一个地方",
+          english: "OR GO SOMEWHERE"
+        )
+      )
+      .font(.system(size: 10, weight: .semibold))
+      .foregroundStyle(.secondary)
+      .fixedSize()
+      Rectangle()
+        .fill(KaidoTheme.paperDivider)
+        .frame(height: 1)
+    }
+  }
+
+  private func beginCircuitJourney() {
+    focusedPlanningField = nil
+    placeSearch.dismissResults()
+
+    if model.origin != nil {
+      model.startCircuitJourney()
+      return
+    }
+    if let snapshot = planningLocation.snapshot {
+      model.selectCurrentOrigin(snapshot.coordinate)
+      model.refreshCircuitEntrances()
+      model.startCircuitJourney()
+      return
+    }
+    if planningLocation.state == .denied
+      || planningLocation.state == .unavailable
+    {
+      showsManualOrigin = true
+      focusedPlanningField = .origin
+      return
+    }
+    waitsForCircuitLocation = true
+    planningLocation.requestCurrentLocation()
+    handlePlanningLocationUpdate()
   }
 
   private var journeySearchComposer: some View {
@@ -712,16 +997,25 @@ struct WholeShutoProductView: View {
       planningLocation.state == .measured
     {
       model.selectCurrentOrigin(snapshot.coordinate)
+      model.refreshCircuitEntrances()
+      if waitsForCircuitLocation {
+        waitsForCircuitLocation = false
+        model.startCircuitJourney()
+        return
+      }
       guard waitsForPlanningLocation else { return }
       waitsForPlanningLocation = false
       model.planJourney()
       return
     }
 
-    guard waitsForPlanningLocation else { return }
+    guard waitsForPlanningLocation || waitsForCircuitLocation else {
+      return
+    }
     switch planningLocation.state {
     case .denied, .unavailable:
       waitsForPlanningLocation = false
+      waitsForCircuitLocation = false
       showsManualOrigin = true
       focusedPlanningField = .origin
     case .idle, .permissionRequired, .locating, .measured:

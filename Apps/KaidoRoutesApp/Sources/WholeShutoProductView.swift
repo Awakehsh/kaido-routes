@@ -1992,7 +1992,14 @@ struct WholeShutoProductView: View {
         english: "ROUTE"
       )
     }
-    return route.routeIDsInOrder
+    // Circuit journeys repeat their member sequence every lap; the summary
+    // names each component once while laps stay visible elsewhere.
+    var routeIDs = route.routeIDsInOrder
+    if model.isCircuitRouteSelected {
+      var seen = Set<String>()
+      routeIDs = routeIDs.filter { seen.insert($0).inserted }
+    }
+    return routeIDs
       .map(shieldLabel)
       .joined(separator: "  →  ")
   }

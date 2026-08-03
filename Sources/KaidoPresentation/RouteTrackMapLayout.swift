@@ -283,14 +283,43 @@ public struct RouteTrackMapLayout: Equatable, Sendable {
     let topY = trackTop - 46
     let bottomY = trackBottom + 50
 
+    // Loop circuits use four quadrant zones; linear routes use the two
+    // corridor sides picked by the route's principal axis.
+    let startPoint = projected[0]
+    let endPoint = projected[projected.count - 1]
+    let endpointGap = hypot(
+      endPoint.x - startPoint.x,
+      endPoint.y - startPoint.y
+    )
+    let boundsDiagonal = hypot(
+      (maxX - minX) * scale,
+      (maxY - minY) * scale
+    )
+    let isClosedLoop = endpointGap < boundsDiagonal * 0.25
+    let runsEastWest =
+      abs(endPoint.x - startPoint.x) >= abs(endPoint.y - startPoint.y)
+
     func zone(forX x: Double, y: Double) -> LabelZone {
-      let angle =
-        (atan2(y - centerY, x - centerX) * 180 / .pi + 360)
-        .truncatingRemainder(dividingBy: 360)
-      if angle < 50 || angle >= 310 { return .right }
-      if angle < 130 { return .bottom }
-      if angle < 230 { return .left }
-      return .top
+      if isClosedLoop {
+        let angle =
+          (atan2(y - centerY, x - centerX) * 180 / .pi + 360)
+          .truncatingRemainder(dividingBy: 360)
+        if angle < 50 || angle >= 310 { return .right }
+        if angle < 130 { return .bottom }
+        if angle < 230 { return .left }
+        return .top
+      }
+      // Linear corridors split by the perpendicular side of the principal
+      // axis, so every label sits on its own side and leaders never cross
+      // the route.
+      let axisX = endPoint.x - startPoint.x
+      let axisY = endPoint.y - startPoint.y
+      let cross =
+        axisX * (y - startPoint.y) - axisY * (x - startPoint.x)
+      if runsEastWest {
+        return (axisX >= 0 ? cross < 0 : cross >= 0) ? .top : .bottom
+      }
+      return (axisY >= 0 ? cross >= 0 : cross < 0) ? .left : .right
     }
 
     struct Working {
@@ -340,11 +369,13 @@ public struct RouteTrackMapLayout: Equatable, Sendable {
       guard !indices.isEmpty else { continue }
       switch zoneCase {
       case .left, .right:
+        // Linear corridors have no top/bottom label rows, so the side
+        // columns may use nearly the full frame height.
         let placed = spread(
           indices.map { working[$0].snapped.y },
           minimumSeparation: 21,
-          lowerBound: 150,
-          upperBound: 540
+          lowerBound: isClosedLoop ? 150 : 100,
+          upperBound: isClosedLoop ? 540 : 616
         )
         for (offset, index) in indices.enumerated() {
           working[index].labelY = placed[offset]

@@ -131,6 +131,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoTrackMapPreviewHost(startsNavigation: true)
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-TRACK-MAP-LINEAR-PREVIEW"
+      ) {
+        WholeShutoLinearTrackMapPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-ROUTE-PREVIEW"
       ) {
         WholeShutoProductPreviewHost(startsNavigation: false)
@@ -431,6 +435,25 @@ private struct WholeShutoJunctionPreviewHost: View {
           await model.advanceSimulationForTesting()
         }
       }
+  }
+}
+
+private struct WholeShutoLinearTrackMapPreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // Tokyo-to-Yokohama linear journey on the corridor-side track map.
+    model.preparePreviewJourney()
+    model.mapMode = .network
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
   }
 }
 

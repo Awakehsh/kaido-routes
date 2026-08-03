@@ -669,7 +669,9 @@ public struct ShutoRoutePlanner: Sendable {
     _ edges: [ShutoNetworkDatabase.Edge]
   ) -> [String] {
     var result: [String] = []
-    for edge in edges {
+    // Ramps and junction connectors are not "driving route X": only
+    // mainline membership contributes to the route sequence.
+    for edge in edges where edge.kind == "MAINLINE" {
       let candidates = edge.routeMemberships.map(\.routeID)
       let next =
         candidates.first(where: { $0 == result.last })

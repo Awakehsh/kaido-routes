@@ -91,6 +91,50 @@ struct RouteTrackMapLayoutTests {
     #expect((dx * dx + dy * dy).squareRoot() < 8)
   }
 
+  @Test("a linear cross-network route lays out along corridor sides")
+  func laysOutLinearRouteAlongCorridorSides() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let route = try planner.plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+
+    let memberRouteIDs = Set(route.routeIDsInOrder)
+    let layout = try #require(
+      RouteTrackMapLayout.make(
+        routeCoordinates: route.coordinates.map {
+          RouteTrackMapLayout.GeoPoint(
+            latitude: $0.latitude,
+            longitude: $0.longitude
+          )
+        },
+        facilities: trackMapFacilities(
+          database: database,
+          memberRouteIDs: memberRouteIDs
+        )
+      )
+    )
+
+    // The Shibuya-to-Minato-Mirai corridor runs mostly north-south, so
+    // labels occupy the two side columns instead of quadrant zones.
+    #expect(!layout.facilityMarks.isEmpty)
+    #expect(
+      layout.facilityMarks.allSatisfy {
+        $0.zone == .left || $0.zone == .right
+      }
+    )
+    for zone in [RouteTrackMapLayout.LabelZone.left, .right] {
+      let ys = layout.facilityMarks
+        .filter { $0.zone == zone }
+        .map(\.labelY)
+        .sorted()
+      #expect(
+        zip(ys, ys.dropFirst()).allSatisfy { $1 - $0 >= 20 }
+      )
+    }
+  }
+
   @Test("a degenerate route produces no layout instead of a broken one")
   func rejectsDegenerateRoutes() {
     #expect(

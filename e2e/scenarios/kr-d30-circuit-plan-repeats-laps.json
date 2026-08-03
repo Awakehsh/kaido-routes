@@ -1,0 +1,379 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-D30",
+  "title": "Circuit planning repeats laps as distinct occurrences",
+  "layer": "DOMAIN",
+  "tags": ["circuit", "loop", "occurrence", "planning"],
+  "purpose": "A circuit plan must assemble entrance approach, N complete loops, and a forward exit as one continuous ordered occurrence sequence, keep repeated edges as distinct occurrences, and reject direction-invalid entrances and invalid lap counts instead of silently accepting them.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "A synthetic one-way test loop proves circuit assembly semantics, not real Shuto geometry or facility facts."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.circuit-loop-v1",
+      "status": "TEST",
+      "effective_at": "2026-08-03T00:00:00+09:00"
+    },
+    "inputs": {
+      "circuit_definition": {
+        "circuit_id": "test.circuit.loop-inner",
+        "display_name_ja": "テスト環状線 内側",
+        "member_route_ids": ["test.route.loop"],
+        "entrance_direction_ja": "TEST_INNER",
+        "anchor_facility_ids": [
+          "test.ic.loop-anchor-west",
+          "test.ic.loop-anchor-north"
+        ]
+      },
+      "circuit_network": {
+        "schema_version": "1.0",
+        "database_id": "test.database.circuit-loop",
+        "network_snapshot_id": "test.snapshot.circuit-loop-v1",
+        "verification_state": "TEST",
+        "checked_at": "2026-08-03",
+        "routes": [
+          {
+            "route_id": "test.route.loop",
+            "official_name_ja": "テスト環状線",
+            "operational_status": "AVAILABLE"
+          }
+        ],
+        "nodes": [
+          { "node_id": 101, "latitude": 35.0, "longitude": 139.011 },
+          { "node_id": 102, "latitude": 34.991, "longitude": 139.011 },
+          { "node_id": 103, "latitude": 34.991, "longitude": 139.0 },
+          { "node_id": 104, "latitude": 34.991, "longitude": 138.989 },
+          { "node_id": 105, "latitude": 35.0, "longitude": 138.989 },
+          { "node_id": 106, "latitude": 35.009, "longitude": 138.989 },
+          { "node_id": 107, "latitude": 35.009, "longitude": 139.0 },
+          { "node_id": 108, "latitude": 35.009, "longitude": 139.011 },
+          { "node_id": 201, "latitude": 35.001, "longitude": 139.0125 },
+          { "node_id": 301, "latitude": 34.9895, "longitude": 139.0002 }
+        ],
+        "ways": [],
+        "edges": [
+          {
+            "edge_id": "test.edge.loop-1",
+            "from_node_id": 101,
+            "to_node_id": 102,
+            "way_id": 0,
+            "segment_index": 0,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-2",
+            "from_node_id": 102,
+            "to_node_id": 103,
+            "way_id": 0,
+            "segment_index": 1,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-3",
+            "from_node_id": 103,
+            "to_node_id": 104,
+            "way_id": 0,
+            "segment_index": 2,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-4",
+            "from_node_id": 104,
+            "to_node_id": 105,
+            "way_id": 0,
+            "segment_index": 3,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-5",
+            "from_node_id": 105,
+            "to_node_id": 106,
+            "way_id": 0,
+            "segment_index": 4,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-6",
+            "from_node_id": 106,
+            "to_node_id": 107,
+            "way_id": 0,
+            "segment_index": 5,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-7",
+            "from_node_id": 107,
+            "to_node_id": 108,
+            "way_id": 0,
+            "segment_index": 6,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.loop-8",
+            "from_node_id": 108,
+            "to_node_id": 101,
+            "way_id": 0,
+            "segment_index": 7,
+            "kind": "MAINLINE",
+            "direction": "forward",
+            "length_meters": 1000.0,
+            "route_memberships": [
+              { "route_id": "test.route.loop", "directions_ja": [] }
+            ]
+          },
+          {
+            "edge_id": "test.edge.entry-ramp",
+            "from_node_id": 201,
+            "to_node_id": 101,
+            "way_id": 0,
+            "segment_index": 0,
+            "kind": "LINK",
+            "direction": "forward",
+            "length_meters": 150.0,
+            "route_memberships": []
+          },
+          {
+            "edge_id": "test.edge.exit-ramp",
+            "from_node_id": 103,
+            "to_node_id": 301,
+            "way_id": 0,
+            "segment_index": 0,
+            "kind": "LINK",
+            "direction": "forward",
+            "length_meters": 150.0,
+            "route_memberships": []
+          }
+        ],
+        "directional_facilities": [
+          {
+            "facility_id": "test.ic.loop-east-entry",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト東入口",
+            "reading_ja": "てすとひがし",
+            "coordinate": { "latitude": 35.001, "longitude": 139.0125 },
+            "entrance_directions": ["TEST_INNER"],
+            "exit_directions": [],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [
+              { "edge_id": "test.edge.entry-ramp", "distance_meters": 5.0 }
+            ],
+            "exit_edge_candidates": []
+          },
+          {
+            "facility_id": "test.ic.loop-south-exit",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト南出口",
+            "reading_ja": "てすとみなみ",
+            "coordinate": { "latitude": 34.9895, "longitude": 139.0002 },
+            "entrance_directions": [],
+            "exit_directions": ["TEST_INNER"],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [],
+            "exit_edge_candidates": [
+              { "edge_id": "test.edge.exit-ramp", "distance_meters": 5.0 }
+            ]
+          },
+          {
+            "facility_id": "test.ic.loop-outer-entry",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト外側入口",
+            "reading_ja": "てすとそとがわ",
+            "coordinate": { "latitude": 35.009, "longitude": 139.0005 },
+            "entrance_directions": ["TEST_OUTER"],
+            "exit_directions": [],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [
+              { "edge_id": "test.edge.entry-ramp", "distance_meters": 5.0 }
+            ],
+            "exit_edge_candidates": []
+          },
+          {
+            "facility_id": "test.ic.loop-anchor-west",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト西",
+            "reading_ja": "てすとにし",
+            "coordinate": { "latitude": 35.0, "longitude": 138.989 },
+            "entrance_directions": [],
+            "exit_directions": [],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [],
+            "exit_edge_candidates": []
+          },
+          {
+            "facility_id": "test.ic.loop-anchor-north",
+            "route_id": "test.route.loop",
+            "name_ja": "テスト北",
+            "reading_ja": "てすときた",
+            "coordinate": { "latitude": 35.009, "longitude": 139.0 },
+            "entrance_directions": [],
+            "exit_directions": [],
+            "etc_only": false,
+            "operational_status": "AVAILABLE",
+            "geometry_match_state": "TEST",
+            "entry_edge_candidates": [],
+            "exit_edge_candidates": []
+          }
+        ],
+        "junctions": [],
+        "parking_areas": []
+      }
+    },
+    "system_state": {
+      "navigation_status": "READY"
+    }
+  },
+  "when": [
+    {
+      "id": "plan-two-laps",
+      "at_ms": 0,
+      "type": "CIRCUIT_PLAN_REQUESTED",
+      "payload": {
+        "entry_facility_id": "test.ic.loop-east-entry",
+        "exit_facility_id": "test.ic.loop-south-exit",
+        "laps": 2
+      }
+    },
+    {
+      "id": "reject-wrong-direction-entrance",
+      "at_ms": 1000,
+      "type": "CIRCUIT_PLAN_REQUESTED",
+      "payload": {
+        "entry_facility_id": "test.ic.loop-outer-entry",
+        "exit_facility_id": "test.ic.loop-south-exit",
+        "laps": 1
+      }
+    },
+    {
+      "id": "reject-zero-laps",
+      "at_ms": 2000,
+      "type": "CIRCUIT_PLAN_REQUESTED",
+      "payload": {
+        "entry_facility_id": "test.ic.loop-east-entry",
+        "exit_facility_id": "test.ic.loop-south-exit",
+        "laps": 0
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "circuit-planned",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.status",
+      "matcher": "EQUALS",
+      "expected": "PLANNED",
+      "rationale": "A direction-valid entrance, exit, and lap count produce one exact circuit plan."
+    },
+    {
+      "id": "circuit-occurrences-distinct",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.distinct_occurrence_id_count",
+      "matcher": "EQUALS",
+      "expected": 20,
+      "rationale": "Every occurrence keeps its own identity even when laps repeat the same edges."
+    },
+    {
+      "id": "circuit-occurrence-count",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.occurrence_count",
+      "matcher": "EQUALS",
+      "expected": 20,
+      "rationale": "Approach (1) + two 8-edge laps (16) + forward tail (2) + exit ramp (1) form the full ordered sequence."
+    },
+    {
+      "id": "circuit-repeats-edges",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.max_entity_repetition",
+      "matcher": "EQUALS",
+      "expected": 3,
+      "rationale": "Repeated traversals stay in the plan instead of being deduplicated: two laps plus the exit tail traverse the first loop edges three times."
+    },
+    {
+      "id": "circuit-continuous",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.edge_continuity",
+      "matcher": "EQUALS",
+      "expected": "CONTINUOUS",
+      "rationale": "Circuit stitching must never produce a gap between consecutive edges."
+    },
+    {
+      "id": "circuit-distance-exact",
+      "after": "plan-two-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.distance_meters",
+      "matcher": "EQUALS",
+      "expected": 18300,
+      "rationale": "Planned distance is the exact edge-length sum: 150 m approach + 16,000 m laps + 2,000 m tail + 150 m exit ramp."
+    },
+    {
+      "id": "wrong-direction-entrance-rejected",
+      "after": "reject-wrong-direction-entrance",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "FACILITY_UNAVAILABLE",
+      "rationale": "An entrance on the opposite carriageway direction is rejected, never silently re-mapped."
+    },
+    {
+      "id": "zero-laps-rejected",
+      "after": "reject-zero-laps",
+      "category": "DOMAIN",
+      "subject": "circuit_plan.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "INVALID_LAP_COUNT",
+      "rationale": "Lap count is a bounded first-class parameter."
+    }
+  ]
+}

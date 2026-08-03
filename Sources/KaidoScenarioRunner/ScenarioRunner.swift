@@ -211,6 +211,8 @@ private struct ScenarioHarness {
       try undoRouteEditorChoice(event.payload)
     case "ROUTE_EDITOR_COMPILE_REQUESTED":
       try compileRouteEditor(event.payload)
+    case "CIRCUIT_PLAN_REQUESTED":
+      try requestCircuitPlan(event.payload)
     case "NAVIGATION_RELEASE_BUNDLE_VALIDATED":
       try validateNavigationReleaseBundle()
     case "NAVIGATION_RELEASE_ARTIFACT_VALIDATED":
@@ -489,6 +491,94 @@ private struct ScenarioHarness {
     if let reason = decision.rejectionReason {
       adapterObservations["surface_egress.admission.rejection_reason"] =
         .string(reason.rawValue)
+    }
+  }
+
+  private mutating func requestCircuitPlan(
+    _ payload: [String: JSONValue]
+  ) throws {
+    let inputs = scenario.given.inputs
+    guard let networkValue = inputs["circuit_network"] else {
+      throw ScenarioExecutionError.invalidInput("circuit_network")
+    }
+    guard let definitionValue = inputs.object("circuit_definition") else {
+      throw ScenarioExecutionError.invalidInput("circuit_definition")
+    }
+    let database = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONEncoder().encode(networkValue)
+    )
+    guard database.networkSnapshotID.hasPrefix("test.") else {
+      throw ScenarioExecutionError.invalidInput(
+        "circuit_network.network_snapshot_id"
+      )
+    }
+    let circuit = ShutoCircuitDefinition(
+      circuitID: try definitionValue.requiredString("circuit_id"),
+      displayNameJA: try definitionValue.requiredString("display_name_ja"),
+      memberRouteIDs: Set(
+        (definitionValue.array("member_route_ids") ?? [])
+          .compactMap(\.stringValue)
+      ),
+      entranceDirectionJA:
+        try definitionValue.requiredString("entrance_direction_ja"),
+      anchorFacilityIDs:
+        (definitionValue.array("anchor_facility_ids") ?? [])
+        .compactMap(\.stringValue)
+    )
+    let planner = ShutoRoutePlanner.forSyntheticScenario(
+      database: database
+    )
+    let laps = payload.int("laps") ?? 1
+    do {
+      let route = try planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: try payload.requiredString("entry_facility_id"),
+        exitFacilityID: try payload.requiredString("exit_facility_id"),
+        laps: laps
+      )
+      let occurrences = route.routePlan.occurrences
+      let entityCounts = Dictionary(
+        grouping: occurrences.map(\.entityID),
+        by: { $0 }
+      ).mapValues(\.count)
+      let continuous = zip(route.edges, route.edges.dropFirst())
+        .allSatisfy { $0.toNodeID == $1.fromNodeID }
+      adapterObservations["circuit_plan.status"] = .string("PLANNED")
+      adapterObservations["circuit_plan.plan_id"] = .string(
+        route.routePlan.id
+      )
+      adapterObservations["circuit_plan.entry_facility_id"] = .string(
+        route.routePlan.entryFacilityID
+      )
+      adapterObservations["circuit_plan.exit_facility_id"] = .string(
+        route.routePlan.exitFacilityID
+      )
+      adapterObservations["circuit_plan.occurrence_count"] = .integer(
+        occurrences.count
+      )
+      adapterObservations["circuit_plan.distinct_occurrence_id_count"] =
+        .integer(Set(occurrences.map(\.id)).count)
+      adapterObservations["circuit_plan.max_entity_repetition"] =
+        .integer(entityCounts.values.max() ?? 0)
+      adapterObservations["circuit_plan.edge_continuity"] = .string(
+        continuous ? "CONTINUOUS" : "BROKEN"
+      )
+      adapterObservations["circuit_plan.distance_meters"] = .integer(
+        Int(route.distanceMeters.rounded())
+      )
+    } catch let error as ShutoCircuitError {
+      adapterObservations["circuit_plan.status"] = .string("REJECTED")
+      adapterObservations["circuit_plan.rejection_reason"] = .string(
+        error == .invalidLapCount
+          ? "INVALID_LAP_COUNT" : "INVALID_CIRCUIT"
+      )
+    } catch let error as ShutoNetworkError {
+      adapterObservations["circuit_plan.status"] = .string("REJECTED")
+      adapterObservations["circuit_plan.rejection_reason"] = .string(
+        error == .facilityUnavailable
+          ? "FACILITY_UNAVAILABLE" : "ROUTE_UNAVAILABLE"
+      )
     }
   }
 

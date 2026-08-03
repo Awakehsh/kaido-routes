@@ -339,6 +339,10 @@ public struct ShutoRoutePlanner: Sendable {
 
   public init(database: ShutoNetworkDatabase) throws {
     try database.validate()
+    self.init(unvalidatedDatabase: database)
+  }
+
+  init(unvalidatedDatabase database: ShutoNetworkDatabase) {
     self.database = database
     nodesByID = Dictionary(
       uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }

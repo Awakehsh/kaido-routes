@@ -73,6 +73,15 @@ public enum ShutoCircuitError: Error, Equatable {
 }
 
 extension ShutoRoutePlanner {
+  /// Deterministic-scenario entry point: builds a planner over a synthetic
+  /// `test.*` network without the bundled-data completeness gate. Production
+  /// code paths must keep using the validating `init(database:)`.
+  public static func forSyntheticScenario(
+    database: ShutoNetworkDatabase
+  ) -> ShutoRoutePlanner {
+    ShutoRoutePlanner(unvalidatedDatabase: database)
+  }
+
   private struct CircuitQueueValue: Comparable {
     let cost: Double
     let nodeID: Int64

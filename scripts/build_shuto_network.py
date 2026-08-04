@@ -192,9 +192,19 @@ def scan_motorway_ways(
     input_path: Path,
     mainline_way_ids: set[int],
     membership_by_way: dict[int, list[dict[str, str]]],
-) -> tuple[dict[int, dict[str, Any]], dict[int, tuple[float, float]]]:
+) -> tuple[
+    dict[int, dict[str, Any]],
+    dict[int, tuple[float, float]],
+    dict[int, dict[str, Any]],
+    dict[int, tuple[float, float]],
+]:
     ways: dict[int, dict[str, Any]] = {}
     node_coordinates: dict[int, tuple[float, float]] = {}
+    # Plain motorway ways carrying no pinned relation membership. They are
+    # never flood-filled; only the bounded gap-connector pass may absorb
+    # them, so another expressway's mainline stays out of the graph.
+    orphan_ways: dict[int, dict[str, Any]] = {}
+    orphan_node_coordinates: dict[int, tuple[float, float]] = {}
     expected_inactive_way_ids: set[int] = set()
     processor = (
         osmium.FileProcessor(str(input_path))
@@ -212,7 +222,14 @@ def scan_motorway_ways(
             highway = "motorway"
             tags["kaido:source_highway"] = "construction"
             tags["highway"] = "motorway"
-        if way.id not in mainline_way_ids and highway != "motorway_link":
+        is_orphan_motorway = (
+            way.id not in mainline_way_ids and highway == "motorway"
+        )
+        if (
+            way.id not in mainline_way_ids
+            and highway != "motorway_link"
+            and not is_orphan_motorway
+        ):
             continue
         if highway not in ALLOWED_HIGHWAYS:
             if tags.get("abandoned:highway") == "motorway":
@@ -244,12 +261,18 @@ def scan_motorway_ways(
             for _, latitude, longitude in coordinates
         ):
             continue
-        ways[way.id] = {
+        record = {
             "way_id": way.id,
             "version": way.version,
             "node_ids": [node_id for node_id, _, _ in coordinates],
             "tags": tags,
         }
+        if is_orphan_motorway:
+            orphan_ways[way.id] = record
+            for node_id, latitude, longitude in coordinates:
+                orphan_node_coordinates[node_id] = (latitude, longitude)
+            continue
+        ways[way.id] = record
         for node_id, latitude, longitude in coordinates:
             existing = node_coordinates.get(node_id)
             coordinate = (latitude, longitude)
@@ -278,7 +301,7 @@ def scan_motorway_ways(
             "were not usable motorways: "
             + ", ".join(str(value) for value in sorted(unexpected_missing))
         )
-    return ways, node_coordinates
+    return ways, node_coordinates, orphan_ways, orphan_node_coordinates
 
 
 def select_connected_links(
@@ -384,6 +407,188 @@ def propagate_membership(
         ]
         for way_id, route_memberships in memberships.items()
     }
+
+
+GAP_CONNECTOR_MAX_METERS = 1_000.0
+GAP_CONNECTOR_MAX_WAYS = 4
+
+
+def gap_connector_matches(
+    tags: dict[str, str],
+    terminating_route_ids: set[str],
+) -> bool:
+    """A gap connector must belong to the interrupted route itself.
+
+    OSM editors regularly split a carriageway way and forget to re-add the
+    new piece to the route relation; those pieces keep the route's `ref`
+    (or at least a Shuto name). Another expressway's mainline sharing the
+    junction node (Aqua-Line, Yoko-Yoko, Kan-Etsu, ...) carries a different
+    ref and is rejected, which preserves the no-flood-fill promise.
+    """
+    route_refs = {
+        route_id.split("_")[0] for route_id in terminating_route_ids
+    }
+    refs = [
+        value.strip()
+        for value in tags.get("ref", "").split(";")
+        if value.strip()
+    ]
+    if refs:
+        return any(ref in route_refs for ref in refs)
+    return "首都高" in tags.get("name", "")
+
+
+def absorb_gap_connectors(
+    ways: dict[int, dict[str, Any]],
+    orphan_ways: dict[int, dict[str, Any]],
+    orphan_node_coordinates: dict[int, tuple[float, float]],
+    selected_way_ids: set[int],
+    mainline_way_ids: set[int],
+    memberships: dict[int, list[dict[str, Any]]],
+    node_coordinates: dict[int, tuple[float, float]],
+) -> list[int]:
+    """Bounded repair of directed dead ends inside the selected graph.
+
+    A membership-carrying carriageway that ends with no outgoing
+    continuation is a gap, not a route terminus, when a short chain of
+    same-route orphan motorway ways (relation membership lost to an OSM
+    split) leads directly back onto the selected graph. Each absorbed way
+    inherits the interrupted route's membership and is marked with a
+    `kaido:gap_connector` tag for provenance.
+    """
+    outgoing_nodes: set[int] = set()
+    terminal_memberships: dict[int, dict[str, set[str]]] = {}
+    for way_id in selected_way_ids:
+        way = ways[way_id]
+        forward, reverse = directions(way["tags"])
+        node_ids = way["node_ids"]
+        for before, after in zip(node_ids, node_ids[1:]):
+            if forward:
+                outgoing_nodes.add(before)
+            if reverse:
+                outgoing_nodes.add(after)
+        way_routes = {
+            membership["route_id"]: set(membership["directions_ja"])
+            for membership in memberships.get(way_id, [])
+        }
+        if not way_routes:
+            continue
+        terminals = []
+        if forward:
+            terminals.append(node_ids[-1])
+        if reverse:
+            terminals.append(node_ids[0])
+        for terminal in terminals:
+            merged = terminal_memberships.setdefault(terminal, {})
+            for route_id, route_directions in way_routes.items():
+                merged.setdefault(route_id, set()).update(
+                    route_directions
+                )
+
+    dead_ends = sorted(
+        node_id
+        for node_id in terminal_memberships
+        if node_id not in outgoing_nodes
+    )
+
+    orphan_entries: dict[int, list[tuple[int, bool]]] = defaultdict(list)
+    for way_id, way in orphan_ways.items():
+        forward, reverse = directions(way["tags"])
+        if forward:
+            orphan_entries[way["node_ids"][0]].append((way_id, False))
+        if reverse:
+            orphan_entries[way["node_ids"][-1]].append((way_id, True))
+
+    def orphan_length(way: dict[str, Any]) -> float:
+        node_ids = way["node_ids"]
+        return sum(
+            haversine_meters(
+                orphan_node_coordinates[before],
+                orphan_node_coordinates[after],
+            )
+            for before, after in zip(node_ids, node_ids[1:])
+        )
+
+    absorbed: dict[int, dict[str, set[str]]] = {}
+    for node_id in dead_ends:
+        routes = terminal_memberships[node_id]
+        queue: deque[tuple[int, float, tuple[tuple[int, bool], ...]]] = (
+            deque([(node_id, 0.0, ())])
+        )
+        seen = {node_id}
+        found: tuple[tuple[int, bool], ...] | None = None
+        while queue and found is None:
+            current, travelled, path = queue.popleft()
+            if len(path) >= GAP_CONNECTOR_MAX_WAYS:
+                continue
+            for way_id, reversed_traversal in orphan_entries.get(
+                current, ()
+            ):
+                if any(step[0] == way_id for step in path):
+                    continue
+                way = orphan_ways[way_id]
+                if not gap_connector_matches(way["tags"], set(routes)):
+                    continue
+                length = orphan_length(way)
+                if travelled + length > GAP_CONNECTOR_MAX_METERS:
+                    continue
+                exit_node = (
+                    way["node_ids"][0]
+                    if reversed_traversal
+                    else way["node_ids"][-1]
+                )
+                next_path = path + ((way_id, reversed_traversal),)
+                if exit_node in outgoing_nodes:
+                    found = next_path
+                    break
+                if exit_node not in seen:
+                    seen.add(exit_node)
+                    queue.append(
+                        (exit_node, travelled + length, next_path)
+                    )
+        if found is None:
+            continue
+        for way_id, _ in found:
+            merged = absorbed.setdefault(way_id, {})
+            refs = [
+                value.strip()
+                for value in orphan_ways[way_id]["tags"]
+                .get("ref", "")
+                .split(";")
+                if value.strip()
+            ]
+            for route_id, route_directions in routes.items():
+                if refs and route_id.split("_")[0] not in refs:
+                    continue
+                merged.setdefault(route_id, set()).update(
+                    route_directions
+                )
+
+    for way_id in sorted(absorbed):
+        way = dict(orphan_ways[way_id])
+        way["tags"] = dict(way["tags"])
+        way["tags"]["kaido:gap_connector"] = "yes"
+        ways[way_id] = way
+        selected_way_ids.add(way_id)
+        mainline_way_ids.add(way_id)
+        memberships[way_id] = [
+            {
+                "route_id": route_id,
+                "directions_ja": sorted(route_directions),
+            }
+            for route_id, route_directions in sorted(
+                absorbed[way_id].items()
+            )
+        ]
+        for node_id in way["node_ids"]:
+            coordinate = orphan_node_coordinates[node_id]
+            existing = node_coordinates.get(node_id)
+            if existing is not None and existing != coordinate:
+                raise NetworkBuildError(
+                    f"coordinate drift for OSM node {node_id}"
+                )
+            node_coordinates[node_id] = coordinate
+    return sorted(absorbed)
 
 
 def directions(tags: dict[str, str]) -> tuple[bool, bool]:
@@ -713,6 +918,7 @@ def compact_way(
             "layer",
             "construction",
             "kaido:source_highway",
+            "kaido:gap_connector",
             "note",
         )
         if key in tags
@@ -747,11 +953,13 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
         osmium, arguments.input
     )
     relation_way_ids = set(membership_by_way)
-    ways, node_coordinates = scan_motorway_ways(
-        osmium,
-        arguments.input,
-        relation_way_ids,
-        membership_by_way,
+    ways, node_coordinates, orphan_ways, orphan_node_coordinates = (
+        scan_motorway_ways(
+            osmium,
+            arguments.input,
+            relation_way_ids,
+            membership_by_way,
+        )
     )
     mainline_way_ids = relation_way_ids & set(ways)
     global ROUTE_WAY_IDS
@@ -762,6 +970,15 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
         selected_way_ids,
         mainline_way_ids,
         membership_by_way,
+    )
+    gap_connector_way_ids = absorb_gap_connectors(
+        ways,
+        orphan_ways,
+        orphan_node_coordinates,
+        selected_way_ids,
+        mainline_way_ids,
+        memberships,
+        node_coordinates,
     )
     selected_node_ids = {
         node_id
@@ -812,6 +1029,7 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
                 "attribution": "© OpenStreetMap contributors",
                 "builder": "pyosmium",
                 "builder_version": arguments.expected_pyosmium_version,
+                "gap_connector_way_ids": gap_connector_way_ids,
             },
         },
         "limitations": [

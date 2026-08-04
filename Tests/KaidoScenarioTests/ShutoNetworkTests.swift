@@ -19,7 +19,7 @@ struct ShutoNetworkTests {
       }
     )
     #expect(database.parkingAreas.count == 19)
-    #expect(database.edges.count == 24_291)
+    #expect(database.edges.count == 24_299)
     #expect(
       database.directionalFacilities
         .filter { $0.operationalStatus == "AVAILABLE" }
@@ -92,7 +92,7 @@ struct ShutoNetworkTests {
       .appendingPathComponent("data")
       .appendingPathComponent("route-atlas")
       .appendingPathComponent("osm-derived")
-      .appendingPathComponent("shuto-whole-network-20260728.json")
+      .appendingPathComponent("shuto-whole-network-20260803.json")
     return try JSONDecoder().decode(
       ShutoNetworkDatabase.self,
       from: Data(contentsOf: url)

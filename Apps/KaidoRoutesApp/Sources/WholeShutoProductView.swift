@@ -24,6 +24,7 @@ struct WholeShutoProductView: View {
   @State private var waitsForPlanningLocation = false
   @State private var waitsForCircuitLocation = false
   @State private var showsCircuitAlternatives = false
+  @State private var showsDestinationComposer = false
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
@@ -433,9 +434,18 @@ struct WholeShutoProductView: View {
     VStack(spacing: 12) {
       circuitExperienceSection
 
-      optionalDestinationDivider
+      HStack(spacing: 8) {
+        if !showsDestinationComposer {
+          // The origin chip stays on the home even while the destination
+          // composer is collapsed.
+          planningLocationButton
+        }
+        optionalDestinationDivider
+      }
 
-      journeySearchComposer
+      if showsDestinationComposer {
+        journeySearchComposer
+      }
 
       routeFailureBanner
     }
@@ -844,25 +854,44 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The destination is an optional continuation after route choice, so the
+  /// search composer stays collapsed behind this divider by default.
   private var optionalDestinationDivider: some View {
-    HStack(spacing: 8) {
-      Rectangle()
-        .fill(KaidoTheme.paperDivider)
-        .frame(height: 1)
-      Text(
-        copy.resolve(
-          japanese: "または目的地へ",
-          simplifiedChinese: "或者：去一个地方",
-          english: "OR GO SOMEWHERE"
+    Button {
+      showsDestinationComposer.toggle()
+      if !showsDestinationComposer {
+        focusedPlanningField = nil
+        placeSearch.dismissResults()
+      }
+    } label: {
+      HStack(spacing: 8) {
+        Rectangle()
+          .fill(KaidoTheme.paperDivider)
+          .frame(height: 1)
+        Text(
+          copy.resolve(
+            japanese: "または目的地へ",
+            simplifiedChinese: "或者：去一个地方",
+            english: "OR GO SOMEWHERE"
+          )
         )
-      )
-      .font(.system(size: 10, weight: .semibold))
-      .foregroundStyle(.secondary)
-      .fixedSize()
-      Rectangle()
-        .fill(KaidoTheme.paperDivider)
-        .frame(height: 1)
+        .font(.system(size: 10, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .fixedSize()
+        Image(
+          systemName: showsDestinationComposer
+            ? "chevron.up" : "chevron.down"
+        )
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(.secondary)
+        Rectangle()
+          .fill(KaidoTheme.paperDivider)
+          .frame(height: 1)
+      }
+      .contentShape(Rectangle())
     }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("whole-shuto-destination-toggle")
   }
 
   private func beginCircuitJourney() {
@@ -883,6 +912,7 @@ struct WholeShutoProductView: View {
       || planningLocation.state == .unavailable
     {
       showsManualOrigin = true
+      showsDestinationComposer = true
       focusedPlanningField = .origin
       return
     }
@@ -1084,6 +1114,7 @@ struct WholeShutoProductView: View {
         || planningLocation.state == .unavailable
       {
         showsManualOrigin = true
+        showsDestinationComposer = true
         focusedPlanningField = .origin
       } else {
         showsManualOrigin = false
@@ -1223,6 +1254,7 @@ struct WholeShutoProductView: View {
       waitsForPlanningLocation = false
       waitsForCircuitLocation = false
       showsManualOrigin = true
+      showsDestinationComposer = true
       focusedPlanningField = .origin
     case .idle, .permissionRequired, .locating, .measured:
       break

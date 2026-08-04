@@ -135,7 +135,7 @@ struct NetworkOverviewLayoutTests {
       .appendingPathComponent("data")
       .appendingPathComponent("route-atlas")
       .appendingPathComponent("osm-derived")
-      .appendingPathComponent("shuto-whole-network-20260728.json")
+      .appendingPathComponent("shuto-whole-network-20260803.json")
     return try JSONDecoder().decode(
       ShutoNetworkDatabase.self,
       from: Data(contentsOf: url)

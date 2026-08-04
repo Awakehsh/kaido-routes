@@ -43,10 +43,22 @@ final class KaidoProductJourneyUITests: XCTestCase {
         in: app
       ).exists
     )
-    XCTAssertTrue(
+    // The destination composer stays collapsed until the driver opts in.
+    XCTAssertFalse(
       element("whole-shuto-destination-search", in: app).exists
     )
+    let destinationToggle = element(
+      "whole-shuto-destination-toggle",
+      in: app
+    )
+    XCTAssertTrue(destinationToggle.exists)
+    destinationToggle.tap()
+    XCTAssertTrue(
+      element("whole-shuto-destination-search", in: app)
+        .waitForExistence(timeout: 3)
+    )
     XCTAssertTrue(element("whole-shuto-plan-route", in: app).exists)
+    destinationToggle.tap()
     assertMapFirstPlanningLayout(in: app)
 
     let homeScreenshot = XCTAttachment(
@@ -160,6 +172,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
     ]
     app.launch()
 
+    // The destination composer is a collapsed optional continuation.
+    let destinationToggle = element(
+      "whole-shuto-destination-toggle",
+      in: app
+    )
+    XCTAssertTrue(destinationToggle.waitForExistence(timeout: 5))
+    destinationToggle.tap()
     let destination = app.textFields[
       "whole-shuto-destination-search"
     ]
@@ -269,6 +288,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     ]
     app.launch()
 
+    let destinationToggle = element(
+      "whole-shuto-destination-toggle",
+      in: app
+    )
+    XCTAssertTrue(destinationToggle.waitForExistence(timeout: 5))
+    destinationToggle.tap()
     let origin = app.textFields["whole-shuto-manual-origin"]
     let destination = app.textFields[
       "whole-shuto-destination-search"

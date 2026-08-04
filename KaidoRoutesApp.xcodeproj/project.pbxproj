@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		009CE153EF2E5AEC3C47371C /* shuto-whole-network-20260803.json in Resources */ = {isa = PBXBuildFile; fileRef = 8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */; };
 		00DC4B88CB139EA32986642F /* KaidoNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 227214DF886C6615AA725882 /* KaidoNavigation */; };
 		03DB3A344A501784A33E0EBE /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json in Resources */ = {isa = PBXBuildFile; fileRef = FDF76A2AF30C8BE1D54E3CE1 /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json */; };
 		0403EF2F4E636F940BF4F85B /* AppSafetyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1E682A168C4207E6C5957A /* AppSafetyState.swift */; };
@@ -24,7 +25,6 @@
 		211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */ = {isa = PBXBuildFile; fileRef = 0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */; };
 		217E5A858CE65E3865DD60DC /* KaidoProductJourneyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9406986ABC9A33D6286EBDB6 /* KaidoProductJourneyModel.swift */; };
 		21F189731E350053A8A9D2A3 /* BundledProductReleaseCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4353A7C0060DDDFD297D330B /* BundledProductReleaseCatalog.swift */; };
-		2431B48579012E5B9274E43C /* shuto-whole-network-20260728.json in Resources */ = {isa = PBXBuildFile; fileRef = 205288CF530F1ABC7814E4D9 /* shuto-whole-network-20260728.json */; };
 		245949BAA162294EF64CE964 /* KaidoInterfaceLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FF46ABB2E0A6116F724448 /* KaidoInterfaceLocalizationTests.swift */; };
 		273C7C828BA2F5F47A1E1B3B /* ProductMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2940C3E443E4E0CE8AECA910 /* ProductMapView.swift */; };
 		28F9B9A5B886A492D4673575 /* SavedRouteLibraryModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7BCE0D5D6D140E232C6C0B6 /* SavedRouteLibraryModelTests.swift */; };
@@ -158,7 +158,6 @@
 		143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModelTests.swift; sourceTree = "<group>"; };
 		193FEF08FEDD2E8F7ACBE3D3 /* ReleasedPreDriveReviewAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapterTests.swift; sourceTree = "<group>"; };
 		1FE65BD55093E129E001ACC7 /* ProductMapPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMapPresentation.swift; sourceTree = "<group>"; };
-		205288CF530F1ABC7814E4D9 /* shuto-whole-network-20260728.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "shuto-whole-network-20260728.json"; path = "data/route-atlas/osm-derived/shuto-whole-network-20260728.json"; sourceTree = "<group>"; };
 		20E264620254982057122D82 /* GuidanceSpeechProsodyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceSpeechProsodyTests.swift; sourceTree = "<group>"; };
 		21EC9E55887FD44C8699F108 /* KaidoProductJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyView.swift; sourceTree = "<group>"; };
 		25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift"; sourceTree = "<group>"; };
@@ -214,6 +213,7 @@
 		8578B44EB78B5C32BAAD51F6 /* SyntheticDrivingPreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewModel.swift; sourceTree = "<group>"; };
 		86BAF8B0C5A1D6000D85903F /* ReleasedRouteEditorAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedRouteEditorAdapter.swift; sourceTree = "<group>"; };
 		88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "shuto-whole-network-20260803.json"; path = "data/route-atlas/osm-derived/shuto-whole-network-20260803.json"; sourceTree = "<group>"; };
 		8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModelTests.swift; sourceTree = "<group>"; };
 		9406986ABC9A33D6286EBDB6 /* KaidoProductJourneyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyModel.swift; sourceTree = "<group>"; };
@@ -378,7 +378,7 @@
 				7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */,
 				A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */,
 				0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */,
-				205288CF530F1ABC7814E4D9 /* shuto-whole-network-20260728.json */,
+				8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */,
 			);
 			name = "Route Atlas";
 			sourceTree = "<group>";
@@ -607,7 +607,7 @@
 				56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */,
 				B0D80A3B61AD987BABA0C185 /* route-atlas-attribution-catalog.json in Resources */,
 				211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */,
-				2431B48579012E5B9274E43C /* shuto-whole-network-20260728.json in Resources */,
+				009CE153EF2E5AEC3C47371C /* shuto-whole-network-20260803.json in Resources */,
 				2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

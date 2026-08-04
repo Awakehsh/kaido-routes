@@ -170,7 +170,7 @@ enum WholeShutoNetworkCatalog {
   static func bundled(bundle: Bundle = .main) throws -> ShutoNetworkDatabase {
     guard
       let url = bundle.url(
-        forResource: "shuto-whole-network-20260728",
+        forResource: "shuto-whole-network-20260803",
         withExtension: "json"
       )
     else {

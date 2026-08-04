@@ -20,20 +20,31 @@ Apache-2.0 licence does not relicense this directory.
 
 ## Whole-Shuto directed network
 
-`shuto-whole-network-20260728.json` is the default iPhone product graph. It
-contains 26 official route entries, 2,491 selected OSM ways, 24,291 directed
+`shuto-whole-network-20260803.json` is the default iPhone product graph. It
+contains 26 official route entries, 2,499 selected OSM ways, 24,299 directed
 edges, 151 operator IC names, 39 JCTs, and 19 PAs.
 
 The builder starts from the 26 pinned Shuto route relations, then adds only
 connected `motorway_link` ways. It does not flood-fill into another
-expressway's mainline. Operator pages establish current route and directional
-facility facts; OSM supplies candidate geometry and topology. Every usable IC
-and every official JCT must match or generation fails. Each JCT also retains
-the URL and SHA-256 of its current operator detail image without redistributing
-the image. The three unmatched IC facts are the explicitly unavailable Yaesu
-Route facilities and have no routable candidates.
+expressway's mainline. A bounded gap-connector pass then repairs directed
+dead ends left by OSM way splits whose new pieces were never re-added to the
+route relation: from each membership-carrying carriageway that ends with no
+outgoing continuation, it absorbs at most four orphan `motorway` ways
+(≤ 1 km total) that lead straight back onto the selected graph, and only
+when their `ref` (or a Shuto name) matches the interrupted route — so a
+different expressway sharing the junction node is still rejected. Absorbed
+ways carry a `kaido:gap_connector` tag and are listed in
+`sources.osm.gap_connector_way_ids`. Operator pages establish current route
+and directional facility facts; OSM supplies candidate geometry and topology.
+Every usable IC and every official JCT must match or generation fails. Each
+JCT also retains the URL and SHA-256 of its current operator detail image
+without redistributing the image. The three unmatched IC facts are the
+explicitly unavailable Yaesu Route facilities and have no routable
+candidates.
 
-Reconstruct it from the current operator fact catalog and the pinned Kanto PBF:
+Reconstruct it from the current operator fact catalog and the pinned Kanto
+PBF (the previously pinned `kanto-260728.osm.pbf` is no longer served by
+Geofabrik; the snapshot now pins the dated 260803 file):
 
 ```sh
 python3 -m venv /tmp/kaido-shuto-osmium
@@ -44,13 +55,13 @@ python3 -m venv /tmp/kaido-shuto-osmium
   --checked-at 2026-07-29 \
   --output data/network/shuto-official-catalog-20260729.json
 /tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_network.py \
-  --input /path/to/kanto-260728.osm.pbf \
+  --input /path/to/kanto-260803.osm.pbf \
   --official-catalog data/network/shuto-official-catalog-20260729.json \
-  --output data/route-atlas/osm-derived/shuto-whole-network-20260728.json \
+  --output data/route-atlas/osm-derived/shuto-whole-network-20260803.json \
   --expected-input-sha256 \
-    4ebc009018467c3d9c4cdc5f1817a7d2bfeab243af0889700667f6be99fe4e52 \
+    be60e855f83428060a7cd9fc5ac78658608ccbdd549f52a6be8d612014be9280 \
   --source-uri \
-    https://download.geofabrik.de/asia/japan/kanto-260728.osm.pbf
+    https://download.geofabrik.de/asia/japan/kanto-260803.osm.pbf
 ```
 
 The database is a complete ODbL derivative offered in the repository. The

@@ -140,6 +140,135 @@ struct ShutoCircuitPlannerTests {
     }
   }
 
+  @Test("the Wangan Daikoku run tours westbound onto the Daikoku exit")
+  func plansWanganDaikokuRun() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // Tokyo waterfront origin near Ariake.
+    let origin = ShutoCoordinate(latitude: 35.636, longitude: 139.792)
+    let entrances = planner.circuitEntranceCandidates(
+      for: .wanganDaikokuRun,
+      origin: origin
+    )
+    #expect(!entrances.isEmpty)
+    // Every offered entrance joins the westbound carriageway and can still
+    // reach Daikoku; Yokohama-side westbound entrances past Daikoku (Sankeien,
+    // Sugita) head away from the course and never appear.
+    #expect(
+      entrances.allSatisfy {
+        $0.entranceDirections.contains("西行き")
+          && $0.facilityID != "shuto.ic.b.sankeien"
+          && $0.facilityID != "shuto.ic.b.sugita"
+          && $0.facilityID != "shuto.ic.b.daikokufutou"
+      }
+    )
+
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .wanganDaikokuRun,
+      origin: origin,
+      evidence: .etcNormalCarActive
+    )
+    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+
+    let route = try planner.planCircuit(
+      circuit: .wanganDaikokuRun,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+    // Ariake to Daikoku along the Bayshore measures roughly 25 km.
+    #expect(route.distanceMeters > 15_000)
+    #expect(route.distanceMeters < 45_000)
+    #expect(assertContinuity(route.edges))
+    #expect(route.routeIDsInOrder == ["B"])
+
+    // A tour is one reviewed pass; laps are a loop concept.
+    #expect(throws: ShutoCircuitError.invalidLapCount) {
+      _ = try planner.planCircuit(
+        circuit: .wanganDaikokuRun,
+        entryFacilityID: pairing.entrance.facilityID,
+        exitFacilityID: pairing.exit.facilityID,
+        laps: 2
+      )
+    }
+  }
+
+  @Test("the Daikoku Yokohama loop closes in the supported direction")
+  func plansDaikokuYokohamaLoop() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // Origin at Daikoku PA itself.
+    let origin = ShutoCoordinate(latitude: 35.4614, longitude: 139.6862)
+    let entrances = planner.circuitEntranceCandidates(
+      for: .daikokuYokohamaLoop,
+      origin: origin
+    )
+    // The Daikoku-Futo westbound entrance heads away from the cycle toward
+    // the Honmoku dead end; the closure gate must exclude it even though it
+    // is geodesically nearest.
+    #expect(
+      entrances.allSatisfy { $0.facilityID != "shuto.ic.b.daikokufutou" }
+    )
+
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .daikokuYokohamaLoop,
+      origin: origin,
+      evidence: .etcNormalCarActive
+    )
+    #expect(pairing.entrance.facilityID == "shuto.ic.b.higashiogishima")
+    // Exiting at Daikoku-Futo right beside the PA keeps the pairing short;
+    // the quoted band never changes with lap count.
+    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    let band = try #require(pairing.tariffBand)
+    #expect(band.quotedYen < 600)
+
+    let twoLaps = try planner.planCircuit(
+      circuit: .daikokuYokohamaLoop,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 2
+    )
+    // One loop measures ~31 km; two laps repeat it as distinct occurrences.
+    #expect(twoLaps.distanceMeters > 50_000)
+    #expect(twoLaps.distanceMeters < 90_000)
+    #expect(assertContinuity(twoLaps.edges))
+    let traversed = Set(twoLaps.routeIDsInOrder)
+    #expect(traversed.isSuperset(of: ["B", "K1", "K5", "K6"]))
+    let edgeCounts = Dictionary(
+      grouping: twoLaps.edges.map(\.edgeID),
+      by: { $0 }
+    ).mapValues(\.count)
+    #expect(edgeCounts.values.contains(2))
+  }
+
+  @Test("the scenic tour passes its anchors in course order to Daikoku PA")
+  func plansScenicGrandTour() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // Origin near the Harumi entrance.
+    let origin = ShutoCoordinate(latitude: 35.655, longitude: 139.784)
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .scenicGrandTour,
+      origin: origin,
+      evidence: .etcNormalCarActive
+    )
+    #expect(pairing.entrance.facilityID == "shuto.ic.10.harumi")
+    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+
+    let route = try planner.planCircuit(
+      circuit: .scenicGrandTour,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+    // Harumi past Haneda and Minato Mirai to Daikoku measures ~41 km.
+    #expect(route.distanceMeters > 30_000)
+    #expect(route.distanceMeters < 55_000)
+    #expect(assertContinuity(route.edges))
+    let traversed = Set(route.routeIDsInOrder)
+    #expect(traversed.isSuperset(of: ["10", "B", "1_HANEDA", "K1", "K3"]))
+  }
+
   private func assertContinuity(
     _ edges: [ShutoNetworkDatabase.Edge]
   ) -> Bool {

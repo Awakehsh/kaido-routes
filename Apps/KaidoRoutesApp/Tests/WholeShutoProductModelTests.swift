@@ -23,7 +23,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .geographic)
   }
 
-  func testCircuitSelectionRecommendsDirectionValidEntrancesFromOrigin() {
+  func testCircuitSelectionDerivesThePairingFromOrigin() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     // Near Hatsudai, west side of the C2 loop.
     model.selectCurrentOrigin(
@@ -31,6 +31,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
 
     model.selectCircuit(.c2InnerWithBayshore)
+    await waitForCircuitPairing(model)
 
     XCTAssertEqual(
       model.selectedCircuit?.circuitID,
@@ -41,11 +42,28 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.circuitEntryFacilityID,
       "shuto.ic.c2.hatsudaiminami"
     )
+    // The exit is derived too — the driver never assembles a pairing.
+    XCTAssertEqual(
+      model.circuitExitFacilityID,
+      "shuto.ic.c2.tomigaya"
+    )
+    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
     XCTAssertTrue(
       model.circuitEntranceCandidates.allSatisfy {
         $0.entranceDirections.contains("内回り")
       }
     )
+  }
+
+  private func waitForCircuitPairing(
+    _ model: WholeShutoProductModel
+  ) async {
+    for _ in 0..<200
+    where model.isResolvingCircuitPairing
+      || model.circuitExitFacilityID == nil
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
   }
 
   func testCircuitEntranceTariffBandsResolveFromDatedEvidence() async {
@@ -77,6 +95,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCurrentOrigin(origin)
     model.selectCircuit(.c2InnerWithBayshore)
     model.selectCircuitLaps(2)
+    await waitForCircuitPairing(model)
 
     XCTAssertTrue(model.startCircuitJourney())
     for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
@@ -118,6 +137,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     model.selectCircuit(.c2InnerWithBayshore)
     model.selectCircuitLaps(2)
+    await waitForCircuitPairing(model)
     XCTAssertTrue(model.startCircuitJourney())
     for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
       await Task.yield()

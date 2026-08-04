@@ -513,18 +513,25 @@ private struct ScenarioHarness {
         "circuit_network.network_snapshot_id"
       )
     }
+    let memberRouteIDs = Set(
+      (definitionValue.array("member_route_ids") ?? [])
+        .compactMap(\.stringValue)
+    )
+    let entranceDirectionJA =
+      try definitionValue.requiredString("entrance_direction_ja")
     let circuit = ShutoCircuitDefinition(
       circuitID: try definitionValue.requiredString("circuit_id"),
       displayNameJA: try definitionValue.requiredString("display_name_ja"),
-      memberRouteIDs: Set(
-        (definitionValue.array("member_route_ids") ?? [])
-          .compactMap(\.stringValue)
+      kind: .loop,
+      memberRouteIDs: memberRouteIDs,
+      entranceDirectionsByRouteID: Dictionary(
+        uniqueKeysWithValues: memberRouteIDs.map {
+          ($0, entranceDirectionJA)
+        }
       ),
-      entranceDirectionJA:
-        try definitionValue.requiredString("entrance_direction_ja"),
-      anchorFacilityIDs:
-        (definitionValue.array("anchor_facility_ids") ?? [])
+      anchors: (definitionValue.array("anchor_facility_ids") ?? [])
         .compactMap(\.stringValue)
+        .map(ShutoCircuitDefinition.Anchor.facility)
     )
     let planner = ShutoRoutePlanner.forSyntheticScenario(
       database: database

@@ -34,11 +34,22 @@ appear in the default product journey.
 ## Home
 
 The home surface asks one question: which route to drive. It shows the network
-map as context, an explicit current-location origin chip, and the
-route-experience list — reviewed route templates (loop circuits and
-radial-plus-loop combinations), saved routes, and one custom-route entry. It
-does not lead with a destination field, and it does not show an editorial,
-operator, creator, or community recommendation feed.
+map as context, an explicit current-location origin chip, and the named
+route-experience catalog — reviewed route templates covering the drives the
+audience actually runs (the C1 inner loop, the C2-plus-Bayshore grand loop,
+the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
+ordered multi-route scenic grand tour), plus saved routes and one advanced
+custom-route entry at the end of the catalog. Each catalog card presents the
+route as a finished experience: its shape thumbnail, distance and duration
+class, landmark and PA facts, and — once an origin is known — the derived
+entrance/exit pairing as one factual line. It does not lead with a destination
+field, and it does not show an editorial, operator, creator, or community
+recommendation feed.
+
+The driver chooses a route, never designs an entrance or exit. Entrances and
+exits are derived outputs of the chosen route plus the origin and the dated
+tariff rule, not inputs the driver must assemble. The manual pairing workflow
+survives only inside the advanced custom entry.
 
 The origin chip uses current location only after explicit permission. It also
 supports a manually entered origin and previously selected origins. If
@@ -50,14 +61,23 @@ does not start a second hidden location request. A denied or unavailable
 location exposes and focuses the manual origin before recommendation can
 continue.
 
-### Entrance recommendation and tariff bands
+### Derived entrance/exit pairing and tariff bands
 
-Selecting a route experience produces ranked direction-valid entrances
-compatible with the route's first occurrence. When the bounded surface
-provider resolves the ordinary-road access leg for every candidate entrance,
-the list orders by that comparable surface access plus Kaido's unchanged route
-score; otherwise the list retains deterministic Kaido order and labels each
-line accordingly. It never mixes provider routes with straight-line estimates.
+Selecting a route experience derives one recommended pairing automatically:
+the nearest direction-valid entrance compatible with the route's first
+occurrence, and — for loop experiences — the exit whose entrance/exit pairing
+lands in the lowest available tariff band, tie-broken by shortest forward
+travel after the loop closes. Ordered tours and PA-terminated runs carry their
+own reviewed egress instead. The pairing appears as one factual line on the
+card; expanding it reveals the ranked alternatives so a driver can correct a
+poor location fix or prefer a different entrance, but the default path never
+asks the driver to assemble a pairing.
+
+When the bounded surface provider resolves the ordinary-road access leg for
+every candidate entrance, the expanded list orders by that comparable surface
+access plus Kaido's unchanged route score; otherwise the list retains
+deterministic Kaido order and labels each line accordingly. It never mixes
+provider routes with straight-line estimates.
 
 Each entrance card shows the exact directional entrance, one factual
 surface-access line, and the tariff band of the resulting entrance/exit
@@ -75,7 +95,9 @@ occurrences, never as an implied U-turn or reversal.
 
 ### Custom selection
 
-Custom expands into a map-anchored route editor rather than replacing the map
+Custom is the advanced entry at the end of the catalog for drivers who want a
+pairing the named experiences do not cover. It expands into a map-anchored
+route editor rather than replacing the map
 with a separate home mode. It lets the parked user pin one nearby
 direction-valid entrance, one nearby direction-valid exit, and a route style.
 The editor previews the concrete route shields and distance before **Use this
@@ -216,7 +238,13 @@ product. Low-confidence or tunnel positioning is shown as estimated without
 fabricating a precise marker.
 
 The geographic presentation is the initial default and renders the released
-route over the system MapKit basemap. A user-started automatic route simulation
+route over the system MapKit basemap. Beneath the highlighted route it also
+draws the whole expressway network — both carriageways of every mainline — as
+a muted context layer, so the driver always sees the opposite carriageway and
+nearby lines the way an ordinary navigation basemap would; the muted layer
+never competes visually with the active route and grants no guidance
+authority. Stacked or parallel carriageways may coincide in plan view; that is
+a display compromise and never affects position matching. A user-started automatic route simulation
 may exercise the complete Drive presentation along the selected route geometry.
 The current whole-Shuto replay uses at most 30 meters between generated samples,
 a 54 km/h reference trace, and an explicitly displayed 20x wall-clock rate,

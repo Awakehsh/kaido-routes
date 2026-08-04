@@ -18,18 +18,26 @@ internal review workbench.
   directional IC facilities, JCTs, and PAs.
 - The geographic map shows the selected route on MapKit and keeps the exact
   Kaido-owned Shuto path separate from bounded surface access and egress.
-- The home is route-first: circuit experiences (the C2 inner loop closed by
-  the Bayshore Route, and the C1 inner loop) lead the planning surface.
-  Selecting a circuit recommends direction-valid entrances nearest the
-  current origin, offers a 1–3 lap count, plans the whole circuit as one
-  ordered occurrence sequence with a forward-ranked exit, and runs it as a
-  round trip through the normal review gate. Entrance candidates show their
-  tariff band from dated ACTIVE evidence (normal car, ETC): the minimum band
-  is asserted only with a distance safety margin, mid-range amounts stay
-  explicit estimates, and nothing is shown until a band is computed. Because
-  the tariff uses the shortest all-Shuto path between entry and exit, lap
-  count never changes the band. Destination search remains an optional
-  continuation below the circuit choices.
+  Beneath the highlighted route it draws every mainline carriageway — both
+  directions — as a muted context layer with no guidance authority.
+- The home is route-first: a named route-experience catalog leads the
+  planning surface — the C1 inner loop, the C2 inner loop closed by the
+  Bayshore Route, the Bayshore westbound run ending at Daikoku PA, the
+  Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
+  Mirai, and the Yokohama Bay Bridge finishing beside Daikoku PA. The driver
+  chooses a route, never designs an entrance or exit: selecting an
+  experience derives the pairing automatically (nearest reachable
+  direction-valid entrance, and for loops the exit whose pairing lands in
+  the lowest tariff band), shows it as one factual line with ranked
+  alternatives one disclosure away, offers a 1–3 lap count on loops, plans
+  the experience as one ordered occurrence sequence, and runs it as a round
+  trip through the normal review gate. Tariff bands come from dated ACTIVE
+  evidence (normal car, ETC): the minimum band is asserted only with a
+  distance safety margin, mid-range amounts stay explicit estimates, and
+  nothing is shown until a band is computed. Because the tariff uses the
+  shortest all-Shuto path between entry and exit, lap count never changes
+  the band. Destination search remains an optional continuation below the
+  catalog.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

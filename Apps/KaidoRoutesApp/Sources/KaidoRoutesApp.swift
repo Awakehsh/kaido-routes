@@ -495,7 +495,8 @@ private struct WholeShutoTrackMapPreviewHost: View {
     )
     model.selectCircuit(.c2InnerWithBayshore)
     model.selectCircuitLaps(2)
-    model.startCircuitJourney()
+    // Pairing derivation is asynchronous; the journey starts on resolution.
+    model.startCircuitJourneyWhenPaired()
     model.mapMode = .network
     self.startsNavigation = startsNavigation
     _model = StateObject(wrappedValue: model)
@@ -504,14 +505,12 @@ private struct WholeShutoTrackMapPreviewHost: View {
   var body: some View {
     WholeShutoProductView(model: model)
       .task(id: scenePhase) {
-        guard
-          startsNavigation,
-          scenePhase == .active,
-          model.phase == .review
-        else {
-          return
+        guard startsNavigation, scenePhase == .active else { return }
+        // The derived pairing lands asynchronously before review opens.
+        for _ in 0..<200 where model.phase != .review {
+          try? await Task.sleep(nanoseconds: 50_000_000)
         }
-        await Task.yield()
+        guard model.phase == .review else { return }
         model.startNavigationSimulation()
         model.mapMode = .network
       }

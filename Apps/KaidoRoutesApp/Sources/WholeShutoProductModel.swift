@@ -232,6 +232,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitEntranceCandidates:
     [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var circuitEntryFacilityID: String?
+  @Published private(set) var circuitExitFacilityID: String?
+  @Published private(set) var circuitPairingBand: ShutoTariffBand?
+  @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
   @Published private(set) var isCircuitRouteSelected = false
@@ -266,6 +269,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var playbackTask: Task<Void, Never>?
   private var surfaceRouteTask: Task<Void, Never>?
   private var circuitTariffTask: Task<Void, Never>?
+  private var startsCircuitJourneyAfterPairing = false
   private var surfaceRouteRequestID: UUID?
   private var routeChoiceSurfaceRoutesByRoutePlanID: [String: WholeShutoRouteChoiceSurfaceRoutes] =
     [:]
@@ -1189,10 +1193,15 @@ final class WholeShutoProductModel: ObservableObject {
     facility(id: circuitEntryFacilityID)
   }
 
+  var circuitExitFacility: ShutoNetworkDatabase.Facility? {
+    facility(id: circuitExitFacilityID)
+  }
+
   var canStartCircuitJourney: Bool {
     phase == .planning
       && selectedCircuit != nil
       && circuitEntryFacilityID != nil
+      && circuitExitFacilityID != nil
       && origin != nil
   }
 
@@ -1200,13 +1209,12 @@ final class WholeShutoProductModel: ObservableObject {
     guard phase == .planning else { return }
     selectedCircuit = circuit
     circuitLaps = 1
-    circuitEntranceCandidates = planner.circuitEntranceCandidates(
-      for: circuit,
-      origin: origin?.coordinate
-    )
-    circuitEntryFacilityID =
-      circuitEntranceCandidates.first?.facilityID
-    resolveCircuitTariffBands()
+    circuitEntranceCandidates = []
+    circuitEntryFacilityID = nil
+    circuitExitFacilityID = nil
+    circuitPairingBand = nil
+    circuitTariffBandsByFacilityID = [:]
+    resolveCircuitPairing(entranceOverride: nil)
   }
 
   func clearCircuitDraft() {
@@ -1220,8 +1228,25 @@ final class WholeShutoProductModel: ObservableObject {
     selectedCircuit = nil
     circuitEntranceCandidates = []
     circuitEntryFacilityID = nil
+    circuitExitFacilityID = nil
+    circuitPairingBand = nil
+    isResolvingCircuitPairing = false
+    startsCircuitJourneyAfterPairing = false
     circuitLaps = 1
     circuitTariffBandsByFacilityID = [:]
+  }
+
+  /// Starts immediately when the derived pairing is ready; otherwise starts
+  /// as soon as the in-flight pairing resolution lands. Used by the flow
+  /// where the location fix arrives after the start action.
+  func startCircuitJourneyWhenPaired() {
+    if canStartCircuitJourney {
+      startCircuitJourney()
+      return
+    }
+    guard phase == .planning, selectedCircuit != nil, origin != nil
+    else { return }
+    startsCircuitJourneyAfterPairing = true
   }
 
   func selectCircuitEntrance(facilityID: String) {
@@ -1230,95 +1255,108 @@ final class WholeShutoProductModel: ObservableObject {
         where: { $0.facilityID == facilityID }
       )
     else { return }
-    circuitEntryFacilityID = facilityID
+    resolveCircuitPairing(entranceOverride: facilityID)
   }
 
   func selectCircuitLaps(_ laps: Int) {
-    guard (1...3).contains(laps) else { return }
+    guard selectedCircuit?.kind == .loop, (1...3).contains(laps) else {
+      return
+    }
     circuitLaps = laps
   }
 
   func refreshCircuitEntrances() {
-    guard let circuit = selectedCircuit else { return }
-    circuitEntranceCandidates = planner.circuitEntranceCandidates(
-      for: circuit,
-      origin: origin?.coordinate
-    )
-    if circuitEntryFacilityID == nil
-      || !circuitEntranceCandidates.contains(
-        where: { $0.facilityID == circuitEntryFacilityID }
-      )
-    {
-      circuitEntryFacilityID =
-        circuitEntranceCandidates.first?.facilityID
-    }
-    resolveCircuitTariffBands()
+    guard selectedCircuit != nil else { return }
+    resolveCircuitPairing(entranceOverride: circuitEntryFacilityID)
   }
 
-  /// Resolves tariff bands for the leading entrance candidates off the main
-  /// actor. A band appears only once computed from the dated ACTIVE evidence;
-  /// until then the interface shows nothing rather than inventing an amount.
-  private func resolveCircuitTariffBands() {
+  /// Derives the recommended entrance/exit pairing off the main actor: the
+  /// nearest reachable entrance (or the driver's override), the tariff-best
+  /// exit, and the per-alternative bands. Until resolution completes the
+  /// start action stays unavailable and the interface shows nothing rather
+  /// than inventing a pairing or an amount.
+  private func resolveCircuitPairing(entranceOverride: String?) {
     circuitTariffTask?.cancel()
-    circuitTariffBandsByFacilityID = [:]
     guard let circuit = selectedCircuit else { return }
+    isResolvingCircuitPairing = true
     let planner = planner
-    let candidateIDs = circuitEntranceCandidates.prefix(3).map(\.facilityID)
+    let originCoordinate = origin?.coordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
-      var bands: [String: ShutoTariffBand] = [:]
-      for entryID in candidateIDs {
-        if Task.isCancelled { return }
-        guard
-          let exit = try? planner.circuitExitCandidates(
-            for: circuit,
-            afterEntering: entryID
-          ).first,
-          let band = try? planner.tariffBand(
-            entryFacilityID: entryID,
-            exitFacilityID: exit.facilityID,
-            evidence: .etcNormalCarActive
-          )
-        else { continue }
-        bands[entryID] = band
+      let candidates = planner.circuitEntranceCandidates(
+        for: circuit,
+        origin: originCoordinate
+      )
+      let entranceID =
+        candidates.contains(where: { $0.facilityID == entranceOverride })
+        ? entranceOverride
+        : candidates.first?.facilityID
+      var pairing: ShutoCircuitPairing?
+      if let entranceID {
+        pairing = try? planner.recommendedCircuitPairing(
+          for: circuit,
+          entranceFacilityID: entranceID,
+          evidence: .etcNormalCarActive
+        )
       }
-      let resolved = bands
+      var bands: [String: ShutoTariffBand] = [:]
+      for candidate in candidates.prefix(3) {
+        if Task.isCancelled { return }
+        if candidate.facilityID == pairing?.entrance.facilityID {
+          bands[candidate.facilityID] = pairing?.tariffBand
+          continue
+        }
+        bands[candidate.facilityID] =
+          (try? planner.recommendedCircuitPairing(
+            for: circuit,
+            entranceFacilityID: candidate.facilityID,
+            evidence: .etcNormalCarActive
+          ))?.tariffBand
+      }
+      let resolvedPairing = pairing
+      let resolvedBands = bands.compactMapValues { $0 }
+      let resolvedCandidates = candidates
       await MainActor.run { [weak self] in
         guard let self, !Task.isCancelled,
           self.selectedCircuit?.circuitID == circuit.circuitID
         else { return }
-        self.circuitTariffBandsByFacilityID = resolved
+        self.circuitEntranceCandidates = resolvedCandidates
+        self.circuitEntryFacilityID =
+          resolvedPairing?.entrance.facilityID
+        self.circuitExitFacilityID = resolvedPairing?.exit.facilityID
+        self.circuitPairingBand = resolvedPairing?.tariffBand
+        self.circuitTariffBandsByFacilityID = resolvedBands
+        self.isResolvingCircuitPairing = false
+        if self.startsCircuitJourneyAfterPairing {
+          self.startsCircuitJourneyAfterPairing = false
+          if self.canStartCircuitJourney {
+            self.startCircuitJourney()
+          }
+        }
       }
     }
   }
 
   /// Starts the circuit journey as a round trip: the origin doubles as the
-  /// destination, the exit is the first direction-valid exit after the
-  /// chosen entrance, and the usual fail-closed surface-leg flow follows.
+  /// destination, the exit is the derived pairing's exit, and the usual
+  /// fail-closed surface-leg flow follows.
   @discardableResult
   func startCircuitJourney() -> Bool {
     guard
       phase == .planning,
       let circuit = selectedCircuit,
       let entryFacilityID = circuitEntryFacilityID,
+      let exitFacilityID = circuitExitFacilityID,
       let origin
     else {
       return false
     }
     do {
-      let exits = try planner.circuitExitCandidates(
-        for: circuit,
-        afterEntering: entryFacilityID
-      )
-      guard let exitFacility = exits.first else {
-        failureCode = "NO_SHUTO_ROUTE"
-        return false
-      }
       let route = try planner.planCircuit(
         circuit: circuit,
         entryFacilityID: entryFacilityID,
-        exitFacilityID: exitFacility.facilityID,
-        laps: circuitLaps
+        exitFacilityID: exitFacilityID,
+        laps: circuit.kind == .loop ? circuitLaps : 1
       )
       cancelSurfaceRouteResolution()
       clearRouteChoiceEvaluation()

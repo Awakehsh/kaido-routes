@@ -74,6 +74,14 @@ public enum ShutoTariffBand: Equatable, Sendable {
   case minimum(yen: Int)
   case estimated(yen: Int)
   case maximum(yen: Int)
+
+  /// The quoted amount regardless of band certainty; used to order pairings.
+  public var quotedYen: Int {
+    switch self {
+    case .minimum(let yen), .estimated(let yen), .maximum(let yen):
+      return yen
+    }
+  }
 }
 
 extension ShutoRoutePlanner {

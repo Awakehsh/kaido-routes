@@ -108,30 +108,31 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
     circuitCard.tap()
 
-    // The panel offers direction-valid entrances, a lap control, and one
-    // start action; a lap change is reflected before any journey starts.
+    // The panel derives the pairing (entrance → exit plus tariff band)
+    // asynchronously, keeps a lap control for loops, and offers one start
+    // action; a lap change is reflected before any journey starts.
     let lapsValue = element("whole-shuto-circuit-laps", in: app)
     XCTAssertTrue(lapsValue.waitForExistence(timeout: 5))
     XCTAssertTrue(
       element("whole-shuto-start-circuit", in: app).exists
     )
     XCTAssertTrue(
+      element("whole-shuto-circuit-pairing", in: app)
+        .waitForExistence(timeout: 15)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-circuit-pairing-tariff", in: app)
+        .waitForExistence(timeout: 10)
+    )
+    // Ranked entrance alternatives stay one disclosure away.
+    element("whole-shuto-circuit-alternatives", in: app).tap()
+    XCTAssertTrue(
       app.descendants(matching: .any).matching(
         NSPredicate(
           format: "identifier BEGINSWITH %@",
           "whole-shuto-circuit-entrance-"
         )
-      ).firstMatch.exists
-    )
-    // Tariff bands from the dated evidence appear asynchronously; the
-    // interface shows nothing until a band is actually computed.
-    XCTAssertTrue(
-      app.descendants(matching: .any).matching(
-        NSPredicate(
-          format: "identifier BEGINSWITH %@",
-          "whole-shuto-circuit-tariff-"
-        )
-      ).firstMatch.waitForExistence(timeout: 10)
+      ).firstMatch.waitForExistence(timeout: 5)
     )
 
     element("whole-shuto-circuit-laps-increase", in: app).tap()

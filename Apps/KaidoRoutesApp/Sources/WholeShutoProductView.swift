@@ -23,6 +23,7 @@ struct WholeShutoProductView: View {
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
   @State private var waitsForCircuitLocation = false
+  @State private var showsCircuitAlternatives = false
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
@@ -459,15 +460,36 @@ struct WholeShutoProductView: View {
       if let circuit = model.selectedCircuit {
         selectedCircuitPanel(circuit)
       } else {
-        HStack(spacing: 10) {
-          ForEach(model.bundledCircuits) { circuit in
-            circuitCard(circuit)
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 10) {
+            ForEach(model.bundledCircuits) { circuit in
+              circuitCard(circuit)
+            }
           }
         }
       }
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-circuit-experiences")
+  }
+
+  private func circuitKindText(
+    _ circuit: ShutoCircuitDefinition
+  ) -> String {
+    switch circuit.kind {
+    case .loop:
+      return copy.resolve(
+        japanese: "周回ルート",
+        simplifiedChinese: "环线路线",
+        english: "CIRCUIT"
+      )
+    case .tour:
+      return copy.resolve(
+        japanese: "ワンウェイツアー",
+        simplifiedChinese: "单程巡游",
+        english: "TOUR"
+      )
+    }
   }
 
   private func circuitCard(
@@ -483,24 +505,33 @@ struct WholeShutoProductView: View {
       }
     } label: {
       VStack(alignment: .leading, spacing: 5) {
-        Image(systemName: "arrow.triangle.capsulepath")
-          .font(.system(size: 15, weight: .bold))
-          .foregroundStyle(KaidoTheme.routeGreen)
+        Image(
+          systemName: circuit.kind == .loop
+            ? "arrow.triangle.capsulepath" : "point.topleft.down.curvedto.point.bottomright.up"
+        )
+        .font(.system(size: 15, weight: .bold))
+        .foregroundStyle(KaidoTheme.routeGreen)
         Text(circuit.displayNameJA)
           .font(.system(size: 12.5, weight: .bold))
           .multilineTextAlignment(.leading)
-          .lineLimit(2)
-        Text(
-          copy.resolve(
-            japanese: "周回ルート",
-            simplifiedChinese: "环线路线",
-            english: "CIRCUIT"
-          )
-        )
-        .font(.system(size: 9.5, weight: .semibold))
-        .foregroundStyle(.secondary)
+          .lineLimit(2, reservesSpace: true)
+        Text(circuitKindText(circuit))
+          .font(.system(size: 9.5, weight: .semibold))
+          .foregroundStyle(.secondary)
+        if !circuit.landmarkNamesJA.isEmpty {
+          Text(circuit.landmarkNamesJA.joined(separator: "・"))
+            .font(.system(size: 9, weight: .medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        if !circuit.paStopNamesJA.isEmpty {
+          Text(circuit.paStopNamesJA.joined(separator: "・"))
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(KaidoTheme.routeGreen)
+            .lineLimit(1)
+        }
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .frame(width: 168, alignment: .leading)
       .padding(10)
       .background(KaidoTheme.paperRaised.opacity(0.94))
       .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -534,56 +565,79 @@ struct WholeShutoProductView: View {
         .accessibilityIdentifier("whole-shuto-circuit-close")
       }
 
-      Text(
-        copy.resolve(
-          japanese: "入口を選ぶ",
-          simplifiedChinese: "选择入口",
-          english: "ENTRANCE"
-        )
-      )
-      .font(.system(size: 10, weight: .bold))
-      .foregroundStyle(.secondary)
+      circuitPairingSummary(circuit)
 
-      ForEach(
-        Array(model.circuitEntranceCandidates.prefix(3)),
-        id: \.facilityID
-      ) { facility in
-        circuitEntranceRow(facility)
+      if !model.circuitEntranceCandidates.isEmpty {
+        Button {
+          showsCircuitAlternatives.toggle()
+        } label: {
+          HStack(spacing: 5) {
+            Text(
+              copy.resolve(
+                japanese: "入口を変更",
+                simplifiedChinese: "更换入口",
+                english: "CHANGE ENTRANCE"
+              )
+            )
+            Image(
+              systemName: showsCircuitAlternatives
+                ? "chevron.up" : "chevron.down"
+            )
+          }
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(.secondary)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("whole-shuto-circuit-alternatives")
+
+        if showsCircuitAlternatives {
+          VStack(alignment: .leading, spacing: 6) {
+            ForEach(
+              Array(model.circuitEntranceCandidates.prefix(3)),
+              id: \.facilityID
+            ) { facility in
+              circuitEntranceRow(facility)
+            }
+          }
+        }
       }
 
-      HStack(spacing: 10) {
-        Text(
-          copy.resolve(
-            japanese: "周回数",
-            simplifiedChinese: "圈数",
-            english: "LAPS"
+      if circuit.kind == .loop {
+        HStack(spacing: 10) {
+          Text(
+            copy.resolve(
+              japanese: "周回数",
+              simplifiedChinese: "圈数",
+              english: "LAPS"
+            )
           )
-        )
-        .font(.system(size: 12, weight: .semibold))
-        Spacer()
-        Button {
-          model.selectCircuitLaps(model.circuitLaps - 1)
-        } label: {
-          Image(systemName: "minus.circle")
-            .font(.system(size: 20))
+          .font(.system(size: 12, weight: .semibold))
+          Spacer()
+          Button {
+            model.selectCircuitLaps(model.circuitLaps - 1)
+          } label: {
+            Image(systemName: "minus.circle")
+              .font(.system(size: 20))
+          }
+          .buttonStyle(.plain)
+          .disabled(model.circuitLaps <= 1)
+          .accessibilityIdentifier("whole-shuto-circuit-laps-decrease")
+          Text("×\(model.circuitLaps)")
+            .font(.system(size: 15, weight: .bold))
+            .monospacedDigit()
+            .accessibilityIdentifier("whole-shuto-circuit-laps")
+            .accessibilityValue("\(model.circuitLaps)")
+          Button {
+            model.selectCircuitLaps(model.circuitLaps + 1)
+          } label: {
+            Image(systemName: "plus.circle")
+              .font(.system(size: 20))
+          }
+          .buttonStyle(.plain)
+          .disabled(model.circuitLaps >= 3)
+          .accessibilityIdentifier("whole-shuto-circuit-laps-increase")
         }
-        .buttonStyle(.plain)
-        .disabled(model.circuitLaps <= 1)
-        .accessibilityIdentifier("whole-shuto-circuit-laps-decrease")
-        Text("×\(model.circuitLaps)")
-          .font(.system(size: 15, weight: .bold))
-          .monospacedDigit()
-          .accessibilityIdentifier("whole-shuto-circuit-laps")
-          .accessibilityValue("\(model.circuitLaps)")
-        Button {
-          model.selectCircuitLaps(model.circuitLaps + 1)
-        } label: {
-          Image(systemName: "plus.circle")
-            .font(.system(size: 20))
-        }
-        .buttonStyle(.plain)
-        .disabled(model.circuitLaps >= 3)
-        .accessibilityIdentifier("whole-shuto-circuit-laps-increase")
       }
 
       Button {
@@ -622,10 +676,13 @@ struct WholeShutoProductView: View {
       }
       .buttonStyle(.plain)
       .disabled(
-        model.circuitEntryFacilityID == nil || waitsForCircuitLocation
+        model.circuitEntryFacilityID == nil
+          || model.circuitExitFacilityID == nil
+          || waitsForCircuitLocation
       )
       .opacity(
-        model.circuitEntryFacilityID == nil ? 0.45 : 1
+        model.circuitEntryFacilityID == nil
+          || model.circuitExitFacilityID == nil ? 0.45 : 1
       )
       .accessibilityIdentifier("whole-shuto-start-circuit")
     }
@@ -635,6 +692,75 @@ struct WholeShutoProductView: View {
     .overlay {
       RoundedRectangle(cornerRadius: 14)
         .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+    }
+  }
+
+  /// The derived pairing as one factual line: entrance → exit plus the
+  /// dated-evidence tariff band. Nothing is shown until derivation finishes.
+  private func circuitPairingSummary(
+    _ circuit: ShutoCircuitDefinition
+  ) -> some View {
+    Group {
+      if model.isResolvingCircuitPairing {
+        HStack(spacing: 8) {
+          ProgressView()
+            .controlSize(.small)
+          Text(
+            copy.resolve(
+              japanese: "現在地から入口・出口を導出中",
+              simplifiedChinese: "正在按当前位置推导入口/出口",
+              english: "Deriving entrance and exit"
+            )
+          )
+          .font(.system(size: 11.5, weight: .semibold))
+          .foregroundStyle(.secondary)
+        }
+      } else if let entry = model.circuitEntryFacility,
+        let exit = model.circuitExitFacility
+      {
+        VStack(alignment: .leading, spacing: 4) {
+          HStack(spacing: 6) {
+            Text(entry.nameJA)
+              .font(.system(size: 13, weight: .bold))
+            Image(systemName: "arrow.right")
+              .font(.system(size: 10, weight: .bold))
+              .foregroundStyle(.secondary)
+            Text(exit.nameJA)
+              .font(.system(size: 13, weight: .bold))
+            if entry.etcOnly || exit.etcOnly {
+              Text("ETC")
+                .font(.system(size: 9, weight: .bold))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(KaidoTheme.roadGray.opacity(0.25))
+                .clipShape(Capsule())
+            }
+            Spacer()
+          }
+          if let band = model.circuitPairingBand {
+            Text(circuitTariffText(band))
+              .font(.system(size: 11, weight: .bold))
+              .monospacedDigit()
+              .foregroundStyle(
+                circuitTariffIsMinimum(band)
+                  ? KaidoTheme.routeGreen : Color.secondary
+              )
+              .accessibilityIdentifier("whole-shuto-circuit-pairing-tariff")
+          }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("whole-shuto-circuit-pairing")
+      } else {
+        Text(
+          copy.resolve(
+            japanese: "この付近から入れる方向対応の入口が見つかりません",
+            simplifiedChinese: "附近没有方向匹配的可用入口",
+            english: "No direction-valid entrance reachable from here"
+          )
+        )
+        .font(.system(size: 11.5, weight: .semibold))
+        .foregroundStyle(.secondary)
+      }
     }
   }
 
@@ -750,7 +876,7 @@ struct WholeShutoProductView: View {
     if let snapshot = planningLocation.snapshot {
       model.selectCurrentOrigin(snapshot.coordinate)
       model.refreshCircuitEntrances()
-      model.startCircuitJourney()
+      model.startCircuitJourneyWhenPaired()
       return
     }
     if planningLocation.state == .denied
@@ -1080,7 +1206,7 @@ struct WholeShutoProductView: View {
       model.refreshCircuitEntrances()
       if waitsForCircuitLocation {
         waitsForCircuitLocation = false
-        model.startCircuitJourney()
+        model.startCircuitJourneyWhenPaired()
         return
       }
       guard waitsForPlanningLocation else { return }
@@ -3608,6 +3734,78 @@ private struct DiagramTransform {
   }
 }
 
+/// One-time per-snapshot cache of every mainline carriageway, both
+/// directions, for the muted context layer beneath the highlighted route.
+/// Cached as `MKPolyline` objects so the map content diff during route
+/// playback compares object identity instead of thousands of coordinates.
+@MainActor
+private enum WholeShutoNetworkBackdrop {
+  private static var cached:
+    (snapshotID: String, polylines: [MKPolyline])?
+
+  static func polylines(
+    for database: ShutoNetworkDatabase
+  ) -> [MKPolyline] {
+    if let cached, cached.snapshotID == database.networkSnapshotID {
+      return cached.polylines
+    }
+    let nodeCoordinates = Dictionary(
+      uniqueKeysWithValues: database.nodes.map {
+        ($0.nodeID, $0.coordinate)
+      }
+    )
+    // Stitch directed mainline ways into long chains by shared end nodes:
+    // ~1000 short ways collapse into a few dozen polylines, which keeps the
+    // map content diff cheap while the route progress republishes.
+    var ways = database.ways.filter {
+      $0.kind == "MAINLINE" && $0.nodeIDs.count > 1
+    }
+    var used = [Bool](repeating: false, count: ways.count)
+    var byFirstNode: [Int64: [Int]] = [:]
+    for (index, way) in ways.enumerated() {
+      byFirstNode[way.nodeIDs[0], default: []].append(index)
+    }
+    var polylines: [MKPolyline] = []
+    for index in ways.indices where !used[index] {
+      used[index] = true
+      var nodeIDs = ways[index].nodeIDs
+      while let nextIndex = byFirstNode[nodeIDs[nodeIDs.count - 1]]?
+        .first(where: { !used[$0] })
+      {
+        used[nextIndex] = true
+        nodeIDs.append(contentsOf: ways[nextIndex].nodeIDs.dropFirst())
+      }
+      // Thin to ~60 m spacing: the muted hairline needs shape, not fidelity,
+      // and fewer vertices keep the overlay cheap during route playback.
+      let raw = nodeIDs.compactMap { nodeCoordinates[$0] }
+      var coordinates: [CLLocationCoordinate2D] = []
+      var lastKept: ShutoCoordinate?
+      for (offset, coordinate) in raw.enumerated() {
+        let isEndpoint = offset == 0 || offset == raw.count - 1
+        if let lastKept, !isEndpoint {
+          let dLatitude = (coordinate.latitude - lastKept.latitude) * 110_540
+          let dLongitude =
+            (coordinate.longitude - lastKept.longitude) * 90_000
+          if (dLatitude * dLatitude + dLongitude * dLongitude)
+            .squareRoot() < 60
+          {
+            continue
+          }
+        }
+        lastKept = coordinate
+        coordinates.append(coordinate.mapCoordinate)
+      }
+      if coordinates.count > 1 {
+        polylines.append(
+          MKPolyline(coordinates: coordinates, count: coordinates.count)
+        )
+      }
+    }
+    cached = (database.networkSnapshotID, polylines)
+    return polylines
+  }
+}
+
 private struct WholeShutoGeographicMap: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
@@ -3626,6 +3824,24 @@ private struct WholeShutoGeographicMap: View {
 
   var body: some View {
     Map(position: $camera) {
+      // The whole expressway network — both carriageways of every mainline —
+      // as a muted context layer beneath the active route. It never carries
+      // guidance authority; stacked carriageways may coincide in plan view.
+      ForEach(
+        WholeShutoNetworkBackdrop.polylines(for: model.database),
+        id: \.self
+      ) { polyline in
+        MapPolyline(polyline)
+          .stroke(
+            KaidoTheme.roadGray.opacity(0.34),
+            style: StrokeStyle(
+              lineWidth: 2.4,
+              lineCap: .round,
+              lineJoin: .round
+            )
+          )
+      }
+
       if let accessRoute = model.accessRoute,
         model.phase == .review || model.phase == .surfaceAccess
       {

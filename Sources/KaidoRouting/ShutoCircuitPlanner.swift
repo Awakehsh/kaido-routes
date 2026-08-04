@@ -183,9 +183,35 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
 }
 
 /// Raised for structurally invalid circuit requests (bad lap count,
-/// entrance/exit outside the circuit's member routes or direction).
+/// entrance/exit outside the circuit's member routes or direction), or for
+/// an origin whose nearest eligible entrance sits beyond the outer surface
+/// access radius — the product fails closed instead of navigating tens of
+/// kilometers of ordinary roads.
 public enum ShutoCircuitError: Error, Equatable {
   case invalidLapCount
+  case entranceOutOfRange(nearestDistanceMeters: Double)
+}
+
+/// Surface-access tiers for reaching an entrance from the origin: Tokyo's
+/// inner wards space Shuto entrances every 1–3 km, so 8 km (~15–20 min of
+/// city driving) covers ordinary urban origins, 16 km is offered with an
+/// explicit far label, and anything beyond fails closed — a distant origin
+/// belongs to a radial approach, not a long surface leg.
+public enum ShutoEntranceAccessTier: Equatable, Sendable {
+  case nearby
+  case far
+  case outOfRange
+
+  public static let nearbyRadiusMeters = 8_000.0
+  public static let outerRadiusMeters = 16_000.0
+
+  public static func classify(
+    distanceMeters: Double
+  ) -> ShutoEntranceAccessTier {
+    if distanceMeters <= nearbyRadiusMeters { return .nearby }
+    if distanceMeters <= outerRadiusMeters { return .far }
+    return .outOfRange
+  }
 }
 
 /// One derived entrance/exit pairing for an experience: the recommendation
@@ -194,6 +220,8 @@ public struct ShutoCircuitPairing: Equatable, Sendable {
   public let entrance: ShutoNetworkDatabase.Facility
   public let exit: ShutoNetworkDatabase.Facility
   public let tariffBand: ShutoTariffBand?
+  /// Geodesic origin-to-entrance distance when an origin was provided.
+  public let entranceDistanceMeters: Double?
 }
 
 extension ShutoRoutePlanner {
@@ -408,6 +436,7 @@ extension ShutoRoutePlanner {
     return try recommendedCircuitPairing(
       for: circuit,
       entranceFacilityID: entrance.facilityID,
+      origin: origin,
       evidence: evidence
     )
   }
@@ -417,12 +446,25 @@ extension ShutoRoutePlanner {
   public func recommendedCircuitPairing(
     for circuit: ShutoCircuitDefinition,
     entranceFacilityID: String,
+    origin: ShutoCoordinate? = nil,
     evidence: ShutoTariffEvidence?
   ) throws -> ShutoCircuitPairing {
     guard let entrance = facilitiesByID[entranceFacilityID],
       isEligibleEntrance(entrance, for: circuit)
     else {
       throw ShutoNetworkError.facilityUnavailable
+    }
+    let entranceDistance = origin.map {
+      Self.distance($0, entrance.coordinate)
+    }
+    if let entranceDistance,
+      ShutoEntranceAccessTier.classify(
+        distanceMeters: entranceDistance
+      ) == .outOfRange
+    {
+      throw ShutoCircuitError.entranceOutOfRange(
+        nearestDistanceMeters: entranceDistance
+      )
     }
     let exits = try circuitExitCandidates(
       for: circuit,
@@ -442,7 +484,8 @@ extension ShutoRoutePlanner {
       return ShutoCircuitPairing(
         entrance: entrance,
         exit: leading,
-        tariffBand: band
+        tariffBand: band,
+        entranceDistanceMeters: entranceDistance
       )
     }
     var best: (ShutoNetworkDatabase.Facility, ShutoTariffBand)?
@@ -463,13 +506,15 @@ extension ShutoRoutePlanner {
       return ShutoCircuitPairing(
         entrance: entrance,
         exit: leading,
-        tariffBand: nil
+        tariffBand: nil,
+        entranceDistanceMeters: entranceDistance
       )
     }
     return ShutoCircuitPairing(
       entrance: entrance,
       exit: best.0,
-      tariffBand: best.1
+      tariffBand: best.1,
+      entranceDistanceMeters: entranceDistance
     )
   }
 

@@ -462,8 +462,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     let slowRoute = model.recommendations[1].route
     let latestRoute = model.recommendations[2].route
     await resolver.configure(
-      slowEntry: slowRoute.entryFacility.coordinate,
-      slowExit: slowRoute.exitFacility.coordinate
+      slowEntry: slowRoute.coordinates.first
+        ?? slowRoute.entryFacility.coordinate,
+      slowExit: slowRoute.coordinates.last
+        ?? slowRoute.exitFacility.coordinate
     )
 
     model.selectRecommendation(at: 1)
@@ -476,24 +478,26 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(model.selectedRecommendationIndex, 2)
     XCTAssertFalse(model.isUpdatingSurfaceRoute)
+    // Surface legs land on the plan's own directional ramp mouths, not
+    // the IC representative points.
     XCTAssertEqual(
       model.accessRoute?.coordinates.last,
-      latestRoute.entryFacility.coordinate
+      latestRoute.coordinates.first
     )
     XCTAssertEqual(
       model.egressRoute?.coordinates.first,
-      latestRoute.exitFacility.coordinate
+      latestRoute.coordinates.last
     )
 
     try? await Task.sleep(nanoseconds: 180_000_000)
 
     XCTAssertEqual(
       model.accessRoute?.coordinates.last,
-      latestRoute.entryFacility.coordinate
+      latestRoute.coordinates.first
     )
     XCTAssertEqual(
       model.egressRoute?.coordinates.first,
-      latestRoute.exitFacility.coordinate
+      latestRoute.coordinates.last
     )
   }
 
@@ -538,13 +542,14 @@ final class WholeShutoProductModelTests: XCTestCase {
       await Task.yield()
     }
     XCTAssertFalse(model.isUpdatingSurfaceRoute)
+    // Surface legs land on the draft's own directional ramp mouths.
     XCTAssertEqual(
       model.accessRoute?.coordinates.last,
-      draft.entryFacility.coordinate
+      draft.coordinates.first
     )
     XCTAssertEqual(
       model.egressRoute?.coordinates.first,
-      draft.exitFacility.coordinate
+      draft.coordinates.last
     )
 
     model.selectRecommendation(at: 0)

@@ -73,6 +73,16 @@ card; expanding it reveals the ranked alternatives so a driver can correct a
 poor location fix or prefer a different entrance, but the default path never
 asks the driver to assemble a pairing.
 
+Surface access to the entrance is tiered: within 8 km the pairing is
+recommended normally, between 8 and 16 km it carries an explicit far label,
+and beyond 16 km the experience fails closed with the factual distance to
+the nearest entrance instead of recommending a long ordinary-road leg — a
+distant origin belongs to a radial approach, not surface navigation. The
+surface legs themselves target the plan's own directional ramp mouths, not
+the IC representative point: a full IC's opposite-direction ramps can sit
+hundreds of meters apart, and the half/full direction facts decide which
+ramp the journey actually uses.
+
 When the bounded surface provider resolves the ordinary-road access leg for
 every candidate entrance, the expanded list orders by that comparable surface
 access plus Kaido's unchanged route score; otherwise the list retains

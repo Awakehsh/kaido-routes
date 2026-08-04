@@ -234,6 +234,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitEntryFacilityID: String?
   @Published private(set) var circuitExitFacilityID: String?
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
+  @Published private(set) var circuitEntranceDistanceMeters: Double?
+  @Published private(set) var circuitEntranceOutOfRangeMeters: Double?
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
@@ -1213,6 +1215,8 @@ final class WholeShutoProductModel: ObservableObject {
     circuitEntryFacilityID = nil
     circuitExitFacilityID = nil
     circuitPairingBand = nil
+    circuitEntranceDistanceMeters = nil
+    circuitEntranceOutOfRangeMeters = nil
     circuitTariffBandsByFacilityID = [:]
     resolveCircuitPairing(entranceOverride: nil)
   }
@@ -1230,6 +1234,8 @@ final class WholeShutoProductModel: ObservableObject {
     circuitEntryFacilityID = nil
     circuitExitFacilityID = nil
     circuitPairingBand = nil
+    circuitEntranceDistanceMeters = nil
+    circuitEntranceOutOfRangeMeters = nil
     isResolvingCircuitPairing = false
     startsCircuitJourneyAfterPairing = false
     circuitLaps = 1
@@ -1283,20 +1289,39 @@ final class WholeShutoProductModel: ObservableObject {
     let originCoordinate = origin?.coordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
-      let candidates = planner.circuitEntranceCandidates(
+      let ranked = planner.circuitEntranceCandidates(
         for: circuit,
         origin: originCoordinate
       )
+      // Alternatives never offer an out-of-range surface leg.
+      let candidates = originCoordinate.map { origin in
+        ranked.filter {
+          ShutoEntranceAccessTier.classify(
+            distanceMeters: Self.distance(origin, $0.coordinate)
+          ) != .outOfRange
+        }
+      } ?? ranked
       let entranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })
         ? entranceOverride
         : candidates.first?.facilityID
       var pairing: ShutoCircuitPairing?
+      var outOfRangeMeters: Double?
       if let entranceID {
         pairing = try? planner.recommendedCircuitPairing(
           for: circuit,
           entranceFacilityID: entranceID,
+          origin: originCoordinate,
           evidence: .etcNormalCarActive
+        )
+      } else if let originCoordinate,
+        let nearest = ranked.first
+      {
+        // Every reachable entrance is beyond the outer radius: fail closed
+        // with the factual distance instead of a long surface navigation.
+        outOfRangeMeters = Self.distance(
+          originCoordinate,
+          nearest.coordinate
         )
       }
       var bands: [String: ShutoTariffBand] = [:]
@@ -1310,10 +1335,12 @@ final class WholeShutoProductModel: ObservableObject {
           (try? planner.recommendedCircuitPairing(
             for: circuit,
             entranceFacilityID: candidate.facilityID,
+            origin: originCoordinate,
             evidence: .etcNormalCarActive
           ))?.tariffBand
       }
       let resolvedPairing = pairing
+      let resolvedOutOfRange = outOfRangeMeters
       let resolvedBands = bands.compactMapValues { $0 }
       let resolvedCandidates = candidates
       await MainActor.run { [weak self] in
@@ -1325,6 +1352,9 @@ final class WholeShutoProductModel: ObservableObject {
           resolvedPairing?.entrance.facilityID
         self.circuitExitFacilityID = resolvedPairing?.exit.facilityID
         self.circuitPairingBand = resolvedPairing?.tariffBand
+        self.circuitEntranceDistanceMeters =
+          resolvedPairing?.entranceDistanceMeters
+        self.circuitEntranceOutOfRangeMeters = resolvedOutOfRange
         self.circuitTariffBandsByFacilityID = resolvedBands
         self.isResolvingCircuitPairing = false
         if self.startsCircuitJourneyAfterPairing {
@@ -1369,10 +1399,10 @@ final class WholeShutoProductModel: ObservableObject {
       selectedDestinationTitle = roundTripDestination.title
       let accessDistance = Self.distance(
         origin.coordinate,
-        route.entryFacility.coordinate
+        route.coordinates.first ?? route.entryFacility.coordinate
       )
       let egressDistance = Self.distance(
-        route.exitFacility.coordinate,
+        route.coordinates.last ?? route.exitFacility.coordinate,
         roundTripDestination.coordinate
       )
       let recommendation = ShutoRouteRecommendation(
@@ -1442,10 +1472,10 @@ final class WholeShutoProductModel: ObservableObject {
     }
     let accessDistance = Self.distance(
       origin.coordinate,
-      route.entryFacility.coordinate
+      route.coordinates.first ?? route.entryFacility.coordinate
     )
     let egressDistance = Self.distance(
-      route.exitFacility.coordinate,
+      route.coordinates.last ?? route.exitFacility.coordinate,
       destination.coordinate
     )
     let recommendation = ShutoRouteRecommendation(
@@ -1496,8 +1526,15 @@ final class WholeShutoProductModel: ObservableObject {
 
     let requestID = UUID()
     let routePlanID = recommendation.route.routePlan.id
-    let entry = recommendation.route.entryFacility.coordinate
-    let exit = recommendation.route.exitFacility.coordinate
+    // Surface legs target the plan's own directional ramp mouths: a full
+    // IC's opposite-direction ramps can sit hundreds of meters apart, so
+    // the IC representative point is not the navigation target.
+    let entry =
+      recommendation.route.coordinates.first
+      ?? recommendation.route.entryFacility.coordinate
+    let exit =
+      recommendation.route.coordinates.last
+      ?? recommendation.route.exitFacility.coordinate
     let resolver = surfaceRouteResolver
     surfaceRouteRequestID = requestID
     surfaceRouteTask = Task { [weak self] in
@@ -2552,7 +2589,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
   }
 
-  private static func distance(
+  private nonisolated static func distance(
     _ first: ShutoCoordinate,
     _ second: ShutoCoordinate
   ) -> Double {

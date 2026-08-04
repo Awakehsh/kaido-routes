@@ -216,6 +216,14 @@ struct ShutoCircuitPlannerTests {
       evidence: .etcNormalCarActive
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.b.higashiogishima")
+    // The derived pairing carries the surface-access distance and stays in
+    // the nearby tier from an on-site origin.
+    let entranceDistance = try #require(pairing.entranceDistanceMeters)
+    #expect(
+      ShutoEntranceAccessTier.classify(
+        distanceMeters: entranceDistance
+      ) == .nearby
+    )
     // Exiting at Daikoku-Futo right beside the PA keeps the pairing short;
     // the quoted band never changes with lap count.
     #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
@@ -267,6 +275,41 @@ struct ShutoCircuitPlannerTests {
     #expect(assertContinuity(route.edges))
     let traversed = Set(route.routeIDsInOrder)
     #expect(traversed.isSuperset(of: ["10", "B", "1_HANEDA", "K1", "K3"]))
+  }
+
+  @Test("a distant origin fails closed instead of a long surface leg")
+  func rejectsOutOfRangeOrigin() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    // Tachikawa sits ~20 km from the nearest C2 entrance: beyond the outer
+    // access radius, the pairing fails closed with the factual distance
+    // instead of recommending a long ordinary-road leg.
+    let origin = ShutoCoordinate(latitude: 35.6979, longitude: 139.4139)
+    #expect {
+      try planner.recommendedCircuitPairing(
+        for: .c2InnerWithBayshore,
+        origin: origin,
+        evidence: .etcNormalCarActive
+      )
+    } throws: { error in
+      guard
+        case ShutoCircuitError.entranceOutOfRange(let nearest) = error
+      else { return false }
+      return nearest > ShutoEntranceAccessTier.outerRadiusMeters
+    }
+  }
+
+  @Test("entrance access tiers split at 8 and 16 kilometers")
+  func classifiesEntranceAccessTiers() {
+    #expect(
+      ShutoEntranceAccessTier.classify(distanceMeters: 7_999) == .nearby
+    )
+    #expect(
+      ShutoEntranceAccessTier.classify(distanceMeters: 8_001) == .far
+    )
+    #expect(
+      ShutoEntranceAccessTier.classify(distanceMeters: 16_001)
+        == .outOfRange
+    )
   }
 
   private func assertContinuity(

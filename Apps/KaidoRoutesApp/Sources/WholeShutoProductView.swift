@@ -711,7 +711,29 @@ struct WholeShutoProductView: View {
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
     Group {
-      if model.isResolvingCircuitPairing {
+      if let nearest = model.circuitEntranceOutOfRangeMeters {
+        // Fail closed instead of navigating a long surface leg; distant
+        // origins belong to a radial approach.
+        Text(
+          copy.resolve(
+            japanese: String(
+              format: "16km圏内に対応入口がありません（最寄り約%.0fkm）",
+              nearest / 1000
+            ),
+            simplifiedChinese: String(
+              format: "16km 内没有可用入口（最近约 %.0f km）",
+              nearest / 1000
+            ),
+            english: String(
+              format: "No entrance within 16 km (nearest ≈ %.0f km)",
+              nearest / 1000
+            )
+          )
+        )
+        .font(.system(size: 11.5, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .accessibilityIdentifier("whole-shuto-circuit-out-of-range")
+      } else if model.isResolvingCircuitPairing {
         HStack(spacing: 8) {
           ProgressView()
             .controlSize(.small)
@@ -747,15 +769,59 @@ struct WholeShutoProductView: View {
             }
             Spacer()
           }
-          if let band = model.circuitPairingBand {
-            Text(circuitTariffText(band))
-              .font(.system(size: 11, weight: .bold))
-              .monospacedDigit()
-              .foregroundStyle(
-                circuitTariffIsMinimum(band)
-                  ? KaidoTheme.routeGreen : Color.secondary
+          HStack(spacing: 6) {
+            if let band = model.circuitPairingBand {
+              Text(circuitTariffText(band))
+                .font(.system(size: 11, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(
+                  circuitTariffIsMinimum(band)
+                    ? KaidoTheme.routeGreen : Color.secondary
+                )
+                .accessibilityIdentifier(
+                  "whole-shuto-circuit-pairing-tariff"
+                )
+            }
+            if let meters = model.circuitEntranceDistanceMeters {
+              Text(
+                copy.resolve(
+                  japanese: String(
+                    format: "入口まで約%.1fkm",
+                    meters / 1000
+                  ),
+                  simplifiedChinese: String(
+                    format: "到入口约 %.1f km",
+                    meters / 1000
+                  ),
+                  english: String(
+                    format: "≈ %.1f km to entrance",
+                    meters / 1000
+                  )
+                )
               )
-              .accessibilityIdentifier("whole-shuto-circuit-pairing-tariff")
+              .font(.system(size: 10.5, weight: .semibold))
+              .monospacedDigit()
+              .foregroundStyle(.secondary)
+              if ShutoEntranceAccessTier.classify(
+                distanceMeters: meters
+              ) == .far {
+                Text(
+                  copy.resolve(
+                    japanese: "遠め",
+                    simplifiedChinese: "较远",
+                    english: "FAR"
+                  )
+                )
+                .font(.system(size: 9, weight: .bold))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(KaidoTheme.signalAmber.opacity(0.3))
+                .clipShape(Capsule())
+                .accessibilityIdentifier(
+                  "whole-shuto-circuit-entrance-far"
+                )
+              }
+            }
           }
         }
         .accessibilityElement(children: .combine)

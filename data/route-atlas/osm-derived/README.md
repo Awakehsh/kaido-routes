@@ -40,7 +40,9 @@ Every usable IC and every official JCT must match or generation fails. Each
 JCT also retains the URL and SHA-256 of its current operator detail image
 without redistributing the image. The three unmatched IC facts are the
 explicitly unavailable Yaesu Route facilities and have no routable
-candidates.
+candidates. The operator fact catalog was re-scraped on 2026-08-04 with
+zero factual differences against the committed 2026-07-29 catalog, which
+therefore remains the pinned build input.
 
 Reconstruct it from the current operator fact catalog and the pinned Kanto
 PBF (the previously pinned `kanto-260728.osm.pbf` is no longer served by

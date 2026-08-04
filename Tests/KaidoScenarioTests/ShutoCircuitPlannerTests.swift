@@ -101,7 +101,15 @@ struct ShutoCircuitPlannerTests {
     )
 
     #expect(!candidates.isEmpty)
-    #expect(candidates.first?.facilityID == "shuto.ic.c2.hatsudaiminami")
+    // The nearest legal start is the Hatsudai radial entrance, which joins
+    // the inner loop through the all-directions Nishi-Shinjuku JCT; the
+    // loop's own Hatsudai-minami ramp ranks right behind it.
+    #expect(candidates.first?.facilityID == "shuto.ic.4.hatsudai")
+    #expect(
+      candidates.contains {
+        $0.facilityID == "shuto.ic.c2.hatsudaiminami"
+      }
+    )
     #expect(candidates.allSatisfy { $0.canEnter })
   }
 

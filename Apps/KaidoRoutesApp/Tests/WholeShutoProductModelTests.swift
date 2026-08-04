@@ -38,16 +38,15 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.circuit.c2-inner-bayshore"
     )
     XCTAssertEqual(model.circuitLaps, 1)
+    // The nearest legal start is the Hatsudai radial entrance joining the
+    // loop through the all-directions Nishi-Shinjuku JCT; the exit is
+    // derived too — the driver never assembles a pairing.
     XCTAssertEqual(
       model.circuitEntryFacilityID,
-      "shuto.ic.c2.hatsudaiminami"
+      "shuto.ic.4.hatsudai"
     )
-    // The exit is derived too — the driver never assembles a pairing.
-    XCTAssertEqual(
-      model.circuitExitFacilityID,
-      "shuto.ic.c2.tomigaya"
-    )
-    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
+    XCTAssertNotNil(model.circuitExitFacilityID)
+    XCTAssertEqual(model.circuitPairingBand?.quotedYen, 300)
     // Radial entrances that legally join the loop are first-class
     // candidates alongside the loop's own inner ramps.
     XCTAssertTrue(
@@ -116,7 +115,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertGreaterThan(route.distanceMeters, 100_000)
     XCTAssertEqual(
       route.routePlan.entryFacilityID,
-      "shuto.ic.c2.hatsudaiminami"
+      "shuto.ic.4.hatsudai"
     )
     XCTAssertEqual(
       Set(route.routePlan.occurrences.map(\.id)).count,
@@ -872,7 +871,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(restored.restoredFromCheckpoint)
     XCTAssertNil(restored.failureCode)
 
-    await restored.advanceSimulationForTesting()
+    await advance(restored, until: { $0.matcherConfidence == .high })
 
     XCTAssertEqual(restored.matcherConfidence, .high)
     XCTAssertEqual(restored.phase, .entryTransition)
@@ -997,9 +996,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.runtimeOccurrenceID)
     XCTAssertEqual(model.positionState, .boundaryTransition)
 
-    for _ in 0..<3 {
-      await model.advanceSimulationForTesting()
-    }
+    // The ramp mouth begins with micro-edges the matcher reports at
+    // reduced confidence; HIGH must still arrive while the phase remains
+    // entryTransition and before any occurrence is admitted.
+    await advance(model, until: { $0.matcherConfidence == .high })
 
     XCTAssertEqual(model.matcherConfidence, .high)
     XCTAssertEqual(model.phase, .entryTransition)

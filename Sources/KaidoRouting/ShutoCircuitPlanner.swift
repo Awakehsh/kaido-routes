@@ -377,6 +377,7 @@ extension ShutoRoutePlanner {
           from: approach.target,
           cost: cost
         )
+        var anchorReaches: [(node: Int64, distance: Double)] = []
         var nearestAnchorNode: (node: Int64, distance: Double)?
         var farthestAnchorNode: (node: Int64, distance: Double)?
         for nodes in anchorSets {
@@ -387,6 +388,7 @@ extension ShutoRoutePlanner {
           else {
             return false
           }
+          anchorReaches.append(best)
           if best.1 < (nearestAnchorNode?.distance ?? .infinity) {
             nearestAnchorNode = best
           }
@@ -396,6 +398,30 @@ extension ShutoRoutePlanner {
         }
         guard let nearestAnchorNode, let farthestAnchorNode else {
           return false
+        }
+        // The anchors form a reviewed cyclic sequence in the experience's
+        // carriageway direction: from a correct landing, forward distances
+        // must be non-decreasing around the rotated cycle. An entrance that
+        // joins the OPPOSITE carriageway reaches every anchor too — in
+        // reverse order — and is a different experience, not an approach.
+        if circuit.kind == .loop, anchorReaches.count >= 3 {
+          let count = anchorReaches.count
+          var startIndex = 0
+          for index in anchorReaches.indices
+          where anchorReaches[index].distance
+            < anchorReaches[startIndex].distance
+          {
+            startIndex = index
+          }
+          for offset in 1..<count {
+            let previous =
+              anchorReaches[(startIndex + offset - 1) % count].distance
+            let next =
+              anchorReaches[(startIndex + offset) % count].distance
+            if next + 1_000 < previous {
+              return false
+            }
+          }
         }
         // A loop entrance must feed an actual cycle: from the farthest
         // anchor the lap must close back to the first anchor within the

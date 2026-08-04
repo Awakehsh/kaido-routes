@@ -1063,14 +1063,34 @@ private struct NavigationDriveSimulationRuntime: Sendable {
     egressOptions = []
     decisionZones = runtimeAssets.decisionZones
     releasedGuidance = runtimeAssets.releasedGuidance
+    // The verification chain is the first CONSECUTIVE window of
+    // confirmable edges near the route head: ramp mouths are stitched from
+    // meter-scale stubs — often directly under a stacked mainline — that
+    // can never yield a unique high-confidence match, and a sub-spacing
+    // stub inside the chain stalls the edge-by-edge walk forever. The
+    // window requires every edge ≥ 25 m and a total span ≥ 60 m, falling
+    // back to the first two route edges only if no such window exists.
+    var window: Range<Int>? = nil
+    var runStart = 0
+    var runMeters = 0.0
+    for (index, edge) in route.edges.prefix(60).enumerated() {
+      if edge.lengthMeters < 25 {
+        runStart = index + 1
+        runMeters = 0
+        continue
+      }
+      runMeters += edge.lengthMeters
+      if index - runStart >= 1, runMeters >= 60 {
+        window = runStart..<min(index + 1, runStart + 6)
+        break
+      }
+    }
+    let chainRange = window ?? 0..<2
     syntheticEntryTransition = EntryTransition(
       facilityID: route.entryFacility.facilityID,
-      directedEdgeIDs: [
-        route.edges[0].edgeID,
-        route.edges[1].edgeID,
-      ],
+      directedEdgeIDs: route.edges[chainRange].map(\.edgeID),
       firstRouteOccurrenceID:
-        route.routePlan.occurrences[1].id
+        route.routePlan.occurrences[chainRange.upperBound - 1].id
     )
   }
 }

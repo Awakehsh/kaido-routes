@@ -712,11 +712,53 @@ def membership_matches(
     return False
 
 
+RAMP_TOPOLOGY_PROBE_METERS = 1_500.0
+
+
+def reaches_mainline(
+    start_node: int,
+    adjacency: dict[int, list[dict[str, Any]]],
+    follow_forward: bool,
+) -> bool:
+    """Bounded probe: does the ramp chain rejoin a mainline carriageway?
+
+    A genuine exit ramp leaves the network (its downstream dead-ends inside
+    the graph because surface streets are not part of it), while a
+    junction-to-junction connector merges back into a mainline within a few
+    hundred meters. Entry ramps are symmetric: a genuine one begins at a
+    graph dead-start, a connector is fed by a mainline.
+    """
+    frontier = [(start_node, 0.0)]
+    seen = {start_node}
+    index = 0
+    while index < len(frontier):
+        node, travelled = frontier[index]
+        index += 1
+        if travelled > RAMP_TOPOLOGY_PROBE_METERS:
+            continue
+        for edge in adjacency.get(node, ()):
+            if edge["kind"] == "MAINLINE":
+                return True
+            next_node = (
+                edge["to_node_id"]
+                if follow_forward
+                else edge["from_node_id"]
+            )
+            if next_node not in seen:
+                seen.add(next_node)
+                frontier.append(
+                    (next_node, travelled + edge["length_meters"])
+                )
+    return False
+
+
 def candidate_edges_for_facility(
     facility: dict[str, Any],
     edges: list[dict[str, Any]],
     node_coordinates: dict[int, tuple[float, float]],
     direction_key: str,
+    outgoing_edges: dict[int, list[dict[str, Any]]],
+    incoming_edges: dict[int, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
     point = (
         facility["coordinate"]["latitude"],
@@ -741,6 +783,75 @@ def candidate_edges_for_facility(
     if not ranked:
         return []
     link_candidates = [item for item in ranked if item[1]["kind"] == "LINK"]
+    if link_candidates:
+        # Ramp-topology gate: at a stacked junction the geometric ranking
+        # also catches junction-to-junction connectors running beside the
+        # true ramp (Namamugi's exit caught the K5-to-K1 connector, faking
+        # a short fare path the operator's own search prices via 15 km).
+        # If the gate would drop every candidate — e.g., a combined plaza
+        # whose exit loop rejoins an entry ramp — keep the geometric list
+        # rather than unmatching the facility.
+        if direction_key == "exit_directions":
+            gated = [
+                item
+                for item in link_candidates
+                if not reaches_mainline(
+                    item[1]["to_node_id"],
+                    outgoing_edges,
+                    follow_forward=True,
+                )
+            ]
+        else:
+            gated = [
+                item
+                for item in link_candidates
+                if not reaches_mainline(
+                    item[1]["from_node_id"],
+                    incoming_edges,
+                    follow_forward=False,
+                )
+            ]
+        if gated:
+            link_candidates = gated
+        # Anchor each surviving candidate at its ramp mouth: the chain start
+        # for an entrance (the toll gate the drive actually begins at) and
+        # the chain end for an exit. Planning from an arbitrary mid-ramp
+        # segment starts routes inside hairpin geometry that entry
+        # continuity verification cannot walk.
+        walk_forward = direction_key == "exit_directions"
+        adjacency = outgoing_edges if walk_forward else incoming_edges
+        anchored: dict[str, tuple[float, dict[str, Any]]] = {}
+        for distance, edge in link_candidates:
+            current = edge
+            walked = 0.0
+            for _ in range(60):
+                node = (
+                    current["to_node_id"]
+                    if walk_forward
+                    else current["from_node_id"]
+                )
+                links = [
+                    neighbor
+                    for neighbor in adjacency.get(node, ())
+                    if neighbor["kind"] == "LINK"
+                ]
+                # The toll gate sits within a few hundred meters of the
+                # facility point; walking further would anchor onto
+                # pre-gate collectors shared with other structures.
+                if (
+                    len(links) != 1
+                    or walked + links[0]["length_meters"] > 350
+                ):
+                    break
+                current = links[0]
+                walked += current["length_meters"]
+            existing = anchored.get(current["edge_id"])
+            if existing is None or distance < existing[0]:
+                anchored[current["edge_id"]] = (distance, current)
+        link_candidates = sorted(
+            anchored.values(),
+            key=lambda item: (item[0], item[1]["edge_id"]),
+        )
     selected = link_candidates[:12] if link_candidates else ranked[:12]
     return [
         {
@@ -756,6 +867,11 @@ def match_facilities(
     edges: list[dict[str, Any]],
     node_coordinates: dict[int, tuple[float, float]],
 ) -> list[dict[str, Any]]:
+    outgoing_edges: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    incoming_edges: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for edge in edges:
+        outgoing_edges[edge["from_node_id"]].append(edge)
+        incoming_edges[edge["to_node_id"]].append(edge)
     facilities: list[dict[str, Any]] = []
     for official in catalog["directional_facilities"]:
         entry_candidates = (
@@ -764,6 +880,8 @@ def match_facilities(
                 edges,
                 node_coordinates,
                 "entrance_directions",
+                outgoing_edges,
+                incoming_edges,
             )
             if official["entrance_directions"]
             and official["operational_status"] == "AVAILABLE"
@@ -775,6 +893,8 @@ def match_facilities(
                 edges,
                 node_coordinates,
                 "exit_directions",
+                outgoing_edges,
+                incoming_edges,
             )
             if official["exit_directions"]
             and official["operational_status"] == "AVAILABLE"

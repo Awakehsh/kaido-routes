@@ -90,23 +90,29 @@ extension ShutoRoutePlanner {
   private static let tariffDistanceMarginMeters = 500.0
 
   /// Tariff band for one entry/exit pairing under one dated tariff rule.
-  /// The fare distance is the shortest DRIVABLE path between the two toll
-  /// points, verified against the operator's own fare search on 2026-08-04:
-  /// Hatsudai-minami to Tomigaya quotes the minimum, while Shinjuku to
-  /// Yoyogi — one kilometer apart on the ground but only connected through
-  /// a full C1 circuit — quotes ¥860. Direction matters; an undirected
-  /// network distance under-quotes every turn-back pairing.
+  /// The fare distance is the shortest DRIVABLE directed path between the
+  /// two TOLL POINTS, where same-named ramps bill as one toll point — both
+  /// verified against the operator's own fare search on 2026-08-04:
+  /// Hatsudai-minami to Tomigaya quotes the minimum; Shinjuku to Yoyogi —
+  /// one kilometer apart on the ground but only connected through a full
+  /// C1 circuit — quotes ¥860; and Daikoku-Futo resolves its Bayshore and
+  /// Daikoku Line ramps to the single toll point B08, pricing the Namamugi
+  /// pairing over the 15 km Bayshore-side path. Direction matters (an
+  /// undirected distance under-quotes every turn-back pairing), and the
+  /// toll-point grouping takes the cheapest ramp of each name.
   public func tariffBand(
     entryFacilityID: String,
     exitFacilityID: String,
     evidence: ShutoTariffEvidence
   ) throws -> ShutoTariffBand {
-    let shortest = try plan(
-      entryFacilityID: entryFacilityID,
-      exitFacilityID: exitFacilityID,
-      preference: .recommended
-    )
-    let distance = shortest.distanceMeters
+    guard
+      let distance = tollPointFareDistanceMeters(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+    else {
+      throw ShutoNetworkError.routeUnavailable
+    }
     let margin = Self.tariffDistanceMarginMeters
     if evidence.rawYen(forTariffDistanceMeters: distance + margin)
       <= Double(evidence.minimumYen)
@@ -127,4 +133,76 @@ extension ShutoRoutePlanner {
     return .estimated(yen: clamped)
   }
 
+  /// Shortest directed network distance between two toll points, seeding
+  /// from every same-named entrance ramp and terminating at every
+  /// same-named exit ramp.
+  private func tollPointFareDistanceMeters(
+    entryFacilityID: String,
+    exitFacilityID: String
+  ) -> Double? {
+    guard let entry = facilitiesByID[entryFacilityID],
+      let exit = facilitiesByID[exitFacilityID]
+    else { return nil }
+    let entryGroup = database.directionalFacilities.filter {
+      $0.nameJA == entry.nameJA && $0.canEnter
+    }
+    let exitGroup = database.directionalFacilities.filter {
+      $0.nameJA == exit.nameJA && $0.canExit
+    }
+
+    var targets: [Int64: Double] = [:]
+    for facility in exitGroup {
+      for candidate in facility.exitEdgeCandidates {
+        guard let edge = edgesByID[candidate.edgeID] else { continue }
+        let tail = candidate.distanceMeters + edge.lengthMeters
+        if tail < targets[edge.fromNodeID, default: .infinity] {
+          targets[edge.fromNodeID] = tail
+        }
+      }
+    }
+    guard !targets.isEmpty else { return nil }
+
+    struct QueueValue: Comparable {
+      let cost: Double
+      let nodeID: Int64
+
+      static func < (lhs: QueueValue, rhs: QueueValue) -> Bool {
+        if lhs.cost != rhs.cost { return lhs.cost < rhs.cost }
+        return lhs.nodeID < rhs.nodeID
+      }
+    }
+    var distances: [Int64: Double] = [:]
+    var queue = MinHeap<QueueValue>()
+    for facility in entryGroup {
+      for candidate in facility.entryEdgeCandidates {
+        guard let edge = edgesByID[candidate.edgeID] else { continue }
+        let cost = candidate.distanceMeters + edge.lengthMeters
+        if cost < distances[edge.toNodeID, default: .infinity] {
+          distances[edge.toNodeID] = cost
+          queue.insert(QueueValue(cost: cost, nodeID: edge.toNodeID))
+        }
+      }
+    }
+    var best: Double?
+    while let current = queue.removeMinimum() {
+      guard current.cost == distances[current.nodeID] else { continue }
+      if let bestSoFar = best, current.cost >= bestSoFar { break }
+      if let tail = targets[current.nodeID] {
+        let total = current.cost + tail
+        if total < (best ?? .infinity) {
+          best = total
+        }
+      }
+      for edge in outgoingEdges[current.nodeID, default: []] {
+        let candidate = current.cost + edge.lengthMeters
+        if candidate < distances[edge.toNodeID, default: .infinity] {
+          distances[edge.toNodeID] = candidate
+          queue.insert(
+            QueueValue(cost: candidate, nodeID: edge.toNodeID)
+          )
+        }
+      }
+    }
+    return best
+  }
 }

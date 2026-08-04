@@ -236,6 +236,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
   @Published private(set) var circuitEntranceDistanceMeters: Double?
   @Published private(set) var circuitEntranceOutOfRangeMeters: Double?
+  @Published private(set) var circuitThumbnailsByID: [String: [CGPoint]] =
+    [:]
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
@@ -336,6 +338,79 @@ final class WholeShutoProductModel: ObservableObject {
       }
     )
     restoreCheckpointIfAvailable()
+    resolveCircuitThumbnails()
+  }
+
+  /// One representative shape per catalog card, computed once off the main
+  /// actor from a reviewed deterministic entrance so the card can show the
+  /// route's silhouette before any selection.
+  private nonisolated static let thumbnailEntranceByCircuitID:
+    [String: String] = [
+    "shuto.circuit.c1-inner": "shuto.ic.c1.takaracho",
+    "shuto.circuit.c2-inner-bayshore": "shuto.ic.c2.hatsudaiminami",
+    "shuto.circuit.wangan-daikoku-run": "shuto.ic.b.shinkiba",
+    "shuto.circuit.daikoku-yokohama-loop": "shuto.ic.b.higashiogishima",
+    "shuto.circuit.scenic-grand-tour": "shuto.ic.10.harumi",
+  ]
+
+  private func resolveCircuitThumbnails() {
+    let planner = planner
+    Task.detached(priority: .utility) { [weak self] in
+      var thumbnails: [String: [CGPoint]] = [:]
+      for circuit in ShutoCircuitDefinition.bundled {
+        guard
+          let entranceID =
+            Self.thumbnailEntranceByCircuitID[circuit.circuitID],
+          let exit = try? planner.circuitExitCandidates(
+            for: circuit,
+            afterEntering: entranceID
+          ).first,
+          let route = try? planner.planCircuit(
+            circuit: circuit,
+            entryFacilityID: entranceID,
+            exitFacilityID: exit.facilityID,
+            laps: 1
+          ),
+          let layout = RouteTrackMapLayout.make(
+            routeCoordinates: route.coordinates.map {
+              RouteTrackMapLayout.GeoPoint(
+                latitude: $0.latitude,
+                longitude: $0.longitude
+              )
+            },
+            facilities: []
+          )
+        else { continue }
+        let points = layout.trackPoints
+        let stride = max(1, points.count / 64)
+        var sampled: [CGPoint] = []
+        for index in Swift.stride(
+          from: 0,
+          to: points.count,
+          by: stride
+        ) {
+          sampled.append(
+            CGPoint(
+              x: points[index].x / RouteTrackMapLayout.designWidth,
+              y: points[index].y / RouteTrackMapLayout.designHeight
+            )
+          )
+        }
+        if let last = points.last {
+          sampled.append(
+            CGPoint(
+              x: last.x / RouteTrackMapLayout.designWidth,
+              y: last.y / RouteTrackMapLayout.designHeight
+            )
+          )
+        }
+        thumbnails[circuit.circuitID] = sampled
+      }
+      let resolved = thumbnails
+      await MainActor.run { [weak self] in
+        self?.circuitThumbnailsByID = resolved
+      }
+    }
   }
 
   deinit {

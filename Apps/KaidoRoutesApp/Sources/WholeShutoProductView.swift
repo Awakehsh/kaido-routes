@@ -483,6 +483,53 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier("whole-shuto-circuit-experiences")
   }
 
+  /// The route's silhouette in the card, drawn from the precomputed
+  /// normalized track shape.
+  private func circuitThumbnail(_ points: [CGPoint]) -> some View {
+    Canvas { context, size in
+      let xs = points.map { Double($0.x) }
+      let ys = points.map { Double($0.y) }
+      guard let minX = xs.min(), let maxX = xs.max(),
+        let minY = ys.min(), let maxY = ys.max(),
+        maxX > minX, maxY > minY
+      else { return }
+      let inset = 3.0
+      let width = Double(size.width)
+      let height = Double(size.height)
+      let scale = min(
+        (width - 2 * inset) / (maxX - minX),
+        (height - 2 * inset) / (maxY - minY)
+      )
+      let offsetX =
+        inset + ((width - 2 * inset) - (maxX - minX) * scale) / 2
+      let offsetY =
+        inset + ((height - 2 * inset) - (maxY - minY) * scale) / 2
+      var path = Path()
+      for (index, value) in zip(xs, ys).enumerated() {
+        let mapped = CGPoint(
+          x: offsetX + (value.0 - minX) * scale,
+          y: offsetY + (value.1 - minY) * scale
+        )
+        if index == 0 {
+          path.move(to: mapped)
+        } else {
+          path.addLine(to: mapped)
+        }
+      }
+      context.stroke(
+        path,
+        with: .color(KaidoTheme.routeGreen),
+        style: StrokeStyle(
+          lineWidth: 2,
+          lineCap: .round,
+          lineJoin: .round
+        )
+      )
+    }
+    .frame(height: 38)
+    .accessibilityHidden(true)
+  }
+
   private func circuitKindText(
     _ circuit: ShutoCircuitDefinition
   ) -> String {
@@ -515,12 +562,20 @@ struct WholeShutoProductView: View {
       }
     } label: {
       VStack(alignment: .leading, spacing: 5) {
-        Image(
-          systemName: circuit.kind == .loop
-            ? "arrow.triangle.capsulepath" : "point.topleft.down.curvedto.point.bottomright.up"
-        )
-        .font(.system(size: 15, weight: .bold))
-        .foregroundStyle(KaidoTheme.routeGreen)
+        if let thumbnail = model.circuitThumbnailsByID[circuit.circuitID],
+          thumbnail.count > 1
+        {
+          circuitThumbnail(thumbnail)
+        } else {
+          Image(
+            systemName: circuit.kind == .loop
+              ? "arrow.triangle.capsulepath"
+              : "point.topleft.down.curvedto.point.bottomright.up"
+          )
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(KaidoTheme.routeGreen)
+          .frame(height: 38)
+        }
         Text(circuit.displayNameJA)
           .font(.system(size: 12.5, weight: .bold))
           .multilineTextAlignment(.leading)

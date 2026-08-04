@@ -48,10 +48,10 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.ic.c2.tomigaya"
     )
     XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
+    // Radial entrances that legally join the loop are first-class
+    // candidates alongside the loop's own inner ramps.
     XCTAssertTrue(
-      model.circuitEntranceCandidates.allSatisfy {
-        $0.entranceDirections.contains("内回り")
-      }
+      model.circuitEntranceCandidates.allSatisfy { $0.canEnter }
     )
   }
 

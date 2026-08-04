@@ -132,11 +132,13 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     entranceDirectionsByRouteID: [
       "B": "西行き",
       "K1": "上り",
+      "K5": "上り",
+      "K6": "下り",
     ],
     anchors: [
-      .facility("shuto.ic.k5.daikokufutou"),
       .facility("shuto.ic.k1.asada"),
       .facility("shuto.ic.k6.tonomachi"),
+      .facility("shuto.ic.b.higashiogishima"),
     ],
     paStopNamesJA: ["大黒PA"],
     landmarkNamesJA: ["鶴見つばさ橋", "川崎臨海部"]
@@ -263,29 +265,57 @@ extension ShutoRoutePlanner {
     }
   }
 
+  /// Loops accept off-member entrances the reachability gates admit — the
+  /// fare rule's shortest-path pricing makes a minimum-band excursion
+  /// possible from almost any ramp, so a radial entrance legally joining
+  /// the loop is a first-class start. An entrance on a member route still
+  /// has to match the experience's carriageway direction: an opposite-loop
+  /// ramp is a different experience, not an approach. Tours keep their
+  /// reviewed maps everywhere because their course identity depends on
+  /// them.
   private func isEligibleEntrance(
     _ facility: ShutoNetworkDatabase.Facility,
     for circuit: ShutoCircuitDefinition
   ) -> Bool {
-    facility.canEnter
-      && circuit.memberRouteIDs.contains(facility.routeID)
-      && circuit.entranceDirectionsByRouteID[facility.routeID].map {
+    guard facility.canEnter else { return false }
+    switch circuit.kind {
+    case .loop:
+      guard circuit.memberRouteIDs.contains(facility.routeID) else {
+        return true
+      }
+      return circuit.entranceDirectionsByRouteID[facility.routeID].map {
         facility.entranceDirections.contains($0)
       } ?? false
+    case .tour:
+      return circuit.memberRouteIDs.contains(facility.routeID)
+        && circuit.entranceDirectionsByRouteID[facility.routeID].map {
+          facility.entranceDirections.contains($0)
+        } ?? false
+    }
   }
 
   private func isEligibleExit(
     _ facility: ShutoNetworkDatabase.Facility,
     for circuit: ShutoCircuitDefinition
   ) -> Bool {
+    guard facility.canExit else { return false }
     let directions =
       circuit.exitDirectionsByRouteID
       ?? circuit.entranceDirectionsByRouteID
-    return facility.canExit
-      && circuit.memberRouteIDs.contains(facility.routeID)
-      && directions[facility.routeID].map {
+    switch circuit.kind {
+    case .loop:
+      guard circuit.memberRouteIDs.contains(facility.routeID) else {
+        return true
+      }
+      return directions[facility.routeID].map {
         facility.exitDirections.contains($0)
       } ?? false
+    case .tour:
+      return circuit.memberRouteIDs.contains(facility.routeID)
+        && directions[facility.routeID].map {
+          facility.exitDirections.contains($0)
+        } ?? false
+    }
   }
 
   /// Direction-valid entrances that can actually reach every anchor of the
@@ -326,42 +356,54 @@ extension ShutoRoutePlanner {
       )
     else { return [] }
     return ranked.prefix(Self.entranceCandidateLimit).filter { entrance in
-      guard
-        let approach = circuitApproach(
-          entryFacility: entrance,
-          isMember: isMember,
-          cost: cost,
-          viability: &viability
-        )
-      else { return false }
-      let forward = forwardDistances(from: approach.target, cost: cost)
-      var farthestAnchorNode: (node: Int64, distance: Double)?
-      for nodes in anchorSets {
-        let best = nodes.compactMap { node in
-          forward[node].map { (node, $0) }
-        }.min { $0.1 < $1.1 }
-        guard let best, best.1 <= Self.entranceReachabilityBudget else {
-          return false
-        }
-        if best.1 > (farthestAnchorNode?.distance ?? -1) {
-          farthestAnchorNode = best
-        }
-      }
-      guard let farthestAnchorNode else { return false }
-      // A loop entrance must also be returnable-to: an entrance that merely
-      // feeds the loop's carriageway one-way (then dead-ends off the cycle)
-      // reaches every anchor but can never close a lap.
-      if circuit.kind == .loop {
-        let back = forwardDistances(
-          from: farthestAnchorNode.node,
+      let approaches = circuitApproaches(
+        entryFacility: entrance,
+        isMember: isMember,
+        cost: cost,
+        viability: &viability
+      )
+      return approaches.contains { approach in
+        let forward = forwardDistances(
+          from: approach.target,
           cost: cost
         )
-        guard
-          let closing = back[approach.target],
-          closing <= Self.loopClosureBudget
-        else { return false }
+        var nearestAnchorNode: (node: Int64, distance: Double)?
+        var farthestAnchorNode: (node: Int64, distance: Double)?
+        for nodes in anchorSets {
+          let best = nodes.compactMap { node in
+            forward[node].map { (node, $0) }
+          }.min { $0.1 < $1.1 }
+          guard let best, best.1 <= Self.entranceReachabilityBudget
+          else {
+            return false
+          }
+          if best.1 < (nearestAnchorNode?.distance ?? .infinity) {
+            nearestAnchorNode = best
+          }
+          if best.1 > (farthestAnchorNode?.distance ?? -1) {
+            farthestAnchorNode = best
+          }
+        }
+        guard let nearestAnchorNode, let farthestAnchorNode else {
+          return false
+        }
+        // A loop entrance must feed an actual cycle: from the farthest
+        // anchor the lap must close back to the first anchor within the
+        // closing-arc budget. The landing itself may sit on a one-way
+        // merge lane, so the cycle — not the landing — is what must be
+        // revisitable.
+        if circuit.kind == .loop {
+          let back = forwardDistances(
+            from: farthestAnchorNode.node,
+            cost: cost
+          )
+          guard
+            let closing = back[nearestAnchorNode.node],
+            closing <= Self.loopClosureBudget
+          else { return false }
+        }
+        return true
       }
-      return true
     }
   }
 
@@ -488,8 +530,33 @@ extension ShutoRoutePlanner {
         entranceDistanceMeters: entranceDistance
       )
     }
-    var best: (ShutoNetworkDatabase.Facility, ShutoTariffBand)?
-    for exit in exits.prefix(8) {
+    // Tariff-best exit for a loop: consider the soonest forward exits plus
+    // every reachable exit near the entrance — the pairing that keeps the
+    // shortest entry-exit path (and therefore the band) small usually sits
+    // right beside the entrance, often far down the forward ranking. A
+    // same-named exit is never recommended: community and operator practice
+    // treats an identical entry/exit name as a pairing to avoid.
+    var candidates: [ShutoNetworkDatabase.Facility] = []
+    for exit in exits.prefix(8)
+    where exit.nameJA != entrance.nameJA {
+      candidates.append(exit)
+    }
+    for exit in exits
+    where
+      exit.nameJA != entrance.nameJA
+      && Self.distance(entrance.coordinate, exit.coordinate) <= 4_500
+      && !candidates.contains(where: {
+        $0.facilityID == exit.facilityID
+      })
+    {
+      candidates.append(exit)
+    }
+    var best: (
+      facility: ShutoNetworkDatabase.Facility,
+      band: ShutoTariffBand,
+      rank: Int
+    )?
+    for (rank, exit) in candidates.enumerated() {
       guard
         let band = try? tariffBand(
           entryFacilityID: entrance.facilityID,
@@ -497,10 +564,14 @@ extension ShutoRoutePlanner {
           evidence: evidence
         )
       else { continue }
-      if best == nil || band.quotedYen < best!.1.quotedYen {
-        best = (exit, band)
+      let isBetter =
+        best == nil
+        || band.quotedYen < best!.band.quotedYen
+        || (band.quotedYen == best!.band.quotedYen
+          && rank < best!.rank)
+      if isBetter {
+        best = (exit, band, rank)
       }
-      if band.quotedYen == evidence.minimumYen { break }
     }
     guard let best else {
       return ShutoCircuitPairing(
@@ -512,8 +583,8 @@ extension ShutoRoutePlanner {
     }
     return ShutoCircuitPairing(
       entrance: entrance,
-      exit: best.0,
-      tariffBand: best.1,
+      exit: best.facility,
+      tariffBand: best.band,
       entranceDistanceMeters: entranceDistance
     )
   }
@@ -592,8 +663,10 @@ extension ShutoRoutePlanner {
       tailEdges.append(exitChoice.edge)
     }
 
-    // Assemble: approach + body + tail, distinct occurrences per lap.
+    // Assemble: approach + one-time entry + body + tail, with distinct
+    // occurrences per lap.
     var routeEdges = traversal.approachEdges
+    routeEdges.append(contentsOf: traversal.entryEdges)
     switch circuit.kind {
     case .loop:
       for _ in 0..<laps {
@@ -627,15 +700,24 @@ extension ShutoRoutePlanner {
 
   private struct CircuitTraversal {
     let approachEdges: [ShutoNetworkDatabase.Edge]
+    /// Driven exactly once before the first lap: empty for an entrance
+    /// already on the cycle, the merge-lane-to-join stretch for a radial
+    /// entrance whose landing the cycle can never revisit.
+    let entryEdges: [ShutoNetworkDatabase.Edge]
+    /// One complete lap for a loop (join-to-join), or the tour's ordered
+    /// anchor pass.
     let bodyEdges: [ShutoNetworkDatabase.Edge]
-    /// Where the exit tail begins: the landing node for a closed loop, the
+    /// Where the exit tail begins: the cycle's join node for a loop, the
     /// last anchor's settled node for a tour.
     let finalNode: Int64
   }
 
   /// Entrance approach plus the experience body: one closed loop through the
-  /// anchors (order discovered from forward distance), or the tour's ordered
-  /// anchor pass.
+  /// anchors' cyclic sequence, or the tour's ordered anchor pass. A ramp can
+  /// geometrically match edges of several nearby carriageways, so a few
+  /// cheapest landings are tried and the traversal with the shortest driven
+  /// geometry wins — a wrong-carriageway landing only "recovers" through an
+  /// extra half-loop and loses the comparison.
   private func circuitTraversal(
     circuit: ShutoCircuitDefinition,
     entryFacility: ShutoNetworkDatabase.Facility,
@@ -643,39 +725,77 @@ extension ShutoRoutePlanner {
     cost: (ShutoNetworkDatabase.Edge) -> Double,
     viability: inout [Int64: Bool]
   ) throws -> CircuitTraversal {
-    guard
-      let approach = circuitApproach(
-        entryFacility: entryFacility,
-        isMember: isMember,
-        cost: cost,
-        viability: &viability
-      )
-    else {
+    let approaches = circuitApproaches(
+      entryFacility: entryFacility,
+      isMember: isMember,
+      cost: cost,
+      viability: &viability
+    )
+    guard !approaches.isEmpty else {
       throw ShutoNetworkError.routeUnavailable
     }
-    let landing = approach.target
     let anchorSets = try anchorNodeSets(
       for: circuit,
       isMember: isMember,
       viability: &viability
     )
 
+    var best: CircuitTraversal?
+    var bestMeters = Double.infinity
+    for approach in approaches {
+      guard
+        let candidate = try? traversalBody(
+          circuit: circuit,
+          approach: approach,
+          anchorSets: anchorSets,
+          cost: cost
+        )
+      else { continue }
+      let meters = (
+        candidate.approachEdges + candidate.entryEdges
+          + candidate.bodyEdges
+      ).reduce(0) { $0 + $1.lengthMeters }
+      if meters < bestMeters {
+        bestMeters = meters
+        best = candidate
+      }
+    }
+    guard let best else {
+      throw ShutoNetworkError.routeUnavailable
+    }
+    return best
+  }
+
+  private func traversalBody(
+    circuit: ShutoCircuitDefinition,
+    approach: (edges: [ShutoNetworkDatabase.Edge], target: Int64),
+    anchorSets: [Set<Int64>],
+    cost: (ShutoNetworkDatabase.Edge) -> Double
+  ) throws -> CircuitTraversal {
+    let landing = approach.target
     let orderedSets: [Set<Int64>]
     switch circuit.kind {
     case .loop:
-      // Discover anchor travel order by directed forward distance from the
-      // landing node. On a one-way loop, forward distance is travel order.
+      // The cyclic anchor sequence pins the carriageway direction; the
+      // entrance only chooses where the cycle is joined, so rotate the
+      // sequence to the nearest-forward anchor.
       let forward = forwardDistances(from: landing, cost: cost)
-      var ordered: [(distance: Double, nodes: Set<Int64>)] = []
-      for nodes in anchorSets {
-        let best = nodes.compactMap { forward[$0] }.min()
-        guard let best else {
+      var startIndex = 0
+      var startDistance = Double.infinity
+      for (index, nodes) in anchorSets.enumerated() {
+        guard
+          let best = nodes.compactMap({ forward[$0] }).min()
+        else {
           throw ShutoNetworkError.routeUnavailable
         }
-        ordered.append((best, nodes))
+        if best < startDistance {
+          startDistance = best
+          startIndex = index
+        }
       }
-      ordered.sort { $0.distance < $1.distance }
-      orderedSets = ordered.map(\.nodes)
+      orderedSets = (0..<anchorSets.count).map {
+        anchorSets[(startIndex + $0) % anchorSets.count]
+      }
     case .tour:
       orderedSets = anchorSets
     }
@@ -697,24 +817,43 @@ extension ShutoRoutePlanner {
     }
     switch circuit.kind {
     case .loop:
+      // Close back to the earliest revisitable point of the traversed path
+      // — the join node. An on-cycle entrance closes to its own landing; a
+      // radial entrance lands on a merge lane the ring can never re-enter,
+      // so its lap cycle starts where the approach first joined the ring.
+      var pathNodes: Set<Int64> = [landing]
+      for edge in bodyEdges {
+        pathNodes.insert(edge.fromNodeID)
+      }
       guard
         let closure = circuitDijkstra(
           from: currentNode,
           cost: cost,
-          isTarget: { $0 == landing }
+          isTarget: { pathNodes.contains($0) }
         )
       else {
         throw ShutoNetworkError.routeUnavailable
       }
-      bodyEdges.append(contentsOf: closure.edges)
+      let joinNode = closure.target
+      let joinIndex =
+        bodyEdges.firstIndex { $0.fromNodeID == joinNode }
+        ?? bodyEdges.count
+      let entryEdges = Array(bodyEdges[..<joinIndex])
+      let cycleEdges =
+        Array(bodyEdges[joinIndex...]) + closure.edges
+      guard !cycleEdges.isEmpty else {
+        throw ShutoNetworkError.routeUnavailable
+      }
       return CircuitTraversal(
         approachEdges: approach.edges,
-        bodyEdges: bodyEdges,
-        finalNode: landing
+        entryEdges: entryEdges,
+        bodyEdges: cycleEdges,
+        finalNode: joinNode
       )
     case .tour:
       return CircuitTraversal(
         approachEdges: approach.edges,
+        entryEdges: [],
         bodyEdges: bodyEdges,
         finalNode: currentNode
       )
@@ -723,12 +862,17 @@ extension ShutoRoutePlanner {
 
   /// Anchor node sets on the experience carriageways, resolved from the
   /// snapshot's own facilities and junctions with growing search radius.
+  /// For loops the cyclic anchor sequence also prunes each set to the
+  /// carriageway that travels in the cycle's direction — both directions of
+  /// a ring are usually drivable, and a leg settling on the opposite
+  /// carriageway can only be "reached" by an extra half-loop.
   private func anchorNodeSets(
     for circuit: ShutoCircuitDefinition,
     isMember: (ShutoNetworkDatabase.Edge) -> Bool,
     viability: inout [Int64: Bool]
   ) throws -> [Set<Int64>] {
     var anchorSets: [Set<Int64>] = []
+    var anchorCoordinates: [ShutoCoordinate] = []
     for anchor in circuit.anchors {
       let coordinate: ShutoCoordinate
       let initialRadius: Double
@@ -769,36 +913,137 @@ extension ShutoRoutePlanner {
         throw ShutoNetworkError.routeUnavailable
       }
       anchorSets.append(nodes)
+      anchorCoordinates.append(coordinate)
+    }
+    guard circuit.kind == .loop, anchorSets.count >= 3 else {
+      return anchorSets
+    }
+    let longitudeScale = cos(anchorCoordinates[0].latitude * .pi / 180)
+    for index in anchorSets.indices {
+      let count = anchorSets.count
+      let previous = anchorCoordinates[(index + count - 1) % count]
+      let next = anchorCoordinates[(index + 1) % count]
+      let expected = (
+        x: (next.longitude - previous.longitude) * longitudeScale,
+        y: next.latitude - previous.latitude
+      )
+      let aligned = anchorSets[index].filter { node in
+        outgoingEdges[node, default: []].contains { edge in
+          guard isMember(edge), edge.kind == "MAINLINE",
+            let from = nodesByID[edge.fromNodeID],
+            let to = nodesByID[edge.toNodeID]
+          else { return false }
+          let heading = (
+            x: (to.coordinate.longitude - from.coordinate.longitude)
+              * longitudeScale,
+            y: to.coordinate.latitude - from.coordinate.latitude
+          )
+          return heading.x * expected.x + heading.y * expected.y > 0
+        }
+      }
+      if !aligned.isEmpty {
+        anchorSets[index] = aligned
+      }
     }
     return anchorSets
   }
 
   // MARK: - Directed search helpers
 
-  /// Ramp candidates onto the circuit carriageway: the first viable node
-  /// with an outgoing member mainline edge is the landing point.
-  private func circuitApproach(
+  /// Ramp candidates onto the circuit carriageways: the cheapest viable
+  /// nodes with an outgoing member mainline edge, at most one per branch
+  /// (settled targets are not expanded, so consecutive downstream nodes of
+  /// the same carriageway collapse into one candidate while a parallel
+  /// carriageway surfaces as its own).
+  private func circuitApproaches(
     entryFacility: ShutoNetworkDatabase.Facility,
     isMember: (ShutoNetworkDatabase.Edge) -> Bool,
     cost: (ShutoNetworkDatabase.Edge) -> Double,
     viability: inout [Int64: Bool]
-  ) -> (edges: [ShutoNetworkDatabase.Edge], target: Int64)? {
+  ) -> [(edges: [ShutoNetworkDatabase.Edge], target: Int64)] {
     let seeds = entryFacility.entryEdgeCandidates.compactMap {
       candidate in
       edgesByID[candidate.edgeID].map {
         (edge: $0, cost: candidate.distanceMeters + cost($0))
       }
     }
-    guard !seeds.isEmpty else { return nil }
-    return circuitDijkstra(
-      seeds: seeds,
-      cost: cost,
-      isTarget: { [self] node in
-        outgoingEdges[node, default: []].contains {
-          isMember($0) && $0.kind == "MAINLINE"
-        } && isViable(node, cache: &viability)
+    guard !seeds.isEmpty else { return [] }
+
+    var distances: [Int64: Double] = [:]
+    var previous: [Int64: ShutoNetworkDatabase.Edge] = [:]
+    var seedEdgeByNode: [Int64: ShutoNetworkDatabase.Edge] = [:]
+    var queue = MinHeap<CircuitQueueValue>()
+    for seed in seeds {
+      if seed.cost < distances[seed.edge.toNodeID, default: .infinity] {
+        distances[seed.edge.toNodeID] = seed.cost
+        seedEdgeByNode[seed.edge.toNodeID] = seed.edge
+        queue.insert(
+          CircuitQueueValue(cost: seed.cost, nodeID: seed.edge.toNodeID)
+        )
       }
-    )
+    }
+    var results: [(edges: [ShutoNetworkDatabase.Edge], target: Int64)] =
+      []
+    var firstTargetCost: Double?
+    while let current = queue.removeMinimum() {
+      guard current.cost == distances[current.nodeID] else { continue }
+      if let firstTargetCost,
+        current.cost > firstTargetCost + 25_000
+      {
+        break
+      }
+      let isTarget =
+        outgoingEdges[current.nodeID, default: []].contains {
+          isMember($0) && $0.kind == "MAINLINE"
+        } && isViable(current.nodeID, cache: &viability)
+      if isTarget {
+        var reversed: [ShutoNetworkDatabase.Edge] = []
+        var nodeID = current.nodeID
+        while let edge = previous[nodeID] {
+          reversed.append(edge)
+          nodeID = edge.fromNodeID
+        }
+        if let seedEdge = seedEdgeByNode[nodeID] {
+          reversed.append(seedEdge)
+        }
+        results.append((reversed.reversed(), current.nodeID))
+        if firstTargetCost == nil {
+          firstTargetCost = current.cost
+        }
+        if results.count >= 4 {
+          break
+        }
+        // A settled landing is not expanded: its downstream carriageway
+        // nodes would only shadow other branches.
+        continue
+      }
+      for edge in outgoingEdges[current.nodeID, default: []] {
+        let candidate = current.cost + cost(edge)
+        if candidate >= distances[edge.toNodeID, default: .infinity] {
+          continue
+        }
+        distances[edge.toNodeID] = candidate
+        previous[edge.toNodeID] = edge
+        queue.insert(
+          CircuitQueueValue(cost: candidate, nodeID: edge.toNodeID)
+        )
+      }
+    }
+    return results
+  }
+
+  private func circuitApproach(
+    entryFacility: ShutoNetworkDatabase.Facility,
+    isMember: (ShutoNetworkDatabase.Edge) -> Bool,
+    cost: (ShutoNetworkDatabase.Edge) -> Double,
+    viability: inout [Int64: Bool]
+  ) -> (edges: [ShutoNetworkDatabase.Edge], target: Int64)? {
+    circuitApproaches(
+      entryFacility: entryFacility,
+      isMember: isMember,
+      cost: cost,
+      viability: &viability
+    ).first
   }
 
   private func circuitDijkstra(

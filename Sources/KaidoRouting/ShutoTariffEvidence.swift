@@ -90,19 +90,25 @@ extension ShutoRoutePlanner {
   private static let tariffDistanceMarginMeters = 500.0
 
   /// Tariff band for one entry/exit pairing under one dated tariff rule.
-  /// The tariff distance is the shortest all-Shuto path between the two
-  /// facilities, independent of the driven route.
+  /// The tariff distance is the operator's fare kilometrage between the two
+  /// toll points — a network distance independent of both the driven route
+  /// and the carriageway direction. The classic Shinjuku-to-Yoyogi pairing
+  /// is about one fare kilometer even though the drivable path runs to
+  /// Miyakezaka and back, so this uses the undirected shortest path over
+  /// the snapshot as the approximation.
   public func tariffBand(
     entryFacilityID: String,
     exitFacilityID: String,
     evidence: ShutoTariffEvidence
   ) throws -> ShutoTariffBand {
-    let shortest = try plan(
-      entryFacilityID: entryFacilityID,
-      exitFacilityID: exitFacilityID,
-      preference: .recommended
-    )
-    let distance = shortest.distanceMeters
+    guard
+      let distance = undirectedFareDistanceMeters(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+    else {
+      throw ShutoNetworkError.routeUnavailable
+    }
     let margin = Self.tariffDistanceMarginMeters
     if evidence.rawYen(forTariffDistanceMeters: distance + margin)
       <= Double(evidence.minimumYen)
@@ -121,5 +127,82 @@ extension ShutoRoutePlanner {
       evidence.maximumYen
     )
     return .estimated(yen: clamped)
+  }
+
+  /// Undirected shortest network distance between two facilities' toll
+  /// boundaries, seeded and terminated at their actual entry/exit edge
+  /// candidates.
+  private func undirectedFareDistanceMeters(
+    entryFacilityID: String,
+    exitFacilityID: String
+  ) -> Double? {
+    guard let entry = facilitiesByID[entryFacilityID],
+      let exit = facilitiesByID[exitFacilityID]
+    else { return nil }
+
+    var neighbors: [Int64: [(node: Int64, meters: Double)]] = [:]
+    for edge in database.edges {
+      neighbors[edge.fromNodeID, default: []].append(
+        (edge.toNodeID, edge.lengthMeters)
+      )
+      neighbors[edge.toNodeID, default: []].append(
+        (edge.fromNodeID, edge.lengthMeters)
+      )
+    }
+
+    var targets: [Int64: Double] = [:]
+    for candidate in exit.exitEdgeCandidates {
+      guard let edge = edgesByID[candidate.edgeID] else { continue }
+      for node in [edge.fromNodeID, edge.toNodeID] {
+        let offset = candidate.distanceMeters
+        if offset < targets[node, default: .infinity] {
+          targets[node] = offset
+        }
+      }
+    }
+    guard !targets.isEmpty else { return nil }
+
+    struct QueueValue: Comparable {
+      let cost: Double
+      let nodeID: Int64
+
+      static func < (lhs: QueueValue, rhs: QueueValue) -> Bool {
+        if lhs.cost != rhs.cost { return lhs.cost < rhs.cost }
+        return lhs.nodeID < rhs.nodeID
+      }
+    }
+    var distances: [Int64: Double] = [:]
+    var queue = MinHeap<QueueValue>()
+    for candidate in entry.entryEdgeCandidates {
+      guard let edge = edgesByID[candidate.edgeID] else { continue }
+      for node in [edge.fromNodeID, edge.toNodeID] {
+        let offset = candidate.distanceMeters
+        if offset < distances[node, default: .infinity] {
+          distances[node] = offset
+          queue.insert(QueueValue(cost: offset, nodeID: node))
+        }
+      }
+    }
+    var best: Double?
+    while let current = queue.removeMinimum() {
+      guard current.cost == distances[current.nodeID] else { continue }
+      if let bestSoFar = best, current.cost >= bestSoFar { break }
+      if let tail = targets[current.nodeID] {
+        let total = current.cost + tail
+        if total < (best ?? .infinity) {
+          best = total
+        }
+      }
+      for neighbor in neighbors[current.nodeID, default: []] {
+        let candidate = current.cost + neighbor.meters
+        if candidate < distances[neighbor.node, default: .infinity] {
+          distances[neighbor.node] = candidate
+          queue.insert(
+            QueueValue(cost: candidate, nodeID: neighbor.node)
+          )
+        }
+      }
+    }
+    return best
   }
 }

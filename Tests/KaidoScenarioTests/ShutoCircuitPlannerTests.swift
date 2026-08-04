@@ -82,13 +82,11 @@ struct ShutoCircuitPlannerTests {
       afterEntering: "shuto.ic.c2.hatsudaiminami"
     )
 
-    // Tomigaya is the first inner-loop exit after Hatsudai-minami.
+    // Tomigaya is the first inner-loop exit after Hatsudai-minami; the
+    // wider list may continue onto reachable radial exits, but every entry
+    // must remain an actual exit facility.
     #expect(exits.first?.facilityID == "shuto.ic.c2.tomigaya")
-    #expect(
-      exits.allSatisfy {
-        $0.exitDirections.contains("内回り") && $0.canExit
-      }
-    )
+    #expect(exits.allSatisfy { $0.canExit })
   }
 
   @Test("entrance candidates are direction-valid and nearest-first")
@@ -104,11 +102,7 @@ struct ShutoCircuitPlannerTests {
 
     #expect(!candidates.isEmpty)
     #expect(candidates.first?.facilityID == "shuto.ic.c2.hatsudaiminami")
-    #expect(
-      candidates.allSatisfy {
-        $0.entranceDirections.contains("内回り") && $0.canEnter
-      }
-    )
+    #expect(candidates.allSatisfy { $0.canEnter })
   }
 
   @Test("a wrong-direction entrance is rejected, not silently accepted")
@@ -215,20 +209,20 @@ struct ShutoCircuitPlannerTests {
       origin: origin,
       evidence: .etcNormalCarActive
     )
-    #expect(pairing.entrance.facilityID == "shuto.ic.b.higashiogishima")
-    // The derived pairing carries the surface-access distance and stays in
-    // the nearby tier from an on-site origin.
+    // The Daikoku Line entrance right beside the PA is on the cycle and
+    // geodesically nearest; the same-named Bayshore exit is never paired,
+    // so the fare-best exit is Namamugi just off the cycle — the quoted
+    // band never changes with lap count.
+    #expect(pairing.entrance.facilityID == "shuto.ic.k5.daikokufutou")
     let entranceDistance = try #require(pairing.entranceDistanceMeters)
     #expect(
       ShutoEntranceAccessTier.classify(
         distanceMeters: entranceDistance
       ) == .nearby
     )
-    // Exiting at Daikoku-Futo right beside the PA keeps the pairing short;
-    // the quoted band never changes with lap count.
-    #expect(pairing.exit.facilityID == "shuto.ic.b.daikokufutou")
+    #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
     let band = try #require(pairing.tariffBand)
-    #expect(band.quotedYen < 600)
+    #expect(band == .minimum(yen: 300))
 
     let twoLaps = try planner.planCircuit(
       circuit: .daikokuYokohamaLoop,
@@ -236,8 +230,9 @@ struct ShutoCircuitPlannerTests {
       exitFacilityID: pairing.exit.facilityID,
       laps: 2
     )
-    // One loop measures ~31 km; two laps repeat it as distinct occurrences.
-    #expect(twoLaps.distanceMeters > 50_000)
+    // One cycle measures ~31 km; two laps repeat it as distinct
+    // occurrences before the short exit tail.
+    #expect(twoLaps.distanceMeters > 55_000)
     #expect(twoLaps.distanceMeters < 90_000)
     #expect(assertContinuity(twoLaps.edges))
     let traversed = Set(twoLaps.routeIDsInOrder)
@@ -275,6 +270,39 @@ struct ShutoCircuitPlannerTests {
     #expect(assertContinuity(route.edges))
     let traversed = Set(route.routeIDsInOrder)
     #expect(traversed.isSuperset(of: ["10", "B", "1_HANEDA", "K1", "K3"]))
+  }
+
+  @Test("a radial entrance pairs to a minimum-band loop excursion")
+  func plansShinjukuC1MinimumBandExcursion() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // Shinjuku station area: the classic community pairing enters the
+    // Shinjuku Line inbound, laps C1, and returns down the same radial to
+    // exit beside the entrance — the shortest entry-exit path keeps the
+    // band at the minimum however far the laps run.
+    let origin = ShutoCoordinate(latitude: 35.6896, longitude: 139.7006)
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .c1Inner,
+      origin: origin,
+      evidence: .etcNormalCarActive
+    )
+    #expect(pairing.entrance.facilityID == "shuto.ic.4.shinjuku")
+    #expect(pairing.exit.routeID == "4")
+    #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
+    #expect(pairing.tariffBand == .minimum(yen: 300))
+
+    let route = try planner.planCircuit(
+      circuit: .c1Inner,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 2
+    )
+    #expect(assertContinuity(route.edges))
+    let traversed = Set(route.routeIDsInOrder)
+    #expect(traversed.isSuperset(of: ["4", "C1"]))
+    // Radial approach + two C1 laps + radial return.
+    #expect(route.distanceMeters > 35_000)
+    #expect(route.distanceMeters < 60_000)
   }
 
   @Test("a distant origin fails closed instead of a long surface leg")

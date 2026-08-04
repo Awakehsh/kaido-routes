@@ -63,15 +63,24 @@ continue.
 
 ### Derived entrance/exit pairing and tariff bands
 
-Selecting a route experience derives one recommended pairing automatically:
-the nearest direction-valid entrance compatible with the route's first
-occurrence, and — for loop experiences — the exit whose entrance/exit pairing
-lands in the lowest available tariff band, tie-broken by shortest forward
-travel after the loop closes. Ordered tours and PA-terminated runs carry their
-own reviewed egress instead. The pairing appears as one factual line on the
-card; expanding it reveals the ranked alternatives so a driver can correct a
-poor location fix or prefer a different entrance, but the default path never
-asks the driver to assemble a pairing.
+Selecting a route experience derives one recommended pairing automatically.
+For a loop, almost any nearby entrance qualifies — including a radial
+entrance whose legal movements join the loop — because the fare rule prices
+the shortest fare-network path between entry and exit, not the driven
+route: the community's minimum-band excursions (enter Shinjuku, lap C1,
+exit Yoyogi beside the entrance) are the normal case, not a special one.
+The exit is chosen to land in the lowest available tariff band, searching
+both the soonest forward exits and every reachable exit near the entrance,
+and an exit sharing the entrance's name is never recommended. The fare
+distance itself is modeled as the undirected shortest network path between
+the two toll points — Shinjuku to Yoyogi is about one fare kilometer even
+though the drivable path runs to Miyakezaka and back. An entrance on a
+member route must still match the experience's carriageway direction (the
+opposite loop is a different experience), and ordered tours keep their
+reviewed entrances and egress throughout. The pairing appears as one
+factual line on the card; expanding it reveals the ranked alternatives so
+a driver can correct a poor location fix or prefer a different entrance,
+but the default path never asks the driver to assemble a pairing.
 
 Surface access to the entrance is tiered: within 8 km the pairing is
 recommended normally, between 8 and 16 km it carries an explicit far label,

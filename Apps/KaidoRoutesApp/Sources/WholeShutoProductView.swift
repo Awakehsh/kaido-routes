@@ -189,6 +189,15 @@ struct WholeShutoProductView: View {
           usesDarkStyle: isDriving,
           visibleBottomFraction: isDriving ? 0.92 : 0.66
         )
+      } else if let overview = WholeShutoNetworkOverviewCatalog.layout(
+        for: model.database
+      ) {
+        WholeShutoNetworkOverviewView(
+          layout: overview,
+          usesDarkStyle: isDriving,
+          visibleBottomFraction: isDriving ? 0.92 : 0.66,
+          initialZoom: networkOverviewInitialZoom
+        )
       } else {
         WholeShutoNetworkDiagram(
           database: model.database,
@@ -205,6 +214,12 @@ struct WholeShutoProductView: View {
         planningLocation: planningLocation.snapshot
       )
     }
+  }
+
+  private var networkOverviewInitialZoom: Double {
+    ProcessInfo.processInfo.arguments.contains(
+      "-WHOLE-SHUTO-NETWORK-DETAIL-ZOOM"
+    ) ? 2.6 : 1
   }
 
   private var isTrackMapPositionEstimated: Bool {

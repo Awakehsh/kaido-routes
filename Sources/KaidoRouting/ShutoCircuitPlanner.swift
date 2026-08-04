@@ -135,6 +135,16 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       "K5": "上り",
       "K6": "下り",
     ],
+    // K1 exits stay unmapped: at the three-way Namamugi JCT the snapshot's
+    // geometric exit candidates catch the K5-to-K1 connector, faking a
+    // short path the operator's own fare search proves undrivable (the
+    // real exit diverges upstream of the merge). Until the candidate
+    // matching pins that junction correctly, only Bayshore/Kawasaki exits
+    // are offered.
+    exitDirectionsByRouteID: [
+      "B": "西行き",
+      "K6": "下り",
+    ],
     anchors: [
       .facility("shuto.ic.k1.asada"),
       .facility("shuto.ic.k6.tonomachi"),

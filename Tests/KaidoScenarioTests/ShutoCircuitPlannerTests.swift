@@ -222,7 +222,7 @@ struct ShutoCircuitPlannerTests {
     )
     #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
     let band = try #require(pairing.tariffBand)
-    #expect(band == .minimum(yen: 300))
+    #expect(band.quotedYen <= 500)
 
     let twoLaps = try planner.planCircuit(
       circuit: .daikokuYokohamaLoop,
@@ -231,9 +231,9 @@ struct ShutoCircuitPlannerTests {
       laps: 2
     )
     // One cycle measures ~31 km; two laps repeat it as distinct
-    // occurrences before the short exit tail.
+    // occurrences before the exit tail.
     #expect(twoLaps.distanceMeters > 55_000)
-    #expect(twoLaps.distanceMeters < 90_000)
+    #expect(twoLaps.distanceMeters < 100_000)
     #expect(assertContinuity(twoLaps.edges))
     let traversed = Set(twoLaps.routeIDsInOrder)
     #expect(traversed.isSuperset(of: ["B", "K1", "K5", "K6"]))
@@ -272,14 +272,15 @@ struct ShutoCircuitPlannerTests {
     #expect(traversed.isSuperset(of: ["10", "B", "1_HANEDA", "K1", "K3"]))
   }
 
-  @Test("a radial entrance pairs to a minimum-band loop excursion")
-  func plansShinjukuC1MinimumBandExcursion() throws {
+  @Test("a radial entrance pairs to the honest cheapest loop excursion")
+  func plansShinjukuC1Excursion() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())
 
-    // Shinjuku station area: the classic community pairing enters the
-    // Shinjuku Line inbound, laps C1, and returns down the same radial to
-    // exit beside the entrance — the shortest entry-exit path keeps the
-    // band at the minimum however far the laps run.
+    // Shinjuku station area: the radial entrance joins C1 for laps. The
+    // folklore Yoyogi pairing is NOT the answer — the operator fare search
+    // (checked 2026-08-04) prices Shinjuku to Yoyogi at ¥860 because the
+    // return radial is only reachable through a full circuit, so the
+    // honest cheapest exit is an onward C1 exit in the mid bands.
     let origin = ShutoCoordinate(latitude: 35.6896, longitude: 139.7006)
     let pairing = try planner.recommendedCircuitPairing(
       for: .c1Inner,
@@ -287,9 +288,9 @@ struct ShutoCircuitPlannerTests {
       evidence: .etcNormalCarActive
     )
     #expect(pairing.entrance.facilityID == "shuto.ic.4.shinjuku")
-    #expect(pairing.exit.routeID == "4")
     #expect(pairing.exit.nameJA != pairing.entrance.nameJA)
-    #expect(pairing.tariffBand == .minimum(yen: 300))
+    let band = try #require(pairing.tariffBand)
+    #expect(band.quotedYen < 700)
 
     let route = try planner.planCircuit(
       circuit: .c1Inner,
@@ -300,8 +301,8 @@ struct ShutoCircuitPlannerTests {
     #expect(assertContinuity(route.edges))
     let traversed = Set(route.routeIDsInOrder)
     #expect(traversed.isSuperset(of: ["4", "C1"]))
-    // Radial approach + two C1 laps + radial return.
-    #expect(route.distanceMeters > 35_000)
+    // Radial approach + two C1 laps + exit tail.
+    #expect(route.distanceMeters > 30_000)
     #expect(route.distanceMeters < 60_000)
   }
 

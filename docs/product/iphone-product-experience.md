@@ -65,19 +65,23 @@ continue.
 
 Selecting a route experience derives one recommended pairing automatically.
 For a loop, almost any nearby entrance qualifies — including a radial
-entrance whose legal movements join the loop — because the fare rule prices
-the shortest fare-network path between entry and exit, not the driven
-route: the community's minimum-band excursions (enter Shinjuku, lap C1,
-exit Yoyogi beside the entrance) are the normal case, not a special one.
-The exit is chosen to land in the lowest available tariff band, searching
-both the soonest forward exits and every reachable exit near the entrance,
-and an exit sharing the entrance's name is never recommended. The fare
-distance itself is modeled as the undirected shortest network path between
-the two toll points — Shinjuku to Yoyogi is about one fare kilometer even
-though the drivable path runs to Miyakezaka and back. An entrance on a
-member route must still match the experience's carriageway direction (the
-opposite loop is a different experience), and ordered tours keep their
-reviewed entrances and egress throughout. The pairing appears as one
+entrance whose legal movements join the loop — because the fare rule
+prices the shortest path between the toll points regardless of the laps
+driven in between. The fare distance is the shortest DRIVABLE directed
+path: this was verified against the operator's own fare search on
+2026-08-04 (Hatsudai-minami to Tomigaya quotes the minimum; Higashi-Ogijima
+to Daikoku-Futo quotes ¥420 matching our estimate; Kahei to Sachiura hits
+the ¥1,950 cap). The folklore radial pairings are dead under the current
+rule — the operator prices Shinjuku to Yoyogi at ¥860 because the return
+radial is only reachable through a full circuit — so recommendations never
+repeat that folklore: the exit search covers the soonest forward exits and
+every reachable exit near the entrance, picks the lowest honestly-priced
+band, and never recommends an exit sharing the entrance's name (same-named
+ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
+search confirm across its Bayshore and Daikoku Line ramps). An entrance on
+a member route must still match the experience's carriageway direction
+(the opposite loop is a different experience), and ordered tours keep
+their reviewed entrances and egress throughout. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.

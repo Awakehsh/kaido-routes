@@ -1603,23 +1603,47 @@ final class WholeShutoProductModel: ObservableObject {
     let routePlanID = recommendation.route.routePlan.id
     // Surface legs target the plan's own directional ramp mouths: a full
     // IC's opposite-direction ramps can sit hundreds of meters apart, so
-    // the IC representative point is not the navigation target.
+    // the IC representative point is not the navigation target. A ramp
+    // mouth sits on the expressway approach structure, though, and the
+    // surface provider cannot always terminate a leg there — those legs
+    // fall back to the facility's representative point rather than
+    // failing the journey.
     let entry =
       recommendation.route.coordinates.first
       ?? recommendation.route.entryFacility.coordinate
+    let entryFallback = recommendation.route.entryFacility.coordinate
     let exit =
       recommendation.route.coordinates.last
       ?? recommendation.route.exitFacility.coordinate
+    let exitFallback = recommendation.route.exitFacility.coordinate
     let resolver = surfaceRouteResolver
     surfaceRouteRequestID = requestID
     surfaceRouteTask = Task { [weak self] in
-      async let access = resolver.route(
+      func leg(
+        from start: ShutoCoordinate,
+        to target: ShutoCoordinate,
+        fallback: (from: ShutoCoordinate, to: ShutoCoordinate)
+      ) async -> WholeShutoSurfaceRoute? {
+        if let resolved = await resolver.route(from: start, to: target) {
+          return resolved
+        }
+        guard !Task.isCancelled,
+          fallback.from != start || fallback.to != target
+        else { return nil }
+        return await resolver.route(
+          from: fallback.from,
+          to: fallback.to
+        )
+      }
+      async let access = leg(
         from: origin.coordinate,
-        to: entry
+        to: entry,
+        fallback: (origin.coordinate, entryFallback)
       )
-      async let egress = resolver.route(
+      async let egress = leg(
         from: exit,
-        to: destination.coordinate
+        to: destination.coordinate,
+        fallback: (exitFallback, destination.coordinate)
       )
       let resolvedRoutes = await (access, egress)
 

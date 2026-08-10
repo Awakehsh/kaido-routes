@@ -1518,12 +1518,45 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func prepareCustomRouteDraft() {
-    guard phase == .review, let route = selectedRoute else { return }
-    let draft = customRecommendation?.route ?? route
-    customEntryFacilityID = draft.entryFacility.facilityID
-    customExitFacilityID = draft.exitFacility.facilityID
-    customPreference = draft.preference
-    refreshCustomRouteDraft()
+    switch phase {
+    case .review:
+      guard let route = selectedRoute else { return }
+      let draft = customRecommendation?.route ?? route
+      customEntryFacilityID = draft.entryFacility.facilityID
+      customExitFacilityID = draft.exitFacility.facilityID
+      customPreference = draft.preference
+      refreshCustomRouteDraft()
+    case .planning:
+      // The advanced home entry drafts from the driver's surroundings:
+      // nearest enterable facility in, nearest differently named exit out.
+      let reference = origin?.coordinate
+      let facilities = database.directionalFacilities.filter {
+        $0.operationalStatus == "AVAILABLE"
+      }
+      func nearest(
+        _ candidates: [ShutoNetworkDatabase.Facility]
+      ) -> ShutoNetworkDatabase.Facility? {
+        guard let reference else {
+          return candidates.min { $0.facilityID < $1.facilityID }
+        }
+        return candidates.min {
+          Self.distance(reference, $0.coordinate)
+            < Self.distance(reference, $1.coordinate)
+        }
+      }
+      guard
+        let entry = nearest(facilities.filter(\.canEnter))
+      else { return }
+      let exit = nearest(
+        facilities.filter { $0.canExit && $0.nameJA != entry.nameJA }
+      )
+      customEntryFacilityID = entry.facilityID
+      customExitFacilityID = exit?.facilityID
+      customPreference = .recommended
+      refreshCustomRouteDraft()
+    default:
+      return
+    }
   }
 
   func selectCustomEntry(facilityID: String) {
@@ -1545,12 +1578,25 @@ final class WholeShutoProductModel: ObservableObject {
 
   @discardableResult
   func applyCustomRoute() -> Bool {
-    guard
-      phase == .review,
-      let origin,
-      let destination,
-      let route = customDraftRoute
-    else {
+    guard let origin, let route = customDraftRoute else { return false }
+    let destination: WholeShutoPlace
+    switch phase {
+    case .review:
+      guard let existing = self.destination else { return false }
+      destination = existing
+    case .planning:
+      // Exact custom routes started from the home catalog are round
+      // trips, matching the circuit journeys they sit beside.
+      destination = origin
+      self.destination = destination
+      destinationQuery = destination.title
+      selectedDestinationTitle = destination.title
+      cancelSurfaceRouteResolution()
+      clearRouteChoiceEvaluation()
+      recommendations = []
+      selectedRecommendationIndex = 0
+      phase = .review
+    default:
       return false
     }
     let accessDistance = Self.distance(

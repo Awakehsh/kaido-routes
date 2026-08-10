@@ -23,6 +23,27 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .network)
   }
 
+  func testCustomRouteFromTheHomeCatalogIsARoundTrip() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    // Tokyo Tower: the nearest enterable facility seeds the draft.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6586, longitude: 139.7454)
+    )
+    model.prepareCustomRouteDraft()
+
+    XCTAssertNotNil(model.customEntryFacilityID)
+    XCTAssertNotNil(model.customExitFacilityID)
+    XCTAssertNotNil(model.customDraftRoute)
+
+    XCTAssertTrue(model.applyCustomRoute())
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(model.isCustomRouteSelected)
+    XCTAssertEqual(
+      model.destination?.coordinate,
+      model.origin?.coordinate
+    )
+  }
+
   func testCircuitSelectionDerivesThePairingFromOrigin() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     // Near Hatsudai, west side of the C2 loop.

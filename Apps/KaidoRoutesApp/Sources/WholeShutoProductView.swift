@@ -573,10 +573,46 @@ struct WholeShutoProductView: View {
             }
           }
         }
+
+        customRouteHomeEntry
       }
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-circuit-experiences")
+  }
+
+  /// The advanced entry at the catalog's foot: exact entrance/exit routes
+  /// for drivers who want to specify the pairing themselves.
+  private var customRouteHomeEntry: some View {
+    Button {
+      if let snapshot = planningLocation.snapshot {
+        model.selectCurrentOrigin(snapshot.coordinate)
+      } else {
+        planningLocation.requestCurrentLocation()
+      }
+      model.prepareCustomRouteDraft()
+      showsRouteCustomization = true
+    } label: {
+      HStack(spacing: 6) {
+        Image(systemName: "slider.horizontal.3")
+          .font(.system(size: 10, weight: .black))
+        Text(
+          copy.resolve(
+            japanese: "カスタム · 入口と出口を指定",
+            simplifiedChinese: "自定义 · 指定入口和出口",
+            english: "CUSTOM · EXACT ENTRY AND EXIT"
+          )
+        )
+        Spacer()
+        Image(systemName: "chevron.right")
+          .font(.system(size: 9, weight: .black))
+      }
+      .font(.system(size: 10, weight: .bold))
+      .foregroundStyle(KaidoTheme.nightQuiet)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("whole-shuto-custom-from-home")
   }
 
   /// The route's silhouette in the card, drawn from the precomputed

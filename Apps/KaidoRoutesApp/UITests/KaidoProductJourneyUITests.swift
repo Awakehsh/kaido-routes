@@ -116,6 +116,38 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(trackMapScreenshot)
   }
 
+  func testCustomRouteEntryLivesAtTheCatalogFoot() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let customEntry = element("whole-shuto-custom-from-home", in: app)
+    XCTAssertTrue(customEntry.waitForExistence(timeout: 8))
+    customEntry.tap()
+    XCTAssertTrue(
+      element("whole-shuto-custom-route-preview", in: app)
+        .waitForExistence(timeout: 8)
+    )
+    let apply = element("whole-shuto-apply-custom-route", in: app)
+    XCTAssertTrue(apply.waitForExistence(timeout: 8))
+    apply.tap()
+    // Applying from the home catalog opens review as a round trip.
+    let product = element("whole-shuto-product", in: app)
+    XCTAssertTrue(product.waitForExistence(timeout: 8))
+    XCTAssertEqual(product.value as? String, "REVIEW")
+    XCTAssertTrue(
+      element("whole-shuto-route-selection", in: app)
+        .waitForExistence(timeout: 8)
+    )
+  }
+
   func testCircuitSelectionOffersEntrancesAndLaps() {
     continueAfterFailure = false
     let app = XCUIApplication()

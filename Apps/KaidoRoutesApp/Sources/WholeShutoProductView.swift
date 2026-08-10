@@ -4984,41 +4984,6 @@ private struct WholeShutoNetworkFactsView: View {
           )
         }
 
-        Section(
-          copy.resolve(
-            japanese: "精度の境界",
-            simplifiedChinese: "准确性边界",
-            english: "ACCURACY BOUNDARIES"
-          )
-        ) {
-          Label(
-            copy.resolve(
-              japanese: "路線、IC方向、JCT、PAの一覧は首都高の現行公式ページに基づきます。",
-              simplifiedChinese: "路线、IC 方向、JCT 与 PA 名单来自首都高当前官方页面。",
-              english:
-                "Route, directional IC, JCT, and PA lists come from current Shuto Expressway pages."
-            ),
-            systemImage: "checkmark.seal"
-          )
-          Label(
-            copy.resolve(
-              japanese: "道路形状と接続は固定版OSM候補で、公式の車線単位の権限ではありません。",
-              simplifiedChinese: "道路几何和连通为固定版本 OSM 候选，不代表官方车道级授权。",
-              english:
-                "Road geometry and connectivity are fixed-version OSM candidates, not official lane-level authority."
-            ),
-            systemImage: "point.3.connected.trianglepath.dotted"
-          )
-          Label(
-            copy.resolve(
-              japanese: "リアルタイム通行、臨時通行止め、料金、PA営業状況は未確認です。",
-              simplifiedChinese: "实时通行、临时封闭、收费与 PA 开放状态尚未确认。",
-              english:
-                "Realtime passage, temporary closures, tolls, and PA availability are unconfirmed."
-            ),
-            systemImage: "exclamationmark.triangle"
-          )
-        }
       }
       .navigationTitle(
         copy.resolve(

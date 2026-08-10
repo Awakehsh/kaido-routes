@@ -189,8 +189,8 @@ struct WholeShutoProductView: View {
           entryFacilityID: route.routePlan.entryFacilityID,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
           isPositionEstimated: isTrackMapPositionEstimated,
-          usesDarkStyle: true,
-          visibleBottomFraction: isDriving ? 0.92 : 0.66
+          visibleBottomFraction: isDriving ? 0.92 : 0.66,
+          routeDistanceMeters: route.distanceMeters
         )
       } else if let overview = WholeShutoNetworkOverviewCatalog.layout(
         for: model.database

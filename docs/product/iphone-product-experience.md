@@ -183,10 +183,13 @@ readable frame, drawn as one stylized continuous line in the manner of a
 circuit diagram. Orientation and proportion may be adjusted for legibility and
 are not required to be north-up or geographically proportional; directed
 connectivity, route occurrence order, and facility direction are never
-distorted. Every on-route IC, JCT, and PA is always labeled — labels do not
-appear or disappear with zoom — and a leader must return each spaced label to
-its exact route point. Off-route network appears only as quiet context or not
-at all. Repeated laps remain separate occurrences; the renderer offsets
+distorted. Every on-route IC, JCT, and PA is always marked on the route
+thread; names ride on plates beside their points with a short leader, and
+plate density is collision-managed so it fills in as the driver pinches
+closer — the same anchored pinch, double-tap, and clamped pan as the network
+diagram. While driving, the next facility ahead of the position always keeps
+its plate and carries its remaining route distance. Off-route network appears
+only as quiet context or not at all. Repeated laps remain separate occurrences; the renderer offsets
 repeated traversals and exposes their ordinal and count instead of
 deduplicating them. A compact summary reports the entrance, JCT, PA, and exit
 counts. Facility names follow the interface locale while Japanese sign text

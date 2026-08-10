@@ -253,6 +253,10 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
   @Published private(set) var isPlaying = false
+  /// True while the drive is fed by real device positions rather than the
+  /// synthetic preview trace. The two modes share one reducer; only the
+  /// evidence source and the surface-leg advance differ.
+  @Published private(set) var isLiveDrive = false
   @Published private(set) var failureCode: String?
   @Published private(set) var isPlanning = false
   @Published private(set) var isUpdatingSurfaceRoute = false
@@ -284,6 +288,7 @@ final class WholeShutoProductModel: ObservableObject {
     [:]
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
+  private var liveDriveSession: ShutoLiveDriveSession?
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
   private var speechCoordinator: GuidanceSpeechCoordinator?
@@ -1780,6 +1785,8 @@ final class WholeShutoProductModel: ObservableObject {
         ),
         speed: Self.simulationPlaybackSpeed
       )
+      liveDriveSession = nil
+      isLiveDrive = false
       try configureSpeech(for: route.routePlan.id)
     } catch {
       failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
@@ -1803,7 +1810,130 @@ final class WholeShutoProductModel: ObservableObject {
     startPlaybackLoop()
   }
 
+  /// Starts a live drive on the exact reviewed journey.
+  ///
+  /// The same compiled runtime drives it, but every position is a real
+  /// device fix: surface legs advance on measured proximity to the ramp
+  /// mouth instead of a timer, and the expressway body advances only on
+  /// admitted matcher evidence, so a weak fix holds progress instead of
+  /// inventing it.
+  @discardableResult
+  func startLiveJourney() -> Bool {
+    guard phase == .review, let route = selectedRoute else { return false }
+    guard isJourneyReadyForPreview else {
+      if !isUpdatingSurfaceRoute {
+        failureCode = "SURFACE_ROUTE_UNAVAILABLE"
+      }
+      return false
+    }
+    do {
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      runtimeAssets = assets
+      liveDriveSession = try ShutoLiveDriveSession(assets: assets)
+      driveSimulator = nil
+      try configureSpeech(for: route.routePlan.id)
+    } catch {
+      failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
+      return false
+    }
+    isLiveDrive = true
+    phase = accessRoute == nil ? .entryTransition : .surfaceAccess
+    progressFraction = 0
+    isPlaying = true
+    matcherConfidence = nil
+    runtimeOccurrenceID = nil
+    runtimeJourneyPhase = nil
+    runtimeRecoveryStatus = nil
+    runtimeCoordinate = nil
+    runtimeFractionAlongOccurrence = nil
+    presentationProjection = nil
+    consumedGuidancePromptIDs = []
+    isStaticJunctionPreview = false
+    restoredFromCheckpoint = false
+    failureCode = nil
+    persistCheckpoint()
+    return true
+  }
+
+  /// Accepts one real device observation. Surface phases advance on
+  /// measured distance; expressway phases go through the reducer.
+  func consumeLiveObservation(_ observation: RouteMatcherObservation) {
+    guard isLiveDrive, let session = liveDriveSession else { return }
+    let coordinate = ShutoCoordinate(
+      latitude: observation.coordinate.latitude,
+      longitude: observation.coordinate.longitude
+    )
+    advanceLiveSurfacePhase(at: coordinate)
+    guard phase == .entryTransition || phase == .expressway else { return }
+    Task { [weak self] in
+      do {
+        let update = try await session.observe(observation)
+        self?.applyNavigationUpdate(update)
+      } catch {
+        self?.failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+      }
+    }
+  }
+
+  /// Surface access and egress are ordinary-road legs the matcher does not
+  /// own. They advance on real distance to the leg's end and hand over only
+  /// when the vehicle is actually at the ramp mouth or the destination.
+  private func advanceLiveSurfacePhase(at coordinate: ShutoCoordinate) {
+    let handoverRadiusMeters = 60.0
+    switch phase {
+    case .surfaceAccess:
+      guard let route = selectedRoute else { return }
+      let target =
+        route.coordinates.first ?? route.entryFacility.coordinate
+      let remaining = Self.distance(coordinate, target)
+      let total = max(accessRoute?.distanceMeters ?? remaining, 1)
+      progressFraction = min(1, max(0, 1 - remaining / total))
+      if remaining <= handoverRadiusMeters {
+        phase = .entryTransition
+        progressFraction = 0
+        persistCheckpoint()
+      }
+    case .surfaceEgress:
+      guard let destination else { return }
+      let remaining = Self.distance(coordinate, destination.coordinate)
+      let total = max(egressRoute?.distanceMeters ?? remaining, 1)
+      progressFraction = min(1, max(0, 1 - remaining / total))
+      if remaining <= handoverRadiusMeters {
+        completeLiveJourney()
+      }
+    case .exitTransition:
+      guard let route = selectedRoute else { return }
+      let exitPoint =
+        route.coordinates.last ?? route.exitFacility.coordinate
+      if Self.distance(coordinate, exitPoint) > handoverRadiusMeters {
+        phase = egressRoute == nil ? .completed : .surfaceEgress
+        progressFraction = 0
+        if phase == .completed {
+          completeLiveJourney()
+        } else {
+          persistCheckpoint()
+        }
+      }
+    default:
+      return
+    }
+  }
+
+  private func completeLiveJourney() {
+    phase = .completed
+    progressFraction = 1
+    isPlaying = false
+    speechCoordinator?.stop()
+    try? checkpointStore?.remove()
+  }
+
   func togglePlayback() {
+    // A live drive follows the vehicle, not a transport; there is nothing
+    // to pause or step.
+    guard !isLiveDrive else { return }
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
@@ -1826,6 +1956,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func advanceSimulation() {
+    guard !isLiveDrive else { return }
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
@@ -1885,6 +2016,8 @@ final class WholeShutoProductModel: ObservableObject {
     consumedGuidancePromptIDs = []
     runtimeAssets = nil
     driveSimulator = nil
+    liveDriveSession = nil
+    isLiveDrive = false
     isStaticJunctionPreview = false
     restoredFromCheckpoint = false
     try? checkpointStore?.remove()
@@ -2049,6 +2182,13 @@ final class WholeShutoProductModel: ObservableObject {
     _ result: NavigationDriveSimulationStepResult
   ) {
     guard let update = result.navigationUpdate else { return }
+    applyNavigationUpdate(update)
+  }
+
+  /// The single admission path for both drive modes: a preview step and a
+  /// live device fix reach the reducer the same way, so progress, recovery,
+  /// and reviewed speech cannot diverge between them.
+  private func applyNavigationUpdate(_ update: NavigationSessionUpdate) {
     matcherConfidence = update.matcherEstimate.confidence
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
@@ -2080,6 +2220,12 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeFractionAlongOccurrence =
       progress.fractionAlongOccurrence
     runtimeCoordinate = progress.coordinate
+    // The preview's timer hands the expressway body over to the exit; a
+    // live drive hands over when real progress reaches the exit ramp.
+    if isLiveDrive, progress.routeProgressFraction >= 0.999 {
+      phase = .exitTransition
+      progressFraction = 0
+    }
     persistCheckpoint()
   }
 
@@ -2353,6 +2499,8 @@ final class WholeShutoProductModel: ObservableObject {
         speechCoordinator = nil
         runtimeAssets = nil
         driveSimulator = nil
+        liveDriveSession = nil
+        isLiveDrive = false
         failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
       }
     }

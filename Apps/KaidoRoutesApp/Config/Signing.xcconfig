@@ -1,0 +1,21 @@
+// Distribution signing and build numbering.
+//
+// The signing identity belongs to the owner's Apple Developer account and is
+// never tracked. To archive for the App Store, copy
+// Signing.local.xcconfig.example to Signing.local.xcconfig (git-ignored) and
+// fill in KAIDO_DEVELOPMENT_TEAM. Simulator and device-development builds
+// work without it.
+//
+// The build number defaults to 1 for local builds. Every App Store upload
+// needs a higher one than the last accepted build; pass it explicitly:
+//
+//   xcodebuild archive ... KAIDO_BUILD_NUMBER=$(git rev-list --count HEAD)
+
+KAIDO_DEVELOPMENT_TEAM =
+KAIDO_BUILD_NUMBER = 1
+
+#include? "Signing.local.xcconfig"
+
+DEVELOPMENT_TEAM = $(KAIDO_DEVELOPMENT_TEAM)
+CODE_SIGN_STYLE = Automatic
+CURRENT_PROJECT_VERSION = $(KAIDO_BUILD_NUMBER)

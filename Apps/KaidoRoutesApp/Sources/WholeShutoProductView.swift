@@ -18,6 +18,7 @@ struct WholeShutoProductView: View {
   @StateObject private var languageSettings: KaidoLanguageSettingsModel
   @StateObject private var planningLocation: WholeShutoPlanningLocationController
   @StateObject private var placeSearch: WholeShutoPlaceSearchController
+  @StateObject private var liveLocation = WholeShutoLiveLocationController()
   @State private var showsNetworkFacts = false
   @State private var showsLanguageSettings = false
   @State private var showsRouteCustomization = false
@@ -72,7 +73,8 @@ struct WholeShutoProductView: View {
     .sheet(isPresented: $showsJourneyReview) {
       WholeShutoJourneyReviewView(
         model: model,
-        languageSettings: languageSettings
+        languageSettings: languageSettings,
+        onStartLiveDrive: beginLiveDrive
       )
     }
     .sheet(isPresented: $showsNetworkFacts) {
@@ -155,10 +157,29 @@ struct WholeShutoProductView: View {
     .onChange(of: planningLocation.state) {
       handlePlanningLocationUpdate()
     }
+    .onChange(of: model.phase) { _, phase in
+      // Release the sensor the moment the journey is over or abandoned.
+      if phase == .planning || phase == .completed {
+        liveLocation.stop()
+      }
+    }
   }
 
   private var isLandscape: Bool {
     verticalSizeClass == .compact
+  }
+
+  /// Starts the live drive and the foreground location session together.
+  /// The session only opens after the reviewed journey is admitted, so the
+  /// app never holds the sensor while merely browsing routes.
+  private func beginLiveDrive() {
+    guard let route = model.selectedRoute else { return }
+    liveLocation.onObservation = { [model] observation in
+      model.consumeLiveObservation(observation)
+    }
+    guard model.startLiveJourney() else { return }
+    liveLocation.start(sessionID: route.routePlan.id)
+    showsJourneyReview = false
   }
 
   private var portraitLayout: some View {
@@ -2060,6 +2081,9 @@ struct WholeShutoProductView: View {
 
       Spacer(minLength: 4)
 
+      // Transport controls belong to the preview only; a live drive
+      // follows the vehicle and cannot be stepped or paused.
+      if !model.isLiveDrive {
       Button {
         model.advanceSimulation()
       } label: {
@@ -2103,6 +2127,7 @@ struct WholeShutoProductView: View {
       )
       .accessibilityIdentifier("whole-shuto-preview-playback")
       .accessibilityValue(model.isPlaying ? "PLAYING" : "PAUSED")
+      }
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
@@ -2369,11 +2394,17 @@ struct WholeShutoProductView: View {
       )
     }
     if isDriving {
-      return copy.resolve(
-        japanese: "首都高ナビプレビュー",
-        simplifiedChinese: "首都高导航预演",
-        english: "SHUTO NAVIGATION PREVIEW"
-      )
+      return model.isLiveDrive
+        ? copy.resolve(
+          japanese: "首都高ナビ",
+          simplifiedChinese: "首都高导航",
+          english: "SHUTO NAVIGATION"
+        )
+        : copy.resolve(
+          japanese: "首都高ナビプレビュー",
+          simplifiedChinese: "首都高导航预演",
+          english: "SHUTO NAVIGATION PREVIEW"
+        )
     }
     return model.phase == .review
       ? copy.resolve(
@@ -2704,6 +2735,14 @@ struct WholeShutoProductView: View {
           english: "BOUNDARY TRANSITION · PREVIEW"
         )
     case .networkPreview:
+      if model.isLiveDrive {
+        return prefix
+          + copy.resolve(
+            japanese: "案内中 · 現在地",
+            simplifiedChinese: "导航中 · 实时定位",
+            english: "NAVIGATING · LIVE POSITION"
+          )
+      }
       return prefix
         + copy.resolve(
           japanese: "ルート再生 · 模擬 \(simulationReplayParametersLabel)",
@@ -5028,13 +5067,7 @@ private struct WholeShutoNetworkFactsView: View {
   var body: some View {
     NavigationStack {
       List {
-        Section(
-          copy.resolve(
-            japanese: "全体範囲",
-            simplifiedChinese: "全网范围",
-            english: "NETWORK SCOPE"
-          )
-        ) {
+        Section {
           fact(
             copy.resolve(
               japanese: "路線",
@@ -5070,8 +5103,37 @@ private struct WholeShutoNetworkFactsView: View {
             ),
             model.database.checkedAt
           )
+        } header: {
+          Text(
+            copy.resolve(
+              japanese: "全体範囲",
+              simplifiedChinese: "全网范围",
+              english: "NETWORK SCOPE"
+            )
+          )
+        } footer: {
+          // The product-ready contract requires known limitations to stay
+          // visible in-product; one compact paragraph carries them without
+          // a wall of provenance prose.
+          Text(
+            copy.resolve(
+              japanese:
+                "路線・施設は首都高の公式ページ、道路形状は OSM 候補です。"
+                + "音声と分岐図は審査済みの分岐のみ。"
+                + "リアルタイム通行・料金・PA 状況は未確認です。",
+              simplifiedChinese:
+                "路线与设施来自首都高官方页面，道路几何为 OSM 候选。"
+                + "语音与分岔图仅覆盖已审核路口。"
+                + "实时通行、收费与 PA 状态尚未确认。",
+              english:
+                "Routes and facilities come from Shuto Expressway pages; "
+                + "road geometry is an OSM candidate. Speech and junction "
+                + "insets cover reviewed junctions only. Realtime passage, "
+                + "tolls, and PA status are unconfirmed."
+            )
+          )
+          .accessibilityIdentifier("whole-shuto-known-limitations")
         }
-
       }
       .navigationTitle(
         copy.resolve(

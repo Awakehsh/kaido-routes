@@ -67,7 +67,10 @@ final class KaidoLanguageSettingsModel: ObservableObject {
       UserDefaultsKaidoLanguagePreferenceStore()
   ) {
     self.store = store
-    interfaceLocale = store.interfaceLocale() ?? .simplifiedChinese
+    interfaceLocale =
+      store.interfaceLocale() ?? KaidoReleaseLocale.matchingPreferredLanguage()
+    // Sign text on the Shuto Expressway is Japanese, so spoken guidance
+    // defaults to Japanese whatever the interface language is.
     guidanceVoiceLocale = store.guidanceVoiceLocale() ?? .japanese
   }
 

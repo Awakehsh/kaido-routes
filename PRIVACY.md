@@ -35,14 +35,26 @@ no server-side account or personal-data record to delete.
 
 ## Network and external services
 
-The current bundled K7 release has no configured update endpoint and does not
-send location or route progress to a Kaido Routes server. Links to official
-road information, map-data attribution, licences, and this policy open
-external websites; those sites apply their own privacy practices.
+Kaido Routes has no server of its own: neither location nor route progress is
+sent to a Kaido Routes service. Three network paths do exist.
 
-A later release that enables a signed-information endpoint or another network
-service must update this policy and its App Store privacy disclosures before
-distribution.
+Apple Maps supplies the ordinary-road legs between the driver's position and
+the chosen entrance, and the exit and destination, and it backs destination
+search. Those requests go to Apple and carry the coordinates or search text
+they need; Apple's privacy practices apply to them.
+
+The bundled K7 route carries a signed pre-drive information endpoint on GitHub
+Pages. The app fetches a static JSON document from it to learn whether newer
+signed information exists. The request carries no route, position, or
+identifier beyond what any HTTPS request carries — the fetch discloses the
+device's IP address and timing to GitHub. The response is accepted only if its
+Ed25519 signature matches a trust key compiled into the app.
+
+Links to official road information, map-data attribution, licences, and this
+policy open external websites; those sites apply their own privacy practices.
+
+A later release that adds another network service must update this policy and
+its App Store privacy disclosures before distribution.
 
 ## Required-reason APIs
 

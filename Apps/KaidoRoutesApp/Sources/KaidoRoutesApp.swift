@@ -29,6 +29,21 @@ struct KaidoRoutesApp: App {
 
   var body: some Scene {
     WindowGroup {
+      #if DEBUG
+        debugPreviewHost
+      #else
+        WholeShutoProductView()
+      #endif
+    }
+  }
+
+  #if DEBUG
+    /// Launch-argument preview and qualification hosts for the automated
+    /// suites and internal review. They compile only into Debug builds —
+    /// the distributed app is the product surface alone, so no internal
+    /// fixture or review screen can be reached from a shipped binary.
+    @ViewBuilder
+    private var debugPreviewHost: some View {
       if ProcessInfo.processInfo.arguments.contains(
         "-ROUTE-ATLAS-ATTRIBUTION-PREVIEW"
       ) {
@@ -234,7 +249,7 @@ struct KaidoRoutesApp: App {
         WholeShutoProductView()
       }
     }
-  }
+  #endif
 }
 
 private enum WholeShutoJunctionPreviewMovement {

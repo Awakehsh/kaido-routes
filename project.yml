@@ -17,7 +17,6 @@ settings:
     SWIFT_VERSION: "6.0"
     ENABLE_USER_SCRIPT_SANDBOXING: true
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
 
 packages:
   KaidoRoutesCore:
@@ -66,6 +65,9 @@ targets:
         product: KaidoPresentation
       - package: KaidoRoutesCore
         product: KaidoAppleAdapters
+    configFiles:
+      Debug: Apps/KaidoRoutesApp/Config/Signing.xcconfig
+      Release: Apps/KaidoRoutesApp/Config/Signing.xcconfig
     settings:
       base:
         PRODUCT_NAME: KaidoRoutes
@@ -74,8 +76,10 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Kaido Routes
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.navigation
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Kaido Routes uses your location after you choose Current Location or start route navigation.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: false
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UILaunchScreen_UIColorName: LaunchBackground
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -87,6 +91,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes.preview
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes
+          CODE_SIGN_IDENTITY: Apple Distribution
 
   KaidoRoutesAppTests:
     type: bundle.unit-test

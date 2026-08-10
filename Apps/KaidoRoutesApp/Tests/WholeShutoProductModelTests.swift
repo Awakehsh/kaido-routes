@@ -1,5 +1,6 @@
 import KaidoAppleAdapters
 import KaidoDomain
+import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
 import KaidoSurfaceRouting
@@ -21,6 +22,78 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(model.phase, .planning)
     XCTAssertEqual(model.mapMode, .network)
+  }
+
+  func testLiveDriveRunsOnRealPositionsWithoutTransportControls() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney()
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+
+    XCTAssertTrue(model.startLiveJourney())
+    XCTAssertTrue(model.isLiveDrive)
+    XCTAssertEqual(model.phase, .surfaceAccess)
+
+    // A live drive follows the vehicle: stepping and pausing are inert.
+    model.togglePlayback()
+    XCTAssertTrue(model.isPlaying)
+    model.advanceSimulation()
+    XCTAssertEqual(model.phase, .surfaceAccess)
+
+    // Reaching the ramp mouth hands the surface leg over to entry.
+    let route = try XCTUnwrap(model.selectedRoute)
+    let entry = try XCTUnwrap(route.coordinates.first)
+    model.consumeLiveObservation(
+      Self.liveObservation(at: entry, atMilliseconds: 1_000)
+    )
+    XCTAssertEqual(model.phase, .entryTransition)
+
+    // Starting the labeled preview afterwards leaves live mode.
+    model.reset()
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+    XCTAssertFalse(model.isLiveDrive)
+  }
+
+  func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
+    XCTAssertEqual(
+      KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),
+      .japanese
+    )
+    XCTAssertEqual(
+      KaidoReleaseLocale.matchingPreferredLanguage(["zh-Hans-CN"]),
+      .simplifiedChinese
+    )
+    // Traditional Chinese is not authored: English beats a script mismatch.
+    XCTAssertEqual(
+      KaidoReleaseLocale.matchingPreferredLanguage(["zh-Hant-TW"]),
+      .english
+    )
+    XCTAssertEqual(
+      KaidoReleaseLocale.matchingPreferredLanguage(["de-DE", "ja-JP"]),
+      .japanese
+    )
+    XCTAssertEqual(
+      KaidoReleaseLocale.matchingPreferredLanguage(["ko-KR"]),
+      .english
+    )
+  }
+
+  private static func liveObservation(
+    at coordinate: ShutoCoordinate,
+    atMilliseconds: Int
+  ) -> RouteMatcherObservation {
+    RouteMatcherObservation(
+      observedAtMilliseconds: atMilliseconds,
+      receivedAtMilliseconds: atMilliseconds,
+      coordinate: MatcherCoordinate(
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude
+      ),
+      horizontalAccuracyMeters: 5,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
   }
 
   func testCustomRouteFromTheHomeCatalogIsARoundTrip() {

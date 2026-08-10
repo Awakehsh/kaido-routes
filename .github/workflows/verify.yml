@@ -1,0 +1,93 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Deterministic core and scenarios
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Swift Testing suite
+        run: swift test
+
+      - name: Portable scenario assertions
+        run: swift run kaido-scenarios e2e/scenarios
+
+      - name: Scenario envelope contract
+        run: python3 scripts/validate_e2e.py
+
+  app:
+    name: iPhone app unit and UI tests
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the app project
+        run: xcodegen generate
+
+      # The product opens on the driver's surroundings, and several UI
+      # tests derive an entrance from the current position, so the runner
+      # needs a booted simulator with an injected fix. Tokyo Tower keeps
+      # the derived pairings inside the C1 area the tests assert on.
+      - name: Boot a simulator with an injected position
+        id: simulator
+        run: |
+          set -euo pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          candidates = [
+              device["udid"]
+              for runtime in devices
+              for device in devices[runtime]
+              if device.get("isAvailable") and "iPhone" in device["name"]
+          ]
+          if not candidates:
+              raise SystemExit("no available iPhone simulator on the runner")
+          print(candidates[-1])
+          ')
+          echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+
+      - name: App unit and UI tests
+        run: |
+          xcodebuild test \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty || exit ${PIPESTATUS[0]}
+
+  data:
+    name: Snapshot and evidence integrity
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # The reviewed candidate exclusions must keep matching the committed
+      # snapshot: a stale review is a build failure, not a silent no-op.
+      - name: Facility candidate review still applies
+        run: python3 scripts/verify_facility_candidate_review.py

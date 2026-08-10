@@ -6,6 +6,9 @@ struct WholeShutoJourneyReviewView: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
+  /// Starting a live drive also needs the location session, which the
+  /// product view owns, so the action is handed in.
+  var onStartLiveDrive: () -> Void = {}
 
   var body: some View {
     VStack(spacing: 0) {
@@ -448,26 +451,51 @@ struct WholeShutoJourneyReviewView: View {
   private var startAction: some View {
     VStack(spacing: 8) {
       Button {
-        model.startNavigationSimulation()
+        onStartLiveDrive()
       } label: {
         HStack(spacing: 9) {
           Text(
             copy.resolve(
-              japanese: "プレビュー開始",
-              simplifiedChinese: "开始预演",
-              english: "START PREVIEW"
+              japanese: "案内を開始",
+              simplifiedChinese: "开始导航",
+              english: "START NAVIGATION"
             )
           )
           Spacer()
-          Image(systemName: "play.fill")
+          Image(systemName: "location.north.fill")
         }
-        .font(.system(size: 13, weight: .black, design: .rounded))
+        .font(.system(size: 14, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.routeWhite)
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
-        .frame(height: 50)
+        .frame(height: 52)
         .background(KaidoTheme.routeGreen)
         .clipShape(RoundedRectangle(cornerRadius: 11))
+      }
+      .buttonStyle(.plain)
+      .disabled(!model.isJourneyReadyForPreview)
+      .opacity(model.isJourneyReadyForPreview ? 1 : 0.45)
+      .accessibilityIdentifier("whole-shuto-start-live-drive")
+
+      Button {
+        model.startNavigationSimulation()
+      } label: {
+        HStack(spacing: 8) {
+          Image(systemName: "play.fill")
+            .font(.system(size: 10, weight: .black))
+          Text(
+            copy.resolve(
+              japanese: "走らずにプレビュー（54 km/h 基準・20×）",
+              simplifiedChinese: "不开车，先预演（54 km/h 基准 · 20×）",
+              english: "Preview without driving (54 km/h reference, 20×)"
+            )
+          )
+          .font(.system(size: 10, weight: .bold))
+        }
+        .foregroundStyle(KaidoTheme.nightQuiet)
+        .frame(maxWidth: .infinity)
+        .frame(height: 34)
+        .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
       .disabled(!model.isJourneyReadyForPreview)
@@ -476,13 +504,15 @@ struct WholeShutoJourneyReviewView: View {
 
       Text(
         copy.resolve(
-          japanese: "これは 54 km/h 基準・20× の合成プレビューです",
-          simplifiedChinese: "这是以 54 km/h 为基准、20× 播放的合成预演",
-          english: "Synthetic preview at a 54 km/h reference and 20× playback"
+          japanese: "案内は前景のみ・審査済みの分岐のみ音声案内します",
+          simplifiedChinese: "导航仅在前台运行，且只播报已审核的分岔",
+          english:
+            "Guidance runs in the foreground and speaks reviewed junctions only"
         )
       )
       .font(.system(size: 8, weight: .bold))
       .foregroundStyle(KaidoTheme.nightQuiet)
+      .multilineTextAlignment(.center)
     }
     .padding(.horizontal, 18)
     .padding(.top, 12)

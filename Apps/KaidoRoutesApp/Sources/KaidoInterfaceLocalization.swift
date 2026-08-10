@@ -1,5 +1,35 @@
+import Foundation
 import KaidoDomain
 import SwiftUI
+
+extension KaidoReleaseLocale {
+  /// The interface language a first launch should open in: the device's own
+  /// preferred language when the product speaks it, English otherwise. A
+  /// Japanese iPhone must never open in Chinese because of a build-time
+  /// default.
+  static func matchingPreferredLanguage(
+    _ preferredLanguages: [String] = Locale.preferredLanguages
+  ) -> KaidoReleaseLocale {
+    for identifier in preferredLanguages {
+      let language = Locale(identifier: identifier).language
+      guard let code = language.languageCode?.identifier else { continue }
+      switch code {
+      case "ja":
+        return .japanese
+      case "zh":
+        // Only Simplified Chinese is authored; Traditional readers get
+        // English rather than mismatched script.
+        return language.script?.identifier == "Hant"
+          ? .english : .simplifiedChinese
+      case "en":
+        return .english
+      default:
+        continue
+      }
+    }
+    return .english
+  }
+}
 
 struct KaidoInterfaceText: Equatable, Sendable {
   let locale: KaidoReleaseLocale
@@ -44,7 +74,7 @@ struct KaidoInterfaceText: Equatable, Sendable {
 }
 
 private struct KaidoInterfaceLocaleEnvironmentKey: EnvironmentKey {
-  static let defaultValue = KaidoReleaseLocale.simplifiedChinese
+  static let defaultValue = KaidoReleaseLocale.matchingPreferredLanguage()
 }
 
 extension EnvironmentValues {

@@ -1,0 +1,4 @@
+// Copy to Signing.local.xcconfig (git-ignored) and fill in the owner's
+// Apple Developer Team ID. Nothing here is tracked.
+
+KAIDO_DEVELOPMENT_TEAM = ABCDE12345

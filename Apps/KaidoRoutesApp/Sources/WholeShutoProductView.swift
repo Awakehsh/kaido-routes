@@ -1,6 +1,7 @@
 import CoreLocation
 import KaidoAppleAdapters
 import KaidoDomain
+import KaidoPresentation
 import KaidoRouting
 import MapKit
 import SwiftUI
@@ -198,7 +199,8 @@ struct WholeShutoProductView: View {
           layout: overview,
           usesDarkStyle: isDriving,
           visibleBottomFraction: isDriving ? 0.92 : 0.66,
-          initialZoom: networkOverviewInitialZoom
+          initialZoom: networkOverviewInitialZoom,
+          overlay: planningOverlay(for: overview)
         )
       } else {
         WholeShutoNetworkDiagram(
@@ -216,6 +218,47 @@ struct WholeShutoProductView: View {
         planningLocation: planningLocation.snapshot
       )
     }
+  }
+
+  private func planningOverlay(
+    for layout: NetworkOverviewLayout
+  ) -> WholeShutoNetworkOverviewView.PlanningOverlay {
+    guard model.phase == .planning else { return .init() }
+    var overlay = WholeShutoNetworkOverviewView.PlanningOverlay()
+    if let circuit = model.selectedCircuit {
+      overlay.highlightedRouteIDs = circuit.memberRouteIDs
+    }
+    if let snapshot = planningLocation.snapshot {
+      overlay.currentPosition = layout.projection.project(
+        .init(
+          latitude: snapshot.coordinate.latitude,
+          longitude: snapshot.coordinate.longitude
+        )
+      )
+    }
+    if let entry = model.circuitEntryFacility {
+      overlay.entranceMark = .init(
+        point: layout.projection.project(
+          .init(
+            latitude: entry.coordinate.latitude,
+            longitude: entry.coordinate.longitude
+          )
+        ),
+        nameJA: entry.nameJA
+      )
+    }
+    if let exit = model.circuitExitFacility {
+      overlay.exitMark = .init(
+        point: layout.projection.project(
+          .init(
+            latitude: exit.coordinate.latitude,
+            longitude: exit.coordinate.longitude
+          )
+        ),
+        nameJA: exit.nameJA
+      )
+    }
+    return overlay
   }
 
   private var networkOverviewInitialZoom: Double {
@@ -272,12 +315,12 @@ struct WholeShutoProductView: View {
         }
 
         VStack(alignment: .leading, spacing: 0) {
-          Text("KAIDO")
-            .font(.system(size: 9, weight: .black, design: .rounded))
-            .tracking(1.7)
-            .foregroundStyle(
-              isDriving ? KaidoTheme.confirmedGreen : KaidoTheme.routeGreen
-            )
+          if model.phase == .planning {
+            Text("KAIDO")
+              .font(.system(size: 9, weight: .black, design: .rounded))
+              .tracking(1.7)
+              .foregroundStyle(KaidoTheme.routeGreen)
+          }
           Text(topTitle)
             .font(.system(size: 18, weight: .black, design: .rounded))
             .foregroundStyle(
@@ -338,21 +381,21 @@ struct WholeShutoProductView: View {
   private var mapModeControl: some View {
     HStack(spacing: 0) {
       mapModeButton(
+        .network,
+        symbol: "point.3.connected.trianglepath.dotted",
+        label: copy.resolve(
+          japanese: "路線",
+          simplifiedChinese: "路线",
+          english: "ROUTES"
+        )
+      )
+      mapModeButton(
         .geographic,
         symbol: "map.fill",
         label: copy.resolve(
           japanese: "地図",
           simplifiedChinese: "地图",
           english: "MAP"
-        )
-      )
-      mapModeButton(
-        .network,
-        symbol: "point.3.connected.trianglepath.dotted",
-        label: copy.resolve(
-          japanese: "全体",
-          simplifiedChinese: "全网",
-          english: "NET"
         )
       )
     }
@@ -1523,25 +1566,14 @@ struct WholeShutoProductView: View {
       HStack(spacing: 10) {
         ProgressView()
           .tint(KaidoTheme.routeGreen)
-        VStack(alignment: .leading, spacing: 2) {
-          Text(
-            copy.resolve(
-              japanese: "地上区間を確認中",
-              simplifiedChinese: "正在确认地面接驳",
-              english: "CONFIRMING SURFACE LEGS"
-            )
+        Text(
+          copy.resolve(
+            japanese: "地上区間を確認中",
+            simplifiedChinese: "正在确认地面接驳",
+            english: "CONFIRMING SURFACE LEGS"
           )
-          .font(.system(size: 11, weight: .black, design: .rounded))
-          Text(
-            copy.resolve(
-              japanese: "選択した入口と出口は変更しません",
-              simplifiedChinese: "不会更改已选择的入口和出口",
-              english: "The selected entry and exit stay fixed"
-            )
-          )
-          .font(.system(size: 9, weight: .bold))
-          .foregroundStyle(KaidoTheme.quietText)
-        }
+        )
+        .font(.system(size: 11, weight: .black, design: .rounded))
         Spacer()
       }
       .foregroundStyle(KaidoTheme.ink)
@@ -1612,25 +1644,14 @@ struct WholeShutoProductView: View {
         showsJourneyReview = true
       } label: {
         HStack(spacing: 9) {
-          VStack(alignment: .leading, spacing: 1) {
-            Text(
-              copy.resolve(
-                japanese: "行程を確認",
-                simplifiedChinese: "确认行程",
-                english: "REVIEW JOURNEY"
-              )
+          Text(
+            copy.resolve(
+              japanese: "行程を確認",
+              simplifiedChinese: "确认行程",
+              english: "REVIEW JOURNEY"
             )
-            .font(.system(size: 13, weight: .black, design: .rounded))
-            Text(
-              copy.resolve(
-                japanese: "入口・首都高・出口を確認して出発",
-                simplifiedChinese: "确认入口、首都高与出口后出发",
-                english: "Confirm entry, Shuto route, and exit"
-              )
-            )
-            .font(.system(size: 9, weight: .bold))
-            .opacity(0.76)
-          }
+          )
+          .font(.system(size: 14, weight: .black, design: .rounded))
           Spacer()
           Image(systemName: "arrow.right")
             .font(.system(size: 13, weight: .black))
@@ -2422,9 +2443,9 @@ struct WholeShutoProductView: View {
     switch model.phase {
     case .surfaceAccess:
       copy.resolve(
-        japanese: "一般道 · 入口へ",
-        simplifiedChinese: "一般道路 · 前往入口",
-        english: "SURFACE ROAD · TO ENTRY"
+        japanese: "一般道",
+        simplifiedChinese: "一般道路",
+        english: "SURFACE ROAD"
       )
     case .entryTransition:
       copy.resolve(
@@ -2448,9 +2469,9 @@ struct WholeShutoProductView: View {
       )
     case .surfaceEgress:
       copy.resolve(
-        japanese: "一般道 · 目的地へ",
-        simplifiedChinese: "一般道路 · 前往目的地",
-        english: "SURFACE ROAD · TO DESTINATION"
+        japanese: "一般道",
+        simplifiedChinese: "一般道路",
+        english: "SURFACE ROAD"
       )
     case .completed:
       copy.resolve(
@@ -2582,9 +2603,9 @@ struct WholeShutoProductView: View {
     case .surfacePreview:
       return prefix
         + copy.resolve(
-          japanese: "MapKit 一般道 · プレビュー",
-          simplifiedChinese: "MapKit 一般道路 · 预演",
-          english: "MAPKIT SURFACE ROAD · PREVIEW"
+          japanese: "一般道 · プレビュー",
+          simplifiedChinese: "一般道路 · 预演",
+          english: "SURFACE ROAD · PREVIEW"
         )
     case .boundaryTransition:
       return prefix
@@ -2603,9 +2624,9 @@ struct WholeShutoProductView: View {
     case .networkDegraded:
       return prefix
         + copy.resolve(
-          japanese: "位置証拠不足 · 進行停止",
-          simplifiedChinese: "定位证据不足 · 未推进",
-          english: "INSUFFICIENT POSITION EVIDENCE · HELD"
+          japanese: "位置不確か · 停止中",
+          simplifiedChinese: "定位弱 · 暂停推进",
+          english: "WEAK POSITION · HELD"
         )
     case .tunnelEstimated:
       return prefix
@@ -2617,9 +2638,9 @@ struct WholeShutoProductView: View {
     case .routeInterrupted:
       return prefix
         + copy.resolve(
-          japanese: "ルート中断 · 公開済み復帰ルートなし",
-          simplifiedChinese: "路线中断 · 无已发布重入路线",
-          english: "ROUTE INTERRUPTED · NO RELEASED REENTRY"
+          japanese: "ルート中断 · 復帰案内なし",
+          simplifiedChinese: "路线中断 · 无重入引导",
+          english: "ROUTE INTERRUPTED · NO REENTRY GUIDANCE"
         )
     case .completed:
       return copy.resolve(
@@ -4415,8 +4436,21 @@ private struct WholeShutoGeographicMap: View {
     guard force || followsRoute else { return }
     guard isDriving, let current = model.currentCoordinate else {
       followsRoute = true
-      if model.selectedRoute != nil || planningLocation != nil {
-        camera = .automatic
+      // `.automatic` would frame every overlay including the whole-network
+      // backdrop (the full Kanto span); frame the journey or the driver's
+      // surroundings instead.
+      withAnimation(.easeOut(duration: 0.5)) {
+        if let region = journeyRegion() {
+          camera = .region(region)
+        } else if let planningLocation {
+          camera = .region(
+            MKCoordinateRegion(
+              center: planningLocation.coordinate.mapCoordinate,
+              latitudinalMeters: 14_000,
+              longitudinalMeters: 14_000
+            )
+          )
+        }
       }
       return
     }
@@ -4441,6 +4475,47 @@ private struct WholeShutoGeographicMap: View {
         )
       }
     }
+  }
+
+  /// Bounding region over the selected route plus resolved surface legs,
+  /// with padding so the review frame reads as one journey.
+  private func journeyRegion() -> MKCoordinateRegion? {
+    guard let route = model.selectedRoute else { return nil }
+    var coordinates: [ShutoCoordinate] = []
+    coordinates.append(
+      contentsOf: stride(from: 0, to: route.coordinates.count, by: 8)
+        .map { route.coordinates[$0] }
+    )
+    for leg in [model.accessRoute, model.egressRoute].compactMap({ $0 }) {
+      coordinates.append(
+        contentsOf: stride(from: 0, to: leg.coordinates.count, by: 8)
+          .map { leg.coordinates[$0] }
+      )
+    }
+    if let origin = model.origin {
+      coordinates.append(origin.coordinate)
+    }
+    guard let first = coordinates.first else { return nil }
+    var minLatitude = first.latitude
+    var maxLatitude = first.latitude
+    var minLongitude = first.longitude
+    var maxLongitude = first.longitude
+    for coordinate in coordinates.dropFirst() {
+      minLatitude = min(minLatitude, coordinate.latitude)
+      maxLatitude = max(maxLatitude, coordinate.latitude)
+      minLongitude = min(minLongitude, coordinate.longitude)
+      maxLongitude = max(maxLongitude, coordinate.longitude)
+    }
+    return MKCoordinateRegion(
+      center: CLLocationCoordinate2D(
+        latitude: (minLatitude + maxLatitude) / 2,
+        longitude: (minLongitude + maxLongitude) / 2
+      ),
+      span: MKCoordinateSpan(
+        latitudeDelta: max(0.02, (maxLatitude - minLatitude) * 1.35),
+        longitudeDelta: max(0.02, (maxLongitude - minLongitude) * 1.35)
+      )
+    )
   }
 
   private func geographicDistance(

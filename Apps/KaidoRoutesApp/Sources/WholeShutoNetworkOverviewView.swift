@@ -91,10 +91,26 @@ enum WholeShutoNetworkOverviewCatalog {
 /// threshold to reveal every available IC with its half/full directional
 /// facts and ETC constraint.
 struct WholeShutoNetworkOverviewView: View {
+  /// Planning-state marks drawn on top of the diagram: the driver's position
+  /// and the derived entrance/exit pairing for the selected circuit. Purely
+  /// presentational — the diagram never carries guidance authority.
+  struct PlanningOverlay: Equatable {
+    struct Mark: Equatable {
+      let point: NetworkOverviewLayout.Point
+      let nameJA: String
+    }
+
+    var highlightedRouteIDs: Set<String> = []
+    var currentPosition: NetworkOverviewLayout.Point?
+    var entranceMark: Mark?
+    var exitMark: Mark?
+  }
+
   let layout: NetworkOverviewLayout
   let usesDarkStyle: Bool
   let visibleBottomFraction: Double
   var initialZoom: Double = 1
+  var overlay = PlanningOverlay()
 
   @State private var zoom: Double = 1
   @State private var zoomAtGestureStart: Double?
@@ -209,8 +225,14 @@ struct WholeShutoNetworkOverviewView: View {
   }
 
   private func draw(in context: inout GraphicsContext, zoom: Double) {
-    // Pseudo-glow, casing, then route colors.
-    for polyline in layout.polylines {
+    let highlighted = overlay.highlightedRouteIDs
+    func isDimmed(_ routeID: String) -> Bool {
+      !highlighted.isEmpty && !highlighted.contains(routeID)
+    }
+
+    // Pseudo-glow, casing, then route colors. With a circuit selected the
+    // member routes keep their color and the rest of the network recedes.
+    for polyline in layout.polylines where !isDimmed(polyline.routeID) {
       context.stroke(
         path(polyline.points),
         with: .color(routeLineColor(polyline.routeID).opacity(0.12)),
@@ -226,11 +248,16 @@ struct WholeShutoNetworkOverviewView: View {
     }
     for polyline in layout.polylines {
       let isTrunk = ["C1", "C2", "B"].contains(polyline.routeID)
+      let dimmed = isDimmed(polyline.routeID)
       context.stroke(
         path(polyline.points),
-        with: .color(routeLineColor(polyline.routeID)),
+        with: .color(
+          dimmed
+            ? palette.label.opacity(usesDarkStyle ? 0.28 : 0.34)
+            : routeLineColor(polyline.routeID)
+        ),
         style: StrokeStyle(
-          lineWidth: isTrunk ? 4.4 : 3.4,
+          lineWidth: dimmed ? 2.6 : isTrunk ? 4.4 : 3.4,
           lineCap: .round,
           lineJoin: .round,
           dash: polyline.routeID == "Y" ? [7, 6] : []
@@ -284,6 +311,7 @@ struct WholeShutoNetworkOverviewView: View {
 
     // Route badges.
     for badge in layout.badges {
+      if isDimmed(badge.routeID) { continue }
       let width: Double = badge.label.count > 1 ? 34 : 26
       let frame = CGRect(
         x: badge.x - width / 2,
@@ -310,7 +338,17 @@ struct WholeShutoNetworkOverviewView: View {
 
     // Facility detail layer past the pinch threshold: every available IC
     // with its half/full directional facts and ETC constraint.
-    guard zoom >= Self.detailZoomThreshold else { return }
+    if zoom >= Self.detailZoomThreshold {
+      drawFacilityDetail(in: &context, claim: claim)
+    }
+
+    drawPlanningOverlay(in: &context)
+  }
+
+  private func drawFacilityDetail(
+    in context: inout GraphicsContext,
+    claim: (CGRect) -> Bool
+  ) {
     for mark in layout.facilityMarks {
       let dot = Path(
         ellipseIn: CGRect(x: mark.x - 2.4, y: mark.y - 2.4, width: 4.8, height: 4.8)
@@ -375,6 +413,80 @@ struct WholeShutoNetworkOverviewView: View {
           )
         )
       }
+    }
+  }
+
+  private func drawPlanningOverlay(in context: inout GraphicsContext) {
+    func drawMark(
+      _ mark: PlanningOverlay.Mark,
+      glyph: String,
+      color: Color
+    ) {
+      let center = CGPoint(x: mark.point.x, y: mark.point.y)
+      let disc = Path(
+        ellipseIn: CGRect(
+          x: center.x - 9, y: center.y - 9, width: 18, height: 18
+        )
+      )
+      context.fill(disc, with: .color(color))
+      context.stroke(
+        disc,
+        with: .color(palette.background),
+        style: StrokeStyle(lineWidth: 2)
+      )
+      context.draw(
+        Text(glyph)
+          .font(.system(size: 10, weight: .heavy))
+          .foregroundColor(palette.background),
+        at: center,
+        anchor: .center
+      )
+      let labelFrame = CGRect(
+        x: center.x + 12,
+        y: center.y - 9,
+        width: Double(mark.nameJA.count) * 13 + 12,
+        height: 18
+      )
+      context.fill(
+        Path(roundedRect: labelFrame, cornerRadius: 5),
+        with: .color(palette.background.opacity(0.85))
+      )
+      context.draw(
+        Text(mark.nameJA)
+          .font(.system(size: 12, weight: .bold))
+          .foregroundColor(palette.junctionLabel),
+        at: CGPoint(x: labelFrame.minX + 6, y: labelFrame.midY),
+        anchor: .leading
+      )
+    }
+
+    if let entrance = overlay.entranceMark {
+      drawMark(entrance, glyph: "入", color: KaidoTheme.positionCyan)
+    }
+    if let exit = overlay.exitMark {
+      drawMark(exit, glyph: "出", color: KaidoTheme.evidenceCoral)
+    }
+    if let position = overlay.currentPosition {
+      let center = CGPoint(x: position.x, y: position.y)
+      context.fill(
+        Path(
+          ellipseIn: CGRect(
+            x: center.x - 14, y: center.y - 14, width: 28, height: 28
+          )
+        ),
+        with: .color(KaidoTheme.positionCyan.opacity(0.18))
+      )
+      let core = Path(
+        ellipseIn: CGRect(
+          x: center.x - 6, y: center.y - 6, width: 12, height: 12
+        )
+      )
+      context.fill(core, with: .color(KaidoTheme.positionCyan))
+      context.stroke(
+        core,
+        with: .color(.white),
+        style: StrokeStyle(lineWidth: 2.4)
+      )
     }
   }
 

@@ -9,18 +9,18 @@ import XCTest
 
 @MainActor
 final class WholeShutoProductModelTests: XCTestCase {
-  func testPlanningAndResetUseTheGeographicMap() {
+  func testPlanningAndResetUseTheNetworkDiagram() {
     let model = WholeShutoProductModel(checkpointStore: nil)
 
     XCTAssertEqual(model.phase, .planning)
-    XCTAssertEqual(model.mapMode, .geographic)
+    XCTAssertEqual(model.mapMode, .network)
 
     model.preparePreviewJourney()
-    model.mapMode = .network
+    model.mapMode = .geographic
     model.reset()
 
     XCTAssertEqual(model.phase, .planning)
-    XCTAssertEqual(model.mapMode, .geographic)
+    XCTAssertEqual(model.mapMode, .network)
   }
 
   func testCircuitSelectionDerivesThePairingFromOrigin() async {

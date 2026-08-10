@@ -213,8 +213,13 @@ final class WholeShutoProductModel: ObservableObject {
   @Published var originQuery: String
   @Published var destinationQuery: String
   @Published var preference: ShutoRoutePreference = .recommended
-  @Published var mapMode: WholeShutoMapMode = .geographic
-  @Published private(set) var phase: WholeShutoJourneyPhase = .planning
+  @Published var mapMode: WholeShutoMapMode = .network
+  @Published private(set) var phase: WholeShutoJourneyPhase = .planning {
+    didSet {
+      guard phase != oldValue else { return }
+      syncMapModeToPhase()
+    }
+  }
   @Published private(set) var origin: WholeShutoPlace?
   @Published private(set) var destination: WholeShutoPlace?
   @Published private(set) var recommendations: [ShutoRouteRecommendation] = []
@@ -969,6 +974,9 @@ final class WholeShutoProductModel: ObservableObject {
     destination = place
     destinationQuery = place.title
     selectedDestinationTitle = place.title
+    // A chosen destination is geographic context: show its pin on the
+    // geographic map instead of the network diagram.
+    mapMode = .geographic
   }
 
   func selectCurrentOrigin(_ coordinate: ShutoCoordinate) {
@@ -1817,7 +1825,7 @@ final class WholeShutoProductModel: ObservableObject {
     progressFraction = 0
     isPlaying = false
     failureCode = nil
-    mapMode = .geographic
+    mapMode = .network
     matcherConfidence = nil
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil
@@ -1861,6 +1869,21 @@ final class WholeShutoProductModel: ObservableObject {
         guard !Task.isCancelled else { return }
         self?.tick()
       }
+    }
+  }
+
+  /// Each phase has a natural primary presentation: the self-drawn network
+  /// diagram and track map carry planning, review, and the expressway body;
+  /// the geographic map carries every leg that runs on ordinary streets.
+  /// Explicit assignments after a phase change (previews, checkpoint restore)
+  /// still override this baseline.
+  private func syncMapModeToPhase() {
+    switch phase {
+    case .planning, .review, .expressway:
+      mapMode = .network
+    case .surfaceAccess, .entryTransition, .exitTransition,
+      .surfaceEgress, .completed:
+      mapMode = .geographic
     }
   }
 

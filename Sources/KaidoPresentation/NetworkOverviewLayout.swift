@@ -105,10 +105,45 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     public let etcOnly: Bool
   }
 
+  /// The fisheye projection that produced this layout, retained so views can
+  /// place arbitrary geographic points (current position, derived entrance
+  /// and exit marks) into the same design space.
+  public struct Projection: Equatable, Sendable {
+    public let focus: RouteTrackMapLayout.GeoPoint
+    public let compression: Double
+    public let kx: Double
+    public let ky: Double
+    public let minX: Double
+    public let maxY: Double
+    public let scale: Double
+    public let offsetX: Double
+    public let offsetY: Double
+
+    public func project(
+      _ coordinate: RouteTrackMapLayout.GeoPoint
+    ) -> Point {
+      let dx = (coordinate.longitude - focus.longitude) * kx
+      let dy = (coordinate.latitude - focus.latitude) * ky
+      let radius = (dx * dx + dy * dy).squareRoot()
+      let p: (x: Double, y: Double)
+      if radius > 1e-9 {
+        let compressed = pow(radius, compression)
+        p = (dx / radius * compressed, dy / radius * compressed)
+      } else {
+        p = (0, 0)
+      }
+      return Point(
+        x: offsetX + (p.x - minX) * scale,
+        y: offsetY + (maxY - p.y) * scale
+      )
+    }
+  }
+
   public let polylines: [Polyline]
   public let badges: [RouteBadge]
   public let junctionMarks: [JunctionMark]
   public let facilityMarks: [FacilityMark]
+  public let projection: Projection
 
   // MARK: - Construction
 
@@ -159,14 +194,21 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     )
     let offsetX = (designWidth - (maxX - minX) * scale) / 2
     let offsetY = (designHeight - (maxY - minY) * scale) / 2
+    let projection = Projection(
+      focus: focus,
+      compression: compression,
+      kx: kx,
+      ky: ky,
+      minX: minX,
+      maxY: maxY,
+      scale: scale,
+      offsetX: offsetX,
+      offsetY: offsetY
+    )
     func project(
       _ coordinate: RouteTrackMapLayout.GeoPoint
     ) -> Point {
-      let p = fisheye(coordinate)
-      return Point(
-        x: offsetX + (p.x - minX) * scale,
-        y: offsetY + (maxY - p.y) * scale
-      )
+      projection.project(coordinate)
     }
 
     func simplifyAndSmooth(_ points: [Point]) -> [Point] {
@@ -272,7 +314,8 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
       polylines: polylines,
       badges: badges,
       junctionMarks: junctionMarks,
-      facilityMarks: facilityMarks
+      facilityMarks: facilityMarks,
+      projection: projection
     )
   }
 }

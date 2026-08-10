@@ -22,8 +22,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-product", in: app).value as? String,
       "PLANNING"
     )
+    // Diagram-first home: the self-drawn network map is the default canvas
+    // and the geographic map stays one toggle away.
     XCTAssertTrue(
+      element("whole-shuto-network-map", in: app).exists
+    )
+    XCTAssertFalse(
       element("whole-shuto-geographic-map", in: app).exists
+    )
+    element("whole-shuto-map-geographic", in: app).tap()
+    XCTAssertTrue(
+      element("whole-shuto-geographic-map", in: app)
+        .waitForExistence(timeout: 3)
+    )
+    element("whole-shuto-map-network", in: app).tap()
+    XCTAssertTrue(
+      element("whole-shuto-network-map", in: app)
+        .waitForExistence(timeout: 3)
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
     // Route first: circuit experiences lead the planning dock and the
@@ -461,7 +476,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let product = element("whole-shuto-product", in: routeApp)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
     XCTAssertEqual(product.value as? String, "REVIEW")
-    XCTAssertTrue(element("whole-shuto-geographic-map", in: routeApp).exists)
+    // Review opens on the self-drawn presentation (track map when the
+    // layout resolves, network diagram otherwise).
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: routeApp).exists
+        || element("whole-shuto-network-map", in: routeApp).exists
+    )
     XCTAssertTrue(element("whole-shuto-route-selection", in: routeApp).exists)
     XCTAssertTrue(element("whole-shuto-route-option-0", in: routeApp).exists)
     let customizeRoute = element(
@@ -643,6 +663,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "ja-JP",
     ]
     navigationApp.launch()
+    // Expressway navigation now opens on the track map; once it appears,
+    // switch to the geographic presentation to exercise its follow/free
+    // camera.
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: navigationApp)
+        .waitForExistence(timeout: 15)
+    )
+    element("whole-shuto-map-geographic", in: navigationApp).tap()
     XCTAssertTrue(
       element("whole-shuto-geographic-map", in: navigationApp)
         .waitForExistence(timeout: 5)

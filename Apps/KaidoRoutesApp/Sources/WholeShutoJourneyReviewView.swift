@@ -453,9 +453,9 @@ struct WholeShutoJourneyReviewView: View {
         HStack(spacing: 9) {
           Text(
             copy.resolve(
-              japanese: "全行程プレビューを開始",
-              simplifiedChinese: "开始完整行程预演",
-              english: "START FULL JOURNEY PREVIEW"
+              japanese: "プレビュー開始",
+              simplifiedChinese: "开始预演",
+              english: "START PREVIEW"
             )
           )
           Spacer()

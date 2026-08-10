@@ -161,10 +161,17 @@ before they can occupy the same replaceable boundary.
 
 ## Plan
 
-The map occupies most of the screen. A persistent control switches between the
-geographic presentation and the Kaido track map. The choice is not tied to
-journey phase and persists when navigation begins. A bottom sheet contains the
-current ordered route and the next legal action.
+The map occupies most of the screen. The self-drawn Kaido presentation — the
+whole-network line diagram before a route exists, the track map after — is the
+primary canvas, and a persistent control keeps the geographic presentation one
+switch away. Each journey phase re-establishes its natural default (planning,
+review, and the expressway body open on the Kaido presentation; ordinary-road
+legs open on the geographic map), and the driver may override it at any time.
+While planning, the diagram carries the driver's current position, the selected
+circuit's member routes at full color over a receded rest-of-network, and the
+derived entrance and exit marks; these marks are presentation only and carry no
+guidance authority. A bottom sheet contains the current ordered route and the
+next legal action.
 
 The track map is the route overview: the entire selected route stays in one
 readable frame, drawn as one stylized continuous line in the manner of a
@@ -260,8 +267,11 @@ photographs may be used for private comparison but are never copied into the
 product. Low-confidence or tunnel positioning is shown as estimated without
 fabricating a precise marker.
 
-The geographic presentation is the initial default and renders the released
-route over the system MapKit basemap. Beneath the highlighted route it also
+The geographic presentation is the default for the ordinary-road access and
+egress legs and renders the released route over the system MapKit basemap.
+Outside active navigation its camera frames the selected journey (or the
+driver's surroundings before a route exists) rather than the whole network
+extent. Beneath the highlighted route it also
 draws the whole expressway network — both carriageways of every mainline — as
 a muted context layer, so the driver always sees the opposite carriageway and
 nearby lines the way an ordinary navigation basemap would; the muted layer

@@ -50,7 +50,7 @@ internal review workbench.
   direction-valid exit, and a route style, previews the resulting route thread,
   and applies its own Kaido-owned `RoutePlan` without turning the map into
   another home surface.
-- Route choice leads to one parked route pass before simulation starts. It
+- Route choice leads to one parked route pass before the drive starts. It
   combines the bounded surface access and egress legs with the exact selected
   Shuto route, shows full-journey distance and a non-realtime preview duration,
   and keeps passage and toll information explicitly unconfirmed when no current
@@ -157,9 +157,12 @@ The product distinguishes what is known from what is still unconfirmed:
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`.
-- The shipped driving flow is a clearly labeled simulation. Device launch and
-  deterministic Core Location injection do not attach a live location manager
-  or claim tunnel, field, acoustic, or CarPlay qualification.
+- The shipped drive runs on real device positions through the shared
+  observation-adaptation boundary, which refuses invalid, stale, future-dated,
+  and (in distributed builds) simulated fixes. A clearly labeled replay preview
+  sits beside it for planning without driving. Neither mode claims tunnel,
+  field, acoustic, or CarPlay qualification, and spoken turn guidance still
+  covers reviewed junction movements only.
 
 ## Build and run
 

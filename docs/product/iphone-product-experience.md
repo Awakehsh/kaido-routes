@@ -243,9 +243,25 @@ Review is a short journey summary, not an evidence report. It shows:
 
 Only an actionable blocker expands automatically. Evidence sources and release
 identity remain in a secondary detail sheet. A second explicit primary action
-starts the exact reviewed journey. The current implementation labels that action
-as a synthetic full-journey preview and discloses its 54 km/h reference trace
-and 20x playback rate.
+starts the exact reviewed journey.
+
+Review offers two ways to start it. **Start navigation** drives the journey on
+real device positions. A secondary action replays the same journey without
+driving, and states its 54 km/h reference trace and 20x playback rate wherever
+it appears, so a preview can never be mistaken for a drive. Both modes run the
+same reducer over the same compiled route: progress admission, wrong-turn
+rejoin, and reviewed speech are identical, and only the evidence source and the
+ordinary-road advance differ.
+
+A live drive is foreground-scoped and requests only when-in-use authorization.
+Device fixes reach the matcher through the shared adaptation boundary, which
+refuses invalid, stale, future-dated, and — in distributed builds — simulated
+fixes rather than letting them become progress. Ordinary-road legs advance on
+measured distance to the directional ramp mouth and hand over only when the
+vehicle is actually there; the expressway body advances only on admitted
+matcher evidence, so a weak fix holds the last admitted progress and shows
+degradation instead of inventing movement. A live drive exposes no transport
+controls, because it follows the vehicle rather than a playback position.
 
 ## Drive
 

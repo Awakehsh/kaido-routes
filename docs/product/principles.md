@@ -94,11 +94,20 @@ traffic control.
 The whole-Shuto planning layer is released: a bundled dated network snapshot
 covering all 26 official routes with directional IC facilities, JCTs, and PAs;
 deterministic route search and exact custom selection; fail-closed surface
-access and egress legs; pre-drive review; and a clearly labeled driving
-simulation. Navigation-grade guidance remains movement-by-movement: only
-reviewed junction movements produce insets and speech, and that coverage grows
-after evidence review rather than shipping a visually complete but unevenly
-verified guidance layer.
+access and egress legs; and pre-drive review. The reviewed journey can then be
+driven on real device positions, or replayed as an explicitly labeled preview;
+both run the same reducer, and the live drive is foreground-scoped and refuses
+invalid or spoofed fixes rather than turning them into progress.
+
+Navigation-grade guidance remains movement-by-movement: only reviewed junction
+movements produce insets and speech, and that coverage grows after evidence
+review rather than shipping a visually complete but unevenly verified guidance
+layer. A driver on a route without reviewed movements therefore gets position,
+progress, and the next facility with its distance, and no spoken turn
+instruction — the product says less rather than guessing. The operator
+publishes its junction guidance only as detail images, so extending coverage
+needs a human reading them or independently reviewed sign evidence; it is not
+derivable from the snapshot.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

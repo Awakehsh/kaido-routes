@@ -24,14 +24,21 @@ struct WholeShutoTrackMapView: View {
   /// dock; the whole route must fit inside it at base zoom.
   let visibleBottomFraction: Double
   var routeDistanceMeters: Double = 0
+  /// Overrides the top strip where plates never place; portrait derives it
+  /// from the floating banner, landscape needs almost none.
+  var labelTopInsetOverride: Double? = nil
 
   @State private var zoom: Double = 1
   @State private var pan: CGSize = .zero
   @State private var zoomAtGestureStart: Double?
   @State private var panAtGestureStart: CGSize?
+  /// While driving the frame follows the position at a closer zoom until
+  /// the driver takes over with a gesture; recentering hands it back.
+  @State private var userAdjustedViewport = false
 
   private static let maximumZoom = 5.0
   private static let doubleTapZoom = 2.2
+  private static let followZoom = 2.4
 
   private enum Midnight {
     static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
@@ -66,6 +73,7 @@ struct WholeShutoTrackMapView: View {
       .simultaneousGesture(
         SpatialTapGesture(count: 2)
           .onEnded { value in
+            userAdjustedViewport = true
             withAnimation(.easeOut(duration: 0.28)) {
               if zoom > 1.01 {
                 zoom = 1
@@ -87,6 +95,7 @@ struct WholeShutoTrackMapView: View {
         SimultaneousGesture(
           MagnifyGesture()
             .onChanged { value in
+              userAdjustedViewport = true
               let startZoom = zoomAtGestureStart ?? zoom
               let startPan = panAtGestureStart ?? pan
               zoomAtGestureStart = startZoom
@@ -106,6 +115,7 @@ struct WholeShutoTrackMapView: View {
             },
           DragGesture()
             .onChanged { value in
+              userAdjustedViewport = true
               let start = panAtGestureStart ?? pan
               panAtGestureStart = start
               pan = clampedPan(
@@ -122,11 +132,98 @@ struct WholeShutoTrackMapView: View {
             .onEnded { _ in panAtGestureStart = nil }
         )
       )
+      .overlay(alignment: .bottomTrailing) {
+        if currentCoordinate != nil, userAdjustedViewport {
+          Button {
+            userAdjustedViewport = false
+            withAnimation(.easeOut(duration: 0.3)) {
+              followPosition(
+                fit: fit,
+                width: width,
+                visibleHeight: visibleHeight
+              )
+            }
+          } label: {
+            Image(systemName: "location.fill")
+              .font(.system(size: 15, weight: .black))
+              .foregroundStyle(Midnight.position)
+              .frame(width: 44, height: 44)
+              .background(Midnight.plate.opacity(0.92))
+              .clipShape(Circle())
+              .overlay {
+                Circle()
+                  .stroke(Midnight.leader, lineWidth: 1)
+              }
+          }
+          .buttonStyle(.plain)
+          .padding(.trailing, 14)
+          .padding(.bottom, geometry.size.height - visibleHeight + 14)
+          .accessibilityIdentifier("whole-shuto-track-map-recenter")
+        }
+      }
+      .onAppear {
+        if currentCoordinate != nil {
+          followPosition(
+            fit: fit,
+            width: width,
+            visibleHeight: visibleHeight
+          )
+        }
+      }
+      .onChange(of: currentCoordinate?.latitude) {
+        guard !userAdjustedViewport else { return }
+        followPosition(
+          fit: fit,
+          width: width,
+          visibleHeight: visibleHeight
+        )
+      }
+      .onChange(of: currentCoordinate == nil) {
+        if currentCoordinate == nil {
+          userAdjustedViewport = false
+          zoom = 1
+          pan = .zero
+        }
+      }
     }
     .accessibilityElement(children: .ignore)
     .accessibilityIdentifier("whole-shuto-track-map")
     .accessibilityLabel(
       Text("Whole-route track map with \(layout.facilityMarks.count) facilities")
+    )
+  }
+
+  /// Centers the driving frame on the current position at the follow zoom.
+  private func followPosition(
+    fit: Double,
+    width: Double,
+    visibleHeight: Double
+  ) {
+    guard let coordinate = currentCoordinate else { return }
+    let position = layout.nearestTrackPoint(
+      to: RouteTrackMapLayout.GeoPoint(
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude
+      ),
+      projector: layout.projector.project
+    )
+    let followZoom = Self.followZoom
+    let centerX =
+      (width - RouteTrackMapLayout.designWidth * fit * followZoom) / 2
+    let centerY =
+      (visibleHeight
+        - RouteTrackMapLayout.designHeight * fit * followZoom) / 2
+    zoom = followZoom
+    pan = clampedPan(
+      CGSize(
+        width: width * 0.5 - centerX - position.x * fit * followZoom,
+        height: visibleHeight * 0.52 - centerY
+          - position.y * fit * followZoom
+      ),
+      fit: fit,
+      zoom: followZoom,
+      width: width,
+      visibleHeight: visibleHeight
     )
   }
 
@@ -389,7 +486,8 @@ struct WholeShutoTrackMapView: View {
     // The next facility ahead of the driver claims first and carries its
     // remaining distance; junctions outrank ICs and PAs for the rest.
     var occupied: [CGRect] = []
-    let topInset = currentCoordinate == nil ? 96.0 : 200.0
+    let topInset =
+      labelTopInsetOverride ?? (currentCoordinate == nil ? 96.0 : 200.0)
     func claim(_ rect: CGRect) -> Bool {
       guard rect.minX > -30, rect.maxX < width + 30,
         rect.minY > topInset, rect.maxY < visibleHeight + 16

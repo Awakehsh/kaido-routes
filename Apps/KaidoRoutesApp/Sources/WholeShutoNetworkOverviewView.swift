@@ -112,6 +112,10 @@ struct WholeShutoNetworkOverviewView: View {
   let visibleBottomFraction: Double
   var initialZoom: Double = 1
   var overlay = PlanningOverlay()
+  /// Top strip where labels never place, covering floating UI (the portrait
+  /// title bar); landscape hosts controls in a side column and needs almost
+  /// none.
+  var labelTopInset: Double = 96
 
   @State private var zoom: Double = 1
   @State private var pan: CGSize = .zero
@@ -442,10 +446,9 @@ struct WholeShutoNetworkOverviewView: View {
 
     var occupied: [CGRect] = []
     func claim(_ rect: CGRect) -> Bool {
-      // The status bar and title float over the top of the canvas; labels
-      // placed under them would be unreadable.
+      // Labels never place under floating UI at the top of the canvas.
       guard rect.minX > -40, rect.maxX < width + 40,
-        rect.minY > 96, rect.maxY < visibleHeight + 20
+        rect.minY > labelTopInset, rect.maxY < visibleHeight + 20
       else { return false }
       guard !occupied.contains(where: { $0.intersects(rect) }) else {
         return false

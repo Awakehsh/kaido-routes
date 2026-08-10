@@ -187,8 +187,13 @@ distorted. Every on-route IC, JCT, and PA is always marked on the route
 thread; names ride on plates beside their points with a short leader, and
 plate density is collision-managed so it fills in as the driver pinches
 closer — the same anchored pinch, double-tap, and clamped pan as the network
-diagram. While driving, the next facility ahead of the position always keeps
-its plate and carries its remaining route distance. Off-route network appears
+diagram. While driving, the frame follows the current position at a closer
+zoom by default; any gesture hands the viewport to the driver and a recenter
+control returns it, with the whole-route frame one double-tap away. The next
+facility ahead of the position always keeps its plate and carries its
+remaining route distance. In landscape the instrument column (title, guidance
+banner, and dock) sits on the leading edge and the map owns the remaining
+width at full height; portrait keeps the floating top bar and bottom dock. Off-route network appears
 only as quiet context or not at all. Repeated laps remain separate occurrences; the renderer offsets
 repeated traversals and exposes their ordinal and count instead of
 deduplicating them. A compact summary reports the entrance, JCT, PA, and exit

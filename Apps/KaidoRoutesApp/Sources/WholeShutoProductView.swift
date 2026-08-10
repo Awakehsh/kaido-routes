@@ -13,6 +13,7 @@ private enum WholeShutoPlanningField: Hashable {
 
 struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.verticalSizeClass) private var verticalSizeClass
   @StateObject private var model: WholeShutoProductModel
   @StateObject private var languageSettings: KaidoLanguageSettingsModel
   @StateObject private var planningLocation: WholeShutoPlanningLocationController
@@ -52,32 +53,11 @@ struct WholeShutoProductView: View {
   }
 
   var body: some View {
-    ZStack {
-      map
-        .ignoresSafeArea()
-
-      VStack(spacing: 0) {
-        topBar
-        Spacer(minLength: 0)
-
-        if model.phase == .completed {
-          arrivalDock
-        } else if isDriving {
-          drivingDock
-        } else {
-          planningDock
-        }
-      }
-
-      if let prompt = model.activeJunctionPrompt {
-        VStack {
-          Spacer()
-          WholeShutoJunctionInset(prompt: prompt)
-            .padding(.horizontal, 14)
-            .padding(.bottom, 142)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-        .allowsHitTesting(false)
+    Group {
+      if isLandscape {
+        landscapeLayout
+      } else {
+        portraitLayout
       }
     }
     .animation(.easeOut(duration: 0.22), value: model.phase)
@@ -177,6 +157,84 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private var isLandscape: Bool {
+    verticalSizeClass == .compact
+  }
+
+  private var portraitLayout: some View {
+    ZStack {
+      map
+        .ignoresSafeArea()
+
+      VStack(spacing: 0) {
+        topBar
+        Spacer(minLength: 0)
+        dockContent
+      }
+
+      if let prompt = model.activeJunctionPrompt {
+        VStack {
+          Spacer()
+          WholeShutoJunctionInset(prompt: prompt)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 142)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+        .allowsHitTesting(false)
+      }
+    }
+  }
+
+  /// Landscape: a fixed instrument column carries the title, guidance
+  /// banner, and dock; the map owns the remaining width at full height.
+  private var landscapeLayout: some View {
+    HStack(spacing: 0) {
+      VStack(spacing: 0) {
+        topBar
+        if isDriving || model.phase == .completed {
+          Spacer(minLength: 8)
+          dockContent
+        } else {
+          ScrollView {
+            dockContent
+              .padding(.top, 8)
+          }
+          .scrollIndicators(.hidden)
+        }
+      }
+      .frame(width: 384)
+      .background(KaidoTheme.night)
+
+      ZStack {
+        map
+          .ignoresSafeArea(edges: [.top, .bottom, .trailing])
+
+        if let prompt = model.activeJunctionPrompt {
+          VStack {
+            Spacer()
+            WholeShutoJunctionInset(prompt: prompt)
+              .padding(.horizontal, 14)
+              .padding(.bottom, 16)
+              .transition(.move(edge: .bottom).combined(with: .opacity))
+          }
+          .allowsHitTesting(false)
+        }
+      }
+    }
+    .background(KaidoTheme.night)
+  }
+
+  @ViewBuilder
+  private var dockContent: some View {
+    if model.phase == .completed {
+      arrivalDock
+    } else if isDriving {
+      drivingDock
+    } else {
+      planningDock
+    }
+  }
+
   @ViewBuilder
   private var map: some View {
     if model.mapMode == .network {
@@ -189,17 +247,19 @@ struct WholeShutoProductView: View {
           entryFacilityID: route.routePlan.entryFacilityID,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
           isPositionEstimated: isTrackMapPositionEstimated,
-          visibleBottomFraction: isDriving ? 0.92 : 0.66,
-          routeDistanceMeters: route.distanceMeters
+          visibleBottomFraction: mapVisibleBottomFraction,
+          routeDistanceMeters: route.distanceMeters,
+          labelTopInsetOverride: isLandscape ? 12 : nil
         )
       } else if let overview = WholeShutoNetworkOverviewCatalog.layout(
         for: model.database
       ) {
         WholeShutoNetworkOverviewView(
           layout: overview,
-          visibleBottomFraction: isDriving ? 0.92 : 0.66,
+          visibleBottomFraction: mapVisibleBottomFraction,
           initialZoom: networkOverviewInitialZoom,
-          overlay: planningOverlay(for: overview)
+          overlay: planningOverlay(for: overview),
+          labelTopInset: isLandscape ? 12 : 96
         )
       } else {
         WholeShutoNetworkDiagram(
@@ -207,8 +267,7 @@ struct WholeShutoProductView: View {
           selectedRoute: model.selectedRoute,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
           usesDarkStyle: true,
-          visibleBottomFraction:
-            isDriving ? 0.92 : 0.66
+          visibleBottomFraction: mapVisibleBottomFraction
         )
       }
     } else {
@@ -258,6 +317,10 @@ struct WholeShutoProductView: View {
       )
     }
     return overlay
+  }
+
+  private var mapVisibleBottomFraction: Double {
+    isLandscape ? 0.94 : isDriving ? 0.92 : 0.66
   }
 
   private var networkOverviewInitialZoom: Double {

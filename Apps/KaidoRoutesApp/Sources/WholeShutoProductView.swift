@@ -85,7 +85,7 @@ struct WholeShutoProductView: View {
       .easeOut(duration: 0.22),
       value: model.activeJunctionPrompt
     )
-    .preferredColorScheme(isDriving ? .dark : .light)
+    .preferredColorScheme(.dark)
     .sheet(isPresented: $showsRouteCustomization) {
       WholeShutoCustomRouteSheet(model: model)
     }
@@ -189,7 +189,7 @@ struct WholeShutoProductView: View {
           entryFacilityID: route.routePlan.entryFacilityID,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
           isPositionEstimated: isTrackMapPositionEstimated,
-          usesDarkStyle: isDriving,
+          usesDarkStyle: true,
           visibleBottomFraction: isDriving ? 0.92 : 0.66
         )
       } else if let overview = WholeShutoNetworkOverviewCatalog.layout(
@@ -197,7 +197,6 @@ struct WholeShutoProductView: View {
       ) {
         WholeShutoNetworkOverviewView(
           layout: overview,
-          usesDarkStyle: isDriving,
           visibleBottomFraction: isDriving ? 0.92 : 0.66,
           initialZoom: networkOverviewInitialZoom,
           overlay: planningOverlay(for: overview)
@@ -207,7 +206,7 @@ struct WholeShutoProductView: View {
           database: model.database,
           selectedRoute: model.selectedRoute,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
-          usesDarkStyle: isDriving,
+          usesDarkStyle: true,
           visibleBottomFraction:
             isDriving ? 0.92 : 0.66
         )
@@ -323,9 +322,7 @@ struct WholeShutoProductView: View {
           }
           Text(topTitle)
             .font(.system(size: 18, weight: .black, design: .rounded))
-            .foregroundStyle(
-              isDriving ? KaidoTheme.routeWhite : KaidoTheme.ink
-            )
+            .foregroundStyle(KaidoTheme.routeWhite)
             .lineLimit(1)
             .minimumScaleFactor(0.65)
         }
@@ -400,18 +397,11 @@ struct WholeShutoProductView: View {
       )
     }
     .padding(3)
-    .background(
-      isDriving
-        ? KaidoTheme.instrument.opacity(0.94)
-        : KaidoTheme.paperRaised.opacity(0.96)
-    )
+    .background(KaidoTheme.nightRaised.opacity(0.95))
     .clipShape(Capsule())
     .overlay {
       Capsule()
-        .stroke(
-          isDriving ? KaidoTheme.steel : KaidoTheme.paperDivider,
-          lineWidth: 1
-        )
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
   }
 
@@ -432,7 +422,7 @@ struct WholeShutoProductView: View {
       .foregroundStyle(
         model.mapMode == mode
           ? KaidoTheme.routeWhite
-          : isDriving ? KaidoTheme.muted : KaidoTheme.quietText
+          : KaidoTheme.nightQuiet
       )
       .padding(.horizontal, 9)
       .frame(height: 30)
@@ -641,11 +631,11 @@ struct WholeShutoProductView: View {
       }
       .frame(width: 168, alignment: .leading)
       .padding(10)
-      .background(KaidoTheme.paperRaised.opacity(0.94))
+      .background(KaidoTheme.nightRaised.opacity(0.94))
       .clipShape(RoundedRectangle(cornerRadius: 12))
       .overlay {
         RoundedRectangle(cornerRadius: 12)
-          .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+          .stroke(KaidoTheme.nightDivider, lineWidth: 1)
       }
     }
     .buttonStyle(.plain)
@@ -795,11 +785,11 @@ struct WholeShutoProductView: View {
       .accessibilityIdentifier("whole-shuto-start-circuit")
     }
     .padding(12)
-    .background(KaidoTheme.paperRaised.opacity(0.94))
+    .background(KaidoTheme.nightRaised.opacity(0.94))
     .clipShape(RoundedRectangle(cornerRadius: 14))
     .overlay {
       RoundedRectangle(cornerRadius: 14)
-        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
   }
 
@@ -1030,7 +1020,7 @@ struct WholeShutoProductView: View {
     } label: {
       HStack(spacing: 8) {
         Rectangle()
-          .fill(KaidoTheme.paperDivider)
+          .fill(KaidoTheme.nightDivider)
           .frame(height: 1)
         Text(
           copy.resolve(
@@ -1049,7 +1039,7 @@ struct WholeShutoProductView: View {
         .font(.system(size: 9, weight: .bold))
         .foregroundStyle(.secondary)
         Rectangle()
-          .fill(KaidoTheme.paperDivider)
+          .fill(KaidoTheme.nightDivider)
           .frame(height: 1)
       }
       .contentShape(Rectangle())
@@ -1109,11 +1099,11 @@ struct WholeShutoProductView: View {
           focus: .destination
         )
         .padding(.horizontal, 8)
-        .background(KaidoTheme.paperRaised.opacity(0.94))
+        .background(KaidoTheme.nightRaised.opacity(0.94))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay {
           RoundedRectangle(cornerRadius: 12)
-            .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+            .stroke(KaidoTheme.nightDivider, lineWidth: 1)
         }
       }
 
@@ -1141,11 +1131,11 @@ struct WholeShutoProductView: View {
           focus: .origin
         )
         .padding(.horizontal, 8)
-        .background(KaidoTheme.paperRaised.opacity(0.94))
+        .background(KaidoTheme.nightRaised.opacity(0.94))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay {
           RoundedRectangle(cornerRadius: 12)
-            .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+            .stroke(KaidoTheme.nightDivider, lineWidth: 1)
         }
       }
 
@@ -1188,7 +1178,7 @@ struct WholeShutoProductView: View {
           Spacer()
         }
         .font(.system(size: 11, weight: .bold))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
         .padding(.horizontal, 12)
         .frame(height: 36)
         .accessibilityIdentifier("whole-shuto-place-search-progress")
@@ -1206,12 +1196,12 @@ struct WholeShutoProductView: View {
                 VStack(alignment: .leading, spacing: 1) {
                   Text(suggestion.title)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(KaidoTheme.ink)
+                    .foregroundStyle(KaidoTheme.routeWhite)
                     .lineLimit(1)
                   if !suggestion.subtitle.isEmpty {
                     Text(suggestion.subtitle)
                       .font(.system(size: 9, weight: .medium))
-                      .foregroundStyle(KaidoTheme.quietText)
+                      .foregroundStyle(KaidoTheme.nightQuiet)
                       .lineLimit(1)
                   }
                 }
@@ -1241,11 +1231,11 @@ struct WholeShutoProductView: View {
             }
           }
         }
-        .background(KaidoTheme.paperRaised.opacity(0.97))
+        .background(KaidoTheme.nightRaised.opacity(0.97))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay {
           RoundedRectangle(cornerRadius: 12)
-            .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+            .stroke(KaidoTheme.nightDivider, lineWidth: 1)
         }
       case .unavailable:
         HStack(spacing: 7) {
@@ -1300,7 +1290,7 @@ struct WholeShutoProductView: View {
       .background(
         planningLocation.state == .measured
           ? KaidoTheme.positionCyan
-          : KaidoTheme.paperRaised.opacity(0.94)
+          : KaidoTheme.nightRaised.opacity(0.94)
       )
       .clipShape(RoundedRectangle(cornerRadius: 12))
       .overlay {
@@ -1472,12 +1462,12 @@ struct WholeShutoProductView: View {
       VStack(alignment: .leading, spacing: 1) {
         Text(label)
           .font(.system(size: 8, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.quietText)
+          .foregroundStyle(KaidoTheme.nightQuiet)
           .lineLimit(1)
           .minimumScaleFactor(0.72)
         TextField(prompt, text: text)
           .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(KaidoTheme.ink)
+          .foregroundStyle(KaidoTheme.routeWhite)
           .lineLimit(1)
           .minimumScaleFactor(0.72)
           .textInputAutocapitalization(.never)
@@ -1504,7 +1494,7 @@ struct WholeShutoProductView: View {
             .font(.system(size: 19, weight: .black, design: .rounded))
           Text(routeSummarySubtitle)
             .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(KaidoTheme.quietText)
+            .foregroundStyle(KaidoTheme.nightQuiet)
         }
         Spacer()
         VStack(alignment: .trailing, spacing: 1) {
@@ -1516,12 +1506,12 @@ struct WholeShutoProductView: View {
             )
           )
           .font(.system(size: 8, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.quietText)
+          .foregroundStyle(KaidoTheme.nightQuiet)
           Text(distanceLabel(model.selectedRoute?.distanceMeters ?? 0))
             .font(.system(size: 20, weight: .black, design: .rounded))
         }
       }
-      .foregroundStyle(KaidoTheme.ink)
+      .foregroundStyle(KaidoTheme.routeWhite)
 
       routeSelection
 
@@ -1576,10 +1566,10 @@ struct WholeShutoProductView: View {
         .font(.system(size: 11, weight: .black, design: .rounded))
         Spacer()
       }
-      .foregroundStyle(KaidoTheme.ink)
+      .foregroundStyle(KaidoTheme.routeWhite)
       .padding(.horizontal, 14)
       .frame(maxWidth: .infinity, minHeight: 48)
-      .background(KaidoTheme.paperRaised.opacity(0.92))
+      .background(KaidoTheme.nightRaised.opacity(0.92))
       .clipShape(RoundedRectangle(cornerRadius: 10))
       .accessibilityElement(children: .combine)
       .accessibilityIdentifier("whole-shuto-surface-route-status")
@@ -1605,7 +1595,7 @@ struct WholeShutoProductView: View {
             )
           )
           .font(.system(size: 9, weight: .bold))
-          .foregroundStyle(KaidoTheme.quietText)
+          .foregroundStyle(KaidoTheme.nightQuiet)
         }
         Spacer()
         Button {
@@ -1787,13 +1777,13 @@ struct WholeShutoProductView: View {
       }
       .foregroundStyle(
         model.isCustomRouteSelected
-          ? KaidoTheme.routeWhite : KaidoTheme.ink
+          ? KaidoTheme.routeWhite : KaidoTheme.routeWhite
       )
       .padding(.horizontal, 12)
       .frame(width: 148, height: 82, alignment: .leading)
       .background(
         model.isCustomRouteSelected
-          ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
+          ? KaidoTheme.routeGreenDeep : KaidoTheme.nightRaised
       )
       .clipShape(RoundedRectangle(cornerRadius: 9))
     }
@@ -1863,14 +1853,14 @@ struct WholeShutoProductView: View {
       .foregroundStyle(
         isSelected
           ? KaidoTheme.routeWhite
-          : KaidoTheme.ink
+          : KaidoTheme.routeWhite
       )
       .padding(.horizontal, 12)
       .frame(width: 176, height: 82, alignment: .leading)
       .background(
         isSelected
           ? KaidoTheme.routeGreen
-          : KaidoTheme.paperRaised
+          : KaidoTheme.nightRaised
       )
       .clipShape(RoundedRectangle(cornerRadius: 9))
     }
@@ -1919,14 +1909,14 @@ struct WholeShutoProductView: View {
             : detail
         )
         .font(.system(size: 8, weight: .bold))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
         .lineLimit(1)
       }
     }
-    .foregroundStyle(KaidoTheme.ink)
+    .foregroundStyle(KaidoTheme.routeWhite)
     .padding(.horizontal, 10)
     .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
-    .background(KaidoTheme.paperRaised.opacity(0.88))
+    .background(KaidoTheme.nightRaised.opacity(0.88))
     .clipShape(RoundedRectangle(cornerRadius: 8))
   }
 
@@ -1952,7 +1942,7 @@ struct WholeShutoProductView: View {
               "whole-shuto-journey-remaining-time"
             )
           Text("·")
-            .foregroundStyle(KaidoTheme.muted)
+            .foregroundStyle(KaidoTheme.nightQuiet)
           Text(journeyRemainingLabel)
             .accessibilityIdentifier("whole-shuto-journey-remaining")
         }
@@ -1965,7 +1955,7 @@ struct WholeShutoProductView: View {
 
         Text(drivingBoundaryLabel)
           .font(.system(size: 9, weight: .bold))
-          .foregroundStyle(KaidoTheme.muted)
+          .foregroundStyle(KaidoTheme.nightQuiet)
           .lineLimit(1)
       }
 
@@ -1994,7 +1984,7 @@ struct WholeShutoProductView: View {
         Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
           .font(.system(size: 15, weight: .black))
           .frame(width: 48, height: 48)
-          .foregroundStyle(KaidoTheme.asphalt)
+          .foregroundStyle(KaidoTheme.night)
           .background(KaidoTheme.confirmedGreen)
           .clipShape(Circle())
       }
@@ -2017,10 +2007,10 @@ struct WholeShutoProductView: View {
     }
     .padding(.horizontal, 16)
     .padding(.vertical, 10)
-    .background(KaidoTheme.asphalt.opacity(0.96))
+    .background(KaidoTheme.night.opacity(0.96))
     .overlay(alignment: .top) {
       Rectangle()
-        .fill(KaidoTheme.steel)
+        .fill(KaidoTheme.nightDivider)
         .frame(height: 1)
     }
   }
@@ -2033,7 +2023,7 @@ struct WholeShutoProductView: View {
 
       ZStack(alignment: .leading) {
         Capsule()
-          .fill(KaidoTheme.steel)
+          .fill(KaidoTheme.nightDivider)
           .frame(height: 4)
         Capsule()
           .fill(KaidoTheme.confirmedGreen)
@@ -2073,7 +2063,7 @@ struct WholeShutoProductView: View {
             .frame(width: 46, height: 46)
           Image(systemName: "checkmark")
             .font(.system(size: 19, weight: .black))
-            .foregroundStyle(KaidoTheme.asphalt)
+            .foregroundStyle(KaidoTheme.night)
         }
 
         VStack(alignment: .leading, spacing: 2) {
@@ -2124,7 +2114,7 @@ struct WholeShutoProductView: View {
           .foregroundStyle(KaidoTheme.positionCyan)
         Text(drivingBoundaryLabel)
           .font(.system(size: 10, weight: .bold))
-          .foregroundStyle(KaidoTheme.muted)
+          .foregroundStyle(KaidoTheme.nightQuiet)
           .lineLimit(1)
           .minimumScaleFactor(0.72)
         Spacer()
@@ -2141,7 +2131,7 @@ struct WholeShutoProductView: View {
           )
         )
         .font(.system(size: 13, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.asphalt)
+        .foregroundStyle(KaidoTheme.night)
         .frame(maxWidth: .infinity)
         .frame(height: 46)
         .background(KaidoTheme.confirmedGreen)
@@ -2153,10 +2143,10 @@ struct WholeShutoProductView: View {
     .padding(.horizontal, 16)
     .padding(.top, 14)
     .padding(.bottom, 12)
-    .background(KaidoTheme.asphalt.opacity(0.97))
+    .background(KaidoTheme.night.opacity(0.97))
     .overlay(alignment: .top) {
       Rectangle()
-        .fill(KaidoTheme.steel)
+        .fill(KaidoTheme.nightDivider)
         .frame(height: 1)
     }
     .accessibilityElement(children: .contain)
@@ -2233,11 +2223,11 @@ struct WholeShutoProductView: View {
       }
     }
     .padding(10)
-    .background(KaidoTheme.asphalt.opacity(0.94))
+    .background(KaidoTheme.night.opacity(0.94))
     .clipShape(RoundedRectangle(cornerRadius: 15))
     .overlay {
       RoundedRectangle(cornerRadius: 15)
-        .stroke(KaidoTheme.steel, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-guidance-card")
@@ -3078,11 +3068,11 @@ private struct WholeShutoCustomRouteSheet: View {
 
       applyButton
     }
-    .background(KaidoTheme.paper)
+    .background(KaidoTheme.nightPanel)
     .presentationDetents([.height(520), .large])
     .presentationDragIndicator(.hidden)
     .presentationCornerRadius(26)
-    .presentationBackground(KaidoTheme.paper)
+    .presentationBackground(KaidoTheme.nightPanel)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-route-customization")
   }
@@ -3098,7 +3088,7 @@ private struct WholeShutoCustomRouteSheet: View {
           )
         )
         .font(.system(size: 21, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
+        .foregroundStyle(KaidoTheme.routeWhite)
 
         Text(
           copy.resolve(
@@ -3108,7 +3098,7 @@ private struct WholeShutoCustomRouteSheet: View {
           )
         )
         .font(.system(size: 11, weight: .medium))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
       }
 
       Spacer()
@@ -3118,13 +3108,13 @@ private struct WholeShutoCustomRouteSheet: View {
       } label: {
         Image(systemName: "xmark")
           .font(.system(size: 13, weight: .black))
-          .foregroundStyle(KaidoTheme.ink)
+          .foregroundStyle(KaidoTheme.routeWhite)
           .frame(width: 36, height: 36)
-          .background(KaidoTheme.paperRaised)
+          .background(KaidoTheme.nightRaised)
           .clipShape(Circle())
           .overlay {
             Circle()
-              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+              .stroke(KaidoTheme.nightDivider, lineWidth: 1)
           }
       }
       .buttonStyle(.plain)
@@ -3171,11 +3161,11 @@ private struct WholeShutoCustomRouteSheet: View {
       )
     }
     .padding(12)
-    .background(KaidoTheme.paperRaised)
+    .background(KaidoTheme.nightRaised)
     .clipShape(RoundedRectangle(cornerRadius: 14))
     .overlay {
       RoundedRectangle(cornerRadius: 14)
-        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("whole-shuto-custom-route-preview")
@@ -3194,7 +3184,7 @@ private struct WholeShutoCustomRouteSheet: View {
         .frame(width: 8, height: 8)
       Text(title)
         .font(.system(size: 10, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
+        .foregroundStyle(KaidoTheme.routeWhite)
         .lineLimit(1)
         .minimumScaleFactor(0.65)
     }
@@ -3213,7 +3203,7 @@ private struct WholeShutoCustomRouteSheet: View {
     VStack(alignment: .leading, spacing: 7) {
       Text(title)
         .font(.system(size: 9, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
 
       ScrollView(.horizontal) {
         HStack(spacing: 8) {
@@ -3244,7 +3234,7 @@ private struct WholeShutoCustomRouteSheet: View {
 
                 Text(facility.nameJA)
                   .font(.system(size: 13, weight: .black))
-                  .foregroundStyle(KaidoTheme.ink)
+                  .foregroundStyle(KaidoTheme.routeWhite)
                   .lineLimit(1)
 
                 Text(
@@ -3254,19 +3244,19 @@ private struct WholeShutoCustomRouteSheet: View {
                   )
                 )
                 .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(KaidoTheme.quietText)
+                .foregroundStyle(KaidoTheme.nightQuiet)
                 .lineLimit(1)
               }
               .padding(.horizontal, 10)
               .frame(width: 124, height: 64, alignment: .leading)
               .background(
-                isSelected ? tint.opacity(0.13) : KaidoTheme.paperRaised
+                isSelected ? tint.opacity(0.13) : KaidoTheme.nightRaised
               )
               .clipShape(RoundedRectangle(cornerRadius: 11))
               .overlay {
                 RoundedRectangle(cornerRadius: 11)
                   .stroke(
-                    isSelected ? tint : KaidoTheme.paperDivider,
+                    isSelected ? tint : KaidoTheme.nightDivider,
                     lineWidth: isSelected ? 2 : 1
                   )
               }
@@ -3301,7 +3291,7 @@ private struct WholeShutoCustomRouteSheet: View {
         )
       )
       .font(.system(size: 9, weight: .black, design: .rounded))
-      .foregroundStyle(KaidoTheme.quietText)
+      .foregroundStyle(KaidoTheme.nightQuiet)
 
       HStack(spacing: 7) {
         ForEach(ShutoRoutePreference.allCases, id: \.rawValue) { preference in
@@ -3312,7 +3302,7 @@ private struct WholeShutoCustomRouteSheet: View {
             Text(preferenceLabel(preference))
               .font(.system(size: 10, weight: .black, design: .rounded))
               .foregroundStyle(
-                isSelected ? KaidoTheme.routeWhite : KaidoTheme.ink
+                isSelected ? KaidoTheme.routeWhite : KaidoTheme.routeWhite
               )
               .lineLimit(1)
               .minimumScaleFactor(0.7)
@@ -3320,14 +3310,14 @@ private struct WholeShutoCustomRouteSheet: View {
               .frame(height: 38)
               .background(
                 isSelected
-                  ? KaidoTheme.routeGreenDeep : KaidoTheme.paperRaised
+                  ? KaidoTheme.routeGreenDeep : KaidoTheme.nightRaised
               )
               .clipShape(RoundedRectangle(cornerRadius: 9))
               .overlay {
                 RoundedRectangle(cornerRadius: 9)
                   .stroke(
                     isSelected
-                      ? KaidoTheme.routeGreenDeep : KaidoTheme.paperDivider,
+                      ? KaidoTheme.routeGreenDeep : KaidoTheme.nightDivider,
                     lineWidth: 1
                   )
               }
@@ -3395,7 +3385,7 @@ private struct WholeShutoCustomRouteSheet: View {
     .background(.ultraThinMaterial)
     .overlay(alignment: .top) {
       Rectangle()
-        .fill(KaidoTheme.paperDivider)
+        .fill(KaidoTheme.nightDivider)
         .frame(height: 1)
     }
   }
@@ -3470,21 +3460,12 @@ private struct WholeShutoCircleButtonStyle: ButtonStyle {
 
   func makeBody(configuration: Configuration) -> some View {
     configuration.label
-      .foregroundStyle(
-        isDriving ? KaidoTheme.routeWhite : KaidoTheme.ink
-      )
-      .background(
-        isDriving
-          ? KaidoTheme.instrument.opacity(0.94)
-          : KaidoTheme.paperRaised.opacity(0.96)
-      )
+      .foregroundStyle(KaidoTheme.routeWhite)
+      .background(KaidoTheme.nightRaised.opacity(0.95))
       .clipShape(Circle())
       .overlay {
         Circle()
-          .stroke(
-            isDriving ? KaidoTheme.steel : KaidoTheme.paperDivider,
-            lineWidth: 1
-          )
+          .stroke(KaidoTheme.nightDivider, lineWidth: 1)
       }
       .scaleEffect(configuration.isPressed ? 0.94 : 1)
   }
@@ -3515,7 +3496,7 @@ private struct WholeShutoNetworkDiagram: View {
       context.fill(
         Path(CGRect(origin: .zero, size: size)),
         with: .color(
-          usesDarkStyle ? KaidoTheme.asphalt : KaidoTheme.paper
+          usesDarkStyle ? KaidoTheme.night : KaidoTheme.nightPanel
         )
       )
 
@@ -3636,7 +3617,7 @@ private struct WholeShutoNetworkDiagram: View {
           with: .color(
             usesDarkStyle
               ? KaidoTheme.routeWhite.opacity(0.8)
-              : KaidoTheme.ink.opacity(0.65)
+              : KaidoTheme.routeWhite.opacity(0.65)
           )
         )
       }
@@ -3659,7 +3640,7 @@ private struct WholeShutoNetworkDiagram: View {
           context.resolve(
             Text("P")
               .font(.system(size: 4.4, weight: .black))
-              .foregroundStyle(KaidoTheme.asphalt)
+              .foregroundStyle(KaidoTheme.night)
           ),
           at: point
         )
@@ -3712,7 +3693,7 @@ private struct WholeShutoNetworkDiagram: View {
         .font(.system(size: 7, weight: .bold))
       }
       .foregroundStyle(
-        usesDarkStyle ? KaidoTheme.muted : KaidoTheme.quietText
+        usesDarkStyle ? KaidoTheme.nightQuiet : KaidoTheme.nightQuiet
       )
       .padding(.horizontal, 8)
       .padding(.vertical, 5)
@@ -3843,7 +3824,7 @@ private struct WholeShutoNetworkDiagram: View {
         shield,
         with: .color(
           usesDarkStyle
-            ? KaidoTheme.asphalt.opacity(0.9)
+            ? KaidoTheme.night.opacity(0.9)
             : Color.white.opacity(0.9)
         ),
         style: StrokeStyle(lineWidth: 1.2)
@@ -4052,7 +4033,7 @@ private struct WholeShutoGeographicMap: View {
                 progress.traveledCoordinates.map(\.mapCoordinate)
             )
             .stroke(
-              KaidoTheme.muted,
+              KaidoTheme.nightQuiet,
               style: StrokeStyle(
                 lineWidth: 7,
                 lineCap: .round,
@@ -4175,7 +4156,7 @@ private struct WholeShutoGeographicMap: View {
           WholeShutoFacilityLabel(
             prefix: "JCT",
             name: prompt.nameJA,
-            color: KaidoTheme.ink
+            color: KaidoTheme.routeWhite
           )
         }
       }
@@ -4566,7 +4547,7 @@ private struct WholeShutoFacilityLabel: View {
         .font(.system(size: 8, weight: .black, design: .rounded))
         .lineLimit(1)
     }
-    .foregroundStyle(darkText ? KaidoTheme.asphalt : Color.white)
+    .foregroundStyle(darkText ? KaidoTheme.night : Color.white)
     .padding(.horizontal, 6)
     .frame(height: 20)
     .background(color)
@@ -4616,15 +4597,15 @@ private struct WholeShutoJunctionInset: View {
             .joined(separator: " · ")
         )
         .font(.system(size: 8, weight: .bold, design: .monospaced))
-        .foregroundStyle(KaidoTheme.muted)
+        .foregroundStyle(KaidoTheme.nightQuiet)
         Text("\(laneGuidanceLabel) · \(prompt.checkedAt)")
           .font(.system(size: 8, weight: .bold))
-          .foregroundStyle(KaidoTheme.muted)
+          .foregroundStyle(KaidoTheme.nightQuiet)
       }
       Spacer(minLength: 0)
     }
     .padding(10)
-    .background(KaidoTheme.asphalt.opacity(0.97))
+    .background(KaidoTheme.night.opacity(0.97))
     .clipShape(RoundedRectangle(cornerRadius: 14))
     .overlay {
       RoundedRectangle(cornerRadius: 14)
@@ -4755,7 +4736,7 @@ private struct WholeShutoJunctionInset: View {
       for endpoint in alternativeEnds {
         context.stroke(
           branchPath(to: endpoint),
-          with: .color(KaidoTheme.steel),
+          with: .color(KaidoTheme.nightDivider),
           style: StrokeStyle(lineWidth: 7, lineCap: .round)
         )
       }
@@ -4785,7 +4766,7 @@ private struct WholeShutoJunctionInset: View {
         at: CGPoint(x: selectedEnd.x, y: selectedEnd.y + 2.5)
       )
     }
-    .background(KaidoTheme.instrument)
+    .background(KaidoTheme.nightRaised)
     .clipShape(RoundedRectangle(cornerRadius: 10))
   }
 }
@@ -4910,7 +4891,7 @@ private struct WholeShutoLanguageSettingsView: View {
         }
       }
     }
-    .foregroundStyle(KaidoTheme.ink)
+    .foregroundStyle(KaidoTheme.routeWhite)
     .accessibilityAddTraits(locale == selection ? .isSelected : [])
     .accessibilityValue(
       locale == selection

@@ -24,11 +24,11 @@ struct WholeShutoJourneyReviewView: View {
 
       startAction
     }
-    .background(KaidoTheme.paper)
+    .background(KaidoTheme.nightPanel)
     .presentationDetents([.fraction(0.86), .large])
     .presentationDragIndicator(.hidden)
     .presentationCornerRadius(24)
-    .presentationBackground(KaidoTheme.paper)
+    .presentationBackground(KaidoTheme.nightPanel)
     .presentationContentInteraction(.scrolls)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-journey-review")
@@ -54,7 +54,7 @@ struct WholeShutoJourneyReviewView: View {
           )
         )
         .font(.system(size: 23, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
+        .foregroundStyle(KaidoTheme.routeWhite)
         Text(
           copy.resolve(
             japanese: "入口から出口まで、選択したルートを固定します",
@@ -63,7 +63,7 @@ struct WholeShutoJourneyReviewView: View {
           )
         )
         .font(.system(size: 11, weight: .bold))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
       }
 
       Spacer(minLength: 8)
@@ -73,13 +73,13 @@ struct WholeShutoJourneyReviewView: View {
       } label: {
         Image(systemName: "xmark")
           .font(.system(size: 12, weight: .black))
-          .foregroundStyle(KaidoTheme.ink)
+          .foregroundStyle(KaidoTheme.routeWhite)
           .frame(width: 38, height: 38)
-          .background(KaidoTheme.paperRaised)
+          .background(KaidoTheme.nightRaised)
           .clipShape(Circle())
           .overlay {
             Circle()
-              .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+              .stroke(KaidoTheme.nightDivider, lineWidth: 1)
           }
       }
       .buttonStyle(.plain)
@@ -215,11 +215,11 @@ struct WholeShutoJourneyReviewView: View {
       )
     }
     .padding(14)
-    .background(KaidoTheme.paperRaised)
+    .background(KaidoTheme.nightRaised)
     .clipShape(RoundedRectangle(cornerRadius: 18))
     .overlay {
       RoundedRectangle(cornerRadius: 18)
-        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
   }
 
@@ -247,13 +247,13 @@ struct WholeShutoJourneyReviewView: View {
           .foregroundStyle(tint)
         Text(title)
           .font(.system(size: 14, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.ink)
+          .foregroundStyle(KaidoTheme.routeWhite)
           .lineLimit(1)
           .minimumScaleFactor(0.72)
         if !detail.isEmpty {
           Text(detail)
             .font(.system(size: 9, weight: .bold))
-            .foregroundStyle(KaidoTheme.quietText)
+            .foregroundStyle(KaidoTheme.nightQuiet)
             .lineLimit(1)
         }
       }
@@ -279,13 +279,13 @@ struct WholeShutoJourneyReviewView: View {
         Text(label)
           .font(.system(size: 8, weight: .black, design: .rounded))
           .tracking(0.6)
-          .foregroundStyle(KaidoTheme.quietText)
+          .foregroundStyle(KaidoTheme.nightQuiet)
         Text(
           "\(distanceLabel(route?.distanceMeters)) · "
             + durationLabel(route?.expectedTravelTimeSeconds)
         )
         .font(.system(size: 11, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
+        .foregroundStyle(KaidoTheme.routeWhite)
       }
 
       Spacer()
@@ -327,7 +327,7 @@ struct WholeShutoJourneyReviewView: View {
             if index > 0 {
               Image(systemName: "arrow.right")
                 .font(.system(size: 9, weight: .black))
-                .foregroundStyle(KaidoTheme.muted)
+                .foregroundStyle(KaidoTheme.nightQuiet)
             }
             Text(shieldLabel(routeID))
               .font(.system(size: 12, weight: .black, design: .rounded))
@@ -342,7 +342,7 @@ struct WholeShutoJourneyReviewView: View {
       .scrollIndicators(.hidden)
     }
     .padding(12)
-    .background(KaidoTheme.asphalt)
+    .background(KaidoTheme.night)
     .clipShape(RoundedRectangle(cornerRadius: 13))
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("whole-shuto-expressway-leg")
@@ -387,7 +387,7 @@ struct WholeShutoJourneyReviewView: View {
           simplifiedChinese: "暂无当前报价",
           english: "No current quote"
         ),
-        tint: KaidoTheme.quietText,
+        tint: KaidoTheme.nightQuiet,
         accessibilityIdentifier: "whole-shuto-toll-status",
         accessibilityValue: "UNAVAILABLE"
       )
@@ -409,11 +409,11 @@ struct WholeShutoJourneyReviewView: View {
       )
     }
     .padding(.horizontal, 12)
-    .background(KaidoTheme.paperRaised)
+    .background(KaidoTheme.nightRaised)
     .clipShape(RoundedRectangle(cornerRadius: 16))
     .overlay {
       RoundedRectangle(cornerRadius: 16)
-        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
   }
 
@@ -432,7 +432,7 @@ struct WholeShutoJourneyReviewView: View {
         .frame(width: 24)
       Text(label)
         .font(.system(size: 9, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
       Spacer()
       Text(value)
         .font(.system(size: 11, weight: .black, design: .rounded))
@@ -482,15 +482,15 @@ struct WholeShutoJourneyReviewView: View {
         )
       )
       .font(.system(size: 8, weight: .bold))
-      .foregroundStyle(KaidoTheme.quietText)
+      .foregroundStyle(KaidoTheme.nightQuiet)
     }
     .padding(.horizontal, 18)
     .padding(.top, 12)
     .padding(.bottom, 10)
-    .background(KaidoTheme.paper)
+    .background(KaidoTheme.nightPanel)
     .overlay(alignment: .top) {
       Rectangle()
-        .fill(KaidoTheme.paperDivider)
+        .fill(KaidoTheme.nightDivider)
         .frame(height: 1)
     }
   }
@@ -509,23 +509,23 @@ struct WholeShutoJourneyReviewView: View {
       Text(label)
         .font(.system(size: 8, weight: .black, design: .rounded))
         .tracking(0.7)
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
       Text(value)
         .font(.system(size: 20, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
+        .foregroundStyle(KaidoTheme.routeWhite)
       Text(detail)
         .font(.system(size: 8, weight: .bold))
-        .foregroundStyle(KaidoTheme.quietText)
+        .foregroundStyle(KaidoTheme.nightQuiet)
         .lineLimit(1)
         .minimumScaleFactor(0.72)
     }
     .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
     .padding(12)
-    .background(KaidoTheme.paperRaised)
+    .background(KaidoTheme.nightRaised)
     .clipShape(RoundedRectangle(cornerRadius: 14))
     .overlay {
       RoundedRectangle(cornerRadius: 14)
-        .stroke(KaidoTheme.paperDivider, lineWidth: 1)
+        .stroke(KaidoTheme.nightDivider, lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier(accessibilityIdentifier)

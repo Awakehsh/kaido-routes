@@ -19,6 +19,13 @@ enum KaidoTheme {
   static let quietTextToken = KaidoColorToken(hex: 0x5E6B68)
   static let paperDividerToken = KaidoColorToken(hex: 0xD8DEDA)
   static let surfaceWaterToken = KaidoColorToken(hex: 0xDDE9EC)
+  // Unified midnight surfaces for the whole-Shuto product: blue-black
+  // asphalt matched to the network diagram's night palette.
+  static let nightToken = KaidoColorToken(hex: 0x080B14)
+  static let nightPanelToken = KaidoColorToken(hex: 0x0F1522)
+  static let nightRaisedToken = KaidoColorToken(hex: 0x151D30)
+  static let nightDividerToken = KaidoColorToken(hex: 0x243252)
+  static let nightQuietToken = KaidoColorToken(hex: 0x8B99B8)
 
   static let asphalt = asphaltToken.color
   static let instrument = instrumentToken.color
@@ -38,6 +45,11 @@ enum KaidoTheme {
   static let quietText = quietTextToken.color
   static let paperDivider = paperDividerToken.color
   static let surfaceWater = surfaceWaterToken.color
+  static let night = nightToken.color
+  static let nightPanel = nightPanelToken.color
+  static let nightRaised = nightRaisedToken.color
+  static let nightDivider = nightDividerToken.color
+  static let nightQuiet = nightQuietToken.color
 }
 
 extension Color {

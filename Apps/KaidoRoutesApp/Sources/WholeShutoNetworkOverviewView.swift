@@ -109,7 +109,6 @@ struct WholeShutoNetworkOverviewView: View {
   }
 
   let layout: NetworkOverviewLayout
-  let usesDarkStyle: Bool
   let visibleBottomFraction: Double
   var initialZoom: Double = 1
   var overlay = PlanningOverlay()
@@ -123,55 +122,32 @@ struct WholeShutoNetworkOverviewView: View {
   private static let maximumZoom = 5.0
   private static let doubleTapZoom = 2.4
 
-  private struct Palette {
-    let background: Color
-    let water: Color
-    let casing: Color
-    let label: Color
-    let junctionLabel: Color
-    let entranceFull: Color
-    let entranceHalf: Color
-    let exitFull: Color
-    let exitHalf: Color
-  }
-
-  private var palette: Palette {
-    usesDarkStyle
-      ? Palette(
-        background: Color(red: 0.05, green: 0.07, blue: 0.1),
-        water: Color(red: 0.06, green: 0.095, blue: 0.145),
-        casing: Color(red: 0.03, green: 0.045, blue: 0.07),
-        label: Color(red: 0.67, green: 0.72, blue: 0.82),
-        junctionLabel: Color(red: 0.88, green: 0.92, blue: 0.98),
-        entranceFull: Color(red: 0.22, green: 0.72, blue: 0.44),
-        entranceHalf: Color(red: 0.5, green: 0.78, blue: 0.62),
-        exitFull: Color(red: 0.82, green: 0.4, blue: 0.34),
-        exitHalf: Color(red: 0.88, green: 0.63, blue: 0.59)
-      )
-      : Palette(
-        background: KaidoTheme.paper,
-        water: KaidoTheme.surfaceWater,
-        casing: Color.white,
-        label: Color(red: 0.32, green: 0.38, blue: 0.44),
-        junctionLabel: Color(red: 0.1, green: 0.13, blue: 0.18),
-        entranceFull: Color(red: 0.11, green: 0.48, blue: 0.28),
-        entranceHalf: Color(red: 0.5, green: 0.75, blue: 0.62),
-        exitFull: Color(red: 0.69, green: 0.29, blue: 0.24),
-        exitHalf: Color(red: 0.87, green: 0.61, blue: 0.58)
-      )
+  /// The single midnight palette: near-black blue asphalt, ink bay, receded
+  /// blue rest-of-network, and plated labels. The diagram renders identically
+  /// day and night — the product's visual identity is the lit expressway.
+  private enum Midnight {
+    static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
+    static let water = Color(red: 0.039, green: 0.067, blue: 0.133)
+    static let casing = Color(red: 0.075, green: 0.1, blue: 0.16)
+    static let restCore = Color(red: 0.173, green: 0.227, blue: 0.36)
+    static let leader = Color(red: 0.192, green: 0.251, blue: 0.369)
+    static let plate = Color(red: 0.02, green: 0.031, blue: 0.063)
+    static let label = Color(red: 0.62, green: 0.68, blue: 0.8)
+    static let junctionLabel = Color(red: 0.79, green: 0.84, blue: 0.95)
+    static let entranceFull = Color(red: 0.22, green: 0.72, blue: 0.44)
+    static let entranceHalf = Color(red: 0.5, green: 0.78, blue: 0.62)
+    static let exitFull = Color(red: 0.82, green: 0.4, blue: 0.34)
+    static let exitHalf = Color(red: 0.88, green: 0.63, blue: 0.59)
   }
 
   private func routeLineColor(_ routeID: String) -> Color {
-    if usesDarkStyle {
-      switch routeID {
-      case "C1": return Color(red: 1.0, green: 0.71, blue: 0.33)
-      case "C2": return Color(red: 0.37, green: 0.82, blue: 0.41)
-      case "B": return Color(red: 0.56, green: 0.66, blue: 0.91)
-      case "Y": return Color(red: 0.35, green: 0.39, blue: 0.47)
-      default: return routeColor(routeID).opacity(0.95)
-      }
+    switch routeID {
+    case "C1": return Color(red: 1.0, green: 0.71, blue: 0.33)
+    case "C2": return Color(red: 0.37, green: 0.82, blue: 0.41)
+    case "B": return Color(red: 0.56, green: 0.66, blue: 0.91)
+    case "Y": return Color(red: 0.35, green: 0.39, blue: 0.47)
+    default: return routeColor(routeID).opacity(0.95)
     }
-    return routeColor(routeID)
   }
 
   var body: some View {
@@ -190,7 +166,7 @@ struct WholeShutoNetworkOverviewView: View {
           visibleHeight: visibleHeight
         )
       }
-      .background(palette.background)
+      .background(Midnight.background)
       .contentShape(Rectangle())
       .simultaneousGesture(
         SpatialTapGesture(count: 2)
@@ -376,7 +352,7 @@ struct WholeShutoNetworkOverviewView: View {
     // fisheye so the Bayshore Route hugs its coast. Presentation only.
     var water = path(Self.bayOutline(projection: layout.projection))
     water.closeSubpath()
-    context.fill(water, with: .color(palette.water))
+    context.fill(water, with: .color(Midnight.water))
 
     let highlighted = overlay.highlightedRouteIDs
     func isDimmed(_ routeID: String) -> Bool {
@@ -390,47 +366,78 @@ struct WholeShutoNetworkOverviewView: View {
       return (isTrunk ? 4.6 : 3.2) * weightScale
     }
 
-    // Pseudo-glow, casing, then route colors. With a circuit selected the
-    // member routes keep their color and the rest of the network recedes.
-    for polyline in layout.polylines where !isDimmed(polyline.routeID) {
+    // Rest of the network first: dark casing plus a receded blue core when a
+    // circuit is selected, or the route's own color when browsing.
+    for polyline in layout.polylines {
       context.stroke(
         path(polyline.points),
-        with: .color(routeLineColor(polyline.routeID).opacity(0.11)),
+        with: .color(Midnight.casing),
         style: StrokeStyle(
-          lineWidth: lineWidth(polyline.routeID) * 2.6,
+          lineWidth: lineWidth(polyline.routeID) + 2.8,
           lineCap: .round,
           lineJoin: .round
         )
       )
     }
-    for polyline in layout.polylines {
+    for polyline in layout.polylines where isDimmed(polyline.routeID) {
       context.stroke(
         path(polyline.points),
-        with: .color(palette.casing),
+        with: .color(Midnight.restCore),
         style: StrokeStyle(
-          lineWidth: lineWidth(polyline.routeID) + 2.6,
+          lineWidth: 2.2 * weightScale,
           lineCap: .round,
           lineJoin: .round
         )
       )
     }
-    for polyline in layout.polylines {
-      let dimmed = isDimmed(polyline.routeID)
+
+    // Lit routes: a blurred neon underglow, the colored tube, then a hot
+    // white core on the selected circuit.
+    let litLines = layout.polylines.filter { !isDimmed($0.routeID) }
+    // Browsing keeps the glow faint; a selected circuit gets the full neon
+    // underglow so one route clearly owns the night.
+    context.drawLayer { layer in
+      layer.addFilter(.blur(radius: highlighted.isEmpty ? 1.5 : 6))
+      for polyline in litLines {
+        layer.stroke(
+          path(polyline.points),
+          with: .color(
+            routeLineColor(polyline.routeID)
+              .opacity(highlighted.isEmpty ? 0.14 : 0.55)
+          ),
+          style: StrokeStyle(
+            lineWidth: lineWidth(polyline.routeID)
+              * (highlighted.isEmpty ? 1.6 : 3.0),
+            lineCap: .round,
+            lineJoin: .round
+          )
+        )
+      }
+    }
+    for polyline in litLines {
       context.stroke(
         path(polyline.points),
-        with: .color(
-          dimmed
-            ? palette.label.opacity(usesDarkStyle ? 0.28 : 0.34)
-            : routeLineColor(polyline.routeID)
-        ),
+        with: .color(routeLineColor(polyline.routeID)),
         style: StrokeStyle(
-          lineWidth: dimmed
-            ? 2.4 * weightScale : lineWidth(polyline.routeID),
+          lineWidth: lineWidth(polyline.routeID),
           lineCap: .round,
           lineJoin: .round,
           dash: polyline.routeID == "Y" ? [7, 6] : []
         )
       )
+    }
+    if !highlighted.isEmpty {
+      for polyline in litLines {
+        context.stroke(
+          path(polyline.points),
+          with: .color(Color.white.opacity(0.92)),
+          style: StrokeStyle(
+            lineWidth: lineWidth(polyline.routeID) * 0.34,
+            lineCap: .round,
+            lineJoin: .round
+          )
+        )
+      }
     }
 
     var occupied: [CGRect] = []
@@ -462,22 +469,40 @@ struct WholeShutoNetworkOverviewView: View {
         height: 22
       )
       let shield = Path(roundedRect: frame, cornerRadius: 5)
-      context.fill(shield, with: .color(routeLineColor(badge.routeID)))
+      context.fill(shield, with: .color(Midnight.plate))
       context.stroke(
         shield,
-        with: .color(palette.casing),
-        style: StrokeStyle(lineWidth: 2)
+        with: .color(routeLineColor(badge.routeID)),
+        style: StrokeStyle(lineWidth: 1.6)
       )
       context.draw(
         Text(badge.label)
           .font(.system(size: 12, weight: .heavy, design: .rounded))
-          .foregroundColor(
-            usesDarkStyle ? palette.background : Color.white
-          ),
+          .foregroundColor(routeLineColor(badge.routeID)),
         at: CGPoint(x: frame.midX, y: frame.midY),
         anchor: .center
       )
       occupied.append(frame)
+    }
+
+    // Planning marks claim their space ahead of junction names: the derived
+    // pairing and the driver's position always win the label fight.
+    for mark in [overlay.entranceMark, overlay.exitMark].compactMap({ $0 }) {
+      let center = point(mark.point)
+      occupied.append(
+        CGRect(
+          x: center.x - 14,
+          y: center.y - 16,
+          width: Double(mark.nameJA.count) * 13 + 58,
+          height: 34
+        )
+      )
+    }
+    if let position = overlay.currentPosition {
+      let center = point(position)
+      occupied.append(
+        CGRect(x: center.x - 16, y: center.y - 16, width: 32, height: 32)
+      )
     }
 
     // Junction diamonds always draw; their names claim screen space, so the
@@ -491,41 +516,53 @@ struct WholeShutoNetworkOverviewView: View {
       diamond.addLine(to: CGPoint(x: center.x, y: center.y + 3.6))
       diamond.addLine(to: CGPoint(x: center.x - 3.6, y: center.y))
       diamond.closeSubpath()
-      context.fill(diamond, with: .color(palette.casing))
+      context.fill(diamond, with: .color(Midnight.plate))
       context.stroke(
         diamond,
-        with: .color(palette.junctionLabel),
+        with: .color(Midnight.junctionLabel),
         style: StrokeStyle(lineWidth: 1.2)
       )
       let name = mark.nameJA.replacingOccurrences(of: "JCT・", with: "・")
       let rect = CGRect(
-        x: center.x + 6,
-        y: center.y - 15,
-        width: Double(name.count) * 11 + 14,
-        height: 15
+        x: center.x + 8,
+        y: center.y - 26,
+        width: Double(name.count) * 11 + 16,
+        height: 20
       )
       if claim(rect) {
         junctionLabels.append(
-          (name, CGPoint(x: center.x + 8, y: center.y - 8))
+          (name, CGPoint(x: center.x + 8, y: center.y - 26))
         )
       }
     }
-    context.drawLayer { layer in
-      layer.addFilter(
-        .shadow(
-          color: palette.background.opacity(0.9),
-          radius: 2
-        )
+    // Names ride on small plates with a short leader back to the diamond,
+    // so text never fights the route lines underneath.
+    for label in junctionLabels {
+      let plate = CGRect(
+        x: label.at.x,
+        y: label.at.y,
+        width: Double(label.name.count) * 11 + 16,
+        height: 20
       )
-      for label in junctionLabels {
-        layer.draw(
-          Text(label.name)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(palette.junctionLabel),
-          at: label.at,
-          anchor: .leading
-        )
-      }
+      var leader = Path()
+      leader.move(to: CGPoint(x: label.at.x - 8, y: label.at.y + 26))
+      leader.addLine(to: CGPoint(x: plate.minX + 4, y: plate.maxY - 2))
+      context.stroke(
+        leader,
+        with: .color(Midnight.leader),
+        style: StrokeStyle(lineWidth: 1.2)
+      )
+      context.fill(
+        Path(roundedRect: plate, cornerRadius: 6),
+        with: .color(Midnight.plate.opacity(0.85))
+      )
+      context.draw(
+        Text(label.name)
+          .font(.system(size: 11, weight: .bold))
+          .foregroundColor(Midnight.junctionLabel),
+        at: CGPoint(x: plate.minX + 8, y: plate.midY),
+        anchor: .leading
+      )
     }
 
     // Facility detail layer past the pinch threshold: every available IC
@@ -553,10 +590,10 @@ struct WholeShutoNetworkOverviewView: View {
           x: center.x - 2.4, y: center.y - 2.4, width: 4.8, height: 4.8
         )
       )
-      context.fill(dot, with: .color(palette.background))
+      context.fill(dot, with: .color(Midnight.background))
       context.stroke(
         dot,
-        with: .color(palette.label),
+        with: .color(Midnight.label),
         style: StrokeStyle(lineWidth: 1.2)
       )
       let name = mark.nameJA
@@ -570,7 +607,7 @@ struct WholeShutoNetworkOverviewView: View {
       guard claim(rect) else { continue }
       var label = Text(name)
         .font(.system(size: 9, weight: .semibold))
-        .foregroundColor(palette.label)
+        .foregroundColor(Midnight.label)
       if mark.etcOnly {
         label =
           label
@@ -596,7 +633,7 @@ struct WholeShutoNetworkOverviewView: View {
           triangle,
           with: .color(
             mark.entrance == .full
-              ? palette.entranceFull : palette.entranceHalf
+              ? Midnight.entranceFull : Midnight.entranceHalf
           )
         )
       }
@@ -609,7 +646,7 @@ struct WholeShutoNetworkOverviewView: View {
         context.fill(
           triangle,
           with: .color(
-            mark.exit == .full ? palette.exitFull : palette.exitHalf
+            mark.exit == .full ? Midnight.exitFull : Midnight.exitHalf
           )
         )
       }
@@ -634,13 +671,13 @@ struct WholeShutoNetworkOverviewView: View {
       context.fill(disc, with: .color(color))
       context.stroke(
         disc,
-        with: .color(palette.background),
+        with: .color(Midnight.background),
         style: StrokeStyle(lineWidth: 2)
       )
       context.draw(
         Text(glyph)
           .font(.system(size: 10, weight: .heavy))
-          .foregroundColor(palette.background),
+          .foregroundColor(Midnight.background),
         at: center,
         anchor: .center
       )
@@ -652,18 +689,51 @@ struct WholeShutoNetworkOverviewView: View {
       )
       context.fill(
         Path(roundedRect: labelFrame, cornerRadius: 5),
-        with: .color(palette.background.opacity(0.85))
+        with: .color(Midnight.plate.opacity(0.85))
       )
       context.draw(
         Text(mark.nameJA)
           .font(.system(size: 12, weight: .bold))
-          .foregroundColor(palette.junctionLabel),
+          .foregroundColor(Midnight.junctionLabel),
         at: CGPoint(x: labelFrame.minX + 6, y: labelFrame.midY),
         anchor: .leading
       )
     }
 
     if let entrance = overlay.entranceMark {
+      // Circuit-sheet start grid: a checkered bar across the carriageway
+      // just ahead of the entrance, oriented along the nearest member
+      // route segment. Pure presentation, no competitive semantics.
+      if !overlay.highlightedRouteIDs.isEmpty,
+        let angle = nearestHighlightedSegmentAngle(to: entrance.point)
+      {
+        let center = point(entrance.point)
+        context.drawLayer { layer in
+          layer.translateBy(
+            x: center.x + cos(angle) * 20,
+            y: center.y + sin(angle) * 20
+          )
+          layer.rotate(by: Angle(radians: angle))
+          for column in 0..<2 {
+            for row in 0..<6 {
+              let cell = CGRect(
+                x: Double(column) * 5 - 5,
+                y: Double(row) * 5 - 15,
+                width: 5,
+                height: 5
+              )
+              layer.fill(
+                Path(cell),
+                with: .color(
+                  (column + row) % 2 == 0
+                    ? Color.white.opacity(0.92)
+                    : Midnight.plate
+                )
+              )
+            }
+          }
+        }
+      }
       drawMark(entrance, glyph: "入", color: KaidoTheme.positionCyan)
     }
     if let exit = overlay.exitMark {
@@ -691,6 +761,32 @@ struct WholeShutoNetworkOverviewView: View {
         style: StrokeStyle(lineWidth: 2.4)
       )
     }
+  }
+
+  /// Direction of the nearest highlighted-route segment to a design-space
+  /// point, used to orient the entrance start grid across the carriageway.
+  private func nearestHighlightedSegmentAngle(
+    to target: NetworkOverviewLayout.Point
+  ) -> Double? {
+    var best: (distance: Double, angle: Double)?
+    for polyline in layout.polylines
+    where overlay.highlightedRouteIDs.contains(polyline.routeID) {
+      let points = polyline.points
+      guard points.count > 1 else { continue }
+      for index in stride(from: 0, to: points.count - 1, by: 2) {
+        let a = points[index]
+        let b = points[min(index + 2, points.count - 1)]
+        let midX = (a.x + b.x) / 2
+        let midY = (a.y + b.y) / 2
+        let distance =
+          (midX - target.x) * (midX - target.x)
+          + (midY - target.y) * (midY - target.y)
+        if best == nil || distance < best!.distance {
+          best = (distance, atan2(b.y - a.y, b.x - a.x))
+        }
+      }
+    }
+    return best?.angle
   }
 
   // MARK: - Water

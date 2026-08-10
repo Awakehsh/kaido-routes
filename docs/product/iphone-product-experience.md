@@ -164,7 +164,12 @@ before they can occupy the same replaceable boundary.
 The map occupies most of the screen. The self-drawn Kaido presentation — the
 whole-network line diagram before a route exists, the track map after — is the
 primary canvas, and a persistent control keeps the geographic presentation one
-switch away. Each journey phase re-establishes its natural default (planning,
+switch away. The whole product renders in a single midnight visual identity:
+blue-black asphalt, an ink Tokyo Bay, receded unlit network, and neon-lit
+route lines, with plated labels that never sit on the carriageways. A
+checkered start-grid glyph may mark the derived entrance direction; it is
+purely presentational and no copy anywhere adopts competitive or performance
+framing. Each journey phase re-establishes its natural default (planning,
 review, and the expressway body open on the Kaido presentation; ordinary-road
 legs open on the geographic map), and the driver may override it at any time.
 While planning, the diagram carries the driver's current position, the selected

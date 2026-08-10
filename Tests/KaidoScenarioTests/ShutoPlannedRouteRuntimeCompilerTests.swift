@@ -50,6 +50,86 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
+  @Test("wrong turns derive rejoin candidates back onto the same loop plan")
+  func derivesWrongTurnRecoveryCandidates() throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let route = try planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: 1
+    )
+
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let candidates = assets.recoveryCandidates
+    #expect(!candidates.isEmpty)
+
+    let occurrenceIndexByID = Dictionary(
+      uniqueKeysWithValues: route.routePlan.occurrences.map {
+        ($0.id, $0.index)
+      }
+    )
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let planDivergenceNodes = Set(route.edges.map(\.toNodeID))
+    for candidate in candidates {
+      #expect(candidate.isReleased)
+      #expect(candidate.staysInAllowedTollDomain)
+      let targetIndex = occurrenceIndexByID[candidate.targetOccurrenceID]
+      #expect(targetIndex != nil)
+      #expect(!candidate.recoveryOccurrenceIDs.isEmpty)
+      let path = candidate.recoveryOccurrenceIDs.compactMap {
+        edgesByID[$0]
+      }
+      #expect(path.count == candidate.recoveryOccurrenceIDs.count)
+      for (current, next) in zip(path, path.dropFirst()) {
+        #expect(current.toNodeID == next.fromNodeID)
+      }
+      // The path departs a plan junction and lands exactly where the
+      // rejoin occurrence begins.
+      #expect(planDivergenceNodes.contains(path.first?.fromNodeID ?? -1))
+      if let targetIndex, let last = path.last {
+        #expect(route.edges[targetIndex].fromNodeID == last.toNodeID)
+      }
+    }
+
+    // A high-confidence wrong branch activates recovery whose rejoin
+    // target is a strictly later occurrence of the same plan.
+    var engine = NavigationEngine(
+      configuration: NavigationConfiguration(
+        routePlan: route.routePlan,
+        recoveryCandidates: candidates
+      ),
+      initialSnapshot: NavigationSnapshot(
+        journeyPhase: .strictRoute,
+        activeRoutePlanID: route.routePlan.id,
+        currentOccurrenceID: route.routePlan.occurrences[0].id,
+        locationConfidence: .high
+      )
+    )
+    engine.observeBranch(
+      BranchObservation(
+        observedMovementID: "test.movement.unplanned",
+        confidence: .high
+      )
+    )
+    #expect(engine.snapshot.journeyPhase == .routeRecovery)
+    #expect(engine.snapshot.recovery.status == .active)
+    #expect(
+      engine.snapshot.recovery.objective == "REJOIN_ACTIVE_ROUTE_PLAN"
+    )
+    let rejoinID = engine.snapshot.recovery.chosenRejoinOccurrenceID
+    #expect(rejoinID != nil)
+    if let rejoinID {
+      #expect((occurrenceIndexByID[rejoinID] ?? -1) > 0)
+    }
+  }
+
   @Test("only exact HIGH occurrence evidence projects route progress")
   func projectsOnlyAdmittedRouteProgress() throws {
     let database = try loadWholeShutoDatabase()

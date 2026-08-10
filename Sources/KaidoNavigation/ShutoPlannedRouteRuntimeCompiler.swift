@@ -53,6 +53,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
+  public let recoveryCandidates: [RecoveryCandidate]
 
   private let routeEdges: [RouteMatcherDirectedEdge]
   private let routeEdgeLengthsMeters: [Double]
@@ -64,6 +65,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
+    recoveryCandidates: [RecoveryCandidate] = [],
     routeEdges: [RouteMatcherDirectedEdge],
     routeEdgeLengthsMeters: [Double]
   ) {
@@ -71,6 +73,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
+    self.recoveryCandidates = recoveryCandidates
     self.routeEdges = routeEdges
     self.routeEdgeLengthsMeters = routeEdgeLengthsMeters
 
@@ -416,8 +419,148 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       matcherCorridor: corridor,
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
+      recoveryCandidates: deriveRecoveryCandidates(
+        database: database,
+        route: route
+      ),
       routeEdges: routeMatcherEdges,
       routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
     )
+  }
+
+  /// Wrong-turn recovery candidates: for every plan node where a legal
+  /// alternative movement diverges from the plan, a bounded directed search
+  /// over the whole snapshot finds the cheapest legal path back onto a
+  /// strictly later plan occurrence. The rejoin objective always stays the
+  /// active RoutePlan — loops make this natural because the ring comes back
+  /// around. Candidates derive from the same released snapshot as the plan
+  /// itself and never mutate it; they carry no navigation-grade guidance
+  /// claim (reviewed movements and speech remain separately gated).
+  static func deriveRecoveryCandidates(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute
+  ) -> [RecoveryCandidate] {
+    let occurrences = route.routePlan.occurrences
+    let edges = route.edges
+    guard occurrences.count == edges.count, edges.count > 1 else {
+      return []
+    }
+    let maximumRecoveryMeters = 30_000.0
+
+    var outgoing: [Int64: [ShutoNetworkDatabase.Edge]] = [:]
+    for edge in database.edges {
+      outgoing[edge.fromNodeID, default: []].append(edge)
+    }
+    for node in outgoing.keys {
+      outgoing[node]?.sort { $0.edgeID < $1.edgeID }
+    }
+    // Plan occurrence indices that begin at a node, in plan order.
+    var planIndicesByNode: [Int64: [Int]] = [:]
+    for (index, edge) in edges.enumerated() {
+      planIndicesByNode[edge.fromNodeID, default: []].append(index)
+    }
+    func rejoinIndex(at node: Int64, after divergence: Int) -> Int? {
+      planIndicesByNode[node]?.first { $0 > divergence }
+    }
+
+    var candidates: [RecoveryCandidate] = []
+    for index in 0..<(edges.count - 1) {
+      let divergenceNode = edges[index].toNodeID
+      let plannedNextEdgeID = edges[index + 1].edgeID
+      let alternatives = (outgoing[divergenceNode] ?? [])
+        .filter { $0.edgeID != plannedNextEdgeID }
+      guard !alternatives.isEmpty else { continue }
+
+      // Multi-source bounded Dijkstra seeded with every wrong turn at this
+      // node; the first settled node that carries a later plan occurrence
+      // is the cheapest legal rejoin.
+      var distances: [Int64: Double] = [:]
+      var previousEdge: [Int64: ShutoNetworkDatabase.Edge] = [:]
+      var frontier: [(cost: Double, node: Int64)] = []
+      func push(_ cost: Double, _ node: Int64) {
+        frontier.append((cost, node))
+        var child = frontier.count - 1
+        while child > 0 {
+          let parent = (child - 1) / 2
+          guard frontier[child].cost < frontier[parent].cost else { break }
+          frontier.swapAt(child, parent)
+          child = parent
+        }
+      }
+      func pop() -> (cost: Double, node: Int64)? {
+        guard let top = frontier.first else { return nil }
+        frontier[0] = frontier[frontier.count - 1]
+        frontier.removeLast()
+        var parent = 0
+        while true {
+          let left = parent * 2 + 1
+          let right = left + 1
+          var smallest = parent
+          if left < frontier.count,
+            frontier[left].cost < frontier[smallest].cost
+          {
+            smallest = left
+          }
+          if right < frontier.count,
+            frontier[right].cost < frontier[smallest].cost
+          {
+            smallest = right
+          }
+          if smallest == parent { break }
+          frontier.swapAt(parent, smallest)
+          parent = smallest
+        }
+        return top
+      }
+
+      for alternative in alternatives {
+        let cost = alternative.lengthMeters
+        if cost <= maximumRecoveryMeters,
+          cost < distances[alternative.toNodeID] ?? .infinity
+        {
+          distances[alternative.toNodeID] = cost
+          previousEdge[alternative.toNodeID] = alternative
+          push(cost, alternative.toNodeID)
+        }
+      }
+
+      var settled: Set<Int64> = []
+      var rejoin: (node: Int64, target: Int)?
+      while let current = pop() {
+        if settled.contains(current.node) { continue }
+        settled.insert(current.node)
+        if let target = rejoinIndex(at: current.node, after: index) {
+          rejoin = (current.node, target)
+          break
+        }
+        for edge in outgoing[current.node] ?? [] {
+          let cost = current.cost + edge.lengthMeters
+          guard cost <= maximumRecoveryMeters,
+            cost < distances[edge.toNodeID] ?? .infinity
+          else { continue }
+          distances[edge.toNodeID] = cost
+          previousEdge[edge.toNodeID] = edge
+          push(cost, edge.toNodeID)
+        }
+      }
+      guard let rejoin else { continue }
+
+      var pathEdgeIDs: [String] = []
+      var cursor = rejoin.node
+      while let edge = previousEdge[cursor] {
+        pathEdgeIDs.append(edge.edgeID)
+        cursor = edge.fromNodeID
+        if cursor == divergenceNode { break }
+      }
+      candidates.append(
+        RecoveryCandidate(
+          targetOccurrenceID: occurrences[rejoin.target].id,
+          recoveryOccurrenceIDs: pathEdgeIDs.reversed(),
+          isReleased: true,
+          staysInAllowedTollDomain: true
+        )
+      )
+    }
+    return candidates
   }
 }

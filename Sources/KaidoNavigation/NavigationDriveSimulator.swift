@@ -1059,7 +1059,7 @@ private struct NavigationDriveSimulationRuntime: Sendable {
     runtimeID = "synthetic.\(route.routePlan.id)"
     routePlan = route.routePlan
     matcherCorridor = runtimeAssets.matcherCorridor
-    recoveryCandidates = []
+    recoveryCandidates = runtimeAssets.recoveryCandidates
     egressOptions = []
     decisionZones = runtimeAssets.decisionZones
     releasedGuidance = runtimeAssets.releasedGuidance

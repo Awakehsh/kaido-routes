@@ -2626,11 +2626,19 @@ struct WholeShutoProductView: View {
           english: "TUNNEL ESTIMATE · SIMULATED \(simulationReplayParametersLabel)"
         )
     case .routeInterrupted:
+      if model.runtimeRecoveryStatus == .active {
+        return prefix
+          + copy.resolve(
+            japanese: "ルート逸脱 · 前方で復帰",
+            simplifiedChinese: "偏离路线 · 前方绕回汇合",
+            english: "OFF ROUTE · REJOIN AHEAD"
+          )
+      }
       return prefix
         + copy.resolve(
-          japanese: "ルート中断 · 復帰案内なし",
-          simplifiedChinese: "路线中断 · 无重入引导",
-          english: "ROUTE INTERRUPTED · NO REENTRY GUIDANCE"
+          japanese: "ルート中断 · 復帰経路なし",
+          simplifiedChinese: "路线中断 · 无绕回路线",
+          english: "ROUTE INTERRUPTED · NO REJOIN PATH"
         )
     case .completed:
       return copy.resolve(

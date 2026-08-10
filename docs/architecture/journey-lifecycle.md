@@ -238,6 +238,15 @@ checked loop or connector, but it cannot optimize away the remaining chosen
 roads, cross an unapproved external boundary, or take an exit merely because it
 is closer.
 
+Whole-Shuto plans derive their rejoin candidates at runtime-compile time: for
+every plan junction where a legal alternative movement diverges, a bounded
+directed search over the released snapshot finds the cheapest legal path back
+onto a strictly later occurrence — a loop plan naturally rejoins by coming
+back around the ring. The candidates share the plan's snapshot authority and
+carry no navigation-grade guidance claim; reviewed movements and speech stay
+separately gated, and the driving surface reports an active rejoin objective
+without inventing turn-by-turn reentry instructions.
+
 If no released rejoin exists, the safe fallback is an explicit egress plan. The
 UI marks the original route interrupted, identifies the exit, and warns that
 distance or toll expectations may change. It never describes that result as a

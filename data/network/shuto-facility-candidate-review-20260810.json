@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "review_id": "shuto-facility-candidate-review-20260810",
+  "checked_at": "2026-08-10",
+  "purpose": "Reviewed per-facility candidate exclusions at stacked or shared-collector junctions where geometric and topology heuristics cannot pin the right ramp. Each exclusion names the evidence that proves the candidate wrong. Global heuristics are deliberately avoided: the up-side Hatsudai entrance anchors onto a collector shared with Hatagaya hundreds of meters from the catalog point, so distance or way-ownership cuts sever real entrances.",
+  "excluded_candidates": [
+    {
+      "facility_id": "shuto.ic.4.yoyogi",
+      "side": "exit",
+      "edge_id": "osm.26957080.3.forward",
+      "reason": "Yoyogi PA (up) access ramp: it leaves the selected graph into the PA's service ways, so the ramp-topology probe cannot tell it from an exit. OSM way 26957080 continues into highway=service ways beside the rest_area polygon named Yoyogi PA (up).",
+      "evidence": "Operator fare search checked 2026-08-04: Shinjuku to Yoyogi prices 860 yen (the full C1 circuit); a drivable up-carriageway exit here would price the pairing near the 300 yen minimum."
+    },
+    {
+      "facility_id": "shuto.ic.4.yoyogi",
+      "side": "exit",
+      "edge_id": "osm.28916826.0.forward",
+      "reason": "Segment of the Shinjuku exit ramp viaduct caught by geometric ranking 500 m from Yoyogi; its anchored mouth sits at the Shinjuku gate area, 900 m from the Yoyogi facility point.",
+      "evidence": "Operator fare search checked 2026-08-04: Shinjuku to Yoyogi prices 860 yen; an up-carriageway Yoyogi exit reachable at the Shinjuku gate would price it near the minimum."
+    }
+  ]
+}

@@ -135,12 +135,13 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       "K5": "上り",
       "K6": "下り",
     ],
-    // K1 exits stay unmapped: at the three-way Namamugi JCT the snapshot's
-    // geometric exit candidates catch the K5-to-K1 connector, faking a
-    // short path the operator's own fare search proves undrivable (the
-    // real exit diverges upstream of the merge). Until the candidate
-    // matching pins that junction correctly, only Bayshore/Kawasaki exits
-    // are offered.
+    // K1 exits stay unmapped: the snapshot's directed graph at Ishikawacho
+    // and Namamugi is verified complete against upstream OSM (2026-08-10),
+    // yet the cheapest legal drivable path Daikoku-Futo to Namamugi still
+    // measures ~30 km where the operator fare search prices the pairing at
+    // 660 yen (~15 km). Until the operator's fare-distance rule for that
+    // cross-carriageway turnaround is reproduced, any K1 exit quote here
+    // would be wrong, so only Bayshore/Kawasaki exits are offered.
     exitDirectionsByRouteID: [
       "B": "西行き",
       "K6": "下り",

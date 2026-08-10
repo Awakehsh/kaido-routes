@@ -46,7 +46,7 @@ targets:
       - path: data/route-atlas/osm-derived/c2-b-20260729-geographic-route.json
         buildPhase: resources
         group: Route Atlas
-      - path: data/route-atlas/osm-derived/shuto-whole-network-20260803.json
+      - path: data/route-atlas/osm-derived/shuto-whole-network-20260804.json
         buildPhase: resources
         group: Route Atlas
       - path: data/route-atlas/candidates/k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json

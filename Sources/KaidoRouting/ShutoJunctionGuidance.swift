@@ -102,7 +102,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.shinonome.b-eastbound-to-10-inbound",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_shinonome",
       junctionNodeID: 493_584_435,
       incomingEdgeID: "osm.888066406.1.forward",
@@ -175,7 +175,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.shinonome.b-westbound-to-10-inbound",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_shinonome",
       junctionNodeID: 569_015_558,
       incomingEdgeID: "osm.678697940.1.forward",
@@ -248,7 +248,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_tatsumi",
       junctionNodeID: 31_300_414,
       incomingEdgeID: "osm.44882718.3.forward",
@@ -320,7 +320,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-westbound-to-9-inbound",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_tatsumi",
       junctionNodeID: 31_300_491,
       incomingEdgeID: "osm.888066409.1.forward",
@@ -392,7 +392,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.kasai.b-westbound-to-c2-inner",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_kasai",
       junctionNodeID: 8_256_670_336,
       incomingEdgeID: "osm.888066413.1.forward",
@@ -465,7 +465,7 @@ public enum ShutoJunctionMovementCatalog {
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.oi.b-westbound-to-c2-outer",
       networkSnapshotID:
-        "shuto-official-2026-07-29-osm-2026-08-03",
+        "shuto-official-2026-07-29-osm-2026-08-04",
       junctionID: "shuto.jct.jct_oi",
       junctionNodeID: 6_534_476_215,
       incomingEdgeID: "osm.266086991.11.forward",

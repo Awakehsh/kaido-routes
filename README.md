@@ -228,7 +228,7 @@ python3 -m venv /tmp/kaido-shuto-osmium
 /tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_network.py \
   --input /path/to/kanto-260728.osm.pbf \
   --official-catalog data/network/shuto-official-catalog-20260729.json \
-  --output data/route-atlas/osm-derived/shuto-whole-network-20260803.json \
+  --output data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
   --expected-input-sha256 \
     4ebc009018467c3d9c4cdc5f1817a7d2bfeab243af0889700667f6be99fe4e52 \
   --source-uri \

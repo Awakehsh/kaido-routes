@@ -74,6 +74,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--official-catalog", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--expected-input-sha256", required=True)
+    parser.add_argument("--facility-candidate-review", required=True, type=Path)
     parser.add_argument("--source-uri", required=True)
     parser.add_argument("--expected-pyosmium-version", default="4.3.1")
     return parser.parse_args()
@@ -852,6 +853,13 @@ def candidate_edges_for_facility(
             anchored.values(),
             key=lambda item: (item[0], item[1]["edge_id"]),
         )
+        # Parking-access rejection: a rest-area ramp also "leaves the
+        # network" (its service roads are not part of the graph), so the
+        # topology gate cannot tell it from a genuine exit — Yoyogi PA's
+        # up-side ramp faked a 1.1 km Shinjuku-to-Yoyogi fare path this
+        # way. A mouth that sits beside a parking area, closer to the PA
+        # than to the claiming facility, belongs to the PA. If the filter
+        # would drop everything, keep the unfiltered list.
     selected = link_candidates[:12] if link_candidates else ranked[:12]
     return [
         {
@@ -860,6 +868,65 @@ def candidate_edges_for_facility(
         }
         for distance, edge in selected
     ]
+
+
+def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
+    raw = path.read_bytes()
+    review = json.loads(raw)
+    if review.get("schema_version") != "1.0":
+        raise NetworkBuildError("unsupported facility candidate review schema")
+    for exclusion in review.get("excluded_candidates", []):
+        for field in ("facility_id", "side", "edge_id", "reason", "evidence"):
+            if not exclusion.get(field):
+                raise NetworkBuildError(
+                    "facility candidate exclusion is missing " + field
+                )
+        if exclusion["side"] not in ("entry", "exit"):
+            raise NetworkBuildError(
+                "facility candidate exclusion side must be entry or exit"
+            )
+    return review, hashlib.sha256(raw).hexdigest()
+
+
+def apply_candidate_review(
+    facilities: list[dict[str, Any]],
+    review: dict[str, Any],
+) -> None:
+    """Reviewed per-facility exclusions for stacked or shared-collector
+    junctions the heuristics cannot pin. Every exclusion must match a
+    present candidate — a stale review fails the build instead of silently
+    rotting."""
+    by_id = {facility["facility_id"]: facility for facility in facilities}
+    for exclusion in review.get("excluded_candidates", []):
+        facility = by_id.get(exclusion["facility_id"])
+        if facility is None:
+            raise NetworkBuildError(
+                "candidate review names unknown facility "
+                + exclusion["facility_id"]
+            )
+        key = (
+            "entry_edge_candidates"
+            if exclusion["side"] == "entry"
+            else "exit_edge_candidates"
+        )
+        remaining = [
+            candidate
+            for candidate in facility[key]
+            if candidate["edge_id"] != exclusion["edge_id"]
+        ]
+        if len(remaining) == len(facility[key]):
+            raise NetworkBuildError(
+                "candidate review exclusion did not match: "
+                + exclusion["facility_id"]
+                + " "
+                + exclusion["edge_id"]
+            )
+        if not remaining:
+            raise NetworkBuildError(
+                "candidate review would unmatch facility "
+                + exclusion["facility_id"]
+            )
+        facility[key] = remaining
 
 
 def match_facilities(
@@ -1068,6 +1135,9 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
             f"!= {arguments.expected_input_sha256}"
         )
     catalog, catalog_sha = load_catalog(arguments.official_catalog)
+    candidate_review, candidate_review_sha = load_candidate_review(
+        arguments.facility_candidate_review
+    )
     osmium = load_osmium(arguments.expected_pyosmium_version)
     routes, membership_by_way, source_snapshot_at = relation_snapshot(
         osmium, arguments.input
@@ -1119,6 +1189,12 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
     official_route_by_id = {
         route["route_id"]: route for route in catalog["routes"]
     }
+    reviewed_facilities = match_facilities(
+        catalog,
+        edges,
+        node_coordinates,
+    )
+    apply_candidate_review(reviewed_facilities, candidate_review)
     return {
         "schema_version": "1.0",
         "database_id": (
@@ -1139,6 +1215,14 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
             "official_catalog": {
                 "catalog_id": catalog["catalog_id"],
                 "sha256": catalog_sha,
+            },
+            "facility_candidate_review": {
+                "review_id": candidate_review["review_id"],
+                "checked_at": candidate_review["checked_at"],
+                "sha256": candidate_review_sha,
+                "excluded_candidate_count": len(
+                    candidate_review.get("excluded_candidates", [])
+                ),
             },
             "osm": {
                 "input_file": arguments.input.name,
@@ -1197,11 +1281,7 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
             for way_id in sorted(selected_way_ids)
         ],
         "edges": edges,
-        "directional_facilities": match_facilities(
-            catalog,
-            edges,
-            node_coordinates,
-        ),
+        "directional_facilities": reviewed_facilities,
         "junctions": match_junctions(
             catalog,
             node_tags,

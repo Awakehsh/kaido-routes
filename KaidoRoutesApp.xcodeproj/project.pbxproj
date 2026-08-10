@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		009CE153EF2E5AEC3C47371C /* shuto-whole-network-20260803.json in Resources */ = {isa = PBXBuildFile; fileRef = 8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */; };
 		00DC4B88CB139EA32986642F /* KaidoNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = 227214DF886C6615AA725882 /* KaidoNavigation */; };
 		03DB3A344A501784A33E0EBE /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json in Resources */ = {isa = PBXBuildFile; fileRef = FDF76A2AF30C8BE1D54E3CE1 /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json */; };
 		0403EF2F4E636F940BF4F85B /* AppSafetyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1E682A168C4207E6C5957A /* AppSafetyState.swift */; };
@@ -74,6 +73,7 @@
 		7EEBAB76303410606DA12FB2 /* RouteAtlasAttributionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840075C8ECA7E7DE38E7CA3C /* RouteAtlasAttributionTests.swift */; };
 		80C8EC579DF38DF6072EDF64 /* WholeShutoTrackMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BB6911D0B98465D70B4B35 /* WholeShutoTrackMapView.swift */; };
 		80E0AA92D99B7DF9256F968F /* C2NavigationDemoModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */; };
+		81801BF41CD099F27C8B94A7 /* shuto-whole-network-20260804.json in Resources */ = {isa = PBXBuildFile; fileRef = AD18271D219AF8FB4C72DC68 /* shuto-whole-network-20260804.json */; };
 		841565C0474C09A23C617351 /* GuidanceLanguagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E8C76F7E6532336CDD0F93 /* GuidanceLanguagePreviewView.swift */; };
 		849BF0098114A8C312385F9C /* WholeShutoProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */; };
 		85750FE5B66D3EC99D5B58FB /* WholeShutoPlanningLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BED1ED1DA8F4825026BE701 /* WholeShutoPlanningLocation.swift */; };
@@ -213,7 +213,6 @@
 		8578B44EB78B5C32BAAD51F6 /* SyntheticDrivingPreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewModel.swift; sourceTree = "<group>"; };
 		86BAF8B0C5A1D6000D85903F /* ReleasedRouteEditorAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedRouteEditorAdapter.swift; sourceTree = "<group>"; };
 		88C450454F62AF9D96B60D08 /* KaidoRoutesAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "shuto-whole-network-20260803.json"; path = "data/route-atlas/osm-derived/shuto-whole-network-20260803.json"; sourceTree = "<group>"; };
 		8B3CC157E3807A52FA92A0BD /* KaidoRoutes.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KaidoRoutes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModelTests.swift; sourceTree = "<group>"; };
 		9406986ABC9A33D6286EBDB6 /* KaidoProductJourneyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyModel.swift; sourceTree = "<group>"; };
@@ -224,6 +223,7 @@
 		A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KRU09AccessibilityUITests.swift; sourceTree = "<group>"; };
 		A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "route-atlas-attribution-catalog.json"; path = "data/route-atlas/attribution/route-atlas-attribution-catalog.json"; sourceTree = "<group>"; };
 		A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNavigationRuntimeModelTests.swift; sourceTree = "<group>"; };
+		AD18271D219AF8FB4C72DC68 /* shuto-whole-network-20260804.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "shuto-whole-network-20260804.json"; path = "data/route-atlas/osm-derived/shuto-whole-network-20260804.json"; sourceTree = "<group>"; };
 		AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2GeographicRoute.swift; sourceTree = "<group>"; };
 		B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationModelTests.swift; sourceTree = "<group>"; };
 		B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationUITests.swift; sourceTree = "<group>"; };
@@ -378,7 +378,7 @@
 				7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */,
 				A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */,
 				0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */,
-				8A8A9E683CB621FA71C9F42D /* shuto-whole-network-20260803.json */,
+				AD18271D219AF8FB4C72DC68 /* shuto-whole-network-20260804.json */,
 			);
 			name = "Route Atlas";
 			sourceTree = "<group>";
@@ -607,7 +607,7 @@
 				56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */,
 				B0D80A3B61AD987BABA0C185 /* route-atlas-attribution-catalog.json in Resources */,
 				211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */,
-				009CE153EF2E5AEC3C47371C /* shuto-whole-network-20260803.json in Resources */,
+				81801BF41CD099F27C8B94A7 /* shuto-whole-network-20260804.json in Resources */,
 				2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -63,6 +63,32 @@ struct ShutoTariffEvidenceTests {
     }
   }
 
+  @Test("the folklore Shinjuku-to-Yoyogi pairing prices the full circuit")
+  func shinjukuToYoyogiPricesTheFullCircuit() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+
+    // The Yoyogi exit serves only the down carriageway, so the legal fare
+    // path from the Shinjuku up entrance rides the full C1 circuit
+    // (~21.4 km). The operator fare search priced this exact pairing at
+    // 860 yen on 2026-08-04; the band's ±500 m geometry margin may quote
+    // one 10-yen step high, never low. A cheap quote here means a
+    // parking-area ramp or a neighbouring facility's ramp leaked back
+    // into the Yoyogi exit candidates.
+    let band = try planner.tariffBand(
+      entryFacilityID: "shuto.ic.4.shinjuku",
+      exitFacilityID: "shuto.ic.4.yoyogi",
+      evidence: .etcNormalCarActive
+    )
+
+    switch band {
+    case .estimated(let yen):
+      #expect(yen >= 860)
+      #expect(yen <= 880)
+    default:
+      Issue.record("Expected an estimated band, got \(band)")
+    }
+  }
+
   @Test("the active evidence stays dated and sourced")
   func evidenceIsDatedAndSourced() {
     let evidence = ShutoTariffEvidence.etcNormalCarActive
@@ -83,7 +109,7 @@ struct ShutoTariffEvidenceTests {
       .appendingPathComponent("data")
       .appendingPathComponent("route-atlas")
       .appendingPathComponent("osm-derived")
-      .appendingPathComponent("shuto-whole-network-20260803.json")
+      .appendingPathComponent("shuto-whole-network-20260804.json")
     return try JSONDecoder().decode(
       ShutoNetworkDatabase.self,
       from: Data(contentsOf: url)

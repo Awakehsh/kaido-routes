@@ -170,7 +170,7 @@ enum WholeShutoNetworkCatalog {
   static func bundled(bundle: Bundle = .main) throws -> ShutoNetworkDatabase {
     guard
       let url = bundle.url(
-        forResource: "shuto-whole-network-20260803",
+        forResource: "shuto-whole-network-20260804",
         withExtension: "json"
       )
     else {
@@ -498,7 +498,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var canApplyCustomRoute: Bool {
-    customDraftRoute != nil
+    // Starting from the home catalog also needs an origin for the round
+    // trip; the review-phase editor already has one.
+    customDraftRoute != nil && (phase == .review || origin != nil)
   }
 
   var usesCurrentLocationOrigin: Bool {

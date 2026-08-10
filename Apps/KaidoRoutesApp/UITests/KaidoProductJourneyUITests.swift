@@ -137,6 +137,16 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     let apply = element("whole-shuto-apply-custom-route", in: app)
     XCTAssertTrue(apply.waitForExistence(timeout: 8))
+    // The apply action stays disabled until the current-location origin
+    // resolves for the round trip.
+    let enabled = NSPredicate(format: "isEnabled == true")
+    let enabledExpectation = XCTNSPredicateExpectation(
+      predicate: enabled, object: apply
+    )
+    XCTAssertEqual(
+      XCTWaiter().wait(for: [enabledExpectation], timeout: 20),
+      .completed
+    )
     apply.tap()
     // Applying from the home catalog opens review as a round trip.
     let product = element("whole-shuto-product", in: app)

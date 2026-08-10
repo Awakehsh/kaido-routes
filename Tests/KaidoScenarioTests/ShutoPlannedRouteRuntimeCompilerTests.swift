@@ -978,7 +978,7 @@ private func loadWholeShutoDatabase() throws -> ShutoNetworkDatabase {
     .appendingPathComponent("data")
     .appendingPathComponent("route-atlas")
     .appendingPathComponent("osm-derived")
-    .appendingPathComponent("shuto-whole-network-20260803.json")
+    .appendingPathComponent("shuto-whole-network-20260804.json")
   return try JSONDecoder().decode(
     ShutoNetworkDatabase.self,
     from: Data(contentsOf: url)

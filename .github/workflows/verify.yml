@@ -131,19 +131,24 @@ jobs:
           TEST_SCOPE: ${{ matrix.test_scope }}
         run: |
           set -euo pipefail
-          TEST_FILTER_ARGS=()
+          run_app_tests() {
+            xcodebuild test \
+              -project KaidoRoutesApp.xcodeproj \
+              -scheme KaidoRoutesApp \
+              -destination "id=${{ steps.simulator.outputs.device-id }}" \
+              -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
+              "$@" \
+              CODE_SIGNING_ALLOWED=NO
+          }
           if [[ -n "$TEST_SCOPE" ]]; then
-            TEST_FILTER_ARGS+=("-only-testing:$TEST_SCOPE")
+            run_app_tests "-only-testing:$TEST_SCOPE" \
+              | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
+              | xcpretty
+          else
+            run_app_tests \
+              | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
+              | xcpretty
           fi
-          xcodebuild test \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -destination "id=${{ steps.simulator.outputs.device-id }}" \
-            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
-            "${TEST_FILTER_ARGS[@]}" \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
-            | xcpretty
 
       - name: Upload App test diagnostics
         if: failure()

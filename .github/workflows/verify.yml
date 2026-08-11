@@ -93,12 +93,13 @@ jobs:
 
       - name: App unit and UI tests
         run: |
+          set -euo pipefail
           xcodebuild test \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -destination "id=${{ steps.simulator.outputs.device-id }}" \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || exit ${PIPESTATUS[0]}
+            | xcpretty
 
   data:
     name: Snapshot and evidence integrity
@@ -122,3 +123,15 @@ jobs:
       # snapshot: a stale review is a build failure, not a silent no-op.
       - name: Facility candidate review still applies
         run: python3 scripts/verify_facility_candidate_review.py
+
+      - name: Validator regression suite
+        run: python3 -m unittest discover -s scripts/tests
+
+      # The retained K7 product is a deterministic regression anchor, not the
+      # default delivery route. Running the production validator here proves
+      # that navigation and atlas inputs still pass the joint release gate.
+      - name: Joint product release validation
+        run: >-
+          swift run kaido-release validate-product
+          --artifact
+          data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json

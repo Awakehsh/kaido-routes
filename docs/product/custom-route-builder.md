@@ -301,11 +301,22 @@ and records whether it was authored here or externally imported. A saved route
 may show that review is required indefinitely; the App never hides or migrates
 it merely because a newer graph exists.
 
-When exactly one current foreground product release owns the identical whole
-RoutePlan, **Open in parked editor** selects that release and nothing more. The
-user must still submit every release-owned choice, compile the exact route,
-select the tariff profile, obtain current pre-drive evidence, and explicitly
-start navigation. A save or import cannot bypass those steps.
+The legacy release-editor path remains strict: **Open in parked editor** is
+available only when exactly one current foreground product release owns the
+identical complete `RoutePlan`. Selecting it chooses that release and nothing
+more. The user must still submit every release-owned choice, compile the exact
+route, select the tariff profile, obtain current pre-drive evidence, and
+explicitly start navigation.
+
+The default whole-Shuto planner has a separate parked-only reopening path. When
+the saved document names the exact bundled current snapshot, the planner
+reconstructs and revalidates the complete `RoutePlan` against that snapshot,
+including repeated occurrences and circuit laps. The library labels this
+availability **CURRENT SNAPSHOT** and may reopen it for parked review and the
+clearly labeled replay. It does not create a `KaidoProductRelease`, release any
+movement, or enable live navigation; **Start navigation** remains blocked until
+an exact authority-bearing release is enrolled. Saving, importing, or matching
+the current snapshot never upgrades evidence.
 
 The App surface supports local save, listing, rename, confirmation-gated delete,
 deterministic JSON export, validated JSON import, and exact-release reopening.

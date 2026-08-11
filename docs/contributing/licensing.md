@@ -63,15 +63,21 @@ Primary references:
 - [OSMF Produced Work guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Produced_Work_-_Guideline)
 - [OSMF Collective Database guideline](https://osmfoundation.org/wiki/Licence/Community_Guidelines/Collective_Database_Guideline_Guideline)
 
-The bounded K7 Northwest candidate database under
-`data/route-atlas/osm-derived/` is the first implementation of this isolation
-rule. That directory identifies ODbL-1.0 as its data licence, carries the
-required OpenStreetMap contributor attribution, pins the parent PBF and bounded
-extract hashes, retains exact OSM node/way lineage, and provides machine-readable
-reconstruction commands. The directed database and successor-audit report are
-both explicitly marked ODbL-1.0. The Apache-2.0 repository licence still applies
-to the extractor and candidate builders, not to their OSM-derived data output.
-Interactive-map attribution integration remains a release blocker.
+The default whole-Shuto graph and the retained bounded K7/C2 candidates under
+`data/route-atlas/osm-derived/` implement this isolation rule. That directory
+identifies ODbL-1.0 as its data licence, carries the required OpenStreetMap
+contributor attribution, pins parent inputs and hashes, retains OSM lineage, and
+provides machine-readable reconstruction commands. The Apache-2.0 repository
+licence still applies to the extractor and candidate builders, not to their
+OSM-derived data output. The immutable bundled Route Atlas attribution catalog
+remains scoped to its exact reviewed legacy resources. The default
+`shuto-whole-network-20260804` product independently validates the decoded
+snapshot's OSM attribution and ODbL metadata and renders fixed official source
+and licence links adjacent to its map. Its complete distribution and
+reconstruction contract is tracked in
+[`shuto-whole-network-20260804.README.md`](../../data/route-atlas/osm-derived/shuto-whole-network-20260804.README.md).
+This is a technical distribution implementation, not legal advice or road
+authority.
 
 The generated K7 schematic SVG is a Produced Work built from that bounded
 database plus a separately tracked Kaido-owned normalized layout. The SVG keeps

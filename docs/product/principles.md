@@ -53,9 +53,10 @@ traffic control.
    parked. Driving mode remains glanceable and low-interaction.
 7. **Culture without racing.** Night scenery, engineering, JDM history, and PA
    etiquette are useful content. Speed and enforcement-evasion mechanics are not.
-8. **Recovery preserves the route.** A missed movement finds a safe legal path to
-   a later occurrence in the selected route; it does not replace the drive with
-   destination-first navigation.
+8. **Recovery preserves the route.** With released rejoin evidence, a missed
+   movement finds a safe legal path to a later occurrence in the selected route;
+   it does not replace the drive with destination-first navigation. Without
+   that evidence, the route is visibly interrupted rather than improvised.
 9. **Entry and exit are explicit — and priced.** After the user chooses a
    route, current-location recommendations target exact direction-valid
    entrances compatible with that route. Each entrance/exit pairing shows its
@@ -91,20 +92,21 @@ traffic control.
 
 ## Product shape today and the route-first realignment
 
-The whole-Shuto planning layer is released: a bundled dated network snapshot
-covering all 26 official routes with directional IC facilities, JCTs, and PAs;
-deterministic route search and exact custom selection; fail-closed surface
-access and egress legs; and pre-drive review. The reviewed journey can then be
-driven on real device positions, or replayed as an explicitly labeled preview;
-both run the same reducer, and the live drive is foreground-scoped and refuses
-invalid or spoofed fixes rather than turning them into progress.
+The whole-Shuto planning layer is the default candidate product surface: a
+bundled dated network snapshot covering all 26 official routes with directional
+IC facilities, JCTs, and PAs; deterministic route search and exact custom
+selection; fail-closed surface access and egress legs; and pre-drive review.
+The selected journey can be replayed as an explicitly labeled preview through
+the route-aware reducer. Live navigation is not enrolled: **Start navigation**
+fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`, and foreground Core
+Location supplies the planning origin only rather than admitting route progress.
 
-Navigation-grade guidance remains movement-by-movement: only reviewed junction
-movements produce insets and speech, and that coverage grows after evidence
-review rather than shipping a visually complete but unevenly verified guidance
-layer. A driver on a route without reviewed movements gets position, progress,
-and the next facility with its distance, and no spoken turn instruction — the
-product says less rather than guessing.
+Guidance remains movement-by-movement: only reviewed junction movements produce
+insets and speech, and that coverage grows after evidence review rather than
+shipping a visually complete but unevenly verified guidance layer. In labeled
+replay, a route without reviewed movements gets route-bound replay position,
+progress, and the next facility with its distance, and no spoken turn
+instruction — the product says less rather than guessing.
 
 Coverage is extended by reviewing the operator's own junction detail diagrams.
 They are published as images rather than machine-readable text, so each review

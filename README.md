@@ -1,10 +1,11 @@
 # Kaido Routes
 
 Kaido Routes is a route-first iPhone navigation product for the Shuto
-Expressway. A driver can start from any MapKit-resolvable place, choose a final
-destination, review the exact directional entrance, Shuto route, junction
-sequence, and exit, then run the complete journey from surface access through
-surface egress.
+Expressway. A driver chooses a route experience first, derives a
+direction-valid entrance and exit from the current origin, optionally adds a
+final destination, reviews the exact Shuto route and junction sequence, then
+replays the journey from surface access through surface egress. Live navigation
+remains fail-closed until an exact authority-bearing product is enrolled.
 
 The project is not affiliated with or endorsed by Metropolitan Expressway
 Company Limited.
@@ -56,9 +57,33 @@ internal review workbench.
   and keeps passage and toll information explicitly unconfirmed when no current
   source exists. Missing either surface leg blocks review and start rather than
   silently skipping that part of the journey.
+- Saved-route import preserves the complete shared `RoutePlan` and never
+  upgrades its evidence. A record labeled `CURRENT SNAPSHOT` has been
+  reconstructed and revalidated against the exact bundled whole-Shuto snapshot,
+  including repeated occurrences and circuit laps; it may reopen parked review
+  and replay only. Live start still requires an authority-bearing
+  `KaidoProductRelease`.
 - Route occurrences remain ordered and distinct. Directed links represent
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
+- The bundled whole-Shuto graph remains a candidate asset rather than a
+  validated `KaidoProductRelease`. The complete journey is available as a
+  clearly labeled replay. **Start navigation** fails closed with
+  `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` until one exact joint product
+  release and its released surface provider/field evidence are enrolled.
+- Every compiled whole-Shuto runtime exposes a deterministic asset identity.
+  Its network-artifact hash covers the complete decoded network, including
+  source, licence, limitation, and bounds metadata; its route-runtime hash
+  additionally covers the exact `RoutePlan`, matcher corridor, decision zones,
+  guidance, recovery candidates, and route-edge lengths. This is not a
+  `KaidoProductRelease`: the hashes detect input drift but do not grant live-input
+  authority or upgrade the graph's evidence status. Entry-transition and
+  expressway replay checkpoints persist that identity and return to parked
+  review instead of restoring runtime progress when either hash drifts.
+- Graph search may derive candidate wrong-turn rejoin shapes for integrity and
+  future review, but every such path remains unreleased. A replayed deviation is
+  therefore unavailable/route-interrupted rather than executing an unreviewed
+  movement.
 - The driving simulation covers surface access, entry, expressway travel,
   junction prompts, exit, surface egress, and completion. Entry and expressway
   playback follow the selected network geometry with a maximum 30-meter sample
@@ -74,9 +99,11 @@ internal review workbench.
   commits at zero. The clean profile must meet the default accuracy floor; an
   eight-meter radial-drift profile must retain 100% HIGH occurrence precision,
   at least 20% HIGH coverage, and at most 15 meters p95 route-progress error.
-- Live Core Location course and speed uncertainty now reach the matcher.
-  Uncertain course expands the heading model instead of being trusted like a
-  precise bearing, and speed uncertainty widens travel-distance tolerance.
+- The Core Location adaptation boundary preserves course and speed uncertainty
+  for release-enrolled runtimes. Uncertain course expands the heading model
+  instead of being trusted like a precise bearing, and speed uncertainty widens
+  travel-distance tolerance. The default candidate product currently uses
+  foreground Core Location for planning origin only, not live navigation.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
   geometry, makes the next reviewed decision and its distance the dominant
@@ -99,14 +126,13 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network movements are both Bayshore Route approaches to
-  Route 10 inbound at Shinonome JCT, both Bayshore Route approaches to Route 9
-  inbound at Tatsumi JCT, Bayshore Route westbound to C2 inner at Kasai JCT,
-  and Bayshore Route westbound to C2 outer at Oi JCT. Their Kaido vectors,
-  branch instructions, Japanese sign targets, and route shields are
-  operator-source-traceable. Each exact outgoing occurrence compiles into
-  actor-owned screen and one-shot speech guidance. Lane indices remain
-  explicitly unreleased, and unreviewed transitions remain silent.
+- The reviewed whole-network catalog contains 20 exact movements. It covers
+  every divergent JCT on the C1 inner catalog loop and on the Bayshore corridor
+  in both directions. Their Kaido vectors, branch or continuation instructions,
+  Japanese sign targets, and route shields are operator-source-traceable. Each
+  exact outgoing occurrence compiles into actor-owned screen and one-shot
+  speech guidance. Lane indices remain explicitly unreleased, and transitions
+  without sufficient approach-specific evidence remain silent.
 - Map facility labels for IC, JCT, and PA, route shields, and physical sign
   targets stay in Japanese. The default whole-network journey provides
   persisted Japanese, Simplified Chinese, and English interface controls plus
@@ -118,13 +144,13 @@ special routing modes.
 
 ## Current network snapshot
 
-The bundled `2026-07-28` OSM geometry snapshot is joined to operator facts
+The bundled `2026-08-04` OSM geometry snapshot is joined to operator facts
 checked on `2026-07-29`:
 
 | Item | Bundled coverage |
 |---|---:|
 | Official route entries | 26 |
-| Directed graph edges | 24,291 |
+| Directed graph edges | 24,299 |
 | IC names | 151 |
 | Usable IC geometry matches | 148 / 148 |
 | Official JCT matches | 39 / 39 |
@@ -149,20 +175,20 @@ The product distinguishes what is known from what is still unconfirmed:
 - The line map and junction inset are Kaido-generated vectors. Every JCT keeps
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
-  IDs, shared JCT node, direction, and official content hash. The Shinonome,
-  Tatsumi, Kasai, and Oi definitions authorize only their reviewed left or
-  right branch plus approach-specific Japanese sign target; they do not copy
+  IDs, shared JCT node, direction, and official content hash. The 20 admitted
+  definitions cover the C1 inner catalog loop and both directions of the
+  Bayshore corridor at divergent JCTs; they authorize only the reviewed branch
+  or continuation and approach-specific Japanese sign target. They do not copy
   operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`.
-- The shipped drive runs on real device positions through the shared
-  observation-adaptation boundary, which refuses invalid, stale, future-dated,
-  and (in distributed builds) simulated fixes. A clearly labeled replay preview
-  sits beside it for planning without driving. Neither mode claims tunnel,
-  field, acoustic, or CarPlay qualification, and spoken turn guidance still
-  covers reviewed junction movements only.
+- The default App's foreground Core Location lifecycle supplies the planning
+  origin; it refuses to start candidate whole-Shuto navigation. The clearly
+  labeled replay exercises the route-aware matcher and actor-owned reducer but
+  grants no road, tunnel, field, acoustic, or CarPlay qualification. Spoken turn
+  guidance still covers reviewed junction movements only.
 
 ## Build and run
 
@@ -210,11 +236,21 @@ Useful visual launch arguments:
 swift test
 swift run kaido-scenarios e2e/scenarios
 python3 scripts/validate_e2e.py
+python3 -m unittest discover -s scripts/tests
+swift run kaido-release validate-product \
+  --artifact \
+  data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 ```
 
 The focused whole-network tests decode the distributed database, validate
 coverage and identity, plan a cross-network IC-to-IC route, and rank entrances
 and exits for arbitrary Tokyo-to-Yokohama coordinates.
+
+The verification workflow also runs the complete Python validator regression
+suite and the production joint-release validator against the retained K7
+product artifact. K7 remains a deterministic regression anchor. Neither gate
+enrolls the candidate whole-Shuto graph, refreshes its evidence, or grants it
+live-navigation authority.
 
 ## Rebuild the network
 
@@ -229,13 +265,15 @@ python3 -m venv /tmp/kaido-shuto-osmium
   --checked-at 2026-07-29 \
   --output data/network/shuto-official-catalog-20260729.json
 /tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_network.py \
-  --input /path/to/kanto-260728.osm.pbf \
+  --input /path/to/kanto-260804.osm.pbf \
   --official-catalog data/network/shuto-official-catalog-20260729.json \
+  --facility-candidate-review \
+    data/network/shuto-facility-candidate-review-20260810.json \
   --output data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
   --expected-input-sha256 \
-    4ebc009018467c3d9c4cdc5f1817a7d2bfeab243af0889700667f6be99fe4e52 \
+    a6835449bd93144cf6724e9682d691494a1b6ead5aeb4f42f1b5bf2f26e6412c \
   --source-uri \
-    https://download.geofabrik.de/asia/japan/kanto-260728.osm.pbf
+    https://download.geofabrik.de/asia/japan/kanto-260804.osm.pbf
 ```
 
 The builder selects the 26 Shuto route relations, adds only connected motorway
@@ -247,8 +285,15 @@ matches every usable official IC and JCT, and fails on source or coverage drift.
 Project code is Apache-2.0. The complete database under
 `data/route-atlas/osm-derived/` is an OpenStreetMap derivative distributed under
 ODbL 1.0 with `© OpenStreetMap contributors` attribution. The root licence does
-not relicense that database.
+not relicense that database. The immutable bundled Route Atlas attribution
+catalog remains bound to the retained K7 review bytes. The default
+`shuto-whole-network-20260804` surface independently validates the decoded
+snapshot's OSM attribution and ODbL metadata, then exposes fixed HTTPS source
+and licence links adjacent to the map; it does not rewrite or inherit the K7
+review.
 
 Raw coordinates and personal field traces must not be committed. See
-[PRIVACY.md](PRIVACY.md), [OSM-derived data notes](data/route-atlas/osm-derived/README.md),
-and [the iOS architecture contract](docs/architecture/ios-navigation-architecture.md).
+[PRIVACY.md](PRIVACY.md), the
+[whole-Shuto OSM distribution notes](data/route-atlas/osm-derived/shuto-whole-network-20260804.README.md),
+the retained [K7 OSM review notes](data/route-atlas/osm-derived/README.md), and
+[the iOS architecture contract](docs/architecture/ios-navigation-architecture.md).

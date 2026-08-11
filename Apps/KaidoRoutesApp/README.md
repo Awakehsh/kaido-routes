@@ -1,46 +1,55 @@
 # Kaido Routes iPhone app
 
-Status: active iPhone product target with one released K7 route. Physical
-position accuracy, field reliability, acoustic output, background navigation,
-and CarPlay remain separately unqualified.
+Status: active iPhone product target with a default whole-Shuto parked planner
+and labeled replay. Its bundled graph is a candidate asset, not an enrolled
+`KaidoProductRelease`; live start fails closed as
+`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`. The released K7 product remains a
+deterministic regression fixture. Physical position accuracy, field reliability,
+acoustic output, background navigation, and CarPlay remain separately
+unqualified.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
-links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`, and
+links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`,
 `KaidoPresentation`, and `KaidoAppleAdapters` products. The ordinary journey
-renders one shared map control with user-selected geographic and topology
-projections; tracked recognition and evidence assets remain in the internal
-workbench.
+renders one shared map control with user-selected geographic and whole-route
+track-map presentations; tracked recognition and evidence assets remain in the
+internal workbench.
 
-The default scene is now an ordered product journey rather than the complete
-internal evidence workbench:
+The default Release scene and the no-argument Debug scene open the ordered
+whole-Shuto product journey rather than the internal evidence workbench:
 
-1. Routes starts directly with origin, map, compatible directional entrance,
-   available route cards, create route, and saved routes;
-2. Plan submits only release-owned parked choices;
-3. only an exact compiled RoutePlan unlocks Review; and
-4. the released K7 route continues into Drive through its actor runtime and
-   starts foreground Core Location only after a second explicit user action.
+1. Routes starts with current/manual origin, the whole-network map, named route
+   experiences, exact customization, and saved routes;
+2. planning derives a direction-valid entrance/exit pairing and compiles one
+   exact occurrence-preserving `RoutePlan` from the current bundled snapshot;
+3. Review requires both bounded surface legs and keeps passage/toll uncertainty
+   visible; and
+4. **Replay route** runs the deterministic complete-journey trace, while
+   **Start navigation** remains blocked until an exact joint release plus
+   released surface-provider and field evidence are enrolled.
 
-The `Map | Lines` choice persists across Routes, Plan, Review, and Drive.
-`Map` is the default and draws every released K7 route occurrence from the
-matcher corridor over a MapKit basemap. Drive exposes one explicit automatic
-route simulation with pause, resume, and replay; it is synthetic and never
-claims live-road position or passage status. `Map` and `Lines` are the only map
-modes. A maneuver-derived junction inset may temporarily overlay either one
-after its active release-bound DecisionZone guidance frame crosses the released
-prompt threshold. It preserves the released Japanese sign target and selected
-left or right branch, and clears with that guidance frame. The App generates
-the road scene and does not bundle operator photographs used for private visual
-comparison.
-`Lines` presents only the selected released route. It derives route shields,
-directional entrance, selected JCT movements, PA count, and directional exit
-from the validated product release; the current foreground catalog's K7 route
-is one ordinary instance of this generic path. Localized facility cards use
-leaders back to their exact Route Atlas points and do not imply broader Shuto
-coverage. The topology renderer preserves repeated occurrences and can draw a
-precise progress marker only from one exact HIGH matcher estimate admitted
-against the active RoutePlan and actor snapshot. LOW, LOST, ambiguous, stale,
-or identity-drifted evidence cannot create that marker.
+A saved record labeled `CURRENT SNAPSHOT` has had its complete ordered
+`RoutePlan` reconstructed against the exact bundled graph, including repeats
+and circuit laps. Circuit source, ID, and lap metadata must reproduce that same
+plan and survive reopen/re-save. The record may open parked Review and resolve
+fresh bounded surface legs for replay; saving/importing does not upgrade
+evidence or unblock live navigation.
+
+The `ROUTES | MAP` choice persists through the journey. `ROUTES` shows the
+Kaido-owned whole-network/whole-route track presentation; `MAP` shows the exact
+selected Shuto path plus bounded ordinary-road legs over MapKit. Replay exposes
+pause, resume, finish, and termination reconstruction without claiming live-road
+position or current passage status. A junction inset and one-shot speech appear
+only for snapshot-bound reviewed movement definitions; lane indices and every
+unreviewed movement stay silent. The App generates the road scene and does not
+bundle operator photographs used for private visual comparison. Exact HIGH
+matcher evidence may advance the replay marker; LOW, LOST, ambiguous, stale, or
+identity-drifted evidence cannot.
+
+Checkpoint load, compatibility, route/runtime validation, save, and removal
+failures publish a localized resume-data warning. Rejected or failed
+replacement data is invalidated when storage remains writable, so stale
+progress and spoken-prompt state cannot silently return after relaunch.
 
 `-C2-ROUTE-MAP-DEMO` opens a dense-route design preview. It shows one complete
 Tomigaya-to-Hatsudai-minami circuit as green C2 sections plus the blue
@@ -64,9 +73,10 @@ The former all-panel review workbench remains available only through
 development launch arguments such as `-INTERNAL-REVIEW-HOME`; focused previews
 retain their existing deterministic test arguments.
 
-## Bundled product release catalog
+## Retained product release catalog
 
-The app does not discover arbitrary JSON files at runtime. Its compile-time
+The explicit released-product Debug/regression surfaces do not discover
+arbitrary JSON files at runtime. Their compile-time
 `BundledProductReleaseCatalog` manifest names each bundled artifact, pins its
 SHA-256 and expected product release ID, and assigns either `DEMO_ONLY` or
 `FOREGROUND_NAVIGATION`. The loader validates the descriptor and content hash
@@ -88,13 +98,14 @@ name, and SHA-256 cannot drift through hand transcription. The generated static
 descriptor must still be reviewed and explicitly added to `previewManifest`;
 staging never becomes runtime resource discovery or automatic enrollment.
 
-The product journey prefers foreground entries when at least one exists.
-Otherwise it exposes the validated demo through the same release-owned authoring
-model for rehearsal only. `ReleasedProductRouteAuthoringModel` lists each
-release through its own locale-complete presentation and submits every stable
-recipe choice explicitly through `ReleasedRouteEditorAdapter`. Compilation must
-equal the selected release's whole `RoutePlan`, including snapshot and
-occurrence order. An optional compile-time, hash-bound
+This retained release-backed journey prefers foreground entries when at least
+one exists; it is not the default whole-Shuto scene. Otherwise it exposes the
+validated demo through the same release-owned authoring model for rehearsal
+only. `ReleasedProductRouteAuthoringModel` lists each release through its own
+locale-complete presentation and submits every stable recipe choice explicitly
+through `ReleasedRouteEditorAdapter`. Compilation must equal the selected
+release's whole `RoutePlan`, including snapshot and occurrence order. An
+optional compile-time, hash-bound
 `PreDriveEvidenceBundle` is the default foreground session-evidence provider;
 tests may still inject one explicitly. The bundle must satisfy
 `ReleasedPreDriveReviewAdapter` before its values may be labeled current. The
@@ -138,7 +149,7 @@ accepted only inside the envelope's own validity window. The corresponding
 private key remains ignored and outside the App; a future key rotation still
 requires a reviewed descriptor update.
 
-The current app deliberately composes only:
+The retained Debug/regression surfaces additionally compose:
 
 - the 26-route full-network recognition reference;
 - the topology-bound K7 evidence candidate;
@@ -168,9 +179,10 @@ The current app deliberately composes only:
   occurrence-bound junction inset;
 - a complete `SYNTHETIC_TEST_ONLY` joint product-release fixture that is decoded
   through the production codec, constructs `KaidoProductNavigationRuntime`, and
-  now owns the default journey's authoring, pre-drive review, and fresh-session
-  actor rehearsal while strict entry remains locked, with a RoutePlan-bound
-  exactly-once speech adapter waiting for a transient prompt emission;
+  owns the retained release-backed journey's authoring, pre-drive review, and
+  fresh-session actor rehearsal while strict entry remains locked, with a
+  RoutePlan-bound exactly-once speech adapter waiting for a transient prompt
+  emission;
 - a release-bound Route Atlas journey overlay that keeps released topology as
   quiet context, renders planned or actor-owned passed/current/future/skipped
   occurrence tracks, preserves repeated traversals with separate ordinal
@@ -178,9 +190,10 @@ The current app deliberately composes only:
   vehicle position;
 - an Application Support saved-route library whose atomically replaced
   schema-1.0 file retains complete shared documents, storage origin, evidence
-  state, snapshot, and ordered occurrences; only one whole-RoutePlan-equal
-  foreground release can reopen a record in the parked release-owned editor,
-  with no automatic choices, compilation, evidence admission, or navigation;
+  state, snapshot, and ordered occurrences; the retained release editor still
+  requires one whole-RoutePlan-equal foreground release, while the default
+  planner may reopen an exact `CURRENT SNAPSHOT` match for parked review/replay
+  only, with no evidence promotion or live-navigation authority;
 - parked local rename, confirmation-gated deletion, deterministic JSON export,
   and validated JSON import controls; import records `SHARED_IMPORT`, unknown
   schemas fail closed without migration, and every mutation persists before the
@@ -228,7 +241,11 @@ The SVG remains non-interactive. Attribution is not delegated to SVG text:
 SwiftUI exposes native source and licence links beside the visible map. The K7
 entry must retain `© OpenStreetMap contributors`, the OpenStreetMap copyright
 URL, the ODbL 1.0 identifier and URI, always-visible placement, and stable
-accessibility identifiers.
+accessibility identifiers. The default whole-Shuto map uses a separate
+fail-closed attribution surface derived from the exact bundled
+`ShutoNetworkDatabase.sources.osm` metadata. It exposes the same official OSM
+copyright and ODbL HTTPS links without changing the legacy K7 catalog or its
+hash-bound review.
 
 It requests when-in-use location only after the operator explicitly starts an
 internal calibration run with non-empty device and mount metadata. The product
@@ -306,8 +323,9 @@ update through the actor. When that update returns one matching
 suppression, interruption without replay, a typed installed-voice failure, an
 atomic background checkpoint, and restoration without position or prompt replay.
 UI tests verify that the runtime remains input-disconnected and entry-locked at
-launch, and that the default product journey can reach the same actor through an
-explicit, fixed-trace rehearsal without enabling live location.
+launch, and that the retained release-backed Debug journey can reach the same
+actor through an explicit, fixed-trace rehearsal without enabling live
+location.
 
 ## Entrance recommendation
 
@@ -411,7 +429,7 @@ authority.
 
 ## Parked guidance-voice sound check
 
-The product journey's pre-drive stage owns a separate
+The retained release-backed journey's pre-drive stage owns a separate
 `GuidanceVoiceSetupModel`. Japanese, Simplified Chinese, and English are
 translated to exact Apple synthesis locales `ja-JP`, `zh-CN`, and `en-US`
 before voice discovery. The model enumerates only exact-locale voices already
@@ -597,17 +615,19 @@ tracked output, and existing evidence directories before a passing receipt can
 exist. Raw `.xcresult`, summary, and build logs remain in ignored private
 storage; the coordinate-free receipt excludes device identifier and name.
 
-The physical suite includes one exact released-K7 Core Location lifecycle:
-the user action requests When In Use permission, survives the system-dialog
-scene interruption, reaches foreground `RUNNING`, and explicitly stops. The
-same suite now also plays parked Japanese, Simplified Chinese, and English
-samples through the real Apple voice-prompt session. It requires an installed
-exact-locale voice, start/finish callbacks, and a non-empty physical output
-route for every sample. The runner requires both named tests to pass and hashes
-the complete test tree. These are permission, callback, and route-lifecycle
-smokes only; they do not qualify location accuracy, matcher reliability, voice
-naturalness, pronunciation, driver comprehension, current road conditions,
-CarPlay, or background navigation. See
+The physical suite includes one exact default whole-Shuto foreground
+planning-location Core Location lifecycle,
+`testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`: the user
+action requests When In Use permission, survives the system-dialog scene
+interruption, reaches foreground `RUNNING`, and explicitly stops. The same suite
+also plays parked Japanese, Simplified Chinese, and English samples through the
+real Apple voice-prompt session. It requires an installed exact-locale voice,
+start/finish callbacks, and a non-empty physical output route for every sample.
+The runner requires both named tests to pass and hashes the complete test tree.
+These are permission, callback, and route-lifecycle smokes only; they do not
+start or enroll live navigation and do not qualify location accuracy, matcher
+reliability, voice naturalness, pronunciation, driver comprehension, current
+road conditions, CarPlay, or background navigation. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
 When the device's XCTest UI Automation service cannot start, use the narrower

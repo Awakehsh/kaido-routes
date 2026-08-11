@@ -1,93 +1,72 @@
 # iOS navigation architecture direction
 
-**Status:** accepted and implemented for the platform-light core and the
-whole-Shuto iPhone product shell. The default app now loads one dated directed
-network containing all 26 official route entries, 151 IC names, 39 JCTs, and
-19 PAs. It can rank directional entrances and exits for arbitrary coordinates,
-compile a Kaido-owned Shuto `RoutePlan`, render geographic and whole-network
-maps, and simulate surface access, entry, junction guidance, exit, and egress.
-The entry and expressway simulation no longer advance from a wall-clock timer.
-`ShutoPlannedRouteRuntimeCompiler` validates the exact selected
-facilities, graph edges, occurrence order, geometry, distance, route shields,
-and network snapshot, then compiles a route-aware matcher corridor containing
-the immutable route plus adjacent deviation edges. Generated observations and
-deterministically injected `CLLocation` samples both run through the existing
-matcher and actor-owned `NavigationSession`. The whole-Shuto product trace
-retains occurrence-scoped samples while adding intermediate samples so no
-selected-edge interval exceeds 30 meters. Its observation timestamps and
-courses derive from distance along that geometry at a 15 m/s reference speed;
-the explicit 20x playback multiplier changes only wall-clock delay. The
-trace also retains exact generator-owned occurrence, edge, fraction, and
-along-route distance truth before any anomaly is applied.
-`NavigationDriveAccuracyEvaluator` compares every matcher result with that truth
-and reports diagnostic top-1 accuracy, HIGH precision and coverage, route
-progress p50/p95/maximum error, wrong HIGH commits, and backward progress.
-Low-confidence online hypotheses may revise near short edge boundaries; only
-HIGH estimates are navigation authority, so the deterministic gate separately
-requires zero wrong or backward HIGH commits. The simulator exercises ordered
-entry continuity through a package-only synthetic path that cannot be called by
-the App or an Apple adapter and grants no released-road authority. Ambiguous or
-degraded entrance evidence keeps the transition unconfirmed. After entry, only
-a unique HIGH occurrence commit projects progress. A unique HIGH off-plan edge
-enters route-first recovery, while the candidate whole-network dataset supplies
-no released rejoin and therefore fails closed as `NO_RELEASED_REJOIN`.
-An active simulation checkpoint restores only against the same network
-snapshot and complete replanned `RoutePlan`, paused at its saved phase and,
-once admitted, exact occurrence and fraction. Matcher posterior is not
-restored.
-Each JCT retains the current operator detail-image URL and SHA-256 for audit;
-`ShutoJunctionGuidanceCompiler` now admits six reviewed whole-network
-movements: both Bayshore Route approaches to Route 10 inbound at Shinonome JCT,
-both Bayshore Route approaches to Route 9 inbound at Tatsumi JCT, Bayshore Route
-westbound to C2 inner at Kasai JCT, and Bayshore Route westbound to C2 outer at
-Oi JCT. Admission requires the exact network snapshot, adjacent incoming and
-outgoing edge IDs, shared OSM JCT node, route direction, occurrence order, and
-current operator-detail hash. Unreviewed route-label changes and nearest-JCT
-geometry produce no inset. The App renders only the reviewed left or right
-branch, approach-specific Japanese sign target, and shields as a Kaido vector;
-lane indices remain explicitly `NOT_RELEASED`. The planner promotes each exact
-outgoing edge occurrence to `JUNCTION_MOVEMENT`, and the whole-network runtime
-compiler creates its DecisionZone and released guidance. The screen and default
-speech output consume the same actor update and one-shot prompt identity.
-The default whole-Shuto shell owns persisted interface and guidance-voice
-selections as independent values. Interface selection localizes planning,
-review, simulation, network-fact, degraded-state, and accessibility copy.
-Actor projection reads the separately selected voice locale when it admits a
-reviewed prompt. Junction presentation localizes its explanatory text and JCT
-name while preserving the exact Japanese physical sign target and route
-shields.
-Simulation start changes the default projection from the whole-network planning
-diagram to the geographic driving map. In ordinary high-confidence states the
-camera follows a route-derived bearing with a pitched driving view; traveled
-and remaining Shuto geometry are separate projections of the exact occurrence
-progress. The HUD derives whole-journey remaining distance and the next
-reviewed-JCT distance from the selected route and surface legs. It never treats
-those simulated distances as live traffic or ETA. A driver can explicitly
-switch between route following and free map browsing. Network-degraded,
-route-interrupted, and tunnel-estimated states suppress the derived heading and
-use a north-up camera rather than fabricating directional evidence.
-The position-state label exposes the 54 km/h simulated reference speed and 20x
-playback rate. They are replay parameters, not observed speed, a speed-limit
-claim, live traffic, or ETA.
-The interaction was cross-checked on 2026-07-30 against Google Navigation
-SDK's documented
-[follow, overview/free, and recenter camera behavior](https://developers.google.com/maps/documentation/navigation/ios-sdk/camera)
-plus its
-[traveled-path and remaining-route information](https://developers.google.com/maps/documentation/navigation/ios-sdk/get-route-info).
-Those documents are UX references only; Google Maps supplies no Kaido road,
-movement, route, or runtime authority.
-The previous C2 simulation and K7 release remain bounded regression fixtures;
-they are not product coverage limits. The app still has no qualified
-whole-network released-road live-input authority, attached continuous location
-manager, background navigation service, or CarPlay scene. The observation
-replay remains visibly labeled as a simulation.
-The current bake-off
-selects Valhalla as the leading shared implementation behind the bounded
-surface-routing/oracle boundary and pure Swift for live RoutePlan matching,
-subject to Apple-adapter, operations, and field evidence in
-`docs/testing/navigation-engine-bakeoff.md`.
+**Status:** accepted and implemented for the platform-light core and default
+whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
+with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. Its route-first home
+offers named experiences, automatic direction-valid entrance/exit pairing,
+1–3 laps for loops, and exact custom routes before the optional destination.
+The selected Kaido-owned `RoutePlan` then drives review and a labeled replay of
+bounded surface legs, entry, expressway progress, exit, egress, finish, and
+checkpoint reconstruction. Candidate whole-Shuto live start remains
+fail-closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`.
 
-**Checked:** 2026-07-30
+`ShutoNetworkDatabase` preserves graph bounds, explicit limitations, official
+catalog and facility-review hashes, and OSM source/licence metadata rather than
+discarding those fields at decode. `ShutoPlannedRouteRuntimeCompiler` validates
+the selected facilities, graph edges, occurrence order, geometry, distance,
+and snapshot, then compiles the route-aware matcher corridor, DecisionZones,
+reviewed guidance, and graph-derived recovery candidates. Because the graph is
+a planning candidate, those recovery paths are marked unreleased: a deviation
+becomes unavailable/route-interrupted instead of executing an unreviewed
+movement. Every result carries a deterministic `ShutoRuntimeAssetIdentity`: the
+network-artifact SHA-256 covers
+the complete canonical decoded database, while the route-runtime SHA-256 binds
+the exact `RoutePlan` and all route-local runtime inputs to that artifact hash.
+It is explicitly not the joint authority-bearing `KaidoProductRelease`. This is
+an integrity and restoration boundary, not a promotion of OSM/provider surface
+geometry, unreviewed movements, or the candidate graph to released-road, lane,
+realtime, or field authority.
+
+The default App has one executable navigation-observation path: labeled replay
+uses the deterministic 15 m/s trace with at most 30 meters between samples and
+an explicit 20x wall-clock multiplier. `WholeShutoPlanningLocationController`
+currently owns a when-in-use foreground Core Location lifecycle for the planning
+origin only. It cannot create a live navigation session from the candidate
+graph. A future enrolled live path must normalize device fixes through the
+shared adapter, reject invalid, stale, future-dated, ambiguous, and
+distributed-build simulated fixes, and require a unique HIGH occurrence commit
+before progress. It must not mint `EntryTransitionAdmissionContext`,
+`SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
+hash or a MapKit response. Neither the current planning location path nor replay
+supplies background-navigation or tunnel dead-reckoning authority.
+
+`ShutoJunctionGuidanceCompiler` contains 20 snapshot- and source-hash-bound
+movement definitions. They cover every divergent JCT on the C1 inner catalog
+loop and on the Bayshore corridor in both directions. Admission still requires
+the exact adjacent edges, shared JCT node, route direction, occurrence order,
+and operator-detail hash. The App may render and speak only the reviewed branch
+or continuation, Japanese sign target, and route shields. Lane indices remain
+`NOT_RELEASED`; insufficient approach-specific evidence keeps the other
+transitions silent.
+
+The default shell persists interface and guidance-voice languages separately,
+preserves Japanese physical sign text and route shields, and exposes geographic
+and whole-route track-map presentations. OSM attribution is a separate adjacent
+native surface and never grants navigation authority. The previous C2 and K7
+artifacts remain deterministic regression fixtures, not product coverage limits
+or active delivery tracks.
+
+Open boundaries remain explicit: no passenger-safe field, tunnel, acoustic, or
+CarPlay qualification exists; there is no background navigation service or
+CarPlay scene; dynamic passage and traffic remain unconfirmed without a current
+provider; and lane guidance remains unreleased. Enrolling live navigation
+requires a real validated joint `KaidoProductRelease` plus released surface
+provider and field evidence; this is an external evidence boundary, not a value
+an asset-integrity hash may synthesize. Valhalla remains the leading
+shared surface-routing/offline-oracle candidate behind a bounded adapter, while
+the pure-Swift route-aware matcher owns live RoutePlan matching.
+
+**Checked:** 2026-08-11
 
 ## Decision summary
 
@@ -516,22 +495,19 @@ their reviewed branch path, Japanese sign target, and shields while stating
 that lane indices are not released. Any source-hash, snapshot, direction, node,
 edge, or occurrence drift suppresses the inset.
 
-For the current candidate snapshot, both Bayshore Route approaches to Route 10
-inbound at Shinonome JCT, both Bayshore Route approaches to Route 9 inbound at
-Tatsumi JCT, Bayshore Route westbound to C2 inner at Kasai JCT, and Bayshore
-Route westbound to C2 outer at Oi JCT compile into occurrence-owned guidance.
-The route planner promotes each exact reviewed outgoing edge occurrence to
-`JUNCTION_MOVEMENT`; `ShutoPlannedRouteRuntimeCompiler` then binds its incoming
-occurrence as the anchor and compiles one DecisionZone plus one commit-stage
-`ReleasedGuidanceDefinition` for that occurrence. Shinonome eastbound projects
-`BRANCH_LEFT` with `豊洲`, while its westbound approach projects `BRANCH_RIGHT`
-with `晴海`. The two Tatsumi approaches project `BRANCH_LEFT` while preserving
-their distinct `箱崎` and `箱崎・銀座` sign targets. Kasai projects
-`BRANCH_LEFT` with `東北道・常磐道`, while Oi projects `BRANCH_LEFT` with
-`東名・中央道`. The App projects phone and voice from the same
-`NavigationSessionUpdate`. None of these movements implies lane preparation;
-lane preparation remains `NONE`, and every unreviewed transition remains
-silent and neutral.
+For the current candidate snapshot, the 20 exact definitions cover every
+divergent JCT on the C1 inner catalog loop and on the Bayshore corridor in both
+directions. The route planner promotes each exact reviewed outgoing edge
+occurrence to `JUNCTION_MOVEMENT`; `ShutoPlannedRouteRuntimeCompiler` then binds
+its incoming occurrence as the anchor and compiles one DecisionZone plus one
+commit-stage `ReleasedGuidanceDefinition` for that occurrence. The catalog
+preserves approach-specific Japanese sign targets, route shields, and a reviewed
+left, right, or mainline-continuation instruction. The App projects phone and
+voice from the same `NavigationSessionUpdate`. None of these definitions
+implies lane preparation; lane preparation remains `NONE`, and every transition
+without sufficient approach-specific evidence remains silent and neutral. The
+current evidence-blocked set and reasons are recorded in
+`docs/product/principles.md`, not inferred from missing code.
 
 The projector fails closed when prompt, anchor occurrence, movement occurrence,
 or DecisionZone identity is absent; the frame does not belong to the current
@@ -554,8 +530,12 @@ HIGH Swift estimate only when along-edge progress, RoutePlan occurrence, directe
 edge, complete version-bound corridor geometry, and reviewed DecisionZone entry
 offset agree. It never consumes the matcher's lateral residual as route distance.
 KR-S17 injects an already resolved scalar; KR-S18 executes the matcher bridge
-through planning, ledger, and projection. Production corridor construction and
-zone calibration remain data/field gates. The synthetic driving/JCT panel now
+through planning, ledger, and projection. The whole-Shuto runtime compiler now
+constructs the candidate corridor and occurrence-bound zones used by replay.
+A future live path may reuse those semantic inputs only after an exact
+`KaidoProductRelease` independently admits them; the candidate assets cannot
+create that authority. Passenger-safe field calibration of matcher and prompt
+timing remains a separate evidence gate. The synthetic driving/JCT panel now
 has a KR-U09 accessibility baseline: localized assistive projection, non-color
 branch/lane cues, actual theme-token contrast checks, and standard plus AXXXL
 Simulator UI tests. A separate app panel decodes one complete
@@ -577,17 +557,24 @@ synthetic scene supplies a typed authority blocker, constructs no manager, and
 keeps strict entry locked. Real-road released assets, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
 device-matrix layout, and physical display timing remain adapter work and device
-gates.
+gates. Separately, the default candidate whole-Shuto journey has a foreground
+`WholeShutoPlanningLocationController` for planning location, but live navigation
+start fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` and constructs no
+`ShutoLiveDriveSession`. It cannot inherit the K7 fixture's road-evidence or
+live-input authority merely because location permission or device fixes exist.
 
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to
 a clean source commit, requires a zero-failure/zero-skip physical `.xcresult`,
-and requires the named released-K7 Core Location permission/start/stop UI test
-to pass exactly once. It hashes the result tree, summary, test tree, and build
-log into a receipt without device ID, device name, coordinates, raw traces,
-audio, or paths. The receipt grants only foreground-location lifecycle smoke;
-it deliberately keeps location accuracy, acoustic, pronunciation, road,
-CarPlay, and background-navigation authority false.
+and requires the named default whole-Shuto foreground planning-location
+`testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`
+permission/start/stop UI test to pass exactly once. It hashes the result tree,
+summary, test tree, and build log into a receipt without device ID, device name,
+coordinates, raw traces, audio, or paths. The receipt grants only
+planning-location lifecycle smoke; it deliberately keeps live navigation,
+location accuracy,
+acoustic, pronunciation, road, CarPlay, and background-navigation authority
+false.
 
 `NavigationSession` now owns the executable runtime ordering of these pieces.
 One matcher observation produces one atomic update containing matcher diagnostics,
@@ -906,7 +893,8 @@ maintainer must still review and explicitly enroll the
 generated static symbol in the App manifest; no runtime scanning or automatic
 promotion is introduced.
 
-The default product journey exposes only foreground releases. When any exist,
+The retained release-backed Debug/regression journey exposes only foreground
+releases. When any exist,
 `ReleasedProductRouteAuthoringModel` replaces the synthetic editor and lets the
 user select one catalog entry and submit each release-owned recipe choice.
 `ReleasedRouteEditorAdapter` retains occurrence identity, and compilation must
@@ -926,9 +914,9 @@ Location. A second explicit action starts foreground location only after actor
 activation and When In Use authorization. Runtime construction failure stays in
 pre-drive review; route invalidation or a newly admitted current closure
 terminates an active runtime. Ending navigation stops input and speech, removes
-the active checkpoint, and returns to review. The current build carries one
-foreground K7 release and one
-synthetic demo. The foreground entry carries one dated, hash-bound K7
+the active checkpoint, and returns to review. Its retained catalog carries one
+foreground K7 release and one synthetic demo; neither is the default
+whole-Shuto delivery route. The foreground entry carries one dated, hash-bound K7
 pre-drive bundle with all ten canonical vehicle/payment profiles. It admits
 current-information presentation only within that bundle's exact validity
 window, becomes a stale-information warning after expiry, and never substitutes
@@ -1102,7 +1090,8 @@ That is a development fact, not yet the minimum deployment target.
   intersections or author an alternate successor graph. Before a real joint
   product release exists, concept compositions must be marked
   topology-unverified and not for navigation.
-- The default internal iPhone scene now sequences Route Atlas, parked authoring,
+- The retained internal release-backed Debug scene sequences Route Atlas,
+  parked authoring,
   pre-drive review, and a locked navigation stage through
   `KaidoProductJourneyModel`. This coordinator owns presentation stage only. It
   selects the synthetic preview editor only when the catalog has no foreground
@@ -1113,10 +1102,11 @@ That is a development fact, not yet the minimum deployment target.
   coordinator cannot convert a structurally valid synthetic or mismatched
   release into navigation authority. The former all-panel evidence workbench
   remains a launch-only internal surface.
-- The default journey owns one persisted interface-locale environment with exact
-  Japanese, Simplified Chinese, and English app copy. The selection is visible
-  and changes atlas, entrance explanation, parked editor, pre-drive review,
-  voice setup, and released-navigation chrome immediately. It does not mutate
+- The App owns one persisted interface-locale environment with exact Japanese,
+  Simplified Chinese, and English copy. The selection is visible in the default
+  whole-Shuto journey and retained release-backed surfaces. It changes atlas,
+  entrance explanation, parked editor, pre-drive review, voice setup, and
+  released-navigation chrome immediately. It does not mutate
   the separately persisted guidance-voice locale, reinterpret RoutePlan values,
   translate evidence codes, or replace release-owned editor and guidance
   catalogs. Synthetic entrance and editor labels must be complete in all three
@@ -1210,8 +1200,8 @@ That is a development fact, not yet the minimum deployment target.
   guidance-voice locales from one validated `GuidanceFrame`. It renders the
   Japanese sign target and route shield unchanged beside localized explanatory
   text. It supplies no prompt emission and therefore has no speech authority.
-  KR-U05 and KR-U11 cover this adapter boundary; the default product journey now
-  applies the independent interface preference to its app-owned chrome, while
+  KR-U05 and KR-U11 cover this adapter boundary; the App applies the independent
+  interface preference to its app-owned chrome, while
   internal-workbench localization and pronunciation review remain pending. The
   separate product-runtime adapter
   exercises the implemented speech scheduler and Apple output lifecycle without
@@ -1721,23 +1711,38 @@ live-session checkpoint. Its provider coordinates and playback index restore
 only local demonstration continuity, never a measured marker or release-owned
 state.
 
-The whole-Shuto simulation uses a separate schema-1.4 app checkpoint. It binds
-the same candidate network snapshot, the complete replanned `RoutePlan`,
-directional entry and exit, selected preference, recommendation-or-custom
-selection source, phase, consumed output prompt IDs, and, after confirmed entry,
-exact route occurrence and fraction. A custom review restores the custom
-selection only after its exact plan is reconstructed; the source flag cannot
-substitute for `RoutePlan` equality. A prior schema or any `RoutePlan` content
-drift is not restored. An entry-transition checkpoint must retain zero route
-progress and no runtime occurrence or fraction. Restoration is paused,
-recompiles the route/corridor from the bundled graph, discards matcher posterior
-and partial entry continuity, and resumes from the first generated entrance
-observation. An expressway restore resumes at the saved occurrence but admits no
-new progress until another HIGH replay observation. App inactive/background
+The whole-Shuto replay uses a separate schema-2.0 app checkpoint. It binds the
+candidate network snapshot, the complete replanned `RoutePlan`, directional
+entry and exit, selected preference, recommendation/custom/circuit selection
+source, circuit identity and lap count when applicable, bounded surface legs,
+phase, map mode, and consumed output prompt IDs. Entry-transition and
+expressway checkpoints additionally carry the exact
+`ShutoRuntimeAssetIdentity`; restoration recompiles the route-local assets from
+the bundled graph and requires both the network-artifact and route-runtime hashes
+to match before reconstructing replay state. The hash is an integrity check,
+not release authority.
+
+A custom or circuit checkpoint restores its selection only after the exact plan
+is reconstructed; the source flag cannot substitute for `RoutePlan` equality.
+A prior schema or `RoutePlan` drift is rejected before any journey state is
+restored. Load, schema, snapshot, phase, route, runtime-identity, save, and
+removal failures publish a distinct checkpoint issue instead of looking like
+an empty first launch. A rejected or failed replacement also removes the old
+checkpoint when storage remains writable, so stale progress or a stale spoken-
+prompt ledger cannot reappear on the next launch. Runtime-asset drift returns
+the reconstructed route to parked Review instead of restoring progress. An
+entry-transition checkpoint must retain zero route progress and no runtime
+occurrence or fraction. Restoration is paused, discards matcher posterior and
+partial entry continuity, and resumes from the first generated entrance
+observation. An expressway restore resumes at the saved occurrence but admits
+no new progress until another HIGH replay observation. App inactive/background
 cancels replay, stops current speech, and saves consumed prompt IDs so
-reconstruction cannot repeat an admitted command. This is termination recovery,
-not background navigation. It is not schema-2.0 released-session evidence and
-cannot mint live-input authority.
+reconstruction cannot repeat an admitted command. Any checkpoint marked as live
+is also returned to parked review with
+`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; the candidate product never
+reconstructs `ShutoLiveDriveSession`. This is replay termination recovery, not
+background navigation or released-session evidence, and it cannot mint
+live-input authority.
 
 For the first small graph:
 
@@ -1759,11 +1764,28 @@ shared document, or delete one stable record. It persists each complete result
 before publishing it to SwiftUI; failed I/O cannot expose an uncommitted
 library. Unsupported schemas are rejected rather than implicitly migrated.
 
-The App can reopen a record only after `SavedRouteReleaseMatcher` finds exactly
-one whole-RoutePlan-equal current foreground release. Reopening selects that
-release's parked `ReleasedRouteEditorAdapter`; it does not replay choices,
-compile, admit pre-drive evidence, or start navigation. Missing, corrupt,
-snapshot-drifted, or ambiguous state stays fail-closed.
+The retained release-editor path can reopen a record only after
+`SavedRouteReleaseMatcher` finds exactly one whole-RoutePlan-equal current
+foreground release. Reopening selects that release's parked
+`ReleasedRouteEditorAdapter`; it does not replay choices, compile, admit
+pre-drive evidence, or start navigation. Missing, corrupt, snapshot-drifted, or
+ambiguous release state stays fail-closed.
+
+The default whole-Shuto planner has a separate current-snapshot resolver.
+`savedRouteAvailability` first requires the exact bundled snapshot ID, then
+reconstructs and validates every ordered occurrence against the current graph,
+including repeated edges, reviewed junction-movement occurrences, directional
+entry/exit bindings, and circuit laps. Only that exact match is labeled
+`CURRENT SNAPSHOT`. `openSavedRoute` is parked-only, preserves the complete
+saved `RoutePlan`, resolves fresh bounded surface legs, and enters Review for a
+labeled replay. Template source is validated separately: a circuit source must
+name a bundled circuit and legal lap count whose newly planned complete
+`RoutePlan` exactly equals the saved plan; custom and recommendation sources
+cannot carry circuit fields. Valid template parameters survive reopen and
+re-save instead of silently degrading a circuit to custom. None of this selects
+a product release or promotes the saved document's evidence; live start remains
+`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` until an authority-bearing release is
+enrolled.
 
 Do not use SwiftData object relationships as the routing graph. The graph needs
 explicit adjacency, stable IDs, spatial queries, and deterministic snapshot

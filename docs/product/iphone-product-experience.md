@@ -1,11 +1,17 @@
 # iPhone product experience
 
-Status: accepted product design contract, realigned on 2026-08-03 to the
-route-first home, entrance recommendation with tariff bands, and the
-whole-route track map. The current implementation still reflects the earlier
-destination-first home and must migrate to this contract. The accompanying
-visual mockup is illustrative and grants no real-road route or navigation
-authority.
+Status: accepted product design contract, realigned on 2026-08-03 and checked
+against the default App on 2026-08-11. The implementation now opens on the
+route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
+bands for named experiences, supports loop lap count and exact custom routes,
+and carries the selected route through review, labeled replay, finish, and
+checkpoint reconstruction. Live start is present but fails closed with
+`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` because the candidate snapshot is not
+an authority-bearing `KaidoProductRelease`. Saved routes that exactly match the
+bundled snapshot can reopen parked review and replay after complete `RoutePlan`
+reconstruction; this current-snapshot path grants no live authority. The
+accompanying visual mockup is illustrative and grants no real-road route, lane,
+realtime, or field authority.
 
 ## Product thesis
 
@@ -35,8 +41,9 @@ appear in the default product journey.
 
 The home surface asks one question: which route to drive. It shows the network
 map as context, an explicit current-location origin chip, and the named
-route-experience catalog — reviewed route templates covering the drives the
-audience actually runs (the C1 inner loop, the C2-plus-Bayshore grand loop,
+route-experience catalog — versioned candidate templates over the bundled
+planning snapshot, covering the drives the audience actually runs (the C1
+inner loop, the C2-plus-Bayshore grand loop,
 the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Each catalog card presents the
@@ -61,6 +68,19 @@ does not start a second hidden location request. A denied or unavailable
 location exposes and focuses the manual origin before recommendation can
 continue.
 
+Saved routes remain below the route-experience catalog. Import preserves the
+complete versioned shared document and its evidence state. When the exact
+`network_snapshot_id` matches the bundled graph, the planner reconstructs and
+revalidates the full ordered `RoutePlan`, including repeated occurrences and
+circuit laps, before labeling the record `CURRENT SNAPSHOT`. Opening it requires
+a parked origin, resolves fresh bounded surface legs, and enters Review; it does
+not silently replan the Shuto sequence. Snapshot drift or invalid occurrence
+content stays unavailable. Circuit template metadata must also reproduce the
+same complete plan for the named circuit and lap count; valid source parameters
+survive reopen and re-save rather than becoming a custom route. This path
+enables parked review and replay only: save, import, and current-snapshot
+matching cannot create a release or unblock **Start navigation**.
+
 ### Derived entrance/exit pairing and tariff bands
 
 Selecting a route experience derives one recommended pairing automatically.
@@ -81,7 +101,7 @@ ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
 search confirm across its Bayshore and Daikoku Line ramps). An entrance on
 a member route must still match the experience's carriageway direction
 (the opposite loop is a different experience), and ordered tours keep
-their reviewed entrances and egress throughout. The pairing appears as one
+their selected direction-valid entrances and exits throughout. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.
@@ -206,8 +226,8 @@ visually distinguish each required route section. A practical C2 circuit
 therefore exposes its C2 and Bayshore components instead of drawing a falsely
 self-contained C2 ring.
 
-Guided planning starts from one reviewed recommended template. It may change
-only approved parameters such as direction, lap count, duration band,
+Guided planning starts from one versioned candidate template. It may change
+only declared parameters such as direction, lap count, duration band,
 directional PA occurrence, finish behavior, and compatible entrance or exit.
 
 Expert planning starts from one exact directional entrance. Each JCT presents
@@ -242,26 +262,51 @@ Review is a short journey summary, not an evidence report. It shows:
 - guidance language and voice.
 
 Only an actionable blocker expands automatically. Evidence sources and release
-identity remain in a secondary detail sheet. A second explicit primary action
-starts the exact reviewed journey.
+identity remain in a secondary detail sheet. Review preserves the exact selected
+journey for both start intents; replay remains synthetic, while navigation stays
+disabled unless an authority-bearing release admits it.
 
-Review offers two ways to start it. **Start navigation** drives the journey on
-real device positions. A secondary action replays the same journey without
-driving, and states its 54 km/h reference trace and 20x playback rate wherever
-it appears, so a preview can never be mistaken for a drive. Both modes run the
-same reducer over the same compiled route: progress admission, wrong-turn
-rejoin, and reviewed speech are identical, and only the evidence source and the
-ordinary-road advance differ.
+The compiled whole-Shuto runtime carries a deterministic asset identity: one
+hash binds the complete decoded graph plus its bounds, limitations, source, and
+licence metadata, and a second binds the selected `RoutePlan`, matcher corridor,
+guidance, recovery candidates, and route-edge lengths to that network-artifact
+hash. Once replay reaches entry transition or the expressway, its checkpoint
+persists that identity and must match both hashes before runtime progress is
+reconstructed; drift returns to parked Review. This is not a
+`KaidoProductRelease` and cannot mint its live-input authority. The hashes make
+input drift detectable; they do not promote
+OSM/provider surface geometry, unreviewed movements, or the network's candidate
+evidence status, and they create no lane, realtime, or field authority.
+Graph search may retain candidate rejoin shapes for integrity and future review,
+but marks them unreleased. A replay deviation therefore becomes unavailable and
+interrupts the route; it cannot execute a recovery movement until that movement
+is separately reviewed and enrolled by an exact product release.
 
-A live drive is foreground-scoped and requests only when-in-use authorization.
-Device fixes reach the matcher through the shared adaptation boundary, which
-refuses invalid, stale, future-dated, and — in distributed builds — simulated
-fixes rather than letting them become progress. Ordinary-road legs advance on
-measured distance to the directional ramp mouth and hand over only when the
-vehicle is actually there; the expressway body advances only on admitted
-matcher evidence, so a weak fix holds the last admitted progress and shows
-degradation instead of inventing movement. A live drive exposes no transport
-controls, because it follows the vehicle rather than a playback position.
+Checkpoint storage failures are not treated as an empty first launch. The App
+labels unreadable, incompatible, invalid, unsaved, or uncleared resume data and
+stays parked when restoration cannot be proven. Rejected or failed replacement
+data is cleared when storage remains writable, so an older progress position or
+spoken-prompt ledger cannot silently return on the next launch.
+
+Review presents two start intents. The secondary action replays the complete
+journey without driving and states its 54 km/h reference trace and 20x playback
+rate wherever it appears, so a preview cannot be mistaken for a drive. **Start
+navigation** may run only when one exact authority-bearing
+`KaidoProductRelease`, released surface-provider artifacts, and required field
+evidence are enrolled. With the current candidate whole-Shuto graph it fails
+closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; an asset hash, location
+permission, or MapKit route response cannot satisfy that gate.
+
+The default candidate product requests when-in-use location only for the
+foreground planning origin. The physical lifecycle smoke proves that permission
+and start/stop wiring; it does not enroll live navigation or grant road
+authority. A future release-enrolled live drive must pass device fixes through
+the shared adaptation boundary, reject invalid, stale, future-dated, and
+distributed-build simulated fixes, and admit no entry, expressway, or egress
+progress from proximity alone. Its termination restore must retain neither a
+measured marker, matcher posterior, partial entry continuity, active audio, nor
+background location ownership, and must require fresh observations before new
+progress.
 
 ## Drive
 
@@ -287,17 +332,18 @@ eligible current position. On the track map, the marker communicates the exact
 route occurrence and progress without implying geographic precision. A
 route-bound junction inset temporarily becomes the strongest visual when it
 helps the next decision. It overlays either presentation and is never a third
-map mode. It appears only after a supported left or right DecisionZone frame
-crosses its released prompt threshold, then disappears after that frame clears.
-The normal guidance card may preview the reviewed instruction before that
-threshold. The inset preserves the released Japanese sign target, route shield,
-distance, and selected branch. It renders its own road scene; operator
+map mode. In labeled replay it appears only after a supported left or right
+DecisionZone frame crosses its bound prompt threshold, then disappears after
+that frame clears. The normal guidance card may preview the stored instruction
+before that threshold. The inset preserves the bound Japanese sign target,
+route shield, distance, and selected branch. It renders its own road scene; operator
 photographs may be used for private comparison but are never copied into the
 product. Low-confidence or tunnel positioning is shown as estimated without
 fabricating a precise marker.
 
 The geographic presentation is the default for the ordinary-road access and
-egress legs and renders the released route over the system MapKit basemap.
+egress legs and renders the selected candidate route over the system MapKit
+basemap.
 Outside active navigation its camera frames the selected journey (or the
 driver's surroundings before a route exists) rather than the whole network
 extent. Beneath the highlighted route it also
@@ -306,8 +352,9 @@ a muted context layer, so the driver always sees the opposite carriageway and
 nearby lines the way an ordinary navigation basemap would; the muted layer
 never competes visually with the active route and grants no guidance
 authority. Stacked or parallel carriageways may coincide in plan view; that is
-a display compromise and never affects position matching. A user-started automatic route simulation
-may exercise the complete Drive presentation along the selected route geometry.
+a display compromise and never affects position matching. A user-started
+automatic route simulation may exercise the complete Drive presentation along
+the selected route geometry.
 The current whole-Shuto replay uses at most 30 meters between generated samples,
 a 54 km/h reference trace, and an explicitly displayed 20x wall-clock rate,
 including position, progress, and transient junction insets. It remains visibly
@@ -332,9 +379,11 @@ before the reviewed entrance approach or after the reviewed exit handoff. It is
 not the default journey and cannot be used to claim that the external app will
 preserve the selected Shuto route.
 
-For a journey with a final destination, the drive continues from the exact exit
-handoff onto the released surface egress leg. A route scoped only to the exit
-ends there after explicit confirmation.
+In labeled replay, a journey with a final destination continues from the
+selected exit onto the bounded provider surface-egress candidate. A
+release-backed drive may call that transition an exact exit handoff only when
+the joint product release also contains the released surface-egress context. A
+route scoped only to the exit ends there after explicit confirmation.
 
 ## Copy and visual hierarchy
 

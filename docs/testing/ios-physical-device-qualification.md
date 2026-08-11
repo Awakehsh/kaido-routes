@@ -71,8 +71,10 @@ The runner:
 4. requires exactly one physical-iOS result configuration;
 5. requires every reported test to pass with zero failures, skips, or expected
    failures;
-6. requires the released-K7 Core Location permission/start/stop lifecycle UI
-   test to appear exactly once and pass;
+6. requires the default whole-Shuto foreground planning-location permission and
+   start/stop lifecycle UI test
+   `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()` to
+   appear exactly once and pass;
 7. requires the parked Japanese, Simplified Chinese, and English voice-prompt
    lifecycle UI test to appear exactly once and pass with an installed voice,
    start/finish callbacks, `.playback + .voicePrompt`, and a non-empty physical
@@ -87,8 +89,9 @@ no passing receipt. Existing output is never overwritten.
 ## Independent App-hosted audio run
 
 The complete App baseline remains the preferred gate because it binds the unit
-and UI suites, foreground Core Location lifecycle, and physical audio lifecycle
-to one commit and device configuration. If the device's XCTest UI Automation
+and UI suites, foreground planning Core Location lifecycle, and physical audio
+lifecycle to one commit and device configuration. It does not enroll live
+navigation. If the device's XCTest UI Automation
 service cannot start, `scripts/run_ios_physical_audio_qualification.py` can
 collect the audio lifecycle independently without weakening or replacing that
 gate:
@@ -129,18 +132,18 @@ App-baseline claim.
 
 It excludes the device identifier, device name, coordinates, raw location
 traces, raw audio, and filesystem paths. The complete-run authority matrix
-records the exact foreground-location start/stop, installed-voice lifecycle,
-and physical audio-route lifecycle smokes as true. The independent audio-run
-matrix records only the latter two as true. Both deliberately keep location
-accuracy, road release, acoustic quality, pronunciation, CarPlay, and
+records the exact foreground planning-location start/stop, installed-voice
+lifecycle, and physical audio-route lifecycle smokes as true. The independent
+audio-run matrix records only the latter two as true. Both deliberately keep
+location accuracy, road release, acoustic quality, pronunciation, CarPlay, and
 background navigation false. A callback and output port prove that the
 technical route was active; they do not prove that a person heard, understood,
 or approved the sound.
 
 ## Remaining device gates
 
-After this baseline passes, the exact released product still needs separate,
-dated evidence for:
+After this baseline passes, the exact default product build still needs
+separate, dated evidence for:
 
 - installed enhanced/premium voice comparison and the owner-selected offline
   voice candidate;

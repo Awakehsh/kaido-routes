@@ -37,11 +37,30 @@ the platform-light `EXIT_TRANSITION` to `COMPLETED` reducer boundary without
 authorizing a surface movement.
 Its ODbL distribution gate is cross-layer evidence: L0 hash-validates the full
 derivative database, reconstruction README, machine-readable notices,
-attribution catalog, SwiftUI implementation, and Xcode resource declaration;
-focused L3 unit and UI tests then prove the K7 credit and source/licence links
-are actually exposed adjacent to the non-interactive map. Passing that gate is
-technical distribution evidence only, not road, topology, layout, realtime, or
-navigation evidence.
+attribution catalog, SwiftUI implementation, and Xcode resource declaration.
+That immutable catalog and implementation remain the exact retained K7 review
+scope. The default whole-Shuto map has an independent L3 gate: it validates the
+decoded network's OSM attribution and ODbL metadata before exposing fixed native
+source/licence links adjacent to the map. This separation adds no bytes to the
+historical K7 review. Passing either technical gate is not road, topology,
+layout, realtime, or navigation evidence.
+
+The current `verify/data` job runs `python3 -m unittest discover -s
+scripts/tests` and exercises the production joint-release CLI against the
+retained K7 `KaidoProductRelease`:
+
+```sh
+swift run kaido-release validate-product \
+  --artifact \
+  data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
+```
+
+These are regression gates for validator behavior and the retained K7 fixture.
+They do not enroll the candidate whole-Shuto snapshot or grant it live-input,
+surface, field, or navigation authority. The historical K7 atlas review records
+remain bound to the exact catalog and implementation bytes that were reviewed;
+whole-Shuto attribution is validated independently rather than rewriting those
+human-review bindings.
 
 ## Portable scenario envelope
 
@@ -563,15 +582,15 @@ identity-drifted, role-drifted, and duplicate manifests; admit a test
 released-road entry only through a production-codec-minted authority; and
 require whole-`RoutePlan` equality. A declared pre-drive evidence manifest is
 also hash-pinned, production-decoded against that exact release, and used by the
-default authoring model only inside its validity window. Missing, mutated, or
+retained authoring model only inside its validity window. Missing, mutated, or
 expired information cannot fall back to injected values or be labeled current,
 but it does not revoke the exact released route. Two independently valid
 released entries for the same exact plan produce an explicit ambiguity rather
 than an arbitrary choice. XCUITest exposes the current
-`1 RELEASED ROAD · 1 DEMO` catalog in the
-default journey. Product schema, release validity, and live-input authority
-remain covered portably by KR-D26/KR-D27; only bundle lookup and content hashing
-are L3-specific.
+`1 RELEASED ROAD · 1 DEMO` catalog only through the explicit
+`-LEGACY-PRODUCT-JOURNEY` regression host. Product schema, release validity, and
+live-input authority remain covered portably by KR-D26/KR-D27; only bundle
+lookup and content hashing are L3-specific.
 
 The focused C2 App suite uses deterministic place, location, and surface-route
 providers to execute the complete visual lifecycle without a live network:
@@ -580,8 +599,8 @@ surface access, entry transition, all ordered C2 + B occurrences, automatic
 Kasai-right and Oi-left junction insets, tunnel degradation, App-inactive
 suspension with explicit resume, exit transition, and surface egress. Checkpoint
 tests require exact file round-trip, route-database drift rejection, and paused
-restoration at the same occurrence progress. The default-journey UI tests
-additionally require the C2 map to be primary while K7 remains an ordinary
+restoration at the same occurrence progress. The launch-only retained-journey UI
+tests additionally require the C2 map to be primary while K7 remains an ordinary
 catalog entry, and require `Continue previous route` to open the restored drive
 without advancing until the user resumes. Model tests retain the exact checked
 operator facility coordinates. These checks prove composition and UI behavior
@@ -599,9 +618,19 @@ Japanese sign targets. The two Shinonome cases must preserve their distinct
 `箱崎・銀座`. App model tests require phone and Japanese speech to consume
 those actor projections, reject schema or complete-`RoutePlan` checkpoint
 drift, and suppress the Oi output prompt after background save and
-reconstruction. A separate model case projects English phone copy and Chinese
-speech from the Oi prompt while requiring its Japanese sign target to remain
-byte-identical. XCUITest launches the static Oi review and deterministic
+reconstruction. Fault-injecting stores distinguish an absent checkpoint from
+load, schema, route, save, and removal failures, require a visible issue code,
+and prove that a failed replacement cannot revive older progress or a stale
+prompt ledger. Saved-route model tests also round-trip circuit source,
+identity, lap count, and exact repeated occurrences while rejecting template
+metadata that cannot reproduce the saved plan. A real file-store regression
+also round-trips the default Ginza-to-Yokohama recommendation through encoded
+JSON before reopening all 789 occurrences. A separate UI launch writes a
+corrupt whole-Shuto checkpoint, requires the localized parked-state issue, and
+then relaunches without the fault to prove the invalid resume data was cleared.
+A separate model case projects English phone copy and Chinese speech from the
+Oi prompt while requiring its Japanese sign target to remain byte-identical.
+XCUITest launches the static Oi review and deterministic
 actor-driven Oi, Kasai, Shinonome, and Tatsumi navigation previews, then uses
 the default whole-Shuto language sheet to switch Simplified Chinese, English,
 and Japanese interface copy without changing the independently selected
@@ -648,13 +677,18 @@ requires a separately reviewed official tariff query and neutral passage check
 before it may be displayed as current information; it is no longer a daily
 licence for route execution.
 
-The physical-iPhone App layer separately executes the released-K7 navigation
-path through the real `CLLocationManager`. Its named UI test accepts the system
-When In Use dialog, proves that the explicit start survives the temporary scene
-interruption, observes foreground `RUNNING`, and explicitly stops. The
-coordinate-free device runner requires that exact test to pass and hashes the
-test tree. This is lifecycle wiring evidence only, not coordinate accuracy,
-matcher reliability, or passenger-safe field evidence.
+The physical-iPhone App layer separately executes the default whole-Shuto
+foreground planning-location path through the real `CLLocationManager`. Its
+named UI test,
+`testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`, accepts
+the system When In Use dialog, proves that the explicit start survives the
+temporary scene interruption, observes foreground `RUNNING`, and explicitly
+stops. The coordinate-free device runner requires that exact test to pass and
+hashes the test tree. It does not start or enroll live navigation. This is
+lifecycle wiring evidence only, not coordinate accuracy, matcher reliability,
+road authority, or passenger-safe field evidence. The retained K7 operational
+E2E remains a fixture-specific release contract and is no longer the current
+physical-device lifecycle gate.
 
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject
@@ -683,10 +717,13 @@ unchanged community-candidate evidence. The portable runner round-trips that
 value and selects the one whole-RoutePlan-equal release candidate while
 rejecting a snapshot-drifted candidate. Package tests cover corrupt metadata,
 duplicate identities, zero/one/multiple current matches, unsafe candidate
-identity, and atomic file storage. App tests prove that a saved released route
-only selects the release-owned parked editor with no automatic choice or
-compilation; the UI test saves a synthetic route, returns to the library, and
-keeps its open action disabled as `REVIEW REQUIRED`.
+identity, and atomic file storage. Retained-path App tests prove that a saved
+released route only selects the release-owned parked editor with no automatic
+choice or compilation. Separate default-product tests require a same-snapshot
+record to reconstruct the complete RoutePlan for parked Review without granting
+release authority. The persistence UI test saves that exact route, terminates
+the App, reopens the real file-backed library, requires `CURRENT SNAPSHOT`, and
+returns to Review with the same directional entrance and exit.
 
 KR-U19 adds the parked shared-route lifecycle without broadening authority. The
 portable runner exports one complete document, imports it under a fresh record

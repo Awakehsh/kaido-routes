@@ -531,6 +531,318 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ]
     ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tanimachi.c1-inner-stays-on-c1",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_tanimachi",
+      junctionNodeID: 252_175_042,
+      incomingEdgeID: "osm.23297430.0.forward",
+      outgoingEdgeID: "osm.316123950.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      // The operator diagram shows the Inner Circular continuation on a
+      // straight arrow and 3号渋谷線 on a diverging arrow, so this
+      // movement keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "芝公園",
+      routeShields: ["C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "谷町JCT",
+        .simplifiedChinese: "谷町 JCT",
+        .english: "Tanimachi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、都心環状線 芝公園方面へ",
+          spokenText:
+            "谷町ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください",
+          spokenForms: [
+            "都心環状線": "としんかんじょうせん",
+            "芝公園": "しばこうえん",
+            "谷町": "たにまち",
+          ],
+          preservedJapaneseSignText: "芝公園"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿都心环状线前往 芝公園 方向",
+          spokenText:
+            "在谷町 JCT不要分岔，沿都心环状线继续前往 芝公園 方向",
+          spokenForms: ["芝公園": "芝公園"],
+          preservedJapaneseSignText: "芝公園"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Inner Circular Route toward 芝公園",
+          spokenText:
+            "At Tanimachi JCT, stay on the Inner Circular Route toward 芝公園",
+          spokenForms: ["Inner Circular Route": "Inner Circular Route"],
+          preservedJapaneseSignText: "芝公園"
+        ),
+      ],
+      // A keep-going advisory is useful before the diverging ramp, not at
+      // its nose, so it commits earlier than a branch instruction.
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "b7f8b5458757c825d2abf42f315bdb7d"
+        + "60e54debbb8a7420f49dd8a4646940fd",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-3/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tanimachi",
+          contentSHA256:
+            "b7f8b5458757c825d2abf42f315bdb7d"
+            + "60e54debbb8a7420f49dd8a4646940fd"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.ichinohashi.c1-inner-stays-on-c1",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 574_460_605,
+      incomingEdgeID: "osm.23297444.19.forward",
+      outgoingEdgeID: "osm.23297444.20.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      // The operator diagram shows the Inner Circular continuation on a
+      // straight arrow and 2号目黒線 on a diverging arrow, so this
+      // movement keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "芝公園",
+      routeShields: ["C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "一ノ橋JCT",
+        .simplifiedChinese: "一之桥 JCT",
+        .english: "Ichinohashi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、都心環状線 芝公園方面へ",
+          spokenText:
+            "一ノ橋ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください",
+          spokenForms: [
+            "都心環状線": "としんかんじょうせん",
+            "芝公園": "しばこうえん",
+            "一ノ橋": "いちのはし",
+          ],
+          preservedJapaneseSignText: "芝公園"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿都心环状线前往 芝公園 方向",
+          spokenText:
+            "在一之桥 JCT不要分岔，沿都心环状线继续前往 芝公園 方向",
+          spokenForms: ["芝公園": "芝公園"],
+          preservedJapaneseSignText: "芝公園"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Inner Circular Route toward 芝公園",
+          spokenText:
+            "At Ichinohashi JCT, stay on the Inner Circular Route toward 芝公園",
+          spokenForms: ["Inner Circular Route": "Inner Circular Route"],
+          preservedJapaneseSignText: "芝公園"
+        ),
+      ],
+      // A keep-going advisory is useful before the diverging ramp, not at
+      // its nose, so it commits earlier than a branch instruction.
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-2/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_ichinohashi",
+          contentSHA256:
+            "f56355b8bf55596a73adc91f8fa2c83a"
+            + "f02ace3089843c63fd7c7b469db7d34d"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.miyakezaka.c1-inner-stays-on-c1",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 255_513_709,
+      incomingEdgeID: "osm.24402540.6.forward",
+      outgoingEdgeID: "osm.24402540.7.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      // The operator diagram shows the Inner Circular continuation on a
+      // straight arrow and 4号新宿線 on a diverging arrow, so this
+      // movement keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "霞が関",
+      routeShields: ["C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "三宅坂JCT",
+        .simplifiedChinese: "三宅坂 JCT",
+        .english: "Miyakezaka JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、都心環状線 霞が関方面へ",
+          spokenText:
+            "三宅坂ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください",
+          spokenForms: [
+            "都心環状線": "としんかんじょうせん",
+            "霞が関": "かすみがせき",
+            "三宅坂": "みやけざか",
+          ],
+          preservedJapaneseSignText: "霞が関"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿都心环状线前往 霞が関 方向",
+          spokenText:
+            "在三宅坂 JCT不要分岔，沿都心环状线继续前往 霞が関 方向",
+          spokenForms: ["霞が関": "霞が関"],
+          preservedJapaneseSignText: "霞が関"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Inner Circular Route toward 霞が関",
+          spokenText:
+            "At Miyakezaka JCT, stay on the Inner Circular Route toward 霞が関",
+          spokenForms: ["Inner Circular Route": "Inner Circular Route"],
+          preservedJapaneseSignText: "霞が関"
+        ),
+      ],
+      // A keep-going advisory is useful before the diverging ramp, not at
+      // its nose, so it commits earlier than a branch instruction.
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-4/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_miyakezaka",
+          contentSHA256:
+            "a4b648d1710a6658750171468b86d14d"
+            + "f4c86d6031841135fddd87e7e2610c71"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.takehashi.c1-inner-stays-on-c1",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 264_871_735,
+      incomingEdgeID: "osm.1545541219.7.forward",
+      outgoingEdgeID: "osm.44779774.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      // The operator diagram shows the Inner Circular continuation on a
+      // straight arrow and 5号池袋線 on a diverging arrow, so this
+      // movement keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "霞が関",
+      routeShields: ["C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "竹橋JCT",
+        .simplifiedChinese: "竹桥 JCT",
+        .english: "Takehashi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、都心環状線 霞が関方面へ",
+          spokenText:
+            "竹橋ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください",
+          spokenForms: [
+            "都心環状線": "としんかんじょうせん",
+            "霞が関": "かすみがせき",
+            "竹橋": "たけはし",
+          ],
+          preservedJapaneseSignText: "霞が関"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿都心环状线前往 霞が関 方向",
+          spokenText:
+            "在竹桥 JCT不要分岔，沿都心环状线继续前往 霞が関 方向",
+          spokenForms: ["霞が関": "霞が関"],
+          preservedJapaneseSignText: "霞が関"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Inner Circular Route toward 霞が関",
+          spokenText:
+            "At Takehashi JCT, stay on the Inner Circular Route toward 霞が関",
+          spokenForms: ["Inner Circular Route": "Inner Circular Route"],
+          preservedJapaneseSignText: "霞が関"
+        ),
+      ],
+      // A keep-going advisory is useful before the diverging ramp, not at
+      // its nose, so it commits earlier than a branch instruction.
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-5/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_takehashi",
+          contentSHA256:
+            "1c1d2a5ebd879002c6053bf0e556f752"
+            + "6d068350cd0ee798a370e23389a97ded"
+        ),
+      ]
+    ),
   ]
 
   public static func releasedDefinition(

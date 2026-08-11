@@ -102,12 +102,21 @@ invalid or spoofed fixes rather than turning them into progress.
 Navigation-grade guidance remains movement-by-movement: only reviewed junction
 movements produce insets and speech, and that coverage grows after evidence
 review rather than shipping a visually complete but unevenly verified guidance
-layer. A driver on a route without reviewed movements therefore gets position,
-progress, and the next facility with its distance, and no spoken turn
-instruction — the product says less rather than guessing. The operator
-publishes its junction guidance only as detail images, so extending coverage
-needs a human reading them or independently reviewed sign evidence; it is not
-derivable from the snapshot.
+layer. A driver on a route without reviewed movements gets position, progress,
+and the next facility with its distance, and no spoken turn instruction — the
+product says less rather than guessing.
+
+Coverage is extended by reviewing the operator's own junction detail diagrams.
+They are published as images rather than machine-readable text, so each review
+reads the diagram, records the sign target and arrow treatment it shows, and
+binds the result to one exact directed movement in the snapshot — junction
+node, incoming edge, outgoing edge, carriageway direction — with the diagram's
+content hash recorded so a redrawn diagram invalidates the review. A movement
+whose diagram shows the route continuing on a straight arrow is released as a
+mainline continuation that asserts no lane; releasing a left or right branch
+instruction additionally requires the diagram to show that branch treatment
+unambiguously for that exact approach. The C1 inner catalog loop is reviewed at
+all four junctions where another route diverges from it.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

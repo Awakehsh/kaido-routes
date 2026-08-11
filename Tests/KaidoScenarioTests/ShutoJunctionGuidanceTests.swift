@@ -388,6 +388,57 @@ struct ShutoJunctionGuidanceTests {
     #expect(match.progressFraction < 1)
   }
 
+  @Test("the C1 inner catalog loop is guided at every diverging junction")
+  func guidesTheC1InnerLoop() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let route = try planner.planCircuit(
+      circuit: .c1Inner,
+      entryFacilityID: "shuto.ic.c1.shibakouen",
+      exitFacilityID: "shuto.ic.c1.shiodome",
+      laps: 1
+    )
+
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    // Every junction where another route diverges from the inner loop is
+    // reviewed, so a lap never runs without an instruction at a decision.
+    // Ordered as the lap encounters them from Shibakoen.
+    #expect(
+      matches.map(\.junctionNameJA)
+        == ["竹橋JCT", "三宅坂JCT", "谷町JCT", "一ノ橋JCT"]
+    )
+    // Each keeps the mainline and preserves the operator sign target the
+    // driver actually reads at that junction.
+    #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
+    #expect(
+      matches.map(\.definition.japaneseSignText)
+        == ["霞が関", "霞が関", "芝公園", "芝公園"]
+    )
+    #expect(
+      matches.allSatisfy {
+        $0.definition.routeShields == ["C1"]
+          && $0.definition.laneGuidanceState == .notReleased
+      }
+    )
+    // Reviewing a movement promotes its occurrence, which is what lets the
+    // runtime bind a decision zone and speak the prompt.
+    for match in matches {
+      let occurrence = route.routePlan.occurrence(
+        id: match.outgoingOccurrenceID
+      )
+      #expect(occurrence?.kind == .junctionMovement)
+      #expect(occurrence?.entityID == match.definition.id)
+    }
+    #expect(
+      matches.map(\.progressFraction)
+        == matches.map(\.progressFraction).sorted()
+    )
+  }
+
   @Test("unreviewed route-label changes do not create junction guidance")
   func suppressesUnreviewedRouteLabelChanges() throws {
     let database = try loadDatabase()

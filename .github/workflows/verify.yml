@@ -18,10 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Record toolchain
+      # The runner's default command-line toolchain lags the package's
+      # required Swift tools version, so pin the newest installed Xcode
+      # rather than whichever one the image defaults to.
+      - name: Select the newest Xcode toolchain
         run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
           swift --version
-          xcodebuild -version
+
+      - name: Record toolchain
+        run: xcodebuild -version
 
       - name: Swift Testing suite
         run: swift test
@@ -38,6 +47,17 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      # The runner's default command-line toolchain lags the package's
+      # required Swift tools version, so pin the newest installed Xcode
+      # rather than whichever one the image defaults to.
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          swift --version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -86,6 +106,17 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
+      # The runner's default command-line toolchain lags the package's
+      # required Swift tools version, so pin the newest installed Xcode
+      # rather than whichever one the image defaults to.
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          swift --version
 
       # The reviewed candidate exclusions must keep matching the committed
       # snapshot: a stale review is a build failure, not a silent no-op.

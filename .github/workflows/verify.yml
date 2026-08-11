@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The runner's default command-line toolchain lags the package's
       # required Swift tools version, so pin the newest installed Xcode
@@ -46,7 +46,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The runner's default command-line toolchain lags the package's
       # required Swift tools version, so pin the newest installed Xcode
@@ -106,7 +106,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The runner's default command-line toolchain lags the package's
       # required Swift tools version, so pin the newest installed Xcode

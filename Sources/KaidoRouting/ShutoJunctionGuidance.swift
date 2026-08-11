@@ -1299,6 +1299,310 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ]
     ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tatsumi.b-eastbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_tatsumi",
+      junctionNodeID: 31_300_414,
+      incomingEdgeID: "osm.44882718.3.forward",
+      outgoingEdgeID: "osm.678761503.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      // The operator diagram shows the Bayshore continuation on a straight
+      // arrow and 9号深川線 on a diverging arrow, so this movement
+      // keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "浦安",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "辰巳JCT",
+        .simplifiedChinese: "辰巳 JCT",
+        .english: "Tatsumi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 浦安方面へ",
+          spokenText:
+            "辰巳ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "浦安": "うらやす",
+            "辰巳": "たつみ",
+          ],
+          preservedJapaneseSignText: "浦安"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 浦安 方向",
+          spokenText:
+            "在辰巳 JCT不要分岔，沿湾岸线继续前往 浦安 方向",
+          spokenForms: ["浦安": "浦安"],
+          preservedJapaneseSignText: "浦安"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 浦安",
+          spokenText:
+            "At Tatsumi JCT, stay on the Bayshore Route toward 浦安",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "浦安"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "c4ea23ea7741c0f9f54b875e62b04825"
+        + "6501d7df8aac183ce8961d2eaf1b3dda",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-9/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tatsumi",
+          contentSHA256:
+            "c4ea23ea7741c0f9f54b875e62b04825"
+            + "6501d7df8aac183ce8961d2eaf1b3dda"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.shinonome.b-eastbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_shinonome",
+      junctionNodeID: 493_584_435,
+      incomingEdgeID: "osm.888066406.1.forward",
+      outgoingEdgeID: "osm.23169038.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      // The operator diagram shows the Bayshore continuation on a straight
+      // arrow and 10号晴海線 on a diverging arrow, so this movement
+      // keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "浦安",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "東雲JCT",
+        .simplifiedChinese: "东云 JCT",
+        .english: "Shinonome JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 浦安方面へ",
+          spokenText:
+            "東雲ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "浦安": "うらやす",
+            "東雲": "しののめ",
+          ],
+          preservedJapaneseSignText: "浦安"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 浦安 方向",
+          spokenText:
+            "在东云 JCT不要分岔，沿湾岸线继续前往 浦安 方向",
+          spokenForms: ["浦安": "浦安"],
+          preservedJapaneseSignText: "浦安"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 浦安",
+          spokenText:
+            "At Shinonome JCT, stay on the Bayshore Route toward 浦安",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "浦安"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "452e2ca3d124ec3f726b0c3643cedbbc"
+        + "e3446b21e755f538b418616278cfa605",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-10/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_shinonome",
+          contentSHA256:
+            "452e2ca3d124ec3f726b0c3643cedbbc"
+            + "e3446b21e755f538b418616278cfa605"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.ariake.b-eastbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_ariake",
+      junctionNodeID: 31_288_813,
+      incomingEdgeID: "osm.266086989.2.forward",
+      outgoingEdgeID: "osm.266086989.3.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      // The operator diagram shows the Bayshore continuation on a straight
+      // arrow and 11号台場線 on a diverging arrow, so this movement
+      // keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "葛西",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "有明JCT",
+        .simplifiedChinese: "有明 JCT",
+        .english: "Ariake JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 葛西方面へ",
+          spokenText:
+            "有明ジャンクションは分岐せず、湾岸線 葛西方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "葛西": "かさい",
+            "有明": "ありあけ",
+          ],
+          preservedJapaneseSignText: "葛西"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 葛西 方向",
+          spokenText:
+            "在有明 JCT不要分岔，沿湾岸线继续前往 葛西 方向",
+          spokenForms: ["葛西": "葛西"],
+          preservedJapaneseSignText: "葛西"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 葛西",
+          spokenText:
+            "At Ariake JCT, stay on the Bayshore Route toward 葛西",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "葛西"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "0351ca02b8260a625334bc17931b57d3"
+        + "5d19631b4305fab64e014daf0aad4c26",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-11/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_ariake",
+          contentSHA256:
+            "0351ca02b8260a625334bc17931b57d3"
+            + "5d19631b4305fab64e014daf0aad4c26"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.daikoku.b-eastbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_daikoku",
+      junctionNodeID: 364_206_183,
+      incomingEdgeID: "osm.5365195.2.forward",
+      outgoingEdgeID: "osm.5365195.3.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      // The operator diagram shows the Bayshore continuation on a straight
+      // arrow and 神奈川5号大黒線 on a diverging arrow, so this movement
+      // keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "空港中央",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "大黒JCT",
+        .simplifiedChinese: "大黑 JCT",
+        .english: "Daikoku JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 空港中央方面へ",
+          spokenText:
+            "大黒ジャンクションは分岐せず、湾岸線 空港中央方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "空港中央": "くうこうちゅうおう",
+            "大黒": "だいこく",
+          ],
+          preservedJapaneseSignText: "空港中央"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 空港中央 方向",
+          spokenText:
+            "在大黑 JCT不要分岔，沿湾岸线继续前往 空港中央 方向",
+          spokenForms: ["空港中央": "空港中央"],
+          preservedJapaneseSignText: "空港中央"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 空港中央",
+          spokenText:
+            "At Daikoku JCT, stay on the Bayshore Route toward 空港中央",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "空港中央"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+        + "247f5acd1b8c34e1e2e5397cf3c004eb",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-k5/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_daikoku",
+          contentSHA256:
+            "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+            + "247f5acd1b8c34e1e2e5397cf3c004eb"
+        ),
+      ]
+    ),
   ]
 
   public static func releasedDefinition(

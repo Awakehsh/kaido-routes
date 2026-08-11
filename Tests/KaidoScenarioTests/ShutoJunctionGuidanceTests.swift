@@ -506,6 +506,50 @@ struct ShutoJunctionGuidanceTests {
     )
   }
 
+  @Test("the eastbound Bayshore corridor is guided at its diverging junctions")
+  func guidesTheEastboundBayshoreCorridor() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.ooi",
+      exitFacilityID: "shuto.ic.b.urayasu"
+    )
+
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    ).filter { $0.definition.incomingDirectionJA == "東行き" }
+
+    // Running the Bayshore east, every junction where another route
+    // diverges is reviewed, and each preserves the sign target its own
+    // operator diagram shows for that approach.
+    #expect(
+      matches.map(\.junctionNameJA)
+        == ["有明JCT", "東雲JCT", "辰巳JCT"]
+    )
+    #expect(
+      matches.map(\.definition.japaneseSignText)
+        == ["葛西", "浦安", "浦安"]
+    )
+    // Daikoku sits further west on the same carriageway and signs its own
+    // continuation for the airport, so it is checked against the catalog.
+    let daikoku = try #require(
+      ShutoJunctionMovementCatalog.released.first {
+        $0.id == "shuto.jct.daikoku.b-eastbound-stays-on-b"
+      }
+    )
+    #expect(daikoku.japaneseSignText == "空港中央")
+    #expect(daikoku.branchSide == .straight)
+    #expect(daikoku.incomingDirectionJA == "東行き")
+    #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
+    #expect(matches.allSatisfy { $0.definition.routeShields == ["B"] })
+    for match in matches {
+      #expect(
+        route.routePlan.occurrence(id: match.outgoingOccurrenceID)?.kind
+          == .junctionMovement
+      )
+    }
+  }
+
   @Test("unreviewed route-label changes do not create junction guidance")
   func suppressesUnreviewedRouteLabelChanges() throws {
     let database = try loadDatabase()

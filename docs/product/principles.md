@@ -115,10 +115,20 @@ content hash recorded so a redrawn diagram invalidates the review. A movement
 whose diagram shows the route continuing on a straight arrow is released as a
 mainline continuation that asserts no lane; releasing a left or right branch
 instruction additionally requires the diagram to show that branch treatment
-unambiguously for that exact approach. The C1 inner catalog loop and the
-westbound Bayshore run are reviewed at every junction where another route
-diverges from them; the remaining catalog routes are partially covered and grow
-by the same review.
+unambiguously for that exact approach.
+
+Coverage today: the C1 inner catalog loop and the Bayshore corridor in both
+directions are reviewed at every junction where another route diverges from
+them. The junctions that remain unreviewed each failed a specific evidence
+test rather than merely awaiting work — a diagram whose signs are exit
+previews rather than a fork (Hakozaki), a junction where the through route is
+not the straight leg (Kohoku), pre-advisory signs that show every destination
+on a straight arrow so no leg is distinguished (Kosuge-Horikiri, Itabashi-
+Kumanocho, Kinko), and a junction where the operator publishes explicit
+per-approach lane advice that a no-lane prompt would under-serve (Namamugi).
+Movements that change route rather than continue on one need the diagram to
+show that branch treatment for that exact approach, which none of the
+remaining ones do yet.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

@@ -12,6 +12,9 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).parents[1]
 MODULE_PATH = SCRIPTS_DIR / "build_k7_route_atlas_release_inputs.py"
 sys.path.insert(0, str(SCRIPTS_DIR))
+sys.path.insert(0, str(Path(__file__).parent))
+from k7_readiness_test_fixture import SyntheticK7ReadinessRepository
+
 SPEC = importlib.util.spec_from_file_location(
     "build_k7_route_atlas_release_inputs",
     MODULE_PATH,
@@ -63,6 +66,19 @@ def approved_reviews() -> tuple[dict, dict]:
 
 
 class BuildK7RouteAtlasReleaseInputsTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary_directory = tempfile.TemporaryDirectory()
+        cls.synthetic_repository = SyntheticK7ReadinessRepository(
+            REPOSITORY_ROOT,
+            Path(cls.temporary_directory.name),
+            builder.readiness_validator,
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary_directory.cleanup()
+
     def test_builds_exact_projection_and_review_dated_released_evidence(self) -> None:
         candidate = load(builder.CANDIDATE_PATH)
         topology, layout = approved_reviews()
@@ -72,6 +88,7 @@ class BuildK7RouteAtlasReleaseInputsTests(unittest.TestCase):
             topology,
             layout,
             date(2026, 7, 27),
+            self.synthetic_repository.root,
         )
 
         self.assertNotIn("evidence", draft["topology_slice"])
@@ -101,6 +118,7 @@ class BuildK7RouteAtlasReleaseInputsTests(unittest.TestCase):
                 topology,
                 layout,
                 date(2026, 7, 27),
+                self.synthetic_repository.root,
             )
 
     def test_rejects_expired_review(self) -> None:
@@ -115,6 +133,7 @@ class BuildK7RouteAtlasReleaseInputsTests(unittest.TestCase):
                 topology,
                 layout,
                 date(2026, 8, 27),
+                self.synthetic_repository.root,
             )
 
     def test_rejects_layout_review_before_topology_approval(self) -> None:
@@ -130,6 +149,7 @@ class BuildK7RouteAtlasReleaseInputsTests(unittest.TestCase):
                 topology,
                 layout,
                 date(2026, 7, 27),
+                self.synthetic_repository.root,
             )
 
     def test_write_refuses_overwrite(self) -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 import importlib.util
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -13,6 +14,9 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).parents[1]
 MODULE_PATH = SCRIPTS_DIR / "prepare_k7_route_atlas_release_packet.py"
 sys.path.insert(0, str(SCRIPTS_DIR))
+sys.path.insert(0, str(Path(__file__).parent))
+from k7_readiness_test_fixture import SyntheticK7ReadinessRepository
+
 SPEC = importlib.util.spec_from_file_location(
     "prepare_k7_route_atlas_release_packet",
     MODULE_PATH,
@@ -27,9 +31,36 @@ REPOSITORY_ROOT = Path(__file__).parents[2]
 class PrepareK7RouteAtlasReleasePacketTests(unittest.TestCase):
     def test_packet_derives_exact_fail_closed_authoring_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            output = Path(directory) / "k7-atlas-review"
+            temporary_root = Path(directory)
+            synthetic = SyntheticK7ReadinessRepository(
+                REPOSITORY_ROOT,
+                temporary_root / "repository",
+                preparer.readiness_validator,
+            )
+            source_paths = (
+                preparer.CANDIDATE_PATH,
+                preparer.TOPOLOGY_REVIEW_PATH,
+                preparer.LAYOUT_REVIEW_PATH,
+                preparer.SCHEMATIC_SVG_PATH,
+            )
+            synthetic_paths = []
+            for source in source_paths:
+                destination = synthetic.root / source.relative_to(REPOSITORY_ROOT)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, destination)
+                synthetic_paths.append(destination)
+            output = temporary_root / "k7-atlas-review"
 
-            manifest = preparer.prepare(output, date(2026, 7, 28))
+            with mock.patch.multiple(
+                preparer,
+                REPOSITORY_ROOT=synthetic.root,
+                READINESS_PATH=synthetic.readiness_path,
+                CANDIDATE_PATH=synthetic_paths[0],
+                TOPOLOGY_REVIEW_PATH=synthetic_paths[1],
+                LAYOUT_REVIEW_PATH=synthetic_paths[2],
+                SCHEMATIC_SVG_PATH=synthetic_paths[3],
+            ):
+                manifest = preparer.prepare(output, date(2026, 7, 28))
 
             self.assertEqual(
                 {path.name for path in output.iterdir()},

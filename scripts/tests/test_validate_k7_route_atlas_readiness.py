@@ -4,6 +4,7 @@ from datetime import date
 import importlib.util
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -11,6 +12,9 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).parents[1]
 MODULE_PATH = SCRIPTS_DIR / "validate_k7_route_atlas_readiness.py"
 sys.path.insert(0, str(SCRIPTS_DIR))
+sys.path.insert(0, str(Path(__file__).parent))
+from k7_readiness_test_fixture import SyntheticK7ReadinessRepository
+
 SPEC = importlib.util.spec_from_file_location(
     "validate_k7_route_atlas_readiness",
     MODULE_PATH,
@@ -165,11 +169,41 @@ def released_authoring(
 
 
 class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
-    def test_tracked_exit_handoff_candidate_passes_all_release_gates(self) -> None:
-        report = validator.evaluate(
-            load(READINESS_PATH),
-            date(2026, 7, 28),
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary_directory = tempfile.TemporaryDirectory()
+        cls.synthetic_repository = SyntheticK7ReadinessRepository(
             REPOSITORY_ROOT,
+            Path(cls.temporary_directory.name),
+            validator,
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary_directory.cleanup()
+
+    def load_synthetic_readiness(self) -> dict:
+        return load(self.synthetic_repository.readiness_path)
+
+    def load_synthetic_distribution_review(self) -> dict:
+        return load(self.synthetic_repository.distribution_review_path)
+
+    def test_tracked_package_fails_closed_after_project_manifest_drift(self) -> None:
+        with self.assertRaisesRegex(
+            validator.ReadinessError,
+            "APP_PROJECT_MANIFEST",
+        ):
+            validator.evaluate(
+                load(READINESS_PATH),
+                date(2026, 7, 28),
+                REPOSITORY_ROOT,
+            )
+
+    def test_synthetic_review_fixture_passes_all_release_gates(self) -> None:
+        report = validator.evaluate(
+            self.load_synthetic_readiness(),
+            date(2026, 7, 28),
+            self.synthetic_repository.root,
         )
 
         self.assertEqual(report["status"], "READY_FOR_RELEASE_VALIDATION")
@@ -222,7 +256,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         self.assertTrue(report["layout_release_review_current"])
 
     def test_artifact_digest_drift_is_rejected(self) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         readiness["artifact_bindings"][0]["content_sha256"] = "0" * 64
 
         with self.assertRaisesRegex(
@@ -232,11 +266,11 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_final_authoring_binding_digest_drift_is_rejected(self) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         authoring_binding = next(
             binding
             for binding in readiness["artifact_bindings"]
@@ -251,11 +285,11 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_malformed_binding_role_fails_without_crashing(self) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         readiness["artifact_bindings"][0]["role"] = ["unexpected"]
 
         with self.assertRaisesRegex(
@@ -265,7 +299,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_malformed_osm_roles_fail_without_crashing(self) -> None:
@@ -372,12 +406,12 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.validate_candidate(candidate)
 
     def test_complete_field_review_clears_only_its_future_scope_gate(self) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
 
         report = validator.evaluate(
             readiness,
             date(2026, 7, 28),
-            REPOSITORY_ROOT,
+            self.synthetic_repository.root,
             completed_field_review(),
         )
 
@@ -413,9 +447,9 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         self,
     ) -> None:
         report = validator.evaluate(
-            load(READINESS_PATH),
+            self.load_synthetic_readiness(),
             date(2026, 7, 28),
-            REPOSITORY_ROOT,
+            self.synthetic_repository.root,
             road_register_review_override=completed_road_register_review(),
         )
 
@@ -450,7 +484,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         complete, reviewer_id, status = validator.evaluate_topology_release_review(
             load(TOPOLOGY_REVIEW_TEMPLATE_PATH),
             date(2026, 7, 25),
-            REPOSITORY_ROOT,
+            self.synthetic_repository.root,
             "RELEASED",
         )
 
@@ -462,7 +496,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
         complete, reviewer_id, status = validator.evaluate_layout_release_review(
             load(LAYOUT_REVIEW_TEMPLATE_PATH),
             date(2026, 7, 25),
-            REPOSITORY_ROOT,
+            self.synthetic_repository.root,
             "RELEASED",
             True,
             "APPROVED",
@@ -484,7 +518,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate_topology_release_review(
                 review,
                 date(2026, 7, 25),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
                 "CANDIDATE",
             )
 
@@ -550,7 +584,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate_topology_release_review(
                 topology_review,
                 date(2026, 7, 25),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
                 "RELEASED",
             )
         )
@@ -581,7 +615,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate_layout_release_review(
                 layout_review,
                 date(2026, 7, 25),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
                 "RELEASED",
                 topology_complete,
                 "APPROVED",
@@ -593,7 +627,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate_layout_release_review(
                 layout_review,
                 date(2026, 7, 25),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
                 "RELEASED",
                 topology_complete,
                 "APPROVED",
@@ -732,7 +766,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
     def test_distribution_status_cannot_replace_bound_review(
         self,
     ) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         readiness["distribution_readiness"]["implementation_status"] = "PENDING"
 
         with self.assertRaisesRegex(
@@ -742,13 +776,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_distribution_review_licence_url_drift_is_rejected(
         self,
     ) -> None:
-        review = load(DISTRIBUTION_REVIEW_PATH)
+        review = self.load_synthetic_distribution_review()
         review["licence"]["url"] = "https://example.invalid/odbl"
 
         with self.assertRaisesRegex(
@@ -758,13 +792,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.validate_distribution_review(
                 review,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_distribution_review_artifact_digest_drift_is_rejected(
         self,
     ) -> None:
-        review = load(DISTRIBUTION_REVIEW_PATH)
+        review = self.load_synthetic_distribution_review()
         review["artifact_bindings"][0]["content_sha256"] = "0" * 64
 
         with self.assertRaisesRegex(
@@ -774,13 +808,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.validate_distribution_review(
                 review,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_distribution_review_malformed_binding_role_fails_without_crashing(
         self,
     ) -> None:
-        review = load(DISTRIBUTION_REVIEW_PATH)
+        review = self.load_synthetic_distribution_review()
         review["artifact_bindings"][0]["role"] = ["unexpected"]
 
         with self.assertRaisesRegex(
@@ -790,13 +824,13 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.validate_distribution_review(
                 review,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_realtime_unconfirmed_cannot_be_promoted_by_readiness(
         self,
     ) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         readiness["realtime_context"]["status"] = "OPEN"
 
         with self.assertRaisesRegex(
@@ -806,11 +840,11 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_declared_decision_must_match_derived_result(self) -> None:
-        readiness = load(READINESS_PATH)
+        readiness = self.load_synthetic_readiness()
         readiness["expected_decision"]["status"] = "BLOCKED"
 
         with self.assertRaisesRegex(
@@ -820,7 +854,7 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             validator.evaluate(
                 readiness,
                 date(2026, 7, 28),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
     def test_assessment_cannot_postdate_as_of(self) -> None:
@@ -829,9 +863,9 @@ class ValidateK7RouteAtlasReadinessTests(unittest.TestCase):
             "assessment is in the future",
         ):
             validator.evaluate(
-                load(READINESS_PATH),
+                self.load_synthetic_readiness(),
                 date(2026, 7, 23),
-                REPOSITORY_ROOT,
+                self.synthetic_repository.root,
             )
 
 

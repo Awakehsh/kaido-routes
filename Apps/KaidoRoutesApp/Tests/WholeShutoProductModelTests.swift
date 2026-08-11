@@ -877,8 +877,12 @@ final class WholeShutoProductModelTests: XCTestCase {
         model.prepareShinonomeWestboundJunctionPreview()
       }
 
-      let prompt = try? XCTUnwrap(model.junctionPrompts.only)
-      XCTAssertEqual(prompt?.movementID, testCase.movementID)
+      // The westbound approach now also passes a reviewed Tatsumi
+      // continuation, so select the movement under test.
+      let prompt = model.junctionPrompts.first {
+        $0.movementID == testCase.movementID
+      }
+      XCTAssertNotNil(prompt)
       XCTAssertEqual(prompt?.nameJA, "東雲JCT")
       XCTAssertEqual(prompt?.outgoingRouteID, "10")
       XCTAssertEqual(prompt?.outgoingDirectionJA, "上り")
@@ -1269,15 +1273,28 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     model.togglePlayback()
 
+    // The westbound run speaks the reviewed Tatsumi continuation first,
+    // then the Shinonome branch; drive to the branch under test.
     await advance(
       model,
-      until: { _ in !output.commands.isEmpty },
-      maximumTicks: 1_000
+      until: {
+        $0.activeJunctionPrompt?.movementID
+          == "shuto.jct.shinonome.b-westbound-to-10-inbound"
+      },
+      maximumTicks: 2_000
     )
 
-    let command = try XCTUnwrap(output.commands.only)
+    let command = try XCTUnwrap(
+      output.commands.last { $0.spokenText.contains("東雲ジャンクション") }
+    )
     XCTAssertEqual(command.languageCode, "ja-JP")
-    XCTAssertTrue(command.spokenText.contains("東雲ジャンクション"))
+    // Each reviewed movement is spoken exactly once by the actor.
+    XCTAssertEqual(
+      output.commands.filter {
+        $0.spokenText.contains("東雲ジャンクション")
+      }.count,
+      1
+    )
     XCTAssertTrue(
       command.synthesisText.contains("じゅうごうはるみせん")
     )

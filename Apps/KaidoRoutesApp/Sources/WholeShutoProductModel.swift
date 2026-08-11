@@ -288,7 +288,11 @@ final class WholeShutoProductModel: ObservableObject {
     [:]
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
-  private var staticJunctionPreviewMovementID: String?
+  /// The reviewed movement a junction preview is staged at. Denser
+  /// corridor coverage means other prompts precede it on the same route,
+  /// so both the static inset and the deterministic preview stepping must
+  /// target this movement rather than whichever prompt comes first.
+  private(set) var junctionPreviewMovementID: String?
   private var liveDriveSession: ShutoLiveDriveSession?
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
@@ -674,11 +678,11 @@ final class WholeShutoProductModel: ObservableObject {
       // The preview is staged at one exact reviewed movement. Denser
       // corridor coverage means earlier prompts exist on the same route,
       // so select the staged movement rather than whichever comes first.
-      guard let staticJunctionPreviewMovementID else {
+      guard let junctionPreviewMovementID else {
         return junctionPrompts.first
       }
       return junctionPrompts.first {
-        $0.movementID == staticJunctionPreviewMovementID
+        $0.movementID == junctionPreviewMovementID
       }
     }
     guard let surface = presentationProjection?.iPhone else {
@@ -1075,7 +1079,7 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .stopped
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
-    staticJunctionPreviewMovementID = nil
+    junctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     mapMode = .geographic
     try? checkpointStore?.remove()
@@ -1202,13 +1206,13 @@ final class WholeShutoProductModel: ObservableObject {
         failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
         return
       }
+      junctionPreviewMovementID = expectedMovementID
       if startsNavigation {
         phase = .review
         startNavigationSimulation()
         return
       }
       isStaticJunctionPreview = true
-      staticJunctionPreviewMovementID = expectedMovementID
       phase = .expressway
       progressFraction = max(0, prompt.progressFraction - 0.012)
       isPlaying = false
@@ -1828,7 +1832,6 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
-    staticJunctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     mapMode = .geographic
     persistCheckpoint()
@@ -1877,7 +1880,7 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
-    staticJunctionPreviewMovementID = nil
+    junctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     failureCode = nil
     persistCheckpoint()
@@ -2045,7 +2048,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveDriveSession = nil
     isLiveDrive = false
     isStaticJunctionPreview = false
-    staticJunctionPreviewMovementID = nil
+    junctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     try? checkpointStore?.remove()
   }

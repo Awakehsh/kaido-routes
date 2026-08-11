@@ -450,7 +450,13 @@ private struct WholeShutoJunctionPreviewHost: View {
     WholeShutoProductView(model: model)
       .task {
         guard startsNavigation else { return }
-        for _ in 0..<1_000 where model.activeJunctionPrompt == nil {
+        // Advance to the movement this preview is staged at, not merely
+        // to the first reviewed prompt on the route — a denser corridor
+        // puts earlier prompts ahead of it.
+        for _ in 0..<2_000
+        where model.activeJunctionPrompt?.movementID
+          != model.junctionPreviewMovementID
+        {
           await model.advanceSimulationForTesting()
         }
       }

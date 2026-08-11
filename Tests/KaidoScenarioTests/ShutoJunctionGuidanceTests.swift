@@ -474,20 +474,19 @@ struct ShutoJunctionGuidanceTests {
 
     // Every junction where another route diverges from the westbound
     // Bayshore is reviewed, so the run never passes a decision unguided.
-    // Tatsumi stays unreviewed for now: a second reviewed prompt on the
-    // already-tested westbound run exposes a real-time playback stall in
-    // the junction preview host, which is a separate defect to fix before
-    // that junction is released.
     #expect(
       matches.map(\.junctionNameJA)
-        == ["東雲JCT", "有明JCT", "大井JCT", "川崎浮島JCT", "大黒JCT"]
+        == [
+          "辰巳JCT", "東雲JCT", "有明JCT", "大井JCT",
+          "川崎浮島JCT", "大黒JCT",
+        ]
     )
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
     // Daikoku signs the continuation as Yokohama-koen; the rest sign it as
     // Yokohama, and each definition preserves what its diagram shows.
     #expect(
       matches.map(\.definition.japaneseSignText)
-        == ["横浜", "横浜", "横浜", "横浜", "横浜公園"]
+        == ["横浜", "横浜", "横浜", "横浜", "横浜", "横浜公園"]
     )
     #expect(
       matches.allSatisfy {

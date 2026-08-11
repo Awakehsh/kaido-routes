@@ -844,6 +844,82 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tatsumi.b-westbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_tatsumi",
+      junctionNodeID: 31_300_491,
+      incomingEdgeID: "osm.888066409.1.forward",
+      outgoingEdgeID: "osm.679272067.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "西行き",
+      // The operator diagram shows the Bayshore continuation on a straight
+      // arrow and 9号深川線 on a diverging arrow, so this movement
+      // keeps the mainline and asserts no lane.
+      branchSide: .straight,
+      japaneseSignText: "横浜",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "辰巳JCT",
+        .simplifiedChinese: "辰巳 JCT",
+        .english: "Tatsumi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 横浜方面へ",
+          spokenText:
+            "辰巳ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "横浜": "よこはま",
+            "辰巳": "たつみ",
+          ],
+          preservedJapaneseSignText: "横浜"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 横浜 方向",
+          spokenText:
+            "在辰巳 JCT不要分岔，沿湾岸线继续前往 横浜 方向",
+          spokenForms: ["横浜": "横浜"],
+          preservedJapaneseSignText: "横浜"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 横浜",
+          spokenText:
+            "At Tatsumi JCT, stay on the Bayshore Route toward 横浜",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "横浜"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-11",
+      expectedJunctionDetailSHA256:
+        "c4ea23ea7741c0f9f54b875e62b04825"
+        + "6501d7df8aac183ce8961d2eaf1b3dda",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-9/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tatsumi",
+          contentSHA256:
+            "c4ea23ea7741c0f9f54b875e62b04825"
+            + "6501d7df8aac183ce8961d2eaf1b3dda"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
       id: "shuto.jct.shinonome.b-westbound-stays-on-b",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-08-04",

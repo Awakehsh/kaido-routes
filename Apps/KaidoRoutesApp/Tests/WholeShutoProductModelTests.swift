@@ -1749,13 +1749,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       languageSelectionProvider: Self.testLanguages
     )
     model.prepareJunctionPreview(startsNavigation: true)
-    model.togglePlayback()
 
-    await advance(
-      model,
-      until: { _ in !initialOutput.commands.isEmpty },
-      maximumTicks: 1_000
-    )
+    let didReachJunction = await model.advanceSimulationToJunctionPreview()
+    XCTAssertTrue(didReachJunction)
 
     let command = try XCTUnwrap(initialOutput.commands.only)
     XCTAssertEqual(command.languageCode, "ja-JP")
@@ -1805,13 +1801,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       languageSelectionProvider: Self.testLanguages
     )
     model.prepareKasaiJunctionPreview(startsNavigation: true)
-    model.togglePlayback()
 
-    await advance(
-      model,
-      until: { _ in !output.commands.isEmpty },
-      maximumTicks: 1_000
-    )
+    let didReachJunction = await model.advanceSimulationToJunctionPreview()
+    XCTAssertTrue(didReachJunction)
 
     let command = try XCTUnwrap(output.commands.only)
     XCTAssertEqual(command.languageCode, "ja-JP")
@@ -1845,18 +1837,9 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.prepareTatsumiEastboundJunctionPreview(
       startsNavigation: true
     )
-    model.togglePlayback()
 
-    // The eastbound run speaks the reviewed Ariake continuation first,
-    // then the Tatsumi branch; drive to the branch under test.
-    await advance(
-      model,
-      until: {
-        $0.activeJunctionPrompt?.movementID
-          == "shuto.jct.tatsumi.b-eastbound-to-9-inbound"
-      },
-      maximumTicks: 2_000
-    )
+    let didReachJunction = await model.advanceSimulationToJunctionPreview()
+    XCTAssertTrue(didReachJunction)
 
     let command = try XCTUnwrap(
       output.commands.last { $0.spokenText.contains("辰巳ジャンクション") }
@@ -1900,18 +1883,9 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.prepareShinonomeWestboundJunctionPreview(
       startsNavigation: true
     )
-    model.togglePlayback()
 
-    // The westbound run speaks the reviewed Tatsumi continuation first,
-    // then the Shinonome branch; drive to the branch under test.
-    await advance(
-      model,
-      until: {
-        $0.activeJunctionPrompt?.movementID
-          == "shuto.jct.shinonome.b-westbound-to-10-inbound"
-      },
-      maximumTicks: 2_000
-    )
+    let didReachJunction = await model.advanceSimulationToJunctionPreview()
+    XCTAssertTrue(didReachJunction)
 
     let command = try XCTUnwrap(
       output.commands.last { $0.spokenText.contains("東雲ジャンクション") }
@@ -1959,13 +1933,9 @@ final class WholeShutoProductModelTests: XCTestCase {
       languageSelectionProvider: { languages }
     )
     model.prepareJunctionPreview(startsNavigation: true)
-    model.togglePlayback()
 
-    await advance(
-      model,
-      until: { _ in !output.commands.isEmpty },
-      maximumTicks: 1_000
-    )
+    let didReachJunction = await model.advanceSimulationToJunctionPreview()
+    XCTAssertTrue(didReachJunction)
 
     let projection = try XCTUnwrap(model.presentationProjection)
     let command = try XCTUnwrap(output.commands.only)

@@ -2478,6 +2478,59 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  /// Stages a navigation preview at its exact reviewed junction using the
+  /// simulator's real matcher/session reducer. Intermediate trace events stay
+  /// inside the simulator actor so map and guidance views publish only the
+  /// target actor-owned emission.
+  @discardableResult
+  func advanceSimulationToJunctionPreview() async -> Bool {
+    guard
+      !isLiveDrive,
+      let junctionPreviewMovementID,
+      let prompt = junctionPrompts.first(where: {
+        $0.movementID == junctionPreviewMovementID
+      }),
+      let driveSimulator
+    else {
+      failureCode = "WHOLE_SHUTO_JUNCTION_PREVIEW_UNAVAILABLE"
+      return false
+    }
+
+    playbackTask?.cancel()
+    playbackTask = nil
+    isPlaying = false
+    phase = .entryTransition
+    progressFraction = 0
+    presentationProjection = nil
+    speechCoordinator?.resume()
+
+    do {
+      guard
+        let result = try await driveSimulator
+          .advancePausedUntilGuidanceEmission(
+            movementOccurrenceID: prompt.outgoingOccurrenceID
+          )
+      else {
+        failureCode = "WHOLE_SHUTO_JUNCTION_PREVIEW_UNAVAILABLE"
+        return false
+      }
+      applyObservationReplayResult(result)
+      guard
+        phase == .expressway,
+        activeJunctionPrompt?.movementID == junctionPreviewMovementID
+      else {
+        failureCode = "WHOLE_SHUTO_JUNCTION_PREVIEW_UNAVAILABLE"
+        return false
+      }
+      failureCode = nil
+      persistCheckpoint()
+      return true
+    } catch {
+      failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+      return false
+    }
+  }
+
   func reset() {
     playbackTask?.cancel()
     playbackTask = nil

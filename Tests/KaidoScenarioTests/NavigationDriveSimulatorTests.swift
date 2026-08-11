@@ -284,6 +284,61 @@ func navigationDriveSimulationRunsThroughNavigationSession() async throws {
   #expect(await simulator.status.state == .completed)
 }
 
+@Test("Simulation stops on one exact actor-owned guidance emission")
+func navigationDriveSimulationStopsOnExactGuidanceEmission() async throws {
+  let release = try simulationProductRelease()
+  let guidance = try #require(
+    release.navigation.bundle.releasedGuidance.first
+  )
+  let movementOccurrenceID = guidance.frameTemplate.movementOccurrenceID
+  let simulator = try NavigationDriveSimulator(
+    release: release,
+    configuration: NavigationDriveSimulationConfiguration(
+      sampleFractions: [0.15, 0.5, 0.85],
+      completesAtExitHandoff: false
+    )
+  )
+
+  let result = try #require(
+    await simulator.advancePausedUntilGuidanceEmission(
+      movementOccurrenceID: movementOccurrenceID
+    )
+  )
+  let update = try #require(result.navigationUpdate)
+  let emission = try #require(update.guidancePromptEmission)
+  let frame = try #require(
+    update.navigationSnapshot.activeGuidanceFrame
+  )
+
+  #expect(emission.promptID == guidance.anchor.promptID)
+  #expect(frame.promptID == emission.promptID)
+  #expect(frame.movementOccurrenceID == movementOccurrenceID)
+  #expect(result.status.state == .paused)
+  #expect(result.status.completedEventCount < result.status.totalEventCount)
+}
+
+@Test("Unknown guidance occurrence exhausts the finite simulation trace")
+func navigationDriveSimulationExhaustsUnknownGuidanceOccurrence()
+  async throws
+{
+  let simulator = try NavigationDriveSimulator(
+    release: simulationProductRelease(),
+    configuration: NavigationDriveSimulationConfiguration(
+      sampleFractions: [0.15, 0.5, 0.85],
+      completesAtExitHandoff: false
+    )
+  )
+
+  let result = try await simulator.advancePausedUntilGuidanceEmission(
+    movementOccurrenceID: "unknown.movement-occurrence"
+  )
+  let status = await simulator.status
+
+  #expect(result == nil)
+  #expect(status.state == .completed)
+  #expect(status.completedEventCount == status.totalEventCount)
+}
+
 private func simulationProductRelease() throws -> KaidoProductRelease {
   let fixture = navigationReleaseBundleFixture()
   return try KaidoProductRelease(

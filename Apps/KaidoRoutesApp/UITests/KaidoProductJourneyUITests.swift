@@ -1303,17 +1303,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
       in: app
     )
     firstReleasedChoice.tap()
+    let secondChoiceIdentifier =
+      "released-route-choice-shutoko.choice.kohoku.shared-corridor-to-exit"
     XCTAssertTrue(
-      firstReleasedChoice.waitForNonExistence(timeout: 3),
+      element(secondChoiceIdentifier, in: app)
+        .waitForExistence(timeout: 3),
       "The released editor did not advance after the first choice"
     )
     let secondReleasedChoice = reveal(
-      "released-route-choice-shutoko.choice.kohoku.shared-corridor-to-exit",
+      secondChoiceIdentifier,
       in: app
     )
     secondReleasedChoice.tap()
     XCTAssertTrue(
-      secondReleasedChoice.waitForNonExistence(timeout: 3),
+      element("released-route-compile", in: app)
+        .waitForExistence(timeout: 3),
       "The released editor did not complete after the second choice"
     )
     reveal("released-route-compile", in: app).tap()
@@ -1475,10 +1479,50 @@ final class KaidoProductJourneyUITests: XCTestCase {
       target.waitForExistence(timeout: 3),
       "\(identifier) did not exist"
     )
-    for _ in 0..<12 where !target.isHittable {
-      app.swipeUp()
+    for _ in 0..<12 {
+      let center = CGPoint(
+        x: target.frame.midX,
+        y: target.frame.midY
+      )
+      let requiresOnScreenCenter = target.elementType == .button
+      if target.isHittable,
+        !requiresOnScreenCenter || app.frame.contains(center)
+      {
+        break
+      }
+      let driveSurface = element("product-drive-surface", in: app)
+      let parkedScroll = app.scrollViews["product-journey-scroll"]
+      if driveSurface.exists {
+        let progress = element("product-drive-progress", in: app)
+        if progress.exists {
+          progress.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+          ).press(
+            forDuration: 0.05,
+            thenDragTo: app.coordinate(
+              withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)
+            )
+          )
+        } else {
+          app.swipeUp()
+        }
+      } else if parkedScroll.exists {
+        parkedScroll.swipeUp()
+      } else {
+        app.swipeUp()
+      }
     }
     XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")
+    if target.elementType == .button {
+      let center = CGPoint(
+        x: target.frame.midX,
+        y: target.frame.midY
+      )
+      XCTAssertTrue(
+        app.frame.contains(center),
+        "\(identifier) did not expose an on-screen tap target"
+      )
+    }
     return target
   }
 

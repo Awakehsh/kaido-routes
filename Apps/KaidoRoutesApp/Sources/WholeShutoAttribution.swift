@@ -95,18 +95,16 @@ struct WholeShutoAttributionStrip: View {
 
   var body: some View {
     Group {
-      if dynamicTypeSize.isAccessibilitySize {
+      if usesExpandedTextLayout {
         verticalLinks
       } else {
-        ViewThatFits(in: .horizontal) {
-          horizontalLinks
-          verticalLinks
-        }
+        horizontalLinks
       }
     }
     .padding(.horizontal, 12)
+    .fixedSize(horizontal: false, vertical: true)
     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-    .background(KaidoTheme.asphalt.opacity(0.86))
+    .background(KaidoTheme.asphalt)
     .overlay(alignment: .top) {
       Rectangle()
         .fill(KaidoTheme.steel.opacity(0.8))
@@ -136,7 +134,7 @@ struct WholeShutoAttributionStrip: View {
     Link(destination: attribution.sourceURL) {
       HStack(spacing: 5) {
         Text(attribution.attribution)
-          .lineLimit(2)
+          .fixedSize(horizontal: false, vertical: true)
         Image(systemName: "arrow.up.right")
       }
       .font(.caption.weight(.bold))
@@ -195,5 +193,17 @@ struct WholeShutoAttributionStrip: View {
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
+  }
+
+  private var usesExpandedTextLayout: Bool {
+    switch dynamicTypeSize {
+    case .xSmall, .small, .medium, .large:
+      false
+    case .xLarge, .xxLarge, .xxxLarge, .accessibility1,
+      .accessibility2, .accessibility3, .accessibility4, .accessibility5:
+      true
+    @unknown default:
+      true
+    }
   }
 }

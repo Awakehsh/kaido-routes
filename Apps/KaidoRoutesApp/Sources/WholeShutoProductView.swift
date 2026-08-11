@@ -227,28 +227,43 @@ struct WholeShutoProductView: View {
         map
           .ignoresSafeArea()
 
-        VStack(spacing: 0) {
-          topBar
-          if (usesExpandedTextLayout || showsDestinationComposer) && !isDriving
-            && model.phase != .completed
-          {
-            ScrollView {
+        if usesExpandedTextLayout && !isDriving
+          && model.phase != .completed
+        {
+          ScrollView {
+            VStack(spacing: 0) {
+              topBar
               dockContent
                 .padding(.top, 8)
                 .padding(.bottom, 12)
             }
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
-          } else {
-            Spacer(minLength: 0)
-            if !isDriving, model.phase != .completed {
+          }
+          .scrollIndicators(.hidden)
+          .scrollDismissesKeyboard(.interactively)
+        } else {
+          VStack(spacing: 0) {
+            topBar
+            if showsDestinationComposer && !isDriving
+              && model.phase != .completed
+            {
               ScrollView {
                 dockContent
+                  .padding(.top, 8)
+                  .padding(.bottom, 12)
               }
               .scrollIndicators(.hidden)
-              .frame(maxHeight: geometry.size.height / 2)
+              .scrollDismissesKeyboard(.interactively)
             } else {
-              dockContent
+              Spacer(minLength: 0)
+              if !isDriving, model.phase != .completed {
+                ScrollView {
+                  dockContent
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: geometry.size.height / 2)
+              } else {
+                dockContent
+              }
             }
           }
         }
@@ -4525,7 +4540,7 @@ private enum WholeShutoNetworkBackdrop {
     // Stitch directed mainline ways into long chains by shared end nodes:
     // ~1000 short ways collapse into a few dozen polylines, which keeps the
     // map content diff cheap while the route progress republishes.
-    var ways = database.ways.filter {
+    let ways = database.ways.filter {
       $0.kind == "MAINLINE" && $0.nodeIDs.count > 1
     }
     var used = [Bool](repeating: false, count: ways.count)

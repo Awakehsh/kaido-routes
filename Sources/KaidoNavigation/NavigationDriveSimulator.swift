@@ -812,6 +812,30 @@ public actor NavigationDriveSimulator {
     return try await processNextEvent()
   }
 
+  /// Advances the real matcher/session reducer to one exact actor-owned
+  /// guidance emission without publishing every intermediate trace event to
+  /// a UI adapter. The trace length is the bound; an unavailable movement
+  /// returns `nil` after the trace is exhausted.
+  public func advancePausedUntilGuidanceEmission(
+    movementOccurrenceID: String
+  ) async throws -> NavigationDriveSimulationStepResult? {
+    guard state != .completed else { return nil }
+    state = .paused
+    while let result = try await processNextEvent() {
+      guard
+        let update = result.navigationUpdate,
+        let emission = update.guidancePromptEmission,
+        let frame = update.navigationSnapshot.activeGuidanceFrame,
+        emission.promptID == frame.promptID,
+        frame.movementOccurrenceID == movementOccurrenceID
+      else {
+        continue
+      }
+      return result
+    }
+    return nil
+  }
+
   public func advanceIfPlaying() async throws
     -> NavigationDriveSimulationStepResult?
   {

@@ -50,8 +50,87 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
-  @Test("wrong turns derive rejoin candidates back onto the same loop plan")
-  func derivesWrongTurnRecoveryCandidates() throws {
+  @Test("runtime assets bind one exact network artifact and route runtime")
+  func bindsExactRuntimeAssetIdentity() throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let route = try planner.plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let repeatedAssets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let alternateRoute = try planner.plan(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.c2.funaboribashi"
+    )
+    let alternateAssets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: alternateRoute
+    )
+    let encodedDatabase = try JSONEncoder().encode(database)
+    var databaseDocument = try #require(
+      JSONSerialization.jsonObject(with: encodedDatabase)
+        as? [String: Any]
+    )
+    var limitations = try #require(
+      databaseDocument["limitations"] as? [String]
+    )
+    limitations.append(
+      "Test-only semantic metadata drift for runtime integrity."
+    )
+    databaseDocument["limitations"] = limitations
+    let driftedDatabase = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONSerialization.data(withJSONObject: databaseDocument)
+    )
+    try driftedDatabase.validate()
+    let driftedRoute = try ShutoRoutePlanner(database: driftedDatabase).plan(
+      entryFacilityID: route.routePlan.entryFacilityID,
+      exitFacilityID: route.routePlan.exitFacilityID
+    )
+    let driftedAssets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: driftedDatabase,
+      route: driftedRoute
+    )
+
+    let identity = assets.runtimeAssetIdentity
+    #expect(identity.schemaVersion == "1.0")
+    #expect(identity.networkArtifactID == database.databaseID)
+    #expect(identity.networkSnapshotID == database.networkSnapshotID)
+    #expect(identity.routeRuntimeID == route.routePlan.id)
+    #expect(identity.routePlanID == route.routePlan.id)
+    #expect(identity.verificationState == database.verificationState)
+    #expect(isLowercaseSHA256(identity.networkArtifactSHA256))
+    #expect(isLowercaseSHA256(identity.routeRuntimeSHA256))
+    #expect(repeatedAssets.runtimeAssetIdentity == identity)
+    #expect(
+      alternateAssets.runtimeAssetIdentity.networkArtifactSHA256
+        == identity.networkArtifactSHA256
+    )
+    #expect(
+      alternateAssets.runtimeAssetIdentity.routeRuntimeSHA256
+        != identity.routeRuntimeSHA256
+    )
+    #expect(driftedRoute.routePlan == route.routePlan)
+    #expect(
+      driftedAssets.runtimeAssetIdentity.networkArtifactSHA256
+        != identity.networkArtifactSHA256
+    )
+    #expect(
+      driftedAssets.runtimeAssetIdentity.routeRuntimeSHA256
+        != identity.routeRuntimeSHA256
+    )
+  }
+
+  @Test("candidate graph cannot release wrong-turn rejoin paths")
+  func candidateGraphCannotReleaseWrongTurnRejoinPaths() throws {
     let database = try loadWholeShutoDatabase()
     let planner = try ShutoRoutePlanner(database: database)
     let route = try planner.planCircuit(
@@ -78,7 +157,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
     let planDivergenceNodes = Set(route.edges.map(\.toNodeID))
     for candidate in candidates {
-      #expect(candidate.isReleased)
+      #expect(!candidate.isReleased)
       #expect(candidate.staysInAllowedTollDomain)
       let targetIndex = occurrenceIndexByID[candidate.targetOccurrenceID]
       #expect(targetIndex != nil)
@@ -98,8 +177,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       }
     }
 
-    // A high-confidence wrong branch activates recovery whose rejoin
-    // target is a strictly later occurrence of the same plan.
+    // Candidate geometry may identify a later rejoin shape, but it cannot
+    // authorize recovery without reviewed movement evidence and a release.
     var engine = NavigationEngine(
       configuration: NavigationConfiguration(
         routePlan: route.routePlan,
@@ -119,15 +198,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       )
     )
     #expect(engine.snapshot.journeyPhase == .routeRecovery)
-    #expect(engine.snapshot.recovery.status == .active)
+    #expect(engine.snapshot.recovery.status == .unavailable)
     #expect(
       engine.snapshot.recovery.objective == "REJOIN_ACTIVE_ROUTE_PLAN"
     )
-    let rejoinID = engine.snapshot.recovery.chosenRejoinOccurrenceID
-    #expect(rejoinID != nil)
-    if let rejoinID {
-      #expect((occurrenceIndexByID[rejoinID] ?? -1) > 0)
-    }
+    #expect(engine.snapshot.recovery.chosenRejoinOccurrenceID == nil)
+    #expect(engine.snapshot.recovery.destinationRerouteUsed == false)
   }
 
   @Test("only exact HIGH occurrence evidence projects route progress")
@@ -1029,6 +1105,13 @@ private func loadWholeShutoDatabase() throws -> ShutoNetworkDatabase {
     ShutoNetworkDatabase.self,
     from: Data(contentsOf: url)
   )
+}
+
+private func isLowercaseSHA256(_ value: String) -> Bool {
+  value.count == 64
+    && value.allSatisfy { character in
+      character.isNumber || ("a"..."f").contains(String(character))
+    }
 }
 
 private func matcherObservation(

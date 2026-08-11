@@ -1,59 +1,47 @@
-import Foundation
 import KaidoDomain
-import KaidoRouting
 
-/// A live drive over one compiled whole-Shuto route.
+/// A live drive admitted by one validated product release.
 ///
-/// Position comes from real device observations instead of a synthetic
-/// trace, and the session owns the same `NavigationSession` reducer the
-/// labeled preview uses — so strict-route progress, wrong-turn recovery, and
-/// reviewed guidance prompts behave identically in both modes.
-///
-/// Authority boundaries are unchanged. Road identity comes from the bundled
-/// dated snapshot the route was planned on, and turn-by-turn guidance still
-/// comes only from reviewed movements: an unreviewed junction yields
-/// progress and distance without inventing an instruction. The session
-/// therefore never asserts released per-route navigation authority; it
-/// asserts exactly what the snapshot and the reviewed guidance set support.
+/// Whole-Shuto route assets are useful for deterministic planning and replay,
+/// but they are not navigation release authority. Callers must supply the
+/// product runtime produced from a `KaidoProductRelease`; this type never
+/// derives admission identities or released surface geometry from asset
+/// hashes.
 public actor ShutoLiveDriveSession {
-  public let routePlanID: String
-  public let networkSnapshotID: String
+  public nonisolated let routePlanID: String
+  public nonisolated let networkSnapshotID: String
+  public nonisolated let productReleaseID: String
+  public nonisolated let navigationReleaseID: String
+  public nonisolated let entryTransitionAdmissionContext:
+    EntryTransitionAdmissionContext
+  public nonisolated let surfaceEgressAdmissionContext:
+    SurfaceEgressAdmissionContext
 
+  private let runtime: KaidoProductNavigationRuntime
   private let session: NavigationSession
   private var hasStarted = false
 
-  public init(
-    assets: ShutoPlannedRouteRuntimeAssets
-  ) throws {
-    routePlanID = assets.routePlan.id
-    networkSnapshotID = assets.matcherCorridor.networkSnapshotID
-    guard let firstOccurrenceID = assets.routePlan.occurrences.first?.id
-    else {
-      throw ShutoLiveDriveSessionError.emptyRoutePlan
+  public init(runtime: KaidoProductNavigationRuntime) throws {
+    guard runtime.release.foregroundLiveInputAuthority != nil else {
+      throw ShutoLiveDriveSessionError
+        .navigationReleaseNotForegroundAuthorized
     }
-    // The drive begins on ordinary roads, so the matcher is seeded at the
-    // route head and reports LOW until real geometry confirms the vehicle
-    // is on the selected carriageway. Progress is never admitted from the
-    // seed alone.
-    var seeded = NavigationSnapshot(
-      journeyPhase: .strictRoute,
-      activeRoutePlanID: assets.routePlan.id,
-      currentOccurrenceID: firstOccurrenceID,
-      locationConfidence: .low
-    )
-    seeded.lastPhaseTransitionTrigger = "WHOLE_SHUTO_LIVE_STRICT_ROUTE_SEED"
-    session = try NavigationSession(
-      navigationConfiguration: NavigationConfiguration(
-        routePlan: assets.routePlan,
-        recoveryCandidates: assets.recoveryCandidates,
-        releasedGuidance: assets.releasedGuidance,
-        allowsUserConfirmedExitHandoffCompletion: true
-      ),
-      matcherCorridor: assets.matcherCorridor,
-      decisionZones: assets.decisionZones,
-      initialNavigationSnapshot: seeded,
-      initialMatcherOccurrenceID: firstOccurrenceID
-    )
+    guard let surfaceEgressAdmissionContext =
+      runtime.surfaceEgressAdmissionContext
+    else {
+      throw ShutoLiveDriveSessionError.releasedSurfaceEgressRequired
+    }
+
+    routePlanID = runtime.routePlanID
+    networkSnapshotID = runtime.networkSnapshotID
+    productReleaseID = runtime.productReleaseID
+    navigationReleaseID = runtime.navigationReleaseID
+    entryTransitionAdmissionContext =
+      runtime.entryTransitionAdmissionContext
+    self.surfaceEgressAdmissionContext =
+      surfaceEgressAdmissionContext
+    self.runtime = runtime
+    session = runtime.session
   }
 
   @discardableResult
@@ -63,9 +51,13 @@ public actor ShutoLiveDriveSession {
     return await session.start()
   }
 
-  /// Feeds one real observation. Throws only on an invalid or out-of-order
-  /// observation; an unmatchable position returns a LOW estimate instead,
-  /// so the caller holds its last admitted progress and shows degradation.
+  public func observeEntryTransitionEvidence(
+    _ evidence: EntryTransitionEvidence
+  ) async throws -> EntryTransitionSessionUpdate {
+    await start()
+    return try await session.observeEntryTransitionEvidence(evidence)
+  }
+
   public func observe(
     _ observation: RouteMatcherObservation
   ) async throws -> NavigationSessionUpdate {
@@ -75,7 +67,23 @@ public actor ShutoLiveDriveSession {
 
   @discardableResult
   public func finishDrive() async -> NavigationSnapshot {
-    await session.finishDrive()
+    await start()
+    return await session.finishDrive()
+  }
+
+  public func observeSurfaceEgressHandoffEvidence(
+    _ evidence: SurfaceEgressHandoffEvidence
+  ) async -> SurfaceEgressHandoffSessionUpdate {
+    await start()
+    return await session.observeSurfaceEgressHandoffEvidence(evidence)
+  }
+
+  public func makeCheckpoint(
+    savedAtMilliseconds: Int
+  ) async throws -> NavigationSessionCheckpoint {
+    try await runtime.makeCheckpoint(
+      savedAtMilliseconds: savedAtMilliseconds
+    )
   }
 
   public var snapshot: NavigationSnapshot {
@@ -84,5 +92,6 @@ public actor ShutoLiveDriveSession {
 }
 
 public enum ShutoLiveDriveSessionError: Error, Equatable, Sendable {
-  case emptyRoutePlan
+  case navigationReleaseNotForegroundAuthorized
+  case releasedSurfaceEgressRequired
 }

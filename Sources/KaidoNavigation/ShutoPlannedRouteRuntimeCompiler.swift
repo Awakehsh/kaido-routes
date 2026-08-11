@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import KaidoDomain
 import KaidoRouting
@@ -13,6 +14,7 @@ public enum ShutoPlannedRouteRuntimeCompilationError:
   case discontinuousRouteEdgeOrder
   case missingNode(Int64)
   case invalidMatcherCorridor([String])
+  case assetIdentityEncodingFailed
 }
 
 public struct ShutoRouteRuntimeProgress: Equatable, Sendable {
@@ -43,12 +45,64 @@ public struct ShutoRouteRuntimeProgress: Equatable, Sendable {
   }
 }
 
+/// A deterministic integrity binding for one whole-Shuto network artifact and
+/// the exact route-local runtime assets compiled from it.
+///
+/// This is not a `KaidoProductRelease` and grants no live-input or navigation
+/// authority. It only proves that the candidate runtime inputs agree at the
+/// canonical semantic layer; it cannot promote OSM/provider geometry,
+/// unreviewed movements, lane data, realtime state, or field observations.
+public struct ShutoRuntimeAssetIdentity: Codable, Equatable, Sendable {
+  public static let currentSchemaVersion = "1.0"
+
+  public let schemaVersion: String
+  public let networkArtifactID: String
+  public let networkArtifactSHA256: String
+  public let routeRuntimeID: String
+  public let routeRuntimeSHA256: String
+  public let networkSnapshotID: String
+  public let routePlanID: String
+  public let verificationState: String
+
+  package init(
+    schemaVersion: String = ShutoRuntimeAssetIdentity.currentSchemaVersion,
+    networkArtifactID: String,
+    networkArtifactSHA256: String,
+    routeRuntimeID: String,
+    routeRuntimeSHA256: String,
+    networkSnapshotID: String,
+    routePlanID: String,
+    verificationState: String
+  ) {
+    self.schemaVersion = schemaVersion
+    self.networkArtifactID = networkArtifactID
+    self.networkArtifactSHA256 = networkArtifactSHA256
+    self.routeRuntimeID = routeRuntimeID
+    self.routeRuntimeSHA256 = routeRuntimeSHA256
+    self.networkSnapshotID = networkSnapshotID
+    self.routePlanID = routePlanID
+    self.verificationState = verificationState
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case schemaVersion = "schema_version"
+    case networkArtifactID = "network_artifact_id"
+    case networkArtifactSHA256 = "network_artifact_sha256"
+    case routeRuntimeID = "route_runtime_id"
+    case routeRuntimeSHA256 = "route_runtime_sha256"
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case verificationState = "verification_state"
+  }
+}
+
 /// Exact matcher inputs compiled from one selected whole-Shuto route.
 ///
 /// The corridor includes every ordered RoutePlan edge plus graph-adjacent
 /// alternatives at route nodes. Alternative edges let the matcher abstain or
 /// report a deviation without allowing a provider to mutate the RoutePlan.
 public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
+  public let runtimeAssetIdentity: ShutoRuntimeAssetIdentity
   public let routePlan: RoutePlan
   public let matcherCorridor: RouteMatcherCorridor
   public let decisionZones: [DecisionZoneProgressDefinition]
@@ -61,6 +115,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   private let totalDistanceMeters: Double
 
   package init(
+    runtimeAssetIdentity: ShutoRuntimeAssetIdentity,
     routePlan: RoutePlan,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
@@ -69,6 +124,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     routeEdges: [RouteMatcherDirectedEdge],
     routeEdgeLengthsMeters: [Double]
   ) {
+    self.runtimeAssetIdentity = runtimeAssetIdentity
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
     self.decisionZones = decisionZones
@@ -141,6 +197,84 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
 }
 
 public enum ShutoPlannedRouteRuntimeCompiler {
+  private struct NetworkArtifactHashPayload: Encodable {
+    let schemaVersion: String
+    let database: ShutoNetworkDatabase
+
+    private enum CodingKeys: String, CodingKey {
+      case schemaVersion = "schema_version"
+      case database
+    }
+  }
+
+  private struct CanonicalMatcherEdge: Encodable {
+    let id: String
+    let coordinates: [MatcherCoordinate]
+    let successorEdgeIDs: [String]
+
+    init(_ edge: RouteMatcherDirectedEdge) {
+      id = edge.id
+      coordinates = edge.coordinates
+      successorEdgeIDs = edge.successorEdgeIDs.sorted()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+      case id
+      case coordinates
+      case successorEdgeIDs = "successor_edge_ids"
+    }
+  }
+
+  private struct CanonicalMatcherCorridor: Encodable {
+    let id: String
+    let networkSnapshotID: String
+    let routePlanID: String
+    let edges: [CanonicalMatcherEdge]
+    let occurrences: [RouteMatcherOccurrence]
+
+    init(_ corridor: RouteMatcherCorridor) {
+      id = corridor.id
+      networkSnapshotID = corridor.networkSnapshotID
+      routePlanID = corridor.routePlanID
+      edges = corridor.edges.map(CanonicalMatcherEdge.init)
+      occurrences = corridor.occurrences
+    }
+
+    private enum CodingKeys: String, CodingKey {
+      case id = "corridor_id"
+      case networkSnapshotID = "network_snapshot_id"
+      case routePlanID = "route_plan_id"
+      case edges
+      case occurrences
+    }
+  }
+
+  private struct RouteRuntimeHashPayload: Encodable {
+    let schemaVersion: String
+    let networkArtifactID: String
+    let networkArtifactSHA256: String
+    let routePlan: RoutePlan
+    let matcherCorridor: CanonicalMatcherCorridor
+    let decisionZones: [DecisionZoneProgressDefinition]
+    let releasedGuidance: [ReleasedGuidanceDefinition]
+    let recoveryCandidates: [RecoveryCandidate]
+    let routeEdgeIDs: [String]
+    let routeEdgeLengthsMeters: [Double]
+
+    private enum CodingKeys: String, CodingKey {
+      case schemaVersion = "schema_version"
+      case networkArtifactID = "network_artifact_id"
+      case networkArtifactSHA256 = "network_artifact_sha256"
+      case routePlan = "route_plan"
+      case matcherCorridor = "matcher_corridor"
+      case decisionZones = "decision_zones"
+      case releasedGuidance = "released_guidance"
+      case recoveryCandidates = "recovery_candidates"
+      case routeEdgeIDs = "route_edge_ids"
+      case routeEdgeLengthsMeters = "route_edge_lengths_meters"
+    }
+  }
+
   public static func compile(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute
@@ -414,28 +548,79 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       }
       return matcherEdge
     }
+    let recoveryCandidates = deriveRecoveryCandidates(
+      database: database,
+      route: route
+    )
+    let networkArtifactID = database.databaseID
+    let networkArtifactSHA256 = try canonicalSHA256(
+      NetworkArtifactHashPayload(
+        schemaVersion: ShutoRuntimeAssetIdentity.currentSchemaVersion,
+        database: database
+      )
+    )
+    let routeRuntimeSHA256 = try canonicalSHA256(
+      RouteRuntimeHashPayload(
+        schemaVersion: ShutoRuntimeAssetIdentity.currentSchemaVersion,
+        networkArtifactID: networkArtifactID,
+        networkArtifactSHA256: networkArtifactSHA256,
+        routePlan: route.routePlan,
+        matcherCorridor: CanonicalMatcherCorridor(corridor),
+        decisionZones: decisionZones,
+        releasedGuidance: releasedGuidance,
+        recoveryCandidates: recoveryCandidates,
+        routeEdgeIDs: route.edges.map(\.edgeID),
+        routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
+      )
+    )
+    let runtimeAssetIdentity = ShutoRuntimeAssetIdentity(
+      networkArtifactID: networkArtifactID,
+      networkArtifactSHA256: networkArtifactSHA256,
+      routeRuntimeID: route.routePlan.id,
+      routeRuntimeSHA256: routeRuntimeSHA256,
+      networkSnapshotID: database.networkSnapshotID,
+      routePlanID: route.routePlan.id,
+      verificationState: database.verificationState
+    )
     return ShutoPlannedRouteRuntimeAssets(
+      runtimeAssetIdentity: runtimeAssetIdentity,
       routePlan: route.routePlan,
       matcherCorridor: corridor,
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
-      recoveryCandidates: deriveRecoveryCandidates(
-        database: database,
-        route: route
-      ),
+      recoveryCandidates: recoveryCandidates,
       routeEdges: routeMatcherEdges,
       routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
     )
   }
 
-  /// Wrong-turn recovery candidates: for every plan node where a legal
-  /// alternative movement diverges from the plan, a bounded directed search
-  /// over the whole snapshot finds the cheapest legal path back onto a
-  /// strictly later plan occurrence. The rejoin objective always stays the
-  /// active RoutePlan — loops make this natural because the ring comes back
-  /// around. Candidates derive from the same released snapshot as the plan
-  /// itself and never mutate it; they carry no navigation-grade guidance
-  /// claim (reviewed movements and speech remain separately gated).
+  private static func canonicalSHA256<Value: Encodable>(
+    _ value: Value
+  ) throws -> String {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+    let data: Data
+    do {
+      data = try encoder.encode(value)
+    } catch {
+      throw ShutoPlannedRouteRuntimeCompilationError
+        .assetIdentityEncodingFailed
+    }
+    return SHA256.hash(data: data).map {
+      String(format: "%02x", $0)
+    }.joined()
+  }
+
+  /// Wrong-turn recovery candidates: for every plan node where an available
+  /// graph movement diverges from the plan, a bounded directed search finds a
+  /// candidate path back onto a strictly later plan occurrence. The rejoin
+  /// objective always stays the active RoutePlan — loops make this natural
+  /// because the ring comes back around.
+  ///
+  /// The whole-Shuto graph is a planning candidate, not a navigation release.
+  /// These paths therefore remain unreleased and cannot be executed by
+  /// `RecoveryPlanner`. A future `KaidoProductRelease` must separately bind
+  /// reviewed recovery movements before a runtime can admit them.
   static func deriveRecoveryCandidates(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute
@@ -556,7 +741,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         RecoveryCandidate(
           targetOccurrenceID: occurrences[rejoin.target].id,
           recoveryOccurrenceIDs: pathEdgeIDs.reversed(),
-          isReleased: true,
+          isReleased: false,
           staysInAllowedTollDomain: true
         )
       )

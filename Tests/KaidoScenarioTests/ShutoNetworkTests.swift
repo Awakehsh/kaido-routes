@@ -1,4 +1,5 @@
 import Foundation
+import KaidoDomain
 import KaidoRouting
 import Testing
 
@@ -29,6 +30,65 @@ struct ShutoNetworkTests {
       database.routes.first { $0.routeID == "Y" }
     )
     #expect(yaesu.operationalStatus == "LONG_TERM_CLOSED")
+  }
+
+  @Test("decoder preserves whole-network bounds, limitations, and source licence")
+  func preservesReleaseMetadata() throws {
+    let database = try loadDatabase()
+
+    #expect(database.bounds.minimumLatitude == 35.15)
+    #expect(database.bounds.maximumLatitude == 36.15)
+    #expect(database.bounds.minimumLongitude == 139.1)
+    #expect(database.bounds.maximumLongitude == 140.35)
+    #expect(database.limitations.count == 3)
+    #expect(
+      database.limitations.contains {
+        $0.contains("not operator-authored lane or vertical-road authority")
+      }
+    )
+    #expect(
+      database.sources.officialCatalog.catalogID
+        == "kaido.shuto.official-facts.2026-07-29"
+    )
+    #expect(
+      database.sources.facilityCandidateReview.reviewID
+        == "shuto-facility-candidate-review-20260810"
+    )
+    #expect(database.sources.osm.attribution == "© OpenStreetMap contributors")
+    #expect(database.sources.osm.licence == "ODbL-1.0")
+    #expect(
+      database.sources.osm.sourceURI
+        == "https://download.geofabrik.de/asia/japan/kanto-260804.osm.pbf"
+    )
+
+    let roundTripped = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONEncoder().encode(database)
+    )
+    #expect(roundTripped.bounds == database.bounds)
+    #expect(roundTripped.limitations == database.limitations)
+    #expect(roundTripped.sources == database.sources)
+  }
+
+  @Test("invalid OSM licence metadata fails closed")
+  func rejectsInvalidOSMLicenceMetadata() throws {
+    var document = try #require(
+      JSONSerialization.jsonObject(with: loadDatabaseData())
+        as? [String: Any]
+    )
+    var sources = try #require(document["sources"] as? [String: Any])
+    var osm = try #require(sources["osm"] as? [String: Any])
+    osm["licence"] = "UNKNOWN"
+    sources["osm"] = osm
+    document["sources"] = sources
+    let database = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONSerialization.data(withJSONObject: document)
+    )
+
+    #expect(throws: ShutoNetworkError.invalidSourceMetadata) {
+      try database.validate()
+    }
   }
 
   @Test("planner crosses the network without mutating directional facilities")
@@ -83,7 +143,94 @@ struct ShutoNetworkTests {
     )
   }
 
+  @Test("saved route restores the exact ordered plan")
+  func restoresExactSavedRoute() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let planned = try planner.plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+
+    let restored = try planner.restore(routePlan: planned.routePlan)
+
+    #expect(restored == planned)
+  }
+
+  @Test("saved circuit restores repeated occurrences without deduplication")
+  func restoresRepeatedCircuitOccurrences() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let exitFacility = try #require(
+      planner.circuitExitCandidates(
+        for: .c1Inner,
+        afterEntering: "shuto.ic.c1.takaracho"
+      ).first
+    )
+    let planned = try planner.planCircuit(
+      circuit: .c1Inner,
+      entryFacilityID: "shuto.ic.c1.takaracho",
+      exitFacilityID: exitFacility.facilityID,
+      laps: 2
+    )
+
+    let restored = try planner.restore(routePlan: planned.routePlan)
+
+    #expect(restored == planned)
+    #expect(Set(restored.edges.map(\.edgeID)).count < restored.edges.count)
+  }
+
+  @Test("saved route restore fails closed on snapshot or occurrence drift")
+  func rejectsSavedRouteIdentityDrift() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let planned = try planner.plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let snapshotDrift = RoutePlan(
+      id: planned.routePlan.id,
+      networkSnapshotID: "superseded-snapshot",
+      entryFacilityID: planned.routePlan.entryFacilityID,
+      exitFacilityID: planned.routePlan.exitFacilityID,
+      recoveryPolicy: planned.routePlan.recoveryPolicy,
+      actualDistanceKM: planned.routePlan.actualDistanceKM,
+      occurrences: planned.routePlan.occurrences
+    )
+    var occurrences = planned.routePlan.occurrences
+    let original = occurrences[0]
+    occurrences[0] = RouteOccurrence(
+      id: original.id,
+      index: original.index,
+      kind: original.kind,
+      entityID: "unknown-edge",
+      parkingAreaID: original.parkingAreaID,
+      tollDomainID: original.tollDomainID,
+      isOptional: original.isOptional
+    )
+    let occurrenceDrift = RoutePlan(
+      id: planned.routePlan.id,
+      networkSnapshotID: planned.routePlan.networkSnapshotID,
+      entryFacilityID: planned.routePlan.entryFacilityID,
+      exitFacilityID: planned.routePlan.exitFacilityID,
+      recoveryPolicy: planned.routePlan.recoveryPolicy,
+      actualDistanceKM: planned.routePlan.actualDistanceKM,
+      occurrences: occurrences
+    )
+
+    #expect(throws: ShutoNetworkError.routeUnavailable) {
+      try planner.restore(routePlan: snapshotDrift)
+    }
+    #expect(throws: ShutoNetworkError.routeUnavailable) {
+      try planner.restore(routePlan: occurrenceDrift)
+    }
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
+    try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: loadDatabaseData()
+    )
+  }
+
+  private func loadDatabaseData() throws -> Data {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()
       .deletingLastPathComponent()
@@ -93,9 +240,6 @@ struct ShutoNetworkTests {
       .appendingPathComponent("route-atlas")
       .appendingPathComponent("osm-derived")
       .appendingPathComponent("shuto-whole-network-20260804.json")
-    return try JSONDecoder().decode(
-      ShutoNetworkDatabase.self,
-      from: Data(contentsOf: url)
-    )
+    return try Data(contentsOf: url)
   }
 }

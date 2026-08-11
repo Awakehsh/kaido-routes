@@ -1,9 +1,34 @@
 import Foundation
+import KaidoDomain
 import KaidoRouting
 import Testing
 
 @Suite("Shuto circuit planner")
 struct ShutoCircuitPlannerTests {
+  @Test("route catalog names and landmarks cover every interface language")
+  func localizesBundledRouteCatalog() {
+    for circuit in ShutoCircuitDefinition.bundled {
+      for locale in KaidoReleaseLocale.allCases {
+        #expect(!circuit.displayName(for: locale).isEmpty)
+        #expect(
+          circuit.landmarkNames(for: locale).count
+            == circuit.landmarkNamesJA.count
+        )
+      }
+    }
+
+    #expect(
+      ShutoCircuitDefinition.c1Inner.displayName(
+        for: .simplifiedChinese
+      ) == "都心环状线 内环"
+    )
+    #expect(
+      ShutoCircuitDefinition.scenicGrandTour.displayName(
+        for: .english
+      ) == "Yokohama Scenic Tour"
+    )
+  }
+
   @Test("C2 inner circuit with Bayshore closes and repeats laps distinctly")
   func plansC2InnerCircuitWithTwoLaps() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())

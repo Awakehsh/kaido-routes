@@ -36,6 +36,38 @@
         "network_snapshot_id": "test.snapshot.circuit-loop-v1",
         "verification_state": "TEST",
         "checked_at": "2026-08-03",
+        "bounds": {
+          "maximum_latitude": 35.02,
+          "maximum_longitude": 139.02,
+          "minimum_latitude": 34.98,
+          "minimum_longitude": 138.98
+        },
+        "limitations": [
+          "Synthetic circuit fixture; not road, licence, or navigation evidence."
+        ],
+        "sources": {
+          "facility_candidate_review": {
+            "checked_at": "2026-08-03",
+            "excluded_candidate_count": 0,
+            "review_id": "test.circuit.facility-review",
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+          },
+          "official_catalog": {
+            "catalog_id": "test.circuit.official-catalog",
+            "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+          },
+          "osm": {
+            "attribution": "© OpenStreetMap contributors",
+            "builder": "synthetic-e2e-fixture",
+            "builder_version": "1.0",
+            "gap_connector_way_ids": [],
+            "input_file": "synthetic-circuit.osm.pbf",
+            "input_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "licence": "ODbL-1.0",
+            "source_snapshot_at": "2026-08-03T00:00:00+09:00",
+            "source_uri": "https://example.invalid/synthetic-circuit.osm.pbf"
+          }
+        },
         "routes": [
           {
             "route_id": "test.route.loop",

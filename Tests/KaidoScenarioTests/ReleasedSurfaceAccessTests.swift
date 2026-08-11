@@ -1,3 +1,4 @@
+import Foundation
 import KaidoDomain
 import KaidoNavigation
 import KaidoSurfaceRouting
@@ -663,6 +664,199 @@ func productRuntimeAdmitsReleasedSurfaceJourney() async throws {
   )
   #expect(!started.strictRouteAutoCommitAllowed)
   #expect(runtime.release.navigation.bundle.routePlan == fixture.routePlan)
+}
+
+@Test("Shuto live session inherits authority and contexts from product runtime")
+func shutoLiveSessionRequiresExactReleasedProductRuntime() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let access = releasedSurfaceAccessDefinition(fixture)
+  let egress = releasedSurfaceEgressDefinition(
+    fixture,
+    providerIdentity: access.providerIdentity
+  )
+  let release = try foregroundProductRelease(
+    fixture,
+    surfaceAccessDefinition: access,
+    surfaceEgressDefinition: egress
+  )
+  let plan = try releasedSurfaceJourney(
+    fixture,
+    release: release,
+    access: access,
+    egress: egress
+  )
+  let runtime = try KaidoProductNavigationRuntime(
+    release: release,
+    journeyPlan: plan
+  )
+  let egressPolicy = try #require(egress.policies.first)
+
+  let session = try ShutoLiveDriveSession(runtime: runtime)
+
+  #expect(session.productReleaseID == runtime.productReleaseID)
+  #expect(session.navigationReleaseID == runtime.navigationReleaseID)
+  #expect(session.networkSnapshotID == runtime.networkSnapshotID)
+  #expect(session.routePlanID == runtime.routePlanID)
+  #expect(
+    session.entryTransitionAdmissionContext
+      == runtime.entryTransitionAdmissionContext
+  )
+  #expect(
+    session.surfaceEgressAdmissionContext
+      == runtime.surfaceEgressAdmissionContext
+  )
+  let started = await session.start()
+  #expect(started.journeyPhase == .approachToEntry)
+  #expect(await session.snapshot == started)
+  let checkpoint = try await session.makeCheckpoint(
+    savedAtMilliseconds: 1_000
+  )
+  #expect(checkpoint.productReleaseID == runtime.productReleaseID)
+  #expect(checkpoint.navigationReleaseID == runtime.navigationReleaseID)
+
+  let entryContext = session.entryTransitionAdmissionContext
+  let entryEdgeIDs = entryContext.entryTransition.directedEdgeIDs
+  try #require(entryEdgeIDs.count == 2)
+  let firstEntry = try await session.observeEntryTransitionEvidence(
+    releasedEntryEvidence(
+      context: entryContext,
+      id: "test.shuto-live.entry.0",
+      at: 1_000,
+      edgeID: entryEdgeIDs[0]
+    )
+  )
+  #expect(firstEntry.status == .observing)
+  #expect(firstEntry.navigationSnapshot.journeyPhase == .entryTransition)
+  #expect(await session.snapshot == firstEntry.navigationSnapshot)
+
+  let enteredRoute = try await session.observeEntryTransitionEvidence(
+    releasedEntryEvidence(
+      context: entryContext,
+      id: "test.shuto-live.entry.1",
+      at: 2_000,
+      edgeID: entryEdgeIDs[1]
+    )
+  )
+  #expect(enteredRoute.status == .strictRouteEntered)
+  #expect(enteredRoute.navigationSnapshot.journeyPhase == .strictRoute)
+  #expect(
+    enteredRoute.navigationSnapshot.currentOccurrenceID
+      == entryContext.entryTransition.firstRouteOccurrenceID
+  )
+  #expect(await session.snapshot == enteredRoute.navigationSnapshot)
+
+  let firstRouteEdge = try #require(
+    entryContext.matcherCorridor.edges.first {
+      $0.id == entryContext.firstRouteDirectedEdgeID
+    }
+  )
+  let routeUpdate = try await session.observe(
+    releasedRouteObservation(
+      id: "test.shuto-live.route.0",
+      at: 3_000,
+      edge: firstRouteEdge
+    )
+  )
+  #expect(routeUpdate.matcherEstimate.confidence == .high)
+  #expect(
+    routeUpdate.matcherEstimate.occurrenceID
+      == entryContext.entryTransition.firstRouteOccurrenceID
+  )
+  #expect(routeUpdate.navigationSnapshot.journeyPhase == .strictRoute)
+  #expect(
+    routeUpdate.navigationSnapshot.currentOccurrenceID
+      == entryContext.entryTransition.firstRouteOccurrenceID
+  )
+  #expect(await session.snapshot == routeUpdate.navigationSnapshot)
+
+  let finished = await session.finishDrive()
+  #expect(finished.journeyPhase == .exitTransition)
+  #expect(finished.egress.exitFacilityID == egressPolicy.exitFacilityID)
+  #expect(await session.snapshot == finished)
+
+  let egressContext = session.surfaceEgressAdmissionContext
+  let observedEgress = await session.observeSurfaceEgressHandoffEvidence(
+    surfaceEgressEvidence(
+      context: egressContext,
+      id: "test.shuto-live.egress.0",
+      at: 4_000,
+      fractionAlongEdge: 0.2
+    )
+  )
+  #expect(observedEgress.status == .observing)
+  #expect(
+    observedEgress.navigationSnapshot.journeyPhase == .exitTransition
+  )
+  #expect(await session.snapshot == observedEgress.navigationSnapshot)
+
+  let enteredEgress = await session.observeSurfaceEgressHandoffEvidence(
+    surfaceEgressEvidence(
+      context: egressContext,
+      id: "test.shuto-live.egress.1",
+      at: 5_000,
+      fractionAlongEdge: 0.4
+    )
+  )
+  #expect(enteredEgress.status == .surfaceEgressEntered)
+  #expect(enteredEgress.navigationSnapshot.journeyPhase == .surfaceEgress)
+  #expect(await session.snapshot == enteredEgress.navigationSnapshot)
+}
+
+@Test("Shuto live session rejects missing live or surface release authority")
+func shutoLiveSessionFailsClosedWithoutCompleteAuthority() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let access = releasedSurfaceAccessDefinition(fixture)
+  let egress = releasedSurfaceEgressDefinition(
+    fixture,
+    providerIdentity: access.providerIdentity
+  )
+  let syntheticRelease = try productRelease(
+    fixture,
+    surfaceAccessDefinition: access,
+    surfaceEgressDefinition: egress
+  )
+  let syntheticPlan = try releasedSurfaceJourney(
+    fixture,
+    release: syntheticRelease,
+    access: access,
+    egress: egress
+  )
+  let syntheticRuntime = try KaidoProductNavigationRuntime(
+    release: syntheticRelease,
+    journeyPlan: syntheticPlan
+  )
+  #expect(
+    throws:
+      ShutoLiveDriveSessionError.navigationReleaseNotForegroundAuthorized
+  ) {
+    _ = try ShutoLiveDriveSession(runtime: syntheticRuntime)
+  }
+
+  let routeOnlySurfaceRelease = try foregroundProductRelease(
+    fixture,
+    surfaceAccessDefinition: access
+  )
+  let input = acceptedSurfaceAccessInput(
+    fixture,
+    definition: access
+  )
+  let accessOnlyPlan = try JourneyPlanCompiler.surfaceAccess(
+    release: routeOnlySurfaceRelease,
+    request: input.request,
+    candidate: input.candidate,
+    inspection: input.inspection,
+    providerIdentity: access.providerIdentity,
+    finishPolicy: .finishOnRequest
+  )
+  let accessOnlyRuntime = try KaidoProductNavigationRuntime(
+    release: routeOnlySurfaceRelease,
+    journeyPlan: accessOnlyPlan
+  )
+  #expect(
+    throws: ShutoLiveDriveSessionError.releasedSurfaceEgressRequired
+  ) {
+    _ = try ShutoLiveDriveSession(runtime: accessOnlyRuntime)
+  }
 }
 
 @Test("Product runtime rejects a surface journey minted for another release")
@@ -1758,6 +1952,50 @@ private func surfaceEgressEvidence(
   )
 }
 
+private func releasedEntryEvidence(
+  context: EntryTransitionAdmissionContext,
+  id: String,
+  at: Int,
+  edgeID: String
+) -> EntryTransitionEvidence {
+  EntryTransitionEvidence(
+    context: context,
+    observationID: id,
+    observedAtMilliseconds: at,
+    receivedAtMilliseconds: at,
+    directedEdgeID: edgeID,
+    candidateEdgeIDs: [edgeID],
+    confidence: .high,
+    headingErrorDegrees: 1,
+    isSimulatedBySoftware: false
+  )
+}
+
+private func releasedRouteObservation(
+  id: String,
+  at: Int,
+  edge: RouteMatcherDirectedEdge
+) throws -> RouteMatcherObservation {
+  let start = try #require(edge.coordinates.first)
+  let end = try #require(edge.coordinates.last)
+  let latitudeDelta = end.latitude - start.latitude
+  let longitudeDelta = end.longitude - start.longitude
+  let course = atan2(longitudeDelta, latitudeDelta) * 180 / .pi
+  return RouteMatcherObservation(
+    id: id,
+    observedAtMilliseconds: at,
+    receivedAtMilliseconds: at,
+    coordinate: MatcherCoordinate(
+      latitude: (start.latitude + end.latitude) / 2,
+      longitude: (start.longitude + end.longitude) / 2
+    ),
+    horizontalAccuracyMeters: 1,
+    courseDegrees: course >= 0 ? course : course + 360,
+    speedMetersPerSecond: 15,
+    source: .phone
+  )
+}
+
 private func productRelease(
   _ fixture: NavigationReleaseBundleFixture,
   surfaceAccessDefinition: ReleasedSurfaceAccessDefinition,
@@ -1778,5 +2016,116 @@ private func productRelease(
         includeIncomingApproach: true
       )
     )
+  )
+}
+
+private func foregroundProductRelease(
+  _ fixture: NavigationReleaseBundleFixture,
+  surfaceAccessDefinition: ReleasedSurfaceAccessDefinition,
+  surfaceEgressDefinition: ReleasedSurfaceEgressDefinition? = nil
+) throws -> KaidoProductRelease {
+  let navigationArtifact = navigationReleaseArtifact(
+    fixture,
+    surfaceAccessDefinition: surfaceAccessDefinition,
+    surfaceEgressDefinition: surfaceEgressDefinition
+  )
+  let reviewedNavigationArtifact = NavigationReleaseArtifact(
+    schemaVersion: navigationArtifact.schemaVersion,
+    releaseID: navigationArtifact.releaseID,
+    releasedAt: navigationArtifact.releasedAt,
+    editorCatalogID: navigationArtifact.editorCatalogID,
+    networkSnapshot: navigationArtifact.networkSnapshot,
+    routePlan: navigationArtifact.routePlan,
+    sourceRegistry: NavigationReleaseSourceRegistry(
+      references: navigationArtifact.sourceRegistry.references.map {
+        source in
+        NavigationReleaseSourceReference(
+          id: source.id,
+          roles: source.roles,
+          authorityName: source.authorityName,
+          sourceURL: source.sourceURL,
+          contentSHA256: source.contentSHA256,
+          checkedAt: source.checkedAt,
+          licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+        )
+      }
+    ),
+    assetEvidence: navigationArtifact.assetEvidence,
+    editorCatalog: navigationArtifact.editorCatalog,
+    editorPresentationCatalog:
+      navigationArtifact.editorPresentationCatalog,
+    runtimePolicy: navigationArtifact.runtimePolicy,
+    matcherCorridor: navigationArtifact.matcherCorridor,
+    decisionZones: navigationArtifact.decisionZones,
+    releasedGuidance: navigationArtifact.releasedGuidance,
+    junctionViews: navigationArtifact.junctionViews,
+    surfaceAccessDefinition:
+      navigationArtifact.surfaceAccessDefinition,
+    surfaceEgressDefinition:
+      navigationArtifact.surfaceEgressDefinition
+  )
+  return try KaidoProductRelease(
+    artifact: KaidoProductReleaseArtifact(
+      releaseID: "test.product-release.shuto-live",
+      releasedAt: "2026-07-24T12:00:00+09:00",
+      runtimeUse: KaidoProductRuntimeUseDeclaration(
+        evidenceScope: .releasedRoad,
+        liveInputPolicy: .foregroundWhenInUse
+      ),
+      navigationRelease: reviewedNavigationArtifact,
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: true,
+        licenceIdentifier: "TEST_REVIEWED_ROAD_ONLY"
+      )
+    )
+  )
+}
+
+private func releasedSurfaceJourney(
+  _ fixture: NavigationReleaseBundleFixture,
+  release: KaidoProductRelease,
+  access: ReleasedSurfaceAccessDefinition,
+  egress: ReleasedSurfaceEgressDefinition
+) throws -> JourneyPlan {
+  let accessInput = acceptedSurfaceAccessInput(
+    fixture,
+    definition: access
+  )
+  let basePlan = try JourneyPlanCompiler.surfaceAccess(
+    release: release,
+    request: accessInput.request,
+    candidate: accessInput.candidate,
+    inspection: accessInput.inspection,
+    providerIdentity: access.providerIdentity,
+    finishPolicy: .returnNearOrigin
+  )
+  let target = try #require(basePlan.returnTarget)
+  let policy = egress.policies[0]
+  let candidate = surfaceEgressCandidate(
+    id: "test.surface-egress.shuto-live",
+    travelTime: 300,
+    distance: 1_600,
+    fixture: fixture,
+    policy: policy,
+    target: target,
+    providerIdentity: access.providerIdentity
+  )
+  return try JourneyPlanCompiler.surfaceEgress(
+    release: release,
+    basePlan: basePlan,
+    request: surfaceEgressRequest(
+      basePlan: basePlan,
+      policy: policy,
+      target: target
+    ),
+    candidate: candidate,
+    inspection: surfaceEgressInspection(
+      candidate: candidate,
+      fixture: fixture,
+      policy: policy,
+      target: target
+    ),
+    providerIdentity: access.providerIdentity
   )
 }

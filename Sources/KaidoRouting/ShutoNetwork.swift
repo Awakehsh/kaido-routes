@@ -11,8 +11,84 @@ public struct ShutoCoordinate: Codable, Equatable, Hashable, Sendable {
   }
 }
 
-public struct ShutoNetworkDatabase: Decodable, Sendable {
-  public struct Route: Decodable, Equatable, Sendable {
+public struct ShutoNetworkDatabase: Codable, Sendable {
+  public struct Bounds: Codable, Equatable, Sendable {
+    public let maximumLatitude: Double
+    public let maximumLongitude: Double
+    public let minimumLatitude: Double
+    public let minimumLongitude: Double
+
+    private enum CodingKeys: String, CodingKey {
+      case maximumLatitude = "maximum_latitude"
+      case maximumLongitude = "maximum_longitude"
+      case minimumLatitude = "minimum_latitude"
+      case minimumLongitude = "minimum_longitude"
+    }
+  }
+
+  public struct FacilityCandidateReviewSource:
+    Codable, Equatable, Sendable
+  {
+    public let checkedAt: String
+    public let excludedCandidateCount: Int
+    public let reviewID: String
+    public let sha256: String
+
+    private enum CodingKeys: String, CodingKey {
+      case checkedAt = "checked_at"
+      case excludedCandidateCount = "excluded_candidate_count"
+      case reviewID = "review_id"
+      case sha256
+    }
+  }
+
+  public struct OfficialCatalogSource: Codable, Equatable, Sendable {
+    public let catalogID: String
+    public let sha256: String
+
+    private enum CodingKeys: String, CodingKey {
+      case catalogID = "catalog_id"
+      case sha256
+    }
+  }
+
+  public struct OSMSource: Codable, Equatable, Sendable {
+    public let attribution: String
+    public let builder: String
+    public let builderVersion: String
+    public let gapConnectorWayIDs: [Int64]
+    public let inputFile: String
+    public let inputSHA256: String
+    public let licence: String
+    public let sourceSnapshotAt: String
+    public let sourceURI: String
+
+    private enum CodingKeys: String, CodingKey {
+      case attribution
+      case builder
+      case builderVersion = "builder_version"
+      case gapConnectorWayIDs = "gap_connector_way_ids"
+      case inputFile = "input_file"
+      case inputSHA256 = "input_sha256"
+      case licence
+      case sourceSnapshotAt = "source_snapshot_at"
+      case sourceURI = "source_uri"
+    }
+  }
+
+  public struct Sources: Codable, Equatable, Sendable {
+    public let facilityCandidateReview: FacilityCandidateReviewSource
+    public let officialCatalog: OfficialCatalogSource
+    public let osm: OSMSource
+
+    private enum CodingKeys: String, CodingKey {
+      case facilityCandidateReview = "facility_candidate_review"
+      case officialCatalog = "official_catalog"
+      case osm
+    }
+  }
+
+  public struct Route: Codable, Equatable, Sendable {
     public let routeID: String
     public let officialNameJA: String
     public let operationalStatus: String
@@ -24,7 +100,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct Node: Decodable, Equatable, Sendable {
+  public struct Node: Codable, Equatable, Sendable {
     public let nodeID: Int64
     public let latitude: Double
     public let longitude: Double
@@ -40,7 +116,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct RouteMembership: Decodable, Equatable, Hashable, Sendable {
+  public struct RouteMembership: Codable, Equatable, Hashable, Sendable {
     public let routeID: String
     public let directionsJA: [String]
 
@@ -50,7 +126,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct Way: Decodable, Equatable, Sendable {
+  public struct Way: Codable, Equatable, Sendable {
     public let wayID: Int64
     public let kind: String
     public let nodeIDs: [Int64]
@@ -66,7 +142,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct Edge: Decodable, Equatable, Hashable, Sendable {
+  public struct Edge: Codable, Equatable, Hashable, Sendable {
     public let edgeID: String
     public let fromNodeID: Int64
     public let toNodeID: Int64
@@ -91,7 +167,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
   }
 
   public struct FacilityEdgeCandidate:
-    Decodable, Equatable, Hashable, Sendable
+    Codable, Equatable, Hashable, Sendable
   {
     public let edgeID: String
     public let distanceMeters: Double
@@ -102,7 +178,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct Facility: Decodable, Equatable, Identifiable, Sendable {
+  public struct Facility: Codable, Equatable, Identifiable, Sendable {
     public var id: String { facilityID }
 
     public let facilityID: String
@@ -142,7 +218,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct Junction: Decodable, Equatable, Identifiable, Sendable {
+  public struct Junction: Codable, Equatable, Identifiable, Sendable {
     public var id: String { junctionID }
 
     public let junctionID: String
@@ -164,7 +240,7 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }
   }
 
-  public struct ParkingArea: Decodable, Equatable, Identifiable, Sendable {
+  public struct ParkingArea: Codable, Equatable, Identifiable, Sendable {
     public var id: String { parkingAreaID }
 
     public let parkingAreaID: String
@@ -193,6 +269,9 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
   public let networkSnapshotID: String
   public let verificationState: String
   public let checkedAt: String
+  public let bounds: Bounds
+  public let limitations: [String]
+  public let sources: Sources
   public let routes: [Route]
   public let nodes: [Node]
   public let ways: [Way]
@@ -207,6 +286,9 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     case networkSnapshotID = "network_snapshot_id"
     case verificationState = "verification_state"
     case checkedAt = "checked_at"
+    case bounds
+    case limitations
+    case sources
     case routes
     case nodes
     case ways
@@ -219,6 +301,40 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
   public func validate() throws {
     guard schemaVersion == "1.0" else {
       throw ShutoNetworkError.unsupportedSchema
+    }
+    guard bounds.minimumLatitude.isFinite,
+      bounds.maximumLatitude.isFinite,
+      bounds.minimumLongitude.isFinite,
+      bounds.maximumLongitude.isFinite,
+      (-90...90).contains(bounds.minimumLatitude),
+      (-90...90).contains(bounds.maximumLatitude),
+      (-180...180).contains(bounds.minimumLongitude),
+      (-180...180).contains(bounds.maximumLongitude),
+      bounds.minimumLatitude < bounds.maximumLatitude,
+      bounds.minimumLongitude < bounds.maximumLongitude
+    else {
+      throw ShutoNetworkError.invalidBounds
+    }
+    guard !limitations.isEmpty,
+      limitations.allSatisfy({
+        !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      }),
+      !sources.facilityCandidateReview.checkedAt.isEmpty,
+      sources.facilityCandidateReview.excludedCandidateCount >= 0,
+      !sources.facilityCandidateReview.reviewID.isEmpty,
+      Self.isSHA256(sources.facilityCandidateReview.sha256),
+      !sources.officialCatalog.catalogID.isEmpty,
+      Self.isSHA256(sources.officialCatalog.sha256),
+      sources.osm.attribution == "© OpenStreetMap contributors",
+      !sources.osm.builder.isEmpty,
+      !sources.osm.builderVersion.isEmpty,
+      !sources.osm.inputFile.isEmpty,
+      Self.isSHA256(sources.osm.inputSHA256),
+      sources.osm.licence == "ODbL-1.0",
+      !sources.osm.sourceSnapshotAt.isEmpty,
+      Self.isHTTPSURL(sources.osm.sourceURI)
+    else {
+      throw ShutoNetworkError.invalidSourceMetadata
     }
     guard routes.count == 26, directionalFacilities.count >= 140,
       junctions.count >= 35, parkingAreas.count >= 15,
@@ -247,6 +363,15 @@ public struct ShutoNetworkDatabase: Decodable, Sendable {
     }) else {
       throw ShutoNetworkError.invalidJunction
     }
+  }
+
+  private static func isSHA256(_ value: String) -> Bool {
+    value.count == 64 && value.allSatisfy { $0.isHexDigit }
+  }
+
+  private static func isHTTPSURL(_ value: String) -> Bool {
+    guard let url = URL(string: value) else { return false }
+    return url.scheme == "https" && url.host != nil
   }
 }
 
@@ -310,6 +435,8 @@ public struct ShutoRouteRecommendation: Equatable, Sendable {
 
 public enum ShutoNetworkError: Error, Equatable {
   case unsupportedSchema
+  case invalidBounds
+  case invalidSourceMetadata
   case incompleteNetwork
   case duplicateIdentity
   case invalidEdge
@@ -377,6 +504,76 @@ public struct ShutoRoutePlanner: Sendable {
       exitFacility: exitFacility,
       preference: preference
     )
+  }
+
+  /// Reconstructs a saved plan only when every ordered occurrence still maps
+  /// exactly onto this database snapshot. This is an integrity check for
+  /// planning and replay; it does not grant navigation-release authority.
+  public func restore(
+    routePlan: RoutePlan,
+    preference: ShutoRoutePreference = .recommended
+  ) throws -> ShutoPlannedRoute {
+    let document = SharedRouteDocument(
+      evidenceState: .communityCandidate,
+      routePlan: routePlan
+    )
+    guard (try? SharedRouteCodec.validate(document)) != nil,
+      routePlan.networkSnapshotID == database.networkSnapshotID,
+      let entryFacility = facilitiesByID[routePlan.entryFacilityID],
+      let exitFacility = facilitiesByID[routePlan.exitFacilityID],
+      entryFacility.canEnter,
+      exitFacility.canExit
+    else {
+      throw ShutoNetworkError.routeUnavailable
+    }
+
+    let movementDefinitionsByID = Dictionary(
+      uniqueKeysWithValues: ShutoJunctionMovementCatalog.released
+        .filter { $0.networkSnapshotID == database.networkSnapshotID }
+        .map { ($0.id, $0) }
+    )
+    var routeEdges: [ShutoNetworkDatabase.Edge] = []
+    for occurrence in routePlan.occurrences {
+      if let edge = edgesByID[occurrence.entityID] {
+        routeEdges.append(edge)
+        continue
+      }
+      guard occurrence.kind == .junctionMovement,
+        let movement = movementDefinitionsByID[occurrence.entityID],
+        routeEdges.last?.edgeID == movement.incomingEdgeID,
+        let outgoingEdge = edgesByID[movement.outgoingEdgeID]
+      else {
+        throw ShutoNetworkError.routeUnavailable
+      }
+      routeEdges.append(outgoingEdge)
+    }
+
+    guard let firstEdge = routeEdges.first,
+      let lastEdge = routeEdges.last,
+      entryFacility.entryEdgeCandidates.contains(where: {
+        $0.edgeID == firstEdge.edgeID
+      }),
+      exitFacility.exitEdgeCandidates.contains(where: {
+        $0.edgeID == lastEdge.edgeID
+      }),
+      zip(routeEdges, routeEdges.dropFirst()).allSatisfy({
+        $0.toNodeID == $1.fromNodeID
+      })
+    else {
+      throw ShutoNetworkError.routeUnavailable
+    }
+
+    let restored = assemblePlannedRoute(
+      routeEdges: routeEdges,
+      planID: routePlan.id,
+      entryFacility: entryFacility,
+      exitFacility: exitFacility,
+      preference: preference
+    )
+    guard restored.routePlan == routePlan else {
+      throw ShutoNetworkError.routeUnavailable
+    }
+    return restored
   }
 
   public func recommend(

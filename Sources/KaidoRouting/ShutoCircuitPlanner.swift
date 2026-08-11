@@ -7,8 +7,9 @@ import KaidoDomain
 ///   unordered set — the planner discovers travel order from directed forward
 ///   distance, so one definition serves any compatible entrance, and laps
 ///   repeat the cycle as distinct ordered occurrences.
-/// - `tour`: an open, ordered pass through the anchors — a reviewed course
-///   (a PA-terminated run or a multi-route grand tour) driven exactly once.
+/// - `tour`: an open, ordered pass through the anchors — a versioned candidate
+///   course (a PA-terminated run or a multi-route grand tour) driven exactly
+///   once.
 ///
 /// The driver chooses the experience; entrances and exits are derived from
 /// the origin, the directed graph, and the dated tariff rule — never designed
@@ -30,6 +31,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
 
   public let circuitID: String
   public let displayNameJA: String
+  public let localizedDisplayNames: [KaidoReleaseLocale: String]
   public let kind: Kind
   public let memberRouteIDs: Set<String>
   /// Travel-direction label per member route (`内回り`, `東行き`, `下り`, …).
@@ -44,20 +46,24 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public let anchors: [Anchor]
   public let paStopNamesJA: [String]
   public let landmarkNamesJA: [String]
+  public let localizedLandmarkNames: [KaidoReleaseLocale: [String]]
 
   public init(
     circuitID: String,
     displayNameJA: String,
+    localizedDisplayNames: [KaidoReleaseLocale: String] = [:],
     kind: Kind,
     memberRouteIDs: Set<String>,
     entranceDirectionsByRouteID: [String: String],
     exitDirectionsByRouteID: [String: String]? = nil,
     anchors: [Anchor],
     paStopNamesJA: [String] = [],
-    landmarkNamesJA: [String] = []
+    landmarkNamesJA: [String] = [],
+    localizedLandmarkNames: [KaidoReleaseLocale: [String]] = [:]
   ) {
     self.circuitID = circuitID
     self.displayNameJA = displayNameJA
+    self.localizedDisplayNames = localizedDisplayNames
     self.kind = kind
     self.memberRouteIDs = memberRouteIDs
     self.entranceDirectionsByRouteID = entranceDirectionsByRouteID
@@ -65,6 +71,15 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     self.anchors = anchors
     self.paStopNamesJA = paStopNamesJA
     self.landmarkNamesJA = landmarkNamesJA
+    self.localizedLandmarkNames = localizedLandmarkNames
+  }
+
+  public func displayName(for locale: KaidoReleaseLocale) -> String {
+    localizedDisplayNames[locale] ?? displayNameJA
+  }
+
+  public func landmarkNames(for locale: KaidoReleaseLocale) -> [String] {
+    localizedLandmarkNames[locale] ?? landmarkNamesJA
   }
 
   /// C2 Central Circular inner loop, closed between Oi JCT and Kasai JCT by
@@ -72,6 +87,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public static let c2InnerWithBayshore = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.c2-inner-bayshore",
     displayNameJA: "中央環状線 内回り＋湾岸線",
+    localizedDisplayNames: [
+      .japanese: "中央環状線 内回り＋湾岸線",
+      .simplifiedChinese: "中央环状线 内环＋湾岸线",
+      .english: "C2 Inner + Bayshore Circuit",
+    ],
     kind: .loop,
     memberRouteIDs: ["C2", "B"],
     entranceDirectionsByRouteID: ["C2": "内回り"],
@@ -84,13 +104,23 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.c2.nakanochoujabashi"),
     ],
     paStopNamesJA: ["大井PA"],
-    landmarkNamesJA: ["山手トンネル", "東京港トンネル"]
+    landmarkNamesJA: ["山手トンネル", "東京港トンネル"],
+    localizedLandmarkNames: [
+      .japanese: ["山手トンネル", "東京港トンネル"],
+      .simplifiedChinese: ["山手隧道", "东京港隧道"],
+      .english: ["Yamate Tunnel", "Tokyo Port Tunnel"],
+    ]
   )
 
   /// C1 Inner Circular inner loop.
   public static let c1Inner = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.c1-inner",
     displayNameJA: "都心環状線 内回り",
+    localizedDisplayNames: [
+      .japanese: "都心環状線 内回り",
+      .simplifiedChinese: "都心环状线 内环",
+      .english: "C1 Inner Circuit",
+    ],
     kind: .loop,
     memberRouteIDs: ["C1"],
     entranceDirectionsByRouteID: ["C1": "内回り"],
@@ -100,7 +130,12 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.c1.kasumigaseki"),
       .facility("shuto.ic.c1.shiodome"),
     ],
-    landmarkNamesJA: ["東京タワー", "銀座", "皇居"]
+    landmarkNamesJA: ["東京タワー", "銀座", "皇居"],
+    localizedLandmarkNames: [
+      .japanese: ["東京タワー", "銀座", "皇居"],
+      .simplifiedChinese: ["东京塔", "银座", "皇居"],
+      .english: ["Tokyo Tower", "Ginza", "Imperial Palace"],
+    ]
   )
 
   /// Bayshore westbound run ending at Daikoku PA: Tokyo waterfront onto the
@@ -109,6 +144,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public static let wanganDaikokuRun = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.wangan-daikoku-run",
     displayNameJA: "湾岸線 大黒PAラン",
+    localizedDisplayNames: [
+      .japanese: "湾岸線 大黒PAラン",
+      .simplifiedChinese: "湾岸线 大黑 PA 巡游",
+      .english: "Bayshore to Daikoku PA",
+    ],
     kind: .tour,
     memberRouteIDs: ["B"],
     entranceDirectionsByRouteID: ["B": "西行き"],
@@ -117,7 +157,12 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.b.daikokufutou"),
     ],
     paStopNamesJA: ["大黒PA"],
-    landmarkNamesJA: ["東京港トンネル", "羽田空港", "鶴見つばさ橋"]
+    landmarkNamesJA: ["東京港トンネル", "羽田空港", "鶴見つばさ橋"],
+    localizedLandmarkNames: [
+      .japanese: ["東京港トンネル", "羽田空港", "鶴見つばさ橋"],
+      .simplifiedChinese: ["东京港隧道", "羽田机场", "鹤见翼桥"],
+      .english: ["Tokyo Port Tunnel", "Haneda Airport", "Tsurumi Tsubasa Bridge"],
+    ]
   )
 
   /// Yokohama-side loop around Daikoku, in the carriageway direction the
@@ -127,6 +172,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public static let daikokuYokohamaLoop = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.daikoku-yokohama-loop",
     displayNameJA: "大黒周回（湾岸・大黒・横羽・川崎）",
+    localizedDisplayNames: [
+      .japanese: "大黒周回（湾岸・大黒・横羽・川崎）",
+      .simplifiedChinese: "大黑环线（湾岸・大黑・横羽・川崎）",
+      .english: "Daikoku Yokohama Circuit",
+    ],
     kind: .loop,
     memberRouteIDs: ["B", "K1", "K5", "K6"],
     entranceDirectionsByRouteID: [
@@ -152,7 +202,12 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.b.higashiogishima"),
     ],
     paStopNamesJA: ["大黒PA"],
-    landmarkNamesJA: ["鶴見つばさ橋", "川崎臨海部"]
+    landmarkNamesJA: ["鶴見つばさ橋", "川崎臨海部"],
+    localizedLandmarkNames: [
+      .japanese: ["鶴見つばさ橋", "川崎臨海部"],
+      .simplifiedChinese: ["鹤见翼桥", "川崎临海区"],
+      .english: ["Tsurumi Tsubasa Bridge", "Kawasaki Waterfront"],
+    ]
   )
 
   /// The scenic grand tour the snapshot's junction movements support: Harumi
@@ -162,6 +217,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public static let scenicGrandTour = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.scenic-grand-tour",
     displayNameJA: "横浜絶景ツアー（羽田・みなとみらい・ベイブリッジ）",
+    localizedDisplayNames: [
+      .japanese: "横浜絶景ツアー（羽田・みなとみらい・ベイブリッジ）",
+      .simplifiedChinese: "横滨景观巡游（羽田・港未来・海湾大桥）",
+      .english: "Yokohama Scenic Tour",
+    ],
     kind: .tour,
     // K5 is a course connector, not an entrance/exit surface: the through
     // carriageway inside the Daikoku interchange carries the K5 relation.
@@ -183,6 +243,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       "みなとみらい",
       "横浜ベイブリッジ",
       "大黒PA",
+    ],
+    localizedLandmarkNames: [
+      .japanese: ["羽田空港", "みなとみらい", "横浜ベイブリッジ", "大黒PA"],
+      .simplifiedChinese: ["羽田机场", "港未来", "横滨海湾大桥", "大黑 PA"],
+      .english: ["Haneda Airport", "Minato Mirai", "Yokohama Bay Bridge", "Daikoku PA"],
     ]
   )
 

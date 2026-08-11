@@ -62,6 +62,18 @@ remain bound to the exact catalog and implementation bytes that were reviewed;
 whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
+The `verify/app` job has three explicit Simulator roles on the newest installed
+iOS runtime. `primary` runs the complete App unit and UI scheme at the standard
+Large content size on an iPhone 17 Pro. `compact-large` and `compact-ax5` run
+`KRU09AccessibilityUITests` on an iPhone SE (3rd generation) at Large and the
+largest accessibility content size. These focused roles include the default
+whole-Shuto home and deterministic Review accessibility audits. Every role uses
+the same injected Tokyo Tower position; an unavailable exact device type fails
+instead of silently selecting a different simulator from inventory order. The
+compact roles are blocking small-screen UI checks, not physical-device,
+live-location, acoustic, or field evidence. Failed App jobs retain the raw
+xcodebuild log and `.xcresult` as a short-lived diagnostic artifact.
+
 ## Portable scenario envelope
 
 Each file under `e2e/scenarios/` contains:

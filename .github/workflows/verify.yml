@@ -42,9 +42,25 @@ jobs:
         run: python3 scripts/validate_e2e.py
 
   app:
-    name: iPhone app unit and UI tests
+    name: iPhone app tests (${{ matrix.label }})
     runs-on: macos-15
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: primary
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+            content_size: large
+            test_scope: ""
+          - label: compact-large
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
+            content_size: large
+            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
+          - label: compact-ax5
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
+            content_size: accessibility-extra-extra-extra-large
+            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
     steps:
       - uses: actions/checkout@v7
 
@@ -65,41 +81,81 @@ jobs:
       - name: Generate the app project
         run: xcodegen generate
 
-      # The product opens on the driver's surroundings, and several UI
-      # tests derive an entrance from the current position, so the runner
-      # needs a booted simulator with an injected fix. Tokyo Tower keeps
-      # the derived pairings inside the C1 area the tests assert on.
+      # The product opens on the driver's surroundings, and several UI tests
+      # derive an entrance from the current position. Select the exact device
+      # role on the newest installed runtime instead of relying on simctl JSON
+      # ordering. Tokyo Tower keeps derived pairings inside the C1 test area.
       - name: Boot a simulator with an injected position
         id: simulator
+        env:
+          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
+          TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
         run: |
           set -euo pipefail
-          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c '
-          import json, sys
+          SELECTION=$(xcrun simctl list devices available -j | python3 -c '
+          import json, os, sys
           devices = json.load(sys.stdin)["devices"]
           candidates = [
-              device["udid"]
+              (runtime, device)
               for runtime in devices
               for device in devices[runtime]
-              if device.get("isAvailable") and "iPhone" in device["name"]
+              if device.get("isAvailable")
+              and device.get("deviceTypeIdentifier")
+                  == os.environ["TARGET_DEVICE_TYPE"]
           ]
           if not candidates:
-              raise SystemExit("no available iPhone simulator on the runner")
-          print(candidates[-1])
+              raise SystemExit(
+                  "target iPhone simulator is unavailable: "
+                  + os.environ["TARGET_DEVICE_TYPE"]
+              )
+          def runtime_version(identifier):
+              tail = identifier.rsplit(".iOS-", 1)[-1]
+              return tuple(int(component) for component in tail.split("-"))
+          runtime, device = max(
+              candidates,
+              key=lambda candidate: runtime_version(candidate[0]),
+          )
+          print("\t".join((device["udid"], device["name"], runtime)))
           ')
+          IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID <<< "$SELECTION"
+          echo "Selected $DEVICE_NAME on $RUNTIME_ID"
           echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
           xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+          xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
+          echo "Content size: $(xcrun simctl ui "$DEVICE_ID" content_size)"
 
       - name: App unit and UI tests
+        env:
+          TEST_SCOPE: ${{ matrix.test_scope }}
         run: |
           set -euo pipefail
+          TEST_FILTER_ARGS=()
+          if [[ -n "$TEST_SCOPE" ]]; then
+            TEST_FILTER_ARGS+=("-only-testing:$TEST_SCOPE")
+          fi
           xcodebuild test \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
+            "${TEST_FILTER_ARGS[@]}" \
             CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
             | xcpretty
+
+      - name: Upload App test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: >-
+            kaido-app-${{ matrix.label }}-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/KaidoRoutesApp-xcodebuild.log
+            ${{ runner.temp }}/KaidoRoutesApp.xcresult
+          if-no-files-found: warn
+          retention-days: 7
 
   data:
     name: Snapshot and evidence integrity

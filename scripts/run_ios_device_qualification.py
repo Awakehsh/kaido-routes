@@ -25,7 +25,7 @@ RECEIPT_SCHEMA_VERSION = "1.2"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
-    "testK7ForegroundLocationStartsAndStopsThroughCoreLocation()"
+    "testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()"
 )
 REQUIRED_PHYSICAL_AUDIO_TEST = (
     "PhysicalAudioQualificationUITests/"

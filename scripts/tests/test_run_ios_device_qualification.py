@@ -79,7 +79,7 @@ def passed_tests() -> dict:
                     {
                         "nodeIdentifier": (
                             "KaidoProductJourneyUITests/"
-                            "testK7ForegroundLocationStartsAndStopsThrough"
+                            "testWholeShutoForegroundLocationStartsAndStopsThrough"
                             "CoreLocation()"
                         ),
                         "nodeType": "Test Case",

@@ -206,9 +206,12 @@ python3 scripts/validate_k7_route_atlas_readiness.py \
   --report /tmp/k7-route-atlas-readiness-report.json
 ```
 
-The command now returns `READY_FOR_RELEASE_VALIDATION` with all eight gates
-satisfied and no top-level blocker. It still reports
-`navigation_authority=false`.
+At the exact source bytes bound by the tracked human review, the command
+returned `READY_FOR_RELEASE_VALIDATION` with all eight gates satisfied and
+`navigation_authority=false`. On the current checkout it intentionally fails
+closed with `APP_PROJECT_MANIFEST` binding drift because the Xcode project has
+changed since that review. A new human review would be required to bind the
+current manifest; the retained K7 product validator does not replace it.
 
 It separately reports `CURRENT_ROAD_IDENTITY_UNCONFIRMED` and
 `CURRENT_SURFACE_FIELD_REVIEW_INCOMPLETE` under the future surface-egress

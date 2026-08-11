@@ -1,4 +1,5 @@
 import Foundation
+import KaidoRouting
 import SwiftUI
 
 struct WholeShutoJourneyReviewView: View {
@@ -6,6 +7,7 @@ struct WholeShutoJourneyReviewView: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
+  @ObservedObject var savedRoutes: SavedRouteLibraryModel
   /// Starting a live drive also needs the location session, which the
   /// product view owns, so the action is handed in.
   var onStartLiveDrive: () -> Void = {}
@@ -19,6 +21,17 @@ struct WholeShutoJourneyReviewView: View {
           journeyMetrics
           routePassport
           availabilitySummary
+          SavedRouteSavePanel(
+            library: savedRoutes,
+            routePlan: model.selectedRoute?.routePlan
+          ) { displayName in
+            savedRoutes.save(
+              routePlan: model.selectedRoute?.routePlan,
+              displayName: displayName,
+              evidenceState: .communityCandidate,
+              templateParameters: model.savedRouteTemplateParameters
+            )
+          }
         }
         .padding(.horizontal, 18)
         .padding(.bottom, 18)
@@ -385,14 +398,10 @@ struct WholeShutoJourneyReviewView: View {
           simplifiedChinese: "通行费",
           english: "TOLL"
         ),
-        value: copy.resolve(
-          japanese: "現在の見積もりなし",
-          simplifiedChinese: "暂无当前报价",
-          english: "No current quote"
-        ),
-        tint: KaidoTheme.nightQuiet,
+        value: tariffPresentation.value,
+        tint: tariffPresentation.tint,
         accessibilityIdentifier: "whole-shuto-toll-status",
-        accessibilityValue: "UNAVAILABLE"
+        accessibilityValue: tariffPresentation.accessibilityValue
       )
 
       Divider()
@@ -417,6 +426,58 @@ struct WholeShutoJourneyReviewView: View {
     .overlay {
       RoundedRectangle(cornerRadius: 16)
         .stroke(KaidoTheme.nightDivider, lineWidth: 1)
+    }
+  }
+
+  private var tariffPresentation: (
+    value: String,
+    tint: Color,
+    accessibilityValue: String
+  ) {
+    let evidence = ShutoTariffEvidence.etcNormalCarActive
+    guard let band = model.selectedTariffBand else {
+      return (
+        copy.resolve(
+          japanese: "現在の見積もりなし",
+          simplifiedChinese: "暂无当前报价",
+          english: "No current quote"
+        ),
+        KaidoTheme.nightQuiet,
+        "UNAVAILABLE"
+      )
+    }
+    let datedSuffix = " · ETC · \(evidence.checkedAt)"
+    switch band {
+    case .minimum(let yen):
+      return (
+        copy.resolve(
+          japanese: "¥\(yen)・最低料金帯",
+          simplifiedChinese: "¥\(yen)·最低费用档",
+          english: "¥\(yen) minimum band"
+        ) + datedSuffix,
+        KaidoTheme.positionCyan,
+        "ACTIVE_MINIMUM_BAND · \(evidence.checkedAt)"
+      )
+    case .estimated(let yen):
+      return (
+        copy.resolve(
+          japanese: "目安 ¥\(yen)",
+          simplifiedChinese: "约 ¥\(yen)",
+          english: "≈ ¥\(yen)"
+        ) + datedSuffix,
+        KaidoTheme.signalAmber,
+        "ACTIVE_ESTIMATED · \(evidence.checkedAt)"
+      )
+    case .maximum(let yen):
+      return (
+        copy.resolve(
+          japanese: "¥\(yen)・上限",
+          simplifiedChinese: "¥\(yen)·上限",
+          english: "¥\(yen) cap"
+        ) + datedSuffix,
+        KaidoTheme.positionCyan,
+        "ACTIVE_MAXIMUM · \(evidence.checkedAt)"
+      )
     }
   }
 
@@ -450,6 +511,33 @@ struct WholeShutoJourneyReviewView: View {
 
   private var startAction: some View {
     VStack(spacing: 8) {
+      if let blockerCode = model.liveNavigationBlockerCode {
+        HStack(alignment: .top, spacing: 8) {
+          Image(systemName: "lock.shield.fill")
+            .foregroundStyle(KaidoTheme.signalAmber)
+          Text(
+            copy.resolve(
+              japanese:
+                "実走ナビには検証済みの製品リリースと地上区間が必要です。このルートは現在プレビューのみ利用できます。",
+              simplifiedChinese:
+                "实车导航需要已验证的产品发布包与地面接驳发布；这条路线目前仅可预演。",
+              english:
+                "Live navigation requires a validated product release and released surface legs. This route is currently preview-only."
+            )
+          )
+          .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 9, weight: .bold))
+        .foregroundStyle(KaidoTheme.nightQuiet)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(KaidoTheme.signalAmber.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 9))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("whole-shuto-live-drive-blocker")
+        .accessibilityValue(blockerCode)
+      }
+
       Button {
         onStartLiveDrive()
       } label: {
@@ -473,9 +561,18 @@ struct WholeShutoJourneyReviewView: View {
         .clipShape(RoundedRectangle(cornerRadius: 11))
       }
       .buttonStyle(.plain)
-      .disabled(!model.isJourneyReadyForPreview)
-      .opacity(model.isJourneyReadyForPreview ? 1 : 0.45)
+      .disabled(
+        !model.isJourneyReadyForPreview
+          || !model.canStartLiveNavigation
+      )
+      .opacity(
+        model.isJourneyReadyForPreview
+          && model.canStartLiveNavigation ? 1 : 0.45
+      )
       .accessibilityIdentifier("whole-shuto-start-live-drive")
+      .accessibilityValue(
+        model.liveNavigationBlockerCode ?? "AVAILABLE"
+      )
 
       Button {
         model.startNavigationSimulation()
@@ -492,9 +589,19 @@ struct WholeShutoJourneyReviewView: View {
           )
           .font(.system(size: 10, weight: .bold))
         }
-        .foregroundStyle(KaidoTheme.nightQuiet)
+        .foregroundStyle(
+          model.canStartLiveNavigation
+            ? KaidoTheme.nightQuiet
+            : KaidoTheme.routeWhite
+        )
         .frame(maxWidth: .infinity)
-        .frame(height: 34)
+        .frame(height: model.canStartLiveNavigation ? 34 : 48)
+        .background(
+          model.canStartLiveNavigation
+            ? Color.clear
+            : KaidoTheme.routeGreen
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 11))
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)

@@ -5,7 +5,13 @@ final class RouteAtlasAttributionUITests: XCTestCase {
   func testK7AttributionIsVisibleBesideMapWithSourceAndLicenceLinks() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-ROUTE-ATLAS-ATTRIBUTION-PREVIEW"]
+    app.launchArguments = [
+      "-ROUTE-ATLAS-ATTRIBUTION-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
 
     let strip = app.descendants(matching: .any)[

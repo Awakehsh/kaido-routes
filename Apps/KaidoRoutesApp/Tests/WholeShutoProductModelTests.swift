@@ -24,35 +24,31 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .network)
   }
 
-  func testLiveDriveRunsOnRealPositionsWithoutTransportControls() throws {
+  func testLiveDriveFailsClosedWithoutValidatedNavigationRelease() {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()
     XCTAssertEqual(model.phase, .review)
     XCTAssertTrue(model.isJourneyReadyForPreview)
 
-    XCTAssertTrue(model.startLiveJourney())
-    XCTAssertTrue(model.isLiveDrive)
-    XCTAssertEqual(model.phase, .surfaceAccess)
-
-    // A live drive follows the vehicle: stepping and pausing are inert.
-    model.togglePlayback()
-    XCTAssertTrue(model.isPlaying)
-    model.advanceSimulation()
-    XCTAssertEqual(model.phase, .surfaceAccess)
-
-    // Reaching the ramp mouth hands the surface leg over to entry.
-    let route = try XCTUnwrap(model.selectedRoute)
-    let entry = try XCTUnwrap(route.coordinates.first)
-    model.consumeLiveObservation(
-      Self.liveObservation(at: entry, atMilliseconds: 1_000)
+    XCTAssertFalse(model.canStartLiveNavigation)
+    XCTAssertEqual(
+      model.liveNavigationBlockerCode,
+      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
     )
-    XCTAssertEqual(model.phase, .entryTransition)
+    XCTAssertFalse(model.startLiveJourney())
+    XCTAssertFalse(model.isLiveDrive)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertEqual(model.liveLocationState, .inactive)
+    XCTAssertEqual(
+      model.failureCode,
+      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+    )
 
-    // Starting the labeled preview afterwards leaves live mode.
-    model.reset()
-    model.preparePreviewJourney()
     model.startNavigationSimulation()
     XCTAssertFalse(model.isLiveDrive)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertNil(model.failureCode)
   }
 
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
@@ -79,23 +75,6 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
-  private static func liveObservation(
-    at coordinate: ShutoCoordinate,
-    atMilliseconds: Int
-  ) -> RouteMatcherObservation {
-    RouteMatcherObservation(
-      observedAtMilliseconds: atMilliseconds,
-      receivedAtMilliseconds: atMilliseconds,
-      coordinate: MatcherCoordinate(
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude
-      ),
-      horizontalAccuracyMeters: 5,
-      speedMetersPerSecond: 15,
-      source: .phone
-    )
-  }
-
   func testCustomRouteFromTheHomeCatalogIsARoundTrip() {
     let model = WholeShutoProductModel(checkpointStore: nil)
     // Tokyo Tower: the nearest enterable facility seeds the draft.
@@ -115,6 +94,438 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.destination?.coordinate,
       model.origin?.coordinate
     )
+  }
+
+  func testRecommendedAndCustomRoutesExposeCurrentTariffBand() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney()
+    let recommendedBand = try XCTUnwrap(model.selectedTariffBand)
+    XCTAssertGreaterThan(recommendedBand.quotedYen, 0)
+    XCTAssertEqual(
+      model.savedRouteTemplateParameters,
+      [
+        "source": "RECOMMENDATION",
+        "preference": model.selectedRoute?.preference.rawValue ?? "",
+      ]
+    )
+
+    let customModel = WholeShutoProductModel(checkpointStore: nil)
+    customModel.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6586, longitude: 139.7454)
+    )
+    customModel.prepareCustomRouteDraft()
+    XCTAssertTrue(customModel.applyCustomRoute())
+    let customBand = try XCTUnwrap(customModel.selectedTariffBand)
+    XCTAssertGreaterThan(customBand.quotedYen, 0)
+    XCTAssertEqual(
+      customModel.savedRouteTemplateParameters["source"],
+      "CUSTOM"
+    )
+  }
+
+  func testTariffBandSurvivesReviewCheckpointRestore() throws {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    let expected = try XCTUnwrap(model.selectedTariffBand)
+
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertEqual(restored.selectedTariffBand, expected)
+  }
+
+  func testFreshlySavedRecommendedRouteReopensOnCurrentSnapshot()
+    throws
+  {
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    source.preparePreviewJourney()
+    let route = try XCTUnwrap(source.selectedRoute)
+    XCTAssertEqual(
+      route.routePlan.id,
+      "shuto.shuto.ic.c1.ginza.shuto.ic.k1.yokohamakouen.recommended"
+    )
+    XCTAssertEqual(route.routePlan.occurrences.count, 789)
+    XCTAssertEqual(
+      source.savedRouteTemplateParameters,
+      [
+        "source": "RECOMMENDATION",
+        "preference": "RECOMMENDED",
+      ]
+    )
+    let restoredRoute = try source.planner.restore(
+      routePlan: route.routePlan,
+      preference: route.preference
+    )
+    XCTAssertEqual(restoredRoute.routePlan, route.routePlan)
+    XCTAssertNoThrow(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: source.database,
+        route: restoredRoute
+      )
+    )
+
+    let libraryDirectory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(
+        "kaido-saved-recommended-\(UUID().uuidString)",
+        isDirectory: true
+      )
+    defer {
+      try? FileManager.default.removeItem(at: libraryDirectory)
+    }
+    let libraryStore = try FileSavedRouteLibraryStore(
+      directoryURL: libraryDirectory
+    )
+    let library = SavedRouteLibraryModel(
+      store: libraryStore,
+      foregroundEntries: [],
+      recordIDProvider: { "saved-route.recommended-preview" },
+      savedAtProvider: { "2026-08-12T12:00:00Z" }
+    )
+    library.save(
+      routePlan: route.routePlan,
+      displayName: "Tokyo Yokohama Snapshot",
+      evidenceState: .communityCandidate,
+      templateParameters: source.savedRouteTemplateParameters
+    )
+    XCTAssertNil(library.lastErrorCode)
+
+    let reloadedStore = try FileSavedRouteLibraryStore(
+      directoryURL: libraryDirectory
+    )
+    let reloadedLibrary = SavedRouteLibraryModel(
+      store: reloadedStore,
+      foregroundEntries: []
+    )
+    let record = try XCTUnwrap(reloadedLibrary.records.first)
+    XCTAssertEqual(record.document.routePlan, route.routePlan)
+    XCTAssertEqual(
+      record.document.templateParameters,
+      source.savedRouteTemplateParameters
+    )
+
+    let reopened = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    XCTAssertEqual(
+      reopened.savedRouteAvailability(record),
+      .currentSnapshot(source.database.networkSnapshotID)
+    )
+    XCTAssertTrue(
+      reopened.openSavedRoute(
+        record,
+        origin: source.origin?.coordinate
+      )
+    )
+    XCTAssertEqual(reopened.phase, .review)
+    XCTAssertEqual(reopened.selectedRoute?.routePlan, route.routePlan)
+    XCTAssertFalse(reopened.isCircuitRouteSelected)
+    XCTAssertFalse(reopened.isCustomRouteSelected)
+    XCTAssertEqual(
+      reopened.savedRouteTemplateParameters,
+      source.savedRouteTemplateParameters
+    )
+  }
+
+  func testSavedCircuitRouteOpensExactRepeatedPlanOnCurrentSnapshot()
+    async throws
+  {
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: 2
+    )
+    let templateParameters = [
+      "source": "CIRCUIT",
+      "preference": circuitRoute.preference.rawValue,
+      "circuit_id": ShutoCircuitDefinition.c2InnerWithBayshore.circuitID,
+      "laps": "2",
+    ]
+    let record = Self.savedRouteRecord(
+      circuitRoute.routePlan,
+      templateParameters: templateParameters
+    )
+    let model = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+
+    XCTAssertEqual(
+      model.savedRouteAvailability(record),
+      .currentSnapshot(source.database.networkSnapshotID)
+    )
+    let origin = ShutoCoordinate(
+      latitude: 35.6798,
+      longitude: 139.6862
+    )
+    XCTAssertTrue(model.openSavedRoute(record, origin: origin))
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertFalse(model.isCustomRouteSelected)
+    XCTAssertEqual(
+      model.selectedCircuit,
+      .c2InnerWithBayshore
+    )
+    XCTAssertEqual(model.circuitLaps, 2)
+    XCTAssertEqual(model.savedRouteTemplateParameters, templateParameters)
+    XCTAssertEqual(model.selectedRoute?.routePlan, circuitRoute.routePlan)
+    XCTAssertEqual(model.origin?.coordinate, origin)
+    XCTAssertEqual(
+      model.destination?.coordinate,
+      circuitRoute.exitFacility.coordinate
+    )
+    XCTAssertEqual(
+      model.destination?.title,
+      circuitRoute.exitFacility.nameJA
+    )
+    XCTAssertNotNil(model.accessRoute)
+    XCTAssertNotNil(model.egressRoute)
+    XCTAssertNotNil(model.selectedTariffBand)
+    let edgeIDs = try XCTUnwrap(model.selectedRoute?.edges.map(\.edgeID))
+    XCTAssertLessThan(Set(edgeIDs).count, edgeIDs.count)
+    XCTAssertFalse(model.canStartLiveNavigation)
+  }
+
+  func testSavedCircuitRouteResavePreservesTemplateProvenance()
+    throws
+  {
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: 2
+    )
+    let templateParameters = [
+      "source": "CIRCUIT",
+      "preference": circuitRoute.preference.rawValue,
+      "circuit_id": ShutoCircuitDefinition.c2InnerWithBayshore.circuitID,
+      "laps": "2",
+      "variant": "NIGHT",
+    ]
+    let record = Self.savedRouteRecord(
+      circuitRoute.routePlan,
+      templateParameters: templateParameters
+    )
+    let model = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+
+    XCTAssertTrue(
+      model.openSavedRoute(
+        record,
+        origin: ShutoCoordinate(latitude: 35.68, longitude: 139.69)
+      )
+    )
+
+    let libraryStore = WholeShutoMemorySavedRouteLibraryStore()
+    let library = SavedRouteLibraryModel(
+      store: libraryStore,
+      foregroundEntries: [],
+      recordIDProvider: { "saved-route.resaved-circuit" },
+      savedAtProvider: { "2026-08-12T12:00:00Z" }
+    )
+    library.save(
+      routePlan: model.selectedRoute?.routePlan,
+      displayName: "Resaved circuit",
+      evidenceState: .communityCandidate,
+      templateParameters: model.savedRouteTemplateParameters
+    )
+
+    let resaved = try XCTUnwrap(library.records.first)
+    XCTAssertEqual(resaved.document.routePlan, circuitRoute.routePlan)
+    XCTAssertEqual(
+      resaved.document.templateParameters,
+      templateParameters
+    )
+    XCTAssertNil(library.lastErrorCode)
+  }
+
+  func testSavedCircuitMetadataMustMatchTheExactCircuitPlan() throws {
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuit = ShutoCircuitDefinition.c2InnerWithBayshore
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: circuit,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: 2
+    )
+    let preference = circuitRoute.preference.rawValue
+    let invalidParameters = [
+      [
+        "source": "UNKNOWN",
+        "preference": preference,
+      ],
+      [
+        "source": "CIRCUIT",
+        "preference": preference,
+        "circuit_id": circuit.circuitID,
+      ],
+      [
+        "source": "CIRCUIT",
+        "preference": preference,
+        "circuit_id": "shuto.circuit.unknown",
+        "laps": "2",
+      ],
+      [
+        "source": "CIRCUIT",
+        "preference": preference,
+        "circuit_id": circuit.circuitID,
+        "laps": "invalid",
+      ],
+      [
+        "source": "CIRCUIT",
+        "preference": preference,
+        "circuit_id": circuit.circuitID,
+        "laps": "1",
+      ],
+      [
+        "source": "CUSTOM",
+        "preference": preference,
+        "circuit_id": circuit.circuitID,
+        "laps": "2",
+      ],
+    ]
+
+    for parameters in invalidParameters {
+      let record = Self.savedRouteRecord(
+        circuitRoute.routePlan,
+        templateParameters: parameters
+      )
+      let model = WholeShutoProductModel(
+        database: source.database,
+        checkpointStore: nil
+      )
+
+      XCTAssertEqual(
+        model.savedRouteAvailability(record),
+        .invalid("SAVED_ROUTE_CURRENT_SNAPSHOT_INVALID")
+      )
+      XCTAssertFalse(
+        model.openSavedRoute(
+          record,
+          origin: ShutoCoordinate(latitude: 35.68, longitude: 139.69)
+        )
+      )
+      XCTAssertEqual(model.phase, .planning)
+      XCTAssertNil(model.selectedRoute)
+      XCTAssertEqual(
+        model.failureCode,
+        "SAVED_ROUTE_CURRENT_SNAPSHOT_INVALID"
+      )
+    }
+  }
+
+  func testSavedRouteSnapshotMismatchCannotOpen() throws {
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    source.preparePreviewJourney()
+    let plan = try XCTUnwrap(source.selectedRoute?.routePlan)
+    let driftedPlan = RoutePlan(
+      id: plan.id,
+      networkSnapshotID: "shuto.future-snapshot",
+      entryFacilityID: plan.entryFacilityID,
+      exitFacilityID: plan.exitFacilityID,
+      recoveryPolicy: plan.recoveryPolicy,
+      actualDistanceKM: plan.actualDistanceKM,
+      occurrences: plan.occurrences
+    )
+    let record = Self.savedRouteRecord(driftedPlan)
+    let model = WholeShutoProductModel(
+      database: source.database,
+      checkpointStore: nil
+    )
+
+    XCTAssertEqual(model.savedRouteAvailability(record), .unavailable)
+    XCTAssertFalse(
+      model.openSavedRoute(
+        record,
+        origin: ShutoCoordinate(latitude: 35.68, longitude: 139.76)
+      )
+    )
+    XCTAssertEqual(model.phase, .planning)
+    XCTAssertEqual(
+      model.failureCode,
+      "SAVED_ROUTE_NETWORK_SNAPSHOT_MISMATCH"
+    )
+  }
+
+  func testSavedRepeatedRouteSimulationRestoresExactProgress()
+    async throws
+  {
+    let store = WholeShutoMemoryCheckpointStore()
+    let source = WholeShutoProductModel(checkpointStore: nil)
+    let circuitRoute = try source.planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: 2
+    )
+    let record = Self.savedRouteRecord(
+      circuitRoute.routePlan,
+      templateParameters: [
+        "source": "CIRCUIT",
+        "preference": circuitRoute.preference.rawValue,
+        "circuit_id": ShutoCircuitDefinition.c2InnerWithBayshore.circuitID,
+        "laps": "2",
+      ]
+    )
+    let model = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+    XCTAssertTrue(
+      model.openSavedRoute(
+        record,
+        origin: ShutoCoordinate(latitude: 35.68, longitude: 139.69)
+      )
+    )
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    model.startNavigationSimulation()
+    model.togglePlayback()
+    await advance(
+      model,
+      until: {
+        $0.phase == .expressway && $0.progressFraction > 0.02
+      },
+      maximumTicks: 1_000
+    )
+    let expectedProgress = model.progressFraction
+    let expectedOccurrenceID = try XCTUnwrap(model.runtimeOccurrenceID)
+    XCTAssertEqual(model.selectedRoute?.routePlan, circuitRoute.routePlan)
+
+    let restored = WholeShutoProductModel(
+      database: source.database,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(restored.phase, .expressway)
+    XCTAssertEqual(restored.selectedRoute?.routePlan, circuitRoute.routePlan)
+    XCTAssertEqual(restored.runtimeOccurrenceID, expectedOccurrenceID)
+    XCTAssertEqual(restored.progressFraction, expectedProgress)
+    XCTAssertFalse(restored.isCustomRouteSelected)
+    XCTAssertTrue(restored.isCircuitRouteSelected)
+    XCTAssertEqual(restored.selectedCircuit, .c2InnerWithBayshore)
+    XCTAssertEqual(restored.circuitLaps, 2)
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertNil(restored.failureCode)
   }
 
   func testCircuitSelectionDerivesThePairingFromOrigin() async {
@@ -216,6 +627,15 @@ final class WholeShutoProductModelTests: XCTestCase {
       route.routePlan.occurrences.count
     )
     XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertEqual(
+      model.savedRouteTemplateParameters,
+      [
+        "source": "CIRCUIT",
+        "preference": route.preference.rawValue,
+        "circuit_id": "shuto.circuit.c2-inner-bayshore",
+        "laps": "2",
+      ]
+    )
   }
 
   func testCircuitJourneyRestoresFromCheckpointAsCircuit() async {
@@ -695,8 +1115,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.preparePreviewJourney()
 
     // The preview journey now crosses reviewed junctions, and every prompt
-    // it carries must still come from an exact released movement — a
-    // prompt is never synthesized from route geometry alone.
+    // it carries must still come from an exact reviewed movement definition;
+    // a prompt is never synthesized from route geometry alone.
     XCTAssertTrue(
       model.junctionPrompts.allSatisfy { prompt in
         ShutoJunctionMovementCatalog.released.contains {
@@ -993,6 +1413,86 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertGreaterThan(restored.progressFraction, 0)
   }
 
+  func testLiveCheckpointReturnsToReviewWithoutSimulationOrProgress() {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+
+    let checkpoint = try? XCTUnwrap(store.checkpoint)
+    XCTAssertNotNil(checkpoint)
+    store.checkpoint = checkpoint?.replacingDriveMode(
+      .live,
+      progressFraction: 0.72
+    )
+
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertEqual(restored.progressFraction, 0)
+    XCTAssertFalse(restored.isLiveDrive)
+    XCTAssertFalse(restored.isPlaying)
+    XCTAssertNil(restored.runtimeOccurrenceID)
+    XCTAssertEqual(
+      restored.failureCode,
+      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+    )
+    XCTAssertEqual(
+      restored.liveLocationIssueCode,
+      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+    )
+    XCTAssertEqual(
+      restored.selectedRoute?.routePlan,
+      checkpoint?.routePlan
+    )
+    XCTAssertEqual(restored.accessRoute, checkpoint?.accessRoute)
+    XCTAssertEqual(restored.egressRoute, checkpoint?.egressRoute)
+  }
+
+  func testSimulationCheckpointRejectsRuntimeAssetIdentityDrift()
+    async throws
+  {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+    model.togglePlayback()
+    await advance(model, until: { $0.phase == .entryTransition })
+
+    let checkpoint = try XCTUnwrap(store.checkpoint)
+    XCTAssertNotNil(checkpoint.runtimeAssetIdentity)
+    let otherRoute = try model.planner.plan(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.9.fukudumi"
+    )
+    let otherIdentity = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: model.database,
+      route: otherRoute
+    ).runtimeAssetIdentity
+    XCTAssertNotEqual(checkpoint.runtimeAssetIdentity, otherIdentity)
+    store.checkpoint = checkpoint.replacingRuntimeAssetIdentity(
+      otherIdentity
+    )
+
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertFalse(restored.isPlaying)
+    XCTAssertNil(restored.runtimeOccurrenceID)
+    XCTAssertEqual(
+      restored.failureCode,
+      "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
+    )
+  }
+
   func testCheckpointRoutePlanDriftDoesNotRestore() throws {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
@@ -1033,6 +1533,118 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedRoute)
     XCTAssertFalse(restored.restoredFromCheckpoint)
+    XCTAssertEqual(
+      restored.checkpointIssueCode,
+      "WHOLE_SHUTO_CHECKPOINT_ROUTE_INVALID"
+    )
+    XCTAssertNil(store.checkpoint)
+  }
+
+  func testCheckpointLoadFailureIsVisibleAndInvalidated() {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    XCTAssertNotNil(store.checkpoint)
+
+    store.loadError = .loadFailed
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(restored.phase, .planning)
+    XCTAssertNil(restored.selectedRoute)
+    XCTAssertFalse(restored.restoredFromCheckpoint)
+    XCTAssertEqual(
+      restored.checkpointIssueCode,
+      "WHOLE_SHUTO_CHECKPOINT_LOAD_FAILED"
+    )
+    XCTAssertNil(store.checkpoint)
+    XCTAssertEqual(store.removeCount, 1)
+
+    store.loadError = nil
+    let nextLaunch = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+    XCTAssertNil(nextLaunch.checkpointIssueCode)
+    XCTAssertEqual(nextLaunch.phase, .planning)
+  }
+
+  func testCheckpointSchemaDriftIsVisibleAndRemoved() throws {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    store.checkpoint = try XCTUnwrap(store.checkpoint)
+      .replacingSchemaVersion("1.0")
+
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+
+    XCTAssertEqual(restored.phase, .planning)
+    XCTAssertNil(restored.selectedRoute)
+    XCTAssertFalse(restored.restoredFromCheckpoint)
+    XCTAssertEqual(
+      restored.checkpointIssueCode,
+      "WHOLE_SHUTO_CHECKPOINT_SCHEMA_UNSUPPORTED"
+    )
+    XCTAssertNil(store.checkpoint)
+  }
+
+  func testCheckpointSaveFailureInvalidatesTheOlderCheckpoint() {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    XCTAssertNotNil(store.checkpoint)
+
+    store.saveError = .saveFailed
+    model.handleScenePhase(.background)
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertNotNil(model.selectedRoute)
+    XCTAssertEqual(
+      model.checkpointIssueCode,
+      "WHOLE_SHUTO_CHECKPOINT_SAVE_FAILED"
+    )
+    XCTAssertNil(store.checkpoint)
+    XCTAssertEqual(store.removeCount, 1)
+
+    store.saveError = nil
+    model.handleScenePhase(.background)
+    XCTAssertNil(model.checkpointIssueCode)
+    XCTAssertNotNil(store.checkpoint)
+
+    let restored = WholeShutoProductModel(
+      database: model.database,
+      checkpointStore: store
+    )
+    XCTAssertEqual(restored.phase, .review)
+    XCTAssertTrue(restored.restoredFromCheckpoint)
+    XCTAssertNil(restored.checkpointIssueCode)
+  }
+
+  func testCheckpointRemoveFailureIsVisibleAndRetryable() {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(checkpointStore: store)
+    model.preparePreviewJourney()
+    XCTAssertNotNil(store.checkpoint)
+
+    store.removeError = .removeFailed
+    model.reset()
+
+    XCTAssertEqual(model.phase, .planning)
+    XCTAssertEqual(
+      model.checkpointIssueCode,
+      "WHOLE_SHUTO_CHECKPOINT_REMOVE_FAILED"
+    )
+    XCTAssertNotNil(store.checkpoint)
+
+    store.removeError = nil
+    model.reset()
+    XCTAssertNil(model.checkpointIssueCode)
+    XCTAssertNil(store.checkpoint)
   }
 
   func testExpresswayPreviewExplicitlyReportsTunnelEstimation() async {
@@ -1398,6 +2010,23 @@ final class WholeShutoProductModelTests: XCTestCase {
       guidanceVoiceLocale: .japanese
     )
   }
+
+  private static func savedRouteRecord(
+    _ routePlan: RoutePlan,
+    templateParameters: [String: String] = [:]
+  ) -> SavedRouteRecord {
+    SavedRouteRecord(
+      id: "saved-route.test",
+      displayName: "Test route",
+      savedAt: "2026-08-11T12:00:00Z",
+      origin: .authoredHere,
+      document: SharedRouteDocument(
+        evidenceState: .communityCandidate,
+        templateParameters: templateParameters,
+        routePlan: routePlan
+      )
+    )
+  }
 }
 
 extension Collection {
@@ -1411,17 +2040,50 @@ private final class WholeShutoMemoryCheckpointStore:
   WholeShutoJourneyCheckpointStoring
 {
   var checkpoint: WholeShutoJourneyCheckpoint?
+  var loadError: WholeShutoTestCheckpointStoreError?
+  var saveError: WholeShutoTestCheckpointStoreError?
+  var removeError: WholeShutoTestCheckpointStoreError?
+  private(set) var loadCount = 0
+  private(set) var saveCount = 0
+  private(set) var removeCount = 0
 
   func load() throws -> WholeShutoJourneyCheckpoint? {
-    checkpoint
+    loadCount += 1
+    if let loadError { throw loadError }
+    return checkpoint
   }
 
   func save(_ checkpoint: WholeShutoJourneyCheckpoint) throws {
+    saveCount += 1
+    if let saveError { throw saveError }
     self.checkpoint = checkpoint
   }
 
   func remove() throws {
+    removeCount += 1
+    if let removeError { throw removeError }
     checkpoint = nil
+  }
+}
+
+private enum WholeShutoTestCheckpointStoreError: Error {
+  case loadFailed
+  case saveFailed
+  case removeFailed
+}
+
+@MainActor
+private final class WholeShutoMemorySavedRouteLibraryStore:
+  SavedRouteLibraryStoring
+{
+  var library: SavedRouteLibraryDocument?
+
+  func load() throws -> SavedRouteLibraryDocument? {
+    library
+  }
+
+  func save(_ library: SavedRouteLibraryDocument) throws {
+    self.library = library
   }
 }
 
@@ -1551,6 +2213,35 @@ private final class WholeShutoUnexpectedLocationProvider:
 }
 
 extension WholeShutoJourneyCheckpoint {
+  fileprivate func replacingSchemaVersion(_ schemaVersion: String) -> Self {
+    WholeShutoJourneyCheckpoint(
+      schemaVersion: schemaVersion,
+      networkSnapshotID: networkSnapshotID,
+      originQuery: originQuery,
+      destinationQuery: destinationQuery,
+      origin: origin,
+      destination: destination,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      routePlan: routePlan,
+      preference: preference,
+      routeSelectionSource: routeSelectionSource,
+      driveMode: driveMode,
+      phase: phase,
+      progressFraction: progressFraction,
+      runtimeOccurrenceID: runtimeOccurrenceID,
+      runtimeFractionAlongOccurrence: runtimeFractionAlongOccurrence,
+      consumedGuidancePromptIDs: consumedGuidancePromptIDs,
+      mapMode: mapMode,
+      accessRoute: accessRoute,
+      egressRoute: egressRoute,
+      circuitID: circuitID,
+      circuitLaps: circuitLaps,
+      runtimeAssetIdentity: runtimeAssetIdentity,
+      liveNavigationCheckpoint: liveNavigationCheckpoint
+    )
+  }
+
   fileprivate func replacingRoutePlan(_ routePlan: RoutePlan) -> Self {
     WholeShutoJourneyCheckpoint(
       schemaVersion: schemaVersion,
@@ -1564,6 +2255,7 @@ extension WholeShutoJourneyCheckpoint {
       routePlan: routePlan,
       preference: preference,
       routeSelectionSource: routeSelectionSource,
+      driveMode: driveMode,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,
@@ -1573,7 +2265,72 @@ extension WholeShutoJourneyCheckpoint {
       accessRoute: accessRoute,
       egressRoute: egressRoute,
       circuitID: circuitID,
-      circuitLaps: circuitLaps
+      circuitLaps: circuitLaps,
+      runtimeAssetIdentity: runtimeAssetIdentity,
+      liveNavigationCheckpoint: liveNavigationCheckpoint
+    )
+  }
+
+  fileprivate func replacingDriveMode(
+    _ driveMode: WholeShutoDriveMode,
+    progressFraction: Double
+  ) -> Self {
+    WholeShutoJourneyCheckpoint(
+      schemaVersion: schemaVersion,
+      networkSnapshotID: networkSnapshotID,
+      originQuery: originQuery,
+      destinationQuery: destinationQuery,
+      origin: origin,
+      destination: destination,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      routePlan: routePlan,
+      preference: preference,
+      routeSelectionSource: routeSelectionSource,
+      driveMode: driveMode,
+      phase: phase,
+      progressFraction: progressFraction,
+      runtimeOccurrenceID: runtimeOccurrenceID,
+      runtimeFractionAlongOccurrence: runtimeFractionAlongOccurrence,
+      consumedGuidancePromptIDs: consumedGuidancePromptIDs,
+      mapMode: mapMode,
+      accessRoute: accessRoute,
+      egressRoute: egressRoute,
+      circuitID: circuitID,
+      circuitLaps: circuitLaps,
+      runtimeAssetIdentity: runtimeAssetIdentity,
+      liveNavigationCheckpoint: liveNavigationCheckpoint
+    )
+  }
+
+  fileprivate func replacingRuntimeAssetIdentity(
+    _ runtimeAssetIdentity: ShutoRuntimeAssetIdentity?
+  ) -> Self {
+    WholeShutoJourneyCheckpoint(
+      schemaVersion: schemaVersion,
+      networkSnapshotID: networkSnapshotID,
+      originQuery: originQuery,
+      destinationQuery: destinationQuery,
+      origin: origin,
+      destination: destination,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      routePlan: routePlan,
+      preference: preference,
+      routeSelectionSource: routeSelectionSource,
+      driveMode: driveMode,
+      phase: phase,
+      progressFraction: progressFraction,
+      runtimeOccurrenceID: runtimeOccurrenceID,
+      runtimeFractionAlongOccurrence: runtimeFractionAlongOccurrence,
+      consumedGuidancePromptIDs: consumedGuidancePromptIDs,
+      mapMode: mapMode,
+      accessRoute: accessRoute,
+      egressRoute: egressRoute,
+      circuitID: circuitID,
+      circuitLaps: circuitLaps,
+      runtimeAssetIdentity: runtimeAssetIdentity,
+      liveNavigationCheckpoint: liveNavigationCheckpoint
     )
   }
 }

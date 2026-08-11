@@ -24,6 +24,27 @@ struct KaidoRoutesApp: App {
           )
         }
       }
+      if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-CORRUPT-CHECKPOINT"
+      ) {
+        UserDefaults.standard.set(
+          Data("not-a-checkpoint".utf8),
+          forKey: WholeShutoUserDefaultsCheckpointStore.key
+        )
+      }
+      if ProcessInfo.processInfo.arguments.contains(
+        "-RESET-SAVED-ROUTES"
+      ) {
+        do {
+          try FileSavedRouteLibraryStore.applicationSupport().save(
+            SavedRouteLibraryDocument(records: [])
+          )
+        } catch {
+          preconditionFailure(
+            "Failed to reset E2E saved routes: \(error)"
+          )
+        }
+      }
     #endif
   }
 
@@ -31,6 +52,10 @@ struct KaidoRoutesApp: App {
     WindowGroup {
       #if DEBUG
         debugPreviewHost
+          .environment(
+            \.kaidoInterfaceLocale,
+            debugInterfaceLocale
+          )
       #else
         WholeShutoProductView()
       #endif
@@ -38,6 +63,15 @@ struct KaidoRoutesApp: App {
   }
 
   #if DEBUG
+    private var debugInterfaceLocale: KaidoReleaseLocale {
+      let key = "app.kaidoroutes.language.interface"
+      return UserDefaults.standard.string(forKey: key)
+        .flatMap(KaidoReleaseLocale.init(rawValue:))
+        ?? KaidoReleaseLocale.matchingPreferredLanguage(
+          Locale.preferredLanguages
+        )
+    }
+
     /// Launch-argument preview and qualification hosts for the automated
     /// suites and internal review. They compile only into Debug builds —
     /// the distributed app is the product surface alone, so no internal
@@ -129,6 +163,14 @@ struct KaidoRoutesApp: App {
         "-WHOLE-SHUTO-SEARCH-PREVIEW"
       ) {
         WholeShutoSearchPreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-CUSTOM-ROUTE-PREVIEW"
+      ) {
+        WholeShutoCustomRoutePreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION"
+      ) {
+        WholeShutoPlanningLocationQualificationHost()
       } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-LOCATION-DENIED-PREVIEW"
       ) {
@@ -259,6 +301,58 @@ private enum WholeShutoJunctionPreviewMovement {
   case shinonomeWestbound
   case tatsumiEastbound
   case tatsumiWestbound
+}
+
+private struct WholeShutoCustomRoutePreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+  @StateObject private var planningLocation:
+    WholeShutoPlanningLocationController
+
+  init() {
+    let coordinate = ShutoCoordinate(
+      latitude: 35.6586,
+      longitude: 139.7454
+    )
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(coordinate)
+    _model = StateObject(wrappedValue: model)
+    _planningLocation = StateObject(
+      wrappedValue: WholeShutoPlanningLocationController(
+        previewSnapshot: WholeShutoPlanningLocationSnapshot(
+          coordinate: coordinate,
+          horizontalAccuracyMeters: 6,
+          courseDegrees: nil,
+          measuredAt: Date(timeIntervalSince1970: 0)
+        )
+      )
+    )
+  }
+
+  var body: some View {
+    WholeShutoProductView(
+      model: model,
+      planningLocation: planningLocation
+    )
+  }
+}
+
+private struct WholeShutoPlanningLocationQualificationHost: View {
+  @StateObject private var model = WholeShutoProductModel(
+    surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+    checkpointStore: nil
+  )
+  @StateObject private var planningLocation =
+    WholeShutoPlanningLocationController()
+
+  var body: some View {
+    WholeShutoProductView(
+      model: model,
+      planningLocation: planningLocation
+    )
+  }
 }
 
 private struct WholeShutoSearchPreviewHost: View {

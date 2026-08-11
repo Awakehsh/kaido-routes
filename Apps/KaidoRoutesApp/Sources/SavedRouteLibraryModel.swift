@@ -6,6 +6,7 @@ import KaidoDomain
 enum SavedRouteLibraryAvailability: Equatable {
   case unavailable
   case selected(String)
+  case currentSnapshot(String)
   case ambiguous([String])
   case invalid(String)
 }
@@ -21,10 +22,11 @@ enum SavedRouteLibraryModelError: String, Error, Equatable {
   case exportFailed = "SAVED_ROUTE_EXPORT_FAILED"
 }
 
-/// Parked-only saved-route persistence and current-release selection.
+/// Parked-only saved-route persistence and current-product selection.
 ///
-/// Saving preserves a complete SharedRouteDocument. Selection can identify one
-/// exact current product release, but this model cannot compile or execute it.
+/// Saving preserves a complete SharedRouteDocument. Availability may identify
+/// one exact current release or a current snapshot that can be recompiled in a
+/// parked editor, but this model cannot compile or execute either one.
 @MainActor
 final class SavedRouteLibraryModel: ObservableObject {
   @Published private(set) var records: [SavedRouteRecord] = []
@@ -33,12 +35,16 @@ final class SavedRouteLibraryModel: ObservableObject {
 
   private let store: (any SavedRouteLibraryStoring)?
   private let releaseCandidates: [SavedRouteReleaseCandidate]
+  private let availabilityResolver:
+    ((SavedRouteRecord) -> SavedRouteLibraryAvailability)?
   private let recordIDProvider: () -> String
   private let savedAtProvider: () -> String
 
   init(
     store: (any SavedRouteLibraryStoring)?,
     foregroundEntries: [BundledProductReleaseEntry],
+    availabilityResolver:
+      ((SavedRouteRecord) -> SavedRouteLibraryAvailability)? = nil,
     recordIDProvider: @escaping () -> String = {
       "saved-route.\(UUID().uuidString.lowercased())"
     },
@@ -52,6 +58,7 @@ final class SavedRouteLibraryModel: ObservableObject {
     }
   ) {
     self.store = store
+    self.availabilityResolver = availabilityResolver
     releaseCandidates = foregroundEntries.map {
       SavedRouteReleaseCandidate(
         releaseID: $0.release.releaseID,
@@ -209,6 +216,9 @@ final class SavedRouteLibraryModel: ObservableObject {
   func availability(
     for record: SavedRouteRecord
   ) -> SavedRouteLibraryAvailability {
+    if let availabilityResolver {
+      return availabilityResolver(record)
+    }
     do {
       switch try SavedRouteReleaseMatcher.select(
         record: record,

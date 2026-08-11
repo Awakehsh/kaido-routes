@@ -26,8 +26,10 @@ final class WholeShutoLiveLocationController: NSObject, ObservableObject {
   @Published private(set) var state: State = .idle
   @Published private(set) var lastRejectionReason: String?
 
-  /// Delivered on the main actor in fix order.
-  var onObservation: ((RouteMatcherObservation) -> Void)?
+  /// Delivered on the main actor in fix order. The envelope is retained so
+  /// release-bound entry and egress adapters can reject simulated evidence.
+  var onObservation: ((CoreLocationObservationEnvelope) -> Void)?
+  var onStateChange: ((State, String?) -> Void)?
 
   private let manager = CLLocationManager()
   private var adapter: CoreLocationObservationAdapter?
@@ -52,6 +54,7 @@ final class WholeShutoLiveLocationController: NSObject, ObservableObject {
   func start(sessionID: String) {
     guard state != .running else { return }
     self.sessionID = sessionID
+    lastRejectionReason = nil
     do {
       adapter = try CoreLocationObservationAdapter(
         sessionID: sessionID,
@@ -66,20 +69,20 @@ final class WholeShutoLiveLocationController: NSObject, ObservableObject {
         }()
       )
     } catch {
-      state = .failed("OBSERVATION_ADAPTER_UNAVAILABLE")
+      publish(.failed("OBSERVATION_ADAPTER_UNAVAILABLE"))
       return
     }
     startRequested = true
     switch manager.authorizationStatus {
     case .notDetermined:
-      state = .awaitingAuthorization
+      publish(.awaitingAuthorization)
       manager.requestWhenInUseAuthorization()
     case .restricted, .denied:
-      state = .permissionDenied
+      publish(.permissionDenied)
     case .authorizedWhenInUse, .authorizedAlways:
       beginUpdates()
     @unknown default:
-      state = .failed("CORE_LOCATION_UNKNOWN_AUTHORIZATION")
+      publish(.failed("CORE_LOCATION_UNKNOWN_AUTHORIZATION"))
     }
   }
 
@@ -89,14 +92,23 @@ final class WholeShutoLiveLocationController: NSObject, ObservableObject {
     adapter = nil
     sessionID = nil
     if state != .permissionDenied {
-      state = .stopped
+      publish(.stopped)
     }
   }
 
   private func beginUpdates() {
     guard startRequested else { return }
     manager.startUpdatingLocation()
-    state = .running
+    publish(.running)
+  }
+
+  private func publish(
+    _ state: State,
+    rejectionReason: String? = nil
+  ) {
+    self.state = state
+    lastRejectionReason = rejectionReason
+    onStateChange?(state, rejectionReason)
   }
 }
 
@@ -110,7 +122,7 @@ extension WholeShutoLiveLocationController: CLLocationManagerDelegate {
       case .authorizedWhenInUse, .authorizedAlways:
         if self.startRequested { self.beginUpdates() }
       case .denied, .restricted:
-        self.state = .permissionDenied
+        self.publish(.permissionDenied)
       case .notDetermined:
         break
       @unknown default:
@@ -134,9 +146,12 @@ extension WholeShutoLiveLocationController: CLLocationManagerDelegate {
         switch result {
         case .accepted(let envelope):
           self.lastRejectionReason = nil
-          self.onObservation?(envelope.observation)
+          self.onObservation?(envelope)
         case .rejected(let rejection):
-          self.lastRejectionReason = rejection.reason.rawValue
+          self.publish(
+            .running,
+            rejectionReason: rejection.reason.rawValue
+          )
         }
       }
     }
@@ -151,13 +166,16 @@ extension WholeShutoLiveLocationController: CLLocationManagerDelegate {
       // A momentary unknown location is normal in tunnels and urban
       // canyons; it degrades confidence rather than ending the drive.
       guard code != .locationUnknown else {
-        self.lastRejectionReason = "CORE_LOCATION_LOCATION_UNKNOWN"
+        self.publish(
+          .running,
+          rejectionReason: "CORE_LOCATION_LOCATION_UNKNOWN"
+        )
         return
       }
-      self.state = .failed(
+      self.publish(.failed(
         code.map { "CORE_LOCATION_\($0.rawValue)" }
           ?? "CORE_LOCATION_FAILURE"
-      )
+      ))
       self.manager.stopUpdatingLocation()
     }
   }

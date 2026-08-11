@@ -68,6 +68,37 @@ final class SavedRouteLibraryModelTests: XCTestCase {
     )
   }
 
+  func testAvailabilityResolverSupportsCurrentRuntimeCompilation() throws {
+    let record = SavedRouteRecord(
+      id: "test.saved.whole-shuto",
+      displayName: "Whole Shuto route",
+      savedAt: "2026-08-11T10:00:00+09:00",
+      origin: .authoredHere,
+      document: SharedRouteDocument(
+        evidenceState: .communityCandidate,
+        routePlan: makeRepeatedSavedRoutePlan()
+      )
+    )
+    let store = MemorySavedRouteLibraryStore(
+      library: SavedRouteLibraryDocument(records: [record])
+    )
+    var resolvedRecordID: String?
+    let model = SavedRouteLibraryModel(
+      store: store,
+      foregroundEntries: [],
+      availabilityResolver: {
+        resolvedRecordID = $0.id
+        return .currentSnapshot("shuto-whole-network-20260804")
+      }
+    )
+
+    XCTAssertEqual(
+      model.availability(for: try XCTUnwrap(model.records.first)),
+      .currentSnapshot("shuto-whole-network-20260804")
+    )
+    XCTAssertEqual(resolvedRecordID, record.id)
+  }
+
   func testImportRenameExportAndDeleteRemainAtomic() throws {
     let sourceDocument = SharedRouteDocument(
       evidenceState: .staleReviewRequired,

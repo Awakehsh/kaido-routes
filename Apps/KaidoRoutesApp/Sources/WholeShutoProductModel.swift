@@ -35,6 +35,23 @@ enum WholeShutoRouteSelectionSource:
   case circuit = "CIRCUIT"
 }
 
+enum WholeShutoDriveMode: String, Codable, Equatable, Sendable {
+  case simulation = "SIMULATION"
+  case live = "LIVE"
+}
+
+enum WholeShutoLiveLocationState: String, Equatable, Sendable {
+  case inactive = "INACTIVE"
+  case resumeRequired = "RESUME_REQUIRED"
+  case awaitingAuthorization = "AWAITING_AUTHORIZATION"
+  case acquiring = "ACQUIRING"
+  case available = "AVAILABLE"
+  case degraded = "DEGRADED"
+  case stale = "STALE"
+  case permissionDenied = "DENIED"
+  case failed = "FAILED"
+}
+
 struct WholeShutoPlace: Codable, Equatable, Sendable {
   let title: String
   let coordinate: ShutoCoordinate
@@ -92,7 +109,7 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
 }
 
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
-  static let currentSchemaVersion = "1.5"
+  static let currentSchemaVersion = "2.0"
 
   let schemaVersion: String
   let networkSnapshotID: String
@@ -105,6 +122,7 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let routePlan: RoutePlan
   let preference: ShutoRoutePreference
   let routeSelectionSource: WholeShutoRouteSelectionSource
+  let driveMode: WholeShutoDriveMode
   let phase: WholeShutoJourneyPhase
   let progressFraction: Double
   let runtimeOccurrenceID: String?
@@ -115,6 +133,8 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let egressRoute: WholeShutoSurfaceRoute?
   let circuitID: String?
   let circuitLaps: Int?
+  let runtimeAssetIdentity: ShutoRuntimeAssetIdentity?
+  let liveNavigationCheckpoint: NavigationSessionCheckpoint?
 }
 
 @MainActor
@@ -164,6 +184,20 @@ enum WholeShutoProductError: Error, Equatable {
   case locationUnavailable
   case destinationUnavailable
   case noExpresswayRoute
+}
+
+private enum WholeShutoSavedRouteResolutionError: Error {
+  case networkSnapshotMismatch
+  case invalidTemplateMetadata
+  case invalidRoutePlan
+}
+
+private struct WholeShutoResolvedSavedRoute {
+  let route: ShutoPlannedRoute
+  let selectionSource: WholeShutoRouteSelectionSource
+  let circuit: ShutoCircuitDefinition?
+  let circuitLaps: Int?
+  let templateParameters: [String: String]
 }
 
 enum WholeShutoNetworkCatalog {
@@ -253,11 +287,15 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
   @Published private(set) var isPlaying = false
-  /// True while the drive is fed by real device positions rather than the
-  /// synthetic preview trace. The two modes share one reducer; only the
-  /// evidence source and the surface-leg advance differ.
+  /// True only for a future drive backed by an injected, validated foreground
+  /// product runtime. The bundled whole-network snapshot is not release
+  /// authority, so its default journey keeps this false and fails live start.
   @Published private(set) var isLiveDrive = false
+  @Published private(set) var liveLocationState:
+    WholeShutoLiveLocationState = .inactive
+  @Published private(set) var liveLocationIssueCode: String?
   @Published private(set) var failureCode: String?
+  @Published private(set) var checkpointIssueCode: String?
   @Published private(set) var isPlanning = false
   @Published private(set) var isUpdatingSurfaceRoute = false
   @Published private(set) var restoredFromCheckpoint = false
@@ -294,15 +332,43 @@ final class WholeShutoProductModel: ObservableObject {
   /// target this movement rather than whichever prompt comes first.
   private(set) var junctionPreviewMovementID: String?
   private var liveDriveSession: ShutoLiveDriveSession?
+  private var liveEntryTransitionAdapter:
+    CoreLocationEntryTransitionAdapter?
+  private var liveSurfaceEgressAdapter:
+    CoreLocationSurfaceEgressAdapter?
+  private var liveNavigationCheckpoint: NavigationSessionCheckpoint?
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
   private var isStaticJunctionPreview = false
   private var selectedDestinationTitle: String?
+  private var selectedSavedRouteTemplateParameters: [String: String]?
   private var trackMapCacheKey: String?
   private var trackMapCacheLayout: RouteTrackMapLayout?
   private var trackMapCacheSpans: [WholeShutoTrackMapSpan] = []
+  private var liveLocationStartedAtMilliseconds: Int?
+  private var lastLiveObservationAtMilliseconds: Int?
+  private var liveLocationFreshnessTask: Task<Void, Never>?
+  private let nowMillisecondsProvider: () -> Int
+
+  static let liveLocationStaleAfterMilliseconds = 10_000
+  private static let checkpointLoadFailedCode =
+    "WHOLE_SHUTO_CHECKPOINT_LOAD_FAILED"
+  private static let checkpointSchemaUnsupportedCode =
+    "WHOLE_SHUTO_CHECKPOINT_SCHEMA_UNSUPPORTED"
+  private static let checkpointNetworkMismatchCode =
+    "WHOLE_SHUTO_CHECKPOINT_NETWORK_MISMATCH"
+  private static let checkpointPhaseInvalidCode =
+    "WHOLE_SHUTO_CHECKPOINT_PHASE_INVALID"
+  private static let checkpointRouteInvalidCode =
+    "WHOLE_SHUTO_CHECKPOINT_ROUTE_INVALID"
+  private static let checkpointRuntimeInvalidCode =
+    "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
+  private static let checkpointSaveFailedCode =
+    "WHOLE_SHUTO_CHECKPOINT_SAVE_FAILED"
+  private static let checkpointRemoveFailedCode =
+    "WHOLE_SHUTO_CHECKPOINT_REMOVE_FAILED"
 
   init(
     database: ShutoNetworkDatabase? = nil,
@@ -317,6 +383,9 @@ final class WholeShutoProductModel: ObservableObject {
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
       WholeShutoUserDefaultsCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
+    nowMillisecondsProvider: @escaping () -> Int = {
+      Int((Date().timeIntervalSince1970 * 1_000).rounded())
+    },
     languageSelectionProvider:
       @escaping () -> NavigationLanguageSelection = {
         let settings = UserDefaultsKaidoLanguagePreferenceStore()
@@ -346,6 +415,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
+    self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
     waysByID = Dictionary(
       uniqueKeysWithValues: resolvedDatabase.ways.map {
@@ -432,6 +502,7 @@ final class WholeShutoProductModel: ObservableObject {
     playbackTask?.cancel()
     surfaceRouteTask?.cancel()
     circuitTariffTask?.cancel()
+    liveLocationFreshnessTask?.cancel()
   }
 
   var selectedRecommendation: ShutoRouteRecommendation? {
@@ -448,6 +519,185 @@ final class WholeShutoProductModel: ObservableObject {
 
   var selectedRoute: ShutoPlannedRoute? {
     selectedRecommendation?.route
+  }
+
+  static let liveNavigationReleaseRequiredCode =
+    "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+
+  /// Candidate whole-network assets are planning authority, not a validated
+  /// foreground navigation release.
+  var canStartLiveNavigation: Bool { false }
+
+  var liveNavigationBlockerCode: String? {
+    canStartLiveNavigation
+      ? nil : Self.liveNavigationReleaseRequiredCode
+  }
+
+  var selectedTariffBand: ShutoTariffBand? {
+    if isCircuitRouteSelected, let circuitPairingBand {
+      return circuitPairingBand
+    }
+    guard let route = selectedRoute else { return nil }
+    return try? planner.tariffBand(
+      entryFacilityID: route.entryFacility.facilityID,
+      exitFacilityID: route.exitFacility.facilityID,
+      evidence: .etcNormalCarActive
+    )
+  }
+
+  var savedRouteTemplateParameters: [String: String] {
+    guard let route = selectedRoute else { return [:] }
+    if let selectedSavedRouteTemplateParameters {
+      return selectedSavedRouteTemplateParameters
+    }
+    let source =
+      isCircuitRouteSelected
+      ? "CIRCUIT" : isCustomRouteSelected ? "CUSTOM" : "RECOMMENDATION"
+    var parameters = [
+      "source": source,
+      "preference": route.preference.rawValue,
+    ]
+    if isCircuitRouteSelected, let selectedCircuit {
+      parameters["circuit_id"] = selectedCircuit.circuitID
+      parameters["laps"] = String(circuitLaps)
+    }
+    return parameters
+  }
+
+  /// Validates the complete saved RoutePlan against the bundled current
+  /// snapshot. This is candidate integrity only; it never selects or mints a
+  /// product release.
+  func savedRouteAvailability(
+    _ record: SavedRouteRecord
+  ) -> SavedRouteLibraryAvailability {
+    guard
+      record.document.routePlan.networkSnapshotID
+        == database.networkSnapshotID
+    else {
+      return .unavailable
+    }
+    do {
+      _ = try resolveSavedRoute(record)
+      return .currentSnapshot(database.networkSnapshotID)
+    } catch {
+      return .invalid("SAVED_ROUTE_CURRENT_SNAPSHOT_INVALID")
+    }
+  }
+
+  /// Opens an exact saved route from the parked planning state and resolves
+  /// fresh provider surface legs around it. The embedded RoutePlan remains
+  /// unchanged, including repeated circuit occurrences.
+  @discardableResult
+  func openSavedRoute(
+    _ record: SavedRouteRecord,
+    origin requestedOrigin: ShutoCoordinate?
+  ) -> Bool {
+    guard phase == .planning else {
+      failureCode = "SAVED_ROUTE_OPEN_REQUIRES_PARKED_PLANNING"
+      return false
+    }
+    guard let originCoordinate = requestedOrigin ?? origin?.coordinate else {
+      failureCode = "LOCATION_UNAVAILABLE"
+      return false
+    }
+    let resolved: WholeShutoResolvedSavedRoute
+    do {
+      resolved = try resolveSavedRoute(record)
+    } catch WholeShutoSavedRouteResolutionError.networkSnapshotMismatch {
+      failureCode = "SAVED_ROUTE_NETWORK_SNAPSHOT_MISMATCH"
+      return false
+    } catch {
+      failureCode = "SAVED_ROUTE_CURRENT_SNAPSHOT_INVALID"
+      return false
+    }
+    let route = resolved.route
+
+    cancelSurfaceRouteResolution()
+    clearRouteChoiceEvaluation()
+    clearCustomRouteSelection()
+    clearCircuitRouteSelection()
+    clearCircuitPlanningDraft()
+
+    let originPlace = WholeShutoPlace(
+      title: "現在地",
+      coordinate: originCoordinate
+    )
+    let destinationPlace = WholeShutoPlace(
+      title: route.exitFacility.nameJA,
+      coordinate: route.exitFacility.coordinate
+    )
+    originQuery = originPlace.title
+    destinationQuery = destinationPlace.title
+    origin = originPlace
+    destination = destinationPlace
+    selectedDestinationTitle = destinationPlace.title
+    recommendations = []
+    selectedRecommendationIndex = 0
+
+    let accessDistance = Self.distance(
+      originCoordinate,
+      route.coordinates.first ?? route.entryFacility.coordinate
+    )
+    let egressDistance = Self.distance(
+      route.coordinates.last ?? route.exitFacility.coordinate,
+      destinationPlace.coordinate
+    )
+    let recommendation = ShutoRouteRecommendation(
+      route: route,
+      surfaceAccessDistanceMeters: accessDistance,
+      surfaceEgressDistanceMeters: egressDistance,
+      totalScoreMeters: route.distanceMeters + accessDistance + egressDistance
+    )
+    switch resolved.selectionSource {
+    case .recommended:
+      recommendations = [recommendation]
+    case .custom:
+      customRecommendation = recommendation
+      isCustomRouteSelected = true
+      customEntryFacilityID = route.entryFacility.facilityID
+      customExitFacilityID = route.exitFacility.facilityID
+      customPreference = route.preference
+      customDraftRoute = route
+    case .circuit:
+      guard let circuit = resolved.circuit,
+        let laps = resolved.circuitLaps
+      else {
+        failureCode = "SAVED_ROUTE_CURRENT_SNAPSHOT_INVALID"
+        return false
+      }
+      selectedCircuit = circuit
+      circuitLaps = laps
+      circuitEntranceCandidates = [route.entryFacility]
+      circuitEntryFacilityID = route.entryFacility.facilityID
+      circuitExitFacilityID = route.exitFacility.facilityID
+      circuitPairingBand = try? planner.tariffBand(
+        entryFacilityID: route.entryFacility.facilityID,
+        exitFacilityID: route.exitFacility.facilityID,
+        evidence: .etcNormalCarActive
+      )
+      circuitEntranceDistanceMeters = accessDistance
+      circuitEntranceOutOfRangeMeters = nil
+      circuitTariffBandsByFacilityID = circuitPairingBand.map {
+        [route.entryFacility.facilityID: $0]
+      } ?? [:]
+      circuitRecommendation = recommendation
+      isCircuitRouteSelected = true
+    }
+    selectedSavedRouteTemplateParameters =
+      resolved.templateParameters.isEmpty
+      ? nil : resolved.templateParameters
+    preference = route.preference
+    phase = .review
+    progressFraction = 0
+    isPlaying = false
+    restoredFromCheckpoint = false
+    failureCode = nil
+    resolveSurfaceRoutes(
+      for: recommendation,
+      origin: originPlace,
+      destination: destinationPlace
+    )
+    return true
   }
 
   func routeChoiceMetrics(
@@ -704,6 +954,14 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var positionState: WholeShutoPositionState {
+    if isLiveDrive,
+      phase != .planning,
+      phase != .review,
+      phase != .completed,
+      liveLocationState != .available
+    {
+      return .networkDegraded
+    }
     switch phase {
     case .planning, .review:
       return .unavailable
@@ -741,11 +999,17 @@ final class WholeShutoProductModel: ObservableObject {
     case .planning, .review:
       return origin?.coordinate
     case .surfaceAccess:
+      if isLiveDrive, let runtimeCoordinate {
+        return runtimeCoordinate
+      }
       return interpolatedCoordinate(
         in: accessRoute?.coordinates ?? [],
         fraction: progressFraction
       )
     case .entryTransition:
+      if isLiveDrive, let runtimeCoordinate {
+        return runtimeCoordinate
+      }
       return selectedRoute?.coordinates.first
     case .expressway:
       return runtimeCoordinate
@@ -754,8 +1018,14 @@ final class WholeShutoProductModel: ObservableObject {
           fraction: progressFraction
         )
     case .exitTransition:
+      if isLiveDrive, let runtimeCoordinate {
+        return runtimeCoordinate
+      }
       return selectedRoute?.coordinates.last
     case .surfaceEgress:
+      if isLiveDrive, let runtimeCoordinate {
+        return runtimeCoordinate
+      }
       return interpolatedCoordinate(
         in: egressRoute?.coordinates ?? [],
         fraction: progressFraction
@@ -1082,7 +1352,7 @@ final class WholeShutoProductModel: ObservableObject {
     junctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     mapMode = .geographic
-    try? checkpointStore?.remove()
+    removeCheckpoint()
   }
 
   func prepareJunctionPreview(startsNavigation: Bool = false) {
@@ -1135,7 +1405,7 @@ final class WholeShutoProductModel: ObservableObject {
     startsNavigation: Bool = false
   ) {
     prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.ooi",
+      entryFacilityID: "shuto.ic.b.ariake",
       exitFacilityID: "shuto.ic.9.fukudumi",
       expectedMovementID:
         "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
@@ -1550,6 +1820,7 @@ final class WholeShutoProductModel: ObservableObject {
   private func clearCircuitRouteSelection() {
     circuitRecommendation = nil
     isCircuitRouteSelected = false
+    selectedSavedRouteTemplateParameters = nil
   }
 
   func prepareCustomRouteDraft() {
@@ -1814,12 +2085,20 @@ final class WholeShutoProductModel: ObservableObject {
         speed: Self.simulationPlaybackSpeed
       )
       liveDriveSession = nil
+      liveEntryTransitionAdapter = nil
+      liveSurfaceEgressAdapter = nil
+      liveNavigationCheckpoint = nil
       isLiveDrive = false
+      liveLocationState = .inactive
+      liveLocationIssueCode = nil
+      liveLocationFreshnessTask?.cancel()
+      liveLocationFreshnessTask = nil
       try configureSpeech(for: route.routePlan.id)
     } catch {
       failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
       return
     }
+    failureCode = nil
     phase = accessRoute == nil ? .entryTransition : .surfaceAccess
     progressFraction = 0
     isPlaying = true
@@ -1838,125 +2117,312 @@ final class WholeShutoProductModel: ObservableObject {
     startPlaybackLoop()
   }
 
-  /// Starts a live drive on the exact reviewed journey.
-  ///
-  /// The same compiled runtime drives it, but every position is a real
-  /// device fix: surface legs advance on measured proximity to the ramp
-  /// mouth instead of a timer, and the expressway body advances only on
-  /// admitted matcher evidence, so a weak fix holds progress instead of
-  /// inventing it.
+  /// Fails closed until this exact selected journey is backed by a validated
+  /// foreground `KaidoProductRelease`, including released surface contexts.
   @discardableResult
   func startLiveJourney() -> Bool {
-    guard phase == .review, let route = selectedRoute else { return false }
-    guard isJourneyReadyForPreview else {
-      if !isUpdatingSurfaceRoute {
-        failureCode = "SURFACE_ROUTE_UNAVAILABLE"
-      }
-      return false
-    }
-    do {
-      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
-        database: database,
-        route: route
-      )
-      runtimeAssets = assets
-      liveDriveSession = try ShutoLiveDriveSession(assets: assets)
-      driveSimulator = nil
-      try configureSpeech(for: route.routePlan.id)
-    } catch {
-      failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
-      return false
-    }
-    isLiveDrive = true
-    phase = accessRoute == nil ? .entryTransition : .surfaceAccess
-    progressFraction = 0
-    isPlaying = true
-    matcherConfidence = nil
-    runtimeOccurrenceID = nil
-    runtimeJourneyPhase = nil
-    runtimeRecoveryStatus = nil
-    runtimeCoordinate = nil
-    runtimeFractionAlongOccurrence = nil
-    presentationProjection = nil
-    consumedGuidancePromptIDs = []
-    isStaticJunctionPreview = false
-    junctionPreviewMovementID = nil
-    restoredFromCheckpoint = false
-    failureCode = nil
-    persistCheckpoint()
-    return true
+    guard phase == .review, selectedRoute != nil else { return false }
+    liveLocationFreshnessTask?.cancel()
+    liveDriveSession = nil
+    liveEntryTransitionAdapter = nil
+    liveSurfaceEgressAdapter = nil
+    liveNavigationCheckpoint = nil
+    isLiveDrive = false
+    liveLocationState = .inactive
+    liveLocationIssueCode = nil
+    liveLocationStartedAtMilliseconds = nil
+    lastLiveObservationAtMilliseconds = nil
+    failureCode = Self.liveNavigationReleaseRequiredCode
+    return false
   }
 
-  /// Accepts one real device observation. Surface phases advance on
-  /// measured distance; expressway phases go through the reducer.
-  func consumeLiveObservation(_ observation: RouteMatcherObservation) {
-    guard isLiveDrive, let session = liveDriveSession else { return }
+  /// Preserves Core Location provenance through both release-bound boundary
+  /// adapters. The synchronous entry point is convenient for the delegate;
+  /// tests use the awaiting variant to assert actor-owned transitions.
+  func consumeLiveObservation(
+    _ envelope: CoreLocationObservationEnvelope
+  ) {
+    Task { [weak self] in
+      await self?.consumeLiveObservationForTesting(envelope)
+    }
+  }
+
+  func consumeLiveObservationForTesting(
+    _ envelope: CoreLocationObservationEnvelope
+  ) async {
+    guard isLiveDrive, isPlaying, let session = liveDriveSession else {
+      return
+    }
+    let observation = envelope.observation
     let coordinate = ShutoCoordinate(
       latitude: observation.coordinate.latitude,
       longitude: observation.coordinate.longitude
     )
-    advanceLiveSurfacePhase(at: coordinate)
-    guard phase == .entryTransition || phase == .expressway else { return }
-    Task { [weak self] in
-      do {
+    runtimeCoordinate = coordinate
+    lastLiveObservationAtMilliseconds = observation.receivedAtMilliseconds
+    liveLocationStartedAtMilliseconds =
+      liveLocationStartedAtMilliseconds
+      ?? observation.receivedAtMilliseconds
+    liveLocationIssueCode = nil
+    liveLocationState = .available
+    scheduleLiveLocationFreshnessCheck()
+
+    do {
+      switch phase {
+      case .surfaceAccess, .entryTransition:
+        if phase == .surfaceAccess {
+          updateLiveSurfaceProgress(
+            coordinate: coordinate,
+            horizontalAccuracyMeters:
+              observation.horizontalAccuracyMeters,
+            route: accessRoute,
+            completesJourney: false
+          )
+        }
+        guard var adapter = liveEntryTransitionAdapter else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
+        let evidence = try adapter.adapt(envelope)
+        liveEntryTransitionAdapter = adapter
+        let update = try await session.observeEntryTransitionEvidence(
+          evidence
+        )
+        matcherConfidence = evidence.confidence
+        applyLiveActorSnapshot(update.navigationSnapshot)
+        if let rejection = update.rejectionReason {
+          liveLocationState = .degraded
+          liveLocationIssueCode = rejection.rawValue
+        }
+      case .expressway:
         let update = try await session.observe(observation)
-        self?.applyNavigationUpdate(update)
-      } catch {
-        self?.failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+        applyNavigationUpdate(update)
+        liveLocationState =
+          update.matcherEstimate.confidence == .high
+          ? .available : .degraded
+        if update.matcherEstimate.confidence != .high {
+          liveLocationIssueCode = "LIVE_MATCHER_CONFIDENCE_"
+            + update.matcherEstimate.confidence.rawValue
+        }
+        if
+          update.navigationSnapshot.journeyPhase == .strictRoute,
+          update.navigationSnapshot.currentOccurrenceID
+            == selectedRoute?.routePlan.occurrences.last?.id,
+          runtimeOccurrenceID
+            == selectedRoute?.routePlan.occurrences.last?.id,
+          progressFraction >= 0.999
+        {
+          let snapshot = await session.finishDrive()
+          applyLiveActorSnapshot(snapshot)
+        }
+      case .exitTransition:
+        guard var adapter = liveSurfaceEgressAdapter else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
+        let evidence = try adapter.adapt(envelope)
+        liveSurfaceEgressAdapter = adapter
+        let update = await session.observeSurfaceEgressHandoffEvidence(
+          evidence
+        )
+        matcherConfidence = evidence.confidence
+        applyLiveActorSnapshot(update.navigationSnapshot)
+        if let rejection = update.rejectionReason {
+          liveLocationState = .degraded
+          liveLocationIssueCode = rejection.rawValue
+        }
+        if update.navigationSnapshot.journeyPhase == .surfaceEgress {
+          updateLiveSurfaceProgress(
+            coordinate: coordinate,
+            horizontalAccuracyMeters:
+              observation.horizontalAccuracyMeters,
+            route: egressRoute,
+            completesJourney: true
+          )
+        }
+      case .surfaceEgress:
+        updateLiveSurfaceProgress(
+          coordinate: coordinate,
+          horizontalAccuracyMeters:
+            observation.horizontalAccuracyMeters,
+          route: egressRoute,
+          completesJourney: true
+        )
+      case .planning, .review, .completed:
+        return
       }
+      if phase != .completed {
+        await captureAndPersistLiveCheckpoint(from: session)
+      }
+    } catch {
+      liveLocationState = .degraded
+      liveLocationIssueCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+      failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
     }
   }
 
-  /// Surface access and egress are ordinary-road legs the matcher does not
-  /// own. They advance on real distance to the leg's end and hand over only
-  /// when the vehicle is actually at the ramp mouth or the destination.
-  private func advanceLiveSurfacePhase(at coordinate: ShutoCoordinate) {
-    let handoverRadiusMeters = 60.0
-    switch phase {
-    case .surfaceAccess:
-      guard let route = selectedRoute else { return }
-      let target =
-        route.coordinates.first ?? route.entryFacility.coordinate
-      let remaining = Self.distance(coordinate, target)
-      let total = max(accessRoute?.distanceMeters ?? remaining, 1)
-      progressFraction = min(1, max(0, 1 - remaining / total))
-      if remaining <= handoverRadiusMeters {
-        phase = .entryTransition
-        progressFraction = 0
-        persistCheckpoint()
-      }
-    case .surfaceEgress:
-      guard let destination else { return }
-      let remaining = Self.distance(coordinate, destination.coordinate)
-      let total = max(egressRoute?.distanceMeters ?? remaining, 1)
-      progressFraction = min(1, max(0, 1 - remaining / total))
-      if remaining <= handoverRadiusMeters {
-        completeLiveJourney()
-      }
-    case .exitTransition:
-      guard let route = selectedRoute else { return }
-      let exitPoint =
-        route.coordinates.last ?? route.exitFacility.coordinate
-      if Self.distance(coordinate, exitPoint) > handoverRadiusMeters {
-        phase = egressRoute == nil ? .completed : .surfaceEgress
-        progressFraction = 0
-        if phase == .completed {
-          completeLiveJourney()
-        } else {
-          persistCheckpoint()
-        }
-      }
-    default:
+  func consumeLiveLocationState(
+    _ state: WholeShutoLiveLocationController.State,
+    rejectionReason: String?
+  ) {
+    guard isLiveDrive else {
+      liveLocationState = .inactive
+      liveLocationIssueCode = nil
       return
     }
+    switch state {
+    case .idle, .stopped:
+      liveLocationState = .inactive
+      liveLocationIssueCode = nil
+      liveLocationFreshnessTask?.cancel()
+      liveLocationFreshnessTask = nil
+    case .awaitingAuthorization:
+      liveLocationState = .awaitingAuthorization
+      liveLocationIssueCode = nil
+      liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
+      scheduleLiveLocationFreshnessCheck()
+    case .running:
+      if let rejectionReason {
+        liveLocationState = .degraded
+        liveLocationIssueCode = rejectionReason
+        matcherConfidence = .low
+      } else if lastLiveObservationAtMilliseconds == nil {
+        liveLocationState = .acquiring
+        liveLocationIssueCode = nil
+      }
+      liveLocationStartedAtMilliseconds =
+        liveLocationStartedAtMilliseconds ?? nowMillisecondsProvider()
+      scheduleLiveLocationFreshnessCheck()
+    case .permissionDenied:
+      liveLocationState = .permissionDenied
+      liveLocationIssueCode = "CORE_LOCATION_PERMISSION_DENIED"
+      isPlaying = false
+      matcherConfidence = .low
+      speechCoordinator?.stop()
+      liveLocationFreshnessTask?.cancel()
+      liveLocationFreshnessTask = nil
+      persistCheckpoint()
+    case .failed(let code):
+      liveLocationState = .failed
+      liveLocationIssueCode = code
+      isPlaying = false
+      matcherConfidence = .low
+      speechCoordinator?.stop()
+      liveLocationFreshnessTask?.cancel()
+      liveLocationFreshnessTask = nil
+      persistCheckpoint()
+    }
+  }
+
+  @discardableResult
+  func resumeLiveJourney() -> Bool {
+    guard isLiveDrive,
+      phase != .planning,
+      phase != .review,
+      phase != .completed,
+      liveDriveSession != nil
+    else {
+      return false
+    }
+    isPlaying = true
+    restoredFromCheckpoint = false
+    liveLocationState = .acquiring
+    liveLocationIssueCode = nil
+    liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
+    lastLiveObservationAtMilliseconds = nil
+    matcherConfidence = .low
+    scheduleLiveLocationFreshnessCheck()
+    speechCoordinator?.resume()
+    persistCheckpoint()
+    return true
+  }
+
+  private func applyLiveActorSnapshot(
+    _ snapshot: NavigationSnapshot
+  ) {
+    runtimeJourneyPhase = snapshot.journeyPhase
+    runtimeRecoveryStatus = snapshot.recovery.status
+    switch snapshot.journeyPhase {
+    case .planning, .approachToEntry:
+      break
+    case .entryTransition:
+      if phase == .surfaceAccess {
+        phase = .entryTransition
+        progressFraction = 0
+      }
+    case .strictRoute:
+      if phase == .surfaceAccess || phase == .entryTransition {
+        phase = .expressway
+        progressFraction = 0
+      }
+    case .routeRecovery:
+      phase = .expressway
+      isPlaying = false
+    case .exitTransition:
+      guard snapshot.egress.status == .active else { return }
+      phase = .exitTransition
+      progressFraction = 0
+      presentationProjection = nil
+    case .surfaceEgress:
+      phase = .surfaceEgress
+      progressFraction = 0
+      presentationProjection = nil
+    case .completed:
+      completeLiveJourney()
+    }
+  }
+
+  private func updateLiveSurfaceProgress(
+    coordinate: ShutoCoordinate,
+    horizontalAccuracyMeters: Double,
+    route: WholeShutoSurfaceRoute?,
+    completesJourney: Bool
+  ) {
+    guard let route,
+      let measurement = Self.surfaceRouteMeasurement(
+        coordinate,
+        along: route.coordinates
+      )
+    else {
+      liveLocationState = .degraded
+      liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
+      return
+    }
+    let maximumLateralDistance = min(
+      100,
+      max(30, horizontalAccuracyMeters * 3)
+    )
+    guard measurement.lateralDistanceMeters
+      <= maximumLateralDistance
+    else {
+      liveLocationState = .degraded
+      liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
+      return
+    }
+    progressFraction = max(
+      progressFraction,
+      measurement.fractionAlongRoute
+    )
+    guard completesJourney,
+      progressFraction >= 0.995,
+      let destination = route.coordinates.last,
+      Self.distance(coordinate, destination)
+        <= max(30, horizontalAccuracyMeters * 2)
+    else {
+      persistCheckpoint()
+      return
+    }
+    completeLiveJourney()
   }
 
   private func completeLiveJourney() {
     phase = .completed
     progressFraction = 1
     isPlaying = false
+    liveLocationState = .inactive
+    liveLocationIssueCode = nil
+    liveLocationFreshnessTask?.cancel()
+    liveLocationFreshnessTask = nil
     speechCoordinator?.stop()
-    try? checkpointStore?.remove()
+    removeCheckpoint()
   }
 
   func togglePlayback() {
@@ -2046,11 +2512,20 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeAssets = nil
     driveSimulator = nil
     liveDriveSession = nil
+    liveEntryTransitionAdapter = nil
+    liveSurfaceEgressAdapter = nil
+    liveNavigationCheckpoint = nil
     isLiveDrive = false
+    liveLocationState = .inactive
+    liveLocationIssueCode = nil
+    liveLocationStartedAtMilliseconds = nil
+    lastLiveObservationAtMilliseconds = nil
+    liveLocationFreshnessTask?.cancel()
+    liveLocationFreshnessTask = nil
     isStaticJunctionPreview = false
     junctionPreviewMovementID = nil
     restoredFromCheckpoint = false
-    try? checkpointStore?.remove()
+    removeCheckpoint()
   }
 
   func handleScenePhase(
@@ -2058,13 +2533,29 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     switch scenePhase {
     case .active:
-      speechCoordinator?.resume()
+      if !isLiveDrive || isPlaying {
+        speechCoordinator?.resume()
+      }
     case .inactive, .background:
       playbackTask?.cancel()
       playbackTask = nil
       isPlaying = false
       speechCoordinator?.stop()
-      persistCheckpoint()
+      if isLiveDrive {
+        liveLocationState = .resumeRequired
+        liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
+        liveLocationFreshnessTask?.cancel()
+        liveLocationFreshnessTask = nil
+        if let liveDriveSession {
+          Task { [weak self] in
+            await self?.captureAndPersistLiveCheckpoint(
+              from: liveDriveSession
+            )
+          }
+        }
+      } else {
+        persistCheckpoint()
+      }
     }
   }
 
@@ -2135,7 +2626,7 @@ final class WholeShutoProductModel: ObservableObject {
       break
     }
     if phase == .completed {
-      try? checkpointStore?.remove()
+      removeCheckpoint()
     } else {
       persistCheckpoint()
       if phase == .entryTransition || phase == .expressway,
@@ -2215,9 +2706,9 @@ final class WholeShutoProductModel: ObservableObject {
     applyNavigationUpdate(update)
   }
 
-  /// The single admission path for both drive modes: a preview step and a
-  /// live device fix reach the reducer the same way, so progress, recovery,
-  /// and reviewed speech cannot diverge between them.
+  /// Applies actor-owned progress and guidance for labeled replay. A future
+  /// release-backed live composition may reuse this projection only after its
+  /// provenance-bearing observations pass the release admission boundary.
   private func applyNavigationUpdate(_ update: NavigationSessionUpdate) {
     matcherConfidence = update.matcherEstimate.confidence
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
@@ -2250,12 +2741,6 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeFractionAlongOccurrence =
       progress.fractionAlongOccurrence
     runtimeCoordinate = progress.coordinate
-    // The preview's timer hands the expressway body over to the exit; a
-    // live drive hands over when real progress reaches the exit ramp.
-    if isLiveDrive, progress.routeProgressFraction >= 0.999 {
-      phase = .exitTransition
-      progressFraction = 0
-    }
     persistCheckpoint()
   }
 
@@ -2377,45 +2862,67 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func restoreCheckpointIfAvailable() {
-    guard let checkpointStore,
-      let checkpoint = try? checkpointStore.load(),
-      checkpoint.schemaVersion
-        == WholeShutoJourneyCheckpoint.currentSchemaVersion,
-      checkpoint.networkSnapshotID == database.networkSnapshotID,
-      checkpoint.phase != .planning,
+    guard let checkpointStore else { return }
+    let checkpoint: WholeShutoJourneyCheckpoint
+    do {
+      guard let loaded = try checkpointStore.load() else { return }
+      checkpoint = loaded
+    } catch {
+      rejectCheckpoint(Self.checkpointLoadFailedCode)
+      return
+    }
+    guard checkpoint.schemaVersion
+      == WholeShutoJourneyCheckpoint.currentSchemaVersion
+    else {
+      rejectCheckpoint(Self.checkpointSchemaUnsupportedCode)
+      return
+    }
+    guard checkpoint.networkSnapshotID == database.networkSnapshotID else {
+      rejectCheckpoint(Self.checkpointNetworkMismatchCode)
+      return
+    }
+    guard checkpoint.phase != .planning,
       checkpoint.phase != .completed
     else {
+      rejectCheckpoint(Self.checkpointPhaseInvalidCode)
       return
     }
     var restoredCircuit: ShutoCircuitDefinition?
-    let replanned: ShutoPlannedRoute?
-    if checkpoint.routeSelectionSource == .circuit {
-      guard
-        let circuit = ShutoCircuitDefinition.bundled.first(
-          where: { $0.circuitID == checkpoint.circuitID }
-        ),
-        let laps = checkpoint.circuitLaps
-      else {
-        return
+    let route: ShutoPlannedRoute
+    do {
+      if checkpoint.routeSelectionSource == .circuit {
+        guard
+          let circuit = ShutoCircuitDefinition.bundled.first(
+            where: { $0.circuitID == checkpoint.circuitID }
+          ),
+          let laps = checkpoint.circuitLaps
+        else {
+          throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+        }
+        restoredCircuit = circuit
+        route = try planner.planCircuit(
+          circuit: circuit,
+          entryFacilityID: checkpoint.entryFacilityID,
+          exitFacilityID: checkpoint.exitFacilityID,
+          laps: laps,
+          preference: checkpoint.preference
+        )
+      } else {
+        guard checkpoint.circuitID == nil,
+          checkpoint.circuitLaps == nil
+        else {
+          throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+        }
+        route = try planner.restore(
+          routePlan: checkpoint.routePlan,
+          preference: checkpoint.preference
+        )
       }
-      restoredCircuit = circuit
-      replanned = try? planner.planCircuit(
-        circuit: circuit,
-        entryFacilityID: checkpoint.entryFacilityID,
-        exitFacilityID: checkpoint.exitFacilityID,
-        laps: laps,
-        preference: checkpoint.preference
-      )
-    } else {
-      replanned = try? planner.plan(
-        entryFacilityID: checkpoint.entryFacilityID,
-        exitFacilityID: checkpoint.exitFacilityID,
-        preference: checkpoint.preference
-      )
-    }
-    guard let route = replanned,
-      route.routePlan == checkpoint.routePlan
-    else {
+      guard route.routePlan == checkpoint.routePlan else {
+        throw WholeShutoSavedRouteResolutionError.invalidRoutePlan
+      }
+    } catch {
+      rejectCheckpoint(Self.checkpointRouteInvalidCode)
       return
     }
     let accessDistance = checkpoint.accessRoute?.distanceMeters ?? 0
@@ -2451,6 +2958,12 @@ final class WholeShutoProductModel: ObservableObject {
       selectedCircuit = restoredCircuit
       circuitLaps = checkpoint.circuitLaps ?? 1
       circuitEntryFacilityID = route.entryFacility.facilityID
+      circuitExitFacilityID = route.exitFacility.facilityID
+      circuitPairingBand = try? planner.tariffBand(
+        entryFacilityID: route.entryFacility.facilityID,
+        exitFacilityID: route.exitFacility.facilityID,
+        evidence: .etcNormalCarActive
+      )
       circuitRecommendation = restoredRecommendation
       isCircuitRouteSelected = true
     case .recommended:
@@ -2468,71 +2981,100 @@ final class WholeShutoProductModel: ObservableObject {
     consumedGuidancePromptIDs = Set(
       checkpoint.consumedGuidancePromptIDs ?? []
     )
-    if checkpoint.phase == .entryTransition
-      || checkpoint.phase == .expressway
-    {
-      do {
-        let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
-          database: database,
+    if checkpoint.driveMode == .live {
+      phase = .review
+      progressFraction = 0
+      mapMode = .network
+      runtimeAssets = nil
+      driveSimulator = nil
+      liveDriveSession = nil
+      liveEntryTransitionAdapter = nil
+      liveSurfaceEgressAdapter = nil
+      liveNavigationCheckpoint = nil
+      isLiveDrive = false
+      liveLocationState = .inactive
+      liveLocationIssueCode = Self.liveNavigationReleaseRequiredCode
+      matcherConfidence = nil
+      runtimeOccurrenceID = nil
+      runtimeJourneyPhase = nil
+      runtimeRecoveryStatus = nil
+      runtimeCoordinate = nil
+      runtimeFractionAlongOccurrence = nil
+      failureCode = Self.liveNavigationReleaseRequiredCode
+      return
+    }
+    do {
+      let needsRuntime = checkpoint.phase == .entryTransition
+        || checkpoint.phase == .expressway
+      guard needsRuntime else { return }
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      guard checkpoint.runtimeAssetIdentity == assets.runtimeAssetIdentity else {
+        throw WholeShutoProductError.noExpresswayRoute
+      }
+      runtimeAssets = assets
+      try configureSpeech(for: route.routePlan.id)
+
+      liveDriveSession = nil
+      liveEntryTransitionAdapter = nil
+      liveSurfaceEgressAdapter = nil
+      liveNavigationCheckpoint = nil
+      isLiveDrive = false
+      liveLocationState = .inactive
+      driveSimulator = try NavigationDriveSimulator(
+        route: route,
+        runtimeAssets: assets,
+        configuration: NavigationDriveSimulationConfiguration(
+          sampleFractions: [0.15, 0.5, 0.85],
+          maximumSampleSpacingMeters: 30,
+          timing: .routeSpeed,
+          horizontalAccuracyMeters: 2,
+          speedMetersPerSecond:
+            Self.simulationReferenceSpeedMetersPerSecond
+        ),
+        speed: Self.simulationPlaybackSpeed
+      )
+      if checkpoint.phase == .entryTransition {
+        guard
+          checkpoint.runtimeOccurrenceID == nil,
+          checkpoint.runtimeFractionAlongOccurrence == nil,
+          progressFraction == 0
+        else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
+      } else {
+        guard checkpoint.phase == .expressway else { return }
+        try restoreRuntimePositionOrThrow(
+          occurrenceID: checkpoint.runtimeOccurrenceID,
+          fraction: checkpoint.runtimeFractionAlongOccurrence,
           route: route
         )
-        runtimeAssets = assets
-        driveSimulator = try NavigationDriveSimulator(
-          route: route,
-          runtimeAssets: assets,
-          configuration: NavigationDriveSimulationConfiguration(
-            sampleFractions: [0.15, 0.5, 0.85],
-            maximumSampleSpacingMeters: 30,
-            timing: .routeSpeed,
-            horizontalAccuracyMeters: 2,
-            speedMetersPerSecond:
-              Self.simulationReferenceSpeedMetersPerSecond
-          ),
-          speed: Self.simulationPlaybackSpeed
-        )
-        try configureSpeech(for: route.routePlan.id)
-        if checkpoint.phase == .entryTransition {
-          guard
-            checkpoint.runtimeOccurrenceID == nil,
-            checkpoint.runtimeFractionAlongOccurrence == nil,
-            progressFraction == 0
-          else {
-            throw WholeShutoProductError.noExpresswayRoute
-          }
-        } else {
-          guard
-            let occurrenceID = checkpoint.runtimeOccurrenceID,
-            let occurrence = route.routePlan.occurrence(
-              id: occurrenceID
-            ),
-            route.edges.indices.contains(occurrence.index),
-            let fraction =
-              checkpoint.runtimeFractionAlongOccurrence,
-            fraction.isFinite,
-            (0...1).contains(fraction)
-          else {
-            throw WholeShutoProductError.noExpresswayRoute
-          }
-          runtimeOccurrenceID = occurrenceID
-          runtimeFractionAlongOccurrence = fraction
-          let start = route.coordinates[occurrence.index]
-          let end = route.coordinates[occurrence.index + 1]
-          runtimeCoordinate = ShutoCoordinate(
-            latitude: start.latitude
-              + (end.latitude - start.latitude) * fraction,
-            longitude: start.longitude
-              + (end.longitude - start.longitude) * fraction
-          )
-        }
-      } catch {
-        speechCoordinator?.stop()
-        speechCoordinator = nil
-        runtimeAssets = nil
-        driveSimulator = nil
-        liveDriveSession = nil
-        isLiveDrive = false
-        failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
       }
+    } catch {
+      speechCoordinator?.stop()
+      speechCoordinator = nil
+      runtimeAssets = nil
+      driveSimulator = nil
+      liveDriveSession = nil
+      liveEntryTransitionAdapter = nil
+      liveSurfaceEgressAdapter = nil
+      liveNavigationCheckpoint = nil
+      isLiveDrive = false
+      liveLocationState = .inactive
+      liveLocationIssueCode = nil
+      phase = .review
+      progressFraction = 0
+      mapMode = .network
+      matcherConfidence = nil
+      runtimeOccurrenceID = nil
+      runtimeJourneyPhase = nil
+      runtimeRecoveryStatus = nil
+      runtimeCoordinate = nil
+      runtimeFractionAlongOccurrence = nil
+      failureCode = Self.checkpointRuntimeInvalidCode
+      rejectCheckpoint(Self.checkpointRuntimeInvalidCode)
     }
   }
 
@@ -2557,6 +3099,7 @@ final class WholeShutoProductModel: ObservableObject {
         isCircuitRouteSelected
         ? .circuit
         : isCustomRouteSelected ? .custom : .recommended,
+      driveMode: isLiveDrive ? .live : .simulation,
       phase: phase,
       progressFraction: progressFraction,
       runtimeOccurrenceID: runtimeOccurrenceID,
@@ -2569,9 +3112,181 @@ final class WholeShutoProductModel: ObservableObject {
       egressRoute: egressRoute,
       circuitID:
         isCircuitRouteSelected ? selectedCircuit?.circuitID : nil,
-      circuitLaps: isCircuitRouteSelected ? circuitLaps : nil
+      circuitLaps: isCircuitRouteSelected ? circuitLaps : nil,
+      runtimeAssetIdentity:
+        phase == .entryTransition || phase == .expressway
+        ? runtimeAssets?.runtimeAssetIdentity : nil,
+      liveNavigationCheckpoint:
+        isLiveDrive ? liveNavigationCheckpoint : nil
     )
-    try? checkpointStore?.save(checkpoint)
+    guard let checkpointStore else { return }
+    do {
+      try checkpointStore.save(checkpoint)
+      checkpointIssueCode = nil
+    } catch {
+      rejectCheckpoint(Self.checkpointSaveFailedCode)
+    }
+  }
+
+  private func rejectCheckpoint(_ issueCode: String) {
+    guard let checkpointStore else {
+      checkpointIssueCode = issueCode
+      return
+    }
+    do {
+      try checkpointStore.remove()
+      checkpointIssueCode = issueCode
+    } catch {
+      checkpointIssueCode = Self.checkpointRemoveFailedCode
+    }
+  }
+
+  private func removeCheckpoint() {
+    guard let checkpointStore else { return }
+    do {
+      try checkpointStore.remove()
+      checkpointIssueCode = nil
+    } catch {
+      checkpointIssueCode = Self.checkpointRemoveFailedCode
+    }
+  }
+
+  private func captureAndPersistLiveCheckpoint(
+    from session: ShutoLiveDriveSession
+  ) async {
+    do {
+      liveNavigationCheckpoint = try await session.makeCheckpoint(
+        savedAtMilliseconds: nowMillisecondsProvider()
+      )
+      persistCheckpoint()
+    } catch {
+      failureCode = Self.checkpointRuntimeInvalidCode
+      checkpointIssueCode = Self.checkpointRuntimeInvalidCode
+    }
+  }
+
+  private func scheduleLiveLocationFreshnessCheck() {
+    liveLocationFreshnessTask?.cancel()
+    guard isLiveDrive, isPlaying else { return }
+    liveLocationFreshnessTask = Task { [weak self] in
+      try? await Task.sleep(
+        for: .milliseconds(Self.liveLocationStaleAfterMilliseconds)
+      )
+      guard !Task.isCancelled, let self else { return }
+      self.evaluateLiveLocationFreshness(
+        atMilliseconds: self.nowMillisecondsProvider()
+      )
+    }
+  }
+
+  func evaluateLiveLocationFreshness(
+    atMilliseconds nowMilliseconds: Int
+  ) {
+    guard isLiveDrive, isPlaying else { return }
+    let reference =
+      lastLiveObservationAtMilliseconds
+      ?? liveLocationStartedAtMilliseconds
+    guard let reference,
+      nowMilliseconds - reference
+        >= Self.liveLocationStaleAfterMilliseconds
+    else {
+      scheduleLiveLocationFreshnessCheck()
+      return
+    }
+    liveLocationState = .stale
+    liveLocationIssueCode = "CORE_LOCATION_NO_RECENT_FIX"
+    matcherConfidence = .low
+  }
+
+  private struct SurfaceRouteMeasurement {
+    let fractionAlongRoute: Double
+    let lateralDistanceMeters: Double
+  }
+
+  private static func surfaceRouteMeasurement(
+    _ point: ShutoCoordinate,
+    along coordinates: [ShutoCoordinate]
+  ) -> SurfaceRouteMeasurement? {
+    guard coordinates.count >= 2 else { return nil }
+    let lengths = zip(coordinates, coordinates.dropFirst()).map {
+      distance($0, $1)
+    }
+    let total = lengths.reduce(0, +)
+    guard total > 0 else { return nil }
+    var traversed = 0.0
+    var best: SurfaceRouteMeasurement?
+    for index in lengths.indices {
+      let start = coordinates[index]
+      let end = coordinates[index + 1]
+      let referenceLatitude =
+        (start.latitude + end.latitude + point.latitude) / 3
+      let latitudeScale = 6_371_000.0 * .pi / 180
+      let longitudeScale =
+        latitudeScale * cos(referenceLatitude * .pi / 180)
+      let segmentX =
+        (end.longitude - start.longitude) * longitudeScale
+      let segmentY =
+        (end.latitude - start.latitude) * latitudeScale
+      let pointX =
+        (point.longitude - start.longitude) * longitudeScale
+      let pointY =
+        (point.latitude - start.latitude) * latitudeScale
+      let squaredLength = segmentX * segmentX + segmentY * segmentY
+      let localFraction =
+        squaredLength > 0
+        ? min(
+          1,
+          max(
+            0,
+            (pointX * segmentX + pointY * segmentY)
+              / squaredLength
+          )
+        ) : 0
+      let lateral = hypot(
+        pointX - segmentX * localFraction,
+        pointY - segmentY * localFraction
+      )
+      let measurement = SurfaceRouteMeasurement(
+        fractionAlongRoute:
+          min(1, max(0, (traversed + lengths[index] * localFraction) / total)),
+        lateralDistanceMeters: lateral
+      )
+      if best.map({ lateral < $0.lateralDistanceMeters }) != false {
+        best = measurement
+      }
+      traversed += lengths[index]
+    }
+    return best
+  }
+
+  private func restoreRuntimePositionOrThrow(
+    occurrenceID: String?,
+    fraction: Double?,
+    route: ShutoPlannedRoute
+  ) throws {
+    if occurrenceID == nil, fraction == nil {
+      return
+    }
+    guard
+      let occurrenceID,
+      let occurrence = route.routePlan.occurrence(id: occurrenceID),
+      route.edges.indices.contains(occurrence.index),
+      let fraction,
+      fraction.isFinite,
+      (0...1).contains(fraction)
+    else {
+      throw WholeShutoProductError.noExpresswayRoute
+    }
+    runtimeOccurrenceID = occurrenceID
+    runtimeFractionAlongOccurrence = fraction
+    let start = route.coordinates[occurrence.index]
+    let end = route.coordinates[occurrence.index + 1]
+    runtimeCoordinate = ShutoCoordinate(
+      latitude: start.latitude
+        + (end.latitude - start.latitude) * fraction,
+      longitude: start.longitude
+        + (end.longitude - start.longitude) * fraction
+    )
   }
 
   private func restoreObservationReplayIfNeeded() async -> Bool {
@@ -2587,7 +3302,8 @@ final class WholeShutoProductModel: ObservableObject {
       return true
     } catch {
       isPlaying = false
-      failureCode = "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
+      failureCode = Self.checkpointRuntimeInvalidCode
+      rejectCheckpoint(Self.checkpointRuntimeInvalidCode)
       return false
     }
   }
@@ -2680,6 +3396,7 @@ final class WholeShutoProductModel: ObservableObject {
     customExitFacilityID = nil
     customPreference = .recommended
     customDraftRoute = nil
+    selectedSavedRouteTemplateParameters = nil
   }
 
   private func facility(
@@ -2688,6 +3405,124 @@ final class WholeShutoProductModel: ObservableObject {
     guard let id else { return nil }
     return database.directionalFacilities.first {
       $0.facilityID == id
+    }
+  }
+
+  private func resolveSavedRoute(
+    _ record: SavedRouteRecord
+  ) throws -> WholeShutoResolvedSavedRoute {
+    do {
+      try SharedRouteCodec.validate(record.document)
+    } catch {
+      throw WholeShutoSavedRouteResolutionError.invalidRoutePlan
+    }
+    let routePlan = record.document.routePlan
+    guard routePlan.networkSnapshotID == database.networkSnapshotID else {
+      throw WholeShutoSavedRouteResolutionError.networkSnapshotMismatch
+    }
+    let templateParameters = record.document.templateParameters
+    let routePreference: ShutoRoutePreference
+    if let preferenceValue = templateParameters["preference"] {
+      guard let preference = ShutoRoutePreference(
+        rawValue: preferenceValue
+      ) else {
+        throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+      }
+      routePreference = preference
+    } else {
+      routePreference = ShutoRoutePreference.allCases.first(where: {
+        routePlan.id.hasSuffix(".\($0.rawValue.lowercased())")
+      }) ?? .recommended
+    }
+    let selectionSource: WholeShutoRouteSelectionSource
+    if let sourceValue = templateParameters["source"] {
+      guard let source = Self.savedRouteSelectionSource(
+        sourceValue
+      ) else {
+        throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+      }
+      selectionSource = source
+    } else {
+      // A source-less schema-1.0 document remains a valid exact saved plan,
+      // but it cannot claim circuit or recommendation provenance.
+      selectionSource = .custom
+    }
+
+    do {
+      let route: ShutoPlannedRoute
+      let circuit: ShutoCircuitDefinition?
+      let circuitLaps: Int?
+      switch selectionSource {
+      case .circuit:
+        guard
+          let circuitID = templateParameters["circuit_id"],
+          let resolvedCircuit = ShutoCircuitDefinition.bundled.first(where: {
+            $0.circuitID == circuitID
+          }),
+          let lapsValue = templateParameters["laps"],
+          let laps = Int(lapsValue)
+        else {
+          throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+        }
+        let planned = try planner.planCircuit(
+          circuit: resolvedCircuit,
+          entryFacilityID: routePlan.entryFacilityID,
+          exitFacilityID: routePlan.exitFacilityID,
+          laps: laps,
+          preference: routePreference
+        )
+        guard planned.routePlan == routePlan else {
+          throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+        }
+        route = planned
+        circuit = resolvedCircuit
+        circuitLaps = laps
+      case .custom, .recommended:
+        guard templateParameters["circuit_id"] == nil,
+          templateParameters["laps"] == nil
+        else {
+          throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
+        }
+        route = try planner.restore(
+          routePlan: routePlan,
+          preference: routePreference
+        )
+        circuit = nil
+        circuitLaps = nil
+      }
+      _ = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      return WholeShutoResolvedSavedRoute(
+        route: route,
+        selectionSource: selectionSource,
+        circuit: circuit,
+        circuitLaps: circuitLaps,
+        templateParameters: templateParameters
+      )
+    } catch {
+      if let resolutionError = error
+        as? WholeShutoSavedRouteResolutionError
+      {
+        throw resolutionError
+      }
+      throw WholeShutoSavedRouteResolutionError.invalidRoutePlan
+    }
+  }
+
+  private static func savedRouteSelectionSource(
+    _ value: String
+  ) -> WholeShutoRouteSelectionSource? {
+    switch value {
+    case "RECOMMENDATION":
+      .recommended
+    case "CUSTOM":
+      .custom
+    case "CIRCUIT":
+      .circuit
+    default:
+      nil
     }
   }
 

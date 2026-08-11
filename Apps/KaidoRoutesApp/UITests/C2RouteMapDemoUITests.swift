@@ -84,7 +84,13 @@ final class C2RouteMapDemoUITests: XCTestCase {
     continueAfterFailure = false
 
     let kasaiApp = XCUIApplication()
-    kasaiApp.launchArguments = ["-C2-NAVIGATION-KASAI-PREVIEW"]
+    kasaiApp.launchArguments = [
+      "-C2-NAVIGATION-KASAI-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     kasaiApp.launch()
     let kasaiInset = element("product-junction-inset", in: kasaiApp)
     XCTAssertTrue(kasaiInset.waitForExistence(timeout: 5))
@@ -106,7 +112,13 @@ final class C2RouteMapDemoUITests: XCTestCase {
     kasaiApp.terminate()
 
     let oiApp = XCUIApplication()
-    oiApp.launchArguments = ["-C2-NAVIGATION-OI-PREVIEW"]
+    oiApp.launchArguments = [
+      "-C2-NAVIGATION-OI-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     oiApp.launch()
     let oiInset = element("product-junction-inset", in: oiApp)
     XCTAssertTrue(oiInset.waitForExistence(timeout: 5))
@@ -157,7 +169,13 @@ final class C2RouteMapDemoUITests: XCTestCase {
   func testCompletedC2CircuitDemoShowsItsWholeRouteStructure() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-C2-ROUTE-MAP-DEMO"]
+    app.launchArguments = [
+      "-C2-ROUTE-MAP-DEMO",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
 
     let demo = element("c2-completed-route-demo", in: app)

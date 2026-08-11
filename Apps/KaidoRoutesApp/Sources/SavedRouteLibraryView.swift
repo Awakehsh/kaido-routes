@@ -189,11 +189,11 @@ struct SavedRouteLibraryPanel: View {
         Text(
           copy.resolve(
             japanese:
-              "保存はナビ権限を作りません。現在のリリースと RoutePlan 全体が一致したルートだけを駐車中 editor で開けます。",
+              "保存はナビ権限を作りません。現在の製品データと RoutePlan 全体が一致したルートだけを駐車中の編集画面で開けます。ナビには別途リリースが必要です。",
             simplifiedChinese:
-              "保存不会产生导航权限；只有与当前发布包完整 RoutePlan 一致的路线才能在停车编辑器中重新打开。",
+              "保存不会产生导航权限；只有与当前产品数据完整 RoutePlan 一致的路线才能在停车编辑器中重新打开，导航仍需单独发布。",
             english:
-              "Saving grants no navigation authority. Only a whole-RoutePlan match to one current release can reopen in the parked editor."
+              "Saving grants no navigation authority. Only a whole-RoutePlan match to the current product data can reopen in the parked editor; navigation still requires a release."
           )
         )
         .font(.system(size: 9, weight: .semibold))
@@ -521,8 +521,12 @@ struct SavedRouteLibraryPanel: View {
   private func canOpen(
     _ availability: SavedRouteLibraryAvailability
   ) -> Bool {
-    if case .selected = availability { return true }
-    return false
+    switch availability {
+    case .selected, .currentSnapshot:
+      true
+    case .unavailable, .ambiguous, .invalid:
+      false
+    }
   }
 
   private func availabilityTitle(
@@ -531,6 +535,8 @@ struct SavedRouteLibraryPanel: View {
     switch availability {
     case .selected:
       "CURRENT RELEASE"
+    case .currentSnapshot:
+      "CURRENT SNAPSHOT"
     case .unavailable:
       "REVIEW REQUIRED"
     case .ambiguous:
@@ -544,7 +550,7 @@ struct SavedRouteLibraryPanel: View {
     _ availability: SavedRouteLibraryAvailability
   ) -> Color {
     switch availability {
-    case .selected:
+    case .selected, .currentSnapshot:
       KaidoTheme.positionCyan
     case .unavailable:
       KaidoTheme.signalAmber

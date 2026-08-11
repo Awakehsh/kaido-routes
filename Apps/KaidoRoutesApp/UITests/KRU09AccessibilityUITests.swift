@@ -2,10 +2,54 @@ import XCTest
 
 @MainActor
 final class KRU09AccessibilityUITests: XCTestCase {
+  func testWholeShutoDefaultHomeAccessibilityAudit() throws {
+    continueAfterFailure = true
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "en",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+    XCTAssertTrue(
+      element("whole-shuto-planning-dock", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    try performAccessibilityAudit(in: app)
+  }
+
+  func testWholeShutoDeterministicReviewAccessibilityAudit() throws {
+    continueAfterFailure = true
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "en",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+    XCTAssertTrue(
+      element("whole-shuto-route-selection", in: app)
+        .waitForExistence(timeout: 5)
+    )
+
+    try performAccessibilityAudit(in: app)
+  }
+
   func testCriticalDrivingSurfaceExposesAccessibleSemantics() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = ["-KR-U09-ACCESSIBILITY-PREVIEW"]
+    app.launchArguments = [
+      "-KR-U09-ACCESSIBILITY-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
     app.launch()
     let panel = element("kr-u09-driving-panel", in: app)
     XCTAssertTrue(panel.waitForExistence(timeout: 5))
@@ -44,6 +88,22 @@ final class KRU09AccessibilityUITests: XCTestCase {
     )
   }
 
+  private func performAccessibilityAudit(in app: XCUIApplication) throws {
+    try app.performAccessibilityAudit { issue in
+      let element = issue.element
+      let identifier = element?.identifier ?? "<none>"
+      let label = element?.label ?? "<none>"
+      print(
+        "KAIDO_A11Y_AUDIT "
+          + "type=\(issue.auditType.rawValue) "
+          + "identifier=\(identifier) "
+          + "label=\(label) "
+          + "detail=\(issue.detailedDescription)"
+      )
+      return false
+    }
+  }
+
   private func element(
     _ identifier: String,
     in app: XCUIApplication
@@ -63,4 +123,5 @@ final class KRU09AccessibilityUITests: XCTestCase {
     XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")
     return target
   }
+
 }

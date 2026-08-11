@@ -64,25 +64,27 @@ final class KaidoLanguageSettingsModel: ObservableObject {
 
   init(
     store: any KaidoLanguagePreferenceStoring =
-      UserDefaultsKaidoLanguagePreferenceStore()
+      UserDefaultsKaidoLanguagePreferenceStore(),
+    preferredLanguages: [String] = Locale.preferredLanguages
   ) {
     self.store = store
     interfaceLocale =
-      store.interfaceLocale() ?? KaidoReleaseLocale.matchingPreferredLanguage()
+      store.interfaceLocale()
+      ?? KaidoReleaseLocale.matchingPreferredLanguage(preferredLanguages)
     // Sign text on the Shuto Expressway is Japanese, so spoken guidance
     // defaults to Japanese whatever the interface language is.
     guidanceVoiceLocale = store.guidanceVoiceLocale() ?? .japanese
   }
 
   func selectInterfaceLocale(_ locale: KaidoReleaseLocale) {
-    guard locale != interfaceLocale else { return }
     store.setInterfaceLocale(locale)
+    guard locale != interfaceLocale else { return }
     interfaceLocale = locale
   }
 
   func selectGuidanceVoiceLocale(_ locale: KaidoReleaseLocale) {
-    guard locale != guidanceVoiceLocale else { return }
     store.setGuidanceVoiceLocale(locale)
+    guard locale != guidanceVoiceLocale else { return }
     guidanceVoiceLocale = locale
   }
 }

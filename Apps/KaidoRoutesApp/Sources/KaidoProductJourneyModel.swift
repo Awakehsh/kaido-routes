@@ -511,6 +511,8 @@ final class KaidoProductJourneyModel: ObservableObject {
       lastBlocker = nil
     case .unavailable:
       lastBlocker = .savedRouteUnavailable
+    case .currentSnapshot:
+      lastBlocker = .savedRouteUnavailable
     case .ambiguous:
       lastBlocker = .savedRouteAmbiguous
     case .invalid:

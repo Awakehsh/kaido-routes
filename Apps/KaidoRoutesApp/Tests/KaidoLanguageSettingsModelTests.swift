@@ -7,7 +7,8 @@ import XCTest
 final class KaidoLanguageSettingsModelTests: XCTestCase {
   func testDefaultsKeepInterfaceAndGuidanceVoiceIndependent() {
     let model = KaidoLanguageSettingsModel(
-      store: RecordingKaidoLanguagePreferenceStore()
+      store: RecordingKaidoLanguagePreferenceStore(),
+      preferredLanguages: ["zh-Hans-CN"]
     )
 
     XCTAssertEqual(model.interfaceLocale, .simplifiedChinese)
@@ -16,7 +17,10 @@ final class KaidoLanguageSettingsModelTests: XCTestCase {
 
   func testSelectionsPersistWithoutMutatingTheOtherLanguage() {
     let store = RecordingKaidoLanguagePreferenceStore()
-    let model = KaidoLanguageSettingsModel(store: store)
+    let model = KaidoLanguageSettingsModel(
+      store: store,
+      preferredLanguages: ["en-US"]
+    )
 
     model.selectInterfaceLocale(.english)
 
@@ -33,6 +37,20 @@ final class KaidoLanguageSettingsModelTests: XCTestCase {
     XCTAssertEqual(store.guidanceVoiceLocale(), .simplifiedChinese)
   }
 
+  func testExplicitGuidanceSelectionPersistsWhenItMatchesTheDefault() {
+    let store = RecordingKaidoLanguagePreferenceStore()
+    let model = KaidoLanguageSettingsModel(
+      store: store,
+      preferredLanguages: ["en-US"]
+    )
+
+    model.selectGuidanceVoiceLocale(.japanese)
+
+    XCTAssertEqual(model.guidanceVoiceLocale, .japanese)
+    XCTAssertEqual(store.guidanceVoiceLocale(), .japanese)
+    XCTAssertNil(store.interfaceLocale())
+  }
+
   func testUserDefaultsStoreRejectsUnknownPersistedLocales() {
     let suiteName = "KaidoLanguageSettingsModelTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suiteName)!
@@ -46,7 +64,10 @@ final class KaidoLanguageSettingsModelTests: XCTestCase {
       defaults: defaults,
       keyPrefix: "test.language"
     )
-    let model = KaidoLanguageSettingsModel(store: store)
+    let model = KaidoLanguageSettingsModel(
+      store: store,
+      preferredLanguages: ["zh-Hans-CN"]
+    )
 
     XCTAssertEqual(model.interfaceLocale, .simplifiedChinese)
     XCTAssertEqual(model.guidanceVoiceLocale, .japanese)

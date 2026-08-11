@@ -8,6 +8,7 @@ enum WholeShutoPlanningLocationState: Equatable {
   case permissionRequired
   case locating
   case measured
+  case stopped
   case denied
   case unavailable
 }
@@ -83,6 +84,9 @@ final class WholeShutoPlanningLocationController:
       startIfEligible()
     } else {
       manager.stopUpdatingLocation()
+      if wantsLocation {
+        state = .stopped
+      }
     }
   }
 
@@ -141,7 +145,14 @@ final class WholeShutoPlanningLocationController:
     case .notDetermined:
       state = .permissionRequired
     case .authorizedAlways, .authorizedWhenInUse:
-      state = snapshot == nil ? (wantsLocation ? .locating : .idle) : .measured
+      if wantsLocation && !isForeground {
+        state = .stopped
+      } else {
+        state =
+          snapshot == nil
+          ? (wantsLocation ? .locating : .idle)
+          : .measured
+      }
     case .denied, .restricted:
       state = .denied
     @unknown default:

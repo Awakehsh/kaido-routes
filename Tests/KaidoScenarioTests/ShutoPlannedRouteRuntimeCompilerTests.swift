@@ -508,14 +508,33 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         route: route
       )
 
-      #expect(assets.decisionZones.count == 1)
-      #expect(assets.releasedGuidance.count == 1)
-      let decisionZone = try #require(assets.decisionZones.first)
-      let guidance = try #require(assets.releasedGuidance.first)
+      // The westbound Bayshore continuations are reviewed too, so select
+      // the zone and prompt for the exact movement under test; each
+      // reviewed movement still owns exactly one of each.
+      let movementOccurrenceID = try #require(
+        route.routePlan.occurrences.first {
+          $0.entityID == testCase.movementID
+        }?.id
+      )
+      let decisionZone = try #require(
+        assets.decisionZones.first {
+          $0.movementOccurrenceID == movementOccurrenceID
+        }
+      )
+      let guidance = try #require(
+        assets.releasedGuidance.first {
+          $0.frameTemplate.movementOccurrenceID == movementOccurrenceID
+        }
+      )
       #expect(
-        route.routePlan.occurrence(
-          id: decisionZone.movementOccurrenceID
-        )?.entityID == testCase.movementID
+        assets.decisionZones.filter {
+          $0.movementOccurrenceID == movementOccurrenceID
+        }.count == 1
+      )
+      #expect(
+        assets.releasedGuidance.filter {
+          $0.frameTemplate.movementOccurrenceID == movementOccurrenceID
+        }.count == 1
       )
       #expect(guidance.frameTemplate.maneuver == testCase.maneuver)
       #expect(guidance.frameTemplate.lanePreparation == .none)
@@ -541,8 +560,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         $0.navigationUpdate?.guidancePromptEmission
       }
 
-      #expect(emissions.count == 1)
-      #expect(emissions.first?.promptID == guidance.anchor.promptID)
+      // The movement under test speaks exactly once; other reviewed
+      // junctions on the same run speak their own prompts.
+      #expect(
+        emissions.filter { $0.promptID == guidance.anchor.promptID }
+          .count == 1
+      )
       #expect(
         results.compactMap {
           $0.navigationUpdate?.navigationSnapshot.activeGuidanceFrame

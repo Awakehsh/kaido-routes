@@ -193,7 +193,7 @@ struct WholeShutoProductView: View {
         dockContent
       }
 
-      if let prompt = model.activeJunctionPrompt {
+      if let prompt = model.activeJunctionInsetPrompt {
         VStack {
           Spacer()
           WholeShutoJunctionInset(prompt: prompt)
@@ -230,7 +230,7 @@ struct WholeShutoProductView: View {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
 
-        if let prompt = model.activeJunctionPrompt {
+        if let prompt = model.activeJunctionInsetPrompt {
           VStack {
             Spacer()
             WholeShutoJunctionInset(prompt: prompt)
@@ -2574,7 +2574,9 @@ struct WholeShutoProductView: View {
         english: "ENTER SHUTO EXPRESSWAY"
       )
     case .expressway:
-      model.activeJunctionPrompt == nil
+      // Only a reviewed branch is "approaching a junction"; a mainline
+      // continuation keeps the ordinary upcoming-junction kicker.
+      model.activeJunctionInsetPrompt == nil
         ? upcomingJunctionKicker
         : copy.resolve(
           japanese: "分岐に接近",

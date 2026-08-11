@@ -288,6 +288,7 @@ final class WholeShutoProductModel: ObservableObject {
     [:]
   private var runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   private var driveSimulator: NavigationDriveSimulator?
+  private var staticJunctionPreviewMovementID: String?
   private var liveDriveSession: ShutoLiveDriveSession?
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
@@ -654,10 +655,31 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  /// The prompt eligible for the route-bound junction inset. The inset
+  /// draws a branch, so it belongs to a reviewed left or right movement
+  /// only; a mainline continuation speaks and shows its card without
+  /// implying a diagram the evidence does not support.
+  var activeJunctionInsetPrompt: WholeShutoJunctionPrompt? {
+    guard let prompt = activeJunctionPrompt,
+      prompt.branchSide == .left || prompt.branchSide == .right
+    else {
+      return nil
+    }
+    return prompt
+  }
+
   var activeJunctionPrompt: WholeShutoJunctionPrompt? {
     guard phase == .expressway else { return nil }
     if isStaticJunctionPreview {
-      return junctionPrompts.first
+      // The preview is staged at one exact reviewed movement. Denser
+      // corridor coverage means earlier prompts exist on the same route,
+      // so select the staged movement rather than whichever comes first.
+      guard let staticJunctionPreviewMovementID else {
+        return junctionPrompts.first
+      }
+      return junctionPrompts.first {
+        $0.movementID == staticJunctionPreviewMovementID
+      }
     }
     guard let surface = presentationProjection?.iPhone else {
       return nil
@@ -1053,6 +1075,7 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .stopped
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
+    staticJunctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     mapMode = .geographic
     try? checkpointStore?.remove()
@@ -1185,6 +1208,7 @@ final class WholeShutoProductModel: ObservableObject {
         return
       }
       isStaticJunctionPreview = true
+      staticJunctionPreviewMovementID = expectedMovementID
       phase = .expressway
       progressFraction = max(0, prompt.progressFraction - 0.012)
       isPlaying = false
@@ -1804,6 +1828,7 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
+    staticJunctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     mapMode = .geographic
     persistCheckpoint()
@@ -1852,6 +1877,7 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     consumedGuidancePromptIDs = []
     isStaticJunctionPreview = false
+    staticJunctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     failureCode = nil
     persistCheckpoint()
@@ -2019,6 +2045,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveDriveSession = nil
     isLiveDrive = false
     isStaticJunctionPreview = false
+    staticJunctionPreviewMovementID = nil
     restoredFromCheckpoint = false
     try? checkpointStore?.remove()
   }

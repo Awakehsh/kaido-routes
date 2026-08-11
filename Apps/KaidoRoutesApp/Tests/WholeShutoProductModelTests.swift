@@ -694,15 +694,23 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     model.preparePreviewJourney()
 
-    XCTAssertTrue(model.junctionPrompts.isEmpty)
+    // The preview journey now crosses reviewed junctions, and every prompt
+    // it carries must still come from an exact released movement — a
+    // prompt is never synthesized from route geometry alone.
+    XCTAssertTrue(
+      model.junctionPrompts.allSatisfy { prompt in
+        ShutoJunctionMovementCatalog.released.contains {
+          $0.id == prompt.movementID
+        }
+      }
+    )
 
     model.prepareJunctionPreview()
 
-    let prompt = try? XCTUnwrap(model.junctionPrompts.only)
-    XCTAssertEqual(
-      prompt?.movementID,
-      "shuto.jct.oi.b-westbound-to-c2-outer"
-    )
+    let prompt = model.junctionPrompts.first {
+      $0.movementID == "shuto.jct.oi.b-westbound-to-c2-outer"
+    }
+    XCTAssertNotNil(prompt)
     XCTAssertEqual(prompt?.nameJA, "大井JCT")
     XCTAssertEqual(prompt?.incomingRouteID, "B")
     XCTAssertEqual(prompt?.outgoingRouteID, "C2")

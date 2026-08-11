@@ -115,8 +115,10 @@ content hash recorded so a redrawn diagram invalidates the review. A movement
 whose diagram shows the route continuing on a straight arrow is released as a
 mainline continuation that asserts no lane; releasing a left or right branch
 instruction additionally requires the diagram to show that branch treatment
-unambiguously for that exact approach. The C1 inner catalog loop is reviewed at
-all four junctions where another route diverges from it.
+unambiguously for that exact approach. The C1 inner catalog loop and the
+westbound Bayshore run are reviewed at every junction where another route
+diverges from them; the remaining catalog routes are partially covered and grow
+by the same review.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

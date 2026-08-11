@@ -49,11 +49,15 @@ struct ShutoJunctionGuidanceTests {
         entryFacilityID: testCase.entryFacilityID,
         exitFacilityID: "shuto.ic.10.harumi"
       )
+      // The westbound corridor is reviewed at its continuations too, so
+      // this route now guides more than one junction; select the exact
+      // movement under test.
+      let matches = ShutoJunctionGuidanceCompiler.compile(
+        database: database,
+        route: route
+      )
       let match = try #require(
-        ShutoJunctionGuidanceCompiler.compile(
-          database: database,
-          route: route
-        ).only
+        matches.first { $0.definition.id == testCase.movementID }
       )
       let definition = match.definition
 
@@ -165,11 +169,12 @@ struct ShutoJunctionGuidanceTests {
         entryFacilityID: testCase.entryFacilityID,
         exitFacilityID: "shuto.ic.9.fukudumi"
       )
+      let matches = ShutoJunctionGuidanceCompiler.compile(
+        database: database,
+        route: route
+      )
       let match = try #require(
-        ShutoJunctionGuidanceCompiler.compile(
-          database: database,
-          route: route
-        ).only
+        matches.first { $0.definition.id == testCase.movementID }
       )
       let definition = match.definition
 
@@ -439,6 +444,69 @@ struct ShutoJunctionGuidanceTests {
     )
   }
 
+  @Test("the Bayshore westbound run is guided at every diverging junction")
+  func guidesTheBayshoreWestboundRun() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let entrance = try #require(
+      planner.circuitEntranceCandidates(
+        for: .wanganDaikokuRun,
+        origin: nil
+      ).first
+    )
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .wanganDaikokuRun,
+      entranceFacilityID: entrance.facilityID,
+      origin: nil,
+      evidence: .etcNormalCarActive
+    )
+    let route = try planner.planCircuit(
+      circuit: .wanganDaikokuRun,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    // Every junction where another route diverges from the westbound
+    // Bayshore is reviewed, so the run never passes a decision unguided.
+    // Tatsumi stays unreviewed for now: a second reviewed prompt on the
+    // already-tested westbound run exposes a real-time playback stall in
+    // the junction preview host, which is a separate defect to fix before
+    // that junction is released.
+    #expect(
+      matches.map(\.junctionNameJA)
+        == ["東雲JCT", "有明JCT", "大井JCT", "川崎浮島JCT", "大黒JCT"]
+    )
+    #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
+    // Daikoku signs the continuation as Yokohama-koen; the rest sign it as
+    // Yokohama, and each definition preserves what its diagram shows.
+    #expect(
+      matches.map(\.definition.japaneseSignText)
+        == ["横浜", "横浜", "横浜", "横浜", "横浜公園"]
+    )
+    #expect(
+      matches.allSatisfy {
+        $0.definition.incomingDirectionJA == "西行き"
+          && $0.definition.routeShields == ["B"]
+      }
+    )
+    for match in matches {
+      let occurrence = route.routePlan.occurrence(
+        id: match.outgoingOccurrenceID
+      )
+      #expect(occurrence?.kind == .junctionMovement)
+    }
+    #expect(
+      matches.map(\.progressFraction)
+        == matches.map(\.progressFraction).sorted()
+    )
+  }
+
   @Test("unreviewed route-label changes do not create junction guidance")
   func suppressesUnreviewedRouteLabelChanges() throws {
     let database = try loadDatabase()
@@ -456,12 +524,38 @@ struct ShutoJunctionGuidanceTests {
       ).first
     )
 
-    #expect(
-      ShutoJunctionGuidanceCompiler.compile(
-        database: database,
-        route: recommendation.route
-      ).isEmpty
+    let route = recommendation.route
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
     )
+    let guidedPairs = Set(
+      matches.map {
+        "\($0.definition.incomingEdgeID)|\($0.definition.outgoingEdgeID)"
+      }
+    )
+    let reviewedPairs = Set(
+      ShutoJunctionMovementCatalog.released.map {
+        "\($0.incomingEdgeID)|\($0.outgoingEdgeID)"
+      }
+    )
+
+    // The route really does cross route-label boundaries.
+    let labelChanges = zip(route.edges, route.edges.dropFirst()).filter {
+      current, next in
+      Set(current.routeMemberships.map(\.routeID))
+        != Set(next.routeMemberships.map(\.routeID))
+    }
+    #expect(!labelChanges.isEmpty)
+
+    // A label change alone never produces guidance: only an exact
+    // reviewed movement does.
+    for (current, next) in labelChanges {
+      let pair = "\(current.edgeID)|\(next.edgeID)"
+      if !reviewedPairs.contains(pair) {
+        #expect(!guidedPairs.contains(pair))
+      }
+    }
   }
 
   @Test("snapshot drift suppresses reviewed junction guidance")

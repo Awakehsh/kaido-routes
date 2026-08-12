@@ -2766,6 +2766,18 @@ private struct ProductSettingsSheet: View {
             )
           }
           .accessibilityIdentifier("product-settings-privacy-policy")
+
+          Link(destination: ProductPrivacyDisclosure.sourceLicenseURL) {
+            Label(
+              copy.resolve(
+                japanese: "オープンソースライセンス",
+                simplifiedChinese: "开源许可证",
+                english: "Open Source License"
+              ),
+              systemImage: "doc.text"
+            )
+          }
+          .accessibilityIdentifier("product-settings-source-license")
         }
 
         Section(

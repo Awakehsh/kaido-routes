@@ -60,6 +60,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     public let inputFile: String
     public let inputSHA256: String
     public let licence: String
+    public let licenceURI: String
     public let sourceSnapshotAt: String
     public let sourceURI: String
 
@@ -71,6 +72,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
       case inputFile = "input_file"
       case inputSHA256 = "input_sha256"
       case licence
+      case licenceURI = "licence_uri"
       case sourceSnapshotAt = "source_snapshot_at"
       case sourceURI = "source_uri"
     }
@@ -331,6 +333,8 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
       !sources.osm.inputFile.isEmpty,
       Self.isSHA256(sources.osm.inputSHA256),
       sources.osm.licence == "ODbL-1.0",
+      sources.osm.licenceURI
+        == "https://opendatacommons.org/licenses/odbl/1-0/",
       !sources.osm.sourceSnapshotAt.isEmpty,
       Self.isHTTPSURL(sources.osm.sourceURI)
     else {

@@ -55,13 +55,40 @@ final class ProductPrivacyDisclosureTests: XCTestCase {
   }
 
   func testAppCarriesReleaseVersionAndPublicPrivacyPolicy() {
-    XCTAssertEqual(
-      ProductPrivacyDisclosure.versionDescription(),
-      "1.0.0 (1)"
+    let version = ProductPrivacyDisclosure.versionDescription()
+    XCTAssertNotNil(
+      version.range(
+        of: #"^[0-9]+\.[0-9]+\.[0-9]+ \([1-9][0-9]*\)$"#,
+        options: .regularExpression
+      )
     )
     XCTAssertEqual(
       ProductPrivacyDisclosure.policyURL.absoluteString,
       "https://github.com/Awakehsh/kaido-routes/blob/main/PRIVACY.md"
+    )
+    XCTAssertEqual(
+      ProductPrivacyDisclosure.sourceLicenseURL.absoluteString,
+      "https://github.com/Awakehsh/kaido-routes/blob/main/LICENSE"
+    )
+    XCTAssertNotNil(
+      Bundle.main.url(forResource: "LICENSE", withExtension: nil)
+    )
+    XCTAssertNotNil(
+      Bundle.main.url(forResource: "DATA-LICENSES", withExtension: "md")
+    )
+    XCTAssertTrue(
+      ProductPrivacyDisclosure.sourceLicenseText()?
+        .contains("Apache License") == true
+    )
+    let mapDataLicense = ProductPrivacyDisclosure.mapDataLicenseText()
+    XCTAssertTrue(
+      mapDataLicense?.contains("© OpenStreetMap contributors") == true
+    )
+    XCTAssertTrue(mapDataLicense?.contains("ODbL-1.0") == true)
+    XCTAssertTrue(
+      mapDataLicense?.contains(
+        "https://opendatacommons.org/licenses/odbl/1-0/"
+      ) == true
     )
   }
 }

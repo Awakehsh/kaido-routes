@@ -7,6 +7,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
+      "-RESET-SAVED-ROUTES",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -26,6 +27,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     // and the geographic map stays one toggle away.
     XCTAssertTrue(
       element("whole-shuto-network-map", in: app).exists
+    )
+    XCTAssertEqual(
+      element("whole-shuto-network-map", in: app).label,
+      "首都高全网线路图"
     )
     XCTAssertFalse(
       element("whole-shuto-geographic-map", in: app).exists
@@ -93,6 +98,67 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(homeScreenshot)
   }
 
+  func testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-app.kaidoroutes.language.interface",
+      "en",
+    ]
+    app.launch()
+    returnWholeShutoToPlanning(in: app)
+
+    let information = element(
+      "whole-shuto-network-information",
+      in: app
+    )
+    XCTAssertTrue(information.waitForExistence(timeout: 5))
+    information.tap()
+
+    _ = revealInformationRow("whole-shuto-location-privacy", in: app)
+    _ = revealInformationRow("whole-shuto-privacy-policy", in: app)
+    let sourceLicense = revealInformationRow(
+      "whole-shuto-source-license",
+      in: app
+    )
+    sourceLicense.tap()
+    let licenseDocument = element(
+      "whole-shuto-source-license-document",
+      in: app
+    )
+    XCTAssertTrue(licenseDocument.waitForExistence(timeout: 3))
+    XCTAssertTrue(licenseDocument.label.contains("Apache License"))
+    let back = app.navigationBars.buttons.firstMatch
+    XCTAssertTrue(back.waitForExistence(timeout: 2))
+    back.tap()
+    let mapDataLicense = revealInformationRow(
+      "whole-shuto-map-data-license",
+      in: app
+    )
+    mapDataLicense.tap()
+    let mapDataLicenseDocument = element(
+      "whole-shuto-map-data-license-document",
+      in: app
+    )
+    XCTAssertTrue(mapDataLicenseDocument.waitForExistence(timeout: 3))
+    XCTAssertTrue(
+      mapDataLicenseDocument.label.contains("Open Database License")
+    )
+    XCTAssertTrue(
+      mapDataLicenseDocument.label.contains("OpenStreetMap contributors")
+    )
+    XCTAssertTrue(back.waitForExistence(timeout: 2))
+    back.tap()
+    let version = revealInformationRow("whole-shuto-app-version", in: app)
+    let versionValue = try? XCTUnwrap(version.value as? String)
+    XCTAssertNotNil(
+      versionValue?.range(
+        of: #"^[0-9]+\.[0-9]+\.[0-9]+ \([1-9][0-9]*\)$"#,
+        options: .regularExpression
+      )
+    )
+  }
+
   func testCorruptWholeShutoCheckpointStaysParkedAndClearsResumeData() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -155,6 +221,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-track-map", in: app)
         .waitForExistence(timeout: 8)
+    )
+    XCTAssertTrue(
+      element("whole-shuto-track-map", in: app).label
+        .hasSuffix("个设施的全路线轨迹图")
     )
     XCTAssertTrue(
       element("whole-shuto-review-journey", in: app)
@@ -1215,6 +1285,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let app = XCUIApplication()
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
+      "-RESET-SAVED-ROUTES",
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",
@@ -1532,6 +1603,52 @@ final class KaidoProductJourneyUITests: XCTestCase {
       )
     }
     return target
+  }
+
+  private func revealInformationRow(
+    _ identifier: String,
+    in app: XCUIApplication
+  ) -> XCUIElement {
+    let target = element(identifier, in: app)
+    for _ in 0..<8 where !target.exists || !target.isHittable {
+      app.swipeUp()
+    }
+    XCTAssertTrue(target.exists, "\(identifier) did not exist")
+    XCTAssertTrue(target.isHittable, "\(identifier) did not become visible")
+    return target
+  }
+
+  private func returnWholeShutoToPlanning(in app: XCUIApplication) {
+    let product = element("whole-shuto-product", in: app)
+    XCTAssertTrue(product.waitForExistence(timeout: 5))
+    switch product.value as? String {
+    case "PLANNING":
+      return
+    case "REVIEW":
+      reveal("whole-shuto-back-to-planning", in: app).tap()
+    case "COMPLETED":
+      reveal("whole-shuto-finish-journey", in: app).tap()
+    case "SURFACE_ACCESS", "ENTRY_TRANSITION", "EXPRESSWAY",
+      "EXIT_TRANSITION", "SURFACE_EGRESS":
+      reveal("whole-shuto-end-journey", in: app).tap()
+      let alert = app.alerts.firstMatch
+      XCTAssertTrue(alert.waitForExistence(timeout: 3))
+      let endPreview = alert.buttons["End preview"]
+      XCTAssertTrue(endPreview.waitForExistence(timeout: 2))
+      endPreview.tap()
+    default:
+      XCTFail("Whole-Shuto Release smoke started in an unknown phase")
+      return
+    }
+    let planning = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "PLANNING"),
+      object: product
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [planning], timeout: 5),
+      .completed,
+      "Whole-Shuto Release smoke could not return to planning"
+    )
   }
 
   private func waitForValuePrefix(

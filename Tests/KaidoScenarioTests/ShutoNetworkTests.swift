@@ -57,6 +57,10 @@ struct ShutoNetworkTests {
     #expect(database.sources.osm.attribution == "© OpenStreetMap contributors")
     #expect(database.sources.osm.licence == "ODbL-1.0")
     #expect(
+      database.sources.osm.licenceURI
+        == "https://opendatacommons.org/licenses/odbl/1-0/"
+    )
+    #expect(
       database.sources.osm.sourceURI
         == "https://download.geofabrik.de/asia/japan/kanto-260804.osm.pbf"
     )
@@ -79,6 +83,27 @@ struct ShutoNetworkTests {
     var sources = try #require(document["sources"] as? [String: Any])
     var osm = try #require(sources["osm"] as? [String: Any])
     osm["licence"] = "UNKNOWN"
+    sources["osm"] = osm
+    document["sources"] = sources
+    let database = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONSerialization.data(withJSONObject: document)
+    )
+
+    #expect(throws: ShutoNetworkError.invalidSourceMetadata) {
+      try database.validate()
+    }
+  }
+
+  @Test("invalid OSM licence URI metadata fails closed")
+  func rejectsInvalidOSMLicenceURIMetadata() throws {
+    var document = try #require(
+      JSONSerialization.jsonObject(with: loadDatabaseData())
+        as? [String: Any]
+    )
+    var sources = try #require(document["sources"] as? [String: Any])
+    var osm = try #require(sources["osm"] as? [String: Any])
+    osm["licence_uri"] = "https://example.com/not-the-odbl"
     sources["osm"] = osm
     document["sources"] = sources
     let database = try JSONDecoder().decode(

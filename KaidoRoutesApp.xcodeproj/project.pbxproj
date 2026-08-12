@@ -12,6 +12,7 @@
 		0403EF2F4E636F940BF4F85B /* AppSafetyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1E682A168C4207E6C5957A /* AppSafetyState.swift */; };
 		044E1C5C296038C10575ECC8 /* ReleasedProductNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A724BED8E00B81DE3BD2B1 /* ReleasedProductNavigationView.swift */; };
 		058EB4C464380023B2A869AC /* ReleasedProductRouteAuthoringModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F89A1B8C8651E1A2BF58930 /* ReleasedProductRouteAuthoringModelTests.swift */; };
+		07576F94DD509E10A5485635 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 0A85BF19C471FCE46DF56FD7 /* LICENSE */; };
 		0916DE415E44498B53599BD9 /* ProductPrivacyDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B612524090282FD210010B6 /* ProductPrivacyDisclosure.swift */; };
 		0D4F3963A1C0F79EB47E7E24 /* C2NavigationSimulationCheckpointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */; };
 		0DABE0B388A98EE5DB4EB9E4 /* ParkedRouteEditorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */; };
@@ -107,6 +108,7 @@
 		B93BBE993A6AA7C24B8AE951 /* C2CompletedRouteDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43CF574213D741739759BCE /* C2CompletedRouteDemoView.swift */; };
 		BB5F2B6475BA2AB1152A3979 /* C2NavigationDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0228E6D3EEAB4BF4FC7C99C6 /* C2NavigationDemoView.swift */; };
 		BCA9818AA58EB47C0C6F715D /* SavedRouteLibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD2D2EDE8B84321C2C4F521 /* SavedRouteLibraryModel.swift */; };
+		BE5D8080326ADECF7D124B2C /* DATA-LICENSES.md in Resources */ = {isa = PBXBuildFile; fileRef = 69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */; };
 		BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */; };
 		C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */ = {isa = PBXBuildFile; fileRef = 64D7D57200F5A1FF4D631BC2 /* k7-northwest-260721-directed-database.json */; };
 		C761E584BB6922A734653C9E /* ProductPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3A347D84B33D5AAB7D8743 /* ProductPrivacyDisclosureTests.swift */; };
@@ -151,6 +153,7 @@
 		0228E6D3EEAB4BF4FC7C99C6 /* C2NavigationDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoView.swift; sourceTree = "<group>"; };
 		03F61A93DD01F3113474B7EE /* InternalLocationCalibrationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLocationCalibrationFixture.swift; sourceTree = "<group>"; };
 		04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewModelTests.swift; sourceTree = "<group>"; };
+		0A85BF19C471FCE46DF56FD7 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
 		0AF3E05CB94F3CEB3C71AAE6 /* KaidoLanguageSettingsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoLanguageSettingsModelTests.swift; sourceTree = "<group>"; };
 		0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationSimulationCheckpoint.swift; sourceTree = "<group>"; };
 		0BD1D579F927E8517D49E0D9 /* WholeShutoLiveLocationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoLiveLocationController.swift; sourceTree = "<group>"; };
@@ -203,6 +206,7 @@
 		655F7EDB9CF7F8649877603D /* PreDriveEvidenceUpdateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveEvidenceUpdateModel.swift; sourceTree = "<group>"; };
 		660C84EF22BF710C2FA21214 /* KaidoAccessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoAccessibility.swift; sourceTree = "<group>"; };
 		67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRuntimePreviewUITests.swift; sourceTree = "<group>"; };
+		69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "DATA-LICENSES.md"; sourceTree = "<group>"; };
 		6B873DEC75409AAFB65937FC /* WholeShutoProductView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductView.swift; sourceTree = "<group>"; };
 		724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoModelTests.swift; sourceTree = "<group>"; };
 		7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalization.swift; sourceTree = "<group>"; };
@@ -374,12 +378,22 @@
 			isa = PBXGroup;
 			children = (
 				6D259781551C8869BE66C377 /* Apps */,
+				5ABFA5AF264BB7D709AB6C79 /* Distribution */,
 				94BFAB9DBDE0B8C5813065B9 /* Internal Calibration */,
 				B8E1BD3838F91AF3F2A70CE0 /* Packages */,
 				20AD6B9EC3BC7F1891A7F4A6 /* Product Release */,
 				6B3B439E1D0470243E47B602 /* Route Atlas */,
 				367EDB88F8DD20EE0C314C2E /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		5ABFA5AF264BB7D709AB6C79 /* Distribution */ = {
+			isa = PBXGroup;
+			children = (
+				69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */,
+				0A85BF19C471FCE46DF56FD7 /* LICENSE */,
+			);
+			name = Distribution;
 			sourceTree = "<group>";
 		};
 		6B3B439E1D0470243E47B602 /* Route Atlas */ = {
@@ -625,7 +639,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */,
+				BE5D8080326ADECF7D124B2C /* DATA-LICENSES.md in Resources */,
 				2BDF994A609CD51C9C99E9E2 /* InfoPlist.strings in Resources */,
+				07576F94DD509E10A5485635 /* LICENSE in Resources */,
 				476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */,
 				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
@@ -1011,6 +1027,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				"CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]" = NO;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
+				EXCLUDED_SOURCE_FILE_NAMES = "c2-b-20260729-geographic-route.json k7-aoba-kohoku-product-release.json k7-aoba-to-kohoku-pre-drive-evidence.json k7-northwest-260721-directed-database.json k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json k7-northwest-up-schematic-layout-candidate.svg route-atlas-attribution-catalog.json shuto-route-atlas-recognition-reference.svg synthetic-product-runtime-preview.json";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kaido Routes";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;

@@ -93,6 +93,8 @@ enum WholeShutoNetworkOverviewCatalog {
 /// driver pinches closer. Pinch anchors at the fingers, double-tap toggles a
 /// closer frame, and panning never lets the diagram leave the screen.
 struct WholeShutoNetworkOverviewView: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   /// Planning-state marks drawn on top of the diagram: the driver's position
   /// and the derived entrance/exit pairing for the selected circuit. Purely
   /// presentational — the diagram never carries guidance authority.
@@ -236,11 +238,23 @@ struct WholeShutoNetworkOverviewView: View {
     .accessibilityElement(children: .ignore)
     .accessibilityIdentifier("whole-shuto-network-map")
     .accessibilityLabel(
-      Text("Whole-Shuto network map")
+      copy.resolve(
+        japanese: "首都高全体路線図",
+        simplifiedChinese: "首都高全网线路图",
+        english: "Whole-Shuto network map"
+      )
     )
     .accessibilityValue(
-      "\(layout.facilityMarks.count) facilities"
+      copy.resolve(
+        japanese: "\(layout.facilityMarks.count)施設",
+        simplifiedChinese: "\(layout.facilityMarks.count)个设施",
+        english: "\(layout.facilityMarks.count) facilities"
+      )
     )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   // MARK: - Viewport

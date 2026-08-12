@@ -596,6 +596,7 @@ struct WholeShutoProductView: View {
             english: "Whole-network data information"
           )
         )
+        .accessibilityIdentifier("whole-shuto-network-information")
       }
     }
   }
@@ -5632,6 +5633,154 @@ private struct WholeShutoNetworkFactsView: View {
             )
           )
           .accessibilityIdentifier("whole-shuto-known-limitations")
+        }
+
+        Section {
+          Label {
+            VStack(alignment: .leading, spacing: 3) {
+              Text(
+                copy.resolve(
+                  japanese: "経路の進行状況はこのデバイス内で処理されます",
+                  simplifiedChinese: "路线进度仅在此设备上处理",
+                  english: "Route progress is processed on this device"
+                )
+              )
+              .font(.body)
+
+              Text(
+                copy.resolve(
+                  japanese:
+                    "位置情報は現在地の選択またはナビ開始後に使用します。"
+                    + "検索と一般道区間では、必要な位置・検索内容を Apple Maps に送信します。"
+                    + "未完了の経路は、終了または完了するまで選択した地点と経路をこのApp内に保存します。",
+                  simplifiedChinese:
+                    "仅在选择当前位置或开始导航后使用定位。"
+                    + "搜索和普通道路路段会将必要的位置与搜索内容发送给 Apple Maps。"
+                    + "未完成的行程会在结束或完成前，将所选地点与路线保存在本 App 内。",
+                  english:
+                    "Location is used after you choose Current Location "
+                    + "or start navigation. Search and ordinary-road legs "
+                    + "send the necessary location or query to Apple Maps. "
+                    + "An unfinished journey stores its selected places and "
+                    + "route in this app until it is ended or completed."
+                )
+              )
+              .font(.caption)
+              .foregroundStyle(.secondary)
+            }
+          } icon: {
+            Image(systemName: "location.shield")
+          }
+          .accessibilityElement(children: .combine)
+          .accessibilityIdentifier("whole-shuto-location-privacy")
+
+          Link(destination: ProductPrivacyDisclosure.policyURL) {
+            Label(
+              copy.resolve(
+                japanese: "プライバシーポリシー",
+                simplifiedChinese: "隐私政策",
+                english: "Privacy Policy"
+              ),
+              systemImage: "hand.raised"
+            )
+          }
+          .accessibilityIdentifier("whole-shuto-privacy-policy")
+
+          NavigationLink {
+            ScrollView {
+              Text(
+                ProductPrivacyDisclosure.sourceLicenseText()
+                  ?? copy.resolve(
+                    japanese: "ライセンス文書を読み込めませんでした。",
+                    simplifiedChinese: "无法读取许可证文本。",
+                    english: "The license text could not be loaded."
+                  )
+              )
+              .font(.footnote.monospaced())
+              .textSelection(.enabled)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding()
+              .accessibilityIdentifier(
+                "whole-shuto-source-license-document"
+              )
+            }
+            .navigationTitle(
+              copy.resolve(
+                japanese: "オープンソースライセンス",
+                simplifiedChinese: "开源许可证",
+                english: "Open Source License"
+              )
+            )
+          } label: {
+            Label(
+              copy.resolve(
+                japanese: "オープンソースライセンス",
+                simplifiedChinese: "开源许可证",
+                english: "Open Source License"
+              ),
+              systemImage: "doc.text"
+            )
+          }
+          .accessibilityIdentifier("whole-shuto-source-license")
+
+          NavigationLink {
+            ScrollView {
+              Text(
+                ProductPrivacyDisclosure.mapDataLicenseText()
+                  ?? copy.resolve(
+                    japanese: "地図データのライセンス文書を読み込めませんでした。",
+                    simplifiedChinese: "无法读取地图数据许可证文本。",
+                    english: "The map data license text could not be loaded."
+                  )
+              )
+              .font(.footnote.monospaced())
+              .textSelection(.enabled)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding()
+              .accessibilityIdentifier(
+                "whole-shuto-map-data-license-document"
+              )
+            }
+            .navigationTitle(
+              copy.resolve(
+                japanese: "地図データライセンス",
+                simplifiedChinese: "地图数据许可证",
+                english: "Map Data License"
+              )
+            )
+          } label: {
+            Label(
+              copy.resolve(
+                japanese: "地図データライセンス",
+                simplifiedChinese: "地图数据许可证",
+                english: "Map Data License"
+              ),
+              systemImage: "map"
+            )
+          }
+          .accessibilityIdentifier("whole-shuto-map-data-license")
+
+          fact(
+            copy.resolve(
+              japanese: "バージョン",
+              simplifiedChinese: "版本",
+              english: "Version"
+            ),
+            ProductPrivacyDisclosure.versionDescription()
+          )
+          .accessibilityElement(children: .combine)
+          .accessibilityIdentifier("whole-shuto-app-version")
+          .accessibilityValue(
+            ProductPrivacyDisclosure.versionDescription()
+          )
+        } header: {
+          Text(
+            copy.resolve(
+              japanese: "プライバシーとアプリ",
+              simplifiedChinese: "隐私与 App",
+              english: "PRIVACY & APP"
+            )
+          )
         }
       }
       .navigationTitle(

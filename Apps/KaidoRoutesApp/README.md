@@ -578,10 +578,17 @@ xcodebuild -downloadPlatform iOS
 `project.yml` assigns `app.kaidoroutes.preview` to Debug and
 `app.kaidoroutes` to Release. Both configurations carry marketing version
 `1.0.0` and build `1`. The Release app bundles `PrivacyInfo.xcprivacy`, whose
-current audited declaration is no tracking, no off-device data collection,
-app-private `UserDefaults` reason `CA92.1`, and elapsed-time reason `35F9.1`.
-Settings exposes the same on-device location boundary and links to the public
-[`PRIVACY.md`](../../PRIVACY.md).
+current audited declaration is no tracking, no data collected by the Kaido
+Routes project, app-private `UserDefaults`
+reason `CA92.1`, and elapsed-time reason `35F9.1`.
+The whole-network information sheet exposes the on-device progress boundary,
+Apple Maps network use, app version, public [`PRIVACY.md`](../../PRIVACY.md),
+Apache-2.0 software licence, and the separate bundled
+[`DATA-LICENSES.md`](../../DATA-LICENSES.md) notice for the machine-readable
+whole-Shuto OpenStreetMap derivative under ODbL 1.0. Release contains only
+those disclosures, localizations,
+the whole-Shuto snapshot, compiled UI assets, and the app binary; retained K7,
+C2, synthetic, and internal-calibration resources remain Debug-only.
 
 The structural Release archive can be reproduced without signing:
 
@@ -594,7 +601,15 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath /tmp/KaidoRoutes.xcarchive \
   CODE_SIGNING_ALLOWED=NO
+
+python3 scripts/validate_ios_release_bundle.py \
+  /tmp/KaidoRoutes.xcarchive
 ```
+
+The dedicated `KaidoRoutesReleaseSmoke` scheme contains only UI tests, so it
+exercises the optimized Release app without enabling `@testable` imports in the
+distributed binary. The regular `KaidoRoutesApp` scheme remains the complete
+Debug unit/UI suite.
 
 A local archive is not an App Store submission. Distribution still requires an
 App Store Connect record and authorized signing account, truthful App Privacy

@@ -15,6 +15,8 @@ struct WholeShutoTrackMapSpan: Equatable {
 /// always claims first and carries its remaining distance — and the driver
 /// can pinch, double-tap, and pan exactly like the network diagram.
 struct WholeShutoTrackMapView: View {
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
   let layout: RouteTrackMapLayout
   let spans: [WholeShutoTrackMapSpan]
   let entryFacilityID: String
@@ -189,8 +191,16 @@ struct WholeShutoTrackMapView: View {
     .accessibilityElement(children: .ignore)
     .accessibilityIdentifier("whole-shuto-track-map")
     .accessibilityLabel(
-      Text("Whole-route track map with \(layout.facilityMarks.count) facilities")
+      copy.resolve(
+        japanese: "\(layout.facilityMarks.count)施設を含む全経路トラックマップ",
+        simplifiedChinese: "包含\(layout.facilityMarks.count)个设施的全路线轨迹图",
+        english: "Whole-route track map with \(layout.facilityMarks.count) facilities"
+      )
     )
+  }
+
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: interfaceLocale)
   }
 
   /// Centers the driving frame on the current position at the follow zoom.

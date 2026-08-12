@@ -285,7 +285,9 @@ matches every usable official IC and JCT, and fails on source or coverage drift.
 Project code is Apache-2.0. The complete database under
 `data/route-atlas/osm-derived/` is an OpenStreetMap derivative distributed under
 ODbL 1.0 with `© OpenStreetMap contributors` attribution. The root licence does
-not relicense that database. The immutable bundled Route Atlas attribution
+not relicense that database. [`DATA-LICENSES.md`](DATA-LICENSES.md) accompanies
+the bundled machine-readable database with its attribution, source and direct
+ODbL URI. The immutable bundled Route Atlas attribution
 catalog remains bound to the retained K7 review bytes. The default
 `shuto-whole-network-20260804` surface independently validates the decoded
 snapshot's OSM attribution and ODbL metadata, then exposes fixed HTTPS source
@@ -297,3 +299,17 @@ Raw coordinates and personal field traces must not be committed. See
 [whole-Shuto OSM distribution notes](data/route-atlas/osm-derived/shuto-whole-network-20260804.README.md),
 the retained [K7 OSM review notes](data/route-atlas/osm-derived/README.md), and
 [the iOS architecture contract](docs/architecture/ios-navigation-architecture.md).
+
+The distributed iPhone app includes the Apache-2.0 project licence and the
+whole-Shuto ODbL data notice. Its information sheet exposes both documents,
+the public privacy policy and version. Before a
+signed archive is uploaded, validate the exact built app (or `.xcarchive`):
+
+```bash
+python3 scripts/validate_ios_release_bundle.py /path/to/KaidoRoutes.app
+```
+
+The validator rejects Debug identifiers, internal K7/C2/synthetic fixtures,
+unreviewed bundle files, privacy-manifest drift, always-on/background location,
+missing localizations or licence bytes, non-iPhoneOS/non-ARM64 application
+bundles, and app icons with transparent pixels.

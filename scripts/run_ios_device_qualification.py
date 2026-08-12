@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the complete App test scheme on one exact physical iPhone."""
+"""Run the Debug App baseline and Release smoke on one physical iPhone."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import plistlib
 import re
 import subprocess
 import sys
@@ -21,8 +22,11 @@ EXPECTED_PLATFORM = "com.apple.platform.iphoneos"
 EXPECTED_SUMMARY_PLATFORM = "iOS"
 EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
-RECEIPT_SCHEMA_VERSION = "1.2"
+RELEASE_SMOKE_SCHEME = "KaidoRoutesReleaseSmoke"
+RELEASE_BUNDLE_IDENTIFIER = "app.kaidoroutes"
+RECEIPT_SCHEMA_VERSION = "1.5"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
+WHOLE_SHUTO_RESOURCE = "shuto-whole-network-20260804.json"
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
     "testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()"
@@ -30,6 +34,14 @@ REQUIRED_FOREGROUND_LOCATION_TEST = (
 REQUIRED_PHYSICAL_AUDIO_TEST = (
     "PhysicalAudioQualificationUITests/"
     "testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()"
+)
+REQUIRED_RELEASE_SMOKE_TEST = (
+    "KaidoProductJourneyUITests/"
+    "testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion()"
+)
+RELEASE_SMOKE_ONLY_TESTING = (
+    "KaidoRoutesAppUITests/KaidoProductJourneyUITests/"
+    "testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion"
 )
 SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 SAFE_TEAM_PATTERN = re.compile(r"^[A-Z0-9]{5,20}$")
@@ -45,6 +57,27 @@ class PhysicalIOSDevice:
     name: str
     model_name: str
     os_version: str
+
+
+@dataclass(frozen=True)
+class TestRunEvidence:
+    counts: dict[str, Any]
+    xcresult_sha256: str
+    summary_sha256: str
+    tests_sha256: str
+    log_sha256: str
+
+
+@dataclass(frozen=True)
+class ReleaseBundleEvidence:
+    version: str
+    build: str
+    app_bundle_sha256: str
+    whole_shuto_sha256: str
+    privacy_manifest_sha256: str
+    license_sha256: str
+    data_licenses_sha256: str
+    validation_log_sha256: str
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -149,6 +182,10 @@ def select_physical_ios_device(
     if not name or not model_name or not os_version:
         raise DeviceQualificationError(
             "physical iPhone inventory metadata is incomplete"
+        )
+    if not model_name.startswith("iPhone"):
+        raise DeviceQualificationError(
+            "the exact requested destination is not an iPhone"
         )
     return PhysicalIOSDevice(
         identifier=device_id,
@@ -259,6 +296,17 @@ def clean_source_commit(repository_root: Path) -> str:
     return commit
 
 
+def require_unchanged_clean_source_commit(
+    repository_root: Path,
+    expected_commit: str,
+) -> None:
+    current_commit = clean_source_commit(repository_root)
+    if current_commit != expected_commit:
+        raise DeviceQualificationError(
+            "source commit changed during device qualification"
+        )
+
+
 def xcodebuild_command(
     repository_root: Path,
     device_id: str,
@@ -267,12 +315,60 @@ def xcodebuild_command(
     development_team: str | None,
     allow_provisioning_updates: bool,
 ) -> list[str]:
+    return test_xcodebuild_command(
+        repository_root=repository_root,
+        scheme=EXPECTED_SCHEME,
+        configuration="Debug",
+        device_id=device_id,
+        result_bundle=result_bundle,
+        derived_data=derived_data,
+        development_team=development_team,
+        allow_provisioning_updates=allow_provisioning_updates,
+    )
+
+
+def release_smoke_xcodebuild_command(
+    repository_root: Path,
+    device_id: str,
+    result_bundle: Path,
+    derived_data: Path,
+    development_team: str | None,
+    allow_provisioning_updates: bool,
+) -> list[str]:
+    return test_xcodebuild_command(
+        repository_root=repository_root,
+        scheme=RELEASE_SMOKE_SCHEME,
+        configuration="Release",
+        device_id=device_id,
+        result_bundle=result_bundle,
+        derived_data=derived_data,
+        development_team=development_team,
+        allow_provisioning_updates=allow_provisioning_updates,
+        only_testing=RELEASE_SMOKE_ONLY_TESTING,
+        signing_identity="Apple Development",
+    )
+
+
+def test_xcodebuild_command(
+    repository_root: Path,
+    scheme: str,
+    configuration: str,
+    device_id: str,
+    result_bundle: Path,
+    derived_data: Path,
+    development_team: str | None,
+    allow_provisioning_updates: bool,
+    only_testing: str | None = None,
+    signing_identity: str | None = None,
+) -> list[str]:
     command = [
         "xcodebuild",
         "-project",
         str(repository_root / "KaidoRoutesApp.xcodeproj"),
         "-scheme",
-        EXPECTED_SCHEME,
+        scheme,
+        "-configuration",
+        configuration,
         "-destination",
         f"platform=iOS,id={device_id}",
         "-derivedDataPath",
@@ -281,6 +377,42 @@ def xcodebuild_command(
         str(result_bundle),
         "-collect-test-diagnostics",
         "never",
+    ]
+    if only_testing is not None:
+        command.append(f"-only-testing:{only_testing}")
+    if allow_provisioning_updates:
+        command.append("-allowProvisioningUpdates")
+    if development_team is not None:
+        command.extend(
+            [
+                f"DEVELOPMENT_TEAM={development_team}",
+                "CODE_SIGN_STYLE=Automatic",
+            ]
+        )
+    if signing_identity is not None:
+        command.append(f"CODE_SIGN_IDENTITY={signing_identity}")
+    command.append("test")
+    return command
+
+
+def release_build_settings_command(
+    repository_root: Path,
+    device_id: str,
+    development_team: str | None,
+    allow_provisioning_updates: bool,
+) -> list[str]:
+    command = [
+        "xcodebuild",
+        "-project",
+        str(repository_root / "KaidoRoutesApp.xcodeproj"),
+        "-scheme",
+        RELEASE_SMOKE_SCHEME,
+        "-configuration",
+        "Release",
+        "-destination",
+        f"platform=iOS,id={device_id}",
+        "-showBuildSettings",
+        "-json",
     ]
     if allow_provisioning_updates:
         command.append("-allowProvisioningUpdates")
@@ -291,7 +423,7 @@ def xcodebuild_command(
                 "CODE_SIGN_STYLE=Automatic",
             ]
         )
-    command.append("test")
+    command.append("CODE_SIGN_IDENTITY=Apple Development")
     return command
 
 
@@ -317,6 +449,36 @@ def run_xcodebuild(
         raise DeviceQualificationError(
             "physical-device App tests failed; private log and result bundle "
             "were retained"
+        )
+
+
+def run_release_bundle_validator(
+    repository_root: Path,
+    app: Path,
+    log_path: Path,
+) -> None:
+    command = [
+        sys.executable,
+        str(repository_root / "scripts/validate_ios_release_bundle.py"),
+        str(app),
+    ]
+    try:
+        with log_path.open("wb") as log:
+            completed = subprocess.run(
+                command,
+                cwd=repository_root,
+                check=False,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+    except OSError as error:
+        raise DeviceQualificationError(
+            f"cannot validate the physical-device Release bundle: {error}"
+        ) from error
+    if completed.returncode != 0:
+        raise DeviceQualificationError(
+            "physical-device Release bundle validation failed; private log "
+            "was retained"
         )
 
 
@@ -438,23 +600,183 @@ def validate_required_physical_audio_test(payload: Any) -> str:
     )
 
 
+def validate_required_release_smoke_test(payload: Any) -> str:
+    return validate_required_test(
+        payload,
+        REQUIRED_RELEASE_SMOKE_TEST,
+        "Release information/privacy",
+    )
+
+
+def validate_release_smoke_counts(counts: dict[str, Any]) -> None:
+    if counts.get("total") != 1 or counts.get("passed") != 1:
+        raise DeviceQualificationError(
+            "Release smoke xcresult must contain exactly one passing test"
+        )
+
+
+def validate_release_build_settings(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, list):
+        raise DeviceQualificationError(
+            "Release build settings must be a JSON array"
+        )
+    targets = [
+        item
+        for item in payload
+        if isinstance(item, dict) and item.get("target") == "KaidoRoutesApp"
+    ]
+    if len(targets) != 1:
+        raise DeviceQualificationError(
+            "Release build settings must contain exactly one KaidoRoutesApp target"
+        )
+    settings = targets[0].get("buildSettings")
+    if not isinstance(settings, dict):
+        raise DeviceQualificationError("Release App build settings are missing")
+    if settings.get("CONFIGURATION") != "Release":
+        raise DeviceQualificationError(
+            "Release smoke must use the Release build configuration"
+        )
+    if settings.get("PRODUCT_BUNDLE_IDENTIFIER") != RELEASE_BUNDLE_IDENTIFIER:
+        raise DeviceQualificationError(
+            "Release smoke App bundle identifier is not app.kaidoroutes"
+        )
+    if settings.get("ENABLE_TESTABILITY") != "NO":
+        raise DeviceQualificationError(
+            "Release smoke must keep ENABLE_TESTABILITY=NO"
+        )
+    return {
+        "configuration": "Release",
+        "bundle_identifier": RELEASE_BUNDLE_IDENTIFIER,
+        "enable_testability": False,
+    }
+
+
+def collect_release_bundle_evidence(
+    repository_root: Path,
+    derived_data: Path,
+    output: Path,
+) -> ReleaseBundleEvidence:
+    app = (
+        derived_data
+        / "Build/Products/Release-iphoneos/KaidoRoutes.app"
+    )
+    if not app.is_dir():
+        raise DeviceQualificationError(
+            "physical-device Release build did not produce KaidoRoutes.app"
+        )
+    validation_log = output / "release-bundle-validation.private.log"
+    run_release_bundle_validator(repository_root, app, validation_log)
+
+    try:
+        info = plistlib.loads((app / "Info.plist").read_bytes())
+    except (OSError, plistlib.InvalidFileException) as error:
+        raise DeviceQualificationError(
+            f"cannot read the validated Release Info.plist: {error}"
+        ) from error
+    if not isinstance(info, dict):
+        raise DeviceQualificationError(
+            "validated Release Info.plist is not a dictionary"
+        )
+    version = info.get("CFBundleShortVersionString")
+    build = info.get("CFBundleVersion")
+    if not isinstance(version, str) or not isinstance(build, str):
+        raise DeviceQualificationError(
+            "validated Release version or build is missing"
+        )
+
+    return ReleaseBundleEvidence(
+        version=version,
+        build=build,
+        app_bundle_sha256=hash_directory(app),
+        whole_shuto_sha256=hash_file(app / WHOLE_SHUTO_RESOURCE),
+        privacy_manifest_sha256=hash_file(app / "PrivacyInfo.xcprivacy"),
+        license_sha256=hash_file(app / "LICENSE"),
+        data_licenses_sha256=hash_file(app / "DATA-LICENSES.md"),
+        validation_log_sha256=hash_file(validation_log),
+    )
+
+
+def collect_xcresult_evidence(
+    result_bundle: Path,
+    log_path: Path,
+    device: PhysicalIOSDevice,
+    output: Path,
+    artifact_stem: str,
+) -> tuple[TestRunEvidence, Any]:
+    summary = run_json_command(
+        [
+            "xcrun",
+            "xcresulttool",
+            "get",
+            "test-results",
+            "summary",
+            "--path",
+            str(result_bundle),
+            "--format",
+            "json",
+        ],
+        f"{artifact_stem} xcresult summary",
+    )
+    counts = validate_xcresult_summary(summary, device)
+    summary_data = encoded_json(summary)
+    write_bytes(
+        output / f"xcresult-{artifact_stem}-summary.private.json",
+        summary_data,
+    )
+    tests = run_json_command(
+        [
+            "xcrun",
+            "xcresulttool",
+            "get",
+            "test-results",
+            "tests",
+            "--path",
+            str(result_bundle),
+            "--format",
+            "json",
+        ],
+        f"{artifact_stem} xcresult tests",
+    )
+    tests_data = encoded_json(tests)
+    write_bytes(
+        output / f"xcresult-{artifact_stem}-tests.private.json",
+        tests_data,
+    )
+    return (
+        TestRunEvidence(
+            counts=counts,
+            xcresult_sha256=hash_directory(result_bundle),
+            summary_sha256=hashlib.sha256(summary_data).hexdigest(),
+            tests_sha256=hashlib.sha256(tests_data).hexdigest(),
+            log_sha256=hash_file(log_path),
+        ),
+        tests,
+    )
+
+
+def receipt_evidence(evidence: TestRunEvidence) -> dict[str, str]:
+    return {
+        "xcresult_tree_sha256": evidence.xcresult_sha256,
+        "xcresult_summary_sha256": evidence.summary_sha256,
+        "xcresult_tests_sha256": evidence.tests_sha256,
+        "xcodebuild_log_sha256": evidence.log_sha256,
+    }
+
+
 def build_receipt(
     source_commit: str,
     device_configuration_id: str,
     device: PhysicalIOSDevice,
-    counts: dict[str, Any],
-    xcresult_sha256: str,
-    summary_sha256: str,
-    tests_sha256: str,
-    log_sha256: str,
+    debug_baseline: TestRunEvidence,
+    release_smoke: TestRunEvidence,
+    release_build_settings_sha256: str,
+    release_bundle: ReleaseBundleEvidence,
 ) -> dict[str, Any]:
     return {
         "schema_version": RECEIPT_SCHEMA_VERSION,
         "classification": RECEIPT_CLASSIFICATION,
         "source": {
             "commit": source_commit,
-            "scheme": EXPECTED_SCHEME,
-            "bundle_identifier": EXPECTED_BUNDLE_IDENTIFIER,
             "worktree_clean": True,
         },
         "device_scope": {
@@ -465,12 +787,45 @@ def build_receipt(
             "physical_device": True,
             "simulator": False,
         },
-        "tests": counts,
-        "evidence": {
-            "xcresult_tree_sha256": xcresult_sha256,
-            "xcresult_summary_sha256": summary_sha256,
-            "xcresult_tests_sha256": tests_sha256,
-            "xcodebuild_log_sha256": log_sha256,
+        "debug_baseline": {
+            "scheme": EXPECTED_SCHEME,
+            "build_configuration": "Debug",
+            "bundle_identifier": EXPECTED_BUNDLE_IDENTIFIER,
+            "scope": "COMPLETE_TRACKED_APP_TEST_SCHEME",
+            "required_tests": [
+                REQUIRED_FOREGROUND_LOCATION_TEST,
+                REQUIRED_PHYSICAL_AUDIO_TEST,
+            ],
+            "tests": debug_baseline.counts,
+            "evidence": receipt_evidence(debug_baseline),
+        },
+        "release_smoke": {
+            "scheme": RELEASE_SMOKE_SCHEME,
+            "build_configuration": "Release",
+            "bundle_identifier": RELEASE_BUNDLE_IDENTIFIER,
+            "version": release_bundle.version,
+            "build": release_bundle.build,
+            "enable_testability": False,
+            "signing_purpose": "DEVELOPMENT_DEVICE_TEST_ONLY",
+            "scope": "ONE_SELECTED_UI_TEST",
+            "required_test": REQUIRED_RELEASE_SMOKE_TEST,
+            "tests": release_smoke.counts,
+            "evidence": {
+                **receipt_evidence(release_smoke),
+                "build_settings_sha256": release_build_settings_sha256,
+                "app_bundle_tree_sha256": release_bundle.app_bundle_sha256,
+                "whole_shuto_sha256": release_bundle.whole_shuto_sha256,
+                "privacy_manifest_sha256": (
+                    release_bundle.privacy_manifest_sha256
+                ),
+                "license_sha256": release_bundle.license_sha256,
+                "data_licenses_sha256": (
+                    release_bundle.data_licenses_sha256
+                ),
+                "bundle_validation_log_sha256": (
+                    release_bundle.validation_log_sha256
+                ),
+            },
         },
         "privacy_contract": {
             "device_identifier_embedded": False,
@@ -482,6 +837,7 @@ def build_receipt(
         },
         "authority": {
             "app_physical_test_baseline": True,
+            "release_configuration_device_smoke": True,
             "foreground_location_start_stop_smoke": True,
             "installed_voice_lifecycle_smoke": True,
             "physical_audio_route_lifecycle_smoke": True,
@@ -491,6 +847,7 @@ def build_receipt(
             "pronunciation_qualified": False,
             "carplay_qualified": False,
             "background_navigation_qualified": False,
+            "app_store_distribution_signature_qualified": False,
         },
     }
 
@@ -616,64 +973,85 @@ def main() -> int:
                 f"cannot create private qualification output: {error}"
             ) from error
 
-        result_bundle = output / "KaidoRoutesApp.xcresult"
-        log_path = output / "xcodebuild.log"
+        debug_result_bundle = output / "KaidoRoutesApp-Debug.xcresult"
+        debug_log_path = output / "xcodebuild-debug.log"
+        release_result_bundle = output / "KaidoRoutesApp-ReleaseSmoke.xcresult"
+        release_log_path = output / "xcodebuild-release-smoke.log"
         with tempfile.TemporaryDirectory(prefix="kaido-device-derived-data.") as temp:
-            command = xcodebuild_command(
+            debug_command = xcodebuild_command(
                 repository_root=repository_root,
                 device_id=device.identifier,
-                result_bundle=result_bundle,
-                derived_data=Path(temp) / "DerivedData",
+                result_bundle=debug_result_bundle,
+                derived_data=Path(temp) / "DebugDerivedData",
                 development_team=arguments.development_team,
                 allow_provisioning_updates=arguments.allow_provisioning_updates,
             )
-            run_xcodebuild(command, repository_root, log_path)
+            run_xcodebuild(debug_command, repository_root, debug_log_path)
 
-        summary = run_json_command(
-            [
-                "xcrun",
-                "xcresulttool",
-                "get",
-                "test-results",
-                "summary",
-                "--path",
-                str(result_bundle),
-                "--format",
-                "json",
-            ],
-            "xcresult summary",
+            debug_baseline, debug_tests = collect_xcresult_evidence(
+                result_bundle=debug_result_bundle,
+                log_path=debug_log_path,
+                device=device,
+                output=output,
+                artifact_stem="debug",
+            )
+            validate_required_foreground_location_test(debug_tests)
+            validate_required_physical_audio_test(debug_tests)
+
+            release_build_settings = run_json_command(
+                release_build_settings_command(
+                    repository_root=repository_root,
+                    device_id=device.identifier,
+                    development_team=arguments.development_team,
+                    allow_provisioning_updates=(
+                        arguments.allow_provisioning_updates
+                    ),
+                ),
+                "Release build settings",
+            )
+            validate_release_build_settings(release_build_settings)
+            release_build_settings_data = encoded_json(release_build_settings)
+            write_bytes(
+                output / "release-build-settings.private.json",
+                release_build_settings_data,
+            )
+
+            release_derived_data = Path(temp) / "ReleaseSmokeDerivedData"
+            release_command = release_smoke_xcodebuild_command(
+                repository_root=repository_root,
+                device_id=device.identifier,
+                result_bundle=release_result_bundle,
+                derived_data=release_derived_data,
+                development_team=arguments.development_team,
+                allow_provisioning_updates=arguments.allow_provisioning_updates,
+            )
+            run_xcodebuild(release_command, repository_root, release_log_path)
+            release_bundle = collect_release_bundle_evidence(
+                repository_root=repository_root,
+                derived_data=release_derived_data,
+                output=output,
+            )
+
+        release_smoke, release_tests = collect_xcresult_evidence(
+            result_bundle=release_result_bundle,
+            log_path=release_log_path,
+            device=device,
+            output=output,
+            artifact_stem="release-smoke",
         )
-        counts = validate_xcresult_summary(summary, device)
-        summary_data = encoded_json(summary)
-        summary_path = output / "xcresult-summary.private.json"
-        write_bytes(summary_path, summary_data)
-        tests = run_json_command(
-            [
-                "xcrun",
-                "xcresulttool",
-                "get",
-                "test-results",
-                "tests",
-                "--path",
-                str(result_bundle),
-                "--format",
-                "json",
-            ],
-            "xcresult tests",
-        )
-        validate_required_foreground_location_test(tests)
-        validate_required_physical_audio_test(tests)
-        tests_data = encoded_json(tests)
-        write_bytes(output / "xcresult-tests.private.json", tests_data)
+        validate_release_smoke_counts(release_smoke.counts)
+        validate_required_release_smoke_test(release_tests)
+        require_unchanged_clean_source_commit(repository_root, source_commit)
         receipt = build_receipt(
             source_commit=source_commit,
             device_configuration_id=configuration_id,
             device=device,
-            counts=counts,
-            xcresult_sha256=hash_directory(result_bundle),
-            summary_sha256=hashlib.sha256(summary_data).hexdigest(),
-            tests_sha256=hashlib.sha256(tests_data).hexdigest(),
-            log_sha256=hash_file(log_path),
+            debug_baseline=debug_baseline,
+            release_smoke=release_smoke,
+            release_build_settings_sha256=hashlib.sha256(
+                release_build_settings_data
+            ).hexdigest(),
+            release_bundle=release_bundle,
         )
         receipt_data = encoded_json(receipt)
         if device.identifier.encode("utf-8") in receipt_data:
@@ -686,8 +1064,11 @@ def main() -> int:
         return 1
 
     print(
-        "PASS: physical iPhone App baseline completed; "
-        f"{counts['passed']}/{counts['total']} tests passed; "
+        "PASS: physical iPhone Debug baseline and Release smoke completed; "
+        f"Debug {debug_baseline.counts['passed']}/"
+        f"{debug_baseline.counts['total']}; "
+        f"Release {release_smoke.counts['passed']}/"
+        f"{release_smoke.counts['total']}; "
         "coordinate-free receipt written inside private evidence output"
     )
     return 0

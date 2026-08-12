@@ -50,6 +50,7 @@ ROUTE_RELATION_IDS = {
 }
 ALLOWED_HIGHWAYS = {"motorway", "motorway_link"}
 FORBIDDEN_ACCESS = {"no", "private"}
+ODBL_LICENSE_URI = "https://opendatacommons.org/licenses/odbl/1-0/"
 BOUNDS = {
     "minimum_latitude": 35.15,
     "maximum_latitude": 36.15,
@@ -1230,6 +1231,7 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
                 "source_snapshot_at": source_snapshot_at,
                 "source_uri": arguments.source_uri,
                 "licence": "ODbL-1.0",
+                "licence_uri": ODBL_LICENSE_URI,
                 "attribution": "© OpenStreetMap contributors",
                 "builder": "pyosmium",
                 "builder_version": arguments.expected_pyosmium_version,
@@ -1292,6 +1294,13 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
 
 
 def validate(result: dict[str, Any]) -> None:
+    osm_source = result.get("sources", {}).get("osm", {})
+    if (
+        osm_source.get("attribution") != "© OpenStreetMap contributors"
+        or osm_source.get("licence") != "ODbL-1.0"
+        or osm_source.get("licence_uri") != ODBL_LICENSE_URI
+    ):
+        raise NetworkBuildError("OSM distribution metadata mismatch")
     if len(result["routes"]) != len(ROUTE_RELATION_IDS):
         raise NetworkBuildError("whole-network route count mismatch")
     if len(result["nodes"]) < 2_000 or len(result["edges"]) < 2_000:

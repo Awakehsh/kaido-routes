@@ -30,6 +30,12 @@ targets:
     sources:
       - path: Apps/KaidoRoutesApp/Sources
       - path: Apps/KaidoRoutesApp/Resources
+      - path: LICENSE
+        buildPhase: resources
+        group: Distribution
+      - path: DATA-LICENSES.md
+        buildPhase: resources
+        group: Distribution
       - path: data/route-atlas/design/shuto-route-atlas-recognition-reference.svg
         buildPhase: resources
         group: Route Atlas
@@ -92,6 +98,16 @@ targets:
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: app.kaidoroutes
           CODE_SIGN_IDENTITY: Apple Distribution
+          EXCLUDED_SOURCE_FILE_NAMES: >-
+            c2-b-20260729-geographic-route.json
+            k7-aoba-kohoku-product-release.json
+            k7-aoba-to-kohoku-pre-drive-evidence.json
+            k7-northwest-260721-directed-database.json
+            k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json
+            k7-northwest-up-schematic-layout-candidate.svg
+            route-atlas-attribution-catalog.json
+            shuto-route-atlas-recognition-reference.svg
+            synthetic-product-runtime-preview.json
 
   KaidoRoutesAppTests:
     type: bundle.unit-test
@@ -138,5 +154,22 @@ schemes:
       targets:
         - KaidoRoutesAppTests
         - KaidoRoutesAppUITests
+    archive:
+      config: Release
+
+  KaidoRoutesReleaseSmoke:
+    build:
+      targets:
+        KaidoRoutesApp: all
+        KaidoRoutesAppUITests:
+          - test
+    test:
+      config: Release
+      targets:
+        - KaidoRoutesAppUITests
+    run:
+      config: Release
+    analyze:
+      config: Release
     archive:
       config: Release

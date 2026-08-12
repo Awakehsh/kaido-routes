@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
+import plistlib
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -100,6 +103,69 @@ def passed_tests() -> dict:
     }
 
 
+def release_summary() -> dict:
+    summary = passed_summary()
+    summary["passedTests"] = 1
+    summary["totalTestCount"] = 1
+    summary["devicesAndConfigurations"][0]["passedTests"] = 1
+    return summary
+
+
+def release_tests() -> dict:
+    return {
+        "testNodes": [
+            {
+                "children": [
+                    {
+                        "nodeIdentifier": runner.REQUIRED_RELEASE_SMOKE_TEST,
+                        "nodeType": "Test Case",
+                        "result": "Passed",
+                    }
+                ]
+            }
+        ]
+    }
+
+
+def release_build_settings() -> list[dict]:
+    return [
+        {
+            "target": "KaidoRoutesApp",
+            "buildSettings": {
+                "CONFIGURATION": "Release",
+                "PRODUCT_BUNDLE_IDENTIFIER": "app.kaidoroutes",
+                "ENABLE_TESTABILITY": "NO",
+            },
+        }
+    ]
+
+
+def test_run_evidence(
+    counts: dict,
+    prefix: str,
+) -> runner.TestRunEvidence:
+    return runner.TestRunEvidence(
+        counts=counts,
+        xcresult_sha256=prefix * 64,
+        summary_sha256=chr(ord(prefix) + 1) * 64,
+        tests_sha256=chr(ord(prefix) + 2) * 64,
+        log_sha256=chr(ord(prefix) + 3) * 64,
+    )
+
+
+def release_bundle_evidence() -> runner.ReleaseBundleEvidence:
+    return runner.ReleaseBundleEvidence(
+        version="1.0.0",
+        build="7",
+        app_bundle_sha256="k" * 64,
+        whole_shuto_sha256="l" * 64,
+        privacy_manifest_sha256="m" * 64,
+        license_sha256="n" * 64,
+        data_licenses_sha256="o" * 64,
+        validation_log_sha256="p" * 64,
+    )
+
+
 class RunIOSDeviceQualificationTests(unittest.TestCase):
     def test_exact_online_physical_iphone_is_selected(self) -> None:
         device = runner.select_physical_ios_device(
@@ -138,6 +204,14 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             (
                 physical_device(platform="com.apple.platform.watchos"),
                 "not a physical iPhone",
+            ),
+            (
+                {
+                    **physical_device(),
+                    "name": "Private Owner iPad",
+                    "modelName": "iPad Pro (13-inch)",
+                },
+                "not an iPhone",
             ),
         ]
         for payload, message in cases:
@@ -210,18 +284,22 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             passed_summary(),
             device,
         )
+        release_counts = runner.validate_xcresult_summary(
+            release_summary(),
+            device,
+        )
         receipt = runner.build_receipt(
             source_commit="a" * 40,
             device_configuration_id="iphone13pro-dashboard-v1",
             device=device,
-            counts=counts,
-            xcresult_sha256="b" * 64,
-            summary_sha256="c" * 64,
-            tests_sha256="d" * 64,
-            log_sha256="e" * 64,
+            debug_baseline=test_run_evidence(counts, "b"),
+            release_smoke=test_run_evidence(release_counts, "f"),
+            release_build_settings_sha256="j" * 64,
+            release_bundle=release_bundle_evidence(),
         )
         encoded = json.dumps(receipt, sort_keys=True)
 
+        self.assertEqual(receipt["schema_version"], "1.5")
         self.assertEqual(counts["passed"], 112)
         self.assertEqual(counts["total"], 112)
         self.assertNotIn(DEVICE_ID, encoded)
@@ -229,6 +307,9 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         self.assertTrue(receipt["device_scope"]["physical_device"])
         self.assertFalse(receipt["device_scope"]["simulator"])
         self.assertTrue(receipt["authority"]["app_physical_test_baseline"])
+        self.assertTrue(
+            receipt["authority"]["release_configuration_device_smoke"]
+        )
         self.assertTrue(
             receipt["authority"]["foreground_location_start_stop_smoke"]
         )
@@ -243,8 +324,70 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         self.assertFalse(receipt["authority"]["acoustic_quality_qualified"])
         self.assertFalse(receipt["authority"]["carplay_qualified"])
         self.assertEqual(
-            receipt["evidence"]["xcresult_tests_sha256"],
+            receipt["debug_baseline"]["evidence"][
+                "xcresult_tests_sha256"
+            ],
             "d" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["bundle_identifier"],
+            "app.kaidoroutes",
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["tests"]["total"],
+            1,
+        )
+        self.assertFalse(receipt["release_smoke"]["enable_testability"])
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "xcresult_tree_sha256"
+            ],
+            "f" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "build_settings_sha256"
+            ],
+            "j" * 64,
+        )
+        self.assertEqual(receipt["release_smoke"]["version"], "1.0.0")
+        self.assertEqual(receipt["release_smoke"]["build"], "7")
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "app_bundle_tree_sha256"
+            ],
+            "k" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"]["whole_shuto_sha256"],
+            "l" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "privacy_manifest_sha256"
+            ],
+            "m" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"]["license_sha256"],
+            "n" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "data_licenses_sha256"
+            ],
+            "o" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "bundle_validation_log_sha256"
+            ],
+            "p" * 64,
+        )
+        self.assertFalse(
+            receipt["authority"][
+                "app_store_distribution_signature_qualified"
+            ]
         )
 
     def test_required_foreground_location_test_must_pass_exactly_once(
@@ -302,6 +445,127 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         ):
             runner.validate_required_physical_audio_test(failed)
 
+    def test_release_smoke_requires_exact_test_and_one_pass(self) -> None:
+        device = runner.select_physical_ios_device(
+            [physical_device()],
+            DEVICE_ID,
+        )
+        counts = runner.validate_xcresult_summary(release_summary(), device)
+
+        runner.validate_release_smoke_counts(counts)
+        self.assertEqual(
+            runner.validate_required_release_smoke_test(release_tests()),
+            runner.REQUIRED_RELEASE_SMOKE_TEST,
+        )
+
+        too_many = {**counts, "total": 2, "passed": 2}
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "exactly one passing test",
+        ):
+            runner.validate_release_smoke_counts(too_many)
+
+        failed = release_tests()
+        failed["testNodes"][0]["children"][0]["result"] = "Failed"
+        with self.assertRaisesRegex(
+            runner.DeviceQualificationError,
+            "did not pass",
+        ):
+            runner.validate_required_release_smoke_test(failed)
+
+    def test_release_settings_are_formal_bundle_and_not_testable(self) -> None:
+        self.assertEqual(
+            runner.validate_release_build_settings(release_build_settings()),
+            {
+                "configuration": "Release",
+                "bundle_identifier": "app.kaidoroutes",
+                "enable_testability": False,
+            },
+        )
+
+        invalid_cases = [
+            ("CONFIGURATION", "Debug", "Release build configuration"),
+            (
+                "PRODUCT_BUNDLE_IDENTIFIER",
+                "app.kaidoroutes.preview",
+                "bundle identifier",
+            ),
+            ("ENABLE_TESTABILITY", "YES", "ENABLE_TESTABILITY=NO"),
+        ]
+        for key, value, message in invalid_cases:
+            with self.subTest(key=key):
+                payload = release_build_settings()
+                payload[0]["buildSettings"][key] = value
+                with self.assertRaisesRegex(
+                    runner.DeviceQualificationError,
+                    message,
+                ):
+                    runner.validate_release_build_settings(payload)
+
+    def test_release_bundle_evidence_binds_the_validated_physical_app(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            derived_data = root / "derived"
+            app = (
+                derived_data
+                / "Build/Products/Release-iphoneos/KaidoRoutes.app"
+            )
+            app.mkdir(parents=True)
+            (app / "Info.plist").write_bytes(
+                plistlib.dumps(
+                    {
+                        "CFBundleShortVersionString": "1.0.0",
+                        "CFBundleVersion": "7",
+                    }
+                )
+            )
+            (app / runner.WHOLE_SHUTO_RESOURCE).write_bytes(b"whole-shuto")
+            (app / "PrivacyInfo.xcprivacy").write_bytes(b"privacy")
+            (app / "LICENSE").write_bytes(b"license")
+            (app / "DATA-LICENSES.md").write_bytes(b"data licence")
+            output = root / "private-output"
+            output.mkdir()
+
+            def write_validation_log(
+                _: Path,
+                validated_app: Path,
+                log_path: Path,
+            ) -> None:
+                self.assertEqual(validated_app, app)
+                log_path.write_text("validated\n", encoding="utf-8")
+
+            with mock.patch.object(
+                runner,
+                "run_release_bundle_validator",
+                side_effect=write_validation_log,
+            ) as validate:
+                evidence = runner.collect_release_bundle_evidence(
+                    repository_root=REPOSITORY_ROOT,
+                    derived_data=derived_data,
+                    output=output,
+                )
+
+            validate.assert_called_once()
+            self.assertEqual(evidence.version, "1.0.0")
+            self.assertEqual(evidence.build, "7")
+            self.assertEqual(len(evidence.app_bundle_sha256), 64)
+            self.assertEqual(
+                evidence.whole_shuto_sha256,
+                runner.hash_file(app / runner.WHOLE_SHUTO_RESOURCE),
+            )
+            self.assertEqual(
+                evidence.data_licenses_sha256,
+                runner.hash_file(app / "DATA-LICENSES.md"),
+            )
+            self.assertEqual(
+                evidence.validation_log_sha256,
+                runner.hash_file(
+                    output / "release-bundle-validation.private.log"
+                ),
+            )
+
     def test_xcresult_rejects_simulator_identity_failure_or_skip(self) -> None:
         device = runner.select_physical_ios_device(
             [physical_device()],
@@ -353,12 +617,124 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
 
         self.assertIn(f"platform=iOS,id={DEVICE_ID}", command)
+        self.assertEqual(command[command.index("-configuration") + 1], "Debug")
+        self.assertNotIn("-only-testing:", " ".join(command))
         diagnostics_index = command.index("-collect-test-diagnostics")
         self.assertEqual(command[diagnostics_index + 1], "never")
         self.assertIn("-allowProvisioningUpdates", command)
         self.assertIn("DEVELOPMENT_TEAM=ABCDE12345", command)
         self.assertIn("CODE_SIGN_STYLE=Automatic", command)
         self.assertEqual(command[-1], "test")
+
+    def test_release_command_runs_only_smoke_under_release_configuration(
+        self,
+    ) -> None:
+        command = runner.release_smoke_xcodebuild_command(
+            repository_root=REPOSITORY_ROOT,
+            device_id=DEVICE_ID,
+            result_bundle=Path("/tmp/private/ReleaseSmoke.xcresult"),
+            derived_data=Path("/tmp/release-derived"),
+            development_team="ABCDE12345",
+            allow_provisioning_updates=True,
+        )
+
+        self.assertEqual(
+            command[command.index("-scheme") + 1],
+            "KaidoRoutesReleaseSmoke",
+        )
+        self.assertEqual(command[command.index("-configuration") + 1], "Release")
+        self.assertIn(
+            f"-only-testing:{runner.RELEASE_SMOKE_ONLY_TESTING}",
+            command,
+        )
+        self.assertIn("CODE_SIGN_IDENTITY=Apple Development", command)
+        self.assertNotIn("ENABLE_TESTABILITY=YES", command)
+        self.assertEqual(command[-1], "test")
+
+        settings_command = runner.release_build_settings_command(
+            repository_root=REPOSITORY_ROOT,
+            device_id=DEVICE_ID,
+            development_team="ABCDE12345",
+            allow_provisioning_updates=True,
+        )
+        self.assertEqual(
+            settings_command[settings_command.index("-configuration") + 1],
+            "Release",
+        )
+        self.assertIn("CODE_SIGN_STYLE=Automatic", settings_command)
+        self.assertIn(
+            "CODE_SIGN_IDENTITY=Apple Development",
+            settings_command,
+        )
+        self.assertNotIn("ENABLE_TESTABILITY=YES", settings_command)
+        self.assertEqual(settings_command[-1], "CODE_SIGN_IDENTITY=Apple Development")
+
+    def test_release_failure_never_writes_combined_receipt(self) -> None:
+        debug_evidence = test_run_evidence(
+            runner.validate_xcresult_summary(
+                passed_summary(),
+                runner.select_physical_ios_device(
+                    [physical_device()],
+                    DEVICE_ID,
+                ),
+            ),
+            "b",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "qualification"
+            arguments = mock.Mock(
+                device_id=DEVICE_ID,
+                device_configuration_id="iphone13pro-dashboard-v1",
+                output=output,
+                preflight_only=False,
+                development_team="ABCDE12345",
+                allow_provisioning_updates=True,
+                xcdevice_timeout=10,
+                repository_root=REPOSITORY_ROOT,
+            )
+            stderr = io.StringIO()
+            with (
+                mock.patch.object(runner, "parse_arguments", return_value=arguments),
+                mock.patch.object(
+                    runner,
+                    "run_json_command",
+                    side_effect=[
+                        [physical_device()],
+                        release_build_settings(),
+                    ],
+                ),
+                mock.patch.object(
+                    runner,
+                    "clean_source_commit",
+                    return_value="a" * 40,
+                ),
+                mock.patch.object(
+                    runner,
+                    "require_ignored_repository_output",
+                ),
+                mock.patch.object(
+                    runner,
+                    "collect_xcresult_evidence",
+                    return_value=(debug_evidence, passed_tests()),
+                ),
+                mock.patch.object(
+                    runner,
+                    "run_xcodebuild",
+                    side_effect=[
+                        None,
+                        runner.DeviceQualificationError(
+                            "Release smoke failed"
+                        ),
+                    ],
+                ) as run_xcodebuild,
+                mock.patch("sys.stderr", stderr),
+            ):
+                self.assertEqual(runner.main(), 1)
+
+            self.assertEqual(run_xcodebuild.call_count, 2)
+            self.assertIn("Release smoke failed", stderr.getvalue())
+            self.assertTrue(output.is_dir())
+            self.assertFalse((output / "qualification-run.json").exists())
 
     def test_source_commit_requires_a_clean_checkout(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -405,6 +781,69 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
                 "clean worktree",
             ):
                 runner.clean_source_commit(repository)
+
+    def test_device_run_rechecks_the_clean_source_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            tracked = repository / "tracked.txt"
+            tracked.write_text("first\n", encoding="utf-8")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repository, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Kaido Test",
+                    "-c",
+                    "user.email=kaido@example.com",
+                    "commit",
+                    "-q",
+                    "-m",
+                    "first",
+                ],
+                cwd=repository,
+                check=True,
+            )
+            first_commit = runner.clean_source_commit(repository)
+            runner.require_unchanged_clean_source_commit(
+                repository,
+                first_commit,
+            )
+
+            tracked.write_text("second\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                runner.DeviceQualificationError,
+                "clean worktree",
+            ):
+                runner.require_unchanged_clean_source_commit(
+                    repository,
+                    first_commit,
+                )
+
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repository, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Kaido Test",
+                    "-c",
+                    "user.email=kaido@example.com",
+                    "commit",
+                    "-q",
+                    "-m",
+                    "second",
+                ],
+                cwd=repository,
+                check=True,
+            )
+            with self.assertRaisesRegex(
+                runner.DeviceQualificationError,
+                "source commit changed",
+            ):
+                runner.require_unchanged_clean_source_commit(
+                    repository,
+                    first_commit,
+                )
 
     def test_directory_hash_is_deterministic_and_rejects_symlinks(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

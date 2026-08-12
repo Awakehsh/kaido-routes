@@ -675,12 +675,20 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(playback.waitForExistence(timeout: 5))
     XCTAssertEqual(playback.value as? String, "PLAYING")
 
-    let phaseBeforeEndRequest = product.value as? String
     app.buttons["whole-shuto-end-journey"].tap()
     let endAlert = app.alerts["结束本次预演？"]
     XCTAssertTrue(endAlert.waitForExistence(timeout: 3))
-    XCTAssertEqual(product.value as? String, phaseBeforeEndRequest)
     XCTAssertEqual(playback.value as? String, "PAUSED")
+    let pausedPhase = product.value as? String
+    XCTAssertNotNil(pausedPhase)
+    let phaseChanged = XCTNSPredicateExpectation(
+      predicate: NSPredicate { object, _ in
+        (object as? XCUIElement)?.value as? String != pausedPhase
+      },
+      object: product
+    )
+    phaseChanged.isInverted = true
+    wait(for: [phaseChanged], timeout: 1)
 
     endAlert.buttons["继续预演"].tap()
     XCTAssertFalse(endAlert.exists)

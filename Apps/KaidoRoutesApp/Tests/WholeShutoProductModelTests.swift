@@ -498,7 +498,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       await Task.yield()
     }
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
     await advance(
       model,
       until: {
@@ -899,7 +899,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let plannedDuration = try XCTUnwrap(model.plannedPreviewDurationSeconds)
 
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
     await model.advanceSimulationForTesting()
 
     XCTAssertEqual(model.phase, .surfaceAccess)
@@ -919,6 +919,31 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(model.journeyProgressFraction, 1, accuracy: 0.001)
     XCTAssertEqual(model.remainingPreviewDurationSeconds, 0)
+  }
+
+  func testPauseReturnsOnlyAfterPlaybackIsStable() async throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.preparePreviewJourney()
+    model.startNavigationSimulation()
+
+    try await Task.sleep(nanoseconds: 500_000_000)
+    let pausedActivePlayback = await model.pausePlayback()
+    XCTAssertTrue(pausedActivePlayback)
+    let pausedPhase = model.phase
+    let pausedProgress = model.progressFraction
+    let pausedOccurrenceID = model.runtimeOccurrenceID
+
+    try await Task.sleep(nanoseconds: 650_000_000)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.phase, pausedPhase)
+    XCTAssertEqual(model.progressFraction, pausedProgress)
+    XCTAssertEqual(model.runtimeOccurrenceID, pausedOccurrenceID)
+    let pausedAgain = await model.pausePlayback()
+    XCTAssertFalse(pausedAgain)
+
+    model.resumePlayback()
+    XCTAssertTrue(model.isPlaying)
+    _ = await model.pausePlayback()
   }
 
   func testUnavailableSurfaceLegsBlockPreviewUntilRetrySucceeds() async {
@@ -1341,7 +1366,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let originalRoute = try XCTUnwrap(model.selectedRoute)
 
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
     await advance(model, until: { $0.phase == .expressway })
     for _ in 0..<3 {
       await model.advanceSimulationForTesting()
@@ -1386,7 +1411,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
     await advance(model, until: { $0.phase == .entryTransition })
 
     XCTAssertEqual(model.progressFraction, 0)
@@ -1460,7 +1485,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
     await advance(model, until: { $0.phase == .entryTransition })
 
     let checkpoint = try XCTUnwrap(store.checkpoint)
@@ -1493,12 +1518,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
-  func testCheckpointRoutePlanDriftDoesNotRestore() throws {
+  func testCheckpointRoutePlanDriftDoesNotRestore() async throws {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
 
     let checkpoint = try XCTUnwrap(store.checkpoint)
     let originalPlan = checkpoint.routePlan
@@ -1593,14 +1618,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(store.checkpoint)
   }
 
-  func testCheckpointSaveFailureInvalidatesTheOlderCheckpoint() {
+  func testCheckpointSaveFailureInvalidatesTheOlderCheckpoint() async {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
     XCTAssertNotNil(store.checkpoint)
 
     store.saveError = .saveFailed
-    model.handleScenePhase(.background)
+    await model.handleScenePhase(.background)
 
     XCTAssertEqual(model.phase, .review)
     XCTAssertNotNil(model.selectedRoute)
@@ -1612,7 +1637,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(store.removeCount, 1)
 
     store.saveError = nil
-    model.handleScenePhase(.background)
+    await model.handleScenePhase(.background)
     XCTAssertNil(model.checkpointIssueCode)
     XCTAssertNotNil(store.checkpoint)
 
@@ -1651,7 +1676,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
 
     await advance(
       model,
@@ -1671,7 +1696,7 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.prepareKasaiJunctionPreview(startsNavigation: true)
-    model.togglePlayback()
+    _ = await model.pausePlayback()
 
     let initialRemaining = try XCTUnwrap(
       model.remainingJourneyDistanceMeters
@@ -1710,7 +1735,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()
     model.startNavigationSimulation()
-    model.togglePlayback()
+    _ = await model.pausePlayback()
 
     await advance(model, until: { $0.phase == .entryTransition })
 
@@ -1770,7 +1795,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       "shuto.jct.oi.b-westbound-to-c2-outer"
     )
 
-    model.handleScenePhase(.background)
+    await model.handleScenePhase(.background)
 
     let restoredOutput = WholeShutoRecordingSpeechOutput()
     let restored = WholeShutoProductModel(

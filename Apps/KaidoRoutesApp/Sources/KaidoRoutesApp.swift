@@ -533,9 +533,6 @@ private struct WholeShutoJunctionPreviewHost: View {
         startsNavigation: startsNavigation
       )
     }
-    if startsNavigation {
-      model.togglePlayback()
-    }
     self.startsNavigation = startsNavigation
     _model = StateObject(wrappedValue: model)
   }

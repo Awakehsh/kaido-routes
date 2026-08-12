@@ -318,6 +318,7 @@ final class WholeShutoProductModel: ObservableObject {
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
+  private var playbackGeneration = 0
   private var surfaceRouteTask: Task<Void, Never>?
   private var circuitTariffTask: Task<Void, Never>?
   private var startsCircuitJourneyAfterPairing = false
@@ -1332,8 +1333,7 @@ final class WholeShutoProductModel: ObservableObject {
   func prepareCompletedJourneyPreview() {
     preparePreviewJourney()
     guard phase == .review else { return }
-    playbackTask?.cancel()
-    playbackTask = nil
+    invalidatePlaybackTask()
     speechCoordinator?.stop()
     speechCoordinator = nil
     phase = .completed
@@ -1479,7 +1479,7 @@ final class WholeShutoProductModel: ObservableObject {
       junctionPreviewMovementID = expectedMovementID
       if startsNavigation {
         phase = .review
-        startNavigationSimulation()
+        startNavigationSimulation(autoplay: false)
         return
       }
       isStaticJunctionPreview = true
@@ -2057,7 +2057,7 @@ final class WholeShutoProductModel: ObservableObject {
     routeChoiceMetricsByRoutePlanID = [:]
   }
 
-  func startNavigationSimulation() {
+  func startNavigationSimulation(autoplay: Bool = true) {
     guard phase == .review, let route = selectedRoute else { return }
     guard isJourneyReadyForPreview else {
       if !isUpdatingSurfaceRoute {
@@ -2101,7 +2101,7 @@ final class WholeShutoProductModel: ObservableObject {
     failureCode = nil
     phase = accessRoute == nil ? .entryTransition : .surfaceAccess
     progressFraction = 0
-    isPlaying = true
+    isPlaying = autoplay
     matcherConfidence = nil
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil
@@ -2114,7 +2114,9 @@ final class WholeShutoProductModel: ObservableObject {
     restoredFromCheckpoint = false
     mapMode = .geographic
     persistCheckpoint()
-    startPlaybackLoop()
+    if autoplay {
+      startPlaybackLoop()
+    }
   }
 
   /// Fails closed until this exact selected journey is backed by a validated
@@ -2425,29 +2427,58 @@ final class WholeShutoProductModel: ObservableObject {
     removeCheckpoint()
   }
 
-  func togglePlayback() {
+  func resumePlayback() {
     // A live drive follows the vehicle, not a transport; there is nothing
     // to pause or step.
     guard !isLiveDrive else { return }
     guard phase != .planning, phase != .review, phase != .completed else {
       return
     }
-    isPlaying.toggle()
-    if isPlaying {
-      Task {
-        guard await restoreObservationReplayIfNeeded() else {
-          return
-        }
-        speechCoordinator?.resume()
-        restoredFromCheckpoint = false
-        persistCheckpoint()
-        startPlaybackLoop()
+    guard !isPlaying else { return }
+    isPlaying = true
+    invalidatePlaybackTask()
+    let generation = playbackGeneration
+    playbackTask = Task { [weak self] in
+      guard let self else { return }
+      guard await restoreObservationReplayIfNeeded() else { return }
+      guard
+        !Task.isCancelled,
+        isPlaying,
+        playbackGeneration == generation
+      else {
+        return
       }
-    } else {
-      playbackTask?.cancel()
-      playbackTask = nil
-      speechCoordinator?.stop()
+      speechCoordinator?.resume()
+      restoredFromCheckpoint = false
+      persistCheckpoint()
+      startPlaybackLoop()
     }
+  }
+
+  /// Stops playback only after any actor-owned observation already in flight
+  /// has published its matching UI state. Returning from this method is the
+  /// pause boundary used by transport controls, lifecycle checkpointing, and
+  /// the end-preview confirmation.
+  @discardableResult
+  func pausePlayback() async -> Bool {
+    guard !isLiveDrive else { return false }
+    let wasPlaying = isPlaying
+    let task = playbackTask
+    guard wasPlaying || task != nil else { return false }
+
+    isPlaying = false
+    playbackTask = nil
+    task?.cancel()
+    if let task {
+      await task.value
+    }
+    if let driveSimulator {
+      _ = await driveSimulator.pause()
+    }
+    playbackGeneration &+= 1
+    speechCoordinator?.stop()
+    persistCheckpoint()
+    return wasPlaying
   }
 
   func advanceSimulation() {
@@ -2496,9 +2527,7 @@ final class WholeShutoProductModel: ObservableObject {
       return false
     }
 
-    playbackTask?.cancel()
-    playbackTask = nil
-    isPlaying = false
+    _ = await pausePlayback()
     phase = .entryTransition
     progressFraction = 0
     presentationProjection = nil
@@ -2532,8 +2561,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func reset() {
-    playbackTask?.cancel()
-    playbackTask = nil
+    invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
     speechCoordinator?.stop()
     speechCoordinator = nil
@@ -2583,18 +2611,17 @@ final class WholeShutoProductModel: ObservableObject {
 
   func handleScenePhase(
     _ scenePhase: ProductNavigationRuntimeScenePhase
-  ) {
+  ) async {
     switch scenePhase {
     case .active:
       if !isLiveDrive || isPlaying {
         speechCoordinator?.resume()
       }
     case .inactive, .background:
-      playbackTask?.cancel()
-      playbackTask = nil
-      isPlaying = false
-      speechCoordinator?.stop()
       if isLiveDrive {
+        invalidatePlaybackTask()
+        isPlaying = false
+        speechCoordinator?.stop()
         liveLocationState = .resumeRequired
         liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
         liveLocationFreshnessTask?.cancel()
@@ -2607,24 +2634,39 @@ final class WholeShutoProductModel: ObservableObject {
           }
         }
       } else {
+        _ = await pausePlayback()
         persistCheckpoint()
       }
     }
   }
 
   private func startPlaybackLoop() {
-    playbackTask?.cancel()
+    invalidatePlaybackTask()
     if phase == .entryTransition || phase == .expressway {
       startObservationReplayLoop()
       return
     }
+    let generation = playbackGeneration
     playbackTask = Task { [weak self] in
       while !Task.isCancelled {
         try? await Task.sleep(for: .milliseconds(420))
-        guard !Task.isCancelled else { return }
-        self?.tick()
+        guard
+          !Task.isCancelled,
+          let self,
+          isPlaying,
+          playbackGeneration == generation
+        else {
+          return
+        }
+        tick()
       }
     }
+  }
+
+  private func invalidatePlaybackTask() {
+    playbackGeneration &+= 1
+    playbackTask?.cancel()
+    playbackTask = nil
   }
 
   /// Each phase has a natural primary presentation: the self-drawn network
@@ -2672,8 +2714,7 @@ final class WholeShutoProductModel: ObservableObject {
     case .surfaceEgress:
       phase = .completed
       isPlaying = false
-      playbackTask?.cancel()
-      playbackTask = nil
+      invalidatePlaybackTask()
       speechCoordinator?.stop()
     case .planning, .review, .completed:
       break
@@ -2699,7 +2740,8 @@ final class WholeShutoProductModel: ObservableObject {
       failureCode = "WHOLE_SHUTO_RUNTIME_MISSING"
       return
     }
-    playbackTask?.cancel()
+    invalidatePlaybackTask()
+    let generation = playbackGeneration
     playbackTask = Task { [weak self] in
       _ = await driveSimulator.play()
       while !Task.isCancelled {
@@ -2715,14 +2757,26 @@ final class WholeShutoProductModel: ObservableObject {
           else {
             break
           }
-          self?.applyObservationReplayResult(result)
+          guard
+            let self,
+            playbackGeneration == generation
+          else {
+            return
+          }
+          applyObservationReplayResult(result)
           if result.status.state == .completed {
-            self?.completeExpresswayObservationReplay()
+            completeExpresswayObservationReplay()
             return
           }
         } catch {
-          self?.isPlaying = false
-          self?.failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
+          guard
+            let self,
+            playbackGeneration == generation
+          else {
+            return
+          }
+          isPlaying = false
+          failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
           return
         }
       }
@@ -2769,7 +2823,7 @@ final class WholeShutoProductModel: ObservableObject {
     publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
       isPlaying = false
-      playbackTask?.cancel()
+      invalidatePlaybackTask()
       return
     }
     if phase == .entryTransition {

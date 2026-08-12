@@ -35,6 +35,7 @@ struct WholeShutoProductView: View {
   @State private var showsDestinationComposer = false
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
+  @State private var isPreparingEndJourneyConfirmation = false
   @State private var pendingSavedRouteRecordID: String?
   @State private var savedRouteOpenErrorCode: String?
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
@@ -163,8 +164,10 @@ struct WholeShutoProductView: View {
       languageSettings.interfaceLocale
     )
     .onChange(of: scenePhase, initial: true) { _, newPhase in
-      model.handleScenePhase(newPhase.productRuntimePhase)
       planningLocation.setForeground(newPhase == .active && !isDriving)
+      Task {
+        await model.handleScenePhase(newPhase.productRuntimePhase)
+      }
     }
     .onChange(of: isDriving) { _, newValue in
       planningLocation.setForeground(scenePhase == .active && !newValue)
@@ -535,6 +538,7 @@ struct WholeShutoProductView: View {
           ? "whole-shuto-end-journey"
           : "whole-shuto-back-to-planning"
       )
+      .disabled(isPreparingEndJourneyConfirmation)
     }
   }
 
@@ -2496,7 +2500,13 @@ struct WholeShutoProductView: View {
       .accessibilityIdentifier("whole-shuto-preview-step")
 
       Button {
-        model.togglePlayback()
+        Task {
+          if model.isPlaying {
+            await model.pausePlayback()
+          } else {
+            model.resumePlayback()
+          }
+        }
       } label: {
         Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
           .font(.system(size: 15, weight: .black))
@@ -2760,11 +2770,18 @@ struct WholeShutoProductView: View {
   }
 
   private func requestEndJourney() {
-    resumesAfterEndJourneyCancellation = model.isPlaying
-    if model.isPlaying {
-      model.togglePlayback()
+    guard !isPreparingEndJourneyConfirmation else { return }
+    isPreparingEndJourneyConfirmation = true
+    Task {
+      let shouldResume = await model.pausePlayback()
+      isPreparingEndJourneyConfirmation = false
+      guard isActiveNavigation else {
+        resumesAfterEndJourneyCancellation = false
+        return
+      }
+      resumesAfterEndJourneyCancellation = shouldResume
+      showsEndJourneyConfirmation = true
     }
-    showsEndJourneyConfirmation = true
   }
 
   private func resumeAfterEndJourneyCancellation() {
@@ -2776,7 +2793,7 @@ struct WholeShutoProductView: View {
     else {
       return
     }
-    model.togglePlayback()
+    model.resumePlayback()
   }
 
   private var topTitle: String {

@@ -1,16 +1,5 @@
 # Kaido Routes agent instructions
 
-## Communication
-
-- Use Chinese with the project owner. Use English for tracked documentation,
-  code, commits, pull requests, issues, and public comments.
-- Lead with verified outcomes. Never claim that a route, movement, toll,
-  closure, test, device behavior, or field result was verified without dated
-  evidence.
-- Keep tracked English Markdown and executable scenarios authoritative. A
-  Chinese owner-facing HTML report is a presentation snapshot and must not add
-  decisions absent from the tracked contract.
-
 ## Product direction and audience
 
 - The primary audience is driving enthusiasts and visiting drivers who come to
@@ -35,10 +24,6 @@
 - The retained C2 and K7 artifacts are deterministic fixtures and regression
   anchors, not delivery tracks. Do not resume K7-specific evidence, field, or
   release work without an explicit owner request.
-- No speed, lap-time, ranking, racing, or enforcement-evasion mechanics.
-  Stylized route presentation is allowed; competitive or performance framing
-  is not.
-
 ## Current stage and autonomous authority
 
 - This repository is in active product delivery. It has a real iPhone target,
@@ -48,8 +33,9 @@
 - The project owner authorizes agents to modify repository rules, product
   code, tests, data contracts, adapters, dependencies, and documentation when
   needed to finish the product.
-- Work directly on `main`. Within Kaido scope, normal implementation,
-  dependency installation, deterministic data generation, simulator testing,
+- Work directly on `main`; do not create process-only branches or pull
+  requests. Within Kaido scope, normal implementation, dependency
+  installation, deterministic data generation, simulator testing,
   physical-device build/install/launch, commits, and pushes do not require a
   separate approval checkpoint.
 - Continue from one completed milestone to the next highest-value executable
@@ -80,8 +66,7 @@
    broad background material.
 4. Treat `research/` as an ignored private notebook. Recheck any discovery
    against current primary sources before promoting it into tracked assets.
-5. Preserve intentional dirty changes and prefer exact IDs, paths, hashes, and
-   runtime probes over inherited prose.
+5. Prefer exact IDs, paths, hashes, and runtime probes over inherited prose.
 
 ## Product invariants
 
@@ -134,6 +119,11 @@
 
 ## Evidence, privacy, and licences
 
+- Treat tracked Markdown and executable scenarios as authoritative. Owner-facing
+  presentation snapshots must not add decisions absent from the tracked
+  contract.
+- Claim that a route, movement, toll, closure, test, device behavior, or field
+  result is verified only when dated evidence supports it.
 - For static road identity and legal movement claims, prefer: current operator
   or government sources; current licensed/open structured data; independently
   reviewed sign/video/passenger evidence; then community material for
@@ -166,8 +156,7 @@
 5. Run the narrowest useful checks, then the full affected regression.
 6. Exercise the real App path on a simulator and connected device when
    applicable; distinguish runtime proof from field proof.
-7. Update authoritative docs, commit with an English Conventional Commit
-   message, and push `main`.
+7. Update authoritative docs, commit the milestone, and push `main`.
 8. Continue to the next executable product gap without waiting for another
    prompt. Stop only at a genuine external boundary and leave one exact
    continuation command or artifact.
@@ -203,14 +192,3 @@ contract explicitly.
 - Run `python3 scripts/validate_e2e.py` after scenario/schema changes.
 - Run `swift test` and `swift run kaido-scenarios e2e/scenarios` after Swift
   core or scenario-semantic changes.
-
-## Git
-
-- Preserve unrelated user changes. Never rewrite, amend, or force-push unless
-  the owner explicitly requests history rewriting.
-- Inspect status before committing. Use a specific English Conventional Commit
-  subject.
-- `feat`, `fix`, `refactor`, `perf`, and `security` commits need a body that
-  states why, user/system impact, and verification.
-- Push completed milestones to `origin/main`; do not create process-only
-  branches or PRs unless collaboration or repository protection requires one.

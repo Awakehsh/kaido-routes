@@ -148,7 +148,16 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
         coordinates: [
           MatcherCoordinate(latitude: 35.68, longitude: 139.761),
           MatcherCoordinate(latitude: 35.681, longitude: 139.761),
-        ]
+        ],
+        successorEdgeIDs: ["test.edge.recovery-continuation"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.edge.recovery-continuation",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.681, longitude: 139.761),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.762),
+        ],
+        successorEdgeIDs: ["test.edge.rejoin"]
       ),
     ],
     occurrences: [
@@ -177,7 +186,10 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
           divergenceOccurrenceID: "test.occurrence.approach",
           triggerDirectedEdgeID: "test.edge.wrong-branch",
           targetOccurrenceID: "test.occurrence.rejoin",
-          recoveryOccurrenceIDs: ["test.edge.wrong-branch"],
+          recoveryOccurrenceIDs: [
+            "test.edge.wrong-branch",
+            "test.edge.recovery-continuation",
+          ],
           isReleased: true,
           staysInAllowedTollDomain: true
         )
@@ -237,6 +249,50 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       == "test.occurrence.rejoin"
   )
   #expect(deviation.navigationSnapshot.recovery.destinationRerouteUsed == false)
+
+  let continuing = try await session.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.continuation",
+      observedAtMilliseconds: 3_000,
+      receivedAtMilliseconds: 3_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.6805,
+        longitude: 139.7615
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 141,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  #expect(
+    continuing.matcherEstimate.directedEdgeID
+      == "test.edge.recovery-continuation"
+  )
+  #expect(continuing.navigationSnapshot.recovery.status == .active)
+
+  let rejoined = try await session.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.rejoin",
+      observedAtMilliseconds: 4_000,
+      receivedAtMilliseconds: 4_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.68,
+        longitude: 139.7625
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 90,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  #expect(rejoined.matcherEstimate.occurrenceID == "test.occurrence.rejoin")
+  #expect(rejoined.navigationSnapshot.journeyPhase == .strictRoute)
+  #expect(rejoined.navigationSnapshot.recovery.status == .inactive)
+  #expect(
+    rejoined.navigationSnapshot.skippedOccurrenceIDs
+      == ["test.occurrence.planned-movement"]
+  )
 }
 
 struct NavigationSessionFixture {

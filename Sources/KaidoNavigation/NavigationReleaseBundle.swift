@@ -313,7 +313,8 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
         routePlan: routePlan,
         matcherCorridor: matcherCorridor,
         decisionZones: decisionZones,
-        releasedGuidance: releasedGuidance
+        releasedGuidance: releasedGuidance,
+        recoveryCandidates: runtimePolicy.recoveryCandidates
       ).map(NavigationReleaseBundleIssue.invalidRuntimeConfiguration)
     )
     issues.append(
@@ -447,7 +448,8 @@ enum NavigationRuntimeConfigurationValidator {
     routePlan: RoutePlan,
     matcherCorridor: RouteMatcherCorridor,
     decisionZones: [DecisionZoneProgressDefinition],
-    releasedGuidance: [ReleasedGuidanceDefinition]
+    releasedGuidance: [ReleasedGuidanceDefinition],
+    recoveryCandidates: [RecoveryCandidate] = []
   ) -> [String] {
     var issues = matcherCorridor.validationIssues
     if routePlan.id != matcherCorridor.routePlanID {
@@ -493,6 +495,33 @@ enum NavigationRuntimeConfigurationValidator {
     var edgesByID: [String: RouteMatcherDirectedEdge] = [:]
     for edge in matcherCorridor.edges where edgesByID[edge.id] == nil {
       edgesByID[edge.id] = edge
+    }
+    for recovery in recoveryCandidates where recovery.isReleased {
+      let recoveryEdges = recovery.recoveryOccurrenceIDs.compactMap {
+        edgesByID[$0]
+      }
+      if recoveryEdges.count != recovery.recoveryOccurrenceIDs.count {
+        issues.append("released recovery path is missing from matcher corridor")
+        continue
+      }
+      if zip(recoveryEdges, recoveryEdges.dropFirst()).contains(where: {
+        pair in
+        !pair.0.successorEdgeIDs.contains(pair.1.id)
+      }) {
+        issues.append("released recovery path is discontinuous in matcher corridor")
+      }
+      guard let target = routePlan.occurrence(
+        id: recovery.targetOccurrenceID
+      ),
+        let targetBinding = corridorOccurrencesByID[target.id],
+        let lastRecoveryEdge = recoveryEdges.last,
+        lastRecoveryEdge.successorEdgeIDs.contains(
+          targetBinding.directedEdgeID
+        )
+      else {
+        issues.append("released recovery path does not join its target occurrence")
+        continue
+      }
     }
     for zone in decisionZones {
       if decisionZonesByID[zone.id] != nil {

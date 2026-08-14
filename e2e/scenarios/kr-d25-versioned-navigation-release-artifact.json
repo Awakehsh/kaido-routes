@@ -275,6 +275,22 @@
             "successor_edge_ids": ["test.edge.navigation-artifact.exit"]
           },
           {
+            "directed_edge_id": "test.recovery.navigation-artifact.movement",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.6804, "longitude": 139.7614}
+            ],
+            "successor_edge_ids": ["test.recovery.navigation-artifact.edge"]
+          },
+          {
+            "directed_edge_id": "test.recovery.navigation-artifact.edge",
+            "coordinates": [
+              {"latitude": 35.6804, "longitude": 139.7614},
+              {"latitude": 35.6801, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.navigation-artifact.exit"]
+          },
+          {
             "directed_edge_id": "test.edge.navigation-artifact.exit",
             "coordinates": [
               {"latitude": 35.6801, "longitude": 139.7612},

@@ -686,6 +686,20 @@ public struct NavigationEngine: Sendable {
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
     guard target.index >= currentIndex else { return }
 
+    if snapshot.journeyPhase == .routeRecovery,
+      snapshot.recovery.status == .active,
+      snapshot.recovery.chosenRejoinOccurrenceID == target.id
+    {
+      for occurrence in routePlan.occurrences
+      where occurrence.index > currentIndex
+        && occurrence.index < target.index
+      {
+        appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+      }
+      snapshot.journeyPhase = .strictRoute
+      snapshot.recovery = RecoveryState()
+    }
+
     if snapshot.currentOccurrenceID != target.id {
       snapshot.activeGuidanceFrame = nil
       snapshot.guidancePlanningStatus = .inactive

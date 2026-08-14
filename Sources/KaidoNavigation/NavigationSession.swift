@@ -1,5 +1,6 @@
 import Foundation
 import KaidoDomain
+import KaidoRouting
 
 public enum NavigationSessionConfigurationError: Error, Equatable, Sendable {
   case invalid([String])
@@ -50,6 +51,7 @@ public actor NavigationSession {
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
   private let configuredEntryTransition: EntryTransition?
+  private let releasedRecoveryCandidates: [RecoveryCandidate]
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
   private var requiresRestorationReacquisition: Bool
 
@@ -72,7 +74,8 @@ public actor NavigationSession {
       routePlan: routePlan,
       matcherCorridor: matcherCorridor,
       decisionZones: decisionZones,
-      releasedGuidance: navigationConfiguration.releasedGuidance
+      releasedGuidance: navigationConfiguration.releasedGuidance,
+      recoveryCandidates: navigationConfiguration.recoveryCandidates
     )
     var allIssues = issues
     if let transition = navigationConfiguration.entryTransition {
@@ -170,6 +173,7 @@ public actor NavigationSession {
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
     configuredEntryTransition = navigationConfiguration.entryTransition
+    releasedRecoveryCandidates = navigationConfiguration.recoveryCandidates
     guidanceTargetByAnchorOccurrence = Self.guidanceTargets(
       decisionZones: decisionZones,
       releasedGuidance: navigationConfiguration.releasedGuidance
@@ -246,7 +250,8 @@ public actor NavigationSession {
       estimate.confidence == .high,
       estimate.occurrenceID == nil,
       let directedEdgeID = estimate.directedEdgeID,
-      estimate.candidateEdgeIDs == [directedEdgeID]
+      estimate.candidateEdgeIDs == [directedEdgeID],
+      !isOnActiveRecoveryPath(directedEdgeID)
     {
       engine.observeBranch(
         BranchObservation(
@@ -298,6 +303,21 @@ public actor NavigationSession {
         guidanceProgressState: state,
         guidanceBridgeError: error
       )
+    }
+  }
+
+  private func isOnActiveRecoveryPath(_ directedEdgeID: String) -> Bool {
+    guard engine.snapshot.journeyPhase == .routeRecovery,
+      engine.snapshot.recovery.status == .active,
+      let targetOccurrenceID =
+        engine.snapshot.recovery.chosenRejoinOccurrenceID
+    else {
+      return false
+    }
+    return releasedRecoveryCandidates.contains {
+      $0.isReleased
+        && $0.targetOccurrenceID == targetOccurrenceID
+        && $0.recoveryOccurrenceIDs.contains(directedEdgeID)
     }
   }
 

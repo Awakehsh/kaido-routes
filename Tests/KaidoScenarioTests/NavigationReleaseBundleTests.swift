@@ -35,6 +35,45 @@ func navigationReleaseBundleAcceptsCoherentRepeatedOccurrences() throws {
     ])
 }
 
+@Test("Released recovery path must be fully matchable through rejoin")
+func navigationReleaseBundleRejectsUnmatchableRecoveryPath() {
+  let fixture = navigationReleaseBundleFixture()
+  let incompleteCorridor = RouteMatcherCorridor(
+    id: fixture.matcherCorridor.id,
+    networkSnapshotID: fixture.matcherCorridor.networkSnapshotID,
+    routePlanID: fixture.matcherCorridor.routePlanID,
+    edges: fixture.matcherCorridor.edges.filter {
+      $0.id != "test.recovery.release-bundle.edge"
+    },
+    occurrences: fixture.matcherCorridor.occurrences
+  )
+
+  do {
+    _ = try NavigationReleaseBundle(
+      networkSnapshot: fixture.networkSnapshot,
+      routePlan: fixture.routePlan,
+      editorCatalog: fixture.editorCatalog,
+      editorPresentationCatalog: fixture.editorPresentationCatalog,
+      runtimePolicy: fixture.runtimePolicy,
+      matcherCorridor: incompleteCorridor,
+      decisionZones: fixture.decisionZones,
+      releasedGuidance: fixture.releasedGuidance,
+      junctionViews: fixture.junctionViews
+    )
+    Issue.record("Expected an incomplete recovery matcher path to block release")
+  } catch NavigationReleaseBundleError.invalid(let issues) {
+    #expect(
+      issues.contains(
+        .invalidRuntimeConfiguration(
+          "released recovery path is missing from matcher corridor"
+        )
+      )
+    )
+  } catch {
+    Issue.record("Unexpected error: \(error)")
+  }
+}
+
 @Test("Navigation release bundle rejects RoutePlan and editor-catalog step drift")
 func navigationReleaseBundleRejectsEditorStepDrift() {
   let fixture = navigationReleaseBundleFixture()
@@ -1017,7 +1056,11 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
         "test.edge.loop",
         139.7600,
         139.7610,
-        successors: ["test.edge.loop-movement", "test.edge.exit-movement"]
+        successors: [
+          "test.edge.loop-movement",
+          "test.edge.exit-movement",
+          "test.recovery.release-bundle.movement",
+        ]
       ),
       matcherEdge(
         "test.edge.loop-movement",
@@ -1030,6 +1073,23 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
         139.7610,
         139.7613,
         successors: ["test.edge.exit"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.recovery.release-bundle.movement",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.68, longitude: 139.7610),
+          MatcherCoordinate(latitude: 35.681, longitude: 139.7614),
+        ],
+        successorEdgeIDs: ["test.recovery.release-bundle.edge"]
+      ),
+      RouteMatcherDirectedEdge(
+        id: "test.recovery.release-bundle.edge",
+        coordinates: [
+          MatcherCoordinate(latitude: 35.681, longitude: 139.7614),
+          MatcherCoordinate(latitude: 35.681, longitude: 139.7600),
+          MatcherCoordinate(latitude: 35.68, longitude: 139.7600),
+        ],
+        successorEdgeIDs: ["test.edge.loop"]
       ),
       matcherEdge("test.edge.exit", 139.7613, 139.7620),
     ],

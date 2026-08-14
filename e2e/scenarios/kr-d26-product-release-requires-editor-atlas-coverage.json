@@ -283,6 +283,22 @@
             "successor_edge_ids": ["test.edge.product-release.exit"]
           },
           {
+            "directed_edge_id": "test.recovery.product-release.movement",
+            "coordinates": [
+              {"latitude": 35.68, "longitude": 139.761},
+              {"latitude": 35.6804, "longitude": 139.7614}
+            ],
+            "successor_edge_ids": ["test.recovery.product-release.edge"]
+          },
+          {
+            "directed_edge_id": "test.recovery.product-release.edge",
+            "coordinates": [
+              {"latitude": 35.6804, "longitude": 139.7614},
+              {"latitude": 35.6801, "longitude": 139.7612}
+            ],
+            "successor_edge_ids": ["test.edge.product-release.exit"]
+          },
+          {
             "directed_edge_id": "test.edge.product-release.exit",
             "coordinates": [
               {"latitude": 35.6801, "longitude": 139.7612},

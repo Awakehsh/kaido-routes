@@ -631,7 +631,12 @@ creates the session from the exact released RoutePlan,
 `ReleasedNavigationRuntimePolicy`, corridor, DecisionZones, and guidance without
 accepting independent replacements. The policy supplies the only eligible
 directional entry transition, released in-domain recovery candidates, and legal
-egress options. Every recovery candidate must identify an exact divergence
+egress options. Every released recovery edge must also exist as one continuous
+matcher-corridor path through the target RoutePlan edge. While recovery is
+active, high-confidence observations on that exact path retain recovery instead
+of being mistaken for a second deviation; reaching the bound target marks the
+bypassed RoutePlan occurrences skipped and returns the actor to strict-route
+navigation. Every recovery candidate must identify an exact divergence
 occurrence and trigger directed edge, begin with that same edge, and rejoin a
 strictly later RoutePlan occurrence. Off-plan observations only select a
 candidate with the same trigger edge. The release gate additionally requires

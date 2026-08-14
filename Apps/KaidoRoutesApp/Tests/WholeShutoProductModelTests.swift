@@ -353,6 +353,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     async throws
   {
     let pairs = [
+      ("shuto.ic.2.meguro", "shuto.ic.c1.ginza"),
       ("shuto.ic.2.tengenji", "shuto.ic.c1.ginza"),
       ("shuto.ic.c1.ginza", "shuto.ic.2.meguro"),
       ("shuto.ic.5.higashiikebukuro", "shuto.ic.c1.ginza"),

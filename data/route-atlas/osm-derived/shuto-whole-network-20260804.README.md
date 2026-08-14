@@ -30,7 +30,7 @@ total) that lead straight back onto the selected graph, and only when their
 
 Facility ramp candidates pass the ramp-topology probe — only link chains that
 genuinely leave (exits) or enter (entrances) the graph survive, each anchored at
-its ramp mouth — and then a dated, reviewed exclusion list
+its ramp mouth — and then a dated, reviewed candidate correction list
 (`data/network/shuto-facility-candidate-review-*.json`, hash-recorded in
 `sources.facility_candidate_review`). At stacked or shared-collector junctions
 no global heuristic can pin the right ramp: a rest-area access also "leaves the
@@ -38,12 +38,16 @@ network" through unselected service ways (Yoyogi PA's up-side ramp faked a
 1.1 km Shinjuku-to-Yoyogi fare path that the operator search prices via the full
 21 km circuit), while a genuine directional gate can anchor hundreds of meters
 from the catalog point on a collector shared with the next facility (Hatsudai's
-up entrance), so distance or way-ownership cuts sever real entrances. Each
-reviewed exclusion therefore names one facility, one candidate edge, and the
-operator evidence proving it wrong; the build fails if an exclusion no longer
-matches or would unmatch a facility. Operator pages establish current route and
-directional facility facts; OSM supplies candidate geometry and topology. Every
-usable IC and every official JCT must match or generation fails. Each JCT also
+up entrance), so distance or way-ownership cuts sever real entrances. Meguro's
+official point lies beside the first downstream ramp edge after the generated
+mouth anchor; its reviewed entry-boundary rebinding preserves the real forward
+`anchor → boundary` transition instead of synthesizing backwards geometry.
+Each reviewed exclusion or rebinding therefore names one facility and exact
+candidate edges plus its evidence; the build fails if it no longer matches the
+graph, reverses continuity, or would unmatch a facility. Operator pages
+establish current route and directional facility facts; OSM supplies candidate
+geometry and topology. Every usable IC and every official JCT must match or
+generation fails. Each JCT also
 retains the URL and SHA-256 of its current operator detail image without
 redistributing the image. The three unmatched IC facts are the explicitly
 unavailable Yaesu Route facilities and have no routable candidates. The operator
@@ -71,7 +75,7 @@ python3 -m venv /tmp/kaido-shuto-osmium
   --input /path/to/kanto-260804.osm.pbf \
   --official-catalog data/network/shuto-official-catalog-20260729.json \
   --facility-candidate-review \
-    data/network/shuto-facility-candidate-review-20260810.json \
+    data/network/shuto-facility-candidate-review-20260815.json \
   --output data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
   --expected-input-sha256 \
     a6835449bd93144cf6724e9682d691494a1b6ead5aeb4f42f1b5bf2f26e6412c \

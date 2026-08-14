@@ -317,7 +317,7 @@ python3 -m venv /tmp/kaido-shuto-osmium
   --input /path/to/kanto-260804.osm.pbf \
   --official-catalog data/network/shuto-official-catalog-20260729.json \
   --facility-candidate-review \
-    data/network/shuto-facility-candidate-review-20260810.json \
+    data/network/shuto-facility-candidate-review-20260815.json \
   --output data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
   --expected-input-sha256 \
     a6835449bd93144cf6724e9682d691494a1b6ead5aeb4f42f1b5bf2f26e6412c \
@@ -327,6 +327,7 @@ python3 -m venv /tmp/kaido-shuto-osmium
 
 The builder selects the 26 Shuto route relations, adds only connected motorway
 links, respects directed access, excludes abandoned and unavailable roads,
+applies hash-bound facility exclusions and forward entry-boundary corrections,
 matches every usable official IC and JCT, and fails on source or coverage drift.
 
 ## Licence and privacy

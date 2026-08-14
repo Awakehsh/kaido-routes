@@ -61,7 +61,14 @@ struct ShutoNetworkTests {
     )
     #expect(
       database.sources.facilityCandidateReview.reviewID
-        == "shuto-facility-candidate-review-20260810"
+        == "shuto-facility-candidate-review-20260815"
+    )
+    #expect(
+      database.sources.facilityCandidateReview.checkedAt == "2026-08-15"
+    )
+    #expect(
+      database.sources.facilityCandidateReview
+        .entryBoundaryRebindingCount == 1
     )
     #expect(database.sources.osm.attribution == "© OpenStreetMap contributors")
     #expect(database.sources.osm.licence == "ODbL-1.0")

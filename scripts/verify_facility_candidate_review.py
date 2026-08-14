@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Verify the committed snapshot still matches its facility candidate review.
 
-The builder applies dated, evidence-bound candidate exclusions at stacked or
-shared-collector junctions. This check keeps that binding honest between
+The builder applies dated, evidence-bound candidate corrections at ambiguous
+or ramp-boundary locations. This check keeps that binding honest between
 rebuilds: the snapshot must record the exact review it was built from, every
-exclusion must still name a real facility, the excluded candidate must be
-absent, and the facility must keep at least one candidate on that side.
+exclusion and rebinding must still name a real facility, and the facility must
+keep at least one candidate on that side.
 
 Run from the repository root. Exits non-zero with a specific reason.
 """
@@ -73,6 +73,11 @@ def main() -> int:
     exclusions = review.get("excluded_candidates", [])
     if recorded.get("excluded_candidate_count") != len(exclusions):
         fail("snapshot records a different exclusion count than the review")
+    rebindings = review.get("entry_boundary_rebindings", [])
+    if recorded.get("entry_boundary_rebinding_count") != len(rebindings):
+        fail(
+            "snapshot records a different entry rebinding count than the review"
+        )
 
     facilities = {
         facility["facility_id"]: facility
@@ -105,9 +110,47 @@ def main() -> int:
                     f"exclusion {exclusion['edge_id']} is missing {field}"
                 )
 
+    for rebinding in rebindings:
+        facility = facilities.get(rebinding["facility_id"])
+        if facility is None:
+            fail(
+                "entry boundary rebinding names unknown facility "
+                + rebinding["facility_id"]
+            )
+        candidates = facility["entry_edge_candidates"]
+        if any(
+            candidate["edge_id"] == rebinding["anchor_edge_id"]
+            for candidate in candidates
+        ):
+            fail(
+                "entry boundary anchor is still a route candidate: "
+                + rebinding["facility_id"]
+            )
+        matching = [
+            candidate
+            for candidate in candidates
+            if candidate["edge_id"] == rebinding["boundary_edge_id"]
+        ]
+        if len(matching) != 1:
+            fail(
+                "entry boundary candidate is not uniquely present: "
+                + rebinding["facility_id"]
+            )
+        if matching[0]["distance_meters"] != rebinding["distance_meters"]:
+            fail(
+                "entry boundary candidate distance differs from review: "
+                + rebinding["facility_id"]
+            )
+        for field in ("reason", "evidence"):
+            if not rebinding.get(field):
+                fail(
+                    "entry boundary rebinding is missing " + field
+                )
+
     print(
         f"PASS: {snapshot_path.name} matches {review_path.name} "
-        f"with {len(exclusions)} reviewed exclusions"
+        f"with {len(exclusions)} reviewed exclusions and "
+        f"{len(rebindings)} entry boundary rebindings"
     )
     return 0
 

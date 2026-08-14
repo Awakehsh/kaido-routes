@@ -906,7 +906,7 @@ def candidate_edges_for_facility(
 def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
     raw = path.read_bytes()
     review = json.loads(raw)
-    if review.get("schema_version") != "1.0":
+    if review.get("schema_version") != "1.1":
         raise NetworkBuildError("unsupported facility candidate review schema")
     for exclusion in review.get("excluded_candidates", []):
         for field in ("facility_id", "side", "edge_id", "reason", "evidence"):
@@ -918,17 +918,42 @@ def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
             raise NetworkBuildError(
                 "facility candidate exclusion side must be entry or exit"
             )
+    for rebinding in review.get("entry_boundary_rebindings", []):
+        for field in (
+            "facility_id",
+            "anchor_edge_id",
+            "boundary_edge_id",
+            "distance_meters",
+            "reason",
+            "evidence",
+        ):
+            if rebinding.get(field) in (None, ""):
+                raise NetworkBuildError(
+                    "entry boundary rebinding is missing " + field
+                )
+        distance = rebinding["distance_meters"]
+        if (
+            not isinstance(distance, (int, float))
+            or not math.isfinite(distance)
+            or distance < 0
+            or distance > 75
+        ):
+            raise NetworkBuildError(
+                "entry boundary rebinding distance must be within 75 meters"
+            )
     return review, hashlib.sha256(raw).hexdigest()
 
 
 def apply_candidate_review(
     facilities: list[dict[str, Any]],
     review: dict[str, Any],
+    edges: list[dict[str, Any]],
 ) -> None:
-    """Reviewed per-facility exclusions for stacked or shared-collector
-    junctions the heuristics cannot pin. Every exclusion must match a
-    present candidate — a stale review fails the build instead of silently
-    rotting."""
+    """Apply exact reviewed exclusions and forward entry boundaries.
+
+    Every correction must match the current graph. A stale review fails the
+    build instead of silently rotting or weakening directed continuity.
+    """
     by_id = {facility["facility_id"]: facility for facility in facilities}
     for exclusion in review.get("excluded_candidates", []):
         facility = by_id.get(exclusion["facility_id"])
@@ -960,6 +985,73 @@ def apply_candidate_review(
                 + exclusion["facility_id"]
             )
         facility[key] = remaining
+
+    edges_by_id = {edge["edge_id"]: edge for edge in edges}
+    for rebinding in review.get("entry_boundary_rebindings", []):
+        facility = by_id.get(rebinding["facility_id"])
+        if facility is None:
+            raise NetworkBuildError(
+                "entry boundary rebinding names unknown facility "
+                + rebinding["facility_id"]
+            )
+        candidates = facility["entry_edge_candidates"]
+        matching = [
+            candidate
+            for candidate in candidates
+            if candidate["edge_id"] == rebinding["anchor_edge_id"]
+        ]
+        if len(matching) != 1:
+            raise NetworkBuildError(
+                "entry boundary rebinding did not match exactly one anchor: "
+                + rebinding["facility_id"]
+                + " "
+                + rebinding["anchor_edge_id"]
+            )
+        anchor = edges_by_id.get(rebinding["anchor_edge_id"])
+        boundary = edges_by_id.get(rebinding["boundary_edge_id"])
+        if anchor is None or boundary is None:
+            raise NetworkBuildError(
+                "entry boundary rebinding names an unknown graph edge"
+            )
+        if (
+            anchor["kind"] != "LINK"
+            or boundary["kind"] != "LINK"
+            or anchor["to_node_id"] != boundary["from_node_id"]
+            or not membership_matches(
+                boundary,
+                facility["route_id"],
+                facility["entrance_directions"],
+            )
+        ):
+            raise NetworkBuildError(
+                "entry boundary rebinding is not one forward ramp step"
+            )
+        if any(
+            candidate["edge_id"] == boundary["edge_id"]
+            for candidate in candidates
+        ):
+            raise NetworkBuildError(
+                "entry boundary rebinding duplicates an existing candidate"
+            )
+        facility["entry_edge_candidates"] = sorted(
+            [
+                candidate
+                for candidate in candidates
+                if candidate["edge_id"] != anchor["edge_id"]
+            ]
+            + [
+                {
+                    "edge_id": boundary["edge_id"],
+                    "distance_meters": round(
+                        float(rebinding["distance_meters"]), 3
+                    ),
+                }
+            ],
+            key=lambda candidate: (
+                candidate["distance_meters"],
+                candidate["edge_id"],
+            ),
+        )
 
 
 def match_facilities(
@@ -1227,7 +1319,7 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
         edges,
         node_coordinates,
     )
-    apply_candidate_review(reviewed_facilities, candidate_review)
+    apply_candidate_review(reviewed_facilities, candidate_review, edges)
     return {
         "schema_version": "1.0",
         "database_id": (
@@ -1255,6 +1347,9 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
                 "sha256": candidate_review_sha,
                 "excluded_candidate_count": len(
                     candidate_review.get("excluded_candidates", [])
+                ),
+                "entry_boundary_rebinding_count": len(
+                    candidate_review.get("entry_boundary_rebindings", [])
                 ),
             },
             "osm": {

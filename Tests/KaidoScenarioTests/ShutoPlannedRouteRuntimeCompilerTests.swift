@@ -370,6 +370,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     let database = try loadWholeShutoDatabase()
     let planner = try ShutoRoutePlanner(database: database)
     let pairs = [
+      ("shuto.ic.2.meguro", "shuto.ic.c1.ginza"),
       ("shuto.ic.2.tengenji", "shuto.ic.c1.ginza"),
       ("shuto.ic.c1.ginza", "shuto.ic.2.meguro"),
       ("shuto.ic.5.higashiikebukuro", "shuto.ic.c1.ginza"),
@@ -388,6 +389,32 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         )
       #expect(artifact.navigationRelease.routePlan == route.routePlan)
     }
+  }
+
+  @Test("Meguro entry binds a forward ramp transition")
+  func meguroEntryBindsForwardRampTransition() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.2.meguro",
+      exitFacilityID: "shuto.ic.c1.ginza"
+    )
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(database: database, route: route)
+    let transition = try #require(
+      artifact.navigationRelease.runtimePolicy
+    ).entryTransition
+
+    #expect(route.edges.first?.edgeID == "osm.422023169.0.forward")
+    #expect(
+      transition.directedEdgeIDs == [
+        "osm.207535708.0.forward",
+        "osm.422023169.0.forward",
+      ]
+    )
+    #expect(
+      transition.firstRouteOccurrenceID
+        == route.routePlan.occurrences.first?.id
+    )
   }
 
   @Test("only exact HIGH occurrence evidence projects route progress")

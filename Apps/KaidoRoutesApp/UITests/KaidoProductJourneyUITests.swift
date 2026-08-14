@@ -288,27 +288,34 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
-  func testExactCustomRouteWithReviewedGuidanceOffersLiveNavigation() {
-    assertExactCustomRouteOffersLiveNavigation(
+  func testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation() {
+    assertExactCustomRouteStartsLiveNavigation(
       previewArgument: "-WHOLE-SHUTO-DYNAMIC-CUSTOM-ROUTE-PREVIEW"
     )
   }
 
-  func testShibuyaToGinzaCustomRouteOffersLiveNavigation() {
-    assertExactCustomRouteOffersLiveNavigation(
+  func testShibuyaToGinzaCustomRouteStartsLiveNavigation() {
+    assertExactCustomRouteStartsLiveNavigation(
       previewArgument:
         "-WHOLE-SHUTO-SHIBUYA-GINZA-LIVE-ROUTE-PREVIEW"
     )
   }
 
-  func testRoute2ToGinzaCustomRouteOffersLiveNavigation() {
-    assertExactCustomRouteOffersLiveNavigation(
+  func testRoute2ToGinzaCustomRouteStartsLiveNavigation() {
+    assertExactCustomRouteStartsLiveNavigation(
       previewArgument:
         "-WHOLE-SHUTO-ROUTE-2-LIVE-ROUTE-PREVIEW"
     )
   }
 
-  private func assertExactCustomRouteOffersLiveNavigation(
+  func testMeguroToGinzaCustomRouteStartsLiveNavigation() {
+    assertExactCustomRouteStartsLiveNavigation(
+      previewArgument:
+        "-WHOLE-SHUTO-MEGURO-LIVE-ROUTE-PREVIEW"
+    )
+  }
+
+  private func assertExactCustomRouteStartsLiveNavigation(
     previewArgument: String
   ) {
     continueAfterFailure = false
@@ -353,6 +360,19 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertFalse(
       element("whole-shuto-live-drive-blocker", in: app).exists
+    )
+    startLiveDrive.tap()
+    let liveEntry = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "SURFACE_ACCESS"),
+      object: product
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [liveEntry], timeout: 8),
+      .completed
+    )
+    XCTAssertTrue(
+      element("whole-shuto-position-state", in: app)
+        .waitForExistence(timeout: 5)
     )
   }
 

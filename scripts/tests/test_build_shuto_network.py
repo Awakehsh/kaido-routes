@@ -16,6 +16,115 @@ SPEC.loader.exec_module(BUILD_SHUTO_NETWORK)
 
 
 class BuildShutoNetworkTests(unittest.TestCase):
+    def test_entry_boundary_rebinding_preserves_forward_ramp_order(
+        self,
+    ) -> None:
+        facilities = [
+            {
+                "facility_id": "test.entry",
+                "route_id": "2",
+                "entrance_directions": ["上り"],
+                "entry_edge_candidates": [
+                    {"edge_id": "test.anchor", "distance_meters": 4.0}
+                ],
+                "exit_edge_candidates": [],
+            }
+        ]
+        edges = [
+            {
+                "edge_id": "test.anchor",
+                "kind": "LINK",
+                "from_node_id": 1,
+                "to_node_id": 2,
+                "route_memberships": [
+                    {"route_id": "2", "directions_ja": []}
+                ],
+            },
+            {
+                "edge_id": "test.boundary",
+                "kind": "LINK",
+                "from_node_id": 2,
+                "to_node_id": 3,
+                "route_memberships": [
+                    {"route_id": "2", "directions_ja": []}
+                ],
+            },
+        ]
+        review = {
+            "excluded_candidates": [],
+            "entry_boundary_rebindings": [
+                {
+                    "facility_id": "test.entry",
+                    "anchor_edge_id": "test.anchor",
+                    "boundary_edge_id": "test.boundary",
+                    "distance_meters": 4.0,
+                }
+            ],
+        }
+
+        BUILD_SHUTO_NETWORK.apply_candidate_review(
+            facilities, review, edges
+        )
+
+        self.assertEqual(
+            facilities[0]["entry_edge_candidates"],
+            [{"edge_id": "test.boundary", "distance_meters": 4.0}],
+        )
+
+    def test_entry_boundary_rebinding_rejects_non_successor(
+        self,
+    ) -> None:
+        facilities = [
+            {
+                "facility_id": "test.entry",
+                "route_id": "2",
+                "entrance_directions": ["上り"],
+                "entry_edge_candidates": [
+                    {"edge_id": "test.anchor", "distance_meters": 4.0}
+                ],
+                "exit_edge_candidates": [],
+            }
+        ]
+        edges = [
+            {
+                "edge_id": "test.anchor",
+                "kind": "LINK",
+                "from_node_id": 1,
+                "to_node_id": 2,
+                "route_memberships": [
+                    {"route_id": "2", "directions_ja": []}
+                ],
+            },
+            {
+                "edge_id": "test.boundary",
+                "kind": "LINK",
+                "from_node_id": 9,
+                "to_node_id": 10,
+                "route_memberships": [
+                    {"route_id": "2", "directions_ja": []}
+                ],
+            },
+        ]
+        review = {
+            "excluded_candidates": [],
+            "entry_boundary_rebindings": [
+                {
+                    "facility_id": "test.entry",
+                    "anchor_edge_id": "test.anchor",
+                    "boundary_edge_id": "test.boundary",
+                    "distance_meters": 4.0,
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(
+            BUILD_SHUTO_NETWORK.NetworkBuildError,
+            "not one forward ramp step",
+        ):
+            BUILD_SHUTO_NETWORK.apply_candidate_review(
+                facilities, review, edges
+            )
+
     def test_official_route_directions_come_from_directional_facilities(
         self,
     ) -> None:

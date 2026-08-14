@@ -30,15 +30,32 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     Codable, Equatable, Sendable
   {
     public let checkedAt: String
+    public let entryBoundaryRebindingCount: Int
     public let excludedCandidateCount: Int
     public let reviewID: String
     public let sha256: String
 
     private enum CodingKeys: String, CodingKey {
       case checkedAt = "checked_at"
+      case entryBoundaryRebindingCount = "entry_boundary_rebinding_count"
       case excludedCandidateCount = "excluded_candidate_count"
       case reviewID = "review_id"
       case sha256
+    }
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      checkedAt = try container.decode(String.self, forKey: .checkedAt)
+      entryBoundaryRebindingCount = try container.decodeIfPresent(
+        Int.self,
+        forKey: .entryBoundaryRebindingCount
+      ) ?? 0
+      excludedCandidateCount = try container.decode(
+        Int.self,
+        forKey: .excludedCandidateCount
+      )
+      reviewID = try container.decode(String.self, forKey: .reviewID)
+      sha256 = try container.decode(String.self, forKey: .sha256)
     }
   }
 
@@ -324,6 +341,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
         !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       }),
       !sources.facilityCandidateReview.checkedAt.isEmpty,
+      sources.facilityCandidateReview.entryBoundaryRebindingCount >= 0,
       sources.facilityCandidateReview.excludedCandidateCount >= 0,
       !sources.facilityCandidateReview.reviewID.isEmpty,
       Self.isSHA256(sources.facilityCandidateReview.sha256),

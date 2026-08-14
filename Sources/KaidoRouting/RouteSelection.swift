@@ -241,17 +241,23 @@ public enum EntranceRecommender {
 }
 
 public struct RecoveryCandidate: Codable, Equatable, Sendable {
+  public let divergenceOccurrenceID: String
+  public let triggerDirectedEdgeID: String
   public let targetOccurrenceID: String
   public let recoveryOccurrenceIDs: [String]
   public let isReleased: Bool
   public let staysInAllowedTollDomain: Bool
 
   public init(
+    divergenceOccurrenceID: String,
+    triggerDirectedEdgeID: String,
     targetOccurrenceID: String,
     recoveryOccurrenceIDs: [String],
     isReleased: Bool,
     staysInAllowedTollDomain: Bool
   ) {
+    self.divergenceOccurrenceID = divergenceOccurrenceID
+    self.triggerDirectedEdgeID = triggerDirectedEdgeID
     self.targetOccurrenceID = targetOccurrenceID
     self.recoveryOccurrenceIDs = recoveryOccurrenceIDs
     self.isReleased = isReleased
@@ -259,6 +265,8 @@ public struct RecoveryCandidate: Codable, Equatable, Sendable {
   }
 
   private enum CodingKeys: String, CodingKey {
+    case divergenceOccurrenceID = "divergence_occurrence_id"
+    case triggerDirectedEdgeID = "trigger_directed_edge_id"
     case targetOccurrenceID = "target_occurrence_id"
     case recoveryOccurrenceIDs = "recovery_occurrence_ids"
     case isReleased = "released"
@@ -270,16 +278,23 @@ public enum RecoveryPlanner {
   public static func choose(
     candidates: [RecoveryCandidate],
     routePlan: RoutePlan,
-    after currentIndex: Int
+    after currentIndex: Int,
+    triggeredBy directedEdgeID: String? = nil
   ) -> RecoveryCandidate? {
     candidates
       .filter { candidate in
         guard candidate.isReleased, candidate.staysInAllowedTollDomain,
+          directedEdgeID.map({ candidate.triggerDirectedEdgeID == $0 }) ?? true,
+          let divergence = routePlan.occurrence(
+            id: candidate.divergenceOccurrenceID
+          ),
           let target = routePlan.occurrence(id: candidate.targetOccurrenceID)
         else {
           return false
         }
         return target.index > currentIndex
+          && target.index > divergence.index
+          && (directedEdgeID == nil || divergence.index >= currentIndex)
       }
       .min { lhs, rhs in
         let lhsIndex = routePlan.occurrence(id: lhs.targetOccurrenceID)?.index ?? .max

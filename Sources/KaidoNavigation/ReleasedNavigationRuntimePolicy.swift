@@ -124,11 +124,21 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
     }
     let firstRouteIndex = routePlan.occurrences.first?.index ?? -1
     for candidate in recoveryCandidates {
+      let divergenceIndex = routePlan.occurrence(
+        id: candidate.divergenceOccurrenceID
+      )?.index
       let targetIndex = routePlan.occurrence(id: candidate.targetOccurrenceID)?.index
       if !candidate.isReleased
         || !candidate.staysInAllowedTollDomain
         || targetIndex.map({ $0 <= firstRouteIndex }) ?? true
+        || divergenceIndex == nil
+        || targetIndex.map({ target in
+          divergenceIndex.map({ target <= $0 }) ?? true
+        }) ?? true
+        || Self.normalized(candidate.triggerDirectedEdgeID).isEmpty
         || candidate.recoveryOccurrenceIDs.isEmpty
+        || candidate.recoveryOccurrenceIDs.first
+          != candidate.triggerDirectedEdgeID
         || candidate.recoveryOccurrenceIDs.contains(where: {
           Self.normalized($0).isEmpty
         })

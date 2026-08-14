@@ -403,6 +403,8 @@ func navigationReleaseBundleRejectsUnusableRecoveryTarget() {
     entryTransition: fixture.runtimePolicy.entryTransition,
     recoveryCandidates: [
       RecoveryCandidate(
+        divergenceOccurrenceID: "test.occurrence.entry",
+        triggerDirectedEdgeID: "test.recovery.invalid.movement",
         targetOccurrenceID: "test.occurrence.entry",
         recoveryOccurrenceIDs: [
           "test.recovery.invalid.movement",
@@ -970,6 +972,8 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
     ),
     recoveryCandidates: [
       RecoveryCandidate(
+        divergenceOccurrenceID: "test.occurrence.entry",
+        triggerDirectedEdgeID: "test.recovery.release-bundle.movement",
         targetOccurrenceID: "test.occurrence.loop-edge-2",
         recoveryOccurrenceIDs: [
           "test.recovery.release-bundle.movement",

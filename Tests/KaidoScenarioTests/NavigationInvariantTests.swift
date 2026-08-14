@@ -289,12 +289,16 @@ func runtimeClosureActivatesReleasedRecovery() {
       routePlan: routePlan,
       recoveryCandidates: [
         RecoveryCandidate(
+          divergenceOccurrenceID: "current",
+          triggerDirectedEdgeID: "test.recovery.still-hits-closure",
           targetOccurrenceID: "blocked",
           recoveryOccurrenceIDs: ["test.recovery.still-hits-closure"],
           isReleased: true,
           staysInAllowedTollDomain: true
         ),
         RecoveryCandidate(
+          divergenceOccurrenceID: "current",
+          triggerDirectedEdgeID: "test.recovery.bypass",
           targetOccurrenceID: "rejoin",
           recoveryOccurrenceIDs: ["test.recovery.bypass"],
           isReleased: true,
@@ -319,6 +323,78 @@ func runtimeClosureActivatesReleasedRecovery() {
   #expect(engine.snapshot.recovery.destinationRerouteUsed == false)
   #expect(engine.snapshot.prohibitedGuidanceActions.contains("ABRUPT_LANE_CHANGE_OR_REVERSAL"))
   #expect(engine.snapshot.requiresRouteEditingWhileMoving == false)
+}
+
+@Test("A wrong branch can only use the recovery released for that directed edge")
+func wrongBranchRecoveryRequiresExactTriggerEdge() {
+  let routePlan = RoutePlan(
+    id: "test.plan.branch-bound-recovery",
+    networkSnapshotID: "test.snapshot.navigation",
+    entryFacilityID: "test.entry",
+    exitFacilityID: "test.exit",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      RouteOccurrence(
+        id: "current",
+        index: 0,
+        kind: .edge,
+        entityID: "test.edge.current"
+      ),
+      RouteOccurrence(
+        id: "planned",
+        index: 1,
+        kind: .junctionMovement,
+        entityID: "test.edge.planned"
+      ),
+      RouteOccurrence(
+        id: "rejoin",
+        index: 2,
+        kind: .edge,
+        entityID: "test.edge.rejoin"
+      ),
+    ]
+  )
+  let candidate = RecoveryCandidate(
+    divergenceOccurrenceID: "current",
+    triggerDirectedEdgeID: "test.edge.wrong-a",
+    targetOccurrenceID: "rejoin",
+    recoveryOccurrenceIDs: ["test.edge.wrong-a", "test.edge.connector"],
+    isReleased: true,
+    staysInAllowedTollDomain: true
+  )
+  func engine() -> NavigationEngine {
+    NavigationEngine(
+      configuration: NavigationConfiguration(
+        routePlan: routePlan,
+        recoveryCandidates: [candidate]
+      ),
+      initialSnapshot: NavigationSnapshot(
+        journeyPhase: .strictRoute,
+        currentOccurrenceID: "current",
+        locationConfidence: .high
+      )
+    )
+  }
+
+  var mismatched = engine()
+  mismatched.observeBranch(
+    BranchObservation(
+      observedMovementID: "test.edge.wrong-b",
+      confidence: .high
+    )
+  )
+  #expect(mismatched.snapshot.recovery.status == .unavailable)
+  #expect(mismatched.snapshot.recovery.chosenRejoinOccurrenceID == nil)
+
+  var matching = engine()
+  matching.observeBranch(
+    BranchObservation(
+      observedMovementID: "test.edge.wrong-a",
+      confidence: .high
+    )
+  )
+  #expect(matching.snapshot.recovery.status == .active)
+  #expect(matching.snapshot.recovery.chosenRejoinOccurrenceID == "rejoin")
 }
 
 @Test("Unavailable recovery clears stale egress authority")

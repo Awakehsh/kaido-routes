@@ -307,7 +307,8 @@ public struct NavigationEngine: Sendable {
       let recovery = RecoveryPlanner.choose(
         candidates: configuration.recoveryCandidates,
         routePlan: routePlan,
-        after: currentIndex
+        after: currentIndex,
+        triggeredBy: observedMovementID
       )
     else {
       activateUnavailableRecovery(routePlan: routePlan)

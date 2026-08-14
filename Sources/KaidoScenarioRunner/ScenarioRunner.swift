@@ -1498,6 +1498,12 @@ private struct ScenarioHarness {
         throw ScenarioExecutionError.invalidInput("recovery_candidates")
       }
       return RecoveryCandidate(
+        divergenceOccurrenceID: try candidate.requiredString(
+          "divergence_occurrence_id"
+        ),
+        triggerDirectedEdgeID: try candidate.requiredString(
+          "trigger_directed_edge_id"
+        ),
         targetOccurrenceID: try candidate.requiredString("target_occurrence_id"),
         recoveryOccurrenceIDs: try Self.requiredStringArray(
           candidate,
@@ -3459,6 +3465,12 @@ private struct ScenarioHarness {
         throw ScenarioExecutionError.invalidInput("recovery_candidates")
       }
       return RecoveryCandidate(
+        divergenceOccurrenceID: try candidate.requiredString(
+          "divergence_occurrence_id"
+        ),
+        triggerDirectedEdgeID: try candidate.requiredString(
+          "trigger_directed_edge_id"
+        ),
         targetOccurrenceID: try candidate.requiredString("target_occurrence_id"),
         recoveryOccurrenceIDs: (candidate.array("recovery_occurrence_ids") ?? [])
           .compactMap(\.stringValue),

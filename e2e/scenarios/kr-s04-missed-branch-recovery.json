@@ -67,6 +67,8 @@
     "inputs": {
       "recovery_candidates": [
         {
+          "divergence_occurrence_id": "approach",
+          "trigger_directed_edge_id": "recovery-unplanned-connector",
           "target_occurrence_id": "planned-rejoin",
           "recovery_occurrence_ids": [
             "recovery-unplanned-connector",
@@ -98,7 +100,7 @@
       "at_ms": 8000,
       "type": "BRANCH_OBSERVED",
       "payload": {
-        "observed_movement_id": "test.movement.unplanned",
+        "observed_movement_id": "recovery-unplanned-connector",
         "confidence": "HIGH"
       }
     }

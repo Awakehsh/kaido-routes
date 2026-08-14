@@ -174,6 +174,8 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       routePlan: routePlan,
       recoveryCandidates: [
         RecoveryCandidate(
+          divergenceOccurrenceID: "test.occurrence.approach",
+          triggerDirectedEdgeID: "test.edge.wrong-branch",
           targetOccurrenceID: "test.occurrence.rejoin",
           recoveryOccurrenceIDs: ["test.edge.wrong-branch"],
           isReleased: true,

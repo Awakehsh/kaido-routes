@@ -196,8 +196,25 @@ class ValidateNavigationReleaseArtifactTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "target_occurrence_id must be later than the first RoutePlan "
+                "target_occurrence_id must be later than the divergence RoutePlan "
                 "occurrence" in error
+                for error in errors
+            )
+        )
+
+    def test_safe_rejoin_path_must_begin_with_trigger_edge(self) -> None:
+        scenario = copy.deepcopy(self.scenario)
+        policy = scenario["given"]["inputs"]["navigation_runtime_policy"]
+        policy["recovery_candidates"][0]["trigger_directed_edge_id"] = (
+            "test.recovery.other-branch"
+        )
+
+        errors = self.validate_runtime_policy(scenario)
+
+        self.assertTrue(
+            any(
+                "recovery_occurrence_ids must begin with "
+                "trigger_directed_edge_id" in error
                 for error in errors
             )
         )

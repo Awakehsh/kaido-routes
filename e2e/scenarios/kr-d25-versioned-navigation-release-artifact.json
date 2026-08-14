@@ -197,6 +197,8 @@
         },
         "recovery_candidates": [
           {
+            "divergence_occurrence_id": "test.occurrence.navigation-artifact.approach",
+            "trigger_directed_edge_id": "test.recovery.navigation-artifact.movement",
             "target_occurrence_id": "test.occurrence.navigation-artifact.exit",
             "recovery_occurrence_ids": [
               "test.recovery.navigation-artifact.movement",

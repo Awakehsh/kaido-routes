@@ -15,10 +15,16 @@ catalog and facility-review hashes, and OSM source/licence metadata rather than
 discarding those fields at decode. `ShutoPlannedRouteRuntimeCompiler` validates
 the selected facilities, graph edges, occurrence order, geometry, distance,
 and snapshot, then compiles the route-aware matcher corridor, DecisionZones,
-reviewed guidance, and graph-derived recovery candidates. Because the graph is
-a planning candidate, those recovery paths are marked unreleased: a deviation
-becomes unavailable/route-interrupted instead of executing an unreviewed
-movement. Every result carries a deterministic `ShutoRuntimeAssetIdentity`: the
+reviewed guidance, and graph-derived recovery candidates. Recovery derivation
+runs independently for each alternative outgoing edge and binds the candidate
+to both the RoutePlan divergence occurrence and the observed directed edge;
+runtime selection refuses a candidate authored for a different branch. Because
+the graph is a planning candidate, those recovery paths are marked unreleased:
+a deviation becomes unavailable/route-interrupted instead of executing an
+unreviewed movement. The compiler also emits a deterministic
+`ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
+branch. It quantifies missing review but grants no authority. Every result
+carries a deterministic `ShutoRuntimeAssetIdentity`: the
 network-artifact SHA-256 covers
 the complete canonical decoded database, while the route-runtime SHA-256 binds
 the exact `RoutePlan` and all route-local runtime inputs to that artifact hash.
@@ -599,7 +605,11 @@ creates the session from the exact released RoutePlan,
 `ReleasedNavigationRuntimePolicy`, corridor, DecisionZones, and guidance without
 accepting independent replacements. The policy supplies the only eligible
 directional entry transition, released in-domain recovery candidates, and legal
-egress options. The release gate additionally requires every transition edge to
+egress options. Every recovery candidate must identify an exact divergence
+occurrence and trigger directed edge, begin with that same edge, and rejoin a
+strictly later RoutePlan occurrence. Off-plan observations only select a
+candidate with the same trigger edge. The release gate additionally requires
+every transition edge to
 exist in the same matcher corridor, every consecutive pair to be an explicit
 successor, and the final transition edge to lead to the first RoutePlan
 occurrence binding. The internal app now owns a foreground-only synthetic

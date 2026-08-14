@@ -2,6 +2,7 @@ import Foundation
 import KaidoAppleAdapters
 import KaidoNavigation
 import KaidoPresentation
+import KaidoRouting
 
 private enum CLIError: Error, CustomStringConvertible {
   case usage
@@ -26,6 +27,9 @@ private enum CLIError: Error, CustomStringConvertible {
     case .usage:
       """
       Usage:
+        kaido-release inspect-live-coverage \\
+          --network <whole-shuto-network.json> \\
+          --entry <directional-entry-id> --exit <directional-exit-id>
         kaido-release validate-navigation --artifact <navigation-release.json>
         kaido-release build-navigation \\
           --draft <navigation-release-draft.json> \\
@@ -263,6 +267,11 @@ private enum CLIError: Error, CustomStringConvertible {
 }
 
 private enum Command {
+  case inspectLiveCoverage(
+    network: String,
+    entryFacilityID: String,
+    exitFacilityID: String
+  )
   case validateNavigation(artifact: String)
   case buildNavigation(
     draft: String,
@@ -334,6 +343,60 @@ private enum Command {
   )
 }
 
+private struct LiveCoverageReport: Encodable {
+  let routePlanID: String
+  let entryFacilityID: String
+  let exitFacilityID: String
+  let routeOccurrenceCount: Int
+  let decisionCount: Int
+  let missingGuidanceDecisionCount: Int
+  let recoveryBranchCount: Int
+  let missingRecoveryCandidateBranchCount: Int
+  let missingReleasedRecoveryBranchCount: Int
+  let expresswayReleaseCoverageComplete: Bool
+  let coverage: ShutoRouteLiveReleaseCoverage
+
+  init(
+    routePlanID: String,
+    entryFacilityID: String,
+    exitFacilityID: String,
+    routeOccurrenceCount: Int,
+    coverage: ShutoRouteLiveReleaseCoverage
+  ) {
+    self.routePlanID = routePlanID
+    self.entryFacilityID = entryFacilityID
+    self.exitFacilityID = exitFacilityID
+    self.routeOccurrenceCount = routeOccurrenceCount
+    decisionCount = coverage.decisions.count
+    missingGuidanceDecisionCount = coverage.missingGuidanceDecisionCount
+    recoveryBranchCount = coverage.recoveryBranches.count
+    missingRecoveryCandidateBranchCount =
+      coverage.missingRecoveryCandidateBranchCount
+    missingReleasedRecoveryBranchCount =
+      coverage.missingReleasedRecoveryBranchCount
+    expresswayReleaseCoverageComplete =
+      coverage.expresswayReleaseCoverageComplete
+    self.coverage = coverage
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case routePlanID = "route_plan_id"
+    case entryFacilityID = "entry_facility_id"
+    case exitFacilityID = "exit_facility_id"
+    case routeOccurrenceCount = "route_occurrence_count"
+    case decisionCount = "decision_count"
+    case missingGuidanceDecisionCount = "missing_guidance_decision_count"
+    case recoveryBranchCount = "recovery_branch_count"
+    case missingRecoveryCandidateBranchCount =
+      "missing_recovery_candidate_branch_count"
+    case missingReleasedRecoveryBranchCount =
+      "missing_released_recovery_branch_count"
+    case expresswayReleaseCoverageComplete =
+      "expressway_release_coverage_complete"
+    case coverage
+  }
+}
+
 private struct Arguments {
   let command: Command
 
@@ -343,6 +406,13 @@ private struct Arguments {
     }
     let flags = try FlagValues(Array(values.dropFirst()))
     switch commandName {
+    case "inspect-live-coverage":
+      try flags.require(exactly: ["--network", "--entry", "--exit"])
+      command = .inspectLiveCoverage(
+        network: try flags.value("--network"),
+        entryFacilityID: try flags.value("--entry"),
+        exitFacilityID: try flags.value("--exit")
+      )
     case "validate-navigation":
       try flags.require(exactly: ["--artifact"])
       command = .validateNavigation(
@@ -823,6 +893,34 @@ private func writeError(_ value: String) {
 do {
   let arguments = try Arguments(Array(CommandLine.arguments.dropFirst()))
   switch arguments.command {
+  case .inspectLiveCoverage(
+    let networkPath,
+    let entryFacilityID,
+    let exitFacilityID
+  ):
+    let database = try decode(
+      ShutoNetworkDatabase.self,
+      path: networkPath
+    )
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let report = LiveCoverageReport(
+      routePlanID: route.routePlan.id,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      routeOccurrenceCount: route.routePlan.occurrences.count,
+      coverage: assets.liveReleaseCoverage
+    )
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    FileHandle.standardOutput.write(try encoder.encode(report))
+    FileHandle.standardOutput.write(Data("\n".utf8))
   case .validateNavigation(let artifact):
     do {
       let release = try NavigationReleaseArtifactCodec.decode(

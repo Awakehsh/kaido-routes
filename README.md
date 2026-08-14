@@ -80,10 +80,14 @@ internal review workbench.
   authority or upgrade the graph's evidence status. Entry-transition and
   expressway replay checkpoints persist that identity and return to parked
   review instead of restoring runtime progress when either hash drifts.
-- Graph search may derive candidate wrong-turn rejoin shapes for integrity and
-  future review, but every such path remains unreleased. A replayed deviation is
-  therefore unavailable/route-interrupted rather than executing an unreviewed
-  movement.
+- Graph search derives candidate wrong-turn rejoin shapes separately for every
+  divergent directed edge. Each candidate is bound to the exact RoutePlan
+  divergence occurrence and the observed wrong-turn edge, so one branch cannot
+  borrow another branch's recovery. Every graph-derived path remains
+  unreleased; a replayed deviation is therefore unavailable/route-interrupted
+  rather than executing an unreviewed movement. `kaido-release
+  inspect-live-coverage` emits the exact route-local missing guidance,
+  candidate-recovery, and released-recovery counts without granting authority.
 - The driving simulation covers surface access, entry, expressway travel,
   junction prompts, exit, surface egress, and completion. Entry and expressway
   playback follow the selected network geometry with a maximum 30-meter sample
@@ -189,6 +193,15 @@ The product distinguishes what is known from what is still unconfirmed:
   labeled replay exercises the route-aware matcher and actor-owned reducer but
   grants no road, tunnel, field, acoustic, or CarPlay qualification. Spoken turn
   guidance still covers reviewed junction movements only.
+
+Inspect one exact planned route's expressway release gaps:
+
+```sh
+swift run kaido-release inspect-live-coverage \
+  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
+  --entry shuto.ic.3.shibuya \
+  --exit shuto.ic.k1.minatomirai
+```
 
 ## Build and run
 

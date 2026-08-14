@@ -1865,10 +1865,12 @@ def validate_navigation_runtime_policy(
         v.add(
             f"{context}.recovery_candidates are allowed only for SAFE_REJOIN"
         )
-    recovery_keys: set[tuple[str, tuple[str, ...], bool, bool]] = set()
+    recovery_keys: set[tuple[str, str, str, tuple[str, ...], bool, bool]] = set()
     for index, candidate in enumerate(recovery_candidates):
         candidate_context = f"{context}.recovery_candidates[{index}]"
         candidate_required = {
+            "divergence_occurrence_id",
+            "trigger_directed_edge_id",
             "target_occurrence_id",
             "recovery_occurrence_ids",
             "released",
@@ -1876,6 +1878,21 @@ def validate_navigation_runtime_policy(
         }
         if not v.require_keys(candidate, candidate_required, candidate_context):
             continue
+        divergence_id = candidate["divergence_occurrence_id"]
+        if (
+            not isinstance(divergence_id, str)
+            or not divergence_id.strip()
+            or divergence_id not in occurrence_ids
+        ):
+            v.add(f"{candidate_context}.divergence_occurrence_id is unknown")
+            divergence_index = None
+        else:
+            divergence_index = occurrence_by_id[divergence_id].get("index")
+        trigger_id = candidate["trigger_directed_edge_id"]
+        if not isinstance(trigger_id, str) or not trigger_id.strip():
+            v.add(
+                f"{candidate_context}.trigger_directed_edge_id must be non-empty"
+            )
         target_id = candidate["target_occurrence_id"]
         if (
             not isinstance(target_id, str)
@@ -1885,17 +1902,16 @@ def validate_navigation_runtime_policy(
             v.add(f"{candidate_context}.target_occurrence_id is unknown")
         else:
             target_index = occurrence_by_id[target_id].get("index")
-            first_index = occurrences[0].get("index")
             if (
                 not isinstance(target_index, int)
                 or isinstance(target_index, bool)
-                or not isinstance(first_index, int)
-                or isinstance(first_index, bool)
-                or target_index <= first_index
+                or not isinstance(divergence_index, int)
+                or isinstance(divergence_index, bool)
+                or target_index <= divergence_index
             ):
                 v.add(
                     f"{candidate_context}.target_occurrence_id must be later "
-                    "than the first RoutePlan occurrence"
+                    "than the divergence RoutePlan occurrence"
                 )
         recovery_ids = candidate["recovery_occurrence_ids"]
         valid_recovery_ids = (
@@ -1912,14 +1928,26 @@ def validate_navigation_runtime_policy(
                 f"{candidate_context}.recovery_occurrence_ids must be "
                 "unique non-empty strings"
             )
+        elif recovery_ids[0] != trigger_id:
+            v.add(
+                f"{candidate_context}.recovery_occurrence_ids must begin with "
+                "trigger_directed_edge_id"
+            )
         if candidate["released"] is not True:
             v.add(f"{candidate_context}.released must be true")
         if candidate["stays_in_allowed_toll_domain"] is not True:
             v.add(
                 f"{candidate_context}.stays_in_allowed_toll_domain must be true"
             )
-        if isinstance(target_id, str) and valid_recovery_ids:
+        if (
+            isinstance(divergence_id, str)
+            and isinstance(trigger_id, str)
+            and isinstance(target_id, str)
+            and valid_recovery_ids
+        ):
             key = (
+                divergence_id,
+                trigger_id,
                 target_id,
                 tuple(recovery_ids),
                 candidate["released"] is True,

@@ -272,6 +272,9 @@ release; the package-only raw session initializer is not an adapter escape
 hatch. The navigation artifact includes one evidenced
 `ReleasedNavigationRuntimePolicy`; the app cannot supply or replace its entry
 transition, recovery candidates, or Finish egress. The validated runtime
+accepts a wrong-turn recovery only when its released divergence occurrence and
+trigger directed edge match the observed branch; another branch's candidate is
+not eligible. The validated runtime
 supplies the only `EntryTransitionAdmissionContext`. The app-owned foreground
 pipeline is wired as `CoreLocationObservationAdapter` →
 `CoreLocationEntryTransitionAdapter` → `NavigationSession`, and after strict

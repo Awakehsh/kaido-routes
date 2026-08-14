@@ -761,13 +761,15 @@
       "network_snapshot_id" : "test.snapshot.release-bundle",
       "recovery_candidates" : [
         {
+          "divergence_occurrence_id" : "test.occurrence.entry",
           "recovery_occurrence_ids" : [
             "test.recovery.release-bundle.movement",
             "test.recovery.release-bundle.edge"
           ],
           "released" : true,
           "stays_in_allowed_toll_domain" : true,
-          "target_occurrence_id" : "test.occurrence.loop-edge-2"
+          "target_occurrence_id" : "test.occurrence.loop-edge-2",
+          "trigger_directed_edge_id" : "test.recovery.release-bundle.movement"
         }
       ],
       "route_plan_id" : "test.plan.release-bundle",

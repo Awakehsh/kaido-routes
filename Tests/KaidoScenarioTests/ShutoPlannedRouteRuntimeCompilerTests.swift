@@ -145,7 +145,17 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       route: route
     )
     let candidates = assets.recoveryCandidates
+    let coverage = assets.liveReleaseCoverage
     #expect(!candidates.isEmpty)
+    #expect(coverage.networkSnapshotID == database.networkSnapshotID)
+    #expect(coverage.routePlanID == route.routePlan.id)
+    #expect(!coverage.decisions.isEmpty)
+    #expect(coverage.missingGuidanceDecisionCount > 0)
+    #expect(
+      coverage.missingReleasedRecoveryBranchCount
+        == coverage.recoveryBranches.count
+    )
+    #expect(!coverage.expresswayReleaseCoverageComplete)
 
     let occurrenceIndexByID = Dictionary(
       uniqueKeysWithValues: route.routePlan.occurrences.map {
@@ -162,6 +172,13 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       let targetIndex = occurrenceIndexByID[candidate.targetOccurrenceID]
       #expect(targetIndex != nil)
       #expect(!candidate.recoveryOccurrenceIDs.isEmpty)
+      #expect(
+        candidate.recoveryOccurrenceIDs.first
+          == candidate.triggerDirectedEdgeID
+      )
+      #expect(
+        occurrenceIndexByID[candidate.divergenceOccurrenceID] != nil
+      )
       let path = candidate.recoveryOccurrenceIDs.compactMap {
         edgesByID[$0]
       }

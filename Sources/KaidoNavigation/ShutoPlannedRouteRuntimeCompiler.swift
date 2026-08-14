@@ -45,6 +45,77 @@ public struct ShutoRouteRuntimeProgress: Equatable, Sendable {
   }
 }
 
+public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
+  public let divergenceOccurrenceID: String
+  public let plannedOutgoingOccurrenceID: String
+  public let junctionNodeID: Int64
+  public let plannedOutgoingDirectedEdgeID: String
+  public let alternativeOutgoingDirectedEdgeIDs: [String]
+  public let releasedGuidanceDefinitionID: String?
+
+  private enum CodingKeys: String, CodingKey {
+    case divergenceOccurrenceID = "divergence_occurrence_id"
+    case plannedOutgoingOccurrenceID = "planned_outgoing_occurrence_id"
+    case junctionNodeID = "junction_node_id"
+    case plannedOutgoingDirectedEdgeID = "planned_outgoing_directed_edge_id"
+    case alternativeOutgoingDirectedEdgeIDs =
+      "alternative_outgoing_directed_edge_ids"
+    case releasedGuidanceDefinitionID = "released_guidance_definition_id"
+  }
+}
+
+public struct ShutoRouteRecoveryBranchCoverage:
+  Codable, Equatable, Sendable
+{
+  public let divergenceOccurrenceID: String
+  public let triggerDirectedEdgeID: String
+  public let candidateTargetOccurrenceID: String?
+  public let candidateIsReleased: Bool
+
+  private enum CodingKeys: String, CodingKey {
+    case divergenceOccurrenceID = "divergence_occurrence_id"
+    case triggerDirectedEdgeID = "trigger_directed_edge_id"
+    case candidateTargetOccurrenceID = "candidate_target_occurrence_id"
+    case candidateIsReleased = "candidate_is_released"
+  }
+}
+
+/// Route-local expressway coverage required before a release may admit live
+/// observations. This report does not cover surface access/egress, freshness,
+/// audio review, or field evidence and grants no navigation authority.
+public struct ShutoRouteLiveReleaseCoverage:
+  Codable, Equatable, Sendable
+{
+  public let networkSnapshotID: String
+  public let routePlanID: String
+  public let decisions: [ShutoRouteDecisionCoverage]
+  public let recoveryBranches: [ShutoRouteRecoveryBranchCoverage]
+
+  public var missingGuidanceDecisionCount: Int {
+    decisions.count { $0.releasedGuidanceDefinitionID == nil }
+  }
+
+  public var missingReleasedRecoveryBranchCount: Int {
+    recoveryBranches.count { !$0.candidateIsReleased }
+  }
+
+  public var missingRecoveryCandidateBranchCount: Int {
+    recoveryBranches.count { $0.candidateTargetOccurrenceID == nil }
+  }
+
+  public var expresswayReleaseCoverageComplete: Bool {
+    missingGuidanceDecisionCount == 0
+      && missingReleasedRecoveryBranchCount == 0
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case routePlanID = "route_plan_id"
+    case decisions
+    case recoveryBranches = "recovery_branches"
+  }
+}
+
 /// A deterministic integrity binding for one whole-Shuto network artifact and
 /// the exact route-local runtime assets compiled from it.
 ///
@@ -108,6 +179,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
   public let decisionZones: [DecisionZoneProgressDefinition]
   public let releasedGuidance: [ReleasedGuidanceDefinition]
   public let recoveryCandidates: [RecoveryCandidate]
+  public let liveReleaseCoverage: ShutoRouteLiveReleaseCoverage
 
   private let routeEdges: [RouteMatcherDirectedEdge]
   private let routeEdgeLengthsMeters: [Double]
@@ -121,6 +193,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition],
     recoveryCandidates: [RecoveryCandidate] = [],
+    liveReleaseCoverage: ShutoRouteLiveReleaseCoverage,
     routeEdges: [RouteMatcherDirectedEdge],
     routeEdgeLengthsMeters: [Double]
   ) {
@@ -130,6 +203,7 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     self.decisionZones = decisionZones
     self.releasedGuidance = releasedGuidance
     self.recoveryCandidates = recoveryCandidates
+    self.liveReleaseCoverage = liveReleaseCoverage
     self.routeEdges = routeEdges
     self.routeEdgeLengthsMeters = routeEdgeLengthsMeters
 
@@ -258,6 +332,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     let decisionZones: [DecisionZoneProgressDefinition]
     let releasedGuidance: [ReleasedGuidanceDefinition]
     let recoveryCandidates: [RecoveryCandidate]
+    let liveReleaseCoverage: ShutoRouteLiveReleaseCoverage
     let routeEdgeIDs: [String]
     let routeEdgeLengthsMeters: [Double]
 
@@ -270,6 +345,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       case decisionZones = "decision_zones"
       case releasedGuidance = "released_guidance"
       case recoveryCandidates = "recovery_candidates"
+      case liveReleaseCoverage = "live_release_coverage"
       case routeEdgeIDs = "route_edge_ids"
       case routeEdgeLengthsMeters = "route_edge_lengths_meters"
     }
@@ -552,6 +628,11 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       database: database,
       route: route
     )
+    let liveReleaseCoverage = liveReleaseCoverage(
+      database: database,
+      route: route,
+      recoveryCandidates: recoveryCandidates
+    )
     let networkArtifactID = database.databaseID
     let networkArtifactSHA256 = try canonicalSHA256(
       NetworkArtifactHashPayload(
@@ -569,6 +650,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         decisionZones: decisionZones,
         releasedGuidance: releasedGuidance,
         recoveryCandidates: recoveryCandidates,
+        liveReleaseCoverage: liveReleaseCoverage,
         routeEdgeIDs: route.edges.map(\.edgeID),
         routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
       )
@@ -589,6 +671,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       decisionZones: decisionZones,
       releasedGuidance: releasedGuidance,
       recoveryCandidates: recoveryCandidates,
+      liveReleaseCoverage: liveReleaseCoverage,
       routeEdges: routeMatcherEdges,
       routeEdgeLengthsMeters: route.edges.map(\.lengthMeters)
     )
@@ -609,6 +692,90 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     return SHA256.hash(data: data).map {
       String(format: "%02x", $0)
     }.joined()
+  }
+
+  public static func liveReleaseCoverage(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute
+  ) -> ShutoRouteLiveReleaseCoverage {
+    liveReleaseCoverage(
+      database: database,
+      route: route,
+      recoveryCandidates: deriveRecoveryCandidates(
+        database: database,
+        route: route
+      )
+    )
+  }
+
+  private static func liveReleaseCoverage(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute,
+    recoveryCandidates: [RecoveryCandidate]
+  ) -> ShutoRouteLiveReleaseCoverage {
+    let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let candidatesByBranch = Dictionary(
+      uniqueKeysWithValues: recoveryCandidates.map {
+        ("\($0.divergenceOccurrenceID)|\($0.triggerDirectedEdgeID)", $0)
+      }
+    )
+    var decisions: [ShutoRouteDecisionCoverage] = []
+    var recoveryBranches: [ShutoRouteRecoveryBranchCoverage] = []
+    guard route.edges.count == route.routePlan.occurrences.count,
+      route.edges.count > 1
+    else {
+      return ShutoRouteLiveReleaseCoverage(
+        networkSnapshotID: database.networkSnapshotID,
+        routePlanID: route.routePlan.id,
+        decisions: [],
+        recoveryBranches: []
+      )
+    }
+
+    for index in 0..<(route.edges.count - 1) {
+      let incoming = route.edges[index]
+      let plannedOutgoing = route.edges[index + 1]
+      let alternatives = (outgoing[incoming.toNodeID] ?? [])
+        .filter { $0.edgeID != plannedOutgoing.edgeID }
+        .sorted { $0.edgeID < $1.edgeID }
+      guard !alternatives.isEmpty else { continue }
+      let divergenceOccurrenceID = route.routePlan.occurrences[index].id
+      let definition = ShutoJunctionMovementCatalog.releasedDefinition(
+        database: database,
+        incoming: incoming,
+        outgoing: plannedOutgoing
+      )
+      decisions.append(
+        ShutoRouteDecisionCoverage(
+          divergenceOccurrenceID: divergenceOccurrenceID,
+          plannedOutgoingOccurrenceID:
+            route.routePlan.occurrences[index + 1].id,
+          junctionNodeID: incoming.toNodeID,
+          plannedOutgoingDirectedEdgeID: plannedOutgoing.edgeID,
+          alternativeOutgoingDirectedEdgeIDs: alternatives.map(\.edgeID),
+          releasedGuidanceDefinitionID: definition?.id
+        )
+      )
+      for alternative in alternatives {
+        let candidate = candidatesByBranch[
+          "\(divergenceOccurrenceID)|\(alternative.edgeID)"
+        ]
+        recoveryBranches.append(
+          ShutoRouteRecoveryBranchCoverage(
+            divergenceOccurrenceID: divergenceOccurrenceID,
+            triggerDirectedEdgeID: alternative.edgeID,
+            candidateTargetOccurrenceID: candidate?.targetOccurrenceID,
+            candidateIsReleased: candidate?.isReleased == true
+          )
+        )
+      }
+    }
+    return ShutoRouteLiveReleaseCoverage(
+      networkSnapshotID: database.networkSnapshotID,
+      routePlanID: route.routePlan.id,
+      decisions: decisions,
+      recoveryBranches: recoveryBranches
+    )
   }
 
   /// Wrong-turn recovery candidates: for every plan node where an available
@@ -656,95 +823,94 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         .filter { $0.edgeID != plannedNextEdgeID }
       guard !alternatives.isEmpty else { continue }
 
-      // Multi-source bounded Dijkstra seeded with every wrong turn at this
-      // node; the first settled node that carries a later plan occurrence
-      // is the cheapest legal rejoin.
-      var distances: [Int64: Double] = [:]
-      var previousEdge: [Int64: ShutoNetworkDatabase.Edge] = [:]
-      var frontier: [(cost: Double, node: Int64)] = []
-      func push(_ cost: Double, _ node: Int64) {
-        frontier.append((cost, node))
-        var child = frontier.count - 1
-        while child > 0 {
-          let parent = (child - 1) / 2
-          guard frontier[child].cost < frontier[parent].cost else { break }
-          frontier.swapAt(child, parent)
-          child = parent
-        }
-      }
-      func pop() -> (cost: Double, node: Int64)? {
-        guard let top = frontier.first else { return nil }
-        frontier[0] = frontier[frontier.count - 1]
-        frontier.removeLast()
-        var parent = 0
-        while true {
-          let left = parent * 2 + 1
-          let right = left + 1
-          var smallest = parent
-          if left < frontier.count,
-            frontier[left].cost < frontier[smallest].cost
-          {
-            smallest = left
-          }
-          if right < frontier.count,
-            frontier[right].cost < frontier[smallest].cost
-          {
-            smallest = right
-          }
-          if smallest == parent { break }
-          frontier.swapAt(parent, smallest)
-          parent = smallest
-        }
-        return top
-      }
-
       for alternative in alternatives {
+        // Each search is rooted in one observed wrong-turn edge. Keeping
+        // candidates separate prevents another branch at the same junction
+        // from borrowing an unrelated rejoin path.
+        var distances: [Int64: Double] = [:]
+        var previousEdge: [Int64: ShutoNetworkDatabase.Edge] = [:]
+        var frontier: [(cost: Double, node: Int64)] = []
+        func push(_ cost: Double, _ node: Int64) {
+          frontier.append((cost, node))
+          var child = frontier.count - 1
+          while child > 0 {
+            let parent = (child - 1) / 2
+            guard frontier[child].cost < frontier[parent].cost else { break }
+            frontier.swapAt(child, parent)
+            child = parent
+          }
+        }
+        func pop() -> (cost: Double, node: Int64)? {
+          guard let top = frontier.first else { return nil }
+          frontier[0] = frontier[frontier.count - 1]
+          frontier.removeLast()
+          var parent = 0
+          while true {
+            let left = parent * 2 + 1
+            let right = left + 1
+            var smallest = parent
+            if left < frontier.count,
+              frontier[left].cost < frontier[smallest].cost
+            {
+              smallest = left
+            }
+            if right < frontier.count,
+              frontier[right].cost < frontier[smallest].cost
+            {
+              smallest = right
+            }
+            if smallest == parent { break }
+            frontier.swapAt(parent, smallest)
+            parent = smallest
+          }
+          return top
+        }
+
         let cost = alternative.lengthMeters
-        if cost <= maximumRecoveryMeters,
-          cost < distances[alternative.toNodeID] ?? .infinity
-        {
-          distances[alternative.toNodeID] = cost
-          previousEdge[alternative.toNodeID] = alternative
-          push(cost, alternative.toNodeID)
-        }
-      }
+        guard cost <= maximumRecoveryMeters else { continue }
+        distances[alternative.toNodeID] = cost
+        previousEdge[alternative.toNodeID] = alternative
+        push(cost, alternative.toNodeID)
 
-      var settled: Set<Int64> = []
-      var rejoin: (node: Int64, target: Int)?
-      while let current = pop() {
-        if settled.contains(current.node) { continue }
-        settled.insert(current.node)
-        if let target = rejoinIndex(at: current.node, after: index) {
-          rejoin = (current.node, target)
-          break
+        var settled: Set<Int64> = []
+        var rejoin: (node: Int64, target: Int)?
+        while let current = pop() {
+          if settled.contains(current.node) { continue }
+          settled.insert(current.node)
+          if let target = rejoinIndex(at: current.node, after: index) {
+            rejoin = (current.node, target)
+            break
+          }
+          for edge in outgoing[current.node] ?? [] {
+            let nextCost = current.cost + edge.lengthMeters
+            guard nextCost <= maximumRecoveryMeters,
+              nextCost < distances[edge.toNodeID] ?? .infinity
+            else { continue }
+            distances[edge.toNodeID] = nextCost
+            previousEdge[edge.toNodeID] = edge
+            push(nextCost, edge.toNodeID)
+          }
         }
-        for edge in outgoing[current.node] ?? [] {
-          let cost = current.cost + edge.lengthMeters
-          guard cost <= maximumRecoveryMeters,
-            cost < distances[edge.toNodeID] ?? .infinity
-          else { continue }
-          distances[edge.toNodeID] = cost
-          previousEdge[edge.toNodeID] = edge
-          push(cost, edge.toNodeID)
-        }
-      }
-      guard let rejoin else { continue }
+        guard let rejoin else { continue }
 
-      var pathEdgeIDs: [String] = []
-      var cursor = rejoin.node
-      while let edge = previousEdge[cursor] {
-        pathEdgeIDs.append(edge.edgeID)
-        cursor = edge.fromNodeID
-        if cursor == divergenceNode { break }
-      }
-      candidates.append(
-        RecoveryCandidate(
-          targetOccurrenceID: occurrences[rejoin.target].id,
-          recoveryOccurrenceIDs: pathEdgeIDs.reversed(),
-          isReleased: false,
-          staysInAllowedTollDomain: true
+        var pathEdgeIDs: [String] = []
+        var cursor = rejoin.node
+        while let edge = previousEdge[cursor] {
+          pathEdgeIDs.append(edge.edgeID)
+          cursor = edge.fromNodeID
+          if cursor == divergenceNode { break }
+        }
+        candidates.append(
+          RecoveryCandidate(
+            divergenceOccurrenceID: occurrences[index].id,
+            triggerDirectedEdgeID: alternative.edgeID,
+            targetOccurrenceID: occurrences[rejoin.target].id,
+            recoveryOccurrenceIDs: pathEdgeIDs.reversed(),
+            isReleased: false,
+            staysInAllowedTollDomain: true
+          )
         )
-      )
+      }
     }
     return candidates
   }

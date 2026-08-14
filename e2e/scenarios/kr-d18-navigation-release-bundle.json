@@ -132,6 +132,8 @@
         },
         "recovery_candidates": [
           {
+            "divergence_occurrence_id": "test.occurrence.approach",
+            "trigger_directed_edge_id": "test.recovery.release-bundle.movement",
             "target_occurrence_id": "test.occurrence.exit",
             "recovery_occurrence_ids": [
               "test.recovery.release-bundle.movement",

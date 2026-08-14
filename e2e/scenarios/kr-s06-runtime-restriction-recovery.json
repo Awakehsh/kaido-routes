@@ -49,6 +49,8 @@
     "inputs": {
       "recovery_candidates": [
         {
+          "divergence_occurrence_id": "current-edge",
+          "trigger_directed_edge_id": "test.recovery.safe-bypass",
           "target_occurrence_id": "later-rejoin-edge",
           "recovery_occurrence_ids": ["test.recovery.safe-bypass"],
           "released": true,

@@ -203,6 +203,13 @@ swift run kaido-release inspect-live-coverage \
   --exit shuto.ic.k1.minatomirai
 ```
 
+Export the snapshot-wide candidate JCT movement review worklist:
+
+```sh
+swift run kaido-release inspect-network-live-coverage \
+  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json
+```
+
 ## Build and run
 
 Requirements:

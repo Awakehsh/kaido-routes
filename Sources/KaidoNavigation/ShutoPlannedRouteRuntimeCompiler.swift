@@ -55,6 +55,7 @@ public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
   public let divergenceOccurrenceID: String
   public let plannedOutgoingOccurrenceID: String
   public let junctionNodeID: Int64
+  public let incomingDirectedEdgeID: String
   public let plannedOutgoingDirectedEdgeID: String
   public let alternativeOutgoingDirectedEdgeIDs: [String]
   public let releasedGuidanceDefinitionID: String?
@@ -64,6 +65,7 @@ public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
     case divergenceOccurrenceID = "divergence_occurrence_id"
     case plannedOutgoingOccurrenceID = "planned_outgoing_occurrence_id"
     case junctionNodeID = "junction_node_id"
+    case incomingDirectedEdgeID = "incoming_directed_edge_id"
     case plannedOutgoingDirectedEdgeID = "planned_outgoing_directed_edge_id"
     case alternativeOutgoingDirectedEdgeIDs =
       "alternative_outgoing_directed_edge_ids"
@@ -130,6 +132,73 @@ public struct ShutoRouteLiveReleaseCoverage:
     case routePlanID = "route_plan_id"
     case decisions
     case recoveryBranches = "recovery_branches"
+  }
+}
+
+public struct ShutoNetworkJunctionMovementCoverage:
+  Codable, Equatable, Sendable
+{
+  public let junctionID: String
+  public let junctionNameJapanese: String
+  public let junctionNodeID: Int64
+  public let incomingDirectedEdgeID: String
+  public let incomingRouteMemberships: [ShutoNetworkDatabase.RouteMembership]
+  public let incomingWayTags: [String: String]
+  public let outgoingDirectedEdgeID: String
+  public let outgoingRouteMemberships: [ShutoNetworkDatabase.RouteMembership]
+  public let outgoingWayTags: [String: String]
+  public let releasedGuidanceDefinitionID: String?
+  public let officialDetailReference: String
+  public let officialDetailSHA256: String
+
+  private enum CodingKeys: String, CodingKey {
+    case junctionID = "junction_id"
+    case junctionNameJapanese = "junction_name_ja"
+    case junctionNodeID = "junction_node_id"
+    case incomingDirectedEdgeID = "incoming_directed_edge_id"
+    case incomingRouteMemberships = "incoming_route_memberships"
+    case incomingWayTags = "incoming_way_tags"
+    case outgoingDirectedEdgeID = "outgoing_directed_edge_id"
+    case outgoingRouteMemberships = "outgoing_route_memberships"
+    case outgoingWayTags = "outgoing_way_tags"
+    case releasedGuidanceDefinitionID = "released_guidance_definition_id"
+    case officialDetailReference = "official_detail_reference"
+    case officialDetailSHA256 = "official_detail_sha256"
+  }
+}
+
+/// Snapshot-wide worklist for every graph movement at a real branching JCT.
+/// It is an authoring inventory, not proof that graph adjacency is a legal or
+/// navigation-released movement.
+public struct ShutoNetworkLiveReleaseCoverage:
+  Codable, Equatable, Sendable
+{
+  public let networkSnapshotID: String
+  public let movements: [ShutoNetworkJunctionMovementCoverage]
+
+  public var incomingApproachCount: Int {
+    Set(
+      movements.map {
+        "\($0.junctionID)|\($0.junctionNodeID)|\($0.incomingDirectedEdgeID)"
+      }
+    ).count
+  }
+
+  public var junctionCount: Int {
+    Set(movements.map(\.junctionID)).count
+  }
+
+  public var releasedMovementCount: Int {
+    movements.count { $0.releasedGuidanceDefinitionID != nil }
+  }
+
+  public var missingMovementReviewCount: Int {
+    movements.count - releasedMovementCount
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case movements
   }
 }
 
@@ -725,6 +794,61 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     )
   }
 
+  public static func networkLiveReleaseCoverage(
+    database: ShutoNetworkDatabase
+  ) throws -> ShutoNetworkLiveReleaseCoverage {
+    try database.validate()
+    let incoming = Dictionary(grouping: database.edges, by: \.toNodeID)
+    let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let waysByID = Dictionary(
+      uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
+    )
+    var movements: [ShutoNetworkJunctionMovementCoverage] = []
+
+    for junction in database.junctions.sorted(by: {
+      $0.junctionID < $1.junctionID
+    }) {
+      for nodeID in junction.osmNodeIDs.sorted() {
+        for incomingEdge in (incoming[nodeID] ?? []).sorted(by: {
+          $0.edgeID < $1.edgeID
+        }) {
+          let choices = (outgoing[nodeID] ?? [])
+            .filter { $0.toNodeID != incomingEdge.fromNodeID }
+            .sorted { $0.edgeID < $1.edgeID }
+          guard choices.count > 1 else { continue }
+          for outgoingEdge in choices {
+            let definition =
+              ShutoJunctionMovementCatalog.releasedDefinition(
+                database: database,
+                incoming: incomingEdge,
+                outgoing: outgoingEdge
+              )
+            movements.append(
+              ShutoNetworkJunctionMovementCoverage(
+                junctionID: junction.junctionID,
+                junctionNameJapanese: junction.nameJA,
+                junctionNodeID: nodeID,
+                incomingDirectedEdgeID: incomingEdge.edgeID,
+                incomingRouteMemberships: incomingEdge.routeMemberships,
+                incomingWayTags: waysByID[incomingEdge.wayID]?.tags ?? [:],
+                outgoingDirectedEdgeID: outgoingEdge.edgeID,
+                outgoingRouteMemberships: outgoingEdge.routeMemberships,
+                outgoingWayTags: waysByID[outgoingEdge.wayID]?.tags ?? [:],
+                releasedGuidanceDefinitionID: definition?.id,
+                officialDetailReference: junction.officialDetailReference,
+                officialDetailSHA256: junction.officialDetailSHA256
+              )
+            )
+          }
+        }
+      }
+    }
+    return ShutoNetworkLiveReleaseCoverage(
+      networkSnapshotID: database.networkSnapshotID,
+      movements: movements
+    )
+  }
+
   private static func liveReleaseCoverage(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
@@ -771,6 +895,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           plannedOutgoingOccurrenceID:
             route.routePlan.occurrences[index + 1].id,
           junctionNodeID: incoming.toNodeID,
+          incomingDirectedEdgeID: incoming.edgeID,
           plannedOutgoingDirectedEdgeID: plannedOutgoing.edgeID,
           alternativeOutgoingDirectedEdgeIDs: alternatives.map(\.edgeID),
           releasedGuidanceDefinitionID: definition?.id

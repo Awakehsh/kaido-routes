@@ -27,6 +27,8 @@ private enum CLIError: Error, CustomStringConvertible {
     case .usage:
       """
       Usage:
+        kaido-release inspect-network-live-coverage \\
+          --network <whole-shuto-network.json>
         kaido-release inspect-live-coverage \\
           --network <whole-shuto-network.json> \\
           --entry <directional-entry-id> --exit <directional-exit-id>
@@ -267,6 +269,7 @@ private enum CLIError: Error, CustomStringConvertible {
 }
 
 private enum Command {
+  case inspectNetworkLiveCoverage(network: String)
   case inspectLiveCoverage(
     network: String,
     entryFacilityID: String,
@@ -405,6 +408,36 @@ private struct LiveCoverageReport: Encodable {
   }
 }
 
+private struct NetworkLiveCoverageReport: Encodable {
+  let networkSnapshotID: String
+  let junctionCount: Int
+  let incomingApproachCount: Int
+  let movementCount: Int
+  let releasedMovementCount: Int
+  let missingMovementReviewCount: Int
+  let coverage: ShutoNetworkLiveReleaseCoverage
+
+  init(coverage: ShutoNetworkLiveReleaseCoverage) {
+    networkSnapshotID = coverage.networkSnapshotID
+    junctionCount = coverage.junctionCount
+    incomingApproachCount = coverage.incomingApproachCount
+    movementCount = coverage.movements.count
+    releasedMovementCount = coverage.releasedMovementCount
+    missingMovementReviewCount = coverage.missingMovementReviewCount
+    self.coverage = coverage
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case networkSnapshotID = "network_snapshot_id"
+    case junctionCount = "junction_count"
+    case incomingApproachCount = "incoming_approach_count"
+    case movementCount = "movement_count"
+    case releasedMovementCount = "released_movement_count"
+    case missingMovementReviewCount = "missing_movement_review_count"
+    case coverage
+  }
+}
+
 private struct Arguments {
   let command: Command
 
@@ -414,6 +447,11 @@ private struct Arguments {
     }
     let flags = try FlagValues(Array(values.dropFirst()))
     switch commandName {
+    case "inspect-network-live-coverage":
+      try flags.require(exactly: ["--network"])
+      command = .inspectNetworkLiveCoverage(
+        network: try flags.value("--network")
+      )
     case "inspect-live-coverage":
       try flags.require(exactly: ["--network", "--entry", "--exit"])
       command = .inspectLiveCoverage(
@@ -901,6 +939,20 @@ private func writeError(_ value: String) {
 do {
   let arguments = try Arguments(Array(CommandLine.arguments.dropFirst()))
   switch arguments.command {
+  case .inspectNetworkLiveCoverage(let networkPath):
+    let database = try decode(
+      ShutoNetworkDatabase.self,
+      path: networkPath
+    )
+    let coverage =
+      try ShutoPlannedRouteRuntimeCompiler
+      .networkLiveReleaseCoverage(database: database)
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    FileHandle.standardOutput.write(
+      try encoder.encode(NetworkLiveCoverageReport(coverage: coverage))
+    )
+    FileHandle.standardOutput.write(Data("\n".utf8))
   case .inspectLiveCoverage(
     let networkPath,
     let entryFacilityID,

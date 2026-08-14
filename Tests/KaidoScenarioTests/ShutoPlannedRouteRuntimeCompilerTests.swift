@@ -11,6 +11,27 @@ import Testing
 
 @Suite("Whole Shuto observation runtime compiler")
 struct ShutoPlannedRouteRuntimeCompilerTests {
+  @Test("whole-network live coverage inventories every candidate JCT movement")
+  func inventoriesWholeNetworkJunctionMovementCoverage() throws {
+    let database = try loadWholeShutoDatabase()
+    let coverage =
+      try ShutoPlannedRouteRuntimeCompiler
+      .networkLiveReleaseCoverage(database: database)
+
+    #expect(coverage.networkSnapshotID == database.networkSnapshotID)
+    #expect(coverage.junctionCount == 37)
+    #expect(coverage.incomingApproachCount == 120)
+    #expect(coverage.movements.count == 241)
+    #expect(coverage.releasedMovementCount == 20)
+    #expect(coverage.missingMovementReviewCount == 221)
+    #expect(
+      coverage.movements.allSatisfy {
+        !$0.officialDetailReference.isEmpty
+          && $0.officialDetailSHA256.count == 64
+      }
+    )
+  }
+
   @Test("compiler preserves every selected edge occurrence and legal branch")
   func compilesExactRouteMatcherCorridor() throws {
     let database = try loadWholeShutoDatabase()

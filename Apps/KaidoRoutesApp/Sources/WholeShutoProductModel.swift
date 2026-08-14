@@ -20,6 +20,51 @@ enum WholeShutoJourneyPhase:
   case completed = "COMPLETED"
 }
 
+extension WholeShutoProductModel: ForegroundNavigationLocationConsuming {
+  var foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity {
+    guard let activeLiveAdmission else {
+      preconditionFailure(
+        "Foreground location identity requested without live admission"
+      )
+    }
+    return activeLiveAdmission.core.release.runtimeIdentity
+  }
+
+  var canConsumeForegroundNavigationLocations: Bool {
+    isLiveDrive
+      && isPlaying
+      && activeLiveAdmission != nil
+      && liveDriveSession != nil
+      && liveObservationAdapter != nil
+      && phase != .planning
+      && phase != .review
+      && phase != .completed
+  }
+
+  func consumeForegroundNavigationLocations(
+    _ locations: [CLLocation],
+    receivedAt: Date
+  ) async {
+    guard canConsumeForegroundNavigationLocations,
+      var adapter = liveObservationAdapter
+    else {
+      return
+    }
+    let results = adapter.adapt(locations, receivedAt: receivedAt)
+    liveObservationAdapter = adapter
+    for result in results {
+      switch result {
+      case .accepted(let envelope):
+        await consumeLiveObservationForTesting(envelope)
+      case .rejected(let rejection):
+        liveLocationState = .degraded
+        liveLocationIssueCode = rejection.reason.rawValue
+        matcherConfidence = .low
+      }
+    }
+  }
+}
+
 enum WholeShutoMapMode:
   String, CaseIterable, Codable, Equatable, Sendable
 {
@@ -316,6 +361,9 @@ final class WholeShutoProductModel: ObservableObject {
   private let routeChoiceEvaluator: WholeShutoSurfaceRouteChoiceEvaluator
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
+  private let liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission]
+  private let liveLocationSourceEvidenceProvider:
+    any CoreLocationSourceEvidenceProviding
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var playbackGeneration = 0
@@ -338,6 +386,11 @@ final class WholeShutoProductModel: ObservableObject {
   private var liveSurfaceEgressAdapter:
     CoreLocationSurfaceEgressAdapter?
   private var liveNavigationCheckpoint: NavigationSessionCheckpoint?
+  private var activeLiveAdmission: WholeShutoLiveJourneyAdmission?
+  private var liveObservationAdapter: CoreLocationObservationAdapter?
+  private var foregroundLiveLocationController:
+    ForegroundNavigationLocationController?
+  private var liveLocationSubscriptions: Set<AnyCancellable> = []
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
   private var speechCoordinator: GuidanceSpeechCoordinator?
@@ -384,6 +437,10 @@ final class WholeShutoProductModel: ObservableObject {
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
       WholeShutoUserDefaultsCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
+    liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission] = [],
+    liveLocationSourceEvidenceProvider:
+      any CoreLocationSourceEvidenceProviding =
+      SystemCoreLocationSourceEvidenceProvider(),
     nowMillisecondsProvider: @escaping () -> Int = {
       Int((Date().timeIntervalSince1970 * 1_000).rounded())
     },
@@ -416,6 +473,9 @@ final class WholeShutoProductModel: ObservableObject {
     )
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
+    self.liveJourneyAdmissions = liveJourneyAdmissions
+    self.liveLocationSourceEvidenceProvider =
+      liveLocationSourceEvidenceProvider
     self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
     waysByID = Dictionary(
@@ -524,14 +584,35 @@ final class WholeShutoProductModel: ObservableObject {
 
   static let liveNavigationReleaseRequiredCode =
     "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+  static let liveNavigationReleaseAmbiguousCode =
+    "WHOLE_SHUTO_NAVIGATION_RELEASE_AMBIGUOUS"
+  static let liveNavigationRuntimeInvalidCode =
+    "WHOLE_SHUTO_NAVIGATION_RUNTIME_INVALID"
 
-  /// Candidate whole-network assets are planning authority, not a validated
-  /// foreground navigation release.
-  var canStartLiveNavigation: Bool { false }
+  /// A route can start only when one complete, externally constructed release
+  /// admission matches the full selected RoutePlan value.
+  var canStartLiveNavigation: Bool {
+    matchingLiveAdmissions.count == 1
+  }
 
   var liveNavigationBlockerCode: String? {
-    canStartLiveNavigation
-      ? nil : Self.liveNavigationReleaseRequiredCode
+    switch matchingLiveAdmissions.count {
+    case 1:
+      nil
+    case 0:
+      Self.liveNavigationReleaseRequiredCode
+    default:
+      Self.liveNavigationReleaseAmbiguousCode
+    }
+  }
+
+  private var matchingLiveAdmissions:
+    [WholeShutoLiveJourneyAdmission]
+  {
+    guard let routePlan = selectedRoute?.routePlan else { return [] }
+    return liveJourneyAdmissions.filter {
+      $0.core.selectedRoutePlan == routePlan
+    }
   }
 
   var selectedTariffBand: ShutoTariffBand? {
@@ -2119,34 +2200,136 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  /// Fails closed until this exact selected journey is backed by a validated
-  /// foreground `KaidoProductRelease`, including released surface contexts.
+  /// Starts only after one exact release-bound journey has constructed every
+  /// actor and adapter. Core Location is attached last.
   @discardableResult
-  func startLiveJourney() -> Bool {
-    guard phase == .review, selectedRoute != nil else { return false }
+  func startLiveJourney() async -> Bool {
+    guard phase == .review, let route = selectedRoute else { return false }
     liveLocationFreshnessTask?.cancel()
     liveDriveSession = nil
     liveEntryTransitionAdapter = nil
     liveSurfaceEgressAdapter = nil
     liveNavigationCheckpoint = nil
+    activeLiveAdmission = nil
+    liveObservationAdapter = nil
+    foregroundLiveLocationController = nil
+    liveLocationSubscriptions.removeAll()
     isLiveDrive = false
     liveLocationState = .inactive
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
-    failureCode = Self.liveNavigationReleaseRequiredCode
-    return false
+    guard matchingLiveAdmissions.count == 1,
+      let admission = matchingLiveAdmissions.first
+    else {
+      failureCode = liveNavigationBlockerCode
+      return false
+    }
+
+    do {
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      guard assets.routePlan == admission.core.selectedRoutePlan else {
+        failureCode = Self.liveNavigationRuntimeInvalidCode
+        return false
+      }
+      let runtime = try admission.core.makeRuntime()
+      let session = try ShutoLiveDriveSession(runtime: runtime)
+      let entryAdapter = try CoreLocationEntryTransitionAdapter(
+        context: session.entryTransitionAdmissionContext
+      )
+      let egressAdapter = try CoreLocationSurfaceEgressAdapter(
+        context: session.surfaceEgressAdmissionContext
+      )
+      let observationAdapter = try CoreLocationObservationAdapter(
+        sessionID: admission.core.release.releaseID,
+        simulatedLocationPolicy: .reject,
+        carPlayConnectionContext: .disconnected,
+        sourceEvidenceProvider: liveLocationSourceEvidenceProvider
+      )
+
+      runtimeAssets = assets
+      driveSimulator = nil
+      liveDriveSession = session
+      liveEntryTransitionAdapter = entryAdapter
+      liveSurfaceEgressAdapter = egressAdapter
+      liveObservationAdapter = observationAdapter
+      activeLiveAdmission = admission
+      accessRoute = admission.accessRoute
+      egressRoute = admission.egressRoute
+      try configureSpeech(for: route.routePlan.id)
+
+      let controller = try ForegroundNavigationLocationController(
+        authority: .releasedProduct(
+          admission.core.foregroundLiveInputAuthority
+        ),
+        consumer: self
+      )
+      observeLiveLocationController(controller)
+      foregroundLiveLocationController = controller
+
+      isLiveDrive = true
+      isPlaying = true
+      restoredFromCheckpoint = false
+      phase = .surfaceAccess
+      progressFraction = 0
+      matcherConfidence = .low
+      runtimeOccurrenceID = nil
+      runtimeJourneyPhase = nil
+      runtimeRecoveryStatus = nil
+      runtimeCoordinate = nil
+      runtimeFractionAlongOccurrence = nil
+      presentationProjection = nil
+      consumedGuidancePromptIDs = []
+      isStaticJunctionPreview = false
+      liveLocationState = .acquiring
+      liveLocationIssueCode = nil
+      liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
+      lastLiveObservationAtMilliseconds = nil
+      failureCode = nil
+
+      applyLiveActorSnapshot(await session.start())
+      scheduleLiveLocationFreshnessCheck()
+      persistCheckpoint()
+      controller.start()
+      return true
+    } catch {
+      liveDriveSession = nil
+      liveEntryTransitionAdapter = nil
+      liveSurfaceEgressAdapter = nil
+      liveObservationAdapter = nil
+      activeLiveAdmission = nil
+      foregroundLiveLocationController = nil
+      liveLocationSubscriptions.removeAll()
+      isLiveDrive = false
+      isPlaying = false
+      liveLocationState = .failed
+      liveLocationIssueCode = Self.liveNavigationRuntimeInvalidCode
+      failureCode = Self.liveNavigationRuntimeInvalidCode
+      return false
+    }
   }
 
-  /// Preserves Core Location provenance through both release-bound boundary
-  /// adapters. The synchronous entry point is convenient for the delegate;
-  /// tests use the awaiting variant to assert actor-owned transitions.
-  func consumeLiveObservation(
-    _ envelope: CoreLocationObservationEnvelope
+  private func observeLiveLocationController(
+    _ controller: ForegroundNavigationLocationController
   ) {
-    Task { [weak self] in
-      await self?.consumeLiveObservationForTesting(envelope)
-    }
+    liveLocationSubscriptions.removeAll()
+    controller.$state
+      .sink { [weak self] state in
+        self?.consumeForegroundLiveLocationState(state)
+      }
+      .store(in: &liveLocationSubscriptions)
+    controller.$lastTransientFailureCode
+      .compactMap { $0 }
+      .sink { [weak self] code in
+        guard self?.isLiveDrive == true else { return }
+        self?.liveLocationState = .degraded
+        self?.liveLocationIssueCode = code
+        self?.matcherConfidence = .low
+      }
+      .store(in: &liveLocationSubscriptions)
   }
 
   func consumeLiveObservationForTesting(
@@ -2261,9 +2444,8 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  func consumeLiveLocationState(
-    _ state: WholeShutoLiveLocationController.State,
-    rejectionReason: String?
+  private func consumeForegroundLiveLocationState(
+    _ state: ForegroundNavigationLocationState
   ) {
     guard isLiveDrive else {
       liveLocationState = .inactive
@@ -2272,8 +2454,10 @@ final class WholeShutoProductModel: ObservableObject {
     }
     switch state {
     case .idle, .stopped:
-      liveLocationState = .inactive
-      liveLocationIssueCode = nil
+      if liveLocationState != .resumeRequired {
+        liveLocationState = .inactive
+        liveLocationIssueCode = nil
+      }
       liveLocationFreshnessTask?.cancel()
       liveLocationFreshnessTask = nil
     case .awaitingAuthorization:
@@ -2282,17 +2466,18 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       scheduleLiveLocationFreshnessCheck()
     case .running:
-      if let rejectionReason {
-        liveLocationState = .degraded
-        liveLocationIssueCode = rejectionReason
-        matcherConfidence = .low
-      } else if lastLiveObservationAtMilliseconds == nil {
+      if lastLiveObservationAtMilliseconds == nil {
         liveLocationState = .acquiring
         liveLocationIssueCode = nil
       }
       liveLocationStartedAtMilliseconds =
         liveLocationStartedAtMilliseconds ?? nowMillisecondsProvider()
       scheduleLiveLocationFreshnessCheck()
+    case .sceneInactive:
+      liveLocationState = .resumeRequired
+      liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
+      liveLocationFreshnessTask?.cancel()
+      liveLocationFreshnessTask = nil
     case .permissionDenied:
       liveLocationState = .permissionDenied
       liveLocationIssueCode = "CORE_LOCATION_PERMISSION_DENIED"
@@ -2302,6 +2487,21 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationFreshnessTask?.cancel()
       liveLocationFreshnessTask = nil
       persistCheckpoint()
+    case .releaseBlocked(let reason):
+      liveLocationState = .failed
+      liveLocationIssueCode = reason.rawValue
+      failureCode = Self.liveNavigationRuntimeInvalidCode
+      isPlaying = false
+    case .runtimeUnavailable:
+      if !isPlaying {
+        liveLocationState = .resumeRequired
+        liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
+      } else {
+        liveLocationState = .failed
+        liveLocationIssueCode = "LIVE_RUNTIME_UNAVAILABLE"
+        failureCode = Self.liveNavigationRuntimeInvalidCode
+        isPlaying = false
+      }
     case .failed(let code):
       liveLocationState = .failed
       liveLocationIssueCode = code
@@ -2333,6 +2533,8 @@ final class WholeShutoProductModel: ObservableObject {
     matcherConfidence = .low
     scheduleLiveLocationFreshnessCheck()
     speechCoordinator?.resume()
+    foregroundLiveLocationController?.refreshRuntimeAvailability()
+    foregroundLiveLocationController?.start()
     persistCheckpoint()
     return true
   }
@@ -2416,6 +2618,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func completeLiveJourney() {
+    stopForegroundLiveLocationController()
     phase = .completed
     progressFraction = 1
     isPlaying = false
@@ -2561,6 +2764,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func reset() {
+    stopForegroundLiveLocationController()
     invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
     speechCoordinator?.stop()
@@ -2596,6 +2800,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveEntryTransitionAdapter = nil
     liveSurfaceEgressAdapter = nil
     liveNavigationCheckpoint = nil
+    activeLiveAdmission = nil
+    liveObservationAdapter = nil
     isLiveDrive = false
     liveLocationState = .inactive
     liveLocationIssueCode = nil
@@ -2612,6 +2818,9 @@ final class WholeShutoProductModel: ObservableObject {
   func handleScenePhase(
     _ scenePhase: ProductNavigationRuntimeScenePhase
   ) async {
+    // The controller stops its source, cancels pending batches, and drains the
+    // in-flight consumer before the model captures a lifecycle checkpoint.
+    await foregroundLiveLocationController?.handleScenePhase(scenePhase)
     switch scenePhase {
     case .active:
       if !isLiveDrive || isPlaying {
@@ -2627,16 +2836,23 @@ final class WholeShutoProductModel: ObservableObject {
         liveLocationFreshnessTask?.cancel()
         liveLocationFreshnessTask = nil
         if let liveDriveSession {
-          Task { [weak self] in
-            await self?.captureAndPersistLiveCheckpoint(
-              from: liveDriveSession
-            )
-          }
+          await captureAndPersistLiveCheckpoint(
+            from: liveDriveSession
+          )
         }
       } else {
         _ = await pausePlayback()
         persistCheckpoint()
       }
+    }
+  }
+
+  private func stopForegroundLiveLocationController() {
+    guard let controller = foregroundLiveLocationController else { return }
+    foregroundLiveLocationController = nil
+    liveLocationSubscriptions.removeAll()
+    Task {
+      await controller.stop()
     }
   }
 

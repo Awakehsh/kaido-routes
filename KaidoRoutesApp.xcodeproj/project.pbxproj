@@ -77,7 +77,6 @@
 		80C8EC579DF38DF6072EDF64 /* WholeShutoTrackMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BB6911D0B98465D70B4B35 /* WholeShutoTrackMapView.swift */; };
 		80E0AA92D99B7DF9256F968F /* C2NavigationDemoModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */; };
 		81801BF41CD099F27C8B94A7 /* shuto-whole-network-20260804.json in Resources */ = {isa = PBXBuildFile; fileRef = AD18271D219AF8FB4C72DC68 /* shuto-whole-network-20260804.json */; };
-		82275E45E85F8D5DDA7484FD /* WholeShutoLiveLocationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD1D579F927E8517D49E0D9 /* WholeShutoLiveLocationController.swift */; };
 		841565C0474C09A23C617351 /* GuidanceLanguagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E8C76F7E6532336CDD0F93 /* GuidanceLanguagePreviewView.swift */; };
 		849BF0098114A8C312385F9C /* WholeShutoProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */; };
 		85750FE5B66D3EC99D5B58FB /* WholeShutoPlanningLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BED1ED1DA8F4825026BE701 /* WholeShutoPlanningLocation.swift */; };
@@ -130,6 +129,7 @@
 		F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6736A54DBD926E1D2965FE9 /* Assets.xcassets */; };
 		F815C81DE2CF396F6157F974 /* KaidoAppleAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 979F0DF2D8FF6A142C418A82 /* KaidoAppleAdapters */; };
 		FA2443F23B10D16E1407FB84 /* SavedRouteLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B53DC4DAC4186DC2F3FEEB /* SavedRouteLibraryView.swift */; };
+		FB308B360BDC095EF539C493 /* WholeShutoLiveJourneyAdmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -156,7 +156,7 @@
 		0A85BF19C471FCE46DF56FD7 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
 		0AF3E05CB94F3CEB3C71AAE6 /* KaidoLanguageSettingsModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoLanguageSettingsModelTests.swift; sourceTree = "<group>"; };
 		0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationSimulationCheckpoint.swift; sourceTree = "<group>"; };
-		0BD1D579F927E8517D49E0D9 /* WholeShutoLiveLocationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoLiveLocationController.swift; sourceTree = "<group>"; };
+		0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoLiveJourneyAdmission.swift; sourceTree = "<group>"; };
 		0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoJourneyReviewView.swift; sourceTree = "<group>"; };
 		0F685F9DD76CE9EE5DF42613 /* C2NavigationSimulationCheckpointTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationSimulationCheckpointTests.swift; sourceTree = "<group>"; };
 		0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPresentationTests.swift; sourceTree = "<group>"; };
@@ -498,7 +498,7 @@
 				CD289A633C0766AE7B609BBB /* SyntheticProductRuntimeView.swift */,
 				313817A04D3745DA3B692788 /* WholeShutoAttribution.swift */,
 				0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */,
-				0BD1D579F927E8517D49E0D9 /* WholeShutoLiveLocationController.swift */,
+				0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */,
 				2E6E5EFF9C6EA822392F9579 /* WholeShutoNetworkOverviewView.swift */,
 				EA0325E5DA555448A0B84E92 /* WholeShutoPlaceSearch.swift */,
 				5BED1ED1DA8F4825026BE701 /* WholeShutoPlanningLocation.swift */,
@@ -772,7 +772,7 @@
 				393FF32599A47A38976F8293 /* SyntheticProductRuntimeView.swift in Sources */,
 				55E751B8F5EDD7F158D7564E /* WholeShutoAttribution.swift in Sources */,
 				F0BDB7C776E286F447A5A8D2 /* WholeShutoJourneyReviewView.swift in Sources */,
-				82275E45E85F8D5DDA7484FD /* WholeShutoLiveLocationController.swift in Sources */,
+				FB308B360BDC095EF539C493 /* WholeShutoLiveJourneyAdmission.swift in Sources */,
 				44C3504E6B2151998C6D1683 /* WholeShutoNetworkOverviewView.swift in Sources */,
 				4707E3A6AC64A43BE01C8592 /* WholeShutoPlaceSearch.swift in Sources */,
 				85750FE5B66D3EC99D5B58FB /* WholeShutoPlanningLocation.swift in Sources */,

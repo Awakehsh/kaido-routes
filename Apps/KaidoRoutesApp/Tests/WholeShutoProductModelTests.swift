@@ -24,7 +24,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .network)
   }
 
-  func testLiveDriveFailsClosedWithoutValidatedNavigationRelease() {
+  func testLiveDriveFailsClosedWithoutValidatedNavigationRelease() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()
     XCTAssertEqual(model.phase, .review)
@@ -35,7 +35,8 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.liveNavigationBlockerCode,
       "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
     )
-    XCTAssertFalse(model.startLiveJourney())
+    let startedLiveJourney = await model.startLiveJourney()
+    XCTAssertFalse(startedLiveJourney)
     XCTAssertFalse(model.isLiveDrive)
     XCTAssertFalse(model.isPlaying)
     XCTAssertEqual(model.phase, .review)

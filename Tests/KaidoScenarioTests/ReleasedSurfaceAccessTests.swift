@@ -2129,3 +2129,103 @@ private func releasedSurfaceJourney(
     providerIdentity: access.providerIdentity
   )
 }
+
+@Test("Live journey admission binds the full selected RoutePlan and released surface journey")
+func liveJourneyAdmissionRequiresExactReleasedComposition() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let access = releasedSurfaceAccessDefinition(fixture)
+  let egress = releasedSurfaceEgressDefinition(
+    fixture,
+    providerIdentity: access.providerIdentity
+  )
+  let release = try foregroundProductRelease(
+    fixture,
+    surfaceAccessDefinition: access,
+    surfaceEgressDefinition: egress
+  )
+  let journeyPlan = try releasedSurfaceJourney(
+    fixture,
+    release: release,
+    access: access,
+    egress: egress
+  )
+
+  let admission = try KaidoLiveJourneyAdmission(
+    release: release,
+    selectedRoutePlan: fixture.routePlan,
+    journeyPlan: journeyPlan
+  )
+  let runtime = try admission.makeRuntime()
+  let session = try ShutoLiveDriveSession(runtime: runtime)
+
+  #expect(admission.selectedRoutePlan == fixture.routePlan)
+  #expect(
+    admission.foregroundLiveInputAuthority.runtimeIdentity
+      == release.runtimeIdentity
+  )
+  #expect(session.routePlanID == fixture.routePlan.id)
+  #expect(session.productReleaseID == release.releaseID)
+}
+
+@Test("Live journey admission rejects route-only, mismatched, and synthetic inputs")
+func liveJourneyAdmissionRejectsIncompleteAuthority() throws {
+  let fixture = navigationReleaseBundleFixture()
+  let access = releasedSurfaceAccessDefinition(fixture)
+  let egress = releasedSurfaceEgressDefinition(
+    fixture,
+    providerIdentity: access.providerIdentity
+  )
+  let release = try foregroundProductRelease(
+    fixture,
+    surfaceAccessDefinition: access,
+    surfaceEgressDefinition: egress
+  )
+  let fullPlan = try releasedSurfaceJourney(
+    fixture,
+    release: release,
+    access: access,
+    egress: egress
+  )
+  var mismatchedRoutePlan = fixture.routePlan
+  mismatchedRoutePlan = RoutePlan(
+    id: "test.plan.other",
+    networkSnapshotID: mismatchedRoutePlan.networkSnapshotID,
+    entryFacilityID: mismatchedRoutePlan.entryFacilityID,
+    exitFacilityID: mismatchedRoutePlan.exitFacilityID,
+    recoveryPolicy: mismatchedRoutePlan.recoveryPolicy,
+    actualDistanceKM: mismatchedRoutePlan.actualDistanceKM,
+    occurrences: mismatchedRoutePlan.occurrences
+  )
+
+  #expect(throws: KaidoLiveJourneyAdmissionError.selectedRoutePlanMismatch) {
+    try KaidoLiveJourneyAdmission(
+      release: release,
+      selectedRoutePlan: mismatchedRoutePlan,
+      journeyPlan: fullPlan
+    )
+  }
+  #expect(throws: KaidoLiveJourneyAdmissionError.releasedSurfaceAccessRequired) {
+    try KaidoLiveJourneyAdmission(
+      release: release,
+      selectedRoutePlan: fixture.routePlan,
+      journeyPlan: JourneyPlanCompiler.routeOnly(release: release)
+    )
+  }
+
+  let synthetic = try productRelease(
+    fixture,
+    surfaceAccessDefinition: access,
+    surfaceEgressDefinition: egress
+  )
+  #expect(
+    throws:
+      KaidoLiveJourneyAdmissionError
+      .foregroundLiveInputAuthorityMissing
+  ) {
+    try KaidoLiveJourneyAdmission(
+      release: synthetic,
+      selectedRoutePlan: fixture.routePlan,
+      journeyPlan: JourneyPlanCompiler.routeOnly(release: synthetic)
+    )
+  }
+}

@@ -27,15 +27,20 @@ an integrity and restoration boundary, not a promotion of OSM/provider surface
 geometry, unreviewed movements, or the candidate graph to released-road, lane,
 realtime, or field authority.
 
-The default App has one executable navigation-observation path: labeled replay
-uses the deterministic 15 m/s trace with at most 30 meters between samples and
-an explicit 20x wall-clock multiplier. `WholeShutoPlanningLocationController`
-currently owns a when-in-use foreground Core Location lifecycle for the planning
-origin only. It cannot create a live navigation session from the candidate
-graph. A future enrolled live path must normalize device fixes through the
-shared adapter, reject invalid, stale, future-dated, ambiguous, and
-distributed-build simulated fixes, and require a unique HIGH occurrence commit
-before progress. It must not mint `EntryTransitionAdmissionContext`,
+The default App always exposes labeled replay using the deterministic 15 m/s
+trace with at most 30 meters between samples and an explicit 20x wall-clock
+multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
+Core Location lifecycle for the planning origin only. It cannot create a live
+navigation session from the candidate graph. The live enrollment seam accepts
+only one `KaidoLiveJourneyAdmission` whose complete selected `RoutePlan` equals
+one foreground-authorized `KaidoProductRelease` and whose immutable
+`JourneyPlan` contains release-bound surface access and egress legs. It then
+constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
+boundary adapters, and the observation adapter before attaching the shared
+serial foreground location controller. Device fixes reject invalid, stale,
+future-dated, ambiguous, and distributed-build simulated input and require a
+unique HIGH occurrence commit before progress. The seam cannot mint
+`EntryTransitionAdmissionContext`,
 `SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
 hash or a MapKit response. Neither the current planning location path nor replay
 supplies background-navigation or tunnel dead-reckoning authority.
@@ -66,7 +71,7 @@ an asset-integrity hash may synthesize. Valhalla remains the leading
 shared surface-routing/offline-oracle candidate behind a bounded adapter, while
 the pure-Swift route-aware matcher owns live RoutePlan matching.
 
-**Checked:** 2026-08-11
+**Checked:** 2026-08-14
 
 ## Decision summary
 
@@ -558,10 +563,16 @@ keeps strict entry locked. Real-road released assets, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
 device-matrix layout, and physical display timing remain adapter work and device
 gates. Separately, the default candidate whole-Shuto journey has a foreground
-`WholeShutoPlanningLocationController` for planning location, but live navigation
-start fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` and constructs no
-`ShutoLiveDriveSession`. It cannot inherit the K7 fixture's road-evidence or
-live-input authority merely because location permission or device fixes exist.
+`WholeShutoPlanningLocationController` for planning location. Live start selects
+an admission by full `RoutePlan` equality, rejects zero or multiple matches, and
+attaches Core Location only after the release runtime and surface adapters
+construct successfully. Inactive/background first stops and drains location,
+then checkpoints; returning active never resumes location without the user's
+explicit Resume Navigation action. The distributed bundle currently supplies no
+whole-Shuto live admissions, so it still fails closed as
+`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`. It cannot inherit the K7 fixture's
+road-evidence or live-input authority merely because location permission or
+device fixes exist.
 
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to

@@ -21,7 +21,6 @@ struct WholeShutoProductView: View {
   @StateObject private var planningLocation: WholeShutoPlanningLocationController
   @StateObject private var placeSearch: WholeShutoPlaceSearchController
   @StateObject private var savedRoutes: SavedRouteLibraryModel
-  @StateObject private var liveLocation = WholeShutoLiveLocationController()
   private let wholeShutoAttribution: WholeShutoAttribution
   @State private var showsNetworkFacts = false
   @State private var showsLanguageSettings = false
@@ -193,12 +192,6 @@ struct WholeShutoProductView: View {
     .onChange(of: planningLocation.state) {
       handlePlanningLocationUpdate()
     }
-    .onChange(of: model.phase) { _, phase in
-      // Release the sensor the moment the journey is over or abandoned.
-      if phase == .planning || phase == .completed {
-        liveLocation.stop()
-      }
-    }
   }
 
   private var isLandscape: Bool {
@@ -209,19 +202,10 @@ struct WholeShutoProductView: View {
   /// The session only opens after the reviewed journey is admitted, so the
   /// app never holds the sensor while merely browsing routes.
   private func beginLiveDrive() {
-    guard let route = model.selectedRoute else { return }
-    liveLocation.onObservation = { [model] observation in
-      model.consumeLiveObservation(observation)
+    Task {
+      guard await model.startLiveJourney() else { return }
+      showsJourneyReview = false
     }
-    liveLocation.onStateChange = { [model] state, rejectionReason in
-      model.consumeLiveLocationState(
-        state,
-        rejectionReason: rejectionReason
-      )
-    }
-    guard model.startLiveJourney() else { return }
-    liveLocation.start(sessionID: route.routePlan.id)
-    showsJourneyReview = false
   }
 
   private var portraitLayout: some View {
@@ -337,11 +321,55 @@ struct WholeShutoProductView: View {
       if model.phase == .completed {
         arrivalDock
       } else if isDriving {
+        if model.isLiveDrive,
+          model.liveLocationState == .resumeRequired
+        {
+          liveResumeBanner
+        }
         drivingDock
       } else {
         planningDock
       }
     }
+  }
+
+  private var liveResumeBanner: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(
+        copy.resolve(
+          japanese: "位置情報は一時停止中です",
+          simplifiedChinese: "实时定位已暂停",
+          english: "LIVE LOCATION IS PAUSED"
+        )
+      )
+      .font(.caption.weight(.black))
+      .foregroundStyle(KaidoTheme.signalAmber)
+
+      Button {
+        _ = model.resumeLiveJourney()
+      } label: {
+        Text(
+          copy.resolve(
+            japanese: "ナビを再開",
+            simplifiedChinese: "恢复导航",
+            english: "RESUME NAVIGATION"
+          )
+        )
+        .font(.body.weight(.black))
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
+        .foregroundStyle(KaidoTheme.night)
+        .background(KaidoTheme.signalAmber)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("whole-shuto-resume-live-drive")
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
+    .background(KaidoTheme.nightPanel)
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-live-resume-required")
   }
 
   private func checkpointIssueBanner(_ code: String) -> some View {

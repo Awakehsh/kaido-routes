@@ -78,6 +78,23 @@ WANGAN_ROUTE_PLAN_ID = (
 WANGAN_ENTRY_FACILITY_ID = "shuto.ic.b.chidoricho"
 WANGAN_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
 WANGAN_ROUTE_OCCURRENCE_COUNT = 339
+C2_PRODUCT_RELEASE_RESOURCE = (
+    "c2-inner-oujiminami-shikahamabashi-product-release.json"
+)
+C2_PRODUCT_RELEASE_SOURCE = (
+    "data/product/releases/"
+    "c2-inner-oujiminami-shikahamabashi-product-release.json"
+)
+C2_PRODUCT_RELEASE_ID = (
+    "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15"
+)
+C2_ROUTE_PLAN_ID = (
+    "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami."
+    "shuto.ic.s1.shikahamabashi.x1.recommended"
+)
+C2_ENTRY_FACILITY_ID = "shuto.ic.c2.oujiminami"
+C2_EXIT_FACILITY_ID = "shuto.ic.s1.shikahamabashi"
+C2_ROUTE_OCCURRENCE_COUNT = 2_196
 DATA_LICENSES_RESOURCE = "DATA-LICENSES.md"
 EXPECTED_OSM_ATTRIBUTION = "© OpenStreetMap contributors"
 EXPECTED_OSM_LICENSE = "ODbL-1.0"
@@ -103,6 +120,7 @@ FIXED_ALLOWED_FILES = {
     "Assets.car",
     C1_PRODUCT_RELEASE_RESOURCE,
     WANGAN_PRODUCT_RELEASE_RESOURCE,
+    C2_PRODUCT_RELEASE_RESOURCE,
     "Info.plist",
     "KaidoRoutes",
     DATA_LICENSES_RESOURCE,
@@ -675,6 +693,9 @@ def validate_distribution_files(app: Path, repository_root: Path) -> None:
         WANGAN_PRODUCT_RELEASE_RESOURCE: (
             repository_root / WANGAN_PRODUCT_RELEASE_SOURCE
         ),
+        C2_PRODUCT_RELEASE_RESOURCE: (
+            repository_root / C2_PRODUCT_RELEASE_SOURCE
+        ),
     }
     for bundled_name, source_path in source_pairs.items():
         require_equal(
@@ -835,6 +856,16 @@ def validate_foreground_product_releases(app: Path) -> None:
         exit_facility_id=WANGAN_EXIT_FACILITY_ID,
         occurrence_count=WANGAN_ROUTE_OCCURRENCE_COUNT,
     )
+    validate_foreground_product_release(
+        app,
+        resource=C2_PRODUCT_RELEASE_RESOURCE,
+        label="C2",
+        release_id=C2_PRODUCT_RELEASE_ID,
+        route_plan_id=C2_ROUTE_PLAN_ID,
+        entry_facility_id=C2_ENTRY_FACILITY_ID,
+        exit_facility_id=C2_EXIT_FACILITY_ID,
+        occurrence_count=C2_ROUTE_OCCURRENCE_COUNT,
+    )
 
 
 def validate_app_icons(app: Path, repository_root: Path) -> None:
@@ -892,6 +923,9 @@ def validate_release_bundle(
         "wangan_product_release_sha256": sha256(
             app / WANGAN_PRODUCT_RELEASE_RESOURCE
         ),
+        "c2_product_release_sha256": sha256(
+            app / C2_PRODUCT_RELEASE_RESOURCE
+        ),
     }
 
 
@@ -908,7 +942,8 @@ def main() -> int:
         f"{result['version']} ({result['build']}), "
         f"whole-Shuto {result['whole_shuto_sha256']}, "
         f"C1 product {result['c1_product_release_sha256']}, "
-        f"Wangan product {result['wangan_product_release_sha256']}"
+        f"Wangan product {result['wangan_product_release_sha256']}, "
+        f"C2 product {result['c2_product_release_sha256']}"
     )
     return 0
 

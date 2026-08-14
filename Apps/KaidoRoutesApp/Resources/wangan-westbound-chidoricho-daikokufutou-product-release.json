@@ -8,14 +8,14 @@
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
           "shutoko-official-catalog-2026-07-29",
-          "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.ariake.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b"
+          "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b"
         ],
         "state" : "RELEASED"
       },
@@ -25,14 +25,14 @@
         "role" : "EDITOR_PRESENTATION",
         "source_reference_ids" : [
           "shutoko-official-catalog-2026-07-29",
-          "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.ariake.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
-          "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b"
+          "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b",
+          "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b"
         ],
         "state" : "RELEASED"
       },

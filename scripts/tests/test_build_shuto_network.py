@@ -67,6 +67,46 @@ class BuildShutoNetworkTests(unittest.TestCase):
         ):
             BUILD_SHUTO_NETWORK.validate(result)
 
+    def test_reviewed_junction_nodes_extend_tagged_geometry(self) -> None:
+        catalog = {
+            "junctions": [
+                {
+                    "junction_id": "shuto.jct.jct_kasai",
+                    "name_ja": "葛西JCT",
+                },
+                {
+                    "junction_id": "shuto.jct.jct_komatsugawa",
+                    "name_ja": "小松川JCT",
+                },
+            ]
+        }
+        node_tags = {
+            8_256_670_336: {
+                "highway": "motorway_junction",
+                "name": "葛西JCT",
+            }
+        }
+        node_coordinates = {
+            31_330_103: (35.64, 139.86),
+            8_256_670_336: (35.64, 139.85),
+            31_337_397: (35.70, 139.85),
+        }
+
+        junctions = BUILD_SHUTO_NETWORK.match_junctions(
+            catalog,
+            node_tags,
+            node_coordinates,
+        )
+
+        self.assertEqual(
+            junctions[0]["osm_node_ids"],
+            [31_330_103, 8_256_670_336],
+        )
+        self.assertEqual(
+            junctions[1]["osm_node_ids"],
+            [31_337_397],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

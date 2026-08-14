@@ -9,10 +9,10 @@
           "osm-kanto-2026-08-04",
           "shutoko-official-catalog-2026-07-29",
           "shutoko-guidance-shuto.jct.edobashi.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1",
+          "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1",
           "shutoko-guidance-shuto.jct.miyakezaka.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1"
+          "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1",
+          "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1"
         ],
         "state" : "RELEASED"
       },
@@ -23,10 +23,10 @@
         "source_reference_ids" : [
           "shutoko-official-catalog-2026-07-29",
           "shutoko-guidance-shuto.jct.edobashi.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1",
+          "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1",
           "shutoko-guidance-shuto.jct.miyakezaka.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1",
-          "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1"
+          "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1",
+          "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1"
         ],
         "state" : "RELEASED"
       },

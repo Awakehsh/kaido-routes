@@ -30,7 +30,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c1-inner-shibakoen-shiodome-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "7edc0ca75bea8c2da213a14801fee3dfd8957e31655f85cb9e92376231c16793",
+        "3166b176e59dc47b0f77f83b15b54fc5e9fec57f0b10c398402f3d675ef7be7f",
       expectedReleaseID:
         "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
       role: .foregroundNavigation
@@ -45,9 +45,23 @@ extension AppBundleProductReleaseDescriptor {
         "wangan-westbound-chidoricho-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "a37a267c1384324fda3ab5ea4527528802b3134a595b82922827f834c1f786fa",
+        "e34e708a7cdb297c3557e49cd157b30934d1a637443a19e81dd11317168fa62e",
       expectedReleaseID:
         "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
+      role: .foregroundNavigation
+    )
+  }
+
+  static var c2InnerOujiminamiShikahamabashi:
+    AppBundleProductReleaseDescriptor
+  {
+    AppBundleProductReleaseDescriptor(
+      resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
+      resourceExtension: "json",
+      expectedSHA256:
+        "f25ba95e8b6c845954da30592197e150367d633efae9a0b7c23519045e31fac2",
+      expectedReleaseID:
+        "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15",
       role: .foregroundNavigation
     )
   }
@@ -223,6 +237,7 @@ enum BundledProductReleaseCatalogLoader {
   static let foregroundManifest: [BundledProductReleaseDescriptor] = [
     .c1InnerShibakoenShiodome,
     .wanganWestboundChidorichoDaikokufutou,
+    .c2InnerOujiminamiShikahamabashi,
   ]
 
   static let previewManifest: [BundledProductReleaseDescriptor] = [

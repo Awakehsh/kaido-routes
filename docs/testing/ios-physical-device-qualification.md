@@ -145,7 +145,7 @@ App-baseline claim.
 
 ## Coordinate-free receipt
 
-The combined receipt uses schema 1.7. `qualification-run.json` retains:
+The combined receipt uses schema 1.8. `qualification-run.json` retains:
 
 - source commit and clean-worktree fact;
 - opaque configuration ID, iPhone model, iOS version, and physical-device fact;
@@ -156,7 +156,8 @@ The combined receipt uses schema 1.7. `qualification-run.json` retains:
   `app.kaidoroutes` bundle identifier, `ENABLE_TESTABILITY=false`, its exact
   version/build, one-test counts and UTC interval, and independent result,
   summary, test-tree, log, build-settings, validated App-tree, whole-Shuto,
-  exact C1 and Bayshore-westbound foreground product releases,
+  exact C1, Bayshore-westbound, and C2 Inner/Bayshore foreground product
+  releases,
   privacy-manifest, software-licence, map-data-licence, and bundle-validation
   hashes; and
 - an explicit authority matrix.

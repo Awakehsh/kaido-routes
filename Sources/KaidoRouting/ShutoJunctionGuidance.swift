@@ -105,7 +105,430 @@ public struct ShutoJunctionMovementDefinition:
 }
 
 public enum ShutoJunctionMovementCatalog {
+  private static func c2InnerMovement(
+    id: String,
+    junctionID: String,
+    junctionNodeID: Int64,
+    incomingEdgeID: String,
+    outgoingEdgeID: String,
+    incomingRouteID: String = "C2",
+    incomingDirectionJA: String = "内回り",
+    outgoingRouteID: String = "C2",
+    outgoingDirectionJA: String = "内回り",
+    coveredFollowingDecisionEdgeIDs: [String] = [],
+    branchSide: ShutoJunctionBranchSide,
+    japaneseSignText: String,
+    routeShields: [String],
+    junctionNameJA: String,
+    junctionNameZH: String,
+    junctionNameEN: String,
+    destinationJA: String,
+    destinationZH: String,
+    destinationEN: String,
+    expectedJunctionDetailSHA256: String,
+    officialDetailReference: String,
+    additionalSources: [String] = []
+  ) -> ShutoJunctionMovementDefinition {
+    let coversFollowingDecision = !coveredFollowingDecisionEdgeIDs.isEmpty
+    let maneuverJA: String
+    let maneuverZH: String
+    let maneuverEN: String
+    switch (branchSide, coversFollowingDecision) {
+    case (.left, true):
+      maneuverJA = "左方向を保ち"
+      maneuverZH = "保持左侧"
+      maneuverEN = "keep left"
+    case (.right, true):
+      maneuverJA = "右方向を保ち"
+      maneuverZH = "保持右侧"
+      maneuverEN = "keep right"
+    case (.left, false):
+      maneuverJA = "左方向へ分岐し"
+      maneuverZH = "向左分岔"
+      maneuverEN = "branch left"
+    case (.right, false):
+      maneuverJA = "右方向へ分岐し"
+      maneuverZH = "向右分岔"
+      maneuverEN = "branch right"
+    case (.straight, _):
+      maneuverJA = "分岐せず"
+      maneuverZH = "不要分岔"
+      maneuverEN = "continue straight"
+    }
+    let detailSource = ShutoJunctionGuidanceSource(
+      url: officialDetailReference,
+      contentSHA256: expectedJunctionDetailSHA256
+    )
+    return ShutoJunctionMovementDefinition(
+      id: id,
+      networkSnapshotID: "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: junctionID,
+      junctionNodeID: junctionNodeID,
+      incomingEdgeID: incomingEdgeID,
+      outgoingEdgeID: outgoingEdgeID,
+      incomingRouteID: incomingRouteID,
+      incomingDirectionJA: incomingDirectionJA,
+      outgoingRouteID: outgoingRouteID,
+      outgoingDirectionJA: outgoingDirectionJA,
+      coveredFollowingDecisionEdgeIDs: coveredFollowingDecisionEdgeIDs,
+      branchSide: branchSide,
+      japaneseSignText: japaneseSignText,
+      routeShields: routeShields,
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: junctionNameJA,
+        .simplifiedChinese: junctionNameZH,
+        .english: junctionNameEN,
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "\(maneuverJA)、\(destinationJA)へ",
+          spokenText:
+            "\(junctionNameJA)では\(maneuverJA)、\(destinationJA)へ進んでください",
+          spokenForms: [
+            "C2": "シーツー",
+            "湾岸線": "わんがんせん",
+          ],
+          preservedJapaneseSignText: japaneseSignText
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "\(maneuverZH)，驶往 \(destinationZH)",
+          spokenText: "在\(junctionNameZH)\(maneuverZH)，驶往 \(destinationZH)",
+          spokenForms: ["C2": "C 二"],
+          preservedJapaneseSignText: japaneseSignText
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "\(maneuverEN.capitalized) for \(destinationEN)",
+          spokenText: "At \(junctionNameEN), \(maneuverEN) for \(destinationEN)",
+          spokenForms: ["C2": "C two"],
+          preservedJapaneseSignText: japaneseSignText
+        ),
+      ],
+      commitTriggerDistanceMeters: 100,
+      checkedAt: "2026-08-15",
+      expectedJunctionDetailSHA256: expectedJunctionDetailSHA256,
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        )
+      ] + additionalSources.map { ShutoJunctionGuidanceSource(url: $0) }
+        + [detailSource]
+    )
+  }
+
   public static let released: [ShutoJunctionMovementDefinition] = [
+    c2InnerMovement(
+      id: "shuto.jct.ohashi.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 7_549_622_953,
+      incomingEdgeID: "osm.80581127.78.forward",
+      outgoingEdgeID: "osm.331692348.0.forward",
+      branchSide: .left,
+      japaneseSignText: "湾岸線",
+      routeShields: ["C2"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.oi.c2-inner-to-b-eastbound",
+      junctionID: "shuto.jct.jct_oi",
+      junctionNodeID: 3_387_909_450,
+      incomingEdgeID: "osm.331692344.2.forward",
+      outgoingEdgeID: "osm.1308572351.0.forward",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .left,
+      japaneseSignText: "東関東道",
+      routeShields: ["B"],
+      junctionNameJA: "大井JCT",
+      junctionNameZH: "大井 JCT",
+      junctionNameEN: "Oi JCT",
+      destinationJA: "湾岸線 東行き",
+      destinationZH: "湾岸线东行方向",
+      destinationEN: "the Bayshore Route eastbound",
+      expectedJunctionDetailSHA256:
+        "4bfe3cb6117273ec547a62872b971a87f"
+        + "cc944fff70b3267022888612aacfc2b",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_oi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.kasai.b-eastbound-to-c2-inner",
+      junctionID: "shuto.jct.jct_kasai",
+      junctionNodeID: 31_330_103,
+      incomingEdgeID: "osm.888066402.7.forward",
+      outgoingEdgeID: "osm.888066403.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      branchSide: .left,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "E6"],
+      junctionNameJA: "葛西JCT",
+      junctionNameZH: "葛西 JCT",
+      junctionNameEN: "Kasai JCT",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "5e52b43abc96875472405c2fe5c2ca49"
+        + "2946356ac0c86460f1610051289aa7b2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kasai",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_komatsugawa",
+      junctionNodeID: 31_337_397,
+      incomingEdgeID: "osm.4857050.46.forward",
+      outgoingEdgeID: "osm.4857050.47.forward",
+      branchSide: .straight,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "E6"],
+      junctionNameJA: "小松川JCT",
+      junctionNameZH: "小松川 JCT",
+      junctionNameEN: "Komatsugawa JCT",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "a5119a85526658f19dda55b445114dd2"
+        + "b72a1ee0161a454b0f55712872c84abe",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_komatsugawa",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch_komatsugawa/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 559_445_920,
+      incomingEdgeID: "osm.44422827.8.forward",
+      outgoingEdgeID: "osm.44422827.9.forward",
+      coveredFollowingDecisionEdgeIDs: [
+        "osm.44422827.10.forward",
+        "osm.44422827.11.forward",
+        "osm.44422826.0.forward",
+        "osm.44422826.1.forward",
+        "osm.44130134.0.forward",
+        "osm.44130134.1.forward",
+        "osm.44130134.2.forward",
+        "osm.44130134.3.forward",
+        "osm.44130134.4.forward",
+        "osm.44130134.5.forward",
+        "osm.44130134.6.forward",
+        "osm.44130134.7.forward",
+        "osm.44130134.8.forward",
+        "osm.44130134.9.forward",
+        "osm.44130134.10.forward",
+        "osm.44130134.11.forward",
+        "osm.44130134.12.forward",
+        "osm.28194807.0.forward",
+      ],
+      branchSide: .left,
+      japaneseSignText: "東北道・大宮",
+      routeShields: ["C2", "E4"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.kohoku.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 309_692_606,
+      incomingEdgeID: "osm.44209394.5.forward",
+      outgoingEdgeID: "osm.44180277.0.forward",
+      branchSide: .left,
+      japaneseSignText: "東池袋・東名",
+      routeShields: ["C2"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/"
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.kohoku.c2-inner-to-s1-outbound",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 309_692_606,
+      incomingEdgeID: "osm.44209394.5.forward",
+      outgoingEdgeID: "osm.44179919.0.forward",
+      outgoingRouteID: "S1",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      japaneseSignText: "東北道",
+      routeShields: ["S1", "E4"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "S1 川口線 下り",
+      destinationZH: "S1 川口线下行方向",
+      destinationEN: "Route S1 outbound",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-s1/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 308_930_039,
+      incomingEdgeID: "osm.156344609.48.forward",
+      outgoingEdgeID: "osm.28195150.0.forward",
+      coveredFollowingDecisionEdgeIDs: [
+        "osm.28195150.1.forward",
+        "osm.28195150.2.forward",
+        "osm.28195150.3.forward",
+        "osm.28195150.4.forward",
+        "osm.28195150.5.forward",
+        "osm.28195150.6.forward",
+        "osm.28195150.7.forward",
+        "osm.28195150.8.forward",
+        "osm.28195150.9.forward",
+        "osm.28195150.10.forward",
+        "osm.28195150.11.forward",
+        "osm.28195150.12.forward",
+        "osm.28195150.13.forward",
+        "osm.28195150.14.forward",
+        "osm.28195150.15.forward",
+        "osm.28195150.16.forward",
+        "osm.28195150.17.forward",
+        "osm.28195150.18.forward",
+        "osm.28195150.19.forward",
+        "osm.28195150.20.forward",
+        "osm.28195150.21.forward",
+        "osm.28195150.22.forward",
+        "osm.28195150.23.forward",
+        "osm.28195150.24.forward",
+        "osm.28195150.25.forward",
+        "osm.28195150.26.forward",
+        "osm.28195150.27.forward",
+        "osm.28195150.28.forward",
+        "osm.28195150.29.forward",
+        "osm.28195150.30.forward",
+        "osm.28195150.31.forward",
+        "osm.28195150.32.forward",
+        "osm.28195150.33.forward",
+        "osm.28195150.34.forward",
+        "osm.28195150.35.forward",
+        "osm.28127112.0.forward",
+        "osm.28127112.1.forward",
+        "osm.28127112.2.forward",
+        "osm.28127112.3.forward",
+        "osm.28127112.4.forward",
+        "osm.28127112.5.forward",
+        "osm.28127112.6.forward",
+        "osm.28127112.7.forward",
+        "osm.28127112.8.forward",
+        "osm.28127112.9.forward",
+        "osm.28127112.10.forward",
+        "osm.28127112.11.forward",
+        "osm.28127112.12.forward",
+        "osm.28126649.0.forward",
+      ],
+      branchSide: .right,
+      japaneseSignText: "中央道・東名",
+      routeShields: ["C2", "E20", "E1"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.nishishinjuku.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 308_925_199,
+      incomingEdgeID: "osm.190617333.53.forward",
+      outgoingEdgeID: "osm.190617333.54.forward",
+      branchSide: .straight,
+      japaneseSignText: "湾岸線",
+      routeShields: ["C2"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/"
+      ]
+    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.shinonome.b-eastbound-to-10-inbound",
       networkSnapshotID:

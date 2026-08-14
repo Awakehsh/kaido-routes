@@ -20,10 +20,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 30)
-    #expect(coverage.incomingApproachCount == 80)
-    #expect(coverage.movements.count == 161)
-    #expect(coverage.releasedMovementCount == 23)
-    #expect(coverage.missingMovementReviewCount == 138)
+    #expect(coverage.incomingApproachCount == 82)
+    #expect(coverage.movements.count == 165)
+    #expect(coverage.releasedMovementCount == 32)
+    #expect(coverage.missingMovementReviewCount == 133)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -176,7 +176,33 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         + coverage.nonJunctionGraphDivergenceCount
         == coverage.decisions.count
     )
-    #expect(coverage.missingGuidanceDecisionCount > 0)
+    #expect(coverage.guidanceDecisionCount == 13)
+    #expect(coverage.nonJunctionGraphDivergenceCount == 12)
+    #expect(coverage.missingGuidanceDecisionCount == 0)
+    #expect(
+      coverage.decisions.filter {
+        $0.releasedGuidanceDefinitionID
+          == "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge"
+      }.count == 2
+    )
+    #expect(
+      coverage.decisions.filter {
+        $0.releasedGuidanceDefinitionID
+          == "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
+      }.count == 2
+    )
+    #expect(
+      coverage.decisions.contains {
+        $0.kind == .graphDivergence
+          && $0.junctionNodeID == 3_387_909_578
+          && $0.incomingDirectedEdgeID
+            == "osm.772511245.20.forward"
+          && $0.plannedOutgoingDirectedEdgeID
+            == "osm.331922708.0.forward"
+          && $0.alternativeOutgoingDirectedEdgeIDs
+            == ["osm.541983769.0.forward"]
+      }
+    )
     #expect(
       coverage.missingReleasedRecoveryBranchCount
         == coverage.recoveryBranches.count

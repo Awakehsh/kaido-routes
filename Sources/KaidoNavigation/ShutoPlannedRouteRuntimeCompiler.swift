@@ -889,6 +889,9 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     recoveryCandidates: [RecoveryCandidate]
   ) -> ShutoRouteLiveReleaseCoverage {
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let waysByID = Dictionary(
+      uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
+    )
     let availableRouteIDs = Set(
       database.routes.filter { $0.operationalStatus == "AVAILABLE" }
         .map(\.routeID)
@@ -927,7 +930,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       let startsTerminalExitBranch = route.edges[(index + 1)...]
         .allSatisfy { $0.kind == "LINK" }
       let hasAvailableExpresswayAlternative = alternatives.contains {
-        leadsToAvailableMainline(
+        !isExplicitSurfaceExit($0, waysByID: waysByID)
+          && leadsToAvailableMainline(
           from: $0,
           outgoing: outgoing,
           availableRouteIDs: availableRouteIDs
@@ -973,6 +977,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
               isJunctionDecision: isJunctionDecision,
               startsTerminalExitBranch: startsTerminalExitBranch,
               alternative: alternative,
+              waysByID: waysByID,
               outgoing: outgoing,
               availableRouteIDs: availableRouteIDs
             ),
@@ -1017,9 +1022,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     isJunctionDecision: Bool,
     startsTerminalExitBranch: Bool,
     alternative: ShutoNetworkDatabase.Edge,
+    waysByID: [Int64: ShutoNetworkDatabase.Way],
     outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
     availableRouteIDs: Set<String>
   ) -> ShutoRouteRecoveryBranchCoverage.Kind {
+    if isExplicitSurfaceExit(alternative, waysByID: waysByID) {
+      return .surfaceExit
+    }
     switch firstMainlineAvailability(
       from: alternative,
       outgoing: outgoing,
@@ -1036,6 +1045,22 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     case .none:
       return .surfaceExit
     }
+  }
+
+  /// Some OSM exit ramps reconnect to an available expressway within the
+  /// bounded graph search. Their explicit exit name remains authoritative for
+  /// classifying the immediate choice as an off-ramp, not a JCT movement.
+  private static func isExplicitSurfaceExit(
+    _ edge: ShutoNetworkDatabase.Edge,
+    waysByID: [Int64: ShutoNetworkDatabase.Way]
+  ) -> Bool {
+    guard let tags = waysByID[edge.wayID]?.tags else { return false }
+    return [tags["name"], tags["name:ja"]]
+      .compactMap { $0 }
+      .contains {
+        $0.contains("出口")
+          || $0.localizedCaseInsensitiveContains("exit")
+      }
   }
 
   private static func firstMainlineAvailability(

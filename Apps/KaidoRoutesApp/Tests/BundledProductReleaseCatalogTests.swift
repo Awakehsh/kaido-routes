@@ -17,8 +17,8 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       }
     )
 
-    XCTAssertEqual(catalog.entries.count, 2)
-    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 2)
+    XCTAssertEqual(catalog.entries.count, 3)
+    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 3)
     XCTAssertTrue(catalog.demoEntries.isEmpty)
     XCTAssertEqual(
       foreground.release.releaseID,
@@ -57,6 +57,27 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       339
     )
     XCTAssertNotNil(wangan.release.foregroundLiveInputAuthority)
+
+    let c2 = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first {
+        $0.release.releaseID
+          == "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15"
+      }
+    )
+    XCTAssertEqual(
+      c2.release.navigation.bundle.routePlan.entryFacilityID,
+      "shuto.ic.c2.oujiminami"
+    )
+    XCTAssertEqual(
+      c2.release.navigation.bundle.routePlan.exitFacilityID,
+      "shuto.ic.s1.shikahamabashi"
+    )
+    XCTAssertEqual(
+      c2.release.navigation.bundle.routePlan.occurrences.count,
+      2_196
+    )
+    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 22)
+    XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
   }
 
   func testBundledManifestLoadsHashBoundDemoAndForegroundReleases() throws {

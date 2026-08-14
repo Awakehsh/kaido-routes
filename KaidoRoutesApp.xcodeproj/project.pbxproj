@@ -109,6 +109,7 @@
 		B93BBE993A6AA7C24B8AE951 /* C2CompletedRouteDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43CF574213D741739759BCE /* C2CompletedRouteDemoView.swift */; };
 		BB5F2B6475BA2AB1152A3979 /* C2NavigationDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0228E6D3EEAB4BF4FC7C99C6 /* C2NavigationDemoView.swift */; };
 		BCA9818AA58EB47C0C6F715D /* SavedRouteLibraryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFD2D2EDE8B84321C2C4F521 /* SavedRouteLibraryModel.swift */; };
+		BD073C925A7F718C73B7F5CF /* c2-inner-oujiminami-shikahamabashi-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */; };
 		BE5D8080326ADECF7D124B2C /* DATA-LICENSES.md in Resources */ = {isa = PBXBuildFile; fileRef = 69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */; };
 		BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */; };
 		C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */ = {isa = PBXBuildFile; fileRef = 64D7D57200F5A1FF4D631BC2 /* k7-northwest-260721-directed-database.json */; };
@@ -249,6 +250,7 @@
 		C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewView.swift; sourceTree = "<group>"; };
 		C68D697CA5443959E84E8E3A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C836965E12C990BA77B852C6 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "c2-inner-oujiminami-shikahamabashi-product-release.json"; sourceTree = "<group>"; };
 		CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapter.swift; sourceTree = "<group>"; };
 		CD289A633C0766AE7B609BBB /* SyntheticProductRuntimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeView.swift; sourceTree = "<group>"; };
 		CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewModelTests.swift; sourceTree = "<group>"; };
@@ -305,6 +307,7 @@
 				8DB8358AB6806A7F1D04E522 /* InfoPlist.strings */,
 				D6736A54DBD926E1D2965FE9 /* Assets.xcassets */,
 				6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */,
+				C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */,
 				3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */,
 				808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */,
 				FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */,
@@ -654,6 +657,7 @@
 				476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */,
 				D9DA8D74EBCD52E47B1DD727 /* c1-inner-shibakoen-shiodome-product-release.json in Resources */,
 				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
+				BD073C925A7F718C73B7F5CF /* c2-inner-oujiminami-shikahamabashi-product-release.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
 				9FA9A38618E777012F472E10 /* k7-aoba-to-kohoku-pre-drive-evidence.json in Resources */,
 				C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */,

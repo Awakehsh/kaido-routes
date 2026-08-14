@@ -30,6 +30,12 @@ public enum ShutoCircuitProductReleaseBuilder {
     "shuto.ic.b.chidoricho"
   public static let wanganExitFacilityID =
     "shuto.ic.b.daikokufutou"
+  public static let c2CircuitID =
+    "shuto.circuit.c2-inner-bayshore"
+  public static let c2EntryFacilityID =
+    "shuto.ic.c2.oujiminami"
+  public static let c2ExitFacilityID =
+    "shuto.ic.s1.shikahamabashi"
 
   public static func plannedRoute(
     database: ShutoNetworkDatabase
@@ -93,6 +99,35 @@ public enum ShutoCircuitProductReleaseBuilder {
         entryFacilityID: entryFacilityID
       ),
       releaseKey: "wangan-westbound-\(entryKey)-daikokufutou",
+      preferredRecoveryTriggerID: nil
+    )
+  }
+
+  public static func plannedC2Route(
+    database: ShutoNetworkDatabase
+  ) throws -> ShutoPlannedRoute {
+    guard
+      let circuit = ShutoCircuitDefinition.bundled.first(where: {
+        $0.circuitID == c2CircuitID
+      })
+    else {
+      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+    }
+    return try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: circuit,
+      entryFacilityID: c2EntryFacilityID,
+      exitFacilityID: c2ExitFacilityID,
+      laps: 1
+    )
+  }
+
+  public static func buildC2Artifact(
+    database: ShutoNetworkDatabase
+  ) throws -> KaidoProductReleaseArtifact {
+    try buildArtifact(
+      database: database,
+      route: plannedC2Route(database: database),
+      releaseKey: "c2-inner-oujiminami-shikahamabashi",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -331,6 +366,12 @@ public enum ShutoCircuitProductReleaseBuilder {
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "\(route.entryFacility.nameJA)入口",
         .english: "\(route.entryFacility.nameJA) entrance",
+      ]
+    case "c2-inner-oujiminami-shikahamabashi":
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "王子南入口",
+        .english: "Oji-minami entrance",
       ]
     default:
       throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
@@ -577,7 +618,12 @@ public enum ShutoCircuitProductReleaseBuilder {
         licenceIdentifier: "Apache-2.0"
       ),
     ]
-    let guidance = movements.map { movement in
+    var seenGuidanceSourceIDs = Set<String>()
+    let guidance = movements.compactMap {
+      movement -> NavigationReleaseSourceReference? in
+      guard seenGuidanceSourceIDs.insert(movement.sourceID).inserted else {
+        return nil
+      }
       let source = movement.definition.sources.first(where: {
         $0.contentSHA256 != nil
       })!
@@ -610,7 +656,7 @@ public enum ShutoCircuitProductReleaseBuilder {
   ) -> [NavigationReleaseAssetEvidence] {
     let officialCatalogID = "shutoko-official-catalog-2026-07-29"
     let osmID = "osm-kanto-2026-08-04"
-    let guidanceSourceIDs = movements.map(\.sourceID)
+    let guidanceSourceIDs = Array(Set(movements.map(\.sourceID))).sorted()
     func evidence(
       _ role: NavigationReleaseAssetRole,
       _ id: String,

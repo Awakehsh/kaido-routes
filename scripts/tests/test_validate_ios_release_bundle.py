@@ -228,6 +228,28 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         (self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE).write_bytes(
             encoded_wangan_release
         )
+        c2_release = json.loads(encoded_product_release)
+        c2_release["release_id"] = validator.C2_PRODUCT_RELEASE_ID
+        c2_route_plan = c2_release["navigation_release"]["route_plan"]
+        c2_route_plan.update(
+            {
+                "plan_id": validator.C2_ROUTE_PLAN_ID,
+                "entry_facility_id": validator.C2_ENTRY_FACILITY_ID,
+                "exit_facility_id": validator.C2_EXIT_FACILITY_ID,
+                "occurrences": [
+                    {"id": f"c2.fixture.{index}"}
+                    for index in range(validator.C2_ROUTE_OCCURRENCE_COUNT)
+                ],
+            }
+        )
+        c2_release["route_atlas_release"]["route_plan"] = c2_route_plan
+        encoded_c2_release = json.dumps(c2_release).encode("utf-8")
+        c2_source = self.repository / validator.C2_PRODUCT_RELEASE_SOURCE
+        c2_source.parent.mkdir(parents=True, exist_ok=True)
+        c2_source.write_bytes(encoded_c2_release)
+        (self.app / validator.C2_PRODUCT_RELEASE_RESOURCE).write_bytes(
+            encoded_c2_release
+        )
         data_licenses = "\n".join(
             (
                 validator.EXPECTED_OSM_ATTRIBUTION,
@@ -298,6 +320,12 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
             result["wangan_product_release_sha256"],
             validator.sha256(
                 self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE
+            ),
+        )
+        self.assertEqual(
+            result["c2_product_release_sha256"],
+            validator.sha256(
+                self.app / validator.C2_PRODUCT_RELEASE_RESOURCE
             ),
         )
 
@@ -538,6 +566,23 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         with self.assertRaisesRegex(
             validator.ReleaseBundleValidationError,
             "Wangan exit facility",
+        ):
+            self.validate()
+
+    def test_c2_foreground_release_drift_is_rejected(self) -> None:
+        for path in (
+            self.app / validator.C2_PRODUCT_RELEASE_RESOURCE,
+            self.repository / validator.C2_PRODUCT_RELEASE_SOURCE,
+        ):
+            artifact = json.loads(path.read_text(encoding="utf-8"))
+            artifact["navigation_release"]["route_plan"][
+                "entry_facility_id"
+            ] = "shuto.ic.c2.wrong"
+            path.write_text(json.dumps(artifact), encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            validator.ReleaseBundleValidationError,
+            "C2 entry facility",
         ):
             self.validate()
 

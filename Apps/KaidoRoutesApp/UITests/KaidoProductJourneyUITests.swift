@@ -1287,6 +1287,68 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testWholeShutoC2RecommendedRouteExposesLiveNavigation() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.resetAuthorizationStatus(for: .location)
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION",
+      "-app.kaidoroutes.language.interface",
+      "en",
+    ]
+    app.launch()
+
+    let currentLocation = element("whole-shuto-current-location", in: app)
+    XCTAssertTrue(currentLocation.waitForExistence(timeout: 5))
+    currentLocation.tap()
+    allowLocationWhenInUseIfRequested()
+
+    let circuit = element(
+      "whole-shuto-circuit-option-shuto.circuit.c2-inner-bayshore",
+      in: app
+    )
+    XCTAssertTrue(circuit.waitForExistence(timeout: 5))
+    circuit.tap()
+    let startCircuit = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(startCircuit.waitForExistence(timeout: 5))
+    let circuitReady = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "isEnabled == true"),
+      object: startCircuit
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [circuitReady], timeout: 15),
+      .completed
+    )
+    startCircuit.tap()
+
+    let product = element("whole-shuto-product", in: app)
+    let review = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "REVIEW"),
+      object: product
+    )
+    XCTAssertEqual(XCTWaiter.wait(for: [review], timeout: 8), .completed)
+    let reviewJourney = app.buttons["whole-shuto-review-journey"]
+    XCTAssertTrue(reviewJourney.waitForExistence(timeout: 5))
+    let reviewReady = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "isEnabled == true"),
+      object: reviewJourney
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [reviewReady], timeout: 8),
+      .completed
+    )
+    reviewJourney.tap()
+
+    let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
+    XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 5))
+    XCTAssertTrue(startLiveDrive.isEnabled)
+    XCTAssertEqual(startLiveDrive.value as? String, "AVAILABLE")
+    XCTAssertFalse(
+      element("whole-shuto-live-drive-blocker", in: app).exists
+    )
+  }
+
   func testWholeShutoInterfaceAndVoiceLanguagesRemainIndependent() {
     continueAfterFailure = false
     let app = XCUIApplication()

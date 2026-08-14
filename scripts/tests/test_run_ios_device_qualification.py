@@ -161,6 +161,7 @@ def release_bundle_evidence() -> runner.ReleaseBundleEvidence:
         whole_shuto_sha256="l" * 64,
         c1_product_release_sha256="m" * 64,
         wangan_product_release_sha256="r" * 64,
+        c2_product_release_sha256="s" * 64,
         privacy_manifest_sha256="n" * 64,
         license_sha256="o" * 64,
         data_licenses_sha256="p" * 64,
@@ -301,7 +302,7 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
         encoded = json.dumps(receipt, sort_keys=True)
 
-        self.assertEqual(receipt["schema_version"], "1.7")
+        self.assertEqual(receipt["schema_version"], "1.8")
         self.assertEqual(counts["passed"], 112)
         self.assertEqual(counts["total"], 112)
         self.assertNotIn(DEVICE_ID, encoded)
@@ -375,6 +376,12 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
                 "wangan_product_release_sha256"
             ],
             "r" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "c2_product_release_sha256"
+            ],
+            "s" * 64,
         )
         self.assertEqual(
             receipt["release_smoke"]["evidence"][
@@ -542,6 +549,9 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             (app / runner.WANGAN_PRODUCT_RELEASE_RESOURCE).write_bytes(
                 b"wangan-product-release"
             )
+            (app / runner.C2_PRODUCT_RELEASE_RESOURCE).write_bytes(
+                b"c2-product-release"
+            )
             (app / "PrivacyInfo.xcprivacy").write_bytes(b"privacy")
             (app / "LICENSE").write_bytes(b"license")
             (app / "DATA-LICENSES.md").write_bytes(b"data licence")
@@ -584,6 +594,10 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
                 runner.hash_file(
                     app / runner.WANGAN_PRODUCT_RELEASE_RESOURCE
                 ),
+            )
+            self.assertEqual(
+                evidence.c2_product_release_sha256,
+                runner.hash_file(app / runner.C2_PRODUCT_RELEASE_RESOURCE),
             )
             self.assertEqual(
                 evidence.data_licenses_sha256,

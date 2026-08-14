@@ -127,6 +127,35 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testC2InnerCircuitAdmitsBundledForegroundNavigation() async throws {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    let expected = try ShutoCircuitProductReleaseBuilder.plannedC2Route(
+      database: model.database
+    )
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.selectCircuit(.c2InnerWithBayshore)
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      ShutoCircuitProductReleaseBuilder.c2EntryFacilityID
+    )
+    XCTAssertEqual(
+      model.circuitExitFacilityID,
+      ShutoCircuitProductReleaseBuilder.c2ExitFacilityID
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
     XCTAssertEqual(
       KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),

@@ -76,6 +76,42 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("C2 Inner and Bayshore circuit builds one exact foreground authority")
+  func buildsC2ForegroundRelease() throws {
+    let database = try loadDatabase()
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildC2Artifact(database: database)
+    let release = try KaidoProductRelease(artifact: artifact)
+    let route = try ShutoCircuitProductReleaseBuilder.plannedC2Route(
+      database: database
+    )
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.navigation.bundle.releasedGuidance.count == 22)
+    #expect(
+      release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
+    )
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
+    )
+    #expect(
+      release.navigation.bundle.releasedGuidance.contains {
+        $0.frameTemplate.presentationSource.japaneseSignText
+          == "東北道・大宮"
+      }
+    )
+    #expect(
+      release.navigation.bundle.releasedGuidance.contains {
+        $0.frameTemplate.presentationSource.japaneseSignText
+          == "中央道・東名"
+      }
+    )
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let databaseURL = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

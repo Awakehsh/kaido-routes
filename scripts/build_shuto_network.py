@@ -62,6 +62,11 @@ JUNCTION_OSM_NODE_OVERRIDES = {
     # Current 1 Haneda mainline branch nodes at Showajima. The operator
     # directory names the JCT; the pinned OSM nodes carry no junction name.
     "昭和島JCT": [36610838, 36610850],
+    # Reviewed C2/B decision nodes. The pinned OSM nodes carry no junction
+    # name, while the operator directory and exact directed route identify
+    # these forks as part of the named junctions.
+    "葛西JCT": [31330103],
+    "小松川JCT": [31337397],
 }
 
 
@@ -1063,15 +1068,14 @@ def match_junctions(
                     for token in tokens
                 )
             }
-        )
-        if not matched_node_ids:
-            matched_node_ids = [
+            | {
                 node_id
                 for node_id in JUNCTION_OSM_NODE_OVERRIDES.get(
                     official["name_ja"], []
                 )
                 if node_id in node_coordinates
-            ]
+            }
+        )
         coordinates = [
             node_coordinates[node_id]
             for node_id in matched_node_ids

@@ -42,6 +42,9 @@ private enum CLIError: Error, CustomStringConvertible {
         kaido-release build-wangan-foreground-product \
           --network <whole-shuto-network.json> \
           --output <product-release.json>
+        kaido-release build-c2-foreground-product \
+          --network <whole-shuto-network.json> \
+          --output <product-release.json>
         kaido-release validate-navigation --artifact <navigation-release.json>
         kaido-release build-navigation \\
           --draft <navigation-release-draft.json> \\
@@ -294,6 +297,7 @@ private enum Command {
   )
   case buildC1ForegroundProduct(network: String, output: String)
   case buildWanganForegroundProduct(network: String, output: String)
+  case buildC2ForegroundProduct(network: String, output: String)
   case validateNavigation(artifact: String)
   case buildNavigation(
     draft: String,
@@ -370,6 +374,7 @@ private struct LiveCoverageReport: Encodable {
   let entryFacilityID: String
   let exitFacilityID: String
   let routeOccurrenceCount: Int
+  let routeDirectedEdgeIDs: [String]
   let decisionCount: Int
   let guidanceDecisionCount: Int
   let nonJunctionGraphDivergenceCount: Int
@@ -386,6 +391,7 @@ private struct LiveCoverageReport: Encodable {
     entryFacilityID: String,
     exitFacilityID: String,
     routeOccurrenceCount: Int,
+    routeDirectedEdgeIDs: [String],
     recoveryCandidates: [RecoveryCandidate],
     coverage: ShutoRouteLiveReleaseCoverage
   ) {
@@ -393,6 +399,7 @@ private struct LiveCoverageReport: Encodable {
     self.entryFacilityID = entryFacilityID
     self.exitFacilityID = exitFacilityID
     self.routeOccurrenceCount = routeOccurrenceCount
+    self.routeDirectedEdgeIDs = routeDirectedEdgeIDs
     decisionCount = coverage.decisions.count
     guidanceDecisionCount = coverage.guidanceDecisionCount
     nonJunctionGraphDivergenceCount =
@@ -414,6 +421,7 @@ private struct LiveCoverageReport: Encodable {
     case entryFacilityID = "entry_facility_id"
     case exitFacilityID = "exit_facility_id"
     case routeOccurrenceCount = "route_occurrence_count"
+    case routeDirectedEdgeIDs = "route_directed_edge_ids"
     case decisionCount = "decision_count"
     case guidanceDecisionCount = "guidance_decision_count"
     case nonJunctionGraphDivergenceCount =
@@ -505,6 +513,12 @@ private struct Arguments {
     case "build-wangan-foreground-product":
       try flags.require(exactly: ["--network", "--output"])
       command = .buildWanganForegroundProduct(
+        network: try flags.value("--network"),
+        output: try flags.value("--output")
+      )
+    case "build-c2-foreground-product":
+      try flags.require(exactly: ["--network", "--output"])
+      command = .buildC2ForegroundProduct(
         network: try flags.value("--network"),
         output: try flags.value("--output")
       )
@@ -1024,6 +1038,7 @@ do {
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       routeOccurrenceCount: route.routePlan.occurrences.count,
+      routeDirectedEdgeIDs: route.edges.map(\.edgeID),
       recoveryCandidates: assets.recoveryCandidates,
       coverage: assets.liveReleaseCoverage
     )
@@ -1062,6 +1077,7 @@ do {
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       routeOccurrenceCount: route.routePlan.occurrences.count,
+      routeDirectedEdgeIDs: route.edges.map(\.edgeID),
       recoveryCandidates: assets.recoveryCandidates,
       coverage: assets.liveReleaseCoverage
     )
@@ -1094,6 +1110,23 @@ do {
     )
     let artifact = try ShutoCircuitProductReleaseBuilder
       .buildWanganArtifact(database: database)
+    let encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
+    let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
+    try writeNew(encoded, path: output)
+    print(
+      "PASS: wrote foreground product \(release.releaseID) with "
+        + "\(release.navigation.bundle.routePlan.occurrences.count) "
+        + "RoutePlan occurrences and "
+        + "\(release.navigation.bundle.releasedGuidance.count) guidance "
+        + "definitions; output \(output)"
+    )
+  case .buildC2ForegroundProduct(let networkPath, let output):
+    let database = try decode(
+      ShutoNetworkDatabase.self,
+      path: networkPath
+    )
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildC2Artifact(database: database)
     let encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
     let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
     try writeNew(encoded, path: output)

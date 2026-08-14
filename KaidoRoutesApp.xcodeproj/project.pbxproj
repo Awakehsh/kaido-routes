@@ -55,6 +55,7 @@
 		46B325E66996D8EE0A22F3C6 /* ReleasedProductRouteAuthoringModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65155C1FCDF19DFFDA69ED9F /* ReleasedProductRouteAuthoringModel.swift */; };
 		4707E3A6AC64A43BE01C8592 /* WholeShutoPlaceSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0325E5DA555448A0B84E92 /* WholeShutoPlaceSearch.swift */; };
 		476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */; };
+		485F417D7CBAECDF7CD9DA21 /* scenic-harumi-daikokufutou-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */; };
 		4E417044D493DCB7948A36CA /* ReleasedPreDriveReviewAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */; };
 		50F7388D9A32451D365016AA /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */; };
 		50FF65EF256B2837555718F1 /* KaidoLanguageSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFDC5907A1BC3584C333F793 /* KaidoLanguageSettingsModel.swift */; };
@@ -65,6 +66,7 @@
 		57829BA952B3751A1BFAE2F7 /* AccessibilityPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */; };
 		596E9BAB3B8898BF6F376F66 /* ProductMapPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE65BD55093E129E001ACC7 /* ProductMapPresentation.swift */; };
 		5A17461F9788177CFEB81559 /* WholeShutoPlaceSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */; };
+		5A8C6FF6A1D1466FAB742B4D /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */; };
 		60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */; };
 		63E970D570EA5576C405BC52 /* C2NavigationSimulationCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */; };
 		662B88AFA6B0F34490E16BC8 /* PreDriveEvidenceUpdateModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */; };
@@ -246,9 +248,11 @@
 		B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationModelTests.swift; sourceTree = "<group>"; };
 		B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationUITests.swift; sourceTree = "<group>"; };
 		B3512D6D318BE2C5B1E03B89 /* GuidanceVoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceVoiceSetupView.swift; sourceTree = "<group>"; };
+		BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "scenic-harumi-daikokufutou-product-release.json"; sourceTree = "<group>"; };
 		BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoPlaceSearchTests.swift; sourceTree = "<group>"; };
 		C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewView.swift; sourceTree = "<group>"; };
 		C68D697CA5443959E84E8E3A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"; sourceTree = "<group>"; };
 		C836965E12C990BA77B852C6 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "c2-inner-oujiminami-shikahamabashi-product-release.json"; sourceTree = "<group>"; };
 		CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapter.swift; sourceTree = "<group>"; };
@@ -308,8 +312,10 @@
 				D6736A54DBD926E1D2965FE9 /* Assets.xcassets */,
 				6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */,
 				C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */,
+				C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */,
 				3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */,
 				808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */,
+				BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */,
 				FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */,
 				2585B4B30CCB02C8B3693F6E /* wangan-westbound-chidoricho-daikokufutou-product-release.json */,
 			);
@@ -658,12 +664,14 @@
 				D9DA8D74EBCD52E47B1DD727 /* c1-inner-shibakoen-shiodome-product-release.json in Resources */,
 				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
 				BD073C925A7F718C73B7F5CF /* c2-inner-oujiminami-shikahamabashi-product-release.json in Resources */,
+				5A8C6FF6A1D1466FAB742B4D /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
 				9FA9A38618E777012F472E10 /* k7-aoba-to-kohoku-pre-drive-evidence.json in Resources */,
 				C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */,
 				03DB3A344A501784A33E0EBE /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json in Resources */,
 				56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */,
 				B0D80A3B61AD987BABA0C185 /* route-atlas-attribution-catalog.json in Resources */,
+				485F417D7CBAECDF7CD9DA21 /* scenic-harumi-daikokufutou-product-release.json in Resources */,
 				211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */,
 				81801BF41CD099F27C8B94A7 /* shuto-whole-network-20260804.json in Resources */,
 				2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */,

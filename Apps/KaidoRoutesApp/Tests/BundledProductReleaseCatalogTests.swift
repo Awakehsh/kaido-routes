@@ -17,8 +17,8 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       }
     )
 
-    XCTAssertEqual(catalog.entries.count, 3)
-    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 3)
+    XCTAssertEqual(catalog.entries.count, 5)
+    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 5)
     XCTAssertTrue(catalog.demoEntries.isEmpty)
     XCTAssertEqual(
       foreground.release.releaseID,
@@ -78,6 +78,54 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 22)
     XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
+
+    let daikoku = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first {
+        $0.release.releaseID
+          == "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15"
+      }
+    )
+    XCTAssertEqual(
+      daikoku.release.navigation.bundle.routePlan.entryFacilityID,
+      "shuto.ic.b.wangankanpachi"
+    )
+    XCTAssertEqual(
+      daikoku.release.navigation.bundle.routePlan.exitFacilityID,
+      "shuto.ic.b.daikokufutou"
+    )
+    XCTAssertEqual(
+      daikoku.release.navigation.bundle.routePlan.occurrences.count,
+      556
+    )
+    XCTAssertEqual(
+      daikoku.release.navigation.bundle.releasedGuidance.count,
+      7
+    )
+    XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
+
+    let scenic = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first {
+        $0.release.releaseID
+          == "shutoko.product.scenic-harumi-daikokufutou.2026-08-15"
+      }
+    )
+    XCTAssertEqual(
+      scenic.release.navigation.bundle.routePlan.entryFacilityID,
+      "shuto.ic.10.harumi"
+    )
+    XCTAssertEqual(
+      scenic.release.navigation.bundle.routePlan.exitFacilityID,
+      "shuto.ic.b.daikokufutou"
+    )
+    XCTAssertEqual(
+      scenic.release.navigation.bundle.routePlan.occurrences.count,
+      718
+    )
+    XCTAssertEqual(
+      scenic.release.navigation.bundle.releasedGuidance.count,
+      10
+    )
+    XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }
 
   func testBundledManifestLoadsHashBoundDemoAndForegroundReleases() throws {

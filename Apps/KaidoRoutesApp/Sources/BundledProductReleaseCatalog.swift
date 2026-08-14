@@ -65,6 +65,35 @@ extension AppBundleProductReleaseDescriptor {
       role: .foregroundNavigation
     )
   }
+
+  static var daikokuYokohamaWangankanpachiDaikokufutou:
+    AppBundleProductReleaseDescriptor
+  {
+    AppBundleProductReleaseDescriptor(
+      resourceName:
+        "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
+      resourceExtension: "json",
+      expectedSHA256:
+        "30e93eeb1e6bd597d4c4329589cc8454cfed3ad79826c1a831a83a82886444e6",
+      expectedReleaseID:
+        "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15",
+      role: .foregroundNavigation
+    )
+  }
+
+  static var scenicHarumiDaikokufutou:
+    AppBundleProductReleaseDescriptor
+  {
+    AppBundleProductReleaseDescriptor(
+      resourceName: "scenic-harumi-daikokufutou-product-release",
+      resourceExtension: "json",
+      expectedSHA256:
+        "01e8c262bc00aaf0ad02e7691f60a6989a6d191303389eed225fefa172d583e7",
+      expectedReleaseID:
+        "shutoko.product.scenic-harumi-daikokufutou.2026-08-15",
+      role: .foregroundNavigation
+    )
+  }
 }
 
 struct BundledProductReleaseEntry: Equatable, Sendable {
@@ -238,6 +267,8 @@ enum BundledProductReleaseCatalogLoader {
     .c1InnerShibakoenShiodome,
     .wanganWestboundChidorichoDaikokufutou,
     .c2InnerOujiminamiShikahamabashi,
+    .daikokuYokohamaWangankanpachiDaikokufutou,
+    .scenicHarumiDaikokufutou,
   ]
 
   static let previewManifest: [BundledProductReleaseDescriptor] = [

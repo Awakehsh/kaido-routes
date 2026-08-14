@@ -162,6 +162,8 @@ def release_bundle_evidence() -> runner.ReleaseBundleEvidence:
         c1_product_release_sha256="m" * 64,
         wangan_product_release_sha256="r" * 64,
         c2_product_release_sha256="s" * 64,
+        daikoku_product_release_sha256="t" * 64,
+        scenic_product_release_sha256="u" * 64,
         privacy_manifest_sha256="n" * 64,
         license_sha256="o" * 64,
         data_licenses_sha256="p" * 64,
@@ -302,7 +304,7 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
         encoded = json.dumps(receipt, sort_keys=True)
 
-        self.assertEqual(receipt["schema_version"], "1.8")
+        self.assertEqual(receipt["schema_version"], "1.10")
         self.assertEqual(counts["passed"], 112)
         self.assertEqual(counts["total"], 112)
         self.assertNotIn(DEVICE_ID, encoded)
@@ -382,6 +384,18 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
                 "c2_product_release_sha256"
             ],
             "s" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "daikoku_product_release_sha256"
+            ],
+            "t" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"][
+                "scenic_product_release_sha256"
+            ],
+            "u" * 64,
         )
         self.assertEqual(
             receipt["release_smoke"]["evidence"][
@@ -552,6 +566,12 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             (app / runner.C2_PRODUCT_RELEASE_RESOURCE).write_bytes(
                 b"c2-product-release"
             )
+            (app / runner.DAIKOKU_PRODUCT_RELEASE_RESOURCE).write_bytes(
+                b"daikoku-product-release"
+            )
+            (app / runner.SCENIC_PRODUCT_RELEASE_RESOURCE).write_bytes(
+                b"scenic-product-release"
+            )
             (app / "PrivacyInfo.xcprivacy").write_bytes(b"privacy")
             (app / "LICENSE").write_bytes(b"license")
             (app / "DATA-LICENSES.md").write_bytes(b"data licence")
@@ -598,6 +618,16 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             self.assertEqual(
                 evidence.c2_product_release_sha256,
                 runner.hash_file(app / runner.C2_PRODUCT_RELEASE_RESOURCE),
+            )
+            self.assertEqual(
+                evidence.daikoku_product_release_sha256,
+                runner.hash_file(
+                    app / runner.DAIKOKU_PRODUCT_RELEASE_RESOURCE
+                ),
+            )
+            self.assertEqual(
+                evidence.scenic_product_release_sha256,
+                runner.hash_file(app / runner.SCENIC_PRODUCT_RELEASE_RESOURCE),
             )
             self.assertEqual(
                 evidence.data_licenses_sha256,

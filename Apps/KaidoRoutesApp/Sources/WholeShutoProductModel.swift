@@ -313,8 +313,7 @@ final class WholeShutoProductModel: ObservableObject {
     .recommended
   @Published private(set) var customDraftRoute: ShutoPlannedRoute?
   @Published private(set) var selectedCircuit: ShutoCircuitDefinition?
-  @Published private(set) var circuitEntranceCandidates:
-    [ShutoNetworkDatabase.Facility] = []
+  @Published private(set) var circuitEntranceCandidates: [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var circuitEntryFacilityID: String?
   @Published private(set) var circuitExitFacilityID: String?
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
@@ -326,8 +325,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
   @Published private(set) var isCircuitRouteSelected = false
-  @Published private(set) var circuitTariffBandsByFacilityID:
-    [String: ShutoTariffBand] = [:]
+  @Published private(set) var circuitTariffBandsByFacilityID: [String: ShutoTariffBand] = [:]
   @Published private(set) var accessRoute: WholeShutoSurfaceRoute?
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
@@ -336,8 +334,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// product runtime. The bundled whole-network snapshot is not release
   /// authority, so its default journey keeps this false and fails live start.
   @Published private(set) var isLiveDrive = false
-  @Published private(set) var liveLocationState:
-    WholeShutoLiveLocationState = .inactive
+  @Published private(set) var liveLocationState: WholeShutoLiveLocationState = .inactive
   @Published private(set) var liveLocationIssueCode: String?
   @Published private(set) var failureCode: String?
   @Published private(set) var checkpointIssueCode: String?
@@ -362,8 +359,7 @@ final class WholeShutoProductModel: ObservableObject {
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission]
-  private let liveLocationSourceEvidenceProvider:
-    any CoreLocationSourceEvidenceProviding
+  private let liveLocationSourceEvidenceProvider: any CoreLocationSourceEvidenceProviding
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var playbackGeneration = 0
@@ -381,15 +377,12 @@ final class WholeShutoProductModel: ObservableObject {
   /// target this movement rather than whichever prompt comes first.
   private(set) var junctionPreviewMovementID: String?
   private var liveDriveSession: ShutoLiveDriveSession?
-  private var liveEntryTransitionAdapter:
-    CoreLocationEntryTransitionAdapter?
-  private var liveSurfaceEgressAdapter:
-    CoreLocationSurfaceEgressAdapter?
+  private var liveEntryTransitionAdapter: CoreLocationEntryTransitionAdapter?
+  private var liveSurfaceEgressAdapter: CoreLocationSurfaceEgressAdapter?
   private var liveNavigationCheckpoint: NavigationSessionCheckpoint?
   private var activeLiveAdmission: WholeShutoLiveJourneyAdmission?
   private var liveObservationAdapter: CoreLocationObservationAdapter?
-  private var foregroundLiveLocationController:
-    ForegroundNavigationLocationController?
+  private var foregroundLiveLocationController: ForegroundNavigationLocationController?
   private var liveLocationSubscriptions: Set<AnyCancellable> = []
   private var runtimeCoordinate: ShutoCoordinate?
   private var runtimeFractionAlongOccurrence: Double?
@@ -490,8 +483,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// One representative shape per catalog card, computed once off the main
   /// actor from a reviewed deterministic entrance so the card can show the
   /// route's silhouette before any selection.
-  private nonisolated static let thumbnailEntranceByCircuitID:
-    [String: String] = [
+  private nonisolated static let thumbnailEntranceByCircuitID: [String: String] = [
     "shuto.circuit.c1-inner": "shuto.ic.c1.takaracho",
     "shuto.circuit.c2-inner-bayshore": "shuto.ic.c2.hatsudaiminami",
     "shuto.circuit.wangan-daikoku-run": "shuto.ic.b.shinkiba",
@@ -606,9 +598,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  private var matchingLiveAdmissions:
-    [WholeShutoLiveJourneyAdmission]
-  {
+  private var matchingLiveAdmissions: [WholeShutoLiveJourneyAdmission] {
     guard let routePlan = selectedRoute?.routePlan else { return [] }
     return liveJourneyAdmissions.filter {
       $0.core.selectedRoutePlan == routePlan
@@ -759,9 +749,10 @@ final class WholeShutoProductModel: ObservableObject {
       )
       circuitEntranceDistanceMeters = accessDistance
       circuitEntranceOutOfRangeMeters = nil
-      circuitTariffBandsByFacilityID = circuitPairingBand.map {
-        [route.entryFacility.facilityID: $0]
-      } ?? [:]
+      circuitTariffBandsByFacilityID =
+        circuitPairingBand.map {
+          [route.entryFacility.facilityID: $0]
+        } ?? [:]
       circuitRecommendation = recommendation
       isCircuitRouteSelected = true
     }
@@ -1695,9 +1686,15 @@ final class WholeShutoProductModel: ObservableObject {
   private func releasedEntranceFacilityID(
     for circuit: ShutoCircuitDefinition
   ) -> String? {
+    releasedRoutePlan(for: circuit)?.entryFacilityID
+  }
+
+  private func releasedRoutePlan(
+    for circuit: ShutoCircuitDefinition
+  ) -> RoutePlan? {
     liveJourneyAdmissions.lazy.map(\.core.selectedRoutePlan).first {
       $0.id.hasPrefix("\(circuit.circuitID).")
-    }?.entryFacilityID
+    }
   }
 
   func clearCircuitDraft() {
@@ -1769,7 +1766,8 @@ final class WholeShutoProductModel: ObservableObject {
     isResolvingCircuitPairing = true
     let planner = planner
     let originCoordinate = origin?.coordinate
-    let releasedEntranceID = releasedEntranceFacilityID(for: circuit)
+    let releasedRoutePlan = releasedRoutePlan(for: circuit)
+    let releasedEntranceID = releasedRoutePlan?.entryFacilityID
     let releasedEntrance = releasedEntranceID.flatMap { facilityID in
       database.directionalFacilities.first {
         $0.facilityID == facilityID
@@ -1781,29 +1779,33 @@ final class WholeShutoProductModel: ObservableObject {
         for: circuit,
         origin: originCoordinate
       )
-      let nearbyCandidates = originCoordinate.map { origin in
-        ranked.filter {
-          ShutoEntranceAccessTier.classify(
-            distanceMeters: Self.distance(origin, $0.coordinate)
-          ) != .outOfRange
-        }
-      } ?? ranked
+      let nearbyCandidates =
+        originCoordinate.map { origin in
+          ranked.filter {
+            ShutoEntranceAccessTier.classify(
+              distanceMeters: Self.distance(origin, $0.coordinate)
+            ) != .outOfRange
+          }
+        } ?? ranked
       // A released expressway-only route remains plannable before the driver
       // reaches Tokyo. Its ordinary-road approach is still preview-only, and
       // live matching cannot enter the route before the released ramp.
-      let pinnedEntrance = entranceOverride == releasedEntranceID
+      let pinnedEntrance =
+        entranceOverride == releasedEntranceID
         ? releasedEntrance : nil
-      let candidates = pinnedEntrance.map { entrance in
-        [entrance]
-          + nearbyCandidates.filter {
-            $0.facilityID != entrance.facilityID
-          }
-      } ?? nearbyCandidates
+      let candidates =
+        pinnedEntrance.map { entrance in
+          [entrance]
+            + nearbyCandidates.filter {
+              $0.facilityID != entrance.facilityID
+            }
+        } ?? nearbyCandidates
       let entranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })
         ? entranceOverride
         : candidates.first?.facilityID
       var pairing: ShutoCircuitPairing?
+      var releasedPairingBand: ShutoTariffBand?
       var outOfRangeMeters: Double?
       if let entranceID {
         let isReleasedEntrance = entranceID == pinnedEntrance?.facilityID
@@ -1813,6 +1815,13 @@ final class WholeShutoProductModel: ObservableObject {
           origin: isReleasedEntrance ? nil : originCoordinate,
           evidence: .etcNormalCarActive
         )
+        if isReleasedEntrance, let releasedRoutePlan {
+          releasedPairingBand = try? planner.tariffBand(
+            entryFacilityID: releasedRoutePlan.entryFacilityID,
+            exitFacilityID: releasedRoutePlan.exitFacilityID,
+            evidence: .etcNormalCarActive
+          )
+        }
       } else if let originCoordinate,
         let nearest = ranked.first
       {
@@ -1827,7 +1836,8 @@ final class WholeShutoProductModel: ObservableObject {
       for candidate in candidates.prefix(3) {
         if Task.isCancelled { return }
         if candidate.facilityID == pairing?.entrance.facilityID {
-          bands[candidate.facilityID] = pairing?.tariffBand
+          bands[candidate.facilityID] =
+            releasedPairingBand ?? pairing?.tariffBand
           continue
         }
         bands[candidate.facilityID] =
@@ -1839,6 +1849,9 @@ final class WholeShutoProductModel: ObservableObject {
           ))?.tariffBand
       }
       let resolvedPairing = pairing
+      let resolvedReleasedRoutePlan =
+        pairing?.entrance.facilityID == releasedRoutePlan?.entryFacilityID
+        ? releasedRoutePlan : nil
       let resolvedOutOfRange = outOfRangeMeters
       let resolvedBands = bands.compactMapValues { $0 }
       let resolvedCandidates = candidates
@@ -1849,8 +1862,12 @@ final class WholeShutoProductModel: ObservableObject {
         self.circuitEntranceCandidates = resolvedCandidates
         self.circuitEntryFacilityID =
           resolvedPairing?.entrance.facilityID
-        self.circuitExitFacilityID = resolvedPairing?.exit.facilityID
-        self.circuitPairingBand = resolvedPairing?.tariffBand
+        self.circuitExitFacilityID =
+          resolvedReleasedRoutePlan?.exitFacilityID
+          ?? resolvedPairing?.exit.facilityID
+        self.circuitPairingBand =
+          resolvedReleasedRoutePlan == nil
+          ? resolvedPairing?.tariffBand : releasedPairingBand
         self.circuitEntranceDistanceMeters =
           resolvedPairing?.entranceDistanceMeters
         self.circuitEntranceOutOfRangeMeters = resolvedOutOfRange
@@ -2303,7 +2320,8 @@ final class WholeShutoProductModel: ObservableObject {
       isLiveDrive = true
       isPlaying = true
       restoredFromCheckpoint = false
-      phase = admission.core.journeyPlan.accessLeg == nil
+      phase =
+        admission.core.journeyPlan.accessLeg == nil
         ? .entryTransition : .surfaceAccess
       progressFraction = 0
       matcherConfidence = .low
@@ -2416,11 +2434,11 @@ final class WholeShutoProductModel: ObservableObject {
           update.matcherEstimate.confidence == .high
           ? .available : .degraded
         if update.matcherEstimate.confidence != .high {
-          liveLocationIssueCode = "LIVE_MATCHER_CONFIDENCE_"
+          liveLocationIssueCode =
+            "LIVE_MATCHER_CONFIDENCE_"
             + update.matcherEstimate.confidence.rawValue
         }
-        if
-          update.navigationSnapshot.journeyPhase == .strictRoute,
+        if update.navigationSnapshot.journeyPhase == .strictRoute,
           update.navigationSnapshot.currentOccurrenceID
             == selectedRoute?.routePlan.occurrences.last?.id,
           runtimeOccurrenceID
@@ -2630,8 +2648,9 @@ final class WholeShutoProductModel: ObservableObject {
       100,
       max(30, horizontalAccuracyMeters * 3)
     )
-    guard measurement.lateralDistanceMeters
-      <= maximumLateralDistance
+    guard
+      measurement.lateralDistanceMeters
+        <= maximumLateralDistance
     else {
       liveLocationState = .degraded
       liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
@@ -2774,7 +2793,8 @@ final class WholeShutoProductModel: ObservableObject {
 
     do {
       guard
-        let result = try await driveSimulator
+        let result =
+          try await driveSimulator
           .advancePausedUntilGuidanceEmission(
             movementOccurrenceID: prompt.outgoingOccurrenceID
           )
@@ -3230,8 +3250,9 @@ final class WholeShutoProductModel: ObservableObject {
       rejectCheckpoint(Self.checkpointLoadFailedCode)
       return
     }
-    guard checkpoint.schemaVersion
-      == WholeShutoJourneyCheckpoint.currentSchemaVersion
+    guard
+      checkpoint.schemaVersion
+        == WholeShutoJourneyCheckpoint.currentSchemaVersion
     else {
       rejectCheckpoint(Self.checkpointSchemaUnsupportedCode)
       return
@@ -3363,7 +3384,8 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     do {
-      let needsRuntime = checkpoint.phase == .entryTransition
+      let needsRuntime =
+        checkpoint.phase == .entryTransition
         || checkpoint.phase == .expressway
       guard needsRuntime else { return }
       let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
@@ -3782,22 +3804,27 @@ final class WholeShutoProductModel: ObservableObject {
     let templateParameters = record.document.templateParameters
     let routePreference: ShutoRoutePreference
     if let preferenceValue = templateParameters["preference"] {
-      guard let preference = ShutoRoutePreference(
-        rawValue: preferenceValue
-      ) else {
+      guard
+        let preference = ShutoRoutePreference(
+          rawValue: preferenceValue
+        )
+      else {
         throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
       }
       routePreference = preference
     } else {
-      routePreference = ShutoRoutePreference.allCases.first(where: {
-        routePlan.id.hasSuffix(".\($0.rawValue.lowercased())")
-      }) ?? .recommended
+      routePreference =
+        ShutoRoutePreference.allCases.first(where: {
+          routePlan.id.hasSuffix(".\($0.rawValue.lowercased())")
+        }) ?? .recommended
     }
     let selectionSource: WholeShutoRouteSelectionSource
     if let sourceValue = templateParameters["source"] {
-      guard let source = Self.savedRouteSelectionSource(
-        sourceValue
-      ) else {
+      guard
+        let source = Self.savedRouteSelectionSource(
+          sourceValue
+        )
+      else {
         throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
       }
       selectionSource = source

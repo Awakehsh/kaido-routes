@@ -250,6 +250,60 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         (self.app / validator.C2_PRODUCT_RELEASE_RESOURCE).write_bytes(
             encoded_c2_release
         )
+        daikoku_release = json.loads(encoded_product_release)
+        daikoku_release["release_id"] = validator.DAIKOKU_PRODUCT_RELEASE_ID
+        daikoku_route_plan = daikoku_release["navigation_release"][
+            "route_plan"
+        ]
+        daikoku_route_plan.update(
+            {
+                "plan_id": validator.DAIKOKU_ROUTE_PLAN_ID,
+                "entry_facility_id": validator.DAIKOKU_ENTRY_FACILITY_ID,
+                "exit_facility_id": validator.DAIKOKU_EXIT_FACILITY_ID,
+                "occurrences": [
+                    {"id": f"daikoku.fixture.{index}"}
+                    for index in range(
+                        validator.DAIKOKU_ROUTE_OCCURRENCE_COUNT
+                    )
+                ],
+            }
+        )
+        daikoku_release["route_atlas_release"]["route_plan"] = (
+            daikoku_route_plan
+        )
+        encoded_daikoku_release = json.dumps(daikoku_release).encode("utf-8")
+        daikoku_source = (
+            self.repository / validator.DAIKOKU_PRODUCT_RELEASE_SOURCE
+        )
+        daikoku_source.parent.mkdir(parents=True, exist_ok=True)
+        daikoku_source.write_bytes(encoded_daikoku_release)
+        (self.app / validator.DAIKOKU_PRODUCT_RELEASE_RESOURCE).write_bytes(
+            encoded_daikoku_release
+        )
+        scenic_release = json.loads(encoded_product_release)
+        scenic_release["release_id"] = validator.SCENIC_PRODUCT_RELEASE_ID
+        scenic_route_plan = scenic_release["navigation_release"]["route_plan"]
+        scenic_route_plan.update(
+            {
+                "plan_id": validator.SCENIC_ROUTE_PLAN_ID,
+                "entry_facility_id": validator.SCENIC_ENTRY_FACILITY_ID,
+                "exit_facility_id": validator.SCENIC_EXIT_FACILITY_ID,
+                "occurrences": [
+                    {"id": f"scenic.fixture.{index}"}
+                    for index in range(validator.SCENIC_ROUTE_OCCURRENCE_COUNT)
+                ],
+            }
+        )
+        scenic_release["route_atlas_release"]["route_plan"] = (
+            scenic_route_plan
+        )
+        encoded_scenic_release = json.dumps(scenic_release).encode("utf-8")
+        scenic_source = self.repository / validator.SCENIC_PRODUCT_RELEASE_SOURCE
+        scenic_source.parent.mkdir(parents=True, exist_ok=True)
+        scenic_source.write_bytes(encoded_scenic_release)
+        (self.app / validator.SCENIC_PRODUCT_RELEASE_RESOURCE).write_bytes(
+            encoded_scenic_release
+        )
         data_licenses = "\n".join(
             (
                 validator.EXPECTED_OSM_ATTRIBUTION,

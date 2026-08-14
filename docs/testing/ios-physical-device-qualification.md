@@ -145,7 +145,7 @@ App-baseline claim.
 
 ## Coordinate-free receipt
 
-The combined receipt uses schema 1.8. `qualification-run.json` retains:
+The combined receipt uses schema 1.10. `qualification-run.json` retains:
 
 - source commit and clean-worktree fact;
 - opaque configuration ID, iPhone model, iOS version, and physical-device fact;

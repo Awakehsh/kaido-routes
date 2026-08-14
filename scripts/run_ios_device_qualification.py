@@ -24,7 +24,7 @@ EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
 RELEASE_SMOKE_SCHEME = "KaidoRoutesReleaseSmoke"
 RELEASE_BUNDLE_IDENTIFIER = "app.kaidoroutes"
-RECEIPT_SCHEMA_VERSION = "1.8"
+RECEIPT_SCHEMA_VERSION = "1.10"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
 WHOLE_SHUTO_RESOURCE = "shuto-whole-network-20260804.json"
 C1_PRODUCT_RELEASE_RESOURCE = (
@@ -35,6 +35,12 @@ WANGAN_PRODUCT_RELEASE_RESOURCE = (
 )
 C2_PRODUCT_RELEASE_RESOURCE = (
     "c2-inner-oujiminami-shikahamabashi-product-release.json"
+)
+DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
+    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+)
+SCENIC_PRODUCT_RELEASE_RESOURCE = (
+    "scenic-harumi-daikokufutou-product-release.json"
 )
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
@@ -86,6 +92,8 @@ class ReleaseBundleEvidence:
     c1_product_release_sha256: str
     wangan_product_release_sha256: str
     c2_product_release_sha256: str
+    daikoku_product_release_sha256: str
+    scenic_product_release_sha256: str
     privacy_manifest_sha256: str
     license_sha256: str
     data_licenses_sha256: str
@@ -710,6 +718,12 @@ def collect_release_bundle_evidence(
         c2_product_release_sha256=hash_file(
             app / C2_PRODUCT_RELEASE_RESOURCE
         ),
+        daikoku_product_release_sha256=hash_file(
+            app / DAIKOKU_PRODUCT_RELEASE_RESOURCE
+        ),
+        scenic_product_release_sha256=hash_file(
+            app / SCENIC_PRODUCT_RELEASE_RESOURCE
+        ),
         privacy_manifest_sha256=hash_file(app / "PrivacyInfo.xcprivacy"),
         license_sha256=hash_file(app / "LICENSE"),
         data_licenses_sha256=hash_file(app / "DATA-LICENSES.md"),
@@ -844,6 +858,12 @@ def build_receipt(
                 ),
                 "c2_product_release_sha256": (
                     release_bundle.c2_product_release_sha256
+                ),
+                "daikoku_product_release_sha256": (
+                    release_bundle.daikoku_product_release_sha256
+                ),
+                "scenic_product_release_sha256": (
+                    release_bundle.scenic_product_release_sha256
                 ),
                 "privacy_manifest_sha256": (
                     release_bundle.privacy_manifest_sha256

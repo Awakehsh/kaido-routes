@@ -601,8 +601,11 @@ attaches Core Location only after the release runtime and surface adapters
 construct successfully. Inactive/background first stops and drains location,
 then checkpoints; returning active never resumes location without the user's
 explicit Resume Navigation action. The distributed bundle currently supplies
-two exact whole-Shuto admissions: C1 inner from Shibakoen to Shiodome for one
-lap, and Bayshore westbound from Chidoricho to Daikoku-Futo. Every other
+five exact whole-Shuto admissions: C1 inner from Shibakoen to Shiodome,
+Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
+Oji-minami to Shikahamabashi, the Daikoku/Yokohama circuit from
+Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
+Daikoku-Futo. Every other
 RoutePlan still fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; none
 can inherit another route's road evidence or live-input authority merely
 because location permission or device fixes exist.

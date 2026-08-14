@@ -142,10 +142,15 @@ struct ShutoNetworkTests {
     #expect(route.distanceMeters > 20_000)
     #expect(route.routeIDsInOrder.contains("3"))
     #expect(route.routeIDsInOrder.contains("K1"))
-    #expect(
-      route.routePlan.occurrences.map(\.entityID)
-        == route.edges.map(\.edgeID)
-    )
+    let expectedOccurrenceEntities = route.edges.enumerated().map { index, edge in
+      guard index > 0 else { return edge.edgeID }
+      return ShutoJunctionMovementCatalog.releasedDefinition(
+        database: database,
+        incoming: route.edges[index - 1],
+        outgoing: edge
+      )?.id ?? edge.edgeID
+    }
+    #expect(route.routePlan.occurrences.map(\.entityID) == expectedOccurrenceEntities)
   }
 
   @Test("arbitrary places produce ranked entry and exit recommendations")

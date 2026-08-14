@@ -673,6 +673,46 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
+  func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let routes = [
+      try planner.planCircuit(
+        circuit: .daikokuYokohamaLoop,
+        entryFacilityID: "shuto.ic.b.higashiogishima",
+        exitFacilityID: "shuto.ic.b.daikokufutou",
+        laps: 1
+      ),
+      try planner.planCircuit(
+        circuit: .scenicGrandTour,
+        entryFacilityID: "shuto.ic.10.harumi",
+        exitFacilityID: "shuto.ic.b.daikokufutou",
+        laps: 1
+      ),
+    ]
+
+    for route in routes {
+      let matches = ShutoJunctionGuidanceCompiler.compile(
+        database: database,
+        route: route
+      )
+      #expect(!matches.isEmpty)
+      for match in matches {
+        let occurrence = route.routePlan.occurrence(
+          id: match.outgoingOccurrenceID
+        )
+        if occurrence?.kind != .junctionMovement
+          || occurrence?.entityID != match.definition.id
+        {
+          Issue.record(
+            "\(match.definition.id) targets \(match.outgoingOccurrenceID) as \(String(describing: occurrence))"
+          )
+        }
+      }
+    }
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

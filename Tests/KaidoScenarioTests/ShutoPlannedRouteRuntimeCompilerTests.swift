@@ -20,10 +20,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 30)
-    #expect(coverage.incomingApproachCount == 82)
-    #expect(coverage.movements.count == 165)
-    #expect(coverage.releasedMovementCount == 32)
-    #expect(coverage.missingMovementReviewCount == 133)
+    #expect(coverage.incomingApproachCount == 86)
+    #expect(coverage.movements.count == 173)
+    #expect(coverage.releasedMovementCount == 44)
+    #expect(coverage.missingMovementReviewCount == 129)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -176,8 +176,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         + coverage.nonJunctionGraphDivergenceCount
         == coverage.decisions.count
     )
-    #expect(coverage.guidanceDecisionCount == 13)
-    #expect(coverage.nonJunctionGraphDivergenceCount == 12)
+    #expect(coverage.guidanceDecisionCount == 12)
+    #expect(coverage.nonJunctionGraphDivergenceCount == 13)
     #expect(coverage.missingGuidanceDecisionCount == 0)
     #expect(
       coverage.decisions.filter {

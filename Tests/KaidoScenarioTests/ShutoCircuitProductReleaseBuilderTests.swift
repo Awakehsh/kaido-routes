@@ -38,7 +38,8 @@ struct ShutoCircuitProductReleaseBuilderTests {
   @Test("Bayshore westbound route builds a second foreground authority")
   func buildsWanganForegroundRelease() throws {
     let database = try loadDatabase()
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildWanganArtifact(database: database)
     let release = try KaidoProductRelease(artifact: artifact)
     let route = try ShutoCircuitProductReleaseBuilder.plannedWanganRoute(
@@ -79,7 +80,8 @@ struct ShutoCircuitProductReleaseBuilderTests {
   @Test("C2 Inner and Bayshore circuit builds one exact foreground authority")
   func buildsC2ForegroundRelease() throws {
     let database = try loadDatabase()
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildC2Artifact(database: database)
     let release = try KaidoProductRelease(artifact: artifact)
     let route = try ShutoCircuitProductReleaseBuilder.plannedC2Route(
@@ -109,6 +111,50 @@ struct ShutoCircuitProductReleaseBuilderTests {
         $0.frameTemplate.presentationSource.japaneseSignText
           == "中央道・東名"
       }
+    )
+  }
+
+  @Test("Daikoku Yokohama circuit builds foreground authority")
+  func buildsDaikokuForegroundRelease() throws {
+    let database = try loadDatabase()
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
+      .buildDaikokuArtifact(database: database)
+    let release = try KaidoProductRelease(artifact: artifact)
+    let route =
+      try ShutoCircuitProductReleaseBuilder
+      .plannedDaikokuRoute(database: database)
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.navigation.bundle.releasedGuidance.count == 7)
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
+    )
+  }
+
+  @Test("Yokohama scenic tour builds foreground authority")
+  func buildsScenicForegroundRelease() throws {
+    let database = try loadDatabase()
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
+      .buildScenicArtifact(database: database)
+    let release = try KaidoProductRelease(artifact: artifact)
+    let route =
+      try ShutoCircuitProductReleaseBuilder
+      .plannedScenicRoute(database: database)
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.navigation.bundle.releasedGuidance.count == 10)
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
     )
   }
 

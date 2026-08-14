@@ -95,6 +95,40 @@ C2_ROUTE_PLAN_ID = (
 C2_ENTRY_FACILITY_ID = "shuto.ic.c2.oujiminami"
 C2_EXIT_FACILITY_ID = "shuto.ic.s1.shikahamabashi"
 C2_ROUTE_OCCURRENCE_COUNT = 2_196
+DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
+    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+)
+DAIKOKU_PRODUCT_RELEASE_SOURCE = (
+    "data/product/releases/"
+    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+)
+DAIKOKU_PRODUCT_RELEASE_ID = (
+    "shutoko.product.daikoku-yokohama-wangankanpachi-"
+    "daikokufutou.2026-08-15"
+)
+DAIKOKU_ROUTE_PLAN_ID = (
+    "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi."
+    "shuto.ic.b.daikokufutou.x1.recommended"
+)
+DAIKOKU_ENTRY_FACILITY_ID = "shuto.ic.b.wangankanpachi"
+DAIKOKU_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
+DAIKOKU_ROUTE_OCCURRENCE_COUNT = 556
+SCENIC_PRODUCT_RELEASE_RESOURCE = (
+    "scenic-harumi-daikokufutou-product-release.json"
+)
+SCENIC_PRODUCT_RELEASE_SOURCE = (
+    "data/product/releases/scenic-harumi-daikokufutou-product-release.json"
+)
+SCENIC_PRODUCT_RELEASE_ID = (
+    "shutoko.product.scenic-harumi-daikokufutou.2026-08-15"
+)
+SCENIC_ROUTE_PLAN_ID = (
+    "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi."
+    "shuto.ic.b.daikokufutou.x1.recommended"
+)
+SCENIC_ENTRY_FACILITY_ID = "shuto.ic.10.harumi"
+SCENIC_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
+SCENIC_ROUTE_OCCURRENCE_COUNT = 718
 DATA_LICENSES_RESOURCE = "DATA-LICENSES.md"
 EXPECTED_OSM_ATTRIBUTION = "© OpenStreetMap contributors"
 EXPECTED_OSM_LICENSE = "ODbL-1.0"
@@ -121,6 +155,8 @@ FIXED_ALLOWED_FILES = {
     C1_PRODUCT_RELEASE_RESOURCE,
     WANGAN_PRODUCT_RELEASE_RESOURCE,
     C2_PRODUCT_RELEASE_RESOURCE,
+    DAIKOKU_PRODUCT_RELEASE_RESOURCE,
+    SCENIC_PRODUCT_RELEASE_RESOURCE,
     "Info.plist",
     "KaidoRoutes",
     DATA_LICENSES_RESOURCE,
@@ -696,6 +732,12 @@ def validate_distribution_files(app: Path, repository_root: Path) -> None:
         C2_PRODUCT_RELEASE_RESOURCE: (
             repository_root / C2_PRODUCT_RELEASE_SOURCE
         ),
+        DAIKOKU_PRODUCT_RELEASE_RESOURCE: (
+            repository_root / DAIKOKU_PRODUCT_RELEASE_SOURCE
+        ),
+        SCENIC_PRODUCT_RELEASE_RESOURCE: (
+            repository_root / SCENIC_PRODUCT_RELEASE_SOURCE
+        ),
     }
     for bundled_name, source_path in source_pairs.items():
         require_equal(
@@ -866,6 +908,26 @@ def validate_foreground_product_releases(app: Path) -> None:
         exit_facility_id=C2_EXIT_FACILITY_ID,
         occurrence_count=C2_ROUTE_OCCURRENCE_COUNT,
     )
+    validate_foreground_product_release(
+        app,
+        resource=DAIKOKU_PRODUCT_RELEASE_RESOURCE,
+        label="Daikoku Yokohama",
+        release_id=DAIKOKU_PRODUCT_RELEASE_ID,
+        route_plan_id=DAIKOKU_ROUTE_PLAN_ID,
+        entry_facility_id=DAIKOKU_ENTRY_FACILITY_ID,
+        exit_facility_id=DAIKOKU_EXIT_FACILITY_ID,
+        occurrence_count=DAIKOKU_ROUTE_OCCURRENCE_COUNT,
+    )
+    validate_foreground_product_release(
+        app,
+        resource=SCENIC_PRODUCT_RELEASE_RESOURCE,
+        label="Scenic",
+        release_id=SCENIC_PRODUCT_RELEASE_ID,
+        route_plan_id=SCENIC_ROUTE_PLAN_ID,
+        entry_facility_id=SCENIC_ENTRY_FACILITY_ID,
+        exit_facility_id=SCENIC_EXIT_FACILITY_ID,
+        occurrence_count=SCENIC_ROUTE_OCCURRENCE_COUNT,
+    )
 
 
 def validate_app_icons(app: Path, repository_root: Path) -> None:
@@ -926,6 +988,12 @@ def validate_release_bundle(
         "c2_product_release_sha256": sha256(
             app / C2_PRODUCT_RELEASE_RESOURCE
         ),
+        "daikoku_product_release_sha256": sha256(
+            app / DAIKOKU_PRODUCT_RELEASE_RESOURCE
+        ),
+        "scenic_product_release_sha256": sha256(
+            app / SCENIC_PRODUCT_RELEASE_RESOURCE
+        ),
     }
 
 
@@ -943,7 +1011,9 @@ def main() -> int:
         f"whole-Shuto {result['whole_shuto_sha256']}, "
         f"C1 product {result['c1_product_release_sha256']}, "
         f"Wangan product {result['wangan_product_release_sha256']}, "
-        f"C2 product {result['c2_product_release_sha256']}"
+        f"C2 product {result['c2_product_release_sha256']}, "
+        f"Daikoku product {result['daikoku_product_release_sha256']}, "
+        f"Scenic product {result['scenic_product_release_sha256']}"
     )
     return 0
 

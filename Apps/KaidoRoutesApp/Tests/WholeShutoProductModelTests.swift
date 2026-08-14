@@ -156,6 +156,68 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testDaikokuYokohamaCircuitAdmitsBundledForegroundNavigation()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    let expected =
+      try ShutoCircuitProductReleaseBuilder
+      .plannedDaikokuRoute(database: model.database)
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.selectCircuit(.daikokuYokohamaLoop)
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
+    )
+    XCTAssertEqual(
+      model.circuitExitFacilityID,
+      ShutoCircuitProductReleaseBuilder.daikokuExitFacilityID
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
+  func testScenicGrandTourAdmitsBundledForegroundNavigation()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    let expected =
+      try ShutoCircuitProductReleaseBuilder
+      .plannedScenicRoute(database: model.database)
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.selectCircuit(.scenicGrandTour)
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      ShutoCircuitProductReleaseBuilder.scenicEntryFacilityID
+    )
+    XCTAssertEqual(
+      model.circuitExitFacilityID,
+      ShutoCircuitProductReleaseBuilder.scenicExitFacilityID
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
     XCTAssertEqual(
       KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),

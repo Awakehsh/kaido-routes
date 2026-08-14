@@ -67,6 +67,12 @@ JUNCTION_OSM_NODE_OVERRIDES = {
     # these forks as part of the named junctions.
     "葛西JCT": [31330103],
     "小松川JCT": [31337397],
+    # Reviewed compound decision nodes on the Yokohama circuits. The
+    # operator diagrams show these forks inside the named JCTs, while the
+    # pinned OSM nodes themselves are unnamed.
+    "生麦JCT": [4360978732],
+    "大師JCT": [273330999, 3817775796],
+    "川崎浮島JCT": [739475888],
 }
 
 

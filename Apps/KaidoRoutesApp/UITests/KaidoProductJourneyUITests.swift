@@ -1288,6 +1288,26 @@ final class KaidoProductJourneyUITests: XCTestCase {
   }
 
   func testWholeShutoC2RecommendedRouteExposesLiveNavigation() {
+    assertWholeShutoRecommendedRouteExposesLiveNavigation(
+      circuitID: "shuto.circuit.c2-inner-bayshore"
+    )
+  }
+
+  func testWholeShutoDaikokuRecommendedRouteExposesLiveNavigation() {
+    assertWholeShutoRecommendedRouteExposesLiveNavigation(
+      circuitID: "shuto.circuit.daikoku-yokohama-loop"
+    )
+  }
+
+  func testWholeShutoScenicRecommendedRouteExposesLiveNavigation() {
+    assertWholeShutoRecommendedRouteExposesLiveNavigation(
+      circuitID: "shuto.circuit.scenic-grand-tour"
+    )
+  }
+
+  private func assertWholeShutoRecommendedRouteExposesLiveNavigation(
+    circuitID: String
+  ) {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.resetAuthorizationStatus(for: .location)
@@ -1305,7 +1325,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     allowLocationWhenInUseIfRequested()
 
     let circuit = element(
-      "whole-shuto-circuit-option-shuto.circuit.c2-inner-bayshore",
+      "whole-shuto-circuit-option-\(circuitID)",
       in: app
     )
     XCTAssertTrue(circuit.waitForExistence(timeout: 5))

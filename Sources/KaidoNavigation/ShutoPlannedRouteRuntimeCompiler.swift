@@ -896,6 +896,11 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       database.routes.filter { $0.operationalStatus == "AVAILABLE" }
         .map(\.routeID)
     )
+    let surfaceExitCandidateEdgeIDs = Set(
+      database.directionalFacilities.flatMap { facility in
+        facility.exitEdgeCandidates.map(\.edgeID)
+      }
+    )
     let candidatesByBranch = Dictionary(
       uniqueKeysWithValues: recoveryCandidates.map {
         ("\($0.divergenceOccurrenceID)|\($0.triggerDirectedEdgeID)", $0)
@@ -930,22 +935,29 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       let startsTerminalExitBranch = route.edges[(index + 1)...]
         .allSatisfy { $0.kind == "LINK" }
       let hasAvailableExpresswayAlternative = alternatives.contains {
-        !isExplicitSurfaceExit($0, waysByID: waysByID)
-          && leadsToAvailableMainline(
-          from: $0,
+        !isSurfaceExitBranch(
+          $0,
+          waysByID: waysByID,
           outgoing: outgoing,
-          availableRouteIDs: availableRouteIDs
+          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
         )
+          && leadsToAvailableMainline(
+            from: $0,
+            outgoing: outgoing,
+            availableRouteIDs: availableRouteIDs
+          )
       }
       let plannedContinuesOnAvailableExpressway = leadsToAvailableMainline(
         from: plannedOutgoing,
         outgoing: outgoing,
         availableRouteIDs: availableRouteIDs
       )
-      let isJunctionDecision = !startsTerminalExitBranch
+      let isJunctionDecision =
+        !startsTerminalExitBranch
         && plannedContinuesOnAvailableExpressway
         && hasAvailableExpresswayAlternative
-      let definition = immediateDefinition
+      let definition =
+        immediateDefinition
         ?? (isJunctionDecision
           ? ShutoJunctionMovementCatalog
             .releasedDefinitionCoveringFollowingDecision(
@@ -979,6 +991,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
               alternative: alternative,
               waysByID: waysByID,
               outgoing: outgoing,
+              surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs,
               availableRouteIDs: availableRouteIDs
             ),
             divergenceOccurrenceID: divergenceOccurrenceID,
@@ -1024,9 +1037,15 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     alternative: ShutoNetworkDatabase.Edge,
     waysByID: [Int64: ShutoNetworkDatabase.Way],
     outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
+    surfaceExitCandidateEdgeIDs: Set<String>,
     availableRouteIDs: Set<String>
   ) -> ShutoRouteRecoveryBranchCoverage.Kind {
-    if isExplicitSurfaceExit(alternative, waysByID: waysByID) {
+    if isSurfaceExitBranch(
+      alternative,
+      waysByID: waysByID,
+      outgoing: outgoing,
+      surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
+    ) {
       return .surfaceExit
     }
     switch firstMainlineAvailability(
@@ -1061,6 +1080,41 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         $0.contains("出口")
           || $0.localizedCaseInsensitiveContains("exit")
       }
+  }
+
+  /// Facility matching identifies many exit ramps whose OSM way has no
+  /// human-readable name. Follow only the connector subgraph: reaching a
+  /// direction-valid exit candidate before another mainline makes the branch
+  /// an off-ramp even when OSM later reconnects it to an available route.
+  private static func isSurfaceExitBranch(
+    _ start: ShutoNetworkDatabase.Edge,
+    waysByID: [Int64: ShutoNetworkDatabase.Way],
+    outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
+    surfaceExitCandidateEdgeIDs: Set<String>
+  ) -> Bool {
+    if isExplicitSurfaceExit(start, waysByID: waysByID) {
+      return true
+    }
+    var queue: [(edge: ShutoNetworkDatabase.Edge, distance: Double)] = [
+      (start, 0)
+    ]
+    var seen = Set([start.edgeID])
+    var index = 0
+    while index < queue.count {
+      let current = queue[index]
+      index += 1
+      guard current.edge.kind == "LINK" else { continue }
+      if surfaceExitCandidateEdgeIDs.contains(current.edge.edgeID) {
+        return true
+      }
+      let distance = current.distance + current.edge.lengthMeters
+      guard distance <= 2_000 else { continue }
+      for next in outgoing[current.edge.toNodeID] ?? []
+      where next.kind == "LINK" && seen.insert(next.edgeID).inserted {
+        queue.append((next, distance))
+      }
+    }
+    return false
   }
 
   private static func firstMainlineAvailability(

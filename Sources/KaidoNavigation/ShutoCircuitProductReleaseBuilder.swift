@@ -36,6 +36,18 @@ public enum ShutoCircuitProductReleaseBuilder {
     "shuto.ic.c2.oujiminami"
   public static let c2ExitFacilityID =
     "shuto.ic.s1.shikahamabashi"
+  public static let daikokuCircuitID =
+    "shuto.circuit.daikoku-yokohama-loop"
+  public static let daikokuEntryFacilityID =
+    "shuto.ic.b.wangankanpachi"
+  public static let daikokuExitFacilityID =
+    "shuto.ic.b.daikokufutou"
+  public static let scenicCircuitID =
+    "shuto.circuit.scenic-grand-tour"
+  public static let scenicEntryFacilityID =
+    "shuto.ic.10.harumi"
+  public static let scenicExitFacilityID =
+    "shuto.ic.b.daikokufutou"
 
   public static func plannedRoute(
     database: ShutoNetworkDatabase
@@ -90,7 +102,8 @@ public enum ShutoCircuitProductReleaseBuilder {
     database: ShutoNetworkDatabase,
     entryFacilityID: String = wanganEntryFacilityID
   ) throws -> KaidoProductReleaseArtifact {
-    let entryKey = entryFacilityID.split(separator: ".").last
+    let entryKey =
+      entryFacilityID.split(separator: ".").last
       .map(String.init) ?? entryFacilityID
     return try buildArtifact(
       database: database,
@@ -132,6 +145,64 @@ public enum ShutoCircuitProductReleaseBuilder {
     )
   }
 
+  public static func plannedDaikokuRoute(
+    database: ShutoNetworkDatabase
+  ) throws -> ShutoPlannedRoute {
+    guard
+      let circuit = ShutoCircuitDefinition.bundled.first(where: {
+        $0.circuitID == daikokuCircuitID
+      })
+    else {
+      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+    }
+    return try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: circuit,
+      entryFacilityID: daikokuEntryFacilityID,
+      exitFacilityID: daikokuExitFacilityID,
+      laps: 1
+    )
+  }
+
+  public static func buildDaikokuArtifact(
+    database: ShutoNetworkDatabase
+  ) throws -> KaidoProductReleaseArtifact {
+    try buildArtifact(
+      database: database,
+      route: plannedDaikokuRoute(database: database),
+      releaseKey: "daikoku-yokohama-wangankanpachi-daikokufutou",
+      preferredRecoveryTriggerID: nil
+    )
+  }
+
+  public static func plannedScenicRoute(
+    database: ShutoNetworkDatabase
+  ) throws -> ShutoPlannedRoute {
+    guard
+      let circuit = ShutoCircuitDefinition.bundled.first(where: {
+        $0.circuitID == scenicCircuitID
+      })
+    else {
+      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+    }
+    return try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: circuit,
+      entryFacilityID: scenicEntryFacilityID,
+      exitFacilityID: scenicExitFacilityID,
+      laps: 1
+    )
+  }
+
+  public static func buildScenicArtifact(
+    database: ShutoNetworkDatabase
+  ) throws -> KaidoProductReleaseArtifact {
+    try buildArtifact(
+      database: database,
+      route: plannedScenicRoute(database: database),
+      releaseKey: "scenic-harumi-daikokufutou",
+      preferredRecoveryTriggerID: nil
+    )
+  }
+
   private static func buildArtifact(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
@@ -151,7 +222,8 @@ public enum ShutoCircuitProductReleaseBuilder {
         + decision.plannedOutgoingDirectedEdgeID
     }
     guard missingGuidance.isEmpty else {
-      throw ShutoCircuitProductReleaseBuilderError
+      throw
+        ShutoCircuitProductReleaseBuilderError
         .incompleteJunctionGuidance(missingGuidance.sorted())
     }
     let reviewedMovements = try reviewedMovements(
@@ -281,7 +353,8 @@ public enum ShutoCircuitProductReleaseBuilder {
     try routePlan.occurrences.enumerated().compactMap { index, occurrence in
       guard occurrence.kind == .junctionMovement else { return nil }
       guard index > 0, index + 1 < routePlan.occurrences.count else {
-        throw ShutoCircuitProductReleaseBuilderError
+        throw
+          ShutoCircuitProductReleaseBuilderError
           .invalidReviewedMovementOrder(occurrence.id)
       }
       guard
@@ -289,7 +362,8 @@ public enum ShutoCircuitProductReleaseBuilder {
           $0.id == occurrence.entityID
         })
       else {
-        throw ShutoCircuitProductReleaseBuilderError
+        throw
+          ShutoCircuitProductReleaseBuilderError
           .missingReviewedMovement(occurrence.entityID)
       }
       return ReviewedMovement(
@@ -372,6 +446,18 @@ public enum ShutoCircuitProductReleaseBuilder {
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "王子南入口",
         .english: "Oji-minami entrance",
+      ]
+    case "daikoku-yokohama-wangankanpachi-daikokufutou":
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "湾岸环八入口",
+        .english: "Wangan-Kanpachi entrance",
+      ]
+    case "scenic-harumi-daikokufutou":
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "晴海入口",
+        .english: "Harumi entrance",
       ]
     default:
       throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
@@ -493,9 +579,10 @@ public enum ShutoCircuitProductReleaseBuilder {
         }
         return $0.triggerDirectedEdgeID < $1.triggerDirectedEdgeID
       }
-    let selected = preferredTriggerID.flatMap { expected in
-      available.first { $0.triggerDirectedEdgeID == expected }
-    } ?? (preferredTriggerID == nil ? available.first : nil)
+    let selected =
+      preferredTriggerID.flatMap { expected in
+        available.first { $0.triggerDirectedEdgeID == expected }
+      } ?? (preferredTriggerID == nil ? available.first : nil)
     guard
       let candidate = selected
     else {
@@ -535,11 +622,13 @@ public enum ShutoCircuitProductReleaseBuilder {
         throw ShutoCircuitProductReleaseBuilderError.missingGraphEdge(id)
       }
       guard let from = nodesByID[edge.fromNodeID] else {
-        throw ShutoCircuitProductReleaseBuilderError
+        throw
+          ShutoCircuitProductReleaseBuilderError
           .missingGraphNode(edge.fromNodeID)
       }
       guard let to = nodesByID[edge.toNodeID] else {
-        throw ShutoCircuitProductReleaseBuilderError
+        throw
+          ShutoCircuitProductReleaseBuilderError
           .missingGraphNode(edge.toNodeID)
       }
       return RouteMatcherDirectedEdge(
@@ -728,7 +817,8 @@ public enum ShutoCircuitProductReleaseBuilder {
         guard existing.fromNodeID == edge.fromNodeID,
           existing.toNodeID == edge.toNodeID
         else {
-          throw ShutoCircuitProductReleaseBuilderError
+          throw
+            ShutoCircuitProductReleaseBuilderError
             .inconsistentRepeatedEntity(occurrence.entityID)
         }
       } else {
@@ -793,9 +883,11 @@ public enum ShutoCircuitProductReleaseBuilder {
       guard let node = nodesByID[nodeID] else {
         throw ShutoCircuitProductReleaseBuilderError.missingGraphNode(nodeID)
       }
-      let width = database.bounds.maximumLongitude
+      let width =
+        database.bounds.maximumLongitude
         - database.bounds.minimumLongitude
-      let height = database.bounds.maximumLatitude
+      let height =
+        database.bounds.maximumLatitude
         - database.bounds.minimumLatitude
       return RouteAtlasPoint(
         x: (node.longitude - database.bounds.minimumLongitude) / width,

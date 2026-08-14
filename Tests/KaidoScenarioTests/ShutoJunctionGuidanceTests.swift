@@ -409,19 +409,18 @@ struct ShutoJunctionGuidanceTests {
       route: route
     )
 
-    // These are the four released inner-loop continuations currently in the
-    // catalog, ordered as the lap encounters them from Shibakoen. The live
-    // coverage audit separately tracks the unreleased JCT approaches.
+    // Edobashi is one operator instruction covering two immediate graph
+    // forks; the runtime emits it once before the four later continuations.
     #expect(
       matches.map(\.junctionNameJA)
-        == ["竹橋JCT", "三宅坂JCT", "谷町JCT", "一ノ橋JCT"]
+        == ["江戸橋JCT", "竹橋JCT", "三宅坂JCT", "谷町JCT", "一ノ橋JCT"]
     )
     // Each keeps the mainline and preserves the operator sign target the
     // driver actually reads at that junction.
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
     #expect(
       matches.map(\.definition.japaneseSignText)
-        == ["霞が関", "霞が関", "芝公園", "芝公園"]
+        == ["神田橋", "霞が関", "霞が関", "芝公園", "芝公園"]
     )
     #expect(
       matches.allSatisfy {

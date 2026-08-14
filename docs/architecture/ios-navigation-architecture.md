@@ -40,10 +40,15 @@ realtime, or field authority.
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 30 JCTs with choices between available expressway
 mainlines, 80 incoming approaches, and 161 candidate incoming/outgoing movement
-pairs. Twenty exact definitions are currently released and 141 still require
+pairs. Twenty-one exact definitions are currently released and 140 still require
 legal/sign review. Terminal exits and connections leading only to the closed
 Yaesu Route remain recovery/egress divergences, not JCT-guidance work. Graph
 adjacency is inventory only: it does not assert that every pair is lawful.
+Route-local coverage does not depend on a single OSM `motorway_junction` tag:
+when the planned continuation and an alternative both reach available
+expressway mainlines, each consecutive fork is a JCT guidance decision. This
+keeps multi-node complexes such as Edobashi from losing a second prompt merely
+because only the first fork is attached to the official JCT node set.
 The snapshot also carries the official direction vocabulary for every route,
 derived from the directional IC catalog. Released JCT definitions bind one of
 those official values to exact incoming and outgoing directed-edge IDs plus the

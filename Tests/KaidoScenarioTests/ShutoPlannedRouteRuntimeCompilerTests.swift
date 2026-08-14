@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 30)
     #expect(coverage.incomingApproachCount == 80)
     #expect(coverage.movements.count == 161)
-    #expect(coverage.releasedMovementCount == 20)
-    #expect(coverage.missingMovementReviewCount == 141)
+    #expect(coverage.releasedMovementCount == 21)
+    #expect(coverage.missingMovementReviewCount == 140)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -265,9 +265,26 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     ).liveReleaseCoverage
 
     #expect(coverage.decisions.count == 15)
-    #expect(coverage.guidanceDecisionCount == 5)
-    #expect(coverage.nonJunctionGraphDivergenceCount == 10)
-    #expect(coverage.missingGuidanceDecisionCount == 1)
+    #expect(coverage.guidanceDecisionCount == 6)
+    #expect(coverage.nonJunctionGraphDivergenceCount == 9)
+    #expect(coverage.missingGuidanceDecisionCount == 0)
+    #expect(
+      coverage.decisions.contains {
+        $0.kind == .junction
+          && $0.junctionNodeID == 567_878_894
+          && $0.incomingDirectedEdgeID == "osm.1085022601.0.forward"
+          && $0.plannedOutgoingDirectedEdgeID
+            == "osm.199311847.0.forward"
+          && $0.alternativeOutgoingDirectedEdgeIDs
+            == ["osm.41520088.0.forward"]
+      }
+    )
+    #expect(
+      coverage.decisions.filter {
+        $0.releasedGuidanceDefinitionID
+          == "shuto.jct.edobashi.c1-inner-stays-on-c1"
+      }.count == 2
+    )
     #expect(coverage.recoveryBranches.count == 15)
     #expect(coverage.missingReleasedRecoveryBranchCount == 15)
     #expect(!coverage.expresswayReleaseCoverageComplete)

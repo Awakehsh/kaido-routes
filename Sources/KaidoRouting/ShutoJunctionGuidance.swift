@@ -40,6 +40,10 @@ public struct ShutoJunctionMovementDefinition:
   public let incomingDirectionJA: String
   public let outgoingRouteID: String
   public let outgoingDirectionJA: String
+  /// Additional immediate forks covered by the same operator sign and spoken
+  /// instruction. The IDs are ordered after `outgoingEdgeID`; they do not
+  /// create additional prompts.
+  public let coveredFollowingDecisionEdgeIDs: [String]
   public let branchSide: ShutoJunctionBranchSide
   public let japaneseSignText: String
   public let routeShields: [String]
@@ -62,6 +66,7 @@ public struct ShutoJunctionMovementDefinition:
     incomingDirectionJA: String,
     outgoingRouteID: String,
     outgoingDirectionJA: String,
+    coveredFollowingDecisionEdgeIDs: [String] = [],
     branchSide: ShutoJunctionBranchSide,
     japaneseSignText: String,
     routeShields: [String],
@@ -83,6 +88,8 @@ public struct ShutoJunctionMovementDefinition:
     self.incomingDirectionJA = incomingDirectionJA
     self.outgoingRouteID = outgoingRouteID
     self.outgoingDirectionJA = outgoingDirectionJA
+    self.coveredFollowingDecisionEdgeIDs =
+      coveredFollowingDecisionEdgeIDs
     self.branchSide = branchSide
     self.japaneseSignText = japaneseSignText
     self.routeShields = routeShields
@@ -684,6 +691,86 @@ public enum ShutoJunctionMovementCatalog {
           contentSHA256:
             "f56355b8bf55596a73adc91f8fa2c83a"
             + "f02ace3089843c63fd7c7b469db7d34d"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.edobashi.c1-inner-stays-on-c1",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 264_871_771,
+      incomingEdgeID: "osm.41009552.1.forward",
+      outgoingEdgeID: "osm.1085022601.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      // The operator diagram presents the C1/5 神田橋 choice once before
+      // two graph forks only about 70 metres apart. One instruction covers
+      // both exact C1 continuations so the runtime does not speak twice.
+      coveredFollowingDecisionEdgeIDs: ["osm.199311847.0.forward"],
+      branchSide: .straight,
+      japaneseSignText: "神田橋",
+      routeShields: ["C1"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "江戸橋JCT",
+        .simplifiedChinese: "江户桥 JCT",
+        .english: "Edobashi JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、都心環状線 神田橋方面へ",
+          spokenText:
+            "江戸橋ジャンクションは分岐せず、都心環状線 神田橋方面へ進んでください",
+          spokenForms: [
+            "都心環状線": "としんかんじょうせん",
+            "神田橋": "かんだばし",
+            "江戸橋": "えどばし",
+          ],
+          preservedJapaneseSignText: "神田橋"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿都心环状线前往 神田橋 方向",
+          spokenText:
+            "在江户桥 JCT不要分岔，沿都心环状线继续前往 神田橋 方向",
+          spokenForms: ["神田橋": "神田橋"],
+          preservedJapaneseSignText: "神田橋"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Inner Circular Route toward 神田橋",
+          spokenText:
+            "At Edobashi JCT, stay on the Inner Circular Route toward 神田橋",
+          spokenForms: ["Inner Circular Route": "Inner Circular Route"],
+          preservedJapaneseSignText: "神田橋"
+        ),
+      ],
+      commitTriggerDistanceMeters: 400,
+      checkedAt: "2026-08-14",
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-c1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-1/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-6/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_edobashi",
+          contentSHA256:
+            "a855321a4dbf059131cada07f5dfd0e0"
+            + "73762b063034053807b25001956db975"
         ),
       ]
     ),
@@ -1650,6 +1737,11 @@ public enum ShutoJunctionMovementCatalog {
         definition.localizedContent.values.allSatisfy({
           $0.preservedJapaneseSignText == definition.japaneseSignText
         }),
+        hasValidCoveredContinuation(
+          definition,
+          database: database,
+          initialOutgoing: outgoing
+        ),
         definition.commitTriggerDistanceMeters.isFinite,
         definition.commitTriggerDistanceMeters > 0
       else {
@@ -1657,6 +1749,85 @@ public enum ShutoJunctionMovementCatalog {
       }
       return true
     }
+  }
+
+  /// Resolves a later fork intentionally covered by one earlier operator sign.
+  /// The complete ordered edge prefix must be present in the selected route;
+  /// matching one repeated edge ID alone is never sufficient.
+  public static func releasedDefinitionCoveringFollowingDecision(
+    database: ShutoNetworkDatabase,
+    routeEdges: [ShutoNetworkDatabase.Edge],
+    decisionIndex: Int
+  ) -> ShutoJunctionMovementDefinition? {
+    guard decisionIndex >= 1, decisionIndex + 1 < routeEdges.count else {
+      return nil
+    }
+    for definition in released
+    where !definition.coveredFollowingDecisionEdgeIDs.isEmpty {
+      for offset in definition.coveredFollowingDecisionEdgeIDs.indices
+      where definition.coveredFollowingDecisionEdgeIDs[offset]
+        == routeEdges[decisionIndex + 1].edgeID
+      {
+        let baseDecisionIndex = decisionIndex - offset - 1
+        guard baseDecisionIndex >= 0,
+          let base = releasedDefinition(
+            database: database,
+            incoming: routeEdges[baseDecisionIndex],
+            outgoing: routeEdges[baseDecisionIndex + 1]
+          ),
+          base.id == definition.id
+        else {
+          continue
+        }
+        let actualContinuation = routeEdges[
+          (baseDecisionIndex + 2)...(decisionIndex + 1)
+        ].map(\.edgeID)
+        guard actualContinuation
+          == Array(
+            definition.coveredFollowingDecisionEdgeIDs.prefix(offset + 1)
+          )
+        else {
+          continue
+        }
+        return definition
+      }
+    }
+    return nil
+  }
+
+  private static func hasValidCoveredContinuation(
+    _ definition: ShutoJunctionMovementDefinition,
+    database: ShutoNetworkDatabase,
+    initialOutgoing: ShutoNetworkDatabase.Edge
+  ) -> Bool {
+    guard
+      Set(definition.coveredFollowingDecisionEdgeIDs).count
+        == definition.coveredFollowingDecisionEdgeIDs.count,
+      !definition.coveredFollowingDecisionEdgeIDs.contains(
+        definition.incomingEdgeID
+      ),
+      !definition.coveredFollowingDecisionEdgeIDs.contains(
+        definition.outgoingEdgeID
+      )
+    else {
+      return false
+    }
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    var previous = initialOutgoing
+    for edgeID in definition.coveredFollowingDecisionEdgeIDs {
+      guard let edge = edgesByID[edgeID],
+        previous.toNodeID == edge.fromNodeID,
+        edge.routeMemberships.contains(where: {
+          $0.routeID == definition.outgoingRouteID
+        })
+      else {
+        return false
+      }
+      previous = edge
+    }
+    return true
   }
 }
 

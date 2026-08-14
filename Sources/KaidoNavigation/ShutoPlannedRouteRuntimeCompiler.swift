@@ -867,7 +867,6 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     recoveryCandidates: [RecoveryCandidate]
   ) -> ShutoRouteLiveReleaseCoverage {
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
-    let junctionNodeIDs = Set(database.junctions.flatMap(\.osmNodeIDs))
     let availableRouteIDs = Set(
       database.routes.filter { $0.operationalStatus == "AVAILABLE" }
         .map(\.routeID)
@@ -898,7 +897,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         .sorted { $0.edgeID < $1.edgeID }
       guard !alternatives.isEmpty else { continue }
       let divergenceOccurrenceID = route.routePlan.occurrences[index].id
-      let definition = ShutoJunctionMovementCatalog.releasedDefinition(
+      let immediateDefinition = ShutoJunctionMovementCatalog.releasedDefinition(
         database: database,
         incoming: incoming,
         outgoing: plannedOutgoing
@@ -912,12 +911,26 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           availableRouteIDs: availableRouteIDs
         )
       }
+      let plannedContinuesOnAvailableExpressway = leadsToAvailableMainline(
+        from: plannedOutgoing,
+        outgoing: outgoing,
+        availableRouteIDs: availableRouteIDs
+      )
+      let isJunctionDecision = !startsTerminalExitBranch
+        && plannedContinuesOnAvailableExpressway
+        && hasAvailableExpresswayAlternative
+      let definition = immediateDefinition
+        ?? (isJunctionDecision
+          ? ShutoJunctionMovementCatalog
+            .releasedDefinitionCoveringFollowingDecision(
+              database: database,
+              routeEdges: route.edges,
+              decisionIndex: index
+            )
+          : nil)
       decisions.append(
         ShutoRouteDecisionCoverage(
-          kind: junctionNodeIDs.contains(incoming.toNodeID)
-            && !startsTerminalExitBranch
-            && hasAvailableExpresswayAlternative
-            ? .junction : .graphDivergence,
+          kind: isJunctionDecision ? .junction : .graphDivergence,
           divergenceOccurrenceID: divergenceOccurrenceID,
           plannedOutgoingOccurrenceID:
             route.routePlan.occurrences[index + 1].id,

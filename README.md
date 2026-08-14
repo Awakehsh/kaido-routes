@@ -221,6 +221,10 @@ swift run kaido-release inspect-circuit-live-coverage \
   --entry shuto.ic.c1.shibakouen --exit shuto.ic.c1.shiodome --laps 1
 ```
 
+The report includes each graph-derived recovery candidate's exact trigger,
+ordered edge path, and later RoutePlan target; every candidate remains
+unreleased until it is present in a validated product release.
+
 ## Build and run
 
 Requirements:

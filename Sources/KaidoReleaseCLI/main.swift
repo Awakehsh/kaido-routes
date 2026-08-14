@@ -370,6 +370,7 @@ private struct LiveCoverageReport: Encodable {
   let missingRecoveryCandidateBranchCount: Int
   let missingReleasedRecoveryBranchCount: Int
   let expresswayReleaseCoverageComplete: Bool
+  let recoveryCandidates: [RecoveryCandidate]
   let coverage: ShutoRouteLiveReleaseCoverage
 
   init(
@@ -377,6 +378,7 @@ private struct LiveCoverageReport: Encodable {
     entryFacilityID: String,
     exitFacilityID: String,
     routeOccurrenceCount: Int,
+    recoveryCandidates: [RecoveryCandidate],
     coverage: ShutoRouteLiveReleaseCoverage
   ) {
     self.routePlanID = routePlanID
@@ -395,6 +397,7 @@ private struct LiveCoverageReport: Encodable {
       coverage.missingReleasedRecoveryBranchCount
     expresswayReleaseCoverageComplete =
       coverage.expresswayReleaseCoverageComplete
+    self.recoveryCandidates = recoveryCandidates
     self.coverage = coverage
   }
 
@@ -415,6 +418,7 @@ private struct LiveCoverageReport: Encodable {
       "missing_released_recovery_branch_count"
     case expresswayReleaseCoverageComplete =
       "expressway_release_coverage_complete"
+    case recoveryCandidates = "recovery_candidates"
     case coverage
   }
 }
@@ -1000,6 +1004,7 @@ do {
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       routeOccurrenceCount: route.routePlan.occurrences.count,
+      recoveryCandidates: assets.recoveryCandidates,
       coverage: assets.liveReleaseCoverage
     )
     let encoder = JSONEncoder()
@@ -1037,6 +1042,7 @@ do {
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       routeOccurrenceCount: route.routePlan.occurrences.count,
+      recoveryCandidates: assets.recoveryCandidates,
       coverage: assets.liveReleaseCoverage
     )
     let encoder = JSONEncoder()

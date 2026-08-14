@@ -521,8 +521,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
               && occurrence.entityID == reviewedMovement.id
           }
           return occurrence.entityID == edge.edgeID
-            && occurrence.kind
-              == (edge.kind == "LINK" ? .junctionMovement : .edge)
+            && occurrence.kind == .edge
         })
     else {
       throw ShutoPlannedRouteRuntimeCompilationError

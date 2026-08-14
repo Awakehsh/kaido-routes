@@ -808,10 +808,7 @@ public struct ShutoRoutePlanner: Sendable {
       return RouteOccurrence(
         id: "shuto.\(index).\(edge.edgeID)",
         index: index,
-        kind:
-          reviewedMovement != nil || edge.kind == "LINK"
-          ? .junctionMovement
-          : .edge,
+        kind: reviewedMovement != nil ? .junctionMovement : .edge,
         entityID: reviewedMovement?.id ?? edge.edgeID,
         tollDomainID: "shuto.toll-domain"
       )

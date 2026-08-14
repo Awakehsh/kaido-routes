@@ -47,6 +47,64 @@ func releasedAuthoringReplaysExactOccurrencePlan() throws {
       ])
 }
 
+@Test("Released authoring preserves fixed corridor edges between reviewed decisions")
+func releasedAuthoringReplaysFixedCorridorEdges() throws {
+  let fixture = releasedAuthoringFixture()
+  let source = fixture.routePlan.occurrences
+  let expanded = [
+    source[0],
+    releasedOccurrence(
+      "test.occurrence.fixed-approach",
+      1,
+      .edge,
+      "test.edge.fixed-approach"
+    ),
+    source[1], source[2],
+    releasedOccurrence(
+      "test.occurrence.fixed-loop",
+      5,
+      .edge,
+      "test.edge.fixed-loop"
+    ),
+    source[3], source[4], source[5], source[6],
+  ].enumerated().map { index, occurrence in
+    releasedOccurrence(
+      occurrence.id,
+      index,
+      occurrence.kind,
+      occurrence.entityID
+    )
+  }
+  let routePlan = replacingOccurrences(
+    in: fixture.routePlan,
+    with: expanded
+  )
+  let recipe = try ReleasedRouteAuthoringRecipe(
+    routePlan: routePlan,
+    editorCatalog: fixture.catalog
+  )
+
+  var session = try recipe.makeSession(interaction: .parked)
+  for step in recipe.steps {
+    try session.select(
+      choiceID: step.choiceID,
+      movementOccurrenceID: step.movementOccurrenceID,
+      outgoingEdgeOccurrenceID: step.outgoingEdgeOccurrenceID,
+      interaction: .parked
+    )
+  }
+
+  #expect(try recipe.compile(session: session, interaction: .parked) == routePlan)
+  #expect(
+    routePlan.occurrences.filter { $0.entityID.hasPrefix("test.edge.fixed") }
+      .map(\.id)
+      == [
+        "test.occurrence.fixed-approach",
+        "test.occurrence.fixed-loop",
+      ]
+  )
+}
+
 @Test("Released authoring session remains parked-only")
 func releasedAuthoringSessionRejectsMovingInteraction() throws {
   let fixture = releasedAuthoringFixture()

@@ -114,27 +114,26 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
       throw ReleasedRouteAuthoringError.entranceOccurrenceMismatch
     }
 
-    let remainingOccurrences = routePlan.occurrences.dropFirst()
-    guard !remainingOccurrences.isEmpty, remainingOccurrences.count.isMultiple(of: 2) else {
-      throw ReleasedRouteAuthoringError.unsupportedOccurrenceSequence(
-        remainingOccurrences.first?.id ?? initialOccurrence.id
-      )
-    }
-
+    let occurrences = routePlan.occurrences
     var currentDecisionPointID = entrance.firstDecisionPointID
     var resolvedSteps: [ReleasedRouteAuthoringStep] = []
-    var offset = remainingOccurrences.startIndex
-    while offset < remainingOccurrences.endIndex {
-      let movement = remainingOccurrences[offset]
-      let edgeIndex = remainingOccurrences.index(after: offset)
-      let outgoingEdge = remainingOccurrences[edgeIndex]
-      guard Self.isSupportedMovement(movement),
-        Self.isSupportedEdge(outgoingEdge)
+    var offset = 1
+    while offset < occurrences.count {
+      let occurrence = occurrences[offset]
+      if Self.isSupportedEdge(occurrence) {
+        offset += 1
+        continue
+      }
+      guard Self.isSupportedMovement(occurrence),
+        offset + 1 < occurrences.count,
+        Self.isSupportedEdge(occurrences[offset + 1])
       else {
         throw ReleasedRouteAuthoringError.unsupportedOccurrenceSequence(
-          !Self.isSupportedMovement(movement) ? movement.id : outgoingEdge.id
+          occurrence.id
         )
       }
+      let movement = occurrence
+      let outgoingEdge = occurrences[offset + 1]
       guard
         let decisionPoint = editorCatalog.decisionPoints.first(where: {
           $0.id == currentDecisionPointID
@@ -157,8 +156,9 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
         throw ReleasedRouteAuthoringError.ambiguousChoice(movement.id)
       }
 
-      let isFinalStep =
-        remainingOccurrences.index(after: edgeIndex) == remainingOccurrences.endIndex
+      let isFinalStep = !occurrences[(offset + 2)...].contains {
+        Self.isSupportedMovement($0)
+      }
       switch (choice.destination, isFinalStep) {
       case (.decisionPoint(let nextDecisionPointID), false):
         currentDecisionPointID = nextDecisionPointID
@@ -177,7 +177,12 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
           outgoingEdgeOccurrenceID: outgoingEdge.id
         )
       )
-      offset = remainingOccurrences.index(after: edgeIndex)
+      offset += 2
+    }
+    guard !resolvedSteps.isEmpty else {
+      throw ReleasedRouteAuthoringError.unsupportedOccurrenceSequence(
+        initialOccurrence.id
+      )
     }
 
     self.routePlan = routePlan
@@ -212,7 +217,11 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     interaction: RouteEditorInteractionContext
   ) throws -> RoutePlan {
     let authored = try session.makeRoutePlan(interaction: interaction)
-    guard Self.matchesReleaseIdentity(authored, routePlan) else {
+    guard Self.matchesReleaseIdentity(
+      authored,
+      routePlan,
+      steps: steps
+    ) else {
       throw ReleasedRouteAuthoringError.authoredRouteMismatch
     }
     return routePlan
@@ -275,14 +284,40 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
 
   private static func matchesReleaseIdentity(
     _ authored: RoutePlan,
-    _ released: RoutePlan
+    _ released: RoutePlan,
+    steps: [ReleasedRouteAuthoringStep]
   ) -> Bool {
-    authored.id == released.id
+    guard authored.id == released.id
       && authored.networkSnapshotID == released.networkSnapshotID
       && authored.entryFacilityID == released.entryFacilityID
       && authored.exitFacilityID == released.exitFacilityID
       && authored.recoveryPolicy == released.recoveryPolicy
-      && authored.occurrences == released.occurrences
+    else {
+      return false
+    }
+    let releasedByID = Dictionary(
+      uniqueKeysWithValues: released.occurrences.map { ($0.id, $0) }
+    )
+    let expectedOccurrenceIDs =
+      [released.occurrences[0].id]
+      + steps.flatMap {
+        [$0.movementOccurrenceID, $0.outgoingEdgeOccurrenceID]
+      }
+    guard authored.occurrences.count == expectedOccurrenceIDs.count else {
+      return false
+    }
+    return zip(authored.occurrences, expectedOccurrenceIDs)
+      .enumerated().allSatisfy { index, pair in
+        guard let expected = releasedByID[pair.1] else { return false }
+        let actual = pair.0
+        return actual.index == index
+          && actual.id == expected.id
+          && actual.kind == expected.kind
+          && actual.entityID == expected.entityID
+          && actual.parkingAreaID == expected.parkingAreaID
+          && actual.tollDomainID == expected.tollDomainID
+          && actual.isOptional == expected.isOptional
+      }
   }
 
   private static func normalized(_ value: String) -> String {

@@ -316,6 +316,39 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testShibuyaToGinzaCustomRouteAdmitsOnDeviceNavigation()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6580, longitude: 139.7016)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.3.shibuya")
+    model.selectCustomExit(facilityID: "shuto.ic.c1.ginza")
+
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertEqual(
+      model.selectedRoute?.routePlan.entryFacilityID,
+      "shuto.ic.3.shibuya"
+    )
+    XCTAssertEqual(
+      model.selectedRoute?.routePlan.exitFacilityID,
+      "shuto.ic.c1.ginza"
+    )
+    XCTAssertFalse(model.isPreparingLiveNavigation)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
   func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
     async throws
   {

@@ -1834,6 +1834,99 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.miyakezaka.c1-inner-to-4-outbound",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 255_513_709,
+      incomingEdgeID: "osm.24402540.6.forward",
+      outgoingEdgeID: "osm.24402503.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "新宿・中央道",
+      routeShields: ["4", "E20"],
+      junctionNameJA: "三宅坂JCT",
+      junctionNameZH: "三宅坂 JCT",
+      junctionNameEN: "Miyakezaka JCT",
+      destinationJA: "4号新宿線 新宿・中央道方面",
+      destinationZH: "4号新宿线 新宿・中央道方向",
+      destinationEN: "Route 4 toward Shinjuku and the Chuo Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_miyakezaka",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-4/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.miyakezaka.4-inbound-to-c1-outer",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 573_233_876,
+      incomingEdgeID: "osm.24636595.7.forward",
+      outgoingEdgeID: "osm.24636434.0.forward",
+      incomingRouteID: "4",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .left,
+      japaneseSignText: "神田橋・箱崎",
+      routeShields: ["C1", "5", "6"],
+      junctionNameJA: "三宅坂JCT",
+      junctionNameZH: "三宅坂 JCT",
+      junctionNameEN: "Miyakezaka JCT",
+      destinationJA: "都心環状線 神田橋・箱崎方面",
+      destinationZH: "都心环状线 神田桥・箱崎方向",
+      destinationEN: "the Outer Circular Route toward Kandabashi and Hakozaki",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_miyakezaka",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-4/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.miyakezaka.4-inbound-to-c1-inner",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 573_233_876,
+      incomingEdgeID: "osm.24636595.7.forward",
+      outgoingEdgeID: "osm.24636612.0.forward",
+      incomingRouteID: "4",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "霞ヶ関・湾岸線",
+      routeShields: ["C1"],
+      junctionNameJA: "三宅坂JCT",
+      junctionNameZH: "三宅坂 JCT",
+      junctionNameEN: "Miyakezaka JCT",
+      destinationJA: "都心環状線 霞ヶ関・湾岸線方面",
+      destinationZH: "都心环状线 霞关・湾岸线方向",
+      destinationEN: "the Inner Circular Route toward Kasumigaseki and the Bayshore Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_miyakezaka",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-4/",
+      ]
+    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.takehashi.c1-inner-stays-on-c1",
       networkSnapshotID:
@@ -1994,6 +2087,37 @@ public enum ShutoJunctionMovementCatalog {
       destinationZH: "都心环状线 中央道・北池袋方向",
       destinationEN:
         "the Outer Circular Route toward the Chuo Expressway and Kita-Ikebukuro",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "b7f8b5458757c825d2abf42f315bdb7d"
+        + "60e54debbb8a7420f49dd8a4646940fd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_tanimachi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.tanimachi.c1-outer-to-3-outbound",
+      junctionID: "shuto.jct.jct_tanimachi",
+      junctionNodeID: 260_710_778,
+      incomingEdgeID: "osm.895902565.2.forward",
+      outgoingEdgeID: "osm.24336502.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "3",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "東名・渋谷",
+      routeShields: ["3", "E1"],
+      junctionNameJA: "谷町JCT",
+      junctionNameZH: "谷町 JCT",
+      junctionNameEN: "Tanimachi JCT",
+      destinationJA: "3号渋谷線 東名・渋谷方面",
+      destinationZH: "3号涩谷线 东名・涩谷方向",
+      destinationEN: "Route 3 toward Shibuya and the Tomei Expressway",
       commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "b7f8b5458757c825d2abf42f315bdb7d"

@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 30)
     #expect(coverage.incomingApproachCount == 87)
     #expect(coverage.movements.count == 175)
-    #expect(coverage.releasedMovementCount == 51)
-    #expect(coverage.missingMovementReviewCount == 124)
+    #expect(coverage.releasedMovementCount == 55)
+    #expect(coverage.missingMovementReviewCount == 120)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -330,6 +330,39 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
     #expect(coverage.missingReleasedRecoveryBranchCount == 15)
     #expect(!coverage.expresswayReleaseCoverageComplete)
+  }
+
+  @Test("a non-JCT mainline split never invents junction guidance")
+  func nonJunctionMainlineSplitDoesNotBlockForegroundRelease() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.c1.ginza"
+    )
+    let coverage = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    ).liveReleaseCoverage
+
+    #expect(coverage.missingGuidanceDecisionCount == 0)
+    #expect(
+      coverage.decisions.contains {
+        $0.kind == .graphDivergence
+          && $0.junctionNodeID == 57_529_600
+          && $0.incomingDirectedEdgeID
+            == "osm.45332354.1.forward"
+          && $0.plannedOutgoingDirectedEdgeID
+            == "osm.4848898.0.forward"
+      }
+    )
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(
+        database: database,
+        route: route
+    )
+    #expect(
+      artifact.navigationRelease.routePlan == route.routePlan
+    )
   }
 
   @Test("only exact HIGH occurrence evidence projects route progress")

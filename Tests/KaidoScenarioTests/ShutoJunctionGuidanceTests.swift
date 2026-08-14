@@ -719,6 +719,67 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Miyakezaka and Tanimachi radial branches bind official signs")
+  func centralRadialBranchesBindOfficialSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String
+      )
+    ] = [
+      (
+        "osm.24402540.6.forward",
+        "osm.24402503.0.forward",
+        "shuto.jct.miyakezaka.c1-inner-to-4-outbound",
+        .left,
+        "新宿・中央道"
+      ),
+      (
+        "osm.24636595.7.forward",
+        "osm.24636434.0.forward",
+        "shuto.jct.miyakezaka.4-inbound-to-c1-outer",
+        .left,
+        "神田橋・箱崎"
+      ),
+      (
+        "osm.24636595.7.forward",
+        "osm.24636612.0.forward",
+        "shuto.jct.miyakezaka.4-inbound-to-c1-inner",
+        .right,
+        "霞ヶ関・湾岸線"
+      ),
+      (
+        "osm.895902565.2.forward",
+        "osm.24336502.0.forward",
+        "shuto.jct.tanimachi.c1-outer-to-3-outbound",
+        .left,
+        "東名・渋谷"
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

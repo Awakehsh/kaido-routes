@@ -49,16 +49,17 @@ realtime, or field authority.
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 30 JCTs with choices between available expressway
-mainlines, 80 incoming approaches, and 161 candidate incoming/outgoing movement
-pairs. Twenty-one exact definitions are currently released and 140 still require
+mainlines, 87 incoming approaches, and 175 candidate incoming/outgoing movement
+pairs. Fifty-five exact definitions are currently released and 120 still require
 legal/sign review. Terminal exits and connections leading only to the closed
 Yaesu Route remain recovery/egress divergences, not JCT-guidance work. Graph
 adjacency is inventory only: it does not assert that every pair is lawful.
-Route-local coverage does not depend on a single OSM `motorway_junction` tag:
-when the planned continuation and an alternative both reach available
-expressway mainlines, each consecutive fork is a JCT guidance decision. This
-keeps multi-node complexes such as Edobashi from losing a second prompt merely
-because only the first fork is attached to the official JCT node set.
+Route-local coverage counts a fork as JCT guidance only when its graph node is
+bound to an official JCT complex, or when a source-bound released definition
+explicitly covers a following fork in that complex. A same-route parallel
+mainline split with neither identity stays a non-JCT graph divergence and never
+forces the product to invent spoken guidance. The explicit-definition exception
+keeps multi-node complexes such as Edobashi from losing a second reviewed prompt.
 The snapshot also carries the official direction vocabulary for every route,
 derived from the directional IC catalog. Released JCT definitions bind one of
 those official values to exact incoming and outgoing directed-edge IDs plus the

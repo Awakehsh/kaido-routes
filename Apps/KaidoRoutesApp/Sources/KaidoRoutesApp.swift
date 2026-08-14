@@ -172,6 +172,17 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoDynamicCustomRoutePreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-SHIBUYA-GINZA-LIVE-ROUTE-PREVIEW"
+      ) {
+        WholeShutoDynamicCustomRoutePreviewHost(
+          origin: ShutoCoordinate(
+            latitude: 35.6580,
+            longitude: 139.7016
+          ),
+          entryFacilityID: "shuto.ic.3.shibuya",
+          exitFacilityID: "shuto.ic.c1.ginza"
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW"
       ) {
         WholeShutoRecommendedLiveRoutePreviewHost()
@@ -359,17 +370,22 @@ private struct WholeShutoCustomRoutePreviewHost: View {
 private struct WholeShutoDynamicCustomRoutePreviewHost: View {
   @StateObject private var model: WholeShutoProductModel
 
-  init() {
+  init(
+    origin: ShutoCoordinate = ShutoCoordinate(
+      latitude: 35.6812,
+      longitude: 139.7671
+    ),
+    entryFacilityID: String = "shuto.ic.b.urayasu",
+    exitFacilityID: String = "shuto.ic.9.fukudumi"
+  ) {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil
     )
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
-    )
+    model.selectCurrentOrigin(origin)
     model.prepareCustomRouteDraft()
-    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
-    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    model.selectCustomEntry(facilityID: entryFacilityID)
+    model.selectCustomExit(facilityID: exitFacilityID)
     precondition(model.applyCustomRoute())
     _model = StateObject(wrappedValue: model)
   }

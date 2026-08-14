@@ -896,6 +896,9 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       database.routes.filter { $0.operationalStatus == "AVAILABLE" }
         .map(\.routeID)
     )
+    let officialJunctionNodeIDs = Set(
+      database.junctions.flatMap(\.osmNodeIDs)
+    )
     let surfaceExitCandidateEdgeIDs = Set(
       database.directionalFacilities.flatMap { facility in
         facility.exitEdgeCandidates.map(\.edgeID)
@@ -952,20 +955,21 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         outgoing: outgoing,
         availableRouteIDs: availableRouteIDs
       )
+      let coveringDefinition =
+        ShutoJunctionMovementCatalog
+        .releasedDefinitionCoveringFollowingDecision(
+          database: database,
+          routeEdges: route.edges,
+          decisionIndex: index
+        )
+      let candidateDefinition = immediateDefinition ?? coveringDefinition
       let isJunctionDecision =
         !startsTerminalExitBranch
         && plannedContinuesOnAvailableExpressway
         && hasAvailableExpresswayAlternative
-      let definition =
-        immediateDefinition
-        ?? (isJunctionDecision
-          ? ShutoJunctionMovementCatalog
-            .releasedDefinitionCoveringFollowingDecision(
-              database: database,
-              routeEdges: route.edges,
-              decisionIndex: index
-            )
-          : nil)
+        && (officialJunctionNodeIDs.contains(incoming.toNodeID)
+          || candidateDefinition != nil)
+      let definition = isJunctionDecision ? candidateDefinition : nil
       decisions.append(
         ShutoRouteDecisionCoverage(
           kind: isJunctionDecision ? .junction : .graphDivergence,

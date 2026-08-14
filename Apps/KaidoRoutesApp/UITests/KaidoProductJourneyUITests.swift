@@ -289,11 +289,26 @@ final class KaidoProductJourneyUITests: XCTestCase {
   }
 
   func testExactCustomRouteWithReviewedGuidanceOffersLiveNavigation() {
+    assertExactCustomRouteOffersLiveNavigation(
+      previewArgument: "-WHOLE-SHUTO-DYNAMIC-CUSTOM-ROUTE-PREVIEW"
+    )
+  }
+
+  func testShibuyaToGinzaCustomRouteOffersLiveNavigation() {
+    assertExactCustomRouteOffersLiveNavigation(
+      previewArgument:
+        "-WHOLE-SHUTO-SHIBUYA-GINZA-LIVE-ROUTE-PREVIEW"
+    )
+  }
+
+  private func assertExactCustomRouteOffersLiveNavigation(
+    previewArgument: String
+  ) {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
-      "-WHOLE-SHUTO-DYNAMIC-CUSTOM-ROUTE-PREVIEW",
+      previewArgument,
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
       "-app.kaidoroutes.language.guidance-voice",

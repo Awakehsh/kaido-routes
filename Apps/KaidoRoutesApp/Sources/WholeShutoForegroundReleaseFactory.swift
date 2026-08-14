@@ -13,28 +13,25 @@ enum WholeShutoForegroundReleaseFactory {
       let database = try WholeShutoNetworkCatalog.bundled()
       let catalog = try BundledProductReleaseCatalogLoader
         .bundledForeground()
-      guard catalog.foregroundNavigationEntries.count == 1,
-        let entry = catalog.foregroundNavigationEntries.first
-      else {
+      guard !catalog.foregroundNavigationEntries.isEmpty else {
         preconditionFailure("Invalid bundled Whole-Shuto foreground catalog")
       }
-      let route = try ShutoCircuitProductReleaseBuilder.plannedRoute(
-        database: database
-      )
-      let journeyPlan = JourneyPlanCompiler.expresswayOnly(
-        release: entry.release
-      )
-      let core = try KaidoLiveJourneyAdmission(
-        release: entry.release,
-        selectedRoutePlan: route.routePlan,
-        journeyPlan: journeyPlan
-      )
-      let admission = try WholeShutoLiveJourneyAdmission(core: core)
+      let admissions = try catalog.foregroundNavigationEntries.map { entry in
+        let journeyPlan = JourneyPlanCompiler.expresswayOnly(
+          release: entry.release
+        )
+        let core = try KaidoLiveJourneyAdmission(
+          release: entry.release,
+          selectedRoutePlan: entry.release.navigation.bundle.routePlan,
+          journeyPlan: journeyPlan
+        )
+        return try WholeShutoLiveJourneyAdmission(core: core)
+      }
       return WholeShutoProductModel(
         database: database,
         surfaceRouteResolver: surfaceRouteResolver,
         checkpointStore: checkpointStore,
-        liveJourneyAdmissions: [admission]
+        liveJourneyAdmissions: admissions
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

@@ -600,21 +600,22 @@ an admission by full `RoutePlan` equality, rejects zero or multiple matches, and
 attaches Core Location only after the release runtime and surface adapters
 construct successfully. Inactive/background first stops and drains location,
 then checkpoints; returning active never resumes location without the user's
-explicit Resume Navigation action. The distributed bundle currently supplies no
-whole-Shuto live admissions, so it still fails closed as
-`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`. It cannot inherit the K7 fixture's
-road-evidence or live-input authority merely because location permission or
-device fixes exist.
+explicit Resume Navigation action. The distributed bundle currently supplies
+two exact whole-Shuto admissions: C1 inner from Shibakoen to Shiodome for one
+lap, and Bayshore westbound from Chidoricho to Daikoku-Futo. Every other
+RoutePlan still fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; none
+can inherit another route's road evidence or live-input authority merely
+because location permission or device fixes exist.
 
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to
 a clean source commit, requires a zero-failure/zero-skip physical `.xcresult`,
 and requires the named default whole-Shuto foreground planning-location
 `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`
-permission/start/stop UI test to pass exactly once. It hashes the result tree,
+permission/live-start/stop UI test to pass exactly once. It hashes the result tree,
 summary, test tree, and build log into a receipt without device ID, device name,
-coordinates, raw traces, audio, or paths. The receipt grants only
-planning-location lifecycle smoke; it deliberately keeps live navigation,
+coordinates, raw traces, audio, or paths. The receipt grants only an exact
+foreground-location lifecycle smoke; it deliberately keeps field reliability,
 location accuracy,
 acoustic, pronunciation, road, CarPlay, and background-navigation authority
 false.

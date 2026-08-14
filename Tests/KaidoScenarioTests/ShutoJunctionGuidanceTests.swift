@@ -476,8 +476,8 @@ struct ShutoJunctionGuidanceTests {
     #expect(
       matches.map(\.junctionNameJA)
         == [
-          "辰巳JCT", "東雲JCT", "有明JCT", "大井JCT",
-          "川崎浮島JCT", "大黒JCT",
+          "葛西JCT", "辰巳JCT", "東雲JCT", "有明JCT", "大井JCT",
+          "東海JCT", "川崎浮島JCT", "大黒JCT",
         ]
     )
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
@@ -485,7 +485,10 @@ struct ShutoJunctionGuidanceTests {
     // Yokohama, and each definition preserves what its diagram shows.
     #expect(
       matches.map(\.definition.japaneseSignText)
-        == ["横浜", "横浜", "横浜", "横浜", "横浜", "横浜公園"]
+        == [
+          "横浜", "横浜", "横浜", "横浜", "横浜",
+          "空港中央・大黒ふ頭", "横浜", "横浜公園",
+        ]
     )
     #expect(
       matches.allSatisfy {

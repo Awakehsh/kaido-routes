@@ -8,13 +8,17 @@ import XCTest
 @testable import KaidoRoutesApp
 
 final class BundledProductReleaseCatalogTests: XCTestCase {
-  func testBundledForegroundManifestLoadsExactC1Release() throws {
+  func testBundledForegroundManifestLoadsExactReleasedRoutes() throws {
     let catalog = try BundledProductReleaseCatalogLoader.bundledForeground()
     let foreground = try XCTUnwrap(
-      catalog.foregroundNavigationEntries.first
+      catalog.foregroundNavigationEntries.first {
+        $0.release.releaseID
+          == "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+      }
     )
 
-    XCTAssertEqual(catalog.entries.count, 1)
+    XCTAssertEqual(catalog.entries.count, 2)
+    XCTAssertEqual(catalog.foregroundNavigationEntries.count, 2)
     XCTAssertTrue(catalog.demoEntries.isEmpty)
     XCTAssertEqual(
       foreground.release.releaseID,
@@ -33,6 +37,26 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       632
     )
     XCTAssertNotNil(foreground.release.foregroundLiveInputAuthority)
+
+    let wangan = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first {
+        $0.release.releaseID
+          == "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15"
+      }
+    )
+    XCTAssertEqual(
+      wangan.release.navigation.bundle.routePlan.entryFacilityID,
+      "shuto.ic.b.chidoricho"
+    )
+    XCTAssertEqual(
+      wangan.release.navigation.bundle.routePlan.exitFacilityID,
+      "shuto.ic.b.daikokufutou"
+    )
+    XCTAssertEqual(
+      wangan.release.navigation.bundle.routePlan.occurrences.count,
+      339
+    )
+    XCTAssertNotNil(wangan.release.foregroundLiveInputAuthority)
   }
 
   func testBundledManifestLoadsHashBoundDemoAndForegroundReleases() throws {

@@ -36,6 +36,21 @@ extension AppBundleProductReleaseDescriptor {
       role: .foregroundNavigation
     )
   }
+
+  static var wanganWestboundChidorichoDaikokufutou:
+    AppBundleProductReleaseDescriptor
+  {
+    AppBundleProductReleaseDescriptor(
+      resourceName:
+        "wangan-westbound-chidoricho-daikokufutou-product-release",
+      resourceExtension: "json",
+      expectedSHA256:
+        "a37a267c1384324fda3ab5ea4527528802b3134a595b82922827f834c1f786fa",
+      expectedReleaseID:
+        "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
+      role: .foregroundNavigation
+    )
+  }
 }
 
 struct BundledProductReleaseEntry: Equatable, Sendable {
@@ -206,7 +221,8 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
 
 enum BundledProductReleaseCatalogLoader {
   static let foregroundManifest: [BundledProductReleaseDescriptor] = [
-    .c1InnerShibakoenShiodome
+    .c1InnerShibakoenShiodome,
+    .wanganWestboundChidorichoDaikokufutou,
   ]
 
   static let previewManifest: [BundledProductReleaseDescriptor] = [

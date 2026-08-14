@@ -1159,6 +1159,81 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     ShutoJunctionMovementDefinition(
+      id: "shuto.jct.kasai.b-westbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_kasai",
+      junctionNodeID: 8_256_670_336,
+      incomingEdgeID: "osm.888066413.1.forward",
+      outgoingEdgeID: "osm.44129629.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "西行き",
+      branchSide: .straight,
+      japaneseSignText: "横浜",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "葛西JCT",
+        .simplifiedChinese: "葛西 JCT",
+        .english: "Kasai JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 横浜方面へ",
+          spokenText:
+            "葛西ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "横浜": "よこはま",
+            "葛西": "かさい",
+          ],
+          preservedJapaneseSignText: "横浜"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 横浜 方向",
+          spokenText:
+            "在葛西 JCT 不要分岔，沿湾岸线继续前往 横浜 方向",
+          spokenForms: ["横浜": "横浜"],
+          preservedJapaneseSignText: "横浜"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText: "Stay on the Bayshore Route toward 横浜",
+          spokenText:
+            "At Kasai JCT, stay on the Bayshore Route toward 横浜",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "横浜"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-15",
+      expectedJunctionDetailSHA256:
+        "5e52b43abc96875472405c2fe5c2ca49"
+        + "2946356ac0c86460f1610051289aa7b2",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/use/convenience/"
+            + "infoboard/chara/cases/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_kasai",
+          contentSHA256:
+            "5e52b43abc96875472405c2fe5c2ca49"
+            + "2946356ac0c86460f1610051289aa7b2"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
       id: "shuto.jct.oi.b-westbound-stays-on-b",
       networkSnapshotID:
         "shuto-official-2026-07-29-osm-2026-08-04",
@@ -1231,6 +1306,83 @@ public enum ShutoJunctionMovementCatalog {
           contentSHA256:
             "4bfe3cb6117273ec547a62872b971a87"
             + "fcc944fff70b3267022888612aacfc2b"
+        ),
+      ]
+    ),
+    ShutoJunctionMovementDefinition(
+      id: "shuto.jct.tokai.b-westbound-stays-on-b",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionID: "shuto.jct.jct_tokai",
+      junctionNodeID: 35_937_972,
+      incomingEdgeID: "osm.45683111.1.forward",
+      outgoingEdgeID: "osm.45683111.2.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "西行き",
+      branchSide: .straight,
+      japaneseSignText: "空港中央・大黒ふ頭",
+      routeShields: ["B"],
+      laneGuidanceState: .notReleased,
+      localizedJunctionNames: [
+        .japanese: "東海JCT",
+        .simplifiedChinese: "东海 JCT",
+        .english: "Tokai JCT",
+      ],
+      localizedContent: [
+        .japanese: LocalizedGuidanceContent(
+          displayText: "分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
+          spokenText:
+            "東海ジャンクションは分岐せず、湾岸線 空港中央・大黒ふ頭方面へ進んでください",
+          spokenForms: [
+            "湾岸線": "わんがんせん",
+            "空港中央": "くうこうちゅうおう",
+            "大黒ふ頭": "だいこくふとう",
+            "東海": "とうかい",
+          ],
+          preservedJapaneseSignText: "空港中央・大黒ふ頭"
+        ),
+        .simplifiedChinese: LocalizedGuidanceContent(
+          displayText: "不要分岔，沿湾岸线前往 空港中央・大黒ふ頭 方向",
+          spokenText:
+            "在东海 JCT 不要分岔，沿湾岸线继续前往 空港中央・大黒ふ頭 方向",
+          spokenForms: ["空港中央・大黒ふ頭": "空港中央・大黒ふ頭"],
+          preservedJapaneseSignText: "空港中央・大黒ふ頭"
+        ),
+        .english: LocalizedGuidanceContent(
+          displayText:
+            "Stay on the Bayshore Route toward 空港中央・大黒ふ頭",
+          spokenText:
+            "At Tokai JCT, stay on the Bayshore Route toward 空港中央・大黒ふ頭",
+          spokenForms: ["Bayshore Route": "Bayshore Route"],
+          preservedJapaneseSignText: "空港中央・大黒ふ頭"
+        ),
+      ],
+      commitTriggerDistanceMeters: 300,
+      checkedAt: "2026-08-15",
+      expectedJunctionDetailSHA256:
+        "c3e400f7d241f86d628020e9bc8ace34"
+        + "3f0d517cbdad993a5f0511443a7cd47a",
+      sources: [
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/jct/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/ss/shutokodeikou/"
+            + "blog/2019/11/part.html"
+        ),
+        ShutoJunctionGuidanceSource(
+          url: "https://www.shutoko.jp/use/network/map/route-b/"
+        ),
+        ShutoJunctionGuidanceSource(
+          url:
+            "https://www.shutoko.jp/-/media/images/responsive/"
+            + "customer/use/network/jct/routeguide/jct_tokai",
+          contentSHA256:
+            "c3e400f7d241f86d628020e9bc8ace34"
+            + "3f0d517cbdad993a5f0511443a7cd47a"
         ),
       ]
     ),

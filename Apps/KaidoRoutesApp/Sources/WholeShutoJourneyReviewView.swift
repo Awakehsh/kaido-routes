@@ -518,11 +518,11 @@ struct WholeShutoJourneyReviewView: View {
           Text(
             copy.resolve(
               japanese:
-                "このルートは実走ナビ未公開です。現在の対応範囲は C1 内回り・芝公園入口・汐留出口・1周です。",
+                "このルートは実走ナビ未公開です。現在の対応範囲は C1 内回り（芝公園→汐留、1周）と湾岸線西行き（千鳥町→大黒ふ頭）です。",
               simplifiedChinese:
-                "这条路线尚未发布实车导航。当前可用范围：C1 内环、芝公园入口、汐留出口、1 圈。",
+                "这条路线尚未发布实车导航。当前可用范围：C1 内环（芝公园→汐留，1 圈）和湾岸线西行（千鸟町→大黑码头）。",
               english:
-                "Live navigation is not released for this route. Current coverage: C1 Inner, Shibakoen entrance, Shiodome exit, one lap."
+                "Live navigation is not released for this route. Current coverage: C1 Inner (Shibakoen to Shiodome, one lap) and Bayshore westbound (Chidoricho to Daikoku-Futo)."
             )
           )
           .fixedSize(horizontal: false, vertical: true)
@@ -606,11 +606,11 @@ struct WholeShutoJourneyReviewView: View {
       Text(
         copy.resolve(
           japanese:
-            "案内は芝公園入口から汐留出口まで前景のみで動作し、審査済みの分岐だけを音声案内します。一般道はプレビューのみです。",
+            "対応ルートでは前景ナビが動作し、審査済みの分岐だけを音声案内します。一般道はプレビューのみです。",
           simplifiedChinese:
-            "导航从芝公园入口开始、在汐留出口结束，仅在前台运行并播报已审核分岔；普通道路只提供预演。",
+            "已发布路线支持前台导航，并只播报已审核分岔；普通道路仍只提供预演。",
           english:
-            "Navigation runs in the foreground from Shibakoen entrance to Shiodome exit and speaks reviewed junctions only. Ordinary roads remain preview-only."
+            "Released routes navigate in the foreground and speak reviewed junctions only. Ordinary roads remain preview-only."
         )
       )
       .font(.system(size: 8, weight: .bold))

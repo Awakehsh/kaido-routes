@@ -5,7 +5,8 @@ Expressway. A driver chooses a route experience first, derives a
 direction-valid entrance and exit from the current origin, optionally adds a
 final destination, reviews the exact Shuto route and junction sequence, then
 replays the journey from surface access through surface egress. Live navigation
-remains fail-closed until an exact authority-bearing product is enrolled.
+starts only when the selected route matches an exact enrolled foreground
+product release.
 
 The project is not affiliated with or endorsed by Metropolitan Expressway
 Company Limited.
@@ -66,11 +67,11 @@ internal review workbench.
 - Route occurrences remain ordered and distinct. Directed links represent
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
-- The bundled whole-Shuto graph remains a candidate asset rather than a
-  validated `KaidoProductRelease`. The complete journey is available as a
-  clearly labeled replay. **Start navigation** fails closed with
-  `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` until one exact joint product
-  release and its released surface provider/field evidence are enrolled.
+- The bundled whole-Shuto graph remains a candidate asset rather than blanket
+  navigation authority. Two exact foreground releases are enrolled: C1 inner
+  from Shibakoen to Shiodome for one lap, and Bayshore westbound from
+  Chidoricho to Daikoku-Futo. **Start navigation** remains fail-closed with
+  `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` for every other exact RoutePlan.
 - Every compiled whole-Shuto runtime exposes a deterministic asset identity.
   Its network-artifact hash covers the complete decoded network, including
   source, licence, limitation, and bounds metadata; its route-runtime hash
@@ -106,8 +107,9 @@ internal review workbench.
 - The Core Location adaptation boundary preserves course and speed uncertainty
   for release-enrolled runtimes. Uncertain course expands the heading model
   instead of being trusted like a precise bearing, and speed uncertainty widens
-  travel-distance tolerance. The default candidate product currently uses
-  foreground Core Location for planning origin only, not live navigation.
+  travel-distance tolerance. The two exact foreground releases attach Core
+  Location only after release admission; unmatched routes use it only for the
+  planning origin.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
   geometry, makes the next reviewed decision and its distance the dominant
@@ -191,10 +193,10 @@ The product distinguishes what is known from what is still unconfirmed:
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`.
 - The default App's foreground Core Location lifecycle supplies the planning
-  origin; it refuses to start candidate whole-Shuto navigation. The clearly
-  labeled replay exercises the route-aware matcher and actor-owned reducer but
-  grants no road, tunnel, field, acoustic, or CarPlay qualification. Spoken turn
-  guidance still covers reviewed junction movements only.
+  origin and the two exact released live routes. Every other candidate
+  whole-Shuto route remains replay-only. Live admission and replay do not grant
+  tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
+  covers reviewed junction movements only.
 
 Inspect one exact planned route's expressway release gaps:
 

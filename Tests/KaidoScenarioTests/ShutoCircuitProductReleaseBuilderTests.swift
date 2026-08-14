@@ -3,22 +3,11 @@ import KaidoNavigation
 import KaidoRouting
 import Testing
 
-@Suite("C1 foreground product release")
+@Suite("Whole-Shuto foreground product releases")
 struct ShutoCircuitProductReleaseBuilderTests {
   @Test("exact C1 circuit builds one foreground navigation authority")
   func buildsExactForegroundRelease() throws {
-    let databaseURL = URL(fileURLWithPath: #filePath)
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .appendingPathComponent("data")
-      .appendingPathComponent("route-atlas")
-      .appendingPathComponent("osm-derived")
-      .appendingPathComponent("shuto-whole-network-20260804.json")
-    let database = try JSONDecoder().decode(
-      ShutoNetworkDatabase.self,
-      from: Data(contentsOf: databaseURL)
-    )
+    let database = try loadDatabase()
     let artifact = try ShutoCircuitProductReleaseBuilder.buildArtifact(
       database: database
     )
@@ -43,6 +32,62 @@ struct ShutoCircuitProductReleaseBuilderTests {
       release.navigation.bundle.matcherCorridor.edges.contains {
         $0.id == "osm.44804643.0.forward"
       }
+    )
+  }
+
+  @Test("Bayshore westbound route builds a second foreground authority")
+  func buildsWanganForegroundRelease() throws {
+    let database = try loadDatabase()
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildWanganArtifact(database: database)
+    let release = try KaidoProductRelease(artifact: artifact)
+    let route = try ShutoCircuitProductReleaseBuilder.plannedWanganRoute(
+      database: database
+    )
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.navigation.bundle.releasedGuidance.count == 8)
+    #expect(
+      release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
+    )
+    #expect(
+      release.navigation.bundle.releasedGuidance.contains {
+        $0.frameTemplate.presentationSource.japaneseSignText
+          == "空港中央・大黒ふ頭"
+      }
+    )
+    let approachID =
+      "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-08-15"
+    #expect(
+      release.navigation.bundle.runtimePolicy.entryTransition
+        .directedEdgeIDs.first == approachID
+    )
+    #expect(
+      release.navigation.bundle.matcherCorridor.edges.contains {
+        $0.id == approachID
+      }
+    )
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
+    )
+  }
+
+  private func loadDatabase() throws -> ShutoNetworkDatabase {
+    let databaseURL = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .appendingPathComponent("data")
+      .appendingPathComponent("route-atlas")
+      .appendingPathComponent("osm-derived")
+      .appendingPathComponent("shuto-whole-network-20260804.json")
+    return try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: Data(contentsOf: databaseURL)
     )
   }
 }

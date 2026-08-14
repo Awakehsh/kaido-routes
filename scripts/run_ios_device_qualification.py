@@ -24,11 +24,14 @@ EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
 RELEASE_SMOKE_SCHEME = "KaidoRoutesReleaseSmoke"
 RELEASE_BUNDLE_IDENTIFIER = "app.kaidoroutes"
-RECEIPT_SCHEMA_VERSION = "1.6"
+RECEIPT_SCHEMA_VERSION = "1.7"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
 WHOLE_SHUTO_RESOURCE = "shuto-whole-network-20260804.json"
 C1_PRODUCT_RELEASE_RESOURCE = (
     "c1-inner-shibakoen-shiodome-product-release.json"
+)
+WANGAN_PRODUCT_RELEASE_RESOURCE = (
+    "wangan-westbound-chidoricho-daikokufutou-product-release.json"
 )
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
@@ -78,6 +81,7 @@ class ReleaseBundleEvidence:
     app_bundle_sha256: str
     whole_shuto_sha256: str
     c1_product_release_sha256: str
+    wangan_product_release_sha256: str
     privacy_manifest_sha256: str
     license_sha256: str
     data_licenses_sha256: str
@@ -696,6 +700,9 @@ def collect_release_bundle_evidence(
         c1_product_release_sha256=hash_file(
             app / C1_PRODUCT_RELEASE_RESOURCE
         ),
+        wangan_product_release_sha256=hash_file(
+            app / WANGAN_PRODUCT_RELEASE_RESOURCE
+        ),
         privacy_manifest_sha256=hash_file(app / "PrivacyInfo.xcprivacy"),
         license_sha256=hash_file(app / "LICENSE"),
         data_licenses_sha256=hash_file(app / "DATA-LICENSES.md"),
@@ -824,6 +831,9 @@ def build_receipt(
                 "whole_shuto_sha256": release_bundle.whole_shuto_sha256,
                 "c1_product_release_sha256": (
                     release_bundle.c1_product_release_sha256
+                ),
+                "wangan_product_release_sha256": (
+                    release_bundle.wangan_product_release_sha256
                 ),
                 "privacy_manifest_sha256": (
                     release_bundle.privacy_manifest_sha256

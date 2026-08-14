@@ -200,6 +200,34 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         (self.app / validator.C1_PRODUCT_RELEASE_RESOURCE).write_bytes(
             encoded_product_release
         )
+        wangan_release = json.loads(encoded_product_release)
+        wangan_release["release_id"] = validator.WANGAN_PRODUCT_RELEASE_ID
+        wangan_route_plan = wangan_release["navigation_release"]["route_plan"]
+        wangan_route_plan.update(
+            {
+                "plan_id": validator.WANGAN_ROUTE_PLAN_ID,
+                "entry_facility_id": validator.WANGAN_ENTRY_FACILITY_ID,
+                "exit_facility_id": validator.WANGAN_EXIT_FACILITY_ID,
+                "occurrences": [
+                    {"id": f"wangan.fixture.{index}"}
+                    for index in range(
+                        validator.WANGAN_ROUTE_OCCURRENCE_COUNT
+                    )
+                ],
+            }
+        )
+        wangan_release["route_atlas_release"]["route_plan"] = (
+            wangan_route_plan
+        )
+        encoded_wangan_release = json.dumps(wangan_release).encode("utf-8")
+        wangan_source = (
+            self.repository / validator.WANGAN_PRODUCT_RELEASE_SOURCE
+        )
+        wangan_source.parent.mkdir(parents=True, exist_ok=True)
+        wangan_source.write_bytes(encoded_wangan_release)
+        (self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE).write_bytes(
+            encoded_wangan_release
+        )
         data_licenses = "\n".join(
             (
                 validator.EXPECTED_OSM_ATTRIBUTION,
@@ -265,6 +293,12 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         self.assertEqual(
             result["c1_product_release_sha256"],
             validator.sha256(self.app / validator.C1_PRODUCT_RELEASE_RESOURCE),
+        )
+        self.assertEqual(
+            result["wangan_product_release_sha256"],
+            validator.sha256(
+                self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE
+            ),
         )
 
     def test_repository_data_license_matches_distribution_contract(self) -> None:
@@ -487,6 +521,23 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         with self.assertRaisesRegex(
             validator.ReleaseBundleValidationError,
             "C1 product live-input policy",
+        ):
+            self.validate()
+
+    def test_wangan_foreground_release_drift_is_rejected(self) -> None:
+        for path in (
+            self.app / validator.WANGAN_PRODUCT_RELEASE_RESOURCE,
+            self.repository / validator.WANGAN_PRODUCT_RELEASE_SOURCE,
+        ):
+            artifact = json.loads(path.read_text(encoding="utf-8"))
+            artifact["navigation_release"]["route_plan"][
+                "exit_facility_id"
+            ] = "shuto.ic.b.wrong"
+            path.write_text(json.dumps(artifact), encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            validator.ReleaseBundleValidationError,
+            "Wangan exit facility",
         ):
             self.validate()
 

@@ -10,20 +10,26 @@ public enum ShutoCircuitProductReleaseBuilderError:
   case invalidReviewedMovementOrder(String)
   case missingEntryPredecessor
   case missingRecoveryCandidate
+  case incompleteJunctionGuidance([String])
   case missingGraphEdge(String)
   case missingGraphNode(Int64)
   case inconsistentRepeatedEntity(String)
 }
 
-/// Authors the first exact whole-Shuto foreground release from the bundled,
-/// dated graph and reviewed junction catalog. The scope is deliberately one
-/// C1 inner circuit; it does not promote other planner routes.
+/// Authors exact whole-Shuto foreground releases from the bundled, dated graph
+/// and reviewed junction catalog.
 public enum ShutoCircuitProductReleaseBuilder {
   public static let circuitID = "shuto.circuit.c1-inner"
   public static let entryFacilityID = "shuto.ic.c1.shibakouen"
   public static let exitFacilityID = "shuto.ic.c1.shiodome"
   public static let releaseDate = "2026-08-15"
   public static let releasedAt = "2026-08-15T00:00:00+09:00"
+  public static let wanganCircuitID =
+    "shuto.circuit.wangan-daikoku-run"
+  public static let wanganEntryFacilityID =
+    "shuto.ic.b.chidoricho"
+  public static let wanganExitFacilityID =
+    "shuto.ic.b.daikokufutou"
 
   public static func plannedRoute(
     database: ShutoNetworkDatabase
@@ -47,41 +53,108 @@ public enum ShutoCircuitProductReleaseBuilder {
   public static func buildArtifact(
     database: ShutoNetworkDatabase
   ) throws -> KaidoProductReleaseArtifact {
-    let route = try plannedRoute(database: database)
+    return try buildArtifact(
+      database: database,
+      route: plannedRoute(database: database),
+      releaseKey: "c1-inner-shibakoen-shiodome",
+      preferredRecoveryTriggerID: "osm.44804643.0.forward"
+    )
+  }
+
+  public static func plannedWanganRoute(
+    database: ShutoNetworkDatabase,
+    entryFacilityID: String = wanganEntryFacilityID
+  ) throws -> ShutoPlannedRoute {
+    guard
+      let circuit = ShutoCircuitDefinition.bundled.first(where: {
+        $0.circuitID == wanganCircuitID
+      })
+    else {
+      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+    }
+    return try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: circuit,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: wanganExitFacilityID,
+      laps: 1
+    )
+  }
+
+  public static func buildWanganArtifact(
+    database: ShutoNetworkDatabase,
+    entryFacilityID: String = wanganEntryFacilityID
+  ) throws -> KaidoProductReleaseArtifact {
+    let entryKey = entryFacilityID.split(separator: ".").last
+      .map(String.init) ?? entryFacilityID
+    return try buildArtifact(
+      database: database,
+      route: plannedWanganRoute(
+        database: database,
+        entryFacilityID: entryFacilityID
+      ),
+      releaseKey: "wangan-westbound-\(entryKey)-daikokufutou",
+      preferredRecoveryTriggerID: nil
+    )
+  }
+
+  private static func buildArtifact(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute,
+    releaseKey: String,
+    preferredRecoveryTriggerID: String?
+  ) throws -> KaidoProductReleaseArtifact {
     let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
       database: database,
       route: route
     )
+    let missingGuidance = assets.liveReleaseCoverage.decisions.compactMap {
+      decision -> String? in
+      guard decision.kind == .junction,
+        decision.releasedGuidanceDefinitionID == nil
+      else { return nil }
+      return "\(decision.incomingDirectedEdgeID)->"
+        + decision.plannedOutgoingDirectedEdgeID
+    }
+    guard missingGuidance.isEmpty else {
+      throw ShutoCircuitProductReleaseBuilderError
+        .incompleteJunctionGuidance(missingGuidance.sorted())
+    }
     let reviewedMovements = try reviewedMovements(
       routePlan: route.routePlan
     )
     let editor = try editorCatalog(
       database: database,
       route: route,
-      reviewedMovements: reviewedMovements
+      reviewedMovements: reviewedMovements,
+      releaseKey: releaseKey
     )
     let releaseRecovery = try releasedRecovery(
       assets: assets,
-      database: database
+      database: database,
+      preferredTriggerID: preferredRecoveryTriggerID
     )
-    let entryPredecessor = try entryPredecessor(
+    let entryApproach = try entryApproach(
       route: route,
       database: database
     )
     let corridor = try releaseCorridor(
       assets: assets,
       database: database,
-      entryPredecessorID: entryPredecessor.edgeID,
+      entryApproach: entryApproach,
       recovery: releaseRecovery
     )
+    let egressOptionID =
+      releaseKey == "c1-inner-shibakoen-shiodome"
+      ? "shutoko.egress.c1-shiodome-handoff.2026-08-15"
+      : "shutoko.egress.\(releaseKey)-handoff.2026-08-15"
     let runtimePolicy = ReleasedNavigationRuntimePolicy(
-      id: "shutoko.runtime.c1-inner-shibakoen-shiodome.2026-08-15",
+      id: "shutoko.runtime.\(releaseKey).2026-08-15",
       networkSnapshotID: database.networkSnapshotID,
       routePlanID: route.routePlan.id,
       entryTransition: EntryTransition(
         facilityID: route.entryFacility.facilityID,
         directedEdgeIDs: [
-          entryPredecessor.edgeID,
+          entryApproach.edgeID,
           route.edges[0].edgeID,
         ],
         firstRouteOccurrenceID: route.routePlan.occurrences[0].id
@@ -89,7 +162,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       recoveryCandidates: [releaseRecovery],
       egressOptions: [
         EgressOption(
-          id: "shutoko.egress.c1-shiodome-handoff.2026-08-15",
+          id: egressOptionID,
           firstEligibleOccurrenceID: route.routePlan.occurrences.last!.id,
           exitFacilityID: route.exitFacility.facilityID,
           egressOccurrenceIDs: [route.edges.last!.edgeID],
@@ -107,7 +180,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       movements: reviewedMovements
     )
     let navigationArtifact = NavigationReleaseArtifact(
-      releaseID: "shutoko.navigation.c1-inner-shibakoen-shiodome.2026-08-15",
+      releaseID: "shutoko.navigation.\(releaseKey).2026-08-15",
       releasedAt: releasedAt,
       editorCatalogID: editor.catalogID,
       networkSnapshot: networkSnapshot,
@@ -132,10 +205,11 @@ public enum ShutoCircuitProductReleaseBuilder {
     let atlasArtifact = try routeAtlasArtifact(
       database: database,
       route: route,
-      networkSnapshot: networkSnapshot
+      networkSnapshot: networkSnapshot,
+      releaseKey: releaseKey
     )
     let product = KaidoProductReleaseArtifact(
-      releaseID: "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
+      releaseID: "shutoko.product.\(releaseKey).2026-08-15",
       releasedAt: releasedAt,
       runtimeUse: KaidoProductRuntimeUseDeclaration(
         evidenceScope: .releasedRoad,
@@ -196,7 +270,8 @@ public enum ShutoCircuitProductReleaseBuilder {
   private static func editorCatalog(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
-    reviewedMovements: [ReviewedMovement]
+    reviewedMovements: [ReviewedMovement],
+    releaseKey: String
   ) throws -> EditorAssets {
     guard let first = reviewedMovements.first else {
       throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
@@ -243,17 +318,30 @@ public enum ShutoCircuitProductReleaseBuilder {
       }
     )
     let presentationID = "\(route.routePlan.id).editor-presentation.2026-08-15"
+    let entranceTitle: [KaidoReleaseLocale: String]
+    switch releaseKey {
+    case "c1-inner-shibakoen-shiodome":
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "芝公园入口",
+        .english: "Shibakoen entrance",
+      ]
+    case let key where key.hasPrefix("wangan-westbound-"):
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "\(route.entryFacility.nameJA)入口",
+        .english: "\(route.entryFacility.nameJA) entrance",
+      ]
+    default:
+      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+    }
     let presentation = ReviewedRouteEditorPresentationCatalog(
       id: presentationID,
       networkSnapshotID: database.networkSnapshotID,
       entrances: [
         ReviewedRouteEditorEntrancePresentation(
           facilityID: route.entryFacility.facilityID,
-          title: localized([
-            .japanese: "\(route.entryFacility.nameJA)入口",
-            .simplifiedChinese: "芝公园入口",
-            .english: "Shibakoen entrance",
-          ])
+          title: localized(entranceTitle)
         )
       ],
       decisionPoints: reviewedMovements.map { movement in
@@ -285,10 +373,15 @@ public enum ShutoCircuitProductReleaseBuilder {
     )
   }
 
-  private static func entryPredecessor(
+  private struct ReleasedEntryApproach {
+    let edgeID: String
+    let virtualMatcherEdge: RouteMatcherDirectedEdge?
+  }
+
+  private static func entryApproach(
     route: ShutoPlannedRoute,
     database: ShutoNetworkDatabase
-  ) throws -> ShutoNetworkDatabase.Edge {
+  ) throws -> ReleasedEntryApproach {
     let first = route.edges[0]
     let routeEdgeIDs = Set(route.edges.map(\.edgeID))
     let predecessors = database.edges
@@ -302,24 +395,68 @@ public enum ShutoCircuitProductReleaseBuilder {
         return lhsRank == rhsRank
           ? lhs.edgeID < rhs.edgeID : lhsRank < rhsRank
       }
-    guard let predecessor = predecessors.first else {
+    if let predecessor = predecessors.first {
+      return ReleasedEntryApproach(
+        edgeID: predecessor.edgeID,
+        virtualMatcherEdge: nil
+      )
+    }
+    guard
+      let firstNode = database.nodes.first(where: {
+        $0.nodeID == first.fromNodeID
+      })
+    else {
       throw ShutoCircuitProductReleaseBuilderError.missingEntryPredecessor
     }
-    return predecessor
+    let facilityCoordinate = route.entryFacility.coordinate
+    let nodeCoordinate = firstNode.coordinate
+    let distance = distanceMeters(facilityCoordinate, nodeCoordinate)
+    guard distance > 1, distance <= 75 else {
+      throw ShutoCircuitProductReleaseBuilderError.missingEntryPredecessor
+    }
+    let virtualID =
+      "shutoko.entry.\(route.entryFacility.facilityID).approach.2026-08-15"
+    return ReleasedEntryApproach(
+      edgeID: virtualID,
+      virtualMatcherEdge: RouteMatcherDirectedEdge(
+        id: virtualID,
+        coordinates: [
+          MatcherCoordinate(
+            latitude: facilityCoordinate.latitude,
+            longitude: facilityCoordinate.longitude
+          ),
+          MatcherCoordinate(
+            latitude: nodeCoordinate.latitude,
+            longitude: nodeCoordinate.longitude
+          ),
+        ],
+        successorEdgeIDs: [first.edgeID]
+      )
+    )
   }
 
   private static func releasedRecovery(
     assets: ShutoPlannedRouteRuntimeAssets,
-    database: ShutoNetworkDatabase
+    database: ShutoNetworkDatabase,
+    preferredTriggerID: String?
   ) throws -> RecoveryCandidate {
-    let expectedTrigger = "osm.44804643.0.forward"
+    let available = assets.recoveryCandidates
+      .filter { candidate in
+        candidate.recoveryOccurrenceIDs.allSatisfy { id in
+          database.edges.contains { $0.edgeID == id }
+        }
+      }
+      .sorted {
+        if $0.divergenceOccurrenceID != $1.divergenceOccurrenceID {
+          return $0.divergenceOccurrenceID < $1.divergenceOccurrenceID
+        }
+        return $0.triggerDirectedEdgeID < $1.triggerDirectedEdgeID
+      }
+    let selected = preferredTriggerID.flatMap { expected in
+      available.first { $0.triggerDirectedEdgeID == expected }
+    } ?? (preferredTriggerID == nil ? available.first : nil)
     guard
-      let candidate = assets.recoveryCandidates.first(where: {
-        $0.triggerDirectedEdgeID == expectedTrigger
-      }),
-      candidate.recoveryOccurrenceIDs.allSatisfy({ id in
-        database.edges.contains { $0.edgeID == id }
-      })
+      let candidate = selected
     else {
       throw ShutoCircuitProductReleaseBuilderError.missingRecoveryCandidate
     }
@@ -336,13 +473,15 @@ public enum ShutoCircuitProductReleaseBuilder {
   private static func releaseCorridor(
     assets: ShutoPlannedRouteRuntimeAssets,
     database: ShutoNetworkDatabase,
-    entryPredecessorID: String,
+    entryApproach: ReleasedEntryApproach,
     recovery: RecoveryCandidate
   ) throws -> RouteMatcherCorridor {
-    let requiredIDs =
+    var requiredIDs =
       Set(assets.matcherCorridor.edges.map(\.id))
-      .union([entryPredecessorID])
       .union(recovery.recoveryOccurrenceIDs)
+    if entryApproach.virtualMatcherEdge == nil {
+      requiredIDs.insert(entryApproach.edgeID)
+    }
     let edgesByID = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
@@ -350,7 +489,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
     )
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
-    let edges = try requiredIDs.sorted().map { id -> RouteMatcherDirectedEdge in
+    var edges = try requiredIDs.sorted().map { id -> RouteMatcherDirectedEdge in
       guard let edge = edgesByID[id] else {
         throw ShutoCircuitProductReleaseBuilderError.missingGraphEdge(id)
       }
@@ -380,6 +519,10 @@ public enum ShutoCircuitProductReleaseBuilder {
         )
       )
     }
+    if let virtualEdge = entryApproach.virtualMatcherEdge {
+      edges.append(virtualEdge)
+      edges.sort { $0.id < $1.id }
+    }
     return RouteMatcherCorridor(
       id: "\(assets.matcherCorridor.id).release.2026-08-15",
       networkSnapshotID: assets.matcherCorridor.networkSnapshotID,
@@ -387,6 +530,23 @@ public enum ShutoCircuitProductReleaseBuilder {
       edges: edges,
       occurrences: assets.matcherCorridor.occurrences
     )
+  }
+
+  private static func distanceMeters(
+    _ first: ShutoCoordinate,
+    _ second: ShutoCoordinate
+  ) -> Double {
+    let latitude1 = first.latitude * .pi / 180
+    let longitude1 = first.longitude * .pi / 180
+    let latitude2 = second.latitude * .pi / 180
+    let longitude2 = second.longitude * .pi / 180
+    let latitudeDelta = latitude2 - latitude1
+    let longitudeDelta = longitude2 - longitude1
+    let value =
+      pow(sin(latitudeDelta / 2), 2)
+      + cos(latitude1) * cos(latitude2)
+      * pow(sin(longitudeDelta / 2), 2)
+    return 2 * 6_371_000 * asin(min(1, sqrt(value)))
   }
 
   private static func navigationSourceRegistry(
@@ -505,8 +665,12 @@ public enum ShutoCircuitProductReleaseBuilder {
   private static func routeAtlasArtifact(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
-    networkSnapshot: NetworkSnapshot
+    networkSnapshot: NetworkSnapshot,
+    releaseKey: String
   ) throws -> RouteAtlasReleaseArtifact {
+    let atlasElementPrefix =
+      releaseKey == "c1-inner-shibakoen-shiodome"
+      ? "c1" : releaseKey
     struct EntityBinding {
       let entityID: String
       let edge: ShutoNetworkDatabase.Edge
@@ -530,7 +694,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     }
     let topologyEdgeIDByEntity = Dictionary(
       uniqueKeysWithValues: orderedBindings.enumerated().map { index, binding in
-        (binding.entityID, "c1.topology.edge.\(index)")
+        (binding.entityID, "\(atlasElementPrefix).topology.edge.\(index)")
       }
     )
     var successorEntities: [String: Set<String>] = [:]
@@ -570,7 +734,8 @@ public enum ShutoCircuitProductReleaseBuilder {
       checkedAt: releaseDate,
       sourceReferenceIDs: [sourceID]
     )
-    let topologyID = "shutoko.atlas.c1-inner-shibakoen-shiodome.topology.2026-08-15"
+    let topologyID =
+      "shutoko.atlas.\(releaseKey).topology.2026-08-15"
     let topology = RouteAtlasTopologySlice(
       id: topologyID,
       networkSnapshotID: database.networkSnapshotID,
@@ -599,7 +764,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     }
     let segmentIDByEntity = Dictionary(
       uniqueKeysWithValues: orderedBindings.enumerated().map { index, binding in
-        (binding.entityID, "c1.atlas.segment.\(index)")
+        (binding.entityID, "\(atlasElementPrefix).atlas.segment.\(index)")
       }
     )
     let segments = try orderedBindings.map { binding in
@@ -620,7 +785,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       )
     }
     let definition = RouteAtlasDefinition(
-      id: "shutoko.atlas.c1-inner-shibakoen-shiodome.2026-08-15",
+      id: "shutoko.atlas.\(releaseKey).2026-08-15",
       networkSnapshotID: database.networkSnapshotID,
       routePlanID: route.routePlan.id,
       topologySliceID: topologyID,

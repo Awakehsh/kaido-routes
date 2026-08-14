@@ -39,6 +39,9 @@ private enum CLIError: Error, CustomStringConvertible {
         kaido-release build-c1-foreground-product \
           --network <whole-shuto-network.json> \
           --output <product-release.json>
+        kaido-release build-wangan-foreground-product \
+          --network <whole-shuto-network.json> \
+          --output <product-release.json>
         kaido-release validate-navigation --artifact <navigation-release.json>
         kaido-release build-navigation \\
           --draft <navigation-release-draft.json> \\
@@ -290,6 +293,7 @@ private enum Command {
     laps: Int
   )
   case buildC1ForegroundProduct(network: String, output: String)
+  case buildWanganForegroundProduct(network: String, output: String)
   case validateNavigation(artifact: String)
   case buildNavigation(
     draft: String,
@@ -495,6 +499,12 @@ private struct Arguments {
     case "build-c1-foreground-product":
       try flags.require(exactly: ["--network", "--output"])
       command = .buildC1ForegroundProduct(
+        network: try flags.value("--network"),
+        output: try flags.value("--output")
+      )
+    case "build-wangan-foreground-product":
+      try flags.require(exactly: ["--network", "--output"])
+      command = .buildWanganForegroundProduct(
         network: try flags.value("--network"),
         output: try flags.value("--output")
       )
@@ -1067,6 +1077,23 @@ do {
     let artifact = try ShutoCircuitProductReleaseBuilder.buildArtifact(
       database: database
     )
+    let encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
+    let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
+    try writeNew(encoded, path: output)
+    print(
+      "PASS: wrote foreground product \(release.releaseID) with "
+        + "\(release.navigation.bundle.routePlan.occurrences.count) "
+        + "RoutePlan occurrences and "
+        + "\(release.navigation.bundle.releasedGuidance.count) guidance "
+        + "definitions; output \(output)"
+    )
+  case .buildWanganForegroundProduct(let networkPath, let output):
+    let database = try decode(
+      ShutoNetworkDatabase.self,
+      path: networkPath
+    )
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildWanganArtifact(database: database)
     let encoded = try KaidoProductReleaseArtifactCodec.encode(artifact)
     let release = try KaidoProductReleaseArtifactCodec.decode(encoded)
     try writeNew(encoded, path: output)

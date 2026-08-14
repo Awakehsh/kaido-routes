@@ -158,6 +158,29 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("an exact custom route with complete guidance builds on demand")
+  func buildsExactCustomForegroundRelease() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.9.fukudumi"
+    )
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(database: database, route: route)
+    let release = try KaidoProductRelease(artifact: artifact)
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.releaseID.hasPrefix("shutoko.product.route-"))
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
+    )
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let databaseURL = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

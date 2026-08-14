@@ -27,11 +27,17 @@ enum WholeShutoForegroundReleaseFactory {
         )
         return try WholeShutoLiveJourneyAdmission(core: core)
       }
+      let routeReleaseAuthority = WholeShutoRouteReleaseAuthority(
+        database: database
+      )
       return WholeShutoProductModel(
         database: database,
         surfaceRouteResolver: surfaceRouteResolver,
         checkpointStore: checkpointStore,
-        liveJourneyAdmissions: admissions
+        liveJourneyAdmissions: admissions,
+        liveJourneyAdmissionResolver: { route in
+          routeReleaseAuthority.resolve(route: route)
+        }
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

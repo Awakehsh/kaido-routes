@@ -3050,11 +3050,12 @@ struct WholeShutoProductView: View {
     guard let route = model.selectedRoute else { return "" }
     switch model.phase {
     case .surfaceAccess:
-      return copy.resolve(
-        japanese: "\(entryName(route.entryFacility.nameJA))へ進む",
-        simplifiedChinese: "前往 \(entryName(route.entryFacility.nameJA))",
-        english: "Continue to \(entryName(route.entryFacility.nameJA))"
-      )
+      return model.activeSurfaceInstruction
+        ?? copy.resolve(
+          japanese: "\(entryName(route.entryFacility.nameJA))へ進む",
+          simplifiedChinese: "前往 \(entryName(route.entryFacility.nameJA))",
+          english: "Continue to \(entryName(route.entryFacility.nameJA))"
+        )
     case .entryTransition:
       let routeLabel =
         route.routeIDsInOrder.first.map(shieldLabel)
@@ -3102,11 +3103,12 @@ struct WholeShutoProductView: View {
           simplifiedChinese: "目的地",
           english: "destination"
         )
-      return copy.resolve(
-        japanese: "\(destination)へ進む",
-        simplifiedChinese: "继续前往 \(destination)",
-        english: "Continue to \(destination)"
-      )
+      return model.activeSurfaceInstruction
+        ?? copy.resolve(
+          japanese: "\(destination)へ進む",
+          simplifiedChinese: "继续前往 \(destination)",
+          english: "Continue to \(destination)"
+        )
     case .completed:
       let destination =
         model.destination?.title
@@ -3164,6 +3166,14 @@ struct WholeShutoProductView: View {
       : ""
     switch model.positionState {
     case .surfacePreview:
+      if model.isLiveDrive {
+        return prefix
+          + copy.resolve(
+            japanese: "一般道案内 · 現在地",
+            simplifiedChinese: "普通道路导航 · 实时定位",
+            english: "SURFACE NAVIGATION · LIVE POSITION"
+          )
+      }
       return prefix
         + copy.resolve(
           japanese: "一般道 · プレビュー",
@@ -3171,6 +3181,14 @@ struct WholeShutoProductView: View {
           english: "SURFACE ROAD · PREVIEW"
         )
     case .boundaryTransition:
+      if model.isLiveDrive {
+        return prefix
+          + copy.resolve(
+            japanese: "境界移行 · 現在地",
+            simplifiedChinese: "边界转换 · 实时定位",
+            english: "BOUNDARY TRANSITION · LIVE POSITION"
+          )
+      }
       return prefix
         + copy.resolve(
           japanese: "境界移行 · プレビュー",
@@ -3335,7 +3353,8 @@ struct WholeShutoProductView: View {
     switch model.phase {
     case .surfaceAccess:
       return distanceLabel(
-        (model.accessRoute?.distanceMeters ?? 0)
+        model.activeSurfaceInstructionRemainingMeters
+          ?? (model.accessRoute?.distanceMeters ?? 0)
           * (1 - model.progressFraction)
       )
     case .entryTransition:
@@ -3359,7 +3378,8 @@ struct WholeShutoProductView: View {
       )
     case .surfaceEgress:
       return distanceLabel(
-        (model.egressRoute?.distanceMeters ?? 0)
+        model.activeSurfaceInstructionRemainingMeters
+          ?? (model.egressRoute?.distanceMeters ?? 0)
           * (1 - model.progressFraction)
       )
     case .completed:

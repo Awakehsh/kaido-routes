@@ -513,19 +513,14 @@ struct WholeShutoJourneyReviewView: View {
     VStack(spacing: 8) {
       if let blockerCode = model.liveNavigationBlockerCode {
         HStack(alignment: .top, spacing: 8) {
-          Image(systemName: "lock.shield.fill")
-            .foregroundStyle(KaidoTheme.signalAmber)
-          Text(
-            copy.resolve(
-              japanese:
-                "このルートは実走ナビ未公開です。現在の対応範囲は C1 内回り（芝公園→汐留、1周）と湾岸線西行き（千鳥町→大黒ふ頭）です。",
-              simplifiedChinese:
-                "这条路线尚未发布实车导航。当前可用范围：C1 内环（芝公园→汐留，1 圈）和湾岸线西行（千鸟町→大黑码头）。",
-              english:
-                "Live navigation is not released for this route. Current coverage: C1 Inner (Shibakoen to Shiodome, one lap) and Bayshore westbound (Chidoricho to Daikoku-Futo)."
-            )
+          Image(
+            systemName:
+              blockerCode == WholeShutoProductModel.liveNavigationPreparingCode
+              ? "hourglass" : "lock.shield.fill"
           )
-          .fixedSize(horizontal: false, vertical: true)
+          .foregroundStyle(KaidoTheme.signalAmber)
+          Text(liveNavigationBlockerMessage(blockerCode))
+            .fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 9, weight: .bold))
         .foregroundStyle(KaidoTheme.nightQuiet)
@@ -606,11 +601,11 @@ struct WholeShutoJourneyReviewView: View {
       Text(
         copy.resolve(
           japanese:
-            "対応ルートでは前景ナビが動作し、審査済みの分岐だけを音声案内します。一般道はプレビューのみです。",
+            "一般道はMapKitの経路を案内し、首都高では審査済みの分岐だけを音声案内します。",
           simplifiedChinese:
-            "已发布路线支持前台导航，并只播报已审核分岔；普通道路仍只提供预演。",
+            "普通道路沿 MapKit 路线导航；进入首都高后只播报已审核的分岔。",
           english:
-            "Released routes navigate in the foreground and speak reviewed junctions only. Ordinary roads remain preview-only."
+            "Surface guidance follows MapKit; on Shuto, only reviewed junctions are spoken."
         )
       )
       .font(.system(size: 8, weight: .bold))
@@ -625,6 +620,36 @@ struct WholeShutoJourneyReviewView: View {
       Rectangle()
         .fill(KaidoTheme.nightDivider)
         .frame(height: 1)
+    }
+  }
+
+  private func liveNavigationBlockerMessage(_ code: String) -> String {
+    switch code {
+    case WholeShutoProductModel.liveNavigationPreparingCode:
+      copy.resolve(
+        japanese: "このルートの完全な経路、分岐案内、復帰経路を確認しています。",
+        simplifiedChinese: "正在验证这条路线的完整路径、分岔提示和安全重返路线。",
+        english: "Validating this route, its junction guidance, and safe rejoin path."
+      )
+    case WholeShutoRouteReleaseAuthority.guidanceIncompleteCode:
+      copy.resolve(
+        japanese: "この経路には未確認の分岐案内があります。実走ナビは開始できません。",
+        simplifiedChinese: "这条路线包含尚未完成审查的分岔提示，暂时不能开始实车导航。",
+        english:
+          "This route contains junction guidance that has not yet been reviewed for live navigation."
+      )
+    case WholeShutoRouteReleaseAuthority.recoveryUnavailableCode:
+      copy.resolve(
+        japanese: "この経路には公開済みの安全な復帰経路がありません。",
+        simplifiedChinese: "这条路线还没有已发布的安全重返路线。",
+        english: "This route does not yet have a released safe-rejoin path."
+      )
+    default:
+      copy.resolve(
+        japanese: "この正確な経路は実走ナビに利用できません。",
+        simplifiedChinese: "这条精确路线目前不能用于实车导航。",
+        english: "This exact route is not available for live navigation."
+      )
     }
   }
 

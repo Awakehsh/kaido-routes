@@ -218,6 +218,149 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertEqual(
+      model.selectedRoute?.routePlan.entryFacilityID,
+      "shuto.ic.b.urayasu"
+    )
+    XCTAssertEqual(
+      model.selectedRoute?.routePlan.exitFacilityID,
+      "shuto.ic.9.fukudumi"
+    )
+    XCTAssertFalse(model.isPreparingLiveNavigation)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
+  func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    XCTAssertTrue(model.isLiveDrive)
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.activeSurfaceInstruction, "Continue on local road")
+    XCTAssertEqual(
+      try XCTUnwrap(model.activeSurfaceInstructionRemainingMeters),
+      1_200,
+      accuracy: 0.01
+    )
+    model.reset()
+  }
+
+  func testLiveSurfaceAccessFollowsPositionAndRejectsOffRouteFix()
+    async throws
+  {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    let midpoint = ShutoCoordinate(
+      latitude: (start.latitude + end.latitude) / 2,
+      longitude: (start.longitude + end.longitude) / 2
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "surface.midpoint", coordinate: midpoint)
+    )
+
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(model.progressFraction, 0.5, accuracy: 0.02)
+    XCTAssertEqual(
+      try XCTUnwrap(model.activeSurfaceInstructionRemainingMeters),
+      600,
+      accuracy: 25
+    )
+
+    let acceptedProgress = model.progressFraction
+    let offRoute = ShutoCoordinate(
+      latitude: midpoint.latitude + 0.01,
+      longitude: midpoint.longitude
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "surface.off-route", coordinate: offRoute)
+    )
+
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.liveLocationState, .degraded)
+    XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_OFF_ROUTE")
+    XCTAssertEqual(model.progressFraction, acceptedProgress, accuracy: 0.001)
+    model.reset()
+  }
+
+  func testOnDeviceRouteAuthorityNamesIncompleteJunctionCoverage()
+    throws
+  {
+    let database = try WholeShutoNetworkCatalog.bundled()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.3.shibuya",
+      exitFacilityID: "shuto.ic.k1.minatomirai"
+    )
+    let authority = WholeShutoRouteReleaseAuthority(database: database)
+
+    switch authority.resolve(route: route) {
+    case .available:
+      XCTFail("Unreviewed junction guidance gained foreground authority")
+    case .unavailable(let code):
+      XCTAssertEqual(
+        code,
+        WholeShutoRouteReleaseAuthority.guidanceIncompleteCode
+      )
+    }
+  }
+
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
     XCTAssertEqual(
       KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),
@@ -2173,6 +2316,37 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  private static func liveLocationEnvelope(
+    id: String,
+    coordinate: ShutoCoordinate
+  ) -> CoreLocationObservationEnvelope {
+    CoreLocationObservationEnvelope(
+      observation: RouteMatcherObservation(
+        id: id,
+        observedAtMilliseconds: 1_000,
+        receivedAtMilliseconds: 1_000,
+        coordinate: MatcherCoordinate(
+          latitude: coordinate.latitude,
+          longitude: coordinate.longitude
+        ),
+        horizontalAccuracyMeters: 5,
+        courseDegrees: 90,
+        speedMetersPerSecond: 10,
+        source: .phone
+      ),
+      provenance: CoreLocationObservationProvenance(
+        deliverySource: .deviceOrUndisclosed,
+        sourceInformationAvailable: true,
+        isSimulatedBySoftware: false,
+        carPlayConnectionContext: .disconnected,
+        matcherCalibrationCohort: .phone,
+        courseAccuracyDegrees: 2,
+        speedAccuracyMetersPerSecond: 1,
+        observationAgeMilliseconds: 0
+      )
+    )
+  }
+
   private static func savedRouteRecord(
     _ routePlan: RoutePlan,
     templateParameters: [String: String] = [:]
@@ -2301,6 +2475,28 @@ private actor WholeShutoRecoveringSurfaceRouteResolver:
       distanceMeters: 1_200,
       expectedTravelTimeSeconds: 180,
       instructions: []
+    )
+  }
+}
+
+private struct WholeShutoInstructionSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_200,
+      expectedTravelTimeSeconds: 180,
+      instructions: ["Continue on local road"],
+      steps: [
+        WholeShutoSurfaceRouteStep(
+          instruction: "Continue on local road",
+          distanceMeters: 1_200
+        )
+      ]
     )
   }
 }

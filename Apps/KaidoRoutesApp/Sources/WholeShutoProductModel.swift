@@ -107,6 +107,26 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let distanceMeters: Double
   let expectedTravelTimeSeconds: Double
   let instructions: [String]
+  let steps: [WholeShutoSurfaceRouteStep]?
+
+  init(
+    coordinates: [ShutoCoordinate],
+    distanceMeters: Double,
+    expectedTravelTimeSeconds: Double,
+    instructions: [String],
+    steps: [WholeShutoSurfaceRouteStep]? = nil
+  ) {
+    self.coordinates = coordinates
+    self.distanceMeters = distanceMeters
+    self.expectedTravelTimeSeconds = expectedTravelTimeSeconds
+    self.instructions = instructions
+    self.steps = steps
+  }
+}
+
+struct WholeShutoSurfaceRouteStep: Codable, Equatable, Sendable {
+  let instruction: String
+  let distanceMeters: Double
 }
 
 struct WholeShutoRouteChoiceMetrics: Equatable, Sendable {
@@ -340,6 +360,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var checkpointIssueCode: String?
   @Published private(set) var isPlanning = false
   @Published private(set) var isUpdatingSurfaceRoute = false
+  @Published private(set) var isPreparingLiveNavigation = false
   @Published private(set) var restoredFromCheckpoint = false
   @Published private(set) var matcherConfidence: MatcherConfidence?
   @Published private(set) var runtimeOccurrenceID: String?
@@ -359,11 +380,16 @@ final class WholeShutoProductModel: ObservableObject {
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission]
+  private let liveJourneyAdmissionResolver: WholeShutoLiveJourneyAdmissionResolver?
   private let liveLocationSourceEvidenceProvider: any CoreLocationSourceEvidenceProviding
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var playbackGeneration = 0
   private var surfaceRouteTask: Task<Void, Never>?
+  private var liveAdmissionTask: Task<Void, Never>?
+  private var liveAdmissionRequestID: UUID?
+  private var resolvedLiveAdmission: WholeShutoLiveJourneyAdmission?
+  private var liveAdmissionResolutionIssueCode: String?
   private var circuitTariffTask: Task<Void, Never>?
   private var startsCircuitJourneyAfterPairing = false
   private var surfaceRouteRequestID: UUID?
@@ -431,6 +457,8 @@ final class WholeShutoProductModel: ObservableObject {
       WholeShutoUserDefaultsCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission] = [],
+    liveJourneyAdmissionResolver:
+      WholeShutoLiveJourneyAdmissionResolver? = nil,
     liveLocationSourceEvidenceProvider:
       any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
@@ -467,6 +495,7 @@ final class WholeShutoProductModel: ObservableObject {
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
     self.liveJourneyAdmissions = liveJourneyAdmissions
+    self.liveJourneyAdmissionResolver = liveJourneyAdmissionResolver
     self.liveLocationSourceEvidenceProvider =
       liveLocationSourceEvidenceProvider
     self.nowMillisecondsProvider = nowMillisecondsProvider
@@ -478,6 +507,9 @@ final class WholeShutoProductModel: ObservableObject {
     )
     restoreCheckpointIfAvailable()
     resolveCircuitThumbnails()
+    if let selectedRoute {
+      prepareLiveNavigationAdmission(for: selectedRoute)
+    }
   }
 
   /// One representative shape per catalog card, computed once off the main
@@ -554,6 +586,7 @@ final class WholeShutoProductModel: ObservableObject {
   deinit {
     playbackTask?.cancel()
     surfaceRouteTask?.cancel()
+    liveAdmissionTask?.cancel()
     circuitTariffTask?.cancel()
     liveLocationFreshnessTask?.cancel()
   }
@@ -578,6 +611,8 @@ final class WholeShutoProductModel: ObservableObject {
     "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
   static let liveNavigationReleaseAmbiguousCode =
     "WHOLE_SHUTO_NAVIGATION_RELEASE_AMBIGUOUS"
+  static let liveNavigationPreparingCode =
+    "WHOLE_SHUTO_NAVIGATION_PREPARING"
   static let liveNavigationRuntimeInvalidCode =
     "WHOLE_SHUTO_NAVIGATION_RUNTIME_INVALID"
 
@@ -588,20 +623,77 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var liveNavigationBlockerCode: String? {
-    switch matchingLiveAdmissions.count {
-    case 1:
-      nil
-    case 0:
-      Self.liveNavigationReleaseRequiredCode
-    default:
-      Self.liveNavigationReleaseAmbiguousCode
+    let count = matchingLiveAdmissions.count
+    if count == 1 { return nil }
+    if count > 1 { return Self.liveNavigationReleaseAmbiguousCode }
+    if isPreparingLiveNavigation {
+      return Self.liveNavigationPreparingCode
     }
+    return liveAdmissionResolutionIssueCode
+      ?? Self.liveNavigationReleaseRequiredCode
   }
 
   private var matchingLiveAdmissions: [WholeShutoLiveJourneyAdmission] {
     guard let routePlan = selectedRoute?.routePlan else { return [] }
-    return liveJourneyAdmissions.filter {
+    let bundled = liveJourneyAdmissions.filter {
       $0.core.selectedRoutePlan == routePlan
+    }
+    guard bundled.isEmpty,
+      resolvedLiveAdmission?.core.selectedRoutePlan == routePlan,
+      let resolvedLiveAdmission
+    else {
+      return bundled
+    }
+    return [resolvedLiveAdmission]
+  }
+
+  private func prepareLiveNavigationAdmission(
+    for route: ShutoPlannedRoute
+  ) {
+    liveAdmissionTask?.cancel()
+    liveAdmissionTask = nil
+    liveAdmissionRequestID = nil
+    resolvedLiveAdmission = nil
+    liveAdmissionResolutionIssueCode = nil
+    isPreparingLiveNavigation = false
+
+    let bundled = liveJourneyAdmissions.filter {
+      $0.core.selectedRoutePlan == route.routePlan
+    }
+    guard bundled.isEmpty, let liveJourneyAdmissionResolver else {
+      return
+    }
+
+    let requestID = UUID()
+    liveAdmissionRequestID = requestID
+    isPreparingLiveNavigation = true
+    let work = Task.detached(priority: .userInitiated) {
+      liveJourneyAdmissionResolver(route)
+    }
+    liveAdmissionTask = Task { [weak self] in
+      let resolution = await work.value
+      guard !Task.isCancelled, let self,
+        self.liveAdmissionRequestID == requestID,
+        self.selectedRoute == route
+      else {
+        return
+      }
+      switch resolution {
+      case .available(let admission)
+      where admission.core.selectedRoutePlan == route.routePlan:
+        self.resolvedLiveAdmission = admission
+        self.liveAdmissionResolutionIssueCode = nil
+      case .available:
+        self.resolvedLiveAdmission = nil
+        self.liveAdmissionResolutionIssueCode =
+          Self.liveNavigationRuntimeInvalidCode
+      case .unavailable(let issueCode):
+        self.resolvedLiveAdmission = nil
+        self.liveAdmissionResolutionIssueCode = issueCode
+      }
+      self.isPreparingLiveNavigation = false
+      self.liveAdmissionRequestID = nil
+      self.liveAdmissionTask = nil
     }
   }
 
@@ -615,6 +707,64 @@ final class WholeShutoProductModel: ObservableObject {
       exitFacilityID: route.exitFacility.facilityID,
       evidence: .etcNormalCarActive
     )
+  }
+
+  var activeSurfaceInstruction: String? {
+    activeSurfaceStep?.instruction
+  }
+
+  var activeSurfaceInstructionRemainingMeters: Double? {
+    guard let route = activeSurfaceRoute,
+      let steps = route.steps?.filter({
+        !$0.instruction.isEmpty && $0.distanceMeters > 0
+      }),
+      !steps.isEmpty
+    else {
+      return nil
+    }
+    let total = steps.reduce(0) { $0 + $1.distanceMeters }
+    guard total > 0 else { return nil }
+    let traveled = min(total, max(0, progressFraction) * total)
+    var cursor = 0.0
+    for step in steps {
+      let end = cursor + step.distanceMeters
+      if traveled <= end {
+        return max(0, end - traveled)
+      }
+      cursor = end
+    }
+    return 0
+  }
+
+  private var activeSurfaceRoute: WholeShutoSurfaceRoute? {
+    switch phase {
+    case .surfaceAccess:
+      accessRoute
+    case .surfaceEgress:
+      egressRoute
+    default:
+      nil
+    }
+  }
+
+  private var activeSurfaceStep: WholeShutoSurfaceRouteStep? {
+    guard let route = activeSurfaceRoute,
+      let steps = route.steps?.filter({
+        !$0.instruction.isEmpty && $0.distanceMeters > 0
+      }),
+      !steps.isEmpty
+    else {
+      return nil
+    }
+    let total = steps.reduce(0) { $0 + $1.distanceMeters }
+    guard total > 0 else { return steps.first }
+    let traveled = min(total, max(0, progressFraction) * total)
+    var cursor = 0.0
+    for step in steps {
+      cursor += step.distanceMeters
+      if traveled <= cursor { return step }
+    }
+    return steps.last
   }
 
   var savedRouteTemplateParameters: [String: String] {
@@ -1393,6 +1543,7 @@ final class WholeShutoProductModel: ObservableObject {
         to: Self.previewDestination.coordinate
       )
       phase = .review
+      prepareLiveNavigationAdmission(for: selectedRecommendation.route)
       persistCheckpoint()
       if startsNavigation {
         startNavigationSimulation()
@@ -2081,6 +2232,7 @@ final class WholeShutoProductModel: ObservableObject {
     origin: WholeShutoPlace,
     destination: WholeShutoPlace
   ) {
+    prepareLiveNavigationAdmission(for: recommendation.route)
     cancelSurfaceRouteResolution()
     accessRoute = nil
     egressRoute = nil
@@ -2173,6 +2325,7 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       return false
     }
+    prepareLiveNavigationAdmission(for: recommendation.route)
     cancelSurfaceRouteResolution()
     accessRoute = routes.access
     egressRoute = routes.egress
@@ -2252,6 +2405,8 @@ final class WholeShutoProductModel: ObservableObject {
   @discardableResult
   func startLiveJourney() async -> Bool {
     guard phase == .review, let route = selectedRoute else { return false }
+    let providerAccessRoute = accessRoute
+    let providerEgressRoute = egressRoute
     liveLocationFreshnessTask?.cancel()
     liveDriveSession = nil
     liveEntryTransitionAdapter = nil
@@ -2304,8 +2459,8 @@ final class WholeShutoProductModel: ObservableObject {
       liveSurfaceEgressAdapter = egressAdapter
       liveObservationAdapter = observationAdapter
       activeLiveAdmission = admission
-      accessRoute = admission.accessRoute
-      egressRoute = admission.egressRoute
+      accessRoute = admission.accessRoute ?? providerAccessRoute
+      egressRoute = admission.egressRoute ?? providerEgressRoute
       try configureSpeech(for: route.routePlan.id)
 
       let controller = try ForegroundNavigationLocationController(
@@ -2321,8 +2476,7 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying = true
       restoredFromCheckpoint = false
       phase =
-        admission.core.journeyPlan.accessLeg == nil
-        ? .entryTransition : .surfaceAccess
+        accessRoute == nil ? .entryTransition : .surfaceAccess
       progressFraction = 0
       matcherConfidence = .low
       runtimeOccurrenceID = nil
@@ -2339,7 +2493,13 @@ final class WholeShutoProductModel: ObservableObject {
       lastLiveObservationAtMilliseconds = nil
       failureCode = nil
 
-      applyLiveActorSnapshot(await session.start())
+      let initialSnapshot = await session.start()
+      if phase == .surfaceAccess {
+        runtimeJourneyPhase = initialSnapshot.journeyPhase
+        runtimeRecoveryStatus = initialSnapshot.recovery.status
+      } else {
+        applyLiveActorSnapshot(initialSnapshot)
+      }
       scheduleLiveLocationFreshnessCheck()
       persistCheckpoint()
       controller.start()
@@ -2403,16 +2563,50 @@ final class WholeShutoProductModel: ObservableObject {
 
     do {
       switch phase {
-      case .surfaceAccess, .entryTransition:
-        if phase == .surfaceAccess {
-          updateLiveSurfaceProgress(
+      case .surfaceAccess:
+        updateLiveSurfaceProgress(
+          coordinate: coordinate,
+          horizontalAccuracyMeters:
+            observation.horizontalAccuracyMeters,
+          route: accessRoute,
+          completesJourney: false
+        )
+        guard
+          isNearSurfaceRouteEnd(
             coordinate: coordinate,
             horizontalAccuracyMeters:
               observation.horizontalAccuracyMeters,
             route: accessRoute,
-            completesJourney: false
+            thresholdMeters: 350
           )
+        else {
+          break
         }
+        guard var adapter = liveEntryTransitionAdapter else {
+          throw WholeShutoProductError.noExpresswayRoute
+        }
+        let evidence = try adapter.adapt(envelope)
+        liveEntryTransitionAdapter = adapter
+        let update = try await session.observeEntryTransitionEvidence(
+          evidence
+        )
+        matcherConfidence = evidence.confidence
+        if update.navigationSnapshot.journeyPhase == .strictRoute
+          || isNearSurfaceRouteEnd(
+            coordinate: coordinate,
+            horizontalAccuracyMeters:
+              observation.horizontalAccuracyMeters,
+            route: accessRoute,
+            thresholdMeters: 60
+          )
+        {
+          applyLiveActorSnapshot(update.navigationSnapshot)
+        }
+        if let rejection = update.rejectionReason {
+          liveLocationState = .degraded
+          liveLocationIssueCode = rejection.rawValue
+        }
+      case .entryTransition:
         guard var adapter = liveEntryTransitionAdapter else {
           throw WholeShutoProductError.noExpresswayRoute
         }
@@ -2448,9 +2642,15 @@ final class WholeShutoProductModel: ObservableObject {
           let snapshot = await session.finishDrive()
           applyLiveActorSnapshot(snapshot)
           if liveSurfaceEgressAdapter == nil {
-            applyLiveActorSnapshot(
-              await session.completeAtExitHandoff()
-            )
+            if egressRoute != nil {
+              phase = .surfaceEgress
+              progressFraction = 0
+              presentationProjection = nil
+            } else {
+              applyLiveActorSnapshot(
+                await session.completeAtExitHandoff()
+              )
+            }
           }
         }
       case .exitTransition:
@@ -2469,22 +2669,30 @@ final class WholeShutoProductModel: ObservableObject {
           liveLocationIssueCode = rejection.rawValue
         }
         if update.navigationSnapshot.journeyPhase == .surfaceEgress {
-          updateLiveSurfaceProgress(
+          if updateLiveSurfaceProgress(
             coordinate: coordinate,
             horizontalAccuracyMeters:
               observation.horizontalAccuracyMeters,
             route: egressRoute,
             completesJourney: true
-          )
+          ) {
+            applyLiveActorSnapshot(
+              await session.completeAtExitHandoff()
+            )
+          }
         }
       case .surfaceEgress:
-        updateLiveSurfaceProgress(
+        if updateLiveSurfaceProgress(
           coordinate: coordinate,
           horizontalAccuracyMeters:
             observation.horizontalAccuracyMeters,
           route: egressRoute,
           completesJourney: true
-        )
+        ) {
+          applyLiveActorSnapshot(
+            await session.completeAtExitHandoff()
+          )
+        }
       case .planning, .review, .completed:
         return
       }
@@ -2628,12 +2836,13 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  @discardableResult
   private func updateLiveSurfaceProgress(
     coordinate: ShutoCoordinate,
     horizontalAccuracyMeters: Double,
     route: WholeShutoSurfaceRoute?,
     completesJourney: Bool
-  ) {
+  ) -> Bool {
     guard let route,
       let measurement = Self.surfaceRouteMeasurement(
         coordinate,
@@ -2642,7 +2851,7 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       liveLocationState = .degraded
       liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
-      return
+      return false
     }
     let maximumLateralDistance = min(
       100,
@@ -2654,7 +2863,7 @@ final class WholeShutoProductModel: ObservableObject {
     else {
       liveLocationState = .degraded
       liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
-      return
+      return false
     }
     progressFraction = max(
       progressFraction,
@@ -2667,9 +2876,20 @@ final class WholeShutoProductModel: ObservableObject {
         <= max(30, horizontalAccuracyMeters * 2)
     else {
       persistCheckpoint()
-      return
+      return false
     }
-    completeLiveJourney()
+    return true
+  }
+
+  private func isNearSurfaceRouteEnd(
+    coordinate: ShutoCoordinate,
+    horizontalAccuracyMeters: Double,
+    route: WholeShutoSurfaceRoute?,
+    thresholdMeters: Double
+  ) -> Bool {
+    guard let destination = route?.coordinates.last else { return false }
+    return Self.distance(coordinate, destination)
+      <= max(thresholdMeters, horizontalAccuracyMeters * 2)
   }
 
   private func completeLiveJourney() {
@@ -2823,6 +3043,12 @@ final class WholeShutoProductModel: ObservableObject {
     stopForegroundLiveLocationController()
     invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
+    liveAdmissionTask?.cancel()
+    liveAdmissionTask = nil
+    liveAdmissionRequestID = nil
+    resolvedLiveAdmission = nil
+    liveAdmissionResolutionIssueCode = nil
+    isPreparingLiveNavigation = false
     speechCoordinator?.stop()
     speechCoordinator = nil
     phase = .planning

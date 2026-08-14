@@ -110,9 +110,11 @@ internal review workbench.
 - The Core Location adaptation boundary preserves course and speed uncertainty
   for release-enrolled runtimes. Uncertain course expands the heading model
   instead of being trusted like a precise bearing, and speed uncertainty widens
-  travel-distance tolerance. The five exact foreground releases attach Core
-  Location only after release admission; unmatched routes use it only for the
-  planning origin.
+  travel-distance tolerance. Five foreground releases are bundled for
+  deterministic startup. Any other exact selected route is content-addressed
+  and admitted on device only when every one of its junction decisions is in
+  the released guidance inventory; unmatched routes use Core Location only for
+  the planning origin.
 - Starting the simulation opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
   geometry, makes the next reviewed decision and its distance the dominant
@@ -195,10 +197,14 @@ The product distinguishes what is known from what is still unconfirmed:
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
-  the Shuto `RoutePlan`.
+  the Shuto `RoutePlan`. During a foreground live drive, accepted MapKit
+  geometry and steps provide the current ordinary-road instruction and
+  distance; entry evidence takes over only near the exact directional ramp.
 - The default App's foreground Core Location lifecycle supplies the planning
-  origin and the five exact released live routes. Every other candidate
-  whole-Shuto route remains replay-only. Live admission and replay do not grant
+  origin, the five bundled routes, and on-device exact routes whose complete
+  decision sequence is covered by the 44 released movement bindings. Routes
+  touching any of the 129 unreviewed movements remain replay-only with an
+  explicit incomplete-guidance blocker. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
   covers reviewed junction movements only.
 

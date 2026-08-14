@@ -282,6 +282,52 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testExactCustomRouteWithReviewedGuidanceOffersLiveNavigation() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-DYNAMIC-CUSTOM-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launch()
+
+    let product = element("whole-shuto-product", in: app)
+    XCTAssertTrue(product.waitForExistence(timeout: 8))
+    XCTAssertEqual(product.value as? String, "REVIEW")
+    let reviewJourney = app.buttons["whole-shuto-review-journey"]
+    XCTAssertTrue(reviewJourney.waitForExistence(timeout: 8))
+    let reviewReady = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "isEnabled == true"),
+      object: reviewJourney
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [reviewReady], timeout: 8),
+      .completed
+    )
+    reviewJourney.tap()
+
+    let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
+    XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 8))
+    let liveReady = XCTNSPredicateExpectation(
+      predicate: NSPredicate(
+        format: "isEnabled == true AND value == %@",
+        "AVAILABLE"
+      ),
+      object: startLiveDrive
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [liveReady], timeout: 12),
+      .completed
+    )
+    XCTAssertFalse(
+      element("whole-shuto-live-drive-blocker", in: app).exists
+    )
+  }
+
   func testCircuitSelectionOffersEntrancesAndLaps() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -1266,7 +1312,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     startLiveDrive.tap()
     let liveEntry = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "value == %@", "ENTRY_TRANSITION"),
+      predicate: NSPredicate(format: "value == %@", "SURFACE_ACCESS"),
       object: product
     )
     XCTAssertEqual(

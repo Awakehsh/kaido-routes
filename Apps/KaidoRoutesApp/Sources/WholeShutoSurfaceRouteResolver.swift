@@ -167,6 +167,15 @@ struct WholeShutoMapKitSurfaceRouteResolver:
         expectedTravelTimeSeconds: route.expectedTravelTime,
         instructions: route.steps.map(\.instructions).filter {
           !$0.isEmpty
+        },
+        steps: route.steps.compactMap { step in
+          guard !step.instructions.isEmpty, step.distance > 0 else {
+            return nil
+          }
+          return WholeShutoSurfaceRouteStep(
+            instruction: step.instructions,
+            distanceMeters: step.distance
+          )
         }
       )
     } catch {

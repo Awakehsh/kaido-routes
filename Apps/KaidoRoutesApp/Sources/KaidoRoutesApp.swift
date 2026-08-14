@@ -168,6 +168,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoCustomRoutePreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-DYNAMIC-CUSTOM-ROUTE-PREVIEW"
+      ) {
+        WholeShutoDynamicCustomRoutePreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION"
       ) {
         WholeShutoPlanningLocationQualificationHost()
@@ -336,6 +340,29 @@ private struct WholeShutoCustomRoutePreviewHost: View {
       model: model,
       planningLocation: planningLocation
     )
+  }
+}
+
+private struct WholeShutoDynamicCustomRoutePreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+
+  init() {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    precondition(model.applyCustomRoute())
+    _model = StateObject(wrappedValue: model)
+  }
+
+  var body: some View {
+    WholeShutoProductView(model: model)
   }
 }
 

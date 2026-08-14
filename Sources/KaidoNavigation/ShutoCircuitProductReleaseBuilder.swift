@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import KaidoDomain
 import KaidoRouting
@@ -199,6 +200,29 @@ public enum ShutoCircuitProductReleaseBuilder {
       database: database,
       route: plannedScenicRoute(database: database),
       releaseKey: "scenic-harumi-daikokufutou",
+      preferredRecoveryTriggerID: nil
+    )
+  }
+
+  /// Builds one exact foreground release for an arbitrary planned route when
+  /// every junction decision already has released, source-bound guidance.
+  /// The release identity is content-addressed from the complete RoutePlan so
+  /// UI labels, saved-route IDs, or caller-controlled strings cannot mint a
+  /// different authority for the same ordered route.
+  public static func buildPlannedRouteArtifact(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute
+  ) throws -> KaidoProductReleaseArtifact {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+    let encodedRoutePlan = try encoder.encode(route.routePlan)
+    let routeDigest = SHA256.hash(data: encodedRoutePlan).map {
+      String(format: "%02x", $0)
+    }.joined()
+    return try buildArtifact(
+      database: database,
+      route: route,
+      releaseKey: "route-\(routeDigest)",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -460,7 +484,11 @@ public enum ShutoCircuitProductReleaseBuilder {
         .english: "Harumi entrance",
       ]
     default:
-      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
+      entranceTitle = [
+        .japanese: "\(route.entryFacility.nameJA)入口",
+        .simplifiedChinese: "\(route.entryFacility.nameJA)入口",
+        .english: "\(route.entryFacility.nameJA) entrance",
+      ]
     }
     let presentation = ReviewedRouteEditorPresentationCatalog(
       id: presentationID,

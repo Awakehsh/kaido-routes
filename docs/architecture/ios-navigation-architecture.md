@@ -600,15 +600,20 @@ an admission by full `RoutePlan` equality, rejects zero or multiple matches, and
 attaches Core Location only after the release runtime and surface adapters
 construct successfully. Inactive/background first stops and drains location,
 then checkpoints; returning active never resumes location without the user's
-explicit Resume Navigation action. The distributed bundle currently supplies
-five exact whole-Shuto admissions: C1 inner from Shibakoen to Shiodome,
+explicit Resume Navigation action. The distributed bundle supplies five
+prebuilt whole-Shuto admissions for deterministic startup: C1 inner from
+Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
 Oji-minami to Shikahamabashi, the Daikoku/Yokohama circuit from
 Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
-Daikoku-Futo. Every other
-RoutePlan still fails closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`; none
-can inherit another route's road evidence or live-input authority merely
-because location permission or device fixes exist.
+Daikoku-Futo. For any other exact selected `RoutePlan`, the app rebuilds the
+complete joint release from the bundled snapshot and released evidence,
+content-addresses the encoded plan, and validates a fresh foreground admission.
+This succeeds only when every junction decision has an exact released guidance
+binding and the plan has a released safe-rejoin recovery; otherwise it fails
+closed with the specific guidance or recovery blocker. No route can inherit
+another route's road evidence or live-input authority merely because location
+permission or device fixes exist.
 
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to
@@ -1171,8 +1176,14 @@ That is a development fact, not yet the minimum deployment target.
 - A precise vehicle bead requires fresh route-resolved evidence. Degraded,
   ambiguous, tunnel, or stacked-road positioning renders an honest segment or
   uncertainty halo rather than a falsely precise point.
-- The bounded surface access and egress screens may use MapKit for geographic
-  context and render accepted provider geometry as overlays.
+- The bounded surface access and egress screens use MapKit for geographic
+  context and render accepted provider geometry as overlays. In a foreground
+  live drive the app projects the current fix onto that bounded polyline,
+  rejects a fix outside the accuracy-scaled corridor, advances its current
+  step instruction, and hands control to the release-owned entry adapter only
+  near the selected directional ramp. Provider steps remain ordinary-road
+  presentation: they cannot mutate the exact `RoutePlan` or grant expressway
+  occurrence authority.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
   artwork. The internal iPhone renderer now maps normalized path points and

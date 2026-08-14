@@ -150,6 +150,11 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.routePlanID == route.routePlan.id)
     #expect(!coverage.decisions.isEmpty)
+    #expect(
+      coverage.guidanceDecisionCount
+        + coverage.nonJunctionGraphDivergenceCount
+        == coverage.decisions.count
+    )
     #expect(coverage.missingGuidanceDecisionCount > 0)
     #expect(
       coverage.missingReleasedRecoveryBranchCount

@@ -23,7 +23,10 @@ the graph is a planning candidate, those recovery paths are marked unreleased:
 a deviation becomes unavailable/route-interrupted instead of executing an
 unreviewed movement. The compiler also emits a deterministic
 `ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
-branch. It quantifies missing review but grants no authority. Every result
+branch. Known JCT decisions are counted separately from non-JCT graph
+divergences such as directional exit splits, so missing JCT guidance is not
+conflated with missing surface re-entry recovery. The report quantifies missing
+review but grants no authority. Every result
 carries a deterministic `ShutoRuntimeAssetIdentity`: the
 network-artifact SHA-256 covers
 the complete canonical decoded database, while the route-runtime SHA-256 binds

@@ -45,7 +45,13 @@ public struct ShutoRouteRuntimeProgress: Equatable, Sendable {
   }
 }
 
+public enum ShutoRouteDecisionKind: String, Codable, Equatable, Sendable {
+  case junction = "JUNCTION"
+  case graphDivergence = "GRAPH_DIVERGENCE"
+}
+
 public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
+  public let kind: ShutoRouteDecisionKind
   public let divergenceOccurrenceID: String
   public let plannedOutgoingOccurrenceID: String
   public let junctionNodeID: Int64
@@ -54,6 +60,7 @@ public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
   public let releasedGuidanceDefinitionID: String?
 
   private enum CodingKeys: String, CodingKey {
+    case kind
     case divergenceOccurrenceID = "divergence_occurrence_id"
     case plannedOutgoingOccurrenceID = "planned_outgoing_occurrence_id"
     case junctionNodeID = "junction_node_id"
@@ -92,7 +99,17 @@ public struct ShutoRouteLiveReleaseCoverage:
   public let recoveryBranches: [ShutoRouteRecoveryBranchCoverage]
 
   public var missingGuidanceDecisionCount: Int {
-    decisions.count { $0.releasedGuidanceDefinitionID == nil }
+    decisions.count {
+      $0.kind == .junction && $0.releasedGuidanceDefinitionID == nil
+    }
+  }
+
+  public var guidanceDecisionCount: Int {
+    decisions.count { $0.kind == .junction }
+  }
+
+  public var nonJunctionGraphDivergenceCount: Int {
+    decisions.count { $0.kind == .graphDivergence }
   }
 
   public var missingReleasedRecoveryBranchCount: Int {
@@ -714,6 +731,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     recoveryCandidates: [RecoveryCandidate]
   ) -> ShutoRouteLiveReleaseCoverage {
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let junctionNodeIDs = Set(database.junctions.flatMap(\.osmNodeIDs))
     let candidatesByBranch = Dictionary(
       uniqueKeysWithValues: recoveryCandidates.map {
         ("\($0.divergenceOccurrenceID)|\($0.triggerDirectedEdgeID)", $0)
@@ -747,6 +765,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       )
       decisions.append(
         ShutoRouteDecisionCoverage(
+          kind: junctionNodeIDs.contains(incoming.toNodeID)
+            ? .junction : .graphDivergence,
           divergenceOccurrenceID: divergenceOccurrenceID,
           plannedOutgoingOccurrenceID:
             route.routePlan.occurrences[index + 1].id,

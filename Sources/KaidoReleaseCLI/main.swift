@@ -349,6 +349,8 @@ private struct LiveCoverageReport: Encodable {
   let exitFacilityID: String
   let routeOccurrenceCount: Int
   let decisionCount: Int
+  let guidanceDecisionCount: Int
+  let nonJunctionGraphDivergenceCount: Int
   let missingGuidanceDecisionCount: Int
   let recoveryBranchCount: Int
   let missingRecoveryCandidateBranchCount: Int
@@ -368,6 +370,9 @@ private struct LiveCoverageReport: Encodable {
     self.exitFacilityID = exitFacilityID
     self.routeOccurrenceCount = routeOccurrenceCount
     decisionCount = coverage.decisions.count
+    guidanceDecisionCount = coverage.guidanceDecisionCount
+    nonJunctionGraphDivergenceCount =
+      coverage.nonJunctionGraphDivergenceCount
     missingGuidanceDecisionCount = coverage.missingGuidanceDecisionCount
     recoveryBranchCount = coverage.recoveryBranches.count
     missingRecoveryCandidateBranchCount =
@@ -385,6 +390,9 @@ private struct LiveCoverageReport: Encodable {
     case exitFacilityID = "exit_facility_id"
     case routeOccurrenceCount = "route_occurrence_count"
     case decisionCount = "decision_count"
+    case guidanceDecisionCount = "guidance_decision_count"
+    case nonJunctionGraphDivergenceCount =
+      "non_junction_graph_divergence_count"
     case missingGuidanceDecisionCount = "missing_guidance_decision_count"
     case recoveryBranchCount = "recovery_branch_count"
     case missingRecoveryCandidateBranchCount =

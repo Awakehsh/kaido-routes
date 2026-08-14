@@ -23,6 +23,11 @@ struct ShutoCircuitPlannerTests {
       ) == "都心环状线 内环"
     )
     #expect(
+      ShutoCircuitDefinition.c1Outer.displayName(
+        for: .simplifiedChinese
+      ) == "都心环状线 外环"
+    )
+    #expect(
       ShutoCircuitDefinition.scenicGrandTour.displayName(
         for: .english
       ) == "Yokohama Scenic Tour"
@@ -96,6 +101,25 @@ struct ShutoCircuitPlannerTests {
     #expect(route.routeIDsInOrder.first == "C1")
     #expect(route.routeIDsInOrder.contains("C1"))
     #expect(!route.routeIDsInOrder.contains("B"))
+  }
+
+  @Test("C1 outer circuit closes as a single-route loop")
+  func plansC1OuterCircuit() throws {
+    let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let route = try planner.planCircuit(
+      circuit: .c1Outer,
+      entryFacilityID: "shuto.ic.c1.kyoubashi",
+      exitFacilityID: "shuto.ic.c1.shintomicho",
+      laps: 1
+    )
+
+    #expect(route.distanceMeters > 12_000)
+    #expect(route.distanceMeters < 25_000)
+    #expect(assertContinuity(route.edges))
+    #expect(route.routeIDsInOrder.first == "C1")
+    #expect(route.routeIDsInOrder.allSatisfy { $0 == "C1" })
+    #expect(route.routePlan.entryFacilityID == "shuto.ic.c1.kyoubashi")
+    #expect(route.routePlan.exitFacilityID == "shuto.ic.c1.shintomicho")
   }
 
   @Test("exit candidates rank by forward travel, not geodesic nearness")

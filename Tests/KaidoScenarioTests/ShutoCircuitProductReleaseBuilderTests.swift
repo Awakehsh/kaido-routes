@@ -181,6 +181,31 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("exact C1 outer circuit builds on demand")
+  func buildsC1OuterForegroundReleaseOnDemand() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: .c1Outer,
+      entryFacilityID: "shuto.ic.c1.kyoubashi",
+      exitFacilityID: "shuto.ic.c1.shintomicho",
+      laps: 1
+    )
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(database: database, route: route)
+    let release = try KaidoProductRelease(artifact: artifact)
+
+    #expect(release.foregroundLiveInputAuthority != nil)
+    #expect(release.navigation.bundle.routePlan == route.routePlan)
+    #expect(release.navigation.bundle.releasedGuidance.count == 7)
+    #expect(
+      try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      ).liveReleaseCoverage.missingGuidanceDecisionCount == 0
+    )
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let databaseURL = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

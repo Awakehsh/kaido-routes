@@ -517,6 +517,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// route's silhouette before any selection.
   private nonisolated static let thumbnailEntranceByCircuitID: [String: String] = [
     "shuto.circuit.c1-inner": "shuto.ic.c1.takaracho",
+    "shuto.circuit.c1-outer": "shuto.ic.c1.kyoubashi",
     "shuto.circuit.c2-inner-bayshore": "shuto.ic.c2.hatsudaiminami",
     "shuto.circuit.wangan-daikoku-run": "shuto.ic.b.shinkiba",
     "shuto.circuit.daikoku-yokohama-loop": "shuto.ic.b.higashiogishima",

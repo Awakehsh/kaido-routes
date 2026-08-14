@@ -77,9 +77,9 @@ unique HIGH occurrence commit before progress. The seam cannot mint
 hash or a MapKit response. Neither the current planning location path nor replay
 supplies background-navigation or tunnel dead-reckoning authority.
 
-`ShutoJunctionGuidanceCompiler` contains 20 snapshot- and source-hash-bound
-movement definitions. They cover every divergent JCT on the C1 inner catalog
-loop and on the Bayshore corridor in both directions. Admission still requires
+`ShutoJunctionGuidanceCompiler` contains 27 snapshot- and source-hash-bound
+movement definitions. They cover every divergent JCT on both C1 catalog loops
+and on the Bayshore corridor in both directions. Admission still requires
 the exact adjacent edges, shared JCT node, route direction, occurrence order,
 and operator-detail hash. The App may render and speak only the reviewed branch
 or continuation, Japanese sign target, and route shields. Lane indices remain
@@ -532,8 +532,8 @@ their reviewed branch path, Japanese sign target, and shields while stating
 that lane indices are not released. Any source-hash, snapshot, direction, node,
 edge, or occurrence drift suppresses the inset.
 
-For the current candidate snapshot, the 20 exact definitions cover every
-divergent JCT on the C1 inner catalog loop and on the Bayshore corridor in both
+For the current candidate snapshot, the 27 exact definitions cover every
+divergent JCT on both C1 catalog loops and on the Bayshore corridor in both
 directions. The route planner promotes each exact reviewed outgoing edge
 occurrence to `JUNCTION_MOVEMENT`; `ShutoPlannedRouteRuntimeCompiler` then binds
 its incoming occurrence as the anchor and compiles one DecisionZone plus one
@@ -606,8 +606,10 @@ Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
 Oji-minami to Shikahamabashi, the Daikoku/Yokohama circuit from
 Wangan-Kanpachi to Daikoku-Futo, and the scenic grand tour from Harumi to
-Daikoku-Futo. For any other exact selected `RoutePlan`, the app rebuilds the
-complete joint release from the bundled snapshot and released evidence,
+Daikoku-Futo. The C1 outer circuit from Kyobashi back to Kyobashi resolves
+through the on-device authoring path. For any other exact selected `RoutePlan`,
+the app rebuilds the complete joint release from the bundled snapshot and
+released evidence,
 content-addresses the encoded plan, and validates a fresh foreground admission.
 This succeeds only when every junction decision has an exact released guidance
 binding and the plan has a released safe-rejoin recovery; otherwise it fails

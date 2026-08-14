@@ -443,6 +443,52 @@ struct ShutoJunctionGuidanceTests {
     )
   }
 
+  @Test("the C1 outer catalog loop is guided at every diverging junction")
+  func guidesTheC1OuterLoop() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: .c1Outer,
+      entryFacilityID: "shuto.ic.c1.kyoubashi",
+      exitFacilityID: "shuto.ic.c1.shintomicho",
+      laps: 1
+    )
+
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    #expect(
+      matches.map(\.junctionNameJA)
+        == [
+          "浜崎橋JCT", "一ノ橋JCT", "谷町JCT", "三宅坂JCT",
+          "竹橋JCT", "江戸橋JCT", "京橋JCT",
+        ]
+    )
+    #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
+    #expect(
+      matches.map(\.definition.japaneseSignText)
+        == [
+          "芝公園", "渋谷・新宿", "中央道・北池袋", "神田橋・北池袋",
+          "神田橋・箱崎", "羽田・銀座", "横浜・銀座",
+        ]
+    )
+    #expect(
+      matches.allSatisfy {
+        $0.definition.routeShields == ["C1"]
+          && $0.definition.commitTriggerDistanceMeters == 300
+          && $0.definition.laneGuidanceState == .notReleased
+      }
+    )
+    for match in matches {
+      let occurrence = route.routePlan.occurrence(
+        id: match.outgoingOccurrenceID
+      )
+      #expect(occurrence?.kind == .junctionMovement)
+      #expect(occurrence?.entityID == match.definition.id)
+    }
+  }
+
   @Test("the Bayshore westbound run is guided at every diverging junction")
   func guidesTheBayshoreWestboundRun() throws {
     let database = try loadDatabase()

@@ -119,7 +119,7 @@ mainline continuation that asserts no lane; releasing a left or right branch
 instruction additionally requires the diagram to show that branch treatment
 unambiguously for that exact approach.
 
-Coverage today: the C1 inner catalog loop and the Bayshore corridor in both
+Coverage today: both C1 catalog loops and the Bayshore corridor in both
 directions are reviewed at every junction where another route diverges from
 them. The junctions that remain unreviewed each failed a specific evidence
 test rather than merely awaiting work — a diagram whose signs are exit

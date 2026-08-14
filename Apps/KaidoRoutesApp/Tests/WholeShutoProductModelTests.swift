@@ -98,6 +98,36 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testC1OuterCircuitBuildsForegroundNavigationOnDemand() async throws {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6777, longitude: 139.7708)
+    )
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+
+    XCTAssertNotNil(model.circuitEntryFacilityID)
+    XCTAssertNotNil(model.circuitExitFacilityID)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<400
+    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertEqual(
+      model.selectedRoute?.routePlan.id.hasPrefix(
+        "shuto.circuit.c1-outer."
+      ),
+      true
+    )
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
   func testWanganDaikokuRunAdmitsBundledForegroundNavigation() async throws {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),

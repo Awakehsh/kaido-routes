@@ -138,6 +138,33 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     ]
   )
 
+  /// C1 Inner Circular outer loop.
+  public static let c1Outer = ShutoCircuitDefinition(
+    circuitID: "shuto.circuit.c1-outer",
+    displayNameJA: "都心環状線 外回り",
+    localizedDisplayNames: [
+      .japanese: "都心環状線 外回り",
+      .simplifiedChinese: "都心环状线 外环",
+      .english: "C1 Outer Circuit",
+    ],
+    kind: .loop,
+    memberRouteIDs: ["C1"],
+    entranceDirectionsByRouteID: ["C1": "外回り"],
+    anchors: [
+      .facility("shuto.ic.c1.kyoubashi"),
+      .facility("shuto.ic.c1.shiodome"),
+      .facility("shuto.ic.c1.shibakouen"),
+      .facility("shuto.ic.c1.kasumigaseki"),
+      .facility("shuto.ic.c1.kandabashi"),
+    ],
+    landmarkNamesJA: ["東京タワー", "銀座", "皇居"],
+    localizedLandmarkNames: [
+      .japanese: ["東京タワー", "銀座", "皇居"],
+      .simplifiedChinese: ["东京塔", "银座", "皇居"],
+      .english: ["Tokyo Tower", "Ginza", "Imperial Palace"],
+    ]
+  )
+
   /// Bayshore westbound run ending at Daikoku PA: Tokyo waterfront onto the
   /// Bayshore Route, across the Tsurumi Tsubasa Bridge, off at Daikoku Futo
   /// beside the PA.
@@ -253,6 +280,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
 
   public static let bundled: [ShutoCircuitDefinition] = [
     .c1Inner,
+    .c1Outer,
     .c2InnerWithBayshore,
     .wanganDaikokuRun,
     .daikokuYokohamaLoop,

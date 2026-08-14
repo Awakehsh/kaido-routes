@@ -566,7 +566,15 @@ public enum ShutoCircuitProductReleaseBuilder {
     let facilityCoordinate = route.entryFacility.coordinate
     let nodeCoordinate = firstNode.coordinate
     let distance = distanceMeters(facilityCoordinate, nodeCoordinate)
-    guard distance > 1, distance <= 75 else {
+    let matchedRampDistance = route.entryFacility.entryEdgeCandidates.first {
+      $0.edgeID == first.edgeID
+    }?.distanceMeters
+    let isBoundedMatchedRamp =
+      first.kind == "LINK"
+      && matchedRampDistance.map {
+        $0.isFinite && $0 <= 250 && distance <= $0 + 25
+      } == true
+    guard distance > 1, distance <= 75 || isBoundedMatchedRamp else {
       throw ShutoCircuitProductReleaseBuilderError.missingEntryPredecessor
     }
     let virtualID =

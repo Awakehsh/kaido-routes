@@ -67,6 +67,10 @@ JUNCTION_OSM_NODE_OVERRIDES = {
     # these forks as part of the named junctions.
     "葛西JCT": [31330103],
     "小松川JCT": [31337397],
+    # The outer-loop C1/3 decision is part of Tanimachi JCT in the operator
+    # diagram, but the pinned OSM node is unnamed. Keep both carriageway
+    # decision nodes bound to the same official junction identity.
+    "谷町JCT": [260710778],
     # Reviewed compound decision nodes on the Yokohama circuits. The
     # operator diagrams show these forks inside the named JCTs, while the
     # pinned OSM nodes themselves are unnamed.

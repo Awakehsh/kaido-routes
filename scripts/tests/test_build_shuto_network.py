@@ -82,6 +82,10 @@ class BuildShutoNetworkTests(unittest.TestCase):
                     "junction_id": "shuto.jct.jct_daishi",
                     "name_ja": "大師JCT",
                 },
+                {
+                    "junction_id": "shuto.jct.jct_tanimachi",
+                    "name_ja": "谷町JCT",
+                },
             ]
         }
         node_tags = {
@@ -96,6 +100,7 @@ class BuildShutoNetworkTests(unittest.TestCase):
             31_337_397: (35.70, 139.85),
             273_330_999: (35.53, 139.72),
             3_817_775_796: (35.54, 139.73),
+            260_710_778: (35.665, 139.739),
         }
 
         junctions = BUILD_SHUTO_NETWORK.match_junctions(
@@ -115,6 +120,10 @@ class BuildShutoNetworkTests(unittest.TestCase):
         self.assertEqual(
             junctions[2]["osm_node_ids"],
             [273_330_999, 3_817_775_796],
+        )
+        self.assertEqual(
+            junctions[3]["osm_node_ids"],
+            [260_710_778],
         )
 
 

@@ -68,13 +68,14 @@ internal review workbench.
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
 - The bundled whole-Shuto graph remains a candidate asset rather than blanket
-  navigation authority. Five exact foreground releases are enrolled: C1 inner
+  navigation authority. Five exact foreground releases are prebuilt: C1 inner
   from Shibakoen to Shiodome, Bayshore westbound from Chidoricho to
   Daikoku-Futo, C2 inner/Bayshore from Oji-minami to Shikahamabashi, the
   Daikoku/Yokohama circuit from Wangan-Kanpachi to Daikoku-Futo, and the
-  scenic grand tour from Harumi to Daikoku-Futo. **Start navigation** remains
-  fail-closed with `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` for every other
-  exact RoutePlan.
+  scenic grand tour from Harumi to Daikoku-Futo. The C1 outer circuit from
+  Kyobashi back to Kyobashi resolves a sixth exact release on device from the
+  same bundled evidence. **Start navigation** remains fail-closed with
+  `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` for every other exact RoutePlan.
 - Every compiled whole-Shuto runtime exposes a deterministic asset identity.
   Its network-artifact hash covers the complete decoded network, including
   source, licence, limitation, and bounds metadata; its route-runtime hash
@@ -137,9 +138,9 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network catalog contains 20 exact movements. It covers
-  every divergent JCT on the C1 inner catalog loop and on the Bayshore corridor
-  in both directions. Their Kaido vectors, branch or continuation instructions,
+- The reviewed whole-network catalog contains 27 exact movements. It covers
+  every divergent JCT on both C1 catalog loops and on the Bayshore corridor in
+  both directions. Their Kaido vectors, branch or continuation instructions,
   Japanese sign targets, and route shields are operator-source-traceable. Each
   exact outgoing occurrence compiles into actor-owned screen and one-shot
   speech guidance. Lane indices remain explicitly unreleased, and transitions
@@ -189,9 +190,9 @@ The product distinguishes what is known from what is still unconfirmed:
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
-  definitions cover all divergent JCTs on the five exact foreground routes;
-  the whole-network inventory currently resolves 44 exact movement bindings
-  and keeps 129 unreviewed movements unavailable. They authorize only the
+  definitions cover all divergent JCTs on the six exact foreground routes;
+  the whole-network inventory currently resolves 51 exact movement bindings
+  and keeps 124 unreviewed movements unavailable. They authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
@@ -201,9 +202,10 @@ The product distinguishes what is known from what is still unconfirmed:
   geometry and steps provide the current ordinary-road instruction and
   distance; entry evidence takes over only near the exact directional ramp.
 - The default App's foreground Core Location lifecycle supplies the planning
-  origin, the five bundled routes, and on-device exact routes whose complete
-  decision sequence is covered by the 44 released movement bindings. Routes
-  touching any of the 129 unreviewed movements remain replay-only with an
+  origin, five prebuilt releases, the C1 outer on-demand release, and other
+  on-device exact routes whose complete decision sequence is covered by the 51
+  released movement bindings. Routes touching any of the 124 unreviewed
+  movements remain replay-only with an
   explicit incomplete-guidance blocker. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
   covers reviewed junction movements only.

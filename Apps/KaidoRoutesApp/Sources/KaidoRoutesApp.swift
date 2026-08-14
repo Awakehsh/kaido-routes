@@ -172,6 +172,10 @@ struct KaidoRoutesApp: App {
       ) {
         WholeShutoDynamicCustomRoutePreviewHost()
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW"
+      ) {
+        WholeShutoRecommendedLiveRoutePreviewHost()
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION"
       ) {
         WholeShutoPlanningLocationQualificationHost()
@@ -363,6 +367,41 @@ private struct WholeShutoDynamicCustomRoutePreviewHost: View {
 
   var body: some View {
     WholeShutoProductView(model: model)
+  }
+}
+
+private struct WholeShutoRecommendedLiveRoutePreviewHost: View {
+  @StateObject private var model: WholeShutoProductModel
+  @StateObject private var planningLocation: WholeShutoPlanningLocationController
+
+  init() {
+    let coordinate = ShutoCoordinate(
+      latitude: 35.6812,
+      longitude: 139.7671
+    )
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(coordinate)
+    _model = StateObject(wrappedValue: model)
+    _planningLocation = StateObject(
+      wrappedValue: WholeShutoPlanningLocationController(
+        previewSnapshot: WholeShutoPlanningLocationSnapshot(
+          coordinate: coordinate,
+          horizontalAccuracyMeters: 6,
+          courseDegrees: nil,
+          measuredAt: Date(timeIntervalSince1970: 0)
+        )
+      )
+    )
+  }
+
+  var body: some View {
+    WholeShutoProductView(
+      model: model,
+      planningLocation: planningLocation
+    )
   }
 }
 

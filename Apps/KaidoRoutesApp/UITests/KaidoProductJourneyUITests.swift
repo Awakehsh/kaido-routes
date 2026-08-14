@@ -72,6 +72,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
         in: app
       ).exists
     )
+    XCTAssertTrue(
+      element(
+        "whole-shuto-circuit-option-shuto.circuit.c1-outer",
+        in: app
+      ).exists
+    )
     // The destination composer stays collapsed until the driver opts in.
     XCTAssertFalse(
       element("whole-shuto-destination-search", in: app).exists
@@ -1339,6 +1345,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testWholeShutoC1OuterRecommendedRouteExposesLiveNavigation() {
+    assertWholeShutoRecommendedRouteExposesLiveNavigation(
+      circuitID: "shuto.circuit.c1-outer"
+    )
+  }
+
   func testWholeShutoDaikokuRecommendedRouteExposesLiveNavigation() {
     assertWholeShutoRecommendedRouteExposesLiveNavigation(
       circuitID: "shuto.circuit.daikoku-yokohama-loop"
@@ -1356,19 +1368,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
   ) {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.resetAuthorizationStatus(for: .location)
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
-      "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION",
+      "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW",
       "-app.kaidoroutes.language.interface",
       "en",
     ]
     app.launch()
-
-    let currentLocation = element("whole-shuto-current-location", in: app)
-    XCTAssertTrue(currentLocation.waitForExistence(timeout: 5))
-    currentLocation.tap()
-    allowLocationWhenInUseIfRequested()
 
     let circuit = element(
       "whole-shuto-circuit-option-\(circuitID)",

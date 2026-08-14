@@ -239,6 +239,7 @@ public enum ShutoJunctionMovementCatalog {
     destinationJA: String,
     destinationZH: String,
     destinationEN: String,
+    commitTriggerDistanceMeters: Double = 100,
     expectedJunctionDetailSHA256: String,
     officialDetailReference: String,
     additionalSources: [String]
@@ -308,7 +309,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: japaneseSignText
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: commitTriggerDistanceMeters,
       checkedAt: "2026-08-15",
       expectedJunctionDetailSHA256: expectedJunctionDetailSHA256,
       sources: [
@@ -1909,6 +1910,225 @@ public enum ShutoJunctionMovementCatalog {
             "1c1d2a5ebd879002c6053bf0e556f752"
             + "6d068350cd0ee798a370e23389a97ded"
         ),
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.hamasakibashi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_hamasakibashi",
+      junctionNodeID: 3_218_329_762,
+      incomingEdgeID: "osm.316213219.28.forward",
+      outgoingEdgeID: "osm.23580153.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "芝公園",
+      routeShields: ["C1"],
+      junctionNameJA: "浜崎橋JCT",
+      junctionNameZH: "浜崎桥 JCT",
+      junctionNameEN: "Hamasakibashi JCT",
+      destinationJA: "都心環状線 芝公園方面",
+      destinationZH: "都心环状线 芝公园方向",
+      destinationEN: "the Outer Circular Route toward Shiba Park",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "9991505f52afb8f1d4c7f9ee46956daa4"
+        + "afad92c55bfb9cc6ccc5cafd2ab82c7",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hamasakibashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ichinohashi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 31_297_000,
+      incomingEdgeID: "osm.24039737.3.forward",
+      outgoingEdgeID: "osm.24039737.4.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "渋谷・新宿",
+      routeShields: ["C1"],
+      junctionNameJA: "一ノ橋JCT",
+      junctionNameZH: "一之桥 JCT",
+      junctionNameEN: "Ichinohashi JCT",
+      destinationJA: "都心環状線 渋谷・新宿方面",
+      destinationZH: "都心环状线 涩谷・新宿方向",
+      destinationEN: "the Outer Circular Route toward Shibuya and Shinjuku",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ichinohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.tanimachi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_tanimachi",
+      junctionNodeID: 260_710_778,
+      incomingEdgeID: "osm.895902565.2.forward",
+      outgoingEdgeID: "osm.243206476.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "中央道・北池袋",
+      routeShields: ["C1"],
+      junctionNameJA: "谷町JCT",
+      junctionNameZH: "谷町 JCT",
+      junctionNameEN: "Tanimachi JCT",
+      destinationJA: "都心環状線 中央道・北池袋方面",
+      destinationZH: "都心环状线 中央道・北池袋方向",
+      destinationEN:
+        "the Outer Circular Route toward the Chuo Expressway and Kita-Ikebukuro",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "b7f8b5458757c825d2abf42f315bdb7d"
+        + "60e54debbb8a7420f49dd8a4646940fd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_tanimachi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.miyakezaka.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 260_710_800,
+      incomingEdgeID: "osm.45392984.0.forward",
+      outgoingEdgeID: "osm.333682073.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "神田橋・北池袋",
+      routeShields: ["C1"],
+      junctionNameJA: "三宅坂JCT",
+      junctionNameZH: "三宅坂 JCT",
+      junctionNameEN: "Miyakezaka JCT",
+      destinationJA: "都心環状線 神田橋・北池袋方面",
+      destinationZH: "都心环状线 神田桥・北池袋方向",
+      destinationEN:
+        "the Outer Circular Route toward Kandabashi and Kita-Ikebukuro",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_miyakezaka",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-4/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.takehashi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 263_987_757,
+      incomingEdgeID: "osm.24039773.1.forward",
+      outgoingEdgeID: "osm.24039773.2.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "神田橋・箱崎",
+      routeShields: ["C1"],
+      junctionNameJA: "竹橋JCT",
+      junctionNameZH: "竹桥 JCT",
+      junctionNameEN: "Takehashi JCT",
+      destinationJA: "都心環状線 神田橋・箱崎方面",
+      destinationZH: "都心环状线 神田桥・箱崎方向",
+      destinationEN:
+        "the Outer Circular Route toward Kandabashi and Hakozaki",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_takehashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 256_426_172,
+      incomingEdgeID: "osm.316185365.6.forward",
+      outgoingEdgeID: "osm.44779562.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "羽田・銀座",
+      routeShields: ["C1"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "都心環状線 羽田・銀座方面",
+      destinationZH: "都心环状线 羽田・银座方向",
+      destinationEN: "the Outer Circular Route toward Haneda and Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kyobashi.c1-outer-stays-on-c1",
+      junctionID: "shuto.jct.jct_kyobashi",
+      junctionNodeID: 572_570_042,
+      incomingEdgeID: "osm.378284505.0.forward",
+      outgoingEdgeID: "osm.378284499.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "横浜・銀座",
+      routeShields: ["C1"],
+      junctionNameJA: "京橋JCT",
+      junctionNameZH: "京桥 JCT",
+      junctionNameEN: "Kyobashi JCT",
+      destinationJA: "都心環状線 横浜・銀座方面",
+      destinationZH: "都心环状线 横滨・银座方向",
+      destinationEN: "the Outer Circular Route toward Yokohama and Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "6ca21c25e6564098b086cd80d2a732f2b"
+        + "ab3d6844202f6edde0f5a36de134f02",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kyobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/"
       ]
     ),
     ShutoJunctionMovementDefinition(

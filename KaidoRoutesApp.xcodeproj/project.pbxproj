@@ -21,6 +21,7 @@
 		19B05CDE221D814344D7ED46 /* C2GeographicRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */; };
 		1C7F2076FBD06953570E9B70 /* PreDriveReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */; };
 		1EEF3DE0296EB3523368FCDD /* ForegroundNavigationLocationControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F58FBDFA0C5C97DA1EC2E92A /* ForegroundNavigationLocationControllerTests.swift */; };
+		1F3075919362B176C9B08625 /* WholeShutoForegroundReleaseFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B933675307687F6A362A4A9 /* WholeShutoForegroundReleaseFactory.swift */; };
 		20F92188AD9C1E12C3DD80FE /* ParkedRouteEditorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */; };
 		211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */ = {isa = PBXBuildFile; fileRef = 0FE8D81ECC7E7E8F05087FD9 /* shuto-route-atlas-recognition-reference.svg */; };
 		217E5A858CE65E3865DD60DC /* KaidoProductJourneyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9406986ABC9A33D6286EBDB6 /* KaidoProductJourneyModel.swift */; };
@@ -117,6 +118,7 @@
 		D02C21875A52789DE2EDDBFA /* KaidoAccessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 660C84EF22BF710C2FA21214 /* KaidoAccessibility.swift */; };
 		D0C12CA534255F589B0F78A9 /* PreDriveEvidenceUpdateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C950684F2E5CE4A081DA2D1 /* PreDriveEvidenceUpdateView.swift */; };
 		D7B4A656D7A476D41BA5AC93 /* InternalLocationCalibrationFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F61A93DD01F3113474B7EE /* InternalLocationCalibrationFixture.swift */; };
+		D9DA8D74EBCD52E47B1DD727 /* c1-inner-shibakoen-shiodome-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = 6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */; };
 		E0A2CC8BE79A4F15B337CE15 /* PhysicalAudioQualificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F1E03F8B36467D558B463E /* PhysicalAudioQualificationView.swift */; };
 		E59C1A3700EA94AF253BBC53 /* ProductJunctionInsetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285D35C9D855FBA6B08F704E /* ProductJunctionInsetView.swift */; };
 		E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */; };
@@ -164,6 +166,7 @@
 		108FBFE290E9B9049C3FF6EA /* ReleasedProductTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductTestSupport.swift; sourceTree = "<group>"; };
 		143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModelTests.swift; sourceTree = "<group>"; };
 		193FEF08FEDD2E8F7ACBE3D3 /* ReleasedPreDriveReviewAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapterTests.swift; sourceTree = "<group>"; };
+		1B933675307687F6A362A4A9 /* WholeShutoForegroundReleaseFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoForegroundReleaseFactory.swift; sourceTree = "<group>"; };
 		1FE65BD55093E129E001ACC7 /* ProductMapPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMapPresentation.swift; sourceTree = "<group>"; };
 		20E264620254982057122D82 /* GuidanceSpeechProsodyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceSpeechProsodyTests.swift; sourceTree = "<group>"; };
 		21EC9E55887FD44C8699F108 /* KaidoProductJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyView.swift; sourceTree = "<group>"; };
@@ -207,6 +210,7 @@
 		660C84EF22BF710C2FA21214 /* KaidoAccessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoAccessibility.swift; sourceTree = "<group>"; };
 		67B815A5BBDEFB928C6CB203 /* ProductRuntimePreviewUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRuntimePreviewUITests.swift; sourceTree = "<group>"; };
 		69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "DATA-LICENSES.md"; sourceTree = "<group>"; };
+		6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "c1-inner-shibakoen-shiodome-product-release.json"; sourceTree = "<group>"; };
 		6B873DEC75409AAFB65937FC /* WholeShutoProductView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductView.swift; sourceTree = "<group>"; };
 		724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoModelTests.swift; sourceTree = "<group>"; };
 		7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalization.swift; sourceTree = "<group>"; };
@@ -298,6 +302,7 @@
 			children = (
 				8DB8358AB6806A7F1D04E522 /* InfoPlist.strings */,
 				D6736A54DBD926E1D2965FE9 /* Assets.xcassets */,
+				6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */,
 				3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */,
 				808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */,
 				FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */,
@@ -497,6 +502,7 @@
 				5CCF9EEB45DF49C522D09A07 /* SyntheticProductRuntimeFixture.swift */,
 				CD289A633C0766AE7B609BBB /* SyntheticProductRuntimeView.swift */,
 				313817A04D3745DA3B692788 /* WholeShutoAttribution.swift */,
+				1B933675307687F6A362A4A9 /* WholeShutoForegroundReleaseFactory.swift */,
 				0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */,
 				0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */,
 				2E6E5EFF9C6EA822392F9579 /* WholeShutoNetworkOverviewView.swift */,
@@ -643,6 +649,7 @@
 				2BDF994A609CD51C9C99E9E2 /* InfoPlist.strings in Resources */,
 				07576F94DD509E10A5485635 /* LICENSE in Resources */,
 				476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */,
+				D9DA8D74EBCD52E47B1DD727 /* c1-inner-shibakoen-shiodome-product-release.json in Resources */,
 				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
 				9FA9A38618E777012F472E10 /* k7-aoba-to-kohoku-pre-drive-evidence.json in Resources */,
@@ -771,6 +778,7 @@
 				A3B3BCF7C3BE3E6E13E6C23F /* SyntheticProductRuntimeFixture.swift in Sources */,
 				393FF32599A47A38976F8293 /* SyntheticProductRuntimeView.swift in Sources */,
 				55E751B8F5EDD7F158D7564E /* WholeShutoAttribution.swift in Sources */,
+				1F3075919362B176C9B08625 /* WholeShutoForegroundReleaseFactory.swift in Sources */,
 				F0BDB7C776E286F447A5A8D2 /* WholeShutoJourneyReviewView.swift in Sources */,
 				FB308B360BDC095EF539C493 /* WholeShutoLiveJourneyAdmission.swift in Sources */,
 				44C3504E6B2151998C6D1683 /* WholeShutoNetworkOverviewView.swift in Sources */,

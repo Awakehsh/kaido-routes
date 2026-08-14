@@ -1256,20 +1256,27 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
     XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 3))
-    XCTAssertFalse(startLiveDrive.isEnabled)
+    XCTAssertTrue(startLiveDrive.isEnabled)
     XCTAssertEqual(
       startLiveDrive.value as? String,
-      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+      "AVAILABLE"
+    )
+    XCTAssertFalse(
+      element("whole-shuto-live-drive-blocker", in: app).exists
+    )
+    startLiveDrive.tap()
+    let liveEntry = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "value == %@", "ENTRY_TRANSITION"),
+      object: product
     )
     XCTAssertEqual(
-      element("whole-shuto-live-drive-blocker", in: app).value
-        as? String,
-      "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
+      XCTWaiter.wait(for: [liveEntry], timeout: 5),
+      .completed
     )
-
-    let startSimulation = app.buttons["whole-shuto-start-simulation"]
-    XCTAssertTrue(startSimulation.isEnabled)
-    startSimulation.tap()
+    XCTAssertTrue(
+      element("whole-shuto-position-state", in: app)
+        .waitForExistence(timeout: 5)
+    )
     let stopped = XCTNSPredicateExpectation(
       predicate: NSPredicate(format: "value == %@", "STOPPED"),
       object: locationState

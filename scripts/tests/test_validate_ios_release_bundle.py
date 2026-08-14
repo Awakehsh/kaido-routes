@@ -168,6 +168,38 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         (self.app / validator.WHOLE_SHUTO_RESOURCE).write_bytes(
             encoded_snapshot
         )
+        product_release = {
+            "release_id": validator.C1_PRODUCT_RELEASE_ID,
+            "runtime_use": {
+                "evidence_scope": "RELEASED_ROAD",
+                "live_input_policy": "FOREGROUND_WHEN_IN_USE",
+            },
+            "navigation_release": {
+                "route_plan": {
+                    "plan_id": validator.C1_ROUTE_PLAN_ID,
+                    "entry_facility_id": validator.C1_ENTRY_FACILITY_ID,
+                    "exit_facility_id": validator.C1_EXIT_FACILITY_ID,
+                    "occurrences": [
+                        {"id": f"fixture.{index}"}
+                        for index in range(
+                            validator.C1_ROUTE_OCCURRENCE_COUNT
+                        )
+                    ],
+                }
+            },
+        }
+        product_release["route_atlas_release"] = {
+            "route_plan": product_release["navigation_release"]["route_plan"]
+        }
+        encoded_product_release = json.dumps(product_release).encode("utf-8")
+        product_source = (
+            self.repository / validator.C1_PRODUCT_RELEASE_SOURCE
+        )
+        product_source.parent.mkdir(parents=True)
+        product_source.write_bytes(encoded_product_release)
+        (self.app / validator.C1_PRODUCT_RELEASE_RESOURCE).write_bytes(
+            encoded_product_release
+        )
         data_licenses = "\n".join(
             (
                 validator.EXPECTED_OSM_ATTRIBUTION,
@@ -230,6 +262,10 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         self.assertEqual(result["bundle_identifier"], "app.kaidoroutes")
         self.assertEqual(result["version"], "1.0.0")
         self.assertEqual(result["build"], "7")
+        self.assertEqual(
+            result["c1_product_release_sha256"],
+            validator.sha256(self.app / validator.C1_PRODUCT_RELEASE_RESOURCE),
+        )
 
     def test_repository_data_license_matches_distribution_contract(self) -> None:
         notice = (
@@ -436,6 +472,21 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         with self.assertRaisesRegex(
             validator.ReleaseBundleValidationError,
             "DATA-LICENSES.md hash",
+        ):
+            self.validate()
+
+    def test_c1_foreground_release_drift_is_rejected(self) -> None:
+        for path in (
+            self.app / validator.C1_PRODUCT_RELEASE_RESOURCE,
+            self.repository / validator.C1_PRODUCT_RELEASE_SOURCE,
+        ):
+            artifact = json.loads(path.read_text(encoding="utf-8"))
+            artifact["runtime_use"]["live_input_policy"] = "DISABLED"
+            path.write_text(json.dumps(artifact), encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            validator.ReleaseBundleValidationError,
+            "C1 product live-input policy",
         ):
             self.validate()
 

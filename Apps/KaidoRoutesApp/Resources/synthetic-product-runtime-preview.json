@@ -341,7 +341,8 @@
           "directed_edge_id" : "test.edge.loop",
           "successor_edge_ids" : [
             "test.edge.exit-movement",
-            "test.edge.loop-movement"
+            "test.edge.loop-movement",
+            "test.recovery.release-bundle.movement"
           ]
         },
         {
@@ -390,6 +391,38 @@
           "directed_edge_id" : "test.edge.exit",
           "successor_edge_ids" : [
 
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.6801,
+              "longitude" : 139.761
+            },
+            {
+              "latitude" : 35.6802,
+              "longitude" : 139.7612
+            }
+          ],
+          "directed_edge_id" : "test.recovery.release-bundle.movement",
+          "successor_edge_ids" : [
+            "test.recovery.release-bundle.edge"
+          ]
+        },
+        {
+          "coordinates" : [
+            {
+              "latitude" : 35.6802,
+              "longitude" : 139.7612
+            },
+            {
+              "latitude" : 35.68,
+              "longitude" : 139.761
+            }
+          ],
+          "directed_edge_id" : "test.recovery.release-bundle.edge",
+          "successor_edge_ids" : [
+            "test.edge.loop"
           ]
         }
       ],

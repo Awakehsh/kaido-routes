@@ -52,6 +52,52 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.failureCode)
   }
 
+  func testExactC1CircuitAdmitsBundledForegroundNavigation() async throws {
+    let database = try WholeShutoNetworkCatalog.bundled()
+    let entry = try XCTUnwrap(
+      BundledProductReleaseCatalogLoader.bundledForeground()
+        .foregroundNavigationEntries.first
+    )
+    let route = try ShutoCircuitProductReleaseBuilder.plannedRoute(
+      database: database
+    )
+    let core = try KaidoLiveJourneyAdmission(
+      release: entry.release,
+      selectedRoutePlan: route.routePlan,
+      journeyPlan: JourneyPlanCompiler.expresswayOnly(
+        release: entry.release
+      )
+    )
+    let model = WholeShutoProductModel(
+      database: database,
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveJourneyAdmissions: [
+        try WholeShutoLiveJourneyAdmission(core: core)
+      ]
+    )
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 37.3349, longitude: -122.0090)
+    )
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      ShutoCircuitProductReleaseBuilder.entryFacilityID
+    )
+    XCTAssertEqual(
+      model.circuitExitFacilityID,
+      ShutoCircuitProductReleaseBuilder.exitFacilityID
+    )
+    XCTAssertTrue(model.startCircuitJourney())
+    XCTAssertEqual(model.selectedRoute?.routePlan, route.routePlan)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
     XCTAssertEqual(
       KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),

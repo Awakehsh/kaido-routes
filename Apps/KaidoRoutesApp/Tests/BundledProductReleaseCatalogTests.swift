@@ -8,6 +8,33 @@ import XCTest
 @testable import KaidoRoutesApp
 
 final class BundledProductReleaseCatalogTests: XCTestCase {
+  func testBundledForegroundManifestLoadsExactC1Release() throws {
+    let catalog = try BundledProductReleaseCatalogLoader.bundledForeground()
+    let foreground = try XCTUnwrap(
+      catalog.foregroundNavigationEntries.first
+    )
+
+    XCTAssertEqual(catalog.entries.count, 1)
+    XCTAssertTrue(catalog.demoEntries.isEmpty)
+    XCTAssertEqual(
+      foreground.release.releaseID,
+      "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+    )
+    XCTAssertEqual(
+      foreground.release.navigation.bundle.routePlan.entryFacilityID,
+      "shuto.ic.c1.shibakouen"
+    )
+    XCTAssertEqual(
+      foreground.release.navigation.bundle.routePlan.exitFacilityID,
+      "shuto.ic.c1.shiodome"
+    )
+    XCTAssertEqual(
+      foreground.release.navigation.bundle.routePlan.occurrences.count,
+      632
+    )
+    XCTAssertNotNil(foreground.release.foregroundLiveInputAuthority)
+  }
+
   func testBundledManifestLoadsHashBoundDemoAndForegroundReleases() throws {
     let catalog = try BundledProductReleaseCatalogLoader.bundledPreview()
     let demo = try XCTUnwrap(catalog.demoEntries.first)

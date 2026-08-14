@@ -159,10 +159,11 @@ def release_bundle_evidence() -> runner.ReleaseBundleEvidence:
         build="7",
         app_bundle_sha256="k" * 64,
         whole_shuto_sha256="l" * 64,
-        privacy_manifest_sha256="m" * 64,
-        license_sha256="n" * 64,
-        data_licenses_sha256="o" * 64,
-        validation_log_sha256="p" * 64,
+        c1_product_release_sha256="m" * 64,
+        privacy_manifest_sha256="n" * 64,
+        license_sha256="o" * 64,
+        data_licenses_sha256="p" * 64,
+        validation_log_sha256="q" * 64,
     )
 
 
@@ -299,7 +300,7 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
         encoded = json.dumps(receipt, sort_keys=True)
 
-        self.assertEqual(receipt["schema_version"], "1.5")
+        self.assertEqual(receipt["schema_version"], "1.6")
         self.assertEqual(counts["passed"], 112)
         self.assertEqual(counts["total"], 112)
         self.assertNotIn(DEVICE_ID, encoded)
@@ -364,25 +365,31 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
         )
         self.assertEqual(
             receipt["release_smoke"]["evidence"][
-                "privacy_manifest_sha256"
+                "c1_product_release_sha256"
             ],
             "m" * 64,
         )
         self.assertEqual(
-            receipt["release_smoke"]["evidence"]["license_sha256"],
+            receipt["release_smoke"]["evidence"][
+                "privacy_manifest_sha256"
+            ],
             "n" * 64,
+        )
+        self.assertEqual(
+            receipt["release_smoke"]["evidence"]["license_sha256"],
+            "o" * 64,
         )
         self.assertEqual(
             receipt["release_smoke"]["evidence"][
                 "data_licenses_sha256"
             ],
-            "o" * 64,
+            "p" * 64,
         )
         self.assertEqual(
             receipt["release_smoke"]["evidence"][
                 "bundle_validation_log_sha256"
             ],
-            "p" * 64,
+            "q" * 64,
         )
         self.assertFalse(
             receipt["authority"][
@@ -522,6 +529,9 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
                 )
             )
             (app / runner.WHOLE_SHUTO_RESOURCE).write_bytes(b"whole-shuto")
+            (app / runner.C1_PRODUCT_RELEASE_RESOURCE).write_bytes(
+                b"c1-product-release"
+            )
             (app / "PrivacyInfo.xcprivacy").write_bytes(b"privacy")
             (app / "LICENSE").write_bytes(b"license")
             (app / "DATA-LICENSES.md").write_bytes(b"data licence")
@@ -554,6 +564,10 @@ class RunIOSDeviceQualificationTests(unittest.TestCase):
             self.assertEqual(
                 evidence.whole_shuto_sha256,
                 runner.hash_file(app / runner.WHOLE_SHUTO_RESOURCE),
+            )
+            self.assertEqual(
+                evidence.c1_product_release_sha256,
+                runner.hash_file(app / runner.C1_PRODUCT_RELEASE_RESOURCE),
             )
             self.assertEqual(
                 evidence.data_licenses_sha256,

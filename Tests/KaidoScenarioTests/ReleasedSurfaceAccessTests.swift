@@ -774,7 +774,7 @@ func shutoLiveSessionRequiresExactReleasedProductRuntime() async throws {
   #expect(finished.egress.exitFacilityID == egressPolicy.exitFacilityID)
   #expect(await session.snapshot == finished)
 
-  let egressContext = session.surfaceEgressAdmissionContext
+  let egressContext = try #require(session.surfaceEgressAdmissionContext)
   let observedEgress = await session.observeSurfaceEgressHandoffEvidence(
     surfaceEgressEvidence(
       context: egressContext,
@@ -853,7 +853,7 @@ func shutoLiveSessionFailsClosedWithoutCompleteAuthority() throws {
     journeyPlan: accessOnlyPlan
   )
   #expect(
-    throws: ShutoLiveDriveSessionError.releasedSurfaceEgressRequired
+    throws: ShutoLiveDriveSessionError.invalidJourneyComposition
   ) {
     _ = try ShutoLiveDriveSession(runtime: accessOnlyRuntime)
   }
@@ -2167,7 +2167,7 @@ func liveJourneyAdmissionRequiresExactReleasedComposition() throws {
   #expect(session.productReleaseID == release.releaseID)
 }
 
-@Test("Live journey admission rejects route-only, mismatched, and synthetic inputs")
+@Test("Live journey admission accepts expressway-only and rejects incomplete authority")
 func liveJourneyAdmissionRejectsIncompleteAuthority() throws {
   let fixture = navigationReleaseBundleFixture()
   let access = releasedSurfaceAccessDefinition(fixture)
@@ -2204,13 +2204,20 @@ func liveJourneyAdmissionRejectsIncompleteAuthority() throws {
       journeyPlan: fullPlan
     )
   }
-  #expect(throws: KaidoLiveJourneyAdmissionError.releasedSurfaceAccessRequired) {
+  #expect(throws: KaidoLiveJourneyAdmissionError.invalidJourneyComposition) {
     try KaidoLiveJourneyAdmission(
       release: release,
       selectedRoutePlan: fixture.routePlan,
       journeyPlan: JourneyPlanCompiler.routeOnly(release: release)
     )
   }
+  #expect(
+    try KaidoLiveJourneyAdmission(
+      release: release,
+      selectedRoutePlan: fixture.routePlan,
+      journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release)
+    ).journeyPlan.initialPhase == .entryTransition
+  )
 
   let synthetic = try productRelease(
     fixture,

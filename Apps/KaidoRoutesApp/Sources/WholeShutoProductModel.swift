@@ -1687,7 +1687,17 @@ final class WholeShutoProductModel: ObservableObject {
     circuitEntranceDistanceMeters = nil
     circuitEntranceOutOfRangeMeters = nil
     circuitTariffBandsByFacilityID = [:]
-    resolveCircuitPairing(entranceOverride: nil)
+    resolveCircuitPairing(
+      entranceOverride: releasedEntranceFacilityID(for: circuit)
+    )
+  }
+
+  private func releasedEntranceFacilityID(
+    for circuit: ShutoCircuitDefinition
+  ) -> String? {
+    liveJourneyAdmissions.lazy.map(\.core.selectedRoutePlan).first {
+      $0.id.hasPrefix("\(circuit.circuitID).")
+    }?.entryFacilityID
   }
 
   func clearCircuitDraft() {
@@ -1741,8 +1751,11 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func refreshCircuitEntrances() {
-    guard selectedCircuit != nil else { return }
-    resolveCircuitPairing(entranceOverride: circuitEntryFacilityID)
+    guard let selectedCircuit else { return }
+    resolveCircuitPairing(
+      entranceOverride: circuitEntryFacilityID
+        ?? releasedEntranceFacilityID(for: selectedCircuit)
+    )
   }
 
   /// Derives the recommended entrance/exit pairing off the main actor: the
@@ -1756,20 +1769,36 @@ final class WholeShutoProductModel: ObservableObject {
     isResolvingCircuitPairing = true
     let planner = planner
     let originCoordinate = origin?.coordinate
+    let releasedEntranceID = releasedEntranceFacilityID(for: circuit)
+    let releasedEntrance = releasedEntranceID.flatMap { facilityID in
+      database.directionalFacilities.first {
+        $0.facilityID == facilityID
+      }
+    }
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
       let ranked = planner.circuitEntranceCandidates(
         for: circuit,
         origin: originCoordinate
       )
-      // Alternatives never offer an out-of-range surface leg.
-      let candidates = originCoordinate.map { origin in
+      let nearbyCandidates = originCoordinate.map { origin in
         ranked.filter {
           ShutoEntranceAccessTier.classify(
             distanceMeters: Self.distance(origin, $0.coordinate)
           ) != .outOfRange
         }
       } ?? ranked
+      // A released expressway-only route remains plannable before the driver
+      // reaches Tokyo. Its ordinary-road approach is still preview-only, and
+      // live matching cannot enter the route before the released ramp.
+      let pinnedEntrance = entranceOverride == releasedEntranceID
+        ? releasedEntrance : nil
+      let candidates = pinnedEntrance.map { entrance in
+        [entrance]
+          + nearbyCandidates.filter {
+            $0.facilityID != entrance.facilityID
+          }
+      } ?? nearbyCandidates
       let entranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })
         ? entranceOverride
@@ -1777,10 +1806,11 @@ final class WholeShutoProductModel: ObservableObject {
       var pairing: ShutoCircuitPairing?
       var outOfRangeMeters: Double?
       if let entranceID {
+        let isReleasedEntrance = entranceID == pinnedEntrance?.facilityID
         pairing = try? planner.recommendedCircuitPairing(
           for: circuit,
           entranceFacilityID: entranceID,
-          origin: originCoordinate,
+          origin: isReleasedEntrance ? nil : originCoordinate,
           evidence: .etcNormalCarActive
         )
       } else if let originCoordinate,
@@ -2240,9 +2270,9 @@ final class WholeShutoProductModel: ObservableObject {
       let entryAdapter = try CoreLocationEntryTransitionAdapter(
         context: session.entryTransitionAdmissionContext
       )
-      let egressAdapter = try CoreLocationSurfaceEgressAdapter(
-        context: session.surfaceEgressAdmissionContext
-      )
+      let egressAdapter = try session.surfaceEgressAdmissionContext.map {
+        try CoreLocationSurfaceEgressAdapter(context: $0)
+      }
       let observationAdapter = try CoreLocationObservationAdapter(
         sessionID: admission.core.release.releaseID,
         simulatedLocationPolicy: .reject,
@@ -2273,7 +2303,8 @@ final class WholeShutoProductModel: ObservableObject {
       isLiveDrive = true
       isPlaying = true
       restoredFromCheckpoint = false
-      phase = .surfaceAccess
+      phase = admission.core.journeyPlan.accessLeg == nil
+        ? .entryTransition : .surfaceAccess
       progressFraction = 0
       matcherConfidence = .low
       runtimeOccurrenceID = nil
@@ -2398,6 +2429,11 @@ final class WholeShutoProductModel: ObservableObject {
         {
           let snapshot = await session.finishDrive()
           applyLiveActorSnapshot(snapshot)
+          if liveSurfaceEgressAdapter == nil {
+            applyLiveActorSnapshot(
+              await session.completeAtExitHandoff()
+            )
+          }
         }
       case .exitTransition:
         guard var adapter = liveSurfaceEgressAdapter else {

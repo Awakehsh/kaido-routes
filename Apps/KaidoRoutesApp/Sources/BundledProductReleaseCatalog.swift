@@ -19,9 +19,21 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "synthetic-product-runtime-preview",
       resourceExtension: "json",
       expectedSHA256:
-        "040c5be59b7b17e3fbfb072560ff9df4742244db000238fdcd3df9a0d0ef54c9",
+        "8b430013a5e17de53914bbcf6f336e01a8a0a044472e0d089bb75da6f74aca34",
       expectedReleaseID: "preview.synthetic.product-release.v1",
       role: .demoOnly
+    )
+  }
+
+  static var c1InnerShibakoenShiodome: AppBundleProductReleaseDescriptor {
+    AppBundleProductReleaseDescriptor(
+      resourceName: "c1-inner-shibakoen-shiodome-product-release",
+      resourceExtension: "json",
+      expectedSHA256:
+        "7edc0ca75bea8c2da213a14801fee3dfd8957e31655f85cb9e92376231c16793",
+      expectedReleaseID:
+        "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
+      role: .foregroundNavigation
     )
   }
 }
@@ -193,6 +205,10 @@ enum BundledProductReleaseCatalogError: Error, Equatable, Sendable {
 }
 
 enum BundledProductReleaseCatalogLoader {
+  static let foregroundManifest: [BundledProductReleaseDescriptor] = [
+    .c1InnerShibakoenShiodome
+  ]
+
   static let previewManifest: [BundledProductReleaseDescriptor] = [
     .syntheticPreview,
     .releasedK7AobaKohoku,
@@ -201,8 +217,21 @@ enum BundledProductReleaseCatalogLoader {
   static func bundledPreview(
     in bundle: Bundle = .main
   ) throws -> BundledProductReleaseCatalog {
+    try bundled(descriptors: previewManifest, in: bundle)
+  }
+
+  static func bundledForeground(
+    in bundle: Bundle = .main
+  ) throws -> BundledProductReleaseCatalog {
+    try bundled(descriptors: foregroundManifest, in: bundle)
+  }
+
+  private static func bundled(
+    descriptors: [BundledProductReleaseDescriptor],
+    in bundle: Bundle
+  ) throws -> BundledProductReleaseCatalog {
     try load(
-      descriptors: previewManifest,
+      descriptors: descriptors,
       guidanceAudioChoicesProvider: { descriptor, productRelease in
         try loadGuidanceAudioChoices(
           descriptor: descriptor,

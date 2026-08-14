@@ -12,48 +12,56 @@ enum WholeShutoLiveJourneyAdmissionError: Error, Equatable {
 /// cannot alter the release-owned RoutePlan or expressway matcher.
 struct WholeShutoLiveJourneyAdmission: Sendable {
   let core: KaidoLiveJourneyAdmission
-  let accessRoute: WholeShutoSurfaceRoute
-  let egressRoute: WholeShutoSurfaceRoute
+  let accessRoute: WholeShutoSurfaceRoute?
+  let egressRoute: WholeShutoSurfaceRoute?
 
   init(
     core: KaidoLiveJourneyAdmission,
-    accessRoute: WholeShutoSurfaceRoute,
-    egressRoute: WholeShutoSurfaceRoute
+    accessRoute: WholeShutoSurfaceRoute? = nil,
+    egressRoute: WholeShutoSurfaceRoute? = nil
   ) throws {
-    guard
-      let accessLeg = core.journeyPlan.accessLeg,
-      let egressLeg = core.journeyPlan.egressLeg,
-      let returnTarget = core.journeyPlan.returnTarget,
-      let accessDefinition =
-        core.release.navigation.bundle.surfaceAccessDefinition,
-      let egressDefinition =
-        core.release.navigation.bundle.surfaceEgressDefinition,
-      let selectedEgressOptionID =
-        core.journeyPlan.selectedEgressOptionID,
-      let egressPolicy = egressDefinition.policies.first(where: {
-        $0.egressOptionID == selectedEgressOptionID
-      }),
-      Self.isUsable(accessRoute),
-      Self.isUsable(egressRoute),
-      Self.matchesMetrics(accessRoute, leg: accessLeg),
-      Self.matchesMetrics(egressRoute, leg: egressLeg),
-      Self.matches(
-        accessRoute.coordinates.first,
-        returnTarget.coordinate
-      ),
-      Self.matches(
-        accessRoute.coordinates.last,
-        accessDefinition.approachPolicy.destinationAnchor.coordinate
-      ),
-      Self.matches(
-        egressRoute.coordinates.first,
-        egressPolicy.originAnchor.coordinate
-      ),
-      Self.matches(
-        egressRoute.coordinates.last,
-        returnTarget.coordinate
-      )
-    else {
+    let hasSurfaceLegs = core.journeyPlan.accessLeg != nil
+      || core.journeyPlan.egressLeg != nil
+    if hasSurfaceLegs {
+      guard
+        let accessRoute,
+        let egressRoute,
+        let accessLeg = core.journeyPlan.accessLeg,
+        let egressLeg = core.journeyPlan.egressLeg,
+        let returnTarget = core.journeyPlan.returnTarget,
+        let accessDefinition =
+          core.release.navigation.bundle.surfaceAccessDefinition,
+        let egressDefinition =
+          core.release.navigation.bundle.surfaceEgressDefinition,
+        let selectedEgressOptionID =
+          core.journeyPlan.selectedEgressOptionID,
+        let egressPolicy = egressDefinition.policies.first(where: {
+          $0.egressOptionID == selectedEgressOptionID
+        }),
+        Self.isUsable(accessRoute),
+        Self.isUsable(egressRoute),
+        Self.matchesMetrics(accessRoute, leg: accessLeg),
+        Self.matchesMetrics(egressRoute, leg: egressLeg),
+        Self.matches(
+          accessRoute.coordinates.first,
+          returnTarget.coordinate
+        ),
+        Self.matches(
+          accessRoute.coordinates.last,
+          accessDefinition.approachPolicy.destinationAnchor.coordinate
+        ),
+        Self.matches(
+          egressRoute.coordinates.first,
+          egressPolicy.originAnchor.coordinate
+        ),
+        Self.matches(
+          egressRoute.coordinates.last,
+          returnTarget.coordinate
+        )
+      else {
+        throw WholeShutoLiveJourneyAdmissionError.invalidSurfaceProjection
+      }
+    } else if accessRoute != nil || egressRoute != nil {
       throw WholeShutoLiveJourneyAdmissionError.invalidSurfaceProjection
     }
     self.core = core

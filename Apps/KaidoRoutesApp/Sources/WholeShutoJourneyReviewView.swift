@@ -518,11 +518,11 @@ struct WholeShutoJourneyReviewView: View {
           Text(
             copy.resolve(
               japanese:
-                "実走ナビには検証済みの製品リリースと地上区間が必要です。このルートは現在プレビューのみ利用できます。",
+                "このルートは実走ナビ未公開です。現在の対応範囲は C1 内回り・芝公園入口・汐留出口・1周です。",
               simplifiedChinese:
-                "实车导航需要已验证的产品发布包与地面接驳发布；这条路线目前仅可预演。",
+                "这条路线尚未发布实车导航。当前可用范围：C1 内环、芝公园入口、汐留出口、1 圈。",
               english:
-                "Live navigation requires a validated product release and released surface legs. This route is currently preview-only."
+                "Live navigation is not released for this route. Current coverage: C1 Inner, Shibakoen entrance, Shiodome exit, one lap."
             )
           )
           .fixedSize(horizontal: false, vertical: true)
@@ -561,14 +561,8 @@ struct WholeShutoJourneyReviewView: View {
         .clipShape(RoundedRectangle(cornerRadius: 11))
       }
       .buttonStyle(.plain)
-      .disabled(
-        !model.isJourneyReadyForPreview
-          || !model.canStartLiveNavigation
-      )
-      .opacity(
-        model.isJourneyReadyForPreview
-          && model.canStartLiveNavigation ? 1 : 0.45
-      )
+      .disabled(!model.canStartLiveNavigation)
+      .opacity(model.canStartLiveNavigation ? 1 : 0.45)
       .accessibilityIdentifier("whole-shuto-start-live-drive")
       .accessibilityValue(
         model.liveNavigationBlockerCode ?? "AVAILABLE"
@@ -611,10 +605,12 @@ struct WholeShutoJourneyReviewView: View {
 
       Text(
         copy.resolve(
-          japanese: "案内は前景のみ・審査済みの分岐のみ音声案内します",
-          simplifiedChinese: "导航仅在前台运行，且只播报已审核的分岔",
+          japanese:
+            "案内は芝公園入口から汐留出口まで前景のみで動作し、審査済みの分岐だけを音声案内します。一般道はプレビューのみです。",
+          simplifiedChinese:
+            "导航从芝公园入口开始、在汐留出口结束，仅在前台运行并播报已审核分岔；普通道路只提供预演。",
           english:
-            "Guidance runs in the foreground and speaks reviewed junctions only"
+            "Navigation runs in the foreground from Shibakoen entrance to Shiodome exit and speaks reviewed junctions only. Ordinary roads remain preview-only."
         )
       )
       .font(.system(size: 8, weight: .bold))

@@ -44,6 +44,23 @@ EXPECTED_PRIVACY_REASONS = {
     "NSPrivacyAccessedAPICategoryUserDefaults": ["CA92.1"],
 }
 WHOLE_SHUTO_RESOURCE = "shuto-whole-network-20260804.json"
+C1_PRODUCT_RELEASE_RESOURCE = (
+    "c1-inner-shibakoen-shiodome-product-release.json"
+)
+C1_PRODUCT_RELEASE_SOURCE = (
+    "data/product/releases/"
+    "c1-inner-shibakoen-to-shiodome-product-release.json"
+)
+C1_PRODUCT_RELEASE_ID = (
+    "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+)
+C1_ROUTE_PLAN_ID = (
+    "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen."
+    "shuto.ic.c1.shiodome.x1.recommended"
+)
+C1_ENTRY_FACILITY_ID = "shuto.ic.c1.shibakouen"
+C1_EXIT_FACILITY_ID = "shuto.ic.c1.shiodome"
+C1_ROUTE_OCCURRENCE_COUNT = 632
 DATA_LICENSES_RESOURCE = "DATA-LICENSES.md"
 EXPECTED_OSM_ATTRIBUTION = "© OpenStreetMap contributors"
 EXPECTED_OSM_LICENSE = "ODbL-1.0"
@@ -67,6 +84,7 @@ FORBIDDEN_RESOURCES = {
 }
 FIXED_ALLOWED_FILES = {
     "Assets.car",
+    C1_PRODUCT_RELEASE_RESOURCE,
     "Info.plist",
     "KaidoRoutes",
     DATA_LICENSES_RESOURCE,
@@ -633,6 +651,9 @@ def validate_distribution_files(app: Path, repository_root: Path) -> None:
             / "data/route-atlas/osm-derived"
             / WHOLE_SHUTO_RESOURCE
         ),
+        C1_PRODUCT_RELEASE_RESOURCE: (
+            repository_root / C1_PRODUCT_RELEASE_SOURCE
+        ),
     }
     for bundled_name, source_path in source_pairs.items():
         require_equal(
@@ -691,6 +712,77 @@ def validate_osm_distribution_license(app: Path) -> None:
             )
 
 
+def validate_c1_foreground_product_release(app: Path) -> None:
+    artifact = read_json_object(
+        app / C1_PRODUCT_RELEASE_RESOURCE,
+        "bundled C1 foreground product release",
+    )
+    require_equal(
+        artifact.get("release_id"),
+        C1_PRODUCT_RELEASE_ID,
+        "C1 product release identity",
+    )
+    runtime_use = artifact.get("runtime_use")
+    if not isinstance(runtime_use, dict):
+        raise ReleaseBundleValidationError(
+            "C1 product release has no runtime-use declaration"
+        )
+    require_equal(
+        runtime_use.get("evidence_scope"),
+        "RELEASED_ROAD",
+        "C1 product evidence scope",
+    )
+    require_equal(
+        runtime_use.get("live_input_policy"),
+        "FOREGROUND_WHEN_IN_USE",
+        "C1 product live-input policy",
+    )
+    navigation = artifact.get("navigation_release")
+    route_plan = (
+        navigation.get("route_plan")
+        if isinstance(navigation, dict)
+        else None
+    )
+    if not isinstance(route_plan, dict):
+        raise ReleaseBundleValidationError(
+            "C1 product release has no navigation RoutePlan"
+        )
+    require_equal(
+        route_plan.get("plan_id"),
+        C1_ROUTE_PLAN_ID,
+        "C1 RoutePlan identity",
+    )
+    require_equal(
+        route_plan.get("entry_facility_id"),
+        C1_ENTRY_FACILITY_ID,
+        "C1 entry facility",
+    )
+    require_equal(
+        route_plan.get("exit_facility_id"),
+        C1_EXIT_FACILITY_ID,
+        "C1 exit facility",
+    )
+    occurrences = route_plan.get("occurrences")
+    if not isinstance(occurrences, list):
+        raise ReleaseBundleValidationError(
+            "C1 RoutePlan occurrences must be one array"
+        )
+    require_equal(
+        len(occurrences),
+        C1_ROUTE_OCCURRENCE_COUNT,
+        "C1 RoutePlan occurrence count",
+    )
+    atlas = artifact.get("route_atlas_release")
+    atlas_route_plan = (
+        atlas.get("route_plan") if isinstance(atlas, dict) else None
+    )
+    require_equal(
+        atlas_route_plan,
+        route_plan,
+        "C1 navigation and Route Atlas RoutePlan",
+    )
+
+
 def validate_app_icons(app: Path, repository_root: Path) -> None:
     source = (
         repository_root
@@ -732,6 +824,7 @@ def validate_release_bundle(
     validate_localizations(app)
     validate_distribution_files(app, root)
     validate_osm_distribution_license(app)
+    validate_c1_foreground_product_release(app)
     validate_app_icons(app, root)
     return {
         "app": str(app),
@@ -739,6 +832,9 @@ def validate_release_bundle(
         "version": version,
         "build": build,
         "whole_shuto_sha256": sha256(app / WHOLE_SHUTO_RESOURCE),
+        "c1_product_release_sha256": sha256(
+            app / C1_PRODUCT_RELEASE_RESOURCE
+        ),
     }
 
 
@@ -753,7 +849,8 @@ def main() -> int:
         "Release bundle validated: "
         f"{result['bundle_identifier']} "
         f"{result['version']} ({result['build']}), "
-        f"whole-Shuto {result['whole_shuto_sha256']}"
+        f"whole-Shuto {result['whole_shuto_sha256']}, "
+        f"C1 product {result['c1_product_release_sha256']}"
     )
     return 0
 

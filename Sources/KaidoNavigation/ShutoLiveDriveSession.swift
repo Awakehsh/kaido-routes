@@ -15,7 +15,7 @@ public actor ShutoLiveDriveSession {
   public nonisolated let entryTransitionAdmissionContext:
     EntryTransitionAdmissionContext
   public nonisolated let surfaceEgressAdmissionContext:
-    SurfaceEgressAdmissionContext
+    SurfaceEgressAdmissionContext?
 
   private let runtime: KaidoProductNavigationRuntime
   private let session: NavigationSession
@@ -26,20 +26,22 @@ public actor ShutoLiveDriveSession {
       throw ShutoLiveDriveSessionError
         .navigationReleaseNotForegroundAuthorized
     }
-    guard let surfaceEgressAdmissionContext =
-      runtime.surfaceEgressAdmissionContext
-    else {
-      throw ShutoLiveDriveSessionError.releasedSurfaceEgressRequired
+    let hasCompleteSurfaceJourney =
+      runtime.journeyPlan.accessLeg != nil
+      && runtime.journeyPlan.egressLeg != nil
+    let isExpresswayOnly =
+      runtime.journeyPlan
+      == JourneyPlanCompiler.expresswayOnly(release: runtime.release)
+    guard hasCompleteSurfaceJourney || isExpresswayOnly else {
+      throw ShutoLiveDriveSessionError.invalidJourneyComposition
     }
-
     routePlanID = runtime.routePlanID
     networkSnapshotID = runtime.networkSnapshotID
     productReleaseID = runtime.productReleaseID
     navigationReleaseID = runtime.navigationReleaseID
     entryTransitionAdmissionContext =
       runtime.entryTransitionAdmissionContext
-    self.surfaceEgressAdmissionContext =
-      surfaceEgressAdmissionContext
+    surfaceEgressAdmissionContext = runtime.surfaceEgressAdmissionContext
     self.runtime = runtime
     session = runtime.session
   }
@@ -78,6 +80,11 @@ public actor ShutoLiveDriveSession {
     return await session.observeSurfaceEgressHandoffEvidence(evidence)
   }
 
+  @discardableResult
+  public func completeAtExitHandoff() async -> NavigationSnapshot {
+    await session.completeAtExitHandoff()
+  }
+
   public func makeCheckpoint(
     savedAtMilliseconds: Int
   ) async throws -> NavigationSessionCheckpoint {
@@ -93,5 +100,5 @@ public actor ShutoLiveDriveSession {
 
 public enum ShutoLiveDriveSessionError: Error, Equatable, Sendable {
   case navigationReleaseNotForegroundAuthorized
-  case releasedSurfaceEgressRequired
+  case invalidJourneyComposition
 }

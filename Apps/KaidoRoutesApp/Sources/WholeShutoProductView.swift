@@ -46,7 +46,8 @@ struct WholeShutoProductView: View {
     placeSearch: WholeShutoPlaceSearchController? = nil,
     savedRoutes: SavedRouteLibraryModel? = nil
   ) {
-    let resolvedModel = model ?? WholeShutoProductModel()
+    let resolvedModel =
+      model ?? WholeShutoForegroundReleaseFactory.makeModel()
     _model = StateObject(
       wrappedValue: resolvedModel
     )

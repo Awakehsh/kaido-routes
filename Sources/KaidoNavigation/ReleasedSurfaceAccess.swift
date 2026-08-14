@@ -351,6 +351,34 @@ public enum JourneyPlanCompiler {
     )
   }
 
+  /// Foreground expressway navigation that begins at the released entrance
+  /// transition and completes at the released exit handoff. It deliberately
+  /// carries no ordinary-road provider result.
+  public static func expresswayOnly(
+    release: KaidoProductRelease
+  ) -> JourneyPlan {
+    let bundle = release.navigation.bundle
+    let selectedEgress = bundle.runtimePolicy.egressOptions.first {
+      $0.isReleased && $0.exitFacilityID == bundle.routePlan.exitFacilityID
+    }
+    return JourneyPlan(
+      id: "\(release.releaseID).journey.expressway-only",
+      productReleaseID: release.releaseID,
+      navigationReleaseID: release.navigation.releaseID,
+      networkSnapshotID: bundle.networkSnapshot.id,
+      routePlanID: bundle.routePlan.id,
+      originID: nil,
+      accessLeg: nil,
+      returnTarget: nil,
+      entryTransition: bundle.runtimePolicy.entryTransition,
+      finishPolicy: .fixedExit,
+      precomputedEgressOptions: bundle.runtimePolicy.egressOptions,
+      selectedEgressOptionID: selectedEgress?.id,
+      egressLeg: nil,
+      initialPhase: .entryTransition
+    )
+  }
+
   package static func surfaceAccess(
     release: KaidoProductRelease,
     request: SurfaceRouteRequest,
@@ -795,7 +823,9 @@ extension JourneyPlan {
         issues: &issues
       )
       validateReturnTarget(issues: &issues)
-    } else if self != JourneyPlanCompiler.routeOnly(release: release) {
+    } else if self != JourneyPlanCompiler.routeOnly(release: release)
+      && self != JourneyPlanCompiler.expresswayOnly(release: release)
+    {
       issues.append(.routeOnlyCompositionMismatch)
     }
     if let egressLeg {

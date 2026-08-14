@@ -340,7 +340,7 @@ private struct WholeShutoCustomRoutePreviewHost: View {
 }
 
 private struct WholeShutoPlanningLocationQualificationHost: View {
-  @StateObject private var model = WholeShutoProductModel(
+  @StateObject private var model = WholeShutoForegroundReleaseFactory.makeModel(
     surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
     checkpointStore: nil
   )

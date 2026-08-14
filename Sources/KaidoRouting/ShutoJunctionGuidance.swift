@@ -1615,6 +1615,9 @@ public enum ShutoJunctionMovementCatalog {
         ($0.junctionID, $0)
       }
     )
+    let routesByID = Dictionary(
+      uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
+    )
     return released.first { definition in
       guard
         definition.networkSnapshotID == database.networkSnapshotID,
@@ -1624,13 +1627,18 @@ public enum ShutoJunctionMovementCatalog {
         outgoing.fromNodeID == definition.junctionNodeID,
         incoming.routeMemberships.contains(where: {
           $0.routeID == definition.incomingRouteID
-            && $0.directionsJA.contains(
-              definition.incomingDirectionJA
-            )
         }),
         outgoing.routeMemberships.contains(where: {
           $0.routeID == definition.outgoingRouteID
         }),
+        routesByID[definition.incomingRouteID]?
+          .officialDirectionsJA.contains(
+            definition.incomingDirectionJA
+          ) == true,
+        routesByID[definition.outgoingRouteID]?
+          .officialDirectionsJA.contains(
+            definition.outgoingDirectionJA
+          ) == true,
         let junction = junctionsByID[definition.junctionID],
         junction.osmNodeIDs.contains(definition.junctionNodeID),
         junction.officialDetailSHA256
@@ -1726,6 +1734,9 @@ public enum ShutoJunctionGuidanceCompiler {
         ($0.junctionID, $0)
       }
     )
+    let routesByID = Dictionary(
+      uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
+    )
     let totalDistance = max(route.distanceMeters, 1)
     var cumulativeDistance = 0.0
     var matches: [ShutoJunctionGuidanceMatch] = []
@@ -1744,13 +1755,18 @@ public enum ShutoJunctionGuidanceCompiler {
           outgoing.fromNodeID == definition.junctionNodeID,
           incoming.routeMemberships.contains(where: {
             $0.routeID == definition.incomingRouteID
-              && $0.directionsJA.contains(
-                definition.incomingDirectionJA
-              )
           }),
           outgoing.routeMemberships.contains(where: {
             $0.routeID == definition.outgoingRouteID
           }),
+          routesByID[definition.incomingRouteID]?
+            .officialDirectionsJA.contains(
+              definition.incomingDirectionJA
+            ) == true,
+          routesByID[definition.outgoingRouteID]?
+            .officialDirectionsJA.contains(
+              definition.outgoingDirectionJA
+            ) == true,
           let junction = junctionsByID[definition.junctionID],
           junction.osmNodeIDs.contains(definition.junctionNodeID),
           junction.officialDetailSHA256

@@ -88,7 +88,11 @@ operator map or JCT image assets.
 The Swift decoder preserves the complete source/licence metadata. The default
 map validates the exact bundled database identity, snapshot identity, candidate
 verification state, OSM attribution, and ODbL identifier before exposing the
-official OSM copyright and ODbL HTTPS links adjacent to the map.
+network with official OSM copyright and ODbL HTTPS links adjacent to the map.
+Route-level `official_directions_ja` values come from the official
+directional IC catalog; they are vocabulary constraints only. A direction is
+bound to a JCT edge only by an exact reviewed movement definition and its
+operator-source hash, never by an empty or inferred OSM relation member role.
 
 The compiled runtime's deterministic asset identity covers this decoded
 metadata and exact route-local inputs. It is not a `KaidoProductRelease`, does

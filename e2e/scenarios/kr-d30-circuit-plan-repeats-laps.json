@@ -72,6 +72,7 @@
         "routes": [
           {
             "route_id": "test.route.loop",
+            "official_directions_ja": ["TEST_INNER", "TEST_OUTER"],
             "official_name_ja": "テスト環状線",
             "operational_status": "AVAILABLE"
           }

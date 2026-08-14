@@ -16,6 +16,26 @@ SPEC.loader.exec_module(BUILD_SHUTO_NETWORK)
 
 
 class BuildShutoNetworkTests(unittest.TestCase):
+    def test_official_route_directions_come_from_directional_facilities(
+        self,
+    ) -> None:
+        catalog_path = (
+            SCRIPT_PATH.parents[1]
+            / "data/network/shuto-official-catalog-20260729.json"
+        )
+        catalog, _ = BUILD_SHUTO_NETWORK.load_catalog(catalog_path)
+
+        directions = BUILD_SHUTO_NETWORK.official_directions_by_route(
+            catalog
+        )
+
+        self.assertEqual(directions["C1"], ["内回り", "外回り"])
+        self.assertEqual(directions["C2"], ["内回り", "外回り"])
+        self.assertEqual(directions["B"], ["東行き", "西行き"])
+        self.assertEqual(directions["Y"], ["北行き", "南行き"])
+        self.assertEqual(directions["3"], ["上り", "下り"])
+        self.assertEqual(set(directions), set(BUILD_SHUTO_NETWORK.ROUTE_RELATION_IDS))
+
     def test_distributed_notice_matches_generated_osm_metadata(self) -> None:
         notice = (
             SCRIPT_PATH.parents[1] / "DATA-LICENSES.md"

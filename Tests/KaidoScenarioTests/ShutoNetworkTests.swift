@@ -30,6 +30,15 @@ struct ShutoNetworkTests {
       database.routes.first { $0.routeID == "Y" }
     )
     #expect(yaesu.operationalStatus == "LONG_TERM_CLOSED")
+    #expect(yaesu.officialDirectionsJA == ["北行き", "南行き"])
+    #expect(
+      database.routes.first { $0.routeID == "C1" }?
+        .officialDirectionsJA == ["内回り", "外回り"]
+    )
+    #expect(
+      database.routes.first { $0.routeID == "3" }?
+        .officialDirectionsJA == ["上り", "下り"]
+    )
   }
 
   @Test("decoder preserves whole-network bounds, limitations, and source licence")

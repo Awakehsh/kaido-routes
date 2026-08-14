@@ -124,6 +124,23 @@ def load_catalog(path: Path) -> tuple[dict[str, Any], str]:
     return catalog, hashlib.sha256(raw).hexdigest()
 
 
+def official_directions_by_route(
+    catalog: dict[str, Any],
+) -> dict[str, list[str]]:
+    directions: dict[str, set[str]] = defaultdict(set)
+    for facility in catalog["directional_facilities"]:
+        directions[facility["route_id"]].update(
+            facility["entrance_directions"]
+        )
+        directions[facility["route_id"]].update(
+            facility["exit_directions"]
+        )
+    return {
+        route["route_id"]: sorted(directions[route["route_id"]])
+        for route in catalog["routes"]
+    }
+
+
 def relation_snapshot(
     osmium: Any,
     input_path: Path,
@@ -1190,6 +1207,7 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
     official_route_by_id = {
         route["route_id"]: route for route in catalog["routes"]
     }
+    official_directions_by_route_id = official_directions_by_route(catalog)
     reviewed_facilities = match_facilities(
         catalog,
         edges,
@@ -1262,6 +1280,8 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
                 "operational_status": official_route_by_id[route_id][
                     "operational_status"
                 ],
+                "official_directions_ja":
+                    official_directions_by_route_id[route_id],
             }
             for route_id in ROUTE_RELATION_IDS
         ],

@@ -166,8 +166,10 @@ facts and are never admitted to route search.
 
 Operator pages establish route names, IC direction availability, the current
 JCT directory, and the PA directory. The pinned OpenStreetMap extract supplies
-candidate geometry and topology. Operator maps, junction images, and logos are
-not copied into the repository.
+candidate geometry and topology. Each route's official direction vocabulary is
+derived from those directional IC facts; exact reviewed movement definitions,
+not incomplete OSM relation roles, bind that vocabulary to directed JCT edges.
+Operator maps, junction images, and logos are not copied into the repository.
 
 ## Accuracy boundary
 

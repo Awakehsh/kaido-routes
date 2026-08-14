@@ -42,6 +42,11 @@ snapshot it identifies 37 JCTs with graph choices, 120 incoming approaches, and
 241 candidate incoming/outgoing movement pairs. Twenty exact definitions are
 currently released and 221 still require legal/sign review. Graph adjacency is
 inventory only: it does not assert that every pair is a lawful movement.
+The snapshot also carries the official direction vocabulary for every route,
+derived from the directional IC catalog. Released JCT definitions bind one of
+those official values to exact incoming and outgoing directed-edge IDs plus the
+operator detail hash; OSM relation member roles are not treated as direction
+authority because most routes do not publish them consistently.
 
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock

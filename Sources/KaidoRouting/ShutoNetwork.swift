@@ -92,11 +92,13 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
 
   public struct Route: Codable, Equatable, Sendable {
     public let routeID: String
+    public let officialDirectionsJA: [String]
     public let officialNameJA: String
     public let operationalStatus: String
 
     private enum CodingKeys: String, CodingKey {
       case routeID = "route_id"
+      case officialDirectionsJA = "official_directions_ja"
       case officialNameJA = "official_name_ja"
       case operationalStatus = "operational_status"
     }
@@ -348,11 +350,28 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     }
     guard Set(nodes.map(\.nodeID)).count == nodes.count,
       Set(edges.map(\.edgeID)).count == edges.count,
+      Set(routes.map(\.routeID)).count == routes.count,
       Set(directionalFacilities.map(\.facilityID)).count
         == directionalFacilities.count,
       Set(junctions.map(\.junctionID)).count == junctions.count
     else {
       throw ShutoNetworkError.duplicateIdentity
+    }
+    let facilitiesByRouteID = Dictionary(
+      grouping: directionalFacilities,
+      by: \.routeID
+    )
+    guard routes.allSatisfy({ route in
+      let directions = Set(
+        (facilitiesByRouteID[route.routeID] ?? []).flatMap {
+          $0.entranceDirections + $0.exitDirections
+        }
+      )
+      return !directions.isEmpty
+        && Set(route.officialDirectionsJA) == directions
+        && route.officialDirectionsJA.count == directions.count
+    }) else {
+      throw ShutoNetworkError.invalidRouteDirections
     }
     let nodeIDs = Set(nodes.map(\.nodeID))
     guard edges.allSatisfy({
@@ -445,6 +464,7 @@ public enum ShutoNetworkError: Error, Equatable {
   case duplicateIdentity
   case invalidEdge
   case invalidJunction
+  case invalidRouteDirections
   case facilityUnavailable
   case routeUnavailable
 }

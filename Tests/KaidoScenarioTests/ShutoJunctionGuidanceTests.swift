@@ -636,6 +636,41 @@ struct ShutoJunctionGuidanceTests {
     )
   }
 
+  @Test("official route direction vocabulary gates exact movement guidance")
+  func rejectsUnknownOfficialRouteDirection() throws {
+    let originalDatabase = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: originalDatabase).plan(
+      entryFacilityID: "shuto.ic.b.ooi",
+      exitFacilityID: "shuto.ic.b.urayasu"
+    )
+    var document = try #require(
+      JSONSerialization.jsonObject(
+        with: JSONEncoder().encode(originalDatabase)
+      )
+        as? [String: Any]
+    )
+    var routes = try #require(document["routes"] as? [[String: Any]])
+    let bayshoreIndex = try #require(
+      routes.firstIndex { $0["route_id"] as? String == "B" }
+    )
+    routes[bayshoreIndex]["official_directions_ja"] = ["西行き"]
+    document["routes"] = routes
+    let database = try JSONDecoder().decode(
+      ShutoNetworkDatabase.self,
+      from: JSONSerialization.data(withJSONObject: document)
+    )
+
+    let matches = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    #expect(matches.isEmpty)
+    #expect(throws: ShutoNetworkError.invalidRouteDirections) {
+      try database.validate()
+    }
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

@@ -1,5 +1,7 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -16,6 +18,42 @@ SPEC.loader.exec_module(BUILD_SHUTO_NETWORK)
 
 
 class BuildShutoNetworkTests(unittest.TestCase):
+    def test_candidate_review_accepts_full_facility_search_radius(
+        self,
+    ) -> None:
+        review = {
+            "schema_version": "1.1",
+            "excluded_candidates": [],
+            "entry_boundary_rebindings": [
+                {
+                    "facility_id": "test.entry",
+                    "anchor_edge_id": "test.anchor",
+                    "boundary_edge_id": "test.boundary",
+                    "distance_meters": 750.0,
+                    "reason": "reviewed boundary",
+                    "evidence": "reviewed topology",
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "review.json"
+            path.write_text(json.dumps(review), encoding="utf-8")
+
+            loaded, digest = BUILD_SHUTO_NETWORK.load_candidate_review(path)
+
+            self.assertEqual(loaded, review)
+            self.assertEqual(len(digest), 64)
+
+            review["entry_boundary_rebindings"][0][
+                "distance_meters"
+            ] = 750.001
+            path.write_text(json.dumps(review), encoding="utf-8")
+            with self.assertRaisesRegex(
+                BUILD_SHUTO_NETWORK.NetworkBuildError,
+                "within 750 meters",
+            ):
+                BUILD_SHUTO_NETWORK.load_candidate_review(path)
+
     def test_entry_boundary_rebinding_preserves_forward_ramp_order(
         self,
     ) -> None:

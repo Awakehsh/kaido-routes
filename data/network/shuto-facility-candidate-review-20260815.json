@@ -11,6 +11,14 @@
       "distance_meters": 3.923,
       "reason": "The official Meguro coordinate projects beside the downstream ramp edge after the generated ramp-mouth anchor. Treating the anchor as the first RoutePlan edge leaves no forward predecessor and would require a backwards virtual entry transition.",
       "evidence": "Pinned OSM topology binds osm.207535708.0.forward.to_node_id and osm.422023169.0.forward.from_node_id to node 2177935839; the official Route 2 Meguro page identifies this as the available inbound entrance."
+    },
+    {
+      "facility_id": "shuto.ic.c1.shibakouen",
+      "anchor_edge_id": "osm.4853801.0.forward",
+      "boundary_edge_id": "osm.4853801.1.forward",
+      "distance_meters": 330.769,
+      "reason": "The generated Shiba Park outer-loop ramp-mouth anchor has no predecessor in the selected graph. Binding the RoutePlan to its immediate downstream edge retains the real anchor as the forward entry transition instead of inventing geometry before the ramp.",
+      "evidence": "Pinned OSM topology binds osm.4853801.0.forward.to_node_id and osm.4853801.1.forward.from_node_id to node 6389606756; both edges carry the C1 outer-loop membership and the official C1 Shiba Park page identifies the directional entrance."
     }
   ],
   "excluded_candidates": [

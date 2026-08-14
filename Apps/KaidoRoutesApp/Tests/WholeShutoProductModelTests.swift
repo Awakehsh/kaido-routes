@@ -397,6 +397,51 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testNewlyCompletedApproachesAdmitOnDeviceNavigation()
+    async throws
+  {
+    let pairs = [
+      ("shuto.ic.c1.shibakouen", "shuto.ic.4.shinjuku"),
+      ("shuto.ic.c1.ginza", "shuto.ic.3.shibuya"),
+      ("shuto.ic.10.harumi", "shuto.ic.b.urayasu"),
+      ("shuto.ic.b.ooi", "shuto.ic.b.urayasu"),
+      ("shuto.ic.c2.hatsudaiminami", "shuto.ic.b.urayasu"),
+    ]
+
+    for (entryFacilityID, exitFacilityID) in pairs {
+      let model = WholeShutoForegroundReleaseFactory.makeModel(
+        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+        checkpointStore: nil
+      )
+      model.selectCurrentOrigin(
+        ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+      )
+      model.prepareCustomRouteDraft()
+      model.selectCustomEntry(facilityID: entryFacilityID)
+      model.selectCustomExit(facilityID: exitFacilityID)
+
+      XCTAssertTrue(model.applyCustomRoute())
+      for _ in 0..<300
+      where model.isPreparingLiveNavigation
+        || model.isUpdatingSurfaceRoute
+      {
+        try? await Task.sleep(nanoseconds: 50_000_000)
+      }
+
+      XCTAssertEqual(
+        model.selectedRoute?.routePlan.entryFacilityID,
+        entryFacilityID
+      )
+      XCTAssertEqual(
+        model.selectedRoute?.routePlan.exitFacilityID,
+        exitFacilityID
+      )
+      XCTAssertFalse(model.isPreparingLiveNavigation)
+      XCTAssertTrue(model.canStartLiveNavigation)
+      XCTAssertNil(model.liveNavigationBlockerCode)
+    }
+  }
+
   func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
     async throws
   {
@@ -491,7 +536,7 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     let database = try WholeShutoNetworkCatalog.bundled()
     let route = try ShutoRoutePlanner(database: database).plan(
-      entryFacilityID: "shuto.ic.3.shibuya",
+      entryFacilityID: "shuto.ic.c1.ginza",
       exitFacilityID: "shuto.ic.k1.minatomirai"
     )
     let authority = WholeShutoRouteReleaseAuthority(database: database)

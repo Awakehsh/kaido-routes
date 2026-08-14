@@ -572,11 +572,11 @@ struct ShutoJunctionGuidanceTests {
     // operator diagram shows for that approach.
     #expect(
       matches.map(\.junctionNameJA)
-        == ["有明JCT", "東雲JCT", "辰巳JCT"]
+        == ["有明JCT", "東雲JCT", "辰巳JCT", "葛西JCT"]
     )
     #expect(
       matches.map(\.definition.japaneseSignText)
-        == ["葛西", "浦安", "浦安"]
+        == ["葛西", "浦安", "浦安", "浦安"]
     )
     // Daikoku sits further west on the same carriageway and signs its own
     // continuation for the airport, so it is checked against the catalog.
@@ -762,6 +762,20 @@ struct ShutoJunctionGuidanceTests {
         .left,
         "東名・渋谷"
       ),
+      (
+        "osm.45392984.0.forward",
+        "osm.24636451.0.forward",
+        "shuto.jct.miyakezaka.c1-outer-to-4-outbound",
+        .left,
+        "新宿・中央道"
+      ),
+      (
+        "osm.23297430.0.forward",
+        "osm.45332351.0.forward",
+        "shuto.jct.tanimachi.c1-inner-to-3-outbound",
+        .right,
+        "東名・渋谷"
+      ),
     ]
 
     for expected in expectations {
@@ -777,6 +791,72 @@ struct ShutoJunctionGuidanceTests {
       #expect(definition.id == expected.id)
       #expect(definition.branchSide == expected.side)
       #expect(definition.japaneseSignText == expected.sign)
+    }
+  }
+
+  @Test("single-gap JCT approaches bind current official signs")
+  func singleGapJunctionApproachesBindOfficialSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String
+      )
+    ] = [
+      (
+        "osm.316213219.28.forward",
+        "osm.45021972.0.forward",
+        "shuto.jct.hamasakibashi.c1-outer-to-1-outbound",
+        .left,
+        "羽田・湾岸線"
+      ),
+      (
+        "osm.888066402.7.forward",
+        "osm.44129862.0.forward",
+        "shuto.jct.kasai.b-eastbound-stays-on-b",
+        .straight,
+        "浦安"
+      ),
+      (
+        "osm.331692344.2.forward",
+        "osm.1308572350.0.forward",
+        "shuto.jct.oi.c2-inner-stays-on-c2",
+        .right,
+        "中央道・都心環状"
+      ),
+      (
+        "osm.1264293942.1.forward",
+        "osm.40971846.0.forward",
+        "shuto.jct.shinonome.10-outbound-to-b-eastbound",
+        .left,
+        "浦安"
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.sources.last?.contentSHA256
+          == definition.expectedJunctionDetailSHA256
+      )
     }
   }
 

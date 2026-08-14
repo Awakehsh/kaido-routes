@@ -315,6 +315,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testShibaParkToShinjukuCustomRouteStartsLiveNavigation() {
+    assertExactCustomRouteStartsLiveNavigation(
+      previewArgument:
+        "-WHOLE-SHUTO-C1-ROUTE-4-LIVE-ROUTE-PREVIEW"
+    )
+  }
+
   private func assertExactCustomRouteStartsLiveNavigation(
     previewArgument: String
   ) {

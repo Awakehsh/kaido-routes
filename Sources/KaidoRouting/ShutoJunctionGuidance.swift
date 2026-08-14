@@ -3415,6 +3415,191 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.hamasakibashi.c1-outer-to-1-outbound",
+      junctionID: "shuto.jct.jct_hamasakibashi",
+      junctionNodeID: 3_218_329_762,
+      incomingEdgeID: "osm.316213219.28.forward",
+      outgoingEdgeID: "osm.45021972.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "1_HANEDA",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "羽田・湾岸線",
+      routeShields: ["1", "B"],
+      junctionNameJA: "浜崎橋JCT",
+      junctionNameZH: "浜崎桥 JCT",
+      junctionNameEN: "Hamasakibashi JCT",
+      destinationJA: "1号羽田線 羽田・湾岸線方面",
+      destinationZH: "1号羽田线 羽田・湾岸线方向",
+      destinationEN: "Route 1 toward Haneda and the Bayshore Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "9991505f52afb8f1d4c7f9ee46956daa4"
+        + "afad92c55bfb9cc6ccc5cafd2ab82c7",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hamasakibashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kasai.b-eastbound-stays-on-b",
+      junctionID: "shuto.jct.jct_kasai",
+      junctionNodeID: 31_330_103,
+      incomingEdgeID: "osm.888066402.7.forward",
+      outgoingEdgeID: "osm.44129862.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .straight,
+      japaneseSignText: "浦安",
+      routeShields: ["B"],
+      junctionNameJA: "葛西JCT",
+      junctionNameZH: "葛西 JCT",
+      junctionNameEN: "Kasai JCT",
+      destinationJA: "湾岸線 浦安方面",
+      destinationZH: "湾岸线浦安方向",
+      destinationEN: "the Bayshore Route toward Urayasu",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "5e52b43abc96875472405c2fe5c2ca49"
+        + "2946356ac0c86460f1610051289aa7b2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kasai",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.miyakezaka.c1-outer-to-4-outbound",
+      junctionID: "shuto.jct.jct_miyakezaka",
+      junctionNodeID: 260_710_800,
+      incomingEdgeID: "osm.45392984.0.forward",
+      outgoingEdgeID: "osm.24636451.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "新宿・中央道",
+      routeShields: ["4", "E20"],
+      junctionNameJA: "三宅坂JCT",
+      junctionNameZH: "三宅坂 JCT",
+      junctionNameEN: "Miyakezaka JCT",
+      destinationJA: "4号新宿線 新宿・中央道方面",
+      destinationZH: "4号新宿线 新宿・中央道方向",
+      destinationEN: "Route 4 toward Shinjuku and the Chuo Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "a4b648d1710a6658750171468b86d14d"
+        + "f4c86d6031841135fddd87e7e2610c71",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_miyakezaka",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-4/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.oi.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_oi",
+      junctionNodeID: 3_387_909_450,
+      incomingEdgeID: "osm.331692344.2.forward",
+      outgoingEdgeID: "osm.1308572350.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .right,
+      japaneseSignText: "中央道・都心環状",
+      routeShields: ["C2", "E20"],
+      junctionNameJA: "大井JCT",
+      junctionNameZH: "大井 JCT",
+      junctionNameEN: "Oi JCT",
+      destinationJA: "C2 内回り 中央道・都心環状方面",
+      destinationZH: "C2 内环 中央道・都心环状方向",
+      destinationEN:
+        "the C2 Inner Loop toward the Chuo Expressway and Inner Circular Route",
+      expectedJunctionDetailSHA256:
+        "4bfe3cb6117273ec547a62872b971a87f"
+        + "cc944fff70b3267022888612aacfc2b",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_oi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.shinonome.10-outbound-to-b-eastbound",
+      junctionID: "shuto.jct.jct_shinonome",
+      junctionNodeID: 499_275_905,
+      incomingEdgeID: "osm.1264293942.1.forward",
+      outgoingEdgeID: "osm.40971846.0.forward",
+      incomingRouteID: "10",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .left,
+      japaneseSignText: "浦安",
+      routeShields: ["B"],
+      junctionNameJA: "東雲JCT",
+      junctionNameZH: "东云 JCT",
+      junctionNameEN: "Shinonome JCT",
+      destinationJA: "湾岸線 浦安方面",
+      destinationZH: "湾岸线浦安方向",
+      destinationEN: "the Bayshore Route toward Urayasu",
+      expectedJunctionDetailSHA256:
+        "452e2ca3d124ec3f726b0c3643cedbbce"
+        + "3446b21e755f538b418616278cfa605",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_shinonome",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-10/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.tanimachi.c1-inner-to-3-outbound",
+      junctionID: "shuto.jct.jct_tanimachi",
+      junctionNodeID: 252_175_042,
+      incomingEdgeID: "osm.23297430.0.forward",
+      outgoingEdgeID: "osm.45332351.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "3",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "東名・渋谷",
+      routeShields: ["3", "E1"],
+      junctionNameJA: "谷町JCT",
+      junctionNameZH: "谷町 JCT",
+      junctionNameEN: "Tanimachi JCT",
+      destinationJA: "3号渋谷線 東名・渋谷方面",
+      destinationZH: "3号涩谷线 东名・涩谷方向",
+      destinationEN: "Route 3 toward Shibuya and the Tomei Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "b7f8b5458757c825d2abf42f315bdb7d"
+        + "60e54debbb8a7420f49dd8a4646940fd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_tanimachi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-3/",
+      ]
+    ),
   ]
 
   public static func releasedDefinition(

@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 30)
     #expect(coverage.incomingApproachCount == 87)
     #expect(coverage.movements.count == 175)
-    #expect(coverage.releasedMovementCount == 63)
-    #expect(coverage.missingMovementReviewCount == 112)
+    #expect(coverage.releasedMovementCount == 69)
+    #expect(coverage.missingMovementReviewCount == 106)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -391,6 +391,37 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
+  @Test("newly completed approaches build foreground products")
+  func newlyCompletedApproachesBuildForegroundProducts() throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let pairs = [
+      ("shuto.ic.c1.shibakouen", "shuto.ic.4.shinjuku"),
+      ("shuto.ic.c1.ginza", "shuto.ic.3.shibuya"),
+      ("shuto.ic.10.harumi", "shuto.ic.b.urayasu"),
+      ("shuto.ic.b.ooi", "shuto.ic.b.urayasu"),
+      ("shuto.ic.c2.hatsudaiminami", "shuto.ic.b.urayasu"),
+    ]
+
+    for (entryFacilityID, exitFacilityID) in pairs {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      #expect(assets.liveReleaseCoverage.missingGuidanceDecisionCount == 0)
+      let artifact = try ShutoCircuitProductReleaseBuilder
+        .buildPlannedRouteArtifact(
+          database: database,
+          route: route
+        )
+      #expect(artifact.navigationRelease.routePlan == route.routePlan)
+    }
+  }
+
   @Test("Meguro entry binds a forward ramp transition")
   func meguroEntryBindsForwardRampTransition() throws {
     let database = try loadWholeShutoDatabase()
@@ -409,6 +440,32 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       transition.directedEdgeIDs == [
         "osm.207535708.0.forward",
         "osm.422023169.0.forward",
+      ]
+    )
+    #expect(
+      transition.firstRouteOccurrenceID
+        == route.routePlan.occurrences.first?.id
+    )
+  }
+
+  @Test("Shiba Park outer entry binds a forward ramp transition")
+  func shibaParkOuterEntryBindsForwardRampTransition() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.c1.shibakouen",
+      exitFacilityID: "shuto.ic.4.shinjuku"
+    )
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(database: database, route: route)
+    let transition = try #require(
+      artifact.navigationRelease.runtimePolicy
+    ).entryTransition
+
+    #expect(route.edges.first?.edgeID == "osm.4853801.1.forward")
+    #expect(
+      transition.directedEdgeIDs == [
+        "osm.4853801.0.forward",
+        "osm.4853801.1.forward",
       ]
     )
     #expect(

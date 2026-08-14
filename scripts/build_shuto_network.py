@@ -936,10 +936,10 @@ def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
             not isinstance(distance, (int, float))
             or not math.isfinite(distance)
             or distance < 0
-            or distance > 75
+            or distance > 750
         ):
             raise NetworkBuildError(
-                "entry boundary rebinding distance must be within 75 meters"
+                "entry boundary rebinding distance must be within 750 meters"
             )
     return review, hashlib.sha256(raw).hexdigest()
 

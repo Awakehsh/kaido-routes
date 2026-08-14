@@ -68,7 +68,7 @@ struct ShutoNetworkTests {
     )
     #expect(
       database.sources.facilityCandidateReview
-        .entryBoundaryRebindingCount == 1
+        .entryBoundaryRebindingCount == 2
     )
     #expect(database.sources.osm.attribution == "© OpenStreetMap contributors")
     #expect(database.sources.osm.licence == "ODbL-1.0")

@@ -19,11 +19,11 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       .networkLiveReleaseCoverage(database: database)
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
-    #expect(coverage.junctionCount == 37)
-    #expect(coverage.incomingApproachCount == 120)
-    #expect(coverage.movements.count == 241)
+    #expect(coverage.junctionCount == 30)
+    #expect(coverage.incomingApproachCount == 80)
+    #expect(coverage.movements.count == 161)
     #expect(coverage.releasedMovementCount == 20)
-    #expect(coverage.missingMovementReviewCount == 221)
+    #expect(coverage.missingMovementReviewCount == 141)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -247,6 +247,30 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
     #expect(engine.snapshot.recovery.chosenRejoinOccurrenceID == nil)
     #expect(engine.snapshot.recovery.destinationRerouteUsed == false)
+  }
+
+  @Test("C1 live coverage separates terminal exit from JCT guidance")
+  func c1CoverageKeepsExitOutOfJunctionGuidance() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: .c1Inner,
+      entryFacilityID: "shuto.ic.c1.shibakouen",
+      exitFacilityID: "shuto.ic.c1.shiodome",
+      laps: 1
+    )
+
+    let coverage = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    ).liveReleaseCoverage
+
+    #expect(coverage.decisions.count == 15)
+    #expect(coverage.guidanceDecisionCount == 5)
+    #expect(coverage.nonJunctionGraphDivergenceCount == 10)
+    #expect(coverage.missingGuidanceDecisionCount == 1)
+    #expect(coverage.recoveryBranches.count == 15)
+    #expect(coverage.missingReleasedRecoveryBranchCount == 15)
+    #expect(!coverage.expresswayReleaseCoverageComplete)
   }
 
   @Test("only exact HIGH occurrence evidence projects route progress")

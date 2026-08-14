@@ -409,9 +409,9 @@ struct ShutoJunctionGuidanceTests {
       route: route
     )
 
-    // Every junction where another route diverges from the inner loop is
-    // reviewed, so a lap never runs without an instruction at a decision.
-    // Ordered as the lap encounters them from Shibakoen.
+    // These are the four released inner-loop continuations currently in the
+    // catalog, ordered as the lap encounters them from Shibakoen. The live
+    // coverage audit separately tracks the unreleased JCT approaches.
     #expect(
       matches.map(\.junctionNameJA)
         == ["竹橋JCT", "三宅坂JCT", "谷町JCT", "一ノ橋JCT"]

@@ -38,10 +38,12 @@ realtime, or field authority.
 
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
-snapshot it identifies 37 JCTs with graph choices, 120 incoming approaches, and
-241 candidate incoming/outgoing movement pairs. Twenty exact definitions are
-currently released and 221 still require legal/sign review. Graph adjacency is
-inventory only: it does not assert that every pair is a lawful movement.
+snapshot it identifies 30 JCTs with choices between available expressway
+mainlines, 80 incoming approaches, and 161 candidate incoming/outgoing movement
+pairs. Twenty exact definitions are currently released and 141 still require
+legal/sign review. Terminal exits and connections leading only to the closed
+Yaesu Route remain recovery/egress divergences, not JCT-guidance work. Graph
+adjacency is inventory only: it does not assert that every pair is lawful.
 The snapshot also carries the official direction vocabulary for every route,
 derived from the directional IC catalog. Released JCT definitions bind one of
 those official values to exact incoming and outgoing directed-edge IDs plus the

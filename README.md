@@ -212,6 +212,15 @@ swift run kaido-release inspect-network-live-coverage \
   --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json
 ```
 
+Inspect one bundled circuit without flattening its repeated occurrences:
+
+```sh
+swift run kaido-release inspect-circuit-live-coverage \
+  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
+  --circuit shuto.circuit.c1-inner \
+  --entry shuto.ic.c1.shibakouen --exit shuto.ic.c1.shiodome --laps 1
+```
+
 ## Build and run
 
 Requirements:

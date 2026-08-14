@@ -32,6 +32,10 @@ private enum CLIError: Error, CustomStringConvertible {
         kaido-release inspect-live-coverage \\
           --network <whole-shuto-network.json> \\
           --entry <directional-entry-id> --exit <directional-exit-id>
+        kaido-release inspect-circuit-live-coverage \\
+          --network <whole-shuto-network.json> --circuit <circuit-id> \\
+          --entry <directional-entry-id> --exit <directional-exit-id> \\
+          --laps <positive-integer>
         kaido-release validate-navigation --artifact <navigation-release.json>
         kaido-release build-navigation \\
           --draft <navigation-release-draft.json> \\
@@ -275,6 +279,13 @@ private enum Command {
     entryFacilityID: String,
     exitFacilityID: String
   )
+  case inspectCircuitLiveCoverage(
+    network: String,
+    circuitID: String,
+    entryFacilityID: String,
+    exitFacilityID: String,
+    laps: Int
+  )
   case validateNavigation(artifact: String)
   case buildNavigation(
     draft: String,
@@ -458,6 +469,20 @@ private struct Arguments {
         network: try flags.value("--network"),
         entryFacilityID: try flags.value("--entry"),
         exitFacilityID: try flags.value("--exit")
+      )
+    case "inspect-circuit-live-coverage":
+      try flags.require(
+        exactly: ["--network", "--circuit", "--entry", "--exit", "--laps"]
+      )
+      guard let laps = Int(try flags.value("--laps")), laps > 0 else {
+        throw CLIError.usage
+      }
+      command = .inspectCircuitLiveCoverage(
+        network: try flags.value("--network"),
+        circuitID: try flags.value("--circuit"),
+        entryFacilityID: try flags.value("--entry"),
+        exitFacilityID: try flags.value("--exit"),
+        laps: laps
       )
     case "validate-navigation":
       try flags.require(exactly: ["--artifact"])
@@ -965,6 +990,43 @@ do {
     let route = try ShutoRoutePlanner(database: database).plan(
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+    let report = LiveCoverageReport(
+      routePlanID: route.routePlan.id,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      routeOccurrenceCount: route.routePlan.occurrences.count,
+      coverage: assets.liveReleaseCoverage
+    )
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    FileHandle.standardOutput.write(try encoder.encode(report))
+    FileHandle.standardOutput.write(Data("\n".utf8))
+  case .inspectCircuitLiveCoverage(
+    let networkPath,
+    let circuitID,
+    let entryFacilityID,
+    let exitFacilityID,
+    let laps
+  ):
+    let database = try decode(
+      ShutoNetworkDatabase.self,
+      path: networkPath
+    )
+    guard let circuit = ShutoCircuitDefinition.bundled.first(where: {
+      $0.circuitID == circuitID
+    }) else {
+      throw CLIError.usage
+    }
+    let route = try ShutoRoutePlanner(database: database).planCircuit(
+      circuit: circuit,
+      entryFacilityID: entryFacilityID,
+      exitFacilityID: exitFacilityID,
+      laps: laps
     )
     let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
       database: database,

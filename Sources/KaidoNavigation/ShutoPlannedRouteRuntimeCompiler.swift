@@ -167,9 +167,10 @@ public struct ShutoNetworkJunctionMovementCoverage:
   }
 }
 
-/// Snapshot-wide worklist for every graph movement at a real branching JCT.
-/// It is an authoring inventory, not proof that graph adjacency is a legal or
-/// navigation-released movement.
+/// Snapshot-wide worklist for movements between available expressway
+/// mainlines at a real branching JCT. Terminal exits and unavailable routes
+/// stay in route-local recovery/egress coverage. This is an authoring
+/// inventory, not proof that graph adjacency is a legal or released movement.
 public struct ShutoNetworkLiveReleaseCoverage:
   Codable, Equatable, Sendable
 {
@@ -800,6 +801,10 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     try database.validate()
     let incoming = Dictionary(grouping: database.edges, by: \.toNodeID)
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let availableRouteIDs = Set(
+      database.routes.filter { $0.operationalStatus == "AVAILABLE" }
+        .map(\.routeID)
+    )
     let waysByID = Dictionary(
       uniqueKeysWithValues: database.ways.map { ($0.wayID, $0) }
     )
@@ -814,6 +819,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         }) {
           let choices = (outgoing[nodeID] ?? [])
             .filter { $0.toNodeID != incomingEdge.fromNodeID }
+            .filter {
+              leadsToAvailableMainline(
+                from: $0,
+                outgoing: outgoing,
+                availableRouteIDs: availableRouteIDs
+              )
+            }
             .sorted { $0.edgeID < $1.edgeID }
           guard choices.count > 1 else { continue }
           for outgoingEdge in choices {
@@ -856,6 +868,10 @@ public enum ShutoPlannedRouteRuntimeCompiler {
   ) -> ShutoRouteLiveReleaseCoverage {
     let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
     let junctionNodeIDs = Set(database.junctions.flatMap(\.osmNodeIDs))
+    let availableRouteIDs = Set(
+      database.routes.filter { $0.operationalStatus == "AVAILABLE" }
+        .map(\.routeID)
+    )
     let candidatesByBranch = Dictionary(
       uniqueKeysWithValues: recoveryCandidates.map {
         ("\($0.divergenceOccurrenceID)|\($0.triggerDirectedEdgeID)", $0)
@@ -887,9 +903,20 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         incoming: incoming,
         outgoing: plannedOutgoing
       )
+      let startsTerminalExitBranch = route.edges[(index + 1)...]
+        .allSatisfy { $0.kind == "LINK" }
+      let hasAvailableExpresswayAlternative = alternatives.contains {
+        leadsToAvailableMainline(
+          from: $0,
+          outgoing: outgoing,
+          availableRouteIDs: availableRouteIDs
+        )
+      }
       decisions.append(
         ShutoRouteDecisionCoverage(
           kind: junctionNodeIDs.contains(incoming.toNodeID)
+            && !startsTerminalExitBranch
+            && hasAvailableExpresswayAlternative
             ? .junction : .graphDivergence,
           divergenceOccurrenceID: divergenceOccurrenceID,
           plannedOutgoingOccurrenceID:
@@ -921,6 +948,37 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       decisions: decisions,
       recoveryBranches: recoveryBranches
     )
+  }
+
+  /// Distinguishes an expressway-to-expressway connector from an off-ramp.
+  /// The first mainline reached owns the result: an unavailable route such as
+  /// the closed Yaesu Route is not followed through to a later open route.
+  private static func leadsToAvailableMainline(
+    from start: ShutoNetworkDatabase.Edge,
+    outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
+    availableRouteIDs: Set<String>
+  ) -> Bool {
+    var queue: [(edge: ShutoNetworkDatabase.Edge, distance: Double)] = [
+      (start, 0)
+    ]
+    var seen = Set([start.edgeID])
+    var index = 0
+    while index < queue.count {
+      let current = queue[index]
+      index += 1
+      if current.edge.kind == "MAINLINE" {
+        return current.edge.routeMemberships.contains {
+          availableRouteIDs.contains($0.routeID)
+        }
+      }
+      let distance = current.distance + current.edge.lengthMeters
+      guard distance <= 2_000 else { continue }
+      for next in outgoing[current.edge.toNodeID] ?? []
+      where seen.insert(next.edgeID).inserted {
+        queue.append((next, distance))
+      }
+    }
+    return false
   }
 
   /// Wrong-turn recovery candidates: for every plan node where an available

@@ -50,7 +50,7 @@ realtime, or field authority.
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 30 JCTs with choices between available expressway
 mainlines, 87 incoming approaches, and 175 candidate incoming/outgoing movement
-pairs. Fifty-five exact definitions are currently released and 120 still require
+pairs. Sixty-three exact definitions are currently released and 112 still require
 legal/sign review. Terminal exits and connections leading only to the closed
 Yaesu Route remain recovery/egress divergences, not JCT-guidance work. Graph
 adjacency is inventory only: it does not assert that every pair is lawful.

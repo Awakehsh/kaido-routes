@@ -183,6 +183,17 @@ struct KaidoRoutesApp: App {
           exitFacilityID: "shuto.ic.c1.ginza"
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-ROUTE-2-LIVE-ROUTE-PREVIEW"
+      ) {
+        WholeShutoDynamicCustomRoutePreviewHost(
+          origin: ShutoCoordinate(
+            latitude: 35.6467,
+            longitude: 139.7239
+          ),
+          entryFacilityID: "shuto.ic.2.tengenji",
+          exitFacilityID: "shuto.ic.c1.ginza"
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW"
       ) {
         WholeShutoRecommendedLiveRoutePreviewHost()

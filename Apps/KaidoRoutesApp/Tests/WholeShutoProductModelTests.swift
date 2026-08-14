@@ -349,6 +349,53 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testRoute2And5RadialPairsAdmitOnDeviceNavigation()
+    async throws
+  {
+    let pairs = [
+      ("shuto.ic.2.tengenji", "shuto.ic.c1.ginza"),
+      ("shuto.ic.c1.ginza", "shuto.ic.2.meguro"),
+      ("shuto.ic.5.higashiikebukuro", "shuto.ic.c1.ginza"),
+      ("shuto.ic.c1.ginza", "shuto.ic.5.higashiikebukuro"),
+    ]
+
+    for (entryFacilityID, exitFacilityID) in pairs {
+      let model = WholeShutoForegroundReleaseFactory.makeModel(
+        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+        checkpointStore: nil
+      )
+      model.selectCurrentOrigin(
+        ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+      )
+      model.prepareCustomRouteDraft()
+      model.selectCustomEntry(facilityID: entryFacilityID)
+      model.selectCustomExit(facilityID: exitFacilityID)
+
+      XCTAssertTrue(model.applyCustomRoute())
+      for _ in 0..<300
+      where model.isPreparingLiveNavigation
+        || model.isUpdatingSurfaceRoute
+      {
+        try? await Task.sleep(nanoseconds: 50_000_000)
+      }
+
+      XCTAssertEqual(
+        model.selectedRoute?.routePlan.entryFacilityID,
+        entryFacilityID
+      )
+      XCTAssertEqual(
+        model.selectedRoute?.routePlan.exitFacilityID,
+        exitFacilityID
+      )
+      XCTAssertFalse(model.isPreparingLiveNavigation)
+      XCTAssertTrue(
+        model.canStartLiveNavigation,
+        "Expected live admission for \(entryFacilityID) -> \(exitFacilityID), blocker: \(model.liveNavigationBlockerCode ?? "none")"
+      )
+      XCTAssertNil(model.liveNavigationBlockerCode)
+    }
+  }
+
   func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
     async throws
   {

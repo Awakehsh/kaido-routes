@@ -2131,6 +2131,254 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.ichinohashi.c1-outer-to-2-outbound",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 31_297_000,
+      incomingEdgeID: "osm.24039737.3.forward",
+      outgoingEdgeID: "osm.4853805.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "2",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "目黒",
+      routeShields: ["2"],
+      junctionNameJA: "一ノ橋JCT",
+      junctionNameZH: "一之桥 JCT",
+      junctionNameEN: "Ichinohashi JCT",
+      destinationJA: "2号目黒線 目黒方面",
+      destinationZH: "2号目黑线 目黑方向",
+      destinationEN: "Route 2 toward Meguro",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ichinohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ichinohashi.c1-inner-to-2-outbound",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 574_460_605,
+      incomingEdgeID: "osm.23297444.19.forward",
+      outgoingEdgeID: "osm.45248411.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "2",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "目黒",
+      routeShields: ["2"],
+      junctionNameJA: "一ノ橋JCT",
+      junctionNameZH: "一之桥 JCT",
+      junctionNameEN: "Ichinohashi JCT",
+      destinationJA: "2号目黒線 目黒方面",
+      destinationZH: "2号目黑线 目黑方向",
+      destinationEN: "Route 2 toward Meguro",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ichinohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ichinohashi.2-inbound-to-c1-outer",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 574_460_620,
+      incomingEdgeID: "osm.7836679.9.forward",
+      outgoingEdgeID: "osm.4853802.0.forward",
+      incomingRouteID: "2",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "2",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "北池袋・新宿",
+      routeShields: ["C1", "3", "4", "5"],
+      junctionNameJA: "一ノ橋JCT",
+      junctionNameZH: "一之桥 JCT",
+      junctionNameEN: "Ichinohashi JCT",
+      destinationJA: "都心環状線 北池袋・新宿方面",
+      destinationZH: "都心环状线 北池袋・新宿方向",
+      destinationEN: "the Outer Circular Route toward Kita-Ikebukuro and Shinjuku",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ichinohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ichinohashi.2-inbound-to-c1-inner",
+      junctionID: "shuto.jct.jct_ichinohashi",
+      junctionNodeID: 574_460_620,
+      incomingEdgeID: "osm.7836679.9.forward",
+      outgoingEdgeID: "osm.4853804.0.forward",
+      incomingRouteID: "2",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "2",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "湾岸線・銀座",
+      routeShields: ["C1", "1", "11", "6"],
+      junctionNameJA: "一ノ橋JCT",
+      junctionNameZH: "一之桥 JCT",
+      junctionNameEN: "Ichinohashi JCT",
+      destinationJA: "都心環状線 湾岸線・銀座方面",
+      destinationZH: "都心环状线 湾岸线・银座方向",
+      destinationEN: "the Inner Circular Route toward the Bayshore Route and Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "f56355b8bf55596a73adc91f8fa2c83a"
+        + "f02ace3089843c63fd7c7b469db7d34d",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ichinohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.takehashi.c1-outer-to-5-outbound",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 263_987_757,
+      incomingEdgeID: "osm.24039773.1.forward",
+      outgoingEdgeID: "osm.24334770.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "北池袋・関越道",
+      routeShields: ["5", "E17"],
+      junctionNameJA: "竹橋JCT",
+      junctionNameZH: "竹桥 JCT",
+      junctionNameEN: "Takehashi JCT",
+      destinationJA: "5号池袋線 北池袋・関越道方面",
+      destinationZH: "5号池袋线 北池袋・关越道方向",
+      destinationEN: "Route 5 toward Kita-Ikebukuro and the Kan-Etsu Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_takehashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.takehashi.c1-inner-to-5-outbound",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 264_871_735,
+      incomingEdgeID: "osm.1545541219.7.forward",
+      outgoingEdgeID: "osm.1421966435.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "北池袋・関越道",
+      routeShields: ["5", "E17"],
+      junctionNameJA: "竹橋JCT",
+      junctionNameZH: "竹桥 JCT",
+      junctionNameEN: "Takehashi JCT",
+      destinationJA: "5号池袋線 北池袋・関越道方面",
+      destinationZH: "5号池袋线 北池袋・关越道方向",
+      destinationEN: "Route 5 toward Kita-Ikebukuro and the Kan-Etsu Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_takehashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.takehashi.5-inbound-to-c1-outer",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 252_174_819,
+      incomingEdgeID: "osm.23681223.222.forward",
+      outgoingEdgeID: "osm.23681223.223.forward",
+      incomingRouteID: "5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "神田橋・箱崎",
+      routeShields: ["C1", "6"],
+      junctionNameJA: "竹橋JCT",
+      junctionNameZH: "竹桥 JCT",
+      junctionNameEN: "Takehashi JCT",
+      destinationJA: "都心環状線 神田橋・箱崎方面",
+      destinationZH: "都心环状线 神田桥・箱崎方向",
+      destinationEN: "the Outer Circular Route toward Kandabashi and Hakozaki",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_takehashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.takehashi.5-inbound-to-c1-inner",
+      junctionID: "shuto.jct.jct_takehashi",
+      junctionNodeID: 252_174_819,
+      incomingEdgeID: "osm.23681223.222.forward",
+      outgoingEdgeID: "osm.955398790.0.forward",
+      incomingRouteID: "5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "霞が関・中央道",
+      routeShields: ["C1", "3", "4", "E20"],
+      junctionNameJA: "竹橋JCT",
+      junctionNameZH: "竹桥 JCT",
+      junctionNameEN: "Takehashi JCT",
+      destinationJA: "都心環状線 霞が関・中央道方面",
+      destinationZH: "都心环状线 霞关・中央道方向",
+      destinationEN: "the Inner Circular Route toward Kasumigaseki and the Chuo Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "1c1d2a5ebd879002c6053bf0e556f752"
+        + "6d068350cd0ee798a370e23389a97ded",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_takehashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.miyakezaka.c1-outer-stays-on-c1",
       junctionID: "shuto.jct.jct_miyakezaka",
       junctionNodeID: 260_710_800,

@@ -301,6 +301,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testRoute2ToGinzaCustomRouteOffersLiveNavigation() {
+    assertExactCustomRouteOffersLiveNavigation(
+      previewArgument:
+        "-WHOLE-SHUTO-ROUTE-2-LIVE-ROUTE-PREVIEW"
+    )
+  }
+
   private func assertExactCustomRouteOffersLiveNavigation(
     previewArgument: String
   ) {

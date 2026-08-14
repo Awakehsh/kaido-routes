@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 30)
     #expect(coverage.incomingApproachCount == 87)
     #expect(coverage.movements.count == 175)
-    #expect(coverage.releasedMovementCount == 55)
-    #expect(coverage.missingMovementReviewCount == 120)
+    #expect(coverage.releasedMovementCount == 63)
+    #expect(coverage.missingMovementReviewCount == 112)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -363,6 +363,31 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(
       artifact.navigationRelease.routePlan == route.routePlan
     )
+  }
+
+  @Test("Route 2 and Route 5 radial pairs build foreground products")
+  func route2And5RadialPairsBuildForegroundProducts() throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let pairs = [
+      ("shuto.ic.2.tengenji", "shuto.ic.c1.ginza"),
+      ("shuto.ic.c1.ginza", "shuto.ic.2.meguro"),
+      ("shuto.ic.5.higashiikebukuro", "shuto.ic.c1.ginza"),
+      ("shuto.ic.c1.ginza", "shuto.ic.5.higashiikebukuro"),
+    ]
+
+    for (entryFacilityID, exitFacilityID) in pairs {
+      let route = try planner.plan(
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID
+      )
+      let artifact = try ShutoCircuitProductReleaseBuilder
+        .buildPlannedRouteArtifact(
+          database: database,
+          route: route
+        )
+      #expect(artifact.navigationRelease.routePlan == route.routePlan)
+    }
   }
 
   @Test("only exact HIGH occurrence evidence projects route progress")

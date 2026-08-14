@@ -286,6 +286,22 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       }.count == 2
     )
     #expect(coverage.recoveryBranches.count == 15)
+    #expect(coverage.recoveryBranchCount(kind: .expresswayBranch) == 6)
+    #expect(coverage.recoveryBranchCount(kind: .surfaceExit) == 8)
+    #expect(coverage.recoveryBranchCount(kind: .missedExit) == 1)
+    #expect(
+      coverage.recoveryBranchCount(kind: .unavailableExpresswayBranch)
+        == 0
+    )
+    #expect(
+      coverage.missingRecoveryCandidateBranchCount(
+        kind: .expresswayBranch
+      ) == 2
+    )
+    #expect(
+      coverage.missingRecoveryCandidateBranchCount(kind: .surfaceExit)
+        == 7
+    )
     #expect(coverage.missingReleasedRecoveryBranchCount == 15)
     #expect(!coverage.expresswayReleaseCoverageComplete)
   }

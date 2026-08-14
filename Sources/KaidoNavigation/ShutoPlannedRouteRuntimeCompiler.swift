@@ -76,12 +76,21 @@ public struct ShutoRouteDecisionCoverage: Codable, Equatable, Sendable {
 public struct ShutoRouteRecoveryBranchCoverage:
   Codable, Equatable, Sendable
 {
+  public enum Kind: String, Codable, Equatable, Sendable {
+    case expresswayBranch = "EXPRESSWAY_BRANCH"
+    case surfaceExit = "SURFACE_EXIT"
+    case missedExit = "MISSED_EXIT"
+    case unavailableExpresswayBranch = "UNAVAILABLE_EXPRESSWAY_BRANCH"
+  }
+
+  public let kind: Kind
   public let divergenceOccurrenceID: String
   public let triggerDirectedEdgeID: String
   public let candidateTargetOccurrenceID: String?
   public let candidateIsReleased: Bool
 
   private enum CodingKeys: String, CodingKey {
+    case kind
     case divergenceOccurrenceID = "divergence_occurrence_id"
     case triggerDirectedEdgeID = "trigger_directed_edge_id"
     case candidateTargetOccurrenceID = "candidate_target_occurrence_id"
@@ -116,6 +125,20 @@ public struct ShutoRouteLiveReleaseCoverage:
 
   public var missingReleasedRecoveryBranchCount: Int {
     recoveryBranches.count { !$0.candidateIsReleased }
+  }
+
+  public func recoveryBranchCount(
+    kind: ShutoRouteRecoveryBranchCoverage.Kind
+  ) -> Int {
+    recoveryBranches.count { $0.kind == kind }
+  }
+
+  public func missingRecoveryCandidateBranchCount(
+    kind: ShutoRouteRecoveryBranchCoverage.Kind
+  ) -> Int {
+    recoveryBranches.count {
+      $0.kind == kind && $0.candidateTargetOccurrenceID == nil
+    }
   }
 
   public var missingRecoveryCandidateBranchCount: Int {
@@ -947,6 +970,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         ]
         recoveryBranches.append(
           ShutoRouteRecoveryBranchCoverage(
+            kind: recoveryBranchKind(
+              isJunctionDecision: isJunctionDecision,
+              startsTerminalExitBranch: startsTerminalExitBranch,
+              alternative: alternative,
+              outgoing: outgoing,
+              availableRouteIDs: availableRouteIDs
+            ),
             divergenceOccurrenceID: divergenceOccurrenceID,
             triggerDirectedEdgeID: alternative.edgeID,
             candidateTargetOccurrenceID: candidate?.targetOccurrenceID,
@@ -971,6 +1001,49 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
     availableRouteIDs: Set<String>
   ) -> Bool {
+    firstMainlineAvailability(
+      from: start,
+      outgoing: outgoing,
+      availableRouteIDs: availableRouteIDs
+    ) == .available
+  }
+
+  private enum FirstMainlineAvailability {
+    case available
+    case unavailable
+    case none
+  }
+
+  private static func recoveryBranchKind(
+    isJunctionDecision: Bool,
+    startsTerminalExitBranch: Bool,
+    alternative: ShutoNetworkDatabase.Edge,
+    outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
+    availableRouteIDs: Set<String>
+  ) -> ShutoRouteRecoveryBranchCoverage.Kind {
+    switch firstMainlineAvailability(
+      from: alternative,
+      outgoing: outgoing,
+      availableRouteIDs: availableRouteIDs
+    ) {
+    case .available where startsTerminalExitBranch:
+      return .missedExit
+    case .available where isJunctionDecision:
+      return .expresswayBranch
+    case .available:
+      return .expresswayBranch
+    case .unavailable:
+      return .unavailableExpresswayBranch
+    case .none:
+      return .surfaceExit
+    }
+  }
+
+  private static func firstMainlineAvailability(
+    from start: ShutoNetworkDatabase.Edge,
+    outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
+    availableRouteIDs: Set<String>
+  ) -> FirstMainlineAvailability {
     var queue: [(edge: ShutoNetworkDatabase.Edge, distance: Double)] = [
       (start, 0)
     ]
@@ -982,7 +1055,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       if current.edge.kind == "MAINLINE" {
         return current.edge.routeMemberships.contains {
           availableRouteIDs.contains($0.routeID)
-        }
+        } ? .available : .unavailable
       }
       let distance = current.distance + current.edge.lengthMeters
       guard distance <= 2_000 else { continue }
@@ -991,7 +1064,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         queue.append((next, distance))
       }
     }
-    return false
+    return .none
   }
 
   /// Wrong-turn recovery candidates: for every plan node where an available

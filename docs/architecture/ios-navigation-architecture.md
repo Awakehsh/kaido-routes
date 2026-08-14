@@ -25,8 +25,12 @@ unreviewed movement. The compiler also emits a deterministic
 `ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
 branch. Known JCT decisions are counted separately from non-JCT graph
 divergences such as directional exit splits, so missing JCT guidance is not
-conflated with missing surface re-entry recovery. The report quantifies missing
-review but grants no authority. Every result
+conflated with missing surface re-entry recovery. The report classifies missing
+release work by intent: a wrong expressway branch, an early surface exit, a missed
+selected exit, or a branch whose first mainline is unavailable. For the first
+C1 inner route this yields six expressway branches, eight surface exits, and
+one missed exit; four expressway branches have graph rejoin candidates, while
+none of those candidates is released. The report grants no authority. Every result
 carries a deterministic `ShutoRuntimeAssetIdentity`: the
 network-artifact SHA-256 covers
 the complete canonical decoded database, while the route-runtime SHA-256 binds

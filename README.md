@@ -293,7 +293,7 @@ swift run kaido-release validate-product \
 
 The focused whole-network tests decode the distributed database, validate
 coverage and identity, plan a cross-network IC-to-IC route, and rank entrances
-and exits for arbitrary Tokyo-to-Yokohama coordinates.
+and exits from both nearby and long-access origins.
 
 The verification workflow also runs the complete Python validator regression
 suite and the production joint-release validator against the retained K7

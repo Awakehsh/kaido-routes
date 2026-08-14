@@ -1345,6 +1345,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testWholeShutoLongSurfaceAccessExposesLiveNavigation() {
+    assertWholeShutoRecommendedRouteExposesLiveNavigation(
+      circuitID: "shuto.circuit.c1-outer",
+      previewArgument: "-WHOLE-SHUTO-LONG-ACCESS-LIVE-ROUTE-PREVIEW",
+      expectedAccessIdentifier: "whole-shuto-circuit-entrance-extended"
+    )
+  }
+
   func testWholeShutoC1OuterRecommendedRouteExposesLiveNavigation() {
     assertWholeShutoRecommendedRouteExposesLiveNavigation(
       circuitID: "shuto.circuit.c1-outer"
@@ -1364,13 +1372,16 @@ final class KaidoProductJourneyUITests: XCTestCase {
   }
 
   private func assertWholeShutoRecommendedRouteExposesLiveNavigation(
-    circuitID: String
+    circuitID: String,
+    previewArgument: String =
+      "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW",
+    expectedAccessIdentifier: String? = nil
   ) {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
-      "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW",
+      previewArgument,
       "-app.kaidoroutes.language.interface",
       "en",
     ]
@@ -1392,6 +1403,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
       XCTWaiter.wait(for: [circuitReady], timeout: 15),
       .completed
     )
+    if let expectedAccessIdentifier {
+      XCTAssertTrue(
+        element(expectedAccessIdentifier, in: app)
+          .waitForExistence(timeout: 3)
+      )
+    }
     startCircuit.tap()
 
     let product = element("whole-shuto-product", in: app)

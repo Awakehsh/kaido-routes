@@ -5,10 +5,16 @@ whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
 with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. Its route-first home
 offers named experiences, automatic direction-valid entrance/exit pairing,
 1–3 laps for loops, and exact custom routes before the optional destination.
+Automatic circuit pairing keeps the nearest bounded radial candidates and every
+direction-valid member-route entrance. It prefers a complete foreground-release
+pairing over a closer preview-only pairing, labels access beyond 16 km as long,
+and lets the surface adapter decide whether that exact ramp is drivable instead
+of rejecting it by straight-line distance.
 The selected Kaido-owned `RoutePlan` then drives review and a labeled replay of
 bounded surface legs, entry, expressway progress, exit, egress, finish, and
-checkpoint reconstruction. Candidate whole-Shuto live start remains
-fail-closed as `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`.
+checkpoint reconstruction. Exact plans whose complete decision sequence and
+recovery compile into a foreground release can start live navigation; every
+other plan remains fail-closed with its precise release blocker.
 
 `ShutoNetworkDatabase` preserves graph bounds, explicit limitations, official
 catalog and facility-review hashes, and OSM source/licence metadata rather than

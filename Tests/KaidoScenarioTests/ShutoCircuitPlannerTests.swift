@@ -363,28 +363,31 @@ struct ShutoCircuitPlannerTests {
     #expect(route.distanceMeters < 60_000)
   }
 
-  @Test("a distant origin fails closed instead of a long surface leg")
-  func rejectsOutOfRangeOrigin() throws {
+  @Test("a distant origin retains a direction-valid surface access candidate")
+  func retainsDistantOriginCandidate() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())
-    // Tachikawa sits ~20 km from the nearest C2 entrance: beyond the outer
-    // access radius, the pairing fails closed with the factual distance
-    // instead of recommending a long ordinary-road leg.
+    // Tachikawa sits beyond the old 16 km cap. The exact C2 route remains
+    // selectable; the surface provider, not geodesic distance, decides whether
+    // the ordinary-road access leg can be driven.
     let origin = ShutoCoordinate(latitude: 35.6979, longitude: 139.4139)
-    #expect {
-      try planner.recommendedCircuitPairing(
-        for: .c2InnerWithBayshore,
-        origin: origin,
-        evidence: .etcNormalCarActive
-      )
-    } throws: { error in
-      guard
-        case ShutoCircuitError.entranceOutOfRange(let nearest) = error
-      else { return false }
-      return nearest > ShutoEntranceAccessTier.outerRadiusMeters
-    }
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .c2InnerWithBayshore,
+      origin: origin,
+      evidence: .etcNormalCarActive
+    )
+    let distance = try #require(pairing.entranceDistanceMeters)
+    #expect(distance > ShutoEntranceAccessTier.outerRadiusMeters)
+    #expect(pairing.entrance.canEnter)
+    #expect(pairing.exit.canExit)
+    #expect(
+      planner.circuitEntranceCandidates(
+        for: .c1Outer,
+        origin: origin
+      ).contains { $0.routeID == "C1" }
+    )
   }
 
-  @Test("entrance access tiers split at 8 and 16 kilometers")
+  @Test("entrance access tiers keep longer surface access explicit")
   func classifiesEntranceAccessTiers() {
     #expect(
       ShutoEntranceAccessTier.classify(distanceMeters: 7_999) == .nearby
@@ -394,7 +397,7 @@ struct ShutoCircuitPlannerTests {
     )
     #expect(
       ShutoEntranceAccessTier.classify(distanceMeters: 16_001)
-        == .outOfRange
+        == .extended
     )
   }
 

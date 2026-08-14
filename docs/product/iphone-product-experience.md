@@ -108,9 +108,13 @@ but the default path never asks the driver to assemble a pairing.
 
 Surface access to the entrance is tiered: within 8 km the pairing is
 recommended normally, between 8 and 16 km it carries an explicit far label,
-and beyond 16 km the experience fails closed with the factual distance to
-the nearest entrance instead of recommending a long ordinary-road leg — a
-distant origin belongs to a radial approach, not surface navigation. The
+and longer approaches carry a long-access label. Straight-line distance never
+decides whether the ordinary-road leg is drivable: the bounded surface provider
+must resolve the exact directional ramp, and a missing access route blocks
+review and start. Among direction-valid automatic candidates, a route whose
+complete junction sequence can construct foreground navigation authority ranks
+ahead of a closer preview-only entrance; an explicit driver override remains
+honored and retains its precise release blocker. The
 surface legs themselves target the plan's own directional ramp mouths, not
 the IC representative point: a full IC's opposite-direction ramps can sit
 hundreds of meters apart, and the half/full direction facts decide which

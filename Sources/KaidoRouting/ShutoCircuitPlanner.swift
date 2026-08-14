@@ -288,25 +288,21 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   ]
 }
 
-/// Raised for structurally invalid circuit requests (bad lap count,
-/// entrance/exit outside the circuit's member routes or direction), or for
-/// an origin whose nearest eligible entrance sits beyond the outer surface
-/// access radius — the product fails closed instead of navigating tens of
-/// kilometers of ordinary roads.
+/// Raised for structurally invalid circuit requests such as a bad lap count.
+/// Direction-invalid facilities continue to use `facilityUnavailable`.
 public enum ShutoCircuitError: Error, Equatable {
   case invalidLapCount
-  case entranceOutOfRange(nearestDistanceMeters: Double)
 }
 
 /// Surface-access tiers for reaching an entrance from the origin: Tokyo's
 /// inner wards space Shuto entrances every 1–3 km, so 8 km (~15–20 min of
-/// city driving) covers ordinary urban origins, 16 km is offered with an
-/// explicit far label, and anything beyond fails closed — a distant origin
-/// belongs to a radial approach, not a long surface leg.
+/// city driving) covers ordinary urban origins, 16 km is offered with a far
+/// label, and longer access is explicit while the surface provider determines
+/// whether a legal driving route actually exists.
 public enum ShutoEntranceAccessTier: Equatable, Sendable {
   case nearby
   case far
-  case outOfRange
+  case extended
 
   public static let nearbyRadiusMeters = 8_000.0
   public static let outerRadiusMeters = 16_000.0
@@ -316,7 +312,7 @@ public enum ShutoEntranceAccessTier: Equatable, Sendable {
   ) -> ShutoEntranceAccessTier {
     if distanceMeters <= nearbyRadiusMeters { return .nearby }
     if distanceMeters <= outerRadiusMeters { return .far }
-    return .outOfRange
+    return .extended
   }
 }
 
@@ -328,6 +324,18 @@ public struct ShutoCircuitPairing: Equatable, Sendable {
   public let tariffBand: ShutoTariffBand?
   /// Geodesic origin-to-entrance distance when an origin was provided.
   public let entranceDistanceMeters: Double?
+
+  public init(
+    entrance: ShutoNetworkDatabase.Facility,
+    exit: ShutoNetworkDatabase.Facility,
+    tariffBand: ShutoTariffBand?,
+    entranceDistanceMeters: Double?
+  ) {
+    self.entrance = entrance
+    self.exit = exit
+    self.tariffBand = tariffBand
+    self.entranceDistanceMeters = entranceDistanceMeters
+  }
 }
 
 extension ShutoRoutePlanner {
@@ -424,7 +432,9 @@ extension ShutoRoutePlanner {
 
   /// Direction-valid entrances that can actually reach every anchor of the
   /// experience, nearest-first from an origin. The reachability gate runs on
-  /// the nearest `entranceCandidateLimit` candidates only.
+  /// the nearest `entranceCandidateLimit` candidates plus every direction-valid
+  /// member-route entrance, so a distant origin never loses the route's own
+  /// ramps behind nearer radial approaches.
   public func circuitEntranceCandidates(
     for circuit: ShutoCircuitDefinition,
     origin: ShutoCoordinate? = nil
@@ -459,7 +469,13 @@ extension ShutoRoutePlanner {
         viability: &viability
       )
     else { return [] }
-    return ranked.prefix(Self.entranceCandidateLimit).filter { entrance in
+    let boundedCandidates = Array(ranked.prefix(Self.entranceCandidateLimit))
+    let candidateIDs = Set(boundedCandidates.map(\.facilityID))
+    let candidates = boundedCandidates + ranked.filter {
+      circuit.memberRouteIDs.contains($0.routeID)
+        && !candidateIDs.contains($0.facilityID)
+    }
+    return candidates.filter { entrance in
       let approaches = circuitApproaches(
         entryFacility: entrance,
         isMember: isMember,
@@ -628,15 +644,6 @@ extension ShutoRoutePlanner {
     }
     let entranceDistance = origin.map {
       Self.distance($0, entrance.coordinate)
-    }
-    if let entranceDistance,
-      ShutoEntranceAccessTier.classify(
-        distanceMeters: entranceDistance
-      ) == .outOfRange
-    {
-      throw ShutoCircuitError.entranceOutOfRange(
-        nearestDistanceMeters: entranceDistance
-      )
     }
     let exits = try circuitExitCandidates(
       for: circuit,

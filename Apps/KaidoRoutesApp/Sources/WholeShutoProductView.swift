@@ -1258,29 +1258,7 @@ struct WholeShutoProductView: View {
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
     Group {
-      if let nearest = model.circuitEntranceOutOfRangeMeters {
-        // Fail closed instead of navigating a long surface leg; distant
-        // origins belong to a radial approach.
-        Text(
-          copy.resolve(
-            japanese: String(
-              format: "16km圏内に対応入口がありません（最寄り約%.0fkm）",
-              nearest / 1000
-            ),
-            simplifiedChinese: String(
-              format: "16km 内没有可用入口（最近约 %.0f km）",
-              nearest / 1000
-            ),
-            english: String(
-              format: "No entrance within 16 km (nearest ≈ %.0f km)",
-              nearest / 1000
-            )
-          )
-        )
-        .font(.system(size: 11.5, weight: .semibold))
-        .foregroundStyle(.secondary)
-        .accessibilityIdentifier("whole-shuto-circuit-out-of-range")
-      } else if model.isResolvingCircuitPairing {
+      if model.isResolvingCircuitPairing {
         HStack(spacing: 8) {
           ProgressView()
             .controlSize(.small)
@@ -1349,14 +1327,15 @@ struct WholeShutoProductView: View {
               .font(.system(size: 10.5, weight: .semibold))
               .monospacedDigit()
               .foregroundStyle(.secondary)
-              if ShutoEntranceAccessTier.classify(
+              let accessTier = ShutoEntranceAccessTier.classify(
                 distanceMeters: meters
-              ) == .far {
+              )
+              if accessTier != .nearby {
                 Text(
                   copy.resolve(
-                    japanese: "遠め",
-                    simplifiedChinese: "较远",
-                    english: "FAR"
+                    japanese: accessTier == .far ? "遠め" : "遠方接続",
+                    simplifiedChinese: accessTier == .far ? "较远" : "远途接入",
+                    english: accessTier == .far ? "FAR" : "LONG ACCESS"
                   )
                 )
                 .font(.system(size: 9, weight: .bold))
@@ -1365,7 +1344,9 @@ struct WholeShutoProductView: View {
                 .background(KaidoTheme.signalAmber.opacity(0.3))
                 .clipShape(Capsule())
                 .accessibilityIdentifier(
-                  "whole-shuto-circuit-entrance-far"
+                  accessTier == .far
+                    ? "whole-shuto-circuit-entrance-far"
+                    : "whole-shuto-circuit-entrance-extended"
                 )
               }
             }

@@ -111,6 +111,10 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertNotNil(model.circuitEntryFacilityID)
     XCTAssertNotNil(model.circuitExitFacilityID)
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      "shuto.ic.c1.kyoubashi"
+    )
     XCTAssertTrue(model.startCircuitJourney())
     for _ in 0..<400
     where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
@@ -124,6 +128,37 @@ final class WholeShutoProductModelTests: XCTestCase {
       ),
       true
     )
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
+  }
+
+  func testLongSurfaceAccessCanReachReleasedCircuitNavigation() async throws {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6979, longitude: 139.4139)
+    )
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+
+    let distance = try XCTUnwrap(model.circuitEntranceDistanceMeters)
+    XCTAssertEqual(
+      ShutoEntranceAccessTier.classify(distanceMeters: distance),
+      .extended
+    )
+    XCTAssertNotNil(model.circuitEntryFacilityID)
+    XCTAssertNotNil(model.circuitExitFacilityID)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<400
+    where model.isUpdatingSurfaceRoute || !model.canStartLiveNavigation {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertNotNil(model.accessRoute)
+    XCTAssertNotNil(model.egressRoute)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
   }

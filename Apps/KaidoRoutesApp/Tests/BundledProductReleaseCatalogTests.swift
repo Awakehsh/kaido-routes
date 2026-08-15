@@ -76,7 +76,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       c2.release.navigation.bundle.routePlan.occurrences.count,
       2_196
     )
-    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 20)
+    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 24)
     XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
 
     let daikoku = try XCTUnwrap(

@@ -2244,6 +2244,150 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Kosuge and Horikiri movements bind every current operator sign")
+  func kosugeHorikiriMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.44422827.8.forward",
+        "osm.44422827.9.forward",
+        "shuto.jct.horikiri.c2-inner-toward-kosuge",
+        .straight,
+        "東北道・常磐道",
+        ["C2", "E4", "6", "E6"]
+      ),
+      (
+        "osm.44422827.8.forward",
+        "osm.44422825.0.forward",
+        "shuto.jct.horikiri.c2-inner-to-6-inbound",
+        .left,
+        "銀座",
+        ["6", "C1"]
+      ),
+      (
+        "osm.44130134.12.forward",
+        "osm.28194807.0.forward",
+        "shuto.jct.kosuge.c2-inner-stays-on-c2",
+        .left,
+        "東北道・大宮",
+        ["C2", "E4", "S1"]
+      ),
+      (
+        "osm.44130134.12.forward",
+        "osm.43992332.0.forward",
+        "shuto.jct.kosuge.c2-inner-to-6-outbound",
+        .right,
+        "常磐道・三郷",
+        ["6", "E6"]
+      ),
+      (
+        "osm.32898851.9.forward",
+        "osm.28188273.0.forward",
+        "shuto.jct.horikiri.c2-outer-to-6-inbound",
+        .right,
+        "銀座",
+        ["6", "C1"]
+      ),
+      (
+        "osm.32898851.9.forward",
+        "osm.44130133.0.forward",
+        "shuto.jct.horikiri.c2-outer-stays-on-c2",
+        .left,
+        "湾岸線・東関東道",
+        ["C2", "B", "E51", "7"]
+      ),
+      (
+        "osm.28194805.12.forward",
+        "osm.28188270.0.forward",
+        "shuto.jct.kosuge.c2-outer-to-6-outbound",
+        .left,
+        "常磐道・三郷",
+        ["6", "E6"]
+      ),
+      (
+        "osm.28194805.12.forward",
+        "osm.28194805.13.forward",
+        "shuto.jct.kosuge.c2-outer-stays-on-c2",
+        .straight,
+        "湾岸線・東関東道",
+        ["C2", "B", "E51", "7"]
+      ),
+      (
+        "osm.250490207.15.forward",
+        "osm.250490207.16.forward",
+        "shuto.jct.kosuge.6-inbound-toward-horikiri",
+        .straight,
+        "湾岸線・都心環状",
+        ["C2", "B", "6", "C1"]
+      ),
+      (
+        "osm.250490207.15.forward",
+        "osm.31090753.0.forward",
+        "shuto.jct.kosuge.6-inbound-to-c2-inner",
+        .right,
+        "東名・中央道",
+        ["C2", "E1", "5", "E20"]
+      ),
+      (
+        "osm.817278024.142.forward",
+        "osm.28188274.0.forward",
+        "shuto.jct.horikiri.6-outbound-to-c2-outer",
+        .right,
+        "湾岸線・東関東道",
+        ["C2", "B", "E51", "7"]
+      ),
+      (
+        "osm.817278024.142.forward",
+        "osm.316265424.0.forward",
+        "shuto.jct.horikiri.6-outbound-toward-kosuge",
+        .straight,
+        "東北道・常磐道",
+        ["C2", "E4", "6", "E6"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 300)
+      #expect(definition.coveredFollowingDecisionEdgeIDs.isEmpty)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "3beba3e408064642b7641cfbac692f1c"
+          + "1f3fec6a0bce421e62c226c1ee6cf695"
+      )
+      #expect(
+        definition.sources.contains {
+          $0.url == "https://www.shutoko.jp/use/safety/fourlanes/"
+        }
+      )
+    }
+  }
+
   @Test("Kawasaki-Ukishima movements bind every current operator sign")
   func kawasakiUkishimaMovementsBindEveryCurrentOperatorSign() throws {
     let database = try loadDatabase()

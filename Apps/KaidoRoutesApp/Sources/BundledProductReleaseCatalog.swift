@@ -59,7 +59,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "ac400f9e2110105d2313275ba4e8bb80cae2325f9f8c2f0aa87f5a9c03c6c9f8",
+        "7de6a703dd813ed6a43c5491aac6f2df703a18af814364763379cd2f2dc9d876",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15",
       role: .foregroundNavigation

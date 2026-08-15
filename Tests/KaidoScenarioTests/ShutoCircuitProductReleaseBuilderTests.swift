@@ -90,7 +90,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 22)
+    #expect(release.navigation.bundle.releasedGuidance.count == 24)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )
@@ -104,6 +104,12 @@ struct ShutoCircuitProductReleaseBuilderTests {
       release.navigation.bundle.releasedGuidance.contains {
         $0.frameTemplate.presentationSource.japaneseSignText
           == "東北道・大宮"
+      }
+    )
+    #expect(
+      release.navigation.bundle.releasedGuidance.contains {
+        $0.frameTemplate.presentationSource.japaneseSignText
+          == "東北道・常磐道"
       }
     )
     #expect(

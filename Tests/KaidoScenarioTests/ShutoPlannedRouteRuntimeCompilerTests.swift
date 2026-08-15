@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 29)
     #expect(coverage.incomingApproachCount == 83)
     #expect(coverage.movements.count == 167)
-    #expect(coverage.releasedMovementCount == 133)
-    #expect(coverage.missingMovementReviewCount == 34)
+    #expect(coverage.releasedMovementCount == 144)
+    #expect(coverage.missingMovementReviewCount == 23)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -240,8 +240,14 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(
       coverage.decisions.filter {
         $0.releasedGuidanceDefinitionID
-          == "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge"
-      }.count == 2
+          == "shuto.jct.horikiri.c2-inner-toward-kosuge"
+      }.count == 1
+    )
+    #expect(
+      coverage.decisions.filter {
+        $0.releasedGuidanceDefinitionID
+          == "shuto.jct.kosuge.c2-inner-stays-on-c2"
+      }.count == 1
     )
     #expect(
       coverage.decisions.filter {

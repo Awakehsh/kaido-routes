@@ -683,41 +683,27 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-7/",
       ]
     ),
-    c2InnerMovement(
-      id: "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge",
+    reviewedMovement(
+      id: "shuto.jct.horikiri.c2-inner-toward-kosuge",
       junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
       junctionNodeID: 559_445_920,
       incomingEdgeID: "osm.44422827.8.forward",
       outgoingEdgeID: "osm.44422827.9.forward",
-      coveredFollowingDecisionEdgeIDs: [
-        "osm.44422827.10.forward",
-        "osm.44422827.11.forward",
-        "osm.44422826.0.forward",
-        "osm.44422826.1.forward",
-        "osm.44130134.0.forward",
-        "osm.44130134.1.forward",
-        "osm.44130134.2.forward",
-        "osm.44130134.3.forward",
-        "osm.44130134.4.forward",
-        "osm.44130134.5.forward",
-        "osm.44130134.6.forward",
-        "osm.44130134.7.forward",
-        "osm.44130134.8.forward",
-        "osm.44130134.9.forward",
-        "osm.44130134.10.forward",
-        "osm.44130134.11.forward",
-        "osm.44130134.12.forward",
-        "osm.28194807.0.forward",
-      ],
-      branchSide: .left,
-      japaneseSignText: "東北道・大宮",
-      routeShields: ["C2", "E4"],
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .straight,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "6", "E6"],
       junctionNameJA: "小菅JCT・堀切JCT",
       junctionNameZH: "小菅 JCT・堀切 JCT",
       junctionNameEN: "Kosuge and Horikiri Junctions",
-      destinationJA: "C2 内回り",
-      destinationZH: "C2 内环",
-      destinationEN: "the C2 Inner Loop",
+      destinationJA: "小菅JCT 東北道・常磐道方面",
+      destinationZH: "小菅 JCT 东北自动车道、常磐自动车道方向",
+      destinationEN:
+        "Kosuge Junction for the Tohoku or Joban Expressway",
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "3beba3e408064642b7641cfbac692f1c"
         + "1f3fec6a0bce421e62c226c1ee6cf695",
@@ -728,6 +714,374 @@ public enum ShutoJunctionMovementCatalog {
       additionalSources: [
         "https://www.shutoko.jp/use/safety/fourlanes/",
         "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.horikiri.c2-inner-to-6-inbound",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 559_445_920,
+      incomingEdgeID: "osm.44422827.8.forward",
+      outgoingEdgeID: "osm.44422825.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "銀座",
+      routeShields: ["6", "C1"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "6号向島線 銀座方面",
+      destinationZH: "6号向岛线银座方向",
+      destinationEN: "Route 6 toward Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 309_692_515,
+      incomingEdgeID: "osm.44130134.12.forward",
+      outgoingEdgeID: "osm.28194807.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .left,
+      maneuverJA: "左方向を保ち",
+      maneuverZH: "保持左侧",
+      maneuverEN: "keep left",
+      japaneseSignText: "東北道・大宮",
+      routeShields: ["C2", "E4", "S1"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 内回り 東北道・大宮方面",
+      destinationZH: "C2 内环东北自动车道、大宫方向",
+      destinationEN:
+        "the C2 Inner Loop toward the Tohoku Expressway and Omiya",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.c2-inner-to-6-outbound",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 309_692_515,
+      incomingEdgeID: "osm.44130134.12.forward",
+      outgoingEdgeID: "osm.43992332.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "6_MISATO",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      maneuverJA: "右方向を保ち",
+      maneuverZH: "保持右侧",
+      maneuverEN: "keep right",
+      japaneseSignText: "常磐道・三郷",
+      routeShields: ["6", "E6"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "6号三郷線 常磐道・三郷方面",
+      destinationZH: "6号三乡线常磐自动车道、三乡方向",
+      destinationEN: "Route 6 toward the Joban Expressway and Misato",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.horikiri.c2-outer-to-6-inbound",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 370_270_206,
+      incomingEdgeID: "osm.32898851.9.forward",
+      outgoingEdgeID: "osm.28188273.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "銀座",
+      routeShields: ["6", "C1"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "6号向島線 銀座方面",
+      destinationZH: "6号向岛线银座方向",
+      destinationEN: "Route 6 toward Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.horikiri.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 370_270_206,
+      incomingEdgeID: "osm.32898851.9.forward",
+      outgoingEdgeID: "osm.44130133.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .left,
+      japaneseSignText: "湾岸線・東関東道",
+      routeShields: ["C2", "B", "E51", "7"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 外回り 湾岸線・東関東道方面",
+      destinationZH: "C2 外环湾岸线、东关东自动车道方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Bayshore Route and Higashi-Kanto Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.c2-outer-to-6-outbound",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 309_609_006,
+      incomingEdgeID: "osm.28194805.12.forward",
+      outgoingEdgeID: "osm.28188270.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "6_MISATO",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "常磐道・三郷",
+      routeShields: ["6", "E6"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "6号三郷線 常磐道・三郷方面",
+      destinationZH: "6号三乡线常磐自动车道、三乡方向",
+      destinationEN: "Route 6 toward the Joban Expressway and Misato",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 309_609_006,
+      incomingEdgeID: "osm.28194805.12.forward",
+      outgoingEdgeID: "osm.28194805.13.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "湾岸線・東関東道",
+      routeShields: ["C2", "B", "E51", "7"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 外回り 湾岸線・東関東道方面",
+      destinationZH: "C2 外环湾岸线、东关东自动车道方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Bayshore Route and Higashi-Kanto Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.6-inbound-toward-horikiri",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 559_445_943,
+      incomingEdgeID: "osm.250490207.15.forward",
+      outgoingEdgeID: "osm.250490207.16.forward",
+      incomingRouteID: "6_MISATO",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "6_MISATO",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "湾岸線・都心環状",
+      routeShields: ["C2", "B", "6", "C1"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "堀切JCT 湾岸線・都心環状方面",
+      destinationZH: "堀切 JCT 湾岸线、都心环状线方向",
+      destinationEN:
+        "Horikiri Junction for the Bayshore or Inner Circular Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kosuge.6-inbound-to-c2-inner",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 559_445_943,
+      incomingEdgeID: "osm.250490207.15.forward",
+      outgoingEdgeID: "osm.31090753.0.forward",
+      incomingRouteID: "6_MISATO",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .right,
+      japaneseSignText: "東名・中央道",
+      routeShields: ["C2", "E1", "5", "E20"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 内回り 東名・中央道方面",
+      destinationZH: "C2 内环东名高速、中央自动车道方向",
+      destinationEN:
+        "the C2 Inner Loop toward the Tomei and Chuo Expressways",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.horikiri.6-outbound-to-c2-outer",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 564_683_280,
+      incomingEdgeID: "osm.817278024.142.forward",
+      outgoingEdgeID: "osm.28188274.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .right,
+      japaneseSignText: "湾岸線・東関東道",
+      routeShields: ["C2", "B", "E51", "7"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "C2 外回り 湾岸線・東関東道方面",
+      destinationZH: "C2 外环湾岸线、东关东自动车道方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Bayshore Route and Higashi-Kanto Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.horikiri.6-outbound-toward-kosuge",
+      junctionID: "shuto.jct.jct_kosugehorikiri_20180404",
+      junctionNodeID: 564_683_280,
+      incomingEdgeID: "osm.817278024.142.forward",
+      outgoingEdgeID: "osm.316265424.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .straight,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "6", "E6"],
+      junctionNameJA: "小菅JCT・堀切JCT",
+      junctionNameZH: "小菅 JCT・堀切 JCT",
+      junctionNameEN: "Kosuge and Horikiri Junctions",
+      destinationJA: "小菅JCT 東北道・常磐道方面",
+      destinationZH: "小菅 JCT 东北自动车道、常磐自动车道方向",
+      destinationEN:
+        "Kosuge Junction for the Tohoku or Joban Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "3beba3e408064642b7641cfbac692f1c"
+        + "1f3fec6a0bce421e62c226c1ee6cf695",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_kosugehorikiri_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
       ]
     ),
     c2InnerMovement(

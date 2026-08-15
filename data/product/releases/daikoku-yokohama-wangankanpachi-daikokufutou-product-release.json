@@ -385,14 +385,14 @@
         {
           "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.70.osm.15766920.0.forward.selected",
           "detail" : {
-            "en" : "大黒線",
-            "ja-JP" : "大黒線",
-            "zh-Hans" : "大黒線"
+            "en" : "東名",
+            "ja-JP" : "東名",
+            "zh-Hans" : "東名"
           },
           "title" : {
-            "en" : "Branch Left for Route K5 inbound",
-            "ja-JP" : "左方向へ分岐し、K5 大黒線 上りへ",
-            "zh-Hans" : "向左分岔，驶往 K5 大黑线上行方向"
+            "en" : "Branch Left for Route K5 toward the Tomei Expressway",
+            "ja-JP" : "左方向へ分岐し、K5 大黒線 東名方面へ",
+            "zh-Hans" : "向左分岔，驶往 K5 大黑线东名高速方向"
           }
         },
         {
@@ -450,14 +450,14 @@
         {
           "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.541.osm.489510478.0.forward.selected",
           "detail" : {
-            "en" : "横浜公園",
-            "ja-JP" : "横浜公園",
-            "zh-Hans" : "横浜公園"
+            "en" : "横浜公園・横横道路",
+            "ja-JP" : "横浜公園・横横道路",
+            "zh-Hans" : "横浜公園・横横道路"
           },
           "title" : {
-            "en" : "Stay on the Bayshore Route toward 横浜公園",
-            "ja-JP" : "分岐せず、湾岸線 横浜公園方面へ",
-            "zh-Hans" : "不要分岔，沿湾岸线前往 横浜公園 方向"
+            "en" : "Stay on the Bayshore Route toward 横浜公園 and 横横道路",
+            "ja-JP" : "分岐せず、湾岸線 横浜公園・横横道路方面へ",
+            "zh-Hans" : "不要分岔，沿湾岸线前往 横浜公園・横横道路 方向"
           }
         }
       ],
@@ -18920,35 +18920,37 @@
           "maneuver" : "BRANCH_LEFT",
           "movement_occurrence_id" : "shuto.70.osm.15766920.0.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "大黒線",
+            "japanese_sign_text" : "東名",
             "localized_content" : {
               "en" : {
-                "display_text" : "Branch Left for Route K5 inbound",
-                "preserved_japanese_sign_text" : "大黒線",
+                "display_text" : "Branch Left for Route K5 toward the Tomei Expressway",
+                "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
-                  "Route K5 inbound" : "Route K5 inbound"
+                  "Route K5 toward the Tomei Expressway" : "Route K5 toward the Tomei Expressway"
                 },
-                "spoken_text" : "At Daikoku JCT, branch left for Route K5 inbound"
+                "spoken_text" : "At Daikoku JCT, branch left for Route K5 toward the Tomei Expressway"
               },
               "ja-JP" : {
-                "display_text" : "左方向へ分岐し、K5 大黒線 上りへ",
-                "preserved_japanese_sign_text" : "大黒線",
+                "display_text" : "左方向へ分岐し、K5 大黒線 東名方面へ",
+                "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
-                  "K5 大黒線 上り" : "K5 大黒線 上り"
+                  "K5 大黒線 東名方面" : "K5 大黒線 東名方面"
                 },
-                "spoken_text" : "大黒JCTでは左方向へ分岐し、K5 大黒線 上りへ進んでください"
+                "spoken_text" : "大黒JCTでは左方向へ分岐し、K5 大黒線 東名方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "向左分岔，驶往 K5 大黑线上行方向",
-                "preserved_japanese_sign_text" : "大黒線",
+                "display_text" : "向左分岔，驶往 K5 大黑线东名高速方向",
+                "preserved_japanese_sign_text" : "東名",
                 "spoken_forms" : {
-                  "K5 大黑线上行方向" : "K5 大黑线上行方向"
+                  "K5 大黑线东名高速方向" : "K5 大黑线东名高速方向"
                 },
-                "spoken_text" : "在大黑 JCT向左分岔，驶往 K5 大黑线上行方向"
+                "spoken_text" : "在大黑 JCT向左分岔，驶往 K5 大黑线东名高速方向"
               }
             },
             "route_shields" : [
-              "K5"
+              "E1",
+              "K5",
+              "K7"
             ]
           },
           "stage" : "COMMIT"
@@ -19188,37 +19190,40 @@
           "maneuver" : "STAY_MAINLINE",
           "movement_occurrence_id" : "shuto.541.osm.489510478.0.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "横浜公園",
+            "japanese_sign_text" : "横浜公園・横横道路",
             "localized_content" : {
               "en" : {
-                "display_text" : "Stay on the Bayshore Route toward 横浜公園",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "Stay on the Bayshore Route toward 横浜公園 and 横横道路",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園"
+                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園 and 横横道路"
               },
               "ja-JP" : {
-                "display_text" : "分岐せず、湾岸線 横浜公園方面へ",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "分岐せず、湾岸線 横浜公園・横横道路方面へ",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
                   "大黒" : "だいこく",
+                  "横横道路" : "よこよこどうろ",
                   "横浜公園" : "よこはまこうえん",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 横浜公園方面へ進んでください"
+                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 横浜公園・横横道路方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "不要分岔，沿湾岸线前往 横浜公園 方向",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "不要分岔，沿湾岸线前往 横浜公園・横横道路 方向",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
-                  "横浜公園" : "横浜公園"
+                  "横浜公園・横横道路" : "横浜公園・横横道路"
                 },
-                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園 方向"
+                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園・横横道路 方向"
               }
             },
             "route_shields" : [
-              "B"
+              "B",
+              "K3",
+              "E16"
             ]
           },
           "stage" : "COMMIT"

@@ -90,7 +90,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 22)
+    #expect(release.navigation.bundle.releasedGuidance.count == 20)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )

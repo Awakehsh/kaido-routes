@@ -559,21 +559,26 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-c2/",
       ]
     ),
-    c2InnerMovement(
-      id: "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+    reviewedMovement(
+      id: "shuto.jct.komatsugawa.c2-outer-stays-on-c2",
       junctionID: "shuto.jct.jct_komatsugawa",
-      junctionNodeID: 31_337_397,
-      incomingEdgeID: "osm.4857050.46.forward",
-      outgoingEdgeID: "osm.4857050.47.forward",
+      junctionNodeID: 370_270_524,
+      incomingEdgeID: "osm.184872023.41.forward",
+      outgoingEdgeID: "osm.184872023.42.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
       branchSide: .straight,
-      japaneseSignText: "東北道・常磐道",
-      routeShields: ["C2", "E4", "E6"],
+      japaneseSignText: "湾岸線・東関東道",
+      routeShields: ["C2", "B", "E51"],
       junctionNameJA: "小松川JCT",
       junctionNameZH: "小松川 JCT",
       junctionNameEN: "Komatsugawa JCT",
-      destinationJA: "C2 内回り",
-      destinationZH: "C2 内环",
-      destinationEN: "the C2 Inner Loop",
+      destinationJA: "C2 外回り 湾岸線・東関東道方面",
+      destinationZH: "C2 外环湾岸线、东关东自动车道方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Bayshore Route and Higashi-Kanto Expressway",
       expectedJunctionDetailSHA256:
         "a5119a85526658f19dda55b445114dd2"
         + "b72a1ee0161a454b0f55712872c84abe",
@@ -583,6 +588,99 @@ public enum ShutoJunctionMovementCatalog {
       additionalSources: [
         "https://www.shutoko.jp/use/safety/branch_komatsugawa/",
         "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.komatsugawa.c2-outer-to-7-outbound",
+      junctionID: "shuto.jct.jct_komatsugawa",
+      junctionNodeID: 370_270_524,
+      incomingEdgeID: "osm.184872023.41.forward",
+      outgoingEdgeID: "osm.751177038.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "7",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "京葉道路・小松川",
+      routeShields: ["7", "E14"],
+      junctionNameJA: "小松川JCT",
+      junctionNameZH: "小松川 JCT",
+      junctionNameEN: "Komatsugawa JCT",
+      destinationJA: "7号小松川線 京葉道路方面",
+      destinationZH: "7号小松川线京叶道路方向",
+      destinationEN: "Route 7 toward the Keiyo Road",
+      expectedJunctionDetailSHA256:
+        "a5119a85526658f19dda55b445114dd2"
+        + "b72a1ee0161a454b0f55712872c84abe",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_komatsugawa",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch_komatsugawa/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.komatsugawa.7-inbound-stays-on-7",
+      junctionID: "shuto.jct.jct_komatsugawa",
+      junctionNodeID: 600_726_158,
+      incomingEdgeID: "osm.59338971.14.forward",
+      outgoingEdgeID: "osm.59338971.15.forward",
+      incomingRouteID: "7",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "7",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "都心環状",
+      routeShields: ["7", "6", "C1"],
+      junctionNameJA: "小松川JCT",
+      junctionNameZH: "小松川 JCT",
+      junctionNameEN: "Komatsugawa JCT",
+      destinationJA: "7号小松川線 都心環状方面",
+      destinationZH: "7号小松川线都心环状方向",
+      destinationEN: "Route 7 toward the Inner Circular Route",
+      expectedJunctionDetailSHA256:
+        "a5119a85526658f19dda55b445114dd2"
+        + "b72a1ee0161a454b0f55712872c84abe",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_komatsugawa",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch_komatsugawa/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.komatsugawa.7-inbound-to-c2-inner",
+      junctionID: "shuto.jct.jct_komatsugawa",
+      junctionNodeID: 600_726_158,
+      incomingEdgeID: "osm.59338971.14.forward",
+      outgoingEdgeID: "osm.751177037.0.forward",
+      incomingRouteID: "7",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .left,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "E6"],
+      junctionNameJA: "小松川JCT",
+      junctionNameZH: "小松川 JCT",
+      junctionNameEN: "Komatsugawa JCT",
+      destinationJA: "C2 内回り 東北道・常磐道方面",
+      destinationZH: "C2 内环东北自动车道、常磐自动车道方向",
+      destinationEN:
+        "the C2 Inner Loop toward the Tohoku and Joban Expressways",
+      expectedJunctionDetailSHA256:
+        "a5119a85526658f19dda55b445114dd2"
+        + "b72a1ee0161a454b0f55712872c84abe",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_komatsugawa",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/branch_komatsugawa/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
       ]
     ),
     c2InnerMovement(

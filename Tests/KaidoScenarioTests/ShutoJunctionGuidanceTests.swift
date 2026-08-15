@@ -1399,6 +1399,100 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Komatsugawa movements exclude the Funaboribashi facility fork")
+  func komatsugawaMovementsExcludeFunaboribashiFacilityFork() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.184872023.41.forward",
+        "osm.184872023.42.forward",
+        "shuto.jct.komatsugawa.c2-outer-stays-on-c2",
+        .straight,
+        "湾岸線・東関東道",
+        ["C2", "B", "E51"]
+      ),
+      (
+        "osm.184872023.41.forward",
+        "osm.751177038.0.forward",
+        "shuto.jct.komatsugawa.c2-outer-to-7-outbound",
+        .left,
+        "京葉道路・小松川",
+        ["7", "E14"]
+      ),
+      (
+        "osm.59338971.14.forward",
+        "osm.59338971.15.forward",
+        "shuto.jct.komatsugawa.7-inbound-stays-on-7",
+        .straight,
+        "都心環状",
+        ["7", "6", "C1"]
+      ),
+      (
+        "osm.59338971.14.forward",
+        "osm.751177037.0.forward",
+        "shuto.jct.komatsugawa.7-inbound-to-c2-inner",
+        .left,
+        "東北道・常磐道",
+        ["C2", "E4", "E6"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "a5119a85526658f19dda55b445114dd2"
+          + "b72a1ee0161a454b0f55712872c84abe"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_komatsugawa"
+      )
+    }
+
+    let funaboribashiIncoming = try #require(
+      edges["osm.4857050.46.forward"]
+    )
+    for outgoingID in [
+      "osm.4857050.47.forward",
+      "osm.383231005.0.forward",
+    ] {
+      let outgoing = try #require(edges[outgoingID])
+      #expect(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: funaboribashiIncoming,
+          outgoing: outgoing
+        ) == nil
+      )
+    }
+  }
+
   @Test("Ryogoku and Shibaura outbound branches bind official signs")
   func ryogokuAndShibauraOutboundBranchesBindOfficialSigns() throws {
     let database = try loadDatabase()

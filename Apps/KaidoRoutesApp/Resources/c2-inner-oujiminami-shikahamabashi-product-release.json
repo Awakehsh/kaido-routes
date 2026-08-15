@@ -14,7 +14,6 @@
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner",
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-to-s1-outbound",
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound",
@@ -35,7 +34,6 @@
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner",
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-to-s1-outbound",
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2",
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound",
@@ -136,15 +134,6 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.743.osm.4857050.47.forward.decision-zone",
-        "checked_at" : "2026-08-15",
-        "role" : "DECISION_ZONE",
-        "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2"
-        ],
-        "state" : "RELEASED"
-      },
-      {
         "asset_id" : "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge.shuto.876.osm.44422827.9.forward.decision-zone",
         "checked_at" : "2026-08-15",
         "role" : "DECISION_ZONE",
@@ -231,15 +220,6 @@
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
-        ],
-        "state" : "RELEASED"
-      },
-      {
-        "asset_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.1861.osm.4857050.47.forward.decision-zone",
-        "checked_at" : "2026-08-15",
-        "role" : "DECISION_ZONE",
-        "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2"
         ],
         "state" : "RELEASED"
       },
@@ -334,15 +314,6 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.743.osm.4857050.47.forward.commit",
-        "checked_at" : "2026-08-15",
-        "role" : "GUIDANCE",
-        "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2"
-        ],
-        "state" : "RELEASED"
-      },
-      {
         "asset_id" : "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge.shuto.876.osm.44422827.9.forward.commit",
         "checked_at" : "2026-08-15",
         "role" : "GUIDANCE",
@@ -433,15 +404,6 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.1861.osm.4857050.47.forward.commit",
-        "checked_at" : "2026-08-15",
-        "role" : "GUIDANCE",
-        "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2"
-        ],
-        "state" : "RELEASED"
-      },
-      {
         "asset_id" : "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge.shuto.1994.osm.44422827.9.forward.commit",
         "checked_at" : "2026-08-15",
         "role" : "GUIDANCE",
@@ -518,13 +480,6 @@
         "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended"
       },
       {
-        "decision_zone_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.743.osm.4857050.47.forward.decision-zone",
-        "entry_offset_meters" : 0,
-        "movement_occurrence_id" : "shuto.743.osm.4857050.47.forward",
-        "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
-        "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended"
-      },
-      {
         "decision_zone_id" : "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge.shuto.876.osm.44422827.9.forward.decision-zone",
         "entry_offset_meters" : 0,
         "movement_occurrence_id" : "shuto.876.osm.44422827.9.forward",
@@ -591,13 +546,6 @@
         "decision_zone_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.decision-zone",
         "entry_offset_meters" : 0,
         "movement_occurrence_id" : "shuto.1789.osm.888066403.0.forward",
-        "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
-        "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended"
-      },
-      {
-        "decision_zone_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.1861.osm.4857050.47.forward.decision-zone",
-        "entry_offset_meters" : 0,
-        "movement_occurrence_id" : "shuto.1861.osm.4857050.47.forward",
         "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
         "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended"
       },
@@ -742,7 +690,7 @@
             {
               "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.671.osm.888066403.0.forward.selected",
               "destination" : {
-                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.743.osm.4857050.47.forward"
+                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.876.osm.44422827.9.forward"
               },
               "movement_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner",
               "movement_toll_domain_id" : "shuto.toll-domain",
@@ -753,23 +701,6 @@
           "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.671.osm.888066403.0.forward",
           "incoming_approach_id" : "osm.888066402.7.forward",
           "junction_complex_id" : "shuto.jct.jct_kasai"
-        },
-        {
-          "choices" : [
-            {
-              "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.743.osm.4857050.47.forward.selected",
-              "destination" : {
-                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.876.osm.44422827.9.forward"
-              },
-              "movement_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
-              "movement_toll_domain_id" : "shuto.toll-domain",
-              "outgoing_edge_id" : "osm.4857050.48.forward",
-              "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
-            }
-          ],
-          "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.743.osm.4857050.47.forward",
-          "incoming_approach_id" : "osm.4857050.46.forward",
-          "junction_complex_id" : "shuto.jct.jct_komatsugawa"
         },
         {
           "choices" : [
@@ -929,7 +860,7 @@
             {
               "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1789.osm.888066403.0.forward.selected",
               "destination" : {
-                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1861.osm.4857050.47.forward"
+                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1994.osm.44422827.9.forward"
               },
               "movement_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner",
               "movement_toll_domain_id" : "shuto.toll-domain",
@@ -940,23 +871,6 @@
           "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1789.osm.888066403.0.forward",
           "incoming_approach_id" : "osm.888066402.7.forward",
           "junction_complex_id" : "shuto.jct.jct_kasai"
-        },
-        {
-          "choices" : [
-            {
-              "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1861.osm.4857050.47.forward.selected",
-              "destination" : {
-                "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1994.osm.44422827.9.forward"
-              },
-              "movement_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
-              "movement_toll_domain_id" : "shuto.toll-domain",
-              "outgoing_edge_id" : "osm.4857050.48.forward",
-              "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
-            }
-          ],
-          "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1861.osm.4857050.47.forward",
-          "incoming_approach_id" : "osm.4857050.46.forward",
-          "junction_complex_id" : "shuto.jct.jct_komatsugawa"
         },
         {
           "choices" : [
@@ -1114,19 +1028,6 @@
           }
         },
         {
-          "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.743.osm.4857050.47.forward.selected",
-          "detail" : {
-            "en" : "東北道・常磐道",
-            "ja-JP" : "東北道・常磐道",
-            "zh-Hans" : "東北道・常磐道"
-          },
-          "title" : {
-            "en" : "Continue Straight for the C2 Inner Loop",
-            "ja-JP" : "分岐せず、C2 内回りへ",
-            "zh-Hans" : "不要分岔，驶往 C2 内环"
-          }
-        },
-        {
           "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.876.osm.44422827.9.forward.selected",
           "detail" : {
             "en" : "東北道・大宮",
@@ -1257,19 +1158,6 @@
           }
         },
         {
-          "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1861.osm.4857050.47.forward.selected",
-          "detail" : {
-            "en" : "東北道・常磐道",
-            "ja-JP" : "東北道・常磐道",
-            "zh-Hans" : "東北道・常磐道"
-          },
-          "title" : {
-            "en" : "Continue Straight for the C2 Inner Loop",
-            "ja-JP" : "分岐せず、C2 内回りへ",
-            "zh-Hans" : "不要分岔，驶往 C2 内环"
-          }
-        },
-        {
           "choice_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1994.osm.44422827.9.forward.selected",
           "detail" : {
             "en" : "東北道・大宮",
@@ -1362,14 +1250,6 @@
           }
         },
         {
-          "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.743.osm.4857050.47.forward",
-          "title" : {
-            "en" : "Komatsugawa JCT",
-            "ja-JP" : "小松川JCT",
-            "zh-Hans" : "小松川 JCT"
-          }
-        },
-        {
           "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.876.osm.44422827.9.forward",
           "title" : {
             "en" : "Kosuge and Horikiri Junctions",
@@ -1447,14 +1327,6 @@
             "en" : "Kasai JCT",
             "ja-JP" : "葛西JCT",
             "zh-Hans" : "葛西 JCT"
-          }
-        },
-        {
-          "decision_point_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor.shuto.1861.osm.4857050.47.forward",
-          "title" : {
-            "en" : "Komatsugawa JCT",
-            "ja-JP" : "小松川JCT",
-            "zh-Hans" : "小松川 JCT"
           }
         },
         {
@@ -32698,62 +32570,6 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.742.osm.4857050.46.forward",
-          "prompt_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.743.osm.4857050.47.forward.commit"
-        },
-        "frame_template" : {
-          "decision_point_name_ja" : "小松川JCT",
-          "decision_zone_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.743.osm.4857050.47.forward.decision-zone",
-          "lane_preparation" : "NONE",
-          "localized_decision_point_names" : {
-            "en" : "Komatsugawa JCT",
-            "ja-JP" : "小松川JCT",
-            "zh-Hans" : "小松川 JCT"
-          },
-          "maneuver" : "STAY_MAINLINE",
-          "movement_occurrence_id" : "shuto.743.osm.4857050.47.forward",
-          "presentation_source" : {
-            "japanese_sign_text" : "東北道・常磐道",
-            "localized_content" : {
-              "en" : {
-                "display_text" : "Continue Straight for the C2 Inner Loop",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "C two"
-                },
-                "spoken_text" : "At Komatsugawa JCT, continue straight for the C2 Inner Loop"
-              },
-              "ja-JP" : {
-                "display_text" : "分岐せず、C2 内回りへ",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "シーツー",
-                  "湾岸線" : "わんがんせん"
-                },
-                "spoken_text" : "小松川JCTでは分岐せず、C2 内回りへ進んでください"
-              },
-              "zh-Hans" : {
-                "display_text" : "不要分岔，驶往 C2 内环",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "C 二"
-                },
-                "spoken_text" : "在小松川 JCT不要分岔，驶往 C2 内环"
-              }
-            },
-            "route_shields" : [
-              "C2",
-              "E4",
-              "E6"
-            ]
-          },
-          "stage" : "COMMIT"
-        },
-        "trigger_distance_meters" : 100
-      },
-      {
-        "anchor" : {
-          "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.875.osm.44422827.8.forward",
           "prompt_id" : "shuto.jct.horikiri.c2-inner-keeps-left-through-kosuge.shuto.876.osm.44422827.9.forward.commit"
         },
@@ -33287,62 +33103,6 @@
                   "C2" : "C 二"
                 },
                 "spoken_text" : "在葛西 JCT向左分岔，驶往 C2 内环"
-              }
-            },
-            "route_shields" : [
-              "C2",
-              "E4",
-              "E6"
-            ]
-          },
-          "stage" : "COMMIT"
-        },
-        "trigger_distance_meters" : 100
-      },
-      {
-        "anchor" : {
-          "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.1860.osm.4857050.46.forward",
-          "prompt_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.1861.osm.4857050.47.forward.commit"
-        },
-        "frame_template" : {
-          "decision_point_name_ja" : "小松川JCT",
-          "decision_zone_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2.shuto.1861.osm.4857050.47.forward.decision-zone",
-          "lane_preparation" : "NONE",
-          "localized_decision_point_names" : {
-            "en" : "Komatsugawa JCT",
-            "ja-JP" : "小松川JCT",
-            "zh-Hans" : "小松川 JCT"
-          },
-          "maneuver" : "STAY_MAINLINE",
-          "movement_occurrence_id" : "shuto.1861.osm.4857050.47.forward",
-          "presentation_source" : {
-            "japanese_sign_text" : "東北道・常磐道",
-            "localized_content" : {
-              "en" : {
-                "display_text" : "Continue Straight for the C2 Inner Loop",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "C two"
-                },
-                "spoken_text" : "At Komatsugawa JCT, continue straight for the C2 Inner Loop"
-              },
-              "ja-JP" : {
-                "display_text" : "分岐せず、C2 内回りへ",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "シーツー",
-                  "湾岸線" : "わんがんせん"
-                },
-                "spoken_text" : "小松川JCTでは分岐せず、C2 内回りへ進んでください"
-              },
-              "zh-Hans" : {
-                "display_text" : "不要分岔，驶往 C2 内环",
-                "preserved_japanese_sign_text" : "東北道・常磐道",
-                "spoken_forms" : {
-                  "C2" : "C 二"
-                },
-                "spoken_text" : "在小松川 JCT不要分岔，驶往 C2 内环"
               }
             },
             "route_shields" : [
@@ -39417,9 +39177,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+          "entity_id" : "osm.4857050.47.forward",
           "index" : 743,
-          "kind" : "JUNCTION_MOVEMENT",
+          "kind" : "EDGE",
           "occurrence_id" : "shuto.743.osm.4857050.47.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -48361,9 +48121,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+          "entity_id" : "osm.4857050.47.forward",
           "index" : 1861,
-          "kind" : "JUNCTION_MOVEMENT",
+          "kind" : "EDGE",
           "occurrence_id" : "shuto.1861.osm.4857050.47.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -51220,20 +50980,6 @@
             "GUIDANCE"
           ],
           "source_url" : "https:\/\/www.shutoko.jp\/-\/media\/images\/responsive\/customer\/use\/network\/jct\/routeguide\/jct_kasai"
-        },
-        {
-          "authority_name" : "Metropolitan Expressway Company Limited",
-          "checked_at" : "2026-08-15",
-          "content_sha256" : "a5119a85526658f19dda55b445114dd2b72a1ee0161a454b0f55712872c84abe",
-          "id" : "shutoko-guidance-shuto.jct.komatsugawa.c2-inner-stays-on-c2",
-          "licence_identifier" : "OFFICIAL_REFERENCE",
-          "roles" : [
-            "DECISION_ZONE",
-            "EDITOR_CATALOG",
-            "EDITOR_PRESENTATION",
-            "GUIDANCE"
-          ],
-          "source_url" : "https:\/\/www.shutoko.jp\/-\/media\/images\/responsive\/customer\/use\/network\/jct\/routeguide\/jct_komatsugawa"
         },
         {
           "authority_name" : "Metropolitan Expressway Company Limited",
@@ -99023,9 +98769,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+          "entity_id" : "osm.4857050.47.forward",
           "index" : 743,
-          "kind" : "JUNCTION_MOVEMENT",
+          "kind" : "EDGE",
           "occurrence_id" : "shuto.743.osm.4857050.47.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -107967,9 +107713,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+          "entity_id" : "osm.4857050.47.forward",
           "index" : 1861,
-          "kind" : "JUNCTION_MOVEMENT",
+          "kind" : "EDGE",
           "occurrence_id" : "shuto.1861.osm.4857050.47.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -117359,7 +117105,7 @@
         {
           "edge_id" : "c2-inner-oujiminami-shikahamabashi.topology.edge.743",
           "from_node_id" : "osm.node.31337397",
-          "route_entity_id" : "shuto.jct.komatsugawa.c2-inner-stays-on-c2",
+          "route_entity_id" : "osm.4857050.47.forward",
           "successor_edge_ids" : [
             "c2-inner-oujiminami-shikahamabashi.topology.edge.744"
           ],

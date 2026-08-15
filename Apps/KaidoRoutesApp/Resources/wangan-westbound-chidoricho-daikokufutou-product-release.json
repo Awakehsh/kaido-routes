@@ -507,14 +507,14 @@
         {
           "choice_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.324.osm.489510478.0.forward.selected",
           "detail" : {
-            "en" : "横浜公園",
-            "ja-JP" : "横浜公園",
-            "zh-Hans" : "横浜公園"
+            "en" : "横浜公園・横横道路",
+            "ja-JP" : "横浜公園・横横道路",
+            "zh-Hans" : "横浜公園・横横道路"
           },
           "title" : {
-            "en" : "Stay on the Bayshore Route toward 横浜公園",
-            "ja-JP" : "分岐せず、湾岸線 横浜公園方面へ",
-            "zh-Hans" : "不要分岔，沿湾岸线前往 横浜公園 方向"
+            "en" : "Stay on the Bayshore Route toward 横浜公園 and 横横道路",
+            "ja-JP" : "分岐せず、湾岸線 横浜公園・横横道路方面へ",
+            "zh-Hans" : "不要分岔，沿湾岸线前往 横浜公園・横横道路 方向"
           }
         }
       ],
@@ -15581,37 +15581,40 @@
           "maneuver" : "STAY_MAINLINE",
           "movement_occurrence_id" : "shuto.324.osm.489510478.0.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "横浜公園",
+            "japanese_sign_text" : "横浜公園・横横道路",
             "localized_content" : {
               "en" : {
-                "display_text" : "Stay on the Bayshore Route toward 横浜公園",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "Stay on the Bayshore Route toward 横浜公園 and 横横道路",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園"
+                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園 and 横横道路"
               },
               "ja-JP" : {
-                "display_text" : "分岐せず、湾岸線 横浜公園方面へ",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "分岐せず、湾岸線 横浜公園・横横道路方面へ",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
                   "大黒" : "だいこく",
+                  "横横道路" : "よこよこどうろ",
                   "横浜公園" : "よこはまこうえん",
                   "湾岸線" : "わんがんせん"
                 },
-                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 横浜公園方面へ進んでください"
+                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 横浜公園・横横道路方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "不要分岔，沿湾岸线前往 横浜公園 方向",
-                "preserved_japanese_sign_text" : "横浜公園",
+                "display_text" : "不要分岔，沿湾岸线前往 横浜公園・横横道路 方向",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
                 "spoken_forms" : {
-                  "横浜公園" : "横浜公園"
+                  "横浜公園・横横道路" : "横浜公園・横横道路"
                 },
-                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園 方向"
+                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園・横横道路 方向"
               }
             },
             "route_shields" : [
-              "B"
+              "B",
+              "K3",
+              "E16"
             ]
           },
           "stage" : "COMMIT"

@@ -21,6 +21,14 @@ struct ShutoNetworkTests {
     )
     #expect(database.parkingAreas.count == 19)
     #expect(database.edges.count == 24_299)
+    let komatsugawa = try #require(
+      database.junctions.first {
+        $0.junctionID == "shuto.jct.jct_komatsugawa"
+      }
+    )
+    #expect(komatsugawa.osmNodeIDs.contains(370_270_524))
+    #expect(komatsugawa.osmNodeIDs.contains(600_726_158))
+    #expect(!komatsugawa.osmNodeIDs.contains(31_337_397))
     #expect(
       database.directionalFacilities
         .filter { $0.operationalStatus == "AVAILABLE" }

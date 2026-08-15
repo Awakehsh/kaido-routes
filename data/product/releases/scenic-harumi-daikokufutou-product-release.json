@@ -608,27 +608,27 @@
         {
           "choice_id" : "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.652.osm.38072737.0.forward.selected",
           "detail" : {
-            "en" : "湾岸線・大黒ふ頭",
-            "ja-JP" : "湾岸線・大黒ふ頭",
-            "zh-Hans" : "湾岸線・大黒ふ頭"
+            "en" : "空港中央・大黒ふ頭",
+            "ja-JP" : "空港中央・大黒ふ頭",
+            "zh-Hans" : "空港中央・大黒ふ頭"
           },
           "title" : {
-            "en" : "Branch Left for the Bayshore Route toward Daikoku-Futo",
-            "ja-JP" : "左方向へ分岐し、湾岸線 大黒ふ頭方面へ",
-            "zh-Hans" : "向左分岔，驶往 湾岸线大黑码头方向"
+            "en" : "Continue Straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
+            "ja-JP" : "分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
+            "zh-Hans" : "不要分岔，驶往 湾岸线空港中央、大黑码头方向"
           }
         },
         {
           "choice_id" : "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.714.osm.5365195.3.forward.selected",
           "detail" : {
-            "en" : "空港中央",
-            "ja-JP" : "空港中央",
-            "zh-Hans" : "空港中央"
+            "en" : "アクアライン・空港中央",
+            "ja-JP" : "アクアライン・空港中央",
+            "zh-Hans" : "アクアライン・空港中央"
           },
           "title" : {
-            "en" : "Stay on the Bayshore Route toward 空港中央",
-            "ja-JP" : "分岐せず、湾岸線 空港中央方面へ",
-            "zh-Hans" : "不要分岔，沿湾岸线前往 空港中央 方向"
+            "en" : "Stay on the Bayshore Route toward アクアライン and 空港中央",
+            "ja-JP" : "分岐せず、湾岸線 アクアライン・空港中央方面へ",
+            "zh-Hans" : "不要分岔，沿湾岸线前往 アクアライン・空港中央 方向"
           }
         }
       ],
@@ -24344,39 +24344,39 @@
             "ja-JP" : "本牧JCT",
             "zh-Hans" : "本牧 JCT"
           },
-          "maneuver" : "BRANCH_LEFT",
+          "maneuver" : "STAY_MAINLINE",
           "movement_occurrence_id" : "shuto.652.osm.38072737.0.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "湾岸線・大黒ふ頭",
+            "japanese_sign_text" : "空港中央・大黒ふ頭",
             "localized_content" : {
               "en" : {
-                "display_text" : "Branch Left for the Bayshore Route toward Daikoku-Futo",
-                "preserved_japanese_sign_text" : "湾岸線・大黒ふ頭",
+                "display_text" : "Continue Straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
-                  "the Bayshore Route toward Daikoku-Futo" : "the Bayshore Route toward Daikoku-Futo"
+                  "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo" : "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo"
                 },
-                "spoken_text" : "At Honmoku JCT, branch left for the Bayshore Route toward Daikoku-Futo"
+                "spoken_text" : "At Honmoku JCT, continue straight for the Bayshore Route toward Kuko-Chuo and Daikoku-Futo"
               },
               "ja-JP" : {
-                "display_text" : "左方向へ分岐し、湾岸線 大黒ふ頭方面へ",
-                "preserved_japanese_sign_text" : "湾岸線・大黒ふ頭",
+                "display_text" : "分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
-                  "湾岸線 大黒ふ頭方面" : "湾岸線 大黒ふ頭方面"
+                  "湾岸線 空港中央・大黒ふ頭方面" : "湾岸線 空港中央・大黒ふ頭方面"
                 },
-                "spoken_text" : "本牧JCTでは左方向へ分岐し、湾岸線 大黒ふ頭方面へ進んでください"
+                "spoken_text" : "本牧JCTでは分岐せず、湾岸線 空港中央・大黒ふ頭方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "向左分岔，驶往 湾岸线大黑码头方向",
-                "preserved_japanese_sign_text" : "湾岸線・大黒ふ頭",
+                "display_text" : "不要分岔，驶往 湾岸线空港中央、大黑码头方向",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
                 "spoken_forms" : {
-                  "湾岸线大黑码头方向" : "湾岸线大黑码头方向"
+                  "湾岸线空港中央、大黑码头方向" : "湾岸线空港中央、大黑码头方向"
                 },
-                "spoken_text" : "在本牧 JCT向左分岔，驶往 湾岸线大黑码头方向"
+                "spoken_text" : "在本牧 JCT不要分岔，驶往 湾岸线空港中央、大黑码头方向"
               }
             },
             "route_shields" : [
-              "K3",
-              "B"
+              "B",
+              "K5"
             ]
           },
           "stage" : "COMMIT"
@@ -24401,37 +24401,39 @@
           "maneuver" : "STAY_MAINLINE",
           "movement_occurrence_id" : "shuto.714.osm.5365195.3.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "空港中央",
+            "japanese_sign_text" : "アクアライン・空港中央",
             "localized_content" : {
               "en" : {
-                "display_text" : "Stay on the Bayshore Route toward 空港中央",
-                "preserved_japanese_sign_text" : "空港中央",
+                "display_text" : "Stay on the Bayshore Route toward アクアライン and 空港中央",
+                "preserved_japanese_sign_text" : "アクアライン・空港中央",
                 "spoken_forms" : {
                   "Bayshore Route" : "Bayshore Route"
                 },
-                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward 空港中央"
+                "spoken_text" : "At Daikoku JCT, stay on the Bayshore Route toward アクアライン and 空港中央"
               },
               "ja-JP" : {
-                "display_text" : "分岐せず、湾岸線 空港中央方面へ",
-                "preserved_japanese_sign_text" : "空港中央",
+                "display_text" : "分岐せず、湾岸線 アクアライン・空港中央方面へ",
+                "preserved_japanese_sign_text" : "アクアライン・空港中央",
                 "spoken_forms" : {
+                  "アクアライン" : "あくあらいん",
                   "大黒" : "だいこく",
                   "湾岸線" : "わんがんせん",
                   "空港中央" : "くうこうちゅうおう"
                 },
-                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 空港中央方面へ進んでください"
+                "spoken_text" : "大黒ジャンクションは分岐せず、湾岸線 アクアライン・空港中央方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "不要分岔，沿湾岸线前往 空港中央 方向",
-                "preserved_japanese_sign_text" : "空港中央",
+                "display_text" : "不要分岔，沿湾岸线前往 アクアライン・空港中央 方向",
+                "preserved_japanese_sign_text" : "アクアライン・空港中央",
                 "spoken_forms" : {
-                  "空港中央" : "空港中央"
+                  "アクアライン・空港中央" : "アクアライン・空港中央"
                 },
-                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 空港中央 方向"
+                "spoken_text" : "在大黑 JCT不要分岔，沿湾岸线继续前往 アクアライン・空港中央 方向"
               }
             },
             "route_shields" : [
-              "B"
+              "B",
+              "CA"
             ]
           },
           "stage" : "COMMIT"

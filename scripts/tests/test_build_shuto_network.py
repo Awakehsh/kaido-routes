@@ -239,12 +239,21 @@ class BuildShutoNetworkTests(unittest.TestCase):
             8_256_670_336: {
                 "highway": "motorway_junction",
                 "name": "葛西JCT",
-            }
+            },
+            370_270_524: {
+                "highway": "motorway_junction",
+                "name": "小松川JCT",
+            },
+            600_726_158: {
+                "highway": "motorway_junction",
+                "name": "小松川JCT",
+            },
         }
         node_coordinates = {
             31_330_103: (35.64, 139.86),
             8_256_670_336: (35.64, 139.85),
-            31_337_397: (35.70, 139.85),
+            370_270_524: (35.70, 139.85),
+            600_726_158: (35.70, 139.86),
             273_330_999: (35.53, 139.72),
             3_817_775_796: (35.54, 139.73),
             260_710_778: (35.665, 139.739),
@@ -262,7 +271,7 @@ class BuildShutoNetworkTests(unittest.TestCase):
         )
         self.assertEqual(
             junctions[1]["osm_node_ids"],
-            [31_337_397],
+            [370_270_524, 600_726_158],
         )
         self.assertEqual(
             junctions[2]["osm_node_ids"],

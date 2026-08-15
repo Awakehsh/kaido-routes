@@ -16,7 +16,42 @@ public struct ShutoReviewedSurfaceExitBranch: Equatable, Sendable {
   public let officialSourceURL: String
 }
 
+/// A snapshot-bound graph fragment that cannot carry a RoutePlan movement.
+/// This is distinct from a surface exit: the source may label the fragment as
+/// an expressway link, but its pinned directed chain reaches no later graph
+/// edge and the operator diagram publishes no corresponding JCT branch.
+public struct ShutoReviewedNonNavigableBranch: Equatable, Sendable {
+  public let id: String
+  public let networkSnapshotID: String
+  public let junctionNodeID: Int64
+  public let incomingDirectedEdgeID: String
+  public let startDirectedEdgeID: String
+  public let terminalDirectedEdgeID: String
+  public let reason: String
+  public let checkedAt: String
+  public let sourceURLs: [String]
+}
+
 public enum ShutoOperationalBranchCatalog {
+  public static let reviewedNonNavigableBranches = [
+    ShutoReviewedNonNavigableBranch(
+      id: "shuto.non-navigable.namamugi-k1-promoted-link-dead-end",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionNodeID: 4_360_978_732,
+      incomingDirectedEdgeID: "osm.32592648.13.forward",
+      startDirectedEdgeID: "osm.567321755.0.forward",
+      terminalDirectedEdgeID: "osm.1022520297.2.forward",
+      reason: "PROMOTED_MOTORWAY_LINK_DEAD_END",
+      checkedAt: "2026-08-15",
+      sourceURLs: [
+        "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_namamugi",
+        "https://www.shutoko.jp/use/network/map/route-k1/asada",
+      ]
+    )
+  ]
+
   public static let reviewedSurfaceExitBranches = [
     ShutoReviewedSurfaceExitBranch(
       id: "shuto.exit.higashiginza.from-kyobashi",
@@ -101,6 +136,18 @@ public enum ShutoOperationalBranchCatalog {
   ) -> ShutoReviewedSurfaceExitBranch? {
     reviewedSurfaceExitBranches.first {
       $0.networkSnapshotID == networkSnapshotID
+        && $0.startDirectedEdgeID == startDirectedEdgeID
+    }
+  }
+
+  public static func reviewedNonNavigableBranch(
+    networkSnapshotID: String,
+    incomingDirectedEdgeID: String,
+    startDirectedEdgeID: String
+  ) -> ShutoReviewedNonNavigableBranch? {
+    reviewedNonNavigableBranches.first {
+      $0.networkSnapshotID == networkSnapshotID
+        && $0.incomingDirectedEdgeID == incomingDirectedEdgeID
         && $0.startDirectedEdgeID == startDirectedEdgeID
     }
   }

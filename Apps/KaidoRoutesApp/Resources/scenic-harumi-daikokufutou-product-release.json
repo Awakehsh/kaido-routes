@@ -577,9 +577,9 @@
             "zh-Hans" : "横浜公園"
           },
           "title" : {
-            "en" : "Keep Left At The First Fork, Then Keep Right for Route K1 toward Yokohama-koen",
-            "ja-JP" : "最初の分岐で左方向を保ち、続く分岐で右方向を保ち、K1 横羽線 横浜公園方面へ",
-            "zh-Hans" : "在第一个分岔保持左侧，随后在第二个分岔保持右侧，驶往 K1 横羽线横浜公園方向"
+            "en" : "Keep Right At The First Fork, Then Keep Right Again for Route K1 toward Yokohama-koen",
+            "ja-JP" : "最初の分岐で右方向を保ち、続く分岐でも右方向を保ち、K1 横羽線 横浜公園方面へ",
+            "zh-Hans" : "在第一个分岔保持右侧，随后在第二个分岔继续保持右侧，驶往 K1 横羽线横浜公園方向"
           }
         },
         {
@@ -24187,34 +24187,34 @@
             "ja-JP" : "生麦JCT",
             "zh-Hans" : "生麦 JCT"
           },
-          "maneuver" : "BRANCH_LEFT",
+          "maneuver" : "BRANCH_RIGHT",
           "movement_occurrence_id" : "shuto.364.osm.38093215.139.forward",
           "presentation_source" : {
             "japanese_sign_text" : "横浜公園",
             "localized_content" : {
               "en" : {
-                "display_text" : "Keep Left At The First Fork, Then Keep Right for Route K1 toward Yokohama-koen",
+                "display_text" : "Keep Right At The First Fork, Then Keep Right Again for Route K1 toward Yokohama-koen",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "Route K1 toward Yokohama-koen" : "Route K1 toward Yokohama-koen"
                 },
-                "spoken_text" : "At Namamugi JCT, keep left at the first fork, then keep right for Route K1 toward Yokohama-koen"
+                "spoken_text" : "At Namamugi JCT, keep right at the first fork, then keep right again for Route K1 toward Yokohama-koen"
               },
               "ja-JP" : {
-                "display_text" : "最初の分岐で左方向を保ち、続く分岐で右方向を保ち、K1 横羽線 横浜公園方面へ",
+                "display_text" : "最初の分岐で右方向を保ち、続く分岐でも右方向を保ち、K1 横羽線 横浜公園方面へ",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "K1 横羽線 横浜公園方面" : "K1 横羽線 横浜公園方面"
                 },
-                "spoken_text" : "生麦JCTでは最初の分岐で左方向を保ち、続く分岐で右方向を保ち、K1 横羽線 横浜公園方面へ進んでください"
+                "spoken_text" : "生麦JCTでは最初の分岐で右方向を保ち、続く分岐でも右方向を保ち、K1 横羽線 横浜公園方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "在第一个分岔保持左侧，随后在第二个分岔保持右侧，驶往 K1 横羽线横浜公園方向",
+                "display_text" : "在第一个分岔保持右侧，随后在第二个分岔继续保持右侧，驶往 K1 横羽线横浜公園方向",
                 "preserved_japanese_sign_text" : "横浜公園",
                 "spoken_forms" : {
                   "K1 横羽线横浜公園方向" : "K1 横羽线横浜公園方向"
                 },
-                "spoken_text" : "在生麦 JCT在第一个分岔保持左侧，随后在第二个分岔保持右侧，驶往 K1 横羽线横浜公園方向"
+                "spoken_text" : "在生麦 JCT在第一个分岔保持右侧，随后在第二个分岔继续保持右侧，驶往 K1 横羽线横浜公園方向"
               }
             },
             "route_shields" : [
@@ -24223,7 +24223,7 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {

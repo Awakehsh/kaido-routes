@@ -542,7 +542,7 @@ struct ShutoJunctionGuidanceTests {
     #expect(
       matches.map(\.definition.routeShields)
         == Array(repeating: ["B"], count: 7)
-          + [["B", "K3", "E16"]]
+        + [["B", "K3", "E16"]]
     )
     #expect(
       matches.allSatisfy {
@@ -733,58 +733,57 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String
-      )
-    ] = [
-      (
-        "osm.24402540.6.forward",
-        "osm.24402503.0.forward",
-        "shuto.jct.miyakezaka.c1-inner-to-4-outbound",
-        .left,
-        "新宿・中央道"
-      ),
-      (
-        "osm.24636595.7.forward",
-        "osm.24636434.0.forward",
-        "shuto.jct.miyakezaka.4-inbound-to-c1-outer",
-        .left,
-        "神田橋・箱崎"
-      ),
-      (
-        "osm.24636595.7.forward",
-        "osm.24636612.0.forward",
-        "shuto.jct.miyakezaka.4-inbound-to-c1-inner",
-        .right,
-        "霞ヶ関・湾岸線"
-      ),
-      (
-        "osm.895902565.2.forward",
-        "osm.24336502.0.forward",
-        "shuto.jct.tanimachi.c1-outer-to-3-outbound",
-        .left,
-        "東名・渋谷"
-      ),
-      (
-        "osm.45392984.0.forward",
-        "osm.24636451.0.forward",
-        "shuto.jct.miyakezaka.c1-outer-to-4-outbound",
-        .left,
-        "新宿・中央道"
-      ),
-      (
-        "osm.23297430.0.forward",
-        "osm.45332351.0.forward",
-        "shuto.jct.tanimachi.c1-inner-to-3-outbound",
-        .right,
-        "東名・渋谷"
-      ),
-    ]
+      )] = [
+        (
+          "osm.24402540.6.forward",
+          "osm.24402503.0.forward",
+          "shuto.jct.miyakezaka.c1-inner-to-4-outbound",
+          .left,
+          "新宿・中央道"
+        ),
+        (
+          "osm.24636595.7.forward",
+          "osm.24636434.0.forward",
+          "shuto.jct.miyakezaka.4-inbound-to-c1-outer",
+          .left,
+          "神田橋・箱崎"
+        ),
+        (
+          "osm.24636595.7.forward",
+          "osm.24636612.0.forward",
+          "shuto.jct.miyakezaka.4-inbound-to-c1-inner",
+          .right,
+          "霞ヶ関・湾岸線"
+        ),
+        (
+          "osm.895902565.2.forward",
+          "osm.24336502.0.forward",
+          "shuto.jct.tanimachi.c1-outer-to-3-outbound",
+          .left,
+          "東名・渋谷"
+        ),
+        (
+          "osm.45392984.0.forward",
+          "osm.24636451.0.forward",
+          "shuto.jct.miyakezaka.c1-outer-to-4-outbound",
+          .left,
+          "新宿・中央道"
+        ),
+        (
+          "osm.23297430.0.forward",
+          "osm.45332351.0.forward",
+          "shuto.jct.tanimachi.c1-inner-to-3-outbound",
+          .right,
+          "東名・渋谷"
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -808,44 +807,43 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String
-      )
-    ] = [
-      (
-        "osm.316213219.28.forward",
-        "osm.45021972.0.forward",
-        "shuto.jct.hamasakibashi.c1-outer-to-1-outbound",
-        .left,
-        "羽田・湾岸線"
-      ),
-      (
-        "osm.888066402.7.forward",
-        "osm.44129862.0.forward",
-        "shuto.jct.kasai.b-eastbound-stays-on-b",
-        .straight,
-        "浦安"
-      ),
-      (
-        "osm.331692344.2.forward",
-        "osm.1308572350.0.forward",
-        "shuto.jct.oi.c2-inner-stays-on-c2",
-        .right,
-        "中央道・都心環状"
-      ),
-      (
-        "osm.1264293942.1.forward",
-        "osm.40971846.0.forward",
-        "shuto.jct.shinonome.10-outbound-to-b-eastbound",
-        .left,
-        "浦安"
-      ),
-    ]
+      )] = [
+        (
+          "osm.316213219.28.forward",
+          "osm.45021972.0.forward",
+          "shuto.jct.hamasakibashi.c1-outer-to-1-outbound",
+          .left,
+          "羽田・湾岸線"
+        ),
+        (
+          "osm.888066402.7.forward",
+          "osm.44129862.0.forward",
+          "shuto.jct.kasai.b-eastbound-stays-on-b",
+          .straight,
+          "浦安"
+        ),
+        (
+          "osm.331692344.2.forward",
+          "osm.1308572350.0.forward",
+          "shuto.jct.oi.c2-inner-stays-on-c2",
+          .right,
+          "中央道・都心環状"
+        ),
+        (
+          "osm.1264293942.1.forward",
+          "osm.40971846.0.forward",
+          "shuto.jct.shinonome.10-outbound-to-b-eastbound",
+          .left,
+          "浦安"
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -874,72 +872,71 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String
-      )
-    ] = [
-      (
-        "osm.24039737.3.forward",
-        "osm.4853805.0.forward",
-        "shuto.jct.ichinohashi.c1-outer-to-2-outbound",
-        .left,
-        "目黒"
-      ),
-      (
-        "osm.23297444.19.forward",
-        "osm.45248411.0.forward",
-        "shuto.jct.ichinohashi.c1-inner-to-2-outbound",
-        .right,
-        "目黒"
-      ),
-      (
-        "osm.7836679.9.forward",
-        "osm.4853802.0.forward",
-        "shuto.jct.ichinohashi.2-inbound-to-c1-outer",
-        .left,
-        "北池袋・新宿"
-      ),
-      (
-        "osm.7836679.9.forward",
-        "osm.4853804.0.forward",
-        "shuto.jct.ichinohashi.2-inbound-to-c1-inner",
-        .right,
-        "湾岸線・銀座"
-      ),
-      (
-        "osm.24039773.1.forward",
-        "osm.24334770.0.forward",
-        "shuto.jct.takehashi.c1-outer-to-5-outbound",
-        .left,
-        "北池袋・関越道"
-      ),
-      (
-        "osm.1545541219.7.forward",
-        "osm.1421966435.0.forward",
-        "shuto.jct.takehashi.c1-inner-to-5-outbound",
-        .right,
-        "北池袋・関越道"
-      ),
-      (
-        "osm.23681223.222.forward",
-        "osm.23681223.223.forward",
-        "shuto.jct.takehashi.5-inbound-to-c1-outer",
-        .left,
-        "神田橋・箱崎"
-      ),
-      (
-        "osm.23681223.222.forward",
-        "osm.955398790.0.forward",
-        "shuto.jct.takehashi.5-inbound-to-c1-inner",
-        .right,
-        "霞が関・中央道"
-      ),
-    ]
+      )] = [
+        (
+          "osm.24039737.3.forward",
+          "osm.4853805.0.forward",
+          "shuto.jct.ichinohashi.c1-outer-to-2-outbound",
+          .left,
+          "目黒"
+        ),
+        (
+          "osm.23297444.19.forward",
+          "osm.45248411.0.forward",
+          "shuto.jct.ichinohashi.c1-inner-to-2-outbound",
+          .right,
+          "目黒"
+        ),
+        (
+          "osm.7836679.9.forward",
+          "osm.4853802.0.forward",
+          "shuto.jct.ichinohashi.2-inbound-to-c1-outer",
+          .left,
+          "北池袋・新宿"
+        ),
+        (
+          "osm.7836679.9.forward",
+          "osm.4853804.0.forward",
+          "shuto.jct.ichinohashi.2-inbound-to-c1-inner",
+          .right,
+          "湾岸線・銀座"
+        ),
+        (
+          "osm.24039773.1.forward",
+          "osm.24334770.0.forward",
+          "shuto.jct.takehashi.c1-outer-to-5-outbound",
+          .left,
+          "北池袋・関越道"
+        ),
+        (
+          "osm.1545541219.7.forward",
+          "osm.1421966435.0.forward",
+          "shuto.jct.takehashi.c1-inner-to-5-outbound",
+          .right,
+          "北池袋・関越道"
+        ),
+        (
+          "osm.23681223.222.forward",
+          "osm.23681223.223.forward",
+          "shuto.jct.takehashi.5-inbound-to-c1-outer",
+          .left,
+          "神田橋・箱崎"
+        ),
+        (
+          "osm.23681223.222.forward",
+          "osm.955398790.0.forward",
+          "shuto.jct.takehashi.5-inbound-to-c1-inner",
+          .right,
+          "霞が関・中央道"
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -963,49 +960,48 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.84530623.12.forward",
-        "osm.301016676.0.forward",
-        "shuto.jct.honmoku.k3-outbound-to-b-westbound",
-        .left,
-        "幸浦",
-        ["B"]
-      ),
-      (
-        "osm.84530623.12.forward",
-        "osm.38072737.0.forward",
-        "shuto.jct.honmoku.k3-outbound-to-b-eastbound",
-        .straight,
-        "空港中央・大黒ふ頭",
-        ["B", "K5"]
-      ),
-      (
-        "osm.435760593.169.forward",
-        "osm.32403532.0.forward",
-        "shuto.jct.honmoku.b-eastbound-to-k3-inbound",
-        .left,
-        "横浜駅東口・狩場線",
-        ["K3", "K1", "K2"]
-      ),
-      (
-        "osm.435760593.169.forward",
-        "osm.435760593.170.forward",
-        "shuto.jct.honmoku.b-eastbound-stays-on-b",
-        .straight,
-        "空港中央・大黒ふ頭",
-        ["B", "K5"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.84530623.12.forward",
+          "osm.301016676.0.forward",
+          "shuto.jct.honmoku.k3-outbound-to-b-westbound",
+          .left,
+          "幸浦",
+          ["B"]
+        ),
+        (
+          "osm.84530623.12.forward",
+          "osm.38072737.0.forward",
+          "shuto.jct.honmoku.k3-outbound-to-b-eastbound",
+          .straight,
+          "空港中央・大黒ふ頭",
+          ["B", "K5"]
+        ),
+        (
+          "osm.435760593.169.forward",
+          "osm.32403532.0.forward",
+          "shuto.jct.honmoku.b-eastbound-to-k3-inbound",
+          .left,
+          "横浜駅東口・狩場線",
+          ["K3", "K1", "K2"]
+        ),
+        (
+          "osm.435760593.169.forward",
+          "osm.435760593.170.forward",
+          "shuto.jct.honmoku.b-eastbound-stays-on-b",
+          .straight,
+          "空港中央・大黒ふ頭",
+          ["B", "K5"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1045,65 +1041,64 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.45019025.1.forward",
-        "osm.202805893.0.forward",
-        "shuto.jct.ariake.11-outbound-to-b-eastbound",
-        .straight,
-        "東関東道",
-        ["E51", "B", "9"]
-      ),
-      (
-        "osm.45019025.1.forward",
-        "osm.4848758.0.forward",
-        "shuto.jct.ariake.11-outbound-to-b-westbound",
-        .right,
-        "横浜・空港中央",
-        ["B", "1"]
-      ),
-      (
-        "osm.1313249026.0.forward",
-        "osm.23169048.0.forward",
-        "shuto.jct.ariake.b-westbound-to-11-inbound",
-        .left,
-        "銀座",
-        ["11", "C1"]
-      ),
-      (
-        "osm.1313249026.0.forward",
-        "osm.1313249025.0.forward",
-        "shuto.jct.ariake.b-westbound-stays-on-b",
-        .straight,
-        "横浜",
-        ["B"]
-      ),
-      (
-        "osm.266086989.2.forward",
-        "osm.4848757.0.forward",
-        "shuto.jct.ariake.b-eastbound-to-11-inbound",
-        .left,
-        "都心環状",
-        ["11", "C1"]
-      ),
-      (
-        "osm.266086989.2.forward",
-        "osm.266086989.3.forward",
-        "shuto.jct.ariake.b-eastbound-stays-on-b",
-        .straight,
-        "葛西",
-        ["B"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.45019025.1.forward",
+          "osm.202805893.0.forward",
+          "shuto.jct.ariake.11-outbound-to-b-eastbound",
+          .straight,
+          "東関東道",
+          ["E51", "B", "9"]
+        ),
+        (
+          "osm.45019025.1.forward",
+          "osm.4848758.0.forward",
+          "shuto.jct.ariake.11-outbound-to-b-westbound",
+          .right,
+          "横浜・空港中央",
+          ["B", "1"]
+        ),
+        (
+          "osm.1313249026.0.forward",
+          "osm.23169048.0.forward",
+          "shuto.jct.ariake.b-westbound-to-11-inbound",
+          .left,
+          "銀座",
+          ["11", "C1"]
+        ),
+        (
+          "osm.1313249026.0.forward",
+          "osm.1313249025.0.forward",
+          "shuto.jct.ariake.b-westbound-stays-on-b",
+          .straight,
+          "横浜",
+          ["B"]
+        ),
+        (
+          "osm.266086989.2.forward",
+          "osm.4848757.0.forward",
+          "shuto.jct.ariake.b-eastbound-to-11-inbound",
+          .left,
+          "都心環状",
+          ["11", "C1"]
+        ),
+        (
+          "osm.266086989.2.forward",
+          "osm.266086989.3.forward",
+          "shuto.jct.ariake.b-eastbound-stays-on-b",
+          .straight,
+          "葛西",
+          ["B"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1142,49 +1137,48 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.780870438.63.forward",
-        "osm.28188172.0.forward",
-        "shuto.jct.kouhoku.c2-outer-to-s1-outbound",
-        .left,
-        "東北道",
-        ["S1", "E4"]
-      ),
-      (
-        "osm.780870438.63.forward",
-        "osm.44211094.0.forward",
-        "shuto.jct.kouhoku.c2-outer-stays-on-c2",
-        .right,
-        "常磐道・湾岸線",
-        ["C2", "E6", "6"]
-      ),
-      (
-        "osm.438367463.80.forward",
-        "osm.28127450.0.forward",
-        "shuto.jct.kouhoku.s1-inbound-to-c2-inner",
-        .right,
-        "中央道・東名",
-        ["C2", "E20", "5", "E1"]
-      ),
-      (
-        "osm.438367463.80.forward",
-        "osm.867182414.0.forward",
-        "shuto.jct.kouhoku.s1-inbound-to-c2-outer",
-        .straight,
-        "東関東道・銀座",
-        ["E51", "C2", "6"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.780870438.63.forward",
+          "osm.28188172.0.forward",
+          "shuto.jct.kouhoku.c2-outer-to-s1-outbound",
+          .left,
+          "東北道",
+          ["S1", "E4"]
+        ),
+        (
+          "osm.780870438.63.forward",
+          "osm.44211094.0.forward",
+          "shuto.jct.kouhoku.c2-outer-stays-on-c2",
+          .right,
+          "常磐道・湾岸線",
+          ["C2", "E6", "6"]
+        ),
+        (
+          "osm.438367463.80.forward",
+          "osm.28127450.0.forward",
+          "shuto.jct.kouhoku.s1-inbound-to-c2-inner",
+          .right,
+          "中央道・東名",
+          ["C2", "E20", "5", "E1"]
+        ),
+        (
+          "osm.438367463.80.forward",
+          "osm.867182414.0.forward",
+          "shuto.jct.kouhoku.s1-inbound-to-c2-outer",
+          .straight,
+          "東関東道・銀座",
+          ["E51", "C2", "6"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1213,71 +1207,147 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
-  @Test("Daikoku movements bind all current operator signs")
-  func daikokuMovementsBindCurrentOperatorSigns() throws {
+  @Test("Yokohama Kohoku movements bind both current operator approaches")
+  func yokohamaKohokuMovementsBindCurrentOperatorApproaches() throws {
     let database = try loadDatabase()
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
+      )] = [
+        (
+          "osm.686983562.14.forward",
+          "osm.686983566.0.forward",
+          "shuto.jct.yokohama-kohoku.k7-north-down-to-daisan-keihin",
+          .straight,
+          "第三京浜・横浜港北出口",
+          ["E83", "K7"]
+        ),
+        (
+          "osm.686983562.14.forward",
+          "osm.686983568.0.forward",
+          "shuto.jct.yokohama-kohoku.k7-north-down-to-k7-northwest",
+          .left,
+          "東名",
+          ["K7", "E1"]
+        ),
+        (
+          "osm.692798735.26.forward",
+          "osm.686983567.0.forward",
+          "shuto.jct.yokohama-kohoku.k7-northwest-up-to-k7-north",
+          .straight,
+          "湾岸線・横浜公園",
+          ["K7", "K1"]
+        ),
+        (
+          "osm.692798735.26.forward",
+          "osm.686983570.0.forward",
+          "shuto.jct.yokohama-kohoku.k7-northwest-up-to-daisan-keihin",
+          .left,
+          "第三京浜・横浜港北出口",
+          ["E83", "K7"]
+        ),
+      ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
       )
-    ] = [
-      (
-        "osm.1449791735.2.forward",
-        "osm.15766920.0.forward",
-        "shuto.jct.daikoku.b-westbound-to-k5-inbound",
-        .left,
-        "東名",
-        ["E1", "K5", "K7"]
-      ),
-      (
-        "osm.1449791735.2.forward",
-        "osm.489510478.0.forward",
-        "shuto.jct.daikoku.b-westbound-stays-on-b",
-        .straight,
-        "横浜公園・横横道路",
-        ["B", "K3", "E16"]
-      ),
-      (
-        "osm.5365195.2.forward",
-        "osm.32355890.0.forward",
-        "shuto.jct.daikoku.b-eastbound-to-k5-inbound",
-        .left,
-        "東名",
-        ["E1", "K5", "K1", "K7"]
-      ),
-      (
-        "osm.5365195.2.forward",
-        "osm.5365195.3.forward",
-        "shuto.jct.daikoku.b-eastbound-stays-on-b",
-        .straight,
-        "アクアライン・空港中央",
-        ["B", "CA"]
-      ),
-      (
-        "osm.32355898.7.forward",
-        "osm.32592543.0.forward",
-        "shuto.jct.daikoku.k5-outbound-to-b-eastbound",
-        .left,
-        "空港中央・東関東道",
-        ["B", "K6", "E51"]
-      ),
-      (
-        "osm.32355898.7.forward",
-        "osm.779045459.0.forward",
-        "shuto.jct.daikoku.k5-outbound-to-b-westbound",
-        .straight,
-        "横浜公園・幸浦",
-        ["B", "K3"]
-      ),
-    ]
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 400)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "d8b31a419e631405171c37b4450051bdf"
+          + "25242c947301d57bcdda79e9e68faf2"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_yokohamakohoku"
+      )
+    }
+  }
+
+  @Test("Daikoku movements bind all current operator signs")
+  func daikokuMovementsBindCurrentOperatorSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations:
+      [(
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )] = [
+        (
+          "osm.1449791735.2.forward",
+          "osm.15766920.0.forward",
+          "shuto.jct.daikoku.b-westbound-to-k5-inbound",
+          .left,
+          "東名",
+          ["E1", "K5", "K7"]
+        ),
+        (
+          "osm.1449791735.2.forward",
+          "osm.489510478.0.forward",
+          "shuto.jct.daikoku.b-westbound-stays-on-b",
+          .straight,
+          "横浜公園・横横道路",
+          ["B", "K3", "E16"]
+        ),
+        (
+          "osm.5365195.2.forward",
+          "osm.32355890.0.forward",
+          "shuto.jct.daikoku.b-eastbound-to-k5-inbound",
+          .left,
+          "東名",
+          ["E1", "K5", "K1", "K7"]
+        ),
+        (
+          "osm.5365195.2.forward",
+          "osm.5365195.3.forward",
+          "shuto.jct.daikoku.b-eastbound-stays-on-b",
+          .straight,
+          "アクアライン・空港中央",
+          ["B", "CA"]
+        ),
+        (
+          "osm.32355898.7.forward",
+          "osm.32592543.0.forward",
+          "shuto.jct.daikoku.k5-outbound-to-b-eastbound",
+          .left,
+          "空港中央・東関東道",
+          ["B", "K6", "E51"]
+        ),
+        (
+          "osm.32355898.7.forward",
+          "osm.779045459.0.forward",
+          "shuto.jct.daikoku.k5-outbound-to-b-westbound",
+          .straight,
+          "横浜公園・幸浦",
+          ["B", "K3"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1312,65 +1382,64 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.254992124.8.forward",
-        "osm.254992124.9.forward",
-        "shuto.jct.ohashi.3-inbound-stays-on-3",
-        .straight,
-        "渋谷・都心環状",
-        ["3", "C1"]
-      ),
-      (
-        "osm.254992124.8.forward",
-        "osm.78334077.0.forward",
-        "shuto.jct.ohashi.3-inbound-to-c2",
-        .right,
-        "湾岸線・東北道",
-        ["C2", "B", "E4"]
-      ),
-      (
-        "osm.80581127.78.forward",
-        "osm.331692348.0.forward",
-        "shuto.jct.ohashi.c2-inner-stays-on-c2",
-        .left,
-        "湾岸線",
-        ["C2"]
-      ),
-      (
-        "osm.80581127.78.forward",
-        "osm.331922702.0.forward",
-        "shuto.jct.ohashi.c2-inner-to-3",
-        .right,
-        "都心環状・東名",
-        ["3", "C1", "E1"]
-      ),
-      (
-        "osm.772511247.10.forward",
-        "osm.331922711.0.forward",
-        "shuto.jct.ohashi.c2-outer-stays-on-c2",
-        .straight,
-        "中央道・東北道",
-        ["C2", "4", "5", "E20", "E4"]
-      ),
-      (
-        "osm.772511247.10.forward",
-        "osm.331922695.0.forward",
-        "shuto.jct.ohashi.c2-outer-to-3",
-        .left,
-        "都心環状・東名",
-        ["3", "C1", "E1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.254992124.8.forward",
+          "osm.254992124.9.forward",
+          "shuto.jct.ohashi.3-inbound-stays-on-3",
+          .straight,
+          "渋谷・都心環状",
+          ["3", "C1"]
+        ),
+        (
+          "osm.254992124.8.forward",
+          "osm.78334077.0.forward",
+          "shuto.jct.ohashi.3-inbound-to-c2",
+          .right,
+          "湾岸線・東北道",
+          ["C2", "B", "E4"]
+        ),
+        (
+          "osm.80581127.78.forward",
+          "osm.331692348.0.forward",
+          "shuto.jct.ohashi.c2-inner-stays-on-c2",
+          .left,
+          "湾岸線",
+          ["C2"]
+        ),
+        (
+          "osm.80581127.78.forward",
+          "osm.331922702.0.forward",
+          "shuto.jct.ohashi.c2-inner-to-3",
+          .right,
+          "都心環状・東名",
+          ["3", "C1", "E1"]
+        ),
+        (
+          "osm.772511247.10.forward",
+          "osm.331922711.0.forward",
+          "shuto.jct.ohashi.c2-outer-stays-on-c2",
+          .straight,
+          "中央道・東北道",
+          ["C2", "4", "5", "E20", "E4"]
+        ),
+        (
+          "osm.772511247.10.forward",
+          "osm.331922695.0.forward",
+          "shuto.jct.ohashi.c2-outer-to-3",
+          .left,
+          "都心環状・東名",
+          ["3", "C1", "E1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1405,49 +1474,48 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.184872023.41.forward",
-        "osm.184872023.42.forward",
-        "shuto.jct.komatsugawa.c2-outer-stays-on-c2",
-        .straight,
-        "湾岸線・東関東道",
-        ["C2", "B", "E51"]
-      ),
-      (
-        "osm.184872023.41.forward",
-        "osm.751177038.0.forward",
-        "shuto.jct.komatsugawa.c2-outer-to-7-outbound",
-        .left,
-        "京葉道路・小松川",
-        ["7", "E14"]
-      ),
-      (
-        "osm.59338971.14.forward",
-        "osm.59338971.15.forward",
-        "shuto.jct.komatsugawa.7-inbound-stays-on-7",
-        .straight,
-        "都心環状",
-        ["7", "6", "C1"]
-      ),
-      (
-        "osm.59338971.14.forward",
-        "osm.751177037.0.forward",
-        "shuto.jct.komatsugawa.7-inbound-to-c2-inner",
-        .left,
-        "東北道・常磐道",
-        ["C2", "E4", "E6"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.184872023.41.forward",
+          "osm.184872023.42.forward",
+          "shuto.jct.komatsugawa.c2-outer-stays-on-c2",
+          .straight,
+          "湾岸線・東関東道",
+          ["C2", "B", "E51"]
+        ),
+        (
+          "osm.184872023.41.forward",
+          "osm.751177038.0.forward",
+          "shuto.jct.komatsugawa.c2-outer-to-7-outbound",
+          .left,
+          "京葉道路・小松川",
+          ["7", "E14"]
+        ),
+        (
+          "osm.59338971.14.forward",
+          "osm.59338971.15.forward",
+          "shuto.jct.komatsugawa.7-inbound-stays-on-7",
+          .straight,
+          "都心環状",
+          ["7", "6", "C1"]
+        ),
+        (
+          "osm.59338971.14.forward",
+          "osm.751177037.0.forward",
+          "shuto.jct.komatsugawa.7-inbound-to-c2-inner",
+          .left,
+          "東北道・常磐道",
+          ["C2", "E4", "E6"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1499,8 +1567,8 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
@@ -1508,49 +1576,48 @@ struct ShutoJunctionGuidanceTests {
         sign: String,
         shields: [String],
         detailSHA256: String
-      )
-    ] = [
-      (
-        "osm.1544832378.11.forward",
-        "osm.712498144.0.forward",
-        "shuto.jct.ryogoku.6-outbound-stays-on-6",
-        .left,
-        "東北道・常磐道",
-        ["6", "E4", "E6"],
-        "720995e96dbb9e570a481e8918bd8b49"
-          + "bef2b7af9e79b4ab660eb6e1460ad66a"
-      ),
-      (
-        "osm.1544832378.11.forward",
-        "osm.44506762.0.forward",
-        "shuto.jct.ryogoku.6-outbound-to-7-outbound",
-        .right,
-        "京葉道路",
-        ["7", "E14"],
-        "720995e96dbb9e570a481e8918bd8b49"
-          + "bef2b7af9e79b4ab660eb6e1460ad66a"
-      ),
-      (
-        "osm.1102698847.2.forward",
-        "osm.1102698847.3.forward",
-        "shuto.jct.shibaura.1-outbound-stays-on-1",
-        .right,
-        "横浜",
-        ["1", "K1"],
-        "c190fee58d35efdaeb0ad62015c838131"
-          + "e00f4e7386cde2510e8aa1d83a1790c"
-      ),
-      (
-        "osm.1102698847.2.forward",
-        "osm.4847519.0.forward",
-        "shuto.jct.shibaura.1-outbound-to-11-outbound",
-        .left,
-        "湾岸線",
-        ["11", "B"],
-        "c190fee58d35efdaeb0ad62015c838131"
-          + "e00f4e7386cde2510e8aa1d83a1790c"
-      ),
-    ]
+      )] = [
+        (
+          "osm.1544832378.11.forward",
+          "osm.712498144.0.forward",
+          "shuto.jct.ryogoku.6-outbound-stays-on-6",
+          .left,
+          "東北道・常磐道",
+          ["6", "E4", "E6"],
+          "720995e96dbb9e570a481e8918bd8b49"
+            + "bef2b7af9e79b4ab660eb6e1460ad66a"
+        ),
+        (
+          "osm.1544832378.11.forward",
+          "osm.44506762.0.forward",
+          "shuto.jct.ryogoku.6-outbound-to-7-outbound",
+          .right,
+          "京葉道路",
+          ["7", "E14"],
+          "720995e96dbb9e570a481e8918bd8b49"
+            + "bef2b7af9e79b4ab660eb6e1460ad66a"
+        ),
+        (
+          "osm.1102698847.2.forward",
+          "osm.1102698847.3.forward",
+          "shuto.jct.shibaura.1-outbound-stays-on-1",
+          .right,
+          "横浜",
+          ["1", "K1"],
+          "c190fee58d35efdaeb0ad62015c838131"
+            + "e00f4e7386cde2510e8aa1d83a1790c"
+        ),
+        (
+          "osm.1102698847.2.forward",
+          "osm.4847519.0.forward",
+          "shuto.jct.shibaura.1-outbound-to-11-outbound",
+          .left,
+          "湾岸線",
+          ["11", "B"],
+          "c190fee58d35efdaeb0ad62015c838131"
+            + "e00f4e7386cde2510e8aa1d83a1790c"
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1586,49 +1653,48 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.316185365.6.forward",
-        "osm.44803854.0.forward",
-        "shuto.jct.edobashi.c1-outer-to-6-outbound",
-        .left,
-        "箱崎・常磐道",
-        ["6", "E6"]
-      ),
-      (
-        "osm.41009552.1.forward",
-        "osm.44804643.0.forward",
-        "shuto.jct.edobashi.c1-inner-to-6-outbound",
-        .right,
-        "上野",
-        ["1"]
-      ),
-      (
-        "osm.44805858.19.forward",
-        "osm.40971852.0.forward",
-        "shuto.jct.edobashi.6-inbound-toward-ginza",
-        .left,
-        "銀座・横浜",
-        ["C1", "7"]
-      ),
-      (
-        "osm.44805858.19.forward",
-        "osm.44803855.0.forward",
-        "shuto.jct.edobashi.6-inbound-toward-kandabashi",
-        .right,
-        "神田橋・北池袋・中央道",
-        ["C1", "5", "E20"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.316185365.6.forward",
+          "osm.44803854.0.forward",
+          "shuto.jct.edobashi.c1-outer-to-6-outbound",
+          .left,
+          "箱崎・常磐道",
+          ["6", "E6"]
+        ),
+        (
+          "osm.41009552.1.forward",
+          "osm.44804643.0.forward",
+          "shuto.jct.edobashi.c1-inner-to-6-outbound",
+          .right,
+          "上野",
+          ["1"]
+        ),
+        (
+          "osm.44805858.19.forward",
+          "osm.40971852.0.forward",
+          "shuto.jct.edobashi.6-inbound-toward-ginza",
+          .left,
+          "銀座・横浜",
+          ["C1", "7"]
+        ),
+        (
+          "osm.44805858.19.forward",
+          "osm.44803855.0.forward",
+          "shuto.jct.edobashi.6-inbound-toward-kandabashi",
+          .right,
+          "神田橋・北池袋・中央道",
+          ["C1", "5", "E20"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1654,10 +1720,10 @@ struct ShutoJunctionGuidanceTests {
         definition.sources.contains {
           $0.url
             == "https://www.shutoko.jp/-/media/images/responsive/"
-              + "customer/use/network/jct/routeguide/jct_edobashi"
+            + "customer/use/network/jct/routeguide/jct_edobashi"
             && $0.contentSHA256
               == "a855321a4dbf059131cada07f5dfd0e0"
-                + "73762b063034053807b25001956db975"
+              + "73762b063034053807b25001956db975"
         }
       )
     }
@@ -1669,37 +1735,36 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         outgoing: String,
         id: String,
         sign: String,
         shields: [String],
         colorPhrase: String
-      )
-    ] = [
-      (
-        "osm.44804029.0.forward",
-        "shuto.jct.hakozaki.6-outbound-to-9-primary",
-        "9・湾岸線",
-        ["9", "B"],
-        "青色の案内"
-      ),
-      (
-        "osm.44804208.0.forward",
-        "shuto.jct.hakozaki.6-outbound-to-9-secondary",
-        "9・湾岸線",
-        ["9", "B"],
-        "青色の案内"
-      ),
-      (
-        "osm.44805851.0.forward",
-        "shuto.jct.hakozaki.6-outbound-stays-on-6",
-        "6 常磐道・7 京葉道路",
-        ["6", "E6", "7", "E14"],
-        "赤色の案内"
-      ),
-    ]
+      )] = [
+        (
+          "osm.44804029.0.forward",
+          "shuto.jct.hakozaki.6-outbound-to-9-primary",
+          "9・湾岸線",
+          ["9", "B"],
+          "青色の案内"
+        ),
+        (
+          "osm.44804208.0.forward",
+          "shuto.jct.hakozaki.6-outbound-to-9-secondary",
+          "9・湾岸線",
+          ["9", "B"],
+          "青色の案内"
+        ),
+        (
+          "osm.44805851.0.forward",
+          "shuto.jct.hakozaki.6-outbound-stays-on-6",
+          "6 常磐道・7 京葉道路",
+          ["6", "E6", "7", "E14"],
+          "赤色の案内"
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges["osm.28194421.7.forward"])
@@ -1740,30 +1805,29 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.44804205.0.forward",
-        "shuto.jct.hakozaki.9-inbound-toward-6-7",
-        .right,
-        "6 東北道・常磐道 / 7 京葉道路",
-        ["6", "E6", "7", "E14"]
-      ),
-      (
-        "osm.766721148.0.forward",
-        "shuto.jct.hakozaki.9-inbound-toward-c1-ginza",
-        .left,
-        "都心環状 C1 銀座",
-        ["C1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.44804205.0.forward",
+          "shuto.jct.hakozaki.9-inbound-toward-6-7",
+          .right,
+          "6 東北道・常磐道 / 7 京葉道路",
+          ["6", "E6", "7", "E14"]
+        ),
+        (
+          "osm.766721148.0.forward",
+          "shuto.jct.hakozaki.9-inbound-toward-c1-ginza",
+          .left,
+          "都心環状 C1 銀座",
+          ["C1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges["osm.44806482.7.forward"])
@@ -1799,30 +1863,29 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.44804206.0.forward",
-        "shuto.jct.hakozaki.6-inbound-to-9-outbound",
-        .left,
-        "湾岸線・東関東道",
-        ["9", "B"]
-      ),
-      (
-        "osm.876405654.0.forward",
-        "shuto.jct.hakozaki.6-inbound-toward-ginza",
-        .right,
-        "銀座",
-        ["C1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.44804206.0.forward",
+          "shuto.jct.hakozaki.6-inbound-to-9-outbound",
+          .left,
+          "湾岸線・東関東道",
+          ["9", "B"]
+        ),
+        (
+          "osm.876405654.0.forward",
+          "shuto.jct.hakozaki.6-inbound-toward-ginza",
+          .right,
+          "銀座",
+          ["C1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges["osm.1544854472.1.forward"])
@@ -1853,57 +1916,56 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.848042057.4.forward",
-        "osm.26956960.0.forward",
-        "shuto.jct.nishishinjuku.4-inbound-to-c2",
-        .left,
-        "湾岸線・東北道",
-        ["C2", "5", "E4"]
-      ),
-      (
-        "osm.848042057.4.forward",
-        "osm.848042056.0.forward",
-        "shuto.jct.nishishinjuku.4-inbound-stays-on-4",
-        .right,
-        "新宿出口・都心環状",
-        ["4", "C1"]
-      ),
-      (
-        "osm.190617333.53.forward",
-        "osm.28127106.0.forward",
-        "shuto.jct.nishishinjuku.c2-inner-to-4-outbound",
-        .right,
-        "高井戸・中央道",
-        ["4", "E20"]
-      ),
-      (
-        "osm.863812380.3.forward",
-        "osm.381972984.0.forward",
-        "shuto.jct.nishishinjuku.c2-outer-to-4-outbound",
-        .right,
-        "高井戸・中央道",
-        ["4", "E20"]
-      ),
-      (
-        "osm.863812380.3.forward",
-        "osm.863812381.0.forward",
-        "shuto.jct.nishishinjuku.c2-outer-stays-on-c2",
-        .straight,
-        "西池袋・東北道",
-        ["C2", "5", "E4"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.848042057.4.forward",
+          "osm.26956960.0.forward",
+          "shuto.jct.nishishinjuku.4-inbound-to-c2",
+          .left,
+          "湾岸線・東北道",
+          ["C2", "5", "E4"]
+        ),
+        (
+          "osm.848042057.4.forward",
+          "osm.848042056.0.forward",
+          "shuto.jct.nishishinjuku.4-inbound-stays-on-4",
+          .right,
+          "新宿出口・都心環状",
+          ["4", "C1"]
+        ),
+        (
+          "osm.190617333.53.forward",
+          "osm.28127106.0.forward",
+          "shuto.jct.nishishinjuku.c2-inner-to-4-outbound",
+          .right,
+          "高井戸・中央道",
+          ["4", "E20"]
+        ),
+        (
+          "osm.863812380.3.forward",
+          "osm.381972984.0.forward",
+          "shuto.jct.nishishinjuku.c2-outer-to-4-outbound",
+          .right,
+          "高井戸・中央道",
+          ["4", "E20"]
+        ),
+        (
+          "osm.863812380.3.forward",
+          "osm.863812381.0.forward",
+          "shuto.jct.nishishinjuku.c2-outer-stays-on-c2",
+          .straight,
+          "西池袋・東北道",
+          ["C2", "5", "E4"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -1934,65 +1996,64 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.760720782.10.forward",
-        "osm.39744129.0.forward",
-        "shuto.jct.kinko.k1-outbound-stays-on-k1",
-        .left,
-        "横浜公園",
-        ["K1"]
-      ),
-      (
-        "osm.760720782.10.forward",
-        "osm.31709108.0.forward",
-        "shuto.jct.kinko.k1-outbound-to-k2-outbound",
-        .right,
-        "第三京浜・横浜新道",
-        ["K2", "E83"]
-      ),
-      (
-        "osm.32404414.20.forward",
-        "osm.340606284.0.forward",
-        "shuto.jct.kinko.k1-inbound-stays-on-k1",
-        .right,
-        "羽田",
-        ["K1"]
-      ),
-      (
-        "osm.32404414.20.forward",
-        "osm.34994498.0.forward",
-        "shuto.jct.kinko.k1-inbound-to-k2-outbound",
-        .left,
-        "第三京浜・横浜新道",
-        ["K2", "E83"]
-      ),
-      (
-        "osm.915304584.0.forward",
-        "osm.39744132.0.forward",
-        "shuto.jct.kinko.k2-inbound-to-k1-outbound",
-        .right,
-        "横浜公園・湾岸線",
-        ["K1", "K3"]
-      ),
-      (
-        "osm.915304584.0.forward",
-        "osm.915304583.0.forward",
-        "shuto.jct.kinko.k2-inbound-to-k1-inbound",
-        .left,
-        "羽田",
-        ["K1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.760720782.10.forward",
+          "osm.39744129.0.forward",
+          "shuto.jct.kinko.k1-outbound-stays-on-k1",
+          .left,
+          "横浜公園",
+          ["K1"]
+        ),
+        (
+          "osm.760720782.10.forward",
+          "osm.31709108.0.forward",
+          "shuto.jct.kinko.k1-outbound-to-k2-outbound",
+          .right,
+          "第三京浜・横浜新道",
+          ["K2", "E83"]
+        ),
+        (
+          "osm.32404414.20.forward",
+          "osm.340606284.0.forward",
+          "shuto.jct.kinko.k1-inbound-stays-on-k1",
+          .right,
+          "羽田",
+          ["K1"]
+        ),
+        (
+          "osm.32404414.20.forward",
+          "osm.34994498.0.forward",
+          "shuto.jct.kinko.k1-inbound-to-k2-outbound",
+          .left,
+          "第三京浜・横浜新道",
+          ["K2", "E83"]
+        ),
+        (
+          "osm.915304584.0.forward",
+          "osm.39744132.0.forward",
+          "shuto.jct.kinko.k2-inbound-to-k1-outbound",
+          .right,
+          "横浜公園・湾岸線",
+          ["K1", "K3"]
+        ),
+        (
+          "osm.915304584.0.forward",
+          "osm.915304583.0.forward",
+          "shuto.jct.kinko.k2-inbound-to-k1-inbound",
+          .left,
+          "羽田",
+          ["K1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -2023,65 +2084,64 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.987587806.0.forward",
-        "osm.38913574.0.forward",
-        "shuto.jct.ishikawacho.k1-outbound-to-k3-outbound",
-        .left,
-        "湾岸線",
-        ["K3", "B"]
-      ),
-      (
-        "osm.987587806.0.forward",
-        "osm.84530636.0.forward",
-        "shuto.jct.ishikawacho.k1-outbound-to-k3-inbound",
-        .right,
-        "保土ヶ谷バイパス",
-        ["K3"]
-      ),
-      (
-        "osm.84530629.13.forward",
-        "osm.32404412.0.forward",
-        "shuto.jct.ishikawacho.k3-inbound-to-k1-inbound",
-        .right,
-        "横浜公園・羽田",
-        ["K1"]
-      ),
-      (
-        "osm.84530629.13.forward",
-        "osm.340606291.0.forward",
-        "shuto.jct.ishikawacho.k3-inbound-stays-on-k3",
-        .straight,
-        "保土ヶ谷バイパス",
-        ["K3"]
-      ),
-      (
-        "osm.174480816.59.forward",
-        "osm.174480816.60.forward",
-        "shuto.jct.ishikawacho.k3-outbound-stays-on-k3",
-        .straight,
-        "湾岸線・空港中央",
-        ["K3", "B"]
-      ),
-      (
-        "osm.174480816.59.forward",
-        "osm.84530632.0.forward",
-        "shuto.jct.ishikawacho.k3-outbound-to-k1-inbound",
-        .left,
-        "羽田・みなとみらい",
-        ["K1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.987587806.0.forward",
+          "osm.38913574.0.forward",
+          "shuto.jct.ishikawacho.k1-outbound-to-k3-outbound",
+          .left,
+          "湾岸線",
+          ["K3", "B"]
+        ),
+        (
+          "osm.987587806.0.forward",
+          "osm.84530636.0.forward",
+          "shuto.jct.ishikawacho.k1-outbound-to-k3-inbound",
+          .right,
+          "保土ヶ谷バイパス",
+          ["K3"]
+        ),
+        (
+          "osm.84530629.13.forward",
+          "osm.32404412.0.forward",
+          "shuto.jct.ishikawacho.k3-inbound-to-k1-inbound",
+          .right,
+          "横浜公園・羽田",
+          ["K1"]
+        ),
+        (
+          "osm.84530629.13.forward",
+          "osm.340606291.0.forward",
+          "shuto.jct.ishikawacho.k3-inbound-stays-on-k3",
+          .straight,
+          "保土ヶ谷バイパス",
+          ["K3"]
+        ),
+        (
+          "osm.174480816.59.forward",
+          "osm.174480816.60.forward",
+          "shuto.jct.ishikawacho.k3-outbound-stays-on-k3",
+          .straight,
+          "湾岸線・空港中央",
+          ["K3", "B"]
+        ),
+        (
+          "osm.174480816.59.forward",
+          "osm.84530632.0.forward",
+          "shuto.jct.ishikawacho.k3-outbound-to-k1-inbound",
+          .left,
+          "羽田・みなとみらい",
+          ["K1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -2112,49 +2172,48 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.38093215.12.forward",
-        "osm.38093215.13.forward",
-        "shuto.jct.daishi.k1-outbound-stays-on-k1",
-        .left,
-        "横浜公園",
-        ["K1"]
-      ),
-      (
-        "osm.38093215.12.forward",
-        "osm.804932420.0.forward",
-        "shuto.jct.daishi.k1-outbound-to-k6-outbound",
-        .right,
-        "湾岸線・東京湾アクアライン",
-        ["K6", "B", "CA"]
-      ),
-      (
-        "osm.438360534.88.forward",
-        "osm.438360534.89.forward",
-        "shuto.jct.daishi.k1-inbound-stays-on-k1",
-        .straight,
-        "羽田",
-        ["K1"]
-      ),
-      (
-        "osm.438360534.88.forward",
-        "osm.38093185.0.forward",
-        "shuto.jct.daishi.k1-inbound-to-k6-outbound",
-        .left,
-        "湾岸線",
-        ["K6", "B"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.38093215.12.forward",
+          "osm.38093215.13.forward",
+          "shuto.jct.daishi.k1-outbound-stays-on-k1",
+          .left,
+          "横浜公園",
+          ["K1"]
+        ),
+        (
+          "osm.38093215.12.forward",
+          "osm.804932420.0.forward",
+          "shuto.jct.daishi.k1-outbound-to-k6-outbound",
+          .right,
+          "湾岸線・東京湾アクアライン",
+          ["K6", "B", "CA"]
+        ),
+        (
+          "osm.438360534.88.forward",
+          "osm.438360534.89.forward",
+          "shuto.jct.daishi.k1-inbound-stays-on-k1",
+          .straight,
+          "羽田",
+          ["K1"]
+        ),
+        (
+          "osm.438360534.88.forward",
+          "osm.38093185.0.forward",
+          "shuto.jct.daishi.k1-inbound-to-k6-outbound",
+          .left,
+          "湾岸線",
+          ["K6", "B"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -2205,81 +2264,80 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.156344609.48.forward",
-        "osm.28195148.0.forward",
-        "shuto.jct.itabashi.c2-inner-to-5-outbound",
-        .left,
-        "大宮・関越道",
-        ["5", "E17"]
-      ),
-      (
-        "osm.156344609.48.forward",
-        "osm.28195150.0.forward",
-        "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho",
-        .right,
-        "中央道・東名",
-        ["C2", "E20", "E1"]
-      ),
-      (
-        "osm.28127112.12.forward",
-        "osm.23681223.0.forward",
-        "shuto.jct.kumanocho.c2-inner-to-5-inbound",
-        .left,
-        "東池袋・都心環状",
-        ["5"]
-      ),
-      (
-        "osm.28127112.12.forward",
-        "osm.28126649.0.forward",
-        "shuto.jct.kumanocho.c2-inner-stays-on-c2",
-        .right,
-        "中央道・東名",
-        ["C2", "E20", "E1"]
-      ),
-      (
-        "osm.44291527.12.forward",
-        "osm.22694126.0.forward",
-        "shuto.jct.itabashi.c2-outer-to-5-outbound",
-        .left,
-        "大宮・関越道",
-        ["5", "E17"]
-      ),
-      (
-        "osm.44291527.12.forward",
-        "osm.24334800.0.forward",
-        "shuto.jct.itabashi.c2-outer-stays-on-c2",
-        .right,
-        "東北道・常磐道",
-        ["C2", "E4", "E6"]
-      ),
-      (
-        "osm.44353152.3.forward",
-        "osm.182527890.0.forward",
-        "shuto.jct.itabashi.5-inbound-to-c2-inner",
-        .left,
-        "常磐道・東関東道",
-        ["C2", "E6", "E51"]
-      ),
-      (
-        "osm.44353152.3.forward",
-        "osm.44353152.4.forward",
-        "shuto.jct.itabashi.5-inbound-stays-on-5",
-        .straight,
-        "都心環状・東名",
-        ["5", "E1"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.156344609.48.forward",
+          "osm.28195148.0.forward",
+          "shuto.jct.itabashi.c2-inner-to-5-outbound",
+          .left,
+          "大宮・関越道",
+          ["5", "E17"]
+        ),
+        (
+          "osm.156344609.48.forward",
+          "osm.28195150.0.forward",
+          "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho",
+          .right,
+          "中央道・東名",
+          ["C2", "E20", "E1"]
+        ),
+        (
+          "osm.28127112.12.forward",
+          "osm.23681223.0.forward",
+          "shuto.jct.kumanocho.c2-inner-to-5-inbound",
+          .left,
+          "東池袋・都心環状",
+          ["5"]
+        ),
+        (
+          "osm.28127112.12.forward",
+          "osm.28126649.0.forward",
+          "shuto.jct.kumanocho.c2-inner-stays-on-c2",
+          .right,
+          "中央道・東名",
+          ["C2", "E20", "E1"]
+        ),
+        (
+          "osm.44291527.12.forward",
+          "osm.22694126.0.forward",
+          "shuto.jct.itabashi.c2-outer-to-5-outbound",
+          .left,
+          "大宮・関越道",
+          ["5", "E17"]
+        ),
+        (
+          "osm.44291527.12.forward",
+          "osm.24334800.0.forward",
+          "shuto.jct.itabashi.c2-outer-stays-on-c2",
+          .right,
+          "東北道・常磐道",
+          ["C2", "E4", "E6"]
+        ),
+        (
+          "osm.44353152.3.forward",
+          "osm.182527890.0.forward",
+          "shuto.jct.itabashi.5-inbound-to-c2-inner",
+          .left,
+          "常磐道・東関東道",
+          ["C2", "E6", "E51"]
+        ),
+        (
+          "osm.44353152.3.forward",
+          "osm.44353152.4.forward",
+          "shuto.jct.itabashi.5-inbound-stays-on-5",
+          .straight,
+          "都心環状・東名",
+          ["5", "E1"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -2309,113 +2367,112 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.44422827.8.forward",
-        "osm.44422827.9.forward",
-        "shuto.jct.horikiri.c2-inner-toward-kosuge",
-        .straight,
-        "東北道・常磐道",
-        ["C2", "E4", "6", "E6"]
-      ),
-      (
-        "osm.44422827.8.forward",
-        "osm.44422825.0.forward",
-        "shuto.jct.horikiri.c2-inner-to-6-inbound",
-        .left,
-        "銀座",
-        ["6", "C1"]
-      ),
-      (
-        "osm.44130134.12.forward",
-        "osm.28194807.0.forward",
-        "shuto.jct.kosuge.c2-inner-stays-on-c2",
-        .left,
-        "東北道・大宮",
-        ["C2", "E4", "S1"]
-      ),
-      (
-        "osm.44130134.12.forward",
-        "osm.43992332.0.forward",
-        "shuto.jct.kosuge.c2-inner-to-6-outbound",
-        .right,
-        "常磐道・三郷",
-        ["6", "E6"]
-      ),
-      (
-        "osm.32898851.9.forward",
-        "osm.28188273.0.forward",
-        "shuto.jct.horikiri.c2-outer-to-6-inbound",
-        .right,
-        "銀座",
-        ["6", "C1"]
-      ),
-      (
-        "osm.32898851.9.forward",
-        "osm.44130133.0.forward",
-        "shuto.jct.horikiri.c2-outer-stays-on-c2",
-        .left,
-        "湾岸線・東関東道",
-        ["C2", "B", "E51", "7"]
-      ),
-      (
-        "osm.28194805.12.forward",
-        "osm.28188270.0.forward",
-        "shuto.jct.kosuge.c2-outer-to-6-outbound",
-        .left,
-        "常磐道・三郷",
-        ["6", "E6"]
-      ),
-      (
-        "osm.28194805.12.forward",
-        "osm.28194805.13.forward",
-        "shuto.jct.kosuge.c2-outer-stays-on-c2",
-        .straight,
-        "湾岸線・東関東道",
-        ["C2", "B", "E51", "7"]
-      ),
-      (
-        "osm.250490207.15.forward",
-        "osm.250490207.16.forward",
-        "shuto.jct.kosuge.6-inbound-toward-horikiri",
-        .straight,
-        "湾岸線・都心環状",
-        ["C2", "B", "6", "C1"]
-      ),
-      (
-        "osm.250490207.15.forward",
-        "osm.31090753.0.forward",
-        "shuto.jct.kosuge.6-inbound-to-c2-inner",
-        .right,
-        "東名・中央道",
-        ["C2", "E1", "5", "E20"]
-      ),
-      (
-        "osm.817278024.142.forward",
-        "osm.28188274.0.forward",
-        "shuto.jct.horikiri.6-outbound-to-c2-outer",
-        .right,
-        "湾岸線・東関東道",
-        ["C2", "B", "E51", "7"]
-      ),
-      (
-        "osm.817278024.142.forward",
-        "osm.316265424.0.forward",
-        "shuto.jct.horikiri.6-outbound-toward-kosuge",
-        .straight,
-        "東北道・常磐道",
-        ["C2", "E4", "6", "E6"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.44422827.8.forward",
+          "osm.44422827.9.forward",
+          "shuto.jct.horikiri.c2-inner-toward-kosuge",
+          .straight,
+          "東北道・常磐道",
+          ["C2", "E4", "6", "E6"]
+        ),
+        (
+          "osm.44422827.8.forward",
+          "osm.44422825.0.forward",
+          "shuto.jct.horikiri.c2-inner-to-6-inbound",
+          .left,
+          "銀座",
+          ["6", "C1"]
+        ),
+        (
+          "osm.44130134.12.forward",
+          "osm.28194807.0.forward",
+          "shuto.jct.kosuge.c2-inner-stays-on-c2",
+          .left,
+          "東北道・大宮",
+          ["C2", "E4", "S1"]
+        ),
+        (
+          "osm.44130134.12.forward",
+          "osm.43992332.0.forward",
+          "shuto.jct.kosuge.c2-inner-to-6-outbound",
+          .right,
+          "常磐道・三郷",
+          ["6", "E6"]
+        ),
+        (
+          "osm.32898851.9.forward",
+          "osm.28188273.0.forward",
+          "shuto.jct.horikiri.c2-outer-to-6-inbound",
+          .right,
+          "銀座",
+          ["6", "C1"]
+        ),
+        (
+          "osm.32898851.9.forward",
+          "osm.44130133.0.forward",
+          "shuto.jct.horikiri.c2-outer-stays-on-c2",
+          .left,
+          "湾岸線・東関東道",
+          ["C2", "B", "E51", "7"]
+        ),
+        (
+          "osm.28194805.12.forward",
+          "osm.28188270.0.forward",
+          "shuto.jct.kosuge.c2-outer-to-6-outbound",
+          .left,
+          "常磐道・三郷",
+          ["6", "E6"]
+        ),
+        (
+          "osm.28194805.12.forward",
+          "osm.28194805.13.forward",
+          "shuto.jct.kosuge.c2-outer-stays-on-c2",
+          .straight,
+          "湾岸線・東関東道",
+          ["C2", "B", "E51", "7"]
+        ),
+        (
+          "osm.250490207.15.forward",
+          "osm.250490207.16.forward",
+          "shuto.jct.kosuge.6-inbound-toward-horikiri",
+          .straight,
+          "湾岸線・都心環状",
+          ["C2", "B", "6", "C1"]
+        ),
+        (
+          "osm.250490207.15.forward",
+          "osm.31090753.0.forward",
+          "shuto.jct.kosuge.6-inbound-to-c2-inner",
+          .right,
+          "東名・中央道",
+          ["C2", "E1", "5", "E20"]
+        ),
+        (
+          "osm.817278024.142.forward",
+          "osm.28188274.0.forward",
+          "shuto.jct.horikiri.6-outbound-to-c2-outer",
+          .right,
+          "湾岸線・東関東道",
+          ["C2", "B", "E51", "7"]
+        ),
+        (
+          "osm.817278024.142.forward",
+          "osm.316265424.0.forward",
+          "shuto.jct.horikiri.6-outbound-toward-kosuge",
+          .straight,
+          "東北道・常磐道",
+          ["C2", "E4", "6", "E6"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])
@@ -2453,81 +2510,80 @@ struct ShutoJunctionGuidanceTests {
     let edges = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
     )
-    let expectations: [
-      (
+    let expectations:
+      [(
         incoming: String,
         outgoing: String,
         id: String,
         side: ShutoJunctionBranchSide,
         sign: String,
         shields: [String]
-      )
-    ] = [
-      (
-        "osm.5204845.0.forward",
-        "osm.5204845.1.forward",
-        "shuto.jct.kawasaki.b-eastbound-stays-on-b",
-        .straight,
-        "東京・空港中央",
-        ["B", "1", "11"]
-      ),
-      (
-        "osm.5204845.0.forward",
-        "osm.5212953.0.forward",
-        "shuto.jct.kawasaki.b-eastbound-to-k6",
-        .left,
-        "川崎・木更津",
-        ["K6", "CA"]
-      ),
-      (
-        "osm.82596770.33.forward",
-        "osm.783646149.0.forward",
-        "shuto.jct.kawasaki.k6-outbound-to-bayshore",
-        .right,
-        "東京・横浜",
-        ["B"]
-      ),
-      (
-        "osm.82596770.33.forward",
-        "osm.783649669.0.forward",
-        "shuto.jct.kawasaki.k6-outbound-to-aqualine",
-        .straight,
-        "アクアライン・木更津",
-        ["CA"]
-      ),
-      (
-        "osm.59613958.0.forward",
-        "osm.5208415.0.forward",
-        "shuto.jct.kawasaki.k6-outbound-to-b-eastbound",
-        .left,
-        "東京",
-        ["B"]
-      ),
-      (
-        "osm.59613958.0.forward",
-        "osm.59613958.1.forward",
-        "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
-        .right,
-        "横浜",
-        ["B"]
-      ),
-      (
-        "osm.5204788.17.forward",
-        "osm.5204789.0.forward",
-        "shuto.jct.kawasaki.b-westbound-stays-on-b",
-        .straight,
-        "横浜",
-        ["B"]
-      ),
-      (
-        "osm.5204788.17.forward",
-        "osm.5212959.0.forward",
-        "shuto.jct.kawasaki.b-westbound-to-k6",
-        .left,
-        "川崎",
-        ["K6"]
-      ),
-    ]
+      )] = [
+        (
+          "osm.5204845.0.forward",
+          "osm.5204845.1.forward",
+          "shuto.jct.kawasaki.b-eastbound-stays-on-b",
+          .straight,
+          "東京・空港中央",
+          ["B", "1", "11"]
+        ),
+        (
+          "osm.5204845.0.forward",
+          "osm.5212953.0.forward",
+          "shuto.jct.kawasaki.b-eastbound-to-k6",
+          .left,
+          "川崎・木更津",
+          ["K6", "CA"]
+        ),
+        (
+          "osm.82596770.33.forward",
+          "osm.783646149.0.forward",
+          "shuto.jct.kawasaki.k6-outbound-to-bayshore",
+          .right,
+          "東京・横浜",
+          ["B"]
+        ),
+        (
+          "osm.82596770.33.forward",
+          "osm.783649669.0.forward",
+          "shuto.jct.kawasaki.k6-outbound-to-aqualine",
+          .straight,
+          "アクアライン・木更津",
+          ["CA"]
+        ),
+        (
+          "osm.59613958.0.forward",
+          "osm.5208415.0.forward",
+          "shuto.jct.kawasaki.k6-outbound-to-b-eastbound",
+          .left,
+          "東京",
+          ["B"]
+        ),
+        (
+          "osm.59613958.0.forward",
+          "osm.59613958.1.forward",
+          "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          .right,
+          "横浜",
+          ["B"]
+        ),
+        (
+          "osm.5204788.17.forward",
+          "osm.5204789.0.forward",
+          "shuto.jct.kawasaki.b-westbound-stays-on-b",
+          .straight,
+          "横浜",
+          ["B"]
+        ),
+        (
+          "osm.5204788.17.forward",
+          "osm.5212959.0.forward",
+          "shuto.jct.kawasaki.b-westbound-to-k6",
+          .left,
+          "川崎",
+          ["K6"]
+        ),
+      ]
 
     for expected in expectations {
       let incoming = try #require(edges[expected.incoming])

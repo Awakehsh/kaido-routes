@@ -133,7 +133,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 8)
+    #expect(release.navigation.bundle.releasedGuidance.count == 9)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -274,12 +274,14 @@ struct ShutoCircuitProductReleaseBuilderTests {
         release.artifact
       )
       let tracked = try Data(
-        contentsOf: repositoryRoot
+        contentsOf:
+          repositoryRoot
           .appendingPathComponent("data/product/releases")
           .appendingPathComponent(release.trackedResource)
       )
       let bundled = try Data(
-        contentsOf: repositoryRoot
+        contentsOf:
+          repositoryRoot
           .appendingPathComponent("Apps/KaidoRoutesApp/Resources")
           .appendingPathComponent(release.appResource)
       )

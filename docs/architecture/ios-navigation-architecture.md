@@ -49,9 +49,9 @@ realtime, or field authority.
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
-mainlines, 85 incoming approaches, and 171 candidate incoming/outgoing movement
-pairs. Ninety-four exact definitions are currently released and 77 still require
-legal/sign review. The former KK Line branch at Kyobashi is bound to the retained
+mainlines, 80 incoming approaches, and 161 candidate incoming/outgoing movement
+pairs. All 161 exact definitions are source-bound and released. The former KK
+Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and
 connections leading only to the closed Yaesu Route remain recovery/egress

@@ -4,8 +4,8 @@
 The builder applies dated, evidence-bound candidate corrections at ambiguous
 or ramp-boundary locations. This check keeps that binding honest between
 rebuilds: the snapshot must record the exact review it was built from, every
-exclusion and rebinding must still name a real facility, and the facility must
-keep at least one candidate on that side.
+exclusion, rebinding, and replacement must still name a real facility, and the
+facility must keep the exact reviewed result.
 
 Run from the repository root. Exits non-zero with a specific reason.
 """
@@ -78,6 +78,11 @@ def main() -> int:
         fail(
             "snapshot records a different entry rebinding count than the review"
         )
+    replacements = review.get("entry_candidate_replacements", [])
+    if recorded.get("entry_candidate_replacement_count") != len(replacements):
+        fail(
+            "snapshot records a different entry replacement count than the review"
+        )
 
     facilities = {
         facility["facility_id"]: facility
@@ -147,10 +152,33 @@ def main() -> int:
                     "entry boundary rebinding is missing " + field
                 )
 
+    for replacement in replacements:
+        facility = facilities.get(replacement["facility_id"])
+        if facility is None:
+            fail(
+                "entry candidate replacement names unknown facility "
+                + replacement["facility_id"]
+            )
+        candidates = facility["entry_edge_candidates"]
+        if candidates != [
+            {
+                "edge_id": replacement["boundary_edge_id"],
+                "distance_meters": replacement["distance_meters"],
+            }
+        ]:
+            fail(
+                "entry candidate replacement result differs from review: "
+                + replacement["facility_id"]
+            )
+        for field in ("reason", "evidence"):
+            if not replacement.get(field):
+                fail("entry candidate replacement is missing " + field)
+
     print(
         f"PASS: {snapshot_path.name} matches {review_path.name} "
         f"with {len(exclusions)} reviewed exclusions and "
-        f"{len(rebindings)} entry boundary rebindings"
+        f"{len(rebindings)} entry boundary rebindings and "
+        f"{len(replacements)} entry candidate replacements"
     )
     return 0
 

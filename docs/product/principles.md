@@ -123,12 +123,14 @@ Coverage today: both C1 catalog loops and the Bayshore corridor in both
 directions are reviewed at every junction where another route diverges from
 them. At Hakozaki, the Route 9 inbound split now binds the operator's separate
 C1 Ginza and Routes 6/7 arrows; the two Hakozaki rotary approaches are instead
-classified as exit/PA branches and never counted as expressway movements. The
-movements that remain unreviewed are at Namamugi, where the operator publishes
-explicit per-approach lane advice that a no-lane prompt would under-serve, and
-Yokohama Kohoku, where the through route is not the straight leg. A movement
-that changes route rather than continuing on one still requires the diagram to
-show the branch treatment for that exact approach.
+classified as exit/PA branches and never counted as expressway movements. Both
+Yokohama Kohoku approaches now bind the operator's exact Tomei,
+Daisan-Keihin, exit, Bayshore, and Yokohama Park branches. The movements that
+remain unreviewed are at Namamugi, where the operator publishes explicit
+per-approach lane advice and sequential forks that a generic no-lane prompt
+would under-serve. A movement that changes route rather than continuing on one
+still requires the diagram to show the branch treatment for that exact
+approach.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

@@ -37,9 +37,7 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var wanganWestboundChidorichoDaikokufutou:
-    AppBundleProductReleaseDescriptor
-  {
+  static var wanganWestboundChidorichoDaikokufutou: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName:
         "wangan-westbound-chidoricho-daikokufutou-product-release",
@@ -52,9 +50,7 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var c2InnerOujiminamiShikahamabashi:
-    AppBundleProductReleaseDescriptor
-  {
+  static var c2InnerOujiminamiShikahamabashi: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
@@ -66,29 +62,25 @@ extension AppBundleProductReleaseDescriptor {
     )
   }
 
-  static var daikokuYokohamaWangankanpachiDaikokufutou:
-    AppBundleProductReleaseDescriptor
-  {
+  static var daikokuYokohamaWangankanpachiDaikokufutou: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName:
         "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "7d593d47500dfaf957b4884b4127d0125b22303e4eabd2417ade85af50f30f35",
+        "dfbcabdadfa66d9cef8c46a54535c66f2ab68a2699119d32dad8d6e5f686834f",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15",
       role: .foregroundNavigation
     )
   }
 
-  static var scenicHarumiDaikokufutou:
-    AppBundleProductReleaseDescriptor
-  {
+  static var scenicHarumiDaikokufutou: AppBundleProductReleaseDescriptor {
     AppBundleProductReleaseDescriptor(
       resourceName: "scenic-harumi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "f37b3a7f24681fe75b61bbb6e26c37263c3c6f01e3e29092901215d709016c57",
+        "e6af1d86069961ad37b7fe36c34484224112a3b71d5b50689aa7ed36bb4c8a0a",
       expectedReleaseID:
         "shutoko.product.scenic-harumi-daikokufutou.2026-08-15",
       role: .foregroundNavigation

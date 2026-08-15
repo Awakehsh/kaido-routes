@@ -42,7 +42,10 @@ up entrance), so distance or way-ownership cuts sever real entrances. Meguro's
 official point lies beside the first downstream ramp edge after the generated
 mouth anchor; its reviewed entry-boundary rebinding preserves the real forward
 `anchor → boundary` transition instead of synthesizing backwards geometry.
-Each reviewed exclusion or rebinding therefore names one facility and exact
+Kiba's entrance and exit share a loop, so the generic dead-end probe ranks only
+the wrong southbound mouth; its reviewed replacement binds the official
+up-side entrance to the exact post-ETC-toll edge toward Hakozaki. Each reviewed
+exclusion, rebinding, or replacement therefore names one facility and exact
 candidate edges plus its evidence; the build fails if it no longer matches the
 graph, reverses continuity, or would unmatch a facility. Operator pages
 establish current route and directional facility facts; OSM supplies candidate

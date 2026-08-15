@@ -20,10 +20,24 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 29)
-    #expect(coverage.incomingApproachCount == 81)
-    #expect(coverage.movements.count == 163)
-    #expect(coverage.releasedMovementCount == 146)
-    #expect(coverage.missingMovementReviewCount == 17)
+    #expect(coverage.incomingApproachCount == 80)
+    #expect(coverage.movements.count == 161)
+    #expect(coverage.releasedMovementCount == 161)
+    #expect(coverage.missingMovementReviewCount == 0)
+    #expect(
+      coverage.movements.first {
+        $0.incomingDirectedEdgeID == "osm.38093215.139.forward"
+          && $0.outgoingDirectedEdgeID == "osm.38093215.140.forward"
+      }?.releasedGuidanceDefinitionID
+        == "shuto.jct.namamugi.k1-outbound-stays-on-k1"
+    )
+    #expect(
+      coverage.movements.first {
+        $0.incomingDirectedEdgeID == "osm.760553865.0.forward"
+          && $0.outgoingDirectedEdgeID == "osm.32593083.0.forward"
+      }?.releasedGuidanceDefinitionID
+        == "shuto.jct.namamugi.k5-inbound-to-k1-haneda"
+    )
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -60,8 +74,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(eastGinzaExit.officialSourceURL.hasPrefix("https://www.shutoko.jp/"))
 
     let edgesByID = Dictionary(uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) })
-    #expect(edgesByID[eastGinzaExit.incomingDirectedEdgeID]?.toNodeID == eastGinzaExit.junctionNodeID)
-    #expect(edgesByID[eastGinzaExit.startDirectedEdgeID]?.fromNodeID == eastGinzaExit.junctionNodeID)
+    #expect(
+      edgesByID[eastGinzaExit.incomingDirectedEdgeID]?.toNodeID == eastGinzaExit.junctionNodeID)
+    #expect(
+      edgesByID[eastGinzaExit.startDirectedEdgeID]?.fromNodeID == eastGinzaExit.junctionNodeID)
     #expect(edgesByID[eastGinzaExit.terminalDirectedEdgeID] != nil)
 
     let daishiExitBranches =
@@ -116,15 +132,30 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
           && $0.junctionNodeID != 1_694_598_897
       }
     )
+    let namamugiDeadEnd = try #require(
+      ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+        networkSnapshotID: database.networkSnapshotID,
+        incomingDirectedEdgeID: "osm.32592648.13.forward",
+        startDirectedEdgeID: "osm.567321755.0.forward"
+      )
+    )
+    #expect(namamugiDeadEnd.junctionNodeID == 4_360_978_732)
+    #expect(namamugiDeadEnd.terminalDirectedEdgeID == "osm.1022520297.2.forward")
+    #expect(namamugiDeadEnd.reason == "PROMOTED_MOTORWAY_LINK_DEAD_END")
     #expect(
-      Set(
-        coverage.movements.compactMap {
-          $0.releasedGuidanceDefinitionID == nil ? $0.junctionID : nil
-        }
-      ) == [
-        "shuto.jct.jct_namamugi",
-        "shuto.jct.jct_yokohamakohoku",
-      ]
+      namamugiDeadEnd.sourceURLs.allSatisfy {
+        $0.hasPrefix("https://www.shutoko.jp/")
+      }
+    )
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.outgoingDirectedEdgeID != namamugiDeadEnd.startDirectedEdgeID
+      }
+    )
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.releasedGuidanceDefinitionID != nil
+      }
     )
   }
 
@@ -457,11 +488,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
             == "osm.4848898.0.forward"
       }
     )
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildPlannedRouteArtifact(
         database: database,
         route: route
-    )
+      )
     #expect(
       artifact.navigationRelease.routePlan == route.routePlan
     )
@@ -484,7 +516,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         entryFacilityID: entryFacilityID,
         exitFacilityID: exitFacilityID
       )
-      let artifact = try ShutoCircuitProductReleaseBuilder
+      let artifact =
+        try ShutoCircuitProductReleaseBuilder
         .buildPlannedRouteArtifact(
           database: database,
           route: route
@@ -503,6 +536,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.10.harumi", "shuto.ic.b.urayasu"),
       ("shuto.ic.b.ooi", "shuto.ic.b.urayasu"),
       ("shuto.ic.c2.hatsudaiminami", "shuto.ic.b.urayasu"),
+      ("shuto.ic.c1.ginza", "shuto.ic.1-ueno.ueno"),
       ("shuto.ic.c1.shibakouen", "shuto.ic.6-mukojima.komagata"),
       ("shuto.ic.6-mukojima.komagata", "shuto.ic.c1.ginza"),
       ("shuto.ic.4.hatagaya", "shuto.ic.c2.nishiikebukuro"),
@@ -521,6 +555,33 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.c2.nishiikebukuro", "shuto.ic.5.nakadai"),
       ("shuto.ic.c2.nishiikebukuro", "shuto.ic.c2.oujiminami"),
       ("shuto.ic.b.higashiogishima", "shuto.ic.b.kukouchuou"),
+      ("shuto.ic.k1.daishi", "shuto.ic.k5.daikokufutou"),
+      (
+        "shuto.ic.k1.daishi",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
+      (
+        "shuto.ic.k5.daikokufutou",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      (
+        "shuto.ic.k1.minatomirai",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      ("shuto.ic.k1.minatomirai", "shuto.ic.k1.daishi"),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k1.daishi"
+      ),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k5.daikokufutou"
+      ),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k1.yokohamakouen"
+      ),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {
@@ -533,7 +594,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         route: route
       )
       #expect(assets.liveReleaseCoverage.missingGuidanceDecisionCount == 0)
-      let artifact = try ShutoCircuitProductReleaseBuilder
+      let artifact =
+        try ShutoCircuitProductReleaseBuilder
         .buildPlannedRouteArtifact(
           database: database,
           route: route
@@ -549,7 +611,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       entryFacilityID: "shuto.ic.2.meguro",
       exitFacilityID: "shuto.ic.c1.ginza"
     )
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildPlannedRouteArtifact(database: database, route: route)
     let transition = try #require(
       artifact.navigationRelease.runtimePolicy
@@ -575,7 +638,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       entryFacilityID: "shuto.ic.c1.shibakouen",
       exitFacilityID: "shuto.ic.4.shinjuku"
     )
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildPlannedRouteArtifact(database: database, route: route)
     let transition = try #require(
       artifact.navigationRelease.runtimePolicy

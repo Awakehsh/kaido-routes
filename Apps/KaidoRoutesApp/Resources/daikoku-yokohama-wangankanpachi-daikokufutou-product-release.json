@@ -15,7 +15,8 @@
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-b-westbound",
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "shutoko-guidance-shuto.jct.namamugi.k1-inbound-stays-on-k1",
-          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-haneda"
         ],
         "state" : "RELEASED"
       },
@@ -32,7 +33,8 @@
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-b-westbound",
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "shutoko-guidance-shuto.jct.namamugi.k1-inbound-stays-on-k1",
-          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-haneda"
         ],
         "state" : "RELEASED"
       },
@@ -74,11 +76,20 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound.shuto.155.osm.32403899.43.forward.decision-zone",
+        "asset_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork.shuto.155.osm.32403899.43.forward.decision-zone",
         "checked_at" : "2026-08-15",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda.shuto.158.osm.32593083.0.forward.decision-zone",
+        "checked_at" : "2026-08-15",
+        "role" : "DECISION_ZONE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-haneda"
         ],
         "state" : "RELEASED"
       },
@@ -146,11 +157,20 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound.shuto.155.osm.32403899.43.forward.commit",
+        "asset_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork.shuto.155.osm.32403899.43.forward.commit",
         "checked_at" : "2026-08-15",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
-          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda.shuto.158.osm.32593083.0.forward.commit",
+        "checked_at" : "2026-08-15",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-haneda"
         ],
         "state" : "RELEASED"
       },
@@ -216,9 +236,16 @@
         "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
       },
       {
-        "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound.shuto.155.osm.32403899.43.forward.decision-zone",
+        "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork.shuto.155.osm.32403899.43.forward.decision-zone",
         "entry_offset_meters" : 0,
         "movement_occurrence_id" : "shuto.155.osm.32403899.43.forward",
+        "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
+        "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
+      },
+      {
+        "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda.shuto.158.osm.32593083.0.forward.decision-zone",
+        "entry_offset_meters" : 0,
+        "movement_occurrence_id" : "shuto.158.osm.32593083.0.forward",
         "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
         "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
       },
@@ -299,9 +326,9 @@
             {
               "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.155.osm.32403899.43.forward.selected",
               "destination" : {
-                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.209.osm.438360534.0.forward"
+                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.158.osm.32593083.0.forward"
               },
-              "movement_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+              "movement_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
               "movement_toll_domain_id" : "shuto.toll-domain",
               "outgoing_edge_id" : "osm.32403899.44.forward",
               "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
@@ -309,6 +336,23 @@
           ],
           "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.155.osm.32403899.43.forward",
           "incoming_approach_id" : "osm.32403899.42.forward",
+          "junction_complex_id" : "shuto.jct.jct_namamugi"
+        },
+        {
+          "choices" : [
+            {
+              "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.158.osm.32593083.0.forward.selected",
+              "destination" : {
+                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.209.osm.438360534.0.forward"
+              },
+              "movement_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda",
+              "movement_toll_domain_id" : "shuto.toll-domain",
+              "outgoing_edge_id" : "osm.32593083.1.forward",
+              "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
+            }
+          ],
+          "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.158.osm.32593083.0.forward",
+          "incoming_approach_id" : "osm.760553865.0.forward",
           "junction_complex_id" : "shuto.jct.jct_namamugi"
         },
         {
@@ -445,14 +489,27 @@
         {
           "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.155.osm.32403899.43.forward.selected",
           "detail" : {
+            "en" : "第三京浜・東名・羽田",
+            "ja-JP" : "第三京浜・東名・羽田",
+            "zh-Hans" : "第三京浜・東名・羽田"
+          },
+          "title" : {
+            "en" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda",
+            "ja-JP" : "右方向を保ち、第三京浜・東名・K1 羽田方面へ",
+            "zh-Hans" : "保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
+          }
+        },
+        {
+          "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.158.osm.32593083.0.forward.selected",
+          "detail" : {
             "en" : "羽田",
             "ja-JP" : "羽田",
             "zh-Hans" : "羽田"
           },
           "title" : {
-            "en" : "Keep Right for Route K1 toward Haneda",
-            "ja-JP" : "右方向を保ち、K1 横羽線 羽田方面へ",
-            "zh-Hans" : "保持右侧，驶往 K1 横羽线羽田方向"
+            "en" : "Branch Right for Route K1 toward Haneda",
+            "ja-JP" : "右方向へ分岐し、K1 横羽線 羽田方面へ",
+            "zh-Hans" : "向右分岔，驶往 K1 横羽线羽田方向"
           }
         },
         {
@@ -540,6 +597,14 @@
         },
         {
           "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.155.osm.32403899.43.forward",
+          "title" : {
+            "en" : "Namamugi JCT",
+            "ja-JP" : "生麦JCT",
+            "zh-Hans" : "生麦 JCT"
+          }
+        },
+        {
+          "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.158.osm.32593083.0.forward",
           "title" : {
             "en" : "Namamugi JCT",
             "ja-JP" : "生麦JCT",
@@ -19029,11 +19094,11 @@
         "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.154.osm.32403899.42.forward",
-          "prompt_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound.shuto.155.osm.32403899.43.forward.commit"
+          "prompt_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork.shuto.155.osm.32403899.43.forward.commit"
         },
         "frame_template" : {
           "decision_point_name_ja" : "生麦JCT",
-          "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound.shuto.155.osm.32403899.43.forward.decision-zone",
+          "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork.shuto.155.osm.32403899.43.forward.decision-zone",
           "lane_preparation" : "NONE",
           "localized_decision_point_names" : {
             "en" : "Namamugi JCT",
@@ -19043,41 +19108,97 @@
           "maneuver" : "BRANCH_RIGHT",
           "movement_occurrence_id" : "shuto.155.osm.32403899.43.forward",
           "presentation_source" : {
-            "japanese_sign_text" : "羽田",
+            "japanese_sign_text" : "第三京浜・東名・羽田",
             "localized_content" : {
               "en" : {
-                "display_text" : "Keep Right for Route K1 toward Haneda",
-                "preserved_japanese_sign_text" : "羽田",
+                "display_text" : "Keep Right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda",
+                "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
-                  "Route K1 toward Haneda" : "Route K1 toward Haneda"
+                  "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda" : "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
                 },
-                "spoken_text" : "At Namamugi JCT, keep right for Route K1 toward Haneda"
+                "spoken_text" : "At Namamugi JCT, keep right for the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda"
               },
               "ja-JP" : {
-                "display_text" : "右方向を保ち、K1 横羽線 羽田方面へ",
-                "preserved_japanese_sign_text" : "羽田",
+                "display_text" : "右方向を保ち、第三京浜・東名・K1 羽田方面へ",
+                "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
-                  "K1 横羽線 羽田方面" : "K1 横羽線 羽田方面"
+                  "第三京浜・東名・K1 羽田方面" : "第三京浜・東名・K1 羽田方面"
                 },
-                "spoken_text" : "生麦JCTでは右方向を保ち、K1 横羽線 羽田方面へ進んでください"
+                "spoken_text" : "生麦JCTでは右方向を保ち、第三京浜・東名・K1 羽田方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "保持右侧，驶往 K1 横羽线羽田方向",
-                "preserved_japanese_sign_text" : "羽田",
+                "display_text" : "保持右侧，驶往 第三京滨・东名高速・K1 羽田方向",
+                "preserved_japanese_sign_text" : "第三京浜・東名・羽田",
                 "spoken_forms" : {
-                  "K1 横羽线羽田方向" : "K1 横羽线羽田方向"
+                  "第三京滨・东名高速・K1 羽田方向" : "第三京滨・东名高速・K1 羽田方向"
                 },
-                "spoken_text" : "在生麦 JCT保持右侧，驶往 K1 横羽线羽田方向"
+                "spoken_text" : "在生麦 JCT保持右侧，驶往 第三京滨・东名高速・K1 羽田方向"
               }
             },
             "route_shields" : [
               "K5",
+              "K7",
+              "E83",
+              "E1",
               "K1"
             ]
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "COMMIT",
+          "occurrence_id" : "shuto.157.osm.760553865.0.forward",
+          "prompt_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda.shuto.158.osm.32593083.0.forward.commit"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "生麦JCT",
+          "decision_zone_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda.shuto.158.osm.32593083.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Namamugi JCT",
+            "ja-JP" : "生麦JCT",
+            "zh-Hans" : "生麦 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.158.osm.32593083.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "羽田",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "Branch Right for Route K1 toward Haneda",
+                "preserved_japanese_sign_text" : "羽田",
+                "spoken_forms" : {
+                  "Route K1 toward Haneda" : "Route K1 toward Haneda"
+                },
+                "spoken_text" : "At Namamugi JCT, branch right for Route K1 toward Haneda"
+              },
+              "ja-JP" : {
+                "display_text" : "右方向へ分岐し、K1 横羽線 羽田方面へ",
+                "preserved_japanese_sign_text" : "羽田",
+                "spoken_forms" : {
+                  "K1 横羽線 羽田方面" : "K1 横羽線 羽田方面"
+                },
+                "spoken_text" : "生麦JCTでは右方向へ分岐し、K1 横羽線 羽田方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "向右分岔，驶往 K1 横羽线羽田方向",
+                "preserved_japanese_sign_text" : "羽田",
+                "spoken_forms" : {
+                  "K1 横羽线羽田方向" : "K1 横羽线羽田方向"
+                },
+                "spoken_text" : "在生麦 JCT向右分岔，驶往 K1 横羽线羽田方向"
+              }
+            },
+            "route_shields" : [
+              "K1"
+            ]
+          },
+          "stage" : "COMMIT"
+        },
+        "trigger_distance_meters" : 150
       },
       {
         "anchor" : {
@@ -20598,7 +20719,7 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+          "entity_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
           "index" : 155,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.155.osm.32403899.43.forward",
@@ -20622,9 +20743,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "osm.32593083.0.forward",
+          "entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda",
           "index" : 158,
-          "kind" : "EDGE",
+          "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.158.osm.32593083.0.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -24377,7 +24498,21 @@
           "authority_name" : "Metropolitan Expressway Company Limited",
           "checked_at" : "2026-08-15",
           "content_sha256" : "68ce0e28c3d83658d98c7bc68fef815ca0f3f7bed77e3bea72573ae2b0c5bd7c",
-          "id" : "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+          "id" : "shutoko-guidance-shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
+          "licence_identifier" : "OFFICIAL_REFERENCE",
+          "roles" : [
+            "DECISION_ZONE",
+            "EDITOR_CATALOG",
+            "EDITOR_PRESENTATION",
+            "GUIDANCE"
+          ],
+          "source_url" : "https:\/\/www.shutoko.jp\/-\/media\/images\/responsive\/customer\/use\/network\/jct\/routeguide\/jct_namamugi"
+        },
+        {
+          "authority_name" : "Metropolitan Expressway Company Limited",
+          "checked_at" : "2026-08-15",
+          "content_sha256" : "68ce0e28c3d83658d98c7bc68fef815ca0f3f7bed77e3bea72573ae2b0c5bd7c",
+          "id" : "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-haneda",
           "licence_identifier" : "OFFICIAL_REFERENCE",
           "roles" : [
             "DECISION_ZONE",
@@ -42243,7 +42378,7 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+          "entity_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
           "index" : 155,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.155.osm.32403899.43.forward",
@@ -42267,9 +42402,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "osm.32593083.0.forward",
+          "entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda",
           "index" : 158,
-          "kind" : "EDGE",
+          "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.158.osm.32593083.0.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -46872,7 +47007,7 @@
         {
           "edge_id" : "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.155",
           "from_node_id" : "osm.node.1032992501",
-          "route_entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+          "route_entity_id" : "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
           "successor_edge_ids" : [
             "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.156"
           ],
@@ -46899,7 +47034,7 @@
         {
           "edge_id" : "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.158",
           "from_node_id" : "osm.node.3585004463",
-          "route_entity_id" : "osm.32593083.0.forward",
+          "route_entity_id" : "shuto.jct.namamugi.k5-inbound-to-k1-haneda",
           "successor_edge_ids" : [
             "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.159"
           ],

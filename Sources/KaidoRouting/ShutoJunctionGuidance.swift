@@ -1649,7 +1649,7 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
-      id: "shuto.jct.namamugi.k5-inbound-to-k1-inbound",
+      id: "shuto.jct.namamugi.k5-inbound-past-yokohama-koen-fork",
       junctionID: "shuto.jct.jct_namamugi",
       junctionNodeID: 1_032_992_501,
       incomingEdgeID: "osm.32403899.42.forward",
@@ -1658,51 +1658,19 @@ public enum ShutoJunctionMovementCatalog {
       incomingDirectionJA: "上り",
       outgoingRouteID: "K5",
       outgoingDirectionJA: "上り",
-      coveredFollowingDecisionEdgeIDs: [
-        "osm.32403899.44.forward",
-        "osm.760553865.0.forward",
-        "osm.32593083.0.forward",
-        "osm.32593083.1.forward",
-        "osm.32593083.2.forward",
-        "osm.760542684.0.forward",
-        "osm.760542684.1.forward",
-        "osm.760542684.2.forward",
-        "osm.760542684.3.forward",
-        "osm.760542684.4.forward",
-        "osm.760542684.5.forward",
-        "osm.760542684.6.forward",
-        "osm.760542684.7.forward",
-        "osm.760542684.8.forward",
-        "osm.760542684.9.forward",
-        "osm.760542684.10.forward",
-        "osm.760542684.11.forward",
-        "osm.760542684.12.forward",
-        "osm.760542684.13.forward",
-        "osm.760542684.14.forward",
-        "osm.760542684.15.forward",
-        "osm.760542684.16.forward",
-        "osm.760542684.17.forward",
-        "osm.760542684.18.forward",
-        "osm.760542684.19.forward",
-        "osm.760542684.20.forward",
-        "osm.760542684.21.forward",
-        "osm.760542684.22.forward",
-        "osm.760540203.0.forward",
-        "osm.760540203.1.forward",
-        "osm.760540203.2.forward",
-      ],
       branchSide: .right,
       maneuverJA: "右方向を保ち",
       maneuverZH: "保持右侧",
       maneuverEN: "keep right",
-      japaneseSignText: "羽田",
-      routeShields: ["K5", "K1"],
+      japaneseSignText: "第三京浜・東名・羽田",
+      routeShields: ["K5", "K7", "E83", "E1", "K1"],
       junctionNameJA: "生麦JCT",
       junctionNameZH: "生麦 JCT",
       junctionNameEN: "Namamugi JCT",
-      destinationJA: "K1 横羽線 羽田方面",
-      destinationZH: "K1 横羽线羽田方向",
-      destinationEN: "Route K1 toward Haneda",
+      destinationJA: "第三京浜・東名・K1 羽田方面",
+      destinationZH: "第三京滨・东名高速・K1 羽田方向",
+      destinationEN: "the Daisan Keihin, Tomei Expressway, or Route K1 toward Haneda",
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1711,6 +1679,288 @@ public enum ShutoJunctionMovementCatalog {
         + "customer/use/network/jct/routeguide/jct_namamugi",
       additionalSources: [
         "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k5-inbound-to-k1-yokohama-koen",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 1_032_992_501,
+      incomingEdgeID: "osm.32403899.42.forward",
+      outgoingEdgeID: "osm.481231607.0.forward",
+      incomingRouteID: "K5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "横浜公園",
+      routeShields: ["K1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 横羽線 横浜公園方面",
+      destinationZH: "K1 横羽线横浜公園方向",
+      destinationEN: "Route K1 toward Yokohama-koen",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k5-inbound-to-k1-haneda",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_463,
+      incomingEdgeID: "osm.760553865.0.forward",
+      outgoingEdgeID: "osm.32593083.0.forward",
+      incomingRouteID: "K5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K5",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      commitTriggerDistanceMeters: 150,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k5-inbound-to-k7-north",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_463,
+      incomingEdgeID: "osm.760553865.0.forward",
+      outgoingEdgeID: "osm.1535717377.0.forward",
+      incomingRouteID: "K5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K5",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "第三京浜・東名",
+      routeShields: ["K7", "E83", "E1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K7 横浜北線 第三京浜・東名方面",
+      destinationZH: "K7 横浜北线第三京滨・东名高速方向",
+      destinationEN: "Route K7 toward the Daisan Keihin and Tomei Expressway",
+      commitTriggerDistanceMeters: 150,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k1-inbound-from-yokohama-to-k1-haneda",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_444,
+      incomingEdgeID: "osm.751194567.38.forward",
+      outgoingEdgeID: "osm.751194567.39.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      commitTriggerDistanceMeters: 200,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/"
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k1-inbound-from-yokohama-to-k7-north",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_444,
+      incomingEdgeID: "osm.751194567.38.forward",
+      outgoingEdgeID: "osm.352724042.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "第三京浜・東名",
+      routeShields: ["K7", "E83", "E1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K7 横浜北線 第三京浜・東名方面",
+      destinationZH: "K7 横浜北线第三京滨・东名高速方向",
+      destinationEN: "Route K7 toward the Daisan Keihin and Tomei Expressway",
+      commitTriggerDistanceMeters: 200,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k7-inbound-past-yokohama-koen-fork",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_487,
+      incomingEdgeID: "osm.352724044.23.forward",
+      outgoingEdgeID: "osm.352724044.24.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      maneuverJA: "左方向を保ち",
+      maneuverZH: "保持左侧",
+      maneuverEN: "keep left",
+      japaneseSignText: "羽田・湾岸線",
+      routeShields: ["K1", "K5", "B"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 羽田・K5 湾岸線方面",
+      destinationZH: "K1 羽田・K5 湾岸线方向",
+      destinationEN: "Route K1 toward Haneda or Route K5 toward the Bayshore Route",
+      commitTriggerDistanceMeters: 200,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k7-inbound-to-k1-yokohama-koen",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_487,
+      incomingEdgeID: "osm.352724044.23.forward",
+      outgoingEdgeID: "osm.481231606.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "横浜公園",
+      routeShields: ["K1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 横羽線 横浜公園方面",
+      destinationZH: "K1 横羽线横浜公園方向",
+      destinationEN: "Route K1 toward Yokohama-koen",
+      commitTriggerDistanceMeters: 200,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k7-inbound-to-k5-outbound",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_484,
+      incomingEdgeID: "osm.352724044.33.forward",
+      outgoingEdgeID: "osm.352724044.34.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "湾岸線・空港中央",
+      routeShields: ["K5", "B"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K5 大黒線 湾岸線・空港中央方面",
+      destinationZH: "K5 大黑线湾岸线・机场中央方向",
+      destinationEN: "Route K5 toward the Bayshore Route and Kuko-chuo",
+      commitTriggerDistanceMeters: 150,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k7-inbound-to-k1-haneda",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 3_585_004_484,
+      incomingEdgeID: "osm.352724044.33.forward",
+      outgoingEdgeID: "osm.481231603.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      commitTriggerDistanceMeters: 150,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
         "https://www.shutoko.jp/use/network/map/route-k1/",
       ]
     ),
@@ -2188,10 +2438,10 @@ public enum ShutoJunctionMovementCatalog {
       coveredFollowingDecisionEdgeIDs: [
         "osm.38093215.140.forward"
       ],
-      branchSide: .left,
-      maneuverJA: "最初の分岐で左方向を保ち、続く分岐で右方向を保ち",
-      maneuverZH: "在第一个分岔保持左侧，随后在第二个分岔保持右侧",
-      maneuverEN: "keep left at the first fork, then keep right",
+      branchSide: .right,
+      maneuverJA: "最初の分岐で右方向を保ち、続く分岐でも右方向を保ち",
+      maneuverZH: "在第一个分岔保持右侧，随后在第二个分岔继续保持右侧",
+      maneuverEN: "keep right at the first fork, then keep right again",
       japaneseSignText: "横浜公園",
       routeShields: ["K1"],
       junctionNameJA: "生麦JCT",
@@ -2200,6 +2450,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 横浜公園方面",
       destinationZH: "K1 横羽线横浜公園方向",
       destinationEN: "Route K1 toward Yokohama-koen",
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -2210,6 +2461,74 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-k1/",
         "https://www.shutoko.jp/use/network/map/route-k5/",
         "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k1-outbound-to-k7-north",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 273_331_184,
+      incomingEdgeID: "osm.38093215.138.forward",
+      outgoingEdgeID: "osm.481231602.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "新横浜・第三京浜・東名",
+      routeShields: ["K7", "E83", "E1"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K7 横浜北線 新横浜・第三京浜・東名方面",
+      destinationZH: "K7 横浜北线新横浜・第三京滨・东名高速方向",
+      destinationEN: "Route K7 toward Shin-yokohama, the Daisan Keihin, and Tomei Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.namamugi.k1-outbound-to-k5-outbound",
+      junctionID: "shuto.jct.jct_namamugi",
+      junctionNodeID: 273_331_184,
+      incomingEdgeID: "osm.38093215.138.forward",
+      outgoingEdgeID: "osm.38093215.139.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "下り",
+      coveredFollowingDecisionEdgeIDs: [
+        "osm.489510479.0.forward"
+      ],
+      branchSide: .right,
+      maneuverJA: "最初の分岐で右方向を保ち、続く分岐で左方向へ分岐し",
+      maneuverZH: "在第一个分岔保持右侧，随后在第二个分岔向左分岔",
+      maneuverEN: "keep right at the first fork, then branch left",
+      japaneseSignText: "湾岸線・空港中央",
+      routeShields: ["K5", "B"],
+      junctionNameJA: "生麦JCT",
+      junctionNameZH: "生麦 JCT",
+      junctionNameEN: "Namamugi JCT",
+      destinationJA: "K5 大黒線 湾岸線・空港中央方面",
+      destinationZH: "K5 大黑线湾岸线・机场中央方向",
+      destinationEN: "Route K5 toward the Bayshore Route and Kuko-chuo",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "68ce0e28c3d83658d98c7bc68fef815c"
+        + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_namamugi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k5/",
       ]
     ),
     reviewedMovement(
@@ -3367,6 +3686,44 @@ public enum ShutoJunctionMovementCatalog {
             "a855321a4dbf059131cada07f5dfd0e0"
             + "73762b063034053807b25001956db975"
         ),
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.c1-inner-to-1-ueno",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 264_871_771,
+      incomingEdgeID: "osm.41009552.1.forward",
+      outgoingEdgeID: "osm.1085022601.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C1",
+      outgoingDirectionJA: "内回り",
+      coveredFollowingDecisionEdgeIDs: [
+        "osm.41520088.0.forward"
+      ],
+      branchSide: .straight,
+      maneuverJA: "最初の分岐は分岐せず、続く分岐で右方向へ分岐し",
+      maneuverZH: "在第一个分岔继续直行，随后在第二个分岔向右分岔",
+      maneuverEN: "continue at the first fork, then branch right",
+      japaneseSignText: "上野",
+      routeShields: ["1"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "1号上野線 上野方面",
+      destinationZH: "1号上野线上野方向",
+      destinationEN: "Route 1 toward Ueno",
+      commitTriggerDistanceMeters: 400,
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-1u/",
       ]
     ),
     ShutoJunctionMovementDefinition(
@@ -6016,6 +6373,130 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-b/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.yokohama-kohoku.k7-north-down-to-daisan-keihin",
+      junctionID: "shuto.jct.jct_yokohamakohoku",
+      junctionNodeID: 4_741_046_931,
+      incomingEdgeID: "osm.686983562.14.forward",
+      outgoingEdgeID: "osm.686983566.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K7_YOKOHAMA_KITA",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      japaneseSignText: "第三京浜・横浜港北出口",
+      routeShields: ["E83", "K7"],
+      junctionNameJA: "横浜港北JCT",
+      junctionNameZH: "横滨港北 JCT",
+      junctionNameEN: "Yokohama Kohoku JCT",
+      destinationJA: "第三京浜・横浜港北出口方面",
+      destinationZH: "第三京滨、横滨港北出口方向",
+      destinationEN: "Daisan-Keihin and Yokohama Kohoku Exit",
+      commitTriggerDistanceMeters: 400,
+      expectedJunctionDetailSHA256:
+        "d8b31a419e631405171c37b4450051bdf"
+        + "25242c947301d57bcdda79e9e68faf2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_yokohamakohoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+        "https://www.shutoko.jp/use/network/map/route-k7ho/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.yokohama-kohoku.k7-north-down-to-k7-northwest",
+      junctionID: "shuto.jct.jct_yokohamakohoku",
+      junctionNodeID: 4_741_046_931,
+      incomingEdgeID: "osm.686983562.14.forward",
+      outgoingEdgeID: "osm.686983568.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_KITA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K7_YOKOHAMA_HOKUSEI",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "東名",
+      routeShields: ["K7", "E1"],
+      junctionNameJA: "横浜港北JCT",
+      junctionNameZH: "横滨港北 JCT",
+      junctionNameEN: "Yokohama Kohoku JCT",
+      destinationJA: "K7 横浜北西線 東名方面",
+      destinationZH: "K7 横滨西北线东名高速方向",
+      destinationEN: "Route K7 Northwest toward the Tomei Expressway",
+      commitTriggerDistanceMeters: 400,
+      expectedJunctionDetailSHA256:
+        "d8b31a419e631405171c37b4450051bdf"
+        + "25242c947301d57bcdda79e9e68faf2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_yokohamakohoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+        "https://www.shutoko.jp/use/network/map/route-k7ho/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.yokohama-kohoku.k7-northwest-up-to-k7-north",
+      junctionID: "shuto.jct.jct_yokohamakohoku",
+      junctionNodeID: 6_988_179_578,
+      incomingEdgeID: "osm.692798735.26.forward",
+      outgoingEdgeID: "osm.686983567.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_HOKUSEI",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_HOKUSEI",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "湾岸線・横浜公園",
+      routeShields: ["K7", "K1"],
+      junctionNameJA: "横浜港北JCT",
+      junctionNameZH: "横滨港北 JCT",
+      junctionNameEN: "Yokohama Kohoku JCT",
+      destinationJA: "K7 横浜北線 湾岸線・横浜公園方面",
+      destinationZH: "K7 横滨北线湾岸线、横滨公园方向",
+      destinationEN: "Route K7 North toward the Bayshore Route and Yokohama Park",
+      commitTriggerDistanceMeters: 400,
+      expectedJunctionDetailSHA256:
+        "d8b31a419e631405171c37b4450051bdf"
+        + "25242c947301d57bcdda79e9e68faf2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_yokohamakohoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7ho/",
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.yokohama-kohoku.k7-northwest-up-to-daisan-keihin",
+      junctionID: "shuto.jct.jct_yokohamakohoku",
+      junctionNodeID: 6_988_179_578,
+      incomingEdgeID: "osm.692798735.26.forward",
+      outgoingEdgeID: "osm.686983570.0.forward",
+      incomingRouteID: "K7_YOKOHAMA_HOKUSEI",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K7_YOKOHAMA_HOKUSEI",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "第三京浜・横浜港北出口",
+      routeShields: ["E83", "K7"],
+      junctionNameJA: "横浜港北JCT",
+      junctionNameZH: "横滨港北 JCT",
+      junctionNameEN: "Yokohama Kohoku JCT",
+      destinationJA: "第三京浜・横浜港北出口方面",
+      destinationZH: "第三京滨、横滨港北出口方向",
+      destinationEN: "Daisan-Keihin and Yokohama Kohoku Exit",
+      commitTriggerDistanceMeters: 400,
+      expectedJunctionDetailSHA256:
+        "d8b31a419e631405171c37b4450051bdf"
+        + "25242c947301d57bcdda79e9e68faf2",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_yokohamakohoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k7ho/",
+        "https://www.shutoko.jp/use/network/map/route-k7/",
+      ]
+    ),
   ]
 
   public static func releasedDefinition(
@@ -6023,6 +6504,62 @@ public enum ShutoJunctionMovementCatalog {
     incoming: ShutoNetworkDatabase.Edge,
     outgoing: ShutoNetworkDatabase.Edge
   ) -> ShutoJunctionMovementDefinition? {
+    validReleasedDefinitions(
+      database: database,
+      incoming: incoming,
+      outgoing: outgoing,
+      definitions: released
+    ).first
+  }
+
+  /// Selects a compound definition only when its complete continuation is the
+  /// selected route prefix. This permits different prompts for the same first
+  /// fork in a tightly spaced sequence without granting either prompt to the
+  /// other continuation.
+  public static func releasedDefinition(
+    database: ShutoNetworkDatabase,
+    routeEdges: [ShutoNetworkDatabase.Edge],
+    decisionIndex: Int,
+    definitions: [ShutoJunctionMovementDefinition] = released
+  ) -> ShutoJunctionMovementDefinition? {
+    guard decisionIndex >= 0, decisionIndex + 1 < routeEdges.count else {
+      return nil
+    }
+    let candidates = validReleasedDefinitions(
+      database: database,
+      incoming: routeEdges[decisionIndex],
+      outgoing: routeEdges[decisionIndex + 1],
+      definitions: definitions
+    )
+    let matchingCompounds = candidates.filter { definition in
+      let continuation = definition.coveredFollowingDecisionEdgeIDs
+      guard !continuation.isEmpty,
+        decisionIndex + 2 + continuation.count <= routeEdges.count
+      else {
+        return false
+      }
+      return Array(
+        routeEdges[
+          (decisionIndex + 2)..<(decisionIndex + 2 + continuation.count)
+        ].map(\.edgeID)
+      ) == continuation
+    }
+    if matchingCompounds.count == 1 {
+      return matchingCompounds[0]
+    }
+    guard matchingCompounds.isEmpty else { return nil }
+    let immediate = candidates.filter {
+      $0.coveredFollowingDecisionEdgeIDs.isEmpty
+    }
+    return immediate.count == 1 ? immediate[0] : nil
+  }
+
+  private static func validReleasedDefinitions(
+    database: ShutoNetworkDatabase,
+    incoming: ShutoNetworkDatabase.Edge,
+    outgoing: ShutoNetworkDatabase.Edge,
+    definitions: [ShutoJunctionMovementDefinition]
+  ) -> [ShutoJunctionMovementDefinition] {
     let junctionsByID = Dictionary(
       uniqueKeysWithValues: database.junctions.map {
         ($0.junctionID, $0)
@@ -6031,7 +6568,7 @@ public enum ShutoJunctionMovementCatalog {
     let routesByID = Dictionary(
       uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
     )
-    return released.first { definition in
+    return definitions.filter { definition in
       guard
         definition.networkSnapshotID == database.networkSnapshotID,
         definition.incomingEdgeID == incoming.edgeID,
@@ -6096,12 +6633,12 @@ public enum ShutoJunctionMovementCatalog {
       {
         let baseDecisionIndex = decisionIndex - offset - 1
         guard baseDecisionIndex >= 0,
-          let base = releasedDefinition(
+          validReleasedDefinitions(
             database: database,
             incoming: routeEdges[baseDecisionIndex],
-            outgoing: routeEdges[baseDecisionIndex + 1]
-          ),
-          base.id == definition.id
+            outgoing: routeEdges[baseDecisionIndex + 1],
+            definitions: released
+          ).contains(where: { $0.id == definition.id })
         else {
           continue
         }
@@ -6116,6 +6653,43 @@ public enum ShutoJunctionMovementCatalog {
         else {
           continue
         }
+        return definition
+      }
+    }
+    return nil
+  }
+
+  /// Resolves one exact adjacent movement inside a reviewed compound prompt.
+  /// This is used by the snapshot-wide inventory, where no selected RoutePlan
+  /// exists but the complete reviewed edge sequence remains immutable.
+  public static func releasedDefinitionCoveringFollowingMovement(
+    database: ShutoNetworkDatabase,
+    incoming: ShutoNetworkDatabase.Edge,
+    outgoing: ShutoNetworkDatabase.Edge
+  ) -> ShutoJunctionMovementDefinition? {
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    for definition in released
+    where !definition.coveredFollowingDecisionEdgeIDs.isEmpty {
+      guard
+        let baseIncoming = edgesByID[definition.incomingEdgeID],
+        let baseOutgoing = edgesByID[definition.outgoingEdgeID],
+        validReleasedDefinitions(
+          database: database,
+          incoming: baseIncoming,
+          outgoing: baseOutgoing,
+          definitions: released
+        ).contains(where: { $0.id == definition.id })
+      else {
+        continue
+      }
+      let sequence =
+        [definition.outgoingEdgeID]
+        + definition.coveredFollowingDecisionEdgeIDs
+      if zip(sequence, sequence.dropFirst()).contains(where: { pair in
+        pair.0 == incoming.edgeID && pair.1 == outgoing.edgeID
+      }) {
         return definition
       }
     }
@@ -6145,10 +6719,7 @@ public enum ShutoJunctionMovementCatalog {
     var previous = initialOutgoing
     for edgeID in definition.coveredFollowingDecisionEdgeIDs {
       guard let edge = edgesByID[edgeID],
-        previous.toNodeID == edge.fromNodeID,
-        edge.routeMemberships.contains(where: {
-          $0.routeID == definition.outgoingRouteID
-        })
+        previous.toNodeID == edge.fromNodeID
       else {
         return false
       }
@@ -6232,72 +6803,39 @@ public enum ShutoJunctionGuidanceCompiler {
         ($0.junctionID, $0)
       }
     )
-    let routesByID = Dictionary(
-      uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
-    )
     let totalDistance = max(route.distanceMeters, 1)
     var cumulativeDistance = 0.0
     var matches: [ShutoJunctionGuidanceMatch] = []
 
     for index in route.edges.indices.dropLast() {
       let incoming = route.edges[index]
-      let outgoing = route.edges[index + 1]
       cumulativeDistance += incoming.lengthMeters
 
-      for definition in definitions
-      where definition.networkSnapshotID == database.networkSnapshotID
-        && definition.incomingEdgeID == incoming.edgeID
-        && definition.outgoingEdgeID == outgoing.edgeID
-      {
-        guard incoming.toNodeID == definition.junctionNodeID,
-          outgoing.fromNodeID == definition.junctionNodeID,
-          incoming.routeMemberships.contains(where: {
-            $0.routeID == definition.incomingRouteID
-          }),
-          outgoing.routeMemberships.contains(where: {
-            $0.routeID == definition.outgoingRouteID
-          }),
-          routesByID[definition.incomingRouteID]?
-            .officialDirectionsJA.contains(
-              definition.incomingDirectionJA
-            ) == true,
-          routesByID[definition.outgoingRouteID]?
-            .officialDirectionsJA.contains(
-              definition.outgoingDirectionJA
-            ) == true,
-          let junction = junctionsByID[definition.junctionID],
-          junction.osmNodeIDs.contains(definition.junctionNodeID),
-          junction.officialDetailSHA256
-            == definition.expectedJunctionDetailSHA256,
-          definition.localizedJunctionNames[.japanese]
-            == junction.nameJA,
-          Set(definition.localizedJunctionNames.keys)
-            == Set(KaidoReleaseLocale.allCases),
-          Set(definition.localizedContent.keys)
-            == Set(KaidoReleaseLocale.allCases),
-          definition.localizedContent.values.allSatisfy({
-            $0.preservedJapaneseSignText
-              == definition.japaneseSignText
-          }),
-          definition.commitTriggerDistanceMeters.isFinite,
-          definition.commitTriggerDistanceMeters > 0,
-          let node = nodesByID[definition.junctionNodeID]
-        else {
-          continue
-        }
-        matches.append(
-          ShutoJunctionGuidanceMatch(
-            definition: definition,
-            junctionNameJA: junction.nameJA,
-            coordinate: node.coordinate,
-            incomingOccurrenceID:
-              route.routePlan.occurrences[index].id,
-            outgoingOccurrenceID:
-              route.routePlan.occurrences[index + 1].id,
-            progressFraction: cumulativeDistance / totalDistance
-          )
-        )
+      guard
+        let definition = ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          routeEdges: route.edges,
+          decisionIndex: index,
+          definitions: definitions
+        ),
+        let junction = junctionsByID[definition.junctionID],
+        definition.localizedJunctionNames[.japanese] == junction.nameJA,
+        let node = nodesByID[definition.junctionNodeID]
+      else {
+        continue
       }
+      matches.append(
+        ShutoJunctionGuidanceMatch(
+          definition: definition,
+          junctionNameJA: junction.nameJA,
+          coordinate: node.coordinate,
+          incomingOccurrenceID:
+            route.routePlan.occurrences[index].id,
+          outgoingOccurrenceID:
+            route.routePlan.occurrences[index + 1].id,
+          progressFraction: cumulativeDistance / totalDistance
+        )
+      )
     }
     return matches.sorted {
       if $0.progressFraction != $1.progressFraction {

@@ -99,7 +99,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
-      8
+      9
     )
     XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
 

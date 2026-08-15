@@ -905,7 +905,7 @@ def candidate_edges_for_facility(
 def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
     raw = path.read_bytes()
     review = json.loads(raw)
-    if review.get("schema_version") != "1.1":
+    if review.get("schema_version") != "1.2":
         raise NetworkBuildError("unsupported facility candidate review schema")
     for exclusion in review.get("excluded_candidates", []):
         for field in ("facility_id", "side", "edge_id", "reason", "evidence"):
@@ -939,6 +939,41 @@ def load_candidate_review(path: Path) -> tuple[dict[str, Any], str]:
         ):
             raise NetworkBuildError(
                 "entry boundary rebinding distance must be within 750 meters"
+            )
+    for replacement in review.get("entry_candidate_replacements", []):
+        for field in (
+            "facility_id",
+            "expected_entry_edge_ids",
+            "predecessor_edge_id",
+            "boundary_edge_id",
+            "distance_meters",
+            "reason",
+            "evidence",
+        ):
+            if replacement.get(field) in (None, "", []):
+                raise NetworkBuildError(
+                    "entry candidate replacement is missing " + field
+                )
+        expected = replacement["expected_entry_edge_ids"]
+        if (
+            not isinstance(expected, list)
+            or not all(
+                isinstance(edge_id, str) and edge_id for edge_id in expected
+            )
+            or len(set(expected)) != len(expected)
+        ):
+            raise NetworkBuildError(
+                "entry candidate replacement expected edges must be unique IDs"
+            )
+        distance = replacement["distance_meters"]
+        if (
+            not isinstance(distance, (int, float))
+            or not math.isfinite(distance)
+            or distance < 0
+            or distance > 750
+        ):
+            raise NetworkBuildError(
+                "entry candidate replacement distance must be within 750 meters"
             )
     return review, hashlib.sha256(raw).hexdigest()
 
@@ -1051,6 +1086,51 @@ def apply_candidate_review(
                 candidate["edge_id"],
             ),
         )
+
+    for replacement in review.get("entry_candidate_replacements", []):
+        facility = by_id.get(replacement["facility_id"])
+        if facility is None:
+            raise NetworkBuildError(
+                "entry candidate replacement names unknown facility "
+                + replacement["facility_id"]
+            )
+        actual_ids = {
+            candidate["edge_id"]
+            for candidate in facility["entry_edge_candidates"]
+        }
+        expected_ids = set(replacement["expected_entry_edge_ids"])
+        if actual_ids != expected_ids:
+            raise NetworkBuildError(
+                "entry candidate replacement does not match current candidates: "
+                + replacement["facility_id"]
+            )
+        predecessor = edges_by_id.get(replacement["predecessor_edge_id"])
+        boundary = edges_by_id.get(replacement["boundary_edge_id"])
+        if predecessor is None or boundary is None:
+            raise NetworkBuildError(
+                "entry candidate replacement names an unknown graph edge"
+            )
+        if (
+            predecessor["kind"] != "LINK"
+            or boundary["kind"] != "LINK"
+            or predecessor["to_node_id"] != boundary["from_node_id"]
+            or not membership_matches(
+                boundary,
+                facility["route_id"],
+                facility["entrance_directions"],
+            )
+        ):
+            raise NetworkBuildError(
+                "entry candidate replacement is not a forward ramp boundary"
+            )
+        facility["entry_edge_candidates"] = [
+            {
+                "edge_id": boundary["edge_id"],
+                "distance_meters": round(
+                    float(replacement["distance_meters"]), 3
+                ),
+            }
+        ]
 
 
 def match_facilities(
@@ -1349,6 +1429,9 @@ def build(arguments: argparse.Namespace) -> dict[str, Any]:
                 ),
                 "entry_boundary_rebinding_count": len(
                     candidate_review.get("entry_boundary_rebindings", [])
+                ),
+                "entry_candidate_replacement_count": len(
+                    candidate_review.get("entry_candidate_replacements", [])
                 ),
             },
             "osm": {

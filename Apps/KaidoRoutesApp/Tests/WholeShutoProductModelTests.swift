@@ -425,6 +425,33 @@ final class WholeShutoProductModelTests: XCTestCase {
       ("shuto.ic.c2.nishiikebukuro", "shuto.ic.5.nakadai"),
       ("shuto.ic.c2.nishiikebukuro", "shuto.ic.c2.oujiminami"),
       ("shuto.ic.b.higashiogishima", "shuto.ic.b.kukouchuou"),
+      ("shuto.ic.k1.daishi", "shuto.ic.k5.daikokufutou"),
+      (
+        "shuto.ic.k1.daishi",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      ("shuto.ic.k5.daikokufutou", "shuto.ic.k1.yokohamakouen"),
+      (
+        "shuto.ic.k5.daikokufutou",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      (
+        "shuto.ic.k1.minatomirai",
+        "shuto.ic.k7-yokohama-kita.shinyokohama"
+      ),
+      ("shuto.ic.k1.minatomirai", "shuto.ic.k1.daishi"),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k1.daishi"
+      ),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k5.daikokufutou"
+      ),
+      (
+        "shuto.ic.k7-yokohama-hokusei.yokohamaaoba",
+        "shuto.ic.k1.yokohamakouen"
+      ),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {
@@ -456,8 +483,14 @@ final class WholeShutoProductModelTests: XCTestCase {
         exitFacilityID
       )
       XCTAssertFalse(model.isPreparingLiveNavigation)
-      XCTAssertTrue(model.canStartLiveNavigation)
-      XCTAssertNil(model.liveNavigationBlockerCode)
+      XCTAssertTrue(
+        model.canStartLiveNavigation,
+        "Expected live admission for \(entryFacilityID) -> \(exitFacilityID), blocker: \(model.liveNavigationBlockerCode ?? "none")"
+      )
+      XCTAssertNil(
+        model.liveNavigationBlockerCode,
+        "Unexpected blocker for \(entryFacilityID) -> \(exitFacilityID)"
+      )
     }
   }
 
@@ -550,7 +583,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
-  func testOnDeviceRouteAuthorityNamesIncompleteJunctionCoverage()
+  func testOnDeviceRouteAuthorityAdmitsYokohamaRouteAfterCompleteReview()
     throws
   {
     let database = try WholeShutoNetworkCatalog.bundled()
@@ -561,13 +594,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     let authority = WholeShutoRouteReleaseAuthority(database: database)
 
     switch authority.resolve(route: route) {
-    case .available:
-      XCTFail("Unreviewed junction guidance gained foreground authority")
+    case .available(let admission):
+      XCTAssertEqual(admission.core.selectedRoutePlan, route.routePlan)
     case .unavailable(let code):
-      XCTAssertEqual(
-        code,
-        WholeShutoRouteReleaseAuthority.guidanceIncompleteCode
-      )
+      XCTFail("Expected live admission after complete review, got \(code)")
     }
   }
 
@@ -582,11 +612,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     let reconstructed = try ShutoRoutePlanner(database: database)
       .restore(routePlan: route.routePlan)
     XCTAssertEqual(reconstructed, route)
-    let artifact = try ShutoCircuitProductReleaseBuilder
+    let artifact =
+      try ShutoCircuitProductReleaseBuilder
       .buildPlannedRouteArtifact(
         database: database,
         route: reconstructed
-    )
+      )
     let release = try KaidoProductRelease(artifact: artifact)
     XCTAssertEqual(
       release.navigation.bundle.runtimePolicy.entryTransition

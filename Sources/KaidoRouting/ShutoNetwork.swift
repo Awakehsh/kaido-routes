@@ -31,6 +31,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
   {
     public let checkedAt: String
     public let entryBoundaryRebindingCount: Int
+    public let entryCandidateReplacementCount: Int
     public let excludedCandidateCount: Int
     public let reviewID: String
     public let sha256: String
@@ -38,6 +39,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     private enum CodingKeys: String, CodingKey {
       case checkedAt = "checked_at"
       case entryBoundaryRebindingCount = "entry_boundary_rebinding_count"
+      case entryCandidateReplacementCount = "entry_candidate_replacement_count"
       case excludedCandidateCount = "excluded_candidate_count"
       case reviewID = "review_id"
       case sha256
@@ -46,10 +48,16 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     public init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
       checkedAt = try container.decode(String.self, forKey: .checkedAt)
-      entryBoundaryRebindingCount = try container.decodeIfPresent(
-        Int.self,
-        forKey: .entryBoundaryRebindingCount
-      ) ?? 0
+      entryBoundaryRebindingCount =
+        try container.decodeIfPresent(
+          Int.self,
+          forKey: .entryBoundaryRebindingCount
+        ) ?? 0
+      entryCandidateReplacementCount =
+        try container.decodeIfPresent(
+          Int.self,
+          forKey: .entryCandidateReplacementCount
+        ) ?? 0
       excludedCandidateCount = try container.decode(
         Int.self,
         forKey: .excludedCandidateCount
@@ -342,6 +350,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
       }),
       !sources.facilityCandidateReview.checkedAt.isEmpty,
       sources.facilityCandidateReview.entryBoundaryRebindingCount >= 0,
+      sources.facilityCandidateReview.entryCandidateReplacementCount >= 0,
       sources.facilityCandidateReview.excludedCandidateCount >= 0,
       !sources.facilityCandidateReview.reviewID.isEmpty,
       Self.isSHA256(sources.facilityCandidateReview.sha256),
@@ -379,29 +388,35 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
       grouping: directionalFacilities,
       by: \.routeID
     )
-    guard routes.allSatisfy({ route in
-      let directions = Set(
-        (facilitiesByRouteID[route.routeID] ?? []).flatMap {
-          $0.entranceDirections + $0.exitDirections
-        }
-      )
-      return !directions.isEmpty
-        && Set(route.officialDirectionsJA) == directions
-        && route.officialDirectionsJA.count == directions.count
-    }) else {
+    guard
+      routes.allSatisfy({ route in
+        let directions = Set(
+          (facilitiesByRouteID[route.routeID] ?? []).flatMap {
+            $0.entranceDirections + $0.exitDirections
+          }
+        )
+        return !directions.isEmpty
+          && Set(route.officialDirectionsJA) == directions
+          && route.officialDirectionsJA.count == directions.count
+      })
+    else {
       throw ShutoNetworkError.invalidRouteDirections
     }
     let nodeIDs = Set(nodes.map(\.nodeID))
-    guard edges.allSatisfy({
-      $0.lengthMeters > 0 && nodeIDs.contains($0.fromNodeID)
-        && nodeIDs.contains($0.toNodeID)
-    }) else {
+    guard
+      edges.allSatisfy({
+        $0.lengthMeters > 0 && nodeIDs.contains($0.fromNodeID)
+          && nodeIDs.contains($0.toNodeID)
+      })
+    else {
       throw ShutoNetworkError.invalidEdge
     }
-    guard junctions.allSatisfy({
-      !$0.osmNodeIDs.isEmpty
-        && $0.osmNodeIDs.allSatisfy(nodeIDs.contains)
-    }) else {
+    guard
+      junctions.allSatisfy({
+        !$0.osmNodeIDs.isEmpty
+          && $0.osmNodeIDs.allSatisfy(nodeIDs.contains)
+      })
+    else {
       throw ShutoNetworkError.invalidJunction
     }
   }
@@ -677,7 +692,8 @@ public struct ShutoRoutePlanner: Sendable {
       }
     }
     var signatures = Set<String>()
-    return recommendations
+    return
+      recommendations
       .sorted {
         if $0.totalScoreMeters != $1.totalScoreMeters {
           return $0.totalScoreMeters < $1.totalScoreMeters
@@ -819,8 +835,8 @@ public struct ShutoRoutePlanner: Sendable {
         index > 0
         ? ShutoJunctionMovementCatalog.releasedDefinition(
           database: database,
-          incoming: routeEdges[index - 1],
-          outgoing: edge
+          routeEdges: routeEdges,
+          decisionIndex: index - 1
         )
         : nil
       return RouteOccurrence(

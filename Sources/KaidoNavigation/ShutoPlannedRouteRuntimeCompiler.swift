@@ -499,8 +499,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           let definition =
             ShutoJunctionMovementCatalog.releasedDefinition(
               database: database,
-              incoming: route.edges[index - 1],
-              outgoing: route.edges[index]
+              routeEdges: route.edges,
+              decisionIndex: index - 1
             )
         else {
           return nil
@@ -842,6 +842,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           let choices = (outgoing[nodeID] ?? [])
             .filter { $0.toNodeID != incomingEdge.fromNodeID }
             .filter {
+              ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+                networkSnapshotID: database.networkSnapshotID,
+                incomingDirectedEdgeID: incomingEdge.edgeID,
+                startDirectedEdgeID: $0.edgeID
+              ) == nil
+            }
+            .filter {
               ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
                 networkSnapshotID: database.networkSnapshotID,
                 startDirectedEdgeID: $0.edgeID
@@ -859,6 +866,12 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           for outgoingEdge in choices {
             let definition =
               ShutoJunctionMovementCatalog.releasedDefinition(
+                database: database,
+                incoming: incomingEdge,
+                outgoing: outgoingEdge
+              )
+              ?? ShutoJunctionMovementCatalog
+              .releasedDefinitionCoveringFollowingMovement(
                 database: database,
                 incoming: incomingEdge,
                 outgoing: outgoingEdge
@@ -933,21 +946,30 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       let plannedOutgoing = route.edges[index + 1]
       let alternatives = (outgoing[incoming.toNodeID] ?? [])
         .filter { $0.edgeID != plannedOutgoing.edgeID }
+        .filter {
+          ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+            networkSnapshotID: database.networkSnapshotID,
+            incomingDirectedEdgeID: incoming.edgeID,
+            startDirectedEdgeID: $0.edgeID
+          ) == nil
+        }
         .sorted { $0.edgeID < $1.edgeID }
       guard !alternatives.isEmpty else { continue }
       let divergenceOccurrenceID = route.routePlan.occurrences[index].id
-      let immediateDefinition = ShutoJunctionMovementCatalog.releasedDefinition(
-        database: database,
-        incoming: incoming,
-        outgoing: plannedOutgoing
-      )
-      let startsTerminalExitBranch = isSurfaceExitBranch(
-        plannedOutgoing,
-        networkSnapshotID: database.networkSnapshotID,
-        waysByID: waysByID,
-        outgoing: outgoing,
-        surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
-      ) || route.edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }
+      let immediateDefinition =
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          routeEdges: route.edges,
+          decisionIndex: index
+        )
+      let startsTerminalExitBranch =
+        isSurfaceExitBranch(
+          plannedOutgoing,
+          networkSnapshotID: database.networkSnapshotID,
+          waysByID: waysByID,
+          outgoing: outgoing,
+          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
+        ) || route.edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }
       let hasAvailableExpresswayAlternative = alternatives.contains {
         !isSurfaceExitBranch(
           $0,
@@ -1222,6 +1244,13 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       let plannedNextEdgeID = edges[index + 1].edgeID
       let alternatives = (outgoing[divergenceNode] ?? [])
         .filter { $0.edgeID != plannedNextEdgeID }
+        .filter {
+          ShutoOperationalBranchCatalog.reviewedNonNavigableBranch(
+            networkSnapshotID: database.networkSnapshotID,
+            incomingDirectedEdgeID: edges[index].edgeID,
+            startDirectedEdgeID: $0.edgeID
+          ) == nil
+        }
       guard !alternatives.isEmpty else { continue }
 
       for alternative in alternatives {

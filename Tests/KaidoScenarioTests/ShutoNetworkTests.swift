@@ -78,6 +78,10 @@ struct ShutoNetworkTests {
       database.sources.facilityCandidateReview
         .entryBoundaryRebindingCount == 2
     )
+    #expect(
+      database.sources.facilityCandidateReview
+        .entryCandidateReplacementCount == 1
+    )
     #expect(database.sources.osm.attribution == "© OpenStreetMap contributors")
     #expect(database.sources.osm.licence == "ODbL-1.0")
     #expect(
@@ -161,11 +165,39 @@ struct ShutoNetworkTests {
       guard index > 0 else { return edge.edgeID }
       return ShutoJunctionMovementCatalog.releasedDefinition(
         database: database,
-        incoming: route.edges[index - 1],
-        outgoing: edge
+        routeEdges: route.edges,
+        decisionIndex: index - 1
       )?.id ?? edge.edgeID
     }
     #expect(route.routePlan.occurrences.map(\.entityID) == expectedOccurrenceEntities)
+  }
+
+  @Test("Kiba entry follows the reviewed Route 9 inbound ramp")
+  func plansKibaInboundWithoutSouthboundDetour() throws {
+    let database = try loadDatabase()
+    let kiba = try #require(
+      database.directionalFacilities.first {
+        $0.facilityID == "shuto.ic.9.kiba"
+      }
+    )
+    #expect(kiba.entryEdgeCandidates.count == 1)
+    #expect(
+      kiba.entryEdgeCandidates.first?.edgeID
+        == "osm.382676575.2.forward"
+    )
+    #expect(kiba.entryEdgeCandidates.first?.distanceMeters == 62.107)
+
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.9.kiba",
+      exitFacilityID: "shuto.ic.c1.ginza"
+    )
+
+    #expect(route.edges.first?.edgeID == "osm.382676575.2.forward")
+    #expect(route.edges.count == 171)
+    #expect(route.routeIDsInOrder.starts(with: ["9"]))
+    #expect(route.routeIDsInOrder.contains("6_MUKOJIMA"))
+    #expect(route.routeIDsInOrder.contains("C1"))
+    #expect(!route.edges.contains { $0.edgeID == "osm.4857854.0.forward" })
   }
 
   @Test("arbitrary places produce ranked entry and exit recommendations")
@@ -289,7 +321,8 @@ struct ShutoNetworkTests {
       .deletingLastPathComponent()
       .deletingLastPathComponent()
       .deletingLastPathComponent()
-    let url = repositoryRoot
+    let url =
+      repositoryRoot
       .appendingPathComponent("data")
       .appendingPathComponent("route-atlas")
       .appendingPathComponent("osm-derived")

@@ -193,9 +193,9 @@ The product distinguishes what is known from what is still unconfirmed:
   the current official detail-image URL and content hash for audit. Reviewed
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
-  definitions cover all divergent JCTs on the six exact foreground routes;
-  the whole-network inventory currently resolves 146 exact movement bindings
-  and keeps 17 unreviewed movements unavailable. They authorize only the
+  definitions cover all divergent JCTs in the bundled snapshot; the
+  whole-network inventory resolves all 161 exact movement bindings. They
+  authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
@@ -207,9 +207,7 @@ The product distinguishes what is known from what is still unconfirmed:
 - The default App's foreground Core Location lifecycle supplies the planning
   origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the
-  146 released movement bindings. Routes touching any of the 17 unreviewed
-  movements remain replay-only with an
-  explicit incomplete-guidance blocker. Live admission and replay do not grant
+  161 released movement bindings. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
   covers reviewed junction movements only.
 
@@ -330,7 +328,8 @@ python3 -m venv /tmp/kaido-shuto-osmium
 
 The builder selects the 26 Shuto route relations, adds only connected motorway
 links, respects directed access, excludes abandoned and unavailable roads,
-applies hash-bound facility exclusions and forward entry-boundary corrections,
+applies hash-bound facility exclusions, forward entry-boundary corrections,
+and exact direction-reviewed candidate replacements,
 matches every usable official IC and JCT, and fails on source or coverage drift.
 
 ## Licence and privacy

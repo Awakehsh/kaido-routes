@@ -48,11 +48,14 @@ realtime, or field authority.
 
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
-snapshot it identifies 30 JCTs with choices between available expressway
-mainlines, 87 incoming approaches, and 175 candidate incoming/outgoing movement
-pairs. Sixty-nine exact definitions are currently released and 106 still require
-legal/sign review. Terminal exits and connections leading only to the closed
-Yaesu Route remain recovery/egress divergences, not JCT-guidance work. Graph
+snapshot it identifies 29 JCTs with choices between available expressway
+mainlines, 86 incoming approaches, and 173 candidate incoming/outgoing movement
+pairs. Sixty-eight exact definitions are currently released and 105 still require
+legal/sign review. The former KK Line branch at Kyobashi is bound to the retained
+East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
+not inventoried as an available expressway movement. Terminal exits and
+connections leading only to the closed Yaesu Route remain recovery/egress
+divergences, not JCT-guidance work. Graph
 adjacency is inventory only: it does not assert that every pair is lawful.
 Route-local coverage counts a fork as JCT guidance only when its graph node is
 bound to an official JCT complex, or when a source-bound released definition

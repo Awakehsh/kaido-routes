@@ -462,7 +462,7 @@ struct ShutoJunctionGuidanceTests {
       matches.map(\.junctionNameJA)
         == [
           "浜崎橋JCT", "一ノ橋JCT", "谷町JCT", "三宅坂JCT",
-          "竹橋JCT", "江戸橋JCT", "京橋JCT",
+          "竹橋JCT", "江戸橋JCT",
         ]
     )
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
@@ -470,7 +470,7 @@ struct ShutoJunctionGuidanceTests {
       matches.map(\.definition.japaneseSignText)
         == [
           "芝公園", "渋谷・新宿", "中央道・北池袋", "神田橋・北池袋",
-          "神田橋・箱崎", "羽田・銀座", "横浜・銀座",
+          "神田橋・箱崎", "羽田・銀座",
         ]
     )
     #expect(

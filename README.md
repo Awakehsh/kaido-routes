@@ -191,8 +191,8 @@ The product distinguishes what is known from what is still unconfirmed:
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
   definitions cover all divergent JCTs on the six exact foreground routes;
-  the whole-network inventory currently resolves 69 exact movement bindings
-  and keeps 106 unreviewed movements unavailable. They authorize only the
+  the whole-network inventory currently resolves 68 exact movement bindings
+  and keeps 105 unreviewed movements unavailable. They authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
@@ -203,8 +203,8 @@ The product distinguishes what is known from what is still unconfirmed:
   distance; entry evidence takes over only near the exact directional ramp.
 - The default App's foreground Core Location lifecycle supplies the planning
   origin, five prebuilt releases, the C1 outer on-demand release, and other
-  on-device exact routes whose complete decision sequence is covered by the 69
-  released movement bindings. Routes touching any of the 106 unreviewed
+  on-device exact routes whose complete decision sequence is covered by the 68
+  released movement bindings. Routes touching any of the 105 unreviewed
   movements remain replay-only with an
   explicit incomplete-guidance blocker. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still

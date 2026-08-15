@@ -19,17 +19,50 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       .networkLiveReleaseCoverage(database: database)
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
-    #expect(coverage.junctionCount == 30)
-    #expect(coverage.incomingApproachCount == 87)
-    #expect(coverage.movements.count == 175)
-    #expect(coverage.releasedMovementCount == 69)
-    #expect(coverage.missingMovementReviewCount == 106)
+    #expect(coverage.junctionCount == 29)
+    #expect(coverage.incomingApproachCount == 86)
+    #expect(coverage.movements.count == 173)
+    #expect(coverage.releasedMovementCount == 68)
+    #expect(coverage.missingMovementReviewCount == 105)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
           && $0.officialDetailSHA256.count == 64
       }
     )
+    // The C1 relation includes the retained East Ginza exit connector at
+    // Kyobashi. Its OSM `motorway_link` identity wins over generated
+    // MAINLINE membership, so the former KK boundary is an exit branch and
+    // never enters the expressway-to-expressway movement worklist.
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.outgoingDirectedEdgeID != "osm.4849055.0.forward"
+      }
+    )
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.junctionID != "shuto.jct.jct_kyobashi"
+      }
+    )
+
+    let eastGinzaExit = try #require(
+      ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
+        networkSnapshotID: database.networkSnapshotID,
+        startDirectedEdgeID: "osm.4849055.0.forward"
+      )
+    )
+    #expect(eastGinzaExit.junctionNodeID == 572_570_042)
+    #expect(eastGinzaExit.incomingDirectedEdgeID == "osm.378284505.0.forward")
+    #expect(eastGinzaExit.terminalDirectedEdgeID == "osm.203301443.0.forward")
+    #expect(eastGinzaExit.exitNameJapanese == "東銀座出口")
+    #expect(eastGinzaExit.effectiveAt == "2025-04-05T20:00:00+09:00")
+    #expect(eastGinzaExit.checkedAt == "2026-08-15")
+    #expect(eastGinzaExit.officialSourceURL.hasPrefix("https://www.shutoko.jp/"))
+
+    let edgesByID = Dictionary(uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) })
+    #expect(edgesByID[eastGinzaExit.incomingDirectedEdgeID]?.toNodeID == eastGinzaExit.junctionNodeID)
+    #expect(edgesByID[eastGinzaExit.startDirectedEdgeID]?.fromNodeID == eastGinzaExit.junctionNodeID)
+    #expect(edgesByID[eastGinzaExit.terminalDirectedEdgeID] != nil)
   }
 
   @Test("compiler preserves every selected edge occurrence and legal branch")

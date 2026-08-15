@@ -2473,36 +2473,6 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-6/",
       ]
     ),
-    reviewedMovement(
-      id: "shuto.jct.kyobashi.c1-outer-stays-on-c1",
-      junctionID: "shuto.jct.jct_kyobashi",
-      junctionNodeID: 572_570_042,
-      incomingEdgeID: "osm.378284505.0.forward",
-      outgoingEdgeID: "osm.378284499.0.forward",
-      incomingRouteID: "C1",
-      incomingDirectionJA: "外回り",
-      outgoingRouteID: "C1",
-      outgoingDirectionJA: "外回り",
-      branchSide: .straight,
-      japaneseSignText: "横浜・銀座",
-      routeShields: ["C1"],
-      junctionNameJA: "京橋JCT",
-      junctionNameZH: "京桥 JCT",
-      junctionNameEN: "Kyobashi JCT",
-      destinationJA: "都心環状線 横浜・銀座方面",
-      destinationZH: "都心环状线 横滨・银座方向",
-      destinationEN: "the Outer Circular Route toward Yokohama and Ginza",
-      commitTriggerDistanceMeters: 300,
-      expectedJunctionDetailSHA256:
-        "6ca21c25e6564098b086cd80d2a732f2b"
-        + "ab3d6844202f6edde0f5a36de134f02",
-      officialDetailReference:
-        "https://www.shutoko.jp/-/media/images/responsive/"
-        + "customer/use/network/jct/routeguide/jct_kyobashi",
-      additionalSources: [
-        "https://www.shutoko.jp/use/network/map/route-c1/"
-      ]
-    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-westbound-stays-on-b",
       networkSnapshotID:

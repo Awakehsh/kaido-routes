@@ -842,6 +842,12 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           let choices = (outgoing[nodeID] ?? [])
             .filter { $0.toNodeID != incomingEdge.fromNodeID }
             .filter {
+              ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
+                networkSnapshotID: database.networkSnapshotID,
+                startDirectedEdgeID: $0.edgeID
+              ) == nil
+            }
+            .filter {
               leadsToAvailableMainline(
                 from: $0,
                 outgoing: outgoing,
@@ -935,11 +941,17 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         incoming: incoming,
         outgoing: plannedOutgoing
       )
-      let startsTerminalExitBranch = route.edges[(index + 1)...]
-        .allSatisfy { $0.kind == "LINK" }
+      let startsTerminalExitBranch = isSurfaceExitBranch(
+        plannedOutgoing,
+        networkSnapshotID: database.networkSnapshotID,
+        waysByID: waysByID,
+        outgoing: outgoing,
+        surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
+      ) || route.edges[(index + 1)...].allSatisfy { $0.kind == "LINK" }
       let hasAvailableExpresswayAlternative = alternatives.contains {
         !isSurfaceExitBranch(
           $0,
+          networkSnapshotID: database.networkSnapshotID,
           waysByID: waysByID,
           outgoing: outgoing,
           surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
@@ -950,11 +962,19 @@ public enum ShutoPlannedRouteRuntimeCompiler {
             availableRouteIDs: availableRouteIDs
           )
       }
-      let plannedContinuesOnAvailableExpressway = leadsToAvailableMainline(
-        from: plannedOutgoing,
-        outgoing: outgoing,
-        availableRouteIDs: availableRouteIDs
-      )
+      let plannedContinuesOnAvailableExpressway =
+        !isSurfaceExitBranch(
+          plannedOutgoing,
+          networkSnapshotID: database.networkSnapshotID,
+          waysByID: waysByID,
+          outgoing: outgoing,
+          surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
+        )
+        && leadsToAvailableMainline(
+          from: plannedOutgoing,
+          outgoing: outgoing,
+          availableRouteIDs: availableRouteIDs
+        )
       let coveringDefinition =
         ShutoJunctionMovementCatalog
         .releasedDefinitionCoveringFollowingDecision(
@@ -993,6 +1013,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
               isJunctionDecision: isJunctionDecision,
               startsTerminalExitBranch: startsTerminalExitBranch,
               alternative: alternative,
+              networkSnapshotID: database.networkSnapshotID,
               waysByID: waysByID,
               outgoing: outgoing,
               surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs,
@@ -1039,6 +1060,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     isJunctionDecision: Bool,
     startsTerminalExitBranch: Bool,
     alternative: ShutoNetworkDatabase.Edge,
+    networkSnapshotID: String,
     waysByID: [Int64: ShutoNetworkDatabase.Way],
     outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
     surfaceExitCandidateEdgeIDs: Set<String>,
@@ -1046,6 +1068,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
   ) -> ShutoRouteRecoveryBranchCoverage.Kind {
     if isSurfaceExitBranch(
       alternative,
+      networkSnapshotID: networkSnapshotID,
       waysByID: waysByID,
       outgoing: outgoing,
       surfaceExitCandidateEdgeIDs: surfaceExitCandidateEdgeIDs
@@ -1092,10 +1115,17 @@ public enum ShutoPlannedRouteRuntimeCompiler {
   /// an off-ramp even when OSM later reconnects it to an available route.
   private static func isSurfaceExitBranch(
     _ start: ShutoNetworkDatabase.Edge,
+    networkSnapshotID: String,
     waysByID: [Int64: ShutoNetworkDatabase.Way],
     outgoing: [Int64: [ShutoNetworkDatabase.Edge]],
     surfaceExitCandidateEdgeIDs: Set<String>
   ) -> Bool {
+    if ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
+      networkSnapshotID: networkSnapshotID,
+      startDirectedEdgeID: start.edgeID
+    ) != nil {
+      return true
+    }
     if isExplicitSurfaceExit(start, waysByID: waysByID) {
       return true
     }

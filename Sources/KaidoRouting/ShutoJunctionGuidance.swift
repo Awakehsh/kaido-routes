@@ -3787,6 +3787,251 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-11/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.ariake.11-outbound-to-b-eastbound",
+      junctionID: "shuto.jct.jct_ariake",
+      junctionNodeID: 31_252_897,
+      incomingEdgeID: "osm.45019025.1.forward",
+      outgoingEdgeID: "osm.202805893.0.forward",
+      incomingRouteID: "11",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .straight,
+      japaneseSignText: "東関東道",
+      routeShields: ["E51", "B", "9"],
+      junctionNameJA: "有明JCT",
+      junctionNameZH: "有明 JCT",
+      junctionNameEN: "Ariake JCT",
+      destinationJA: "湾岸線 東関東道方面",
+      destinationZH: "湾岸线东关东自动车道方向",
+      destinationEN:
+        "the Bayshore Route toward the Higashi-Kanto Expressway",
+      expectedJunctionDetailSHA256:
+        "0351ca02b8260a625334bc17931b57d3"
+        + "5d19631b4305fab64e014daf0aad4c26",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ariake",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-11/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ariake.11-outbound-to-b-westbound",
+      junctionID: "shuto.jct.jct_ariake",
+      junctionNodeID: 31_252_897,
+      incomingEdgeID: "osm.45019025.1.forward",
+      outgoingEdgeID: "osm.4848758.0.forward",
+      incomingRouteID: "11",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "西行き",
+      branchSide: .right,
+      japaneseSignText: "横浜・空港中央",
+      routeShields: ["B", "1"],
+      junctionNameJA: "有明JCT",
+      junctionNameZH: "有明 JCT",
+      junctionNameEN: "Ariake JCT",
+      destinationJA: "湾岸線 横浜・空港中央方面",
+      destinationZH: "湾岸线横滨、空港中央方向",
+      destinationEN:
+        "the Bayshore Route toward Yokohama and Kuko-Chuo",
+      expectedJunctionDetailSHA256:
+        "0351ca02b8260a625334bc17931b57d3"
+        + "5d19631b4305fab64e014daf0aad4c26",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ariake",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-11/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ariake.b-westbound-to-11-inbound",
+      junctionID: "shuto.jct.jct_ariake",
+      junctionNodeID: 31_288_751,
+      incomingEdgeID: "osm.1313249026.0.forward",
+      outgoingEdgeID: "osm.23169048.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "11",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "銀座",
+      routeShields: ["11", "C1"],
+      junctionNameJA: "有明JCT",
+      junctionNameZH: "有明 JCT",
+      junctionNameEN: "Ariake JCT",
+      destinationJA: "11号台場線 銀座方面",
+      destinationZH: "11号台场线银座方向",
+      destinationEN: "Route 11 toward Ginza",
+      expectedJunctionDetailSHA256:
+        "0351ca02b8260a625334bc17931b57d3"
+        + "5d19631b4305fab64e014daf0aad4c26",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ariake",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-11/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ariake.b-eastbound-to-11-inbound",
+      junctionID: "shuto.jct.jct_ariake",
+      junctionNodeID: 31_288_813,
+      incomingEdgeID: "osm.266086989.2.forward",
+      outgoingEdgeID: "osm.4848757.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "11",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "都心環状",
+      routeShields: ["11", "C1"],
+      junctionNameJA: "有明JCT",
+      junctionNameZH: "有明 JCT",
+      junctionNameEN: "Ariake JCT",
+      destinationJA: "11号台場線 都心環状方面",
+      destinationZH: "11号台场线都心环状线方向",
+      destinationEN: "Route 11 toward the Inner Circular Route",
+      expectedJunctionDetailSHA256:
+        "0351ca02b8260a625334bc17931b57d3"
+        + "5d19631b4305fab64e014daf0aad4c26",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ariake",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-11/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kouhoku.c2-outer-to-s1-outbound",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 263_988_157,
+      incomingEdgeID: "osm.780870438.63.forward",
+      outgoingEdgeID: "osm.28188172.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "S1",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "東北道",
+      routeShields: ["S1", "E4"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "S1 川口線 東北道方面",
+      destinationZH: "S1 川口线东北自动车道方向",
+      destinationEN: "Route S1 toward the Tohoku Expressway",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-s1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kouhoku.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 263_988_157,
+      incomingEdgeID: "osm.780870438.63.forward",
+      outgoingEdgeID: "osm.44211094.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .right,
+      japaneseSignText: "常磐道・湾岸線",
+      routeShields: ["C2", "E6", "6"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "C2 中央環状線 常磐道・湾岸線方面",
+      destinationZH: "C2 中央环状线常磐道、湾岸线方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Joban Expressway and Bayshore Route",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-s1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kouhoku.s1-inbound-to-c2-inner",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 308_933_022,
+      incomingEdgeID: "osm.438367463.80.forward",
+      outgoingEdgeID: "osm.28127450.0.forward",
+      incomingRouteID: "S1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "S1",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "中央道・東名",
+      routeShields: ["C2", "E20", "5", "E1"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "C2 中央環状線 中央道・東名方面",
+      destinationZH: "C2 中央环状线中央道、东名高速方向",
+      destinationEN:
+        "the C2 Inner Loop toward the Chuo and Tomei expressways",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-s1/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kouhoku.s1-inbound-to-c2-outer",
+      junctionID: "shuto.jct.jct_kouhoku",
+      junctionNodeID: 308_933_022,
+      incomingEdgeID: "osm.438367463.80.forward",
+      outgoingEdgeID: "osm.867182414.0.forward",
+      incomingRouteID: "S1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "S1",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "東関東道・銀座",
+      routeShields: ["E51", "C2", "6"],
+      junctionNameJA: "江北JCT",
+      junctionNameZH: "江北 JCT",
+      junctionNameEN: "Kohoku JCT",
+      destinationJA: "C2 中央環状線 東関東道・銀座方面",
+      destinationZH: "C2 中央环状线东关东自动车道、银座方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Higashi-Kanto Expressway and Ginza",
+      expectedJunctionDetailSHA256:
+        "d168d950ee904e51e2332fb9e6c94cb9"
+        + "ffad6ef825b01df9e917d1db8e372d81",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kouhoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-s1/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
   ]
 
   public static func releasedDefinition(

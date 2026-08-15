@@ -1031,6 +1031,180 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Ariake movements bind all current operator signs")
+  func ariakeMovementsBindCurrentOperatorSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.45019025.1.forward",
+        "osm.202805893.0.forward",
+        "shuto.jct.ariake.11-outbound-to-b-eastbound",
+        .straight,
+        "東関東道",
+        ["E51", "B", "9"]
+      ),
+      (
+        "osm.45019025.1.forward",
+        "osm.4848758.0.forward",
+        "shuto.jct.ariake.11-outbound-to-b-westbound",
+        .right,
+        "横浜・空港中央",
+        ["B", "1"]
+      ),
+      (
+        "osm.1313249026.0.forward",
+        "osm.23169048.0.forward",
+        "shuto.jct.ariake.b-westbound-to-11-inbound",
+        .left,
+        "銀座",
+        ["11", "C1"]
+      ),
+      (
+        "osm.1313249026.0.forward",
+        "osm.1313249025.0.forward",
+        "shuto.jct.ariake.b-westbound-stays-on-b",
+        .straight,
+        "横浜",
+        ["B"]
+      ),
+      (
+        "osm.266086989.2.forward",
+        "osm.4848757.0.forward",
+        "shuto.jct.ariake.b-eastbound-to-11-inbound",
+        .left,
+        "都心環状",
+        ["11", "C1"]
+      ),
+      (
+        "osm.266086989.2.forward",
+        "osm.266086989.3.forward",
+        "shuto.jct.ariake.b-eastbound-stays-on-b",
+        .straight,
+        "葛西",
+        ["B"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "0351ca02b8260a625334bc17931b57d3"
+          + "5d19631b4305fab64e014daf0aad4c26"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_ariake"
+      )
+      #expect(
+        definition.sources.last?.contentSHA256
+          == definition.expectedJunctionDetailSHA256
+      )
+    }
+  }
+
+  @Test("Kohoku movements bind both current operator approaches")
+  func kohokuMovementsBindCurrentOperatorApproaches() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.780870438.63.forward",
+        "osm.28188172.0.forward",
+        "shuto.jct.kouhoku.c2-outer-to-s1-outbound",
+        .left,
+        "東北道",
+        ["S1", "E4"]
+      ),
+      (
+        "osm.780870438.63.forward",
+        "osm.44211094.0.forward",
+        "shuto.jct.kouhoku.c2-outer-stays-on-c2",
+        .right,
+        "常磐道・湾岸線",
+        ["C2", "E6", "6"]
+      ),
+      (
+        "osm.438367463.80.forward",
+        "osm.28127450.0.forward",
+        "shuto.jct.kouhoku.s1-inbound-to-c2-inner",
+        .right,
+        "中央道・東名",
+        ["C2", "E20", "5", "E1"]
+      ),
+      (
+        "osm.438367463.80.forward",
+        "osm.867182414.0.forward",
+        "shuto.jct.kouhoku.s1-inbound-to-c2-outer",
+        .straight,
+        "東関東道・銀座",
+        ["E51", "C2", "6"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "d168d950ee904e51e2332fb9e6c94cb9"
+          + "ffad6ef825b01df9e917d1db8e372d81"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_kouhoku"
+      )
+    }
+  }
+
   @Test("Ryogoku and Shibaura outbound branches bind official signs")
   func ryogokuAndShibauraOutboundBranchesBindOfficialSigns() throws {
     let database = try loadDatabase()

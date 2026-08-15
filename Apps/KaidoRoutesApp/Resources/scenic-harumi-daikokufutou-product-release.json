@@ -487,6 +487,9 @@
       ],
       "entrances" : [
         {
+          "direct_route_occurrences" : [
+
+          ],
           "facility_id" : "shuto.ic.10.harumi",
           "first_decision_point_id" : "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.11.osm.174976692.0.forward",
           "initial_edge_id" : "osm.44882520.0.forward",

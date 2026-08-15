@@ -13,6 +13,7 @@
           "shutoko-guidance-shuto.jct.daishi.k1-inbound-to-k6-outbound",
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "shutoko-guidance-shuto.jct.namamugi.k1-inbound-stays-on-k1",
           "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
         ],
@@ -29,6 +30,7 @@
           "shutoko-guidance-shuto.jct.daishi.k1-inbound-to-k6-outbound",
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
           "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "shutoko-guidance-shuto.jct.namamugi.k1-inbound-stays-on-k1",
           "shutoko-guidance-shuto.jct.namamugi.k5-inbound-to-k1-inbound"
         ],
@@ -99,7 +101,16 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.457.osm.783646149.0.forward.decision-zone",
+        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore.shuto.457.osm.783646149.0.forward.decision-zone",
+        "checked_at" : "2026-08-15",
+        "role" : "DECISION_ZONE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.493.osm.59613958.1.forward.decision-zone",
         "checked_at" : "2026-08-15",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
@@ -162,7 +173,16 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.457.osm.783646149.0.forward.commit",
+        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore.shuto.457.osm.783646149.0.forward.commit",
+        "checked_at" : "2026-08-15",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.493.osm.59613958.1.forward.commit",
         "checked_at" : "2026-08-15",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
@@ -217,9 +237,16 @@
         "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
       },
       {
-        "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.457.osm.783646149.0.forward.decision-zone",
+        "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore.shuto.457.osm.783646149.0.forward.decision-zone",
         "entry_offset_meters" : 0,
         "movement_occurrence_id" : "shuto.457.osm.783646149.0.forward",
+        "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
+        "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
+      },
+      {
+        "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.493.osm.59613958.1.forward.decision-zone",
+        "entry_offset_meters" : 0,
+        "movement_occurrence_id" : "shuto.493.osm.59613958.1.forward",
         "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
         "route_plan_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended"
       },
@@ -323,9 +350,9 @@
             {
               "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.457.osm.783646149.0.forward.selected",
               "destination" : {
-                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.541.osm.489510478.0.forward"
+                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.493.osm.59613958.1.forward"
               },
-              "movement_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+              "movement_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore",
               "movement_toll_domain_id" : "shuto.toll-domain",
               "outgoing_edge_id" : "osm.783646149.1.forward",
               "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
@@ -333,6 +360,23 @@
           ],
           "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.457.osm.783646149.0.forward",
           "incoming_approach_id" : "osm.82596770.33.forward",
+          "junction_complex_id" : "shuto.jct.jct_kawasaki"
+        },
+        {
+          "choices" : [
+            {
+              "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.493.osm.59613958.1.forward.selected",
+              "destination" : {
+                "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.541.osm.489510478.0.forward"
+              },
+              "movement_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+              "movement_toll_domain_id" : "shuto.toll-domain",
+              "outgoing_edge_id" : "osm.59613958.2.forward",
+              "outgoing_edge_toll_domain_id" : "shuto.toll-domain"
+            }
+          ],
+          "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.493.osm.59613958.1.forward",
+          "incoming_approach_id" : "osm.59613958.0.forward",
           "junction_complex_id" : "shuto.jct.jct_kawasaki"
         },
         {
@@ -355,6 +399,9 @@
       ],
       "entrances" : [
         {
+          "direct_route_occurrences" : [
+
+          ],
           "facility_id" : "shuto.ic.b.wangankanpachi",
           "first_decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.31.osm.5204789.0.forward",
           "initial_edge_id" : "osm.884343942.0.forward",
@@ -437,14 +484,27 @@
         {
           "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.457.osm.783646149.0.forward.selected",
           "detail" : {
+            "en" : "東京・横浜",
+            "ja-JP" : "東京・横浜",
+            "zh-Hans" : "東京・横浜"
+          },
+          "title" : {
+            "en" : "Keep Right for the Bayshore Route toward Tokyo or Yokohama",
+            "ja-JP" : "右方向を保ち、湾岸線 東京・横浜方面へ",
+            "zh-Hans" : "保持右侧，驶往 湾岸线东京、横滨方向"
+          }
+        },
+        {
+          "choice_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.493.osm.59613958.1.forward.selected",
+          "detail" : {
             "en" : "横浜",
             "ja-JP" : "横浜",
             "zh-Hans" : "横浜"
           },
           "title" : {
-            "en" : "Keep Right for the Bayshore Route toward Yokohama",
-            "ja-JP" : "右方向を保ち、湾岸線 横浜方面へ",
-            "zh-Hans" : "保持右侧，驶往 湾岸线横滨方向"
+            "en" : "Branch Right for the Bayshore Route toward Yokohama",
+            "ja-JP" : "右方向へ分岐し、湾岸線 横浜方面へ",
+            "zh-Hans" : "向右分岔，驶往 湾岸线横滨方向"
           }
         },
         {
@@ -506,6 +566,14 @@
           "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.457.osm.783646149.0.forward",
           "title" : {
             "en" : "Kawasaki-Ukishima JCT",
+            "ja-JP" : "川崎浮島JCT",
+            "zh-Hans" : "川崎浮岛 JCT"
+          }
+        },
+        {
+          "decision_point_id" : "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.493.osm.59613958.1.forward",
+          "title" : {
+            "en" : "Kawasaki-Ukishima Junction",
             "ja-JP" : "川崎浮島JCT",
             "zh-Hans" : "川崎浮岛 JCT"
           }
@@ -19122,11 +19190,11 @@
         "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.456.osm.82596770.33.forward",
-          "prompt_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.457.osm.783646149.0.forward.commit"
+          "prompt_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore.shuto.457.osm.783646149.0.forward.commit"
         },
         "frame_template" : {
           "decision_point_name_ja" : "川崎浮島JCT",
-          "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.457.osm.783646149.0.forward.decision-zone",
+          "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore.shuto.457.osm.783646149.0.forward.decision-zone",
           "lane_preparation" : "NONE",
           "localized_decision_point_names" : {
             "en" : "Kawasaki-Ukishima JCT",
@@ -19136,35 +19204,87 @@
           "maneuver" : "BRANCH_RIGHT",
           "movement_occurrence_id" : "shuto.457.osm.783646149.0.forward",
           "presentation_source" : {
+            "japanese_sign_text" : "東京・横浜",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "Keep Right for the Bayshore Route toward Tokyo or Yokohama",
+                "preserved_japanese_sign_text" : "東京・横浜",
+                "spoken_forms" : {
+                  "the Bayshore Route toward Tokyo or Yokohama" : "the Bayshore Route toward Tokyo or Yokohama"
+                },
+                "spoken_text" : "At Kawasaki-Ukishima JCT, keep right for the Bayshore Route toward Tokyo or Yokohama"
+              },
+              "ja-JP" : {
+                "display_text" : "右方向を保ち、湾岸線 東京・横浜方面へ",
+                "preserved_japanese_sign_text" : "東京・横浜",
+                "spoken_forms" : {
+                  "湾岸線 東京・横浜方面" : "湾岸線 東京・横浜方面"
+                },
+                "spoken_text" : "川崎浮島JCTでは右方向を保ち、湾岸線 東京・横浜方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "保持右侧，驶往 湾岸线东京、横滨方向",
+                "preserved_japanese_sign_text" : "東京・横浜",
+                "spoken_forms" : {
+                  "湾岸线东京、横滨方向" : "湾岸线东京、横滨方向"
+                },
+                "spoken_text" : "在川崎浮岛 JCT保持右侧，驶往 湾岸线东京、横滨方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "COMMIT"
+        },
+        "trigger_distance_meters" : 100
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "COMMIT",
+          "occurrence_id" : "shuto.492.osm.59613958.0.forward",
+          "prompt_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.493.osm.59613958.1.forward.commit"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "川崎浮島JCT",
+          "decision_zone_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound.shuto.493.osm.59613958.1.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kawasaki-Ukishima Junction",
+            "ja-JP" : "川崎浮島JCT",
+            "zh-Hans" : "川崎浮岛 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.493.osm.59613958.1.forward",
+          "presentation_source" : {
             "japanese_sign_text" : "横浜",
             "localized_content" : {
               "en" : {
-                "display_text" : "Keep Right for the Bayshore Route toward Yokohama",
+                "display_text" : "Branch Right for the Bayshore Route toward Yokohama",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "the Bayshore Route toward Yokohama" : "the Bayshore Route toward Yokohama"
                 },
-                "spoken_text" : "At Kawasaki-Ukishima JCT, keep right for the Bayshore Route toward Yokohama"
+                "spoken_text" : "At Kawasaki-Ukishima Junction, branch right for the Bayshore Route toward Yokohama"
               },
               "ja-JP" : {
-                "display_text" : "右方向を保ち、湾岸線 横浜方面へ",
+                "display_text" : "右方向へ分岐し、湾岸線 横浜方面へ",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "湾岸線 横浜方面" : "湾岸線 横浜方面"
                 },
-                "spoken_text" : "川崎浮島JCTでは右方向を保ち、湾岸線 横浜方面へ進んでください"
+                "spoken_text" : "川崎浮島JCTでは右方向へ分岐し、湾岸線 横浜方面へ進んでください"
               },
               "zh-Hans" : {
-                "display_text" : "保持右侧，驶往 湾岸线横滨方向",
+                "display_text" : "向右分岔，驶往 湾岸线横滨方向",
                 "preserved_japanese_sign_text" : "横浜",
                 "spoken_forms" : {
                   "湾岸线横滨方向" : "湾岸线横滨方向"
                 },
-                "spoken_text" : "在川崎浮岛 JCT保持右侧，驶往 湾岸线横滨方向"
+                "spoken_text" : "在川崎浮岛 JCT向右分岔，驶往 湾岸线横滨方向"
               }
             },
             "route_shields" : [
-              "K6",
               "B"
             ]
           },
@@ -22894,7 +23014,7 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "index" : 457,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.457.osm.783646149.0.forward",
@@ -23182,9 +23302,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "osm.59613958.1.forward",
+          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
           "index" : 493,
-          "kind" : "EDGE",
+          "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.493.osm.59613958.1.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -24227,7 +24347,7 @@
         },
         {
           "authority_name" : "Metropolitan Expressway Company Limited",
-          "checked_at" : "2026-08-11",
+          "checked_at" : "2026-08-15",
           "content_sha256" : "29eb925d30dec708acdc797dfc662d91769e80e18e80133b7c6f0bfbd2fba92c",
           "id" : "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
           "licence_identifier" : "OFFICIAL_REFERENCE",
@@ -24294,6 +24414,20 @@
             "GUIDANCE"
           ],
           "source_url" : "https:\/\/www.shutoko.jp\/-\/media\/images\/responsive\/customer\/use\/network\/jct\/routeguide\/jct_daishi"
+        },
+        {
+          "authority_name" : "Metropolitan Expressway Company Limited",
+          "checked_at" : "2026-08-15",
+          "content_sha256" : "29eb925d30dec708acdc797dfc662d91769e80e18e80133b7c6f0bfbd2fba92c",
+          "id" : "shutoko-guidance-shuto.jct.kawasaki.k6-outbound-to-bayshore",
+          "licence_identifier" : "OFFICIAL_REFERENCE",
+          "roles" : [
+            "DECISION_ZONE",
+            "EDITOR_CATALOG",
+            "EDITOR_PRESENTATION",
+            "GUIDANCE"
+          ],
+          "source_url" : "https:\/\/www.shutoko.jp\/-\/media\/images\/responsive\/customer\/use\/network\/jct\/routeguide\/jct_kawasaki"
         },
         {
           "authority_name" : "Metropolitan Expressway Company Limited",
@@ -44525,7 +44659,7 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "index" : 457,
           "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.457.osm.783646149.0.forward",
@@ -44813,9 +44947,9 @@
           "toll_domain_id" : "shuto.toll-domain"
         },
         {
-          "entity_id" : "osm.59613958.1.forward",
+          "entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
           "index" : 493,
-          "kind" : "EDGE",
+          "kind" : "JUNCTION_MOVEMENT",
           "occurrence_id" : "shuto.493.osm.59613958.1.forward",
           "optional" : false,
           "toll_domain_id" : "shuto.toll-domain"
@@ -49456,7 +49590,7 @@
         {
           "edge_id" : "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.457",
           "from_node_id" : "osm.node.36421538",
-          "route_entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+          "route_entity_id" : "shuto.jct.kawasaki.k6-outbound-to-bayshore",
           "successor_edge_ids" : [
             "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.458"
           ],
@@ -49780,7 +49914,7 @@
         {
           "edge_id" : "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.493",
           "from_node_id" : "osm.node.739475888",
-          "route_entity_id" : "osm.59613958.1.forward",
+          "route_entity_id" : "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
           "successor_edge_ids" : [
             "daikoku-yokohama-wangankanpachi-daikokufutou.topology.edge.494"
           ],

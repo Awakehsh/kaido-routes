@@ -63,6 +63,36 @@ public enum ShutoOperationalBranchCatalog {
         "https://www.shutoko.jp/-/media/images/responsive/"
         + "customer/use/network/jct/routeguide/jct_daishi"
     ),
+    ShutoReviewedSurfaceExitBranch(
+      id: "shuto.exit.hakozaki-rotary.from-6-inbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionNodeID: 565_479_944,
+      incomingDirectedEdgeID: "osm.1544854470.2.forward",
+      startDirectedEdgeID: "osm.766719786.0.forward",
+      terminalDirectedEdgeID: "osm.157249387.3.forward",
+      exitNameJapanese: "箱崎出口・箱崎PA",
+      effectiveAt: "2026-08-15T00:00:00+09:00",
+      checkedAt: "2026-08-15",
+      officialSourceURL:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki"
+    ),
+    ShutoReviewedSurfaceExitBranch(
+      id: "shuto.exit.hakozaki-rotary.from-6-outbound",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionNodeID: 1_694_598_897,
+      incomingDirectedEdgeID: "osm.1544832379.11.forward",
+      startDirectedEdgeID: "osm.157249374.0.forward",
+      terminalDirectedEdgeID: "osm.157249387.3.forward",
+      exitNameJapanese: "箱崎出口・箱崎PA",
+      effectiveAt: "2026-08-15T00:00:00+09:00",
+      checkedAt: "2026-08-15",
+      officialSourceURL:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki"
+    ),
   ]
 
   public static func reviewedSurfaceExitBranch(

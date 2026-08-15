@@ -121,16 +121,14 @@ unambiguously for that exact approach.
 
 Coverage today: both C1 catalog loops and the Bayshore corridor in both
 directions are reviewed at every junction where another route diverges from
-them. The junctions that remain unreviewed each failed a specific evidence
-test rather than merely awaiting work — a diagram whose signs are exit
-previews rather than a fork (Hakozaki), a junction where the through route is
-not the straight leg (Kohoku), pre-advisory signs that show every destination
-on a straight arrow so no leg is distinguished (Kosuge-Horikiri, Itabashi-
-Kumanocho, Kinko), and a junction where the operator publishes explicit
-per-approach lane advice that a no-lane prompt would under-serve (Namamugi).
-Movements that change route rather than continue on one need the diagram to
-show that branch treatment for that exact approach, which none of the
-remaining ones do yet.
+them. At Hakozaki, the Route 9 inbound split now binds the operator's separate
+C1 Ginza and Routes 6/7 arrows; the two Hakozaki rotary approaches are instead
+classified as exit/PA branches and never counted as expressway movements. The
+movements that remain unreviewed are at Namamugi, where the operator publishes
+explicit per-approach lane advice that a no-lane prompt would under-serve, and
+Yokohama Kohoku, where the through route is not the straight leg. A movement
+that changes route rather than continuing on one still requires the diagram to
+show the branch treatment for that exact approach.
 
 The route-first realignment accepted on 2026-08-03 prioritizes, in order:
 

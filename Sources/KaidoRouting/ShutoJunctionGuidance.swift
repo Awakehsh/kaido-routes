@@ -4217,6 +4217,73 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.hakozaki.9-inbound-toward-6-7",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 309_619_368,
+      incomingEdgeID: "osm.44806482.7.forward",
+      outgoingEdgeID: "osm.44804205.0.forward",
+      incomingRouteID: "9",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "6 東北道・常磐道 / 7 京葉道路",
+      routeShields: ["6", "E6", "7", "E14"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "6号向島線 東北道・常磐道、7号小松川線 京葉道路方面",
+      destinationZH: "6号向岛线 东北道・常磐道、7号小松川线 京叶道路方向",
+      destinationEN:
+        "Route 6 toward the Tohoku and Joban Expressways, "
+        + "or Route 7 toward the Keiyo Road",
+      commitTriggerDistanceMeters: 350,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+        "https://www.shutoko.jp/use/network/map/route-9/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.9-inbound-toward-c1-ginza",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 309_619_368,
+      incomingEdgeID: "osm.44806482.7.forward",
+      outgoingEdgeID: "osm.766721148.0.forward",
+      incomingRouteID: "9",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "都心環状 C1 銀座",
+      routeShields: ["C1"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "都心環状線 銀座方面",
+      destinationZH: "都心环状线 银座方向",
+      destinationEN: "the Inner Circular Route toward Ginza",
+      commitTriggerDistanceMeters: 350,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-9/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.hakozaki.6-outbound-to-9-primary",
       junctionID: "shuto.jct.jct_hakozaki",
       junctionNodeID: 568_090_177,

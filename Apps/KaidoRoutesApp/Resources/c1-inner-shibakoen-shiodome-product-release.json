@@ -267,6 +267,9 @@
       ],
       "entrances" : [
         {
+          "direct_route_occurrences" : [
+
+          ],
           "facility_id" : "shuto.ic.c1.shibakouen",
           "first_decision_point_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor.shuto.167.osm.1085022601.0.forward",
           "initial_edge_id" : "osm.861095931.3.forward",

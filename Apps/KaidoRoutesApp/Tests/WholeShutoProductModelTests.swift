@@ -555,8 +555,8 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     let database = try WholeShutoNetworkCatalog.bundled()
     let route = try ShutoRoutePlanner(database: database).plan(
-      entryFacilityID: "shuto.ic.7.ichinoe",
-      exitFacilityID: "shuto.ic.c1.ginza"
+      entryFacilityID: "shuto.ic.k1.yokohamakouen",
+      exitFacilityID: "shuto.ic.k7-yokohama-hokusei.yokohamaaoba"
     )
     let authority = WholeShutoRouteReleaseAuthority(database: database)
 

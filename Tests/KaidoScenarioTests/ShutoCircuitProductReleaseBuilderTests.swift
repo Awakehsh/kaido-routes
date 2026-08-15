@@ -212,6 +212,83 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("tracked foreground releases reproduce the current builders")
+  func trackedForegroundReleasesAreCurrent() throws {
+    let database = try loadDatabase()
+    let releases = [
+      (
+        appResource: "c1-inner-shibakoen-shiodome-product-release.json",
+        trackedResource:
+          "c1-inner-shibakoen-to-shiodome-product-release.json",
+        artifact: try ShutoCircuitProductReleaseBuilder.buildArtifact(
+          database: database
+        )
+      ),
+      (
+        appResource:
+          "wangan-westbound-chidoricho-daikokufutou-product-release.json",
+        trackedResource:
+          "wangan-westbound-chidoricho-daikokufutou-product-release.json",
+        artifact:
+          try ShutoCircuitProductReleaseBuilder.buildWanganArtifact(
+            database: database
+          )
+      ),
+      (
+        appResource:
+          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+        trackedResource:
+          "c2-inner-oujiminami-shikahamabashi-product-release.json",
+        artifact: try ShutoCircuitProductReleaseBuilder.buildC2Artifact(
+          database: database
+        )
+      ),
+      (
+        appResource:
+          "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json",
+        trackedResource:
+          "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json",
+        artifact:
+          try ShutoCircuitProductReleaseBuilder.buildDaikokuArtifact(
+            database: database
+          )
+      ),
+      (
+        appResource:
+          "scenic-harumi-daikokufutou-product-release.json",
+        trackedResource:
+          "scenic-harumi-daikokufutou-product-release.json",
+        artifact:
+          try ShutoCircuitProductReleaseBuilder.buildScenicArtifact(
+            database: database
+          )
+      ),
+    ]
+    let repositoryRoot = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+      .deletingLastPathComponent()
+
+    for release in releases {
+      let encoded = try KaidoProductReleaseArtifactCodec.encode(
+        release.artifact
+      )
+      let tracked = try Data(
+        contentsOf: repositoryRoot
+          .appendingPathComponent("data/product/releases")
+          .appendingPathComponent(release.trackedResource)
+      )
+      let bundled = try Data(
+        contentsOf: repositoryRoot
+          .appendingPathComponent("Apps/KaidoRoutesApp/Resources")
+          .appendingPathComponent(release.appResource)
+      )
+
+      #expect(tracked == encoded)
+      #expect(bundled == encoded)
+    }
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let databaseURL = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

@@ -399,6 +399,9 @@
       ],
       "entrances" : [
         {
+          "direct_route_occurrences" : [
+
+          ],
           "facility_id" : "shuto.ic.b.chidoricho",
           "first_decision_point_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor.shuto.88.osm.44129629.0.forward",
           "initial_edge_id" : "osm.915743994.0.forward",
@@ -18924,7 +18927,7 @@
         },
         {
           "authority_name" : "Metropolitan Expressway Company Limited",
-          "checked_at" : "2026-08-11",
+          "checked_at" : "2026-08-15",
           "content_sha256" : "29eb925d30dec708acdc797dfc662d91769e80e18e80133b7c6f0bfbd2fba92c",
           "id" : "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b",
           "licence_identifier" : "OFFICIAL_REFERENCE",

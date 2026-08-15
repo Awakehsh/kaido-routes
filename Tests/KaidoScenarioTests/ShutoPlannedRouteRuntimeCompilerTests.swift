@@ -20,10 +20,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 29)
-    #expect(coverage.incomingApproachCount == 83)
-    #expect(coverage.movements.count == 167)
-    #expect(coverage.releasedMovementCount == 144)
-    #expect(coverage.missingMovementReviewCount == 23)
+    #expect(coverage.incomingApproachCount == 81)
+    #expect(coverage.movements.count == 163)
+    #expect(coverage.releasedMovementCount == 146)
+    #expect(coverage.missingMovementReviewCount == 17)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -87,6 +87,44 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         $0.junctionNodeID != 448_041_015
           && $0.junctionNodeID != 3_817_775_796
       }
+    )
+
+    let hakozakiRotaryBranches =
+      ShutoOperationalBranchCatalog.reviewedSurfaceExitBranches.filter {
+        $0.exitNameJapanese == "箱崎出口・箱崎PA"
+      }
+    #expect(hakozakiRotaryBranches.count == 2)
+    #expect(
+      Set(hakozakiRotaryBranches.map(\.startDirectedEdgeID)) == [
+        "osm.766719786.0.forward",
+        "osm.157249374.0.forward",
+      ]
+    )
+    #expect(
+      hakozakiRotaryBranches.allSatisfy {
+        edgesByID[$0.incomingDirectedEdgeID]?.toNodeID
+          == $0.junctionNodeID
+          && edgesByID[$0.startDirectedEdgeID]?.fromNodeID
+            == $0.junctionNodeID
+          && edgesByID[$0.terminalDirectedEdgeID] != nil
+          && $0.officialSourceURL.hasSuffix("jct_hakozaki")
+      }
+    )
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.junctionNodeID != 565_479_944
+          && $0.junctionNodeID != 1_694_598_897
+      }
+    )
+    #expect(
+      Set(
+        coverage.movements.compactMap {
+          $0.releasedGuidanceDefinitionID == nil ? $0.junctionID : nil
+        }
+      ) == [
+        "shuto.jct.jct_namamugi",
+        "shuto.jct.jct_yokohamakohoku",
+      ]
     )
   }
 

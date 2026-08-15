@@ -1734,6 +1734,65 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Hakozaki Route 9 inbound split binds C1 and Routes 6/7")
+  func hakozakiRoute9InboundSplitBindsCurrentDestinations() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.44804205.0.forward",
+        "shuto.jct.hakozaki.9-inbound-toward-6-7",
+        .right,
+        "6 東北道・常磐道 / 7 京葉道路",
+        ["6", "E6", "7", "E14"]
+      ),
+      (
+        "osm.766721148.0.forward",
+        "shuto.jct.hakozaki.9-inbound-toward-c1-ginza",
+        .left,
+        "都心環状 C1 銀座",
+        ["C1"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges["osm.44806482.7.forward"])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 350)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "49f645e5cf96c1be9e7003e857d2cf4b"
+          + "aed0c502daaca7b7469c41d1e8f43373"
+      )
+      #expect(
+        definition.sources.contains {
+          $0.url == "https://www.shutoko.jp/use/safety/edobashi_hakozaki/"
+        }
+      )
+    }
+  }
+
   @Test("Hakozaki inbound split binds Ginza and Bayshore destinations")
   func hakozakiInboundSplitBindsCurrentDestinations() throws {
     let database = try loadDatabase()

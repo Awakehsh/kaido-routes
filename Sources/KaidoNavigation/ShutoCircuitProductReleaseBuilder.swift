@@ -284,10 +284,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       routePlanID: route.routePlan.id,
       entryTransition: EntryTransition(
         facilityID: route.entryFacility.facilityID,
-        directedEdgeIDs: [
-          entryApproach.edgeID,
-          route.edges[0].edgeID,
-        ],
+        directedEdgeIDs: entryApproach.transitionEdgeIDs,
         firstRouteOccurrenceID: route.routePlan.occurrences[0].id
       ),
       recoveryCandidates: [releaseRecovery],
@@ -529,7 +526,7 @@ public enum ShutoCircuitProductReleaseBuilder {
   }
 
   private struct ReleasedEntryApproach {
-    let edgeID: String
+    let transitionEdgeIDs: [String]
     let virtualMatcherEdge: RouteMatcherDirectedEdge?
   }
 
@@ -552,7 +549,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       }
     if let predecessor = predecessors.first {
       return ReleasedEntryApproach(
-        edgeID: predecessor.edgeID,
+        transitionEdgeIDs: [predecessor.edgeID, first.edgeID],
         virtualMatcherEdge: nil
       )
     }
@@ -574,27 +571,40 @@ public enum ShutoCircuitProductReleaseBuilder {
       && matchedRampDistance.map {
         $0.isFinite && $0 <= 250 && distance <= $0 + 25
       } == true
-    guard distance > 1, distance <= 75 || isBoundedMatchedRamp else {
+    if distance > 1, distance <= 75 || isBoundedMatchedRamp {
+      let virtualID =
+        "shutoko.entry.\(route.entryFacility.facilityID).approach.2026-08-15"
+      return ReleasedEntryApproach(
+        transitionEdgeIDs: [virtualID, first.edgeID],
+        virtualMatcherEdge: RouteMatcherDirectedEdge(
+          id: virtualID,
+          coordinates: [
+            MatcherCoordinate(
+              latitude: facilityCoordinate.latitude,
+              longitude: facilityCoordinate.longitude
+            ),
+            MatcherCoordinate(
+              latitude: nodeCoordinate.latitude,
+              longitude: nodeCoordinate.longitude
+            ),
+          ],
+          successorEdgeIDs: [first.edgeID]
+        )
+      )
+    }
+
+    // Some official facility coordinates identify the interchange rather
+    // than the start of the retained OSM ramp. A long straight virtual edge
+    // would create matcher authority across unrelated surface roads. When no
+    // graph predecessor exists, prove entry with the first two exact ordered
+    // RoutePlan edges instead; strict-route authority still targets the first
+    // occurrence and opens only after both directed matches are observed.
+    guard route.edges.count >= 2 else {
       throw ShutoCircuitProductReleaseBuilderError.missingEntryPredecessor
     }
-    let virtualID =
-      "shutoko.entry.\(route.entryFacility.facilityID).approach.2026-08-15"
     return ReleasedEntryApproach(
-      edgeID: virtualID,
-      virtualMatcherEdge: RouteMatcherDirectedEdge(
-        id: virtualID,
-        coordinates: [
-          MatcherCoordinate(
-            latitude: facilityCoordinate.latitude,
-            longitude: facilityCoordinate.longitude
-          ),
-          MatcherCoordinate(
-            latitude: nodeCoordinate.latitude,
-            longitude: nodeCoordinate.longitude
-          ),
-        ],
-        successorEdgeIDs: [first.edgeID]
-      )
+      transitionEdgeIDs: [first.edgeID, route.edges[1].edgeID],
+      virtualMatcherEdge: nil
     )
   }
 
@@ -644,7 +654,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       Set(assets.matcherCorridor.edges.map(\.id))
       .union(recovery.recoveryOccurrenceIDs)
     if entryApproach.virtualMatcherEdge == nil {
-      requiredIDs.insert(entryApproach.edgeID)
+      requiredIDs.formUnion(entryApproach.transitionEdgeIDs)
     }
     let edgesByID = Dictionary(
       uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }

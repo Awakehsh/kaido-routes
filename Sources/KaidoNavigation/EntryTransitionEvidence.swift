@@ -364,7 +364,15 @@ package enum EntryTransitionCorridorValidator {
       return Array(Set(issues)).sorted()
     }
 
-    if finalTransitionEdgeID != firstBinding.directedEdgeID,
+    let routeEdgeIDs = matcherCorridor.occurrences
+      .sorted { $0.index < $1.index }
+      .map(\.directedEdgeID)
+    let transitionUsesRoutePrefix =
+      transitionEdgeIDs.count <= routeEdgeIDs.count
+      && Array(routeEdgeIDs.prefix(transitionEdgeIDs.count))
+        == transitionEdgeIDs
+    if !transitionUsesRoutePrefix,
+      finalTransitionEdgeID != firstBinding.directedEdgeID,
       edgeByID[finalTransitionEdgeID]?.successorEdgeIDs.contains(
         firstBinding.directedEdgeID
       ) != true

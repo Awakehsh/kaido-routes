@@ -87,9 +87,10 @@ unique HIGH occurrence commit before progress. The seam cannot mint
 hash or a MapKit response. Neither the current planning location path nor replay
 supplies background-navigation or tunnel dead-reckoning authority.
 
-`ShutoJunctionGuidanceCompiler` contains 27 snapshot- and source-hash-bound
-movement definitions. They cover every divergent JCT on both C1 catalog loops
-and on the Bayshore corridor in both directions. Admission still requires
+`ShutoJunctionGuidanceCompiler` contains 91 snapshot- and source-hash-bound
+movement definitions. They cover every divergent JCT on the six bundled
+foreground routes and admit other exact plans only when their entire decision
+sequence is covered. Admission still requires
 the exact adjacent edges, shared JCT node, route direction, occurrence order,
 and operator-detail hash. The App may render and speak only the reviewed branch
 or continuation, Japanese sign target, and route shields. Lane indices remain
@@ -661,10 +662,13 @@ navigation. Every recovery candidate must identify an exact divergence
 occurrence and trigger directed edge, begin with that same edge, and rejoin a
 strictly later RoutePlan occurrence. Off-plan observations only select a
 candidate with the same trigger edge. The release gate additionally requires
-every transition edge to
-exist in the same matcher corridor, every consecutive pair to be an explicit
-successor, and the final transition edge to lead to the first RoutePlan
-occurrence binding. The internal app now owns a foreground-only synthetic
+every transition edge to exist in the same matcher corridor and every
+consecutive pair to be an explicit successor. The transition may end
+immediately before the first RoutePlan occurrence or use an exact prefix
+beginning with that occurrence. The prefix form avoids inventing a long
+straight virtual approach when the retained graph omits a surface predecessor;
+strict-route entry still requires HIGH, heading-valid matches on both ordered
+RoutePlan edges. The internal app now owns a foreground-only synthetic
 composition pipeline and an input-disconnected SwiftUI scene. The app model
 retains the `NavigationPresentationProjection` returned from the same atomic
 update used for speech scheduling. SwiftUI renders only that value; it does not

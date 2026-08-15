@@ -536,8 +536,8 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     let database = try WholeShutoNetworkCatalog.bundled()
     let route = try ShutoRoutePlanner(database: database).plan(
-      entryFacilityID: "shuto.ic.c1.ginza",
-      exitFacilityID: "shuto.ic.k1.minatomirai"
+      entryFacilityID: "shuto.ic.7.ichinoe",
+      exitFacilityID: "shuto.ic.c1.ginza"
     )
     let authority = WholeShutoRouteReleaseAuthority(database: database)
 
@@ -552,12 +552,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
-  func testOnDeviceRouteAuthorityAdmitsOiToHatsudaiThroughOhashi()
+  func testOnDeviceRouteAuthorityAdmitsRinkaiToHatsudaiWithoutPredecessor()
     throws
   {
     let database = try WholeShutoNetworkCatalog.bundled()
     let route = try ShutoRoutePlanner(database: database).plan(
-      entryFacilityID: "shuto.ic.b.ooi",
+      entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
       exitFacilityID: "shuto.ic.c2.hatsudaiminami"
     )
     let reconstructed = try ShutoRoutePlanner(database: database)
@@ -567,8 +567,18 @@ final class WholeShutoProductModelTests: XCTestCase {
       .buildPlannedRouteArtifact(
         database: database,
         route: reconstructed
-      )
+    )
     let release = try KaidoProductRelease(artifact: artifact)
+    XCTAssertEqual(
+      release.navigation.bundle.runtimePolicy.entryTransition
+        .directedEdgeIDs,
+      Array(route.edges.prefix(2).map(\.edgeID))
+    )
+    XCTAssertEqual(
+      release.navigation.bundle.runtimePolicy.entryTransition
+        .firstRouteOccurrenceID,
+      route.routePlan.occurrences.first?.id
+    )
     let core = try KaidoLiveJourneyAdmission(
       release: release,
       selectedRoutePlan: route.routePlan,

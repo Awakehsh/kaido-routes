@@ -2047,6 +2047,99 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Daishi movements exclude the two surface-exit loops")
+  func daishiMovementsExcludeSurfaceExitLoops() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.38093215.12.forward",
+        "osm.38093215.13.forward",
+        "shuto.jct.daishi.k1-outbound-stays-on-k1",
+        .left,
+        "横浜公園",
+        ["K1"]
+      ),
+      (
+        "osm.38093215.12.forward",
+        "osm.804932420.0.forward",
+        "shuto.jct.daishi.k1-outbound-to-k6-outbound",
+        .right,
+        "湾岸線・東京湾アクアライン",
+        ["K6", "B", "CA"]
+      ),
+      (
+        "osm.438360534.88.forward",
+        "osm.438360534.89.forward",
+        "shuto.jct.daishi.k1-inbound-stays-on-k1",
+        .straight,
+        "羽田",
+        ["K1"]
+      ),
+      (
+        "osm.438360534.88.forward",
+        "osm.38093185.0.forward",
+        "shuto.jct.daishi.k1-inbound-to-k6-outbound",
+        .left,
+        "湾岸線",
+        ["K6", "B"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "2888d66c9bb0f1edba8864802e5c91ce"
+          + "d93b34bc190527afa1a2f4e07ca7e7be"
+      )
+    }
+
+    for (incomingID, outgoingID) in [
+      ("osm.964816693.3.forward", "osm.82596771.0.forward"),
+      ("osm.82596772.7.forward", "osm.82596774.0.forward"),
+    ] {
+      let incoming = try #require(edges[incomingID])
+      let outgoing = try #require(edges[outgoingID])
+      #expect(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        ) == nil
+      )
+      #expect(
+        ShutoOperationalBranchCatalog.reviewedSurfaceExitBranch(
+          networkSnapshotID: database.networkSnapshotID,
+          startDirectedEdgeID: outgoingID
+        )?.exitNameJapanese == "大師出口"
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

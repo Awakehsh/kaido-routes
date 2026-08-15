@@ -32,7 +32,37 @@ public enum ShutoOperationalBranchCatalog {
       officialSourceURL:
         "https://www.shutoko.jp/traffic/control/blockinfo/"
         + "ndata/20250210_0904/"
-    )
+    ),
+    ShutoReviewedSurfaceExitBranch(
+      id: "shuto.exit.daishi.from-k6-north-loop",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionNodeID: 448_041_015,
+      incomingDirectedEdgeID: "osm.964816693.3.forward",
+      startDirectedEdgeID: "osm.82596771.0.forward",
+      terminalDirectedEdgeID: "osm.82596774.28.forward",
+      exitNameJapanese: "大師出口",
+      effectiveAt: "2026-08-15T00:00:00+09:00",
+      checkedAt: "2026-08-15",
+      officialSourceURL:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daishi"
+    ),
+    ShutoReviewedSurfaceExitBranch(
+      id: "shuto.exit.daishi.from-k6-south-loop",
+      networkSnapshotID:
+        "shuto-official-2026-07-29-osm-2026-08-04",
+      junctionNodeID: 3_817_775_796,
+      incomingDirectedEdgeID: "osm.82596772.7.forward",
+      startDirectedEdgeID: "osm.82596774.0.forward",
+      terminalDirectedEdgeID: "osm.82596774.28.forward",
+      exitNameJapanese: "大師出口",
+      effectiveAt: "2026-08-15T00:00:00+09:00",
+      checkedAt: "2026-08-15",
+      officialSourceURL:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daishi"
+    ),
   ]
 
   public static func reviewedSurfaceExitBranch(

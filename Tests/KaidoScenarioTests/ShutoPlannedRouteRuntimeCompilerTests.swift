@@ -20,10 +20,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
 
     #expect(coverage.networkSnapshotID == database.networkSnapshotID)
     #expect(coverage.junctionCount == 29)
-    #expect(coverage.incomingApproachCount == 85)
-    #expect(coverage.movements.count == 171)
-    #expect(coverage.releasedMovementCount == 118)
-    #expect(coverage.missingMovementReviewCount == 53)
+    #expect(coverage.incomingApproachCount == 83)
+    #expect(coverage.movements.count == 167)
+    #expect(coverage.releasedMovementCount == 120)
+    #expect(coverage.missingMovementReviewCount == 47)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -63,6 +63,31 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(edgesByID[eastGinzaExit.incomingDirectedEdgeID]?.toNodeID == eastGinzaExit.junctionNodeID)
     #expect(edgesByID[eastGinzaExit.startDirectedEdgeID]?.fromNodeID == eastGinzaExit.junctionNodeID)
     #expect(edgesByID[eastGinzaExit.terminalDirectedEdgeID] != nil)
+
+    let daishiExitBranches =
+      ShutoOperationalBranchCatalog.reviewedSurfaceExitBranches.filter {
+        $0.exitNameJapanese == "大師出口"
+      }
+    #expect(daishiExitBranches.count == 2)
+    #expect(
+      Set(daishiExitBranches.map(\.startDirectedEdgeID)) == [
+        "osm.82596771.0.forward",
+        "osm.82596774.0.forward",
+      ]
+    )
+    #expect(
+      daishiExitBranches.allSatisfy {
+        edgesByID[$0.startDirectedEdgeID] != nil
+          && edgesByID[$0.terminalDirectedEdgeID] != nil
+          && $0.officialSourceURL.hasSuffix("jct_daishi")
+      }
+    )
+    #expect(
+      coverage.movements.allSatisfy {
+        $0.junctionNodeID != 448_041_015
+          && $0.junctionNodeID != 3_817_775_796
+      }
+    )
   }
 
   @Test("compiler preserves every selected edge occurrence and legal branch")
@@ -443,6 +468,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.k1.minatomirai", "shuto.ic.k3.hananoki"),
       ("shuto.ic.k3.shinyamashita", "shuto.ic.k1.minatomirai"),
       ("shuto.ic.k3.hananoki", "shuto.ic.k3.shinyamashita"),
+      ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
+      ("shuto.ic.k6.daishi", "shuto.ic.k1.hamakawasaki"),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {

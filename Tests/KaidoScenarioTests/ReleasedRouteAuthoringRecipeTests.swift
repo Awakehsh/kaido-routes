@@ -2,6 +2,68 @@ import KaidoDomain
 import KaidoRouting
 import Testing
 
+@Test("Released authoring preserves an exact route with no junction decisions")
+func releasedAuthoringReplaysDirectRoute() throws {
+  let routePlan = RoutePlan(
+    id: "test.plan.direct",
+    networkSnapshotID: "test.snapshot.direct",
+    entryFacilityID: "test.entrance.direct",
+    exitFacilityID: "test.exit.direct",
+    recoveryPolicy: .safeRejoin,
+    occurrences: [
+      releasedOccurrence("test.occurrence.direct-0", 0, .edge, "test.edge.direct-0"),
+      releasedOccurrence("test.occurrence.direct-1", 1, .edge, "test.edge.direct-1"),
+    ]
+  )
+  let catalog = ReviewedRouteEditorCatalog(
+    networkSnapshotID: routePlan.networkSnapshotID,
+    entrances: [
+      ReviewedRouteEditorEntrance(
+        facilityID: routePlan.entryFacilityID,
+        initialEdgeID: "test.edge.direct-0",
+        initialEdgeTollDomainID: "test.toll",
+        directExitFacilityID: routePlan.exitFacilityID,
+        directRouteOccurrences: routePlan.occurrences
+      )
+    ],
+    decisionPoints: []
+  )
+
+  #expect(catalog.validationIssues.isEmpty)
+  let recipe = try ReleasedRouteAuthoringRecipe(
+    routePlan: routePlan,
+    editorCatalog: catalog
+  )
+  #expect(recipe.steps.isEmpty)
+
+  let session = try recipe.makeSession(interaction: .parked)
+  #expect(session.snapshot.state == .finished)
+  #expect(session.snapshot.selectedExitFacilityID == routePlan.exitFacilityID)
+  #expect(session.snapshot.occurrences == routePlan.occurrences)
+  #expect(try recipe.compile(session: session, interaction: .parked) == routePlan)
+
+  var driftedOccurrences = routePlan.occurrences
+  driftedOccurrences[1] = releasedOccurrence(
+    "test.occurrence.direct-1",
+    1,
+    .edge,
+    "test.edge.unreleased"
+  )
+  #expect(
+    throws: ReleasedRouteAuthoringError.destinationMismatch(
+      "test.occurrence.direct-0"
+    )
+  ) {
+    try ReleasedRouteAuthoringRecipe(
+      routePlan: replacingOccurrences(
+        in: routePlan,
+        with: driftedOccurrences
+      ),
+      editorCatalog: catalog
+    )
+  }
+}
+
 @Test("Released authoring preserves repeated occurrences and restores reviewed distance")
 func releasedAuthoringReplaysExactOccurrencePlan() throws {
   let fixture = releasedAuthoringFixture()

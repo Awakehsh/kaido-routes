@@ -164,7 +164,9 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
   public let facilityID: String
   public let initialEdgeID: String
   public let initialEdgeTollDomainID: String
-  public let firstDecisionPointID: String
+  public let firstDecisionPointID: String?
+  public let directExitFacilityID: String?
+  public let directRouteOccurrences: [RouteOccurrence]
 
   public init(
     facilityID: String,
@@ -176,6 +178,23 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     self.initialEdgeID = initialEdgeID
     self.initialEdgeTollDomainID = initialEdgeTollDomainID
     self.firstDecisionPointID = firstDecisionPointID
+    directExitFacilityID = nil
+    directRouteOccurrences = []
+  }
+
+  public init(
+    facilityID: String,
+    initialEdgeID: String,
+    initialEdgeTollDomainID: String,
+    directExitFacilityID: String,
+    directRouteOccurrences: [RouteOccurrence]
+  ) {
+    self.facilityID = facilityID
+    self.initialEdgeID = initialEdgeID
+    self.initialEdgeTollDomainID = initialEdgeTollDomainID
+    firstDecisionPointID = nil
+    self.directExitFacilityID = directExitFacilityID
+    self.directRouteOccurrences = directRouteOccurrences
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -183,6 +202,31 @@ public struct ReviewedRouteEditorEntrance: Codable, Equatable, Sendable {
     case initialEdgeID = "initial_edge_id"
     case initialEdgeTollDomainID = "initial_edge_toll_domain_id"
     case firstDecisionPointID = "first_decision_point_id"
+    case directExitFacilityID = "direct_exit_facility_id"
+    case directRouteOccurrences = "direct_route_occurrences"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    facilityID = try container.decode(String.self, forKey: .facilityID)
+    initialEdgeID = try container.decode(String.self, forKey: .initialEdgeID)
+    initialEdgeTollDomainID = try container.decode(
+      String.self,
+      forKey: .initialEdgeTollDomainID
+    )
+    firstDecisionPointID = try container.decodeIfPresent(
+      String.self,
+      forKey: .firstDecisionPointID
+    )
+    directExitFacilityID = try container.decodeIfPresent(
+      String.self,
+      forKey: .directExitFacilityID
+    )
+    directRouteOccurrences =
+      try container.decodeIfPresent(
+        [RouteOccurrence].self,
+        forKey: .directRouteOccurrences
+      ) ?? []
   }
 }
 
@@ -261,7 +305,11 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
       issues.append("network snapshot ID is empty")
     }
     if entrances.isEmpty { issues.append("editor entrances are empty") }
-    if decisionPoints.isEmpty { issues.append("editor decision points are empty") }
+    if decisionPoints.isEmpty,
+      entrances.contains(where: { $0.firstDecisionPointID != nil })
+    {
+      issues.append("editor decision points are empty")
+    }
 
     let entranceIDs = entrances.map(\.facilityID)
     if Set(entranceIDs).count != entranceIDs.count {
@@ -278,12 +326,53 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
         entrance.facilityID,
         entrance.initialEdgeID,
         entrance.initialEdgeTollDomainID,
-        entrance.firstDecisionPointID,
       ].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
         issues.append("editor entrance contains an empty identifier")
       }
-      if !decisionPointIDSet.contains(entrance.firstDecisionPointID) {
-        issues.append("editor entrance references an unknown decision point")
+      switch (entrance.firstDecisionPointID, entrance.directExitFacilityID) {
+      case (.some(let firstDecisionPointID), .none):
+        if firstDecisionPointID.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty {
+          issues.append("editor entrance contains an empty identifier")
+        }
+        if !decisionPointIDSet.contains(firstDecisionPointID) {
+          issues.append("editor entrance references an unknown decision point")
+        }
+        if !entrance.directRouteOccurrences.isEmpty {
+          issues.append("decision-based editor entrance contains a direct route")
+        }
+      case (.none, .some(let directExitFacilityID)):
+        if directExitFacilityID.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty {
+          issues.append("editor direct exit facility ID is empty")
+        }
+        let occurrences = entrance.directRouteOccurrences
+        if occurrences.isEmpty {
+          issues.append("editor direct route occurrences are empty")
+          break
+        }
+        if occurrences.map(\.index) != Array(0..<occurrences.count)
+          || Set(occurrences.map(\.id)).count != occurrences.count
+        {
+          issues.append("editor direct route occurrence identity is invalid")
+        }
+        if occurrences.first?.entityID != entrance.initialEdgeID
+          || occurrences.first?.tollDomainID
+            != entrance.initialEdgeTollDomainID
+        {
+          issues.append("editor direct route does not start at its entrance")
+        }
+        if occurrences.contains(where: {
+          $0.kind != .edge || $0.parkingAreaID != nil || $0.isOptional
+        }) {
+          issues.append("editor direct route contains a non-edge occurrence")
+        }
+      default:
+        issues.append(
+          "editor entrance must reference one decision point or one direct exit"
+        )
       }
     }
 
@@ -349,12 +438,16 @@ public struct ReviewedRouteEditorCatalog: Codable, Equatable, Sendable {
         issues.append("editor lap template does not form a reviewed closed sequence")
       }
     }
-    for entrance in entrances
-    where !hasReachableExit(
-      from: entrance.firstDecisionPointID,
-      decisionPoints: decisionPoints
-    ) {
-      issues.append("editor entrance has no reachable exit")
+    for entrance in entrances {
+      guard let firstDecisionPointID = entrance.firstDecisionPointID else {
+        continue
+      }
+      if !hasReachableExit(
+        from: firstDecisionPointID,
+        decisionPoints: decisionPoints
+      ) {
+        issues.append("editor entrance has no reachable exit")
+      }
     }
     return Array(Set(issues)).sorted()
   }
@@ -530,19 +623,30 @@ public struct ExpertRouteEditorSession: Sendable {
     self.routePlanID = routePlanID
     self.entranceFacilityID = entranceFacilityID
     self.recoveryPolicy = recoveryPolicy
-    currentDecisionPointID = entrance.firstDecisionPointID
-    selectedExitFacilityID = nil
-    occurrences = [
-      RouteOccurrence(
-        id: initialOccurrenceID,
-        index: 0,
-        kind: .edge,
-        entityID: entrance.initialEdgeID,
-        tollDomainID: entrance.initialEdgeTollDomainID
-      )
-    ]
     history = []
-    state = .editing
+    if let directExitFacilityID = entrance.directExitFacilityID {
+      guard entrance.directRouteOccurrences.first?.id == initialOccurrenceID
+      else {
+        throw ExpertRouteEditorError.invalidIdentifier
+      }
+      currentDecisionPointID = nil
+      selectedExitFacilityID = directExitFacilityID
+      occurrences = entrance.directRouteOccurrences
+      state = .finished
+    } else {
+      currentDecisionPointID = entrance.firstDecisionPointID
+      selectedExitFacilityID = nil
+      occurrences = [
+        RouteOccurrence(
+          id: initialOccurrenceID,
+          index: 0,
+          kind: .edge,
+          entityID: entrance.initialEdgeID,
+          tollDomainID: entrance.initialEdgeTollDomainID
+        )
+      ]
+      state = .editing
+    }
   }
 
   public var snapshot: ExpertRouteEditorSnapshot {

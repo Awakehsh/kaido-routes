@@ -115,7 +115,25 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     }
 
     let occurrences = routePlan.occurrences
-    var currentDecisionPointID = entrance.firstDecisionPointID
+    if let directExitFacilityID = entrance.directExitFacilityID {
+      guard directExitFacilityID == routePlan.exitFacilityID,
+        entrance.directRouteOccurrences == occurrences
+      else {
+        throw ReleasedRouteAuthoringError.destinationMismatch(
+          initialOccurrence.id
+        )
+      }
+      self.routePlan = routePlan
+      self.editorCatalog = editorCatalog
+      steps = []
+      return
+    }
+    guard let firstDecisionPointID = entrance.firstDecisionPointID else {
+      throw ReleasedRouteAuthoringError.invalidEditorCatalog(
+        editorCatalog.validationIssues
+      )
+    }
+    var currentDecisionPointID = firstDecisionPointID
     var resolvedSteps: [ReleasedRouteAuthoringStep] = []
     var offset = 1
     while offset < occurrences.count {
@@ -298,11 +316,15 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     let releasedByID = Dictionary(
       uniqueKeysWithValues: released.occurrences.map { ($0.id, $0) }
     )
-    let expectedOccurrenceIDs =
-      [released.occurrences[0].id]
-      + steps.flatMap {
-        [$0.movementOccurrenceID, $0.outgoingEdgeOccurrenceID]
-      }
+    let expectedOccurrenceIDs: [String]
+    if steps.isEmpty {
+      expectedOccurrenceIDs = released.occurrences.map(\.id)
+    } else {
+      expectedOccurrenceIDs = [released.occurrences[0].id]
+        + steps.flatMap {
+          [$0.movementOccurrenceID, $0.outgoingEdgeOccurrenceID]
+        }
+    }
     guard authored.occurrences.count == expectedOccurrenceIDs.count else {
       return false
     }

@@ -403,9 +403,6 @@ public enum ShutoCircuitProductReleaseBuilder {
     reviewedMovements: [ReviewedMovement],
     releaseKey: String
   ) throws -> EditorAssets {
-    guard let first = reviewedMovements.first else {
-      throw ShutoCircuitProductReleaseBuilderError.unsupportedCircuit
-    }
     func decisionID(_ movement: ReviewedMovement) -> String {
       "\(route.routePlan.id).editor.\(movement.occurrence.id)"
     }
@@ -414,17 +411,28 @@ public enum ShutoCircuitProductReleaseBuilder {
     ) -> RouteEditorLocalizedText {
       RouteEditorLocalizedText(values: values)
     }
+    let entrance: ReviewedRouteEditorEntrance
+    if let first = reviewedMovements.first {
+      entrance = ReviewedRouteEditorEntrance(
+        facilityID: route.entryFacility.facilityID,
+        initialEdgeID: route.routePlan.occurrences[0].entityID,
+        initialEdgeTollDomainID:
+          route.routePlan.occurrences[0].tollDomainID!,
+        firstDecisionPointID: decisionID(first)
+      )
+    } else {
+      entrance = ReviewedRouteEditorEntrance(
+        facilityID: route.entryFacility.facilityID,
+        initialEdgeID: route.routePlan.occurrences[0].entityID,
+        initialEdgeTollDomainID:
+          route.routePlan.occurrences[0].tollDomainID!,
+        directExitFacilityID: route.exitFacility.facilityID,
+        directRouteOccurrences: route.routePlan.occurrences
+      )
+    }
     let catalog = ReviewedRouteEditorCatalog(
       networkSnapshotID: database.networkSnapshotID,
-      entrances: [
-        ReviewedRouteEditorEntrance(
-          facilityID: route.entryFacility.facilityID,
-          initialEdgeID: route.routePlan.occurrences[0].entityID,
-          initialEdgeTollDomainID:
-            route.routePlan.occurrences[0].tollDomainID!,
-          firstDecisionPointID: decisionID(first)
-        )
-      ],
+      entrances: [entrance],
       decisionPoints: reviewedMovements.enumerated().map { offset, movement in
         ReviewedRouteEditorDecisionPoint(
           id: decisionID(movement),

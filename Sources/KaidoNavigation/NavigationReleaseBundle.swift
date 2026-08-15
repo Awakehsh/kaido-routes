@@ -258,12 +258,15 @@ public struct NavigationReleaseBundle: Equatable, Sendable {
     } else {
       issues.append(.unknownRouteEntrance)
     }
-    let catalogExitIDs = Set<String>(
+    let decisionExitIDs =
       editorCatalog.decisionPoints.flatMap(\.choices).compactMap { choice -> String? in
         guard case .exitFacility(let id) = choice.destination else { return nil }
         return id
       }
+    let directExitIDs = editorCatalog.entrances.compactMap(
+      \.directExitFacilityID
     )
+    let catalogExitIDs = Set(decisionExitIDs + directExitIDs)
     if !catalogExitIDs.contains(routePlan.exitFacilityID) {
       issues.append(.unknownRouteExit)
     }

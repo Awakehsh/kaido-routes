@@ -1197,6 +1197,36 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.daishi.k1-inbound-stays-on-k1",
+      junctionID: "shuto.jct.jct_daishi",
+      junctionNodeID: 448_041_038,
+      incomingEdgeID: "osm.438360534.88.forward",
+      outgoingEdgeID: "osm.438360534.89.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "大師JCT",
+      junctionNameZH: "大师 JCT",
+      junctionNameEN: "Daishi JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      expectedJunctionDetailSHA256:
+        "2888d66c9bb0f1edba8864802e5c91ce"
+        + "d93b34bc190527afa1a2f4e07ca7e7be",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daishi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k6/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
       junctionID: "shuto.jct.jct_kawasaki",
       junctionNodeID: 36_421_538,
@@ -1349,6 +1379,37 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 横浜公園方面",
       destinationZH: "K1 横羽线横浜公園方向",
       destinationEN: "Route K1 toward Yokohama-koen",
+      expectedJunctionDetailSHA256:
+        "2888d66c9bb0f1edba8864802e5c91ce"
+        + "d93b34bc190527afa1a2f4e07ca7e7be",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daishi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.daishi.k1-outbound-to-k6-outbound",
+      junctionID: "shuto.jct.jct_daishi",
+      junctionNodeID: 273_330_999,
+      incomingEdgeID: "osm.38093215.12.forward",
+      outgoingEdgeID: "osm.804932420.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "湾岸線・東京湾アクアライン",
+      routeShields: ["K6", "B", "CA"],
+      junctionNameJA: "大師JCT",
+      junctionNameZH: "大师 JCT",
+      junctionNameEN: "Daishi JCT",
+      destinationJA: "K6 川崎線 湾岸線・東京湾アクアライン方面",
+      destinationZH: "K6 川崎线湾岸线・东京湾跨海公路方向",
+      destinationEN:
+        "Route K6 toward the Bayshore Route and Tokyo Bay Aqua-Line",
       expectedJunctionDetailSHA256:
         "2888d66c9bb0f1edba8864802e5c91ce"
         + "d93b34bc190527afa1a2f4e07ca7e7be",

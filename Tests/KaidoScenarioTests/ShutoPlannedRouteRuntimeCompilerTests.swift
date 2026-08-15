@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 29)
     #expect(coverage.incomingApproachCount == 85)
     #expect(coverage.movements.count == 171)
-    #expect(coverage.releasedMovementCount == 101)
-    #expect(coverage.missingMovementReviewCount == 70)
+    #expect(coverage.releasedMovementCount == 103)
+    #expect(coverage.missingMovementReviewCount == 68)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -435,6 +435,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.b.ooi", "shuto.ic.b.urayasu"),
       ("shuto.ic.c2.hatsudaiminami", "shuto.ic.b.urayasu"),
       ("shuto.ic.c1.shibakouen", "shuto.ic.6-mukojima.komagata"),
+      ("shuto.ic.6-mukojima.komagata", "shuto.ic.c1.ginza"),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {

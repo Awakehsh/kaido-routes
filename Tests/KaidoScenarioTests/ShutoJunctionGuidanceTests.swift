@@ -1734,6 +1734,60 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Hakozaki inbound split binds Ginza and Bayshore destinations")
+  func hakozakiInboundSplitBindsCurrentDestinations() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.44804206.0.forward",
+        "shuto.jct.hakozaki.6-inbound-to-9-outbound",
+        .left,
+        "湾岸線・東関東道",
+        ["9", "B"]
+      ),
+      (
+        "osm.876405654.0.forward",
+        "shuto.jct.hakozaki.6-inbound-toward-ginza",
+        .right,
+        "銀座",
+        ["C1"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges["osm.1544854472.1.forward"])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 300)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "49f645e5cf96c1be9e7003e857d2cf4b"
+          + "aed0c502daaca7b7469c41d1e8f43373"
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

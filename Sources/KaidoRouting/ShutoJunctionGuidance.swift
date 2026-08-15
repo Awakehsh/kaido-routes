@@ -3047,6 +3047,69 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-7/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.6-inbound-to-9-outbound",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 565_480_310,
+      incomingEdgeID: "osm.1544854472.1.forward",
+      outgoingEdgeID: "osm.44804206.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "湾岸線・東関東道",
+      routeShields: ["9", "B"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "9号深川線 湾岸線・東関東道方面",
+      destinationZH: "9号深川线 湾岸线・东关东道方向",
+      destinationEN: "Route 9 toward the Bayshore Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-9/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.6-inbound-toward-ginza",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 565_480_310,
+      incomingEdgeID: "osm.1544854472.1.forward",
+      outgoingEdgeID: "osm.876405654.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "銀座",
+      routeShields: ["C1"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "都心環状線 銀座方面",
+      destinationZH: "都心环状线 银座方向",
+      destinationEN: "the Inner Circular Route toward Ginza",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-westbound-stays-on-b",
       networkSnapshotID:

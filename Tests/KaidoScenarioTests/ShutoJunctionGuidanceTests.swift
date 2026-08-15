@@ -1788,6 +1788,87 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Nishi-shinjuku movements bind every current operator sign")
+  func nishiShinjukuMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.848042057.4.forward",
+        "osm.26956960.0.forward",
+        "shuto.jct.nishishinjuku.4-inbound-to-c2",
+        .left,
+        "湾岸線・東北道",
+        ["C2", "5", "E4"]
+      ),
+      (
+        "osm.848042057.4.forward",
+        "osm.848042056.0.forward",
+        "shuto.jct.nishishinjuku.4-inbound-stays-on-4",
+        .right,
+        "新宿出口・都心環状",
+        ["4", "C1"]
+      ),
+      (
+        "osm.190617333.53.forward",
+        "osm.28127106.0.forward",
+        "shuto.jct.nishishinjuku.c2-inner-to-4-outbound",
+        .right,
+        "高井戸・中央道",
+        ["4", "E20"]
+      ),
+      (
+        "osm.863812380.3.forward",
+        "osm.381972984.0.forward",
+        "shuto.jct.nishishinjuku.c2-outer-to-4-outbound",
+        .right,
+        "高井戸・中央道",
+        ["4", "E20"]
+      ),
+      (
+        "osm.863812380.3.forward",
+        "osm.863812381.0.forward",
+        "shuto.jct.nishishinjuku.c2-outer-stays-on-c2",
+        .straight,
+        "西池袋・東北道",
+        ["C2", "5", "E4"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 300)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "377261189835d54ed378c7c5487cebf6"
+          + "c108a411449dad525dd975da6e9d1c20"
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

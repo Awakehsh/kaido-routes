@@ -887,6 +887,161 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.nishishinjuku.4-inbound-to-c2",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 267_805_268,
+      incomingEdgeID: "osm.848042057.4.forward",
+      outgoingEdgeID: "osm.26956960.0.forward",
+      incomingRouteID: "4",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "湾岸線・東北道",
+      routeShields: ["C2", "5", "E4"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "C2 湾岸線・東北道方面",
+      destinationZH: "C2 湾岸线・东北道方向",
+      destinationEN: "C2 toward the Bayshore Route and Tohoku Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-4/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.nishishinjuku.4-inbound-stays-on-4",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 267_805_268,
+      incomingEdgeID: "osm.848042057.4.forward",
+      outgoingEdgeID: "osm.848042056.0.forward",
+      incomingRouteID: "4",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "新宿出口・都心環状",
+      routeShields: ["4", "C1"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "4号新宿線 新宿出口・都心環状線方面",
+      destinationZH: "4号新宿线 新宿出口・都心环状线方向",
+      destinationEN: "Route 4 toward Shinjuku and the Inner Circular Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-4/",
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.nishishinjuku.c2-inner-to-4-outbound",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 308_925_199,
+      incomingEdgeID: "osm.190617333.53.forward",
+      outgoingEdgeID: "osm.28127106.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "高井戸・中央道",
+      routeShields: ["4", "E20"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "4号新宿線 高井戸・中央道方面",
+      destinationZH: "4号新宿线 高井户・中央道方向",
+      destinationEN: "Route 4 toward Takaido and the Chuo Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-4/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.nishishinjuku.c2-outer-to-4-outbound",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 3_851_809_274,
+      incomingEdgeID: "osm.863812380.3.forward",
+      outgoingEdgeID: "osm.381972984.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "4",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "高井戸・中央道",
+      routeShields: ["4", "E20"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "4号新宿線 高井戸・中央道方面",
+      destinationZH: "4号新宿线 高井户・中央道方向",
+      destinationEN: "Route 4 toward Takaido and the Chuo Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-4/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.nishishinjuku.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_nishishinjuku",
+      junctionNodeID: 3_851_809_274,
+      incomingEdgeID: "osm.863812380.3.forward",
+      outgoingEdgeID: "osm.863812381.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "西池袋・東北道",
+      routeShields: ["C2", "5", "E4"],
+      junctionNameJA: "西新宿JCT",
+      junctionNameZH: "西新宿 JCT",
+      junctionNameEN: "Nishi-shinjuku JCT",
+      destinationJA: "C2 西池袋・東北道方面",
+      destinationZH: "C2 西池袋・东北道方向",
+      destinationEN: "C2 toward Nishi-ikebukuro and the Tohoku Expressway",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "377261189835d54ed378c7c5487cebf6"
+        + "c108a411449dad525dd975da6e9d1c20",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_nishishinjuku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.daikoku.b-westbound-to-k5-inbound",
       junctionID: "shuto.jct.jct_daikoku",
       junctionNodeID: 157_941_466,

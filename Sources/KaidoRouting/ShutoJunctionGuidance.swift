@@ -1450,7 +1450,7 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
-      id: "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+      id: "shuto.jct.kawasaki.k6-outbound-to-bayshore",
       junctionID: "shuto.jct.jct_kawasaki",
       junctionNodeID: 36_421_538,
       incomingEdgeID: "osm.82596770.33.forward",
@@ -1495,17 +1495,105 @@ public enum ShutoJunctionMovementCatalog {
         "osm.783646149.33.forward",
         "osm.783646149.34.forward",
         "osm.59613958.0.forward",
-        "osm.59613958.1.forward",
       ],
       branchSide: .right,
       maneuverJA: "右方向を保ち",
       maneuverZH: "保持右侧",
       maneuverEN: "keep right",
-      japaneseSignText: "横浜",
-      routeShields: ["K6", "B"],
+      japaneseSignText: "東京・横浜",
+      routeShields: ["B"],
       junctionNameJA: "川崎浮島JCT",
       junctionNameZH: "川崎浮岛 JCT",
       junctionNameEN: "Kawasaki-Ukishima JCT",
+      destinationJA: "湾岸線 東京・横浜方面",
+      destinationZH: "湾岸线东京、横滨方向",
+      destinationEN: "the Bayshore Route toward Tokyo or Yokohama",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k6/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.k6-outbound-to-aqualine",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 36_421_538,
+      incomingEdgeID: "osm.82596770.33.forward",
+      outgoingEdgeID: "osm.783649669.0.forward",
+      incomingRouteID: "K6",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K6",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      japaneseSignText: "アクアライン・木更津",
+      routeShields: ["CA"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
+      destinationJA: "東京湾アクアライン 木更津方面",
+      destinationZH: "东京湾 Aqua-Line 木更津方向",
+      destinationEN: "the Tokyo Bay Aqua-Line toward Kisarazu",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k6/"
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.k6-outbound-to-b-eastbound",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 739_475_888,
+      incomingEdgeID: "osm.59613958.0.forward",
+      outgoingEdgeID: "osm.5208415.0.forward",
+      incomingRouteID: "K6",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .left,
+      japaneseSignText: "東京",
+      routeShields: ["B"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
+      destinationJA: "湾岸線 東京方面",
+      destinationZH: "湾岸线东京方向",
+      destinationEN: "the Bayshore Route toward Tokyo",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k6/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 739_475_888,
+      incomingEdgeID: "osm.59613958.0.forward",
+      outgoingEdgeID: "osm.59613958.1.forward",
+      incomingRouteID: "K6",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K6",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "横浜",
+      routeShields: ["B"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
       destinationJA: "湾岸線 横浜方面",
       destinationZH: "湾岸线横滨方向",
       destinationEN: "the Bayshore Route toward Yokohama",
@@ -1518,6 +1606,95 @@ public enum ShutoJunctionMovementCatalog {
       additionalSources: [
         "https://www.shutoko.jp/use/network/map/route-k6/",
         "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.b-eastbound-stays-on-b",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 36_421_509,
+      incomingEdgeID: "osm.5204845.0.forward",
+      outgoingEdgeID: "osm.5204845.1.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .straight,
+      japaneseSignText: "東京・空港中央",
+      routeShields: ["B", "1", "11"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
+      destinationJA: "湾岸線 東京・空港中央方面",
+      destinationZH: "湾岸线东京、空港中央方向",
+      destinationEN: "the Bayshore Route toward Tokyo and Haneda Airport",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/"
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.b-eastbound-to-k6",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 36_421_509,
+      incomingEdgeID: "osm.5204845.0.forward",
+      outgoingEdgeID: "osm.5212953.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "K6",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "川崎・木更津",
+      routeShields: ["K6", "CA"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
+      destinationJA: "K6 川崎線・東京湾アクアライン方面",
+      destinationZH: "K6 川崎线、东京湾 Aqua-Line 方向",
+      destinationEN: "Route K6 or the Tokyo Bay Aqua-Line",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-k6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kawasaki.b-westbound-to-k6",
+      junctionID: "shuto.jct.jct_kawasaki",
+      junctionNodeID: 739_475_893,
+      incomingEdgeID: "osm.5204788.17.forward",
+      outgoingEdgeID: "osm.5212959.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "西行き",
+      outgoingRouteID: "K6",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "川崎",
+      routeShields: ["K6"],
+      junctionNameJA: "川崎浮島JCT",
+      junctionNameZH: "川崎浮岛 JCT",
+      junctionNameEN: "Kawasaki-Ukishima Junction",
+      destinationJA: "K6 川崎線 川崎方面",
+      destinationZH: "K6 川崎线川崎方向",
+      destinationEN: "Route K6 toward Kawasaki",
+      expectedJunctionDetailSHA256:
+        "29eb925d30dec708acdc797dfc662d917"
+        + "69e80e18e80133b7c6f0bfbd2fba92c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kawasaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-k6/",
       ]
     ),
     reviewedMovement(
@@ -4361,7 +4538,7 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ],
       commitTriggerDistanceMeters: 300,
-      checkedAt: "2026-08-11",
+      checkedAt: "2026-08-15",
       expectedJunctionDetailSHA256:
         "29eb925d30dec708acdc797dfc662d91"
         + "769e80e18e80133b7c6f0bfbd2fba92c",

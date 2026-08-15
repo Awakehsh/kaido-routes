@@ -138,7 +138,7 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network catalog contains 127 exact movements. It covers
+- The reviewed whole-network catalog contains 133 exact movements. It covers
   every divergent JCT on both C1 catalog loops, the Bayshore corridor in both
   directions, and the currently released radial and Yokohama approaches.
   Their Kaido vectors, branch or continuation instructions,
@@ -146,7 +146,7 @@ internal review workbench.
   exact outgoing occurrence compiles into actor-owned screen and one-shot
   speech guidance. Lane indices remain explicitly unreleased, and transitions
   without sufficient approach-specific evidence remain silent.
-  The remaining 40 candidate JCT movements stay preview-only until their
+  The remaining 34 candidate JCT movements stay preview-only until their
   approach-specific signs and legal continuations are released.
 - Map facility labels for IC, JCT, and PA, route shields, and physical sign
   targets stay in Japanese. The default whole-network journey provides
@@ -194,8 +194,8 @@ The product distinguishes what is known from what is still unconfirmed:
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
   definitions cover all divergent JCTs on the six exact foreground routes;
-  the whole-network inventory currently resolves 94 exact movement bindings
-  and keeps 77 unreviewed movements unavailable. They authorize only the
+  the whole-network inventory currently resolves 133 exact movement bindings
+  and keeps 34 unreviewed movements unavailable. They authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
@@ -207,7 +207,7 @@ The product distinguishes what is known from what is still unconfirmed:
 - The default App's foreground Core Location lifecycle supplies the planning
   origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the 94
-  released movement bindings. Routes touching any of the 77 unreviewed
+  released movement bindings. Routes touching any of the 34 unreviewed
   movements remain replay-only with an
   explicit incomplete-guidance blocker. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still

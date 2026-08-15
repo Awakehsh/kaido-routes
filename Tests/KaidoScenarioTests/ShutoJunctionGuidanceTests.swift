@@ -2244,6 +2244,145 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Kawasaki-Ukishima movements bind every current operator sign")
+  func kawasakiUkishimaMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.5204845.0.forward",
+        "osm.5204845.1.forward",
+        "shuto.jct.kawasaki.b-eastbound-stays-on-b",
+        .straight,
+        "東京・空港中央",
+        ["B", "1", "11"]
+      ),
+      (
+        "osm.5204845.0.forward",
+        "osm.5212953.0.forward",
+        "shuto.jct.kawasaki.b-eastbound-to-k6",
+        .left,
+        "川崎・木更津",
+        ["K6", "CA"]
+      ),
+      (
+        "osm.82596770.33.forward",
+        "osm.783646149.0.forward",
+        "shuto.jct.kawasaki.k6-outbound-to-bayshore",
+        .right,
+        "東京・横浜",
+        ["B"]
+      ),
+      (
+        "osm.82596770.33.forward",
+        "osm.783649669.0.forward",
+        "shuto.jct.kawasaki.k6-outbound-to-aqualine",
+        .straight,
+        "アクアライン・木更津",
+        ["CA"]
+      ),
+      (
+        "osm.59613958.0.forward",
+        "osm.5208415.0.forward",
+        "shuto.jct.kawasaki.k6-outbound-to-b-eastbound",
+        .left,
+        "東京",
+        ["B"]
+      ),
+      (
+        "osm.59613958.0.forward",
+        "osm.59613958.1.forward",
+        "shuto.jct.kawasaki.k6-outbound-to-b-westbound",
+        .right,
+        "横浜",
+        ["B"]
+      ),
+      (
+        "osm.5204788.17.forward",
+        "osm.5204789.0.forward",
+        "shuto.jct.kawasaki.b-westbound-stays-on-b",
+        .straight,
+        "横浜",
+        ["B"]
+      ),
+      (
+        "osm.5204788.17.forward",
+        "osm.5212959.0.forward",
+        "shuto.jct.kawasaki.b-westbound-to-k6",
+        .left,
+        "川崎",
+        ["K6"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "29eb925d30dec708acdc797dfc662d917"
+          + "69e80e18e80133b7c6f0bfbd2fba92c"
+      )
+    }
+
+    let bayshore = try #require(
+      ShutoJunctionMovementCatalog.released.first {
+        $0.id == "shuto.jct.kawasaki.k6-outbound-to-bayshore"
+      }
+    )
+    #expect(
+      bayshore.coveredFollowingDecisionEdgeIDs.last
+        == "osm.59613958.0.forward"
+    )
+    #expect(
+      !bayshore.coveredFollowingDecisionEdgeIDs.contains(
+        "osm.59613958.1.forward"
+      )
+    )
+
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.higashiogishima",
+      exitFacilityID: "shuto.ic.b.kukouchuou"
+    )
+    let movementIDs = ShutoJunctionGuidanceCompiler.compile(
+      database: database,
+      route: route
+    ).map(\.definition.id)
+    #expect(
+      movementIDs.filter {
+        $0 == "shuto.jct.kawasaki.k6-outbound-to-bayshore"
+      }.count == 1
+    )
+    #expect(
+      movementIDs.filter {
+        $0 == "shuto.jct.kawasaki.k6-outbound-to-b-eastbound"
+      }.count == 1
+    )
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

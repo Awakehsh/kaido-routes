@@ -2140,6 +2140,110 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Itabashi and Kumanocho movements bind every current operator sign")
+  func itabashiAndKumanochoMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.156344609.48.forward",
+        "osm.28195148.0.forward",
+        "shuto.jct.itabashi.c2-inner-to-5-outbound",
+        .left,
+        "大宮・関越道",
+        ["5", "E17"]
+      ),
+      (
+        "osm.156344609.48.forward",
+        "osm.28195150.0.forward",
+        "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho",
+        .right,
+        "中央道・東名",
+        ["C2", "E20", "E1"]
+      ),
+      (
+        "osm.28127112.12.forward",
+        "osm.23681223.0.forward",
+        "shuto.jct.kumanocho.c2-inner-to-5-inbound",
+        .left,
+        "東池袋・都心環状",
+        ["5"]
+      ),
+      (
+        "osm.28127112.12.forward",
+        "osm.28126649.0.forward",
+        "shuto.jct.kumanocho.c2-inner-stays-on-c2",
+        .right,
+        "中央道・東名",
+        ["C2", "E20", "E1"]
+      ),
+      (
+        "osm.44291527.12.forward",
+        "osm.22694126.0.forward",
+        "shuto.jct.itabashi.c2-outer-to-5-outbound",
+        .left,
+        "大宮・関越道",
+        ["5", "E17"]
+      ),
+      (
+        "osm.44291527.12.forward",
+        "osm.24334800.0.forward",
+        "shuto.jct.itabashi.c2-outer-stays-on-c2",
+        .right,
+        "東北道・常磐道",
+        ["C2", "E4", "E6"]
+      ),
+      (
+        "osm.44353152.3.forward",
+        "osm.182527890.0.forward",
+        "shuto.jct.itabashi.5-inbound-to-c2-inner",
+        .left,
+        "常磐道・東関東道",
+        ["C2", "E6", "E51"]
+      ),
+      (
+        "osm.44353152.3.forward",
+        "osm.44353152.4.forward",
+        "shuto.jct.itabashi.5-inbound-stays-on-5",
+        .straight,
+        "都心環状・東名",
+        ["5", "E1"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "4c1cb61e312e4b0d70eed1eb542d48c0"
+          + "19de9e605d354cd85fdd7800babc80ba"
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

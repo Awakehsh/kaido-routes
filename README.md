@@ -138,7 +138,7 @@ internal review workbench.
   map and the whole-network line map. A junction inset appears only when an
   exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
   route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network catalog contains 120 exact movements. It covers
+- The reviewed whole-network catalog contains 127 exact movements. It covers
   every divergent JCT on both C1 catalog loops, the Bayshore corridor in both
   directions, and the currently released radial and Yokohama approaches.
   Their Kaido vectors, branch or continuation instructions,
@@ -146,7 +146,7 @@ internal review workbench.
   exact outgoing occurrence compiles into actor-owned screen and one-shot
   speech guidance. Lane indices remain explicitly unreleased, and transitions
   without sufficient approach-specific evidence remain silent.
-  The remaining 47 candidate JCT movements stay preview-only until their
+  The remaining 40 candidate JCT movements stay preview-only until their
   approach-specific signs and legal continuations are released.
 - Map facility labels for IC, JCT, and PA, route shields, and physical sign
   targets stay in Japanese. The default whole-network journey provides

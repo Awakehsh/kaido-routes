@@ -861,6 +861,229 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-c2/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.itabashi.c2-inner-to-5-outbound",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 308_930_039,
+      incomingEdgeID: "osm.156344609.48.forward",
+      outgoingEdgeID: "osm.28195148.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "大宮・関越道",
+      routeShields: ["5", "E17"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "5 池袋線 下り",
+      destinationZH: "5 池袋线下行方向",
+      destinationEN: "Route 5 outbound",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kumanocho.c2-inner-to-5-inbound",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 252_174_760,
+      incomingEdgeID: "osm.28127112.12.forward",
+      outgoingEdgeID: "osm.23681223.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "東池袋・都心環状",
+      routeShields: ["5"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "5 池袋線 上り",
+      destinationZH: "5 池袋线上行方向",
+      destinationEN: "Route 5 inbound",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kumanocho.c2-inner-stays-on-c2",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 252_174_760,
+      incomingEdgeID: "osm.28127112.12.forward",
+      outgoingEdgeID: "osm.28126649.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .right,
+      japaneseSignText: "中央道・東名",
+      routeShields: ["C2", "E20", "E1"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.itabashi.c2-outer-to-5-outbound",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 263_988_109,
+      incomingEdgeID: "osm.44291527.12.forward",
+      outgoingEdgeID: "osm.22694126.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "大宮・関越道",
+      routeShields: ["5", "E17"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "5 池袋線 下り",
+      destinationZH: "5 池袋线下行方向",
+      destinationEN: "Route 5 outbound",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.itabashi.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 263_988_109,
+      incomingEdgeID: "osm.44291527.12.forward",
+      outgoingEdgeID: "osm.24334800.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .right,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["C2", "E4", "E6"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "C2 外回り",
+      destinationZH: "C2 外环",
+      destinationEN: "the C2 Outer Loop",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.itabashi.5-inbound-to-c2-inner",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 562_825_892,
+      incomingEdgeID: "osm.44353152.3.forward",
+      outgoingEdgeID: "osm.182527890.0.forward",
+      incomingRouteID: "5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .left,
+      japaneseSignText: "常磐道・東関東道",
+      routeShields: ["C2", "E6", "E51"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.itabashi.5-inbound-stays-on-5",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 562_825_892,
+      incomingEdgeID: "osm.44353152.3.forward",
+      outgoingEdgeID: "osm.44353152.4.forward",
+      incomingRouteID: "5",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "5",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "都心環状・東名",
+      routeShields: ["5", "E1"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "5 池袋線 上り",
+      destinationZH: "5 池袋线上行方向",
+      destinationEN: "Route 5 inbound",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
     c2InnerMovement(
       id: "shuto.jct.nishishinjuku.c2-inner-stays-on-c2",
       junctionID: "shuto.jct.jct_nishishinjuku",

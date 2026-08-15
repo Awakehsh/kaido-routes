@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 29)
     #expect(coverage.incomingApproachCount == 83)
     #expect(coverage.movements.count == 167)
-    #expect(coverage.releasedMovementCount == 120)
-    #expect(coverage.missingMovementReviewCount == 47)
+    #expect(coverage.releasedMovementCount == 127)
+    #expect(coverage.missingMovementReviewCount == 40)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -247,7 +247,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       coverage.decisions.filter {
         $0.releasedGuidanceDefinitionID
           == "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
-      }.count == 2
+      }.count == 1
     )
     #expect(
       coverage.decisions.contains {
@@ -470,6 +470,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       ("shuto.ic.k3.hananoki", "shuto.ic.k3.shinyamashita"),
       ("shuto.ic.k1.asada", "shuto.ic.k6.daishi"),
       ("shuto.ic.k6.daishi", "shuto.ic.k1.hamakawasaki"),
+      ("shuto.ic.c2.oujiminami", "shuto.ic.5.nakadai"),
+      ("shuto.ic.c2.oujiminami", "shuto.ic.c2.nishiikebukuro"),
+      ("shuto.ic.5.nakadai", "shuto.ic.c1.ginza"),
+      ("shuto.ic.5.nakadai", "shuto.ic.c2.oujiminami"),
+      ("shuto.ic.c2.nishiikebukuro", "shuto.ic.5.nakadai"),
+      ("shuto.ic.c2.nishiikebukuro", "shuto.ic.c2.oujiminami"),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {

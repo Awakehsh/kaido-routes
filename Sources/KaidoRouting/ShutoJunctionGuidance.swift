@@ -1614,6 +1614,157 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.ishikawacho.k1-outbound-to-k3-inbound",
+      junctionID: "shuto.jct.jct_ishikawacho",
+      junctionNodeID: 982_266_259,
+      incomingEdgeID: "osm.987587806.0.forward",
+      outgoingEdgeID: "osm.84530636.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "保土ヶ谷バイパス",
+      routeShields: ["K3"],
+      junctionNameJA: "石川町JCT",
+      junctionNameZH: "石川町 JCT",
+      junctionNameEN: "Ishikawacho JCT",
+      destinationJA: "K3 狩場線 保土ヶ谷バイパス方面",
+      destinationZH: "K3 狩场线保土谷绕行线方向",
+      destinationEN: "Route K3 toward the Hodogaya Bypass",
+      expectedJunctionDetailSHA256:
+        "7f49d7d4ac190a0fdb160b216e95fee7"
+        + "78d83b4869d3bee629345816a19e88dd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ishikawacho",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ishikawacho.k3-inbound-to-k1-inbound",
+      junctionID: "shuto.jct.jct_ishikawacho",
+      junctionNodeID: 364_548_786,
+      incomingEdgeID: "osm.84530629.13.forward",
+      outgoingEdgeID: "osm.32404412.0.forward",
+      incomingRouteID: "K3",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "横浜公園・羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "石川町JCT",
+      junctionNameZH: "石川町 JCT",
+      junctionNameEN: "Ishikawacho JCT",
+      destinationJA: "K1 横羽線 横浜公園・羽田方面",
+      destinationZH: "K1 横羽线横滨公园・羽田方向",
+      destinationEN: "Route K1 toward Yokohama-koen and Haneda",
+      expectedJunctionDetailSHA256:
+        "7f49d7d4ac190a0fdb160b216e95fee7"
+        + "78d83b4869d3bee629345816a19e88dd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ishikawacho",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ishikawacho.k3-inbound-stays-on-k3",
+      junctionID: "shuto.jct.jct_ishikawacho",
+      junctionNodeID: 364_548_786,
+      incomingEdgeID: "osm.84530629.13.forward",
+      outgoingEdgeID: "osm.340606291.0.forward",
+      incomingRouteID: "K3",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K3",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "保土ヶ谷バイパス",
+      routeShields: ["K3"],
+      junctionNameJA: "石川町JCT",
+      junctionNameZH: "石川町 JCT",
+      junctionNameEN: "Ishikawacho JCT",
+      destinationJA: "K3 狩場線 保土ヶ谷バイパス方面",
+      destinationZH: "K3 狩场线保土谷绕行线方向",
+      destinationEN: "Route K3 toward the Hodogaya Bypass",
+      expectedJunctionDetailSHA256:
+        "7f49d7d4ac190a0fdb160b216e95fee7"
+        + "78d83b4869d3bee629345816a19e88dd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ishikawacho",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ishikawacho.k3-outbound-stays-on-k3",
+      junctionID: "shuto.jct.jct_ishikawacho",
+      junctionNodeID: 447_800_585,
+      incomingEdgeID: "osm.174480816.59.forward",
+      outgoingEdgeID: "osm.174480816.60.forward",
+      incomingRouteID: "K3",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K3",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      japaneseSignText: "湾岸線・空港中央",
+      routeShields: ["K3", "B"],
+      junctionNameJA: "石川町JCT",
+      junctionNameZH: "石川町 JCT",
+      junctionNameEN: "Ishikawacho JCT",
+      destinationJA: "K3 狩場線 湾岸線・空港中央方面",
+      destinationZH: "K3 狩场线湾岸线・空港中央方向",
+      destinationEN:
+        "Route K3 toward the Bayshore Route and Kuko-Chuo",
+      expectedJunctionDetailSHA256:
+        "7f49d7d4ac190a0fdb160b216e95fee7"
+        + "78d83b4869d3bee629345816a19e88dd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ishikawacho",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ishikawacho.k3-outbound-to-k1-inbound",
+      junctionID: "shuto.jct.jct_ishikawacho",
+      junctionNodeID: 447_800_585,
+      incomingEdgeID: "osm.174480816.59.forward",
+      outgoingEdgeID: "osm.84530632.0.forward",
+      incomingRouteID: "K3",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "羽田・みなとみらい",
+      routeShields: ["K1"],
+      junctionNameJA: "石川町JCT",
+      junctionNameZH: "石川町 JCT",
+      junctionNameEN: "Ishikawacho JCT",
+      destinationJA: "K1 横羽線 羽田・みなとみらい方面",
+      destinationZH: "K1 横羽线羽田・港未来方向",
+      destinationEN: "Route K1 toward Haneda and Minato Mirai",
+      expectedJunctionDetailSHA256:
+        "7f49d7d4ac190a0fdb160b216e95fee7"
+        + "78d83b4869d3bee629345816a19e88dd",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ishikawacho",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.honmoku.k3-outbound-to-b-eastbound",
       junctionID: "shuto.jct.jct_honmoku",
       junctionNodeID: 354_782_234,

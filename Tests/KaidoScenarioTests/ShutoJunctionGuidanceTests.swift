@@ -1663,6 +1663,77 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Hakozaki outbound split follows current operator color guidance")
+  func hakozakiOutboundSplitFollowsOperatorColorGuidance() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        outgoing: String,
+        id: String,
+        sign: String,
+        shields: [String],
+        colorPhrase: String
+      )
+    ] = [
+      (
+        "osm.44804029.0.forward",
+        "shuto.jct.hakozaki.6-outbound-to-9-primary",
+        "9・湾岸線",
+        ["9", "B"],
+        "青色の案内"
+      ),
+      (
+        "osm.44804208.0.forward",
+        "shuto.jct.hakozaki.6-outbound-to-9-secondary",
+        "9・湾岸線",
+        ["9", "B"],
+        "青色の案内"
+      ),
+      (
+        "osm.44805851.0.forward",
+        "shuto.jct.hakozaki.6-outbound-stays-on-6",
+        "6 常磐道・7 京葉道路",
+        ["6", "E6", "7", "E14"],
+        "赤色の案内"
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges["osm.28194421.7.forward"])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == .straight)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.commitTriggerDistanceMeters == 500)
+      #expect(
+        definition.localizedContent[.japanese]?.displayText.contains(
+          expected.colorPhrase
+        ) == true
+      )
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "49f645e5cf96c1be9e7003e857d2cf4b"
+          + "aed0c502daaca7b7469c41d1e8f43373"
+      )
+      #expect(
+        definition.sources.contains {
+          $0.url == "https://www.shutoko.jp/use/safety/edobashi_hakozaki/"
+        }
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

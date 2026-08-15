@@ -2942,6 +2942,111 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-6/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.6-outbound-to-9-primary",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 568_090_177,
+      incomingEdgeID: "osm.28194421.7.forward",
+      outgoingEdgeID: "osm.44804029.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      maneuverJA: "青色の案内に従い",
+      maneuverZH: "沿蓝色引导行驶",
+      maneuverEN: "follow the blue route marking",
+      japaneseSignText: "9・湾岸線",
+      routeShields: ["9", "B"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "9号深川線・湾岸線方面",
+      destinationZH: "9号深川线・湾岸线方向",
+      destinationEN: "Route 9 and the Bayshore Route",
+      commitTriggerDistanceMeters: 500,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-9/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.6-outbound-to-9-secondary",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 568_090_177,
+      incomingEdgeID: "osm.28194421.7.forward",
+      outgoingEdgeID: "osm.44804208.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "9",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      maneuverJA: "青色の案内に従い",
+      maneuverZH: "沿蓝色引导行驶",
+      maneuverEN: "follow the blue route marking",
+      japaneseSignText: "9・湾岸線",
+      routeShields: ["9", "B"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "9号深川線・湾岸線方面",
+      destinationZH: "9号深川线・湾岸线方向",
+      destinationEN: "Route 9 and the Bayshore Route",
+      commitTriggerDistanceMeters: 500,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-9/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.hakozaki.6-outbound-stays-on-6",
+      junctionID: "shuto.jct.jct_hakozaki",
+      junctionNodeID: 568_090_177,
+      incomingEdgeID: "osm.28194421.7.forward",
+      outgoingEdgeID: "osm.44805851.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      maneuverJA: "赤色の案内に従い",
+      maneuverZH: "沿红色引导行驶",
+      maneuverEN: "follow the red route marking",
+      japaneseSignText: "6 常磐道・7 京葉道路",
+      routeShields: ["6", "E6", "7", "E14"],
+      junctionNameJA: "箱崎JCT",
+      junctionNameZH: "箱崎 JCT",
+      junctionNameEN: "Hakozaki JCT",
+      destinationJA: "6号向島線・7号小松川線方面",
+      destinationZH: "6号向岛线・7号小松川线方向",
+      destinationEN: "Routes 6 and 7",
+      commitTriggerDistanceMeters: 500,
+      expectedJunctionDetailSHA256:
+        "49f645e5cf96c1be9e7003e857d2cf4b"
+        + "aed0c502daaca7b7469c41d1e8f43373",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_hakozaki",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+      ]
+    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-westbound-stays-on-b",
       networkSnapshotID:

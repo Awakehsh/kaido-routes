@@ -2812,6 +2812,136 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-6/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.c1-outer-to-6-outbound",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 256_426_172,
+      incomingEdgeID: "osm.316185365.6.forward",
+      outgoingEdgeID: "osm.44803854.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "箱崎・常磐道",
+      routeShields: ["6", "E6"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "6号向島線 箱崎・常磐道方面",
+      destinationZH: "6号向岛线 箱崎・常磐道方向",
+      destinationEN: "Route 6 toward Hakozaki and the Joban Expressway",
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.c1-inner-to-6-outbound",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 264_871_771,
+      incomingEdgeID: "osm.41009552.1.forward",
+      outgoingEdgeID: "osm.44804643.0.forward",
+      incomingRouteID: "C1",
+      incomingDirectionJA: "内回り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "上野",
+      routeShields: ["1"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "上野方面",
+      destinationZH: "上野方向",
+      destinationEN: "Ueno",
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/edobashi_hakozaki/",
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-1u/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.6-inbound-toward-ginza",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 499_275_976,
+      incomingEdgeID: "osm.44805858.19.forward",
+      outgoingEdgeID: "osm.40971852.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "1_UENO",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      maneuverJA: "左方向を保ち",
+      maneuverZH: "保持左侧",
+      maneuverEN: "keep left",
+      japaneseSignText: "銀座・横浜",
+      routeShields: ["C1", "7"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "都心環状線 銀座・横浜方面",
+      destinationZH: "都心环状线 银座・横滨方向",
+      destinationEN: "the Inner Circular Route toward Ginza and Yokohama",
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-1u/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.edobashi.6-inbound-toward-kandabashi",
+      junctionID: "shuto.jct.jct_edobashi",
+      junctionNodeID: 499_275_976,
+      incomingEdgeID: "osm.44805858.19.forward",
+      outgoingEdgeID: "osm.44803855.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      maneuverJA: "右方向を保ち",
+      maneuverZH: "保持右侧",
+      maneuverEN: "keep right",
+      japaneseSignText: "神田橋・北池袋・中央道",
+      routeShields: ["C1", "5", "E20"],
+      junctionNameJA: "江戸橋JCT",
+      junctionNameZH: "江户桥 JCT",
+      junctionNameEN: "Edobashi JCT",
+      destinationJA: "神田橋・北池袋・中央道方面",
+      destinationZH: "神田橋・北池袋・中央道方向",
+      destinationEN: "Kandabashi, Kita-ikebukuro, and the Chuo Expressway",
+      expectedJunctionDetailSHA256:
+        "a855321a4dbf059131cada07f5dfd0e0"
+        + "73762b063034053807b25001956db975",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_edobashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c1/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
+        "https://www.shutoko.jp/use/network/map/route-6/",
+      ]
+    ),
     ShutoJunctionMovementDefinition(
       id: "shuto.jct.tatsumi.b-westbound-stays-on-b",
       networkSnapshotID:

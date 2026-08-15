@@ -1580,6 +1580,89 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Edobashi movements bind every current operator sign")
+  func edobashiMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.316185365.6.forward",
+        "osm.44803854.0.forward",
+        "shuto.jct.edobashi.c1-outer-to-6-outbound",
+        .left,
+        "箱崎・常磐道",
+        ["6", "E6"]
+      ),
+      (
+        "osm.41009552.1.forward",
+        "osm.44804643.0.forward",
+        "shuto.jct.edobashi.c1-inner-to-6-outbound",
+        .right,
+        "上野",
+        ["1"]
+      ),
+      (
+        "osm.44805858.19.forward",
+        "osm.40971852.0.forward",
+        "shuto.jct.edobashi.6-inbound-toward-ginza",
+        .left,
+        "銀座・横浜",
+        ["C1", "7"]
+      ),
+      (
+        "osm.44805858.19.forward",
+        "osm.44803855.0.forward",
+        "shuto.jct.edobashi.6-inbound-toward-kandabashi",
+        .right,
+        "神田橋・北池袋・中央道",
+        ["C1", "5", "E20"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "a855321a4dbf059131cada07f5dfd0e0"
+          + "73762b063034053807b25001956db975"
+      )
+      #expect(
+        definition.sources.contains {
+          $0.url
+            == "https://www.shutoko.jp/-/media/images/responsive/"
+              + "customer/use/network/jct/routeguide/jct_edobashi"
+            && $0.contentSHA256
+              == "a855321a4dbf059131cada07f5dfd0e0"
+                + "73762b063034053807b25001956db975"
+        }
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

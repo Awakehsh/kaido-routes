@@ -406,6 +406,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ("shuto.ic.10.harumi", "shuto.ic.b.urayasu"),
       ("shuto.ic.b.ooi", "shuto.ic.b.urayasu"),
       ("shuto.ic.c2.hatsudaiminami", "shuto.ic.b.urayasu"),
+      ("shuto.ic.c1.ginza", "shuto.ic.1-ueno.ueno"),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {

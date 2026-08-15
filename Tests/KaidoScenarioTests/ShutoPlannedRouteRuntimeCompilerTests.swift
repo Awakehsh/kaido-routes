@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 29)
     #expect(coverage.incomingApproachCount == 85)
     #expect(coverage.movements.count == 171)
-    #expect(coverage.releasedMovementCount == 94)
-    #expect(coverage.missingMovementReviewCount == 77)
+    #expect(coverage.releasedMovementCount == 98)
+    #expect(coverage.missingMovementReviewCount == 73)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty

@@ -949,6 +949,88 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Honmoku movements bind both current operator signs")
+  func honmokuMovementsBindCurrentOperatorSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.84530623.12.forward",
+        "osm.301016676.0.forward",
+        "shuto.jct.honmoku.k3-outbound-to-b-westbound",
+        .left,
+        "幸浦",
+        ["B"]
+      ),
+      (
+        "osm.84530623.12.forward",
+        "osm.38072737.0.forward",
+        "shuto.jct.honmoku.k3-outbound-to-b-eastbound",
+        .straight,
+        "空港中央・大黒ふ頭",
+        ["B", "K5"]
+      ),
+      (
+        "osm.435760593.169.forward",
+        "osm.32403532.0.forward",
+        "shuto.jct.honmoku.b-eastbound-to-k3-inbound",
+        .left,
+        "横浜駅東口・狩場線",
+        ["K3", "K1", "K2"]
+      ),
+      (
+        "osm.435760593.169.forward",
+        "osm.435760593.170.forward",
+        "shuto.jct.honmoku.b-eastbound-stays-on-b",
+        .straight,
+        "空港中央・大黒ふ頭",
+        ["B", "K5"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "8d14238a40aaeaef7ec2c22904747f53f"
+          + "335173c99583595b2152e5df4dbc934"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_honmoku"
+      )
+      #expect(
+        definition.sources.last?.contentSHA256
+          == definition.expectedJunctionDetailSHA256
+      )
+    }
+  }
+
   @Test("Ryogoku and Shibaura outbound branches bind official signs")
   func ryogokuAndShibauraOutboundBranchesBindOfficialSigns() throws {
     let database = try loadDatabase()

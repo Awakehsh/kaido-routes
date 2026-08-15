@@ -1068,15 +1068,16 @@ public enum ShutoJunctionMovementCatalog {
       incomingDirectionJA: "下り",
       outgoingRouteID: "K3",
       outgoingDirectionJA: "下り",
-      branchSide: .left,
-      japaneseSignText: "湾岸線・大黒ふ頭",
-      routeShields: ["K3", "B"],
+      branchSide: .straight,
+      japaneseSignText: "空港中央・大黒ふ頭",
+      routeShields: ["B", "K5"],
       junctionNameJA: "本牧JCT",
       junctionNameZH: "本牧 JCT",
       junctionNameEN: "Honmoku JCT",
-      destinationJA: "湾岸線 大黒ふ頭方面",
-      destinationZH: "湾岸线大黑码头方向",
-      destinationEN: "the Bayshore Route toward Daikoku-Futo",
+      destinationJA: "湾岸線 空港中央・大黒ふ頭方面",
+      destinationZH: "湾岸线空港中央、大黑码头方向",
+      destinationEN:
+        "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
       expectedJunctionDetailSHA256:
         "8d14238a40aaeaef7ec2c22904747f53f"
         + "335173c99583595b2152e5df4dbc934",
@@ -1086,6 +1087,97 @@ public enum ShutoJunctionMovementCatalog {
       additionalSources: [
         "https://www.shutoko.jp/use/network/map/route-k3/",
         "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.honmoku.k3-outbound-to-b-westbound",
+      junctionID: "shuto.jct.jct_honmoku",
+      junctionNodeID: 354_782_234,
+      incomingEdgeID: "osm.84530623.12.forward",
+      outgoingEdgeID: "osm.301016676.0.forward",
+      incomingRouteID: "K3",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K3",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "幸浦",
+      routeShields: ["B"],
+      junctionNameJA: "本牧JCT",
+      junctionNameZH: "本牧 JCT",
+      junctionNameEN: "Honmoku JCT",
+      destinationJA: "湾岸線 幸浦方面",
+      destinationZH: "湾岸线幸浦方向",
+      destinationEN: "the Bayshore Route toward Sachiura",
+      expectedJunctionDetailSHA256:
+        "8d14238a40aaeaef7ec2c22904747f53f"
+        + "335173c99583595b2152e5df4dbc934",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_honmoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.honmoku.b-eastbound-to-k3-inbound",
+      junctionID: "shuto.jct.jct_honmoku",
+      junctionNodeID: 364_539_038,
+      incomingEdgeID: "osm.435760593.169.forward",
+      outgoingEdgeID: "osm.32403532.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "K3",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "横浜駅東口・狩場線",
+      routeShields: ["K3", "K1", "K2"],
+      junctionNameJA: "本牧JCT",
+      junctionNameZH: "本牧 JCT",
+      junctionNameEN: "Honmoku JCT",
+      destinationJA: "K3 狩場線 横浜駅東口方面",
+      destinationZH: "K3 狩场线横滨站东口方向",
+      destinationEN: "Route K3 toward Yokohama Station East Exit",
+      expectedJunctionDetailSHA256:
+        "8d14238a40aaeaef7ec2c22904747f53f"
+        + "335173c99583595b2152e5df4dbc934",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_honmoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.honmoku.b-eastbound-stays-on-b",
+      junctionID: "shuto.jct.jct_honmoku",
+      junctionNodeID: 364_539_038,
+      incomingEdgeID: "osm.435760593.169.forward",
+      outgoingEdgeID: "osm.435760593.170.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .straight,
+      japaneseSignText: "空港中央・大黒ふ頭",
+      routeShields: ["B", "K5"],
+      junctionNameJA: "本牧JCT",
+      junctionNameZH: "本牧 JCT",
+      junctionNameEN: "Honmoku JCT",
+      destinationJA: "湾岸線 空港中央・大黒ふ頭方面",
+      destinationZH: "湾岸线空港中央、大黑码头方向",
+      destinationEN:
+        "the Bayshore Route toward Kuko-Chuo and Daikoku-Futo",
+      expectedJunctionDetailSHA256:
+        "8d14238a40aaeaef7ec2c22904747f53f"
+        + "335173c99583595b2152e5df4dbc934",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_honmoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-k3/",
       ]
     ),
     ShutoJunctionMovementDefinition(

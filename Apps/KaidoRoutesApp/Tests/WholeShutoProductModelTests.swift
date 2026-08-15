@@ -411,6 +411,8 @@ final class WholeShutoProductModelTests: XCTestCase {
       ("shuto.ic.6-mukojima.komagata", "shuto.ic.c1.ginza"),
       ("shuto.ic.4.hatagaya", "shuto.ic.c2.nishiikebukuro"),
       ("shuto.ic.c2.nishiikebukuro", "shuto.ic.4.takaido"),
+      ("shuto.ic.k2.mitsuzawa", "shuto.ic.k1.yokohamakouen"),
+      ("shuto.ic.k1.higashikanagawa", "shuto.ic.k2.mitsuzawa"),
     ]
 
     for (entryFacilityID, exitFacilityID) in pairs {

@@ -1431,6 +1431,159 @@ public enum ShutoJunctionMovementCatalog {
       ]
     ),
     reviewedMovement(
+      id: "shuto.jct.kinko.k1-outbound-to-k2-outbound",
+      junctionID: "shuto.jct.jct_kinkou",
+      junctionNodeID: 273_331_411,
+      incomingEdgeID: "osm.760720782.10.forward",
+      outgoingEdgeID: "osm.31709108.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K2",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "第三京浜・横浜新道",
+      routeShields: ["K2", "E83"],
+      junctionNameJA: "金港JCT",
+      junctionNameZH: "金港 JCT",
+      junctionNameEN: "Kinko JCT",
+      destinationJA: "K2 三ツ沢線 第三京浜・横浜新道方面",
+      destinationZH: "K2 三泽线第三京滨・横滨新道方向",
+      destinationEN:
+        "Route K2 toward Daisan Keihin and Yokohama Shindo",
+      expectedJunctionDetailSHA256:
+        "dc2a994c6b95e83be9c44ab42c2ff852"
+        + "06696723d5e7c78cd189ce3960207061",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kinkou",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kinko.k1-inbound-stays-on-k1",
+      junctionID: "shuto.jct.jct_kinkou",
+      junctionNodeID: 364_550_932,
+      incomingEdgeID: "osm.32404414.20.forward",
+      outgoingEdgeID: "osm.340606284.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K1",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "金港JCT",
+      junctionNameZH: "金港 JCT",
+      junctionNameEN: "Kinko JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      expectedJunctionDetailSHA256:
+        "dc2a994c6b95e83be9c44ab42c2ff852"
+        + "06696723d5e7c78cd189ce3960207061",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kinkou",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kinko.k1-inbound-to-k2-outbound",
+      junctionID: "shuto.jct.jct_kinkou",
+      junctionNodeID: 364_550_932,
+      incomingEdgeID: "osm.32404414.20.forward",
+      outgoingEdgeID: "osm.34994498.0.forward",
+      incomingRouteID: "K1",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K2",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "第三京浜・横浜新道",
+      routeShields: ["K2", "E83"],
+      junctionNameJA: "金港JCT",
+      junctionNameZH: "金港 JCT",
+      junctionNameEN: "Kinko JCT",
+      destinationJA: "K2 三ツ沢線 第三京浜・横浜新道方面",
+      destinationZH: "K2 三泽线第三京滨・横滨新道方向",
+      destinationEN:
+        "Route K2 toward Daisan Keihin and Yokohama Shindo",
+      expectedJunctionDetailSHA256:
+        "dc2a994c6b95e83be9c44ab42c2ff852"
+        + "06696723d5e7c78cd189ce3960207061",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kinkou",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kinko.k2-inbound-to-k1-outbound",
+      junctionID: "shuto.jct.jct_kinkou",
+      junctionNodeID: 476_496_811,
+      incomingEdgeID: "osm.915304584.0.forward",
+      outgoingEdgeID: "osm.39744132.0.forward",
+      incomingRouteID: "K2",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K2",
+      outgoingDirectionJA: "上り",
+      branchSide: .right,
+      japaneseSignText: "横浜公園・湾岸線",
+      routeShields: ["K1", "K3"],
+      junctionNameJA: "金港JCT",
+      junctionNameZH: "金港 JCT",
+      junctionNameEN: "Kinko JCT",
+      destinationJA: "K1 横羽線 横浜公園・K3 狩場線 湾岸線方面",
+      destinationZH: "K1 横羽线横滨公园・K3 狩场线湾岸线方向",
+      destinationEN:
+        "Route K1 toward Yokohama-koen and Route K3 toward the Bayshore Route",
+      expectedJunctionDetailSHA256:
+        "dc2a994c6b95e83be9c44ab42c2ff852"
+        + "06696723d5e7c78cd189ce3960207061",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kinkou",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.kinko.k2-inbound-to-k1-inbound",
+      junctionID: "shuto.jct.jct_kinkou",
+      junctionNodeID: 476_496_811,
+      incomingEdgeID: "osm.915304584.0.forward",
+      outgoingEdgeID: "osm.915304583.0.forward",
+      incomingRouteID: "K2",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "K2",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "羽田",
+      routeShields: ["K1"],
+      junctionNameJA: "金港JCT",
+      junctionNameZH: "金港 JCT",
+      junctionNameEN: "Kinko JCT",
+      destinationJA: "K1 横羽線 羽田方面",
+      destinationZH: "K1 横羽线羽田方向",
+      destinationEN: "Route K1 toward Haneda",
+      expectedJunctionDetailSHA256:
+        "dc2a994c6b95e83be9c44ab42c2ff852"
+        + "06696723d5e7c78cd189ce3960207061",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_kinkou",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k1/",
+        "https://www.shutoko.jp/use/network/map/route-k2/",
+      ]
+    ),
+    reviewedMovement(
       id: "shuto.jct.ishikawacho.k1-outbound-to-k3-outbound",
       junctionID: "shuto.jct.jct_ishikawacho",
       junctionNodeID: 982_266_259,

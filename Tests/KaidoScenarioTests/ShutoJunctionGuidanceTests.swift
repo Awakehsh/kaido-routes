@@ -1869,6 +1869,95 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Kinko movements bind every current operator sign")
+  func kinkoMovementsBindEveryCurrentOperatorSign() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.760720782.10.forward",
+        "osm.39744129.0.forward",
+        "shuto.jct.kinko.k1-outbound-stays-on-k1",
+        .left,
+        "横浜公園",
+        ["K1"]
+      ),
+      (
+        "osm.760720782.10.forward",
+        "osm.31709108.0.forward",
+        "shuto.jct.kinko.k1-outbound-to-k2-outbound",
+        .right,
+        "第三京浜・横浜新道",
+        ["K2", "E83"]
+      ),
+      (
+        "osm.32404414.20.forward",
+        "osm.340606284.0.forward",
+        "shuto.jct.kinko.k1-inbound-stays-on-k1",
+        .right,
+        "羽田",
+        ["K1"]
+      ),
+      (
+        "osm.32404414.20.forward",
+        "osm.34994498.0.forward",
+        "shuto.jct.kinko.k1-inbound-to-k2-outbound",
+        .left,
+        "第三京浜・横浜新道",
+        ["K2", "E83"]
+      ),
+      (
+        "osm.915304584.0.forward",
+        "osm.39744132.0.forward",
+        "shuto.jct.kinko.k2-inbound-to-k1-outbound",
+        .right,
+        "横浜公園・湾岸線",
+        ["K1", "K3"]
+      ),
+      (
+        "osm.915304584.0.forward",
+        "osm.915304583.0.forward",
+        "shuto.jct.kinko.k2-inbound-to-k1-inbound",
+        .left,
+        "羽田",
+        ["K1"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "dc2a994c6b95e83be9c44ab42c2ff852"
+          + "06696723d5e7c78cd189ce3960207061"
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

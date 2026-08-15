@@ -949,6 +949,93 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Ryogoku and Shibaura outbound branches bind official signs")
+  func ryogokuAndShibauraOutboundBranchesBindOfficialSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String],
+        detailSHA256: String
+      )
+    ] = [
+      (
+        "osm.1544832378.11.forward",
+        "osm.712498144.0.forward",
+        "shuto.jct.ryogoku.6-outbound-stays-on-6",
+        .left,
+        "東北道・常磐道",
+        ["6", "E4", "E6"],
+        "720995e96dbb9e570a481e8918bd8b49"
+          + "bef2b7af9e79b4ab660eb6e1460ad66a"
+      ),
+      (
+        "osm.1544832378.11.forward",
+        "osm.44506762.0.forward",
+        "shuto.jct.ryogoku.6-outbound-to-7-outbound",
+        .right,
+        "京葉道路",
+        ["7", "E14"],
+        "720995e96dbb9e570a481e8918bd8b49"
+          + "bef2b7af9e79b4ab660eb6e1460ad66a"
+      ),
+      (
+        "osm.1102698847.2.forward",
+        "osm.1102698847.3.forward",
+        "shuto.jct.shibaura.1-outbound-stays-on-1",
+        .right,
+        "横浜",
+        ["1", "K1"],
+        "c190fee58d35efdaeb0ad62015c838131"
+          + "e00f4e7386cde2510e8aa1d83a1790c"
+      ),
+      (
+        "osm.1102698847.2.forward",
+        "osm.4847519.0.forward",
+        "shuto.jct.shibaura.1-outbound-to-11-outbound",
+        .left,
+        "湾岸線",
+        ["11", "B"],
+        "c190fee58d35efdaeb0ad62015c838131"
+          + "e00f4e7386cde2510e8aa1d83a1790c"
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == expected.detailSHA256
+      )
+      #expect(definition.checkedAt == "2026-08-15")
+      #expect(definition.commitTriggerDistanceMeters == 300)
+      #expect(
+        definition.sources.allSatisfy {
+          $0.url.hasPrefix("https://www.shutoko.jp/")
+        }
+      )
+    }
+  }
+
   @Test("Yokohama catalog routes bind every reviewed prompt to a movement")
   func yokohamaCatalogGuidanceBindsJunctionOccurrences() throws {
     let database = try loadDatabase()

@@ -50,7 +50,7 @@ realtime, or field authority.
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
 mainlines, 86 incoming approaches, and 173 candidate incoming/outgoing movement
-pairs. Sixty-eight exact definitions are currently released and 105 still require
+pairs. Seventy-two exact definitions are currently released and 101 still require
 legal/sign review. The former KK Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and

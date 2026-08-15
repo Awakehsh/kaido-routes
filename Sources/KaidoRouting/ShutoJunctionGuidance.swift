@@ -3570,6 +3570,131 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-3/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.ryogoku.6-outbound-stays-on-6",
+      junctionID: "shuto.jct.jct_ryogoku",
+      junctionNodeID: 6_698_927_667,
+      incomingEdgeID: "osm.1544832378.11.forward",
+      outgoingEdgeID: "osm.712498144.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "6_MUKOJIMA",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "東北道・常磐道",
+      routeShields: ["6", "E4", "E6"],
+      junctionNameJA: "両国JCT",
+      junctionNameZH: "两国 JCT",
+      junctionNameEN: "Ryogoku JCT",
+      destinationJA: "6号向島線 東北道・常磐道方面",
+      destinationZH: "6号向岛线 东北道・常磐道方向",
+      destinationEN:
+        "Route 6 toward the Tohoku and Joban Expressways",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "720995e96dbb9e570a481e8918bd8b49"
+        + "bef2b7af9e79b4ab660eb6e1460ad66a",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ryogoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ryogoku.6-outbound-to-7-outbound",
+      junctionID: "shuto.jct.jct_ryogoku",
+      junctionNodeID: 6_698_927_667,
+      incomingEdgeID: "osm.1544832378.11.forward",
+      outgoingEdgeID: "osm.44506762.0.forward",
+      incomingRouteID: "6_MUKOJIMA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "7",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "京葉道路",
+      routeShields: ["7", "E14"],
+      junctionNameJA: "両国JCT",
+      junctionNameZH: "两国 JCT",
+      junctionNameEN: "Ryogoku JCT",
+      destinationJA: "7号小松川線 京葉道路方面",
+      destinationZH: "7号小松川线 京叶道路方向",
+      destinationEN: "Route 7 toward the Keiyo Road",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "720995e96dbb9e570a481e8918bd8b49"
+        + "bef2b7af9e79b4ab660eb6e1460ad66a",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ryogoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-6/",
+        "https://www.shutoko.jp/use/network/map/route-7/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.shibaura.1-outbound-stays-on-1",
+      junctionID: "shuto.jct.jct_shibaura",
+      junctionNodeID: 31_252_934,
+      incomingEdgeID: "osm.1102698847.2.forward",
+      outgoingEdgeID: "osm.1102698847.3.forward",
+      incomingRouteID: "1_HANEDA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "1_HANEDA",
+      outgoingDirectionJA: "下り",
+      branchSide: .right,
+      japaneseSignText: "横浜",
+      routeShields: ["1", "K1"],
+      junctionNameJA: "芝浦JCT",
+      junctionNameZH: "芝浦 JCT",
+      junctionNameEN: "Shibaura JCT",
+      destinationJA: "1号羽田線 横浜方面",
+      destinationZH: "1号羽田线 横滨方向",
+      destinationEN: "Route 1 toward Yokohama",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "c190fee58d35efdaeb0ad62015c838131"
+        + "e00f4e7386cde2510e8aa1d83a1790c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_shibaura",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-1/",
+        "https://www.shutoko.jp/use/network/map/route-11/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.shibaura.1-outbound-to-11-outbound",
+      junctionID: "shuto.jct.jct_shibaura",
+      junctionNodeID: 31_252_934,
+      incomingEdgeID: "osm.1102698847.2.forward",
+      outgoingEdgeID: "osm.4847519.0.forward",
+      incomingRouteID: "1_HANEDA",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "11",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "湾岸線",
+      routeShields: ["11", "B"],
+      junctionNameJA: "芝浦JCT",
+      junctionNameZH: "芝浦 JCT",
+      junctionNameEN: "Shibaura JCT",
+      destinationJA: "11号台場線 湾岸線方面",
+      destinationZH: "11号台场线 湾岸线方向",
+      destinationEN: "Route 11 toward the Bayshore Route",
+      commitTriggerDistanceMeters: 300,
+      expectedJunctionDetailSHA256:
+        "c190fee58d35efdaeb0ad62015c838131"
+        + "e00f4e7386cde2510e8aa1d83a1790c",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_shibaura",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-1/",
+        "https://www.shutoko.jp/use/network/map/route-11/",
+      ]
+    ),
   ]
 
   public static func releasedDefinition(

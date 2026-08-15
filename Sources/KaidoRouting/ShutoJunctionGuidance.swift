@@ -353,6 +353,155 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-c2/",
       ]
     ),
+    reviewedMovement(
+      id: "shuto.jct.ohashi.3-inbound-stays-on-3",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 927_641_089,
+      incomingEdgeID: "osm.254992124.8.forward",
+      outgoingEdgeID: "osm.254992124.9.forward",
+      incomingRouteID: "3",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "3",
+      outgoingDirectionJA: "上り",
+      branchSide: .straight,
+      japaneseSignText: "渋谷・都心環状",
+      routeShields: ["3", "C1"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "3号渋谷線 渋谷・都心環状方面",
+      destinationZH: "3号涩谷线涩谷、都心环状方向",
+      destinationEN:
+        "Route 3 toward Shibuya and the Inner Circular Route",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-3/"
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ohashi.3-inbound-to-c2",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 927_641_089,
+      incomingEdgeID: "osm.254992124.8.forward",
+      outgoingEdgeID: "osm.78334077.0.forward",
+      incomingRouteID: "3",
+      incomingDirectionJA: "上り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "内回り",
+      branchSide: .right,
+      japaneseSignText: "湾岸線・東北道",
+      routeShields: ["C2", "B", "E4"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "C2 湾岸線・東北道方面",
+      destinationZH: "C2 湾岸线、东北自动车道方向",
+      destinationEN:
+        "C2 toward the Bayshore Route and Tohoku Expressway",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-3/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.ohashi.c2-inner-to-3",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 7_549_622_953,
+      incomingEdgeID: "osm.80581127.78.forward",
+      outgoingEdgeID: "osm.331922702.0.forward",
+      branchSide: .right,
+      japaneseSignText: "都心環状・東名",
+      routeShields: ["3", "C1", "E1"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "3号渋谷線 都心環状・東名方面",
+      destinationZH: "3号涩谷线都心环状、东名方向",
+      destinationEN:
+        "Route 3 toward the Inner Circular Route and Tomei Expressway",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-3/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ohashi.c2-outer-stays-on-c2",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 3_387_909_708,
+      incomingEdgeID: "osm.772511247.10.forward",
+      outgoingEdgeID: "osm.331922711.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .straight,
+      japaneseSignText: "中央道・東北道",
+      routeShields: ["C2", "4", "5", "E20", "E4"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "C2 外回り 中央道・東北道方面",
+      destinationZH: "C2 外环中央自动车道、东北自动车道方向",
+      destinationEN:
+        "the C2 Outer Loop toward the Chuo and Tohoku Expressways",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/"
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.ohashi.c2-outer-to-3",
+      junctionID: "shuto.jct.jct_ohashi",
+      junctionNodeID: 3_387_909_708,
+      incomingEdgeID: "osm.772511247.10.forward",
+      outgoingEdgeID: "osm.331922695.0.forward",
+      incomingRouteID: "C2",
+      incomingDirectionJA: "外回り",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .left,
+      japaneseSignText: "都心環状・東名",
+      routeShields: ["3", "C1", "E1"],
+      junctionNameJA: "大橋JCT",
+      junctionNameZH: "大桥 JCT",
+      junctionNameEN: "Ohashi JCT",
+      destinationJA: "3号渋谷線 都心環状・東名方面",
+      destinationZH: "3号涩谷线都心环状、东名方向",
+      destinationEN:
+        "Route 3 toward the Inner Circular Route and Tomei Expressway",
+      expectedJunctionDetailSHA256:
+        "5f27a01a763abd067d5bbd9108a6cd19"
+        + "368a31492b779f57cd045d5053e4dcaa",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_ohashi",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+        "https://www.shutoko.jp/use/network/map/route-3/",
+      ]
+    ),
     c2InnerMovement(
       id: "shuto.jct.oi.c2-inner-to-b-eastbound",
       junctionID: "shuto.jct.jct_oi",

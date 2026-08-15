@@ -552,6 +552,39 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testOnDeviceRouteAuthorityAdmitsOiToHatsudaiThroughOhashi()
+    throws
+  {
+    let database = try WholeShutoNetworkCatalog.bundled()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.ooi",
+      exitFacilityID: "shuto.ic.c2.hatsudaiminami"
+    )
+    let reconstructed = try ShutoRoutePlanner(database: database)
+      .restore(routePlan: route.routePlan)
+    XCTAssertEqual(reconstructed, route)
+    let artifact = try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteArtifact(
+        database: database,
+        route: reconstructed
+      )
+    let release = try KaidoProductRelease(artifact: artifact)
+    let core = try KaidoLiveJourneyAdmission(
+      release: release,
+      selectedRoutePlan: route.routePlan,
+      journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release)
+    )
+    XCTAssertEqual(core.selectedRoutePlan, route.routePlan)
+    let authority = WholeShutoRouteReleaseAuthority(database: database)
+
+    switch authority.resolve(route: route) {
+    case .available(let admission):
+      XCTAssertEqual(admission.core.selectedRoutePlan, route.routePlan)
+    case .unavailable(let code):
+      XCTFail("Expected live admission, got \(code)")
+    }
+  }
+
   func testFirstLaunchInterfaceLanguageFollowsTheDevice() {
     XCTAssertEqual(
       KaidoReleaseLocale.matchingPreferredLanguage(["ja-JP", "en-US"]),

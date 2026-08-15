@@ -331,7 +331,10 @@ struct ShutoJunctionGuidanceTests {
       ShutoJunctionGuidanceCompiler.compile(
         database: database,
         route: route
-      ).only
+      ).first {
+        $0.definition.id
+          == "shuto.jct.oi.b-westbound-to-c2-outer"
+      }
     )
     let definition = match.definition
 
@@ -1299,6 +1302,99 @@ struct ShutoJunctionGuidanceTests {
         definition.sources.last?.url
           == "https://www.shutoko.jp/-/media/images/responsive/"
           + "customer/use/network/jct/routeguide/jct_daikoku"
+      )
+    }
+  }
+
+  @Test("Ohashi movements bind all three approach signs")
+  func ohashiMovementsBindAllThreeApproachSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.254992124.8.forward",
+        "osm.254992124.9.forward",
+        "shuto.jct.ohashi.3-inbound-stays-on-3",
+        .straight,
+        "渋谷・都心環状",
+        ["3", "C1"]
+      ),
+      (
+        "osm.254992124.8.forward",
+        "osm.78334077.0.forward",
+        "shuto.jct.ohashi.3-inbound-to-c2",
+        .right,
+        "湾岸線・東北道",
+        ["C2", "B", "E4"]
+      ),
+      (
+        "osm.80581127.78.forward",
+        "osm.331692348.0.forward",
+        "shuto.jct.ohashi.c2-inner-stays-on-c2",
+        .left,
+        "湾岸線",
+        ["C2"]
+      ),
+      (
+        "osm.80581127.78.forward",
+        "osm.331922702.0.forward",
+        "shuto.jct.ohashi.c2-inner-to-3",
+        .right,
+        "都心環状・東名",
+        ["3", "C1", "E1"]
+      ),
+      (
+        "osm.772511247.10.forward",
+        "osm.331922711.0.forward",
+        "shuto.jct.ohashi.c2-outer-stays-on-c2",
+        .straight,
+        "中央道・東北道",
+        ["C2", "4", "5", "E20", "E4"]
+      ),
+      (
+        "osm.772511247.10.forward",
+        "osm.331922695.0.forward",
+        "shuto.jct.ohashi.c2-outer-to-3",
+        .left,
+        "都心環状・東名",
+        ["3", "C1", "E1"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "5f27a01a763abd067d5bbd9108a6cd19"
+          + "368a31492b779f57cd045d5053e4dcaa"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_ohashi"
       )
     }
   }

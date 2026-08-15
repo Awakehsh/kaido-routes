@@ -22,8 +22,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     #expect(coverage.junctionCount == 29)
     #expect(coverage.incomingApproachCount == 86)
     #expect(coverage.movements.count == 173)
-    #expect(coverage.releasedMovementCount == 86)
-    #expect(coverage.missingMovementReviewCount == 87)
+    #expect(coverage.releasedMovementCount == 91)
+    #expect(coverage.missingMovementReviewCount == 82)
     #expect(
       coverage.movements.allSatisfy {
         !$0.officialDetailReference.isEmpty
@@ -991,10 +991,18 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       route: route
     )
 
-    #expect(assets.decisionZones.count == 1)
-    #expect(assets.releasedGuidance.count == 1)
-    let decisionZone = try #require(assets.decisionZones.first)
-    let guidance = try #require(assets.releasedGuidance.first)
+    let decisionZone = try #require(
+      assets.decisionZones.first {
+        route.routePlan.occurrence(id: $0.movementOccurrenceID)?
+          .entityID == "shuto.jct.oi.b-westbound-to-c2-outer"
+      }
+    )
+    let guidance = try #require(
+      assets.releasedGuidance.first {
+        $0.frameTemplate.movementOccurrenceID
+          == decisionZone.movementOccurrenceID
+      }
+    )
     #expect(
       route.routePlan.occurrence(
         id: decisionZone.movementOccurrenceID
@@ -1020,8 +1028,10 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       $0.navigationUpdate?.guidancePromptEmission
     }
 
-    #expect(emissions.count == 1)
-    #expect(emissions.first?.promptID == guidance.anchor.promptID)
+    #expect(
+      emissions.filter { $0.promptID == guidance.anchor.promptID }
+        .count == 1
+    )
     #expect(
       results.compactMap {
         $0.navigationUpdate?.navigationSnapshot.activeGuidanceFrame

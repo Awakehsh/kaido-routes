@@ -650,14 +650,14 @@ public enum ShutoJunctionMovementCatalog {
       outgoingRouteID: "K5",
       outgoingDirectionJA: "上り",
       branchSide: .left,
-      japaneseSignText: "大黒線",
-      routeShields: ["K5"],
+      japaneseSignText: "東名",
+      routeShields: ["E1", "K5", "K7"],
       junctionNameJA: "大黒JCT",
       junctionNameZH: "大黑 JCT",
       junctionNameEN: "Daikoku JCT",
-      destinationJA: "K5 大黒線 上り",
-      destinationZH: "K5 大黑线上行方向",
-      destinationEN: "Route K5 inbound",
+      destinationJA: "K5 大黒線 東名方面",
+      destinationZH: "K5 大黑线东名高速方向",
+      destinationEN: "Route K5 toward the Tomei Expressway",
       expectedJunctionDetailSHA256:
         "4fcd99ab1e97a6a84f6c5c41e86c2b16"
         + "247f5acd1b8c34e1e2e5397cf3c004eb",
@@ -3113,8 +3113,8 @@ public enum ShutoJunctionMovementCatalog {
       // arrow and 神奈川5号大黒線 on a diverging arrow, so this movement
       // keeps the mainline and asserts no lane.
       branchSide: .straight,
-      japaneseSignText: "横浜公園",
-      routeShields: ["B"],
+      japaneseSignText: "横浜公園・横横道路",
+      routeShields: ["B", "K3", "E16"],
       laneGuidanceState: .notReleased,
       localizedJunctionNames: [
         .japanese: "大黒JCT",
@@ -3123,29 +3123,31 @@ public enum ShutoJunctionMovementCatalog {
       ],
       localizedContent: [
         .japanese: LocalizedGuidanceContent(
-          displayText: "分岐せず、湾岸線 横浜公園方面へ",
+          displayText: "分岐せず、湾岸線 横浜公園・横横道路方面へ",
           spokenText:
-            "大黒ジャンクションは分岐せず、湾岸線 横浜公園方面へ進んでください",
+            "大黒ジャンクションは分岐せず、湾岸線 横浜公園・横横道路方面へ進んでください",
           spokenForms: [
             "湾岸線": "わんがんせん",
             "横浜公園": "よこはまこうえん",
+            "横横道路": "よこよこどうろ",
             "大黒": "だいこく",
           ],
-          preservedJapaneseSignText: "横浜公園"
+          preservedJapaneseSignText: "横浜公園・横横道路"
         ),
         .simplifiedChinese: LocalizedGuidanceContent(
-          displayText: "不要分岔，沿湾岸线前往 横浜公園 方向",
+          displayText: "不要分岔，沿湾岸线前往 横浜公園・横横道路 方向",
           spokenText:
-            "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園 方向",
-          spokenForms: ["横浜公園": "横浜公園"],
-          preservedJapaneseSignText: "横浜公園"
+            "在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園・横横道路 方向",
+          spokenForms: ["横浜公園・横横道路": "横浜公園・横横道路"],
+          preservedJapaneseSignText: "横浜公園・横横道路"
         ),
         .english: LocalizedGuidanceContent(
-          displayText: "Stay on the Bayshore Route toward 横浜公園",
+          displayText:
+            "Stay on the Bayshore Route toward 横浜公園 and 横横道路",
           spokenText:
-            "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園",
+            "At Daikoku JCT, stay on the Bayshore Route toward 横浜公園 and 横横道路",
           spokenForms: ["Bayshore Route": "Bayshore Route"],
-          preservedJapaneseSignText: "横浜公園"
+          preservedJapaneseSignText: "横浜公園・横横道路"
         ),
       ],
       commitTriggerDistanceMeters: 300,
@@ -3417,8 +3419,8 @@ public enum ShutoJunctionMovementCatalog {
       // arrow and 神奈川5号大黒線 on a diverging arrow, so this movement
       // keeps the mainline and asserts no lane.
       branchSide: .straight,
-      japaneseSignText: "空港中央",
-      routeShields: ["B"],
+      japaneseSignText: "アクアライン・空港中央",
+      routeShields: ["B", "CA"],
       laneGuidanceState: .notReleased,
       localizedJunctionNames: [
         .japanese: "大黒JCT",
@@ -3427,29 +3429,33 @@ public enum ShutoJunctionMovementCatalog {
       ],
       localizedContent: [
         .japanese: LocalizedGuidanceContent(
-          displayText: "分岐せず、湾岸線 空港中央方面へ",
+          displayText: "分岐せず、湾岸線 アクアライン・空港中央方面へ",
           spokenText:
-            "大黒ジャンクションは分岐せず、湾岸線 空港中央方面へ進んでください",
+            "大黒ジャンクションは分岐せず、湾岸線 アクアライン・空港中央方面へ進んでください",
           spokenForms: [
             "湾岸線": "わんがんせん",
+            "アクアライン": "あくあらいん",
             "空港中央": "くうこうちゅうおう",
             "大黒": "だいこく",
           ],
-          preservedJapaneseSignText: "空港中央"
+          preservedJapaneseSignText: "アクアライン・空港中央"
         ),
         .simplifiedChinese: LocalizedGuidanceContent(
-          displayText: "不要分岔，沿湾岸线前往 空港中央 方向",
+          displayText: "不要分岔，沿湾岸线前往 アクアライン・空港中央 方向",
           spokenText:
-            "在大黑 JCT不要分岔，沿湾岸线继续前往 空港中央 方向",
-          spokenForms: ["空港中央": "空港中央"],
-          preservedJapaneseSignText: "空港中央"
+            "在大黑 JCT不要分岔，沿湾岸线继续前往 アクアライン・空港中央 方向",
+          spokenForms: [
+            "アクアライン・空港中央": "アクアライン・空港中央"
+          ],
+          preservedJapaneseSignText: "アクアライン・空港中央"
         ),
         .english: LocalizedGuidanceContent(
-          displayText: "Stay on the Bayshore Route toward 空港中央",
+          displayText:
+            "Stay on the Bayshore Route toward アクアライン and 空港中央",
           spokenText:
-            "At Daikoku JCT, stay on the Bayshore Route toward 空港中央",
+            "At Daikoku JCT, stay on the Bayshore Route toward アクアライン and 空港中央",
           spokenForms: ["Bayshore Route": "Bayshore Route"],
-          preservedJapaneseSignText: "空港中央"
+          preservedJapaneseSignText: "アクアライン・空港中央"
         ),
       ],
       commitTriggerDistanceMeters: 300,
@@ -4030,6 +4036,98 @@ public enum ShutoJunctionMovementCatalog {
       additionalSources: [
         "https://www.shutoko.jp/use/network/map/route-s1/",
         "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.daikoku.b-eastbound-to-k5-inbound",
+      junctionID: "shuto.jct.jct_daikoku",
+      junctionNodeID: 364_206_183,
+      incomingEdgeID: "osm.5365195.2.forward",
+      outgoingEdgeID: "osm.32355890.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "K5",
+      outgoingDirectionJA: "上り",
+      branchSide: .left,
+      japaneseSignText: "東名",
+      routeShields: ["E1", "K5", "K1", "K7"],
+      junctionNameJA: "大黒JCT",
+      junctionNameZH: "大黑 JCT",
+      junctionNameEN: "Daikoku JCT",
+      destinationJA: "K5 大黒線 東名方面",
+      destinationZH: "K5 大黑线东名高速方向",
+      destinationEN: "Route K5 toward the Tomei Expressway",
+      expectedJunctionDetailSHA256:
+        "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+        + "247f5acd1b8c34e1e2e5397cf3c004eb",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daikoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-b/",
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.daikoku.k5-outbound-to-b-eastbound",
+      junctionID: "shuto.jct.jct_daikoku",
+      junctionNodeID: 364_203_327,
+      incomingEdgeID: "osm.32355898.7.forward",
+      outgoingEdgeID: "osm.32592543.0.forward",
+      incomingRouteID: "K5",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K5",
+      outgoingDirectionJA: "下り",
+      branchSide: .left,
+      japaneseSignText: "空港中央・東関東道",
+      routeShields: ["B", "K6", "E51"],
+      junctionNameJA: "大黒JCT",
+      junctionNameZH: "大黑 JCT",
+      junctionNameEN: "Daikoku JCT",
+      destinationJA: "湾岸線 空港中央・東関東道方面",
+      destinationZH: "湾岸线空港中央、东关东自动车道方向",
+      destinationEN:
+        "the Bayshore Route toward Kuko-Chuo and the Higashi-Kanto Expressway",
+      expectedJunctionDetailSHA256:
+        "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+        + "247f5acd1b8c34e1e2e5397cf3c004eb",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daikoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
+      ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.daikoku.k5-outbound-to-b-westbound",
+      junctionID: "shuto.jct.jct_daikoku",
+      junctionNodeID: 364_203_327,
+      incomingEdgeID: "osm.32355898.7.forward",
+      outgoingEdgeID: "osm.779045459.0.forward",
+      incomingRouteID: "K5",
+      incomingDirectionJA: "下り",
+      outgoingRouteID: "K5",
+      outgoingDirectionJA: "下り",
+      branchSide: .straight,
+      japaneseSignText: "横浜公園・幸浦",
+      routeShields: ["B", "K3"],
+      junctionNameJA: "大黒JCT",
+      junctionNameZH: "大黑 JCT",
+      junctionNameEN: "Daikoku JCT",
+      destinationJA: "湾岸線 横浜公園・幸浦方面",
+      destinationZH: "湾岸线横滨公园、幸浦方向",
+      destinationEN:
+        "the Bayshore Route toward Yokohama Park and Sachiura",
+      expectedJunctionDetailSHA256:
+        "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+        + "247f5acd1b8c34e1e2e5397cf3c004eb",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/jct_daikoku",
+      additionalSources: [
+        "https://www.shutoko.jp/use/network/map/route-k5/",
+        "https://www.shutoko.jp/use/network/map/route-b/",
       ]
     ),
   ]

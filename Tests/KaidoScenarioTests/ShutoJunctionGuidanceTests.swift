@@ -527,19 +527,23 @@ struct ShutoJunctionGuidanceTests {
         ]
     )
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
-    // Daikoku signs the continuation as Yokohama-koen; the rest sign it as
-    // Yokohama, and each definition preserves what its diagram shows.
+    // Daikoku additionally signs Yokohama-Yokosuka Road; each definition
+    // preserves the exact destinations and shields on its own diagram.
     #expect(
       matches.map(\.definition.japaneseSignText)
         == [
           "横浜", "横浜", "横浜", "横浜", "横浜",
-          "空港中央・大黒ふ頭", "横浜", "横浜公園",
+          "空港中央・大黒ふ頭", "横浜", "横浜公園・横横道路",
         ]
+    )
+    #expect(
+      matches.map(\.definition.routeShields)
+        == Array(repeating: ["B"], count: 7)
+          + [["B", "K3", "E16"]]
     )
     #expect(
       matches.allSatisfy {
         $0.definition.incomingDirectionJA == "西行き"
-          && $0.definition.routeShields == ["B"]
       }
     )
     for match in matches {
@@ -585,7 +589,8 @@ struct ShutoJunctionGuidanceTests {
         $0.id == "shuto.jct.daikoku.b-eastbound-stays-on-b"
       }
     )
-    #expect(daikoku.japaneseSignText == "空港中央")
+    #expect(daikoku.japaneseSignText == "アクアライン・空港中央")
+    #expect(daikoku.routeShields == ["B", "CA"])
     #expect(daikoku.branchSide == .straight)
     #expect(daikoku.incomingDirectionJA == "東行き")
     #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
@@ -1201,6 +1206,99 @@ struct ShutoJunctionGuidanceTests {
         definition.sources.last?.url
           == "https://www.shutoko.jp/-/media/images/responsive/"
           + "customer/use/network/jct/routeguide/jct_kouhoku"
+      )
+    }
+  }
+
+  @Test("Daikoku movements bind all current operator signs")
+  func daikokuMovementsBindCurrentOperatorSigns() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let expectations: [
+      (
+        incoming: String,
+        outgoing: String,
+        id: String,
+        side: ShutoJunctionBranchSide,
+        sign: String,
+        shields: [String]
+      )
+    ] = [
+      (
+        "osm.1449791735.2.forward",
+        "osm.15766920.0.forward",
+        "shuto.jct.daikoku.b-westbound-to-k5-inbound",
+        .left,
+        "東名",
+        ["E1", "K5", "K7"]
+      ),
+      (
+        "osm.1449791735.2.forward",
+        "osm.489510478.0.forward",
+        "shuto.jct.daikoku.b-westbound-stays-on-b",
+        .straight,
+        "横浜公園・横横道路",
+        ["B", "K3", "E16"]
+      ),
+      (
+        "osm.5365195.2.forward",
+        "osm.32355890.0.forward",
+        "shuto.jct.daikoku.b-eastbound-to-k5-inbound",
+        .left,
+        "東名",
+        ["E1", "K5", "K1", "K7"]
+      ),
+      (
+        "osm.5365195.2.forward",
+        "osm.5365195.3.forward",
+        "shuto.jct.daikoku.b-eastbound-stays-on-b",
+        .straight,
+        "アクアライン・空港中央",
+        ["B", "CA"]
+      ),
+      (
+        "osm.32355898.7.forward",
+        "osm.32592543.0.forward",
+        "shuto.jct.daikoku.k5-outbound-to-b-eastbound",
+        .left,
+        "空港中央・東関東道",
+        ["B", "K6", "E51"]
+      ),
+      (
+        "osm.32355898.7.forward",
+        "osm.779045459.0.forward",
+        "shuto.jct.daikoku.k5-outbound-to-b-westbound",
+        .straight,
+        "横浜公園・幸浦",
+        ["B", "K3"]
+      ),
+    ]
+
+    for expected in expectations {
+      let incoming = try #require(edges[expected.incoming])
+      let outgoing = try #require(edges[expected.outgoing])
+      let definition = try #require(
+        ShutoJunctionMovementCatalog.releasedDefinition(
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing
+        )
+      )
+      #expect(definition.id == expected.id)
+      #expect(definition.branchSide == expected.side)
+      #expect(definition.japaneseSignText == expected.sign)
+      #expect(definition.routeShields == expected.shields)
+      #expect(
+        definition.expectedJunctionDetailSHA256
+          == "4fcd99ab1e97a6a84f6c5c41e86c2b16"
+          + "247f5acd1b8c34e1e2e5397cf3c004eb"
+      )
+      #expect(
+        definition.sources.last?.url
+          == "https://www.shutoko.jp/-/media/images/responsive/"
+          + "customer/use/network/jct/routeguide/jct_daikoku"
       )
     }
   }

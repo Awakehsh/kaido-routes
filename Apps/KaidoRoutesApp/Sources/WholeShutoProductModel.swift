@@ -108,19 +108,22 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let expectedTravelTimeSeconds: Double
   let instructions: [String]
   let steps: [WholeShutoSurfaceRouteStep]?
+  let guidanceLanguageCode: String?
 
   init(
     coordinates: [ShutoCoordinate],
     distanceMeters: Double,
     expectedTravelTimeSeconds: Double,
     instructions: [String],
-    steps: [WholeShutoSurfaceRouteStep]? = nil
+    steps: [WholeShutoSurfaceRouteStep]? = nil,
+    guidanceLanguageCode: String? = nil
   ) {
     self.coordinates = coordinates
     self.distanceMeters = distanceMeters
     self.expectedTravelTimeSeconds = expectedTravelTimeSeconds
     self.instructions = instructions
     self.steps = steps
+    self.guidanceLanguageCode = guidanceLanguageCode
   }
 }
 
@@ -418,6 +421,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var runtimeFractionAlongOccurrence: Double?
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
+  private var surfaceSpeechGeneration = 0
   private var isStaticJunctionPreview = false
   private var selectedDestinationTitle: String?
   private var selectedSavedRouteTemplateParameters: [String: String]?
@@ -432,6 +436,7 @@ final class WholeShutoProductModel: ObservableObject {
   static let liveLocationStaleAfterMilliseconds = 10_000
   static let surfaceRerouteRequiredOffRouteObservations = 2
   static let surfaceRerouteCooldownMilliseconds = 15_000
+  static let surfaceSpeechPreannounceDistanceMeters = 250.0
   static let surfaceRouteReroutingCode = "SURFACE_ROUTE_REROUTING"
   static let surfaceRouteRerouteUnavailableCode =
     "SURFACE_ROUTE_REROUTE_UNAVAILABLE"
@@ -737,26 +742,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var activeSurfaceInstructionRemainingMeters: Double? {
-    guard let route = activeSurfaceRoute,
-      let steps = route.steps?.filter({
-        !$0.instruction.isEmpty && $0.distanceMeters > 0
-      }),
-      !steps.isEmpty
-    else {
-      return nil
-    }
-    let total = steps.reduce(0) { $0 + $1.distanceMeters }
-    guard total > 0 else { return nil }
-    let traveled = min(total, max(0, progressFraction) * total)
-    var cursor = 0.0
-    for step in steps {
-      let end = cursor + step.distanceMeters
-      if traveled <= end {
-        return max(0, end - traveled)
-      }
-      cursor = end
-    }
-    return 0
+    activeSurfaceStepProgress?.remainingMeters
   }
 
   private var activeSurfaceRoute: WholeShutoSurfaceRoute? {
@@ -771,6 +757,17 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private var activeSurfaceStep: WholeShutoSurfaceRouteStep? {
+    activeSurfaceStepProgress?.step
+  }
+
+  private var activeSurfaceStepProgress:
+    (
+      index: Int,
+      step: WholeShutoSurfaceRouteStep,
+      steps: [WholeShutoSurfaceRouteStep],
+      remainingMeters: Double
+    )?
+  {
     guard let route = activeSurfaceRoute,
       let steps = route.steps?.filter({
         !$0.instruction.isEmpty && $0.distanceMeters > 0
@@ -780,14 +777,28 @@ final class WholeShutoProductModel: ObservableObject {
       return nil
     }
     let total = steps.reduce(0) { $0 + $1.distanceMeters }
-    guard total > 0 else { return steps.first }
+    guard total > 0 else { return nil }
     let traveled = min(total, max(0, progressFraction) * total)
     var cursor = 0.0
-    for step in steps {
-      cursor += step.distanceMeters
-      if traveled <= cursor { return step }
+    for (index, step) in steps.enumerated() {
+      let end = cursor + step.distanceMeters
+      if traveled <= end {
+        return (
+          index: index,
+          step: step,
+          steps: steps,
+          remainingMeters: max(0, end - traveled)
+        )
+      }
+      cursor = end
     }
-    return steps.last
+    guard let step = steps.last else { return nil }
+    return (
+      index: steps.count - 1,
+      step: step,
+      steps: steps,
+      remainingMeters: 0
+    )
   }
 
   var savedRouteTemplateParameters: [String: String] {
@@ -2554,6 +2565,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeFractionAlongOccurrence = nil
       presentationProjection = nil
       consumedGuidancePromptIDs = []
+      surfaceSpeechGeneration = 0
       isStaticJunctionPreview = false
       liveLocationState = .acquiring
       liveLocationIssueCode = nil
@@ -2568,6 +2580,7 @@ final class WholeShutoProductModel: ObservableObject {
       } else {
         applyLiveActorSnapshot(initialSnapshot)
       }
+      scheduleLiveSurfaceSpeech(forceCurrentStep: true)
       scheduleLiveLocationFreshnessCheck()
       persistCheckpoint()
       controller.start()
@@ -2714,6 +2727,7 @@ final class WholeShutoProductModel: ObservableObject {
               phase = .surfaceEgress
               progressFraction = 0
               presentationProjection = nil
+              scheduleLiveSurfaceSpeech(forceCurrentStep: true)
             } else {
               applyLiveActorSnapshot(
                 await session.completeAtExitHandoff()
@@ -2880,12 +2894,14 @@ final class WholeShutoProductModel: ObservableObject {
     case .entryTransition:
       if phase == .surfaceAccess {
         cancelSurfaceReroute()
+        speechCoordinator?.stopProviderSurface()
         phase = .entryTransition
         progressFraction = 0
       }
     case .strictRoute:
       if phase == .surfaceAccess || phase == .entryTransition {
         cancelSurfaceReroute()
+        speechCoordinator?.stopProviderSurface()
         phase = .expressway
         progressFraction = 0
       }
@@ -2901,6 +2917,7 @@ final class WholeShutoProductModel: ObservableObject {
       phase = .surfaceEgress
       progressFraction = 0
       presentationProjection = nil
+      scheduleLiveSurfaceSpeech(forceCurrentStep: true)
     case .completed:
       completeLiveJourney()
     }
@@ -2954,6 +2971,7 @@ final class WholeShutoProductModel: ObservableObject {
       progressFraction,
       measurement.fractionAlongRoute
     )
+    scheduleLiveSurfaceSpeech(forceCurrentStep: false)
     guard completesJourney,
       progressFraction >= 0.995,
       let destination = route.coordinates.last,
@@ -3163,6 +3181,7 @@ final class WholeShutoProductModel: ObservableObject {
     presentationProjection = nil
     speechStatus = .idle
     consumedGuidancePromptIDs = []
+    surfaceSpeechGeneration = 0
     runtimeAssets = nil
     driveSimulator = nil
     liveDriveSession = nil
@@ -3352,8 +3371,11 @@ final class WholeShutoProductModel: ObservableObject {
         return
       }
       self.progressFraction = 0
+      self.speechCoordinator?.stopProviderSurface()
+      self.surfaceSpeechGeneration += 1
       self.liveLocationState = .available
       self.liveLocationIssueCode = nil
+      self.scheduleLiveSurfaceSpeech(forceCurrentStep: true)
       self.persistCheckpoint()
     }
   }
@@ -3601,6 +3623,54 @@ final class WholeShutoProductModel: ObservableObject {
     }
     speechCoordinator = coordinator
     speechStatus = .idle
+  }
+
+  private func scheduleLiveSurfaceSpeech(forceCurrentStep: Bool) {
+    guard
+      isLiveDrive,
+      isPlaying,
+      phase == .surfaceAccess || phase == .surfaceEgress,
+      let route = activeSurfaceRoute,
+      let progress = activeSurfaceStepProgress,
+      let routePlanID = selectedRoute?.routePlan.id,
+      let speechCoordinator
+    else {
+      return
+    }
+
+    let stepIndex: Int
+    if !forceCurrentStep,
+      progress.remainingMeters
+        <= Self.surfaceSpeechPreannounceDistanceMeters,
+      progress.index + 1 < progress.steps.count
+    {
+      stepIndex = progress.index + 1
+    } else {
+      stepIndex = progress.index
+    }
+    let instruction = progress.steps[stepIndex].instruction
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !instruction.isEmpty else { return }
+    let phaseID = phase.rawValue.lowercased()
+    let promptID =
+      "provider.surface.\(phaseID).\(surfaceSpeechGeneration).\(stepIndex)"
+    let routeLanguageCode = route.guidanceLanguageCode?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let languageCode =
+      routeLanguageCode.flatMap { $0.isEmpty ? nil : $0 }
+      ?? languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
+    speechStatus = speechCoordinator.submitProviderSurface(
+      GuidanceSpeechCommand(
+        identity: GuidanceSpeechIdentity(
+          promptID: promptID,
+          anchorID: "PROVIDER_SURFACE_STEP",
+          anchorOccurrenceID: promptID
+        ),
+        routePlanID: routePlanID,
+        languageCode: languageCode,
+        spokenText: instruction
+      )
+    )
   }
 
   private func publishPresentationAndScheduleSpeech(

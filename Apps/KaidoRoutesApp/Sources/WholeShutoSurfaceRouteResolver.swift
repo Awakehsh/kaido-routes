@@ -176,7 +176,9 @@ struct WholeShutoMapKitSurfaceRouteResolver:
             instruction: step.instructions,
             distanceMeters: step.distance
           )
-        }
+        },
+        guidanceLanguageCode: (Locale.preferredLanguages.first ?? Locale.current.identifier)
+          .replacingOccurrences(of: "_", with: "-")
       )
     } catch {
       return nil

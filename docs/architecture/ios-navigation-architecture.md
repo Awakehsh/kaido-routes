@@ -420,7 +420,19 @@ consumes and drops the active prompt; ending the interruption never replays it o
 any prompt that arrived while audio was unavailable.
 
 `GuidanceSpeechCoordinator` connects that scheduler to an injected output.
-The iOS `AVSpeechGuidanceOutput` resolves only the requested reviewed locale,
+During live surface access and egress it also accepts provider-owned ordinary-
+road step commands bound to the same exact RoutePlan. The model speaks the
+current step at surface-leg start, admits the next step once within 250 meters,
+and gives each recalculated leg a new generation so a changed first step can be
+spoken. The coordinator consumes each provider step identity exactly once,
+drops it across interruption, and silences it at the expressway boundary.
+Released expressway speech may replace surface speech; surface speech cannot
+replace an active released prompt. Provider text, geometry, and timing remain
+bounded presentation inputs and never create or mutate expressway guidance
+authority.
+For released expressway prompts, the iOS `AVSpeechGuidanceOutput` resolves only
+the requested reviewed locale. Provider surface commands instead retain the
+language code associated with the provider's localized instruction. The output
 enumerates only voices already installed on the device, excludes novelty and
 personal voices, and ranks premium, enhanced, then default quality. The locale's
 release identifier is translated to an exact synthesis locale before voice

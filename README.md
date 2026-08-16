@@ -202,7 +202,10 @@ The product distinguishes what is known from what is still unconfirmed:
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`. During a live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and
-  distance. Two consecutive accurate off-route observations trigger a bounded
+  distance. Live navigation speaks the current provider step and preannounces
+  the next step once within 250 meters; these route-bound provider commands
+  share the interruption-safe audio output but never gain expressway guidance
+  authority. Two consecutive accurate off-route observations trigger a bounded
   MapKit recalculation of only the active ordinary-road leg, with a cooldown;
   the exact Shuto plan and the opposite surface leg remain unchanged. Entry
   evidence takes over only near the exact directional ramp.

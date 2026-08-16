@@ -578,6 +578,7 @@ and one post-entry matcher update, asserting only actor-returned snapshots. The
 same update's matching one-shot emission passes through the RoutePlan-bound
 speech scheduler into an injected output exactly once. Focused tests execute
 replacement-safe callback identity, interruption without catch-up replay,
+provider surface-step exactly-once delivery and released-prompt priority,
 reviewed-form rendering without cascade or duplicate expansion, exact
 offline-audio lookup against unchanged release text, and a typed missing-voice
 failure. The real iOS output is compile- and launch-checked

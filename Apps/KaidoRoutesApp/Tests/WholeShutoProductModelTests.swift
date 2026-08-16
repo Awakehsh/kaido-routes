@@ -498,9 +498,11 @@ final class WholeShutoProductModelTests: XCTestCase {
   func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
     async throws
   {
+    let output = WholeShutoRecordingSpeechOutput()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
-      checkpointStore: nil
+      checkpointStore: nil,
+      speechOutput: output
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -524,6 +526,56 @@ final class WholeShutoProductModelTests: XCTestCase {
       1_200,
       accuracy: 0.01
     )
+    let command = try XCTUnwrap(output.commands.only)
+    XCTAssertEqual(command.routePlanID, model.selectedRoute?.routePlan.id)
+    XCTAssertEqual(command.languageCode, "en-US")
+    XCTAssertEqual(command.spokenText, "Continue on local road")
+    XCTAssertTrue(command.identity.promptID.hasPrefix("provider.surface."))
+    model.reset()
+  }
+
+  func testLiveSurfaceSpeechPreannouncesNextStepExactlyOnce()
+    async throws
+  {
+    let output = WholeShutoRecordingSpeechOutput()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoMultiStepSurfaceRouteResolver(),
+      checkpointStore: nil,
+      speechOutput: output
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    XCTAssertEqual(output.commands.map(\.spokenText), ["Continue straight"])
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    let midpoint = ShutoCoordinate(
+      latitude: (start.latitude + end.latitude) / 2,
+      longitude: (start.longitude + end.longitude) / 2
+    )
+    let envelope = Self.liveLocationEnvelope(
+      id: "surface.preannounce",
+      coordinate: midpoint
+    )
+    await model.consumeLiveObservationForTesting(envelope)
+    await model.consumeLiveObservationForTesting(envelope)
+
+    XCTAssertEqual(
+      output.commands.map(\.spokenText),
+      ["Continue straight", "Turn left"]
+    )
     model.reset()
   }
 
@@ -534,7 +586,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
-      liveLocationSource: locationSource
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput()
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -616,7 +669,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
-      liveLocationSource: locationSource
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput()
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -668,7 +722,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
-      liveLocationSource: locationSource
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput()
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -2897,7 +2952,35 @@ private struct WholeShutoInstructionSurfaceRouteResolver:
           instruction: "Continue on local road",
           distanceMeters: 1_200
         )
-      ]
+      ],
+      guidanceLanguageCode: "en-US"
+    )
+  }
+}
+
+private struct WholeShutoMultiStepSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) async -> WholeShutoSurfaceRoute? {
+    WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_200,
+      expectedTravelTimeSeconds: 180,
+      instructions: ["Continue straight", "Turn left"],
+      steps: [
+        WholeShutoSurfaceRouteStep(
+          instruction: "Continue straight",
+          distanceMeters: 700
+        ),
+        WholeShutoSurfaceRouteStep(
+          instruction: "Turn left",
+          distanceMeters: 500
+        ),
+      ],
+      guidanceLanguageCode: "en-US"
     )
   }
 }
@@ -3146,6 +3229,7 @@ private final class WholeShutoRecordingSpeechOutput:
   func speak(_ command: GuidanceSpeechCommand) {
     commands.append(command)
     eventHandler?(.didStart(command.identity))
+    eventHandler?(.didFinish(command.identity))
   }
 
   func stop() {}

@@ -1,4 +1,5 @@
 import Foundation
+import KaidoAppleAdapters
 import KaidoNavigation
 
 @MainActor
@@ -8,7 +9,8 @@ enum WholeShutoForegroundReleaseFactory {
       WholeShutoMapKitSurfaceRouteResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
       WholeShutoUserDefaultsCheckpointStore(),
-    liveLocationSource: (any ForegroundNavigationLocationSource)? = nil
+    liveLocationSource: (any ForegroundNavigationLocationSource)? = nil,
+    speechOutput: (any GuidanceSpeechOutput)? = nil
   ) -> WholeShutoProductModel {
     do {
       let database = try WholeShutoNetworkCatalog.bundled()
@@ -35,6 +37,7 @@ enum WholeShutoForegroundReleaseFactory {
         database: database,
         surfaceRouteResolver: surfaceRouteResolver,
         checkpointStore: checkpointStore,
+        speechOutput: speechOutput,
         liveJourneyAdmissions: admissions,
         liveJourneyAdmissionResolver: { route in
           routeReleaseAuthority.resolve(route: route)

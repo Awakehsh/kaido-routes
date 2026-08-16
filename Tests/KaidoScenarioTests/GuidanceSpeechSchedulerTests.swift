@@ -229,6 +229,169 @@ func speechCoordinatorStopsReplacedOutput() throws {
   #expect(coordinator.scheduler.activeCommand?.identity == secondIdentity)
 }
 
+@MainActor
+@Test("Speech coordinator admits one route-bound provider surface step exactly once")
+func speechCoordinatorAdmitsProviderSurfaceStepOnce() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let command = surfaceSpeechCommand(promptID: "surface.access.0")
+
+  #expect(
+    coordinator.submitProviderSurface(command)
+      == .speaking(command.identity)
+  )
+  #expect(output.commands == [command])
+  #expect(
+    coordinator.submitProviderSurface(command)
+      == .suppressed(.duplicate)
+  )
+  #expect(output.commands == [command])
+}
+
+@MainActor
+@Test("A provider surface step waits for the active step to finish")
+func providerSurfaceSpeechDoesNotCutOffTheActiveStep() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let first = surfaceSpeechCommand(promptID: "surface.access.0")
+  let second = surfaceSpeechCommand(promptID: "surface.access.1")
+  _ = coordinator.submitProviderSurface(first)
+
+  #expect(
+    coordinator.submitProviderSurface(second)
+      == .suppressed(.notAuthorized)
+  )
+  #expect(output.commands == [first])
+  output.finish(first.identity)
+  #expect(
+    coordinator.submitProviderSurface(second)
+      == .speaking(second.identity)
+  )
+  #expect(output.commands == [first, second])
+}
+
+@MainActor
+@Test("Released expressway speech replaces provider surface speech")
+func releasedSpeechReplacesProviderSurfaceSpeech() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let surface = surfaceSpeechCommand(promptID: "surface.access.0")
+  _ = coordinator.submitProviderSurface(surface)
+
+  let projection = try speechProjection(
+    promptID: "test.prompt.entry",
+    anchorOccurrenceID: "test.occurrence.entry"
+  )
+  guard case .speaking(let releasedIdentity) = coordinator.submit(projection)
+  else {
+    Issue.record("Expected released expressway prompt to replace surface speech")
+    return
+  }
+
+  #expect(output.stopCount == 1)
+  #expect(output.commands.map(\.identity) == [surface.identity, releasedIdentity])
+  output.finish(surface.identity)
+  #expect(coordinator.status == .speaking(releasedIdentity))
+}
+
+@MainActor
+@Test("Provider surface speech cannot replace released expressway speech")
+func providerSurfaceSpeechCannotReplaceReleasedSpeech() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let projection = try speechProjection(
+    promptID: "test.prompt.expressway",
+    anchorOccurrenceID: "test.occurrence.expressway"
+  )
+  guard case .speaking(let releasedIdentity) = coordinator.submit(projection)
+  else {
+    Issue.record("Expected released expressway speech")
+    return
+  }
+
+  let surface = surfaceSpeechCommand(promptID: "surface.egress.0")
+  #expect(
+    coordinator.submitProviderSurface(surface)
+      == .suppressed(.notAuthorized)
+  )
+  #expect(output.stopCount == 0)
+  #expect(output.commands.map(\.identity) == [releasedIdentity])
+}
+
+@MainActor
+@Test("Interrupted provider surface speech is consumed without catch-up replay")
+func providerSurfaceSpeechDoesNotReplayAfterInterruption() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let command = surfaceSpeechCommand(promptID: "surface.access.0")
+  _ = coordinator.submitProviderSurface(command)
+
+  output.beginInterruption()
+  #expect(coordinator.status == .interrupted)
+  let during = surfaceSpeechCommand(promptID: "surface.access.1")
+  #expect(
+    coordinator.submitProviderSurface(during) == .suppressed(.interrupted)
+  )
+  output.endInterruption()
+  #expect(coordinator.status == .idle)
+  #expect(
+    coordinator.submitProviderSurface(command)
+      == .suppressed(.duplicate)
+  )
+  #expect(
+    coordinator.submitProviderSurface(during)
+      == .suppressed(.duplicate)
+  )
+}
+
+@MainActor
+@Test("Provider surface speech remains bound to the selected RoutePlan")
+func providerSurfaceSpeechRejectsRoutePlanDrift() throws {
+  let output = RecordingSpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech",
+    output: output
+  )
+  let command = surfaceSpeechCommand(
+    routePlanID: "test.plan.other",
+    promptID: "surface.access.0"
+  )
+
+  #expect(coordinator.submitProviderSurface(command) == .invalidProjection)
+  #expect(output.commands.isEmpty)
+}
+
+private func surfaceSpeechCommand(
+  routePlanID: String = "test.plan.speech",
+  promptID: String
+) -> GuidanceSpeechCommand {
+  GuidanceSpeechCommand(
+    identity: GuidanceSpeechIdentity(
+      promptID: promptID,
+      anchorID: "PROVIDER_SURFACE_STEP",
+      anchorOccurrenceID: promptID
+    ),
+    routePlanID: routePlanID,
+    languageCode: "ja-JP",
+    spokenText: "次の交差点を左折です"
+  )
+}
+
 private func speechProjection(
   routePlanID: String = "test.plan.speech",
   promptID: String,
@@ -338,5 +501,13 @@ private final class RecordingSpeechOutput: GuidanceSpeechOutput {
 
   func finish(_ identity: GuidanceSpeechIdentity) {
     eventHandler?(.didFinish(identity))
+  }
+
+  func beginInterruption() {
+    eventHandler?(.interruptionBegan)
+  }
+
+  func endInterruption() {
+    eventHandler?(.interruptionEnded)
   }
 }

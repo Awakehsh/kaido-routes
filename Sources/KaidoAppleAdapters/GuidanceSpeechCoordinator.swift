@@ -86,6 +86,8 @@ public final class GuidanceSpeechCoordinator {
   }
 
   private let output: any GuidanceSpeechOutput
+  private var activeSurfaceCommand: GuidanceSpeechCommand?
+  private var consumedSurfaceIdentities: Set<GuidanceSpeechIdentity> = []
 
   public init(
     expectedRoutePlanID: String,
@@ -110,6 +112,10 @@ public final class GuidanceSpeechCoordinator {
         status = .suppressed(reason)
       case .speak(let command, let replacing):
         do {
+          if activeSurfaceCommand != nil {
+            activeSurfaceCommand = nil
+            output.stop()
+          }
           if replacing != nil {
             output.stop()
           }
@@ -131,8 +137,81 @@ public final class GuidanceSpeechCoordinator {
     return status
   }
 
+  /// Speaks one provider-owned ordinary-road instruction without granting it
+  /// authority over the released expressway plan. The caller supplies a
+  /// route-bound, step-scoped identity and is responsible for deciding when a
+  /// new provider step becomes current. Exact identities remain consumed after
+  /// interruption or replacement so UI updates cannot replay them.
+  @discardableResult
+  public func submitProviderSurface(
+    _ command: GuidanceSpeechCommand
+  ) -> GuidanceSpeechCoordinatorStatus {
+    guard
+      normalized(command.routePlanID) == scheduler.expectedRoutePlanID,
+      !normalized(command.identity.promptID).isEmpty,
+      !normalized(command.identity.anchorID).isEmpty,
+      !normalized(command.identity.anchorOccurrenceID).isEmpty,
+      !normalized(command.languageCode).isEmpty,
+      !normalized(command.spokenText).isEmpty,
+      !normalized(command.synthesisText).isEmpty
+    else {
+      status = .invalidProjection
+      return status
+    }
+    guard !consumedSurfaceIdentities.contains(command.identity) else {
+      status = .suppressed(.duplicate)
+      return status
+    }
+    switch scheduler.state {
+    case .interrupted:
+      consumedSurfaceIdentities.insert(command.identity)
+      status = .suppressed(.interrupted)
+      return status
+    case .stopped:
+      consumedSurfaceIdentities.insert(command.identity)
+      status = .suppressed(.stopped)
+      return status
+    case .idle, .speaking:
+      break
+    }
+
+    guard scheduler.activeCommand == nil else {
+      consumedSurfaceIdentities.insert(command.identity)
+      status = .suppressed(.notAuthorized)
+      return status
+    }
+    guard activeSurfaceCommand == nil else {
+      status = .suppressed(.notAuthorized)
+      return status
+    }
+
+    consumedSurfaceIdentities.insert(command.identity)
+    activeSurfaceCommand = command
+    status = .scheduled(command.identity)
+    do {
+      try output.speak(command)
+    } catch let error as GuidanceSpeechOutputError {
+      activeSurfaceCommand = nil
+      status = .failed(error.code)
+    } catch {
+      activeSurfaceCommand = nil
+      status = .failed(.audioSessionActivationFailed)
+    }
+    return status
+  }
+
+  /// Silences only provider-owned ordinary-road speech at an expressway
+  /// boundary. Released guidance, when present, remains untouched.
+  public func stopProviderSurface() {
+    guard activeSurfaceCommand != nil else { return }
+    activeSurfaceCommand = nil
+    output.stop()
+    status = .idle
+  }
+
   public func stop() {
     _ = scheduler.stop()
+    activeSurfaceCommand = nil
     output.stop()
     status = .stopped
   }
@@ -146,15 +225,30 @@ public final class GuidanceSpeechCoordinator {
   private func handle(_ event: GuidanceSpeechOutputEvent) {
     switch event {
     case .didStart(let identity):
+      if activeSurfaceCommand?.identity == identity {
+        status = .speaking(identity)
+        return
+      }
       guard scheduler.activeCommand?.identity == identity else { return }
       status = .speaking(identity)
     case .didFinish(let identity):
+      if activeSurfaceCommand?.identity == identity {
+        activeSurfaceCommand = nil
+        status = .idle
+        return
+      }
       guard scheduler.didFinish(identity) else { return }
       status = .idle
     case .didCancel(let identity):
+      if activeSurfaceCommand?.identity == identity {
+        activeSurfaceCommand = nil
+        status = .idle
+        return
+      }
       guard scheduler.didCancel(identity) else { return }
       status = .idle
     case .interruptionBegan:
+      activeSurfaceCommand = nil
       _ = scheduler.interruptionBegan()
       status = .interrupted
     case .interruptionEnded:
@@ -162,6 +256,10 @@ public final class GuidanceSpeechCoordinator {
       guard scheduler.state == .idle else { return }
       status = .idle
     }
+  }
+
+  private func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
 
@@ -208,7 +306,13 @@ public final class GuidanceSpeechCoordinator {
     }
 
     public func speak(_ command: GuidanceSpeechCommand) throws {
-      cancelActiveUtterance()
+      // The coordinator stops an admitted replacement before calling speak.
+      // Only cancel here when a direct caller still owns an active utterance;
+      // stopping the same synthesizer twice while its cancellation settles can
+      // crash the simulator audio service.
+      if activeUtteranceID != nil {
+        cancelActiveUtterance()
+      }
 
       guard
         let profile = Self.preferredInstalledVoiceProfile(

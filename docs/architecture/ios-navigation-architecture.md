@@ -12,9 +12,10 @@ and lets the surface adapter decide whether that exact ramp is drivable instead
 of rejecting it by straight-line distance.
 The selected Kaido-owned `RoutePlan` then drives review and a labeled replay of
 bounded surface legs, entry, expressway progress, exit, egress, finish, and
-checkpoint reconstruction. Exact plans whose complete decision sequence and
-recovery compile into a foreground release can start live navigation; every
-other plan remains fail-closed with its precise release blocker.
+checkpoint reconstruction. Every plannable direction-valid facility route in
+the current snapshot can compile from the 161 released movement bindings into
+one exact foreground release; malformed, mismatched, or incomplete plans remain
+fail-closed with their precise release blocker.
 
 `ShutoNetworkDatabase` preserves graph bounds, explicit limitations, official
 catalog and facility-review hashes, and OSM source/licence metadata rather than
@@ -72,11 +73,12 @@ authority because most routes do not publish them consistently.
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
 multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
-Core Location lifecycle for the planning origin only. It cannot create a live
-navigation session from the candidate graph. The live enrollment seam accepts
-only one `KaidoLiveJourneyAdmission` whose complete selected `RoutePlan` equals
-one foreground-authorized `KaidoProductRelease` and whose immutable
-`JourneyPlan` contains release-bound surface access and egress legs. It then
+Core Location lifecycle for the planning origin and an admitted live drive. It
+cannot create a live navigation session from the candidate graph alone. The
+live enrollment seam accepts only one `KaidoLiveJourneyAdmission` whose complete
+selected `RoutePlan` equals one foreground-authorized `KaidoProductRelease`.
+MapKit surface legs remain bounded presentation inputs around its expressway-only
+`JourneyPlan`. It then
 constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
 boundary adapters, and the observation adapter before attaching the shared
 serial foreground location controller. Device fixes reject invalid, stale,
@@ -84,13 +86,16 @@ future-dated, ambiguous, and distributed-build simulated input and require a
 unique HIGH occurrence commit before progress. The seam cannot mint
 `EntryTransitionAdmissionContext`,
 `SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
-hash or a MapKit response. Neither the current planning location path nor replay
-supplies background-navigation or tunnel dead-reckoning authority.
+hash or a MapKit response. Two consecutive accepted off-route observations may
+replace only the active MapKit surface leg from the current coordinate; a
+15-second cooldown prevents request churn, and the exact Shuto plan is never
+recomputed. Neither the current planning location path nor replay supplies
+background-navigation or tunnel dead-reckoning authority.
 
-`ShutoJunctionGuidanceCompiler` contains 94 snapshot- and source-hash-bound
-movement definitions. They cover every divergent JCT on the six bundled
-foreground routes and admit other exact plans only when their entire decision
-sequence is covered. Admission still requires
+`ShutoJunctionGuidanceCompiler` contains 161 snapshot- and source-hash-bound
+movement definitions. They cover every inventoried available mainline movement
+and admit an exact plan only when its entire decision sequence is covered.
+Admission still requires
 the exact adjacent edges, shared JCT node, route direction, occurrence order,
 and operator-detail hash. The App may render and speak only the reviewed branch
 or continuation, Japanese sign target, and route shields. Lane indices remain
@@ -107,14 +112,14 @@ or active delivery tracks.
 Open boundaries remain explicit: no passenger-safe field, tunnel, acoustic, or
 CarPlay qualification exists; there is no background navigation service or
 CarPlay scene; dynamic passage and traffic remain unconfirmed without a current
-provider; and lane guidance remains unreleased. Enrolling live navigation
-requires a real validated joint `KaidoProductRelease` plus released surface
-provider and field evidence; this is an external evidence boundary, not a value
-an asset-integrity hash may synthesize. Valhalla remains the leading
+provider; and lane guidance remains unreleased. Foreground live navigation uses
+one validated on-device joint `KaidoProductRelease`; field reliability remains
+an external evidence boundary that an asset-integrity hash cannot synthesize.
+Valhalla remains the leading
 shared surface-routing/offline-oracle candidate behind a bounded adapter, while
 the pure-Swift route-aware matcher owns live RoutePlan matching.
 
-**Checked:** 2026-08-14
+**Checked:** 2026-08-16
 
 ## Decision summary
 

@@ -68,14 +68,12 @@ internal review workbench.
   candidate entrances, exits, and junction connectivity; official facility
   facts remain distinguishable from OSM topology.
 - The bundled whole-Shuto graph remains a candidate asset rather than blanket
-  navigation authority. Five exact foreground releases are prebuilt: C1 inner
-  from Shibakoen to Shiodome, Bayshore westbound from Chidoricho to
-  Daikoku-Futo, C2 inner/Bayshore from Oji-minami to Shikahamabashi, the
-  Daikoku/Yokohama circuit from Wangan-Kanpachi to Daikoku-Futo, and the
-  scenic grand tour from Harumi to Daikoku-Futo. The C1 outer circuit from
-  Kyobashi back to Kyobashi resolves a sixth exact release on device from the
-  same bundled evidence. **Start navigation** remains fail-closed with
-  `WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` for every other exact RoutePlan.
+  navigation authority. Five representative foreground releases are prebuilt
+  for startup regression. Every other plannable exact `RoutePlan` is rebuilt
+  and content-addressed on device from the same validated snapshot and 161
+  released movement bindings before **Start navigation** is enabled. The
+  exhaustive admission audit covers all 51,582 direction-valid facility route
+  combinations; malformed, mismatched, or incomplete plans still fail closed.
 - Every compiled whole-Shuto runtime exposes a deterministic asset identity.
   Its network-artifact hash covers the complete decoded network, including
   source, licence, limitation, and bounds metadata; its route-runtime hash
@@ -203,7 +201,10 @@ The product distinguishes what is known from what is still unconfirmed:
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`. During a foreground live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and
-  distance; entry evidence takes over only near the exact directional ramp.
+  distance. Two consecutive accurate off-route observations trigger a bounded
+  MapKit recalculation of only the active ordinary-road leg, with a cooldown;
+  the exact Shuto plan and the opposite surface leg remain unchanged. Entry
+  evidence takes over only near the exact directional ramp.
 - The default App's foreground Core Location lifecycle supplies the planning
   origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the

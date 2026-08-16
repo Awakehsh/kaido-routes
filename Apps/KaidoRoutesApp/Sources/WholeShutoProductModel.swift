@@ -349,9 +349,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var egressRoute: WholeShutoSurfaceRoute?
   @Published private(set) var progressFraction = 0.0
   @Published private(set) var isPlaying = false
-  /// True only for a future drive backed by an injected, validated foreground
-  /// product runtime. The bundled whole-network snapshot is not release
-  /// authority, so its default journey keeps this false and fails live start.
+  /// True only after the selected exact route has produced a validated
+  /// foreground product runtime and the user has started live navigation.
   @Published private(set) var isLiveDrive = false
   @Published private(set) var liveLocationState: WholeShutoLiveLocationState = .inactive
   @Published private(set) var liveLocationIssueCode: String?
@@ -359,6 +358,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var checkpointIssueCode: String?
   @Published private(set) var isPlanning = false
   @Published private(set) var isUpdatingSurfaceRoute = false
+  @Published private(set) var isReroutingSurfaceRoute = false
   @Published private(set) var isPreparingLiveNavigation = false
   @Published private(set) var restoredFromCheckpoint = false
   @Published private(set) var matcherConfidence: MatcherConfidence?
@@ -385,6 +385,10 @@ final class WholeShutoProductModel: ObservableObject {
   private var playbackTask: Task<Void, Never>?
   private var playbackGeneration = 0
   private var surfaceRouteTask: Task<Void, Never>?
+  private var surfaceRerouteTask: Task<Void, Never>?
+  private var surfaceRerouteRequestID: UUID?
+  private var consecutiveSurfaceOffRouteObservations = 0
+  private var lastSurfaceRerouteAttemptAtMilliseconds: Int?
   private var liveAdmissionTask: Task<Void, Never>?
   private var liveAdmissionRequestID: UUID?
   private var resolvedLiveAdmission: WholeShutoLiveJourneyAdmission?
@@ -425,6 +429,11 @@ final class WholeShutoProductModel: ObservableObject {
   private let nowMillisecondsProvider: () -> Int
 
   static let liveLocationStaleAfterMilliseconds = 10_000
+  static let surfaceRerouteRequiredOffRouteObservations = 2
+  static let surfaceRerouteCooldownMilliseconds = 15_000
+  static let surfaceRouteReroutingCode = "SURFACE_ROUTE_REROUTING"
+  static let surfaceRouteRerouteUnavailableCode =
+    "SURFACE_ROUTE_REROUTE_UNAVAILABLE"
   private static let checkpointLoadFailedCode =
     "WHOLE_SHUTO_CHECKPOINT_LOAD_FAILED"
   private static let checkpointSchemaUnsupportedCode =
@@ -596,6 +605,7 @@ final class WholeShutoProductModel: ObservableObject {
   deinit {
     playbackTask?.cancel()
     surfaceRouteTask?.cancel()
+    surfaceRerouteTask?.cancel()
     liveAdmissionTask?.cancel()
     circuitTariffTask?.cancel()
     liveLocationFreshnessTask?.cancel()
@@ -2474,6 +2484,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    cancelSurfaceReroute()
     guard matchingLiveAdmissions.count == 1,
       let admission = matchingLiveAdmissions.first
     else {
@@ -2864,11 +2875,13 @@ final class WholeShutoProductModel: ObservableObject {
       break
     case .entryTransition:
       if phase == .surfaceAccess {
+        cancelSurfaceReroute()
         phase = .entryTransition
         progressFraction = 0
       }
     case .strictRoute:
       if phase == .surfaceAccess || phase == .entryTransition {
+        cancelSurfaceReroute()
         phase = .expressway
         progressFraction = 0
       }
@@ -2902,8 +2915,15 @@ final class WholeShutoProductModel: ObservableObject {
         along: route.coordinates
       )
     else {
+      recordSurfaceOffRouteObservation(
+        coordinate: coordinate,
+        observedAtMilliseconds:
+          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+      )
       liveLocationState = .degraded
-      liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
+      if !isReroutingSurfaceRoute {
+        liveLocationIssueCode = "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
+      }
       return false
     }
     let maximumLateralDistance = min(
@@ -2914,10 +2934,18 @@ final class WholeShutoProductModel: ObservableObject {
       measurement.lateralDistanceMeters
         <= maximumLateralDistance
     else {
+      recordSurfaceOffRouteObservation(
+        coordinate: coordinate,
+        observedAtMilliseconds:
+          lastLiveObservationAtMilliseconds ?? nowMillisecondsProvider()
+      )
       liveLocationState = .degraded
-      liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
+      if !isReroutingSurfaceRoute {
+        liveLocationIssueCode = "SURFACE_ROUTE_OFF_ROUTE"
+      }
       return false
     }
+    consecutiveSurfaceOffRouteObservations = 0
     progressFraction = max(
       progressFraction,
       measurement.fractionAlongRoute
@@ -2946,6 +2974,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func completeLiveJourney() {
+    cancelSurfaceReroute()
     stopForegroundLiveLocationController()
     phase = .completed
     progressFraction = 1
@@ -3096,6 +3125,7 @@ final class WholeShutoProductModel: ObservableObject {
     stopForegroundLiveLocationController()
     invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
+    cancelSurfaceReroute()
     liveAdmissionTask?.cancel()
     liveAdmissionTask = nil
     liveAdmissionRequestID = nil
@@ -3142,6 +3172,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    lastSurfaceRerouteAttemptAtMilliseconds = nil
     liveLocationFreshnessTask?.cancel()
     liveLocationFreshnessTask = nil
     isStaticJunctionPreview = false
@@ -3163,6 +3194,7 @@ final class WholeShutoProductModel: ObservableObject {
       }
     case .inactive, .background:
       if isLiveDrive {
+        cancelSurfaceReroute()
         invalidatePlaybackTask()
         isPlaying = false
         speechCoordinator?.stop()
@@ -3189,6 +3221,149 @@ final class WholeShutoProductModel: ObservableObject {
     Task {
       await controller.stop()
     }
+  }
+
+  private func recordSurfaceOffRouteObservation(
+    coordinate: ShutoCoordinate,
+    observedAtMilliseconds: Int
+  ) {
+    guard
+      isLiveDrive,
+      isPlaying,
+      phase == .surfaceAccess || phase == .surfaceEgress
+    else {
+      return
+    }
+    consecutiveSurfaceOffRouteObservations += 1
+    guard
+      consecutiveSurfaceOffRouteObservations
+        >= Self.surfaceRerouteRequiredOffRouteObservations,
+      surfaceRerouteTask == nil,
+      lastSurfaceRerouteAttemptAtMilliseconds.map({
+        observedAtMilliseconds - $0
+          >= Self.surfaceRerouteCooldownMilliseconds
+      }) ?? true
+    else {
+      return
+    }
+    beginSurfaceReroute(
+      from: coordinate,
+      phase: phase,
+      attemptedAtMilliseconds: observedAtMilliseconds
+    )
+  }
+
+  private func beginSurfaceReroute(
+    from coordinate: ShutoCoordinate,
+    phase requestedPhase: WholeShutoJourneyPhase,
+    attemptedAtMilliseconds: Int
+  ) {
+    guard
+      let selectedRoute,
+      requestedPhase == .surfaceAccess || requestedPhase == .surfaceEgress
+    else {
+      return
+    }
+    let destination: ShutoCoordinate
+    let fallbackDestination: ShutoCoordinate?
+    switch requestedPhase {
+    case .surfaceAccess:
+      destination =
+        selectedRoute.coordinates.first
+        ?? selectedRoute.entryFacility.coordinate
+      fallbackDestination = selectedRoute.entryFacility.coordinate
+    case .surfaceEgress:
+      guard let journeyDestination = self.destination?.coordinate else {
+        return
+      }
+      destination = journeyDestination
+      fallbackDestination = nil
+    default:
+      return
+    }
+
+    let requestID = UUID()
+    let routePlanID = selectedRoute.routePlan.id
+    let resolver = surfaceRouteResolver
+    consecutiveSurfaceOffRouteObservations = 0
+    lastSurfaceRerouteAttemptAtMilliseconds = attemptedAtMilliseconds
+    surfaceRerouteRequestID = requestID
+    isReroutingSurfaceRoute = true
+    liveLocationState = .degraded
+    liveLocationIssueCode = Self.surfaceRouteReroutingCode
+    surfaceRerouteTask = Task { [weak self] in
+      var resolved = await resolver.route(
+        from: coordinate,
+        to: destination
+      )
+      if resolved == nil,
+        !Task.isCancelled,
+        let fallbackDestination,
+        fallbackDestination != destination
+      {
+        resolved = await resolver.route(
+          from: coordinate,
+          to: fallbackDestination
+        )
+      }
+      guard
+        !Task.isCancelled,
+        let self,
+        self.surfaceRerouteRequestID == requestID
+      else {
+        return
+      }
+      self.surfaceRerouteTask = nil
+      self.surfaceRerouteRequestID = nil
+      self.isReroutingSurfaceRoute = false
+      guard
+        self.isLiveDrive,
+        self.isPlaying,
+        self.phase == requestedPhase,
+        self.selectedRoute?.routePlan.id == routePlanID
+      else {
+        return
+      }
+      guard let resolved, Self.isUsableSurfaceRoute(resolved) else {
+        self.liveLocationState = .degraded
+        self.liveLocationIssueCode = Self.surfaceRouteRerouteUnavailableCode
+        self.persistCheckpoint()
+        return
+      }
+      switch requestedPhase {
+      case .surfaceAccess:
+        self.accessRoute = resolved
+      case .surfaceEgress:
+        self.egressRoute = resolved
+      default:
+        return
+      }
+      self.progressFraction = 0
+      self.liveLocationState = .available
+      self.liveLocationIssueCode = nil
+      self.persistCheckpoint()
+    }
+  }
+
+  private static func isUsableSurfaceRoute(
+    _ route: WholeShutoSurfaceRoute
+  ) -> Bool {
+    route.coordinates.count >= 2
+      && route.distanceMeters.isFinite
+      && route.distanceMeters >= 0
+      && route.expectedTravelTimeSeconds.isFinite
+      && route.expectedTravelTimeSeconds >= 0
+      && route.coordinates.allSatisfy {
+        $0.latitude.isFinite && $0.longitude.isFinite
+      }
+  }
+
+  private func cancelSurfaceReroute() {
+    surfaceRerouteTask?.cancel()
+    surfaceRerouteTask = nil
+    surfaceRerouteRequestID = nil
+    consecutiveSurfaceOffRouteObservations = 0
+    isReroutingSurfaceRoute = false
   }
 
   private func startPlaybackLoop() {

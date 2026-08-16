@@ -118,43 +118,24 @@ struct WholeShutoProductView: View {
       WholeShutoLanguageSettingsView(model: languageSettings)
     }
     .alert(
-      copy.resolve(
-        japanese: "プレビューを終了しますか？",
-        simplifiedChinese: "结束本次预演？",
-        english: "End this preview?"
-      ),
+      endJourneyConfirmationTitle,
       isPresented: $showsEndJourneyConfirmation
     ) {
       Button(
-        copy.resolve(
-          japanese: "続ける",
-          simplifiedChinese: "继续预演",
-          english: "Continue preview"
-        ),
+        continueJourneyActionLabel,
         role: .cancel
       ) {
         resumeAfterEndJourneyCancellation()
       }
       Button(
-        copy.resolve(
-          japanese: "プレビューを終了",
-          simplifiedChinese: "结束预演",
-          english: "End preview"
-        ),
+        endJourneyActionLabel,
         role: .destructive
       ) {
         resumesAfterEndJourneyCancellation = false
         model.reset()
       }
     } message: {
-      Text(
-        copy.resolve(
-          japanese: "現在の進行状況は破棄され、ルート検索に戻ります。",
-          simplifiedChinese: "当前行程进度将被清除，并返回路线规划。",
-          english:
-            "Current journey progress will be cleared and route planning will reopen."
-        )
-      )
+      Text(endJourneyConfirmationMessage)
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-product")
@@ -551,11 +532,7 @@ struct WholeShutoProductView: View {
       .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
       .accessibilityLabel(
         isActiveNavigation
-          ? copy.resolve(
-            japanese: "プレビューを終了",
-            simplifiedChinese: "结束预演",
-            english: "End preview"
-          )
+          ? endJourneyActionLabel
           : copy.resolve(
             japanese: "経路計画に戻る",
             simplifiedChinese: "返回路线规划",
@@ -2607,11 +2584,7 @@ struct WholeShutoProductView: View {
 
         VStack(alignment: .leading, spacing: 2) {
           Text(
-            copy.resolve(
-              japanese: "全行程プレビュー完了",
-              simplifiedChinese: "完整行程预演完成",
-              english: "FULL JOURNEY PREVIEW COMPLETE"
-            )
+            arrivalTitle
           )
           .font(.system(size: 9, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.confirmedGreen)
@@ -2795,6 +2768,77 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private var endJourneyConfirmationTitle: String {
+    model.isLiveDrive
+      ? copy.resolve(
+        japanese: "ナビを終了しますか？",
+        simplifiedChinese: "结束本次导航？",
+        english: "End navigation?"
+      )
+      : copy.resolve(
+        japanese: "プレビューを終了しますか？",
+        simplifiedChinese: "结束本次预演？",
+        english: "End this preview?"
+      )
+  }
+
+  private var continueJourneyActionLabel: String {
+    model.isLiveDrive
+      ? copy.resolve(
+        japanese: "ナビを続ける",
+        simplifiedChinese: "继续导航",
+        english: "Continue navigation"
+      )
+      : copy.resolve(
+        japanese: "続ける",
+        simplifiedChinese: "继续预演",
+        english: "Continue preview"
+      )
+  }
+
+  private var endJourneyActionLabel: String {
+    model.isLiveDrive
+      ? copy.resolve(
+        japanese: "ナビを終了",
+        simplifiedChinese: "结束导航",
+        english: "End navigation"
+      )
+      : copy.resolve(
+        japanese: "プレビューを終了",
+        simplifiedChinese: "结束预演",
+        english: "End preview"
+      )
+  }
+
+  private var endJourneyConfirmationMessage: String {
+    model.isLiveDrive
+      ? copy.resolve(
+        japanese: "現在のナビを終了して、ルート検索に戻ります。",
+        simplifiedChinese: "将结束当前导航并返回路线规划。",
+        english: "The current navigation will end and route planning will reopen."
+      )
+      : copy.resolve(
+        japanese: "現在の進行状況は破棄され、ルート検索に戻ります。",
+        simplifiedChinese: "当前行程进度将被清除，并返回路线规划。",
+        english:
+          "Current journey progress will be cleared and route planning will reopen."
+      )
+  }
+
+  private var arrivalTitle: String {
+    model.isLiveDrive
+      ? copy.resolve(
+        japanese: "目的地に到着",
+        simplifiedChinese: "已到达目的地",
+        english: "ARRIVED AT DESTINATION"
+      )
+      : copy.resolve(
+        japanese: "全行程プレビュー完了",
+        simplifiedChinese: "完整行程预演完成",
+        english: "FULL JOURNEY PREVIEW COMPLETE"
+      )
+  }
+
   private func resumeAfterEndJourneyCancellation() {
     defer { resumesAfterEndJourneyCancellation = false }
     guard
@@ -2968,7 +3012,10 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionSymbol: String {
-    switch model.phase {
+    if model.isReroutingSurfaceRoute {
+      return "arrow.triangle.2.circlepath"
+    }
+    return switch model.phase {
     case .surfaceAccess: "arrow.turn.up.right"
     case .entryTransition: "arrow.up.right"
     case .expressway:
@@ -2982,7 +3029,14 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionKicker: String {
-    switch model.phase {
+    if model.isReroutingSurfaceRoute {
+      return copy.resolve(
+        japanese: "新しい経路を検索中",
+        simplifiedChinese: "正在重新规划",
+        english: "REROUTING"
+      )
+    }
+    return switch model.phase {
     case .surfaceAccess:
       copy.resolve(
         japanese: "一般道",
@@ -3029,6 +3083,13 @@ struct WholeShutoProductView: View {
 
   private var instructionTitle: String {
     guard let route = model.selectedRoute else { return "" }
+    if model.isReroutingSurfaceRoute {
+      return copy.resolve(
+        japanese: "安全に進みながらお待ちください",
+        simplifiedChinese: "请安全行驶，正在计算新路线",
+        english: "Continue safely while a new route is calculated"
+      )
+    }
     switch model.phase {
     case .surfaceAccess:
       return model.activeSurfaceInstruction
@@ -3331,6 +3392,7 @@ struct WholeShutoProductView: View {
 
   private var primaryGuidanceDistanceLabel: String {
     guard let route = model.selectedRoute else { return "—" }
+    if model.isReroutingSurfaceRoute { return "…" }
     switch model.phase {
     case .surfaceAccess:
       return distanceLabel(

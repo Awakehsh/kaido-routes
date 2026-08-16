@@ -526,7 +526,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
-  func testLiveSurfaceAccessFollowsPositionAndRejectsOffRouteFix()
+  func testLiveSurfaceAccessReroutesAfterTwoConsecutiveOffRouteFixes()
     async throws
   {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
@@ -547,7 +547,9 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     let started = await model.startLiveJourney()
     XCTAssertTrue(started)
+    let routePlan = try XCTUnwrap(model.selectedRoute?.routePlan)
     let route = try XCTUnwrap(model.accessRoute)
+    let originalEgressRoute = try XCTUnwrap(model.egressRoute)
     let start = try XCTUnwrap(route.coordinates.first)
     let end = try XCTUnwrap(route.coordinates.last)
     let midpoint = ShutoCoordinate(
@@ -573,13 +575,34 @@ final class WholeShutoProductModelTests: XCTestCase {
       longitude: midpoint.longitude
     )
     await model.consumeLiveObservationForTesting(
-      Self.liveLocationEnvelope(id: "surface.off-route", coordinate: offRoute)
+      Self.liveLocationEnvelope(id: "surface.off-route.0", coordinate: offRoute)
     )
 
     XCTAssertEqual(model.phase, .surfaceAccess)
     XCTAssertEqual(model.liveLocationState, .degraded)
     XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_OFF_ROUTE")
     XCTAssertEqual(model.progressFraction, acceptedProgress, accuracy: 0.001)
+    XCTAssertEqual(model.accessRoute, route)
+    XCTAssertFalse(model.isReroutingSurfaceRoute)
+
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "surface.off-route.1", coordinate: offRoute)
+    )
+    for _ in 0..<100
+    where model.accessRoute?.coordinates.first != offRoute {
+      try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.selectedRoute?.routePlan, routePlan)
+    XCTAssertEqual(model.accessRoute?.coordinates.first, offRoute)
+    XCTAssertEqual(model.accessRoute?.coordinates.last, route.coordinates.last)
+    XCTAssertEqual(model.egressRoute, originalEgressRoute)
+    XCTAssertEqual(model.activeSurfaceInstruction, "Continue on local road")
+    XCTAssertEqual(model.progressFraction, 0, accuracy: 0.001)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertFalse(model.isReroutingSurfaceRoute)
     model.reset()
   }
 

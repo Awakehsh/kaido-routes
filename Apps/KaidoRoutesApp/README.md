@@ -1,12 +1,12 @@
 # Kaido Routes iPhone app
 
-Status: active iPhone product target with a default whole-Shuto parked planner
-and labeled replay. Its bundled graph is a candidate asset, not an enrolled
-`KaidoProductRelease`; live start fails closed as
-`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED`. The released K7 product remains a
-deterministic regression fixture. Physical position accuracy, field reliability,
-acoustic output, background navigation, and CarPlay remain separately
-unqualified.
+Status: active iPhone product target with a default whole-Shuto route-first
+planner, labeled replay, and foreground live navigation. The App authors one
+exact, content-addressed `KaidoProductRelease` from the validated bundled
+snapshot and released movement catalog before attaching Core Location. The
+released K7 product remains a deterministic regression fixture. Physical
+position accuracy, field reliability, acoustic output, background navigation,
+and CarPlay remain separately unqualified.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
 links the local `KaidoDomain`, `KaidoRouting`, `KaidoNavigation`,
@@ -25,8 +25,8 @@ whole-Shuto product journey rather than the internal evidence workbench:
 3. Review requires both bounded surface legs and keeps passage/toll uncertainty
    visible; and
 4. **Replay route** runs the deterministic complete-journey trace, while
-   **Start navigation** remains blocked until an exact joint release plus
-   released surface-provider and field evidence are enrolled.
+   **Start navigation** constructs the selected route's exact joint release and
+   begins a foreground Core Location session only after validation succeeds.
 
 A saved record labeled `CURRENT SNAPSHOT` has had its complete ordered
 `RoutePlan` reconstructed against the exact bundled graph, including repeats
@@ -45,6 +45,12 @@ unreviewed movement stay silent. The App generates the road scene and does not
 bundle operator photographs used for private visual comparison. Exact HIGH
 matcher evidence may advance the replay marker; LOW, LOST, ambiguous, stale, or
 identity-drifted evidence cannot.
+
+During a live surface leg, two consecutive accurate off-route fixes trigger a
+bounded MapKit recalculation from the current position. Only that ordinary-road
+leg changes; the exact Shuto `RoutePlan` and the opposite surface leg remain
+unchanged. A cooldown prevents repeated requests during noisy positioning, and
+the guidance card exposes recalculation or provider-unavailable state.
 
 Checkpoint load, compatibility, route/runtime validation, save, and removal
 failures publish a localized resume-data warning. Rejected or failed

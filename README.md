@@ -5,8 +5,9 @@ Expressway. A driver chooses a route experience first, derives a
 direction-valid entrance and exit from the current origin, optionally adds a
 final destination, reviews the exact Shuto route and junction sequence, then
 replays the journey from surface access through surface egress. Live navigation
-starts only when the selected route matches an exact enrolled foreground
-product release.
+starts only in the foreground and only when the selected route matches an exact
+enrolled product release; that explicitly started session continues through
+screen lock and temporary app switching.
 
 The project is not affiliated with or endorsed by Metropolitan Expressway
 Company Limited.
@@ -199,14 +200,17 @@ The product distinguishes what is known from what is still unconfirmed:
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
-  the Shuto `RoutePlan`. During a foreground live drive, accepted MapKit
+  the Shuto `RoutePlan`. During a live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and
   distance. Two consecutive accurate off-route observations trigger a bounded
   MapKit recalculation of only the active ordinary-road leg, with a cooldown;
   the exact Shuto plan and the opposite surface leg remain unchanged. Entry
   evidence takes over only near the exact directional ramp.
-- The default App's foreground Core Location lifecycle supplies the planning
-  origin, five prebuilt releases, the C1 outer on-demand release, and other
+- The default App's Core Location lifecycle keeps planning location
+  foreground-only, while an explicitly foreground-started live navigation
+  session continues through screen lock or temporary app switching and stops
+  when the journey ends, permission is revoked, or the pipeline fails. It
+  supplies the planning origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the
   161 released movement bindings. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
@@ -363,6 +367,7 @@ python3 scripts/validate_ios_release_bundle.py /path/to/KaidoRoutes.app
 ```
 
 The validator rejects Debug identifiers, internal K7/C2/synthetic fixtures,
-unreviewed bundle files, privacy-manifest drift, always-on/background location,
+unreviewed bundle files, privacy-manifest drift, missing or unreviewed
+background navigation modes,
 missing localizations or licence bytes, non-iPhoneOS/non-ARM64 application
 bundles, and app icons with transparent pixels.

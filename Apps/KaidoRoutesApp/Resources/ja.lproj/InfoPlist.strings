@@ -1,1 +1,1 @@
-"NSLocationWhenInUseUsageDescription" = "現在地の選択時とルート案内の開始後に、位置情報を使用します。";
+"NSLocationWhenInUseUsageDescription" = "現在地の選択時とルート案内の開始後に位置情報を使用します。ナビ中は画面ロック中や他のApp表示中も継続します。";

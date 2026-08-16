@@ -1,1 +1,1 @@
-"NSLocationWhenInUseUsageDescription" = "Kaido Routes uses your location after you choose Current Location or start route navigation.";
+"NSLocationWhenInUseUsageDescription" = "Kaido Routes uses your location after you choose Current Location or start route navigation, including while the screen is locked or another app is visible during active navigation.";

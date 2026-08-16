@@ -335,6 +335,7 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
             "MinimumOSVersion": validator.EXPECTED_MINIMUM_OS,
             "ITSAppUsesNonExemptEncryption": False,
             "UIDeviceFamily": [1],
+            "UIBackgroundModes": validator.EXPECTED_BACKGROUND_MODES,
             "NSLocationWhenInUseUsageDescription": (
                 validator.EXPECTED_LOCALIZATIONS["en"]
             ),
@@ -459,15 +460,27 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         ):
             self.validate()
 
-    def test_background_location_scope_is_rejected(self) -> None:
+    def test_missing_background_navigation_modes_are_rejected(self) -> None:
         info_path = self.app / "Info.plist"
         info = plistlib.loads(info_path.read_bytes())
-        info["UIBackgroundModes"] = ["location"]
+        info.pop("UIBackgroundModes")
         info_path.write_bytes(plistlib.dumps(info))
 
         with self.assertRaisesRegex(
             validator.ReleaseBundleValidationError,
-            "background modes",
+            "background navigation modes",
+        ):
+            self.validate()
+
+    def test_unreviewed_background_mode_is_rejected(self) -> None:
+        info_path = self.app / "Info.plist"
+        info = plistlib.loads(info_path.read_bytes())
+        info["UIBackgroundModes"] = ["audio", "location", "fetch"]
+        info_path.write_bytes(plistlib.dumps(info))
+
+        with self.assertRaisesRegex(
+            validator.ReleaseBundleValidationError,
+            "background navigation modes",
         ):
             self.validate()
 

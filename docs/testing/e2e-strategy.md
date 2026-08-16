@@ -690,15 +690,18 @@ before it may be displayed as current information; it is no longer a daily
 licence for route execution.
 
 The physical-iPhone App layer separately executes the default whole-Shuto
-foreground planning-location path through the real `CLLocationManager`. Its
+planning-to-live handoff through the real `CLLocationManager`. Its
 named UI test,
 `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`, accepts
 the system When In Use dialog, proves that the explicit start survives the
-temporary scene interruption, observes foreground `RUNNING`, and explicitly
-stops. The coordinate-free device runner requires that exact test to pass and
-hashes the test tree. It does not start or enroll live navigation. This is
-lifecycle wiring evidence only, not coordinate accuracy, matcher reliability,
-road authority, or passenger-safe field evidence. The retained K7 operational
+temporary permission scene interruption, builds an exact released journey,
+starts live navigation, verifies the planning manager stopped, presses Home,
+returns to the App, and requires the same live journey to remain active without
+`RESUME_REQUIRED`. The coordinate-free device runner requires that exact test
+to pass and hashes the test tree. This is App-switch lifecycle wiring evidence
+only, not proof that fixes or speech were delivered while locked/backgrounded,
+nor coordinate accuracy, matcher reliability, road authority, or passenger-safe
+field evidence. The retained K7 operational
 E2E remains a fixture-specific release contract and is no longer the current
 physical-device lifecycle gate.
 
@@ -757,8 +760,10 @@ KR-S03 now also asserts that the first post-gap fix remains LOW; KR-S10, KR-S16,
 and KR-S19 retain prompt, matcher-reset, and entry-admission boundaries.
 App tests drive `background → atomic store → new runtime → first fix` and prove
 no position or prompt replay. XCUITest keeps the no-store launch preview
-`FOREGROUND` and deterministic. The app target has no location background mode,
-so these checks are termination recovery rather than background navigation.
+`FOREGROUND` and deterministic. The app target's active live-navigation path
+declares `location` and `audio` background modes, while deterministic replay
+still stops and checkpoints; these checks remain termination recovery rather
+than proof of physical background continuity.
 Together with KR-U15, this selects the existing KR-S10/KR-S17/KR-S18 transient
 emission contract rather than adding a portable Apple-audio event, and grants no
 field evidence or real-road release authority.
@@ -783,9 +788,10 @@ The complete App scheme now has a separate physical-iPhone runner. It resolves
 one exact `xcdevice` entry, rejects Simulator/offline destinations and dirty
 source, requires zero failed/skipped/expected-failure tests in the physical
 `.xcresult`, and hashes the private evidence into a coordinate-free receipt.
-The receipt explicitly remains only an App physical-test baseline; it cannot
-assert road release, acoustic quality, pronunciation, location accuracy,
-CarPlay, or background navigation.
+The receipt explicitly remains only an App physical-test baseline; its required
+location test covers a foreground-started live session across temporary App
+switching, but it cannot assert road release, acoustic quality, pronunciation,
+location accuracy, CarPlay, lock-screen fix delivery, or background speech.
 
 ## Field-test protocol
 

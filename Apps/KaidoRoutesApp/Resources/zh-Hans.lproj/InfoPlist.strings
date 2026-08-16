@@ -1,1 +1,1 @@
-"NSLocationWhenInUseUsageDescription" = "在你选择「当前位置」或开始路线导航后，Kaido Routes 会使用你的位置信息。";
+"NSLocationWhenInUseUsageDescription" = "在你选择「当前位置」或开始路线导航后，Kaido Routes 会使用你的位置信息。导航进行时，锁屏或显示其他 App 期间也会继续使用。";

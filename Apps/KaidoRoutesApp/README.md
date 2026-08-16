@@ -1,11 +1,12 @@
 # Kaido Routes iPhone app
 
 Status: active iPhone product target with a default whole-Shuto route-first
-planner, labeled replay, and foreground live navigation. The App authors one
+planner, labeled replay, and foreground-started live navigation that continues
+through screen lock and temporary app switching. The App authors one
 exact, content-addressed `KaidoProductRelease` from the validated bundled
 snapshot and released movement catalog before attaching Core Location. The
 released K7 product remains a deterministic regression fixture. Physical
-position accuracy, field reliability, acoustic output, background navigation,
+position accuracy, field reliability, background continuity, acoustic output,
 and CarPlay remain separately unqualified.
 
 This target is the first real iPhone composition boundary for Kaido Routes. It
@@ -26,7 +27,9 @@ whole-Shuto product journey rather than the internal evidence workbench:
    visible; and
 4. **Replay route** runs the deterministic complete-journey trace, while
    **Start navigation** constructs the selected route's exact joint release and
-   begins a foreground Core Location session only after validation succeeds.
+   begins Core Location in the foreground only after validation succeeds, then
+   keeps that active navigation session running through lock screen and app
+   switching.
 
 A saved record labeled `CURRENT SNAPSHOT` has had its complete ordered
 `RoutePlan` reconstructed against the exact bundled graph, including repeats
@@ -264,10 +267,12 @@ navigation release, snapshot, RoutePlan, runtime policy, and matcher corridor.
 The schema-6.0 bundled synthetic workbench release remains
 `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and cannot request permission
 or display a live measured position. An admitted
-controller requires an explicit user start, When In Use authorization, an
-active scene, and an actor ready to accept input; inactive or background stops
-the source and drains the current callback before checkpointing. It never
-enables background location or exposes a CarPlay scene. Its Apple speech output
+controller requires an explicit user start in an active scene, When In Use
+authorization, the declared `location` and `audio` background modes, and an
+actor ready to accept input. Once started, it preserves ordered callback
+delivery and Apple voice prompts through screen lock and temporary app
+switching. Explicit end, completion, permission downgrade, pipeline failure,
+or process termination stops the session. It exposes no CarPlay scene. Its Apple speech output
 remains idle without an actor-owned one-shot emission; synthetic test callbacks
 use an injected recording output rather than device audio. Real-road guidance
 still requires a coherent released product artifact, installed-voice and
@@ -290,7 +295,7 @@ this input only after exact on-demand release admission; tests also prove that
 ordered synthetic fixture callbacks cannot grant themselves real-road
 authority. Focused controller tests prove release-identity
 and release-token admission, explicit authorization, callback ordering,
-permission downgrade, scene stop without automatic resume, and distinct
+permission downgrade, background continuity without duplicate restart, and distinct
 transient versus terminal Core Location failures. Test-only released-road
 artifacts obtain their token through the production codec; app tests cannot
 construct a token or runtime identity directly.
@@ -306,8 +311,9 @@ entry evidence, active frame, measured position, and speech authority; an active
 drive returns as estimated/LOST and must rebuild a multi-fix matcher window. The
 prompt ledger remains, so a process restart cannot replay an old instruction.
 The dedicated launch-only preview injects no store to stay deterministic.
-Neither scene declares the location background mode or starts a background
-location session.
+The default product declares `location` and `audio` background modes for an
+active user-started navigation session. The retained synthetic scene cannot
+mint live-input authority or start either service.
 
 ## Synthetic product runtime composition
 
@@ -643,7 +649,7 @@ The physical suite includes one exact default whole-Shuto foreground
 planning-location Core Location lifecycle,
 `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`: the user
 action requests When In Use permission, survives the system-dialog scene
-interruption, reaches foreground `RUNNING`, and explicitly stops. The same suite
+interruption, reaches `RUNNING`, and explicitly stops. The same suite
 also plays parked Japanese, Simplified Chinese, and English samples through the
 real Apple voice-prompt session. It requires an installed exact-locale voice,
 start/finish callbacks, and a non-empty physical output route for every sample.
@@ -651,7 +657,7 @@ The runner requires both named tests to pass and hashes the complete test tree.
 These are permission, callback, and route-lifecycle smokes only; they do not
 start or enroll live navigation and do not qualify location accuracy, matcher
 reliability, voice naturalness, pronunciation, driver comprehension, current
-road conditions, CarPlay, or background navigation. See
+road conditions, CarPlay, or lock-screen/background continuity. See
 [`docs/testing/ios-physical-device-qualification.md`](../../docs/testing/ios-physical-device-qualification.md).
 
 When the device's XCTest UI Automation service cannot start, use the narrower

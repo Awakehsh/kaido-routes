@@ -32,13 +32,19 @@ EXPECTED_VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 EXPECTED_LOCALIZATIONS = {
     "en": (
         "Kaido Routes uses your location after you choose Current Location "
-        "or start route navigation."
+        "or start route navigation, including while the screen is locked or "
+        "another app is visible during active navigation."
     ),
-    "ja": "現在地の選択時とルート案内の開始後に、位置情報を使用します。",
+    "ja": (
+        "現在地の選択時とルート案内の開始後に位置情報を使用します。"
+        "ナビ中は画面ロック中や他のApp表示中も継続します。"
+    ),
     "zh-Hans": (
         "在你选择「当前位置」或开始路线导航后，Kaido Routes 会使用你的位置信息。"
+        "导航进行时，锁屏或显示其他 App 期间也会继续使用。"
     ),
 }
+EXPECTED_BACKGROUND_MODES = ["audio", "location"]
 EXPECTED_PRIVACY_REASONS = {
     "NSPrivacyAccessedAPICategorySystemBootTime": ["35F9.1"],
     "NSPrivacyAccessedAPICategoryUserDefaults": ["CA92.1"],
@@ -579,10 +585,11 @@ def validate_info_plist(app: Path) -> tuple[str, str]:
         "export-compliance declaration",
     )
     require_equal(info.get("UIDeviceFamily"), [1], "target device family")
-    if "UIBackgroundModes" in info:
-        raise ReleaseBundleValidationError(
-            "Release declares background modes outside the current product scope"
-        )
+    require_equal(
+        sorted(info.get("UIBackgroundModes", [])),
+        EXPECTED_BACKGROUND_MODES,
+        "Release background navigation modes",
+    )
     for key in (
         "NSLocationAlwaysUsageDescription",
         "NSLocationAlwaysAndWhenInUseUsageDescription",

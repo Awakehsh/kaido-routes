@@ -52,11 +52,11 @@ enum ForegroundNavigationLocationState: Equatable, Sendable {
     case .awaitingAuthorization:
       "AWAITING LOCATION AUTHORIZATION"
     case .running:
-      "FOREGROUND LOCATION RUNNING"
+      "NAVIGATION LOCATION RUNNING"
     case .stopped:
-      "FOREGROUND LOCATION STOPPED"
+      "NAVIGATION LOCATION STOPPED"
     case .sceneInactive:
-      "LOCATION STOPPED · SCENE INACTIVE"
+      "LOCATION IDLE · SCENE INACTIVE"
     case .permissionDenied:
       "LOCATION PERMISSION DENIED"
     case .failed:
@@ -75,11 +75,11 @@ enum ForegroundNavigationLocationState: Equatable, Sendable {
     case .awaitingAuthorization:
       "Waiting for When In Use authorization; no updates have started."
     case .running:
-      "When In Use updates feed the exact release-bound actor in callback order."
+      "Foreground-started When In Use updates feed the exact release-bound actor in callback order and continue during active background navigation."
     case .stopped:
       "Updates remain stopped until another explicit user action."
     case .sceneInactive:
-      "Updates stopped before checkpointing; background location is disabled."
+      "No active navigation session is using location while the scene is inactive."
     case .permissionDenied:
       "Core Location is denied or restricted; no route progress is accepted."
     case .failed(let code):
@@ -125,8 +125,10 @@ protocol ForegroundNavigationLocationSource: AnyObject {
   var delegate: (any ForegroundNavigationLocationSourceDelegate)? { get set }
   var authorizationStatus: CLAuthorizationStatus { get }
   var accuracyAuthorization: CLAccuracyAuthorization { get }
+  var supportsBackgroundNavigation: Bool { get }
 
   func requestWhenInUseAuthorization()
+  func setBackgroundNavigationEnabled(_ enabled: Bool)
   func startUpdatingLocation()
   func stopUpdatingLocation()
 }
@@ -139,9 +141,16 @@ final class CoreLocationForegroundNavigationSource: NSObject,
   weak var delegate: (any ForegroundNavigationLocationSourceDelegate)?
 
   private let locationManager: CLLocationManager
+  let supportsBackgroundNavigation: Bool
 
-  init(locationManager: CLLocationManager = CLLocationManager()) {
+  init(
+    locationManager: CLLocationManager = CLLocationManager(),
+    backgroundModes: [String] =
+      Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes")
+      as? [String] ?? []
+  ) {
     self.locationManager = locationManager
+    supportsBackgroundNavigation = backgroundModes.contains("location")
     super.init()
     locationManager.delegate = self
     locationManager.activityType = .automotiveNavigation
@@ -162,6 +171,16 @@ final class CoreLocationForegroundNavigationSource: NSObject,
 
   func requestWhenInUseAuthorization() {
     locationManager.requestWhenInUseAuthorization()
+  }
+
+  func setBackgroundNavigationEnabled(_ enabled: Bool) {
+    guard supportsBackgroundNavigation else {
+      locationManager.allowsBackgroundLocationUpdates = false
+      locationManager.showsBackgroundLocationIndicator = false
+      return
+    }
+    locationManager.allowsBackgroundLocationUpdates = enabled
+    locationManager.showsBackgroundLocationIndicator = enabled
   }
 
   func startUpdatingLocation() {
@@ -253,10 +272,14 @@ final class ForegroundNavigationLocationController: ObservableObject {
     case .releasedProduct:
       let admittedSource = source ?? CoreLocationForegroundNavigationSource()
       self.source = admittedSource
-      state =
-        consumer.canConsumeForegroundNavigationLocations
-        ? .idle
-        : .runtimeUnavailable
+      if !admittedSource.supportsBackgroundNavigation {
+        state = .failed("BACKGROUND_LOCATION_MODE_MISSING")
+      } else {
+        state =
+          consumer.canConsumeForegroundNavigationLocations
+          ? .idle
+          : .runtimeUnavailable
+      }
     }
     self.source?.delegate = self
   }
@@ -280,6 +303,10 @@ final class ForegroundNavigationLocationController: ObservableObject {
 
   var canStop: Bool {
     state == .awaitingAuthorization || state == .running
+  }
+
+  var maintainsActiveNavigationAcrossSceneChanges: Bool {
+    state == .running || (startRequested && pendingAuthorizationStart)
   }
 
   var authorizationLabel: String {
@@ -314,6 +341,13 @@ final class ForegroundNavigationLocationController: ObservableObject {
 
   func refreshRuntimeAvailability() {
     guard case .releasedProduct = authority else { return }
+    guard source?.supportsBackgroundNavigation == true else {
+      state = .failed("BACKGROUND_LOCATION_MODE_MISSING")
+      return
+    }
+    if state == .running, startRequested {
+      return
+    }
     guard scenePhase == .active else {
       state = .sceneInactive
       return
@@ -328,10 +362,8 @@ final class ForegroundNavigationLocationController: ObservableObject {
   }
 
   func start() {
-    guard canStart, let source else {
-      refreshRuntimeAvailability()
-      return
-    }
+    refreshRuntimeAvailability()
+    guard canStart, let source else { return }
     lastTransientFailureCode = nil
     startRequested = true
     switch source.authorizationStatus {
@@ -362,6 +394,9 @@ final class ForegroundNavigationLocationController: ObservableObject {
     _ phase: ProductNavigationRuntimeScenePhase
   ) async {
     scenePhase = phase
+    if state == .running, startRequested {
+      return
+    }
     stateOperationID += 1
     let operationID = stateOperationID
     switch authority {
@@ -387,6 +422,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
             failAndStop("UNKNOWN_AUTHORIZATION_STATUS")
           }
         case .inactive, .background:
+          source?.setBackgroundNavigationEnabled(false)
           source?.stopUpdatingLocation()
           state = .sceneInactive
         }
@@ -408,12 +444,14 @@ final class ForegroundNavigationLocationController: ObservableObject {
       startRequested,
       scenePhase == .active,
       consumer?.canConsumeForegroundNavigationLocations == true,
-      let source
+      let source,
+      source.supportsBackgroundNavigation
     else {
       failAndStop("LOCATION_START_PRECONDITION_DRIFT")
       return
     }
     if state != .running {
+      source.setBackgroundNavigationEnabled(true)
       state = .running
       source.startUpdatingLocation()
     }
@@ -422,6 +460,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
   private func quiesceLocationSource() async {
     startRequested = false
     pendingAuthorizationStart = false
+    source?.setBackgroundNavigationEnabled(false)
     source?.stopUpdatingLocation()
     pendingBatches.removeAll(keepingCapacity: true)
     let task = drainTask
@@ -483,6 +522,7 @@ final class ForegroundNavigationLocationController: ObservableObject {
     stateOperationID += 1
     startRequested = false
     pendingAuthorizationStart = false
+    source?.setBackgroundNavigationEnabled(false)
     source?.stopUpdatingLocation()
     pendingBatches.removeAll(keepingCapacity: true)
     drainTask?.cancel()
@@ -534,6 +574,7 @@ extension ForegroundNavigationLocationController:
       stateOperationID += 1
       startRequested = false
       pendingAuthorizationStart = false
+      source.setBackgroundNavigationEnabled(false)
       source.stopUpdatingLocation()
       pendingBatches.removeAll(keepingCapacity: true)
       drainTask?.cancel()

@@ -1,3 +1,4 @@
+import CoreLocation
 import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
@@ -529,9 +530,11 @@ final class WholeShutoProductModelTests: XCTestCase {
   func testLiveSurfaceAccessReroutesAfterTwoConsecutiveOffRouteFixes()
     async throws
   {
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
-      checkpointStore: nil
+      checkpointStore: nil,
+      liveLocationSource: locationSource
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -603,6 +606,97 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.liveLocationState, .available)
     XCTAssertNil(model.liveLocationIssueCode)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
+    model.reset()
+  }
+
+  func testLiveJourneyContinuesWhenScreenLocksAndStopsWhenEnded()
+    async throws
+  {
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: locationSource
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(locationSource.startCount, 1)
+    XCTAssertTrue(locationSource.backgroundNavigationEnabled)
+
+    await model.handleScenePhase(.inactive)
+    await model.handleScenePhase(.background)
+
+    XCTAssertTrue(model.isLiveDrive)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertNotEqual(model.liveLocationState, .resumeRequired)
+    XCTAssertNotEqual(model.liveLocationIssueCode, "LIVE_RESUME_REQUIRED")
+    XCTAssertEqual(locationSource.startCount, 1)
+    XCTAssertEqual(locationSource.stopCount, 0)
+    XCTAssertTrue(locationSource.backgroundNavigationEnabled)
+
+    await model.handleScenePhase(.active)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(locationSource.startCount, 1)
+
+    model.reset()
+    for _ in 0..<100 where locationSource.stopCount == 0 {
+      try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertEqual(locationSource.stopCount, 1)
+    XCTAssertFalse(locationSource.backgroundNavigationEnabled)
+  }
+
+  func testFirstLocationPermissionRoundTripStartsTheSameLiveJourney()
+    async throws
+  {
+    let locationSource = WholeShutoBackgroundNavigationLocationSource(
+      authorizationStatus: .notDetermined
+    )
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: locationSource
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(model.liveLocationState, .awaitingAuthorization)
+    XCTAssertEqual(locationSource.authorizationRequestCount, 1)
+    XCTAssertEqual(locationSource.startCount, 0)
+
+    await model.handleScenePhase(.inactive)
+    locationSource.deliverAuthorization(.authorizedWhenInUse)
+    await model.handleScenePhase(.active)
+
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(model.liveLocationState, .acquiring)
+    XCTAssertEqual(locationSource.startCount, 1)
+    XCTAssertTrue(locationSource.backgroundNavigationEnabled)
     model.reset()
   }
 
@@ -2837,6 +2931,47 @@ private actor WholeShutoRankingSurfaceRouteResolver:
       expectedTravelTimeSeconds: expectedTravelTimeSeconds,
       instructions: []
     )
+  }
+}
+
+@MainActor
+private final class WholeShutoBackgroundNavigationLocationSource:
+  ForegroundNavigationLocationSource
+{
+  weak var delegate: (any ForegroundNavigationLocationSourceDelegate)?
+  private(set) var authorizationStatus: CLAuthorizationStatus
+  let accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+  let supportsBackgroundNavigation = true
+  private(set) var authorizationRequestCount = 0
+  private(set) var startCount = 0
+  private(set) var stopCount = 0
+  private(set) var backgroundNavigationEnabled = false
+
+  init(
+    authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
+  ) {
+    self.authorizationStatus = authorizationStatus
+  }
+
+  func requestWhenInUseAuthorization() {
+    authorizationRequestCount += 1
+  }
+
+  func setBackgroundNavigationEnabled(_ enabled: Bool) {
+    backgroundNavigationEnabled = enabled
+  }
+
+  func startUpdatingLocation() {
+    startCount += 1
+  }
+
+  func stopUpdatingLocation() {
+    stopCount += 1
+  }
+
+  func deliverAuthorization(_ status: CLAuthorizationStatus) {
+    authorizationStatus = status
+    delegate?.foregroundNavigationLocationSourceDidChangeAuthorization(self)
   }
 }
 

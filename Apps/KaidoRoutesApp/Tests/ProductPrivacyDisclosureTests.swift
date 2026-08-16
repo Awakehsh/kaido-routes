@@ -90,5 +90,21 @@ final class ProductPrivacyDisclosureTests: XCTestCase {
         "https://opendatacommons.org/licenses/odbl/1-0/"
       ) == true
     )
+    XCTAssertEqual(
+      Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes")
+        as? [String],
+      ["audio", "location"]
+    )
+    XCTAssertTrue(
+      Set([
+        "Kaido Routes uses your location after you choose Current Location or start route navigation, including while the screen is locked or another app is visible during active navigation.",
+        "現在地の選択時とルート案内の開始後に位置情報を使用します。ナビ中は画面ロック中や他のApp表示中も継続します。",
+        "在你选择「当前位置」或开始路线导航后，Kaido Routes 会使用你的位置信息。导航进行时，锁屏或显示其他 App 期间也会继续使用。",
+      ]).contains(
+        Bundle.main.object(
+          forInfoDictionaryKey: "NSLocationWhenInUseUsageDescription"
+        ) as? String ?? ""
+      )
+    )
   }
 }

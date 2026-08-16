@@ -73,7 +73,9 @@ authority because most routes do not publish them consistently.
 The default App always exposes labeled replay using the deterministic 15 m/s
 trace with at most 30 meters between samples and an explicit 20x wall-clock
 multiplier. `WholeShutoPlanningLocationController` owns a when-in-use foreground
-Core Location lifecycle for the planning origin and an admitted live drive. It
+Core Location lifecycle only for the planning origin. An admitted live drive
+starts its separate When In Use session in the foreground and keeps it active
+through screen lock and temporary app switching. It
 cannot create a live navigation session from the candidate graph alone. The
 live enrollment seam accepts only one `KaidoLiveJourneyAdmission` whose complete
 selected `RoutePlan` equals one foreground-authorized `KaidoProductRelease`.
@@ -81,7 +83,7 @@ MapKit surface legs remain bounded presentation inputs around its expressway-onl
 `JourneyPlan`. It then
 constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
 boundary adapters, and the observation adapter before attaching the shared
-serial foreground location controller. Device fixes reject invalid, stale,
+serial navigation location controller. Device fixes reject invalid, stale,
 future-dated, ambiguous, and distributed-build simulated input and require a
 unique HIGH occurrence commit before progress. The seam cannot mint
 `EntryTransitionAdmissionContext`,
@@ -89,8 +91,9 @@ unique HIGH occurrence commit before progress. The seam cannot mint
 hash or a MapKit response. Two consecutive accepted off-route observations may
 replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
-recomputed. Neither the current planning location path nor replay supplies
-background-navigation or tunnel dead-reckoning authority.
+recomputed. Planning location and replay never run in the background; only the
+explicitly user-started live session does. No current path supplies tunnel
+dead-reckoning authority.
 
 `ShutoJunctionGuidanceCompiler` contains 161 snapshot- and source-hash-bound
 movement definitions. They cover every inventoried available mainline movement
@@ -109,10 +112,10 @@ native surface and never grants navigation authority. The previous C2 and K7
 artifacts remain deterministic regression fixtures, not product coverage limits
 or active delivery tracks.
 
-Open boundaries remain explicit: no passenger-safe field, tunnel, acoustic, or
-CarPlay qualification exists; there is no background navigation service or
+Open boundaries remain explicit: no passenger-safe field, tunnel, acoustic,
+physical background-continuity, or CarPlay qualification exists; there is no
 CarPlay scene; dynamic passage and traffic remain unconfirmed without a current
-provider; and lane guidance remains unreleased. Foreground live navigation uses
+provider; and lane guidance remains unreleased. Foreground-started live navigation uses
 one validated on-device joint `KaidoProductRelease`; field reliability remains
 an external evidence boundary that an asset-integrity hash cannot synthesize.
 Valhalla remains the leading
@@ -600,12 +603,14 @@ CarPlay, and voice from the same frame. An update without a transient prompt
 emission may refresh the visual projection but cannot speak, while a missing or
 invalid frame exposes no driving surface. The panel's explicit fixed synthetic
 trace exercises that full path without attaching a location manager or creating
-UI-owned occurrence progress. A separate foreground controller can construct an
+UI-owned occurrence progress. A separate foreground-started controller can construct an
 automotive `CLLocationManager` only after a release-bound live-input authority
 matches the actor's exact product release, navigation release, runtime policy,
 snapshot, RoutePlan, and matcher corridor. It requests When In Use authorization
-only after an explicit start, serializes callback batches, and stops plus drains
-the current callback before inactive/background checkpointing. The bundled
+only after an explicit start and serializes callback batches. An admitted
+active navigation session continues across inactive/background scene changes;
+explicit stop, permission downgrade, runtime failure, or completion disables
+background updates and drains the current callback. The bundled
 synthetic scene supplies a typed authority blocker, constructs no manager, and
 keeps strict entry locked. Real-road released assets, full-app focus and
 interaction review, installed voice discovery, `CPMapTemplate`, audio routing,
@@ -614,9 +619,10 @@ gates. Separately, the default candidate whole-Shuto journey has a foreground
 `WholeShutoPlanningLocationController` for planning location. Live start selects
 an admission by full `RoutePlan` equality, rejects zero or multiple matches, and
 attaches Core Location only after the release runtime and surface adapters
-construct successfully. Inactive/background first stops and drains location,
-then checkpoints; returning active never resumes location without the user's
-explicit Resume Navigation action. The distributed bundle supplies five
+construct successfully. Screen lock or temporary app switching preserves that
+same active session without a duplicate start, while also writing a current
+checkpoint. A session that was not already active still cannot start from the
+background. The distributed bundle supplies five
 prebuilt whole-Shuto admissions for deterministic startup: C1 inner from
 Shibakoen to Shiodome,
 Bayshore westbound from Chidoricho to Daikoku-Futo, C2 inner/Bayshore from
@@ -636,14 +642,18 @@ permission or device fixes exist.
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to
 a clean source commit, requires a zero-failure/zero-skip physical `.xcresult`,
-and requires the named default whole-Shuto foreground planning-location
+and requires the named default whole-Shuto location lifecycle
 `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()`
-permission/live-start/stop UI test to pass exactly once. It hashes the result tree,
+permission/live-start/App-switch UI test to pass exactly once. The test starts
+the exact released live journey, verifies that planning location hands off to
+the release-bound controller, presses Home, returns to the App, and requires
+the same journey to remain active without a resume-required state. It hashes the result tree,
 summary, test tree, and build log into a receipt without device ID, device name,
 coordinates, raw traces, audio, or paths. The receipt grants only an exact
-foreground-location lifecycle smoke; it deliberately keeps field reliability,
+foreground-started App-switch lifecycle smoke; it deliberately keeps lock-screen
+location delivery, spoken-audio continuity, field reliability,
 location accuracy,
-acoustic, pronunciation, road, CarPlay, and background-navigation authority
+acoustic, pronunciation, road, and CarPlay authority
 false.
 
 `NavigationSession` now owns the executable runtime ordering of these pieces.
@@ -683,7 +693,7 @@ update used for speech scheduling. SwiftUI renders only that value; it does not
 recompute occurrence, movement, prompt, DecisionZone, sign, shield, lane, or
 distance semantics. A later update with the same active frame and no emission
 updates the display with `voice.shouldSpeak=false` and cannot replay the prompt.
-The foreground location controller owns only source lifecycle and ordered
+The foreground-started location controller owns only source lifecycle and ordered
 delivery; it feeds raw callback batches through the existing Apple adapters and
 never owns matching, occurrence progress, guidance, or presentation.
 
@@ -708,13 +718,13 @@ Application Support. The runtime panel observes `scenePhase`; inactive or
 background stops current speech and saves immediately because background can
 precede termination, while active resumes only future prompt delivery. A
 completed journey removes the active checkpoint on the next inactive/background
-lifecycle save. This is termination recovery, not background navigation: the
-target declares no location background mode and starts no
-`CLBackgroundActivitySession` or equivalent background service. Foreground
-`CLLocationManager` ownership is implemented behind exact live-input authority,
-but the bundled synthetic release cannot construct it. Real released assets,
-active background navigation, and production process/device evidence remain
-Apple boundaries.
+lifecycle save. This panel behavior is termination recovery rather than use of
+the product's background navigation capability. The target declares `location`
+and `audio` background modes, and the foreground-started default live journey
+sets `allowsBackgroundLocationUpdates` only while an authority-bound session is
+active. The bundled synthetic release cannot construct that manager. Physical
+background continuity and production process/device evidence remain Apple
+boundaries.
 
 `NavigationReleaseBundle` is the platform-light pre-runtime eligibility gate.
 It keeps an active `NetworkSnapshot`, compiled `RoutePlan`, reviewed editor

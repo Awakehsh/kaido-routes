@@ -97,6 +97,7 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
     XCTAssertEqual(controller.state, .running)
     XCTAssertEqual(source.startCount, 1)
+    XCTAssertEqual(source.backgroundNavigationEnabled, true)
     XCTAssertFalse(controller.canStart)
     XCTAssertTrue(controller.canStop)
 
@@ -125,10 +126,11 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
     XCTAssertEqual(controller.state, .stopped)
     XCTAssertEqual(source.stopCount, 1)
+    XCTAssertEqual(source.backgroundNavigationEnabled, false)
   }
 
   @MainActor
-  func testSceneDepartureStopsWithoutAutomaticResume() async throws {
+  func testActiveNavigationContinuesAcrossBackgroundAndForeground() async throws {
     let authority = try makeReleasedAuthority()
     let identity = authority.runtimeIdentity
     let consumer = RecordingLocationConsumer(identity: identity)
@@ -146,20 +148,27 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
     await controller.handleScenePhase(.background)
 
-    XCTAssertEqual(controller.state, .sceneInactive)
-    XCTAssertEqual(source.stopCount, 1)
+    XCTAssertEqual(controller.state, .running)
+    XCTAssertEqual(source.stopCount, 0)
     XCTAssertFalse(controller.canStart)
+    XCTAssertTrue(controller.maintainsActiveNavigationAcrossSceneChanges)
+
+    let consumed = expectation(description: "background callback consumed")
+    consumer.didConsume = { consumed.fulfill() }
+    source.deliver(
+      [makeLocation(longitude: 139.7600, timestamp: 101)],
+      receivedAt: Date(timeIntervalSince1970: 102)
+    )
+    await fulfillment(of: [consumed], timeout: 2)
 
     await controller.handleScenePhase(.active)
 
-    XCTAssertEqual(controller.state, .idle)
-    XCTAssertEqual(source.startCount, 1)
-    XCTAssertTrue(controller.canStart)
-
-    controller.start()
-
     XCTAssertEqual(controller.state, .running)
-    XCTAssertEqual(source.startCount, 2)
+    XCTAssertEqual(source.startCount, 1)
+    XCTAssertEqual(source.stopCount, 0)
+
+    await controller.stop()
+    XCTAssertEqual(controller.state, .stopped)
   }
 
   @MainActor
@@ -197,7 +206,7 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   }
 
   @MainActor
-  func testSceneDepartureWaitsForTheCurrentActorCallbackBeforeCheckpointing()
+  func testExplicitStopWaitsForTheCurrentActorCallbackBeforeReturning()
     async throws
   {
     let authority = try makeReleasedAuthority()
@@ -222,8 +231,8 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
     )
     await fulfillment(of: [started], timeout: 2)
 
-    let transition = Task {
-      await controller.handleScenePhase(.background)
+    let stop = Task {
+      await controller.stop()
     }
     await Task.yield()
 
@@ -231,17 +240,17 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
     XCTAssertEqual(consumer.completedBatchCount, 0)
 
     consumer.resume()
-    await transition.value
+    await stop.value
 
     XCTAssertEqual(consumer.completedBatchCount, 1)
-    XCTAssertEqual(controller.state, .sceneInactive)
+    XCTAssertEqual(controller.state, .stopped)
   }
 
   @MainActor
-  func testNewerActiveSceneWinsWhileInactiveWaitsForActorDrain() async throws {
+  func testRepeatedSceneChangesDoNotRestartActiveNavigation() async throws {
     let authority = try makeReleasedAuthority()
     let identity = authority.runtimeIdentity
-    let consumer = SuspendedLocationConsumer(identity: identity)
+    let consumer = RecordingLocationConsumer(identity: identity)
     let source = FakeForegroundNavigationLocationSource(
       authorizationStatus: .authorizedWhenInUse
     )
@@ -250,34 +259,15 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
       consumer: consumer,
       source: source
     )
-    let started = expectation(description: "actor callback started")
-    consumer.didStart = {
-      started.fulfill()
-    }
     controller.start()
-    source.deliver(
-      [makeLocation(longitude: 139.7590, timestamp: 90)],
-      receivedAt: Date(timeIntervalSince1970: 100)
-    )
-    await fulfillment(of: [started], timeout: 2)
+    await controller.handleScenePhase(.inactive)
+    await controller.handleScenePhase(.background)
+    await controller.handleScenePhase(.active)
 
-    let inactiveTransition = Task {
-      await controller.handleScenePhase(.inactive)
-    }
-    await Task.yield()
-    let activeTransition = Task {
-      await controller.handleScenePhase(.active)
-    }
-    await Task.yield()
-
-    consumer.resume()
-    await inactiveTransition.value
-    await activeTransition.value
-
-    XCTAssertEqual(controller.state, .idle)
-    XCTAssertTrue(controller.canStart)
+    XCTAssertEqual(controller.state, .running)
+    XCTAssertFalse(controller.canStart)
     XCTAssertEqual(source.startCount, 1)
-    XCTAssertGreaterThanOrEqual(source.stopCount, 2)
+    XCTAssertEqual(source.stopCount, 0)
   }
 
   @MainActor
@@ -421,10 +411,11 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   }
 
   @MainActor
-  func testProductionSourceIsConfiguredForForegroundAutomotiveUpdates() {
+  func testProductionSourceIsConfiguredForBackgroundAutomotiveNavigation() {
     let manager = CLLocationManager()
     let source = CoreLocationForegroundNavigationSource(
-      locationManager: manager
+      locationManager: manager,
+      backgroundModes: ["audio", "location"]
     )
 
     XCTAssertTrue(manager.delegate === source)
@@ -437,6 +428,34 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
     XCTAssertFalse(manager.pausesLocationUpdatesAutomatically)
     XCTAssertFalse(manager.allowsBackgroundLocationUpdates)
     XCTAssertFalse(manager.showsBackgroundLocationIndicator)
+
+    source.setBackgroundNavigationEnabled(true)
+    XCTAssertTrue(manager.allowsBackgroundLocationUpdates)
+    XCTAssertTrue(manager.showsBackgroundLocationIndicator)
+
+    source.setBackgroundNavigationEnabled(false)
+    XCTAssertFalse(manager.allowsBackgroundLocationUpdates)
+    XCTAssertFalse(manager.showsBackgroundLocationIndicator)
+  }
+
+  @MainActor
+  func testMissingBackgroundLocationModeFailsClosedBeforeStarting() throws {
+    let authority = try makeReleasedAuthority()
+    let consumer = RecordingLocationConsumer(identity: authority.runtimeIdentity)
+    let source = FakeForegroundNavigationLocationSource(
+      authorizationStatus: .authorizedWhenInUse,
+      supportsBackgroundNavigation: false
+    )
+    let controller = try ForegroundNavigationLocationController(
+      authority: .releasedProduct(authority),
+      consumer: consumer,
+      source: source
+    )
+
+    XCTAssertEqual(controller.state, .failed("BACKGROUND_LOCATION_MODE_MISSING"))
+    XCTAssertFalse(controller.canStart)
+    controller.start()
+    XCTAssertEqual(source.startCount, 0)
   }
 
   private func makeReleasedAuthority(
@@ -572,20 +591,28 @@ private final class FakeForegroundNavigationLocationSource:
   weak var delegate: (any ForegroundNavigationLocationSourceDelegate)?
   var authorizationStatus: CLAuthorizationStatus
   var accuracyAuthorization: CLAccuracyAuthorization
+  let supportsBackgroundNavigation: Bool
   private(set) var authorizationRequestCount = 0
   private(set) var startCount = 0
   private(set) var stopCount = 0
+  private(set) var backgroundNavigationEnabled = false
 
   init(
     authorizationStatus: CLAuthorizationStatus = .notDetermined,
-    accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy
+    accuracyAuthorization: CLAccuracyAuthorization = .fullAccuracy,
+    supportsBackgroundNavigation: Bool = true
   ) {
     self.authorizationStatus = authorizationStatus
     self.accuracyAuthorization = accuracyAuthorization
+    self.supportsBackgroundNavigation = supportsBackgroundNavigation
   }
 
   func requestWhenInUseAuthorization() {
     authorizationRequestCount += 1
+  }
+
+  func setBackgroundNavigationEnabled(_ enabled: Bool) {
+    backgroundNavigationEnabled = enabled && supportsBackgroundNavigation
   }
 
   func startUpdatingLocation() {

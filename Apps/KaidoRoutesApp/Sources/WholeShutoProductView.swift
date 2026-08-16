@@ -180,7 +180,7 @@ struct WholeShutoProductView: View {
     verticalSizeClass == .compact
   }
 
-  /// Starts the live drive and the foreground location session together.
+  /// Starts the live drive and location session together from the foreground.
   /// The session only opens after the reviewed journey is admitted, so the
   /// app never holds the sensor while merely browsing routes.
   private func beginLiveDrive() {
@@ -2437,7 +2437,11 @@ struct WholeShutoProductView: View {
             .font(.system(size: 8, weight: .black, design: .rounded))
             .foregroundStyle(positionStatusColor)
             .accessibilityIdentifier("whole-shuto-position-state")
-            .accessibilityValue(model.positionState.rawValue)
+            .accessibilityValue(
+              model.isLiveDrive
+                ? model.liveLocationState.rawValue
+                : model.positionState.rawValue
+            )
         }
 
         HStack(spacing: 6) {
@@ -5743,15 +5747,19 @@ private struct WholeShutoNetworkFactsView: View {
                 copy.resolve(
                   japanese:
                     "位置情報は現在地の選択またはナビ開始後に使用します。"
+                    + "ナビ中は画面ロック中や他のApp表示中も、位置情報と音声案内が継続します。"
                     + "検索と一般道区間では、必要な位置・検索内容を Apple Maps に送信します。"
                     + "未完了の経路は、終了または完了するまで選択した地点と経路をこのApp内に保存します。",
                   simplifiedChinese:
                     "仅在选择当前位置或开始导航后使用定位。"
+                    + "导航进行时，锁屏或显示其他 App 期间仍会继续定位和语音引导。"
                     + "搜索和普通道路路段会将必要的位置与搜索内容发送给 Apple Maps。"
                     + "未完成的行程会在结束或完成前，将所选地点与路线保存在本 App 内。",
                   english:
                     "Location is used after you choose Current Location "
-                    + "or start navigation. Search and ordinary-road legs "
+                    + "or start navigation. During active navigation, location "
+                    + "and spoken guidance continue while the screen is locked "
+                    + "or another app is visible. Search and ordinary-road legs "
                     + "send the necessary location or query to Apple Maps. "
                     + "An unfinished journey stores its selected places and "
                     + "route in this app until it is ended or completed."

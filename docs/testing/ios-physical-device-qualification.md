@@ -9,8 +9,8 @@ incomplete Debug baseline, or a Debug-only result cannot be reported as the
 physical-device App qualification.
 
 This is an App baseline only. Even a passing receipt grants no road-release,
-acoustic-quality, pronunciation, CarPlay, background-navigation, location
-accuracy, or driver-comprehension authority.
+acoustic-quality, pronunciation, CarPlay, lock-screen location-delivery,
+background-speech, location-accuracy, or driver-comprehension authority.
 
 ## Preflight
 
@@ -73,10 +73,12 @@ The runner:
 4. requires exactly one physical-iOS result configuration;
 5. requires every reported test to pass with zero failures, skips, or expected
    failures;
-6. requires the default whole-Shuto foreground planning-location permission and
-   start/stop lifecycle UI test
+6. requires the default whole-Shuto planning-to-live permission, handoff, and
+   App-switch lifecycle UI test
    `testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()` to
-   appear exactly once and pass;
+   appear exactly once and pass; the test starts the exact released live
+   journey, presses Home, returns to the App, and rejects a stopped or
+   resume-required session;
 7. requires the parked Japanese, Simplified Chinese, and English voice-prompt
    lifecycle UI test to appear exactly once and pass with an installed voice,
    start/finish callbacks, `.playback + .voicePrompt`, and a non-empty physical
@@ -111,9 +113,10 @@ overwritten.
 ## Independent App-hosted audio run
 
 The combined runner remains the preferred gate because it binds the complete
-Debug unit/UI baseline, Release configuration smoke, foreground planning Core
-Location lifecycle, and physical audio lifecycle to one commit and device
-configuration. It does not enroll live navigation. If the device's XCTest UI
+Debug unit/UI baseline, Release configuration smoke, planning-to-live Core
+Location handoff, foreground-started App-switch lifecycle, and physical audio
+lifecycle to one commit and device configuration. It does not prove that
+location fixes or speech were delivered while backgrounded. If the device's XCTest UI
 Automation
 service cannot start, `scripts/run_ios_physical_audio_qualification.py` can
 collect the audio lifecycle independently without weakening or replacing that
@@ -165,11 +168,11 @@ The combined receipt uses schema 1.10. `qualification-run.json` retains:
 It excludes the device identifier, device name, coordinates, raw location
 traces, raw audio, and filesystem paths. The combined-run authority matrix
 records the complete physical App baseline, Release-configuration device smoke,
-exact foreground planning-location start/stop, installed-voice lifecycle, and
+exact planning-to-live/App-switch lifecycle, installed-voice lifecycle, and
 physical audio-route lifecycle smokes as true. The independent audio-run matrix
 records only the latter two as true. Both deliberately keep location accuracy,
-road release, acoustic quality, pronunciation, CarPlay, background navigation,
-and App Store distribution-signature qualification false. A callback and output
+road release, acoustic quality, pronunciation, CarPlay, lock-screen fix/audio
+delivery, and App Store distribution-signature qualification false. A callback and output
 port prove that the technical route was active; they do not prove that a person
 heard, understood, or approved the sound.
 

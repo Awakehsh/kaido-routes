@@ -14,8 +14,10 @@ public enum KaidoProductLiveInputPolicy: String, Codable, Equatable, Sendable {
 ///
 /// Structural release validation alone never grants a live sensor authority.
 /// The joint product artifact must also declare whether its evidence is
-/// synthetic or released-road evidence and whether foreground live input is
-/// permitted.
+/// synthetic or released-road evidence and whether live input may be started
+/// from an explicit foreground When In Use action. Platform adapters may keep
+/// that active navigation session alive across scene changes when the product
+/// declares the matching background modes.
 public struct KaidoProductRuntimeUseDeclaration: Codable, Equatable, Sendable {
   public let evidenceScope: KaidoProductRuntimeEvidenceScope
   public let liveInputPolicy: KaidoProductLiveInputPolicy
@@ -219,7 +221,8 @@ public struct KaidoProductRuntimeIdentity: Equatable, Sendable {
   }
 }
 
-/// Unforgeable authority for an exact released-road foreground runtime.
+/// Unforgeable authority for an exact released-road runtime that must start in
+/// the foreground.
 ///
 /// Only `KaidoProductRelease` can mint this package-internal token after the
 /// complete joint release and runtime-use declaration pass validation.

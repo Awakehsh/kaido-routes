@@ -1,6 +1,6 @@
 # Kaido Routes Privacy Policy
 
-Effective date: August 12, 2026
+Effective date: August 16, 2026
 
 Kaido Routes is a route-first driving navigation app. This policy describes
 the behavior of the current open-source iPhone release.
@@ -16,6 +16,13 @@ and timestamp observations on the device. These observations are used to
 choose an origin or estimate progress on the selected route. Raw observation
 samples are not transmitted to the Kaido Routes project or retained in the
 navigation checkpoint.
+
+Planning location stops when the app leaves the foreground. After the user
+explicitly starts navigation in the foreground, location updates and audible
+guidance may continue while the screen is locked or another app is visible.
+The system shows its background-location indicator. Background updates stop
+when navigation finishes, the user ends it, permission is revoked, or the
+location pipeline fails.
 
 Development builds include an internal calibration mode that can keep raw
 location observations in memory during an explicitly started session. It is

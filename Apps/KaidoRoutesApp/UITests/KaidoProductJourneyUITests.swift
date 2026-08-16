@@ -1386,6 +1386,50 @@ final class KaidoProductJourneyUITests: XCTestCase {
       XCTWaiter.wait(for: [stopped], timeout: 5),
       .completed
     )
+
+    let liveLocationState = element(
+      "whole-shuto-position-state",
+      in: app
+    )
+    let liveLocationStarted = XCTNSPredicateExpectation(
+      predicate: NSPredicate(
+        format: "value != %@ AND value != %@ AND value != %@",
+        "INACTIVE",
+        "RESUME_REQUIRED",
+        "FAILED"
+      ),
+      object: liveLocationState
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [liveLocationStarted], timeout: 5),
+      .completed
+    )
+
+    XCUIDevice.shared.press(.home)
+    let backgrounded = XCTNSPredicateExpectation(
+      predicate: NSPredicate { object, _ in
+        (object as? XCUIApplication)?.state != .runningForeground
+      },
+      object: app
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [backgrounded], timeout: 5),
+      .completed
+    )
+    app.activate()
+    let foregrounded = XCTNSPredicateExpectation(
+      predicate: NSPredicate { object, _ in
+        (object as? XCUIApplication)?.state == .runningForeground
+      },
+      object: app
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [foregrounded], timeout: 5),
+      .completed
+    )
+    XCTAssertEqual(product.value as? String, "SURFACE_ACCESS")
+    XCTAssertNotEqual(liveLocationState.value as? String, "RESUME_REQUIRED")
+    XCTAssertNotEqual(liveLocationState.value as? String, "FAILED")
   }
 
   func testWholeShutoC2RecommendedRouteExposesLiveNavigation() {

@@ -7,12 +7,13 @@ enum WholeShutoForegroundReleaseFactory {
     surfaceRouteResolver: any WholeShutoSurfaceRouteResolving =
       WholeShutoMapKitSurfaceRouteResolver(),
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
-      WholeShutoUserDefaultsCheckpointStore()
+      WholeShutoUserDefaultsCheckpointStore(),
+    liveLocationSource: (any ForegroundNavigationLocationSource)? = nil
   ) -> WholeShutoProductModel {
     do {
       let database = try WholeShutoNetworkCatalog.bundled()
-      let catalog = try BundledProductReleaseCatalogLoader
-        .bundledForeground()
+      let catalog =
+        try BundledProductReleaseCatalogLoader.bundledForeground()
       guard !catalog.foregroundNavigationEntries.isEmpty else {
         preconditionFailure("Invalid bundled Whole-Shuto foreground catalog")
       }
@@ -37,7 +38,8 @@ enum WholeShutoForegroundReleaseFactory {
         liveJourneyAdmissions: admissions,
         liveJourneyAdmissionResolver: { route in
           routeReleaseAuthority.resolve(route: route)
-        }
+        },
+        liveLocationSource: liveLocationSource
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

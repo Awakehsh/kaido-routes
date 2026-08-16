@@ -381,6 +381,7 @@ final class WholeShutoProductModel: ObservableObject {
   private let liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission]
   private let liveJourneyAdmissionResolver: WholeShutoLiveJourneyAdmissionResolver?
   private let liveLocationSourceEvidenceProvider: any CoreLocationSourceEvidenceProviding
+  private let liveLocationSource: (any ForegroundNavigationLocationSource)?
   private let waysByID: [Int64: ShutoNetworkDatabase.Way]
   private var playbackTask: Task<Void, Never>?
   private var playbackGeneration = 0
@@ -470,6 +471,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationSourceEvidenceProvider:
       any CoreLocationSourceEvidenceProviding =
       SystemCoreLocationSourceEvidenceProvider(),
+    liveLocationSource: (any ForegroundNavigationLocationSource)? = nil,
     nowMillisecondsProvider: @escaping () -> Int = {
       Int((Date().timeIntervalSince1970 * 1_000).rounded())
     },
@@ -506,6 +508,7 @@ final class WholeShutoProductModel: ObservableObject {
     self.liveJourneyAdmissionResolver = liveJourneyAdmissionResolver
     self.liveLocationSourceEvidenceProvider =
       liveLocationSourceEvidenceProvider
+    self.liveLocationSource = liveLocationSource
     self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
     waysByID = Dictionary(
@@ -2531,7 +2534,8 @@ final class WholeShutoProductModel: ObservableObject {
         authority: .releasedProduct(
           admission.core.foregroundLiveInputAuthority
         ),
-        consumer: self
+        consumer: self,
+        source: liveLocationSource
       )
       observeLiveLocationController(controller)
       foregroundLiveLocationController = controller
@@ -3184,9 +3188,8 @@ final class WholeShutoProductModel: ObservableObject {
   func handleScenePhase(
     _ scenePhase: ProductNavigationRuntimeScenePhase
   ) async {
-    // The controller stops its source, cancels pending batches, and drains the
-    // in-flight consumer before the model captures a lifecycle checkpoint.
-    await foregroundLiveLocationController?.handleScenePhase(scenePhase)
+    let liveLocationController = foregroundLiveLocationController
+    await liveLocationController?.handleScenePhase(scenePhase)
     switch scenePhase {
     case .active:
       if !isLiveDrive || isPlaying {
@@ -3194,6 +3197,16 @@ final class WholeShutoProductModel: ObservableObject {
       }
     case .inactive, .background:
       if isLiveDrive {
+        if liveLocationController?
+          .maintainsActiveNavigationAcrossSceneChanges == true
+        {
+          if let liveDriveSession {
+            await captureAndPersistLiveCheckpoint(
+              from: liveDriveSession
+            )
+          }
+          return
+        }
         cancelSurfaceReroute()
         invalidatePlaybackTask()
         isPlaying = false

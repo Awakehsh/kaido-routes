@@ -213,30 +213,71 @@ public enum ShutoCircuitProductReleaseBuilder {
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute
   ) throws -> KaidoProductReleaseArtifact {
+    try buildPlannedRouteArtifact(
+      context: ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+        database: database
+      ),
+      route: route
+    )
+  }
+
+  public static func buildPlannedRouteArtifact(
+    context: ShutoPlannedRouteRuntimeCompiler.NetworkContext,
+    route: ShutoPlannedRoute
+  ) throws -> KaidoProductReleaseArtifact {
+    try buildArtifact(
+      database: context.database,
+      route: route,
+      releaseKey: plannedRouteReleaseKey(route.routePlan),
+      preferredRecoveryTriggerID: nil,
+      runtimeContext: context
+    )
+  }
+
+  /// Builds and validates the on-demand foreground release exactly once.
+  /// Live admission callers use this path so authoring and authority creation
+  /// cannot redundantly traverse the full navigation and atlas artifact.
+  public static func buildPlannedRouteRelease(
+    context: ShutoPlannedRouteRuntimeCompiler.NetworkContext,
+    route: ShutoPlannedRoute
+  ) throws -> KaidoProductRelease {
+    let artifact = try buildArtifact(
+      database: context.database,
+      route: route,
+      releaseKey: plannedRouteReleaseKey(route.routePlan),
+      preferredRecoveryTriggerID: nil,
+      runtimeContext: context,
+      validatesProduct: false
+    )
+    return try KaidoProductRelease(artifact: artifact)
+  }
+
+  private static func plannedRouteReleaseKey(
+    _ routePlan: RoutePlan
+  ) throws -> String {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-    let encodedRoutePlan = try encoder.encode(route.routePlan)
+    let encodedRoutePlan = try encoder.encode(routePlan)
     let routeDigest = SHA256.hash(data: encodedRoutePlan).map {
       String(format: "%02x", $0)
     }.joined()
-    return try buildArtifact(
-      database: database,
-      route: route,
-      releaseKey: "route-\(routeDigest)",
-      preferredRecoveryTriggerID: nil
-    )
+    return "route-\(routeDigest)"
   }
 
   private static func buildArtifact(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
     releaseKey: String,
-    preferredRecoveryTriggerID: String?
+    preferredRecoveryTriggerID: String?,
+    runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext? = nil,
+    validatesProduct: Bool = true
   ) throws -> KaidoProductReleaseArtifact {
-    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
-      database: database,
-      route: route
-    )
+    let assets =
+      try runtimeContext?.compile(route: route)
+      ?? ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
     let missingGuidance = assets.liveReleaseCoverage.decisions.compactMap {
       decision -> String? in
       guard decision.kind == .junction,
@@ -259,9 +300,11 @@ public enum ShutoCircuitProductReleaseBuilder {
       reviewedMovements: reviewedMovements,
       releaseKey: releaseKey
     )
-    let releaseRecovery = try releasedRecovery(
+    let releaseRecovery = releasedRecovery(
       assets: assets,
-      database: database,
+      availableDirectedEdgeIDs:
+        runtimeContext?.directedEdgeIDs
+        ?? Set(database.edges.map(\.edgeID)),
       preferredTriggerID: preferredRecoveryTriggerID
     )
     let entryApproach = try entryApproach(
@@ -271,6 +314,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     let corridor = try releaseCorridor(
       assets: assets,
       database: database,
+      runtimeContext: runtimeContext,
       entryApproach: entryApproach,
       recovery: releaseRecovery
     )
@@ -287,7 +331,7 @@ public enum ShutoCircuitProductReleaseBuilder {
         directedEdgeIDs: entryApproach.transitionEdgeIDs,
         firstRouteOccurrenceID: route.routePlan.occurrences[0].id
       ),
-      recoveryCandidates: [releaseRecovery],
+      recoveryCandidates: releaseRecovery.map { [$0] } ?? [],
       egressOptions: [
         EgressOption(
           id: egressOptionID,
@@ -346,7 +390,9 @@ public enum ShutoCircuitProductReleaseBuilder {
       navigationRelease: navigationArtifact,
       routeAtlasRelease: atlasArtifact
     )
-    _ = try KaidoProductRelease(artifact: product)
+    if validatesProduct {
+      _ = try KaidoProductRelease(artifact: product)
+    }
     return product
   }
 
@@ -618,14 +664,14 @@ public enum ShutoCircuitProductReleaseBuilder {
 
   private static func releasedRecovery(
     assets: ShutoPlannedRouteRuntimeAssets,
-    database: ShutoNetworkDatabase,
+    availableDirectedEdgeIDs: Set<String>,
     preferredTriggerID: String?
-  ) throws -> RecoveryCandidate {
+  ) -> RecoveryCandidate? {
     let available = assets.recoveryCandidates
       .filter { candidate in
-        candidate.recoveryOccurrenceIDs.allSatisfy { id in
-          database.edges.contains { $0.edgeID == id }
-        }
+        candidate.recoveryOccurrenceIDs.allSatisfy(
+          availableDirectedEdgeIDs.contains
+        )
       }
       .sorted {
         if $0.divergenceOccurrenceID != $1.divergenceOccurrenceID {
@@ -637,11 +683,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       preferredTriggerID.flatMap { expected in
         available.first { $0.triggerDirectedEdgeID == expected }
       } ?? (preferredTriggerID == nil ? available.first : nil)
-    guard
-      let candidate = selected
-    else {
-      throw ShutoCircuitProductReleaseBuilderError.missingRecoveryCandidate
-    }
+    guard let candidate = selected else { return nil }
     return RecoveryCandidate(
       divergenceOccurrenceID: candidate.divergenceOccurrenceID,
       triggerDirectedEdgeID: candidate.triggerDirectedEdgeID,
@@ -655,22 +697,29 @@ public enum ShutoCircuitProductReleaseBuilder {
   private static func releaseCorridor(
     assets: ShutoPlannedRouteRuntimeAssets,
     database: ShutoNetworkDatabase,
+    runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext?,
     entryApproach: ReleasedEntryApproach,
-    recovery: RecoveryCandidate
+    recovery: RecoveryCandidate?
   ) throws -> RouteMatcherCorridor {
     var requiredIDs =
       Set(assets.matcherCorridor.edges.map(\.id))
-      .union(recovery.recoveryOccurrenceIDs)
+      .union(recovery?.recoveryOccurrenceIDs ?? [])
     if entryApproach.virtualMatcherEdge == nil {
       requiredIDs.formUnion(entryApproach.transitionEdgeIDs)
     }
-    let edgesByID = Dictionary(
-      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
-    )
-    let nodesByID = Dictionary(
-      uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
-    )
-    let outgoing = Dictionary(grouping: database.edges, by: \.fromNodeID)
+    let edgesByID =
+      runtimeContext?.edgesByID
+      ?? Dictionary(
+        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+      )
+    let nodesByID =
+      runtimeContext?.nodesByID
+      ?? Dictionary(
+        uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
+      )
+    let outgoing =
+      runtimeContext?.outgoingEdges
+      ?? Dictionary(grouping: database.edges, by: \.fromNodeID)
     var edges = try requiredIDs.sorted().map { id -> RouteMatcherDirectedEdge in
       guard let edge = edgesByID[id] else {
         throw ShutoCircuitProductReleaseBuilderError.missingGraphEdge(id)

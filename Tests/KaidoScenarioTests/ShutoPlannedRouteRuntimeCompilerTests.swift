@@ -526,6 +526,23 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
+  @Test("link route memberships do not drift planned route geometry")
+  func linkMembershipsDoNotDriftPlannedRouteGeometry() throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.6-mukojima.hakozaki",
+      exitFacilityID: "shuto.ic.1-haneda.haneda"
+    )
+
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+      database: database,
+      route: route
+    )
+
+    #expect(assets.routePlan == route.routePlan)
+    #expect(assets.runtimeAssetIdentity.routePlanID == route.routePlan.id)
+  }
+
   @Test("newly completed approaches build foreground products")
   func newlyCompletedApproachesBuildForegroundProducts() throws {
     let database = try loadWholeShutoDatabase()

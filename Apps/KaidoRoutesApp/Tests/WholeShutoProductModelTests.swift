@@ -591,7 +591,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       entryFacilityID: "shuto.ic.k1.yokohamakouen",
       exitFacilityID: "shuto.ic.k7-yokohama-hokusei.yokohamaaoba"
     )
-    let authority = WholeShutoRouteReleaseAuthority(database: database)
+    let authority = try WholeShutoRouteReleaseAuthority(database: database)
 
     switch authority.resolve(route: route) {
     case .available(let admission):
@@ -635,7 +635,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release)
     )
     XCTAssertEqual(core.selectedRoutePlan, route.routePlan)
-    let authority = WholeShutoRouteReleaseAuthority(database: database)
+    let authority = try WholeShutoRouteReleaseAuthority(database: database)
 
     switch authority.resolve(route: route) {
     case .available(let admission):

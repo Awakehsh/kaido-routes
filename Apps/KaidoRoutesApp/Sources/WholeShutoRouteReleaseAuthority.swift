@@ -27,6 +27,14 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
     "WHOLE_SHUTO_NAVIGATION_RUNTIME_INVALID"
 
   let database: ShutoNetworkDatabase
+  let runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext
+
+  init(database: ShutoNetworkDatabase) throws {
+    self.database = database
+    runtimeContext = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+  }
 
   func resolve(
     route selectedRoute: ShutoPlannedRoute
@@ -37,13 +45,12 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
       guard reconstructed == selectedRoute else {
         return .unavailable(Self.runtimeInvalidCode)
       }
-      let artifact =
+      let release =
         try ShutoCircuitProductReleaseBuilder
-        .buildPlannedRouteArtifact(
-          database: database,
+        .buildPlannedRouteRelease(
+          context: runtimeContext,
           route: reconstructed
         )
-      let release = try KaidoProductRelease(artifact: artifact)
       let core = try KaidoLiveJourneyAdmission(
         release: release,
         selectedRoutePlan: reconstructed.routePlan,

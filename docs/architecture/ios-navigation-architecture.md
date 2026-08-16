@@ -652,8 +652,11 @@ External adapters construct `KaidoProductNavigationRuntime` from one validated
 creates the session from the exact released RoutePlan,
 `ReleasedNavigationRuntimePolicy`, corridor, DecisionZones, and guidance without
 accepting independent replacements. The policy supplies the only eligible
-directional entry transition, released in-domain recovery candidates, and legal
-egress options. Every released recovery edge must also exist as one continuous
+directional entry transition, any released in-domain recovery candidates that
+exist for the exact route, and legal egress options. An exact route with no
+legal later rejoin remains navigable; if the driver leaves it, recovery is
+explicitly unavailable instead of inventing a reversal or replacement route.
+Every released recovery edge must also exist as one continuous
 matcher-corridor path through the target RoutePlan edge. While recovery is
 active, high-confidence observations on that exact path retain recovery instead
 of being mistaken for a second deviation; reaching the bound target marks the

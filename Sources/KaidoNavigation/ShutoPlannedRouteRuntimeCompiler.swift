@@ -461,26 +461,85 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     }
   }
 
+  /// One validated whole-network input shared by route-local compilations.
+  ///
+  /// The whole database hash is intentionally computed once. Every route
+  /// still receives its own canonical runtime hash, while interactive route
+  /// selection avoids re-encoding the same multi-megabyte network artifact.
+  public struct NetworkContext: Sendable {
+    package let database: ShutoNetworkDatabase
+    package let networkArtifactID: String
+    package let networkArtifactSHA256: String
+    package let nodesByID: [Int64: ShutoNetworkDatabase.Node]
+    package let edgesByID: [String: ShutoNetworkDatabase.Edge]
+    package let directedEdgeIDs: Set<String>
+    package let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
+    package let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
+    package let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
+
+    public init(database: ShutoNetworkDatabase) throws {
+      try database.validate()
+      self.database = database
+      networkArtifactID = database.databaseID
+      networkArtifactSHA256 = try canonicalSHA256(
+        NetworkArtifactHashPayload(
+          schemaVersion: ShutoRuntimeAssetIdentity.currentSchemaVersion,
+          database: database
+        )
+      )
+      nodesByID = Dictionary(
+        uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
+      )
+      edgesByID = Dictionary(
+        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+      )
+      directedEdgeIDs = Set(database.edges.map(\.edgeID))
+      outgoingEdges = Dictionary(
+        grouping: database.edges,
+        by: \.fromNodeID
+      )
+      facilitiesByID = Dictionary(
+        uniqueKeysWithValues: database.directionalFacilities.map {
+          ($0.facilityID, $0)
+        }
+      )
+      releasedMovementContext =
+        ShutoJunctionMovementCatalog.ReleasedContext(database: database)
+    }
+
+    public func compile(
+      route: ShutoPlannedRoute
+    ) throws -> ShutoPlannedRouteRuntimeAssets {
+      try compileValidated(
+        context: self,
+        route: route,
+        networkArtifactID: networkArtifactID,
+        networkArtifactSHA256: networkArtifactSHA256
+      )
+    }
+  }
+
   public static func compile(
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute
   ) throws -> ShutoPlannedRouteRuntimeAssets {
-    try database.validate()
+    try NetworkContext(database: database).compile(route: route)
+  }
+
+  private static func compileValidated(
+    context: NetworkContext,
+    route: ShutoPlannedRoute,
+    networkArtifactID: String,
+    networkArtifactSHA256: String
+  ) throws -> ShutoPlannedRouteRuntimeAssets {
+    let database = context.database
     guard route.routePlan.networkSnapshotID == database.networkSnapshotID else {
       throw ShutoPlannedRouteRuntimeCompilationError
         .networkSnapshotMismatch
     }
-    let nodesByID = Dictionary(
-      uniqueKeysWithValues: database.nodes.map { ($0.nodeID, $0) }
-    )
-    let edgesByID = Dictionary(
-      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
-    )
-    let facilitiesByID = Dictionary(
-      uniqueKeysWithValues: database.directionalFacilities.map {
-        ($0.facilityID, $0)
-      }
-    )
+    let nodesByID = context.nodesByID
+    let edgesByID = context.edgesByID
+    let facilitiesByID = context.facilitiesByID
     guard
       route.routePlan.entryFacilityID == route.entryFacility.facilityID,
       route.routePlan.exitFacilityID == route.exitFacility.facilityID,
@@ -496,9 +555,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       uniqueKeysWithValues: route.edges.indices.dropFirst().compactMap {
         index -> (Int, ShutoJunctionMovementDefinition)? in
         guard
-          let definition =
-            ShutoJunctionMovementCatalog.releasedDefinition(
-              database: database,
+          let definition = context.releasedMovementContext
+            .releasedDefinition(
               routeEdges: route.edges,
               decisionIndex: index - 1
             )
@@ -563,7 +621,9 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       $0 + $1.lengthMeters
     }
     var expectedRouteIDs: [String] = []
-    for edge in route.edges {
+    // Ramps and junction connectors do not add route shields to the planner's
+    // presentation contract, so they must not drift the runtime identity.
+    for edge in route.edges where edge.kind == "MAINLINE" {
       let candidates = edge.routeMemberships.map(\.routeID)
       let next =
         candidates.first(where: { $0 == expectedRouteIDs.last })
@@ -648,7 +708,8 @@ public enum ShutoPlannedRouteRuntimeCompiler {
     )
     let guidanceMatches = ShutoJunctionGuidanceCompiler.compile(
       database: database,
-      route: route
+      route: route,
+      releasedContext: context.releasedMovementContext
     )
     let decisionZones = guidanceMatches.map { match in
       DecisionZoneProgressDefinition(
@@ -741,13 +802,6 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       database: database,
       route: route,
       recoveryCandidates: recoveryCandidates
-    )
-    let networkArtifactID = database.databaseID
-    let networkArtifactSHA256 = try canonicalSHA256(
-      NetworkArtifactHashPayload(
-        schemaVersion: ShutoRuntimeAssetIdentity.currentSchemaVersion,
-        database: database
-      )
     )
     let routeRuntimeSHA256 = try canonicalSHA256(
       RouteRuntimeHashPayload(

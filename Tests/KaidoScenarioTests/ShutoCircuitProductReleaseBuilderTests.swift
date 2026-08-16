@@ -187,6 +187,47 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("a direct route without a later safe rejoin still builds honestly")
+  func buildsDirectRouteWithoutInventingRecovery() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+    let entries = database.directionalFacilities.filter(\.canEnter).sorted {
+      $0.facilityID < $1.facilityID
+    }
+    let exits = database.directionalFacilities.filter(\.canExit).sorted {
+      $0.facilityID < $1.facilityID
+    }
+
+    for entry in entries {
+      for exit in exits where exit.facilityID != entry.facilityID {
+        for preference in ShutoRoutePreference.allCases {
+          guard
+            let route = try? planner.plan(
+              entryFacilityID: entry.facilityID,
+              exitFacilityID: exit.facilityID,
+              preference: preference
+            ),
+            try context.compile(route: route).recoveryCandidates.isEmpty
+          else { continue }
+          let release =
+            try ShutoCircuitProductReleaseBuilder
+            .buildPlannedRouteRelease(context: context, route: route)
+
+          #expect(release.foregroundLiveInputAuthority != nil)
+          #expect(release.navigation.bundle.routePlan == route.routePlan)
+          #expect(
+            release.navigation.bundle.runtimePolicy.recoveryCandidates.isEmpty
+          )
+          return
+        }
+      }
+    }
+    Issue.record("Expected at least one direct route without a safe rejoin")
+  }
+
   @Test("exact C1 outer circuit builds on demand")
   func buildsC1OuterForegroundReleaseOnDemand() throws {
     let database = try loadDatabase()

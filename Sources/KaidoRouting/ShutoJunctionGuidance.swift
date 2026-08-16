@@ -326,6 +326,57 @@ public enum ShutoJunctionMovementCatalog {
     )
   }
 
+  private static let itabashiToKumanochoInnerPrefix = [
+    "osm.28195150.1.forward",
+    "osm.28195150.2.forward",
+    "osm.28195150.3.forward",
+    "osm.28195150.4.forward",
+    "osm.28195150.5.forward",
+    "osm.28195150.6.forward",
+    "osm.28195150.7.forward",
+    "osm.28195150.8.forward",
+    "osm.28195150.9.forward",
+    "osm.28195150.10.forward",
+    "osm.28195150.11.forward",
+    "osm.28195150.12.forward",
+    "osm.28195150.13.forward",
+    "osm.28195150.14.forward",
+    "osm.28195150.15.forward",
+    "osm.28195150.16.forward",
+    "osm.28195150.17.forward",
+    "osm.28195150.18.forward",
+    "osm.28195150.19.forward",
+    "osm.28195150.20.forward",
+    "osm.28195150.21.forward",
+    "osm.28195150.22.forward",
+    "osm.28195150.23.forward",
+    "osm.28195150.24.forward",
+    "osm.28195150.25.forward",
+    "osm.28195150.26.forward",
+    "osm.28195150.27.forward",
+    "osm.28195150.28.forward",
+    "osm.28195150.29.forward",
+    "osm.28195150.30.forward",
+    "osm.28195150.31.forward",
+    "osm.28195150.32.forward",
+    "osm.28195150.33.forward",
+    "osm.28195150.34.forward",
+    "osm.28195150.35.forward",
+    "osm.28127112.0.forward",
+    "osm.28127112.1.forward",
+    "osm.28127112.2.forward",
+    "osm.28127112.3.forward",
+    "osm.28127112.4.forward",
+    "osm.28127112.5.forward",
+    "osm.28127112.6.forward",
+    "osm.28127112.7.forward",
+    "osm.28127112.8.forward",
+    "osm.28127112.9.forward",
+    "osm.28127112.10.forward",
+    "osm.28127112.11.forward",
+    "osm.28127112.12.forward",
+  ]
+
   public static let released: [ShutoJunctionMovementDefinition] = [
     c2InnerMovement(
       id: "shuto.jct.ohashi.c2-inner-stays-on-c2",
@@ -1143,57 +1194,9 @@ public enum ShutoJunctionMovementCatalog {
       junctionNodeID: 308_930_039,
       incomingEdgeID: "osm.156344609.48.forward",
       outgoingEdgeID: "osm.28195150.0.forward",
-      coveredFollowingDecisionEdgeIDs: [
-        "osm.28195150.1.forward",
-        "osm.28195150.2.forward",
-        "osm.28195150.3.forward",
-        "osm.28195150.4.forward",
-        "osm.28195150.5.forward",
-        "osm.28195150.6.forward",
-        "osm.28195150.7.forward",
-        "osm.28195150.8.forward",
-        "osm.28195150.9.forward",
-        "osm.28195150.10.forward",
-        "osm.28195150.11.forward",
-        "osm.28195150.12.forward",
-        "osm.28195150.13.forward",
-        "osm.28195150.14.forward",
-        "osm.28195150.15.forward",
-        "osm.28195150.16.forward",
-        "osm.28195150.17.forward",
-        "osm.28195150.18.forward",
-        "osm.28195150.19.forward",
-        "osm.28195150.20.forward",
-        "osm.28195150.21.forward",
-        "osm.28195150.22.forward",
-        "osm.28195150.23.forward",
-        "osm.28195150.24.forward",
-        "osm.28195150.25.forward",
-        "osm.28195150.26.forward",
-        "osm.28195150.27.forward",
-        "osm.28195150.28.forward",
-        "osm.28195150.29.forward",
-        "osm.28195150.30.forward",
-        "osm.28195150.31.forward",
-        "osm.28195150.32.forward",
-        "osm.28195150.33.forward",
-        "osm.28195150.34.forward",
-        "osm.28195150.35.forward",
-        "osm.28127112.0.forward",
-        "osm.28127112.1.forward",
-        "osm.28127112.2.forward",
-        "osm.28127112.3.forward",
-        "osm.28127112.4.forward",
-        "osm.28127112.5.forward",
-        "osm.28127112.6.forward",
-        "osm.28127112.7.forward",
-        "osm.28127112.8.forward",
-        "osm.28127112.9.forward",
-        "osm.28127112.10.forward",
-        "osm.28127112.11.forward",
-        "osm.28127112.12.forward",
-        "osm.28126649.0.forward",
-      ],
+      coveredFollowingDecisionEdgeIDs:
+        itabashiToKumanochoInnerPrefix
+        + ["osm.28126649.0.forward"],
       branchSide: .right,
       japaneseSignText: "中央道・東名",
       routeShields: ["C2", "E20", "E1"],
@@ -1212,6 +1215,37 @@ public enum ShutoJunctionMovementCatalog {
         + "jct_itabashi_20180404",
       additionalSources: [
         "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-c2/",
+      ]
+    ),
+    c2InnerMovement(
+      id: "shuto.jct.itabashi.c2-inner-keeps-right-to-5-inbound",
+      junctionID: "shuto.jct.jct_itabashi_20180404",
+      junctionNodeID: 308_930_039,
+      incomingEdgeID: "osm.156344609.48.forward",
+      outgoingEdgeID: "osm.28195150.0.forward",
+      coveredFollowingDecisionEdgeIDs:
+        itabashiToKumanochoInnerPrefix
+        + ["osm.23681223.0.forward"],
+      branchSide: .right,
+      japaneseSignText: "中央道・東名",
+      routeShields: ["C2", "E20", "E1"],
+      junctionNameJA: "板橋JCT・熊野町JCT",
+      junctionNameZH: "板桥 JCT・熊野町 JCT",
+      junctionNameEN: "Itabashi and Kumanocho Junctions",
+      destinationJA: "C2 内回り",
+      destinationZH: "C2 内环",
+      destinationEN: "the C2 Inner Loop",
+      expectedJunctionDetailSHA256:
+        "4c1cb61e312e4b0d70eed1eb542d48c0"
+        + "19de9e605d354cd85fdd7800babc80ba",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/"
+        + "customer/use/network/jct/routeguide/"
+        + "jct_itabashi_20180404",
+      additionalSources: [
+        "https://www.shutoko.jp/use/safety/fourlanes/",
+        "https://www.shutoko.jp/use/network/map/route-5/",
         "https://www.shutoko.jp/use/network/map/route-c2/",
       ]
     ),
@@ -6512,6 +6546,85 @@ public enum ShutoJunctionMovementCatalog {
     ).first
   }
 
+  /// Validates the released movement catalog once for one exact network and
+  /// provides constant-time adjacent-movement lookup for route planning.
+  public struct ReleasedContext: Sendable {
+    private let definitionsByMovement: [String: [ShutoJunctionMovementDefinition]]
+
+    public init(
+      database: ShutoNetworkDatabase,
+      definitions: [ShutoJunctionMovementDefinition] =
+        ShutoJunctionMovementCatalog.released
+    ) {
+      let junctionsByID = Dictionary(
+        uniqueKeysWithValues: database.junctions.map {
+          ($0.junctionID, $0)
+        }
+      )
+      let routesByID = Dictionary(
+        uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
+      )
+      let edgesByID = Dictionary(
+        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+      )
+      let valid = definitions.filter { definition in
+        guard let incoming = edgesByID[definition.incomingEdgeID],
+          let outgoing = edgesByID[definition.outgoingEdgeID]
+        else { return false }
+        return isValidReleasedDefinition(
+          definition,
+          database: database,
+          incoming: incoming,
+          outgoing: outgoing,
+          junctionsByID: junctionsByID,
+          routesByID: routesByID,
+          edgesByID: edgesByID
+        )
+      }
+      definitionsByMovement = Dictionary(
+        grouping: valid,
+        by: { Self.key($0.incomingEdgeID, $0.outgoingEdgeID) }
+      )
+    }
+
+    public func releasedDefinition(
+      routeEdges: [ShutoNetworkDatabase.Edge],
+      decisionIndex: Int
+    ) -> ShutoJunctionMovementDefinition? {
+      guard decisionIndex >= 0, decisionIndex + 1 < routeEdges.count else {
+        return nil
+      }
+      let candidates = definitionsByMovement[
+        Self.key(
+          routeEdges[decisionIndex].edgeID,
+          routeEdges[decisionIndex + 1].edgeID
+        ),
+        default: []
+      ]
+      let matchingCompounds = candidates.filter { definition in
+        let continuation = definition.coveredFollowingDecisionEdgeIDs
+        guard !continuation.isEmpty,
+          decisionIndex + 2 + continuation.count <= routeEdges.count
+        else { return false }
+        return Array(
+          routeEdges[
+            (decisionIndex + 2)..<(decisionIndex + 2 + continuation.count)
+          ].map(\.edgeID)
+        ) == continuation
+      }
+      if matchingCompounds.count == 1 { return matchingCompounds[0] }
+      guard matchingCompounds.isEmpty else { return nil }
+      let immediate = candidates.filter {
+        $0.coveredFollowingDecisionEdgeIDs.isEmpty
+      }
+      return immediate.count == 1 ? immediate[0] : nil
+    }
+
+    private static func key(_ incoming: String, _ outgoing: String) -> String {
+      incoming + "\u{1f}" + outgoing
+    }
+  }
+
   /// Selects a compound definition only when its complete continuation is the
   /// selected route prefix. This permits different prompts for the same first
   /// fork in a tightly spaced sequence without granting either prompt to the
@@ -6568,50 +6681,69 @@ public enum ShutoJunctionMovementCatalog {
     let routesByID = Dictionary(
       uniqueKeysWithValues: database.routes.map { ($0.routeID, $0) }
     )
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
     return definitions.filter { definition in
-      guard
-        definition.networkSnapshotID == database.networkSnapshotID,
-        definition.incomingEdgeID == incoming.edgeID,
-        definition.outgoingEdgeID == outgoing.edgeID,
-        incoming.toNodeID == definition.junctionNodeID,
-        outgoing.fromNodeID == definition.junctionNodeID,
-        incoming.routeMemberships.contains(where: {
-          $0.routeID == definition.incomingRouteID
-        }),
-        outgoing.routeMemberships.contains(where: {
-          $0.routeID == definition.outgoingRouteID
-        }),
-        routesByID[definition.incomingRouteID]?
-          .officialDirectionsJA.contains(
-            definition.incomingDirectionJA
-          ) == true,
-        routesByID[definition.outgoingRouteID]?
-          .officialDirectionsJA.contains(
-            definition.outgoingDirectionJA
-          ) == true,
-        let junction = junctionsByID[definition.junctionID],
-        junction.osmNodeIDs.contains(definition.junctionNodeID),
-        junction.officialDetailSHA256
-          == definition.expectedJunctionDetailSHA256,
-        Set(definition.localizedJunctionNames.keys)
-          == Set(KaidoReleaseLocale.allCases),
-        Set(definition.localizedContent.keys)
-          == Set(KaidoReleaseLocale.allCases),
-        definition.localizedContent.values.allSatisfy({
-          $0.preservedJapaneseSignText == definition.japaneseSignText
-        }),
-        hasValidCoveredContinuation(
-          definition,
-          database: database,
-          initialOutgoing: outgoing
-        ),
-        definition.commitTriggerDistanceMeters.isFinite,
-        definition.commitTriggerDistanceMeters > 0
-      else {
-        return false
-      }
-      return true
+      isValidReleasedDefinition(
+        definition,
+        database: database,
+        incoming: incoming,
+        outgoing: outgoing,
+        junctionsByID: junctionsByID,
+        routesByID: routesByID,
+        edgesByID: edgesByID
+      )
     }
+  }
+
+  private static func isValidReleasedDefinition(
+    _ definition: ShutoJunctionMovementDefinition,
+    database: ShutoNetworkDatabase,
+    incoming: ShutoNetworkDatabase.Edge,
+    outgoing: ShutoNetworkDatabase.Edge,
+    junctionsByID: [String: ShutoNetworkDatabase.Junction],
+    routesByID: [String: ShutoNetworkDatabase.Route],
+    edgesByID: [String: ShutoNetworkDatabase.Edge]
+  ) -> Bool {
+    guard
+      definition.networkSnapshotID == database.networkSnapshotID,
+      definition.incomingEdgeID == incoming.edgeID,
+      definition.outgoingEdgeID == outgoing.edgeID,
+      incoming.toNodeID == definition.junctionNodeID,
+      outgoing.fromNodeID == definition.junctionNodeID,
+      incoming.routeMemberships.contains(where: {
+        $0.routeID == definition.incomingRouteID
+      }),
+      outgoing.routeMemberships.contains(where: {
+        $0.routeID == definition.outgoingRouteID
+      }),
+      routesByID[definition.incomingRouteID]?
+        .officialDirectionsJA.contains(definition.incomingDirectionJA)
+        == true,
+      routesByID[definition.outgoingRouteID]?
+        .officialDirectionsJA.contains(definition.outgoingDirectionJA)
+        == true,
+      let junction = junctionsByID[definition.junctionID],
+      junction.osmNodeIDs.contains(definition.junctionNodeID),
+      junction.officialDetailSHA256
+        == definition.expectedJunctionDetailSHA256,
+      Set(definition.localizedJunctionNames.keys)
+        == Set(KaidoReleaseLocale.allCases),
+      Set(definition.localizedContent.keys)
+        == Set(KaidoReleaseLocale.allCases),
+      definition.localizedContent.values.allSatisfy({
+        $0.preservedJapaneseSignText == definition.japaneseSignText
+      }),
+      hasValidCoveredContinuation(
+        definition,
+        edgesByID: edgesByID,
+        initialOutgoing: outgoing
+      ),
+      definition.commitTriggerDistanceMeters.isFinite,
+      definition.commitTriggerDistanceMeters > 0
+    else { return false }
+    return true
   }
 
   /// Resolves a later fork intentionally covered by one earlier operator sign.
@@ -6701,6 +6833,20 @@ public enum ShutoJunctionMovementCatalog {
     database: ShutoNetworkDatabase,
     initialOutgoing: ShutoNetworkDatabase.Edge
   ) -> Bool {
+    hasValidCoveredContinuation(
+      definition,
+      edgesByID: Dictionary(
+        uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+      ),
+      initialOutgoing: initialOutgoing
+    )
+  }
+
+  private static func hasValidCoveredContinuation(
+    _ definition: ShutoJunctionMovementDefinition,
+    edgesByID: [String: ShutoNetworkDatabase.Edge],
+    initialOutgoing: ShutoNetworkDatabase.Edge
+  ) -> Bool {
     guard
       Set(definition.coveredFollowingDecisionEdgeIDs).count
         == definition.coveredFollowingDecisionEdgeIDs.count,
@@ -6713,9 +6859,6 @@ public enum ShutoJunctionMovementCatalog {
     else {
       return false
     }
-    let edgesByID = Dictionary(
-      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
-    )
     var previous = initialOutgoing
     for edgeID in definition.coveredFollowingDecisionEdgeIDs {
       guard let edge = edgesByID[edgeID],
@@ -6765,8 +6908,26 @@ public enum ShutoJunctionGuidanceCompiler {
     database: ShutoNetworkDatabase,
     route: ShutoPlannedRoute,
     definitions: [ShutoJunctionMovementDefinition] =
-      ShutoJunctionMovementCatalog.released
+      ShutoJunctionMovementCatalog.released,
+    releasedContext: ShutoJunctionMovementCatalog.ReleasedContext? = nil
   ) -> [ShutoJunctionGuidanceMatch] {
+    func releasedDefinition(
+      at decisionIndex: Int
+    ) -> ShutoJunctionMovementDefinition? {
+      if let releasedContext {
+        return releasedContext.releasedDefinition(
+          routeEdges: route.edges,
+          decisionIndex: decisionIndex
+        )
+      }
+      return ShutoJunctionMovementCatalog.releasedDefinition(
+        database: database,
+        routeEdges: route.edges,
+        decisionIndex: decisionIndex,
+        definitions: definitions
+      )
+    }
+
     let edgeDistance = route.edges.reduce(0) {
       $0 + $1.lengthMeters
     }
@@ -6783,13 +6944,9 @@ public enum ShutoJunctionGuidanceCompiler {
             return true
           }
           guard index > 0 else { return false }
-          return definitions.contains {
-            $0.id == occurrence.entityID
-              && $0.networkSnapshotID == database.networkSnapshotID
-              && $0.incomingEdgeID == route.edges[index - 1].edgeID
-              && $0.outgoingEdgeID == edge.edgeID
-              && occurrence.kind == .junctionMovement
-          }
+          let released = releasedDefinition(at: index - 1)
+          return released?.id == occurrence.entityID
+            && occurrence.kind == .junctionMovement
         })
     else {
       return []
@@ -6812,12 +6969,7 @@ public enum ShutoJunctionGuidanceCompiler {
       cumulativeDistance += incoming.lengthMeters
 
       guard
-        let definition = ShutoJunctionMovementCatalog.releasedDefinition(
-          database: database,
-          routeEdges: route.edges,
-          decisionIndex: index,
-          definitions: definitions
-        ),
+        let definition = releasedDefinition(at: index),
         let junction = junctionsByID[definition.junctionID],
         definition.localizedJunctionNames[.japanese] == junction.nameJA,
         let node = nodesByID[definition.junctionNodeID]

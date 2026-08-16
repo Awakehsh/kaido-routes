@@ -520,6 +520,7 @@ public struct ShutoRoutePlanner: Sendable {
   let edgesByID: [String: ShutoNetworkDatabase.Edge]
   let outgoingEdges: [Int64: [ShutoNetworkDatabase.Edge]]
   let facilitiesByID: [String: ShutoNetworkDatabase.Facility]
+  let releasedMovementContext: ShutoJunctionMovementCatalog.ReleasedContext
 
   public init(database: ShutoNetworkDatabase) throws {
     try database.validate()
@@ -541,6 +542,9 @@ public struct ShutoRoutePlanner: Sendable {
     facilitiesByID = Dictionary(
       uniqueKeysWithValues:
         database.directionalFacilities.map { ($0.facilityID, $0) }
+    )
+    releasedMovementContext = ShutoJunctionMovementCatalog.ReleasedContext(
+      database: database
     )
   }
 
@@ -833,12 +837,10 @@ public struct ShutoRoutePlanner: Sendable {
     let occurrences = routeEdges.enumerated().map { index, edge in
       let reviewedMovement =
         index > 0
-        ? ShutoJunctionMovementCatalog.releasedDefinition(
-          database: database,
+        ? releasedMovementContext.releasedDefinition(
           routeEdges: routeEdges,
           decisionIndex: index - 1
-        )
-        : nil
+        ) : nil
       return RouteOccurrence(
         id: "shuto.\(index).\(edge.edgeID)",
         index: index,

@@ -116,9 +116,6 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
       issues.append(.invalidEntryTransition)
     }
 
-    if routePlan.recoveryPolicy == .safeRejoin && recoveryCandidates.isEmpty {
-      issues.append(.missingReleasedRecovery)
-    }
     if routePlan.recoveryPolicy != .safeRejoin && !recoveryCandidates.isEmpty {
       issues.append(.unexpectedReleasedRecovery)
     }

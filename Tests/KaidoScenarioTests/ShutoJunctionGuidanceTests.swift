@@ -2361,6 +2361,38 @@ struct ShutoJunctionGuidanceTests {
     }
   }
 
+  @Test("Itabashi compound guidance follows the selected Kumanocho branch")
+  func itabashiCompoundGuidanceFollowsSelectedKumanochoBranch() throws {
+    let database = try loadDatabase()
+    let edges = Dictionary(
+      uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) }
+    )
+    let context = ShutoJunctionMovementCatalog.ReleasedContext(
+      database: database
+    )
+    let ids = [
+      "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho",
+      "shuto.jct.itabashi.c2-inner-keeps-right-to-5-inbound",
+    ]
+
+    for id in ids {
+      let expected = try #require(
+        ShutoJunctionMovementCatalog.released.first { $0.id == id }
+      )
+      let routeEdgeIDs =
+        [expected.incomingEdgeID, expected.outgoingEdgeID]
+        + expected.coveredFollowingDecisionEdgeIDs
+      let routeEdges = try routeEdgeIDs.map { try #require(edges[$0]) }
+
+      #expect(
+        context.releasedDefinition(
+          routeEdges: routeEdges,
+          decisionIndex: 0
+        )?.id == id
+      )
+    }
+  }
+
   @Test("Kosuge and Horikiri movements bind every current operator sign")
   func kosugeHorikiriMovementsBindEveryCurrentOperatorSign() throws {
     let database = try loadDatabase()

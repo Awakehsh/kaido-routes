@@ -247,17 +247,17 @@ fail-closed attribution surface derived from the exact bundled
 copyright and ODbL HTTPS links without changing the legacy K7 catalog or its
 hash-bound review.
 
-It requests when-in-use location only after the operator explicitly starts an
-internal calibration run with non-empty device and mount metadata. The product
-runtime panel constructs a real `NavigationSession`, but only from a complete
-joint release whose identities, sources, and licences are explicitly synthetic.
-Its foreground-navigation controller does not construct a `CLLocationManager`
-unless it receives the unforgeable live-input token minted by a validated joint
-product release for the exact product release, navigation release, runtime
-policy, snapshot, RoutePlan, and matcher corridor. The schema-6.0 bundled
-synthetic release declares `SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and
-always supplies a typed blocker, so the panel requests no permission and
-displays no live measured position. An admitted
+The internal calibration surface requests when-in-use location only after the
+operator explicitly starts a run with non-empty device and mount metadata. The
+default whole-Shuto product separately authors a complete on-demand joint
+release from the exact selected RoutePlan, bundled network snapshot, reviewed
+guidance, runtime policy, matcher corridor, and Route Atlas. Its
+foreground-navigation controller does not construct a `CLLocationManager`
+unless that release mints the unforgeable live-input token for the same product,
+navigation release, snapshot, RoutePlan, runtime policy, and matcher corridor.
+The schema-6.0 bundled synthetic workbench release remains
+`SYNTHETIC_TEST_ONLY + DISABLED`, mints no token, and cannot request permission
+or display a live measured position. An admitted
 controller requires an explicit user start, When In Use authorization, an
 active scene, and an actor ready to accept input; inactive or background stops
 the source and drains the current callback before checkpointing. It never
@@ -279,10 +279,10 @@ supplies the only `EntryTransitionAdmissionContext`. The app-owned foreground
 pipeline is wired as `CoreLocationObservationAdapter` →
 `CoreLocationEntryTransitionAdapter` → `NavigationSession`, and after strict
 entry as `CoreLocationObservationAdapter` → `NavigationSession.observe`. Only
-the actor's returned atomic snapshot is published. The default preview keeps
-this input disconnected, and tests prove ordered synthetic fixture callbacks
-without granting those callbacks real-road authority. No real product release
-artifact exists in the app today. Focused controller tests prove release-identity
+the actor's returned atomic snapshot is published. The default product connects
+this input only after exact on-demand release admission; tests also prove that
+ordered synthetic fixture callbacks cannot grant themselves real-road
+authority. Focused controller tests prove release-identity
 and release-token admission, explicit authorization, callback ordering,
 permission downgrade, scene stop without automatic resume, and distinct
 transient versus terminal Core Location failures. Test-only released-road

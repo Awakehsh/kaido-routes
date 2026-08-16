@@ -27,7 +27,7 @@ enum WholeShutoForegroundReleaseFactory {
         )
         return try WholeShutoLiveJourneyAdmission(core: core)
       }
-      let routeReleaseAuthority = WholeShutoRouteReleaseAuthority(
+      let routeReleaseAuthority = try WholeShutoRouteReleaseAuthority(
         database: database
       )
       return WholeShutoProductModel(

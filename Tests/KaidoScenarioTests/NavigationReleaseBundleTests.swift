@@ -419,11 +419,6 @@ func navigationReleaseBundleRejectsIncompleteRuntimePolicy() {
     )
     #expect(
       issues.contains(
-        .invalidRuntimePolicy(.missingReleasedRecovery)
-      )
-    )
-    #expect(
-      issues.contains(
         .invalidRuntimePolicy(.missingReleasedEgress)
       )
     )

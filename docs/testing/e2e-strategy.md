@@ -477,8 +477,8 @@ live service exists. Its synthetic asset set proves that one active snapshot,
 RoutePlan, editor catalog, entry/recovery/egress runtime policy, matcher
 corridor, DecisionZone set, released-guidance set, and optional junction-view
 registry can pass as one coherent unit. Unit tests supply the fail-closed matrix
-for invalid entry binding, absent released recovery/egress, compiled-exit drift,
-non-rejoin policy contamination, missing repeated-occurrence assets, duplicate
+for invalid entry binding, absent released egress, malformed recovery,
+non-rejoin policy contamination, compiled-exit drift, missing repeated-occurrence assets, duplicate
 movement zones, and unregistered or orphaned junction views. Neither
 the portable scenario nor those tests promote their synthetic `ACTIVE` or
 `RELEASED` flags into real release evidence.

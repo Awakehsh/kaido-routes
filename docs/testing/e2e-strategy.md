@@ -620,6 +620,15 @@ operator facility coordinates. These checks prove composition and UI behavior
 only; they do not validate live MapKit output, release C2 route authority, or
 replace field qualification.
 
+The whole-Shuto live model suite also drives a released Rinkai-fukutoshin to
+Hatsudai-minami route through the real entry adapter and route-aware matcher to
+a tagged tunnel edge. After a deterministic fix gap it requires a moving,
+growing-uncertainty presentation estimate while authoritative progress,
+occurrence identity, and speech count remain unchanged. A later unrelated weak
+raw coordinate must not displace that route projection. Platform tests bind the
+45-second horizon, speed bound, and next-decision safety limit independently.
+These are deterministic safety semantics, not tunnel accuracy evidence.
+
 The focused whole-Shuto suite compiles the exact reviewed Shinonome, Tatsumi,
 Kasai, and Oi adjacent-edge transitions into occurrence-owned
 `JUNCTION_MOVEMENT`, DecisionZone, and commit-stage guidance values. Package

@@ -123,7 +123,12 @@ internal review workbench.
   may be shown before its decision-zone threshold, while junction insets and
   one-shot speech remain actor-triggered. An explicit free-browse/follow
   control remains available. Degraded, interrupted, and tunnel-estimated states
-  return to north-up instead of inventing a route heading.
+  return to north-up instead of inventing a route heading. In a tagged tunnel
+  or covered segment, a live drive may move an amber estimated marker for at
+  most 45 seconds from the last HIGH route-resolved fix using bounded speed as
+  weak evidence. Its uncertainty halo grows continuously and the marker stops
+  before the next released junction movement; the estimate cannot advance the
+  matcher, NavigationSession, spoken guidance, exit handoff, or completion.
 - With a route selected, the second map presentation is the whole-route track
   map: the entire selected route in one readable frame with every on-route
   IC, JCT, and PA always labeled, component routes visually distinct (the
@@ -216,8 +221,9 @@ The product distinguishes what is known from what is still unconfirmed:
   supplies the planning origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the
   161 released movement bindings. Live admission and replay do not grant
-  tunnel, field, acoustic, or CarPlay qualification; spoken turn guidance still
-  covers reviewed junction movements only.
+  tunnel, field, acoustic, or CarPlay qualification. Tunnel coasting is an
+  explicitly low-confidence presentation aid, not dead-reckoning authority;
+  spoken expressway guidance still covers reviewed junction movements only.
 
 Inspect one exact planned route's expressway release gaps:
 

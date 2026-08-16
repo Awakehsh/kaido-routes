@@ -10,7 +10,10 @@ enum WholeShutoForegroundReleaseFactory {
     checkpointStore: (any WholeShutoJourneyCheckpointStoring)? =
       WholeShutoUserDefaultsCheckpointStore(),
     liveLocationSource: (any ForegroundNavigationLocationSource)? = nil,
-    speechOutput: (any GuidanceSpeechOutput)? = nil
+    speechOutput: (any GuidanceSpeechOutput)? = nil,
+    nowMillisecondsProvider: @escaping () -> Int = {
+      Int((Date().timeIntervalSince1970 * 1_000).rounded())
+    }
   ) -> WholeShutoProductModel {
     do {
       let database = try WholeShutoNetworkCatalog.bundled()
@@ -42,7 +45,8 @@ enum WholeShutoForegroundReleaseFactory {
         liveJourneyAdmissionResolver: { route in
           routeReleaseAuthority.resolve(route: route)
         },
-        liveLocationSource: liveLocationSource
+        liveLocationSource: liveLocationSource,
+        nowMillisecondsProvider: nowMillisecondsProvider
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

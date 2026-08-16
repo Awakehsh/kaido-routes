@@ -293,6 +293,16 @@ enum WholeShutoNetworkCatalog {
 
 @MainActor
 final class WholeShutoProductModel: ObservableObject {
+  private struct TunnelEstimateAnchor {
+    let routePlanID: String
+    let occurrenceID: String
+    let receivedAtMilliseconds: Int
+    let routeDistanceMeters: Double
+    let safetyLimitRouteDistanceMeters: Double
+    let speedMetersPerSecond: Double
+    let speedAccuracyMetersPerSecond: Double?
+  }
+
   static let simulationReferenceSpeedMetersPerSecond = 15.0
   static let simulationPlaybackSpeed: NavigationDriveSimulationSpeed =
     .twentyTimes
@@ -370,6 +380,8 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
+  @Published private(set) var tunnelEstimatedProgressFraction: Double?
+  @Published private(set) var tunnelEstimateUncertaintyMeters: Double?
 
   let database: ShutoNetworkDatabase
   let planner: ShutoRoutePlanner
@@ -431,9 +443,11 @@ final class WholeShutoProductModel: ObservableObject {
   private var liveLocationStartedAtMilliseconds: Int?
   private var lastLiveObservationAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
+  private var tunnelEstimateAnchor: TunnelEstimateAnchor?
   private let nowMillisecondsProvider: () -> Int
 
   static let liveLocationStaleAfterMilliseconds = 10_000
+  static let tunnelEstimateRefreshMilliseconds = 1_000
   static let surfaceRerouteRequiredOffRouteObservations = 2
   static let surfaceRerouteCooldownMilliseconds = 15_000
   static let surfaceSpeechPreannounceDistanceMeters = 250.0
@@ -1216,6 +1230,11 @@ final class WholeShutoProductModel: ObservableObject {
       phase != .completed,
       liveLocationState != .available
     {
+      if phase == .expressway,
+        tunnelEstimatedProgressFraction != nil
+      {
+        return .tunnelEstimated
+      }
       return .networkDegraded
     }
     switch phase {
@@ -1268,6 +1287,11 @@ final class WholeShutoProductModel: ObservableObject {
       }
       return selectedRoute?.coordinates.first
     case .expressway:
+      if let tunnelEstimatedProgressFraction {
+        return estimatedExpresswayPosition(
+          at: tunnelEstimatedProgressFraction
+        )?.coordinate
+      }
       return runtimeCoordinate
         ?? interpolatedCoordinate(
           in: selectedRoute?.coordinates ?? [],
@@ -1441,6 +1465,17 @@ final class WholeShutoProductModel: ObservableObject {
         remainingCoordinates: route.coordinates
       )
     case .expressway:
+      if let tunnelEstimatedProgressFraction,
+        let estimated = estimatedExpresswayPosition(
+          at: tunnelEstimatedProgressFraction
+        )
+      {
+        return Self.split(
+          route.coordinates,
+          afterVertexAt: estimated.edgeIndex,
+          segmentFraction: estimated.edgeFraction
+        )
+      }
       if let runtimeOccurrenceID,
         let occurrence = route.routePlan.occurrence(
           id: runtimeOccurrenceID
@@ -2563,6 +2598,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeRecoveryStatus = nil
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
+      clearTunnelEstimate()
       presentationProjection = nil
       consumedGuidancePromptIDs = []
       surfaceSpeechGeneration = 0
@@ -2633,7 +2669,12 @@ final class WholeShutoProductModel: ObservableObject {
       latitude: observation.coordinate.latitude,
       longitude: observation.coordinate.longitude
     )
-    runtimeCoordinate = coordinate
+    // Expressway presentation uses only route-resolved matcher projection.
+    // A raw weak or ambiguous GPS fix must not displace the last accepted
+    // route position on stacked roads or in a tunnel.
+    if phase != .expressway {
+      runtimeCoordinate = coordinate
+    }
     lastLiveObservationAtMilliseconds = observation.receivedAtMilliseconds
     liveLocationStartedAtMilliseconds =
       liveLocationStartedAtMilliseconds
@@ -2705,6 +2746,16 @@ final class WholeShutoProductModel: ObservableObject {
       case .expressway:
         let update = try await session.observe(observation)
         applyNavigationUpdate(update)
+        if update.matcherEstimate.confidence == .high {
+          refreshTunnelEstimateAnchor(from: envelope)
+        } else {
+          updateTunnelEstimate(
+            atMilliseconds: observation.receivedAtMilliseconds
+          )
+          scheduleTunnelEstimateRefreshIfNeeded(
+            atMilliseconds: observation.receivedAtMilliseconds
+          )
+        }
         liveLocationState =
           update.matcherEstimate.confidence == .high
           ? .available : .degraded
@@ -2782,6 +2833,7 @@ final class WholeShutoProductModel: ObservableObject {
         await captureAndPersistLiveCheckpoint(from: session)
       }
     } catch {
+      clearTunnelEstimate()
       liveLocationState = .degraded
       liveLocationIssueCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
       failureCode = "WHOLE_SHUTO_OBSERVATION_PIPELINE_FAILED"
@@ -2798,6 +2850,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
     switch state {
     case .idle, .stopped:
+      clearTunnelEstimate()
       if liveLocationState != .resumeRequired {
         liveLocationState = .inactive
         liveLocationIssueCode = nil
@@ -2818,11 +2871,13 @@ final class WholeShutoProductModel: ObservableObject {
         liveLocationStartedAtMilliseconds ?? nowMillisecondsProvider()
       scheduleLiveLocationFreshnessCheck()
     case .sceneInactive:
+      clearTunnelEstimate()
       liveLocationState = .resumeRequired
       liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
       liveLocationFreshnessTask?.cancel()
       liveLocationFreshnessTask = nil
     case .permissionDenied:
+      clearTunnelEstimate()
       liveLocationState = .permissionDenied
       liveLocationIssueCode = "CORE_LOCATION_PERMISSION_DENIED"
       isPlaying = false
@@ -2832,11 +2887,13 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationFreshnessTask = nil
       persistCheckpoint()
     case .releaseBlocked(let reason):
+      clearTunnelEstimate()
       liveLocationState = .failed
       liveLocationIssueCode = reason.rawValue
       failureCode = Self.liveNavigationRuntimeInvalidCode
       isPlaying = false
     case .runtimeUnavailable:
+      clearTunnelEstimate()
       if !isPlaying {
         liveLocationState = .resumeRequired
         liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
@@ -2847,6 +2904,7 @@ final class WholeShutoProductModel: ObservableObject {
         isPlaying = false
       }
     case .failed(let code):
+      clearTunnelEstimate()
       liveLocationState = .failed
       liveLocationIssueCode = code
       isPlaying = false
@@ -2875,6 +2933,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
     matcherConfidence = .low
+    clearTunnelEstimate()
     scheduleLiveLocationFreshnessCheck()
     speechCoordinator?.resume()
     foregroundLiveLocationController?.refreshRuntimeAvailability()
@@ -2910,10 +2969,12 @@ final class WholeShutoProductModel: ObservableObject {
       isPlaying = false
     case .exitTransition:
       guard snapshot.egress.status == .active else { return }
+      clearTunnelEstimate()
       phase = .exitTransition
       progressFraction = 0
       presentationProjection = nil
     case .surfaceEgress:
+      clearTunnelEstimate()
       phase = .surfaceEgress
       progressFraction = 0
       presentationProjection = nil
@@ -3178,6 +3239,7 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeRecoveryStatus = nil
     runtimeCoordinate = nil
     runtimeFractionAlongOccurrence = nil
+    clearTunnelEstimate()
     presentationProjection = nil
     speechStatus = .idle
     consumedGuidancePromptIDs = []
@@ -4083,12 +4145,14 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  private func scheduleLiveLocationFreshnessCheck() {
+  private func scheduleLiveLocationFreshnessCheck(
+    afterMilliseconds: Int = WholeShutoProductModel.liveLocationStaleAfterMilliseconds
+  ) {
     liveLocationFreshnessTask?.cancel()
     guard isLiveDrive, isPlaying else { return }
     liveLocationFreshnessTask = Task { [weak self] in
       try? await Task.sleep(
-        for: .milliseconds(Self.liveLocationStaleAfterMilliseconds)
+        for: .milliseconds(afterMilliseconds)
       )
       guard !Task.isCancelled, let self else { return }
       self.evaluateLiveLocationFreshness(
@@ -4101,6 +4165,15 @@ final class WholeShutoProductModel: ObservableObject {
     atMilliseconds nowMilliseconds: Int
   ) {
     guard isLiveDrive, isPlaying else { return }
+    if liveLocationState == .degraded,
+      tunnelEstimateAnchor != nil
+    {
+      updateTunnelEstimate(atMilliseconds: nowMilliseconds)
+      scheduleTunnelEstimateRefreshIfNeeded(
+        atMilliseconds: nowMilliseconds
+      )
+      return
+    }
     let reference =
       lastLiveObservationAtMilliseconds
       ?? liveLocationStartedAtMilliseconds
@@ -4114,6 +4187,157 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationState = .stale
     liveLocationIssueCode = "CORE_LOCATION_NO_RECENT_FIX"
     matcherConfidence = .low
+    updateTunnelEstimate(atMilliseconds: nowMilliseconds)
+    scheduleTunnelEstimateRefreshIfNeeded(
+      atMilliseconds: nowMilliseconds
+    )
+  }
+
+  private func refreshTunnelEstimateAnchor(
+    from envelope: CoreLocationObservationEnvelope
+  ) {
+    clearTunnelEstimate()
+    guard
+      phase == .expressway,
+      let route = selectedRoute,
+      let occurrenceID = runtimeOccurrenceID,
+      let occurrence = route.routePlan.occurrence(id: occurrenceID),
+      route.edges.indices.contains(occurrence.index),
+      let fraction = runtimeFractionAlongOccurrence,
+      fraction.isFinite,
+      (0...1).contains(fraction),
+      let way = waysByID[route.edges[occurrence.index].wayID],
+      way.tags["tunnel"] == "yes" || way.tags["covered"] == "yes",
+      let speed = envelope.observation.speedMetersPerSecond,
+      speed.isFinite,
+      speed > 0
+    else {
+      return
+    }
+
+    let distanceBeforeOccurrence = route.edges.prefix(occurrence.index)
+      .reduce(0) { $0 + $1.lengthMeters }
+    let routeDistance =
+      distanceBeforeOccurrence
+      + route.edges[occurrence.index].lengthMeters * fraction
+    let nextDecisionIndex = route.routePlan.occurrences
+      .first {
+        $0.index > occurrence.index
+          && $0.kind == .junctionMovement
+      }?.index
+    let safetyLimit =
+      nextDecisionIndex.map {
+        route.edges.prefix($0).reduce(0) { $0 + $1.lengthMeters }
+      } ?? route.distanceMeters
+
+    tunnelEstimateAnchor = TunnelEstimateAnchor(
+      routePlanID: route.routePlan.id,
+      occurrenceID: occurrenceID,
+      receivedAtMilliseconds:
+        envelope.observation.receivedAtMilliseconds,
+      routeDistanceMeters: routeDistance,
+      safetyLimitRouteDistanceMeters: max(routeDistance, safetyLimit),
+      speedMetersPerSecond: speed,
+      speedAccuracyMetersPerSecond:
+        envelope.observation.speedAccuracyMetersPerSecond
+    )
+  }
+
+  private func updateTunnelEstimate(atMilliseconds nowMilliseconds: Int) {
+    guard
+      let anchor = tunnelEstimateAnchor,
+      let route = selectedRoute,
+      route.routePlan.id == anchor.routePlanID,
+      runtimeOccurrenceID == anchor.occurrenceID,
+      nowMilliseconds >= anchor.receivedAtMilliseconds,
+      let estimate = TunnelPositionEstimator.estimate(
+        anchorRouteDistanceMeters: anchor.routeDistanceMeters,
+        routeDistanceMeters: route.distanceMeters,
+        safetyLimitRouteDistanceMeters:
+          anchor.safetyLimitRouteDistanceMeters,
+        speedMetersPerSecond: anchor.speedMetersPerSecond,
+        speedAccuracyMetersPerSecond:
+          anchor.speedAccuracyMetersPerSecond,
+        elapsedMilliseconds:
+          nowMilliseconds - anchor.receivedAtMilliseconds
+      )
+    else {
+      tunnelEstimatedProgressFraction = nil
+      tunnelEstimateUncertaintyMeters = nil
+      return
+    }
+    tunnelEstimatedProgressFraction = min(
+      1,
+      max(progressFraction, estimate.routeDistanceMeters / route.distanceMeters)
+    )
+    tunnelEstimateUncertaintyMeters = estimate.uncertaintyRadiusMeters
+  }
+
+  private func scheduleTunnelEstimateRefreshIfNeeded(
+    atMilliseconds nowMilliseconds: Int
+  ) {
+    guard
+      tunnelEstimatedProgressFraction != nil,
+      let anchor = tunnelEstimateAnchor,
+      nowMilliseconds >= anchor.receivedAtMilliseconds,
+      Double(nowMilliseconds - anchor.receivedAtMilliseconds) / 1_000
+        < TunnelPositionEstimator.maximumHorizonSeconds
+    else {
+      return
+    }
+    scheduleLiveLocationFreshnessCheck(
+      afterMilliseconds: Self.tunnelEstimateRefreshMilliseconds
+    )
+  }
+
+  private func clearTunnelEstimate() {
+    tunnelEstimateAnchor = nil
+    tunnelEstimatedProgressFraction = nil
+    tunnelEstimateUncertaintyMeters = nil
+  }
+
+  private func estimatedExpresswayPosition(
+    at routeProgressFraction: Double
+  ) -> (
+    edgeIndex: Int,
+    edgeFraction: Double,
+    coordinate: ShutoCoordinate
+  )? {
+    guard
+      let route = selectedRoute,
+      !route.edges.isEmpty,
+      route.coordinates.count == route.edges.count + 1,
+      route.distanceMeters > 0
+    else {
+      return nil
+    }
+    let target =
+      route.distanceMeters
+      * min(1, max(0, routeProgressFraction))
+    var traversed = 0.0
+    for index in route.edges.indices {
+      let edgeLength = route.edges[index].lengthMeters
+      if traversed + edgeLength >= target || index == route.edges.indices.last {
+        let fraction =
+          edgeLength > 0
+          ? min(1, max(0, (target - traversed) / edgeLength))
+          : 0
+        let start = route.coordinates[index]
+        let end = route.coordinates[index + 1]
+        return (
+          edgeIndex: index,
+          edgeFraction: fraction,
+          coordinate: ShutoCoordinate(
+            latitude: start.latitude
+              + (end.latitude - start.latitude) * fraction,
+            longitude: start.longitude
+              + (end.longitude - start.longitude) * fraction
+          )
+        )
+      }
+      traversed += edgeLength
+    }
+    return nil
   }
 
   private struct SurfaceRouteMeasurement {

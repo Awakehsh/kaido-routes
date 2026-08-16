@@ -381,6 +381,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-position-state", in: app)
         .waitForExistence(timeout: 5)
     )
+    let livePosition = element("whole-shuto-current-position", in: app)
+    XCTAssertTrue(livePosition.waitForExistence(timeout: 5))
+    XCTAssertEqual(livePosition.label, "当前位置")
   }
 
   func testCircuitSelectionOffersEntrancesAndLaps() {

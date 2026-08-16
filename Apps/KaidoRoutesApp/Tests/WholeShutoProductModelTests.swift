@@ -662,6 +662,146 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testLiveTunnelGapCoastsPresentationWithoutAdvancingAuthority()
+    async throws
+  {
+    var nowMilliseconds = 1_000
+    let output = WholeShutoRecordingSpeechOutput()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      speechOutput: output,
+      nowMillisecondsProvider: { nowMilliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6275, longitude: 139.7730)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(
+      facilityID: "shuto.ic.b.rinkaihukutoshin"
+    )
+    model.selectCustomExit(
+      facilityID: "shuto.ic.c2.hatsudaiminami"
+    )
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    XCTAssertTrue(
+      model.canStartLiveNavigation,
+      model.liveNavigationBlockerCode ?? "no blocker code"
+    )
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+
+    let route = try XCTUnwrap(model.selectedRoute)
+    let accessEnd = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    let initialCourse = Self.bearing(
+      from: route.coordinates[0],
+      to: route.coordinates[1]
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "tunnel.access-end",
+        coordinate: accessEnd,
+        atMilliseconds: nowMilliseconds,
+        courseDegrees: initialCourse
+      )
+    )
+
+    var observationIndex = 0
+    for edgeIndex in route.edges.indices {
+      let start = route.coordinates[edgeIndex]
+      let end = route.coordinates[edgeIndex + 1]
+      let course = Self.bearing(from: start, to: end)
+      for fraction in [0.25, 0.75] {
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        let coordinate = ShutoCoordinate(
+          latitude: start.latitude
+            + (end.latitude - start.latitude) * fraction,
+          longitude: start.longitude
+            + (end.longitude - start.longitude) * fraction
+        )
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "tunnel.route.\(observationIndex)",
+            coordinate: coordinate,
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: course,
+            speedMetersPerSecond: 18
+          )
+        )
+        if model.phase == .expressway,
+          model.liveLocationState == .available,
+          model.positionState == .tunnelEstimated,
+          model.runtimeOccurrenceID != nil
+        {
+          break
+        }
+      }
+      if model.phase == .expressway,
+        model.liveLocationState == .available,
+        model.positionState == .tunnelEstimated,
+        model.runtimeOccurrenceID != nil
+      {
+        break
+      }
+    }
+
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(model.positionState, .tunnelEstimated)
+    let authoritativeOccurrence = try XCTUnwrap(model.runtimeOccurrenceID)
+    let authoritativeProgress = model.progressFraction
+    let authoritativeCoordinate = try XCTUnwrap(model.currentCoordinate)
+    let spokenPromptCount = output.commands.count
+
+    nowMilliseconds += WholeShutoProductModel.liveLocationStaleAfterMilliseconds
+    model.evaluateLiveLocationFreshness(
+      atMilliseconds: nowMilliseconds
+    )
+
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(model.positionState, .tunnelEstimated)
+    XCTAssertEqual(model.runtimeOccurrenceID, authoritativeOccurrence)
+    XCTAssertEqual(model.progressFraction, authoritativeProgress)
+    XCTAssertGreaterThan(
+      try XCTUnwrap(model.tunnelEstimatedProgressFraction),
+      authoritativeProgress
+    )
+    XCTAssertGreaterThan(
+      try XCTUnwrap(model.tunnelEstimateUncertaintyMeters),
+      TunnelPositionEstimator.minimumUncertaintyRadiusMeters
+    )
+    XCTAssertNotEqual(model.currentCoordinate, authoritativeCoordinate)
+    XCTAssertEqual(output.commands.count, spokenPromptCount)
+
+    nowMilliseconds += 1_000
+    let unrelatedRawCoordinate = ShutoCoordinate(
+      latitude: 35.0,
+      longitude: 140.0
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "tunnel.weak-unrelated-fix",
+        coordinate: unrelatedRawCoordinate,
+        atMilliseconds: nowMilliseconds,
+        courseDegrees: 0,
+        speedMetersPerSecond: 18
+      )
+    )
+
+    XCTAssertNotEqual(model.currentCoordinate, unrelatedRawCoordinate)
+    XCTAssertEqual(model.runtimeOccurrenceID, authoritativeOccurrence)
+    XCTAssertEqual(model.progressFraction, authoritativeProgress)
+    XCTAssertEqual(output.commands.count, spokenPromptCount)
+    model.reset()
+  }
+
   func testLiveJourneyContinuesWhenScreenLocksAndStopsWhenEnded()
     async throws
   {
@@ -2774,20 +2914,24 @@ final class WholeShutoProductModelTests: XCTestCase {
 
   private static func liveLocationEnvelope(
     id: String,
-    coordinate: ShutoCoordinate
+    coordinate: ShutoCoordinate,
+    atMilliseconds: Int = 1_000,
+    courseDegrees: Double = 90,
+    speedMetersPerSecond: Double = 10
   ) -> CoreLocationObservationEnvelope {
     CoreLocationObservationEnvelope(
       observation: RouteMatcherObservation(
         id: id,
-        observedAtMilliseconds: 1_000,
-        receivedAtMilliseconds: 1_000,
+        observedAtMilliseconds: atMilliseconds,
+        receivedAtMilliseconds: atMilliseconds,
         coordinate: MatcherCoordinate(
           latitude: coordinate.latitude,
           longitude: coordinate.longitude
         ),
         horizontalAccuracyMeters: 5,
-        courseDegrees: 90,
-        speedMetersPerSecond: 10,
+        courseDegrees: courseDegrees,
+        speedMetersPerSecond: speedMetersPerSecond,
+        speedAccuracyMetersPerSecond: 1,
         source: .phone
       ),
       provenance: CoreLocationObservationProvenance(
@@ -2801,6 +2945,21 @@ final class WholeShutoProductModelTests: XCTestCase {
         observationAgeMilliseconds: 0
       )
     )
+  }
+
+  private static func bearing(
+    from start: ShutoCoordinate,
+    to end: ShutoCoordinate
+  ) -> Double {
+    let startLatitude = start.latitude * .pi / 180
+    let endLatitude = end.latitude * .pi / 180
+    let longitudeDelta = (end.longitude - start.longitude) * .pi / 180
+    let y = sin(longitudeDelta) * cos(endLatitude)
+    let x =
+      cos(startLatitude) * sin(endLatitude)
+      - sin(startLatitude) * cos(endLatitude) * cos(longitudeDelta)
+    let degrees = atan2(y, x) * 180 / .pi
+    return degrees >= 0 ? degrees : degrees + 360
   }
 
   private static func savedRouteRecord(

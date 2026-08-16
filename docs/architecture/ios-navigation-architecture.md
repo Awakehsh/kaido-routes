@@ -93,7 +93,13 @@ replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
 recomputed. Planning location and replay never run in the background; only the
 explicitly user-started live session does. No current path supplies tunnel
-dead-reckoning authority.
+dead-reckoning authority. For a tagged tunnel or covered edge only, the App may
+derive a presentation-only estimate from the last HIGH route projection and
+bounded reported speed. It refreshes once per second for at most 45 seconds,
+grows an uncertainty halo, and stops before the next released junction-movement
+occurrence. Raw LOW or ambiguous coordinates cannot replace the last accepted
+route projection. This estimate never mutates `NavigationSession`, occurrence
+identity, guidance emission, exit handoff, or completion.
 
 `ShutoJunctionGuidanceCompiler` contains 161 snapshot- and source-hash-bound
 movement definitions. They cover every inventoried available mainline movement
@@ -1723,6 +1729,14 @@ When GPS observations stop:
 4. increase uncertainty continuously;
 5. do not commit an ambiguous tunnel branch during the gap;
 6. on signal return, replay a short buffered window before confirming a new state.
+
+The current iPhone path implements the presentation portion of steps 1, 2, 4,
+and 5 for snapshot-tagged tunnel/covered edges. `TunnelPositionEstimator` uses
+the last HIGH route distance, bounded speed, and disclosed speed uncertainty;
+the App caps it at the start of the next released junction-movement occurrence
+and freezes it after 45 seconds. The authoritative matcher progress and
+occurrence stay unchanged, so no prompt or route transition can be emitted from
+coasting. Core Motion and field-calibrated dead reckoning remain absent.
 
 The feasibility reducer makes that final step explicit. After a low or lost
 tunnel observation, signal reacquisition is `PENDING`. A single good coordinate

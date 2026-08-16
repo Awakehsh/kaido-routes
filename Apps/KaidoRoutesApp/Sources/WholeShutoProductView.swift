@@ -3264,6 +3264,14 @@ struct WholeShutoProductView: View {
           english: "WEAK POSITION · HELD"
         )
     case .tunnelEstimated:
+      if model.isLiveDrive {
+        return prefix
+          + copy.resolve(
+            japanese: "トンネル位置推定 · 低信頼",
+            simplifiedChinese: "隧道位置估算 · 低置信",
+            english: "TUNNEL ESTIMATE · LOW CONFIDENCE"
+          )
+      }
       return prefix
         + copy.resolve(
           japanese: "トンネル位置推定 · 模擬 \(simulationReplayParametersLabel)",
@@ -4948,6 +4956,21 @@ private struct WholeShutoGeographicMap: View {
         }
       }
 
+      if model.positionState == .tunnelEstimated,
+        let current = displayedPosition,
+        let uncertainty = model.tunnelEstimateUncertaintyMeters
+      {
+        MapCircle(
+          center: current.mapCoordinate,
+          radius: uncertainty
+        )
+        .foregroundStyle(KaidoTheme.signalAmber.opacity(0.12))
+        .stroke(
+          KaidoTheme.signalAmber.opacity(0.55),
+          style: StrokeStyle(lineWidth: 2, dash: [5, 4])
+        )
+      }
+
       if let current = displayedPosition {
         Annotation(
           positionAnnotationLabel,
@@ -4964,12 +4987,16 @@ private struct WholeShutoGeographicMap: View {
                 ? "circle.fill" : "location.north.fill"
             )
             .font(.system(size: 13, weight: .black))
-            .foregroundStyle(KaidoTheme.positionCyan)
+            .foregroundStyle(
+              model.positionState == .tunnelEstimated
+                ? KaidoTheme.signalAmber : KaidoTheme.positionCyan
+            )
             .rotationEffect(
               .degrees(displayedHeadingDegrees ?? 0)
             )
           }
           .accessibilityIdentifier("whole-shuto-current-position")
+          .accessibilityLabel(positionAnnotationLabel)
         }
       }
     }
@@ -5120,17 +5147,32 @@ private struct WholeShutoGeographicMap: View {
   }
 
   private var positionAnnotationLabel: String {
-    isDriving
-      ? copy.resolve(
-        japanese: "模擬位置",
-        simplifiedChinese: "模拟位置",
-        english: "Simulated position"
-      )
-      : copy.resolve(
+    guard isDriving else {
+      return copy.resolve(
         japanese: "現在地",
         simplifiedChinese: "当前位置",
         english: "Current location"
       )
+    }
+    if model.isLiveDrive {
+      if model.positionState == .tunnelEstimated {
+        return copy.resolve(
+          japanese: "推定位置",
+          simplifiedChinese: "估算位置",
+          english: "Estimated position"
+        )
+      }
+      return copy.resolve(
+        japanese: "現在地",
+        simplifiedChinese: "当前位置",
+        english: "Current location"
+      )
+    }
+    return copy.resolve(
+      japanese: "模擬位置",
+      simplifiedChinese: "模拟位置",
+      english: "Simulated position"
+    )
   }
 
   private func facilityBoundaryName(

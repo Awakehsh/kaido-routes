@@ -26,9 +26,11 @@ reviewed guidance, and graph-derived recovery candidates. Recovery derivation
 runs independently for each alternative outgoing edge and binds the candidate
 to both the RoutePlan divergence occurrence and the observed directed edge;
 runtime selection refuses a candidate authored for a different branch. Because
-the graph is a planning candidate, those recovery paths are marked unreleased:
-a deviation becomes unavailable/route-interrupted instead of executing an
-unreviewed movement. The compiler also emits a deterministic
+the graph is a planning candidate, compiler output marks those paths unreleased.
+The foreground product release builder may explicitly promote one exact
+in-domain candidate into the release-bound runtime policy; all other deviations
+become unavailable/route-interrupted instead of executing an unreviewed
+movement. The compiler also emits a deterministic
 `ShutoRouteLiveReleaseCoverage` report for every graph decision and recovery
 branch. Known JCT decisions are counted separately from non-JCT graph
 divergences such as directional exit splits, so missing JCT guidance is not
@@ -657,6 +659,21 @@ closed with the specific guidance or recovery blocker. No route can inherit
 another route's road evidence or live-input authority merely because location
 permission or device fixes exist.
 
+Bundled catalog matching and admission construction run off the main actor.
+Admission construction validates the immutable release, full selected
+`RoutePlan`, foreground authority, journey composition, and complete navigation
+runtime before exposing foreground input authority. Route selection then
+retains a fresh runtime, compiled route assets, and one reviewed-junction
+projection cache under the same exact identity. Live start is disabled until
+all three are ready, consumes that prepared runtime once, and constructs the
+Core Location controller last.
+Switching routes or destroying the model cancels admission, runtime, and route
+thumbnail preparation so stale work cannot publish or accumulate. SwiftUI
+getters never re-run `ShutoJunctionGuidanceCompiler` while driving. For spoken
+navigation, `AVSpeechGuidanceOutput` resolves only an eligible explicit voice
+preference or the system locale default; complete installed-voice enumeration
+belongs to the parked settings surface and cannot block the first live prompt.
+
 `run_ios_device_qualification.py` makes the first of those gates repeatable. It
 accepts only one exact online physical iPhone, binds the complete App scheme to
 a clean source commit, requires a zero-failure/zero-skip physical `.xcresult`,
@@ -696,8 +713,14 @@ of being mistaken for a second deviation; reaching the bound target marks the
 bypassed RoutePlan occurrences skipped and returns the actor to strict-route
 navigation. Every recovery candidate must identify an exact divergence
 occurrence and trigger directed edge, begin with that same edge, and rejoin a
-strictly later RoutePlan occurrence. Off-plan observations only select a
-candidate with the same trigger edge. The release gate additionally requires
+strictly later RoutePlan occurrence. A uniquely matched trigger edge selects
+that candidate directly. If the first branch segments remain geometrically
+ambiguous, a later HIGH observation may select a candidate only when that edge
+belongs to exactly one eligible released recovery path; ambiguous or unknown
+edges remain fail-closed. The App then keeps the live observation stream active,
+projects the current position onto that released path, renders its remaining
+geometry, and clears recovery state only after the actor reaches the bound
+target occurrence. The release gate additionally requires
 every transition edge to exist in the same matcher corridor and every
 consecutive pair to be an explicit successor. The transition may end
 immediately before the first RoutePlan occurrence or use an exact prefix

@@ -22,17 +22,7 @@ enum WholeShutoForegroundReleaseFactory {
       guard !catalog.foregroundNavigationEntries.isEmpty else {
         preconditionFailure("Invalid bundled Whole-Shuto foreground catalog")
       }
-      let admissions = try catalog.foregroundNavigationEntries.map { entry in
-        let journeyPlan = JourneyPlanCompiler.expresswayOnly(
-          release: entry.release
-        )
-        let core = try KaidoLiveJourneyAdmission(
-          release: entry.release,
-          selectedRoutePlan: entry.release.navigation.bundle.routePlan,
-          journeyPlan: journeyPlan
-        )
-        return try WholeShutoLiveJourneyAdmission(core: core)
-      }
+      let foregroundEntries = catalog.foregroundNavigationEntries
       let routeReleaseAuthority = try WholeShutoRouteReleaseAuthority(
         database: database
       )
@@ -41,9 +31,40 @@ enum WholeShutoForegroundReleaseFactory {
         surfaceRouteResolver: surfaceRouteResolver,
         checkpointStore: checkpointStore,
         speechOutput: speechOutput,
-        liveJourneyAdmissions: admissions,
+        liveJourneyAdmissions: [],
+        releasedForegroundRoutePlans: foregroundEntries.map {
+          $0.release.navigation.bundle.routePlan
+        },
         liveJourneyAdmissionResolver: { route in
-          routeReleaseAuthority.resolve(route: route)
+          let matches = foregroundEntries.filter {
+            $0.release.navigation.bundle.routePlan == route.routePlan
+          }
+          switch matches.count {
+          case 0:
+            return routeReleaseAuthority.resolve(route: route)
+          case 1:
+            do {
+              let release = matches[0].release
+              let core = try KaidoLiveJourneyAdmission(
+                release: release,
+                selectedRoutePlan: route.routePlan,
+                journeyPlan: JourneyPlanCompiler.expresswayOnly(
+                  release: release
+                )
+              )
+              return .available(
+                try WholeShutoLiveJourneyAdmission(core: core)
+              )
+            } catch {
+              return .unavailable(
+                WholeShutoRouteReleaseAuthority.runtimeInvalidCode
+              )
+            }
+          default:
+            return .unavailable(
+              WholeShutoRouteReleaseAuthority.ambiguousReleaseCode
+            )
+          }
         },
         liveLocationSource: liveLocationSource,
         nowMillisecondsProvider: nowMillisecondsProvider

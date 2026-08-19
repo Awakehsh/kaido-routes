@@ -84,12 +84,22 @@ internal review workbench.
   authority or upgrade the graph's evidence status. Entry-transition and
   expressway replay checkpoints persist that identity and return to parked
   review instead of restoring runtime progress when either hash drifts.
+- Selecting an exact route prepares its compiled assets, release-bound runtime,
+  and reviewed JCT prompt projection off the main actor. **Start navigation**
+  stays in `PREPARING` until all three match the full `RoutePlan`; start then
+  reuses those values and attaches Core Location last. Changing or abandoning
+  the route cancels its preparation. Driving UI reads one route-scoped prompt
+  cache instead of recompiling the junction catalog during every map refresh.
 - Graph search derives candidate wrong-turn rejoin shapes separately for every
   divergent directed edge. Each candidate is bound to the exact RoutePlan
   divergence occurrence and the observed wrong-turn edge, so one branch cannot
-  borrow another branch's recovery. Every graph-derived path remains
-  unreleased; a replayed deviation is therefore unavailable/route-interrupted
-  rather than executing an unreviewed movement. `kaido-release
+  borrow another branch's recovery. Compiler output alone remains unreleased.
+  An exact foreground product release may bind one in-domain candidate into
+  its runtime policy; all other deviations remain unavailable rather than
+  executing an unreviewed movement. While that released recovery is active,
+  the App keeps consuming serialized location observations, renders the
+  remaining rejoin path, and returns to the unchanged RoutePlan at its bound
+  target occurrence. `kaido-release
   inspect-live-coverage` emits the exact route-local missing guidance,
   candidate-recovery, and released-recovery counts without granting authority.
 - The driving simulation covers surface access, entry, expressway travel,

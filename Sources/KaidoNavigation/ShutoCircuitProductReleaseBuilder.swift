@@ -17,6 +17,19 @@ public enum ShutoCircuitProductReleaseBuilderError:
   case inconsistentRepeatedEntity(String)
 }
 
+public struct ShutoPlannedRouteProductBuild: Sendable {
+  public let release: KaidoProductRelease
+  public let runtimeAssets: ShutoPlannedRouteRuntimeAssets
+
+  public init(
+    release: KaidoProductRelease,
+    runtimeAssets: ShutoPlannedRouteRuntimeAssets
+  ) {
+    self.release = release
+    self.runtimeAssets = runtimeAssets
+  }
+}
+
 /// Authors exact whole-Shuto foreground releases from the bundled, dated graph
 /// and reviewed junction catalog.
 public enum ShutoCircuitProductReleaseBuilder {
@@ -241,15 +254,30 @@ public enum ShutoCircuitProductReleaseBuilder {
     context: ShutoPlannedRouteRuntimeCompiler.NetworkContext,
     route: ShutoPlannedRoute
   ) throws -> KaidoProductRelease {
+    try buildPlannedRouteProduct(
+      context: context,
+      route: route
+    ).release
+  }
+
+  public static func buildPlannedRouteProduct(
+    context: ShutoPlannedRouteRuntimeCompiler.NetworkContext,
+    route: ShutoPlannedRoute
+  ) throws -> ShutoPlannedRouteProductBuild {
+    let runtimeAssets = try context.compile(route: route)
     let artifact = try buildArtifact(
       database: context.database,
       route: route,
       releaseKey: plannedRouteReleaseKey(route.routePlan),
       preferredRecoveryTriggerID: nil,
       runtimeContext: context,
+      runtimeAssets: runtimeAssets,
       validatesProduct: false
     )
-    return try KaidoProductRelease(artifact: artifact)
+    return try ShutoPlannedRouteProductBuild(
+      release: KaidoProductRelease(artifact: artifact),
+      runtimeAssets: runtimeAssets
+    )
   }
 
   private static func plannedRouteReleaseKey(
@@ -270,10 +298,12 @@ public enum ShutoCircuitProductReleaseBuilder {
     releaseKey: String,
     preferredRecoveryTriggerID: String?,
     runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext? = nil,
+    runtimeAssets: ShutoPlannedRouteRuntimeAssets? = nil,
     validatesProduct: Bool = true
   ) throws -> KaidoProductReleaseArtifact {
     let assets =
-      try runtimeContext?.compile(route: route)
+      try runtimeAssets
+      ?? runtimeContext?.compile(route: route)
       ?? ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
         route: route

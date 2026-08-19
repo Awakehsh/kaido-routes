@@ -19,6 +19,7 @@ public struct KaidoLiveJourneyAdmission: Sendable {
   public let selectedRoutePlan: RoutePlan
   public let journeyPlan: JourneyPlan
   public let foregroundLiveInputAuthority: KaidoForegroundLiveInputAuthority
+  private let validatedRuntime: KaidoProductNavigationRuntime
 
   public init(
     release: KaidoProductRelease,
@@ -41,9 +42,10 @@ public struct KaidoLiveJourneyAdmission: Sendable {
       throw KaidoLiveJourneyAdmissionError.invalidJourneyComposition
     }
 
-    // This validates every release, RoutePlan, provider, surface-leg, matcher,
-    // DecisionZone, guidance, entry, recovery, and egress identity together.
-    _ = try KaidoProductNavigationRuntime(
+    // Admission is an authority boundary. Do not expose foreground input
+    // authority until the complete release and journey composition has passed
+    // the same validation used to create a live runtime.
+    let validatedRuntime = try KaidoProductNavigationRuntime(
       release: release,
       journeyPlan: journeyPlan
     )
@@ -52,12 +54,10 @@ public struct KaidoLiveJourneyAdmission: Sendable {
     self.selectedRoutePlan = selectedRoutePlan
     self.journeyPlan = journeyPlan
     foregroundLiveInputAuthority = authority
+    self.validatedRuntime = validatedRuntime
   }
 
   public func makeRuntime() throws -> KaidoProductNavigationRuntime {
-    try KaidoProductNavigationRuntime(
-      release: release,
-      journeyPlan: journeyPlan
-    )
+    validatedRuntime
   }
 }

@@ -94,6 +94,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCircuitProductReleaseBuilder.exitFacilityID
     )
     XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.selectedRoute?.routePlan, route.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
@@ -188,6 +189,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCircuitProductReleaseBuilder.wanganExitFacilityID
     )
     XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
@@ -217,6 +219,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCircuitProductReleaseBuilder.c2ExitFacilityID
     )
     XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
@@ -248,6 +251,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCircuitProductReleaseBuilder.daikokuExitFacilityID
     )
     XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
@@ -279,6 +283,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       ShutoCircuitProductReleaseBuilder.scenicExitFacilityID
     )
     XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
@@ -659,6 +664,209 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.liveLocationState, .available)
     XCTAssertNil(model.liveLocationIssueCode)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
+    model.reset()
+  }
+
+  func testReleasedLiveRecoveryKeepsConsumingLocationUntilRouteRejoin()
+    async throws
+  {
+    var nowMilliseconds = 1_000
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      nowMillisecondsProvider: { nowMilliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6763, longitude: 139.7720)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.rinkaihukutoshin")
+    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let route = try XCTUnwrap(model.selectedRoute)
+    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: model.database
+    )
+    let release =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteRelease(context: context, route: route)
+    let recovery = try XCTUnwrap(
+      release.navigation.bundle.runtimePolicy.recoveryCandidates.first
+    )
+    let divergence = try XCTUnwrap(
+      route.routePlan.occurrence(id: recovery.divergenceOccurrenceID)
+    )
+    let target = try XCTUnwrap(
+      route.routePlan.occurrence(id: recovery.targetOccurrenceID)
+    )
+    XCTAssertLessThan(divergence.index, target.index)
+    XCTAssertFalse(recovery.recoveryOccurrenceIDs.isEmpty)
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let corridorEdges = Dictionary(
+      uniqueKeysWithValues: release.navigation.bundle.matcherCorridor.edges
+        .map { ($0.id, $0) }
+    )
+    let corridorOccurrences = release.navigation.bundle.matcherCorridor
+      .occurrences.sorted { $0.index < $1.index }
+    let accessEnd = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "recovery.access-end",
+        coordinate: accessEnd,
+        atMilliseconds: nowMilliseconds,
+        courseDegrees: Self.bearing(
+          from: route.coordinates[0],
+          to: route.coordinates[1]
+        )
+      )
+    )
+
+    for occurrence in corridorOccurrences
+    where occurrence.index <= divergence.index {
+      let edge = try XCTUnwrap(corridorEdges[occurrence.directedEdgeID])
+      let start = try XCTUnwrap(edge.coordinates.first)
+      let end = try XCTUnwrap(edge.coordinates.last)
+      let startCoordinate = ShutoCoordinate(
+        latitude: start.latitude,
+        longitude: start.longitude
+      )
+      let endCoordinate = ShutoCoordinate(
+        latitude: end.latitude,
+        longitude: end.longitude
+      )
+      for fraction in [0.25, 0.75] {
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "recovery.route.\(occurrence.index).\(fraction)",
+            coordinate: Self.interpolate(
+              from: startCoordinate,
+              to: endCoordinate,
+              fraction: fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(
+              from: startCoordinate,
+              to: endCoordinate
+            )
+          )
+        )
+      }
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.runtimeJourneyPhase, .strictRoute)
+    XCTAssertLessThanOrEqual(
+      try XCTUnwrap(
+        route.routePlan.occurrence(
+          id: try XCTUnwrap(model.runtimeOccurrenceID)
+        )
+      ).index,
+      divergence.index
+    )
+    let preRecoveryCoordinate = try XCTUnwrap(model.currentCoordinate)
+
+    var observedActiveRecovery = false
+    for edgeID in recovery.recoveryOccurrenceIDs {
+      let edge = try XCTUnwrap(corridorEdges[edgeID])
+      let start = try XCTUnwrap(edge.coordinates.first)
+      let end = try XCTUnwrap(edge.coordinates.last)
+      let startCoordinate = ShutoCoordinate(
+        latitude: start.latitude,
+        longitude: start.longitude
+      )
+      let endCoordinate = ShutoCoordinate(
+        latitude: end.latitude,
+        longitude: end.longitude
+      )
+      for fraction in [0.25, 0.75] {
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "recovery.path.\(edgeID).\(fraction)",
+            coordinate: Self.interpolate(
+              from: startCoordinate,
+              to: endCoordinate,
+              fraction: fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(
+              from: startCoordinate,
+              to: endCoordinate
+            )
+          )
+        )
+        if model.runtimeRecoveryStatus == .active {
+          observedActiveRecovery = true
+          XCTAssertTrue(model.isPlaying)
+          XCTAssertTrue(model.canConsumeForegroundNavigationLocations)
+          XCTAssertEqual(
+            model.runtimeRecoveryTargetOccurrenceID,
+            recovery.targetOccurrenceID
+          )
+          XCTAssertFalse(model.activeRecoveryRouteCoordinates.isEmpty)
+          XCTAssertNotEqual(model.currentCoordinate, preRecoveryCoordinate)
+        }
+      }
+    }
+    XCTAssertTrue(observedActiveRecovery)
+
+    for occurrence in corridorOccurrences
+    where occurrence.index >= target.index
+      && occurrence.index < target.index + 2
+    {
+      let edge = try XCTUnwrap(corridorEdges[occurrence.directedEdgeID])
+      let start = try XCTUnwrap(edge.coordinates.first)
+      let end = try XCTUnwrap(edge.coordinates.last)
+      let startCoordinate = ShutoCoordinate(
+        latitude: start.latitude,
+        longitude: start.longitude
+      )
+      let endCoordinate = ShutoCoordinate(
+        latitude: end.latitude,
+        longitude: end.longitude
+      )
+      for fraction in [0.25, 0.75] {
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "recovery.rejoin.\(occurrence.index).\(fraction)",
+            coordinate: Self.interpolate(
+              from: startCoordinate,
+              to: endCoordinate,
+              fraction: fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(
+              from: startCoordinate,
+              to: endCoordinate
+            )
+          )
+        )
+      }
+    }
+
+    XCTAssertEqual(model.runtimeJourneyPhase, .strictRoute)
+    XCTAssertEqual(model.runtimeRecoveryStatus, .inactive)
+    XCTAssertNil(model.runtimeRecoveryTargetOccurrenceID)
+    XCTAssertNil(model.runtimeRecoveryDirectedEdgeID)
+    XCTAssertTrue(model.activeRecoveryRouteCoordinates.isEmpty)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertGreaterThanOrEqual(
+      try XCTUnwrap(
+        route.routePlan.occurrence(id: try XCTUnwrap(model.runtimeOccurrenceID))
+      ).index,
+      target.index
+    )
     model.reset()
   }
 
@@ -1471,6 +1679,17 @@ final class WholeShutoProductModelTests: XCTestCase {
     for _ in 0..<200
     where model.isResolvingCircuitPairing
       || model.circuitExitFacilityID == nil
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+  }
+
+  private func waitForLiveNavigationPreparation(
+    _ model: WholeShutoProductModel
+  ) async {
+    for _ in 0..<1_000
+    where model.isPreparingLiveNavigation
+      || !model.canStartLiveNavigation
     {
       try? await Task.sleep(nanoseconds: 50_000_000)
     }
@@ -2960,6 +3179,19 @@ final class WholeShutoProductModelTests: XCTestCase {
       - sin(startLatitude) * cos(endLatitude) * cos(longitudeDelta)
     let degrees = atan2(y, x) * 180 / .pi
     return degrees >= 0 ? degrees : degrees + 360
+  }
+
+  private static func interpolate(
+    from start: ShutoCoordinate,
+    to end: ShutoCoordinate,
+    fraction: Double
+  ) -> ShutoCoordinate {
+    ShutoCoordinate(
+      latitude: start.latitude
+        + (end.latitude - start.latitude) * fraction,
+      longitude: start.longitude
+        + (end.longitude - start.longitude) * fraction
+    )
   }
 
   private static func savedRouteRecord(

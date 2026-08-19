@@ -255,7 +255,9 @@ public actor NavigationSession {
     {
       engine.observeBranch(
         BranchObservation(
-          observedMovementID: directedEdgeID,
+          observedMovementID:
+            uniquelyReleasedRecoveryTrigger(containing: directedEdgeID)
+            ?? directedEdgeID,
           confidence: .high
         )
       )
@@ -319,6 +321,34 @@ public actor NavigationSession {
         && $0.targetOccurrenceID == targetOccurrenceID
         && $0.recoveryOccurrenceIDs.contains(directedEdgeID)
     }
+  }
+
+  private func uniquelyReleasedRecoveryTrigger(
+    containing directedEdgeID: String
+  ) -> String? {
+    guard engine.snapshot.journeyPhase == .strictRoute,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex
+    else {
+      return nil
+    }
+    let matchingCandidates =
+      releasedRecoveryCandidates.filter { candidate in
+        guard candidate.isReleased,
+          candidate.staysInAllowedTollDomain,
+          candidate.recoveryOccurrenceIDs.contains(directedEdgeID),
+          let divergence = routePlan.occurrence(
+            id: candidate.divergenceOccurrenceID
+          ),
+          let target = routePlan.occurrence(id: candidate.targetOccurrenceID),
+          divergence.index >= currentIndex,
+          target.index > currentIndex
+        else {
+          return false
+        }
+        return true
+      }
+    guard matchingCandidates.count == 1 else { return nil }
+    return matchingCandidates[0].triggerDirectedEdgeID
   }
 
   /// Exercises ordered entry continuity for the deterministic simulator only.

@@ -4819,6 +4819,21 @@ private struct WholeShutoGeographicMap: View {
           )
         }
 
+        if model.activeRecoveryRouteCoordinates.count > 1 {
+          MapPolyline(
+            coordinates: model.activeRecoveryRouteCoordinates.map(\.mapCoordinate)
+          )
+          .stroke(
+            KaidoTheme.signalAmber,
+            style: StrokeStyle(
+              lineWidth: 8,
+              lineCap: .round,
+              lineJoin: .round,
+              dash: [10, 6]
+            )
+          )
+        }
+
         Annotation(
           facilityBoundaryName(
             route.entryFacility.nameJA,
@@ -4989,6 +5004,7 @@ private struct WholeShutoGeographicMap: View {
             .font(.system(size: 13, weight: .black))
             .foregroundStyle(
               model.positionState == .tunnelEstimated
+                || model.positionState == .routeInterrupted
                 ? KaidoTheme.signalAmber : KaidoTheme.positionCyan
             )
             .rotationEffect(
@@ -5155,6 +5171,15 @@ private struct WholeShutoGeographicMap: View {
       )
     }
     if model.isLiveDrive {
+      if model.positionState == .routeInterrupted,
+        model.runtimeRecoveryStatus == .active
+      {
+        return copy.resolve(
+          japanese: "復帰経路上の現在地",
+          simplifiedChinese: "绕回路线当前位置",
+          english: "Current location on rejoin route"
+        )
+      }
       if model.positionState == .tunnelEstimated {
         return copy.resolve(
           japanese: "推定位置",

@@ -25,6 +25,8 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
     "WHOLE_SHUTO_NAVIGATION_RECOVERY_UNAVAILABLE"
   static let runtimeInvalidCode =
     "WHOLE_SHUTO_NAVIGATION_RUNTIME_INVALID"
+  static let ambiguousReleaseCode =
+    "WHOLE_SHUTO_NAVIGATION_RELEASE_AMBIGUOUS"
 
   let database: ShutoNetworkDatabase
   let runtimeContext: ShutoPlannedRouteRuntimeCompiler.NetworkContext
@@ -45,19 +47,24 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
       guard reconstructed == selectedRoute else {
         return .unavailable(Self.runtimeInvalidCode)
       }
-      let release =
+      let product =
         try ShutoCircuitProductReleaseBuilder
-        .buildPlannedRouteRelease(
+        .buildPlannedRouteProduct(
           context: runtimeContext,
           route: reconstructed
         )
       let core = try KaidoLiveJourneyAdmission(
-        release: release,
+        release: product.release,
         selectedRoutePlan: reconstructed.routePlan,
-        journeyPlan: JourneyPlanCompiler.expresswayOnly(release: release)
+        journeyPlan: JourneyPlanCompiler.expresswayOnly(
+          release: product.release
+        )
       )
       return .available(
-        try WholeShutoLiveJourneyAdmission(core: core)
+        try WholeShutoLiveJourneyAdmission(
+          core: core,
+          runtimeAssets: product.runtimeAssets
+        )
       )
     } catch let error as ShutoCircuitProductReleaseBuilderError {
       switch error {

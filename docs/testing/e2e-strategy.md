@@ -105,6 +105,11 @@ names or pixel coordinates.
   road data.
 - Field observations record hardware and route configuration but do not become
   deterministic truth for every device.
+- The foreground Core Location UI regression keeps a five-second transition
+  bound from the explicit live-start tap to `SURFACE_ACCESS`. It therefore
+  catches main-actor runtime construction, synchronous voice enumeration, and
+  repeated junction-guidance compilation instead of hiding them behind a
+  longer test timeout.
 
 ## Scenario-first coding workflow
 
@@ -714,6 +719,18 @@ nor coordinate accuracy, matcher reliability, road authority, or passenger-safe
 field evidence. The retained K7 operational
 E2E remains a fixture-specific release contract and is no longer the current
 physical-device lifecycle gate.
+
+A deterministic App integration test separately drives an exact foreground
+release from surface handoff through strict-route observations, a released
+wrong-route path, and its bound later RoutePlan occurrence. It requires the
+model to continue accepting serialized location observations during active
+recovery, move the displayed position along the release-owned recovery
+geometry, keep navigation active, and return to strict-route state at rejoin.
+A package test also covers the case where the trigger segment is ambiguous and
+the first unique HIGH evidence arrives on a later edge: activation is allowed
+only when that edge belongs to exactly one eligible released recovery. These
+tests prove deterministic runtime and App projection behavior, not field
+matcher accuracy or prompt timing.
 
 Portable guidance-audio tests also prepare a complete exact-WAV review
 checklist, require every generated decision to begin `PENDING`, and reject

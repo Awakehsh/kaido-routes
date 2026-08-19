@@ -187,6 +187,40 @@ struct ShutoCircuitProductReleaseBuilderTests {
     )
   }
 
+  @Test("on-demand product build returns its exact compiled runtime assets")
+  func buildsProductAndRuntimeAssetsTogether() throws {
+    let database = try loadDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.urayasu",
+      exitFacilityID: "shuto.ic.9.fukudumi"
+    )
+    let context = try ShutoPlannedRouteRuntimeCompiler.NetworkContext(
+      database: database
+    )
+
+    let product =
+      try ShutoCircuitProductReleaseBuilder
+      .buildPlannedRouteProduct(context: context, route: route)
+
+    #expect(product.release.navigation.bundle.routePlan == route.routePlan)
+    #expect(product.runtimeAssets.routePlan == route.routePlan)
+    let runtimeEdgeIDs = Set(
+      product.runtimeAssets.matcherCorridor.edges.map(\.id)
+    )
+    let releasedEdgeIDs = Set(
+      product.release.navigation.bundle.matcherCorridor.edges.map(\.id)
+    )
+    #expect(runtimeEdgeIDs.isSubset(of: releasedEdgeIDs))
+    #expect(
+      product.runtimeAssets.matcherCorridor.occurrences
+        == product.release.navigation.bundle.matcherCorridor.occurrences
+    )
+    #expect(
+      product.runtimeAssets.decisionZones
+        == product.release.navigation.bundle.decisionZones
+    )
+  }
+
   @Test("a direct route without a later safe rejoin still builds honestly")
   func buildsDirectRouteWithoutInventingRecovery() throws {
     let database = try loadDatabase()

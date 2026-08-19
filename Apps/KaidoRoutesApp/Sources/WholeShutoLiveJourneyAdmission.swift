@@ -4,6 +4,7 @@ import KaidoSurfaceRouting
 
 enum WholeShutoLiveJourneyAdmissionError: Error, Equatable {
   case invalidSurfaceProjection
+  case invalidRuntimeAssets
 }
 
 /// App presentation geometry bound to one core live admission.
@@ -12,15 +13,23 @@ enum WholeShutoLiveJourneyAdmissionError: Error, Equatable {
 /// cannot alter the release-owned RoutePlan or expressway matcher.
 struct WholeShutoLiveJourneyAdmission: Sendable {
   let core: KaidoLiveJourneyAdmission
+  let runtimeAssets: ShutoPlannedRouteRuntimeAssets?
   let accessRoute: WholeShutoSurfaceRoute?
   let egressRoute: WholeShutoSurfaceRoute?
 
   init(
     core: KaidoLiveJourneyAdmission,
+    runtimeAssets: ShutoPlannedRouteRuntimeAssets? = nil,
     accessRoute: WholeShutoSurfaceRoute? = nil,
     egressRoute: WholeShutoSurfaceRoute? = nil
   ) throws {
-    let hasSurfaceLegs = core.journeyPlan.accessLeg != nil
+    if let runtimeAssets,
+      runtimeAssets.routePlan != core.selectedRoutePlan
+    {
+      throw WholeShutoLiveJourneyAdmissionError.invalidRuntimeAssets
+    }
+    let hasSurfaceLegs =
+      core.journeyPlan.accessLeg != nil
       || core.journeyPlan.egressLeg != nil
     if hasSurfaceLegs {
       guard
@@ -65,6 +74,7 @@ struct WholeShutoLiveJourneyAdmission: Sendable {
       throw WholeShutoLiveJourneyAdmissionError.invalidSurfaceProjection
     }
     self.core = core
+    self.runtimeAssets = runtimeAssets
     self.accessRoute = accessRoute
     self.egressRoute = egressRoute
   }

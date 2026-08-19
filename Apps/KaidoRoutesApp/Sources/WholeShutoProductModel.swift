@@ -373,11 +373,14 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var isUpdatingSurfaceRoute = false
   @Published private(set) var isReroutingSurfaceRoute = false
   @Published private(set) var isPreparingLiveNavigation = false
+  @Published private(set) var isStartingLiveNavigation = false
   @Published private(set) var restoredFromCheckpoint = false
   @Published private(set) var matcherConfidence: MatcherConfidence?
   @Published private(set) var runtimeOccurrenceID: String?
   @Published private(set) var runtimeJourneyPhase: JourneyPhase?
   @Published private(set) var runtimeRecoveryStatus: RecoveryState.Status?
+  @Published private(set) var runtimeRecoveryTargetOccurrenceID: String?
+  @Published private(set) var runtimeRecoveryDirectedEdgeID: String?
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
   @Published private(set) var tunnelEstimatedProgressFraction: Double?
@@ -394,6 +397,7 @@ final class WholeShutoProductModel: ObservableObject {
   private let speechOutput: any GuidanceSpeechOutput
   private let languageSelectionProvider: () -> NavigationLanguageSelection
   private let liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission]
+  private let releasedForegroundRoutePlans: [RoutePlan]
   private let liveJourneyAdmissionResolver: WholeShutoLiveJourneyAdmissionResolver?
   private let liveLocationSourceEvidenceProvider: any CoreLocationSourceEvidenceProviding
   private let liveLocationSource: (any ForegroundNavigationLocationSource)?
@@ -407,6 +411,13 @@ final class WholeShutoProductModel: ObservableObject {
   private var lastSurfaceRerouteAttemptAtMilliseconds: Int?
   private var liveAdmissionTask: Task<Void, Never>?
   private var liveAdmissionRequestID: UUID?
+  private var liveRuntimeAssetsTask: Task<Void, Never>?
+  private var liveRuntimeAssetsRequestID: UUID?
+  private var preparedLiveRuntimeAssets: ShutoPlannedRouteRuntimeAssets?
+  private var preparedLiveRuntime: KaidoProductNavigationRuntime?
+  private var junctionPromptCacheRoutePlan: RoutePlan?
+  private var junctionPromptCache: [WholeShutoJunctionPrompt] = []
+  private var circuitThumbnailTask: Task<Void, Never>?
   private var resolvedLiveAdmission: WholeShutoLiveJourneyAdmission?
   private var liveAdmissionResolutionIssueCode: String?
   private var circuitTariffTask: Task<Void, Never>?
@@ -485,6 +496,7 @@ final class WholeShutoProductModel: ObservableObject {
       WholeShutoUserDefaultsCheckpointStore(),
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     liveJourneyAdmissions: [WholeShutoLiveJourneyAdmission] = [],
+    releasedForegroundRoutePlans: [RoutePlan]? = nil,
     liveJourneyAdmissionResolver:
       WholeShutoLiveJourneyAdmissionResolver? = nil,
     liveLocationSourceEvidenceProvider:
@@ -524,6 +536,9 @@ final class WholeShutoProductModel: ObservableObject {
     self.checkpointStore = checkpointStore
     self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
     self.liveJourneyAdmissions = liveJourneyAdmissions
+    self.releasedForegroundRoutePlans =
+      releasedForegroundRoutePlans
+      ?? liveJourneyAdmissions.map(\.core.selectedRoutePlan)
     self.liveJourneyAdmissionResolver = liveJourneyAdmissionResolver
     self.liveLocationSourceEvidenceProvider =
       liveLocationSourceEvidenceProvider
@@ -566,9 +581,11 @@ final class WholeShutoProductModel: ObservableObject {
 
   private func resolveCircuitThumbnails() {
     let planner = planner
-    Task.detached(priority: .utility) { [weak self] in
+    circuitThumbnailTask?.cancel()
+    circuitThumbnailTask = Task.detached(priority: .utility) { [weak self] in
       var thumbnails: [String: [CGPoint]] = [:]
       for circuit in ShutoCircuitDefinition.bundled {
+        guard !Task.isCancelled else { return }
         guard
           let entranceID =
             Self.thumbnailEntranceByCircuitID[circuit.circuitID],
@@ -618,8 +635,10 @@ final class WholeShutoProductModel: ObservableObject {
         thumbnails[circuit.circuitID] = sampled
       }
       let resolved = thumbnails
+      guard !Task.isCancelled else { return }
       await MainActor.run { [weak self] in
         self?.circuitThumbnailsByID = resolved
+        self?.circuitThumbnailTask = nil
       }
     }
   }
@@ -629,6 +648,8 @@ final class WholeShutoProductModel: ObservableObject {
     surfaceRouteTask?.cancel()
     surfaceRerouteTask?.cancel()
     liveAdmissionTask?.cancel()
+    liveRuntimeAssetsTask?.cancel()
+    circuitThumbnailTask?.cancel()
     circuitTariffTask?.cancel()
     liveLocationFreshnessTask?.cancel()
   }
@@ -652,7 +673,7 @@ final class WholeShutoProductModel: ObservableObject {
   static let liveNavigationReleaseRequiredCode =
     "WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED"
   static let liveNavigationReleaseAmbiguousCode =
-    "WHOLE_SHUTO_NAVIGATION_RELEASE_AMBIGUOUS"
+    WholeShutoRouteReleaseAuthority.ambiguousReleaseCode
   static let liveNavigationPreparingCode =
     "WHOLE_SHUTO_NAVIGATION_PREPARING"
   static let liveNavigationRuntimeInvalidCode =
@@ -661,12 +682,25 @@ final class WholeShutoProductModel: ObservableObject {
   /// A route can start only when one complete, externally constructed release
   /// admission matches the full selected RoutePlan value.
   var canStartLiveNavigation: Bool {
-    matchingLiveAdmissions.count == 1
+    !isStartingLiveNavigation
+      && matchingLiveAdmissions.count == 1
+      && matchingLiveRuntimeAssets != nil
+      && matchingPreparedLiveRuntime != nil
+      && junctionPromptCacheRoutePlan == selectedRoute?.routePlan
   }
 
   var liveNavigationBlockerCode: String? {
+    if isStartingLiveNavigation {
+      return Self.liveNavigationPreparingCode
+    }
     let count = matchingLiveAdmissions.count
-    if count == 1 { return nil }
+    if count == 1,
+      matchingLiveRuntimeAssets != nil,
+      matchingPreparedLiveRuntime != nil,
+      junctionPromptCacheRoutePlan == selectedRoute?.routePlan
+    {
+      return nil
+    }
     if count > 1 { return Self.liveNavigationReleaseAmbiguousCode }
     if isPreparingLiveNavigation {
       return Self.liveNavigationPreparingCode
@@ -689,6 +723,36 @@ final class WholeShutoProductModel: ObservableObject {
     return [resolvedLiveAdmission]
   }
 
+  private var matchingLiveRuntimeAssets: ShutoPlannedRouteRuntimeAssets? {
+    guard let routePlan = selectedRoute?.routePlan,
+      matchingLiveAdmissions.count == 1,
+      let admission = matchingLiveAdmissions.first
+    else {
+      return nil
+    }
+    if let runtimeAssets = admission.runtimeAssets {
+      return runtimeAssets.routePlan == routePlan ? runtimeAssets : nil
+    }
+    guard preparedLiveRuntimeAssets?.routePlan == routePlan else {
+      return nil
+    }
+    return preparedLiveRuntimeAssets
+  }
+
+  private var matchingPreparedLiveRuntime: KaidoProductNavigationRuntime? {
+    guard let routePlan = selectedRoute?.routePlan,
+      matchingLiveAdmissions.count == 1,
+      let admission = matchingLiveAdmissions.first,
+      let runtime = preparedLiveRuntime,
+      runtime.release.navigation.bundle.routePlan == routePlan,
+      runtime.runtimeIdentity == admission.core.release.runtimeIdentity,
+      runtime.journeyPlan == admission.core.journeyPlan
+    else {
+      return nil
+    }
+    return runtime
+  }
+
   private func prepareLiveNavigationAdmission(
     for route: ShutoPlannedRoute
   ) {
@@ -697,10 +761,21 @@ final class WholeShutoProductModel: ObservableObject {
     liveAdmissionRequestID = nil
     resolvedLiveAdmission = nil
     liveAdmissionResolutionIssueCode = nil
+    liveRuntimeAssetsTask?.cancel()
+    liveRuntimeAssetsTask = nil
+    liveRuntimeAssetsRequestID = nil
+    preparedLiveRuntimeAssets = nil
+    preparedLiveRuntime = nil
+    junctionPromptCacheRoutePlan = nil
+    junctionPromptCache = []
     isPreparingLiveNavigation = false
 
     let bundled = liveJourneyAdmissions.filter {
       $0.core.selectedRoutePlan == route.routePlan
+    }
+    if bundled.count == 1 {
+      prepareLiveRuntime(for: route, admission: bundled[0])
+      return
     }
     guard bundled.isEmpty, let liveJourneyAdmissionResolver else {
       return
@@ -713,7 +788,11 @@ final class WholeShutoProductModel: ObservableObject {
       liveJourneyAdmissionResolver(route)
     }
     liveAdmissionTask = Task { [weak self] in
-      let resolution = await work.value
+      let resolution = await withTaskCancellationHandler {
+        await work.value
+      } onCancel: {
+        work.cancel()
+      }
       guard !Task.isCancelled, let self,
         self.liveAdmissionRequestID == requestID,
         self.selectedRoute == route
@@ -725,6 +804,10 @@ final class WholeShutoProductModel: ObservableObject {
       where admission.core.selectedRoutePlan == route.routePlan:
         self.resolvedLiveAdmission = admission
         self.liveAdmissionResolutionIssueCode = nil
+        self.liveAdmissionRequestID = nil
+        self.liveAdmissionTask = nil
+        self.prepareLiveRuntime(for: route, admission: admission)
+        return
       case .available:
         self.resolvedLiveAdmission = nil
         self.liveAdmissionResolutionIssueCode =
@@ -736,6 +819,67 @@ final class WholeShutoProductModel: ObservableObject {
       self.isPreparingLiveNavigation = false
       self.liveAdmissionRequestID = nil
       self.liveAdmissionTask = nil
+    }
+  }
+
+  private func prepareLiveRuntime(
+    for route: ShutoPlannedRoute,
+    admission: WholeShutoLiveJourneyAdmission
+  ) {
+    let requestID = UUID()
+    let database = database
+    liveRuntimeAssetsRequestID = requestID
+    isPreparingLiveNavigation = true
+    let work = Task.detached(priority: .userInitiated) {
+      () -> (
+        ShutoPlannedRouteRuntimeAssets,
+        KaidoProductNavigationRuntime,
+        [WholeShutoJunctionPrompt]
+      )? in
+      do {
+        let assets =
+          try admission.runtimeAssets
+          ?? ShutoPlannedRouteRuntimeCompiler.compile(
+            database: database,
+            route: route
+          )
+        guard assets.routePlan == admission.core.selectedRoutePlan else {
+          return nil
+        }
+        let runtime = try admission.core.makeRuntime()
+        let prompts = Self.compileJunctionPrompts(
+          database: database,
+          route: route
+        )
+        return (assets, runtime, prompts)
+      } catch {
+        return nil
+      }
+    }
+    liveRuntimeAssetsTask = Task { [weak self] in
+      let prepared = await withTaskCancellationHandler {
+        await work.value
+      } onCancel: {
+        work.cancel()
+      }
+      guard !Task.isCancelled,
+        let self,
+        self.liveRuntimeAssetsRequestID == requestID,
+        self.selectedRoute == route
+      else {
+        return
+      }
+      self.preparedLiveRuntimeAssets = prepared?.0
+      self.preparedLiveRuntime = prepared?.1
+      self.junctionPromptCache = prepared?.2 ?? []
+      self.junctionPromptCacheRoutePlan = prepared == nil ? nil : route.routePlan
+      if prepared == nil {
+        self.liveAdmissionResolutionIssueCode =
+          Self.liveNavigationRuntimeInvalidCode
+      }
+      self.isPreparingLiveNavigation = false
+      self.liveRuntimeAssetsRequestID = nil
+      self.liveRuntimeAssetsTask = nil
     }
   }
 
@@ -1153,7 +1297,24 @@ final class WholeShutoProductModel: ObservableObject {
 
   var junctionPrompts: [WholeShutoJunctionPrompt] {
     guard let route = selectedRoute else { return [] }
-    return ShutoJunctionGuidanceCompiler.compile(
+    if junctionPromptCacheRoutePlan == route.routePlan {
+      return junctionPromptCache
+    }
+    guard !isPreparingLiveNavigation else { return [] }
+    let prompts = Self.compileJunctionPrompts(
+      database: database,
+      route: route
+    )
+    junctionPromptCacheRoutePlan = route.routePlan
+    junctionPromptCache = prompts
+    return prompts
+  }
+
+  private nonisolated static func compileJunctionPrompts(
+    database: ShutoNetworkDatabase,
+    route: ShutoPlannedRoute
+  ) -> [WholeShutoJunctionPrompt] {
+    ShutoJunctionGuidanceCompiler.compile(
       database: database,
       route: route
     ).map { match in
@@ -1500,6 +1661,51 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  var activeRecoveryRouteCoordinates: [ShutoCoordinate] {
+    guard
+      isLiveDrive,
+      runtimeRecoveryStatus == .active,
+      let targetOccurrenceID = runtimeRecoveryTargetOccurrenceID,
+      let bundle = activeLiveAdmission?.core.release.navigation.bundle,
+      let candidate = releasedRecoveryCandidate(
+        targetOccurrenceID: targetOccurrenceID,
+        containing: runtimeRecoveryDirectedEdgeID
+      )
+    else {
+      return []
+    }
+    let firstVisibleIndex =
+      runtimeRecoveryDirectedEdgeID.flatMap {
+        candidate.recoveryOccurrenceIDs.firstIndex(of: $0)
+      } ?? candidate.recoveryOccurrenceIDs.startIndex
+    let edgesByID = Dictionary(
+      uniqueKeysWithValues: bundle.matcherCorridor.edges.map { ($0.id, $0) }
+    )
+    var result: [ShutoCoordinate] = []
+    if let runtimeCoordinate {
+      result.append(runtimeCoordinate)
+    }
+    for (offset, edgeID) in candidate.recoveryOccurrenceIDs[firstVisibleIndex...]
+      .enumerated()
+    {
+      guard let edge = edgesByID[edgeID] else { return [] }
+      let visibleCoordinates =
+        offset == 0 && runtimeRecoveryDirectedEdgeID != nil
+        ? edge.coordinates.dropFirst()
+        : edge.coordinates[...]
+      for coordinate in visibleCoordinates {
+        let value = ShutoCoordinate(
+          latitude: coordinate.latitude,
+          longitude: coordinate.longitude
+        )
+        if result.last != value {
+          result.append(value)
+        }
+      }
+    }
+    return result
+  }
+
   var navigationHeadingDegrees: Double? {
     switch positionState {
     case .surfacePreview, .boundaryTransition, .networkPreview:
@@ -1634,6 +1840,8 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil
     runtimeRecoveryStatus = nil
+    runtimeRecoveryTargetOccurrenceID = nil
+    runtimeRecoveryDirectedEdgeID = nil
     runtimeCoordinate = destination?.coordinate
     runtimeFractionAlongOccurrence = nil
     presentationProjection = nil
@@ -1910,7 +2118,7 @@ final class WholeShutoProductModel: ObservableObject {
   private func releasedRoutePlan(
     for circuit: ShutoCircuitDefinition
   ) -> RoutePlan? {
-    liveJourneyAdmissions.lazy.map(\.core.selectedRoutePlan).first {
+    releasedForegroundRoutePlans.first {
       $0.id.hasPrefix("\(circuit.circuitID).")
     }
   }
@@ -2499,6 +2707,8 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil
     runtimeRecoveryStatus = nil
+    runtimeRecoveryTargetOccurrenceID = nil
+    runtimeRecoveryDirectedEdgeID = nil
     runtimeCoordinate = nil
     runtimeFractionAlongOccurrence = nil
     presentationProjection = nil
@@ -2516,7 +2726,12 @@ final class WholeShutoProductModel: ObservableObject {
   /// actor and adapter. Core Location is attached last.
   @discardableResult
   func startLiveJourney() async -> Bool {
-    guard phase == .review, let route = selectedRoute else { return false }
+    guard !isStartingLiveNavigation,
+      phase == .review,
+      let route = selectedRoute
+    else {
+      return false
+    }
     let providerAccessRoute = accessRoute
     let providerEgressRoute = egressRoute
     liveLocationFreshnessTask?.cancel()
@@ -2535,23 +2750,36 @@ final class WholeShutoProductModel: ObservableObject {
     lastLiveObservationAtMilliseconds = nil
     cancelSurfaceReroute()
     guard matchingLiveAdmissions.count == 1,
-      let admission = matchingLiveAdmissions.first
+      let admission = matchingLiveAdmissions.first,
+      let preparedRuntimeAssets = matchingLiveRuntimeAssets,
+      let preparedRuntime = matchingPreparedLiveRuntime,
+      junctionPromptCacheRoutePlan == route.routePlan
     else {
       failureCode = liveNavigationBlockerCode
       return false
     }
+    isStartingLiveNavigation = true
+    defer { isStartingLiveNavigation = false }
 
     do {
-      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
-        database: database,
-        route: route
-      )
+      let prepared = try await Task.detached(priority: .userInitiated) {
+        let session = try ShutoLiveDriveSession(runtime: preparedRuntime)
+        return (preparedRuntimeAssets, session)
+      }.value
+      let assets = prepared.0
+      let session = prepared.1
+      guard phase == .review,
+        selectedRoute == route,
+        matchingLiveAdmissions.count == 1,
+        matchingLiveAdmissions.first?.core.release.runtimeIdentity
+          == admission.core.release.runtimeIdentity
+      else {
+        return false
+      }
       guard assets.routePlan == admission.core.selectedRoutePlan else {
         failureCode = Self.liveNavigationRuntimeInvalidCode
         return false
       }
-      let runtime = try admission.core.makeRuntime()
-      let session = try ShutoLiveDriveSession(runtime: runtime)
       let entryAdapter = try CoreLocationEntryTransitionAdapter(
         context: session.entryTransitionAdmissionContext
       )
@@ -2585,6 +2813,7 @@ final class WholeShutoProductModel: ObservableObject {
       )
       observeLiveLocationController(controller)
       foregroundLiveLocationController = controller
+      preparedLiveRuntime = nil
 
       isLiveDrive = true
       isPlaying = true
@@ -2596,6 +2825,8 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeOccurrenceID = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
+      runtimeRecoveryTargetOccurrenceID = nil
+      runtimeRecoveryDirectedEdgeID = nil
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
       clearTunnelEstimate()
@@ -2613,6 +2844,8 @@ final class WholeShutoProductModel: ObservableObject {
       if phase == .surfaceAccess {
         runtimeJourneyPhase = initialSnapshot.journeyPhase
         runtimeRecoveryStatus = initialSnapshot.recovery.status
+        runtimeRecoveryTargetOccurrenceID =
+          initialSnapshot.recovery.chosenRejoinOccurrenceID
       } else {
         applyLiveActorSnapshot(initialSnapshot)
       }
@@ -2746,15 +2979,19 @@ final class WholeShutoProductModel: ObservableObject {
       case .expressway:
         let update = try await session.observe(observation)
         applyNavigationUpdate(update)
-        if update.matcherEstimate.confidence == .high {
+        if update.navigationSnapshot.journeyPhase == .strictRoute,
+          update.matcherEstimate.confidence == .high
+        {
           refreshTunnelEstimateAnchor(from: envelope)
-        } else {
+        } else if update.navigationSnapshot.journeyPhase == .strictRoute {
           updateTunnelEstimate(
             atMilliseconds: observation.receivedAtMilliseconds
           )
           scheduleTunnelEstimateRefreshIfNeeded(
             atMilliseconds: observation.receivedAtMilliseconds
           )
+        } else {
+          clearTunnelEstimate()
         }
         liveLocationState =
           update.matcherEstimate.confidence == .high
@@ -2947,6 +3184,11 @@ final class WholeShutoProductModel: ObservableObject {
   ) {
     runtimeJourneyPhase = snapshot.journeyPhase
     runtimeRecoveryStatus = snapshot.recovery.status
+    runtimeRecoveryTargetOccurrenceID =
+      snapshot.recovery.chosenRejoinOccurrenceID
+    if snapshot.recovery.status != .active {
+      runtimeRecoveryDirectedEdgeID = nil
+    }
     switch snapshot.journeyPhase {
     case .planning, .approachToEntry:
       break
@@ -2966,7 +3208,9 @@ final class WholeShutoProductModel: ObservableObject {
       }
     case .routeRecovery:
       phase = .expressway
-      isPlaying = false
+      if snapshot.recovery.status != .active {
+        isPlaying = false
+      }
     case .exitTransition:
       guard snapshot.egress.status == .active else { return }
       clearTunnelEstimate()
@@ -3214,6 +3458,13 @@ final class WholeShutoProductModel: ObservableObject {
     liveAdmissionRequestID = nil
     resolvedLiveAdmission = nil
     liveAdmissionResolutionIssueCode = nil
+    liveRuntimeAssetsTask?.cancel()
+    liveRuntimeAssetsTask = nil
+    liveRuntimeAssetsRequestID = nil
+    preparedLiveRuntimeAssets = nil
+    preparedLiveRuntime = nil
+    junctionPromptCacheRoutePlan = nil
+    junctionPromptCache = []
     isPreparingLiveNavigation = false
     speechCoordinator?.stop()
     speechCoordinator = nil
@@ -3237,6 +3488,8 @@ final class WholeShutoProductModel: ObservableObject {
     runtimeOccurrenceID = nil
     runtimeJourneyPhase = nil
     runtimeRecoveryStatus = nil
+    runtimeRecoveryTargetOccurrenceID = nil
+    runtimeRecoveryDirectedEdgeID = nil
     runtimeCoordinate = nil
     runtimeFractionAlongOccurrence = nil
     clearTunnelEstimate()
@@ -3643,12 +3896,24 @@ final class WholeShutoProductModel: ObservableObject {
     matcherConfidence = update.matcherEstimate.confidence
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
+    runtimeRecoveryTargetOccurrenceID =
+      update.navigationSnapshot.recovery.chosenRejoinOccurrenceID
     publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
+      clearTunnelEstimate()
+      if isLiveDrive,
+        update.navigationSnapshot.recovery.status == .active
+      {
+        updateReleasedRecoveryPosition(from: update.matcherEstimate)
+        persistCheckpoint()
+        return
+      }
+      runtimeRecoveryDirectedEdgeID = nil
       isPlaying = false
       invalidatePlaybackTask()
       return
     }
+    runtimeRecoveryDirectedEdgeID = nil
     if phase == .entryTransition {
       guard update.navigationSnapshot.journeyPhase == .strictRoute else {
         persistCheckpoint()
@@ -3804,6 +4069,8 @@ final class WholeShutoProductModel: ObservableObject {
     matcherConfidence = nil
     runtimeJourneyPhase = nil
     runtimeRecoveryStatus = nil
+    runtimeRecoveryTargetOccurrenceID = nil
+    runtimeRecoveryDirectedEdgeID = nil
     runtimeOccurrenceID = nil
     runtimeFractionAlongOccurrence = nil
     runtimeCoordinate = selectedRoute?.coordinates.last
@@ -3977,6 +4244,8 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeOccurrenceID = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
+      runtimeRecoveryTargetOccurrenceID = nil
+      runtimeRecoveryDirectedEdgeID = nil
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
       failureCode = Self.liveNavigationReleaseRequiredCode
@@ -4051,6 +4320,8 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeOccurrenceID = nil
       runtimeJourneyPhase = nil
       runtimeRecoveryStatus = nil
+      runtimeRecoveryTargetOccurrenceID = nil
+      runtimeRecoveryDirectedEdgeID = nil
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
       failureCode = Self.checkpointRuntimeInvalidCode
@@ -4294,6 +4565,97 @@ final class WholeShutoProductModel: ObservableObject {
     tunnelEstimateAnchor = nil
     tunnelEstimatedProgressFraction = nil
     tunnelEstimateUncertaintyMeters = nil
+  }
+
+  private func releasedRecoveryCandidate(
+    targetOccurrenceID: String,
+    containing directedEdgeID: String?
+  ) -> RecoveryCandidate? {
+    guard
+      let policy = activeLiveAdmission?.core.release.navigation.bundle
+        .runtimePolicy
+    else {
+      return nil
+    }
+    let candidates = policy.recoveryCandidates.filter {
+      $0.isReleased && $0.targetOccurrenceID == targetOccurrenceID
+    }
+    let matchingCandidates: [RecoveryCandidate]
+    if let directedEdgeID {
+      matchingCandidates = candidates.filter {
+        $0.recoveryOccurrenceIDs.contains(directedEdgeID)
+      }
+    } else {
+      matchingCandidates = candidates
+    }
+    return matchingCandidates.count == 1 ? matchingCandidates[0] : nil
+  }
+
+  private func updateReleasedRecoveryPosition(
+    from estimate: MatcherEstimate
+  ) {
+    guard
+      estimate.confidence == .high,
+      let directedEdgeID = estimate.directedEdgeID,
+      estimate.candidateEdgeIDs == [directedEdgeID],
+      let targetOccurrenceID = runtimeRecoveryTargetOccurrenceID,
+      releasedRecoveryCandidate(
+        targetOccurrenceID: targetOccurrenceID,
+        containing: directedEdgeID
+      ) != nil,
+      let edge = activeLiveAdmission?.core.release.navigation.bundle
+        .matcherCorridor.edges.first(where: { $0.id == directedEdgeID }),
+      let fraction = estimate.fractionAlongEdge,
+      let coordinate = Self.interpolateMatcherEdge(
+        edge,
+        fraction: fraction
+      )
+    else {
+      return
+    }
+    runtimeRecoveryDirectedEdgeID = directedEdgeID
+    runtimeCoordinate = coordinate
+  }
+
+  private static func interpolateMatcherEdge(
+    _ edge: RouteMatcherDirectedEdge,
+    fraction: Double
+  ) -> ShutoCoordinate? {
+    guard edge.coordinates.count >= 2, fraction.isFinite else {
+      return nil
+    }
+    let coordinates = edge.coordinates.map {
+      ShutoCoordinate(
+        latitude: $0.latitude,
+        longitude: $0.longitude
+      )
+    }
+    let lengths = zip(coordinates, coordinates.dropFirst()).map {
+      distance($0, $1)
+    }
+    let total = lengths.reduce(0, +)
+    guard total > 0 else { return coordinates.first }
+    let target = total * min(1, max(0, fraction))
+    var traversed = 0.0
+    for index in lengths.indices {
+      let length = lengths[index]
+      if traversed + length >= target || index == lengths.indices.last {
+        let localFraction =
+          length > 0
+          ? min(1, max(0, (target - traversed) / length))
+          : 0
+        let start = coordinates[index]
+        let end = coordinates[index + 1]
+        return ShutoCoordinate(
+          latitude: start.latitude
+            + (end.latitude - start.latitude) * localFraction,
+          longitude: start.longitude
+            + (end.longitude - start.longitude) * localFraction
+        )
+      }
+      traversed += length
+    }
+    return coordinates.last
   }
 
   private func estimatedExpresswayPosition(

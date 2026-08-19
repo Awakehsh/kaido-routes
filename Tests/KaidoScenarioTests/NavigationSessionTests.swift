@@ -178,31 +178,33 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
       ),
     ]
   )
+  let navigationConfiguration = NavigationConfiguration(
+    routePlan: routePlan,
+    recoveryCandidates: [
+      RecoveryCandidate(
+        divergenceOccurrenceID: "test.occurrence.approach",
+        triggerDirectedEdgeID: "test.edge.wrong-branch",
+        targetOccurrenceID: "test.occurrence.rejoin",
+        recoveryOccurrenceIDs: [
+          "test.edge.wrong-branch",
+          "test.edge.recovery-continuation",
+        ],
+        isReleased: true,
+        staysInAllowedTollDomain: true
+      )
+    ]
+  )
+  let initialSnapshot = NavigationSnapshot(
+    journeyPhase: .strictRoute,
+    activeRoutePlanID: routePlan.id,
+    currentOccurrenceID: "test.occurrence.approach",
+    locationConfidence: .high
+  )
   let session = try NavigationSession(
-    navigationConfiguration: NavigationConfiguration(
-      routePlan: routePlan,
-      recoveryCandidates: [
-        RecoveryCandidate(
-          divergenceOccurrenceID: "test.occurrence.approach",
-          triggerDirectedEdgeID: "test.edge.wrong-branch",
-          targetOccurrenceID: "test.occurrence.rejoin",
-          recoveryOccurrenceIDs: [
-            "test.edge.wrong-branch",
-            "test.edge.recovery-continuation",
-          ],
-          isReleased: true,
-          staysInAllowedTollDomain: true
-        )
-      ]
-    ),
+    navigationConfiguration: navigationConfiguration,
     matcherCorridor: corridor,
     decisionZones: [],
-    initialNavigationSnapshot: NavigationSnapshot(
-      journeyPhase: .strictRoute,
-      activeRoutePlanID: routePlan.id,
-      currentOccurrenceID: "test.occurrence.approach",
-      locationConfidence: .high
-    ),
+    initialNavigationSnapshot: initialSnapshot,
     initialMatcherOccurrenceID: "test.occurrence.approach"
   )
   _ = await session.start()
@@ -292,6 +294,55 @@ func navigationSessionTurnsOffPlanCommitIntoRecovery() async throws {
   #expect(
     rejoined.navigationSnapshot.skippedOccurrenceIDs
       == ["test.occurrence.planned-movement"]
+  )
+
+  let delayedEvidenceSession = try NavigationSession(
+    navigationConfiguration: navigationConfiguration,
+    matcherCorridor: corridor,
+    decisionZones: [],
+    initialNavigationSnapshot: initialSnapshot,
+    initialMatcherOccurrenceID: "test.occurrence.approach"
+  )
+  _ = await delayedEvidenceSession.start()
+  _ = try await delayedEvidenceSession.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.delayed-evidence.approach",
+      observedAtMilliseconds: 1_000,
+      receivedAtMilliseconds: 1_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.68,
+        longitude: 139.7605
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 90,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  let delayedEvidence = try await delayedEvidenceSession.observe(
+    RouteMatcherObservation(
+      id: "test.recovery.delayed-evidence.continuation",
+      observedAtMilliseconds: 2_000,
+      receivedAtMilliseconds: 2_000,
+      coordinate: MatcherCoordinate(
+        latitude: 35.6805,
+        longitude: 139.7615
+      ),
+      horizontalAccuracyMeters: 2,
+      courseDegrees: 141,
+      speedMetersPerSecond: 15,
+      source: .phone
+    )
+  )
+  #expect(
+    delayedEvidence.matcherEstimate.directedEdgeID
+      == "test.edge.recovery-continuation"
+  )
+  #expect(delayedEvidence.navigationSnapshot.journeyPhase == .routeRecovery)
+  #expect(delayedEvidence.navigationSnapshot.recovery.status == .active)
+  #expect(
+    delayedEvidence.navigationSnapshot.recovery.chosenRejoinOccurrenceID
+      == "test.occurrence.rejoin"
   )
 }
 

@@ -315,21 +315,18 @@ public final class GuidanceSpeechCoordinator {
       }
 
       guard
-        let profile = Self.preferredInstalledVoiceProfile(
+        let selection = Self.navigationVoiceSelection(
           for: command.languageCode,
           preferredIdentifier: preferredVoiceIdentifierProvider(
             command.languageCode
           )
-        ),
-        let voice = AVSpeechSynthesisVoice(
-          identifier: profile.identifier
         )
       else {
         throw GuidanceSpeechOutputError.voiceUnavailable(
           command.languageCode
         )
       }
-      selectedVoiceProfile = profile
+      selectedVoiceProfile = selection.profile
 
       do {
         try audioSession.setCategory(
@@ -350,7 +347,7 @@ public final class GuidanceSpeechCoordinator {
       }
 
       let utterance = AVSpeechUtterance(string: command.synthesisText)
-      utterance.voice = voice
+      utterance.voice = selection.voice
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: command.languageCode
       )
@@ -359,6 +356,48 @@ public final class GuidanceSpeechCoordinator {
       identityByUtterance[utteranceID] = command.identity
       activeUtteranceID = utteranceID
       synthesizer.speak(utterance)
+    }
+
+    /// Resolves only the explicit preference and the system locale default.
+    /// Enumerating every installed voice is reserved for the parked settings
+    /// screen because `speechVoices()` can synchronously block first playback.
+    private static func navigationVoiceSelection(
+      for languageCode: String,
+      preferredIdentifier: String?
+    ) -> (voice: AVSpeechSynthesisVoice, profile: GuidanceSpeechVoiceProfile)? {
+      let defaultVoice = AVSpeechSynthesisVoice(language: languageCode)
+      var voicesByIdentifier: [String: AVSpeechSynthesisVoice] = [:]
+      var candidates: [GuidanceSpeechVoiceCandidate] = []
+      for voice in [
+        preferredIdentifier.flatMap(AVSpeechSynthesisVoice.init(identifier:)),
+        defaultVoice,
+      ].compactMap({ $0 }) {
+        guard voicesByIdentifier[voice.identifier] == nil else { continue }
+        voicesByIdentifier[voice.identifier] = voice
+        let voiceTraits = traits(voice)
+        candidates.append(
+          GuidanceSpeechVoiceCandidate(
+            identifier: voice.identifier,
+            name: voice.name,
+            languageCode: voice.language,
+            quality: quality(voice.quality),
+            isNoveltyVoice: voiceTraits.isNoveltyVoice,
+            isPersonalVoice: voiceTraits.isPersonalVoice
+          )
+        )
+      }
+      guard
+        let profile = GuidanceSpeechVoiceSelector.select(
+          languageCode: languageCode,
+          candidates: candidates,
+          systemDefaultIdentifier: defaultVoice?.identifier,
+          preferredIdentifier: preferredIdentifier
+        ),
+        let voice = voicesByIdentifier[profile.identifier]
+      else {
+        return nil
+      }
+      return (voice, profile)
     }
 
     public static func preferredInstalledVoiceProfile(

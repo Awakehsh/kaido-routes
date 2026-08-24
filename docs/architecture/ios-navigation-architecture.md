@@ -115,8 +115,8 @@ transitions silent.
 
 The default shell persists interface and guidance-voice languages separately,
 preserves Japanese physical sign text and route shields, and exposes geographic
-and whole-route track-map presentations. OSM attribution is a separate adjacent
-native surface and never grants navigation authority. The previous C2 and K7
+and whole-route track-map presentations. OSM attribution is a compact
+map-adjacent native overlay and never grants navigation authority. The previous C2 and K7
 artifacts remain deterministic regression fixtures, not product coverage limits
 or active delivery tracks.
 

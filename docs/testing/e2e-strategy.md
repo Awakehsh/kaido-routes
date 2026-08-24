@@ -40,8 +40,8 @@ derivative database, reconstruction README, machine-readable notices,
 attribution catalog, SwiftUI implementation, and Xcode resource declaration.
 That immutable catalog and implementation remain the exact retained K7 review
 scope. The default whole-Shuto map has an independent L3 gate: it validates the
-decoded network's OSM attribution and ODbL metadata before exposing fixed native
-source/licence links adjacent to the map. This separation adds no bytes to the
+decoded network's OSM attribution and ODbL metadata before exposing compact
+native source/licence links adjacent to the map. This separation adds no bytes to the
 historical K7 review. Passing either technical gate is not road, topology,
 layout, realtime, or navigation evidence.
 

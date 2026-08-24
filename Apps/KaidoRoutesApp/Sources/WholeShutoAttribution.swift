@@ -101,24 +101,14 @@ struct WholeShutoAttributionStrip: View {
         horizontalLinks
       }
     }
-    .padding(.horizontal, 12)
-    .fixedSize(horizontal: false, vertical: true)
-    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-    .background(KaidoTheme.asphalt)
-    .overlay(alignment: .top) {
-      Rectangle()
-        .fill(KaidoTheme.steel.opacity(0.8))
-        .frame(height: 1)
-    }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("route-atlas-attribution-strip")
     .accessibilityValue("ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS")
   }
 
   private var horizontalLinks: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: 8) {
       sourceLink
-      Spacer(minLength: 8)
       licenceLink
     }
   }
@@ -132,15 +122,16 @@ struct WholeShutoAttributionStrip: View {
 
   private var sourceLink: some View {
     Link(destination: attribution.sourceURL) {
-      HStack(spacing: 5) {
+      HStack(spacing: 4) {
         Text(attribution.attribution)
           .fixedSize(horizontal: false, vertical: true)
         Image(systemName: "arrow.up.right")
       }
-      .font(.caption.weight(.bold))
-      .fontDesign(.monospaced)
-      .foregroundStyle(KaidoTheme.muted)
-      .frame(minHeight: 44, alignment: .leading)
+      .font(.caption2.weight(.semibold))
+      .fontDesign(.rounded)
+      .foregroundStyle(KaidoTheme.nightQuiet)
+      .shadow(color: KaidoTheme.night.opacity(0.85), radius: 4, y: 1)
+      .frame(minHeight: 44, alignment: .bottomLeading)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
@@ -163,14 +154,15 @@ struct WholeShutoAttributionStrip: View {
 
   private var licenceLink: some View {
     Link(destination: attribution.licenceURL) {
-      HStack(spacing: 5) {
+      HStack(spacing: 4) {
         Text(attribution.licenceLabel)
         Image(systemName: "doc.text")
       }
-      .font(.caption.weight(.black))
-      .fontDesign(.monospaced)
-      .foregroundStyle(KaidoTheme.positionCyan)
-      .frame(minHeight: 44, alignment: .leading)
+      .font(.caption2.weight(.semibold))
+      .fontDesign(.rounded)
+      .foregroundStyle(KaidoTheme.nightQuiet)
+      .shadow(color: KaidoTheme.night.opacity(0.85), radius: 4, y: 1)
+      .frame(minHeight: 44, alignment: .bottomLeading)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)

@@ -55,6 +55,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("route-atlas-attribution-licence", in: app).exists
     )
+    XCTAssertTrue(element("whole-shuto-settings", in: app).exists)
+    XCTAssertFalse(element("whole-shuto-language-settings", in: app).exists)
+    XCTAssertFalse(
+      element("whole-shuto-network-information", in: app).exists
+    )
     // Route first: circuit experiences lead the planning dock and the
     // destination search remains available as an optional continuation.
     XCTAssertTrue(
@@ -114,12 +119,13 @@ final class KaidoProductJourneyUITests: XCTestCase {
     app.launch()
     returnWholeShutoToPlanning(in: app)
 
-    let information = element(
-      "whole-shuto-network-information",
-      in: app
+    let settings = element("whole-shuto-settings", in: app)
+    XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    settings.tap()
+    XCTAssertTrue(
+      element("whole-shuto-settings-form", in: app)
+        .waitForExistence(timeout: 3)
     )
-    XCTAssertTrue(information.waitForExistence(timeout: 5))
-    information.tap()
 
     _ = revealInformationRow("whole-shuto-location-privacy", in: app)
     _ = revealInformationRow("whole-shuto-privacy-policy", in: app)
@@ -1559,10 +1565,15 @@ final class KaidoProductJourneyUITests: XCTestCase {
         .waitForExistence(timeout: 5)
     )
 
-    let settings = element("whole-shuto-language-settings", in: app)
+    let settings = element("whole-shuto-settings", in: app)
     XCTAssertTrue(settings.waitForExistence(timeout: 5))
     settings.tap()
+    XCTAssertTrue(
+      element("whole-shuto-settings-form", in: app)
+        .waitForExistence(timeout: 3)
+    )
 
+    element("whole-shuto-interface-language", in: app).tap()
     let englishInterface = element(
       "whole-shuto-interface-language-en",
       in: app
@@ -1570,6 +1581,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(englishInterface.waitForExistence(timeout: 3))
     englishInterface.tap()
 
+    let voiceLanguage = element(
+      "whole-shuto-guidance-voice-language",
+      in: app
+    )
+    XCTAssertTrue(voiceLanguage.waitForExistence(timeout: 3))
+    voiceLanguage.tap()
     let chineseVoice = element(
       "whole-shuto-guidance-voice-language-zh-Hans",
       in: app
@@ -1577,10 +1594,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(chineseVoice.waitForExistence(timeout: 3))
     chineseVoice.tap()
 
-    XCTAssertTrue(englishInterface.isSelected)
-    XCTAssertTrue(chineseVoice.isSelected)
-
-    let done = app.buttons["whole-shuto-language-settings-done"]
+    let done = app.buttons["whole-shuto-settings-done"]
+    XCTAssertTrue(done.waitForExistence(timeout: 3))
     done.tap()
     XCTAssertTrue(done.waitForNonExistence(timeout: 3))
     waitForLayoutSettlement()
@@ -1602,14 +1617,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
     add(englishScreenshot)
 
     settings.tap()
+    XCTAssertTrue(
+      element("whole-shuto-settings-form", in: app)
+        .waitForExistence(timeout: 3)
+    )
+    element("whole-shuto-interface-language", in: app).tap()
     let japaneseInterface = element(
       "whole-shuto-interface-language-ja-JP",
       in: app
     )
     XCTAssertTrue(japaneseInterface.waitForExistence(timeout: 3))
     japaneseInterface.tap()
-    XCTAssertTrue(japaneseInterface.isSelected)
+    XCTAssertTrue(voiceLanguage.waitForExistence(timeout: 3))
+    voiceLanguage.tap()
+    XCTAssertTrue(chineseVoice.waitForExistence(timeout: 3))
     XCTAssertTrue(chineseVoice.isSelected)
+    chineseVoice.tap()
+    XCTAssertTrue(done.waitForExistence(timeout: 3))
     done.tap()
     XCTAssertTrue(done.waitForNonExistence(timeout: 3))
     waitForLayoutSettlement()

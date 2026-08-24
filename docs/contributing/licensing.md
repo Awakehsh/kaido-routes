@@ -72,8 +72,8 @@ licence still applies to the extractor and candidate builders, not to their
 OSM-derived data output. The immutable bundled Route Atlas attribution catalog
 remains scoped to its exact reviewed legacy resources. The default
 `shuto-whole-network-20260804` product independently validates the decoded
-snapshot's OSM attribution and ODbL metadata and renders fixed official source
-and licence links adjacent to its map. Its complete distribution and
+snapshot's OSM attribution and ODbL metadata and renders compact official
+source and licence links adjacent to its map. Its complete distribution and
 reconstruction contract is tracked in
 [`shuto-whole-network-20260804.README.md`](../../data/route-atlas/osm-derived/shuto-whole-network-20260804.README.md).
 This is a technical distribution implementation, not legal advice or road

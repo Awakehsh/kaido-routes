@@ -22,8 +22,7 @@ struct WholeShutoProductView: View {
   @StateObject private var placeSearch: WholeShutoPlaceSearchController
   @StateObject private var savedRoutes: SavedRouteLibraryModel
   private let wholeShutoAttribution: WholeShutoAttribution
-  @State private var showsNetworkFacts = false
-  @State private var showsLanguageSettings = false
+  @State private var showsSettings = false
   @State private var showsRouteCustomization = false
   @State private var showsJourneyReview = false
   @State private var showsSavedRoutes = false
@@ -111,11 +110,15 @@ struct WholeShutoProductView: View {
     .sheet(isPresented: $showsSavedRoutes) {
       savedRouteLibrarySheet
     }
-    .sheet(isPresented: $showsNetworkFacts) {
-      WholeShutoNetworkFactsView(model: model)
-    }
-    .sheet(isPresented: $showsLanguageSettings) {
-      WholeShutoLanguageSettingsView(model: languageSettings)
+    .sheet(isPresented: $showsSettings) {
+      WholeShutoSettingsView(
+        languageSettings: languageSettings,
+        checkedAt: model.database.checkedAt
+      )
+      .environment(
+        \.kaidoInterfaceLocale,
+        languageSettings.interfaceLocale
+      )
     }
     .alert(
       endJourneyConfirmationTitle,
@@ -202,9 +205,11 @@ struct WholeShutoProductView: View {
           ScrollView {
             VStack(spacing: 0) {
               topBar
-              dockContent
-                .padding(.top, 8)
-                .padding(.bottom, 12)
+              withMapCredit {
+                dockContent
+                  .padding(.top, 8)
+                  .padding(.bottom, 12)
+              }
             }
           }
           .scrollIndicators(.hidden)
@@ -216,22 +221,28 @@ struct WholeShutoProductView: View {
               && model.phase != .completed
             {
               ScrollView {
-                dockContent
-                  .padding(.top, 8)
-                  .padding(.bottom, 12)
+                withMapCredit {
+                  dockContent
+                    .padding(.top, 8)
+                    .padding(.bottom, 12)
+                }
               }
               .scrollIndicators(.hidden)
               .scrollDismissesKeyboard(.interactively)
             } else {
               Spacer(minLength: 0)
               if !isDriving, model.phase != .completed {
-                ScrollView {
+                withMapCredit {
+                  ScrollView {
+                    dockContent
+                  }
+                  .scrollIndicators(.hidden)
+                  .frame(maxHeight: geometry.size.height / 2)
+                }
+              } else {
+                withMapCredit {
                   dockContent
                 }
-                .scrollIndicators(.hidden)
-                .frame(maxHeight: geometry.size.height / 2)
-              } else {
-                dockContent
               }
             }
           }
@@ -275,9 +286,15 @@ struct WholeShutoProductView: View {
       .frame(width: 384)
       .background(KaidoTheme.night)
 
-      ZStack {
+      ZStack(alignment: .bottomLeading) {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
+
+        WholeShutoAttributionStrip(
+          attribution: wholeShutoAttribution
+        )
+        .padding(.leading, 12)
+        .padding(.bottom, 12)
 
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
@@ -292,6 +309,26 @@ struct WholeShutoProductView: View {
       }
     }
     .background(KaidoTheme.night)
+  }
+
+  private var mapCredit: some View {
+    HStack(spacing: 0) {
+      WholeShutoAttributionStrip(
+        attribution: wholeShutoAttribution
+      )
+      Spacer(minLength: 0)
+    }
+    .padding(.horizontal, 12)
+    .padding(.bottom, 2)
+  }
+
+  private func withMapCredit<Content: View>(
+    @ViewBuilder content: () -> Content
+  ) -> some View {
+    VStack(spacing: 0) {
+      mapCredit
+      content()
+    }
   }
 
   private var dockContent: some View {
@@ -503,10 +540,6 @@ struct WholeShutoProductView: View {
         }
       }
 
-      WholeShutoAttributionStrip(
-        attribution: wholeShutoAttribution
-      )
-
       if isActiveNavigation {
         instructionBanner
       }
@@ -569,41 +602,22 @@ struct WholeShutoProductView: View {
   @ViewBuilder
   private var topBarUtilityButtons: some View {
     if !isDriving {
-      HStack(spacing: 10) {
-        Button {
-          showsLanguageSettings = true
-        } label: {
-          Image(systemName: "globe")
-            .font(.system(size: 14, weight: .black))
-            .frame(width: 38, height: 38)
-        }
-        .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
-        .accessibilityLabel(
-          copy.resolve(
-            japanese: "言語設定",
-            simplifiedChinese: "语言设置",
-            english: "Language settings"
-          )
-        )
-        .accessibilityIdentifier("whole-shuto-language-settings")
-
-        Button {
-          showsNetworkFacts = true
-        } label: {
-          Image(systemName: "info")
-            .font(.system(size: 14, weight: .black))
-            .frame(width: 38, height: 38)
-        }
-        .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
-        .accessibilityLabel(
-          copy.resolve(
-            japanese: "首都高全体データについて",
-            simplifiedChinese: "全网数据说明",
-            english: "Whole-network data information"
-          )
-        )
-        .accessibilityIdentifier("whole-shuto-network-information")
+      Button {
+        showsSettings = true
+      } label: {
+        Image(systemName: "gearshape")
+          .font(.system(size: 14, weight: .black))
+          .frame(width: 38, height: 38)
       }
+      .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
+      .accessibilityLabel(
+        copy.resolve(
+          japanese: "設定",
+          simplifiedChinese: "设置",
+          english: "Settings"
+        )
+      )
+      .accessibilityIdentifier("whole-shuto-settings")
     }
   }
 
@@ -5580,204 +5594,79 @@ private struct WholeShutoJunctionInset: View {
   }
 }
 
-private struct WholeShutoLanguageSettingsView: View {
-  @ObservedObject var model: KaidoLanguageSettingsModel
+private struct WholeShutoSettingsView: View {
+  @ObservedObject var languageSettings: KaidoLanguageSettingsModel
+  let checkedAt: String
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
     NavigationStack {
       List {
         Section {
-          ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
-            languageButton(
-              locale,
-              selection: model.interfaceLocale
-            ) {
-              model.selectInterfaceLocale(locale)
-            }
-            .accessibilityIdentifier(
-              "whole-shuto-interface-language-\(locale.rawValue)"
+          NavigationLink {
+            WholeShutoLanguagePickerPage(
+              title: copy.resolve(
+                japanese: "画面表示",
+                simplifiedChinese: "界面语言",
+                english: "Interface language"
+              ),
+              selection: languageSettings.interfaceLocale,
+              accessibilityPrefix: "whole-shuto-interface-language",
+              onSelect: { languageSettings.selectInterfaceLocale($0) }
+            )
+          } label: {
+            LabeledContent(
+              copy.resolve(
+                japanese: "画面表示",
+                simplifiedChinese: "界面语言",
+                english: "Interface"
+              ),
+              value: languageSettings.interfaceLocale.nativeLanguageName
             )
           }
+          .accessibilityIdentifier("whole-shuto-interface-language")
+
+          NavigationLink {
+            WholeShutoLanguagePickerPage(
+              title: copy.resolve(
+                japanese: "音声案内",
+                simplifiedChinese: "导航语音",
+                english: "Guidance voice"
+              ),
+              selection: languageSettings.guidanceVoiceLocale,
+              accessibilityPrefix: "whole-shuto-guidance-voice-language",
+              onSelect: { languageSettings.selectGuidanceVoiceLocale($0) }
+            )
+          } label: {
+            LabeledContent(
+              copy.resolve(
+                japanese: "音声案内",
+                simplifiedChinese: "导航语音",
+                english: "Guidance voice"
+              ),
+              value: languageSettings.guidanceVoiceLocale.nativeLanguageName
+            )
+          }
+          .accessibilityIdentifier("whole-shuto-guidance-voice-language")
         } header: {
           Text(
             copy.resolve(
-              japanese: "画面表示",
-              simplifiedChinese: "界面语言",
-              english: "INTERFACE LANGUAGE"
+              japanese: "言語",
+              simplifiedChinese: "语言",
+              english: "Language"
             )
           )
         } footer: {
           Text(
             copy.resolve(
-              japanese: "画面上の説明文と操作項目の言語を変更します。",
-              simplifiedChinese: "更改界面说明和操作项的语言。",
-              english: "Changes explanatory copy and controls."
+              japanese: "標識とルート番号は日本語のまま表示します。",
+              simplifiedChinese: "路牌和路线编号仍显示日文。",
+              english: "Road signs and route shields stay in Japanese."
             )
           )
         }
 
         Section {
-          ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
-            languageButton(
-              locale,
-              selection: model.guidanceVoiceLocale
-            ) {
-              model.selectGuidanceVoiceLocale(locale)
-            }
-            .accessibilityIdentifier(
-              "whole-shuto-guidance-voice-language-\(locale.rawValue)"
-            )
-          }
-        } header: {
-          Text(
-            copy.resolve(
-              japanese: "音声案内",
-              simplifiedChinese: "导航语音",
-              english: "GUIDANCE VOICE"
-            )
-          )
-        } footer: {
-          Text(
-            copy.resolve(
-              japanese: "画面表示とは独立して、審査済み音声案内の言語を選択します。",
-              simplifiedChinese: "独立于界面语言，选择已审核导航语音的语言。",
-              english:
-                "Selects reviewed spoken guidance independently from the interface."
-            )
-          )
-        }
-
-        Section {
-          Label(
-            copy.resolve(
-              japanese: "物理標識とルート番号は日本語のまま表示します。",
-              simplifiedChinese: "实体路牌和路线编号始终保留日文原文。",
-              english:
-                "Physical sign targets and route shields remain visible in Japanese."
-            ),
-            systemImage: "signpost.right"
-          )
-        }
-      }
-      .navigationTitle(
-        copy.resolve(
-          japanese: "言語設定",
-          simplifiedChinese: "语言设置",
-          english: "Language Settings"
-        )
-      )
-      .toolbar {
-        ToolbarItem(placement: .confirmationAction) {
-          Button(
-            copy.resolve(
-              japanese: "完了",
-              simplifiedChinese: "完成",
-              english: "Done"
-            )
-          ) {
-            dismiss()
-          }
-          .accessibilityIdentifier("whole-shuto-language-settings-done")
-        }
-      }
-    }
-  }
-
-  private func languageButton(
-    _ locale: KaidoReleaseLocale,
-    selection: KaidoReleaseLocale,
-    action: @escaping () -> Void
-  ) -> some View {
-    Button(action: action) {
-      HStack {
-        Text(copy.languageName(locale))
-        Spacer()
-        if locale == selection {
-          Image(systemName: "checkmark")
-            .fontWeight(.bold)
-            .foregroundStyle(KaidoTheme.routeGreen)
-        }
-      }
-    }
-    .foregroundStyle(KaidoTheme.routeWhite)
-    .accessibilityAddTraits(locale == selection ? .isSelected : [])
-    .accessibilityValue(
-      locale == selection
-        ? copy.resolve(
-          japanese: "選択中",
-          simplifiedChinese: "已选择",
-          english: "Selected"
-        )
-        : copy.resolve(
-          japanese: "未選択",
-          simplifiedChinese: "未选择",
-          english: "Not selected"
-        )
-    )
-  }
-
-  private var copy: KaidoInterfaceText {
-    KaidoInterfaceText(locale: model.interfaceLocale)
-  }
-}
-
-private struct WholeShutoNetworkFactsView: View {
-  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
-  @ObservedObject var model: WholeShutoProductModel
-  @Environment(\.dismiss) private var dismiss
-
-  var body: some View {
-    NavigationStack {
-      List {
-        Section {
-          fact(
-            copy.resolve(
-              japanese: "路線",
-              simplifiedChinese: "路线",
-              english: "Routes"
-            ),
-            "\(model.database.routes.count)"
-          )
-          fact(
-            copy.resolve(
-              japanese: "IC 名称",
-              simplifiedChinese: "IC 名称",
-              english: "IC names"
-            ),
-            "\(model.database.directionalFacilities.count)"
-          )
-          fact("JCT", "\(model.database.junctions.count)")
-          fact(
-            copy.resolve(
-              japanese: "JCT 公式詳細図索引",
-              simplifiedChinese: "JCT 官方详图索引",
-              english: "Official JCT detail index"
-            ),
-            "\(officialJunctionReferenceCount)"
-              + " / \(model.database.junctions.count)"
-          )
-          fact("PA", "\(model.database.parkingAreas.count)")
-          fact(
-            copy.resolve(
-              japanese: "データ確認日",
-              simplifiedChinese: "数据日期",
-              english: "Data checked"
-            ),
-            model.database.checkedAt
-          )
-        } header: {
-          Text(
-            copy.resolve(
-              japanese: "全体範囲",
-              simplifiedChinese: "全网范围",
-              english: "NETWORK SCOPE"
-            )
-          )
-        } footer: {
-          // The product-ready contract requires known limitations to stay
-          // visible in-product; one compact paragraph carries them without
-          // a wall of provenance prose.
           Text(
             copy.resolve(
               japanese:
@@ -5795,46 +5684,40 @@ private struct WholeShutoNetworkFactsView: View {
                 + "ETC bands; realtime passage and PA status are unconfirmed."
             )
           )
+          .font(.footnote)
+          .foregroundStyle(.secondary)
           .accessibilityIdentifier("whole-shuto-known-limitations")
+
+          LabeledContent(
+            copy.resolve(
+              japanese: "データ確認日",
+              simplifiedChinese: "数据日期",
+              english: "Data checked"
+            ),
+            value: checkedAt
+          )
+        } header: {
+          Text(
+            copy.resolve(
+              japanese: "この地図について",
+              simplifiedChinese: "关于此地图",
+              english: "About this map"
+            )
+          )
         }
 
         Section {
           Label {
-            VStack(alignment: .leading, spacing: 3) {
-              Text(
-                copy.resolve(
-                  japanese: "経路の進行状況はこのデバイス内で処理されます",
-                  simplifiedChinese: "路线进度仅在此设备上处理",
-                  english: "Route progress is processed on this device"
-                )
+            Text(
+              copy.resolve(
+                japanese:
+                  "位置情報は現在地の選択またはナビ開始後に、このデバイス内で使います。",
+                simplifiedChinese:
+                  "定位仅在选择当前位置或开始导航后，于本机处理。",
+                english:
+                  "Location is used on this device after Current Location or Start."
               )
-              .font(.body)
-
-              Text(
-                copy.resolve(
-                  japanese:
-                    "位置情報は現在地の選択またはナビ開始後に使用します。"
-                    + "ナビ中は画面ロック中や他のApp表示中も、位置情報と音声案内が継続します。"
-                    + "検索と一般道区間では、必要な位置・検索内容を Apple Maps に送信します。"
-                    + "未完了の経路は、終了または完了するまで選択した地点と経路をこのApp内に保存します。",
-                  simplifiedChinese:
-                    "仅在选择当前位置或开始导航后使用定位。"
-                    + "导航进行时，锁屏或显示其他 App 期间仍会继续定位和语音引导。"
-                    + "搜索和普通道路路段会将必要的位置与搜索内容发送给 Apple Maps。"
-                    + "未完成的行程会在结束或完成前，将所选地点与路线保存在本 App 内。",
-                  english:
-                    "Location is used after you choose Current Location "
-                    + "or start navigation. During active navigation, location "
-                    + "and spoken guidance continue while the screen is locked "
-                    + "or another app is visible. Search and ordinary-road legs "
-                    + "send the necessary location or query to Apple Maps. "
-                    + "An unfinished journey stores its selected places and "
-                    + "route in this app until it is ended or completed."
-                )
-              )
-              .font(.caption)
-              .foregroundStyle(.secondary)
-            }
+            )
           } icon: {
             Image(systemName: "location.shield")
           }
@@ -5854,23 +5737,15 @@ private struct WholeShutoNetworkFactsView: View {
           .accessibilityIdentifier("whole-shuto-privacy-policy")
 
           NavigationLink {
-            ScrollView {
-              Text(
-                ProductPrivacyDisclosure.sourceLicenseText()
-                  ?? copy.resolve(
-                    japanese: "ライセンス文書を読み込めませんでした。",
-                    simplifiedChinese: "无法读取许可证文本。",
-                    english: "The license text could not be loaded."
-                  )
-              )
-              .font(.footnote.monospaced())
-              .textSelection(.enabled)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding()
-              .accessibilityIdentifier(
-                "whole-shuto-source-license-document"
-              )
-            }
+            licenseDocument(
+              text: ProductPrivacyDisclosure.sourceLicenseText(),
+              missing: copy.resolve(
+                japanese: "ライセンス文書を読み込めませんでした。",
+                simplifiedChinese: "无法读取许可证文本。",
+                english: "The license text could not be loaded."
+              ),
+              identifier: "whole-shuto-source-license-document"
+            )
             .navigationTitle(
               copy.resolve(
                 japanese: "オープンソースライセンス",
@@ -5891,23 +5766,15 @@ private struct WholeShutoNetworkFactsView: View {
           .accessibilityIdentifier("whole-shuto-source-license")
 
           NavigationLink {
-            ScrollView {
-              Text(
-                ProductPrivacyDisclosure.mapDataLicenseText()
-                  ?? copy.resolve(
-                    japanese: "地図データのライセンス文書を読み込めませんでした。",
-                    simplifiedChinese: "无法读取地图数据许可证文本。",
-                    english: "The map data license text could not be loaded."
-                  )
-              )
-              .font(.footnote.monospaced())
-              .textSelection(.enabled)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding()
-              .accessibilityIdentifier(
-                "whole-shuto-map-data-license-document"
-              )
-            }
+            licenseDocument(
+              text: ProductPrivacyDisclosure.mapDataLicenseText(),
+              missing: copy.resolve(
+                japanese: "地図データのライセンス文書を読み込めませんでした。",
+                simplifiedChinese: "无法读取地图数据许可证文本。",
+                english: "The map data license text could not be loaded."
+              ),
+              identifier: "whole-shuto-map-data-license-document"
+            )
             .navigationTitle(
               copy.resolve(
                 japanese: "地図データライセンス",
@@ -5927,13 +5794,13 @@ private struct WholeShutoNetworkFactsView: View {
           }
           .accessibilityIdentifier("whole-shuto-map-data-license")
 
-          fact(
+          LabeledContent(
             copy.resolve(
               japanese: "バージョン",
               simplifiedChinese: "版本",
               english: "Version"
             ),
-            ProductPrivacyDisclosure.versionDescription()
+            value: ProductPrivacyDisclosure.versionDescription()
           )
           .accessibilityElement(children: .combine)
           .accessibilityIdentifier("whole-shuto-app-version")
@@ -5945,18 +5812,20 @@ private struct WholeShutoNetworkFactsView: View {
             copy.resolve(
               japanese: "プライバシーとアプリ",
               simplifiedChinese: "隐私与 App",
-              english: "PRIVACY & APP"
+              english: "Privacy & app"
             )
           )
         }
       }
+      .accessibilityIdentifier("whole-shuto-settings-form")
       .navigationTitle(
         copy.resolve(
-          japanese: "首都高全体",
-          simplifiedChinese: "首都高全网",
-          english: "Whole Shuto"
+          japanese: "設定",
+          simplifiedChinese: "设置",
+          english: "Settings"
         )
       )
+      .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
           Button(
@@ -5965,25 +5834,82 @@ private struct WholeShutoNetworkFactsView: View {
               simplifiedChinese: "完成",
               english: "Done"
             )
-          ) { dismiss() }
+          ) {
+            dismiss()
+          }
+          .accessibilityIdentifier("whole-shuto-settings-done")
         }
       }
     }
   }
 
-  private func fact(_ label: String, _ value: String) -> some View {
-    HStack {
-      Text(label)
-      Spacer()
-      Text(value)
-        .foregroundStyle(.secondary)
+  private func licenseDocument(
+    text: String?,
+    missing: String,
+    identifier: String
+  ) -> some View {
+    ScrollView {
+      Text(text ?? missing)
+        .font(.footnote.monospaced())
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .accessibilityIdentifier(identifier)
     }
   }
 
-  private var officialJunctionReferenceCount: Int {
-    model.database.junctions.filter {
-      $0.officialDetailSHA256.count == 64
-    }.count
+  private var copy: KaidoInterfaceText {
+    KaidoInterfaceText(locale: languageSettings.interfaceLocale)
+  }
+}
+
+private struct WholeShutoLanguagePickerPage: View {
+  let title: String
+  let selection: KaidoReleaseLocale
+  let accessibilityPrefix: String
+  let onSelect: (KaidoReleaseLocale) -> Void
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
+
+  var body: some View {
+    List {
+      ForEach(KaidoReleaseLocale.allCases, id: \.self) { locale in
+        Button {
+          onSelect(locale)
+          dismiss()
+        } label: {
+          HStack {
+            Text(locale.nativeLanguageName)
+            Spacer()
+            if locale == selection {
+              Image(systemName: "checkmark")
+                .fontWeight(.bold)
+                .foregroundStyle(KaidoTheme.routeGreen)
+            }
+          }
+        }
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .accessibilityAddTraits(locale == selection ? .isSelected : [])
+        .accessibilityIdentifier(
+          "\(accessibilityPrefix)-\(locale.rawValue)"
+        )
+        .accessibilityValue(
+          locale == selection
+            ? copy.resolve(
+              japanese: "選択中",
+              simplifiedChinese: "已选择",
+              english: "Selected"
+            )
+            : copy.resolve(
+              japanese: "未選択",
+              simplifiedChinese: "未选择",
+              english: "Not selected"
+            )
+        )
+      }
+    }
+    .navigationTitle(title)
+    .navigationBarTitleDisplayMode(.inline)
   }
 
   private var copy: KaidoInterfaceText {

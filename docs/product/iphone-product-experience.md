@@ -1,7 +1,8 @@
 # iPhone product experience
 
-Status: accepted product design contract, realigned on 2026-08-03 and checked
-against the default App on 2026-08-11. The implementation now opens on the
+Status: accepted product design contract, realigned on 2026-08-03, checked
+against the default App on 2026-08-11, and updated on 2026-08-24 for the
+single Settings sheet and compact map-adjacent OSM credit. The implementation now opens on the
 route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
 bands for named experiences, supports loop lap count and exact custom routes,
 and carries the selected route through review, labeled replay, finish, and
@@ -46,7 +47,10 @@ planning snapshot, covering the drives the audience actually runs (the C1
 inner loop, the C2-plus-Bayshore grand loop,
 the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
-custom-route entry at the end of the catalog. Each catalog card presents the
+custom-route entry at the end of the catalog. Parked chrome keeps one Settings
+entry for interface language, guidance voice, known map limitations, privacy,
+and licences. OSM source and licence credit stays a compact overlay adjacent
+to the map, not a full-width chrome band. Each catalog card presents the
 route as a finished experience: its shape thumbnail, distance and duration
 class, landmark and PA facts, and — once an origin is known — the derived
 entrance/exit pairing as one factual line. It does not lead with a destination

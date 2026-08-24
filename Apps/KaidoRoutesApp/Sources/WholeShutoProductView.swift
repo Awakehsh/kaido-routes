@@ -5,6 +5,7 @@ import KaidoPresentation
 import KaidoRouting
 import MapKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum WholeShutoPlanningField: Hashable {
   case origin
@@ -26,6 +27,7 @@ struct WholeShutoProductView: View {
   @State private var showsRouteCustomization = false
   @State private var showsJourneyReview = false
   @State private var showsSavedRoutes = false
+  @State private var isImportingSavedRoute = false
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
   @State private var waitsForCircuitLocation = false
@@ -109,6 +111,13 @@ struct WholeShutoProductView: View {
     }
     .sheet(isPresented: $showsSavedRoutes) {
       savedRouteLibrarySheet
+    }
+    .fileImporter(
+      isPresented: $isImportingSavedRoute,
+      allowedContentTypes: [.json],
+      allowsMultipleSelection: false
+    ) { result in
+      _ = importSavedRouteFile(result, into: savedRoutes)
     }
     .sheet(isPresented: $showsSettings) {
       WholeShutoSettingsView(
@@ -855,7 +864,8 @@ struct WholeShutoProductView: View {
         VStack(spacing: 12) {
           SavedRouteLibraryPanel(
             model: savedRoutes,
-            openRecord: requestOpenSavedRoute
+            openRecord: requestOpenSavedRoute,
+            importPresentation: $isImportingSavedRoute
           )
 
           if let savedRouteOpenErrorCode {

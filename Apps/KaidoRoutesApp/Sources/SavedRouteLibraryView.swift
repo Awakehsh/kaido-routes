@@ -3,11 +3,63 @@ import KaidoDomain
 import SwiftUI
 import UniformTypeIdentifiers
 
+@MainActor
+func importSavedRouteFile(
+  _ result: Result<[URL], Error>,
+  into model: SavedRouteLibraryModel
+) -> String? {
+  do {
+    guard let url = try result.get().first else {
+      return "SAVED_ROUTE_IMPORT_SELECTION_EMPTY"
+    }
+    let accessed = url.startAccessingSecurityScopedResource()
+    defer {
+      if accessed {
+        url.stopAccessingSecurityScopedResource()
+      }
+    }
+    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+    let suggestedName = url.deletingPathExtension().lastPathComponent
+    model.importSharedRoute(
+      data,
+      suggestedName:
+        suggestedName.isEmpty
+        ? "Imported route"
+        : suggestedName
+    )
+    return nil
+  } catch {
+    return "SAVED_ROUTE_IMPORT_READ_FAILED"
+  }
+}
+
+private struct SavedRouteImportModifier: ViewModifier {
+  @Binding var isPresented: Bool
+  let enabled: Bool
+  let onCompletion: (Result<[URL], Error>) -> Void
+
+  func body(content: Content) -> some View {
+    if enabled {
+      content.fileImporter(
+        isPresented: $isPresented,
+        allowedContentTypes: [.json],
+        allowsMultipleSelection: false,
+        onCompletion: onCompletion
+      )
+    } else {
+      content
+    }
+  }
+}
+
 struct SavedRouteLibraryPanel: View {
   @ObservedObject var model: SavedRouteLibraryModel
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
 
   let openRecord: (String) -> Void
+  /// When set, the parent presents the document picker. A picker attached
+  /// inside an already-presented sheet often never appears.
+  var importPresentation: Binding<Bool>? = nil
 
   @State private var isImporting = false
   @State private var isExporting = false
@@ -51,11 +103,12 @@ struct SavedRouteLibraryPanel: View {
       "\(model.records.count) RECORDS · "
         + "\(model.lastErrorCode ?? "READY")"
     )
-    .fileImporter(
-      isPresented: $isImporting,
-      allowedContentTypes: [.json],
-      allowsMultipleSelection: false,
-      onCompletion: importSharedRoute
+    .modifier(
+      SavedRouteImportModifier(
+        isPresented: importing,
+        enabled: importPresentation == nil,
+        onCompletion: importSharedRoute
+      )
     )
     .fileExporter(
       isPresented: $isExporting,
@@ -251,7 +304,9 @@ struct SavedRouteLibraryPanel: View {
         ),
       code:
         model.lastErrorCode
-        ?? SavedRouteLibraryModelError.storeUnavailable.rawValue,
+        ?? (model.storageAvailable
+          ? "SAVED_ROUTE_LIBRARY_EMPTY"
+          : SavedRouteLibraryModelError.storeUnavailable.rawValue),
       color:
         model.storageAvailable
         ? KaidoTheme.steel
@@ -263,7 +318,7 @@ struct SavedRouteLibraryPanel: View {
   private var transferControls: some View {
     Button {
       transferErrorCode = nil
-      isImporting = true
+      importing.wrappedValue = true
     } label: {
       HStack(spacing: 8) {
         Image(systemName: "square.and.arrow.down")
@@ -455,33 +510,14 @@ struct SavedRouteLibraryPanel: View {
     }
   }
 
+  private var importing: Binding<Bool> {
+    importPresentation ?? $isImporting
+  }
+
   private func importSharedRoute(
     _ result: Result<[URL], Error>
   ) {
-    do {
-      guard let url = try result.get().first else {
-        transferErrorCode = "SAVED_ROUTE_IMPORT_SELECTION_EMPTY"
-        return
-      }
-      let accessed = url.startAccessingSecurityScopedResource()
-      defer {
-        if accessed {
-          url.stopAccessingSecurityScopedResource()
-        }
-      }
-      let data = try Data(contentsOf: url, options: .mappedIfSafe)
-      let suggestedName = url.deletingPathExtension().lastPathComponent
-      model.importSharedRoute(
-        data,
-        suggestedName:
-          suggestedName.isEmpty
-          ? "Imported route"
-          : suggestedName
-      )
-      transferErrorCode = nil
-    } catch {
-      transferErrorCode = "SAVED_ROUTE_IMPORT_READ_FAILED"
-    }
+    transferErrorCode = importSavedRouteFile(result, into: model)
   }
 
   private func safeExportFileName(_ displayName: String) -> String {

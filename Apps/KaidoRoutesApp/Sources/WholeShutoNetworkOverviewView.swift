@@ -583,7 +583,7 @@ struct WholeShutoNetworkOverviewView: View {
       let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
       let emphasized = onSelection(mark.routeIDs)
       occupied.append(
-        CGRect(x: center.x - 22, y: center.y - 22, width: 44, height: 44)
+        CGRect(x: center.x - 13, y: center.y - 13, width: 26, height: 26)
       )
       if !NetworkOverviewPlacePhoto.draw(
         placeID: mark.id,
@@ -606,7 +606,7 @@ struct WholeShutoNetworkOverviewView: View {
           at: center,
           color: Midnight.place,
           emphasized: emphasized,
-          offset: CGSize(width: 24, height: -10),
+          offset: CGSize(width: 16, height: -8),
           context: &context
         )
       }
@@ -1007,7 +1007,7 @@ struct WholeShutoNetworkOverviewView: View {
 
 /// Bundled Wikimedia Commons photographs, cropped to square pins.
 private enum NetworkOverviewPlacePhoto {
-  static let pinSize: CGFloat = 40
+  static let pinSize: CGFloat = 22
 
   static func assetName(forPlaceID id: String) -> String? {
     switch id {
@@ -1063,7 +1063,7 @@ private enum NetworkOverviewPlacePhoto {
     context.stroke(
       Path(ellipseIn: rect),
       with: .color(ring),
-      style: StrokeStyle(lineWidth: 1.7)
+      style: StrokeStyle(lineWidth: 1.2)
     )
     return true
   }

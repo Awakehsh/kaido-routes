@@ -1,4 +1,5 @@
 import Foundation
+import KaidoDomain
 
 /// Whole-network browse layout: real snapshot geometry under a focus-plus-
 /// context (fisheye) projection centered on the C1 area, so the dense center
@@ -81,6 +82,61 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     }
   }
 
+  public struct ParkingAreaInput: Equatable, Sendable {
+    public let id: String
+    public let nameJA: String
+    public let baseNameJA: String
+    public let routeID: String?
+    public let directionJA: String?
+    public let coordinate: RouteTrackMapLayout.GeoPoint
+
+    public init(
+      id: String,
+      nameJA: String,
+      baseNameJA: String,
+      routeID: String?,
+      directionJA: String?,
+      coordinate: RouteTrackMapLayout.GeoPoint
+    ) {
+      self.id = id
+      self.nameJA = nameJA
+      self.baseNameJA = baseNameJA
+      self.routeID = routeID
+      self.directionJA = directionJA
+      self.coordinate = coordinate
+    }
+  }
+
+  /// Off-network or on-structure place sitting beside the diagram.
+  public struct PlaceInput: Equatable, Sendable {
+    public let id: String
+    public let nameJA: String
+    public let nameZH: String
+    public let nameEN: String
+    public let coordinate: RouteTrackMapLayout.GeoPoint
+    public let routeIDs: Set<String>
+    /// When true, the label sits on the nearest member-route polyline.
+    public let snapToRoute: Bool
+
+    public init(
+      id: String,
+      nameJA: String,
+      nameZH: String,
+      nameEN: String,
+      coordinate: RouteTrackMapLayout.GeoPoint,
+      routeIDs: Set<String>,
+      snapToRoute: Bool
+    ) {
+      self.id = id
+      self.nameJA = nameJA
+      self.nameZH = nameZH
+      self.nameEN = nameEN
+      self.coordinate = coordinate
+      self.routeIDs = routeIDs
+      self.snapToRoute = snapToRoute
+    }
+  }
+
   public struct Polyline: Equatable, Sendable {
     public let routeID: String
     public let points: [Point]
@@ -111,6 +167,35 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     public let entrance: DirectionalPresence
     public let exit: DirectionalPresence
     public let etcOnly: Bool
+  }
+
+  public struct ParkingAreaMark: Equatable, Sendable {
+    public let id: String
+    public let nameJA: String
+    public let shortNameJA: String
+    public let directionJA: String?
+    public let x: Double
+    public let y: Double
+    public let routeIDs: Set<String>
+    public let notable: Bool
+  }
+
+  public struct PlaceMark: Equatable, Sendable {
+    public let id: String
+    public let nameJA: String
+    public let nameZH: String
+    public let nameEN: String
+    public let x: Double
+    public let y: Double
+    public let routeIDs: Set<String>
+
+    public func name(for locale: KaidoReleaseLocale) -> String {
+      switch locale {
+      case .japanese: nameJA
+      case .simplifiedChinese: nameZH
+      case .english: nameEN
+      }
+    }
   }
 
   /// The fisheye projection that produced this layout, retained so views can
@@ -151,6 +236,8 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
   public let badges: [RouteBadge]
   public let junctionMarks: [JunctionMark]
   public let facilityMarks: [FacilityMark]
+  public let parkingAreaMarks: [ParkingAreaMark]
+  public let placeMarks: [PlaceMark]
   public let projection: Projection
 
   // MARK: - Construction
@@ -159,6 +246,10 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     ways: [WayInput],
     facilities: [FacilityInput],
     junctions: [JunctionInput],
+    parkingAreas: [ParkingAreaInput] = [],
+    places: [PlaceInput] = NetworkOverviewPlaceCatalog.scenic,
+    notableParkingAreaIDs: Set<String> =
+      NetworkOverviewPlaceCatalog.notableParkingAreaIDs,
     badgeLabels: [String: String],
     focus: RouteTrackMapLayout.GeoPoint = .init(
       latitude: 35.672,
@@ -333,11 +424,77 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
       )
     }
 
+    let parkingAreaMarks = parkingAreas.map { parkingArea in
+      let p = project(parkingArea.coordinate)
+      var routeIDs: Set<String> = []
+      if let routeID = parkingArea.routeID {
+        routeIDs.insert(routeID)
+      }
+      let shortName: String
+      if parkingArea.baseNameJA.hasSuffix("PA") {
+        shortName = parkingArea.baseNameJA
+      } else {
+        shortName = parkingArea.baseNameJA + "PA"
+      }
+      return ParkingAreaMark(
+        id: parkingArea.id,
+        nameJA: parkingArea.nameJA,
+        shortNameJA: shortName,
+        directionJA: parkingArea.directionJA,
+        x: p.x,
+        y: p.y,
+        routeIDs: routeIDs,
+        notable: notableParkingAreaIDs.contains(parkingArea.id)
+      )
+    }
+
+    let snapLimit = 80.0
+    let snapLimitSquared = snapLimit * snapLimit
+    func snappedPoint(
+      _ coordinate: RouteTrackMapLayout.GeoPoint,
+      routeIDs: Set<String>
+    ) -> Point {
+      let projected = project(coordinate)
+      var best: (distanceSquared: Double, point: Point)?
+      for polyline in polylines where routeIDs.contains(polyline.routeID) {
+        for point in polyline.points {
+          let dx = point.x - projected.x
+          let dy = point.y - projected.y
+          let distanceSquared = dx * dx + dy * dy
+          if best == nil || distanceSquared < best!.distanceSquared {
+            best = (distanceSquared, point)
+          }
+        }
+      }
+      if let best, best.distanceSquared <= snapLimitSquared {
+        return best.point
+      }
+      return projected
+    }
+
+    let placeMarks = places.map { place in
+      let p =
+        place.snapToRoute
+        ? snappedPoint(place.coordinate, routeIDs: place.routeIDs)
+        : project(place.coordinate)
+      return PlaceMark(
+        id: place.id,
+        nameJA: place.nameJA,
+        nameZH: place.nameZH,
+        nameEN: place.nameEN,
+        x: p.x,
+        y: p.y,
+        routeIDs: place.routeIDs
+      )
+    }
+
     return NetworkOverviewLayout(
       polylines: polylines,
       badges: badges,
       junctionMarks: junctionMarks,
       facilityMarks: facilityMarks,
+      parkingAreaMarks: parkingAreaMarks,
+      placeMarks: placeMarks,
       projection: projection
     )
   }

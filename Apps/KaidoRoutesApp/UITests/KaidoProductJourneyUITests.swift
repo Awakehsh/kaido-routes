@@ -51,6 +51,14 @@ final class KaidoProductJourneyUITests: XCTestCase {
       browseValue.contains("C1"),
       "Browse must keep the network receded until a catalog card is chosen"
     )
+    XCTAssertTrue(
+      browseValue.contains("大黒PA"),
+      "The small diagram names Daikoku PA"
+    )
+    XCTAssertTrue(
+      browseValue.contains("东京塔"),
+      "The small diagram names Tokyo Tower in the interface language"
+    )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
     XCTAssertTrue(
       element("route-atlas-attribution-strip", in: app).exists

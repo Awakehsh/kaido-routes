@@ -33,6 +33,39 @@ struct NetworkOverviewLayoutTests {
     )
     #expect(ogiohashi.entrance == .full)
     #expect(ogiohashi.exit == .full)
+    #expect(layout.parkingAreaMarks.count == 19)
+    #expect(
+      layout.parkingAreaMarks.filter(\.notable).map(\.shortNameJA).sorted()
+        == [
+          "大井PA", "大黒PA", "平和島PA", "箱崎PA", "芝浦PA", "辰巳第一PA",
+        ]
+    )
+    #expect(
+      layout.placeMarks.map(\.nameJA).sorted() == [
+        "かつしかハープ橋",
+        "みなとみらい",
+        "レインボーブリッジ",
+        "五色桜大橋",
+        "東京スカイツリー",
+        "東京タワー",
+        "横浜ベイブリッジ",
+        "羽田空港",
+        "鶴見つばさ橋",
+      ]
+    )
+    let tokyoTower = try #require(
+      layout.placeMarks.first { $0.id == "place.tokyo-tower" }
+    )
+    #expect(tokyoTower.routeIDs == ["C1"])
+    let rainbow = try #require(
+      layout.placeMarks.first { $0.id == "place.rainbow-bridge" }
+    )
+    #expect(rainbow.routeIDs == ["11"])
+    let daikokuPA = try #require(
+      layout.parkingAreaMarks.first { $0.id == "shuto.pa.daikoku" }
+    )
+    #expect(daikokuPA.notable)
+    #expect(daikokuPA.routeIDs.contains("B"))
     // Junction marks and route badges are present and spread apart.
     #expect(layout.junctionMarks.count == 39)
     let edobashi = try #require(
@@ -124,6 +157,19 @@ struct NetworkOverviewLayoutTests {
           coordinate: RouteTrackMapLayout.GeoPoint(
             latitude: coordinate.latitude,
             longitude: coordinate.longitude
+          )
+        )
+      },
+      parkingAreas: database.parkingAreas.map {
+        NetworkOverviewLayout.ParkingAreaInput(
+          id: $0.parkingAreaID,
+          nameJA: $0.nameJA,
+          baseNameJA: $0.baseNameJA,
+          routeID: $0.routeID,
+          directionJA: $0.directionJA,
+          coordinate: RouteTrackMapLayout.GeoPoint(
+            latitude: $0.coordinate.latitude,
+            longitude: $0.coordinate.longitude
           )
         )
       },

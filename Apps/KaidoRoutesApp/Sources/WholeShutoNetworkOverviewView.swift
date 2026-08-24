@@ -74,10 +74,24 @@ enum WholeShutoNetworkOverviewCatalog {
           )
         )
       }
+    let parkingAreas = database.parkingAreas.map {
+      NetworkOverviewLayout.ParkingAreaInput(
+        id: $0.parkingAreaID,
+        nameJA: $0.nameJA,
+        baseNameJA: $0.baseNameJA,
+        routeID: $0.routeID,
+        directionJA: $0.directionJA,
+        coordinate: RouteTrackMapLayout.GeoPoint(
+          latitude: $0.coordinate.latitude,
+          longitude: $0.coordinate.longitude
+        )
+      )
+    }
     let layout = NetworkOverviewLayout.make(
       ways: ways,
       facilities: facilities,
       junctions: junctions,
+      parkingAreas: parkingAreas,
       badgeLabels: badgeLabels
     )
     cachedSnapshotID = database.networkSnapshotID
@@ -144,6 +158,8 @@ struct WholeShutoNetworkOverviewView: View {
     static let entranceHalf = Color(red: 0.5, green: 0.78, blue: 0.62)
     static let exitFull = Color(red: 0.82, green: 0.4, blue: 0.34)
     static let exitHalf = Color(red: 0.88, green: 0.63, blue: 0.59)
+    static let pa = Color(red: 0.42, green: 0.82, blue: 0.58)
+    static let place = Color(red: 0.93, green: 0.82, blue: 0.55)
   }
 
   private func routeLineColor(_ routeID: String) -> Color {
@@ -245,9 +261,23 @@ struct WholeShutoNetworkOverviewView: View {
           simplifiedChinese: "\(layout.facilityMarks.count)个设施",
           english: "\(layout.facilityMarks.count) facilities"
         )
+        let parking = copy.resolve(
+          japanese: "\(layout.parkingAreaMarks.count)PA",
+          simplifiedChinese: "\(layout.parkingAreaMarks.count)个PA",
+          english: "\(layout.parkingAreaMarks.count) PAs"
+        )
+        let notable = layout.parkingAreaMarks.filter(\.notable)
+          .map(\.shortNameJA)
+        let places = layout.placeMarks.map {
+          $0.name(for: interfaceLocale)
+        }
+        let named = (notable + places).joined(separator: " ")
+        var value = "\(count) · \(parking) · \(named)"
         let highlighted = overlay.highlightedRouteIDs.sorted()
-        if highlighted.isEmpty { return count }
-        return count + " · " + highlighted.joined(separator: " ")
+        if !highlighted.isEmpty {
+          value += " · " + highlighted.joined(separator: " ")
+        }
+        return value
       }()
     )
   }
@@ -502,6 +532,107 @@ struct WholeShutoNetworkOverviewView: View {
       let center = point(position)
       occupied.append(
         CGRect(x: center.x - 16, y: center.y - 16, width: 32, height: 32)
+      )
+    }
+
+    func onSelection(_ routeIDs: Set<String>) -> Bool {
+      highlighted.isEmpty || !routeIDs.isDisjoint(with: highlighted)
+    }
+
+    func plateName(
+      _ name: String,
+      at center: CGPoint,
+      color: Color,
+      emphasized: Bool,
+      context: inout GraphicsContext
+    ) {
+      let rect = CGRect(
+        x: center.x + 8,
+        y: center.y - 26,
+        width: Double(name.count) * 11 + 16,
+        height: 20
+      )
+      guard claim(rect) else { return }
+      var leader = Path()
+      leader.move(to: CGPoint(x: center.x, y: center.y))
+      leader.addLine(to: CGPoint(x: rect.minX + 4, y: rect.maxY - 2))
+      context.stroke(
+        leader,
+        with: .color(Midnight.leader),
+        style: StrokeStyle(lineWidth: 1.2)
+      )
+      context.fill(
+        Path(roundedRect: rect, cornerRadius: 6),
+        with: .color(Midnight.plate.opacity(emphasized ? 0.85 : 0.62))
+      )
+      context.draw(
+        Text(name)
+          .font(.system(size: 11, weight: .bold))
+          .foregroundColor(emphasized ? color : Midnight.label),
+        at: CGPoint(x: rect.minX + 8, y: rect.midY),
+        anchor: .leading
+      )
+    }
+
+    // Scenic marks and the handful of named PAs claim space before
+    // junction plates so the small diagram keeps 大黒PA and 東京タワー.
+    for mark in layout.placeMarks {
+      let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
+      let emphasized = onSelection(mark.routeIDs)
+      let disc = Path(
+        ellipseIn: CGRect(
+          x: center.x - 3.2, y: center.y - 3.2, width: 6.4, height: 6.4
+        )
+      )
+      context.fill(disc, with: .color(Midnight.plate))
+      context.stroke(
+        disc,
+        with: .color(emphasized ? Midnight.place : Midnight.label),
+        style: StrokeStyle(lineWidth: 1.3)
+      )
+      plateName(
+        mark.name(for: interfaceLocale),
+        at: center,
+        color: Midnight.place,
+        emphasized: emphasized,
+        context: &context
+      )
+    }
+
+    let showEveryParkingArea = zoom >= Self.detailZoomThreshold
+    let parkingAreasToLabel =
+      showEveryParkingArea
+      ? layout.parkingAreaMarks
+      : layout.parkingAreaMarks.filter(\.notable)
+    for mark in parkingAreasToLabel {
+      let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
+      let emphasized = onSelection(mark.routeIDs)
+      let square = Path(
+        roundedRect: CGRect(
+          x: center.x - 3.2, y: center.y - 3.2, width: 6.4, height: 6.4
+        ),
+        cornerRadius: 1.4
+      )
+      context.fill(square, with: .color(Midnight.plate))
+      context.stroke(
+        square,
+        with: .color(emphasized ? Midnight.pa : Midnight.label),
+        style: StrokeStyle(lineWidth: 1.3)
+      )
+      let name: String
+      if showEveryParkingArea, let direction = mark.directionJA,
+        !direction.isEmpty
+      {
+        name = "\(mark.shortNameJA)（\(direction)）"
+      } else {
+        name = mark.shortNameJA
+      }
+      plateName(
+        name,
+        at: center,
+        color: Midnight.pa,
+        emphasized: emphasized,
+        context: &context
       )
     }
 

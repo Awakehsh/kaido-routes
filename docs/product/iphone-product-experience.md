@@ -196,7 +196,8 @@ switch away. The whole product renders in a single midnight visual identity:
 blue-black asphalt, an ink Tokyo Bay, receded unlit network, and neon-lit
 route lines, with plated labels that never sit on the carriageways. Until
 the driver chooses a route the network stays receded; selecting a catalog
-experience lights only its member routes in their route colors. A
+experience lights only its member routes in their route colors. Junction
+names stay on the diagram. A
 checkered start-grid glyph may mark the derived entrance direction; it is
 purely presentational and no copy anywhere adopts competitive or performance
 framing. Each journey phase re-establishes its natural default (planning,

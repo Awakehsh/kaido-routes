@@ -531,12 +531,14 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Junction diamonds stay as quiet ticks. Names appear only on the
-    // selected members so the rest of the network does not fill with plates.
-    var junctionLabels: [(name: String, at: CGPoint)] = []
+    // Junction diamonds and names always draw. Collision still thins the
+    // plates at low zoom; a selected circuit only changes emphasis, it
+    // never hides names.
+    var junctionLabels: [(name: String, at: CGPoint, emphasized: Bool)] = []
     for mark in layout.junctionMarks {
       let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
-      let onSelection = junctionIsOnSelection(mark)
+      let emphasized =
+        highlighted.isEmpty || junctionIsOnSelection(mark)
       var diamond = Path()
       diamond.move(to: CGPoint(x: center.x, y: center.y - 3.6))
       diamond.addLine(to: CGPoint(x: center.x + 3.6, y: center.y))
@@ -547,11 +549,10 @@ struct WholeShutoNetworkOverviewView: View {
       context.stroke(
         diamond,
         with: .color(
-          onSelection ? Midnight.junctionLabel : Midnight.restCore
+          emphasized ? Midnight.junctionLabel : Midnight.label
         ),
-        style: StrokeStyle(lineWidth: onSelection ? 1.2 : 0.8)
+        style: StrokeStyle(lineWidth: 1.2)
       )
-      guard onSelection else { continue }
       let name = mark.nameJA.replacingOccurrences(of: "JCT・", with: "・")
       let rect = CGRect(
         x: center.x + 8,
@@ -561,7 +562,7 @@ struct WholeShutoNetworkOverviewView: View {
       )
       if claim(rect) {
         junctionLabels.append(
-          (name, CGPoint(x: center.x + 8, y: center.y - 26))
+          (name, CGPoint(x: center.x + 8, y: center.y - 26), emphasized)
         )
       }
     }
@@ -584,12 +585,14 @@ struct WholeShutoNetworkOverviewView: View {
       )
       context.fill(
         Path(roundedRect: plate, cornerRadius: 6),
-        with: .color(Midnight.plate.opacity(0.85))
+        with: .color(Midnight.plate.opacity(label.emphasized ? 0.85 : 0.62))
       )
       context.draw(
         Text(label.name)
           .font(.system(size: 11, weight: .bold))
-          .foregroundColor(Midnight.junctionLabel),
+          .foregroundColor(
+            label.emphasized ? Midnight.junctionLabel : Midnight.label
+          ),
         at: CGPoint(x: plate.minX + 8, y: plate.midY),
         anchor: .leading
       )

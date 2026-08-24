@@ -101,13 +101,17 @@ struct WholeShutoAttributionStrip: View {
         horizontalLinks
       }
     }
+    .padding(.horizontal, 6)
+    .padding(.vertical, 3)
+    .background(KaidoTheme.night.opacity(0.72))
+    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("route-atlas-attribution-strip")
     .accessibilityValue("ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS")
   }
 
   private var horizontalLinks: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: 6) {
       sourceLink
       licenceLink
     }
@@ -123,15 +127,13 @@ struct WholeShutoAttributionStrip: View {
   private var sourceLink: some View {
     Link(destination: attribution.sourceURL) {
       HStack(spacing: 4) {
-        Text(attribution.attribution)
-          .fixedSize(horizontal: false, vertical: true)
+        Text("© OSM")
         Image(systemName: "arrow.up.right")
       }
       .font(.caption2.weight(.semibold))
       .fontDesign(.rounded)
       .foregroundStyle(KaidoTheme.nightQuiet)
-      .shadow(color: KaidoTheme.night.opacity(0.85), radius: 4, y: 1)
-      .frame(minHeight: 44, alignment: .bottomLeading)
+      .frame(minHeight: 22, alignment: .leading)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
@@ -155,14 +157,13 @@ struct WholeShutoAttributionStrip: View {
   private var licenceLink: some View {
     Link(destination: attribution.licenceURL) {
       HStack(spacing: 4) {
-        Text(attribution.licenceLabel)
+        Text("ODbL")
         Image(systemName: "doc.text")
       }
       .font(.caption2.weight(.semibold))
       .fontDesign(.rounded)
       .foregroundStyle(KaidoTheme.nightQuiet)
-      .shadow(color: KaidoTheme.night.opacity(0.85), radius: 4, y: 1)
-      .frame(minHeight: 44, alignment: .bottomLeading)
+      .frame(minHeight: 22, alignment: .leading)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)

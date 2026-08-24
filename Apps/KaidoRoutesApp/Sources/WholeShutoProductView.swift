@@ -214,11 +214,9 @@ struct WholeShutoProductView: View {
           ScrollView {
             VStack(spacing: 0) {
               topBar
-              withMapCredit {
-                dockContent
-                  .padding(.top, 8)
-                  .padding(.bottom, 12)
-              }
+              dockContent
+                .padding(.top, 8)
+                .padding(.bottom, 12)
             }
           }
           .scrollIndicators(.hidden)
@@ -230,28 +228,22 @@ struct WholeShutoProductView: View {
               && model.phase != .completed
             {
               ScrollView {
-                withMapCredit {
-                  dockContent
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
-                }
+                dockContent
+                  .padding(.top, 8)
+                  .padding(.bottom, 12)
               }
               .scrollIndicators(.hidden)
               .scrollDismissesKeyboard(.interactively)
             } else {
               Spacer(minLength: 0)
               if !isDriving, model.phase != .completed {
-                withMapCredit {
-                  ScrollView {
-                    dockContent
-                  }
-                  .scrollIndicators(.hidden)
-                  .frame(maxHeight: geometry.size.height / 2)
-                }
-              } else {
-                withMapCredit {
+                ScrollView {
                   dockContent
                 }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: geometry.size.height / 2)
+              } else {
+                dockContent
               }
             }
           }
@@ -295,15 +287,9 @@ struct WholeShutoProductView: View {
       .frame(width: 384)
       .background(KaidoTheme.night)
 
-      ZStack(alignment: .bottomLeading) {
+      ZStack {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
-
-        WholeShutoAttributionStrip(
-          attribution: wholeShutoAttribution
-        )
-        .padding(.leading, 12)
-        .padding(.bottom, 12)
 
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
@@ -318,26 +304,6 @@ struct WholeShutoProductView: View {
       }
     }
     .background(KaidoTheme.night)
-  }
-
-  private var mapCredit: some View {
-    HStack(spacing: 0) {
-      WholeShutoAttributionStrip(
-        attribution: wholeShutoAttribution
-      )
-      Spacer(minLength: 0)
-    }
-    .padding(.horizontal, 12)
-    .padding(.bottom, 2)
-  }
-
-  private func withMapCredit<Content: View>(
-    @ViewBuilder content: () -> Content
-  ) -> some View {
-    VStack(spacing: 0) {
-      mapCredit
-      content()
-    }
   }
 
   private var dockContent: some View {
@@ -537,15 +503,19 @@ struct WholeShutoProductView: View {
   private var topBar: some View {
     VStack(spacing: 8) {
       VStack(spacing: 6) {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
           topBarBackButton
-          topBarTitle
-          Spacer(minLength: 0)
-          topBarUtilityButtons
-        }
-        HStack {
-          Spacer(minLength: 0)
-          mapModeControl
+          VStack(alignment: .leading, spacing: 2) {
+            topBarTitle
+            WholeShutoAttributionStrip(
+              attribution: wholeShutoAttribution
+            )
+          }
+          Spacer(minLength: 8)
+          VStack(alignment: .trailing, spacing: 6) {
+            topBarUtilityButtons
+            mapModeControl
+          }
         }
       }
 

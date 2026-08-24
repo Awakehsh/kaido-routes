@@ -49,8 +49,8 @@ the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
 entry for interface language, guidance voice, known map limitations, privacy,
-and licences. OSM source and licence credit stays a compact overlay adjacent
-to the map, not a full-width chrome band. Each catalog card presents the
+and licences. OSM source and licence credit sits under the title as a compact
+caption, adjacent to the map and off the road drawing. Each catalog card presents the
 route as a finished experience: its shape thumbnail, distance and duration
 class, landmark and PA facts, and — once an origin is known — the derived
 entrance/exit pairing as one factual line. It does not lead with a destination

@@ -582,7 +582,7 @@ struct WholeShutoNetworkOverviewView: View {
       let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
       let emphasized = onSelection(mark.routeIDs)
       occupied.append(
-        CGRect(x: center.x - 13, y: center.y - 15, width: 26, height: 30)
+        CGRect(x: center.x - 16, y: center.y - 18, width: 32, height: 36)
       )
       NetworkOverviewPlaceGlyph.draw(
         mark.icon,
@@ -996,9 +996,9 @@ struct WholeShutoNetworkOverviewView: View {
   }
 }
 
-/// Screen-space silhouettes for the classic places on the network diagram.
-/// Drawn in a 20×24 box so Tokyo Tower and Skytree stay distinct at the
-/// unzoomed mark size.
+/// Canonical map pictograms, not filled blobs: Tokyo Tower keeps two decks
+/// and open lattice legs; Skytree stays a needle with two rings; bridges
+/// keep towers and a deck so they do not read as a tent or a mountain.
 private enum NetworkOverviewPlaceGlyph {
   static func draw(
     _ icon: NetworkOverviewLayout.PlaceIcon,
@@ -1008,268 +1008,220 @@ private enum NetworkOverviewPlaceGlyph {
     context: inout GraphicsContext
   ) {
     let box = CGRect(
-      x: center.x - 10,
-      y: center.y - 12,
-      width: 20,
-      height: 24
+      x: center.x - 12,
+      y: center.y - 16,
+      width: 24,
+      height: 32
     )
+    let plateRect = box.insetBy(dx: -3, dy: -2)
     context.fill(
-      Path(roundedRect: box.insetBy(dx: -3, dy: -2), cornerRadius: 7),
+      Path(roundedRect: plateRect, cornerRadius: 8),
       with: .color(plate)
     )
     context.stroke(
-      Path(roundedRect: box.insetBy(dx: -3, dy: -2), cornerRadius: 7),
-      with: .color(color.opacity(0.45)),
+      Path(roundedRect: plateRect, cornerRadius: 8),
+      with: .color(color.opacity(0.4)),
       style: StrokeStyle(lineWidth: 1)
     )
 
     func p(_ x: Double, _ y: Double) -> CGPoint {
       CGPoint(
-        x: box.minX + x / 20 * box.width,
-        y: box.minY + y / 24 * box.height
+        x: box.minX + x / 24 * box.width,
+        y: box.minY + y / 32 * box.height
       )
+    }
+    func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double) -> CGRect {
+      let origin = p(x, y)
+      let extent = p(x + w, y + h)
+      return CGRect(
+        x: origin.x,
+        y: origin.y,
+        width: extent.x - origin.x,
+        height: extent.y - origin.y
+      )
+    }
+    func stroke(
+      _ path: Path,
+      width: CGFloat = 1.35,
+      cap: CGLineCap = .round
+    ) {
+      context.stroke(
+        path,
+        with: .color(color),
+        style: StrokeStyle(lineWidth: width, lineCap: cap, lineJoin: .round)
+      )
+    }
+    func fill(_ path: Path) {
+      context.fill(path, with: .color(color))
     }
 
     switch icon {
     case .tokyoTower:
-      var tower = Path()
-      tower.move(to: p(10, 0.4))
-      tower.addLine(to: p(10.9, 3.1))
-      tower.addLine(to: p(13.4, 3.1))
-      tower.addLine(to: p(13.4, 5.3))
-      tower.addLine(to: p(11.5, 5.3))
-      tower.addLine(to: p(15.6, 12.2))
-      tower.addLine(to: p(16.8, 12.2))
-      tower.addLine(to: p(16.8, 14.5))
-      tower.addLine(to: p(18.6, 23.4))
-      tower.addLine(to: p(1.4, 23.4))
-      tower.addLine(to: p(3.2, 14.5))
-      tower.addLine(to: p(3.2, 12.2))
-      tower.addLine(to: p(8.5, 5.3))
-      tower.addLine(to: p(6.6, 5.3))
-      tower.addLine(to: p(6.6, 3.1))
-      tower.addLine(to: p(9.1, 3.1))
-      tower.closeSubpath()
-      context.fill(tower, with: .color(color))
+      var antenna = Path()
+      antenna.move(to: p(12, 0.4))
+      antenna.addLine(to: p(12, 4.6))
+      stroke(antenna, width: 1.3)
+      fill(Path(roundedRect: rect(8.2, 4.4, 7.6, 2.4), cornerRadius: 0.6))
+      fill(Path(roundedRect: rect(5.0, 13.0, 14.0, 2.8), cornerRadius: 0.6))
+      var legs = Path()
+      legs.move(to: p(9.6, 6.8))
+      legs.addLine(to: p(3.2, 31.2))
+      legs.move(to: p(14.4, 6.8))
+      legs.addLine(to: p(20.8, 31.2))
+      legs.move(to: p(10.6, 6.8))
+      legs.addLine(to: p(7.4, 31.2))
+      legs.move(to: p(13.4, 6.8))
+      legs.addLine(to: p(16.6, 31.2))
+      stroke(legs, width: 1.35)
+      var brace = Path()
+      brace.move(to: p(6.4, 15.8))
+      brace.addLine(to: p(17.6, 24.4))
+      brace.move(to: p(17.6, 15.8))
+      brace.addLine(to: p(6.4, 24.4))
+      stroke(brace, width: 1.05)
 
     case .tokyoSkytree:
-      var tree = Path()
-      tree.move(to: p(10, 0.3))
-      tree.addLine(to: p(11.0, 4.2))
-      tree.addQuadCurve(to: p(11.2, 7.4), control: p(13.6, 5.6))
-      tree.addLine(to: p(11.0, 11.2))
-      tree.addQuadCurve(to: p(11.6, 15.4), control: p(14.8, 13.2))
-      tree.addLine(to: p(12.4, 19.6))
-      tree.addLine(to: p(14.8, 23.5))
-      tree.addLine(to: p(5.2, 23.5))
-      tree.addLine(to: p(7.6, 19.6))
-      tree.addLine(to: p(8.4, 15.4))
-      tree.addQuadCurve(to: p(9.0, 11.2), control: p(5.2, 13.2))
-      tree.addLine(to: p(8.8, 7.4))
-      tree.addQuadCurve(to: p(9.0, 4.2), control: p(6.4, 5.6))
-      tree.closeSubpath()
-      context.fill(tree, with: .color(color))
+      fill(Path(roundedRect: rect(11.1, 0.4, 1.8, 27.2), cornerRadius: 0.8))
+      fill(Path(ellipseIn: rect(9.4, 5.2, 5.2, 4.6)))
+      fill(Path(ellipseIn: rect(7.6, 13.4, 8.8, 5.6)))
+      var base = Path()
+      base.move(to: p(10.6, 27.0))
+      base.addLine(to: p(6.4, 31.4))
+      base.addLine(to: p(17.6, 31.4))
+      base.addLine(to: p(13.4, 27.0))
+      base.closeSubpath()
+      fill(base)
 
     case .airplane:
       var plane = Path()
-      plane.move(to: p(1.6, 13.2))
-      plane.addLine(to: p(8.2, 12.4))
-      plane.addLine(to: p(11.4, 4.2))
-      plane.addLine(to: p(13.2, 4.2))
-      plane.addLine(to: p(12.4, 12.2))
-      plane.addLine(to: p(16.4, 11.8))
-      plane.addLine(to: p(18.6, 8.6))
-      plane.addLine(to: p(19.4, 9.2))
-      plane.addLine(to: p(17.6, 13.4))
-      plane.addLine(to: p(19.4, 15.2))
-      plane.addLine(to: p(18.4, 16.0))
-      plane.addLine(to: p(16.2, 14.6))
-      plane.addLine(to: p(12.2, 14.8))
-      plane.addLine(to: p(13.6, 20.8))
-      plane.addLine(to: p(11.8, 20.8))
-      plane.addLine(to: p(10.0, 14.8))
-      plane.addLine(to: p(6.2, 15.2))
-      plane.addQuadCurve(to: p(1.6, 13.2), control: p(1.2, 14.6))
+      plane.move(to: p(1.6, 16.6))
+      plane.addLine(to: p(8.8, 15.6))
+      plane.addLine(to: p(12.2, 5.2))
+      plane.addLine(to: p(14.4, 5.2))
+      plane.addLine(to: p(13.2, 15.4))
+      plane.addLine(to: p(18.0, 14.8))
+      plane.addLine(to: p(21.4, 10.6))
+      plane.addLine(to: p(22.4, 11.4))
+      plane.addLine(to: p(19.6, 16.8))
+      plane.addLine(to: p(22.2, 19.2))
+      plane.addLine(to: p(21.0, 20.2))
+      plane.addLine(to: p(17.6, 18.2))
+      plane.addLine(to: p(13.0, 18.6))
+      plane.addLine(to: p(14.8, 27.4))
+      plane.addLine(to: p(12.6, 27.4))
+      plane.addLine(to: p(10.8, 18.6))
+      plane.addLine(to: p(6.4, 19.2))
+      plane.addQuadCurve(to: p(1.6, 16.6), control: p(1.2, 18.4))
       plane.closeSubpath()
-      context.fill(plane, with: .color(color))
+      fill(plane)
 
     case .ferrisWheel:
-      let wheelOrigin = p(3.2, 1.6)
-      let wheelExtent = p(16.8, 15.2)
-      let wheel = Path(
-        ellipseIn: CGRect(
-          x: wheelOrigin.x,
-          y: wheelOrigin.y,
-          width: wheelExtent.x - wheelOrigin.x,
-          height: wheelExtent.y - wheelOrigin.y
-        )
-      )
-      context.stroke(
-        wheel,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.5)
-      )
-      let hub = CGPoint(x: p(10, 8.4).x, y: p(10, 8.4).y)
-      for index in 0..<6 {
-        let angle = Double(index) * .pi / 3
+      let wheel = Path(ellipseIn: rect(3.2, 1.6, 17.6, 17.6))
+      stroke(wheel, width: 1.55)
+      let hub = p(12, 10.4)
+      let radius = p(20.0, 10.4).x - hub.x
+      for index in 0..<8 {
+        let angle = Double(index) * .pi / 4
         var spoke = Path()
         spoke.move(to: hub)
         spoke.addLine(
           to: CGPoint(
-            x: hub.x + cos(angle) * (p(16.4, 8.4).x - hub.x),
-            y: hub.y + sin(angle) * (p(16.4, 8.4).x - hub.x)
+            x: hub.x + cos(angle) * radius,
+            y: hub.y + sin(angle) * radius
           )
         )
-        context.stroke(
-          spoke,
-          with: .color(color),
-          style: StrokeStyle(lineWidth: 1)
+        stroke(spoke, width: 0.95)
+        let gondola = CGRect(
+          x: hub.x + cos(angle) * radius - 1.5,
+          y: hub.y + sin(angle) * radius - 1.5,
+          width: 3,
+          height: 3
         )
+        fill(Path(ellipseIn: gondola))
       }
       var legs = Path()
-      legs.move(to: p(8.4, 14.4))
-      legs.addLine(to: p(5.2, 23.2))
-      legs.move(to: p(11.6, 14.4))
-      legs.addLine(to: p(14.8, 23.2))
-      context.stroke(
-        legs,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.6, lineCap: .round)
-      )
+      legs.move(to: p(9.6, 18.4))
+      legs.addLine(to: p(6.0, 31.0))
+      legs.move(to: p(14.4, 18.4))
+      legs.addLine(to: p(18.0, 31.0))
+      stroke(legs, width: 1.6)
 
     case .suspensionBridge:
+      fill(Path(roundedRect: rect(4.2, 3.2, 2.4, 24.0), cornerRadius: 0.4))
+      fill(Path(roundedRect: rect(17.4, 3.2, 2.4, 24.0), cornerRadius: 0.4))
+      fill(Path(roundedRect: rect(3.2, 3.2, 4.4, 2.2), cornerRadius: 0.4))
+      fill(Path(roundedRect: rect(16.4, 3.2, 4.4, 2.2), cornerRadius: 0.4))
       var deck = Path()
-      deck.move(to: p(0.8, 18.4))
-      deck.addLine(to: p(19.2, 18.4))
-      context.stroke(
-        deck,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.7, lineCap: .round)
-      )
-      var towers = Path()
-      towers.addRect(
-        CGRect(
-          x: p(5.2, 5.2).x,
-          y: p(5.2, 5.2).y,
-          width: p(6.6, 5.2).x - p(5.2, 5.2).x,
-          height: p(6.6, 18.4).y - p(5.2, 5.2).y
-        )
-      )
-      towers.addRect(
-        CGRect(
-          x: p(13.4, 5.2).x,
-          y: p(13.4, 5.2).y,
-          width: p(14.8, 5.2).x - p(13.4, 5.2).x,
-          height: p(14.8, 18.4).y - p(13.4, 5.2).y
-        )
-      )
-      context.fill(towers, with: .color(color))
+      deck.move(to: p(0.8, 27.4))
+      deck.addLine(to: p(23.2, 27.4))
+      stroke(deck, width: 1.8)
       var cables = Path()
-      cables.move(to: p(1.2, 18.4))
-      cables.addQuadCurve(to: p(5.9, 5.2), control: p(3.0, 9.5))
-      cables.addQuadCurve(to: p(14.1, 5.2), control: p(10.0, 1.4))
-      cables.addQuadCurve(to: p(18.8, 18.4), control: p(17.0, 9.5))
-      context.stroke(
-        cables,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.2, lineCap: .round)
-      )
+      cables.move(to: p(5.4, 5.4))
+      cables.addQuadCurve(to: p(18.6, 5.4), control: p(12.0, 14.8))
+      cables.move(to: p(1.6, 27.4))
+      cables.addQuadCurve(to: p(5.4, 5.4), control: p(3.0, 14.0))
+      cables.move(to: p(22.4, 27.4))
+      cables.addQuadCurve(to: p(18.6, 5.4), control: p(21.0, 14.0))
+      stroke(cables, width: 1.2)
+      var hangers = Path()
+      for x in [8.0, 12.0, 16.0] {
+        hangers.move(to: p(x, 12.4))
+        hangers.addLine(to: p(x, 27.4))
+      }
+      stroke(hangers, width: 0.85)
 
     case .cableStayedBridge:
+      fill(Path(roundedRect: rect(6.6, 2.4, 2.2, 25.0), cornerRadius: 0.4))
+      fill(Path(roundedRect: rect(15.2, 2.4, 2.2, 25.0), cornerRadius: 0.4))
       var deck = Path()
-      deck.move(to: p(0.8, 18.6))
-      deck.addLine(to: p(19.2, 18.6))
-      context.stroke(
-        deck,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.7, lineCap: .round)
-      )
-      var towers = Path()
-      towers.addRect(
-        CGRect(
-          x: p(6.4, 3.6).x,
-          y: p(6.4, 3.6).y,
-          width: p(7.6, 3.6).x - p(6.4, 3.6).x,
-          height: p(7.6, 18.6).y - p(6.4, 3.6).y
-        )
-      )
-      towers.addRect(
-        CGRect(
-          x: p(12.4, 3.6).x,
-          y: p(12.4, 3.6).y,
-          width: p(13.6, 3.6).x - p(12.4, 3.6).x,
-          height: p(13.6, 18.6).y - p(12.4, 3.6).y
-        )
-      )
-      context.fill(towers, with: .color(color))
+      deck.move(to: p(0.8, 27.4))
+      deck.addLine(to: p(23.2, 27.4))
+      stroke(deck, width: 1.8)
       var stays = Path()
-      for t in [3.0, 7.5, 11.5, 16.5] {
-        stays.move(to: p(7.0, 4.2))
-        stays.addLine(to: p(t, 18.6))
-        stays.move(to: p(13.0, 4.2))
-        stays.addLine(to: p(20.0 - t, 18.6))
+      for x in [1.6, 4.4, 10.4] {
+        stays.move(to: p(7.7, 3.2))
+        stays.addLine(to: p(x, 27.4))
       }
-      context.stroke(
-        stays,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 0.9)
-      )
+      for x in [13.6, 19.6, 22.4] {
+        stays.move(to: p(16.3, 3.2))
+        stays.addLine(to: p(x, 27.4))
+      }
+      stroke(stays, width: 1.0)
 
     case .harpBridge:
+      fill(Path(roundedRect: rect(4.4, 1.6, 2.2, 25.8), cornerRadius: 0.4))
+      fill(Path(roundedRect: rect(16.8, 12.4, 2.0, 15.0), cornerRadius: 0.4))
       var deck = Path()
-      deck.move(to: p(0.8, 19.0))
-      deck.addLine(to: p(19.2, 19.0))
-      context.stroke(
-        deck,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.7, lineCap: .round)
-      )
-      var towers = Path()
-      towers.addRect(
-        CGRect(
-          x: p(4.6, 2.4).x,
-          y: p(4.6, 2.4).y,
-          width: p(6.0, 2.4).x - p(4.6, 2.4).x,
-          height: p(6.0, 19.0).y - p(4.6, 2.4).y
-        )
-      )
-      towers.addRect(
-        CGRect(
-          x: p(14.4, 9.4).x,
-          y: p(14.4, 9.4).y,
-          width: p(15.6, 9.4).x - p(14.4, 9.4).x,
-          height: p(15.6, 19.0).y - p(14.4, 9.4).y
-        )
-      )
-      context.fill(towers, with: .color(color))
+      deck.move(to: p(0.8, 27.6))
+      deck.addLine(to: p(23.2, 27.6))
+      stroke(deck, width: 1.8)
       var harp = Path()
-      for t in [8.0, 11.0, 14.0, 17.5] {
-        harp.move(to: p(5.3, 2.8))
-        harp.addLine(to: p(t, 19.0))
+      for x in [8.4, 12.0, 15.6, 19.6, 22.4] {
+        harp.move(to: p(5.5, 2.2))
+        harp.addLine(to: p(x, 27.6))
       }
-      context.stroke(
-        harp,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 0.95)
-      )
+      stroke(harp, width: 1.0)
 
     case .archBridge:
       var arch = Path()
-      arch.move(to: p(1.4, 19.2))
-      arch.addQuadCurve(to: p(18.6, 19.2), control: p(10.0, 1.2))
-      context.stroke(
-        arch,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.7, lineCap: .round)
-      )
+      arch.move(to: p(2.0, 27.4))
+      arch.addQuadCurve(to: p(22.0, 27.4), control: p(12.0, 1.6))
+      stroke(arch, width: 1.7)
       var deck = Path()
-      deck.move(to: p(0.8, 19.2))
-      deck.addLine(to: p(19.2, 19.2))
-      context.stroke(
-        deck,
-        with: .color(color),
-        style: StrokeStyle(lineWidth: 1.5, lineCap: .round)
-      )
+      deck.move(to: p(0.8, 27.4))
+      deck.addLine(to: p(23.2, 27.4))
+      stroke(deck, width: 1.7)
+      var hangers = Path()
+      for x in [6.0, 9.0, 12.0, 15.0, 18.0] {
+        let t = (x - 2.0) / 20.0
+        let y =
+          (1 - t) * (1 - t) * 27.4
+          + 2 * (1 - t) * t * 1.6
+          + t * t * 27.4
+        hangers.move(to: p(x, y + 0.6))
+        hangers.addLine(to: p(x, 27.4))
+      }
+      stroke(hangers, width: 0.9)
     }
   }
 }

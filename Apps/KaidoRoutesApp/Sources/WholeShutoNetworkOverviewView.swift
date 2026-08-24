@@ -1,6 +1,7 @@
 import KaidoPresentation
 import KaidoRouting
 import SwiftUI
+import UIKit
 
 /// Builds and caches the whole-network overview layout once per snapshot.
 @MainActor
@@ -575,29 +576,37 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Classic places use silhouettes on the small diagram; names join
-    // once pinched in. Icons claim space before junction plates.
+    // Classic places use licensed photographs as circular pins; names
+    // join once pinched in. Pins claim space before junction plates.
     let showPlaceNames = zoom >= Self.detailZoomThreshold
     for mark in layout.placeMarks {
       let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
       let emphasized = onSelection(mark.routeIDs)
       occupied.append(
-        CGRect(x: center.x - 16, y: center.y - 18, width: 32, height: 36)
+        CGRect(x: center.x - 22, y: center.y - 22, width: 44, height: 44)
       )
-      NetworkOverviewPlaceGlyph.draw(
-        mark.icon,
+      if !NetworkOverviewPlacePhoto.draw(
+        placeID: mark.id,
         at: center,
-        color: emphasized ? Midnight.place : Midnight.label,
-        plate: Midnight.plate.opacity(emphasized ? 0.9 : 0.7),
+        emphasized: emphasized,
+        ring: emphasized ? Midnight.place : Midnight.label,
         context: &context
-      )
+      ) {
+        NetworkOverviewPlaceGlyph.draw(
+          mark.icon,
+          at: center,
+          color: emphasized ? Midnight.place : Midnight.label,
+          plate: Midnight.plate.opacity(emphasized ? 0.9 : 0.7),
+          context: &context
+        )
+      }
       if showPlaceNames {
         plateName(
           mark.name(for: interfaceLocale),
           at: center,
           color: Midnight.place,
           emphasized: emphasized,
-          offset: CGSize(width: 16, height: -10),
+          offset: CGSize(width: 24, height: -10),
           context: &context
         )
       }
@@ -993,6 +1002,70 @@ struct WholeShutoNetworkOverviewView: View {
       points = smooth
     }
     return points
+  }
+}
+
+/// Bundled Wikimedia Commons photographs, cropped to square pins.
+private enum NetworkOverviewPlacePhoto {
+  static let pinSize: CGFloat = 40
+
+  static func assetName(forPlaceID id: String) -> String? {
+    switch id {
+    case "place.tokyo-tower": "place-tokyo-tower"
+    case "place.tokyo-skytree": "place-tokyo-skytree"
+    case "place.haneda-airport": "place-haneda-airport"
+    case "place.minato-mirai": "place-minato-mirai"
+    case "place.rainbow-bridge": "place-rainbow-bridge"
+    case "place.yokohama-bay-bridge": "place-yokohama-bay-bridge"
+    case "place.tsurumi-tsubasa-bridge": "place-tsurumi-tsubasa-bridge"
+    case "place.katsushika-harp-bridge": "place-katsushika-harp-bridge"
+    case "place.goshikizakura-bridge": "place-goshikizakura-bridge"
+    default: nil
+    }
+  }
+
+  static func draw(
+    placeID: String,
+    at center: CGPoint,
+    emphasized: Bool,
+    ring: Color,
+    context: inout GraphicsContext
+  ) -> Bool {
+    guard let name = assetName(forPlaceID: placeID),
+      let uiImage = UIImage(named: name)
+    else { return false }
+    let rect = CGRect(
+      x: center.x - pinSize / 2,
+      y: center.y - pinSize / 2,
+      width: pinSize,
+      height: pinSize
+    )
+    context.drawLayer { layer in
+      layer.opacity = emphasized ? 1 : 0.55
+      layer.clip(to: Path(ellipseIn: rect))
+      let imageSize = uiImage.size
+      let scale = max(
+        rect.width / max(imageSize.width, 1),
+        rect.height / max(imageSize.height, 1)
+      )
+      let width = imageSize.width * scale
+      let height = imageSize.height * scale
+      layer.draw(
+        Image(uiImage: uiImage),
+        in: CGRect(
+          x: rect.midX - width / 2,
+          y: rect.midY - height / 2,
+          width: width,
+          height: height
+        )
+      )
+    }
+    context.stroke(
+      Path(ellipseIn: rect),
+      with: .color(ring),
+      style: StrokeStyle(lineWidth: 1.7)
+    )
+    return true
   }
 }
 

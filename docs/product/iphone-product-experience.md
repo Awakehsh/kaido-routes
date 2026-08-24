@@ -198,9 +198,9 @@ route lines, with plated labels that never sit on the carriageways. Until
 the driver chooses a route the network stays receded; selecting a catalog
 experience lights only its member routes in their route colors. Junction
 names stay on the diagram. The unzoomed network marks classic places with
-silhouettes (Tokyo Tower, Tokyo Skytree, Haneda, Minato Mirai, and the
-named bridges) and names a short PA set — Daikoku, Tatsumi First,
-Shibaura, Heiwajima, Oi, and Hakozaki. Pinching past the detail
+licensed circular photographs (Tokyo Tower, Tokyo Skytree, Haneda, Minato
+Mirai, and the named bridges) and names a short PA set — Daikoku, Tatsumi
+First, Shibaura, Heiwajima, Oi, and Hakozaki. Pinching past the detail
 threshold names those places and every bundled PA. A
 checkered start-grid glyph may mark the derived entrance direction; it is
 purely presentational and no copy anywhere adopts competitive or performance

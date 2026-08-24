@@ -132,6 +132,7 @@
 		EE2095C8B683BEBA65A3BC25 /* SyntheticDrivingPreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */; };
 		EEE6CCFA40BA99EB8F3A1852 /* RouteAtlasAttribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4860344042C17F616B51F445 /* RouteAtlasAttribution.swift */; };
 		F0BDB7C776E286F447A5A8D2 /* WholeShutoJourneyReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */; };
+		F3E06774C793B38335B1BD85 /* PlacePhotoBundleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74DF3BB26DA09F15B47FDF6 /* PlacePhotoBundleTests.swift */; };
 		F48AC1B1B723F87D47B6326F /* GuidanceVoiceSetupModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A25A3D7A56C184CE1EBC08 /* GuidanceVoiceSetupModelTests.swift */; };
 		F75EA6137FD4AC36C2609490 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6736A54DBD926E1D2965FE9 /* Assets.xcassets */; };
 		F815C81DE2CF396F6157F974 /* KaidoAppleAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 979F0DF2D8FF6A142C418A82 /* KaidoAppleAdapters */; };
@@ -283,6 +284,7 @@
 		F5BB38CE646AEC77C3F7218C /* kaido-routes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "kaido-routes"; path = .; sourceTree = SOURCE_ROOT; };
 		F696441576DF5372272A07E3 /* RouteAtlasAttributionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasAttributionUITests.swift; sourceTree = "<group>"; };
 		F718989C373E79DA78630D0D /* KaidoProductJourneyModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyModelTests.swift; sourceTree = "<group>"; };
+		F74DF3BB26DA09F15B47FDF6 /* PlacePhotoBundleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacePhotoBundleTests.swift; sourceTree = "<group>"; };
 		FB1E682A168C4207E6C5957A /* AppSafetyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSafetyState.swift; sourceTree = "<group>"; };
 		FC391ECE79DA9EEFC6D198F0 /* SyntheticProductRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeTests.swift; sourceTree = "<group>"; };
 		FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "synthetic-product-runtime-preview.json"; sourceTree = "<group>"; };
@@ -352,6 +354,7 @@
 				F718989C373E79DA78630D0D /* KaidoProductJourneyModelTests.swift */,
 				93AB18CB50718A191FE944E9 /* ParkedRouteEditorModelTests.swift */,
 				F1E27C7476287603CC26C20B /* PhysicalAudioQualificationTests.swift */,
+				F74DF3BB26DA09F15B47FDF6 /* PlacePhotoBundleTests.swift */,
 				FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */,
 				04F60AE0558E6734309280B3 /* PreDriveReviewModelTests.swift */,
 				E0933E1161E416A3A2A7E290 /* ProductMapPresentationTests.swift */,
@@ -706,6 +709,7 @@
 				3213A36BC77158EC02718D91 /* KaidoProductJourneyModelTests.swift in Sources */,
 				20F92188AD9C1E12C3DD80FE /* ParkedRouteEditorModelTests.swift in Sources */,
 				B7A160BDF3FD3C2CD621CE3B /* PhysicalAudioQualificationTests.swift in Sources */,
+				F3E06774C793B38335B1BD85 /* PlacePhotoBundleTests.swift in Sources */,
 				662B88AFA6B0F34490E16BC8 /* PreDriveEvidenceUpdateModelTests.swift in Sources */,
 				364EAB2BE5288A7F6CAF6CAB /* PreDriveReviewModelTests.swift in Sources */,
 				45563D5723E68ACEC71B4E62 /* ProductMapPresentationTests.swift in Sources */,

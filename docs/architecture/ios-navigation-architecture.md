@@ -3,9 +3,9 @@
 **Status:** accepted and implemented for the platform-light core and default
 whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
 with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. The whole-network
-browse map marks classic places with silhouettes and names a curated PA set
-at the default frame, then names those places and every bundled PA once
-pinched in. Its route-first home
+browse map marks classic places with licensed photographs and names a
+curated PA set at the default frame, then names those places and every
+bundled PA once pinched in. Its route-first home
 offers named experiences, automatic direction-valid entrance/exit pairing,
 1–9 laps for loops, and exact custom routes before the optional destination.
 Automatic circuit pairing keeps the nearest bounded radial candidates and every

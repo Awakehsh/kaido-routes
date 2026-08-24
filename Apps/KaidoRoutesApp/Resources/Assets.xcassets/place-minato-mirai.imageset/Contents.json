@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "minato-mirai.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

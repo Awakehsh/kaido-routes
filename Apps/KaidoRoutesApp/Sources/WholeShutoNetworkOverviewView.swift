@@ -245,11 +245,16 @@ struct WholeShutoNetworkOverviewView: View {
       )
     )
     .accessibilityValue(
-      copy.resolve(
-        japanese: "\(layout.facilityMarks.count)施設",
-        simplifiedChinese: "\(layout.facilityMarks.count)个设施",
-        english: "\(layout.facilityMarks.count) facilities"
-      )
+      {
+        let count = copy.resolve(
+          japanese: "\(layout.facilityMarks.count)施設",
+          simplifiedChinese: "\(layout.facilityMarks.count)个设施",
+          english: "\(layout.facilityMarks.count) facilities"
+        )
+        let highlighted = overlay.highlightedRouteIDs.sorted()
+        if highlighted.isEmpty { return count }
+        return count + " · " + highlighted.joined(separator: " ")
+      }()
     )
   }
 
@@ -374,7 +379,12 @@ struct WholeShutoNetworkOverviewView: View {
 
     let highlighted = overlay.highlightedRouteIDs
     func isDimmed(_ routeID: String) -> Bool {
-      !highlighted.isEmpty && !highlighted.contains(routeID)
+      !highlighted.contains(routeID)
+    }
+    func junctionIsOnSelection(_ mark: NetworkOverviewLayout.JunctionMark)
+      -> Bool
+    {
+      !highlighted.isEmpty && !mark.routeIDs.isDisjoint(with: highlighted)
     }
 
     // Line weights are screen-point sizes that thicken gently with zoom.
@@ -384,8 +394,9 @@ struct WholeShutoNetworkOverviewView: View {
       return (isTrunk ? 4.6 : 3.2) * weightScale
     }
 
-    // Rest of the network first: dark casing plus a receded blue core when a
-    // circuit is selected, or the route's own color when browsing.
+    // Rest of the network first: dark casing plus a receded blue core.
+    // A selected circuit (or planned route) keeps rainbow color on its
+    // members only; browsing with no selection leaves the whole net receded.
     for polyline in layout.polylines {
       context.stroke(
         path(polyline.points),
@@ -409,11 +420,9 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Lit routes: a blurred neon underglow, the colored tube, then a hot
-    // white core on the selected circuit.
+    // Lit members: a blurred neon underglow, the colored tube, then a hot
+    // white core. Unselected browsing leaves this set empty.
     let litLines = layout.polylines.filter { !isDimmed($0.routeID) }
-    // Browsing keeps the glow faint; a selected circuit gets the full neon
-    // underglow so one route clearly owns the night.
     context.drawLayer { layer in
       layer.addFilter(.blur(radius: highlighted.isEmpty ? 1.5 : 6))
       for polyline in litLines {
@@ -522,11 +531,12 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Junction diamonds always draw; their names claim screen space, so the
-    // base zoom stays quiet and detail fills in while zooming.
+    // Junction diamonds stay as quiet ticks. Names appear only on the
+    // selected members so the rest of the network does not fill with plates.
     var junctionLabels: [(name: String, at: CGPoint)] = []
     for mark in layout.junctionMarks {
       let center = point(NetworkOverviewLayout.Point(x: mark.x, y: mark.y))
+      let onSelection = junctionIsOnSelection(mark)
       var diamond = Path()
       diamond.move(to: CGPoint(x: center.x, y: center.y - 3.6))
       diamond.addLine(to: CGPoint(x: center.x + 3.6, y: center.y))
@@ -536,9 +546,12 @@ struct WholeShutoNetworkOverviewView: View {
       context.fill(diamond, with: .color(Midnight.plate))
       context.stroke(
         diamond,
-        with: .color(Midnight.junctionLabel),
-        style: StrokeStyle(lineWidth: 1.2)
+        with: .color(
+          onSelection ? Midnight.junctionLabel : Midnight.restCore
+        ),
+        style: StrokeStyle(lineWidth: onSelection ? 1.2 : 0.8)
       )
+      guard onSelection else { continue }
       let name = mark.nameJA.replacingOccurrences(of: "JCT・", with: "・")
       let rect = CGRect(
         x: center.x + 8,

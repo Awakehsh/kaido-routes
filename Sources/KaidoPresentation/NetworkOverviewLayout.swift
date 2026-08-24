@@ -98,6 +98,9 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     public let nameJA: String
     public let x: Double
     public let y: Double
+    /// Snapshot routes whose drawn polylines pass close enough to this
+    /// junction that its name belongs with those members when highlighted.
+    public let routeIDs: Set<String>
   }
 
   public struct FacilityMark: Equatable, Sendable {
@@ -289,13 +292,28 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
       badges.append(RouteBadge(routeID: routeID, label: label, x: x, y: y))
     }
 
+    let snapRadius = 28.0
+    let snapRadiusSquared = snapRadius * snapRadius
     let junctionMarks = junctions.map { junction in
       let p = project(junction.coordinate)
+      var routeIDs: Set<String> = []
+      for polyline in polylines {
+        if routeIDs.contains(polyline.routeID) { continue }
+        for point in polyline.points {
+          let dx = point.x - p.x
+          let dy = point.y - p.y
+          if dx * dx + dy * dy <= snapRadiusSquared {
+            routeIDs.insert(polyline.routeID)
+            break
+          }
+        }
+      }
       return JunctionMark(
         id: junction.id,
         nameJA: junction.nameJA,
         x: p.x,
-        y: p.y
+        y: p.y,
+        routeIDs: routeIDs
       )
     }
 

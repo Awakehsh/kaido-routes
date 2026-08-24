@@ -45,6 +45,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-network-map", in: app)
         .waitForExistence(timeout: 3)
     )
+    let networkMap = element("whole-shuto-network-map", in: app)
+    let browseValue = networkMap.value as? String ?? ""
+    XCTAssertFalse(
+      browseValue.contains("C1"),
+      "Browse must keep the network receded until a catalog card is chosen"
+    )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
     XCTAssertTrue(
       element("route-atlas-attribution-strip", in: app).exists
@@ -100,6 +106,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(element("whole-shuto-plan-route", in: app).exists)
     destinationToggle.tap()
     assertMapFirstPlanningLayout(in: app)
+
+    element(
+      "whole-shuto-circuit-option-shuto.circuit.c1-inner",
+      in: app
+    ).tap()
+    let litC1 = XCTNSPredicateExpectation(
+      predicate: NSPredicate(
+        format: "value CONTAINS %@",
+        "C1"
+      ),
+      object: networkMap
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [litC1], timeout: 3),
+      .completed,
+      "Selecting C1 Inner must light only that member on the network map"
+    )
 
     let homeScreenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()

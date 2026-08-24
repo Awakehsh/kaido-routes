@@ -35,6 +35,14 @@ struct NetworkOverviewLayoutTests {
     #expect(ogiohashi.exit == .full)
     // Junction marks and route badges are present and spread apart.
     #expect(layout.junctionMarks.count == 39)
+    let edobashi = try #require(
+      layout.junctionMarks.first { $0.nameJA == "江戸橋JCT" }
+    )
+    #expect(edobashi.routeIDs.contains("C1"))
+    let daikoku = try #require(
+      layout.junctionMarks.first { $0.nameJA == "大黒JCT" }
+    )
+    #expect(!daikoku.routeIDs.isEmpty)
     #expect(!layout.badges.isEmpty)
     for (index, badge) in layout.badges.enumerated() {
       for other in layout.badges[(index + 1)...] {

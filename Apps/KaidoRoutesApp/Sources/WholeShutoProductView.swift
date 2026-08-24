@@ -435,6 +435,8 @@ struct WholeShutoProductView: View {
     var overlay = WholeShutoNetworkOverviewView.PlanningOverlay()
     if let circuit = model.selectedCircuit {
       overlay.highlightedRouteIDs = circuit.memberRouteIDs
+    } else if let route = model.selectedRoute {
+      overlay.highlightedRouteIDs = Set(route.routeIDsInOrder)
     }
     if let snapshot = planningLocation.snapshot {
       overlay.currentPosition = layout.projection.project(

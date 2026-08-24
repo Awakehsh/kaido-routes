@@ -147,13 +147,7 @@ struct WholeShutoNetworkOverviewView: View {
   }
 
   private func routeLineColor(_ routeID: String) -> Color {
-    switch routeID {
-    case "C1": return Color(red: 1.0, green: 0.71, blue: 0.33)
-    case "C2": return Color(red: 0.37, green: 0.82, blue: 0.41)
-    case "B": return Color(red: 0.56, green: 0.66, blue: 0.91)
-    case "Y": return Color(red: 0.35, green: 0.39, blue: 0.47)
-    default: return routeColor(routeID).opacity(0.95)
-    }
+    routeColor(routeID)
   }
 
   var body: some View {
@@ -420,51 +414,31 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Lit members: a blurred neon underglow, the colored tube, then a hot
-    // white core. Unselected browsing leaves this set empty.
+    // Lit members keep each route's own color, slightly thicker than the
+    // receded net. No neon halo and no white-hot core — those read as a
+    // highlighter, not a selected carriageway.
     let litLines = layout.polylines.filter { !isDimmed($0.routeID) }
-    context.drawLayer { layer in
-      layer.addFilter(.blur(radius: highlighted.isEmpty ? 1.5 : 6))
-      for polyline in litLines {
-        layer.stroke(
-          path(polyline.points),
-          with: .color(
-            routeLineColor(polyline.routeID)
-              .opacity(highlighted.isEmpty ? 0.14 : 0.55)
-          ),
-          style: StrokeStyle(
-            lineWidth: lineWidth(polyline.routeID)
-              * (highlighted.isEmpty ? 1.6 : 3.0),
-            lineCap: .round,
-            lineJoin: .round
-          )
-        )
-      }
-    }
     for polyline in litLines {
+      let color = routeLineColor(polyline.routeID)
       context.stroke(
         path(polyline.points),
-        with: .color(routeLineColor(polyline.routeID)),
+        with: .color(color.opacity(0.28)),
         style: StrokeStyle(
-          lineWidth: lineWidth(polyline.routeID),
+          lineWidth: lineWidth(polyline.routeID) + 3.2,
+          lineCap: .round,
+          lineJoin: .round
+        )
+      )
+      context.stroke(
+        path(polyline.points),
+        with: .color(color),
+        style: StrokeStyle(
+          lineWidth: lineWidth(polyline.routeID) + 0.8,
           lineCap: .round,
           lineJoin: .round,
           dash: polyline.routeID == "Y" ? [7, 6] : []
         )
       )
-    }
-    if !highlighted.isEmpty {
-      for polyline in litLines {
-        context.stroke(
-          path(polyline.points),
-          with: .color(Color.white.opacity(0.92)),
-          style: StrokeStyle(
-            lineWidth: lineWidth(polyline.routeID) * 0.34,
-            lineCap: .round,
-            lineJoin: .round
-          )
-        )
-      }
     }
 
     var occupied: [CGRect] = []

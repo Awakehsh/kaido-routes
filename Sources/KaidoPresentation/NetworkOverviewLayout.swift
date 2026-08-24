@@ -107,6 +107,19 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     }
   }
 
+  /// Compact silhouette used on the unzoomed diagram in place of a generic
+  /// dot. Names join once the driver pinches in.
+  public enum PlaceIcon: String, Equatable, Sendable {
+    case tokyoTower
+    case tokyoSkytree
+    case airplane
+    case ferrisWheel
+    case suspensionBridge
+    case cableStayedBridge
+    case harpBridge
+    case archBridge
+  }
+
   /// Off-network or on-structure place sitting beside the diagram.
   public struct PlaceInput: Equatable, Sendable {
     public let id: String
@@ -117,6 +130,7 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     public let routeIDs: Set<String>
     /// When true, the label sits on the nearest member-route polyline.
     public let snapToRoute: Bool
+    public let icon: PlaceIcon
 
     public init(
       id: String,
@@ -125,7 +139,8 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
       nameEN: String,
       coordinate: RouteTrackMapLayout.GeoPoint,
       routeIDs: Set<String>,
-      snapToRoute: Bool
+      snapToRoute: Bool,
+      icon: PlaceIcon
     ) {
       self.id = id
       self.nameJA = nameJA
@@ -134,6 +149,7 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
       self.coordinate = coordinate
       self.routeIDs = routeIDs
       self.snapToRoute = snapToRoute
+      self.icon = icon
     }
   }
 
@@ -188,6 +204,7 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
     public let x: Double
     public let y: Double
     public let routeIDs: Set<String>
+    public let icon: PlaceIcon
 
     public func name(for locale: KaidoReleaseLocale) -> String {
       switch locale {
@@ -484,7 +501,8 @@ public struct NetworkOverviewLayout: Equatable, Sendable {
         nameEN: place.nameEN,
         x: p.x,
         y: p.y,
-        routeIDs: place.routeIDs
+        routeIDs: place.routeIDs,
+        icon: place.icon
       )
     }
 

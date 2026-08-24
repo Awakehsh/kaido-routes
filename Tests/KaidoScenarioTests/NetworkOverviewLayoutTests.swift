@@ -57,10 +57,26 @@ struct NetworkOverviewLayoutTests {
       layout.placeMarks.first { $0.id == "place.tokyo-tower" }
     )
     #expect(tokyoTower.routeIDs == ["C1"])
+    #expect(tokyoTower.icon == .tokyoTower)
     let rainbow = try #require(
       layout.placeMarks.first { $0.id == "place.rainbow-bridge" }
     )
     #expect(rainbow.routeIDs == ["11"])
+    #expect(rainbow.icon == .suspensionBridge)
+    #expect(
+      layout.placeMarks.map(\.icon).sorted { $0.rawValue < $1.rawValue }
+        == [
+          .airplane,
+          .archBridge,
+          .cableStayedBridge,
+          .cableStayedBridge,
+          .ferrisWheel,
+          .harpBridge,
+          .suspensionBridge,
+          .tokyoSkytree,
+          .tokyoTower,
+        ]
+    )
     let daikokuPA = try #require(
       layout.parkingAreaMarks.first { $0.id == "shuto.pa.daikoku" }
     )

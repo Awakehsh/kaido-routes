@@ -278,6 +278,9 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     ]
   )
 
+  /// Inclusive lap range for `.loop` experiences. Tours are always one pass.
+  public static let loopLapRange = 1...9
+
   public static let bundled: [ShutoCircuitDefinition] = [
     .c1Inner,
     .c1Outer,
@@ -738,7 +741,7 @@ extension ShutoRoutePlanner {
   ) throws -> ShutoPlannedRoute {
     switch circuit.kind {
     case .loop:
-      guard (1...9).contains(laps) else {
+      guard ShutoCircuitDefinition.loopLapRange.contains(laps) else {
         throw ShutoCircuitError.invalidLapCount
       }
     case .tour:

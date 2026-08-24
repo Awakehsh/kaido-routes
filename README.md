@@ -32,7 +32,7 @@ internal review workbench.
   experience derives the pairing automatically (nearest reachable
   direction-valid entrance, and for loops the exit whose pairing lands in
   the lowest tariff band), shows it as one factual line with ranked
-  alternatives one disclosure away, offers a 1–3 lap count on loops, plans
+  alternatives one disclosure away, offers a 1–9 lap count on loops, plans
   the experience as one ordered occurrence sequence, and runs it as a round
   trip through the normal review gate. Tariff bands come from dated ACTIVE
   evidence (normal car, ETC): the minimum band is asserted only with a

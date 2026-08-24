@@ -1165,7 +1165,9 @@ struct WholeShutoProductView: View {
               .font(.system(size: 20))
           }
           .buttonStyle(.plain)
-          .disabled(model.circuitLaps >= 3)
+          .disabled(
+            model.circuitLaps >= ShutoCircuitDefinition.loopLapRange.upperBound
+          )
           .accessibilityIdentifier("whole-shuto-circuit-laps-increase")
         }
       }

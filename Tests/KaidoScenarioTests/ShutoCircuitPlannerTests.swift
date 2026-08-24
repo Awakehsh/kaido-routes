@@ -180,15 +180,35 @@ struct ShutoCircuitPlannerTests {
   @Test("lap count is bounded")
   func rejectsInvalidLapCount() throws {
     let planner = try ShutoRoutePlanner(database: loadDatabase())
+    let range = ShutoCircuitDefinition.loopLapRange
 
     #expect(throws: ShutoCircuitError.invalidLapCount) {
       _ = try planner.planCircuit(
         circuit: .c2InnerWithBayshore,
         entryFacilityID: "shuto.ic.c2.hatsudaiminami",
         exitFacilityID: "shuto.ic.c2.tomigaya",
-        laps: 0
+        laps: range.lowerBound - 1
       )
     }
+    #expect(throws: ShutoCircuitError.invalidLapCount) {
+      _ = try planner.planCircuit(
+        circuit: .c2InnerWithBayshore,
+        entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+        exitFacilityID: "shuto.ic.c2.tomigaya",
+        laps: range.upperBound + 1
+      )
+    }
+
+    let maxLaps = try planner.planCircuit(
+      circuit: .c2InnerWithBayshore,
+      entryFacilityID: "shuto.ic.c2.hatsudaiminami",
+      exitFacilityID: "shuto.ic.c2.tomigaya",
+      laps: range.upperBound
+    )
+    #expect(
+      Set(maxLaps.routePlan.occurrences.map(\.id)).count
+        == maxLaps.routePlan.occurrences.count
+    )
   }
 
   @Test("the Wangan Daikoku run tours westbound onto the Daikoku exit")

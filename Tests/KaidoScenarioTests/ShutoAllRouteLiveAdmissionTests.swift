@@ -166,7 +166,9 @@ struct ShutoAllRouteLiveAdmissionTests {
               continue
             }
 
-            let lapCounts = circuit.kind == .loop ? Array(1...3) : [1]
+            let lapCounts =
+              circuit.kind == .loop
+              ? Array(ShutoCircuitDefinition.loopLapRange) : [1]
             for laps in lapCounts {
               do {
                 let route = try planner.planCircuit(

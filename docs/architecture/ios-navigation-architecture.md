@@ -4,7 +4,7 @@
 whole-Shuto iPhone journey. The App loads the dated 2026-08-04 directed graph
 with 26 route entries, 151 IC names, 39 JCTs, and 19 PAs. Its route-first home
 offers named experiences, automatic direction-valid entrance/exit pairing,
-1–3 laps for loops, and exact custom routes before the optional destination.
+1–9 laps for loops, and exact custom routes before the optional destination.
 Automatic circuit pairing keeps the nearest bounded radial candidates and every
 direction-valid member-route entrance. It prefers a complete foreground-release
 pairing over a closer preview-only pairing, labels access beyond 16 km as long,

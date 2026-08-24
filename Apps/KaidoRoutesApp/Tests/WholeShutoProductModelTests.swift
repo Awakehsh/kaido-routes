@@ -1695,6 +1695,28 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testCircuitLapControlFollowsPlannerRange() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    let range = ShutoCircuitDefinition.loopLapRange
+
+    model.selectCircuit(.c2InnerWithBayshore)
+    XCTAssertEqual(model.circuitLaps, range.lowerBound)
+
+    model.selectCircuitLaps(range.lowerBound - 1)
+    XCTAssertEqual(model.circuitLaps, range.lowerBound)
+
+    model.selectCircuitLaps(range.upperBound)
+    XCTAssertEqual(model.circuitLaps, range.upperBound)
+
+    model.selectCircuitLaps(range.upperBound + 1)
+    XCTAssertEqual(model.circuitLaps, range.upperBound)
+
+    model.selectCircuit(.scenicGrandTour)
+    XCTAssertEqual(model.circuitLaps, 1)
+    model.selectCircuitLaps(2)
+    XCTAssertEqual(model.circuitLaps, 1)
+  }
+
   func testCircuitEntranceTariffBandsResolveFromDatedEvidence() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.selectCurrentOrigin(

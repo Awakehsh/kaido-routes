@@ -2166,7 +2166,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func selectCircuitLaps(_ laps: Int) {
-    guard selectedCircuit?.kind == .loop, (1...3).contains(laps) else {
+    guard selectedCircuit?.kind == .loop,
+      ShutoCircuitDefinition.loopLapRange.contains(laps)
+    else {
       return
     }
     circuitLaps = laps

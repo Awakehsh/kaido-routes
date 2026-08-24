@@ -63,8 +63,12 @@ whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
 The `verify/app` job has three explicit Simulator roles on the newest installed
-iOS runtime. `primary` runs the complete App unit and UI scheme at the standard
-Large content size on an iPhone 17 Pro. `compact-large` and `compact-ax5` run
+iOS runtime. `primary` runs every App unit test plus a small UI smoke set for
+default launch, reviewed custom routing, denied-location recovery, arrival, and
+the foreground-location lifecycle at the standard Large content size on an
+iPhone 17 Pro. It intentionally does not repeat all specialized UI scenarios on
+every push; the full tracked App unit and UI scheme remains part of physical
+device qualification. `compact-large` and `compact-ax5` run
 `KRU09AccessibilityUITests` on an iPhone SE (3rd generation) at Large and the
 largest accessibility content size. These focused roles include the default
 whole-Shuto home and deterministic Review accessibility audits. Every role uses

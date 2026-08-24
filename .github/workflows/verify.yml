@@ -52,7 +52,13 @@ jobs:
           - label: primary
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
             content_size: large
-            test_scope: ""
+            test_scope: |-
+              KaidoRoutesAppTests
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDefaultLaunchMakesWholeShutoMapTheProduct
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoArrivalHasOneClearFinishAction
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation
           - label: compact-large
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
             content_size: large
@@ -141,7 +147,13 @@ jobs:
               CODE_SIGNING_ALLOWED=NO
           }
           if [[ -n "$TEST_SCOPE" ]]; then
-            run_app_tests "-only-testing:$TEST_SCOPE" \
+            test_scope_arguments=()
+            while IFS= read -r test_scope; do
+              if [[ -n "$test_scope" ]]; then
+                test_scope_arguments+=("-only-testing:$test_scope")
+              fi
+            done <<< "$TEST_SCOPE"
+            run_app_tests "${test_scope_arguments[@]}" \
               | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
               | xcpretty
           else
@@ -202,7 +214,7 @@ jobs:
             "$RUNNER_TEMP/KaidoRoutes.xcarchive" 2>&1 \
             | tee "$RUNNER_TEMP/KaidoRoutes-bundle-validation.log"
 
-      - name: Upload Release smoke diagnostics
+      - name: Upload Release bundle diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:

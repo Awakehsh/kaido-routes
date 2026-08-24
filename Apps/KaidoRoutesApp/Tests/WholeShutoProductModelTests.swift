@@ -366,11 +366,12 @@ final class WholeShutoProductModelTests: XCTestCase {
       ("shuto.ic.c1.ginza", "shuto.ic.5.higashiikebukuro"),
     ]
 
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
     for (entryFacilityID, exitFacilityID) in pairs {
-      let model = WholeShutoForegroundReleaseFactory.makeModel(
-        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
-        checkpointStore: nil
-      )
+      model.reset()
       model.selectCurrentOrigin(
         ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
       )

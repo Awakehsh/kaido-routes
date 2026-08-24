@@ -1195,18 +1195,17 @@ private enum NetworkOverviewPlaceGlyph {
       let radius = p(20.0, 10.4).x - hub.x
       for index in 0..<8 {
         let angle = Double(index) * .pi / 4
+        let rim = CGPoint(
+          x: hub.x + cos(angle) * radius,
+          y: hub.y + sin(angle) * radius
+        )
         var spoke = Path()
         spoke.move(to: hub)
-        spoke.addLine(
-          to: CGPoint(
-            x: hub.x + cos(angle) * radius,
-            y: hub.y + sin(angle) * radius
-          )
-        )
+        spoke.addLine(to: rim)
         stroke(spoke, width: 0.95)
         let gondola = CGRect(
-          x: hub.x + cos(angle) * radius - 1.5,
-          y: hub.y + sin(angle) * radius - 1.5,
+          x: rim.x - 1.5,
+          y: rim.y - 1.5,
           width: 3,
           height: 3
         )

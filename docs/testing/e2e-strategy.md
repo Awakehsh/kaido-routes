@@ -63,17 +63,20 @@ remain bound to the exact catalog and implementation bytes that were reviewed;
 whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
-The per-change `verify/app` job runs every App unit test followed by one critical
-route-selection-to-live-navigation UI smoke on the newest iPhone 17 Pro
-Simulator. The complete 33-pair foreground-product matrix stays in the
-deterministic compiler suite instead of being repeated through the asynchronous
-App model. Failed App runs retain raw xcodebuild logs and `.xcresult` bundles.
+The per-change `verify/app` job runs every fast App unit class, six critical
+whole-Shuto App-model journeys, and one route-selection-to-live-navigation UI
+smoke on the newest iPhone 17 Pro Simulator. Its test build overlaps Simulator
+boot. The complete 33-pair foreground-product matrix stays in the deterministic
+compiler suite instead of being repeated through the asynchronous App model.
+Documentation-only changes stop after the lightweight `verify/changes` path
+classification. Failed App runs retain raw xcodebuild logs and `.xcresult`
+bundles.
 
 After the same commit passes `verify`, manually trigger the
-`iOS qualification` workflow for the intentionally slower gates: the focused
-five-journey primary suite, iPhone SE accessibility audits at Large and AX5,
-and a validated unsigned Release archive. It uploads the exact archive as a
-short-lived artifact, but it does not claim signing,
+`iOS qualification` workflow for the intentionally slower gates: every App unit
+test, the focused five-journey primary suite, iPhone SE accessibility audits at
+Large and AX5, and a validated unsigned Release archive. It uploads the exact
+archive as a short-lived artifact, but it does not claim signing,
 installation, road, acoustic, CarPlay, TestFlight, or App Store evidence.
 Physical-device qualification remains a separate local workflow because it
 requires the connected authorized phone and private output.

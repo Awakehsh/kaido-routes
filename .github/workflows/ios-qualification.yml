@@ -23,6 +23,7 @@ jobs:
             device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
             content_size: large
             test_scope: |-
+              KaidoRoutesAppTests
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDefaultLaunchMakesWholeShutoMapTheProduct
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation
               KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
@@ -49,7 +50,7 @@ jobs:
 
       - name: Generate the app project
         run: |
-          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
       - name: Boot the qualification simulator
@@ -141,7 +142,7 @@ jobs:
 
       - name: Generate the app project
         run: |
-          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
 
       - name: Archive the unsigned iPhone Release product

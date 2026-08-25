@@ -321,16 +321,19 @@ coverage and identity, plan a cross-network IC-to-IC route, and rank entrances
 and exits from both nearby and long-access origins.
 
 The per-change verification workflow runs the complete deterministic suites,
-every App unit test, and one critical route journey UI smoke. The production
-joint-release validator still checks the retained K7 product artifact as a
-deterministic regression anchor; it does not enroll the candidate whole-Shuto
-graph, refresh its evidence, or grant live-navigation authority.
+all fast App unit classes, six critical whole-Shuto App-model journeys, and one
+route-selection-to-live-navigation UI smoke. Documentation-only changes finish
+after lightweight path classification. The production joint-release validator
+still checks the retained K7 product artifact as a deterministic regression
+anchor; it does not enroll the candidate whole-Shuto graph, refresh its
+evidence, or grant live-navigation authority.
 
 Before a road-test or release qualification, manually run the
 `iOS qualification` GitHub Actions workflow after `verify` is green. It runs
-the broader journey and compact accessibility matrix and publishes a validated
-unsigned Release archive. That artifact is not signed, installable device
-evidence, TestFlight delivery, or an App Store submission.
+the complete App unit suite, broader journey and compact accessibility matrix,
+and publishes a validated unsigned Release archive. That artifact is not
+signed, installable device evidence, TestFlight delivery, or an App Store
+submission.
 
 ## Rebuild the network
 

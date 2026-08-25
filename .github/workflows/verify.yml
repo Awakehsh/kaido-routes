@@ -6,96 +6,72 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  core:
-    name: Deterministic core and scenarios
+  deterministic:
+    name: Deterministic product verification
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d -print | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          swift --version
+
+      - name: Swift tests and portable scenarios
+        run: |
+          set -euo pipefail
+          swift test
+          swift run kaido-scenarios e2e/scenarios
+
+      - name: Scenario and data contracts
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_e2e.py
+          python3 scripts/verify_facility_candidate_review.py
+          python3 -m unittest discover -s scripts/tests
+
+      - name: Retained joint product release
+        run: >-
+          swift run kaido-release validate-product
+          --artifact
+          data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
+
+  app:
+    name: iPhone app unit and journey smoke
     runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      # The runner's default command-line toolchain lags the package's
-      # required Swift tools version, so pin the newest installed Xcode
-      # rather than whichever one the image defaults to.
       - name: Select the newest Xcode toolchain
         run: |
           set -euo pipefail
-          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d -print | sort -V | tail -1)
           echo "Selecting $latest"
           sudo xcode-select -s "$latest"
-          swift --version
-
-      - name: Record toolchain
-        run: xcodebuild -version
-
-      - name: Swift Testing suite
-        run: swift test
-
-      - name: Portable scenario assertions
-        run: swift run kaido-scenarios e2e/scenarios
-
-      - name: Scenario envelope contract
-        run: python3 scripts/validate_e2e.py
-
-  app:
-    name: iPhone app tests (${{ matrix.label }})
-    runs-on: macos-15
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: primary
-            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
-            content_size: large
-            test_scope: |-
-              KaidoRoutesAppTests
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDefaultLaunchMakesWholeShutoMapTheProduct
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoArrivalHasOneClearFinishAction
-              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation
-          - label: compact-large
-            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
-            content_size: large
-            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
-          - label: compact-ax5
-            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
-            content_size: accessibility-extra-extra-extra-large
-            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
-    steps:
-      - uses: actions/checkout@v7
-
-      # The runner's default command-line toolchain lags the package's
-      # required Swift tools version, so pin the newest installed Xcode
-      # rather than whichever one the image defaults to.
-      - name: Select the newest Xcode toolchain
-        run: |
-          set -euo pipefail
-          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          echo "Selecting $latest"
-          sudo xcode-select -s "$latest"
-          swift --version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
+          xcodebuild -version
 
       - name: Generate the app project
-        run: xcodegen generate
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
 
-      # The product opens on the driver's surroundings, and several UI tests
-      # derive an entrance from the current position. Select the exact device
-      # role on the newest installed runtime instead of relying on simctl JSON
-      # ordering. Tokyo Tower keeps derived pairings inside the C1 test area.
-      - name: Boot a simulator with an injected position
+      - name: Boot the primary simulator
         id: simulator
         env:
-          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
-          TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
+          TARGET_DEVICE_TYPE: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
         run: |
           set -euo pipefail
           SELECTION=$(xcrun simctl list devices available -j | python3 -c '
@@ -129,134 +105,41 @@ jobs:
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
           xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-          xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
-          echo "Content size: $(xcrun simctl ui "$DEVICE_ID" content_size)"
+          xcrun simctl ui "$DEVICE_ID" content_size large
 
-      - name: App unit and UI tests
-        env:
-          TEST_SCOPE: ${{ matrix.test_scope }}
+      - name: App unit tests
         run: |
           set -euo pipefail
-          run_app_tests() {
-            xcodebuild test \
-              -project KaidoRoutesApp.xcodeproj \
-              -scheme KaidoRoutesApp \
-              -destination "id=${{ steps.simulator.outputs.device-id }}" \
-              -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
-              "$@" \
-              CODE_SIGNING_ALLOWED=NO
-          }
-          if [[ -n "$TEST_SCOPE" ]]; then
-            test_scope_arguments=()
-            while IFS= read -r test_scope; do
-              if [[ -n "$test_scope" ]]; then
-                test_scope_arguments+=("-only-testing:$test_scope")
-              fi
-            done <<< "$TEST_SCOPE"
-            run_app_tests "${test_scope_arguments[@]}" \
-              | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
-              | xcpretty
-          else
-            run_app_tests \
-              | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log" \
-              | xcpretty
-          fi
+          xcodebuild test \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-unit.xcresult" \
+            -only-testing:KaidoRoutesAppTests \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-unit.log"
+
+      - name: Critical route journey UI smoke
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-smoke.xcresult" \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-smoke.log"
 
       - name: Upload App test diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: >-
-            kaido-app-${{ matrix.label }}-diagnostics-${{ github.run_attempt }}
+          name: kaido-app-diagnostics-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/KaidoRoutesApp-xcodebuild.log
-            ${{ runner.temp }}/KaidoRoutesApp.xcresult
+            ${{ runner.temp }}/KaidoRoutesApp-unit.log
+            ${{ runner.temp }}/KaidoRoutesApp-unit.xcresult
+            ${{ runner.temp }}/KaidoRoutesApp-smoke.log
+            ${{ runner.temp }}/KaidoRoutesApp-smoke.xcresult
           if-no-files-found: warn
           retention-days: 7
-
-  release:
-    name: Unsigned iPhone Release bundle
-    runs-on: macos-15
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Select the newest Xcode toolchain
-        run: |
-          set -euo pipefail
-          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          echo "Selecting $latest"
-          sudo xcode-select -s "$latest"
-          xcodebuild -version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      - name: Generate the app project
-        run: xcodegen generate
-
-      - name: Archive the unsigned iPhone Release product
-        run: |
-          set -euo pipefail
-          xcodebuild archive \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/KaidoRoutes.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutes-archive.log"
-
-      - name: Validate the distributed iPhone archive
-        run: |
-          set -euo pipefail
-          python3 scripts/validate_ios_release_bundle.py \
-            "$RUNNER_TEMP/KaidoRoutes.xcarchive" 2>&1 \
-            | tee "$RUNNER_TEMP/KaidoRoutes-bundle-validation.log"
-
-      - name: Upload Release bundle diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: kaido-release-bundle-diagnostics-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/KaidoRoutes-archive.log
-            ${{ runner.temp }}/KaidoRoutes-bundle-validation.log
-            ${{ runner.temp }}/KaidoRoutes.xcarchive
-          if-no-files-found: warn
-          retention-days: 7
-
-  data:
-    name: Snapshot and evidence integrity
-    runs-on: macos-15
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-
-      # The runner's default command-line toolchain lags the package's
-      # required Swift tools version, so pin the newest installed Xcode
-      # rather than whichever one the image defaults to.
-      - name: Select the newest Xcode toolchain
-        run: |
-          set -euo pipefail
-          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          echo "Selecting $latest"
-          sudo xcode-select -s "$latest"
-          swift --version
-
-      # The reviewed candidate exclusions must keep matching the committed
-      # snapshot: a stale review is a build failure, not a silent no-op.
-      - name: Facility candidate review still applies
-        run: python3 scripts/verify_facility_candidate_review.py
-
-      - name: Validator regression suite
-        run: python3 -m unittest discover -s scripts/tests
-
-      # The retained K7 product is a deterministic regression anchor, not the
-      # default delivery route. Running the production validator here proves
-      # that navigation and atlas inputs still pass the joint release gate.
-      - name: Joint product release validation
-        run: >-
-          swift run kaido-release validate-product
-          --artifact
-          data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json

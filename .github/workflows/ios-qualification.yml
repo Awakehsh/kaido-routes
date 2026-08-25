@@ -1,0 +1,183 @@
+name: iOS qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-qualification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    name: Simulator qualification (${{ matrix.label }})
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: primary
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro
+            content_size: large
+            test_scope: |-
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDefaultLaunchMakesWholeShutoMapTheProduct
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoArrivalHasOneClearFinishAction
+              KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation
+          - label: compact-large
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
+            content_size: large
+            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
+          - label: compact-ax5
+            device_type: com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
+            content_size: accessibility-extra-extra-extra-large
+            test_scope: KaidoRoutesAppUITests/KRU09AccessibilityUITests
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d -print | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      - name: Generate the app project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+
+      - name: Boot the qualification simulator
+        id: simulator
+        env:
+          TARGET_CONTENT_SIZE: ${{ matrix.content_size }}
+          TARGET_DEVICE_TYPE: ${{ matrix.device_type }}
+        run: |
+          set -euo pipefail
+          SELECTION=$(xcrun simctl list devices available -j | python3 -c '
+          import json, os, sys
+          devices = json.load(sys.stdin)["devices"]
+          candidates = [
+              (runtime, device)
+              for runtime in devices
+              for device in devices[runtime]
+              if device.get("isAvailable")
+              and device.get("deviceTypeIdentifier")
+                  == os.environ["TARGET_DEVICE_TYPE"]
+          ]
+          if not candidates:
+              raise SystemExit(
+                  "target iPhone simulator is unavailable: "
+                  + os.environ["TARGET_DEVICE_TYPE"]
+              )
+          def runtime_version(identifier):
+              tail = identifier.rsplit(".iOS-", 1)[-1]
+              return tuple(int(component) for component in tail.split("-"))
+          runtime, device = max(
+              candidates,
+              key=lambda candidate: runtime_version(candidate[0]),
+          )
+          print("\t".join((device["udid"], device["name"], runtime)))
+          ')
+          IFS=$'\t' read -r DEVICE_ID DEVICE_NAME RUNTIME_ID <<< "$SELECTION"
+          echo "Selected $DEVICE_NAME on $RUNTIME_ID"
+          echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID"
+          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+          xcrun simctl ui "$DEVICE_ID" content_size "$TARGET_CONTENT_SIZE"
+
+      - name: Focused App qualification
+        env:
+          TEST_SCOPE: ${{ matrix.test_scope }}
+        run: |
+          set -euo pipefail
+          test_scope_arguments=()
+          while IFS= read -r test_scope; do
+            if [[ -n "$test_scope" ]]; then
+              test_scope_arguments+=("-only-testing:$test_scope")
+            fi
+          done <<< "$TEST_SCOPE"
+          xcodebuild test \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -destination "id=${{ steps.simulator.outputs.device-id }}" \
+            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp.xcresult" \
+            "${test_scope_arguments[@]}" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-xcodebuild.log"
+
+      - name: Upload simulator diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: >-
+            kaido-qualification-${{ matrix.label }}-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/KaidoRoutesApp-xcodebuild.log
+            ${{ runner.temp }}/KaidoRoutesApp.xcresult
+          if-no-files-found: warn
+          retention-days: 7
+
+  release:
+    name: Validated unsigned iPhone archive
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select the newest Xcode toolchain
+        run: |
+          set -euo pipefail
+          latest=$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d -print | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      - name: Generate the app project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+
+      - name: Archive the unsigned iPhone Release product
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project KaidoRoutesApp.xcodeproj \
+            -scheme KaidoRoutesApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/KaidoRoutes.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee "$RUNNER_TEMP/KaidoRoutes-archive.log"
+
+      - name: Validate the distributed iPhone archive
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_ios_release_bundle.py \
+            "$RUNNER_TEMP/KaidoRoutes.xcarchive" 2>&1 \
+            | tee "$RUNNER_TEMP/KaidoRoutes-bundle-validation.log"
+
+      - name: Upload the validated unsigned archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: kaido-routes-unsigned-${{ github.sha }}
+          path: ${{ runner.temp }}/KaidoRoutes.xcarchive
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Release diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kaido-release-diagnostics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/KaidoRoutes-archive.log
+            ${{ runner.temp }}/KaidoRoutes-bundle-validation.log
+          if-no-files-found: warn
+          retention-days: 7

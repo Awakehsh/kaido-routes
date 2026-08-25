@@ -45,9 +45,10 @@ native source/licence links adjacent to the map. This separation adds no bytes t
 historical K7 review. Passing either technical gate is not road, topology,
 layout, realtime, or navigation evidence.
 
-The current `verify/data` job runs `python3 -m unittest discover -s
-scripts/tests` and exercises the production joint-release CLI against the
-retained K7 `KaidoProductRelease`:
+The current `verify/deterministic` job runs `python3 -m unittest discover -s
+scripts/tests` alongside the Swift and portable scenario suites, then exercises
+the production joint-release CLI against the retained K7
+`KaidoProductRelease`:
 
 ```sh
 swift run kaido-release validate-product \
@@ -62,21 +63,20 @@ remain bound to the exact catalog and implementation bytes that were reviewed;
 whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
-The `verify/app` job has three explicit Simulator roles on the newest installed
-iOS runtime. `primary` runs every App unit test plus a small UI smoke set for
-default launch, reviewed custom routing, denied-location recovery, arrival, and
-the foreground-location lifecycle at the standard Large content size on an
-iPhone 17 Pro. It intentionally does not repeat all specialized UI scenarios on
-every push; the full tracked App unit and UI scheme remains part of physical
-device qualification. `compact-large` and `compact-ax5` run
-`KRU09AccessibilityUITests` on an iPhone SE (3rd generation) at Large and the
-largest accessibility content size. These focused roles include the default
-whole-Shuto home and deterministic Review accessibility audits. Every role uses
-the same injected Tokyo Tower position; an unavailable exact device type fails
-instead of silently selecting a different simulator from inventory order. The
-compact roles are blocking small-screen UI checks, not physical-device,
-live-location, acoustic, or field evidence. Failed App jobs retain the raw
-xcodebuild log and `.xcresult` as a short-lived diagnostic artifact.
+The per-change `verify/app` job runs every App unit test followed by one critical
+route-selection-to-live-navigation UI smoke on the newest iPhone 17 Pro
+Simulator. The complete 33-pair foreground-product matrix stays in the
+deterministic compiler suite instead of being repeated through the asynchronous
+App model. Failed App runs retain raw xcodebuild logs and `.xcresult` bundles.
+
+After the same commit passes `verify`, manually trigger the
+`iOS qualification` workflow for the intentionally slower gates: the focused
+five-journey primary suite, iPhone SE accessibility audits at Large and AX5,
+and a validated unsigned Release archive. It uploads the exact archive as a
+short-lived artifact, but it does not claim signing,
+installation, road, acoustic, CarPlay, TestFlight, or App Store evidence.
+Physical-device qualification remains a separate local workflow because it
+requires the connected authorized phone and private output.
 
 ## Portable scenario envelope
 

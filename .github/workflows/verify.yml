@@ -148,7 +148,7 @@ jobs:
           echo "device-id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
           echo "device-state=$DEVICE_STATE" >> "$GITHUB_OUTPUT"
 
-      - name: Build tests while the simulator boots
+      - name: Critical App unit and journey smoke
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.device-id }}
           DEVICE_STATE: ${{ steps.simulator.outputs.device-state }}
@@ -157,63 +157,39 @@ jobs:
           if [[ "$DEVICE_STATE" != "Booted" ]]; then
             xcrun simctl boot "$DEVICE_ID"
           fi
-          xcodebuild build-for-testing \
+          (
+            set -euo pipefail
+            xcrun simctl bootstatus "$DEVICE_ID"
+            xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
+            xcrun simctl ui "$DEVICE_ID" content_size large
+          ) &
+          SIMULATOR_PID=$!
+          xcodebuild test \
             -project KaidoRoutesApp.xcodeproj \
             -scheme KaidoRoutesApp \
             -destination "id=$DEVICE_ID" \
-            -derivedDataPath "$RUNNER_TEMP/KaidoRoutesDerivedData" \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-build.log" &
-          BUILD_PID=$!
-          xcrun simctl bootstatus "$DEVICE_ID"
-          xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
-          xcrun simctl ui "$DEVICE_ID" content_size large
-          wait "$BUILD_PID"
-
-      - name: Fast App unit tests
-        run: |
-          set -euo pipefail
-          xcodebuild test-without-building \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -destination "id=${{ steps.simulator.outputs.device-id }}" \
-            -derivedDataPath "$RUNNER_TEMP/KaidoRoutesDerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-fast.xcresult" \
-            -only-testing:KaidoRoutesAppTests \
-            -skip-testing:KaidoRoutesAppTests/WholeShutoProductModelTests \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-fast.log"
-
-      - name: Critical whole-Shuto App model tests
-        run: |
-          set -euo pipefail
-          xcodebuild test-without-building \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -destination "id=${{ steps.simulator.outputs.device-id }}" \
-            -derivedDataPath "$RUNNER_TEMP/KaidoRoutesDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-critical.xcresult" \
+            -only-testing:KaidoRoutesAppTests/AccessibilityPresentationTests \
+            -only-testing:KaidoRoutesAppTests/AppSafetyStateTests \
+            -only-testing:KaidoRoutesAppTests/BundledProductReleaseCatalogTests \
+            -only-testing:KaidoRoutesAppTests/ForegroundNavigationLocationControllerTests \
+            -only-testing:KaidoRoutesAppTests/KaidoProductJourneyModelTests \
+            -only-testing:KaidoRoutesAppTests/PreDriveEvidenceUpdateModelTests \
+            -only-testing:KaidoRoutesAppTests/ProductNavigationRuntimeModelTests \
+            -only-testing:KaidoRoutesAppTests/ProductPrivacyDisclosureTests \
+            -only-testing:KaidoRoutesAppTests/ReleasedProductRouteAuthoringModelTests \
+            -only-testing:KaidoRoutesAppTests/RouteAtlasAttributionTests \
+            -only-testing:KaidoRoutesAppTests/SavedRouteLibraryModelTests \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testFirstLocationPermissionRoundTripStartsTheSameLiveJourney \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testEntryTransitionRequiresOrderedObservationsBeforeExpressway \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testLiveJourneyContinuesWhenScreenLocksAndStopsWhenEnded \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testReleasedLiveRecoveryKeepsConsumingLocationUntilRouteRejoin \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
-            CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
-
-      - name: Critical route journey UI smoke
-        run: |
-          set -euo pipefail
-          xcodebuild test-without-building \
-            -project KaidoRoutesApp.xcodeproj \
-            -scheme KaidoRoutesApp \
-            -destination "id=${{ steps.simulator.outputs.device-id }}" \
-            -derivedDataPath "$RUNNER_TEMP/KaidoRoutesDerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/KaidoRoutesApp-smoke.xcresult" \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
             CODE_SIGNING_ALLOWED=NO \
-            | tee "$RUNNER_TEMP/KaidoRoutesApp-smoke.log"
+            | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
+          wait "$SIMULATOR_PID"
 
       - name: Upload App test diagnostics
         if: failure()
@@ -221,12 +197,7 @@ jobs:
         with:
           name: kaido-app-diagnostics-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/KaidoRoutesApp-build.log
-            ${{ runner.temp }}/KaidoRoutesApp-fast.log
-            ${{ runner.temp }}/KaidoRoutesApp-fast.xcresult
             ${{ runner.temp }}/KaidoRoutesApp-critical.log
             ${{ runner.temp }}/KaidoRoutesApp-critical.xcresult
-            ${{ runner.temp }}/KaidoRoutesApp-smoke.log
-            ${{ runner.temp }}/KaidoRoutesApp-smoke.xcresult
           if-no-files-found: warn
           retention-days: 7

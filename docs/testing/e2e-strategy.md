@@ -63,11 +63,12 @@ remain bound to the exact catalog and implementation bytes that were reviewed;
 whole-Shuto attribution is validated independently rather than rewriting those
 human-review bindings.
 
-The per-change `verify/app` job runs every fast App unit class, six critical
+The per-change `verify/app` job runs 11 critical App unit classes, six
 whole-Shuto App-model journeys, and one route-selection-to-live-navigation UI
-smoke on the newest iPhone 17 Pro Simulator. Its test build overlaps Simulator
-boot. The complete 33-pair foreground-product matrix stays in the deterministic
-compiler suite instead of being repeated through the asynchronous App model.
+smoke in one xcodebuild session on the newest iPhone 17 Pro Simulator. Simulator
+boot and location injection run alongside the test build. The complete 33-pair
+foreground-product matrix stays in the deterministic compiler suite instead of
+being repeated through the asynchronous App model.
 Documentation-only changes stop after the lightweight `verify/changes` path
 classification. Failed App runs retain raw xcodebuild logs and `.xcresult`
 bundles.

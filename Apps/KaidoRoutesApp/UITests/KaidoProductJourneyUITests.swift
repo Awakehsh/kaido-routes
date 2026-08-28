@@ -1397,10 +1397,16 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
     XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 3))
-    XCTAssertTrue(startLiveDrive.isEnabled)
+    let liveReady = XCTNSPredicateExpectation(
+      predicate: NSPredicate(
+        format: "isEnabled == true AND value == %@",
+        "AVAILABLE"
+      ),
+      object: startLiveDrive
+    )
     XCTAssertEqual(
-      startLiveDrive.value as? String,
-      "AVAILABLE"
+      XCTWaiter.wait(for: [liveReady], timeout: 15),
+      .completed
     )
     XCTAssertFalse(
       element("whole-shuto-live-drive-blocker", in: app).exists

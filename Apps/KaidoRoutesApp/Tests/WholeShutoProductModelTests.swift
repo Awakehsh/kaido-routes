@@ -575,9 +575,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     async throws
   {
     var nowMilliseconds = 1_000
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil,
+      liveLocationSource: locationSource,
       speechOutput: WholeShutoRecordingSpeechOutput(),
       nowMillisecondsProvider: { nowMilliseconds }
     )
@@ -779,9 +781,11 @@ final class WholeShutoProductModelTests: XCTestCase {
   {
     var nowMilliseconds = 1_000
     let output = WholeShutoRecordingSpeechOutput()
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil,
+      liveLocationSource: locationSource,
       speechOutput: output,
       nowMillisecondsProvider: { nowMilliseconds }
     )

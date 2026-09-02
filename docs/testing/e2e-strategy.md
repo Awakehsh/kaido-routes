@@ -74,13 +74,15 @@ classification. Failed App runs retain raw xcodebuild logs and `.xcresult`
 bundles.
 
 After the same commit passes `verify`, manually trigger the
-`iOS qualification` workflow for the intentionally slower gates: every App unit
-test, the focused five-journey primary suite, iPhone SE accessibility audits at
-Large and AX5, and a validated unsigned Release archive. It uploads the exact
+`iOS qualification` workflow for the intentionally slower gates: every default
+silent App unit test, the focused five-journey primary suite, iPhone SE
+accessibility audits at Large and AX5, and a validated unsigned Release archive. It uploads the exact
 archive as a short-lived artifact, but it does not claim signing,
 installation, road, acoustic, CarPlay, TestFlight, or App Store evidence.
 Physical-device qualification remains a separate local workflow because it
-requires the connected authorized phone and private output.
+requires the connected authorized phone and private output. Real audio tests
+are excluded from every default scheme and run only through the explicit
+`KaidoRoutesPhysicalAudioQualification` scheme.
 
 ## Portable scenario envelope
 

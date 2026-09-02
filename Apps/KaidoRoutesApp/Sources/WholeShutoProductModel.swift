@@ -534,7 +534,8 @@ final class WholeShutoProductModel: ObservableObject {
       resolver: surfaceRouteResolver
     )
     self.checkpointStore = checkpointStore
-    self.speechOutput = speechOutput ?? AVSpeechGuidanceOutput()
+    self.speechOutput =
+      speechOutput ?? AppGuidanceSpeechOutputFactory.make()
     self.liveJourneyAdmissions = liveJourneyAdmissions
     self.releasedForegroundRoutePlans =
       releasedForegroundRoutePlans

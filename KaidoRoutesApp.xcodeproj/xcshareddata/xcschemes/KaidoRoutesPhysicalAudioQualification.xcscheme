@@ -69,7 +69,8 @@
       <Testables>
          <TestableReference
             skipped = "NO"
-            parallelizable = "NO">
+            parallelizable = "NO"
+            useTestSelectionWhitelist = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8A994C962B4A54283040F521"
@@ -77,18 +78,19 @@
                BlueprintName = "KaidoRoutesAppTests"
                ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
+            <SelectedTests>
                <Test
                   Identifier = "PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()">
                </Test>
                <Test
                   Identifier = "PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()">
                </Test>
-            </SkippedTests>
+            </SelectedTests>
          </TestableReference>
          <TestableReference
             skipped = "NO"
-            parallelizable = "NO">
+            parallelizable = "NO"
+            useTestSelectionWhitelist = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2E41B89C294C6FC3E01F0274"
@@ -96,11 +98,11 @@
                BlueprintName = "KaidoRoutesAppUITests"
                ReferencedContainer = "container:KaidoRoutesApp.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
+            <SelectedTests>
                <Test
                   Identifier = "PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()">
                </Test>
-            </SkippedTests>
+            </SelectedTests>
          </TestableReference>
       </Testables>
       <CommandLineArguments>

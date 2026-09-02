@@ -252,7 +252,8 @@ final class ProductNavigationRuntimeModel: ObservableObject {
     entryTransitionAdapter = try CoreLocationEntryTransitionAdapter(
       context: runtime.entryTransitionAdmissionContext
     )
-    let resolvedSpeechOutput = speechOutput ?? AVSpeechGuidanceOutput()
+    let resolvedSpeechOutput =
+      speechOutput ?? AppGuidanceSpeechOutputFactory.make()
     speechCoordinator = try GuidanceSpeechCoordinator(
       expectedRoutePlanID: runtime.routePlanID,
       output: resolvedSpeechOutput

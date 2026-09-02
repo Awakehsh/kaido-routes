@@ -12,7 +12,7 @@ final class RouteAtlasAttributionUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let strip = app.descendants(matching: .any)[
       "route-atlas-attribution-strip"

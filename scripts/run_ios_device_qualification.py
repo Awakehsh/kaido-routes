@@ -24,7 +24,7 @@ EXPECTED_SCHEME = "KaidoRoutesApp"
 EXPECTED_BUNDLE_IDENTIFIER = "app.kaidoroutes.preview"
 RELEASE_SMOKE_SCHEME = "KaidoRoutesReleaseSmoke"
 RELEASE_BUNDLE_IDENTIFIER = "app.kaidoroutes"
-RECEIPT_SCHEMA_VERSION = "1.10"
+RECEIPT_SCHEMA_VERSION = "1.11"
 RECEIPT_CLASSIFICATION = "PRIVATE_COORDINATE_FREE_IOS_DEVICE_TEST"
 WHOLE_SHUTO_RESOURCE = "shuto-whole-network-20260804.json"
 C1_PRODUCT_RELEASE_RESOURCE = (
@@ -45,10 +45,6 @@ SCENIC_PRODUCT_RELEASE_RESOURCE = (
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"
     "testWholeShutoForegroundLocationStartsAndStopsThroughCoreLocation()"
-)
-REQUIRED_PHYSICAL_AUDIO_TEST = (
-    "PhysicalAudioQualificationUITests/"
-    "testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()"
 )
 REQUIRED_RELEASE_SMOKE_TEST = (
     "KaidoProductJourneyUITests/"
@@ -612,14 +608,6 @@ def validate_required_foreground_location_test(payload: Any) -> str:
     )
 
 
-def validate_required_physical_audio_test(payload: Any) -> str:
-    return validate_required_test(
-        payload,
-        REQUIRED_PHYSICAL_AUDIO_TEST,
-        "physical-audio lifecycle",
-    )
-
-
 def validate_required_release_smoke_test(payload: Any) -> str:
     return validate_required_test(
         payload,
@@ -829,7 +817,6 @@ def build_receipt(
             "scope": "COMPLETE_TRACKED_APP_TEST_SCHEME",
             "required_tests": [
                 REQUIRED_FOREGROUND_LOCATION_TEST,
-                REQUIRED_PHYSICAL_AUDIO_TEST,
             ],
             "tests": debug_baseline.counts,
             "evidence": receipt_evidence(debug_baseline),
@@ -889,8 +876,8 @@ def build_receipt(
             "app_physical_test_baseline": True,
             "release_configuration_device_smoke": True,
             "foreground_location_start_stop_smoke": True,
-            "installed_voice_lifecycle_smoke": True,
-            "physical_audio_route_lifecycle_smoke": True,
+            "installed_voice_lifecycle_smoke": False,
+            "physical_audio_route_lifecycle_smoke": False,
             "road_release_authority": False,
             "location_accuracy_qualified": False,
             "acoustic_quality_qualified": False,
@@ -1046,7 +1033,6 @@ def main() -> int:
                 artifact_stem="debug",
             )
             validate_required_foreground_location_test(debug_tests)
-            validate_required_physical_audio_test(debug_tests)
 
             release_build_settings = run_json_command(
                 release_build_settings_command(

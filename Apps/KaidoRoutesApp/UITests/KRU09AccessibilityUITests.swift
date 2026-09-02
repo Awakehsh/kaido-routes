@@ -12,7 +12,7 @@ final class KRU09AccessibilityUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
     XCTAssertTrue(
       element("whole-shuto-planning-dock", in: app)
         .waitForExistence(timeout: 5)
@@ -31,7 +31,7 @@ final class KRU09AccessibilityUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
     XCTAssertTrue(
       element("whole-shuto-route-selection", in: app)
         .waitForExistence(timeout: 5)
@@ -50,7 +50,7 @@ final class KRU09AccessibilityUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
     let panel = element("kr-u09-driving-panel", in: app)
     XCTAssertTrue(panel.waitForExistence(timeout: 5))
     XCTAssertTrue(

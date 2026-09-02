@@ -6,7 +6,7 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let activation = element("product-runtime-activation", in: app)
     XCTAssertTrue(activation.waitForExistence(timeout: 5))
@@ -42,7 +42,7 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let panel = app.descendants(matching: .any)[
       "synthetic-product-runtime-panel"
@@ -103,7 +103,7 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let activation = element("product-runtime-activation", in: app)
     XCTAssertTrue(activation.waitForExistence(timeout: 5))
@@ -158,7 +158,7 @@ final class ProductRuntimePreviewUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-PRODUCT-RUNTIME-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let activation = element("product-runtime-activation", in: app)
     XCTAssertTrue(activation.waitForExistence(timeout: 5))

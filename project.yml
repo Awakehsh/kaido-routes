@@ -164,8 +164,13 @@ schemes:
     test:
       config: Debug
       targets:
-        - KaidoRoutesAppTests
-        - KaidoRoutesAppUITests
+        - name: KaidoRoutesAppTests
+          skippedTests:
+            - PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()
+            - PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
+        - name: KaidoRoutesAppUITests
+          skippedTests:
+            - PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
     archive:
       config: Release
 
@@ -185,3 +190,24 @@ schemes:
       config: Release
     archive:
       config: Release
+
+  KaidoRoutesPhysicalAudioQualification:
+    build:
+      targets:
+        KaidoRoutesApp: all
+        KaidoRoutesAppTests:
+          - test
+        KaidoRoutesAppUITests:
+          - test
+    test:
+      config: Debug
+      targets:
+        - name: KaidoRoutesAppTests
+          selectedTests:
+            - PhysicalAudioQualificationTests/testGuidanceOutputStopsBeforeImmediateReplacement()
+            - PhysicalAudioQualificationTests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
+        - name: KaidoRoutesAppUITests
+          selectedTests:
+            - PhysicalAudioQualificationUITests/testInstalledVoicesCompleteThroughTheVoicePromptOutputRoute()
+    run:
+      config: Debug

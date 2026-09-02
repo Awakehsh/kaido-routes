@@ -247,7 +247,7 @@ final class KaidoRoutesAppModel: ObservableObject {
       )
       guidanceLanguagePreview = try GuidanceLanguagePreviewModel()
       syntheticDrivingPreview = try SyntheticDrivingPreviewModel()
-      let guidanceSpeechOutput = AVSpeechGuidanceOutput(
+      let guidanceSpeechOutput = AppGuidanceSpeechOutputFactory.make(
         preferredVoiceIdentifierProvider: {
           guidanceVoicePreferenceStore.identifier(for: $0)
         }
@@ -345,7 +345,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   func makeForegroundNavigationRuntime(
     for entry: BundledProductReleaseEntry
   ) throws -> ProductNavigationRuntimeModel {
-    let fallback = AVSpeechGuidanceOutput(
+    let fallback = AppGuidanceSpeechOutputFactory.make(
       preferredVoiceIdentifierProvider: {
         [guidanceVoicePreferenceStore] languageCode in
         guidanceVoicePreferenceStore.identifier(for: languageCode)
@@ -356,7 +356,9 @@ final class KaidoRoutesAppModel: ObservableObject {
       guidanceAudioSourcePreferenceStore.selectionID(
         for: entry.release.releaseID
       )
-    if let selectedAudioID,
+    if AppGuidanceSpeechOutputFactory.isSilent {
+      speechOutput = fallback
+    } else if let selectedAudioID,
       let choice = entry.guidanceAudioChoices.first(where: {
         $0.selectionID == selectedAudioID
       })
@@ -391,7 +393,7 @@ final class KaidoRoutesAppModel: ObservableObject {
   }
 
   func makeDemoRehearsalRuntime() throws -> ProductNavigationRuntimeModel {
-    let speechOutput = AVSpeechGuidanceOutput(
+    let speechOutput = AppGuidanceSpeechOutputFactory.make(
       preferredVoiceIdentifierProvider: {
         [guidanceVoicePreferenceStore] languageCode in
         guidanceVoicePreferenceStore.identifier(for: languageCode)

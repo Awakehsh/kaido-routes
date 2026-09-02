@@ -13,7 +13,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     XCTAssertTrue(
       element("whole-shuto-product", in: app)
@@ -147,7 +147,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "en",
     ]
-    app.launch()
+    app.launchSilently()
     returnWholeShutoToPlanning(in: app)
 
     let settings = element("whole-shuto-settings", in: app)
@@ -213,7 +213,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let product = element("whole-shuto-product", in: app)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
@@ -236,7 +236,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    nextLaunch.launch()
+    nextLaunch.launchSilently()
     XCTAssertTrue(
       element("whole-shuto-planning-dock", in: nextLaunch)
         .waitForExistence(timeout: 5)
@@ -257,7 +257,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     // The circuit review opens on the whole-route track map: one frame,
     // no zoom, replacing the semantic-zoom network diagram.
@@ -293,7 +293,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let customEntry = element("whole-shuto-custom-from-home", in: app)
     XCTAssertTrue(customEntry.waitForExistence(timeout: 8))
@@ -372,7 +372,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let product = element("whole-shuto-product", in: app)
     XCTAssertTrue(product.waitForExistence(timeout: 8))
@@ -433,7 +433,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let circuitCard = element(
       "whole-shuto-circuit-option-shuto.circuit.c2-inner-bayshore",
@@ -492,7 +492,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     // The destination composer is a collapsed optional continuation.
     let destinationToggle = element(
@@ -620,7 +620,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    authoringApp.launch()
+    authoringApp.launchSilently()
 
     let product = element("whole-shuto-product", in: authoringApp)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
@@ -675,7 +675,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    reopeningApp.launch()
+    reopeningApp.launchSilently()
 
     let savedRoutes = element(
       "whole-shuto-saved-routes",
@@ -747,7 +747,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
-    app.launch()
+    app.launchSilently()
 
     let destinationToggle = element(
       "whole-shuto-destination-toggle",
@@ -788,7 +788,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
-    app.launch()
+    app.launchSilently()
 
     let surfaceStatus = element(
       "whole-shuto-surface-route-status",
@@ -829,7 +829,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
-    app.launch()
+    app.launchSilently()
 
     let product = element("whole-shuto-product", in: app)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
@@ -878,7 +878,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
-    app.launch()
+    app.launchSilently()
 
     let product = element("whole-shuto-product", in: app)
     let playback = app.buttons["whole-shuto-preview-playback"]
@@ -925,7 +925,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    routeApp.launch()
+    routeApp.launchSilently()
 
     let product = element("whole-shuto-product", in: routeApp)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
@@ -1083,7 +1083,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    junctionApp.launch()
+    junctionApp.launchSilently()
     XCTAssertTrue(
       element("whole-shuto-geographic-map", in: junctionApp)
         .waitForExistence(timeout: 5)
@@ -1116,7 +1116,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    navigationApp.launch()
+    navigationApp.launchSilently()
     // Expressway navigation now opens on the track map; once it appears,
     // switch to the geographic presentation to exercise its follow/free
     // camera.
@@ -1214,7 +1214,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let junctionInset = element(
       "whole-shuto-junction-inset",
@@ -1254,7 +1254,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let junctionInset = element(
       "whole-shuto-junction-inset",
@@ -1294,7 +1294,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let junctionInset = element(
       "whole-shuto-junction-inset",
@@ -1336,7 +1336,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let locationState = element(
       "whole-shuto-planning-location-state",
@@ -1524,7 +1524,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "en",
     ]
-    app.launch()
+    app.launchSilently()
 
     let circuit = element(
       "whole-shuto-circuit-option-\(circuitID)",
@@ -1595,7 +1595,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     XCTAssertTrue(
       app.staticTexts["都心环状线 内环"]
@@ -1801,7 +1801,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "zh-Hans",
     ]
-    app.launch()
+    app.launchSilently()
 
     let route = reveal("product-route-option-c2-complete", in: app)
     XCTAssertEqual(route.value as? String, "RESTORABLE")
@@ -1860,7 +1860,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.map-projection.v2",
       "geographic",
     ]
-    app.launch()
+    app.launchSilently()
     return app
   }
 

@@ -6,7 +6,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-C2-FULL-NAVIGATION-DEMO"]
-    app.launch()
+    app.launchSilently()
 
     let navigation = element("c2-full-navigation", in: app)
     XCTAssertTrue(navigation.waitForExistence(timeout: 5))
@@ -59,7 +59,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-C2-FULL-NAVIGATION-DEMO"]
-    app.launch()
+    app.launchSilently()
 
     let navigation = element("c2-full-navigation", in: app)
     XCTAssertTrue(navigation.waitForExistence(timeout: 5))
@@ -91,7 +91,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    kasaiApp.launch()
+    kasaiApp.launchSilently()
     let kasaiInset = element("product-junction-inset", in: kasaiApp)
     XCTAssertTrue(kasaiInset.waitForExistence(timeout: 5))
     XCTAssertTrue(
@@ -119,7 +119,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    oiApp.launch()
+    oiApp.launchSilently()
     let oiInset = element("product-junction-inset", in: oiApp)
     XCTAssertTrue(oiInset.waitForExistence(timeout: 5))
     XCTAssertTrue(
@@ -152,7 +152,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-C2-NAVIGATION-EGRESS-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let navigation = element("c2-full-navigation", in: app)
     XCTAssertTrue(navigation.waitForExistence(timeout: 5))
@@ -176,7 +176,7 @@ final class C2RouteMapDemoUITests: XCTestCase {
       "-app.kaidoroutes.language.guidance-voice",
       "ja-JP",
     ]
-    app.launch()
+    app.launchSilently()
 
     let demo = element("c2-completed-route-demo", in: app)
     XCTAssertTrue(demo.waitForExistence(timeout: 5))

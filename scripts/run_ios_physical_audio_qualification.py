@@ -14,7 +14,6 @@ from typing import Any, Sequence
 from run_ios_device_qualification import (
     DeviceQualificationError,
     EXPECTED_BUNDLE_IDENTIFIER,
-    EXPECTED_SCHEME,
     PhysicalIOSDevice,
     clean_source_commit,
     encoded_json,
@@ -31,6 +30,7 @@ from run_ios_device_qualification import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+PHYSICAL_AUDIO_SCHEME = "KaidoRoutesPhysicalAudioQualification"
 RECEIPT_SCHEMA_VERSION = "1.0"
 RECEIPT_CLASSIFICATION = (
     "PRIVATE_COORDINATE_FREE_IOS_PHYSICAL_AUDIO_TEST"
@@ -103,7 +103,7 @@ def xcodebuild_command(
         "-project",
         str(repository_root / "KaidoRoutesApp.xcodeproj"),
         "-scheme",
-        EXPECTED_SCHEME,
+        PHYSICAL_AUDIO_SCHEME,
         "-destination",
         f"platform=iOS,id={device_id}",
         "-derivedDataPath",
@@ -167,7 +167,7 @@ def build_receipt(
         "classification": RECEIPT_CLASSIFICATION,
         "source": {
             "commit": source_commit,
-            "scheme": EXPECTED_SCHEME,
+            "scheme": PHYSICAL_AUDIO_SCHEME,
             "test_target": "KaidoRoutesAppTests",
             "required_test": REQUIRED_PHYSICAL_AUDIO_TEST,
             "bundle_identifier": EXPECTED_BUNDLE_IDENTIFIER,

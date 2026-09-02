@@ -1,6 +1,6 @@
 # iOS physical-device Debug baseline and Release smoke
 
-`scripts/run_ios_device_qualification.py` first runs the complete Debug
+`scripts/run_ios_device_qualification.py` first runs the default silent Debug
 `KaidoRoutesApp` test scheme, then runs one information/privacy UI smoke through
 the Release-only `KaidoRoutesReleaseSmoke` scheme on the same exact online
 physical iPhone. It retains separate private result bundles for both parts. It
@@ -8,7 +8,8 @@ exists so a Simulator result, an offline device listing, a dirty checkout, an
 incomplete Debug baseline, or a Debug-only result cannot be reported as the
 physical-device App qualification.
 
-This is an App baseline only. Even a passing receipt grants no road-release,
+Real audio tests are excluded from this default scheme. This is an App baseline
+only. Even a passing receipt grants no road-release,
 acoustic-quality, pronunciation, CarPlay, lock-screen location-delivery,
 background-speech, location-accuracy, or driver-comprehension authority.
 
@@ -79,28 +80,24 @@ The runner:
    appear exactly once and pass; the test starts the exact released live
    journey, presses Home, returns to the App, and rejects a stopped or
    resume-required session;
-7. requires the parked Japanese, Simplified Chinese, and English voice-prompt
-   lifecycle UI test to appear exactly once and pass with an installed voice,
-   start/finish callbacks, `.playback + .voicePrompt`, and a non-empty physical
-   output route for every sample;
-8. resolves the formal App build settings from `KaidoRoutesReleaseSmoke` and
+7. resolves the formal App build settings from `KaidoRoutesReleaseSmoke` and
    fails unless they report `Release`, bundle identifier `app.kaidoroutes`, and
    `ENABLE_TESTABILITY=NO`;
-9. rebuilds with separate derived data and runs only
+8. rebuilds with separate derived data and runs only
    `testWholeShutoInformationExposesPrivacyPolicyAndBuildVersion()` through the
    Release scheme on the same device; that test first finishes or ends any
    persisted unfinished preview through the public UI, so prior App-container
    state cannot hide the information surface;
-10. requires that Release result to contain exactly that one passing test with
+9. requires that Release result to contain exactly that one passing test with
     zero failures, skips, or expected failures;
-11. runs `validate_ios_release_bundle.py` against the exact
+10. runs `validate_ios_release_bundle.py` against the exact
     `Release-iphoneos/KaidoRoutes.app` produced for that device and binds its
     version, build, whole-Shuto snapshot, privacy manifest, software licence,
     map-data licence notice, and full App-tree hashes into the receipt;
-12. independently hashes each `.xcresult` tree, canonical summary, canonical
+11. independently hashes each `.xcresult` tree, canonical summary, canonical
     test tree, and build log, and also hashes the private Release build-settings
     and bundle-validation payloads; and
-13. writes `qualification-run.json` only after both parts and the exact Release
+12. writes `qualification-run.json` only after both parts and the exact Release
     bundle validation pass.
 
 The Release smoke uses development-device signing so XCTest can install it. It
@@ -112,15 +109,9 @@ overwritten.
 
 ## Independent App-hosted audio run
 
-The combined runner remains the preferred gate because it binds the complete
-Debug unit/UI baseline, Release configuration smoke, planning-to-live Core
-Location handoff, foreground-started App-switch lifecycle, and physical audio
-lifecycle to one commit and device configuration. It does not prove that
-location fixes or speech were delivered while backgrounded. If the device's XCTest UI
-Automation
-service cannot start, `scripts/run_ios_physical_audio_qualification.py` can
-collect the audio lifecycle independently without weakening or replacing that
-gate:
+The default App baseline never activates the speaker. Run
+`scripts/run_ios_physical_audio_qualification.py` only when physical audio
+evidence is intentionally needed:
 
 ```sh
 python3 scripts/run_ios_physical_audio_qualification.py \
@@ -148,7 +139,7 @@ App-baseline claim.
 
 ## Coordinate-free receipt
 
-The combined receipt uses schema 1.10. `qualification-run.json` retains:
+The combined receipt uses schema 1.11. `qualification-run.json` retains:
 
 - source commit and clean-worktree fact;
 - opaque configuration ID, iPhone model, iOS version, and physical-device fact;
@@ -168,10 +159,10 @@ The combined receipt uses schema 1.10. `qualification-run.json` retains:
 It excludes the device identifier, device name, coordinates, raw location
 traces, raw audio, and filesystem paths. The combined-run authority matrix
 records the complete physical App baseline, Release-configuration device smoke,
-exact planning-to-live/App-switch lifecycle, installed-voice lifecycle, and
-physical audio-route lifecycle smokes as true. The independent audio-run matrix
-records only the latter two as true. Both deliberately keep location accuracy,
-road release, acoustic quality, pronunciation, CarPlay, lock-screen fix/audio
+and exact planning-to-live/App-switch lifecycle as true while keeping audio
+lifecycle false. The independent audio-run matrix records only installed-voice
+and physical audio-route lifecycle as true. Both deliberately keep location
+accuracy, road release, acoustic quality, pronunciation, CarPlay, lock-screen fix/audio
 delivery, and App Store distribution-signature qualification false. A callback and output
 port prove that the technical route was active; they do not prove that a person
 heard, understood, or approved the sound.

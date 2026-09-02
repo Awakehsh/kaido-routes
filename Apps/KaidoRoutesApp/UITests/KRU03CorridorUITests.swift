@@ -6,7 +6,7 @@ final class KRU03CorridorUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = ["-KR-U03-CORRIDOR-PREVIEW"]
-    app.launch()
+    app.launchSilently()
 
     let panel = app.descendants(matching: .any)["kr-u03-editor-panel"]
     XCTAssertTrue(panel.waitForExistence(timeout: 5))

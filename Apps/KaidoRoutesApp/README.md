@@ -31,6 +31,12 @@ whole-Shuto product journey rather than the internal evidence workbench:
    keeps that active navigation session running through lock screen and app
    switching.
 
+The planning panel can be collapsed and reopened by tap or drag without losing
+the selected route. Place completion merges bundled direction-valid Shuto ICs
+ahead of MapKit results for both manual origins and destinations. The custom
+route editor waits for an origin, pins its current entry and exit at the leading
+edge, and exposes searchable nearby candidates with direction and distance.
+
 A saved record labeled `CURRENT SNAPSHOT` has had its complete ordered
 `RoutePlan` reconstructed against the exact bundled graph, including repeats
 and circuit laps. Circuit source, ID, and lap metadata must reproduce that same

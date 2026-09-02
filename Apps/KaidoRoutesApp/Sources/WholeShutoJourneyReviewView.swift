@@ -42,7 +42,7 @@ struct WholeShutoJourneyReviewView: View {
     }
     .background(KaidoTheme.nightPanel)
     .presentationDetents([.fraction(0.86), .large])
-    .presentationDragIndicator(.hidden)
+    .presentationDragIndicator(.visible)
     .presentationCornerRadius(24)
     .presentationBackground(KaidoTheme.nightPanel)
     .presentationContentInteraction(.scrolls)
@@ -90,7 +90,7 @@ struct WholeShutoJourneyReviewView: View {
         Image(systemName: "xmark")
           .font(.system(size: 12, weight: .black))
           .foregroundStyle(KaidoTheme.routeWhite)
-          .frame(width: 38, height: 38)
+          .frame(width: 44, height: 44)
           .background(KaidoTheme.nightRaised)
           .clipShape(Circle())
           .overlay {

@@ -36,6 +36,9 @@ struct WholeShutoProductView: View {
   @State private var showsEndJourneyConfirmation = false
   @State private var resumesAfterEndJourneyCancellation = false
   @State private var isPreparingEndJourneyConfirmation = false
+  @State private var isPlanningDockExpanded = true
+  @GestureState private var planningDockDragOffset: CGFloat = 0
+  @State private var waitsForCustomRouteLocation = false
   @State private var pendingSavedRouteRecordID: String?
   @State private var savedRouteOpenErrorCode: String?
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
@@ -60,7 +63,11 @@ struct WholeShutoProductView: View {
         planningLocation ?? WholeShutoPlanningLocationController()
     )
     _placeSearch = StateObject(
-      wrappedValue: placeSearch ?? WholeShutoPlaceSearchController()
+      wrappedValue:
+        placeSearch
+        ?? WholeShutoPlaceSearchController(
+          localPlaces: Self.localSearchPlaces(in: resolvedModel.database)
+        )
     )
     _savedRoutes = StateObject(
       wrappedValue:
@@ -124,6 +131,7 @@ struct WholeShutoProductView: View {
         languageSettings: languageSettings,
         checkedAt: model.database.checkedAt
       )
+      .presentationDragIndicator(.visible)
       .environment(
         \.kaidoInterfaceLocale,
         languageSettings.interfaceLocale
@@ -166,22 +174,25 @@ struct WholeShutoProductView: View {
       planningLocation.setForeground(scenePhase == .active && !newValue)
     }
     .onChange(of: model.destinationQuery, initial: true) {
-      updateDestinationSearch()
+      updatePlanningPlaceSearch()
+    }
+    .onChange(of: model.originQuery, initial: true) {
+      updatePlanningPlaceSearch()
     }
     .onChange(of: focusedPlanningField) { _, newField in
-      if newField == .destination {
-        updateDestinationSearch()
+      if newField != nil {
+        updatePlanningPlaceSearch()
       } else {
         placeSearch.dismissResults()
       }
     }
     .onChange(of: planningLocation.snapshot?.coordinate.latitude) {
       handlePlanningLocationUpdate()
-      updateDestinationSearch()
+      updatePlanningPlaceSearch()
     }
     .onChange(of: planningLocation.snapshot?.coordinate.longitude) {
       handlePlanningLocationUpdate()
-      updateDestinationSearch()
+      updatePlanningPlaceSearch()
     }
     .onChange(of: planningLocation.state) {
       handlePlanningLocationUpdate()
@@ -190,6 +201,37 @@ struct WholeShutoProductView: View {
 
   private var isLandscape: Bool {
     verticalSizeClass == .compact
+  }
+
+  static func localSearchPlaces(
+    in database: ShutoNetworkDatabase
+  ) -> [(WholeShutoPlaceSuggestion, WholeShutoPlace)] {
+    database.directionalFacilities.map { facility in
+      var accessRoles: [String] = []
+      if facility.canEnter {
+        accessRoles.append(
+          "入口 \(facility.entranceDirections.joined(separator: " / "))"
+        )
+      }
+      if facility.canExit {
+        accessRoles.append(
+          "出口 \(facility.exitDirections.joined(separator: " / "))"
+        )
+      }
+      let accessText = accessRoles.isEmpty
+        ? ""
+        : " · \(accessRoles.joined(separator: " · "))"
+      let title = "\(facility.nameJA) IC"
+      return (
+        WholeShutoPlaceSuggestion(
+          id: "shuto-facility:\(facility.facilityID)",
+          title: title,
+          subtitle: "\(shieldLabel(facility.routeID))\(accessText)",
+          isShutoFacility: true
+        ),
+        WholeShutoPlace(title: title, coordinate: facility.coordinate)
+      )
+    }
   }
 
   /// Starts the live drive and location session together from the foreground.
@@ -472,7 +514,11 @@ struct WholeShutoProductView: View {
   }
 
   private var mapVisibleBottomFraction: Double {
-    isLandscape ? 0.94 : isDriving ? 0.92 : 0.66
+    isLandscape
+      ? 0.94
+      : isDriving
+        ? 0.92
+        : isPlanningDockExpanded ? 0.66 : 0.88
   }
 
   private var networkOverviewInitialZoom: Double {
@@ -541,7 +587,7 @@ struct WholeShutoProductView: View {
       } label: {
         Image(systemName: isActiveNavigation ? "xmark" : "chevron.left")
           .font(.system(size: 14, weight: .black))
-          .frame(width: 38, height: 38)
+          .frame(width: 44, height: 44)
       }
       .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
       .accessibilityLabel(
@@ -588,7 +634,7 @@ struct WholeShutoProductView: View {
       } label: {
         Image(systemName: "gearshape")
           .font(.system(size: 14, weight: .black))
-          .frame(width: 38, height: 38)
+          .frame(width: 44, height: 44)
       }
       .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
       .accessibilityLabel(
@@ -680,10 +726,16 @@ struct WholeShutoProductView: View {
 
   private var planningDock: some View {
     VStack(spacing: 0) {
-      if model.phase == .planning {
-        routeComposer
+      planningDockHandle
+
+      if isPlanningDockExpanded {
+        if model.phase == .planning {
+          routeComposer
+        } else {
+          routeReview
+        }
       } else {
-        routeReview
+        compactPlanningDockContent
       }
     }
     .background(KaidoTheme.nightPanel)
@@ -693,15 +745,149 @@ struct WholeShutoProductView: View {
         topTrailingRadius: 20
       )
     )
-    .overlay(alignment: .top) {
-      Capsule()
-        .fill(KaidoTheme.roadGray.opacity(0.65))
-        .frame(width: 36, height: 4)
-        .padding(.top, 8)
-    }
     .shadow(color: .black.opacity(0.16), radius: 18, y: -3)
+    .offset(y: planningDockInteractiveOffset)
+    .animation(
+      .spring(response: 0.28, dampingFraction: 0.86),
+      value: isPlanningDockExpanded
+    )
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-planning-dock")
+    .accessibilityValue(
+      isPlanningDockExpanded ? "EXPANDED" : "COLLAPSED"
+    )
+  }
+
+  private var planningDockHandle: some View {
+    VStack(spacing: 5) {
+      Capsule()
+        .fill(KaidoTheme.roadGray.opacity(0.72))
+        .frame(width: 42, height: 5)
+      Image(
+        systemName: isPlanningDockExpanded
+          ? "chevron.down" : "chevron.up"
+      )
+      .font(.system(size: 10, weight: .black))
+      .foregroundStyle(KaidoTheme.nightQuiet)
+    }
+    .frame(maxWidth: .infinity, minHeight: 44)
+    .contentShape(Rectangle())
+    .onTapGesture {
+      setPlanningDockExpanded(!isPlanningDockExpanded)
+    }
+    .gesture(planningDockDragGesture)
+    .accessibilityElement(children: .ignore)
+    .accessibilityAddTraits(.isButton)
+    .accessibilityAction {
+      setPlanningDockExpanded(!isPlanningDockExpanded)
+    }
+    .accessibilityLabel(
+      copy.resolve(
+        japanese: isPlanningDockExpanded ? "パネルを閉じる" : "パネルを開く",
+        simplifiedChinese: isPlanningDockExpanded ? "收起面板" : "展开面板",
+        english: isPlanningDockExpanded ? "Collapse panel" : "Expand panel"
+      )
+    )
+    .accessibilityIdentifier("whole-shuto-planning-dock-handle")
+  }
+
+  private var compactPlanningDockContent: some View {
+    Button {
+      setPlanningDockExpanded(true)
+    } label: {
+      HStack(spacing: 12) {
+        Image(
+          systemName: model.phase == .planning
+            ? "point.3.connected.trianglepath.dotted"
+            : "road.lanes"
+        )
+        .font(.system(size: 17, weight: .bold))
+        .foregroundStyle(KaidoTheme.routeGreen)
+        .frame(width: 34, height: 34)
+        .background(KaidoTheme.routeGreen.opacity(0.16))
+        .clipShape(Circle())
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(compactPlanningDockTitle)
+            .font(.body.weight(.black))
+            .foregroundStyle(KaidoTheme.routeWhite)
+          Text(compactPlanningDockDetail)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(KaidoTheme.nightQuiet)
+            .lineLimit(1)
+        }
+        Spacer(minLength: 8)
+        Image(systemName: "chevron.up")
+          .font(.system(size: 12, weight: .black))
+          .foregroundStyle(KaidoTheme.nightQuiet)
+      }
+      .padding(.horizontal, 16)
+      .padding(.bottom, 14)
+      .frame(maxWidth: .infinity, minHeight: 64)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("whole-shuto-planning-dock-summary")
+  }
+
+  private var compactPlanningDockTitle: String {
+    if model.phase == .planning {
+      return model.selectedCircuit?.displayName(
+        for: languageSettings.interfaceLocale
+      )
+        ?? copy.resolve(
+          japanese: "ルートを選ぶ",
+          simplifiedChinese: "选择路线",
+          english: "Choose a route"
+        )
+    }
+    return routeSummaryTitle
+  }
+
+  private var compactPlanningDockDetail: String {
+    if let entry = model.circuitEntryFacility,
+      let exit = model.circuitExitFacility,
+      model.phase == .planning
+    {
+      return "\(entry.nameJA) → \(exit.nameJA)"
+    }
+    if model.phase == .review {
+      return "\(routeSummarySubtitle) · "
+        + distanceLabel(model.selectedRoute?.distanceMeters ?? 0)
+    }
+    return planningLocationLongLabel
+  }
+
+  private var planningDockInteractiveOffset: CGFloat {
+    if isPlanningDockExpanded {
+      return max(0, planningDockDragOffset)
+    }
+    return min(0, planningDockDragOffset)
+  }
+
+  private var planningDockDragGesture: some Gesture {
+    DragGesture(minimumDistance: 6)
+      .updating($planningDockDragOffset) { value, state, _ in
+        state = value.translation.height
+      }
+      .onEnded { value in
+        if value.translation.height > 36 {
+          setPlanningDockExpanded(false)
+        } else if value.translation.height < -36 {
+          setPlanningDockExpanded(true)
+        }
+      }
+  }
+
+  private func setPlanningDockExpanded(_ expanded: Bool) {
+    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+      isPlanningDockExpanded = expanded
+      if !expanded {
+        showsDestinationComposer = false
+        focusedPlanningField = nil
+        placeSearch.dismissResults()
+      }
+    }
   }
 
   private var routeComposer: some View {
@@ -724,7 +910,7 @@ struct WholeShutoProductView: View {
       routeFailureBanner
     }
     .padding(.horizontal, 16)
-    .padding(.top, 22)
+    .padding(.top, 4)
     .padding(.bottom, 14)
   }
 
@@ -868,7 +1054,7 @@ struct WholeShutoProductView: View {
     }
     .background(KaidoTheme.nightPanel)
     .presentationDetents([.large])
-    .presentationDragIndicator(.hidden)
+    .presentationDragIndicator(.visible)
     .presentationBackground(KaidoTheme.nightPanel)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-saved-route-sheet")
@@ -916,25 +1102,53 @@ struct WholeShutoProductView: View {
     Button {
       if let snapshot = planningLocation.snapshot {
         model.selectCurrentOrigin(snapshot.coordinate)
+        openCustomRouteEditor()
+      } else if model.origin != nil {
+        openCustomRouteEditor()
+      } else if !model.usesCurrentLocationOrigin,
+        !model.originQuery.trimmingCharacters(
+          in: .whitespacesAndNewlines
+        ).isEmpty
+      {
+        resolveManualOriginForCustomRoute()
+      } else if planningLocation.state == .denied
+        || planningLocation.state == .unavailable
+      {
+        showsManualOrigin = true
+        showsDestinationComposer = true
+        focusedPlanningField = .origin
       } else {
+        waitsForCustomRouteLocation = true
         planningLocation.requestCurrentLocation()
+        handlePlanningLocationUpdate()
       }
-      model.prepareCustomRouteDraft()
-      showsRouteCustomization = true
     } label: {
       HStack(spacing: 6) {
-        Image(systemName: "slider.horizontal.3")
-          .font(.system(size: 10, weight: .black))
-        Text(
-          copy.resolve(
-            japanese: "カスタム · 入口と出口を指定",
-            simplifiedChinese: "自定义 · 指定入口和出口",
-            english: "CUSTOM · EXACT ENTRY AND EXIT"
+        if waitsForCustomRouteLocation {
+          ProgressView()
+            .controlSize(.small)
+            .tint(KaidoTheme.positionCyan)
+          Text(
+            copy.resolve(
+              japanese: "近くの入口を確認中",
+              simplifiedChinese: "正在查找附近入口",
+              english: "Finding nearby entrances"
+            )
           )
-        )
-        Spacer()
-        Image(systemName: "chevron.right")
-          .font(.system(size: 9, weight: .black))
+        } else {
+          Image(systemName: "slider.horizontal.3")
+            .font(.system(size: 10, weight: .black))
+          Text(
+            copy.resolve(
+              japanese: "カスタム · 入口と出口を指定",
+              simplifiedChinese: "自定义 · 指定入口和出口",
+              english: "CUSTOM · EXACT ENTRY AND EXIT"
+            )
+          )
+          Spacer()
+          Image(systemName: "chevron.right")
+            .font(.system(size: 9, weight: .black))
+        }
       }
       .font(.system(size: 10, weight: .bold))
       .foregroundStyle(KaidoTheme.nightQuiet)
@@ -942,7 +1156,30 @@ struct WholeShutoProductView: View {
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .disabled(waitsForCustomRouteLocation)
     .accessibilityIdentifier("whole-shuto-custom-from-home")
+  }
+
+  private func openCustomRouteEditor() {
+    waitsForCustomRouteLocation = false
+    model.prepareCustomRouteDraft()
+    showsRouteCustomization = true
+  }
+
+  private func resolveManualOriginForCustomRoute() {
+    waitsForCustomRouteLocation = true
+    focusedPlanningField = nil
+    placeSearch.dismissResults()
+    Task {
+      if await model.resolveTypedOriginPreview() {
+        openCustomRouteEditor()
+      } else {
+        waitsForCustomRouteLocation = false
+        showsManualOrigin = true
+        showsDestinationComposer = true
+        focusedPlanningField = .origin
+      }
+    }
   }
 
   /// The route's silhouette in the card, drawn from the precomputed
@@ -1090,6 +1327,8 @@ struct WholeShutoProductView: View {
           Image(systemName: "xmark.circle.fill")
             .font(.system(size: 16))
             .foregroundStyle(.secondary)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("whole-shuto-circuit-close")
@@ -1251,6 +1490,16 @@ struct WholeShutoProductView: View {
         let exit = model.circuitExitFacility
       {
         VStack(alignment: .leading, spacing: 4) {
+          HStack(spacing: 5) {
+            Image(
+              systemName: model.circuitEntranceWasOverridden
+                ? "hand.tap.fill" : "location.fill"
+            )
+            Text(circuitPairingReasonLabel)
+          }
+          .font(.caption.weight(.black))
+          .foregroundStyle(KaidoTheme.positionCyan)
+
           HStack(spacing: 6) {
             Text(entry.nameJA)
               .font(.system(size: 13, weight: .bold))
@@ -1286,15 +1535,15 @@ struct WholeShutoProductView: View {
               Text(
                 copy.resolve(
                   japanese: String(
-                    format: "入口まで約%.1fkm",
+                    format: "直線約%.1fkm",
                     meters / 1000
                   ),
                   simplifiedChinese: String(
-                    format: "到入口约 %.1f km",
+                    format: "直线约 %.1f km",
                     meters / 1000
                   ),
                   english: String(
-                    format: "≈ %.1f km to entrance",
+                    format: "≈ %.1f km straight-line",
                     meters / 1000
                   )
                 )
@@ -1343,6 +1592,27 @@ struct WholeShutoProductView: View {
     }
   }
 
+  private var circuitPairingReasonLabel: String {
+    if model.circuitEntranceWasOverridden {
+      return copy.resolve(
+        japanese: "選択した入口と出口",
+        simplifiedChinese: "已选择的入口和出口",
+        english: "Selected entry and exit"
+      )
+    }
+    return model.usesCurrentLocationOrigin
+      ? copy.resolve(
+        japanese: "現在地からおすすめ",
+        simplifiedChinese: "根据当前位置推荐",
+        english: "Recommended from current location"
+      )
+      : copy.resolve(
+        japanese: "出発地からおすすめ",
+        simplifiedChinese: "根据出发地推荐",
+        english: "Recommended from origin"
+      )
+  }
+
   private func circuitEntranceRow(
     _ facility: ShutoNetworkDatabase.Facility
   ) -> some View {
@@ -1363,6 +1633,35 @@ struct WholeShutoProductView: View {
         Text(facility.entranceDirections.joined(separator: "・"))
           .font(.system(size: 10.5, weight: .semibold))
           .foregroundStyle(.secondary)
+        if let origin = model.origin {
+          Text(
+            copy.resolve(
+              japanese: "直線 \(distanceLabel(distance(origin.coordinate, facility.coordinate)))",
+              simplifiedChinese:
+                "直线 \(distanceLabel(distance(origin.coordinate, facility.coordinate)))",
+              english:
+                "\(distanceLabel(distance(origin.coordinate, facility.coordinate))) straight-line"
+            )
+          )
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+          .monospacedDigit()
+        }
+        if isSelected {
+          Text(
+            copy.resolve(
+              japanese: "選択中",
+              simplifiedChinese: "已选",
+              english: "SELECTED"
+            )
+          )
+          .font(.caption2.weight(.black))
+          .foregroundStyle(KaidoTheme.night)
+          .padding(.horizontal, 5)
+          .padding(.vertical, 2)
+          .background(KaidoTheme.positionCyan)
+          .clipShape(Capsule())
+        }
         if facility.etcOnly {
           Text("ETC")
             .font(.system(size: 9, weight: .bold))
@@ -1392,6 +1691,18 @@ struct WholeShutoProductView: View {
     .buttonStyle(.plain)
     .accessibilityIdentifier(
       "whole-shuto-circuit-entrance-\(facility.facilityID)"
+    )
+  }
+
+  private func distance(
+    _ lhs: ShutoCoordinate,
+    _ rhs: ShutoCoordinate
+  ) -> Double {
+    CLLocation(
+      latitude: lhs.latitude,
+      longitude: lhs.longitude
+    ).distance(
+      from: CLLocation(latitude: rhs.latitude, longitude: rhs.longitude)
     )
   }
 
@@ -1524,8 +1835,6 @@ struct WholeShutoProductView: View {
         }
       }
 
-      destinationSearchResults
-
       if showsManualOrigin
         || planningLocation.state == .denied
         || planningLocation.state == .unavailable
@@ -1556,6 +1865,8 @@ struct WholeShutoProductView: View {
         }
       }
 
+      planningPlaceSearchResults
+
       planRouteButton(
         title: copy.resolve(
           japanese: "ルートを検索",
@@ -1573,8 +1884,8 @@ struct WholeShutoProductView: View {
   }
 
   @ViewBuilder
-  private var destinationSearchResults: some View {
-    if focusedPlanningField == .destination {
+  private var planningPlaceSearchResults: some View {
+    if focusedPlanningField != nil {
       switch placeSearch.state {
       case .searching, .resolving:
         HStack(spacing: 8) {
@@ -1603,18 +1914,35 @@ struct WholeShutoProductView: View {
         VStack(spacing: 0) {
           ForEach(placeSearch.suggestions.prefix(4)) { suggestion in
             Button {
-              selectDestinationSuggestion(suggestion)
+              selectPlanningSuggestion(suggestion)
             } label: {
               HStack(spacing: 10) {
-                Image(systemName: "mappin")
-                  .font(.system(size: 11, weight: .bold))
-                  .foregroundStyle(KaidoTheme.routeGreen)
-                  .frame(width: 24)
+                Image(
+                  systemName: suggestion.isShutoFacility
+                    ? "road.lanes" : "mappin"
+                )
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(
+                  suggestion.isShutoFacility
+                    ? KaidoTheme.positionCyan : KaidoTheme.routeGreen
+                )
+                .frame(width: 24)
                 VStack(alignment: .leading, spacing: 1) {
-                  Text(suggestion.title)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(KaidoTheme.routeWhite)
-                    .lineLimit(1)
+                  HStack(spacing: 6) {
+                    Text(suggestion.title)
+                      .font(.system(size: 13, weight: .bold))
+                      .foregroundStyle(KaidoTheme.routeWhite)
+                      .lineLimit(1)
+                    if suggestion.isShutoFacility {
+                      Text("SHUTO")
+                        .font(.system(size: 8, weight: .black, design: .rounded))
+                        .foregroundStyle(KaidoTheme.night)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(KaidoTheme.positionCyan)
+                        .clipShape(Capsule())
+                    }
+                  }
                   if !suggestion.subtitle.isEmpty {
                     Text(suggestion.subtitle)
                       .font(.system(size: 9, weight: .medium))
@@ -1806,6 +2134,10 @@ struct WholeShutoProductView: View {
     {
       model.selectCurrentOrigin(snapshot.coordinate)
       model.refreshCircuitEntrances()
+      if waitsForCustomRouteLocation {
+        openCustomRouteEditor()
+        return
+      }
       if let pendingSavedRouteRecordID,
         let record = savedRoutes.record(id: pendingSavedRouteRecordID)
       {
@@ -1823,8 +2155,10 @@ struct WholeShutoProductView: View {
       return
     }
 
-    guard waitsForPlanningLocation || waitsForCircuitLocation
-      || pendingSavedRouteRecordID != nil
+    guard
+      waitsForPlanningLocation || waitsForCircuitLocation
+        || waitsForCustomRouteLocation
+        || pendingSavedRouteRecordID != nil
     else {
       return
     }
@@ -1836,6 +2170,7 @@ struct WholeShutoProductView: View {
       }
       waitsForPlanningLocation = false
       waitsForCircuitLocation = false
+      waitsForCustomRouteLocation = false
       showsManualOrigin = true
       showsDestinationComposer = true
       focusedPlanningField = .origin
@@ -1927,7 +2262,7 @@ struct WholeShutoProductView: View {
       routeReviewAction
     }
     .padding(.horizontal, 16)
-    .padding(.top, 22)
+    .padding(.top, 4)
     .padding(.bottom, 12)
   }
 
@@ -3525,36 +3860,62 @@ struct WholeShutoProductView: View {
     }
   }
 
-  private func updateDestinationSearch() {
+  private func updatePlanningPlaceSearch() {
     guard
       model.phase == .planning,
-      focusedPlanningField == .destination
+      let focusedPlanningField
     else {
       placeSearch.dismissResults()
       return
     }
-    if model.hasSelectedDestinationPreview {
+    if focusedPlanningField == .destination,
+      model.hasSelectedDestinationPreview
+    {
       placeSearch.dismissResults()
       return
     }
-    if model.destination != nil {
+    if focusedPlanningField == .origin,
+      model.hasSelectedOriginPreview
+    {
+      placeSearch.dismissResults()
+      return
+    }
+    if focusedPlanningField == .origin,
+      model.origin != nil,
+      !model.usesCurrentLocationOrigin
+    {
+      model.clearOriginPreview()
+    }
+    if focusedPlanningField == .destination, model.destination != nil {
       model.clearDestinationPreview()
     }
     placeSearch.clearSelection()
     placeSearch.update(
-      query: model.destinationQuery,
-      near: planningLocation.snapshot?.coordinate
+      query:
+        focusedPlanningField == .origin
+        ? model.originQuery : model.destinationQuery,
+      near:
+        planningLocation.snapshot?.coordinate
+        ?? model.origin?.coordinate
     )
   }
 
-  private func selectDestinationSuggestion(
+  private func selectPlanningSuggestion(
     _ suggestion: WholeShutoPlaceSuggestion
   ) {
+    guard let field = focusedPlanningField else { return }
     Task {
       do {
         let place = try await placeSearch.resolve(suggestion)
-        model.selectDestinationPreview(place)
-        focusedPlanningField = nil
+        if field == .origin {
+          model.selectOriginPreview(place)
+          showsManualOrigin = true
+          model.refreshCircuitEntrances()
+          focusedPlanningField = .destination
+        } else {
+          model.selectDestinationPreview(place)
+          focusedPlanningField = nil
+        }
       } catch {
         // The typed query remains available for the normal route-search path.
       }
@@ -3771,6 +4132,8 @@ private struct WholeShutoCustomRouteSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
+  @State private var entryQuery = ""
+  @State private var exitQuery = ""
 
   var body: some View {
     VStack(spacing: 0) {
@@ -3789,7 +4152,9 @@ private struct WholeShutoCustomRouteSheet: View {
             candidates: model.customEntryCandidates,
             selectedFacilityID: model.customEntryFacilityID,
             usesEntranceDirection: true,
-            identifierPrefix: "whole-shuto-custom-entry"
+            identifierPrefix: "whole-shuto-custom-entry",
+            query: $entryQuery,
+            referenceCoordinate: model.origin?.coordinate
           ) {
             model.selectCustomEntry(facilityID: $0)
           }
@@ -3803,7 +4168,10 @@ private struct WholeShutoCustomRouteSheet: View {
             candidates: model.customExitCandidates,
             selectedFacilityID: model.customExitFacilityID,
             usesEntranceDirection: false,
-            identifierPrefix: "whole-shuto-custom-exit"
+            identifierPrefix: "whole-shuto-custom-exit",
+            query: $exitQuery,
+            referenceCoordinate:
+              model.destination?.coordinate ?? model.origin?.coordinate
           ) {
             model.selectCustomExit(facilityID: $0)
           }
@@ -3817,8 +4185,8 @@ private struct WholeShutoCustomRouteSheet: View {
       applyButton
     }
     .background(KaidoTheme.nightPanel)
-    .presentationDetents([.height(520), .large])
-    .presentationDragIndicator(.hidden)
+    .presentationDetents([.fraction(0.82), .large])
+    .presentationDragIndicator(.visible)
     .presentationCornerRadius(26)
     .presentationBackground(KaidoTheme.nightPanel)
     .accessibilityElement(children: .contain)
@@ -3857,7 +4225,7 @@ private struct WholeShutoCustomRouteSheet: View {
         Image(systemName: "xmark")
           .font(.system(size: 13, weight: .black))
           .foregroundStyle(KaidoTheme.routeWhite)
-          .frame(width: 36, height: 36)
+          .frame(width: 44, height: 44)
           .background(KaidoTheme.nightRaised)
           .clipShape(Circle())
           .overlay {
@@ -3946,87 +4314,231 @@ private struct WholeShutoCustomRouteSheet: View {
     selectedFacilityID: String?,
     usesEntranceDirection: Bool,
     identifierPrefix: String,
+    query: Binding<String>,
+    referenceCoordinate: ShutoCoordinate?,
     onSelect: @escaping (String) -> Void
   ) -> some View {
-    VStack(alignment: .leading, spacing: 7) {
-      Text(title)
-        .font(.system(size: 9, weight: .black, design: .rounded))
+    let normalizedQuery = query.wrappedValue.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    let matchingCandidates = candidates.filter { facility in
+      normalizedQuery.isEmpty
+        || facility.nameJA.localizedCaseInsensitiveContains(normalizedQuery)
+        || shieldLabel(facility.routeID)
+          .localizedCaseInsensitiveContains(normalizedQuery)
+        || (facility.entranceDirections + facility.exitDirections)
+          .contains {
+            $0.localizedCaseInsensitiveContains(normalizedQuery)
+          }
+    }
+    let visibleCandidates =
+      normalizedQuery.isEmpty
+      ? Array(matchingCandidates.prefix(12))
+      : matchingCandidates
+
+    return VStack(alignment: .leading, spacing: 7) {
+      HStack {
+        Text(title)
+          .font(.caption.weight(.black))
+          .fontDesign(.rounded)
+          .foregroundStyle(KaidoTheme.nightQuiet)
+        Spacer()
+        Text(
+          copy.resolve(
+            japanese: "近い順 · 選択中を先頭表示",
+            simplifiedChinese: "按距离排序 · 已选项置顶",
+            english: "Nearest first · selection pinned"
+          )
+        )
+        .font(.caption2.weight(.semibold))
         .foregroundStyle(KaidoTheme.nightQuiet)
+      }
 
-      ScrollView(.horizontal) {
+      HStack(spacing: 8) {
+        Image(systemName: "magnifyingglass")
+          .font(.system(size: 13, weight: .bold))
+          .foregroundStyle(KaidoTheme.positionCyan)
+        TextField(
+          copy.resolve(
+            japanese: "IC名または路線番号",
+            simplifiedChinese: "搜索 IC 名称或路线编号",
+            english: "Search IC or route"
+          ),
+          text: query
+        )
+        .font(.body.weight(.semibold))
+        .foregroundStyle(KaidoTheme.routeWhite)
+        .textInputAutocapitalization(.characters)
+        .autocorrectionDisabled()
+        if !normalizedQuery.isEmpty {
+          Button {
+            query.wrappedValue = ""
+          } label: {
+            Image(systemName: "xmark.circle.fill")
+              .foregroundStyle(KaidoTheme.nightQuiet)
+              .frame(width: 32, height: 32)
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(
+            copy.resolve(
+              japanese: "検索を消去",
+              simplifiedChinese: "清除搜索",
+              english: "Clear search"
+            )
+          )
+        }
+      }
+      .padding(.horizontal, 12)
+      .frame(minHeight: 46)
+      .background(KaidoTheme.nightRaised)
+      .clipShape(RoundedRectangle(cornerRadius: 11))
+      .overlay {
+        RoundedRectangle(cornerRadius: 11)
+          .stroke(KaidoTheme.nightDivider, lineWidth: 1)
+      }
+      .accessibilityIdentifier("\(identifierPrefix)-search")
+
+      if visibleCandidates.isEmpty {
         HStack(spacing: 8) {
-          ForEach(candidates) { facility in
-            let isSelected =
-              facility.facilityID == selectedFacilityID
-            Button {
-              onSelect(facility.facilityID)
-            } label: {
-              VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                  Text(shieldLabel(facility.routeID))
-                    .font(.system(size: 9, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .frame(height: 19)
-                    .background(routeColor(facility.routeID))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+          Image(systemName: "magnifyingglass")
+          Text(
+            normalizedQuery.isEmpty
+              ? copy.resolve(
+                japanese: "出発地を選ぶと候補を表示します",
+                simplifiedChinese: "选择出发地后显示候选",
+                english: "Choose an origin to see candidates"
+              )
+              : copy.resolve(
+                japanese: "一致するICがありません",
+                simplifiedChinese: "没有匹配的 IC",
+                english: "No matching IC"
+              )
+          )
+        }
+        .font(.body.weight(.semibold))
+        .foregroundStyle(KaidoTheme.signalAmber)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .accessibilityIdentifier("\(identifierPrefix)-empty")
+      } else {
+        ScrollViewReader { proxy in
+          ScrollView(.horizontal) {
+            LazyHStack(spacing: 8) {
+              ForEach(visibleCandidates) { facility in
+                let isSelected =
+                  facility.facilityID == selectedFacilityID
+                Button {
+                  onSelect(facility.facilityID)
+                } label: {
+                  VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 5) {
+                      Text(shieldLabel(facility.routeID))
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .frame(height: 19)
+                        .background(routeColor(facility.routeID))
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
 
-                  Spacer()
+                      Spacer()
 
-                  if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                      .font(.system(size: 11, weight: .black))
-                      .foregroundStyle(tint)
+                      if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                          .font(.system(size: 11, weight: .black))
+                          .foregroundStyle(tint)
+                      }
+                    }
+
+                    Text(facility.nameJA)
+                      .font(.system(size: 13, weight: .black))
+                      .foregroundStyle(KaidoTheme.routeWhite)
+                      .lineLimit(1)
+
+                    Text(
+                      facilityDirection(
+                        facility,
+                        usesEntranceDirection: usesEntranceDirection
+                      )
+                    )
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(KaidoTheme.nightQuiet)
+                    .lineLimit(1)
+
+                    if let referenceCoordinate {
+                      Text(
+                        facilityDistanceLabel(
+                          facility,
+                          from: referenceCoordinate
+                        )
+                      )
+                      .font(.caption2.weight(.bold))
+                      .foregroundStyle(
+                        isSelected
+                          ? tint : KaidoTheme.nightQuiet
+                      )
+                      .monospacedDigit()
+                    }
+                  }
+                  .padding(.horizontal, 10)
+                  .frame(width: 132, height: 78, alignment: .leading)
+                  .background(
+                    isSelected ? tint.opacity(0.13) : KaidoTheme.nightRaised
+                  )
+                  .clipShape(RoundedRectangle(cornerRadius: 11))
+                  .overlay {
+                    RoundedRectangle(cornerRadius: 11)
+                      .stroke(
+                        isSelected ? tint : KaidoTheme.nightDivider,
+                        lineWidth: isSelected ? 2 : 1
+                      )
                   }
                 }
-
-                Text(facility.nameJA)
-                  .font(.system(size: 13, weight: .black))
-                  .foregroundStyle(KaidoTheme.routeWhite)
-                  .lineLimit(1)
-
-                Text(
-                  facilityDirection(
-                    facility,
-                    usesEntranceDirection: usesEntranceDirection
-                  )
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(
+                  "\(facility.nameJA), \(shieldLabel(facility.routeID)), "
+                    + facilityDirection(
+                      facility,
+                      usesEntranceDirection: usesEntranceDirection
+                    )
                 )
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(KaidoTheme.nightQuiet)
-                .lineLimit(1)
-              }
-              .padding(.horizontal, 10)
-              .frame(width: 124, height: 64, alignment: .leading)
-              .background(
-                isSelected ? tint.opacity(0.13) : KaidoTheme.nightRaised
-              )
-              .clipShape(RoundedRectangle(cornerRadius: 11))
-              .overlay {
-                RoundedRectangle(cornerRadius: 11)
-                  .stroke(
-                    isSelected ? tint : KaidoTheme.nightDivider,
-                    lineWidth: isSelected ? 2 : 1
-                  )
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityIdentifier(
+                  "\(identifierPrefix)-\(facility.facilityID)"
+                )
+                .id(facility.facilityID)
               }
             }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(
-              "\(facility.nameJA), \(shieldLabel(facility.routeID)), "
-                + facilityDirection(
-                  facility,
-                  usesEntranceDirection: usesEntranceDirection
-                )
-            )
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-            .accessibilityIdentifier(
-              "\(identifierPrefix)-\(facility.facilityID)"
-            )
+          }
+          .scrollIndicators(.visible)
+          .onAppear {
+            guard let selectedFacilityID else { return }
+            proxy.scrollTo(selectedFacilityID, anchor: .leading)
+          }
+          .onChange(of: selectedFacilityID) { _, facilityID in
+            guard let facilityID else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+              proxy.scrollTo(facilityID, anchor: .leading)
+            }
           }
         }
       }
-      .scrollIndicators(.hidden)
     }
+  }
+
+  private func facilityDistanceLabel(
+    _ facility: ShutoNetworkDatabase.Facility,
+    from reference: ShutoCoordinate
+  ) -> String {
+    let meters = CLLocation(
+      latitude: reference.latitude,
+      longitude: reference.longitude
+    ).distance(
+      from: CLLocation(
+        latitude: facility.coordinate.latitude,
+        longitude: facility.coordinate.longitude
+      )
+    )
+    return distanceLabel(meters)
   }
 
   private var preferenceSelector: some View {

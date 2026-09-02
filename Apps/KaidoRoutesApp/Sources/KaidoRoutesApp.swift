@@ -568,14 +568,27 @@ private final class WholeShutoSearchPreviewLocationProvider:
 }
 
 private struct WholeShutoLocationDeniedPreviewHost: View {
-  @StateObject private var model = WholeShutoProductModel(
-    checkpointStore: nil
-  )
-  @StateObject private var planningLocation =
-    WholeShutoPlanningLocationController(previewState: .denied)
-  @StateObject private var placeSearch = WholeShutoPlaceSearchController(
-    previewPlaces: []
-  )
+  @StateObject private var model: WholeShutoProductModel
+  @StateObject private var planningLocation: WholeShutoPlanningLocationController
+  @StateObject private var placeSearch: WholeShutoPlaceSearchController
+
+  init() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    _model = StateObject(wrappedValue: model)
+    _planningLocation = StateObject(
+      wrappedValue: WholeShutoPlanningLocationController(
+        previewState: .denied
+      )
+    )
+    _placeSearch = StateObject(
+      wrappedValue: WholeShutoPlaceSearchController(
+        localPlaces: WholeShutoProductView.localSearchPlaces(
+          in: model.database
+        ),
+        usesMapKit: false
+      )
+    )
+  }
 
   var body: some View {
     WholeShutoProductView(

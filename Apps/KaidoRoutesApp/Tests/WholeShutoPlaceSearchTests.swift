@@ -40,6 +40,32 @@ final class WholeShutoPlaceSearchTests: XCTestCase {
     XCTAssertEqual(controller.state, .idle)
   }
 
+  func testBundledShutoFacilityAppearsBeforeMapKitSuggestions() async throws {
+    let shibaura = WholeShutoPlace(
+      title: "芝浦 IC",
+      coordinate: ShutoCoordinate(
+        latitude: 35.6415,
+        longitude: 139.7555
+      )
+    )
+    let suggestion = WholeShutoPlaceSuggestion(
+      id: "shuto-facility:shuto.ic.1.shibaura",
+      title: "芝浦 IC",
+      subtitle: "1 · 入口 内回り",
+      isShutoFacility: true
+    )
+    let controller = WholeShutoPlaceSearchController(
+      localPlaces: [(suggestion, shibaura)]
+    )
+
+    controller.update(query: "芝浦", near: nil)
+
+    XCTAssertEqual(controller.state, .results)
+    XCTAssertEqual(controller.suggestions.first, suggestion)
+    let selected = try await controller.resolve(suggestion)
+    XCTAssertEqual(selected, shibaura)
+  }
+
   private func makeController() -> WholeShutoPlaceSearchController {
     WholeShutoPlaceSearchController(
       previewPlaces: [

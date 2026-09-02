@@ -65,6 +65,10 @@ survives only inside the advanced custom entry.
 The origin chip uses current location only after explicit permission. It also
 supports a manually entered origin and previously selected origins. If
 permission is denied, saved and manually selected routes remain available.
+Manual origin and destination fields share one completion surface. Exact
+directional ICs from the bundled snapshot appear before MapKit address and POI
+suggestions, keep their selected coordinate through planning, and remain
+available when MapKit completion is unavailable.
 Entrance recommendation reuses the measured coordinate shown by the origin
 chip. If a measurement is still pending, the recommendation action shows that
 it is locating and continues automatically when the coordinate arrives; it
@@ -151,6 +155,13 @@ pairing the named experiences do not cover. It expands into a map-anchored
 route editor rather than replacing the map
 with a separate home mode. It lets the parked user pin one nearby
 direction-valid entrance, one nearby direction-valid exit, and a route style.
+The editor waits for its explicit current-location request before opening; a
+denied or unavailable request returns to the manual origin field. Entry and
+exit candidates are distance ordered from the route's origin (or destination
+when editing an existing point-to-point journey), keep the current selection at
+the leading edge, show direction and straight-line distance, and can be filtered
+by IC name or route shield. Empty filters and unavailable origins explain the
+next action instead of rendering an unlabeled blank row.
 The editor previews the concrete route shields and distance before **Use this
 route** applies a new exact `RoutePlan`. Opening or dismissing the editor
 never marks a draft as selected. Selecting another option immediately clears
@@ -210,8 +221,12 @@ legs open on the geographic map), and the driver may override it at any time.
 While planning, the diagram carries the driver's current position, the selected
 circuit's member routes at full color over a receded rest-of-network, and the
 derived entrance and exit marks; these marks are presentation only and carry no
-guidance authority. A bottom sheet contains the current ordered route and the
-next legal action.
+guidance authority. A bottom panel contains the current ordered route and the
+next legal action. Its visible handle is functional: pulling down or tapping it
+collapses the panel to a route summary and pulling up reopens it, preserving map
+access without discarding the draft. Modal Settings, saved-route, custom-route,
+and journey-review sheets retain explicit Close or Done actions and visible
+system drag indicators.
 
 The track map is the route overview: the entire selected route stays in one
 readable frame, drawn as one stylized continuous line in the manner of a

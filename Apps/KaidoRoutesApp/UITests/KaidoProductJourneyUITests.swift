@@ -202,6 +202,37 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testSettingsSheetCanBePulledDownAndReopened() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launchSilently()
+
+    let settings = element("whole-shuto-settings", in: app)
+    XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    settings.tap()
+    let form = element("whole-shuto-settings-form", in: app)
+    XCTAssertTrue(form.waitForExistence(timeout: 3))
+
+    let sheetTop = app.coordinate(
+      withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)
+    )
+    let sheetBottom = app.coordinate(
+      withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88)
+    )
+    sheetTop.press(forDuration: 0.05, thenDragTo: sheetBottom)
+    XCTAssertTrue(form.waitForNonExistence(timeout: 3))
+
+    settings.tap()
+    XCTAssertTrue(form.waitForExistence(timeout: 3))
+    app.buttons["whole-shuto-settings-done"].tap()
+    XCTAssertTrue(form.waitForNonExistence(timeout: 3))
+  }
+
   func testCorruptWholeShutoCheckpointStaysParkedAndClearsResumeData() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -302,6 +333,34 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-custom-route-preview", in: app)
         .waitForExistence(timeout: 8)
     )
+    XCTAssertTrue(
+      element("whole-shuto-custom-entry-search", in: app).exists
+    )
+    XCTAssertTrue(
+      element("whole-shuto-custom-exit-search", in: app).exists
+    )
+    let entryCandidates = app.buttons.matching(
+      NSPredicate(
+        format: "identifier BEGINSWITH %@",
+        "whole-shuto-custom-entry-shuto.ic."
+      )
+    )
+    let exitCandidates = app.buttons.matching(
+      NSPredicate(
+        format: "identifier BEGINSWITH %@",
+        "whole-shuto-custom-exit-shuto.ic."
+      )
+    )
+    XCTAssertGreaterThan(entryCandidates.count, 0)
+    XCTAssertGreaterThan(exitCandidates.count, 0)
+    XCTAssertTrue(entryCandidates.firstMatch.isSelected)
+    XCTAssertTrue(exitCandidates.firstMatch.isSelected)
+    let customCandidatesScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    customCandidatesScreenshot.name = "Nearby custom entry and exit candidates"
+    customCandidatesScreenshot.lifetime = .keepAlways
+    add(customCandidatesScreenshot)
     let apply = element("whole-shuto-apply-custom-route", in: app)
     XCTAssertTrue(apply.waitForExistence(timeout: 8))
     // The apply action stays disabled until the current-location origin
@@ -322,6 +381,35 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-route-selection", in: app)
         .waitForExistence(timeout: 8)
+    )
+  }
+
+  func testPlanningDockCanCollapseAndReopenByDrag() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-RESET-SAVED-ROUTES",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launchSilently()
+
+    let dock = element("whole-shuto-planning-dock", in: app)
+    let handle = element("whole-shuto-planning-dock-handle", in: app)
+    XCTAssertTrue(handle.waitForExistence(timeout: 5))
+    XCTAssertEqual(dock.value as? String, "EXPANDED")
+
+    handle.swipeDown(velocity: .fast)
+    XCTAssertEqual(dock.value as? String, "COLLAPSED")
+    XCTAssertTrue(
+      element("whole-shuto-planning-dock-summary", in: app).exists
+    )
+
+    handle.swipeUp(velocity: .fast)
+    XCTAssertEqual(dock.value as? String, "EXPANDED")
+    XCTAssertTrue(
+      element("whole-shuto-circuit-experiences", in: app).exists
     )
   }
 
@@ -450,10 +538,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-start-circuit", in: app).exists
     )
-    XCTAssertTrue(
-      element("whole-shuto-circuit-pairing", in: app)
-        .waitForExistence(timeout: 15)
-    )
+    let pairing = element("whole-shuto-circuit-pairing", in: app)
+    XCTAssertTrue(pairing.waitForExistence(timeout: 15))
+    XCTAssertTrue(pairing.label.contains("根据当前位置推荐"))
     XCTAssertTrue(
       element("whole-shuto-circuit-pairing-tariff", in: app)
         .waitForExistence(timeout: 10)
@@ -604,6 +691,76 @@ final class KaidoProductJourneyUITests: XCTestCase {
     reviewScreenshot.name = "Whole Shuto pre-drive journey review"
     reviewScreenshot.lifetime = .keepAlways
     add(reviewScreenshot)
+  }
+
+  func testDestinationSearchPrefersBundledDirectionalIC() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-CUSTOM-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launchSilently()
+
+    let destinationToggle = element(
+      "whole-shuto-destination-toggle",
+      in: app
+    )
+    XCTAssertTrue(destinationToggle.waitForExistence(timeout: 5))
+    destinationToggle.tap()
+    let destination = app.textFields[
+      "whole-shuto-destination-search"
+    ]
+    XCTAssertTrue(destination.waitForExistence(timeout: 5))
+    destination.tap()
+    destination.typeText("芝浦")
+
+    let bundledIC = app.buttons[
+      "whole-shuto-place-suggestion-shuto-facility:shuto.ic.1-haneda.shibaura"
+    ]
+    XCTAssertTrue(bundledIC.waitForExistence(timeout: 5))
+    XCTAssertTrue(bundledIC.label.contains("芝浦 IC"))
+    XCTAssertTrue(bundledIC.label.contains("1"))
+  }
+
+  func testCustomRouteFallsBackToASearchableManualOrigin() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-LOCATION-DENIED-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+    ]
+    app.launchSilently()
+
+    let customRoute = element("whole-shuto-custom-from-home", in: app)
+    XCTAssertTrue(customRoute.waitForExistence(timeout: 5))
+    customRoute.tap()
+    let origin = app.textFields["whole-shuto-manual-origin"]
+    XCTAssertTrue(origin.waitForExistence(timeout: 3))
+    origin.tap()
+    origin.typeText("芝浦")
+
+    let bundledIC = app.buttons[
+      "whole-shuto-place-suggestion-shuto-facility:shuto.ic.1-haneda.shibaura"
+    ]
+    XCTAssertTrue(bundledIC.waitForExistence(timeout: 5))
+    bundledIC.tap()
+
+    customRoute.tap()
+    XCTAssertTrue(
+      element("whole-shuto-custom-route-preview", in: app)
+        .waitForExistence(timeout: 5)
+    )
+    XCTAssertFalse(
+      element("whole-shuto-custom-entry-empty", in: app).exists
+    )
+    XCTAssertFalse(
+      element("whole-shuto-custom-exit-empty", in: app).exists
+    )
   }
 
   func testWholeShutoSavedRoutePersistsAndReopensInCurrentSnapshot() {

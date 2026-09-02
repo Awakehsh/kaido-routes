@@ -351,6 +351,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitExitFacilityID: String?
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
   @Published private(set) var circuitEntranceDistanceMeters: Double?
+  @Published private(set) var circuitEntranceWasOverridden = false
   @Published private(set) var circuitThumbnailsByID: [String: [CGPoint]] =
     [:]
   @Published private(set) var isResolvingCircuitPairing = false
@@ -446,6 +447,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var consumedGuidancePromptIDs: Set<String> = []
   private var surfaceSpeechGeneration = 0
   private var isStaticJunctionPreview = false
+  private var selectedOriginTitle: String?
   private var selectedDestinationTitle: String?
   private var selectedSavedRouteTemplateParameters: [String: String]?
   private var trackMapCacheKey: String?
@@ -1148,6 +1150,12 @@ final class WholeShutoProductModel: ObservableObject {
       && selectedDestinationTitle == destinationQuery
   }
 
+  var hasSelectedOriginPreview: Bool {
+    phase == .planning
+      && origin != nil
+      && selectedOriginTitle == originQuery
+  }
+
   var customEntryCandidates: [ShutoNetworkDatabase.Facility] {
     rankedCustomFacilities(
       from: origin?.coordinate,
@@ -1158,7 +1166,10 @@ final class WholeShutoProductModel: ObservableObject {
 
   var customExitCandidates: [ShutoNetworkDatabase.Facility] {
     rankedCustomFacilities(
-      from: destination?.coordinate,
+      // A home-authored custom route is a round trip. Its destination is
+      // intentionally committed only when the draft is applied, so the
+      // origin is also the correct reference for nearby exits while editing.
+      from: destination?.coordinate ?? origin?.coordinate,
       selectedFacilityID: customExitFacilityID,
       isEligible: \.canExit
     )
@@ -1780,8 +1791,41 @@ final class WholeShutoProductModel: ObservableObject {
     mapMode = .geographic
   }
 
+  func selectOriginPreview(_ place: WholeShutoPlace) {
+    guard phase == .planning else { return }
+    origin = place
+    originQuery = place.title
+    selectedOriginTitle = place.title
+  }
+
+  @discardableResult
+  func resolveTypedOriginPreview() async -> Bool {
+    guard phase == .planning, !usesCurrentLocationOrigin else { return false }
+    do {
+      let resolved = try await placeResolver.resolve(
+        query: originQuery,
+        near: nil
+      )
+      selectOriginPreview(
+        WholeShutoPlace(
+          title: resolved.title,
+          coordinate: ShutoCoordinate(
+            latitude: resolved.coordinate.latitude,
+            longitude: resolved.coordinate.longitude
+          )
+        )
+      )
+      failureCode = nil
+      return true
+    } catch {
+      failureCode = "LOCATION_UNAVAILABLE"
+      return false
+    }
+  }
+
   func selectCurrentOrigin(_ coordinate: ShutoCoordinate) {
     guard phase == .planning, usesCurrentLocationOrigin else { return }
+    selectedOriginTitle = nil
     origin = WholeShutoPlace(
       title: "現在地",
       coordinate: coordinate
@@ -1792,6 +1836,14 @@ final class WholeShutoProductModel: ObservableObject {
     guard phase == .planning else { return }
     destination = nil
     selectedDestinationTitle = nil
+  }
+
+  func clearOriginPreview() {
+    guard phase == .planning else { return }
+    selectedOriginTitle = nil
+    if !usesCurrentLocationOrigin {
+      origin = nil
+    }
   }
 
   func preparePreviewJourney(startsNavigation: Bool = false) {
@@ -2104,6 +2156,7 @@ final class WholeShutoProductModel: ObservableObject {
     circuitExitFacilityID = nil
     circuitPairingBand = nil
     circuitEntranceDistanceMeters = nil
+    circuitEntranceWasOverridden = false
     circuitTariffBandsByFacilityID = [:]
     resolveCircuitPairing(
       entranceOverride: releasedEntranceFacilityID(for: circuit)
@@ -2138,6 +2191,7 @@ final class WholeShutoProductModel: ObservableObject {
     circuitExitFacilityID = nil
     circuitPairingBand = nil
     circuitEntranceDistanceMeters = nil
+    circuitEntranceWasOverridden = false
     isResolvingCircuitPairing = false
     startsCircuitJourneyAfterPairing = false
     circuitLaps = 1
@@ -2163,6 +2217,7 @@ final class WholeShutoProductModel: ObservableObject {
         where: { $0.facilityID == facilityID }
       )
     else { return }
+    circuitEntranceWasOverridden = true
     resolveCircuitPairing(entranceOverride: facilityID)
   }
 
@@ -2468,13 +2523,19 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func selectCustomEntry(facilityID: String) {
-    guard facility(id: facilityID)?.canEnter == true else { return }
+    guard let facility = facility(id: facilityID),
+      facility.canEnter,
+      facility.operationalStatus == "AVAILABLE"
+    else { return }
     customEntryFacilityID = facilityID
     refreshCustomRouteDraft()
   }
 
   func selectCustomExit(facilityID: String) {
-    guard facility(id: facilityID)?.canExit == true else { return }
+    guard let facility = facility(id: facilityID),
+      facility.canExit,
+      facility.operationalStatus == "AVAILABLE"
+    else { return }
     customExitFacilityID = facilityID
     refreshCustomRouteDraft()
   }
@@ -4816,6 +4877,12 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func resolveOrigin() async throws -> WholeShutoPlace {
+    let normalized = originQuery.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
+    if selectedOriginTitle == normalized, let origin {
+      return origin
+    }
     if Self.isCurrentLocationQuery(originQuery) {
       if let origin {
         return origin
@@ -5045,7 +5112,10 @@ final class WholeShutoProductModel: ObservableObject {
   ) -> [ShutoNetworkDatabase.Facility] {
     guard let coordinate else { return [] }
     let ranked = database.directionalFacilities
-      .filter { $0[keyPath: isEligible] }
+      .filter {
+        $0[keyPath: isEligible]
+          && $0.operationalStatus == "AVAILABLE"
+      }
       .sorted {
         let leftDistance = Self.distance(coordinate, $0.coordinate)
         let rightDistance = Self.distance(coordinate, $1.coordinate)
@@ -5054,16 +5124,15 @@ final class WholeShutoProductModel: ObservableObject {
         }
         return $0.facilityID < $1.facilityID
       }
-    var result = Array(ranked.prefix(8))
-    if let selectedFacilityID,
-      !result.contains(where: { $0.facilityID == selectedFacilityID }),
+    guard let selectedFacilityID,
       let selected = ranked.first(where: {
         $0.facilityID == selectedFacilityID
       })
-    {
-      result.append(selected)
+    else {
+      return ranked
     }
-    return result
+    return [selected]
+      + ranked.filter { $0.facilityID != selectedFacilityID }
   }
 
   private func primaryRouteID(

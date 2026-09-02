@@ -1118,6 +1118,72 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  func testHomeCustomRouteOffersOriginRankedEntryAndExitCandidatesBeforeApply() {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6586, longitude: 139.7454)
+    )
+
+    model.prepareCustomRouteDraft()
+
+    XCTAssertNil(model.destination)
+    XCTAssertGreaterThan(model.customEntryCandidates.count, 8)
+    XCTAssertGreaterThan(model.customExitCandidates.count, 8)
+    XCTAssertEqual(
+      model.customEntryCandidates.first?.facilityID,
+      model.customEntryFacilityID
+    )
+    XCTAssertEqual(
+      model.customExitCandidates.first?.facilityID,
+      model.customExitFacilityID
+    )
+  }
+
+  func testSelectedOriginCoordinateIsReusedWithoutAnotherPlaceLookup() async {
+    let resolver = WholeShutoRecordingPlaceResolver()
+    let model = WholeShutoProductModel(
+      placeResolver: resolver,
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    let selectedOrigin = WholeShutoPlace(
+      title: "東京駅丸の内口",
+      coordinate: ShutoCoordinate(
+        latitude: 35.6812,
+        longitude: 139.7649
+      )
+    )
+    model.selectOriginPreview(selectedOrigin)
+    model.destinationQuery = "横浜中華街"
+
+    model.planJourney()
+    for _ in 0..<1_000 where model.isPlanning {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(resolver.queries, ["横浜中華街"])
+    XCTAssertEqual(model.origin, selectedOrigin)
+    XCTAssertEqual(model.phase, .review)
+  }
+
+  func testTypedManualOriginCanOpenTheCustomRouteFlow() async {
+    let resolver = WholeShutoRecordingPlaceResolver()
+    let model = WholeShutoProductModel(
+      placeResolver: resolver,
+      checkpointStore: nil
+    )
+    model.originQuery = "東京駅"
+
+    let resolved = await model.resolveTypedOriginPreview()
+    XCTAssertTrue(resolved)
+    model.prepareCustomRouteDraft()
+
+    XCTAssertEqual(resolver.queries, ["東京駅"])
+    XCTAssertTrue(model.hasSelectedOriginPreview)
+    XCTAssertFalse(model.customEntryCandidates.isEmpty)
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+  }
+
   func testRecommendedAndCustomRoutesExposeCurrentTariffBand() throws {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()
@@ -3535,6 +3601,27 @@ extension WholeShutoJourneyCheckpoint {
       circuitLaps: circuitLaps,
       runtimeAssetIdentity: runtimeAssetIdentity,
       liveNavigationCheckpoint: liveNavigationCheckpoint
+    )
+  }
+}
+
+@MainActor
+private final class WholeShutoRecordingPlaceResolver:
+  C2NavigationPlaceResolving
+{
+  private(set) var queries: [String] = []
+
+  func resolve(
+    query: String,
+    near _: SurfaceCoordinate?
+  ) async throws -> C2NavigationResolvedPlace {
+    queries.append(query)
+    return C2NavigationResolvedPlace(
+      title: query,
+      coordinate: SurfaceCoordinate(
+        latitude: 35.4437,
+        longitude: 139.6468
+      )
     )
   }
 }

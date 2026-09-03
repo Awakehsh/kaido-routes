@@ -2245,23 +2245,19 @@ final class WholeShutoProductModel: ObservableObject {
         )
       }
       var bands: [String: ShutoTariffBand] = [:]
-      for candidate in candidates {
+      for candidate in candidates.prefix(3) {
         if Task.isCancelled { return }
         if candidate.facilityID == pairing?.entrance.facilityID {
           bands[candidate.facilityID] = pairing?.tariffBand
           continue
         }
-        if let band = (try? planner.recommendedCircuitPairing(
-          for: circuit,
-          entranceFacilityID: candidate.facilityID,
-          origin: originCoordinate,
-          evidence: .etcNormalCarActive
-        ))?.tariffBand {
-          bands[candidate.facilityID] = band
-          if case .minimum = band, bands.count >= 3 {
-            break
-          }
-        }
+        bands[candidate.facilityID] =
+          (try? planner.recommendedCircuitPairing(
+            for: circuit,
+            entranceFacilityID: candidate.facilityID,
+            origin: originCoordinate,
+            evidence: .etcNormalCarActive
+          ))?.tariffBand
       }
       let resolvedPairing = pairing
       let resolvedBands = bands.compactMapValues { $0 }

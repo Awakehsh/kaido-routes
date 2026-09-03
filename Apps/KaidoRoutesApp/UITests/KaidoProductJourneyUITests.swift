@@ -598,7 +598,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
   }
 
-  func testHatsudaiC1ShowsLocalPairingMinimumFareAndBackAction() {
+  func testHatsudaiC1ShowsLocalPairingTariffAndBackAction() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -625,8 +625,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let tariff = element("whole-shuto-circuit-pairing-tariff", in: app)
     XCTAssertTrue(tariff.waitForExistence(timeout: 5))
-    XCTAssertTrue(tariff.label.contains("推荐"))
-    XCTAssertTrue(tariff.label.contains("¥300"))
+    XCTAssertFalse(tariff.label.contains("最低费用方案"))
+    XCTAssertFalse(tariff.label.contains("推荐 ·"))
 
     let screenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
@@ -639,6 +639,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(back.exists)
     back.tap()
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
+
+    circuitCard.tap()
+    let start = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(start.waitForExistence(timeout: 10))
+    let ready = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "isEnabled == true"),
+      object: start
+    )
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [ready], timeout: 15),
+      .completed
+    )
+    start.tap()
+
+    let routeTitle = element("whole-shuto-route-summary-title", in: app)
+    XCTAssertTrue(routeTitle.waitForExistence(timeout: 10))
+    XCTAssertTrue(routeTitle.label.contains("4 · 高速4号新宿線"))
+    XCTAssertTrue(routeTitle.label.contains("C1 · 高速都心環状線"))
   }
 
   func testDestinationSearchSelectsOneResolvedPlace() {

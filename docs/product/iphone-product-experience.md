@@ -60,7 +60,9 @@ recommendation feed.
 Selecting an experience replaces the catalog with one compact draft that has
 an explicit **All routes** return action. The draft labels the entrance and its
 automatically recommended exit separately; changing the entrance always
-recomputes the exit and tariff band as one pairing.
+recomputes the exit and tariff band as one pairing. Route sequences pair every
+shield with its official Japanese route name, so a transition such as `4 → C1`
+is shown as `4 · 高速4号新宿線 → C1 · 高速都心環状線`.
 
 The driver chooses a route, never designs an entrance or exit. Entrances and
 exits are derived outputs of the chosen route plus the origin and the dated

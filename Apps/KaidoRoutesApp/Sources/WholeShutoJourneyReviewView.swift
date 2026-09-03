@@ -352,6 +352,9 @@ struct WholeShutoJourneyReviewView: View {
               .frame(height: 30)
               .background(routeColor(routeID))
               .clipShape(RoundedRectangle(cornerRadius: 7))
+              .accessibilityLabel(
+                routeDisplayLabel(routeID, in: model.database)
+              )
           }
         }
       }
@@ -364,7 +367,7 @@ struct WholeShutoJourneyReviewView: View {
     .accessibilityIdentifier("whole-shuto-expressway-leg")
     .accessibilityValue(
       (model.selectedRoute?.routeIDsInOrder ?? [])
-        .map(shieldLabel)
+        .map { routeDisplayLabel($0, in: model.database) }
         .joined(separator: " → ")
     )
   }

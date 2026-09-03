@@ -1381,12 +1381,6 @@ struct WholeShutoProductView: View {
 
       circuitPairingSummary(circuit)
 
-      if let minimumFareEntrance = minimumFareCircuitEntrance,
-        minimumFareEntrance.facilityID != model.circuitEntryFacilityID
-      {
-        minimumFareCircuitButton(minimumFareEntrance)
-      }
-
       if !model.circuitEntranceCandidates.isEmpty {
         Button {
           showsCircuitAlternatives.toggle()
@@ -1594,7 +1588,7 @@ struct WholeShutoProductView: View {
           }
           HStack(spacing: 6) {
             if let band = model.circuitPairingBand {
-              Text(selectedCircuitTariffText(band))
+              Text(circuitTariffText(band))
                 .font(.system(size: 11, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(
@@ -1685,61 +1679,6 @@ struct WholeShutoProductView: View {
         simplifiedChinese: "根据出发地推荐最近可达入口",
         english: "Nearest reachable entrance from origin"
       )
-  }
-
-  private var minimumFareCircuitEntrance:
-    ShutoNetworkDatabase.Facility?
-  {
-    model.circuitEntranceCandidates.first { facility in
-      guard
-        let band = model.circuitTariffBandsByFacilityID[facility.facilityID]
-      else { return false }
-      if case .minimum = band { return true }
-      return false
-    }
-  }
-
-  private func minimumFareCircuitButton(
-    _ facility: ShutoNetworkDatabase.Facility
-  ) -> some View {
-    Button {
-      model.selectCircuitEntrance(facilityID: facility.facilityID)
-    } label: {
-      HStack(spacing: 9) {
-        Image(systemName: "yensign.circle.fill")
-          .foregroundStyle(KaidoTheme.routeGreen)
-        VStack(alignment: .leading, spacing: 2) {
-          Text(
-            copy.resolve(
-              japanese: "¥300 最低料金のルート",
-              simplifiedChinese: "¥300 最低费用方案",
-              english: "¥300 MINIMUM FARE OPTION"
-            )
-          )
-          .font(.caption.weight(.black))
-          Text(
-            copy.resolve(
-              japanese: "\(facility.nameJA)入口からおすすめ出口まで",
-              simplifiedChinese: "\(facility.nameJA)入口 → 推荐出口",
-              english: "\(facility.nameJA) entrance → recommended exit"
-            )
-          )
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(.secondary)
-        }
-        Spacer()
-        Image(systemName: "chevron.right")
-          .font(.caption.weight(.bold))
-          .foregroundStyle(.secondary)
-      }
-      .padding(.horizontal, 10)
-      .frame(minHeight: 48)
-      .background(KaidoTheme.routeGreen.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 10))
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .accessibilityIdentifier("whole-shuto-circuit-minimum-fare")
   }
 
   private func circuitEntranceRow(
@@ -1861,17 +1800,6 @@ struct WholeShutoProductView: View {
         english: "¥\(yen) CAP"
       )
     }
-  }
-
-  private func selectedCircuitTariffText(_ band: ShutoTariffBand) -> String {
-    guard case .minimum(let yen) = band else {
-      return circuitTariffText(band)
-    }
-    return copy.resolve(
-      japanese: "おすすめ · ¥\(yen)・最低料金帯",
-      simplifiedChinese: "推荐 · ¥\(yen)·最低费用档",
-      english: "RECOMMENDED · ¥\(yen) MIN BAND"
-    )
   }
 
   /// The destination is an optional continuation after route choice, so the
@@ -2434,6 +2362,7 @@ struct WholeShutoProductView: View {
       Text(routeSummaryTitle)
         .font(.title3.weight(.black))
         .fontDesign(.rounded)
+        .accessibilityIdentifier("whole-shuto-route-summary-title")
       Text(routeSummarySubtitle)
         .font(.caption.weight(.bold))
     }
@@ -2795,8 +2724,8 @@ struct WholeShutoProductView: View {
         .font(.caption.weight(.black))
         Text(
           route.routeIDsInOrder
-            .map(shieldLabel)
-            .joined(separator: " · ")
+            .map { routeDisplayLabel($0, in: model.database) }
+            .joined(separator: " → ")
         )
         .font(.subheadline.weight(.black))
         .fontDesign(.rounded)
@@ -3378,7 +3307,7 @@ struct WholeShutoProductView: View {
       routeIDs = routeIDs.filter { seen.insert($0).inserted }
     }
     return routeIDs
-      .map(shieldLabel)
+      .map { routeDisplayLabel($0, in: model.database) }
       .joined(separator: "  →  ")
   }
 
@@ -6603,6 +6532,19 @@ func shieldLabel(_ routeID: String) -> String {
     .replacingOccurrences(of: "_MISATO", with: "")
     .replacingOccurrences(of: "_YOKOHAMA_KITA", with: "")
     .replacingOccurrences(of: "_YOKOHAMA_HOKUSEI", with: "")
+}
+
+func routeDisplayLabel(
+  _ routeID: String,
+  in database: ShutoNetworkDatabase
+) -> String {
+  let shield = shieldLabel(routeID)
+  guard
+    let officialName = database.routes.first(where: {
+      $0.routeID == routeID
+    })?.officialNameJA
+  else { return shield }
+  return "\(shield) · \(officialName)"
 }
 
 func routeColor(_ routeID: String) -> Color {

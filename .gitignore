@@ -25,3 +25,6 @@ __pycache__/
 /benchmarks/surface-routing/runs/
 /benchmarks/map-matching/raw/
 /benchmarks/map-matching/runs/
+
+# Local agent handoffs (session-specific, never tracked)
+/handoffs/

@@ -60,13 +60,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The small diagram names Tokyo Tower in the interface language"
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
-    XCTAssertTrue(
-      element("route-atlas-attribution-strip", in: app).exists
-    )
-    XCTAssertTrue(
-      element("route-atlas-attribution-source", in: app).exists
-    )
-    XCTAssertTrue(
+    XCTAssertTrue(element("whole-shuto-map-credit", in: app).exists)
+    XCTAssertFalse(
       element("route-atlas-attribution-licence", in: app).exists
     )
     XCTAssertTrue(element("whole-shuto-settings", in: app).exists)
@@ -156,6 +151,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       element("whole-shuto-settings-form", in: app)
         .waitForExistence(timeout: 3)
+    )
+    XCTAssertTrue(
+      element("route-atlas-attribution-source", in: app).exists
+    )
+    XCTAssertTrue(
+      element("route-atlas-attribution-licence", in: app).exists
     )
 
     _ = revealInformationRow("whole-shuto-location-privacy", in: app)
@@ -384,7 +385,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
-  func testPlanningDockCanCollapseAndReopenByDrag() {
+  func testPlanningDockCanCollapseByDragAndReopenByTap() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -406,7 +407,31 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-planning-dock-summary", in: app).exists
     )
 
-    handle.swipeUp(velocity: .fast)
+    let summary = element("whole-shuto-planning-dock-summary", in: app)
+    waitForLayoutSettlement()
+    let collapsedDock = element("whole-shuto-planning-dock", in: app)
+    XCTAssertLessThanOrEqual(
+      summary.frame.height,
+      72,
+      "The collapsed planning content must use normal phone control density."
+    )
+    XCTAssertLessThanOrEqual(
+      collapsedDock.frame.height,
+      100,
+      "The collapsed dock may add only the phone bottom safe area."
+    )
+    XCTAssertGreaterThanOrEqual(
+      collapsedDock.frame.maxY,
+      app.frame.maxY - 40,
+      "The collapsed planning dock must stay attached to the phone bottom edge."
+    )
+    let collapsedScreenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    collapsedScreenshot.name = "Compact route planning dock"
+    collapsedScreenshot.lifetime = .keepAlways
+    add(collapsedScreenshot)
+    summary.tap()
     XCTAssertEqual(dock.value as? String, "EXPANDED")
     XCTAssertTrue(
       element("whole-shuto-circuit-experiences", in: app).exists

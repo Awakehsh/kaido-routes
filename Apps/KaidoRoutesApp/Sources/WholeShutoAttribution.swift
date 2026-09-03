@@ -87,56 +87,24 @@ struct WholeShutoAttribution: Equatable, Sendable {
   }
 }
 
-struct WholeShutoAttributionStrip: View {
+struct WholeShutoMapCredit: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
-  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   let attribution: WholeShutoAttribution
 
   var body: some View {
-    Group {
-      if usesExpandedTextLayout {
-        verticalLinks
-      } else {
-        horizontalLinks
-      }
-    }
-    .padding(.horizontal, 6)
-    .padding(.vertical, 3)
-    .background(KaidoTheme.night.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-    .accessibilityElement(children: .contain)
-    .accessibilityIdentifier("route-atlas-attribution-strip")
-    .accessibilityValue("ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS")
-  }
-
-  private var horizontalLinks: some View {
-    HStack(spacing: 6) {
-      sourceLink
-      licenceLink
-    }
-  }
-
-  private var verticalLinks: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      sourceLink
-      licenceLink
-    }
-  }
-
-  private var sourceLink: some View {
     Link(destination: attribution.sourceURL) {
-      HStack(spacing: 4) {
-        Text("© OSM")
-        Image(systemName: "arrow.up.right")
-      }
-      .font(.caption2.weight(.semibold))
-      .fontDesign(.rounded)
-      .foregroundStyle(KaidoTheme.nightQuiet)
-      .frame(minHeight: 22, alignment: .leading)
-      .contentShape(Rectangle())
+      Text("© OpenStreetMap")
+        .font(.system(size: 9, weight: .medium, design: .rounded))
+        .foregroundStyle(KaidoTheme.nightQuiet)
+        .padding(.horizontal, 6)
+        .frame(minHeight: 22)
+        .background(KaidoTheme.night.opacity(0.68))
+        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .frame(minHeight: 44)
     .accessibilityLabel(
       copy.resolve(
         japanese: "地図データの出典、\(attribution.attribution)",
@@ -151,52 +119,11 @@ struct WholeShutoAttributionStrip: View {
         english: "Open the \(attribution.sourceLabel) source statement"
       )
     )
-    .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
-  }
-
-  private var licenceLink: some View {
-    Link(destination: attribution.licenceURL) {
-      HStack(spacing: 4) {
-        Text("ODbL")
-        Image(systemName: "doc.text")
-      }
-      .font(.caption2.weight(.semibold))
-      .fontDesign(.rounded)
-      .foregroundStyle(KaidoTheme.nightQuiet)
-      .frame(minHeight: 22, alignment: .leading)
-      .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(
-      copy.resolve(
-        japanese: "データライセンス、\(attribution.licenceIdentifier)",
-        simplifiedChinese: "数据许可证，\(attribution.licenceIdentifier)",
-        english: "Data licence, \(attribution.licenceIdentifier)"
-      )
-    )
-    .accessibilityHint(
-      copy.resolve(
-        japanese: "ライセンス全文を開く",
-        simplifiedChinese: "打开许可证全文",
-        english: "Open the full licence"
-      )
-    )
-    .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
+    .accessibilityIdentifier("whole-shuto-map-credit")
   }
 
   private var copy: KaidoInterfaceText {
     KaidoInterfaceText(locale: interfaceLocale)
   }
 
-  private var usesExpandedTextLayout: Bool {
-    switch dynamicTypeSize {
-    case .xSmall, .small, .medium, .large:
-      false
-    case .xLarge, .xxLarge, .xxxLarge, .accessibility1,
-      .accessibility2, .accessibility3, .accessibility4, .accessibility5:
-      true
-    @unknown default:
-      true
-    }
-  }
 }

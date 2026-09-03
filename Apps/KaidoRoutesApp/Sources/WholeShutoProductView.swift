@@ -129,7 +129,8 @@ struct WholeShutoProductView: View {
     .sheet(isPresented: $showsSettings) {
       WholeShutoSettingsView(
         languageSettings: languageSettings,
-        checkedAt: model.database.checkedAt
+        checkedAt: model.database.checkedAt,
+        attribution: wholeShutoAttribution
       )
       .presentationDragIndicator(.visible)
       .environment(
@@ -250,6 +251,16 @@ struct WholeShutoProductView: View {
         map
           .ignoresSafeArea()
 
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            WholeShutoMapCredit(attribution: wholeShutoAttribution)
+          }
+          .padding(.trailing, 10)
+          .padding(.bottom, mapCreditBottomPadding(for: geometry.size.height))
+        }
+
         if usesExpandedTextLayout && !isDriving
           && model.phase != .completed
         {
@@ -279,11 +290,15 @@ struct WholeShutoProductView: View {
             } else {
               Spacer(minLength: 0)
               if !isDriving, model.phase != .completed {
-                ScrollView {
+                if isPlanningDockExpanded {
+                  ScrollView {
+                    dockContent
+                  }
+                  .scrollIndicators(.hidden)
+                  .frame(maxHeight: geometry.size.height / 2)
+                } else {
                   dockContent
                 }
-                .scrollIndicators(.hidden)
-                .frame(maxHeight: geometry.size.height / 2)
               } else {
                 dockContent
               }
@@ -332,6 +347,15 @@ struct WholeShutoProductView: View {
       ZStack {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
+
+        VStack {
+          Spacer()
+          HStack {
+            Spacer()
+            WholeShutoMapCredit(attribution: wholeShutoAttribution)
+              .padding(10)
+          }
+        }
 
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
@@ -521,6 +545,13 @@ struct WholeShutoProductView: View {
         : isPlanningDockExpanded ? 0.66 : 0.88
   }
 
+  private func mapCreditBottomPadding(for height: CGFloat) -> CGFloat {
+    if !isDriving, model.phase != .completed, !isPlanningDockExpanded {
+      return 68
+    }
+    return height * (1 - mapVisibleBottomFraction) + 44
+  }
+
   private var networkOverviewInitialZoom: Double {
     ProcessInfo.processInfo.arguments.contains(
       "-WHOLE-SHUTO-NETWORK-DETAIL-ZOOM"
@@ -553,12 +584,7 @@ struct WholeShutoProductView: View {
       VStack(spacing: 6) {
         HStack(alignment: .top, spacing: 10) {
           topBarBackButton
-          VStack(alignment: .leading, spacing: 2) {
-            topBarTitle
-            WholeShutoAttributionStrip(
-              attribution: wholeShutoAttribution
-            )
-          }
+          topBarTitle
           Spacer(minLength: 8)
           VStack(alignment: .trailing, spacing: 6) {
             topBarUtilityButtons
@@ -726,9 +752,8 @@ struct WholeShutoProductView: View {
 
   private var planningDock: some View {
     VStack(spacing: 0) {
-      planningDockHandle
-
       if isPlanningDockExpanded {
+        planningDockHandle
         if model.phase == .planning {
           routeComposer
         } else {
@@ -795,38 +820,45 @@ struct WholeShutoProductView: View {
     Button {
       setPlanningDockExpanded(true)
     } label: {
-      HStack(spacing: 12) {
-        Image(
-          systemName: model.phase == .planning
-            ? "point.3.connected.trianglepath.dotted"
-            : "road.lanes"
-        )
-        .font(.system(size: 17, weight: .bold))
-        .foregroundStyle(KaidoTheme.routeGreen)
-        .frame(width: 34, height: 34)
-        .background(KaidoTheme.routeGreen.opacity(0.16))
-        .clipShape(Circle())
+      ZStack(alignment: .top) {
+        Capsule()
+          .fill(KaidoTheme.roadGray.opacity(0.72))
+          .frame(width: 32, height: 4)
 
-        VStack(alignment: .leading, spacing: 2) {
-          Text(compactPlanningDockTitle)
-            .font(.body.weight(.black))
-            .foregroundStyle(KaidoTheme.routeWhite)
-          Text(compactPlanningDockDetail)
-            .font(.caption.weight(.semibold))
+        HStack(spacing: 10) {
+          Image(
+            systemName: model.phase == .planning
+              ? "point.3.connected.trianglepath.dotted"
+              : "road.lanes"
+          )
+          .font(.system(size: 15, weight: .bold))
+          .foregroundStyle(KaidoTheme.routeGreen)
+          .frame(width: 28, height: 28)
+          .background(KaidoTheme.routeGreen.opacity(0.14))
+          .clipShape(Circle())
+
+          VStack(alignment: .leading, spacing: 1) {
+            Text(compactPlanningDockTitle)
+              .font(.subheadline.weight(.bold))
+              .foregroundStyle(KaidoTheme.routeWhite)
+            Text(compactPlanningDockDetail)
+              .font(.caption2.weight(.medium))
+              .foregroundStyle(KaidoTheme.nightQuiet)
+              .lineLimit(1)
+          }
+          Spacer(minLength: 8)
+          Image(systemName: "chevron.up")
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(KaidoTheme.nightQuiet)
-            .lineLimit(1)
         }
-        Spacer(minLength: 8)
-        Image(systemName: "chevron.up")
-          .font(.system(size: 12, weight: .black))
-          .foregroundStyle(KaidoTheme.nightQuiet)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
       }
-      .padding(.horizontal, 16)
-      .padding(.bottom, 14)
-      .frame(maxWidth: .infinity, minHeight: 64)
+      .frame(maxWidth: .infinity, minHeight: 60)
       .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .simultaneousGesture(planningDockDragGesture)
     .accessibilityIdentifier("whole-shuto-planning-dock-summary")
   }
 
@@ -6093,6 +6125,7 @@ private struct WholeShutoJunctionInset: View {
 private struct WholeShutoSettingsView: View {
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
   let checkedAt: String
+  let attribution: WholeShutoAttribution
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
@@ -6163,6 +6196,30 @@ private struct WholeShutoSettingsView: View {
         }
 
         Section {
+          Link(destination: attribution.sourceURL) {
+            Label(
+              copy.resolve(
+                japanese: "OpenStreetMap の地図データ",
+                simplifiedChinese: "OpenStreetMap 地图数据",
+                english: "OpenStreetMap map data"
+              ),
+              systemImage: "map"
+            )
+          }
+          .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
+
+          Link(destination: attribution.licenceURL) {
+            LabeledContent(
+              copy.resolve(
+                japanese: "地図データライセンス",
+                simplifiedChinese: "地图数据许可",
+                english: "Map data licence"
+              ),
+              value: attribution.licenceLabel
+            )
+          }
+          .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
+
           Text(
             copy.resolve(
               japanese:

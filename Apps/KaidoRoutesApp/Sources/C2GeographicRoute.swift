@@ -305,17 +305,6 @@ struct C2GeographicRouteMap: View {
       .clipShape(RoundedRectangle(cornerRadius: 10))
       .padding(9)
     }
-    .overlay(alignment: .bottomTrailing) {
-      Text("© OpenStreetMap contributors · ODbL 1.0")
-        .font(.system(size: 7, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.ink)
-        .padding(.horizontal, 7)
-        .frame(height: 20)
-        .background(.thinMaterial)
-        .clipShape(Capsule())
-        .padding(8)
-        .accessibilityIdentifier("c2-geographic-map-attribution")
-    }
     .accessibilityElement(children: .contain)
     .accessibilityLabel(
       copy.resolve(

@@ -55,11 +55,11 @@ database or reconstruct the bounded derivative from the pinned source. No
 additional restriction is imposed on the ODbL database.
 
 The iPhone target bundles
-`../attribution/route-atlas-attribution-catalog.json`. When the K7 produced
-work is visible, SwiftUI renders `© OpenStreetMap contributors` and a separate
-`ODbL 1.0` link in a native strip adjacent to the map. The credit is visible
-without interacting with the non-interactive SVG. Unit and UI tests verify the
-exact URLs and accessibility identities.
+`../attribution/route-atlas-attribution-catalog.json`. The catalog remains the
+fail-closed source of `© OpenStreetMap contributors`, the copyright URL, and
+the `ODbL 1.0` URI. Map canvases do not repeat those links; Settings and this
+notice carry them. Unit tests verify the exact URLs and accessibility
+identities.
 
 `k7-northwest-260721-distribution-review.json` is the dated, hash-bound
 technical implementation review for this distribution and attribution

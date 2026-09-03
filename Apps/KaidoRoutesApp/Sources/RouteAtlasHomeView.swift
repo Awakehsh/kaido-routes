@@ -16,8 +16,7 @@ struct RouteAtlasHomeView: View {
           atlasModePicker
 
           RouteAtlasCard(
-            mode: model.atlasMode,
-            attribution: model.attribution(for: model.atlasMode)
+            mode: model.atlasMode
           )
 
           EntranceRecommendationPanel(model: model.entranceRecommendation)
@@ -175,7 +174,6 @@ struct RouteAtlasCard: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
 
   let mode: RouteAtlasMode
-  let attribution: RouteAtlasAttribution
 
   var body: some View {
     VStack(spacing: 0) {
@@ -200,8 +198,6 @@ struct RouteAtlasCard: View {
         .accessibilityLabel(mode.accessibilityLabel(for: interfaceLocale))
       }
       .frame(height: mode.mapViewportHeight)
-
-      RouteAtlasAttributionStrip(attribution: attribution)
     }
     .background(KaidoTheme.instrument)
     .clipShape(RoundedRectangle(cornerRadius: 24))
@@ -231,108 +227,10 @@ struct RouteAtlasCard: View {
   }
 }
 
-private struct RouteAtlasAttributionStrip: View {
-  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
-
-  let attribution: RouteAtlasAttribution
-
-  var body: some View {
-    ViewThatFits(in: .horizontal) {
-      HStack(spacing: 12) {
-        sourceLink
-        Spacer(minLength: 8)
-        licenceLink
-      }
-
-      VStack(alignment: .leading, spacing: 7) {
-        sourceLink
-        licenceLink
-      }
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 9)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(KaidoTheme.asphalt.opacity(0.86))
-    .overlay(alignment: .top) {
-      Rectangle()
-        .fill(KaidoTheme.steel.opacity(0.8))
-        .frame(height: 1)
-    }
-    .accessibilityElement(children: .contain)
-    .accessibilityIdentifier("route-atlas-attribution-strip")
-    .accessibilityValue("ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS")
-  }
-
-  private var sourceLink: some View {
-    Link(destination: attribution.sourceURL) {
-      HStack(spacing: 5) {
-        Text(attribution.attribution)
-          .lineLimit(2)
-
-        Image(systemName: "arrow.up.right")
-          .font(.system(size: 7, weight: .black))
-      }
-      .font(.system(size: 9, weight: .bold, design: .monospaced))
-      .foregroundStyle(KaidoTheme.muted)
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(
-      copy.resolve(
-        japanese: "地図データの出典、\(attribution.attribution)",
-        simplifiedChinese: "地图数据来源，\(attribution.attribution)",
-        english: "Map data source, \(attribution.attribution)"
-      )
-    )
-    .accessibilityHint(
-      copy.resolve(
-        japanese: "\(attribution.sourceLabel) の出典説明を開く",
-        simplifiedChinese: "打开 \(attribution.sourceLabel) 来源说明",
-        english: "Open the \(attribution.sourceLabel) source statement"
-      )
-    )
-    .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
-  }
-
-  private var licenceLink: some View {
-    Link(destination: attribution.licenceURL) {
-      HStack(spacing: 5) {
-        Text(attribution.licenceLabel)
-
-        Image(systemName: "doc.text")
-          .font(.system(size: 7, weight: .black))
-      }
-      .font(.system(size: 9, weight: .black, design: .monospaced))
-      .foregroundStyle(KaidoTheme.positionCyan)
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(
-      copy.resolve(
-        japanese: "データライセンス、\(attribution.licenceIdentifier)",
-        simplifiedChinese: "数据许可证，\(attribution.licenceIdentifier)",
-        english: "Data licence, \(attribution.licenceIdentifier)"
-      )
-    )
-    .accessibilityHint(
-      copy.resolve(
-        japanese: "ライセンス全文を開く",
-        simplifiedChinese: "打开许可证全文",
-        english: "Open the full licence"
-      )
-    )
-    .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
-  }
-
-  private var copy: KaidoInterfaceText {
-    KaidoInterfaceText(locale: interfaceLocale)
-  }
-}
-
 struct RouteAtlasAttributionPreviewHost: View {
-  private let attribution: RouteAtlasAttribution
-
   init() {
     do {
-      attribution = try RouteAtlasAttributionCatalog.bundled()
+      _ = try RouteAtlasAttributionCatalog.bundled()
         .attribution(for: .k7Evidence)
     } catch {
       preconditionFailure("Invalid Route Atlas attribution fixture: \(error)")
@@ -342,8 +240,7 @@ struct RouteAtlasAttributionPreviewHost: View {
   var body: some View {
     ScrollView {
       RouteAtlasCard(
-        mode: .k7Evidence,
-        attribution: attribution
+        mode: .k7Evidence
       )
       .padding(18)
     }

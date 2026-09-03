@@ -252,15 +252,14 @@ visual adapter evidence only; it does not qualify a physical device, acoustic
 quality, or real navigation.
 
 The SVG remains non-interactive. Attribution is not delegated to SVG text:
-`route-atlas-attribution-catalog.json` is a bundled fail-closed contract, and
-SwiftUI exposes native source and licence links beside the visible map. The K7
+`route-atlas-attribution-catalog.json` is a bundled fail-closed contract. The K7
 entry must retain `© OpenStreetMap contributors`, the OpenStreetMap copyright
-URL, the ODbL 1.0 identifier and URI, always-visible placement, and stable
-accessibility identifiers. The default whole-Shuto product uses a separate
-fail-closed attribution surface derived from the exact bundled
-`ShutoNetworkDatabase.sources.osm` metadata. Settings exposes the same official
-OSM copyright and ODbL HTTPS links; the home map does not repeat them. This
-does not change the legacy K7 catalog or its hash-bound review.
+URL, the ODbL 1.0 identifier and URI, and stable accessibility identifiers in
+that catalog. The default whole-Shuto product uses a separate fail-closed
+attribution surface derived from the exact bundled
+`ShutoNetworkDatabase.sources.osm` metadata. Settings exposes the official OSM
+copyright and ODbL HTTPS links; map canvases do not repeat them. This does not
+change the legacy K7 catalog or its hash-bound review.
 
 The internal calibration surface requests when-in-use location only after the
 operator explicitly starts a run with non-empty device and mount metadata. The

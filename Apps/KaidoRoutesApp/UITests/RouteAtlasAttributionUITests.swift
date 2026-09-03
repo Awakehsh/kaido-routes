@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class RouteAtlasAttributionUITests: XCTestCase {
-  func testK7AttributionIsVisibleBesideMapWithSourceAndLicenceLinks() {
+  func testK7MapDoesNotRepeatSourceAndLicenceLinks() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -14,30 +14,21 @@ final class RouteAtlasAttributionUITests: XCTestCase {
     ]
     app.launchSilently()
 
-    let strip = app.descendants(matching: .any)[
-      "route-atlas-attribution-strip"
-    ]
-    XCTAssertTrue(strip.waitForExistence(timeout: 5))
-    XCTAssertEqual(
-      strip.value as? String,
-      "ALWAYS_VISIBLE · ADJACENT_TO_MAP · NATIVE_LINKS"
+    XCTAssertTrue(
+      app.descendants(matching: .any)["route-atlas-attribution-preview"]
+        .waitForExistence(timeout: 5)
     )
-
-    let source = app.descendants(matching: .any)[
-      "route-atlas-attribution-source"
-    ]
-    XCTAssertTrue(source.waitForExistence(timeout: 2))
-    XCTAssertTrue(source.isHittable)
-    XCTAssertEqual(
-      source.label,
-      "地图数据来源，© OpenStreetMap contributors"
+    XCTAssertFalse(
+      app.descendants(matching: .any)["route-atlas-attribution-strip"]
+        .exists
     )
-
-    let licence = app.descendants(matching: .any)[
-      "route-atlas-attribution-licence"
-    ]
-    XCTAssertTrue(licence.waitForExistence(timeout: 2))
-    XCTAssertTrue(licence.isHittable)
-    XCTAssertEqual(licence.label, "数据许可证，ODbL-1.0")
+    XCTAssertFalse(
+      app.descendants(matching: .any)["route-atlas-attribution-source"]
+        .exists
+    )
+    XCTAssertFalse(
+      app.descendants(matching: .any)["route-atlas-attribution-licence"]
+        .exists
+    )
   }
 }

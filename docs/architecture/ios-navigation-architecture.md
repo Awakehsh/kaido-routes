@@ -98,8 +98,11 @@ nearby ordered occurrence of the active RoutePlan. The seam cannot mint
 hash or a MapKit response. Two consecutive accepted off-route observations may
 replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
-recomputed. Planning location and replay never run in the background; only the
-explicitly user-started live session does. No current path supplies tunnel
+recomputed. While the device fix remains outside that surface leg, presentation
+reports that the drive is waiting to join the route; it does not relabel a valid
+fix as weak positioning. Planning location and replay never run in the
+background; only the explicitly user-started live session does. No current path
+supplies tunnel
 dead-reckoning authority. The live adapter drives the actor's tunnel entry/exit
 and multi-observation reacquisition state. For a tagged tunnel or covered edge only, the App may
 derive a presentation-only estimate from the last HIGH route projection and
@@ -1896,11 +1899,12 @@ not release authority.
 A custom or circuit checkpoint restores its selection only after the exact plan
 is reconstructed; the source flag cannot substitute for `RoutePlan` equality.
 A prior schema or `RoutePlan` drift is rejected before any journey state is
-restored. Load, schema, snapshot, phase, route, runtime-identity, save, and
-removal failures publish a distinct checkpoint issue instead of looking like
-an empty first launch. A rejected or failed replacement also removes the old
-checkpoint when storage remains writable, so stale progress or a stale spoken-
-prompt ledger cannot reappear on the next launch. Runtime-asset drift returns
+restored. Invalid startup checkpoints are removed silently when storage remains
+writable. Save failures during an active journey and removal failures still
+publish a checkpoint issue because recovery cannot then be trusted. A rejected
+or failed replacement removes the old checkpoint when possible, so stale
+progress or a stale spoken-prompt ledger cannot reappear on the next launch.
+Runtime-asset drift returns
 the reconstructed route to parked Review instead of restoring progress. An
 entry-transition checkpoint must retain zero route progress and no runtime
 occurrence or fraction. Restoration is paused, discards matcher posterior and

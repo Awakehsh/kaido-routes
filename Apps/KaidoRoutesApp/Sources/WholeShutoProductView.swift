@@ -3725,6 +3725,13 @@ struct WholeShutoProductView: View {
           simplifiedChinese: "一般道路 · 预演",
           english: "SURFACE ROAD · PREVIEW"
         )
+    case .surfaceRoutePending:
+      return prefix
+        + copy.resolve(
+          japanese: "一般道 · ルート接続待ち",
+          simplifiedChinese: "一般道路 · 等待接入路线",
+          english: "SURFACE ROAD · WAITING TO JOIN ROUTE"
+        )
     case .boundaryTransition:
       if model.isLiveDrive {
         return prefix
@@ -3756,12 +3763,43 @@ struct WholeShutoProductView: View {
           english: "ROUTE REPLAY · SIMULATED \(simulationReplayParametersLabel)"
         )
     case .networkDegraded:
-      return prefix
-        + copy.resolve(
-          japanese: "位置不確か · 停止中",
-          simplifiedChinese: "定位弱 · 暂停推进",
-          english: "WEAK POSITION · HELD"
-        )
+      switch model.liveLocationState {
+      case .awaitingAuthorization, .acquiring:
+        return prefix
+          + copy.resolve(
+            japanese: "現在地を確認中",
+            simplifiedChinese: "正在确认当前位置",
+            english: "ACQUIRING CURRENT POSITION"
+          )
+      case .resumeRequired:
+        return prefix
+          + copy.resolve(
+            japanese: "ナビ一時停止中",
+            simplifiedChinese: "导航已暂停",
+            english: "NAVIGATION PAUSED"
+          )
+      case .permissionDenied:
+        return prefix
+          + copy.resolve(
+            japanese: "位置情報の許可なし",
+            simplifiedChinese: "未获得定位权限",
+            english: "LOCATION PERMISSION REQUIRED"
+          )
+      case .inactive, .failed:
+        return prefix
+          + copy.resolve(
+            japanese: "位置情報を利用できません",
+            simplifiedChinese: "定位暂不可用",
+            english: "LOCATION UNAVAILABLE"
+          )
+      case .available, .degraded, .stale:
+        return prefix
+          + copy.resolve(
+            japanese: "位置不確か · 停止中",
+            simplifiedChinese: "定位弱 · 暂停推进",
+            english: "WEAK POSITION · HELD"
+          )
+      }
     case .tunnelEstimated:
       if model.isLiveDrive {
         return prefix

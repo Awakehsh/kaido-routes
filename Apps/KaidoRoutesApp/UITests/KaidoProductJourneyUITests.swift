@@ -235,7 +235,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(form.waitForNonExistence(timeout: 3))
   }
 
-  func testCorruptWholeShutoCheckpointStaysParkedAndClearsResumeData() {
+  func testCorruptWholeShutoCheckpointClearsSilentlyAndStaysParked() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -251,14 +251,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let product = element("whole-shuto-product", in: app)
     XCTAssertTrue(product.waitForExistence(timeout: 5))
     XCTAssertEqual(product.value as? String, "PLANNING")
-    let issue = element("whole-shuto-checkpoint-issue", in: app)
-    XCTAssertTrue(issue.waitForExistence(timeout: 5))
-    XCTAssertEqual(
-      issue.value as? String,
-      "WHOLE_SHUTO_CHECKPOINT_LOAD_FAILED"
-    )
-    XCTAssertTrue(
-      issue.label.contains("The previous route could not be read")
+    XCTAssertFalse(
+      element("whole-shuto-checkpoint-issue", in: app).exists
     )
     app.terminate()
 

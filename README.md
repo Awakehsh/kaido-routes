@@ -223,7 +223,10 @@ The product distinguishes what is known from what is still unconfirmed:
   authority. Two consecutive accurate off-route observations trigger a bounded
   MapKit recalculation of only the active ordinary-road leg, with a cooldown;
   the exact Shuto plan and the opposite surface leg remain unchanged. Entry
-  evidence takes over only near the exact directional ramp.
+  evidence takes over only near the exact directional ramp. A valid device fix
+  that has not joined the surface route is labeled as waiting to join the route,
+  not as weak positioning; genuinely stale or low-confidence positioning keeps
+  the separate degraded warning.
 - The default App's Core Location lifecycle keeps planning location
   foreground-only, while an explicitly foreground-started live navigation
   session continues through screen lock or temporary app switching and stops

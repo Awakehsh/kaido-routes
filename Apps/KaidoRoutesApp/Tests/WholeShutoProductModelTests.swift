@@ -586,6 +586,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.phase, .surfaceAccess)
     XCTAssertEqual(model.liveLocationState, .degraded)
     XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_OFF_ROUTE")
+    XCTAssertEqual(model.positionState, .surfaceRoutePending)
     XCTAssertEqual(model.progressFraction, acceptedProgress, accuracy: 0.001)
     XCTAssertEqual(model.accessRoute, route)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
@@ -607,6 +608,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.progressFraction, 0, accuracy: 0.001)
     XCTAssertEqual(model.liveLocationState, .available)
     XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertEqual(model.positionState, .surfacePreview)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
     model.reset()
   }
@@ -1264,10 +1266,7 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedTariffBand)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_PHASE_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
   }
 
   func testFreshlySavedRecommendedRouteReopensOnCurrentSnapshot()
@@ -1882,10 +1881,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(restored.restoredFromCheckpoint)
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedRoute)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_PHASE_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
   }
 
@@ -2334,10 +2330,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertFalse(restored.restoredFromCheckpoint)
     XCTAssertNil(restored.selectedRoute)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_PHASE_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
   }
 
@@ -2669,10 +2662,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertFalse(restored.isLiveDrive)
     XCTAssertFalse(restored.isPlaying)
     XCTAssertNil(restored.runtimeOccurrenceID)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(restored.selectedRoute)
     XCTAssertNil(store.checkpoint)
   }
@@ -2768,10 +2758,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .review)
     XCTAssertFalse(restored.isPlaying)
     XCTAssertNil(restored.runtimeOccurrenceID)
-    XCTAssertEqual(
-      restored.failureCode,
-      "WHOLE_SHUTO_CHECKPOINT_RUNTIME_INVALID"
-    )
+    XCTAssertNil(restored.failureCode)
   }
 
   func testCheckpointRoutePlanDriftDoesNotRestore() async throws {
@@ -2814,14 +2801,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedRoute)
     XCTAssertFalse(restored.restoredFromCheckpoint)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_ROUTE_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
   }
 
-  func testCheckpointLoadFailureIsVisibleAndInvalidated() {
+  func testCheckpointLoadFailureIsSilentlyInvalidated() {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
@@ -2836,10 +2820,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedRoute)
     XCTAssertFalse(restored.restoredFromCheckpoint)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_LOAD_FAILED"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
     XCTAssertEqual(store.removeCount, 1)
 
@@ -2852,7 +2833,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(nextLaunch.phase, .planning)
   }
 
-  func testCheckpointSchemaDriftIsVisibleAndRemoved() throws {
+  func testCheckpointSchemaDriftIsSilentlyRemoved() throws {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(checkpointStore: store)
     model.preparePreviewJourney()
@@ -2867,10 +2848,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertNil(restored.selectedRoute)
     XCTAssertFalse(restored.restoredFromCheckpoint)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_SCHEMA_UNSUPPORTED"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
   }
 
@@ -2903,10 +2881,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     XCTAssertEqual(restored.phase, .planning)
     XCTAssertFalse(restored.restoredFromCheckpoint)
-    XCTAssertEqual(
-      restored.checkpointIssueCode,
-      "WHOLE_SHUTO_CHECKPOINT_PHASE_INVALID"
-    )
+    XCTAssertNil(restored.checkpointIssueCode)
     XCTAssertNil(store.checkpoint)
   }
 

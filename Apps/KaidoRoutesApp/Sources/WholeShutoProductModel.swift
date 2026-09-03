@@ -168,6 +168,7 @@ struct WholeShutoJunctionPrompt: Equatable, Identifiable, Sendable {
 enum WholeShutoPositionState: String, Equatable, Sendable {
   case unavailable = "UNAVAILABLE"
   case surfacePreview = "SURFACE_PREVIEW"
+  case surfaceRoutePending = "SURFACE_ROUTE_PENDING"
   case boundaryTransition = "BOUNDARY_TRANSITION"
   case networkPreview = "NETWORK_PREVIEW"
   case networkDegraded = "NETWORK_DEGRADED"
@@ -1386,6 +1387,15 @@ final class WholeShutoProductModel: ObservableObject {
 
   var positionState: WholeShutoPositionState {
     if isLiveDrive,
+      phase == .surfaceAccess || phase == .surfaceEgress,
+      liveLocationIssueCode == "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
+        || liveLocationIssueCode == "SURFACE_ROUTE_OFF_ROUTE"
+        || liveLocationIssueCode == Self.surfaceRouteReroutingCode
+        || liveLocationIssueCode == Self.surfaceRouteRerouteUnavailableCode
+    {
+      return .surfaceRoutePending
+    }
+    if isLiveDrive,
       phase != .planning,
       phase != .review,
       phase != .completed,
@@ -1708,7 +1718,8 @@ final class WholeShutoProductModel: ObservableObject {
 
   var navigationHeadingDegrees: Double? {
     switch positionState {
-    case .surfacePreview, .boundaryTransition, .networkPreview:
+    case .surfacePreview, .surfaceRoutePending, .boundaryTransition,
+      .networkPreview:
       break
     case .unavailable, .networkDegraded, .tunnelEstimated,
       .routeInterrupted, .completed:
@@ -4180,25 +4191,25 @@ final class WholeShutoProductModel: ObservableObject {
       guard let loaded = try checkpointStore.load() else { return }
       checkpoint = loaded
     } catch {
-      rejectCheckpoint(Self.checkpointLoadFailedCode)
+      discardCheckpointDuringRestore()
       return
     }
     guard
       checkpoint.schemaVersion
         == WholeShutoJourneyCheckpoint.currentSchemaVersion
     else {
-      rejectCheckpoint(Self.checkpointSchemaUnsupportedCode)
+      discardCheckpointDuringRestore()
       return
     }
     guard checkpoint.networkSnapshotID == database.networkSnapshotID else {
-      rejectCheckpoint(Self.checkpointNetworkMismatchCode)
+      discardCheckpointDuringRestore()
       return
     }
     guard checkpoint.phase != .planning,
       checkpoint.phase != .review,
       checkpoint.phase != .completed
     else {
-      rejectCheckpoint(Self.checkpointPhaseInvalidCode)
+      discardCheckpointDuringRestore()
       return
     }
     var restoredCircuit: ShutoCircuitDefinition?
@@ -4236,7 +4247,7 @@ final class WholeShutoProductModel: ObservableObject {
         throw WholeShutoSavedRouteResolutionError.invalidRoutePlan
       }
     } catch {
-      rejectCheckpoint(Self.checkpointRouteInvalidCode)
+      discardCheckpointDuringRestore()
       return
     }
     let accessDistance = checkpoint.accessRoute?.distanceMeters ?? 0
@@ -4297,9 +4308,7 @@ final class WholeShutoProductModel: ObservableObject {
     )
     if checkpoint.driveMode == .live {
       guard let navigationCheckpoint = checkpoint.liveNavigationCheckpoint else {
-        rejectCheckpoint(Self.checkpointRuntimeInvalidCode)
         reset()
-        checkpointIssueCode = Self.checkpointRuntimeInvalidCode
         return
       }
       runtimeAssets = nil
@@ -4398,8 +4407,8 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeRecoveryDirectedEdgeID = nil
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
-      failureCode = Self.checkpointRuntimeInvalidCode
-      rejectCheckpoint(Self.checkpointRuntimeInvalidCode)
+      failureCode = nil
+      discardCheckpointDuringRestore()
     }
   }
 
@@ -4461,6 +4470,16 @@ final class WholeShutoProductModel: ObservableObject {
     do {
       try checkpointStore.remove()
       checkpointIssueCode = issueCode
+    } catch {
+      checkpointIssueCode = Self.checkpointRemoveFailedCode
+    }
+  }
+
+  private func discardCheckpointDuringRestore() {
+    guard let checkpointStore else { return }
+    do {
+      try checkpointStore.remove()
+      checkpointIssueCode = nil
     } catch {
       checkpointIssueCode = Self.checkpointRemoveFailedCode
     }

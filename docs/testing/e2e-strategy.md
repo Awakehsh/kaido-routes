@@ -665,15 +665,18 @@ Japanese sign targets. The two Shinonome cases must preserve their distinct
 those actor projections, reject schema or complete-`RoutePlan` checkpoint
 drift, and suppress the Oi output prompt after background save and
 reconstruction. Fault-injecting stores distinguish an absent checkpoint from
-load, schema, route, save, and removal failures, require a visible issue code,
-and prove that a failed replacement cannot revive older progress or a stale
-prompt ledger. Saved-route model tests also round-trip circuit source,
-identity, lap count, and exact repeated occurrences while rejecting template
+load, schema, route, save, and removal failures. Invalid startup data is cleared
+without a user-facing issue when removal succeeds; save and removal failures
+remain visible. The tests also prove that a failed replacement cannot revive
+older progress or a stale prompt ledger. Saved-route model tests also round-trip
+circuit source, identity, lap count, and exact repeated occurrences while
+rejecting template
 metadata that cannot reproduce the saved plan. A real file-store regression
 also round-trips the default Ginza-to-Yokohama recommendation through encoded
 JSON before reopening all 789 occurrences. A separate UI launch writes a
-corrupt whole-Shuto checkpoint, requires the localized parked-state issue, and
-then relaunches without the fault to prove the invalid resume data was cleared.
+corrupt whole-Shuto checkpoint, requires a clean parked state without a recovery
+banner, and then relaunches without the fault to prove the invalid resume data
+was cleared.
 A separate model case projects English phone copy and Chinese speech from the
 Oi prompt while requiring its Japanese sign target to remain byte-identical.
 XCUITest launches the static Oi review and deterministic

@@ -326,17 +326,19 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
     totalDistanceMeters = routeEdgeLengthsMeters.reduce(0, +)
   }
 
-  /// Projects only an unambiguous HIGH matcher commit onto route progress.
+  /// Projects an unambiguous route-bound matcher commit onto route progress.
   ///
-  /// LOW, stale, stacked-road, off-route, or incomplete evidence returns nil
-  /// so callers preserve their last admitted progress and expose degradation.
+  /// HIGH remains required at entry, exit, recovery and completion boundaries.
+  /// Between those boundaries, a unique MEDIUM result may advance along the
+  /// matcher session's forward-only occurrence path. LOW, stacked-road,
+  /// off-route, or incomplete evidence returns nil so callers preserve their
+  /// last admitted progress and expose degradation.
   public func project(
     _ estimate: MatcherEstimate
   ) -> ShutoRouteRuntimeProgress? {
-    guard estimate.confidence == .high,
+    guard estimate.confidence == .high || estimate.confidence == .medium,
       let occurrenceID = estimate.occurrenceID,
       let directedEdgeID = estimate.directedEdgeID,
-      estimate.candidateEdgeIDs == [directedEdgeID],
       let fraction = estimate.fractionAlongEdge,
       fraction.isFinite,
       (0...1).contains(fraction),
@@ -351,6 +353,24 @@ public struct ShutoPlannedRouteRuntimeAssets: Equatable, Sendable {
       cumulativeDistanceAtOccurrence.indices.contains(occurrence.index),
       totalDistanceMeters > 0
     else {
+      return nil
+    }
+
+    guard estimate.candidateEdgeIDs.allSatisfy({ candidateID in
+      let lower = max(
+        0,
+        occurrence.index
+          - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      )
+      let upper = min(
+        routeEdges.count - 1,
+        occurrence.index
+          + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+      )
+      return (lower...upper).contains {
+        routeEdges[$0].id == candidateID
+      }
+    }) else {
       return nil
     }
 
@@ -727,6 +747,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         ($0.movementOccurrenceID, $0)
       }
     )
+    var claimedGuidanceAnchorOccurrenceIDs: Set<String> = []
     let releasedGuidance = guidanceMatches.compactMap {
       match -> ReleasedGuidanceDefinition? in
       guard
@@ -736,6 +757,51 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         return nil
       }
       let definition = match.definition
+      guard
+        let movementOccurrence = route.routePlan.occurrence(
+          id: match.outgoingOccurrenceID
+        ),
+        let incomingOccurrence = route.routePlan.occurrence(
+          id: match.incomingOccurrenceID
+        )
+      else {
+        return nil
+      }
+      var accumulatedDistance = 0.0
+      var preferredAnchorIndex = incomingOccurrence.index
+      let distanceFromRouteStart = route.edges
+        .prefix(movementOccurrence.index)
+        .reduce(0.0) { $0 + $1.lengthMeters }
+      if movementOccurrence.index > 0,
+        distanceFromRouteStart > definition.commitTriggerDistanceMeters
+      {
+        for index in stride(
+          from: movementOccurrence.index - 1,
+          through: 0,
+          by: -1
+        ) {
+          let distanceAtOccurrenceStart =
+            accumulatedDistance + route.edges[index].lengthMeters
+          if distanceAtOccurrenceStart
+            > definition.commitTriggerDistanceMeters
+          {
+            break
+          }
+          accumulatedDistance = distanceAtOccurrenceStart
+          preferredAnchorIndex = index
+        }
+      }
+      let anchorOccurrence =
+        (preferredAnchorIndex...incomingOccurrence.index)
+        .compactMap { index in
+          route.routePlan.occurrences.first {
+            $0.index == index
+              && !claimedGuidanceAnchorOccurrenceIDs.contains($0.id)
+          }
+        }
+        .first
+        ?? incomingOccurrence
+      claimedGuidanceAnchorOccurrenceIDs.insert(anchorOccurrence.id)
       let maneuver: GuidanceManeuver
       switch definition.branchSide {
       case .left:
@@ -747,7 +813,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       }
       return ReleasedGuidanceDefinition(
         anchor: GuidanceAnchorDefinition(
-          occurrenceID: match.incomingOccurrenceID,
+          occurrenceID: anchorOccurrence.id,
           anchorID: "COMMIT",
           promptID:
             "\(definition.id)."

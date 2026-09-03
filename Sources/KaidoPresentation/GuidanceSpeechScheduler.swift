@@ -109,13 +109,13 @@ public struct GuidanceSpeechScheduler: Sendable {
       throw GuidanceSpeechSchedulerError.emptyLanguageCode
     }
 
-    consumedIdentities.insert(identity)
     guard state != .interrupted else {
       return .suppressed(.interrupted)
     }
     guard state != .stopped else {
       return .suppressed(.stopped)
     }
+    consumedIdentities.insert(identity)
 
     let replacedIdentity = activeCommand?.identity
     let command = GuidanceSpeechCommand(

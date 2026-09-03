@@ -16,7 +16,7 @@ enum AppGuidanceSpeechOutputFactory {
 
   static func make(
     preferredVoiceIdentifierProvider: @escaping (String) -> String? = {
-      _ in nil
+      UserDefaultsGuidanceVoicePreferenceStore().identifier(for: $0)
     }
   ) -> any GuidanceSpeechOutput {
     if isSilent {
@@ -31,8 +31,15 @@ enum AppGuidanceSpeechOutputFactory {
 @MainActor
 private final class SilentAppGuidanceSpeechOutput: GuidanceSpeechOutput {
   var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
+  private(set) var selectedVoiceProfile: GuidanceSpeechVoiceProfile?
 
   func speak(_ command: GuidanceSpeechCommand) {
+    selectedVoiceProfile = GuidanceSpeechVoiceProfile(
+      identifier: "app.kaidoroutes.silent-test-output",
+      name: "Silent test output",
+      languageCode: command.languageCode,
+      quality: .defaultQuality
+    )
     eventHandler?(.didStart(command.identity))
     eventHandler?(.didFinish(command.identity))
   }

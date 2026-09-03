@@ -101,6 +101,7 @@ public struct RouteMatcherOccurrence: Codable, Equatable, Sendable {
 /// Successors must come from the same directed graph snapshot; the matcher does
 /// not infer production topology from provider prose or road names.
 public struct RouteMatcherCorridor: Codable, Equatable, Sendable {
+  public static let longitudinalCandidateOccurrenceWindow = 12
   public let id: String
   public let networkSnapshotID: String
   public let routePlanID: String
@@ -510,9 +511,7 @@ public struct RouteMatcherSession: Sendable {
                 + model.transitionScore(
                   from: previous,
                   to: candidate,
-                  observation: observation,
-                  gapThresholdMilliseconds: sessionConfiguration
-                    .observationGapThresholdMilliseconds
+                  observation: observation
                 )
             }.max() ?? negativeInfinityScore
           return (
@@ -608,7 +607,17 @@ public struct RouteMatcherSession: Sendable {
     candidateEdgeIDs.append(selected.state.edgeID)
     candidateEdgeIDs = candidateEdgeIDs.uniqued().sorted()
 
-    let candidateDistances = candidateEdgeIDs.compactMap { measuredEdges[$0]?.distanceMeters }
+    let independentCandidateEdgeIDs = candidateEdgeIDs.filter {
+      $0 == selected.state.edgeID
+        || !model.isNearbyRouteEdge(
+          $0,
+          selectedState: selected.state
+        )
+    }
+
+    let candidateDistances = independentCandidateEdgeIDs.compactMap {
+      measuredEdges[$0]?.distanceMeters
+    }
       .sorted()
     let indistinguishableGeometry =
       candidateDistances.count > 1
@@ -622,12 +631,14 @@ public struct RouteMatcherSession: Sendable {
       : .infinity
 
     let confidence: MatcherConfidence
-    if forceLow || indistinguishableGeometry || candidateEdgeIDs.count > 1
-      || observation.horizontalAccuracyMeters >= 15
+    if forceLow || indistinguishableGeometry
+      || independentCandidateEdgeIDs.count > 1
+      || observation.horizontalAccuracyMeters >= 30
     {
       confidence = .low
     } else if selected.measurement.distanceMeters
       <= max(3, observation.horizontalAccuracyMeters),
+      candidateEdgeIDs.count == 1,
       scoreMargin >= matcherConfiguration.minimumHighScoreMargin
     {
       confidence = .high
@@ -794,8 +805,7 @@ private struct MatcherModel: Sendable {
   func transitionScore(
     from previous: PathState,
     to candidate: StateCandidate,
-    observation: RouteMatcherObservation,
-    gapThresholdMilliseconds: Int
+    observation: RouteMatcherObservation
   ) -> Double {
     let elapsed =
       observation.observedAtMilliseconds
@@ -841,9 +851,7 @@ private struct MatcherModel: Sendable {
             observation: observation
           )
       }
-      if candidateIndex > previousIndex + 1,
-        elapsed >= gapThresholdMilliseconds
-      {
+      if candidateIndex > previousIndex + 1 {
         guard
           let previousEdge = edges[previous.state.edgeID],
           let candidateEdge = edges[candidate.state.edgeID]
@@ -881,6 +889,26 @@ private struct MatcherModel: Sendable {
 
   private func edgesConnected(_ lhsID: String, _ rhsID: String) -> Bool {
     edges[lhsID]?.successorEdgeIDs.contains(rhsID) == true
+  }
+
+  func isNearbyRouteEdge(
+    _ edgeID: String,
+    selectedState: MatcherState
+  ) -> Bool {
+    guard let selectedIndex = selectedState.occurrenceIndex else {
+      return edgeID == selectedState.edgeID
+    }
+    let lower = max(
+      0,
+      selectedIndex - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    let upper = min(
+      routeStatesByIndex.count - 1,
+      selectedIndex + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    return (lower...upper).contains {
+      routeStatesByIndex[$0]?.edgeID == edgeID
+    }
   }
 
   private func travelConsistencyScore(

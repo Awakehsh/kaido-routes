@@ -441,6 +441,23 @@ func unavailableRecoveryClearsStaleEgressAuthority() {
   #expect(engine.snapshot.egress.firstEligibleOccurrenceID == nil)
   #expect(engine.snapshot.egress.prohibitedActions.isEmpty)
   #expect(engine.snapshot.finishConfirmationExitFacilityID == nil)
+
+  engine.observeLocation(
+    LocationObservation(
+      matchedOccurrenceID: "second",
+      candidateOccurrenceIDs: ["second"],
+      candidateResolution: .resolved,
+      observedAtMilliseconds: 2_000,
+      reportedConfidence: .high
+    )
+  )
+  #expect(engine.snapshot.journeyPhase == .strictRoute)
+  #expect(engine.snapshot.recovery.status == .inactive)
+  #expect(engine.snapshot.currentOccurrenceID == "second")
+  #expect(
+    engine.snapshot.lastPhaseTransitionTrigger
+      == "EXACT_LATER_ROUTE_OCCURRENCE_REACQUIRED"
+  )
 }
 
 @Test("Exit handoff completion requires explicit scope and terminal route progress")

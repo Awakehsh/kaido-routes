@@ -33,6 +33,8 @@ final class WholeShutoPlanningLocationController:
   private let previewState: WholeShutoPlanningLocationState?
   private var wantsLocation = false
   private var isForeground = true
+  private var locationTimeoutTask: Task<Void, Never>?
+  private static let locationTimeout = Duration.seconds(12)
 
   init(
     manager: CLLocationManager = CLLocationManager(),
@@ -83,6 +85,8 @@ final class WholeShutoPlanningLocationController:
       updateAuthorizationState()
       startIfEligible()
     } else {
+      locationTimeoutTask?.cancel()
+      locationTimeoutTask = nil
       manager.stopUpdatingLocation()
       if wantsLocation {
         state = .stopped
@@ -92,6 +96,8 @@ final class WholeShutoPlanningLocationController:
 
   func stop() {
     wantsLocation = false
+    locationTimeoutTask?.cancel()
+    locationTimeoutTask = nil
     if let previewState {
       state = previewState
       return
@@ -132,11 +138,15 @@ final class WholeShutoPlanningLocationController:
         ? location.course : nil,
       measuredAt: location.timestamp
     )
+    locationTimeoutTask?.cancel()
+    locationTimeoutTask = nil
     state = .measured
   }
 
   func locationManager(_: CLLocationManager, didFailWithError _: Error) {
     guard previewState == nil else { return }
+    locationTimeoutTask?.cancel()
+    locationTimeoutTask = nil
     state = snapshot == nil ? .unavailable : .measured
   }
 
@@ -166,10 +176,27 @@ final class WholeShutoPlanningLocationController:
     case .authorizedAlways, .authorizedWhenInUse:
       state = snapshot == nil ? .locating : .measured
       manager.startUpdatingLocation()
+      scheduleLocationTimeoutIfNeeded()
     case .notDetermined, .denied, .restricted:
       break
     @unknown default:
       state = .unavailable
+    }
+  }
+
+  private func scheduleLocationTimeoutIfNeeded() {
+    locationTimeoutTask?.cancel()
+    guard snapshot == nil else { return }
+    locationTimeoutTask = Task { [weak self] in
+      try? await Task.sleep(for: Self.locationTimeout)
+      guard !Task.isCancelled, let self,
+        self.wantsLocation,
+        self.isForeground,
+        self.snapshot == nil
+      else { return }
+      self.manager.stopUpdatingLocation()
+      self.state = .unavailable
+      self.locationTimeoutTask = nil
     }
   }
 }

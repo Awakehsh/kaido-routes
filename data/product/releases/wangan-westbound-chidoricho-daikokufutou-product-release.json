@@ -15183,7 +15183,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.87.osm.888066413.1.forward",
+          "occurrence_id" : "shuto.79.osm.46876343.1.forward",
           "prompt_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.commit"
         },
         "frame_template" : {
@@ -15238,7 +15238,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.106.osm.888066409.1.forward",
+          "occurrence_id" : "shuto.105.osm.888066409.0.forward",
           "prompt_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.commit"
         },
         "frame_template" : {
@@ -15293,7 +15293,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.122.osm.678697940.1.forward",
+          "occurrence_id" : "shuto.119.osm.679272067.12.forward",
           "prompt_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.commit"
         },
         "frame_template" : {
@@ -15403,7 +15403,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.159.osm.266086991.11.forward",
+          "occurrence_id" : "shuto.149.osm.266086991.1.forward",
           "prompt_id" : "shuto.jct.oi.b-westbound-stays-on-b.shuto.160.osm.266086991.12.forward.commit"
         },
         "frame_template" : {
@@ -15458,7 +15458,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.187.osm.45683111.1.forward",
+          "occurrence_id" : "shuto.186.osm.45683111.0.forward",
           "prompt_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.commit"
         },
         "frame_template" : {
@@ -15514,7 +15514,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.284.osm.5204788.17.forward",
+          "occurrence_id" : "shuto.280.osm.5204788.13.forward",
           "prompt_id" : "shuto.jct.kawasaki.b-westbound-stays-on-b.shuto.285.osm.5204789.0.forward.commit"
         },
         "frame_template" : {
@@ -15569,7 +15569,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.323.osm.1449791735.2.forward",
+          "occurrence_id" : "shuto.322.osm.1449791735.1.forward",
           "prompt_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.commit"
         },
         "frame_template" : {

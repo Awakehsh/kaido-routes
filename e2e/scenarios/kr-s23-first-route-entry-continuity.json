@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S23",
+  "title": "Consecutive route-head evidence enters strict-route mode",
+  "layer": "SIMULATION",
+  "tags": [
+    "entry",
+    "release-identity",
+    "core-location",
+    "short-edge"
+  ],
+  "purpose": "Keep a legal entry usable when 1 Hz location fixes cross reviewed micro-edges between samples, while still requiring exact release identity, heading, and consecutive evidence on the first RoutePlan edge.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Coordinates and evidence values are synthetic; this proves the bounded route-head admission contract, not field accuracy."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.entry-route-head-v1",
+      "status": "TEST",
+      "effective_at": "2026-09-03T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.entry-route-head",
+      "network_snapshot_id": "test.snapshot.entry-route-head-v1",
+      "entry_facility_id": "test.entrance.entry-route-head",
+      "exit_facility_id": "test.exit.entry-route-head",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.entry-route-head.first",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.entry-route-head.mainline"
+        }
+      ]
+    },
+    "inputs": {
+      "entry_transition": {
+        "facility_id": "test.entrance.entry-route-head",
+        "directed_edge_ids": [
+          "test.edge.entry-route-head.surface",
+          "test.edge.entry-route-head.ramp"
+        ],
+        "first_route_occurrence_id": "test.occurrence.entry-route-head.first"
+      },
+      "entry_transition_admission": {
+        "product_release_id": "test.product-release.entry-route-head",
+        "navigation_release_id": "test.navigation-release.entry-route-head",
+        "runtime_policy_id": "test.runtime-policy.entry-route-head"
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.entry-route-head",
+        "network_snapshot_id": "test.snapshot.entry-route-head-v1",
+        "route_plan_id": "test.plan.entry-route-head",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.entry-route-head.surface",
+            "coordinates": [
+              { "latitude": 35.6800, "longitude": 139.7590 },
+              { "latitude": 35.6800, "longitude": 139.7591 }
+            ],
+            "successor_edge_ids": [
+              "test.edge.entry-route-head.ramp"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.entry-route-head.ramp",
+            "coordinates": [
+              { "latitude": 35.6800, "longitude": 139.7591 },
+              { "latitude": 35.6800, "longitude": 139.7592 }
+            ],
+            "successor_edge_ids": [
+              "test.edge.entry-route-head.mainline"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.entry-route-head.mainline",
+            "coordinates": [
+              { "latitude": 35.6800, "longitude": 139.7592 },
+              { "latitude": 35.6800, "longitude": 139.7600 }
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.entry-route-head.first",
+            "index": 0,
+            "directed_edge_id": "test.edge.entry-route-head.mainline"
+          }
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "APPROACH_TO_ENTRY",
+      "active_route_plan_id": "test.plan.entry-route-head"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "first-route-head-fix",
+      "at_ms": 1000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.route-head.0",
+        "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "candidate_edge_ids": [
+          "test.edge.entry-route-head.mainline"
+        ],
+        "confidence": "MEDIUM",
+        "heading_error_degrees": 4,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "second-route-head-fix",
+      "at_ms": 2000,
+      "type": "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "entry.route-head.1",
+        "directed_edge_id": "test.edge.entry-route-head.mainline",
+        "candidate_edge_ids": [
+          "test.edge.entry-route-head.mainline"
+        ],
+        "confidence": "MEDIUM",
+        "heading_error_degrees": 3,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "one-fix-cannot-enter",
+      "after": "first-route-head-fix",
+      "category": "SAFETY",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "APPROACH_TO_ENTRY",
+      "rationale": "One route-head fix cannot authorize entry."
+    },
+    {
+      "id": "consecutive-fixes-enter",
+      "after": "second-route-head-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "STRICT_ROUTE",
+      "rationale": "Two consecutive exact route-head fixes bridge micro-edges without weakening release identity or heading gates."
+    },
+    {
+      "id": "route-head-trigger-is-auditable",
+      "after": "second-route-head-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY",
+      "rationale": "The alternative entry path remains distinguishable in the actor audit state."
+    }
+  ]
+}

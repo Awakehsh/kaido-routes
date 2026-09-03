@@ -122,7 +122,7 @@ struct ShutoJunctionGuidanceTests {
           $0.preservedJapaneseSignText == testCase.signText
         }
       )
-      #expect(definition.commitTriggerDistanceMeters == 100)
+      #expect(definition.commitTriggerDistanceMeters == 300)
       #expect(match.progressFraction > 0)
       #expect(match.progressFraction < 1)
     }
@@ -239,7 +239,7 @@ struct ShutoJunctionGuidanceTests {
           $0.preservedJapaneseSignText == testCase.signText
         }
       )
-      #expect(definition.commitTriggerDistanceMeters == 100)
+      #expect(definition.commitTriggerDistanceMeters == 300)
       #expect(match.progressFraction > 0)
       #expect(match.progressFraction < 1)
     }
@@ -314,7 +314,7 @@ struct ShutoJunctionGuidanceTests {
         $0.preservedJapaneseSignText == "東北道・常磐道"
       }
     )
-    #expect(definition.commitTriggerDistanceMeters == 100)
+    #expect(definition.commitTriggerDistanceMeters == 300)
     #expect(match.progressFraction > 0)
     #expect(match.progressFraction < 1)
   }
@@ -391,7 +391,7 @@ struct ShutoJunctionGuidanceTests {
         $0.preservedJapaneseSignText == "東名・中央道"
       }
     )
-    #expect(definition.commitTriggerDistanceMeters == 100)
+    #expect(definition.commitTriggerDistanceMeters == 300)
     #expect(match.progressFraction > 0)
     #expect(match.progressFraction < 1)
   }

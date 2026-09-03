@@ -184,6 +184,8 @@ package struct EntryTransitionAdmissionDecision: Equatable, Sendable {
 package struct EntryTransitionEvidenceAdmission: Sendable {
   static let maximumEvidenceAgeMilliseconds = 10_000
   static let maximumHeadingErrorDegrees = 45.0
+  static let firstRouteEdgeMinimumObservationCount = 2
+  static let firstRouteEdgeMaximumGapMilliseconds = 5_000
 
   package let context: EntryTransitionAdmissionContext
 
@@ -191,6 +193,8 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
   private var lastObservationID: String?
   private var lastObservedAtMilliseconds: Int?
   private var lastReceivedAtMilliseconds: Int?
+  private var firstRouteEdgeObservationCount = 0
+  private var lastFirstRouteEdgeObservedAtMilliseconds: Int?
 
   package init(context: EntryTransitionAdmissionContext) {
     self.context = context
@@ -248,9 +252,6 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
     guard evidence.source == .coreLocationRouteAwareMatcher else {
       return rejected(.unsupportedEvidenceSource)
     }
-    guard evidence.confidence == .high else {
-      return rejected(.insufficientConfidence)
-    }
     guard let directedEdgeID = evidence.directedEdgeID,
       evidence.candidateEdgeIDs == [directedEdgeID]
     else {
@@ -263,7 +264,37 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
       return rejected(.missingHeading)
     }
     guard headingErrorDegrees <= Self.maximumHeadingErrorDegrees else {
+      resetFirstRouteEdgeContinuity()
       return rejected(.headingMismatch)
+    }
+
+    if directedEdgeID == context.firstRouteDirectedEdgeID {
+      guard evidence.confidence == .high || evidence.confidence == .medium else {
+        resetFirstRouteEdgeContinuity()
+        return rejected(.insufficientConfidence)
+      }
+      let continuesWindow = lastFirstRouteEdgeObservedAtMilliseconds.map {
+        evidence.observedAtMilliseconds - $0
+          <= Self.firstRouteEdgeMaximumGapMilliseconds
+      } ?? false
+      firstRouteEdgeObservationCount = continuesWindow
+        ? firstRouteEdgeObservationCount + 1
+        : 1
+      lastFirstRouteEdgeObservedAtMilliseconds =
+        evidence.observedAtMilliseconds
+      let entered = firstRouteEdgeObservationCount
+        >= Self.firstRouteEdgeMinimumObservationCount
+      return EntryTransitionAdmissionDecision(
+        status: entered ? .strictRouteEntered : .observing,
+        rejectionReason: nil,
+        acceptedTransitionEdgeIndex: progress >= 0 ? progress : nil,
+        engineObservation: nil
+      )
+    }
+
+    resetFirstRouteEdgeContinuity()
+    guard evidence.confidence == .high else {
+      return rejected(.insufficientConfidence)
     }
     guard
       let position = context.entryTransition.directedEdgeIDs.firstIndex(
@@ -283,6 +314,7 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
       progress = position
       advanced = true
     } else {
+      progress = position == 0 ? 0 : -1
       return rejected(.outOfOrderEdge)
     }
 
@@ -314,6 +346,11 @@ package struct EntryTransitionEvidenceAdmission: Sendable {
       && evidence.networkSnapshotID == context.networkSnapshotID
       && evidence.routePlanID == context.routePlanID
       && evidence.matcherCorridorID == context.matcherCorridorID
+  }
+
+  private mutating func resetFirstRouteEdgeContinuity() {
+    firstRouteEdgeObservationCount = 0
+    lastFirstRouteEdgeObservedAtMilliseconds = nil
   }
 
   private func rejected(

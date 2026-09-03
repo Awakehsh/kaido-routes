@@ -937,6 +937,72 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
+  @Test("1 Hz urban GPS keeps progress live without unsafe HIGH commits")
+  func oneHertzUrbanGPSKeepsProgressLive() async throws {
+    let database = try loadWholeShutoDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let routes = [
+      try ShutoCircuitProductReleaseBuilder.plannedRoute(database: database),
+      try planner.plan(
+        entryFacilityID: "shuto.ic.c1.kyoubashi",
+        exitFacilityID: "shuto.ic.k1.minatomirai"
+      ),
+    ]
+
+    for route in routes {
+      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+        database: database,
+        route: route
+      )
+      let clean = NavigationDriveSimulationConfiguration(
+        maximumSampleSpacingMeters: 17,
+        timing: .routeSpeed,
+        horizontalAccuracyMeters: 2,
+        speedMetersPerSecond: 17
+      )
+      let cleanTrace = try NavigationDriveSimulationTraceGenerator.generate(
+        routePlan: route.routePlan,
+        corridor: assets.matcherCorridor,
+        configuration: clean
+      )
+      let drift = NavigationDriveSimulationConfiguration(
+        maximumSampleSpacingMeters: 17,
+        timing: .routeSpeed,
+        horizontalAccuracyMeters: 12,
+        speedMetersPerSecond: 17,
+        anomalies:
+          try NavigationDriveSimulationNoiseGenerator.radialCoordinateDrift(
+            sampleTruth: cleanTrace.sampleTruth,
+            magnitudeMeters: 8
+          )
+      )
+
+      for configuration in [clean, drift] {
+        let readiness = try navigationReadinessReport(
+          route: route,
+          assets: assets,
+          configuration: configuration
+        )
+        #expect(
+          readiness.accuracy.unsafeHighConfidenceEdgeCount == 0,
+          "\(route.routePlan.id): \(readiness)"
+        )
+        #expect(
+          readiness.accuracy.unsafeHighConfidenceOccurrenceCount == 0,
+          "\(route.routePlan.id): \(readiness)"
+        )
+        #expect(
+          readiness.admittedProgressCoverage >= 0.5,
+          "\(route.routePlan.id): \(readiness)"
+        )
+        #expect(
+          readiness.longestNoProgressGapMilliseconds <= 30_000,
+          "\(route.routePlan.id): \(readiness)"
+        )
+      }
+    }
+  }
+
   @Test("both reviewed Tatsumi approaches emit one actor-owned prompt")
   func emitsReviewedTatsumiGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()
@@ -1022,12 +1088,12 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       let emissions = results.compactMap {
         $0.navigationUpdate?.guidancePromptEmission
       }
-
       // The movement under test speaks exactly once; other reviewed
       // junctions on the same run speak their own prompts.
       #expect(
         emissions.filter { $0.promptID == guidance.anchor.promptID }
-          .count == 1
+          .count == 1,
+        "\(testCase.entryFacilityID) anchor \(guidance.anchor.occurrenceID) at \(route.routePlan.occurrence(id: guidance.anchor.occurrenceID)?.index ?? -1), movement at \(route.routePlan.occurrence(id: movementOccurrenceID)?.index ?? -1), emitted \(emissions.map(\.promptID))"
       )
       #expect(
         results.compactMap {
@@ -1132,7 +1198,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       // junctions on the same run speak their own prompts.
       #expect(
         emissions.filter { $0.promptID == guidance.anchor.promptID }
-          .count == 1
+          .count == 1,
+        "\(testCase.entryFacilityID) anchor \(guidance.anchor.occurrenceID) at \(route.routePlan.occurrence(id: guidance.anchor.occurrenceID)?.index ?? -1), movement at \(route.routePlan.occurrence(id: movementOccurrenceID)?.index ?? -1), emitted \(emissions.map(\.promptID))"
       )
       #expect(
         results.compactMap {
@@ -1657,6 +1724,109 @@ private func navigationAccuracyReport(
     thresholds: NavigationDriveAccuracyThresholds(
       minimumEdgeTop1Accuracy: 0.84
     )
+  )
+}
+
+private struct NavigationReadinessReport: CustomStringConvertible {
+  let accuracy: NavigationDriveAccuracyReport
+  let admittedProgressCount: Int
+  let sampleCount: Int
+  let longestNoProgressGapMilliseconds: Int
+  let longestGapSampleRange: ClosedRange<Int>?
+  let longestGapRouteDistanceRange: ClosedRange<Double>?
+
+  var admittedProgressCoverage: Double {
+    guard sampleCount > 0 else { return 0 }
+    return Double(admittedProgressCount) / Double(sampleCount)
+  }
+
+  var description: String {
+    "admitted=\(admittedProgressCount)/\(sampleCount), "
+      + "coverage=\(admittedProgressCoverage), "
+      + "longestGapMs=\(longestNoProgressGapMilliseconds), "
+      + "gapSamples=\(String(describing: longestGapSampleRange)), "
+      + "gapDistance=\(String(describing: longestGapRouteDistanceRange)), "
+      + "accuracy=\(accuracy)"
+  }
+}
+
+private func navigationReadinessReport(
+  route: ShutoPlannedRoute,
+  assets: ShutoPlannedRouteRuntimeAssets,
+  configuration: NavigationDriveSimulationConfiguration
+) throws -> NavigationReadinessReport {
+  let trace = try NavigationDriveSimulationTraceGenerator.generate(
+    routePlan: route.routePlan,
+    corridor: assets.matcherCorridor,
+    configuration: configuration
+  )
+  let observations = trace.events.compactMap { event -> RouteMatcherObservation? in
+    guard case .matcherObservation(let observation) = event.action else {
+      return nil
+    }
+    return observation
+  }
+  var matcherSession = try RouteAwareSwiftMatcher().makeSession(
+    corridor: assets.matcherCorridor,
+    initialOccurrenceID: route.routePlan.occurrences.first?.id
+  )
+  var estimates: [MatcherEstimate] = []
+  var admittedProgressCount = 0
+  var longestGap = 0
+  var lastAdmittedAt = observations.first?.observedAtMilliseconds
+  var lastAdmittedIndex = 0
+  var longestGapSampleRange: ClosedRange<Int>?
+  var lastProgress = 0.0
+  for (index, observation) in observations.enumerated() {
+    let estimate = try matcherSession.observe(observation)
+    estimates.append(estimate)
+    guard let progress = assets.project(estimate),
+      progress.routeProgressFraction >= lastProgress
+    else { continue }
+    if let lastAdmittedAt {
+      let gap = observation.observedAtMilliseconds - lastAdmittedAt
+      if gap > longestGap {
+        longestGap = gap
+        longestGapSampleRange = lastAdmittedIndex...index
+      }
+    }
+    lastAdmittedAt = observation.observedAtMilliseconds
+    lastAdmittedIndex = index
+    lastProgress = progress.routeProgressFraction
+    admittedProgressCount += 1
+  }
+  if let lastObservationAt = observations.last?.observedAtMilliseconds,
+    let lastAdmittedAt
+  {
+    let gap = lastObservationAt - lastAdmittedAt
+    if gap > longestGap {
+      longestGap = gap
+      longestGapSampleRange = lastAdmittedIndex...max(0, observations.count - 1)
+    }
+  }
+  let accuracy = try NavigationDriveAccuracyEvaluator.evaluate(
+    trace: trace,
+    corridor: assets.matcherCorridor,
+    estimates: estimates,
+    thresholds: NavigationDriveAccuracyThresholds(
+      minimumEdgeTop1Accuracy: 0,
+      minimumOccurrenceAccuracy: 0,
+      minimumHighConfidenceCoverage: 0,
+      maximumProgressErrorP95Meters: .greatestFiniteMagnitude,
+      maximumBackwardProgressRegressionMeters: .greatestFiniteMagnitude
+    )
+  )
+  return NavigationReadinessReport(
+    accuracy: accuracy,
+    admittedProgressCount: admittedProgressCount,
+    sampleCount: observations.count,
+    longestNoProgressGapMilliseconds: longestGap,
+    longestGapSampleRange: longestGapSampleRange,
+    longestGapRouteDistanceRange: longestGapSampleRange.map {
+      let lower = trace.sampleTruth[$0.lowerBound].routeDistanceMeters
+      let upper = trace.sampleTruth[$0.upperBound].routeDistanceMeters
+      return lower...upper
+    }
   )
 }
 

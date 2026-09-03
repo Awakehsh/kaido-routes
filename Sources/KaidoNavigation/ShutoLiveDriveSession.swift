@@ -68,6 +68,18 @@ public actor ShutoLiveDriveSession {
   }
 
   @discardableResult
+  public func enterTunnel() async -> NavigationSnapshot {
+    await start()
+    return await session.enterTunnel()
+  }
+
+  @discardableResult
+  public func exitTunnel() async -> NavigationSnapshot {
+    await start()
+    return await session.exitTunnel()
+  }
+
+  @discardableResult
   public func finishDrive() async -> NavigationSnapshot {
     await start()
     return await session.finishDrive()

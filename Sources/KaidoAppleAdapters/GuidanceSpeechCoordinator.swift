@@ -348,6 +348,9 @@ public final class GuidanceSpeechCoordinator {
 
       let utterance = AVSpeechUtterance(string: command.synthesisText)
       utterance.voice = selection.voice
+      // Bluetooth receivers commonly need a short lead-in after the playback
+      // session activates; otherwise the first word can be clipped.
+      utterance.preUtteranceDelay = 0.6
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: command.languageCode
       )
@@ -482,6 +485,10 @@ public final class GuidanceSpeechCoordinator {
       case .began:
         eventHandler?(.interruptionBegan)
         cancelActiveUtterance()
+        // Some routes (notably Bluetooth handoffs and Siri) never deliver a
+        // matching `.ended` notification to this session. The interrupted
+        // utterance remains consumed, but future prompts must stay eligible.
+        eventHandler?(.interruptionEnded)
       case .ended:
         eventHandler?(.interruptionEnded)
       @unknown default:

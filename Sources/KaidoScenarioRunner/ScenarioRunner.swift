@@ -345,6 +345,15 @@ private struct ScenarioHarness {
     if let observation = decision.engineObservation {
       engine.observeLocation(observation)
     }
+    if decision.status == .strictRouteEntered,
+      engine.snapshot.journeyPhase != .strictRoute,
+      let firstOccurrenceID = context.entryTransition.firstRouteOccurrenceID
+    {
+      engine.enterStrictRoute(
+        firstOccurrenceID: firstOccurrenceID,
+        trigger: "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY"
+      )
+    }
     adapterObservations["entry_transition.admission.status"] = .string(
       decision.status.rawValue
     )

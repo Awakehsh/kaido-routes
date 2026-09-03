@@ -1,3 +1,4 @@
+import CoreLocation
 import XCTest
 
 @MainActor
@@ -539,6 +540,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
   func testCircuitSelectionOffersEntrancesAndLaps() {
     continueAfterFailure = false
     let app = XCUIApplication()
+    app.resetAuthorizationStatus(for: .location)
+    setTestLocation(latitude: 35.6586, longitude: 139.7454)
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
       "-app.kaidoroutes.language.interface",
@@ -554,6 +557,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
     circuitCard.tap()
+    allowLocationWhenInUseIfRequested()
     XCTAssertTrue(
       element("whole-shuto-circuit-back", in: app)
         .waitForExistence(timeout: 5)
@@ -1344,7 +1348,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("大井 JCT"))
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("東名・中央道"))
-    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertTrue(junctionInset.label.contains("暂无车道提示"))
     XCTAssertTrue(
       element("whole-shuto-guidance-instruction", in: junctionApp)
         .label.contains("向左分岔")
@@ -1472,7 +1476,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("葛西 JCT"))
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("東北道・常磐道"))
-    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertTrue(junctionInset.label.contains("暂无车道提示"))
     let speech = element(
       "whole-shuto-guidance-speech",
       in: app
@@ -1512,7 +1516,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("辰巳 JCT"))
     XCTAssertTrue(junctionInset.label.contains("左分岔"))
     XCTAssertTrue(junctionInset.label.contains("箱崎"))
-    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertTrue(junctionInset.label.contains("暂无车道提示"))
     let speech = element(
       "whole-shuto-guidance-speech",
       in: app
@@ -1552,7 +1556,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(junctionInset.label.contains("东云 JCT"))
     XCTAssertTrue(junctionInset.label.contains("右分岔"))
     XCTAssertTrue(junctionInset.label.contains("晴海"))
-    XCTAssertTrue(junctionInset.label.contains("车道编号尚未发布"))
+    XCTAssertTrue(junctionInset.label.contains("暂无车道提示"))
     let speech = element(
       "whole-shuto-guidance-speech",
       in: app
@@ -1576,6 +1580,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.resetAuthorizationStatus(for: .location)
+    setTestLocation(latitude: 35.6586, longitude: 139.7454)
     app.launchArguments = [
       "-RESET-NAVIGATION-CHECKPOINT",
       "-WHOLE-SHUTO-PLANNING-LOCATION-QUALIFICATION",
@@ -2273,6 +2278,15 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The system location prompt did not expose a When In Use action"
     )
     whenInUse.tap()
+  }
+
+  private func setTestLocation(latitude: Double, longitude: Double) {
+    XCUIDevice.shared.location = XCUILocation(
+      location: CLLocation(latitude: latitude, longitude: longitude)
+    )
+    addTeardownBlock {
+      XCUIDevice.shared.location = nil
+    }
   }
 
   private func waitForLayoutSettlement() {

@@ -450,6 +450,15 @@ precision, at least 20% HIGH coverage, at least 56% diagnostic edge top-1 and
 64% occurrence top-1 accuracy, and no more than 15 meters p95 progress error.
 These are deterministic regression floors, not field accuracy claims.
 
+A separate in-car readiness regression drives the C1 inner circuit and
+Kyobashi-to-Minatomirai corridor at 1 Hz / 17 m/s with both 2-meter clean fixes
+and 12-meter fixes plus deterministic 8-meter radial drift. It requires zero
+unsafe HIGH edge or occurrence commits, at least 50% admitted HIGH-or-ordered-
+MEDIUM progress coverage, and no admitted-progress gap longer than 30 seconds.
+The C1 entry adapter is also exercised at 1 Hz with 8-meter accuracy through the
+real release-bound route-head continuity path. These are synthetic regression
+bounds, not road or field evidence.
+
 Core Location adapter tests additionally require valid `courseAccuracy` and
 `speedAccuracy` to reach the matcher observation. A focused opposing-direction
 fixture proves that a highly uncertain course cannot overpower route continuity
@@ -795,8 +804,9 @@ ledger. A restored actor exposes its first otherwise-HIGH matcher result as LOW,
 does not advance or emit, and requires the ordinary reacquisition window.
 KR-S03 now also asserts that the first post-gap fix remains LOW; KR-S10, KR-S16,
 and KR-S19 retain prompt, matcher-reset, and entry-admission boundaries.
-App tests drive `background → atomic store → new runtime → first fix` and prove
-no position or prompt replay. XCUITest keeps the no-store launch preview
+App tests drive `background → atomic store → new runtime → explicit resume →
+first fix` and prove no position or prompt replay. Review-phase checkpoints are
+rejected so an old current-location origin cannot silently return. XCUITest keeps the no-store launch preview
 `FOREGROUND` and deterministic. The app target's active live-navigation path
 declares `location` and `audio` background modes, while deterministic replay
 still stops and checkpoints; these checks remain termination recovery rather

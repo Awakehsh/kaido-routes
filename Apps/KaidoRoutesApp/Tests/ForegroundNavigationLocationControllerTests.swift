@@ -304,7 +304,7 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
   }
 
   @MainActor
-  func testCallbackBacklogFailsClosedInsteadOfDroppingOrReorderingInput()
+  func testCallbackBacklogDropsOldestPendingBatchWithoutStoppingLocation()
     async throws
   {
     let authority = try makeReleasedAuthority()
@@ -341,14 +341,18 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
       )
     }
 
+    XCTAssertEqual(controller.state, .running)
     XCTAssertEqual(
-      controller.state,
-      .failed("LOCATION_CALLBACK_BACKLOG_EXCEEDED")
+      controller.lastTransientFailureCode,
+      "LOCATION_CALLBACK_BACKLOG_EXCEEDED"
     )
-    XCTAssertEqual(source.stopCount, 1)
+    XCTAssertEqual(source.stopCount, 0)
 
     consumer.resume()
-    await Task.yield()
+    for _ in 0..<100 where consumer.completedBatchCount < 9 {
+      await Task.yield()
+    }
+    XCTAssertEqual(consumer.completedBatchCount, 9)
   }
 
   @MainActor
@@ -537,9 +541,11 @@ private final class SuspendedLocationConsumer:
     _: [CLLocation],
     receivedAt _: Date
   ) async {
-    didStart?()
-    await withCheckedContinuation { continuation in
-      self.continuation = continuation
+    if completedBatchCount == 0 {
+      didStart?()
+      await withCheckedContinuation { continuation in
+        self.continuation = continuation
+      }
     }
     completedBatchCount += 1
   }

@@ -65,8 +65,8 @@ func speechSchedulerRequiresTransientEmission() throws {
   #expect(scheduler.state == .idle)
 }
 
-@Test("Audio interruption drops current and interrupted prompts without catch-up replay")
-func speechSchedulerDoesNotReplayAfterInterruption() throws {
+@Test("Audio interruption keeps an unplayed prompt eligible after recovery")
+func speechSchedulerRetriesUnplayedPromptAfterInterruption() throws {
   var scheduler = try GuidanceSpeechScheduler(
     expectedRoutePlanID: "test.plan.speech"
   )
@@ -94,16 +94,21 @@ func speechSchedulerDoesNotReplayAfterInterruption() throws {
   #expect(scheduler.state == .idle)
   #expect(scheduler.activeCommand == nil)
   let replayResult = try scheduler.submit(during)
-  #expect(replayResult == .suppressed(.duplicate))
+  guard case .speak(let replayedCommand, replacing: nil) = replayResult else {
+    Issue.record("Expected the interrupted prompt to remain eligible")
+    return
+  }
 
   let after = try speechProjection(
     promptID: "test.prompt.after-call",
     anchorOccurrenceID: "test.occurrence.after-call"
   )
-  guard case .speak(let afterCommand, replacing: nil) = try scheduler.submit(after) else {
+  guard case .speak(let afterCommand, replacing: let replaced) = try scheduler.submit(after)
+  else {
     Issue.record("Expected a fresh post-interruption prompt")
     return
   }
+  #expect(replaced == replayedCommand.identity)
   #expect(afterCommand.identity.promptID == "test.prompt.after-call")
 }
 

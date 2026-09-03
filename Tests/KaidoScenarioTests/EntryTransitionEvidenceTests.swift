@@ -1,5 +1,8 @@
+import Foundation
+import KaidoAppleAdapters
 import KaidoDomain
 import KaidoNavigation
+import KaidoRouting
 import Testing
 
 @Test("Product runtime admits only an ordered release-bound entry sequence")
@@ -69,6 +72,125 @@ func productRuntimeAdmitsReleaseBoundEntryEvidence() async throws {
     ramp.navigationSnapshot.currentOccurrenceID
       == context.entryTransition.firstRouteOccurrenceID
   )
+}
+
+@Test("Two ordered MEDIUM fixes on the first route edge enter strict navigation")
+func firstRouteEdgeContinuityAdmitsRealisticEntryFixes() async throws {
+  let fixture = navigationReleaseBundleFixture()
+  let release = try KaidoProductRelease(
+    artifact: KaidoProductReleaseArtifact(
+      releaseID: "test.product-release.first-route-entry",
+      releasedAt: "2026-09-03T12:00:00+09:00",
+      navigationRelease: navigationReleaseArtifact(fixture),
+      routeAtlasRelease: productRouteAtlasArtifact(
+        fixture,
+        includeIncomingApproach: true
+      )
+    )
+  )
+  let runtime = try KaidoProductNavigationRuntime(release: release)
+  let context = runtime.entryTransitionAdmissionContext
+  _ = await runtime.session.start()
+
+  let first = try await runtime.session.observeEntryTransitionEvidence(
+    entryEvidence(
+      context: context,
+      id: "first-route.0",
+      at: 1_000,
+      edgeID: context.firstRouteDirectedEdgeID,
+      confidence: .medium
+    )
+  )
+  #expect(first.status == .observing)
+  #expect(first.navigationSnapshot.journeyPhase == .planning)
+
+  let second = try await runtime.session.observeEntryTransitionEvidence(
+    entryEvidence(
+      context: context,
+      id: "first-route.1",
+      at: 2_000,
+      edgeID: context.firstRouteDirectedEdgeID,
+      confidence: .medium
+    )
+  )
+  #expect(second.status == .strictRouteEntered)
+  #expect(second.navigationSnapshot.journeyPhase == .strictRoute)
+  #expect(
+    second.navigationSnapshot.lastPhaseTransitionTrigger
+      == "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY"
+  )
+  #expect(
+    second.navigationSnapshot.currentOccurrenceID
+      == context.entryTransition.firstRouteOccurrenceID
+  )
+}
+
+@Test("Core Location adapter enters C1 from 1 Hz 8 m accuracy fixes")
+func coreLocationAdapterAdmitsRealisticC1EntryFixes() async throws {
+  let database = try loadEntryTestWholeShutoDatabase()
+  let release = try KaidoProductRelease(
+    artifact: ShutoCircuitProductReleaseBuilder.buildArtifact(database: database)
+  )
+  let runtime = try KaidoProductNavigationRuntime(release: release)
+  let context = runtime.entryTransitionAdmissionContext
+  let edge = try #require(
+    context.matcherCorridor.edges.first {
+      $0.id == context.firstRouteDirectedEdgeID
+    }
+  )
+  let start = try #require(edge.coordinates.first)
+  let end = try #require(edge.coordinates.last)
+  let course = entryTestBearing(from: start, to: end)
+  var adapter = try CoreLocationEntryTransitionAdapter(context: context)
+  _ = await runtime.session.start()
+  var entered = false
+  var diagnostics: [String] = []
+
+  for (index, fraction) in [0.15, 0.4, 0.65, 0.9].enumerated() {
+    let at = (index + 1) * 1_000
+    let observation = RouteMatcherObservation(
+      id: "c1.entry.realistic.\(index)",
+      observedAtMilliseconds: at,
+      receivedAtMilliseconds: at,
+      coordinate: MatcherCoordinate(
+        latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+        longitude: start.longitude + (end.longitude - start.longitude) * fraction
+      ),
+      horizontalAccuracyMeters: 8,
+      courseDegrees: course,
+      courseAccuracyDegrees: 5,
+      speedMetersPerSecond: 10,
+      speedAccuracyMetersPerSecond: 1,
+      source: .phone
+    )
+    let envelope = CoreLocationObservationEnvelope(
+      observation: observation,
+      provenance: CoreLocationObservationProvenance(
+        deliverySource: .deviceOrUndisclosed,
+        sourceInformationAvailable: true,
+        isSimulatedBySoftware: false,
+        carPlayConnectionContext: .disconnected,
+        matcherCalibrationCohort: .phone,
+        courseAccuracyDegrees: 5,
+        speedAccuracyMetersPerSecond: 1,
+        observationAgeMilliseconds: 0
+      )
+    )
+    let evidence = try adapter.adapt(envelope)
+    let update = try await runtime.session.observeEntryTransitionEvidence(evidence)
+    diagnostics.append(
+      "\(index):\(evidence.confidence.rawValue):\(evidence.directedEdgeID ?? "nil"):"
+        + "\(evidence.candidateEdgeIDs):\(String(describing: update.rejectionReason))"
+    )
+    if update.status == .strictRouteEntered {
+      entered = true
+      break
+    }
+  }
+
+  #expect(entered, "\(diagnostics)")
+  let snapshot = await runtime.session.snapshot
+  #expect(snapshot.journeyPhase == .strictRoute)
 }
 
 @Test("Entry evidence rejects skips, simulation, identity drift, and replay")
@@ -235,7 +357,8 @@ private func entryEvidence(
   id: String,
   at: Int,
   edgeID: String,
-  isSimulated: Bool = false
+  isSimulated: Bool = false,
+  confidence: MatcherConfidence = .high
 ) -> EntryTransitionEvidence {
   EntryTransitionEvidence(
     context: context,
@@ -244,8 +367,35 @@ private func entryEvidence(
     receivedAtMilliseconds: at,
     directedEdgeID: edgeID,
     candidateEdgeIDs: [edgeID],
-    confidence: .high,
+    confidence: confidence,
     headingErrorDegrees: 1,
     isSimulatedBySoftware: isSimulated
   )
+}
+
+private func loadEntryTestWholeShutoDatabase() throws -> ShutoNetworkDatabase {
+  let repositoryRoot = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+  return try JSONDecoder().decode(
+    ShutoNetworkDatabase.self,
+    from: Data(
+      contentsOf:
+        repositoryRoot
+        .appendingPathComponent("data/route-atlas/osm-derived")
+        .appendingPathComponent("shuto-whole-network-20260804.json")
+    )
+  )
+}
+
+private func entryTestBearing(
+  from start: MatcherCoordinate,
+  to end: MatcherCoordinate
+) -> Double {
+  let degrees = atan2(
+    end.longitude - start.longitude,
+    end.latitude - start.latitude
+  ) * 180 / .pi
+  return degrees >= 0 ? degrees : degrees + 360
 }

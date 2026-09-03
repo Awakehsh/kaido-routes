@@ -140,7 +140,7 @@ final class ProductRuntimePreviewUITests: XCTestCase {
 
     let speech = reveal("product-runtime-speech", in: app)
     let speechValue = speech.value as? String ?? ""
-    XCTAssertTrue(speechValue.contains("ja-JP"))
+    XCTAssertTrue(speechValue.contains("ja-JP"), speechValue)
     XCTAssertTrue(
       ["DEFAULT", "ENHANCED", "PREMIUM"].contains {
         speechValue.contains($0)

@@ -23953,12 +23953,12 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.35.osm.1313249026.0.forward",
+          "occurrence_id" : "shuto.34.osm.44882521.2.forward",
           "prompt_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.36.osm.1313249025.0.forward.commit"
         },
         "frame_template" : {
@@ -24013,7 +24013,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.65.osm.266086991.11.forward",
+          "occurrence_id" : "shuto.55.osm.266086991.1.forward",
           "prompt_id" : "shuto.jct.oi.b-westbound-stays-on-b.shuto.66.osm.266086991.12.forward.commit"
         },
         "frame_template" : {
@@ -24068,7 +24068,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.93.osm.45683111.1.forward",
+          "occurrence_id" : "shuto.92.osm.45683111.0.forward",
           "prompt_id" : "shuto.jct.tokai.b-westbound-to-yokohama-branch.shuto.94.osm.5171344.0.forward.commit"
         },
         "frame_template" : {
@@ -24117,12 +24117,12 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.237.osm.38093215.12.forward",
+          "occurrence_id" : "shuto.233.osm.38093215.8.forward",
           "prompt_id" : "shuto.jct.daishi.k1-outbound-stays-on-k1.shuto.238.osm.38093215.13.forward.commit"
         },
         "frame_template" : {
@@ -24170,7 +24170,7 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
@@ -24228,7 +24228,7 @@
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.497.osm.760720782.10.forward",
+          "occurrence_id" : "shuto.491.osm.760720782.4.forward",
           "prompt_id" : "shuto.jct.kinko.k1-outbound-stays-on-k1.shuto.498.osm.39744129.0.forward.commit"
         },
         "frame_template" : {
@@ -24276,12 +24276,12 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.607.osm.987587806.0.forward",
+          "occurrence_id" : "shuto.605.osm.34621722.0.forward",
           "prompt_id" : "shuto.jct.ishikawacho.k1-outbound-to-k3-outbound.shuto.608.osm.38913574.0.forward.commit"
         },
         "frame_template" : {
@@ -24330,12 +24330,12 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.651.osm.84530623.12.forward",
+          "occurrence_id" : "shuto.650.osm.84530623.11.forward",
           "prompt_id" : "shuto.jct.honmoku.k3-outbound-to-b-eastbound.shuto.652.osm.38072737.0.forward.commit"
         },
         "frame_template" : {
@@ -24384,12 +24384,12 @@
           },
           "stage" : "COMMIT"
         },
-        "trigger_distance_meters" : 100
+        "trigger_distance_meters" : 300
       },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
-          "occurrence_id" : "shuto.713.osm.5365195.2.forward",
+          "occurrence_id" : "shuto.712.osm.5365195.1.forward",
           "prompt_id" : "shuto.jct.daikoku.b-eastbound-stays-on-b.shuto.714.osm.5365195.3.forward.commit"
         },
         "frame_template" : {

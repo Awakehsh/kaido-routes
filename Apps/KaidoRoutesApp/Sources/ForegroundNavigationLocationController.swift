@@ -477,12 +477,12 @@ final class ForegroundNavigationLocationController: ObservableObject {
       return
     }
     guard consumer?.canConsumeForegroundNavigationLocations == true else {
-      failAndStop("RUNTIME_STOPPED_ACCEPTING_LOCATION")
+      lastTransientFailureCode = "RUNTIME_STOPPED_ACCEPTING_LOCATION"
       return
     }
-    guard pendingBatches.count < Self.maximumPendingBatchCount else {
-      failAndStop("LOCATION_CALLBACK_BACKLOG_EXCEEDED")
-      return
+    if pendingBatches.count >= Self.maximumPendingBatchCount {
+      pendingBatches.removeFirst()
+      lastTransientFailureCode = "LOCATION_CALLBACK_BACKLOG_EXCEEDED"
     }
     pendingBatches.append(
       LocationBatch(locations: locations, receivedAt: receivedAt)
@@ -507,7 +507,8 @@ final class ForegroundNavigationLocationController: ObservableObject {
       !pendingBatches.isEmpty
     {
       guard let consumer, consumer.canConsumeForegroundNavigationLocations else {
-        failAndStop("RUNTIME_STOPPED_ACCEPTING_LOCATION")
+        pendingBatches.removeAll(keepingCapacity: true)
+        lastTransientFailureCode = "RUNTIME_STOPPED_ACCEPTING_LOCATION"
         return
       }
       let batch = pendingBatches.removeFirst()

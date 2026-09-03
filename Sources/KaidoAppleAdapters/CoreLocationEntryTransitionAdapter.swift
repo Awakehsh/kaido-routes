@@ -7,13 +7,15 @@
   ///
   /// This adapter produces evidence only. It cannot advance the journey: the
   /// `NavigationSession` actor independently checks release identity, time,
-  /// ambiguity, heading, simulation provenance, and the complete ordered edge
-  /// sequence before it grants strict-route entry.
+  /// ambiguity, heading, simulation provenance, and either the complete ordered
+  /// edge sequence or the bounded consecutive route-head contract before it
+  /// grants strict-route entry.
   public struct CoreLocationEntryTransitionAdapter: Sendable {
     public let context: EntryTransitionAdmissionContext
 
     private var matcherSession: RouteMatcherSession
     private let edgeByID: [String: RouteMatcherDirectedEdge]
+    private let firstRouteContinuityEdgeIDs: Set<String>
 
     public init(
       context: EntryTransitionAdmissionContext,
@@ -31,6 +33,21 @@
         context.matcherCorridor.edges.map { ($0.id, $0) },
         uniquingKeysWith: { first, _ in first }
       )
+      let routeHeadEdgeIDs = Set(
+        context.matcherCorridor.occurrences
+          .sorted { $0.index < $1.index }
+          .prefix(RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow)
+          .map(\.directedEdgeID)
+      )
+      let entryHeadEdgeIDs = routeHeadEdgeIDs
+        .union(context.entryTransition.directedEdgeIDs)
+        .union([context.firstRouteDirectedEdgeID])
+      firstRouteContinuityEdgeIDs = entryHeadEdgeIDs.union(
+        context.matcherCorridor.edges.compactMap { edge in
+          edge.successorEdgeIDs.isDisjoint(with: entryHeadEdgeIDs)
+            ? nil : edge.id
+        }
+      )
     }
 
     public mutating func adapt(
@@ -38,7 +55,24 @@
     ) throws -> EntryTransitionEvidence {
       let observation = envelope.observation
       let estimate = try matcherSession.observe(observation)
-      let headingError: Double? = estimate.directedEdgeID.flatMap { edgeID in
+      let firstRouteOccurrenceID =
+        context.entryTransition.firstRouteOccurrenceID
+      let usesFirstRouteContinuity =
+        (estimate.occurrenceID == firstRouteOccurrenceID
+          || estimate.directedEdgeID == context.firstRouteDirectedEdgeID
+          || estimate.candidateEdgeIDs.contains(
+            context.firstRouteDirectedEdgeID
+          ))
+        && estimate.confidence != .lost
+        && Set(estimate.candidateEdgeIDs)
+          .isSubset(of: firstRouteContinuityEdgeIDs)
+      let directedEdgeID = usesFirstRouteContinuity
+        ? context.firstRouteDirectedEdgeID : estimate.directedEdgeID
+      let candidateEdgeIDs = usesFirstRouteContinuity
+        ? [context.firstRouteDirectedEdgeID] : estimate.candidateEdgeIDs
+      let confidence: MatcherConfidence = usesFirstRouteContinuity
+        ? .medium : estimate.confidence
+      let headingError: Double? = directedEdgeID.flatMap { edgeID in
         guard let course = observation.courseDegrees,
           observation.speedMetersPerSecond.map({ $0 >= 2 }) == true,
           let edge = edgeByID[edgeID],
@@ -57,9 +91,9 @@
         observationID: observation.id ?? "",
         observedAtMilliseconds: observation.observedAtMilliseconds,
         receivedAtMilliseconds: observation.receivedAtMilliseconds,
-        directedEdgeID: estimate.directedEdgeID,
-        candidateEdgeIDs: estimate.candidateEdgeIDs,
-        confidence: estimate.confidence,
+        directedEdgeID: directedEdgeID,
+        candidateEdgeIDs: candidateEdgeIDs,
+        confidence: confidence,
         headingErrorDegrees: headingError,
         isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
       )

@@ -30,7 +30,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c1-inner-shibakoen-shiodome-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "ad05eab8c746b1c59e652835991eea2e883bc89f4b2bc22aaae19b55e22f6082",
+        "0b210d571dbfa7966524ac2a3dafb3994ca86aa439b85db67b1663d1517dd8d9",
       expectedReleaseID:
         "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
       role: .foregroundNavigation
@@ -43,7 +43,7 @@ extension AppBundleProductReleaseDescriptor {
         "wangan-westbound-chidoricho-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "698f2e009f78d8c3fe9f85ea668876fb311a51177dc594821471963390edf7e0",
+        "d564687b3fca57127dc2ee061312a6e0f453239de69befb30fa686b8aa2b6b1f",
       expectedReleaseID:
         "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
       role: .foregroundNavigation
@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "7de6a703dd813ed6a43c5491aac6f2df703a18af814364763379cd2f2dc9d876",
+        "4262be663b1a5434f17c7f87e830abec22838749a68e00b8e81019db6ea956fc",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15",
       role: .foregroundNavigation
@@ -68,7 +68,7 @@ extension AppBundleProductReleaseDescriptor {
         "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "dfbcabdadfa66d9cef8c46a54535c66f2ab68a2699119d32dad8d6e5f686834f",
+        "b276e33d981132b23681ff5cd53f46eaae97c6627abc574d9fa3caf58fe233ca",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15",
       role: .foregroundNavigation
@@ -80,7 +80,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "scenic-harumi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "e6af1d86069961ad37b7fe36c34484224112a3b71d5b50689aa7ed36bb4c8a0a",
+        "aaf3fd129e9dd039f2f05ebc626992d617847b138bdc6bd44ce532fe69443eed",
       expectedReleaseID:
         "shutoko.product.scenic-harumi-daikokufutou.2026-08-15",
       role: .foregroundNavigation

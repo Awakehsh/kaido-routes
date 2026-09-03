@@ -5,11 +5,21 @@ import KaidoPresentation
 import KaidoRouting
 import MapKit
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 private enum WholeShutoPlanningField: Hashable {
   case origin
   case destination
+}
+
+enum WholeShutoIdleTimerPolicy {
+  static func disablesIdleTimer(
+    isLiveDrive: Bool,
+    phase: WholeShutoJourneyPhase
+  ) -> Bool {
+    isLiveDrive && phase != .completed
+  }
 }
 
 struct WholeShutoProductView: View {
@@ -41,6 +51,13 @@ struct WholeShutoProductView: View {
   @State private var waitsForCustomRouteLocation = false
   @State private var pendingSavedRouteRecordID: String?
   @State private var savedRouteOpenErrorCode: String?
+  @State private var savedRouteImportErrorCode: String?
+  @State private var geographicCamera = WholeShutoGeographicMap.defaultCamera
+  @State private var geographicFollowsRoute = true
+  @State private var lastStableGeographicHeadingDegrees: Double?
+  @State private var trackMapZoom = 1.0
+  @State private var trackMapPan = CGSize.zero
+  @State private var trackMapUserAdjustedViewport = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
 
   init(
@@ -124,7 +141,10 @@ struct WholeShutoProductView: View {
       allowedContentTypes: [.json],
       allowsMultipleSelection: false
     ) { result in
-      _ = importSavedRouteFile(result, into: savedRoutes)
+      savedRouteImportErrorCode = importSavedRouteFile(
+        result,
+        into: savedRoutes
+      )
     }
     .sheet(isPresented: $showsSettings) {
       WholeShutoSettingsView(
@@ -173,6 +193,16 @@ struct WholeShutoProductView: View {
     }
     .onChange(of: isDriving) { _, newValue in
       planningLocation.setForeground(scenePhase == .active && !newValue)
+      updateIdleTimer()
+    }
+    .onChange(of: model.isLiveDrive, initial: true) {
+      updateIdleTimer()
+    }
+    .onChange(of: model.phase) {
+      updateIdleTimer()
+    }
+    .onDisappear {
+      UIApplication.shared.isIdleTimerDisabled = false
     }
     .onChange(of: model.destinationQuery, initial: true) {
       updatePlanningPlaceSearch()
@@ -198,6 +228,14 @@ struct WholeShutoProductView: View {
     .onChange(of: planningLocation.state) {
       handlePlanningLocationUpdate()
     }
+  }
+
+  private func updateIdleTimer() {
+    UIApplication.shared.isIdleTimerDisabled =
+      WholeShutoIdleTimerPolicy.disablesIdleTimer(
+        isLiveDrive: model.isLiveDrive,
+        phase: model.phase
+      )
   }
 
   private var isLandscape: Bool {
@@ -309,7 +347,11 @@ struct WholeShutoProductView: View {
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
             Spacer()
-            WholeShutoJunctionInset(prompt: prompt)
+            WholeShutoJunctionInset(
+              prompt: prompt,
+              distanceText:
+                model.distanceToNextReviewedJunctionMeters.map(distanceLabel)
+            )
               .padding(.horizontal, 14)
               .padding(.bottom, 142)
               .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -360,7 +402,11 @@ struct WholeShutoProductView: View {
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
             Spacer()
-            WholeShutoJunctionInset(prompt: prompt)
+            WholeShutoJunctionInset(
+              prompt: prompt,
+              distanceText:
+                model.distanceToNextReviewedJunctionMeters.map(distanceLabel)
+            )
               .padding(.horizontal, 14)
               .padding(.bottom, 16)
               .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -406,7 +452,7 @@ struct WholeShutoProductView: View {
       .foregroundStyle(KaidoTheme.signalAmber)
 
       Button {
-        _ = model.resumeLiveJourney()
+        Task { _ = await model.resumeLiveJourney() }
       } label: {
         Text(
           copy.resolve(
@@ -462,10 +508,15 @@ struct WholeShutoProductView: View {
           spans: model.trackMapSpans,
           entryFacilityID: route.routePlan.entryFacilityID,
           currentCoordinate: isDriving ? model.currentCoordinate : nil,
+          routeProgressFraction:
+            model.phase == .expressway ? model.progressFraction : nil,
           isPositionEstimated: isTrackMapPositionEstimated,
           visibleBottomFraction: mapVisibleBottomFraction,
           routeDistanceMeters: route.distanceMeters,
-          labelTopInsetOverride: isLandscape ? 12 : nil
+          labelTopInsetOverride: isLandscape ? 12 : nil,
+          zoom: $trackMapZoom,
+          pan: $trackMapPan,
+          userAdjustedViewport: $trackMapUserAdjustedViewport
         )
       } else if let overview = WholeShutoNetworkOverviewCatalog.layout(
         for: model.database
@@ -489,7 +540,10 @@ struct WholeShutoProductView: View {
     } else {
       WholeShutoGeographicMap(
         model: model,
-        planningLocation: planningLocation.snapshot
+        planningLocation: planningLocation.snapshot,
+        camera: $geographicCamera,
+        followsRoute: $geographicFollowsRoute,
+        lastStableHeadingDegrees: $lastStableGeographicHeadingDegrees
       )
     }
   }
@@ -983,6 +1037,7 @@ struct WholeShutoProductView: View {
     Button {
       pendingSavedRouteRecordID = nil
       savedRouteOpenErrorCode = nil
+      savedRouteImportErrorCode = nil
       showsSavedRoutes = true
     } label: {
       HStack(spacing: 6) {
@@ -1078,6 +1133,25 @@ struct WholeShutoProductView: View {
               color: KaidoTheme.evidenceCoral
             )
             .accessibilityIdentifier("whole-shuto-saved-route-open-error")
+          }
+
+          if let savedRouteImportErrorCode {
+            ReviewBoundaryCard(
+              symbol: "doc.badge.exclamationmark",
+              title: copy.resolve(
+                japanese: "ルートを読み込めませんでした",
+                simplifiedChinese: "无法导入路线",
+                english: "Route import failed"
+              ),
+              detail: copy.resolve(
+                japanese: "選択したファイルを確認して、もう一度お試しください。",
+                simplifiedChinese: "请检查所选文件后重试。",
+                english: "Check the selected file and try again."
+              ),
+              code: savedRouteImportErrorCode,
+              color: KaidoTheme.evidenceCoral
+            )
+            .accessibilityIdentifier("whole-shuto-saved-route-import-error")
           }
         }
         .padding(18)
@@ -2646,7 +2720,6 @@ struct WholeShutoProductView: View {
         .font(.caption.weight(.black))
         Text(customRouteCardDetail)
           .font(.caption.weight(.bold))
-          .lineLimit(2)
           .fixedSize(horizontal: false, vertical: true)
         if let route = model.customRecommendation?.route {
           Text(routeBoundarySummary(route))
@@ -2667,7 +2740,6 @@ struct WholeShutoProductView: View {
               )
             )
             .font(.body.weight(.semibold))
-            .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)
           }
         }
@@ -2729,7 +2801,6 @@ struct WholeShutoProductView: View {
         )
         .font(.subheadline.weight(.black))
         .fontDesign(.rounded)
-        .lineLimit(2)
         .fixedSize(horizontal: false, vertical: true)
         Text(routeBoundarySummary(route))
           .font(.body.weight(.semibold))
@@ -2749,7 +2820,6 @@ struct WholeShutoProductView: View {
             )
           )
           .font(.body.weight(.semibold))
-          .lineLimit(2)
           .fixedSize(horizontal: false, vertical: true)
         }
       }
@@ -2772,24 +2842,32 @@ struct WholeShutoProductView: View {
       .clipShape(RoundedRectangle(cornerRadius: 9))
     }
     .buttonStyle(.plain)
-    .accessibilityIdentifier("whole-shuto-route-option-\(index)")
-    .accessibilityAddTraits(
-      index == model.selectedRecommendationIndex
-        && !model.isCustomRouteSelected
-        ? .isSelected : []
-    )
-    .accessibilityValue(
-      model.isUpdatingSurfaceRoute
-        && index == model.selectedRecommendationIndex
-        ? routeSelectionAccessibilityValue(at: index)
-          + "; "
-          + copy.resolve(
-            japanese: "ルートを確認中",
-            simplifiedChinese: "正在确认路线",
-            english: "CONFIRMING ROUTE"
-          )
-        : routeSelectionAccessibilityValue(at: index)
-    )
+    .accessibilityRepresentation {
+      Button {
+        showsRouteCustomization = false
+        model.selectRecommendation(at: index)
+      } label: {
+        Text(recommendationLabel(at: index))
+      }
+      .accessibilityIdentifier("whole-shuto-route-option-\(index)")
+      .accessibilityAddTraits(
+        index == model.selectedRecommendationIndex
+          && !model.isCustomRouteSelected
+          ? .isSelected : []
+      )
+      .accessibilityValue(
+        model.isUpdatingSurfaceRoute
+          && index == model.selectedRecommendationIndex
+          ? routeSelectionAccessibilityValue(at: index)
+            + "; "
+            + copy.resolve(
+              japanese: "ルートを確認中",
+              simplifiedChinese: "正在确认路线",
+              english: "CONFIRMING ROUTE"
+            )
+          : routeSelectionAccessibilityValue(at: index)
+      )
+    }
   }
 
   private func routeBoundary(
@@ -2836,7 +2914,7 @@ struct WholeShutoProductView: View {
             .fill(positionStatusColor)
             .frame(width: 7, height: 7)
           Text(positionStatusLabel)
-            .font(.system(size: 8, weight: .black, design: .rounded))
+            .font(.system(size: 11, weight: .black, design: .rounded))
             .foregroundStyle(positionStatusColor)
             .accessibilityIdentifier("whole-shuto-position-state")
             .accessibilityValue(
@@ -2858,7 +2936,7 @@ struct WholeShutoProductView: View {
           Text(journeyRemainingLabel)
             .accessibilityIdentifier("whole-shuto-journey-remaining")
         }
-        .font(.system(size: 9, weight: .black, design: .rounded))
+        .font(.system(size: 11, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.confirmedGreen)
         .lineLimit(1)
         .minimumScaleFactor(0.72)
@@ -2866,12 +2944,31 @@ struct WholeShutoProductView: View {
         journeyProgressRail
 
         Text(drivingBoundaryLabel)
-          .font(.system(size: 9, weight: .bold))
+          .font(.system(size: 11, weight: .bold))
           .foregroundStyle(KaidoTheme.nightQuiet)
           .lineLimit(1)
       }
 
       Spacer(minLength: 4)
+
+      if model.canFinishLiveExpressway {
+        Button {
+          Task { _ = await model.finishLiveExpressway() }
+        } label: {
+          Image(systemName: "rectangle.portrait.and.arrow.right")
+            .font(.system(size: 16, weight: .black))
+            .frame(width: 48, height: 48)
+        }
+        .buttonStyle(WholeShutoCircleButtonStyle(isDriving: true))
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "首都高区間を完了",
+            simplifiedChinese: "完成首都高速路段",
+            english: "Finish Shuto section"
+          )
+        )
+        .accessibilityIdentifier("whole-shuto-finish-expressway")
+      }
 
       // Transport controls belong to the preview only; a live drive
       // follows the vehicle and cannot be stepped or paused.
@@ -3084,7 +3181,7 @@ struct WholeShutoProductView: View {
 
       VStack(alignment: .leading, spacing: 1) {
         Text(instructionKicker)
-          .font(.system(size: 9, weight: .black, design: .rounded))
+          .font(.system(size: 11, weight: .black, design: .rounded))
           .tracking(0.5)
           .foregroundStyle(KaidoTheme.confirmedGreen)
           .lineLimit(1)
@@ -3103,7 +3200,7 @@ struct WholeShutoProductView: View {
           .accessibilityIdentifier("whole-shuto-guidance-distance")
 
         Text(instructionTitle)
-          .font(.system(size: 13, weight: .black, design: .rounded))
+          .font(.system(size: 16, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
           .lineLimit(1)
           .minimumScaleFactor(0.68)
@@ -5294,7 +5391,7 @@ private struct WholeShutoGeographicMap: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   @ObservedObject var model: WholeShutoProductModel
   let planningLocation: WholeShutoPlanningLocationSnapshot?
-  @State private var camera = MapCameraPosition.region(
+  static let defaultCamera = MapCameraPosition.region(
     MKCoordinateRegion(
       center: CLLocationCoordinate2D(
         latitude: 35.6762,
@@ -5304,7 +5401,9 @@ private struct WholeShutoGeographicMap: View {
       longitudinalMeters: 82_000
     )
   )
-  @State private var followsRoute = true
+  @Binding var camera: MapCameraPosition
+  @Binding var followsRoute: Bool
+  @Binding var lastStableHeadingDegrees: Double?
 
   var body: some View {
     Map(position: $camera) {
@@ -5805,6 +5904,7 @@ private struct WholeShutoGeographicMap: View {
     guard force || followsRoute else { return }
     guard isDriving, let current = model.currentCoordinate else {
       followsRoute = true
+      lastStableHeadingDegrees = nil
       // `.automatic` would frame every overlay including the whole-network
       // backdrop (the full Kanto span); frame the journey or the driver's
       // surroundings instead.
@@ -5823,8 +5923,11 @@ private struct WholeShutoGeographicMap: View {
       }
       return
     }
+    if let heading = model.navigationHeadingDegrees {
+      lastStableHeadingDegrees = heading
+    }
     withAnimation(.easeOut(duration: 0.35)) {
-      if let heading = model.navigationHeadingDegrees {
+      if let heading = lastStableHeadingDegrees {
         camera = .camera(
           MapCamera(
             centerCoordinate: current.mapCoordinate,
@@ -5950,6 +6053,7 @@ private struct WholeShutoFacilityLabel: View {
 private struct WholeShutoJunctionInset: View {
   @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
   let prompt: WholeShutoJunctionPrompt
+  let distanceText: String?
 
   var body: some View {
     HStack(spacing: 12) {
@@ -5964,8 +6068,13 @@ private struct WholeShutoJunctionInset: View {
             english: "JUNCTION AHEAD · \(localizedJunctionName)"
           )
         )
-        .font(.system(size: 9, weight: .black, design: .rounded))
+        .font(.system(size: 11, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.confirmedGreen)
+        if let distanceText {
+          Text(distanceText)
+            .font(.system(size: 18, weight: .black, design: .rounded))
+            .foregroundStyle(KaidoTheme.routeWhite)
+        }
         Text(localizedDisplayText)
           .font(.system(size: 19, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
@@ -5978,16 +6087,16 @@ private struct WholeShutoJunctionInset: View {
             .junctionShield(color: routeColor(prompt.outgoingRouteID))
         }
         Text(verbatim: prompt.japaneseSignText)
-          .font(.system(size: 10, weight: .black, design: .rounded))
+          .font(.system(size: 12, weight: .black, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
         Text(
           prompt.routeShields.map(shieldLabel)
             .joined(separator: " · ")
         )
-        .font(.system(size: 8, weight: .bold, design: .monospaced))
+        .font(.system(size: 10, weight: .bold, design: .monospaced))
         .foregroundStyle(KaidoTheme.nightQuiet)
-        Text("\(laneGuidanceLabel) · \(prompt.checkedAt)")
-          .font(.system(size: 8, weight: .bold))
+        Text(laneGuidanceLabel)
+          .font(.system(size: 10, weight: .bold))
           .foregroundStyle(KaidoTheme.nightQuiet)
       }
       Spacer(minLength: 0)
@@ -6034,9 +6143,9 @@ private struct WholeShutoJunctionInset: View {
     switch prompt.laneGuidanceState {
     case .notReleased:
       copy.resolve(
-        japanese: "車線番号は未公開",
-        simplifiedChinese: "车道编号尚未发布",
-        english: "Lane numbers not released"
+        japanese: "車線案内なし",
+        simplifiedChinese: "暂无车道提示",
+        english: "Lane guidance unavailable"
       )
     }
   }
@@ -6051,19 +6160,20 @@ private struct WholeShutoJunctionInset: View {
   }
 
   private var accessibilitySummary: String {
-    copy.resolve(
+    let distance = distanceText.map { "\($0), " } ?? ""
+    return copy.resolve(
       japanese:
-        "\(localizedJunctionName)、"
+        "\(distance)\(localizedJunctionName)、"
         + "\(shieldLabel(prompt.incomingRouteID))から\(branchLabel)、"
         + "\(localizedDisplayText)、日本語標識\(prompt.japaneseSignText)、"
         + laneGuidanceLabel,
       simplifiedChinese:
-        "\(localizedJunctionName)，"
+        "\(distance)\(localizedJunctionName)，"
         + "从\(shieldLabel(prompt.incomingRouteID))\(branchLabel)，"
         + "\(localizedDisplayText)，日文路牌\(prompt.japaneseSignText)，"
         + laneGuidanceLabel,
       english:
-        "\(localizedJunctionName), from "
+        "\(distance)\(localizedJunctionName), from "
         + "\(shieldLabel(prompt.incomingRouteID)), \(branchLabel), "
         + "\(localizedDisplayText), Japanese sign "
         + "\(prompt.japaneseSignText), \(laneGuidanceLabel)"

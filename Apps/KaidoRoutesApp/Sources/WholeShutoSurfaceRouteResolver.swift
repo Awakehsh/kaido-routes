@@ -1,5 +1,6 @@
 import CoreLocation
 import KaidoRouting
+import OSLog
 @preconcurrency import MapKit
 
 protocol WholeShutoSurfaceRouteResolving: Sendable {
@@ -21,11 +22,6 @@ struct WholeShutoRouteChoiceEvaluation: Equatable, Sendable {
 }
 
 struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
-  private struct CandidateResult: Sendable {
-    let routePlanID: String
-    let surfaceRoutes: WholeShutoRouteChoiceSurfaceRoutes?
-  }
-
   private static let surfaceScoreWeight = 1.25
   private static let surfaceReferenceSpeedMetersPerSecond = 8.3
 
@@ -40,45 +36,27 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
     origin: ShutoCoordinate,
     destination: ShutoCoordinate
   ) async -> WholeShutoRouteChoiceEvaluation {
-    let surfaceRoutesByRoutePlanID = await withTaskGroup(
-      of: CandidateResult.self,
-      returning: [
-        String: WholeShutoRouteChoiceSurfaceRoutes
-      ].self
-    ) { group in
-      for recommendation in recommendations {
-        group.addTask {
-          async let access = resolver.route(
-            from: origin,
-            to: recommendation.route.entryFacility.coordinate
+    var surfaceRoutesByRoutePlanID: [
+      String: WholeShutoRouteChoiceSurfaceRoutes
+    ] = [:]
+    // Evaluate one candidate at a time (two legs in parallel) so a four-route
+    // result set cannot fan out into eight simultaneous MapKit requests.
+    for recommendation in recommendations {
+      guard !Task.isCancelled else { break }
+      let entry = recommendation.route.coordinates.first
+        ?? recommendation.route.entryFacility.coordinate
+      let exit = recommendation.route.coordinates.last
+        ?? recommendation.route.exitFacility.coordinate
+      async let access = resolver.route(from: origin, to: entry)
+      async let egress = resolver.route(from: exit, to: destination)
+      let routes = await (access, egress)
+      if let accessRoute = routes.0, let egressRoute = routes.1 {
+        surfaceRoutesByRoutePlanID[recommendation.route.routePlan.id] =
+          WholeShutoRouteChoiceSurfaceRoutes(
+            access: accessRoute,
+            egress: egressRoute
           )
-          async let egress = resolver.route(
-            from: recommendation.route.exitFacility.coordinate,
-            to: destination
-          )
-          let routes = await (access, egress)
-          let surfaceRoutes = routes.0.flatMap { accessRoute in
-            routes.1.map { egressRoute in
-              WholeShutoRouteChoiceSurfaceRoutes(
-                access: accessRoute,
-                egress: egressRoute
-              )
-            }
-          }
-          return CandidateResult(
-            routePlanID: recommendation.route.routePlan.id,
-            surfaceRoutes: surfaceRoutes
-          )
-        }
       }
-
-      var results: [String: WholeShutoRouteChoiceSurfaceRoutes] = [:]
-      for await result in group {
-        if let surfaceRoutes = result.surfaceRoutes {
-          results[result.routePlanID] = surfaceRoutes
-        }
-      }
-      return results
     }
 
     guard
@@ -136,6 +114,11 @@ struct WholeShutoMapKitSurfaceRouteResolver:
   WholeShutoSurfaceRouteResolving,
   Sendable
 {
+  private static let logger = Logger(
+    subsystem: "app.kaidoroutes",
+    category: "surface-routing"
+  )
+
   func route(
     from origin: ShutoCoordinate,
     to destination: ShutoCoordinate
@@ -152,6 +135,17 @@ struct WholeShutoMapKitSurfaceRouteResolver:
         let route = try await MKDirections(request: request)
           .calculate().routes.first
       else {
+        Self.logger.error("MapKit returned no automobile route")
+        return nil
+      }
+      guard
+        route.polyline.pointCount >= 2,
+        route.distance.isFinite,
+        route.distance >= 0,
+        route.expectedTravelTime.isFinite,
+        route.expectedTravelTime >= 0
+      else {
+        Self.logger.error("MapKit returned invalid route geometry or metrics")
         return nil
       }
       let points = route.polyline.points()
@@ -177,10 +171,15 @@ struct WholeShutoMapKitSurfaceRouteResolver:
             distanceMeters: step.distance
           )
         },
-        guidanceLanguageCode: (Locale.preferredLanguages.first ?? Locale.current.identifier)
-          .replacingOccurrences(of: "_", with: "-")
+        guidanceLanguageCode: Self.supportedSpeechLanguageCode(
+          Locale.preferredLanguages.first ?? Locale.current.identifier
+        )
       )
     } catch {
+      let nsError = error as NSError
+      Self.logger.error(
+        "MapKit route failed: domain=\(nsError.domain, privacy: .public) code=\(nsError.code)"
+      )
       return nil
     }
   }
@@ -203,6 +202,20 @@ struct WholeShutoMapKitSurfaceRouteResolver:
         )
       )
     )
+  }
+
+  private static func supportedSpeechLanguageCode(_ identifier: String) -> String {
+    let normalized = identifier.replacingOccurrences(of: "_", with: "-")
+      .lowercased()
+    if normalized.hasPrefix("ja") { return "ja-JP" }
+    if normalized.hasPrefix("zh-hant")
+      || normalized.hasPrefix("zh-tw")
+      || normalized.hasPrefix("zh-hk")
+    {
+      return "zh-TW"
+    }
+    if normalized.hasPrefix("zh") { return "zh-CN" }
+    return "en-US"
   }
 }
 

@@ -1,16 +1,18 @@
 # iPhone product experience
 
-Status: accepted product design contract, realigned on 2026-08-03, checked
-against the default App on 2026-08-11, and updated on 2026-08-24 for the
-single Settings sheet and compact map-adjacent OSM credit. The implementation now opens on the
+Status: accepted product design contract, checked against the default App on
+2026-09-03. The implementation now opens on the
 route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
 bands for named experiences, supports loop lap count and exact custom routes,
 and carries the selected route through review, labeled replay, finish, and
-checkpoint reconstruction. Live start is present but fails closed with
-`WHOLE_SHUTO_NAVIGATION_RELEASE_REQUIRED` because the candidate snapshot is not
-an authority-bearing `KaidoProductRelease`. Saved routes that exactly match the
-bundled snapshot can reopen parked review and replay after complete `RoutePlan`
-reconstruction; this current-snapshot path grants no live authority. The
+checkpoint reconstruction. Every direction-valid route with complete reviewed
+junction coverage can build an authority-bearing foreground product release on
+device; incomplete routes still fail closed. An interrupted live journey keeps
+its exact release-bound actor checkpoint and returns through an explicit resume
+action with matcher reacquisition. Parked review checkpoints are deliberately
+discarded so a stale current-location origin is never reused on a later drive.
+Saved routes that exactly match the bundled snapshot reopen through current
+origin resolution and complete `RoutePlan` reconstruction. The
 accompanying visual mockup is illustrative and grants no real-road route, lane,
 realtime, or field authority.
 

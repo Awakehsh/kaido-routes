@@ -221,13 +221,19 @@ public actor NavigationSession {
     let detectsOffPlanDeviation =
       engine.snapshot.journeyPhase == .strictRoute
       || engine.snapshot.journeyPhase == .routeRecovery
+    let admitsMediumConfidenceProgress =
+      engine.snapshot.journeyPhase == .strictRoute
+    let resolvesLongitudinalCandidates =
+      longitudinalCandidatesAreResolved(in: estimate)
 
     if requiresRestorationReacquisition {
       engine.observeLocation(
         Self.locationObservation(
           from: estimate,
           source: observation,
-          admitsOccurrenceProgress: admitsOccurrenceProgress
+          admitsOccurrenceProgress: admitsOccurrenceProgress,
+          admitsMediumConfidence: resolvesLongitudinalCandidates,
+          resolvesLongitudinalCandidates: resolvesLongitudinalCandidates
         )
       )
       if engine.snapshot.signalReacquisitionStatus == .confirmed {
@@ -243,7 +249,9 @@ public actor NavigationSession {
       Self.locationObservation(
         from: estimate,
         source: observation,
-        admitsOccurrenceProgress: admitsOccurrenceProgress
+        admitsOccurrenceProgress: admitsOccurrenceProgress,
+        admitsMediumConfidence: admitsMediumConfidenceProgress,
+        resolvesLongitudinalCandidates: resolvesLongitudinalCandidates
       )
     )
     if detectsOffPlanDeviation,
@@ -381,7 +389,9 @@ public actor NavigationSession {
         Self.locationObservation(
           from: estimate,
           source: observation,
-          admitsOccurrenceProgress: false
+          admitsOccurrenceProgress: false,
+          admitsMediumConfidence: false,
+          resolvesLongitudinalCandidates: false
         )
       )
       return update(
@@ -454,9 +464,14 @@ public actor NavigationSession {
       engine.observeLocation(observation)
     }
     if decision.status == .strictRouteEntered,
-      engine.snapshot.journeyPhase == .strictRoute,
       let firstOccurrenceID = admission.context.entryTransition.firstRouteOccurrenceID
     {
+      if engine.snapshot.journeyPhase != .strictRoute {
+        engine.enterStrictRoute(
+          firstOccurrenceID: firstOccurrenceID,
+          trigger: "VERIFIED_FIRST_ROUTE_EDGE_CONTINUITY"
+        )
+      }
       try matcherSession.restart(at: firstOccurrenceID)
     }
     return EntryTransitionSessionUpdate(
@@ -580,7 +595,9 @@ public actor NavigationSession {
   private static func locationObservation(
     from estimate: MatcherEstimate,
     source observation: RouteMatcherObservation,
-    admitsOccurrenceProgress: Bool
+    admitsOccurrenceProgress: Bool,
+    admitsMediumConfidence: Bool,
+    resolvesLongitudinalCandidates: Bool
   ) -> LocationObservation {
     guard admitsOccurrenceProgress else {
       return LocationObservation(
@@ -592,13 +609,22 @@ public actor NavigationSession {
       )
     }
     let candidateResolution: RouteCandidateResolution
-    if estimate.directedEdgeID != nil, estimate.candidateEdgeIDs.count == 1 {
+    if estimate.directedEdgeID != nil,
+      estimate.candidateEdgeIDs.count == 1 || resolvesLongitudinalCandidates
+    {
       candidateResolution = .resolved
     } else if estimate.candidateEdgeIDs.count > 1 {
       candidateResolution = .ambiguous
     } else {
       candidateResolution = .unknown
     }
+    let admittedConfidence: LocationConfidence =
+      estimate.confidence == .medium
+        && admitsMediumConfidence
+        && estimate.occurrenceID != nil
+        && resolvesLongitudinalCandidates
+      ? .high
+      : LocationConfidence(rawValue: estimate.confidence.rawValue) ?? .lost
     return LocationObservation(
       directedEdgeID: estimate.directedEdgeID,
       matchedEntityID: estimate.directedEdgeID,
@@ -606,12 +632,38 @@ public actor NavigationSession {
       candidateOccurrenceIDs: Set([estimate.occurrenceID].compactMap { $0 }),
       candidateResolution: candidateResolution,
       observedAtMilliseconds: observation.observedAtMilliseconds,
-      reportedConfidence: LocationConfidence(rawValue: estimate.confidence.rawValue) ?? .lost,
+      reportedConfidence: admittedConfidence,
       horizontalAccuracyMeters: observation.horizontalAccuracyMeters,
       ageMilliseconds: observation.receivedAtMilliseconds
         - observation.observedAtMilliseconds,
       forwardContinuity: false
     )
+  }
+
+  private func longitudinalCandidatesAreResolved(
+    in estimate: MatcherEstimate
+  ) -> Bool {
+    guard estimate.directedEdgeID != nil,
+      let occurrenceID = estimate.occurrenceID,
+      let occurrence = routePlan.occurrence(id: occurrenceID)
+    else { return false }
+    let lower = max(
+      0,
+      occurrence.index
+        - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    let upper = min(
+      routePlan.occurrences.count - 1,
+      occurrence.index
+        + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    return estimate.candidateEdgeIDs.allSatisfy { candidateID in
+      (lower...upper).contains { index in
+        matcherCorridor.occurrences.first {
+          $0.index == index && $0.directedEdgeID == candidateID
+        } != nil
+      }
+    }
   }
 
   private static func restorationEstimate(

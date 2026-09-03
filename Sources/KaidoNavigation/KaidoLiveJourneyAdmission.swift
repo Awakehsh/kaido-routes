@@ -60,4 +60,14 @@ public struct KaidoLiveJourneyAdmission: Sendable {
   public func makeRuntime() throws -> KaidoProductNavigationRuntime {
     validatedRuntime
   }
+
+  public func makeRuntime(
+    checkpoint: NavigationSessionCheckpoint
+  ) throws -> KaidoProductNavigationRuntime {
+    try KaidoProductNavigationRuntime(
+      release: release,
+      journeyPlan: journeyPlan,
+      checkpoint: checkpoint
+    )
+  }
 }

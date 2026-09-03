@@ -21,6 +21,7 @@ struct WholeShutoTrackMapView: View {
   let spans: [WholeShutoTrackMapSpan]
   let entryFacilityID: String
   let currentCoordinate: ShutoCoordinate?
+  let routeProgressFraction: Double?
   let isPositionEstimated: Bool
   /// Fraction of the view height left visible above the planning/driving
   /// dock; the whole route must fit inside it at base zoom.
@@ -30,13 +31,13 @@ struct WholeShutoTrackMapView: View {
   /// from the floating banner, landscape needs almost none.
   var labelTopInsetOverride: Double? = nil
 
-  @State private var zoom: Double = 1
-  @State private var pan: CGSize = .zero
+  @Binding var zoom: Double
+  @Binding var pan: CGSize
   @State private var zoomAtGestureStart: Double?
   @State private var panAtGestureStart: CGSize?
   /// While driving the frame follows the position at a closer zoom until
   /// the driver takes over with a gesture; recentering hands it back.
-  @State private var userAdjustedViewport = false
+  @Binding var userAdjustedViewport: Bool
 
   private static let maximumZoom = 5.0
   private static let doubleTapZoom = 2.2
@@ -159,7 +160,7 @@ struct WholeShutoTrackMapView: View {
           }
           .buttonStyle(.plain)
           .padding(.trailing, 14)
-          .padding(.bottom, geometry.size.height - visibleHeight + 14)
+          .padding(.bottom, geometry.size.height - visibleHeight + 58)
           .accessibilityIdentifier("whole-shuto-track-map-recenter")
         }
       }
@@ -173,6 +174,14 @@ struct WholeShutoTrackMapView: View {
         }
       }
       .onChange(of: currentCoordinate?.latitude) {
+        guard !userAdjustedViewport else { return }
+        followPosition(
+          fit: fit,
+          width: width,
+          visibleHeight: visibleHeight
+        )
+      }
+      .onChange(of: routeProgressFraction) {
         guard !userAdjustedViewport else { return }
         followPosition(
           fit: fit,
@@ -209,14 +218,7 @@ struct WholeShutoTrackMapView: View {
     width: Double,
     visibleHeight: Double
   ) {
-    guard let coordinate = currentCoordinate else { return }
-    let position = layout.nearestTrackPoint(
-      to: RouteTrackMapLayout.GeoPoint(
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude
-      ),
-      projector: layout.projector.project
-    )
+    guard let position = currentTrackPosition else { return }
     let followZoom = Self.followZoom
     let centerX =
       (width - RouteTrackMapLayout.designWidth * fit * followZoom) / 2
@@ -343,15 +345,8 @@ struct WholeShutoTrackMapView: View {
       return path
     }
 
-    let position = currentCoordinate.map {
-      layout.nearestTrackPoint(
-        to: RouteTrackMapLayout.GeoPoint(
-          latitude: $0.latitude,
-          longitude: $0.longitude
-        ),
-        projector: layout.projector.project
-      )
-    }
+    let position = currentTrackPosition
+
     let traveled = position?.fraction ?? 0
     let weightScale = 0.85 + 0.15 * zoom
 
@@ -726,6 +721,21 @@ struct WholeShutoTrackMapView: View {
           layer.fill(arrow, with: .color(Midnight.background))
         }
       }
+    }
+  }
+
+  private var currentTrackPosition: RouteTrackMapLayout.TrackPoint? {
+    if let routeProgressFraction {
+      return layout.point(atFraction: min(1, max(0, routeProgressFraction)))
+    }
+    return currentCoordinate.map {
+      layout.nearestTrackPoint(
+        to: RouteTrackMapLayout.GeoPoint(
+          latitude: $0.latitude,
+          longitude: $0.longitude
+        ),
+        projector: layout.projector.project
+      )
     }
   }
 

@@ -15,7 +15,7 @@ public enum GuidanceProgressBridgeError: Error, Equatable, Sendable {
   case invalidGeometry(String)
 }
 
-/// Converts a HIGH Swift-matcher along-edge result into route distance to a reviewed zone.
+/// Converts an unambiguous route-bound matcher result into route distance to a reviewed zone.
 /// Lateral match error is never interpreted as route progress.
 public enum GuidanceProgressBridge {
   public static func resolve(
@@ -25,7 +25,7 @@ public enum GuidanceProgressBridge {
     decisionZone: DecisionZoneProgressDefinition,
     skippedOccurrenceIDs: Set<String> = []
   ) throws -> GuidanceProgressObservation {
-    guard estimate.confidence == .high,
+    guard estimate.confidence == .high || estimate.confidence == .medium,
       let currentOccurrenceID = estimate.occurrenceID,
       let directedEdgeID = estimate.directedEdgeID,
       let fractionAlongEdge = estimate.fractionAlongEdge
@@ -82,6 +82,23 @@ public enum GuidanceProgressBridge {
       let currentBinding = corridorOccurrencesByID[currentOccurrenceID]
     else {
       throw GuidanceProgressBridgeError.unknownCurrentOccurrence
+    }
+    let lowerCandidateIndex = max(
+      0,
+      currentRouteOccurrence.index
+        - RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    let upperCandidateIndex = min(
+      routePlan.occurrences.count - 1,
+      currentRouteOccurrence.index
+        + RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+    )
+    guard estimate.candidateEdgeIDs.allSatisfy({ candidateID in
+      (lowerCandidateIndex...upperCandidateIndex).contains { index in
+        corridorOccurrencesByIndex[index]?.directedEdgeID == candidateID
+      }
+    }) else {
+      throw GuidanceProgressBridgeError.insufficientMatcherEvidence
     }
     guard currentBinding.index == currentRouteOccurrence.index,
       currentBinding.directedEdgeID == directedEdgeID,

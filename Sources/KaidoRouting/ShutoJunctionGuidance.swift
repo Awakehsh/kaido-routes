@@ -204,7 +204,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: japaneseSignText
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-08-15",
       expectedJunctionDetailSHA256: expectedJunctionDetailSHA256,
       sources: [
@@ -239,7 +239,7 @@ public enum ShutoJunctionMovementCatalog {
     destinationJA: String,
     destinationZH: String,
     destinationEN: String,
-    commitTriggerDistanceMeters: Double = 100,
+    commitTriggerDistanceMeters: Double = 300,
     expectedJunctionDetailSHA256: String,
     officialDetailReference: String,
     additionalSources: [String]
@@ -1766,7 +1766,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 羽田方面",
       destinationZH: "K1 横羽线羽田方向",
       destinationEN: "Route K1 toward Haneda",
-      commitTriggerDistanceMeters: 150,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1797,7 +1797,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K7 横浜北線 第三京浜・東名方面",
       destinationZH: "K7 横浜北线第三京滨・东名高速方向",
       destinationEN: "Route K7 toward the Daisan Keihin and Tomei Expressway",
-      commitTriggerDistanceMeters: 150,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1828,7 +1828,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 羽田方面",
       destinationZH: "K1 横羽线羽田方向",
       destinationEN: "Route K1 toward Haneda",
-      commitTriggerDistanceMeters: 200,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1858,7 +1858,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K7 横浜北線 第三京浜・東名方面",
       destinationZH: "K7 横浜北线第三京滨・东名高速方向",
       destinationEN: "Route K7 toward the Daisan Keihin and Tomei Expressway",
-      commitTriggerDistanceMeters: 200,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1892,7 +1892,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 羽田・K5 湾岸線方面",
       destinationZH: "K1 羽田・K5 湾岸线方向",
       destinationEN: "Route K1 toward Haneda or Route K5 toward the Bayshore Route",
-      commitTriggerDistanceMeters: 200,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1924,7 +1924,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 横浜公園方面",
       destinationZH: "K1 横羽线横浜公園方向",
       destinationEN: "Route K1 toward Yokohama-koen",
-      commitTriggerDistanceMeters: 200,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1955,7 +1955,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K5 大黒線 湾岸線・空港中央方面",
       destinationZH: "K5 大黑线湾岸线・机场中央方向",
       destinationEN: "Route K5 toward the Bayshore Route and Kuko-chuo",
-      commitTriggerDistanceMeters: 150,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -1986,7 +1986,7 @@ public enum ShutoJunctionMovementCatalog {
       destinationJA: "K1 横羽線 羽田方面",
       destinationZH: "K1 横羽线羽田方向",
       destinationEN: "Route K1 toward Haneda",
-      commitTriggerDistanceMeters: 150,
+      commitTriggerDistanceMeters: 300,
       expectedJunctionDetailSHA256:
         "68ce0e28c3d83658d98c7bc68fef815c"
         + "a0f3f7bed77e3bea72573ae2b0c5bd7c",
@@ -3097,7 +3097,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "豊洲"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-30",
       expectedJunctionDetailSHA256:
         "452e2ca3d124ec3f726b0c3643cedbbc"
@@ -3170,7 +3170,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "晴海"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-30",
       expectedJunctionDetailSHA256:
         "452e2ca3d124ec3f726b0c3643cedbbc"
@@ -3242,7 +3242,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "箱崎"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-30",
       expectedJunctionDetailSHA256:
         "c4ea23ea7741c0f9f54b875e62b04825"
@@ -3314,7 +3314,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "箱崎・銀座"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-30",
       expectedJunctionDetailSHA256:
         "c4ea23ea7741c0f9f54b875e62b04825"
@@ -3387,7 +3387,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "東北道・常磐道"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-30",
       expectedJunctionDetailSHA256:
         "5e52b43abc96875472405c2fe5c2ca49"
@@ -3459,7 +3459,7 @@ public enum ShutoJunctionMovementCatalog {
           preservedJapaneseSignText: "東名・中央道"
         ),
       ],
-      commitTriggerDistanceMeters: 100,
+      commitTriggerDistanceMeters: 300,
       checkedAt: "2026-07-29",
       expectedJunctionDetailSHA256:
         "4bfe3cb6117273ec547a62872b971a87f"

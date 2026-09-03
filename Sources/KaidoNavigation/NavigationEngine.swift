@@ -400,6 +400,21 @@ public struct NavigationEngine: Sendable {
       "RELEASED_EGRESS_PLAN_ACTIVATED"
   }
 
+  package mutating func enterStrictRoute(
+    firstOccurrenceID: String,
+    trigger: String
+  ) {
+    guard snapshot.journeyPhase == .planning
+      || snapshot.journeyPhase == .approachToEntry
+      || snapshot.journeyPhase == .entryTransition
+    else { return }
+    snapshot.journeyPhase = .strictRoute
+    snapshot.lastPhaseTransitionTrigger = trigger
+    snapshot.strictRouteAutoCommitAllowed = true
+    snapshot.ambiguityReason = nil
+    advance(to: firstOccurrenceID)
+  }
+
   package mutating func activateSurfaceEgress() {
     guard snapshot.journeyPhase == .exitTransition,
       snapshot.egress.status == .active
@@ -685,6 +700,16 @@ public struct NavigationEngine: Sendable {
     }
     let currentIndex = snapshot.currentOccurrenceIndex ?? -1
     guard target.index >= currentIndex else { return }
+
+    if snapshot.journeyPhase == .routeRecovery,
+      snapshot.recovery.status == .unavailable,
+      target.index > currentIndex
+    {
+      snapshot.journeyPhase = .strictRoute
+      snapshot.recovery = RecoveryState()
+      snapshot.lastPhaseTransitionTrigger =
+        "EXACT_LATER_ROUTE_OCCURRENCE_REACQUIRED"
+    }
 
     if snapshot.journeyPhase == .routeRecovery,
       snapshot.recovery.status == .active,

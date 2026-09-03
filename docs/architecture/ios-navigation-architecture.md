@@ -89,8 +89,10 @@ MapKit surface legs remain bounded presentation inputs around its expressway-onl
 constructs `KaidoProductNavigationRuntime`, `ShutoLiveDriveSession`, both
 boundary adapters, and the observation adapter before attaching the shared
 serial navigation location controller. Device fixes reject invalid, stale,
-future-dated, ambiguous, and distributed-build simulated input and require a
-unique HIGH occurrence commit before progress. The seam cannot mint
+future-dated, independently ambiguous, and distributed-build simulated input.
+HIGH remains mandatory at entry/exit, recovery, and completion boundaries;
+between them, MEDIUM estimates may advance only when every candidate is a
+nearby ordered occurrence of the active RoutePlan. The seam cannot mint
 `EntryTransitionAdmissionContext`,
 `SurfaceEgressAdmissionContext`, or an `isReleased` surface option from an asset
 hash or a MapKit response. Two consecutive accepted off-route observations may
@@ -98,7 +100,8 @@ replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
 recomputed. Planning location and replay never run in the background; only the
 explicitly user-started live session does. No current path supplies tunnel
-dead-reckoning authority. For a tagged tunnel or covered edge only, the App may
+dead-reckoning authority. The live adapter drives the actor's tunnel entry/exit
+and multi-observation reacquisition state. For a tagged tunnel or covered edge only, the App may
 derive a presentation-only estimate from the last HIGH route projection and
 bounded reported speed. It refreshes once per second for at most 45 seconds,
 grows an uncertainty halo, and stops before the next released junction-movement
@@ -392,10 +395,13 @@ or schedule guidance. `CoreLocationEntryTransitionAdapter` instead consumes the
 immutable admission context supplied by `KaidoProductNavigationRuntime`, matches
 against the exact release-bound corridor, and emits a package-only
 `EntryTransitionEvidence`. The actor rejects simulation, stale/replayed or
-receive-reversed observations, release identity drift, non-HIGH or ambiguous
-matches, missing/mismatched heading, and skipped transition edges. It derives
-forward continuity from the accepted edge history and restarts route matching at
-the exact first occurrence only after strict-route entry. The current 45-degree
+receive-reversed observations, release identity drift, independent road
+ambiguity, missing/mismatched heading, and skipped transition edges. Exact HIGH
+ordered transition edges remain sufficient. Because several released ramps are
+shorter than a 1 Hz driving sample, two time-ordered, heading-compatible MEDIUM
+observations over the release-bound transition/route-head chain may instead
+confirm the exact first RoutePlan edge. It restarts route matching at that exact
+first occurrence only after strict-route entry. The current 45-degree
 heading and ten-second age gates are conservative implementation thresholds, not
 field-calibrated release values. The Core Location adapter preserves
 `courseAccuracy` and `speedAccuracy` on the matcher observation as well as in
@@ -606,9 +612,12 @@ moving decision zone exposes no route editor or required phone touch.
 
 The released frame, pure planner, ledger update, and semantic projection are
 executable. `GuidanceProgressBridge` now derives distance-to-DecisionZone from a
-HIGH Swift estimate only when along-edge progress, RoutePlan occurrence, directed
-edge, complete version-bound corridor geometry, and reviewed DecisionZone entry
-offset agree. It never consumes the matcher's lateral residual as route distance.
+HIGH or route-order-continuous MEDIUM Swift estimate only when along-edge
+progress, RoutePlan occurrence, directed edge, complete version-bound corridor
+geometry, and reviewed DecisionZone entry offset agree. Guidance anchors are
+compiled onto the earliest sampled occurrence already inside their
+300-meter-or-greater trigger window instead of the single short edge before the
+movement. It never consumes the matcher's lateral residual as route distance.
 KR-S17 injects an already resolved scalar; KR-S18 executes the matcher bridge
 through planning, ledger, and projection. The whole-Shuto runtime compiler now
 constructs the candidate corridor and occurrence-bound zones used by replay.
@@ -631,7 +640,9 @@ UI-owned occurrence progress. A separate foreground-started controller can const
 automotive `CLLocationManager` only after a release-bound live-input authority
 matches the actor's exact product release, navigation release, runtime policy,
 snapshot, RoutePlan, and matcher corridor. It requests When In Use authorization
-only after an explicit start and serializes callback batches. An admitted
+only after an explicit start and serializes callback batches. A bounded callback
+backlog drops the oldest pending batch and reports a transient issue without
+terminating Core Location. An admitted
 active navigation session continues across inactive/background scene changes;
 explicit stop, permission downgrade, runtime failure, or completion disables
 background updates and drains the current callback. The bundled
@@ -724,14 +735,16 @@ belongs to exactly one eligible released recovery path; ambiguous or unknown
 edges remain fail-closed. The App then keeps the live observation stream active,
 projects the current position onto that released path, renders its remaining
 geometry, and clears recovery state only after the actor reaches the bound
-target occurrence. The release gate additionally requires
+target occurrence. If no released detour exists, the stream remains active and
+an exact HIGH match on a legal later RoutePlan occurrence resumes strict-route
+navigation without inventing a reversal or destination reroute. The release gate additionally requires
 every transition edge to exist in the same matcher corridor and every
 consecutive pair to be an explicit successor. The transition may end
 immediately before the first RoutePlan occurrence or use an exact prefix
 beginning with that occurrence. The prefix form avoids inventing a long
 straight virtual approach when the retained graph omits a surface predecessor;
-strict-route entry still requires HIGH, heading-valid matches on both ordered
-RoutePlan edges. The internal app now owns a foreground-only synthetic
+strict-route entry requires either that exact HIGH sequence or the bounded
+route-head continuity window above. The internal app now owns a foreground-only synthetic
 composition pipeline and an input-disconnected SwiftUI scene. The app model
 retains the `NavigationPresentationProjection` returned from the same atomic
 update used for speech scheduling. SwiftUI renders only that value; it does not
@@ -756,7 +769,11 @@ first otherwise-HIGH matcher estimate may seed that window but is returned as
 LOW and cannot advance progress or emit guidance. Later fresh evidence must
 satisfy the ordinary multi-observation reacquisition policy. The emitted-prompt
 ledger remains in the checkpoint, so reconstruction cannot replay a prior
-prompt.
+prompt. The whole-Shuto shell persists that actor checkpoint with its local
+journey projection at most once per five-second observation window and always
+on background transition. A new process reconstructs the same release-bound
+runtime only after an explicit resume action; parked review checkpoints are
+rejected instead of restoring a stale current-location origin.
 
 `FileNavigationSessionCheckpointStore` atomically replaces one JSON file under
 Application Support. The runtime panel observes `scenePhase`; inactive or

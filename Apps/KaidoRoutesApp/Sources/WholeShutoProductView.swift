@@ -289,16 +289,6 @@ struct WholeShutoProductView: View {
         map
           .ignoresSafeArea()
 
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            WholeShutoMapCredit(attribution: wholeShutoAttribution)
-          }
-          .padding(.trailing, 10)
-          .padding(.bottom, mapCreditBottomPadding(for: geometry.size.height))
-        }
-
         if usesExpandedTextLayout && !isDriving
           && model.phase != .completed
         {
@@ -389,15 +379,6 @@ struct WholeShutoProductView: View {
       ZStack {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
-
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            WholeShutoMapCredit(attribution: wholeShutoAttribution)
-              .padding(10)
-          }
-        }
 
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
@@ -597,13 +578,6 @@ struct WholeShutoProductView: View {
       : isDriving
         ? 0.92
         : isPlanningDockExpanded ? 0.66 : 0.88
-  }
-
-  private func mapCreditBottomPadding(for height: CGFloat) -> CGFloat {
-    if !isDriving, model.phase != .completed, !isPlanningDockExpanded {
-      return 68
-    }
-    return height * (1 - mapVisibleBottomFraction) + 44
   }
 
   private var networkOverviewInitialZoom: Double {

@@ -61,7 +61,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The small diagram names Tokyo Tower in the interface language"
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
-    XCTAssertTrue(element("whole-shuto-map-credit", in: app).exists)
+    XCTAssertFalse(element("whole-shuto-map-credit", in: app).exists)
+    XCTAssertFalse(
+      element("route-atlas-attribution-source", in: app).exists
+    )
     XCTAssertFalse(
       element("route-atlas-attribution-licence", in: app).exists
     )

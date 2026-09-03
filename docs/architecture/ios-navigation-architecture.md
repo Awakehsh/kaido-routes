@@ -124,8 +124,8 @@ transitions silent.
 
 The default shell persists interface and guidance-voice languages separately,
 preserves Japanese physical sign text and route shields, and exposes geographic
-and whole-route track-map presentations. OSM attribution is a compact
-map-adjacent native credit in the parked chrome and never grants
+and whole-route track-map presentations. OSM attribution is in Settings
+(source and ODbL links, known-limitations copy) and never grants
 navigation authority. The previous C2 and K7
 artifacts remain deterministic regression fixtures, not product coverage limits
 or active delivery tracks.

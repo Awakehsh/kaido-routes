@@ -95,7 +95,7 @@ operator map or JCT image assets.
 The Swift decoder preserves the complete source/licence metadata. The default
 map validates the exact bundled database identity, snapshot identity, candidate
 verification state, OSM attribution, and ODbL identifier before exposing the
-network with official OSM copyright and ODbL HTTPS links adjacent to the map.
+network with official OSM copyright and ODbL HTTPS links in Settings.
 Route-level `official_directions_ja` values come from the official
 directional IC catalog; they are vocabulary constraints only. A direction is
 bound to a JCT edge only by an exact reviewed movement definition and its

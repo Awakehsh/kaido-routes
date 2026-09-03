@@ -379,7 +379,7 @@ ODbL URI. The immutable bundled Route Atlas attribution
 catalog remains bound to the retained K7 review bytes. The default
 `shuto-whole-network-20260804` surface independently validates the decoded
 snapshot's OSM attribution and ODbL metadata, then exposes fixed HTTPS source
-and licence links adjacent to the map; it does not rewrite or inherit the K7
+and licence links in Settings; it does not rewrite or inherit the K7
 review.
 
 Raw coordinates and personal field traces must not be committed. See

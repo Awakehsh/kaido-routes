@@ -256,11 +256,11 @@ The SVG remains non-interactive. Attribution is not delegated to SVG text:
 SwiftUI exposes native source and licence links beside the visible map. The K7
 entry must retain `© OpenStreetMap contributors`, the OpenStreetMap copyright
 URL, the ODbL 1.0 identifier and URI, always-visible placement, and stable
-accessibility identifiers. The default whole-Shuto map uses a separate
+accessibility identifiers. The default whole-Shuto product uses a separate
 fail-closed attribution surface derived from the exact bundled
-`ShutoNetworkDatabase.sources.osm` metadata. It exposes the same official OSM
-copyright and ODbL HTTPS links without changing the legacy K7 catalog or its
-hash-bound review.
+`ShutoNetworkDatabase.sources.osm` metadata. Settings exposes the same official
+OSM copyright and ODbL HTTPS links; the home map does not repeat them. This
+does not change the legacy K7 catalog or its hash-bound review.
 
 The internal calibration surface requests when-in-use location only after the
 operator explicitly starts a run with non-empty device and mount metadata. The

@@ -1350,23 +1350,42 @@ struct WholeShutoProductView: View {
   ) -> some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack {
-        Text(circuit.displayName(for: languageSettings.interfaceLocale))
-          .font(.system(size: 14, weight: .bold))
-        Spacer()
         Button {
+          showsCircuitAlternatives = false
           model.clearCircuitDraft()
         } label: {
-          Image(systemName: "xmark.circle.fill")
-            .font(.system(size: 16))
-            .foregroundStyle(.secondary)
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
+          HStack(spacing: 5) {
+            Image(systemName: "chevron.left")
+            Text(
+              copy.resolve(
+                japanese: "ルート一覧",
+                simplifiedChinese: "返回路线列表",
+                english: "ALL ROUTES"
+              )
+            )
+          }
+          .font(.caption.weight(.bold))
+          .foregroundStyle(KaidoTheme.positionCyan)
+          .frame(minHeight: 44)
+          .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("whole-shuto-circuit-close")
+        .accessibilityIdentifier("whole-shuto-circuit-back")
+
+        Spacer()
+
+        Text(circuit.displayName(for: languageSettings.interfaceLocale))
+          .font(.system(size: 14, weight: .bold))
+          .multilineTextAlignment(.trailing)
       }
 
       circuitPairingSummary(circuit)
+
+      if let minimumFareEntrance = minimumFareCircuitEntrance,
+        minimumFareEntrance.facilityID != model.circuitEntryFacilityID
+      {
+        minimumFareCircuitButton(minimumFareEntrance)
+      }
 
       if !model.circuitEntranceCandidates.isEmpty {
         Button {
@@ -1532,14 +1551,37 @@ struct WholeShutoProductView: View {
           .font(.caption.weight(.black))
           .foregroundStyle(KaidoTheme.positionCyan)
 
-          HStack(spacing: 6) {
-            Text(entry.nameJA)
-              .font(.system(size: 13, weight: .bold))
+          HStack(alignment: .bottom, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(
+                copy.resolve(
+                  japanese: "入口",
+                  simplifiedChinese: "入口",
+                  english: "ENTRANCE"
+                )
+              )
+              .font(.caption2.weight(.semibold))
+              .foregroundStyle(.secondary)
+              Text(entry.nameJA)
+                .font(.system(size: 13, weight: .bold))
+            }
             Image(systemName: "arrow.right")
               .font(.system(size: 10, weight: .bold))
               .foregroundStyle(.secondary)
-            Text(exit.nameJA)
-              .font(.system(size: 13, weight: .bold))
+              .padding(.bottom, 3)
+            VStack(alignment: .leading, spacing: 2) {
+              Text(
+                copy.resolve(
+                  japanese: "おすすめ出口",
+                  simplifiedChinese: "推荐出口",
+                  english: "RECOMMENDED EXIT"
+                )
+              )
+              .font(.caption2.weight(.semibold))
+              .foregroundStyle(.secondary)
+              Text(exit.nameJA)
+                .font(.system(size: 13, weight: .bold))
+            }
             if entry.etcOnly || exit.etcOnly {
               Text("ETC")
                 .font(.system(size: 9, weight: .bold))
@@ -1552,7 +1594,7 @@ struct WholeShutoProductView: View {
           }
           HStack(spacing: 6) {
             if let band = model.circuitPairingBand {
-              Text(circuitTariffText(band))
+              Text(selectedCircuitTariffText(band))
                 .font(.system(size: 11, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(
@@ -1634,15 +1676,70 @@ struct WholeShutoProductView: View {
     }
     return model.usesCurrentLocationOrigin
       ? copy.resolve(
-        japanese: "現在地からおすすめ",
-        simplifiedChinese: "根据当前位置推荐",
-        english: "Recommended from current location"
+        japanese: "現在地から最寄りの到達可能な入口",
+        simplifiedChinese: "根据当前位置推荐最近可达入口",
+        english: "Nearest reachable entrance from your location"
       )
       : copy.resolve(
-        japanese: "出発地からおすすめ",
-        simplifiedChinese: "根据出发地推荐",
-        english: "Recommended from origin"
+        japanese: "出発地から最寄りの到達可能な入口",
+        simplifiedChinese: "根据出发地推荐最近可达入口",
+        english: "Nearest reachable entrance from origin"
       )
+  }
+
+  private var minimumFareCircuitEntrance:
+    ShutoNetworkDatabase.Facility?
+  {
+    model.circuitEntranceCandidates.first { facility in
+      guard
+        let band = model.circuitTariffBandsByFacilityID[facility.facilityID]
+      else { return false }
+      if case .minimum = band { return true }
+      return false
+    }
+  }
+
+  private func minimumFareCircuitButton(
+    _ facility: ShutoNetworkDatabase.Facility
+  ) -> some View {
+    Button {
+      model.selectCircuitEntrance(facilityID: facility.facilityID)
+    } label: {
+      HStack(spacing: 9) {
+        Image(systemName: "yensign.circle.fill")
+          .foregroundStyle(KaidoTheme.routeGreen)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(
+            copy.resolve(
+              japanese: "¥300 最低料金のルート",
+              simplifiedChinese: "¥300 最低费用方案",
+              english: "¥300 MINIMUM FARE OPTION"
+            )
+          )
+          .font(.caption.weight(.black))
+          Text(
+            copy.resolve(
+              japanese: "\(facility.nameJA)入口からおすすめ出口まで",
+              simplifiedChinese: "\(facility.nameJA)入口 → 推荐出口",
+              english: "\(facility.nameJA) entrance → recommended exit"
+            )
+          )
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.secondary)
+        }
+        Spacer()
+        Image(systemName: "chevron.right")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(.secondary)
+      }
+      .padding(.horizontal, 10)
+      .frame(minHeight: 48)
+      .background(KaidoTheme.routeGreen.opacity(0.1))
+      .clipShape(RoundedRectangle(cornerRadius: 10))
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("whole-shuto-circuit-minimum-fare")
   }
 
   private func circuitEntranceRow(
@@ -1764,6 +1861,17 @@ struct WholeShutoProductView: View {
         english: "¥\(yen) CAP"
       )
     }
+  }
+
+  private func selectedCircuitTariffText(_ band: ShutoTariffBand) -> String {
+    guard case .minimum(let yen) = band else {
+      return circuitTariffText(band)
+    }
+    return copy.resolve(
+      japanese: "おすすめ · ¥\(yen)・最低料金帯",
+      simplifiedChinese: "推荐 · ¥\(yen)·最低费用档",
+      english: "RECOMMENDED · ¥\(yen) MIN BAND"
+    )
   }
 
   /// The destination is an optional continuation after route choice, so the

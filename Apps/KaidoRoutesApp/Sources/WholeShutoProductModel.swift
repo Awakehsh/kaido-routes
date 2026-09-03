@@ -572,16 +572,6 @@ final class WholeShutoProductModel: ObservableObject {
     "shuto.circuit.scenic-grand-tour": "shuto.ic.10.harumi",
   ]
 
-  /// Exact catalog routes whose reviewed junction set is complete enough to
-  /// author a foreground release directly from the bundled network.
-  private nonisolated static let onDemandNavigationPairingByCircuitID:
-    [String: (entranceID: String, exitID: String)] = [
-      "shuto.circuit.c1-outer": (
-        entranceID: "shuto.ic.c1.kyoubashi",
-        exitID: "shuto.ic.c1.shintomicho"
-      )
-    ]
-
   private func resolveCircuitThumbnails() {
     let planner = planner
     circuitThumbnailTask?.cancel()
@@ -2158,23 +2148,7 @@ final class WholeShutoProductModel: ObservableObject {
     circuitEntranceDistanceMeters = nil
     circuitEntranceWasOverridden = false
     circuitTariffBandsByFacilityID = [:]
-    resolveCircuitPairing(
-      entranceOverride: releasedEntranceFacilityID(for: circuit)
-    )
-  }
-
-  private func releasedEntranceFacilityID(
-    for circuit: ShutoCircuitDefinition
-  ) -> String? {
-    releasedRoutePlan(for: circuit)?.entryFacilityID
-  }
-
-  private func releasedRoutePlan(
-    for circuit: ShutoCircuitDefinition
-  ) -> RoutePlan? {
-    releasedForegroundRoutePlans.first {
-      $0.id.hasPrefix("\(circuit.circuitID).")
-    }
+    resolveCircuitPairing(entranceOverride: nil)
   }
 
   func clearCircuitDraft() {
@@ -2231,10 +2205,10 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func refreshCircuitEntrances() {
-    guard let selectedCircuit else { return }
+    guard selectedCircuit != nil else { return }
     resolveCircuitPairing(
-      entranceOverride: circuitEntryFacilityID
-        ?? releasedEntranceFacilityID(for: selectedCircuit)
+      entranceOverride:
+        circuitEntranceWasOverridden ? circuitEntryFacilityID : nil
     )
   }
 
@@ -2249,95 +2223,47 @@ final class WholeShutoProductModel: ObservableObject {
     isResolvingCircuitPairing = true
     let planner = planner
     let originCoordinate = origin?.coordinate
-    let requestedLaps = circuitLaps
-    let admissionResolver = liveJourneyAdmissionResolver
-    let onDemandNavigationPairing =
-      Self.onDemandNavigationPairingByCircuitID[circuit.circuitID]
-    let releasedRoutePlan = releasedRoutePlan(for: circuit)
-    let releasedEntranceID = releasedRoutePlan?.entryFacilityID
-    let releasedEntrance = releasedEntranceID.flatMap { facilityID in
-      database.directionalFacilities.first {
-        $0.facilityID == facilityID
-      }
-    }
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
-      let ranked = planner.circuitEntranceCandidates(
+      let candidates = planner.circuitEntranceCandidates(
         for: circuit,
         origin: originCoordinate
       )
-      // A released expressway-only route remains plannable before the driver
-      // reaches Tokyo. Its ordinary-road approach is still preview-only, and
-      // live matching cannot enter the route before the released ramp.
-      let pinnedEntrance =
-        entranceOverride == releasedEntranceID
-        ? releasedEntrance : nil
-      let candidates =
-        pinnedEntrance.map { entrance in
-          [entrance]
-            + ranked.filter {
-              $0.facilityID != entrance.facilityID
-            }
-        } ?? ranked
       let overriddenEntranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })
         ? entranceOverride
         : nil
-      let navigationReadyPairing =
-        Self.navigationReadyPairing(
-          circuit: circuit,
-          requestedLaps: requestedLaps,
-          originCoordinate: originCoordinate,
-          candidates: candidates,
-          entranceOverride: overriddenEntranceID,
-          onDemandPairing: onDemandNavigationPairing,
-          planner: planner,
-          admissionResolver: admissionResolver
-        )
       let entranceID =
         overriddenEntranceID
-        ?? navigationReadyPairing?.entrance.facilityID
         ?? candidates.first?.facilityID
-      var pairing = navigationReadyPairing
-      var releasedPairingBand: ShutoTariffBand?
-      if let entranceID {
-        let isReleasedEntrance = entranceID == pinnedEntrance?.facilityID
-        if pairing == nil {
-          pairing = try? planner.recommendedCircuitPairing(
-            for: circuit,
-            entranceFacilityID: entranceID,
-            origin: isReleasedEntrance ? nil : originCoordinate,
-            evidence: .etcNormalCarActive
-          )
-        }
-        if isReleasedEntrance, let releasedRoutePlan {
-          releasedPairingBand = try? planner.tariffBand(
-            entryFacilityID: releasedRoutePlan.entryFacilityID,
-            exitFacilityID: releasedRoutePlan.exitFacilityID,
-            evidence: .etcNormalCarActive
-          )
-        }
+      let pairing = entranceID.flatMap {
+        try? planner.recommendedCircuitPairing(
+          for: circuit,
+          entranceFacilityID: $0,
+          origin: originCoordinate,
+          evidence: .etcNormalCarActive
+        )
       }
       var bands: [String: ShutoTariffBand] = [:]
-      for candidate in candidates.prefix(3) {
+      for candidate in candidates {
         if Task.isCancelled { return }
         if candidate.facilityID == pairing?.entrance.facilityID {
-          bands[candidate.facilityID] =
-            releasedPairingBand ?? pairing?.tariffBand
+          bands[candidate.facilityID] = pairing?.tariffBand
           continue
         }
-        bands[candidate.facilityID] =
-          (try? planner.recommendedCircuitPairing(
-            for: circuit,
-            entranceFacilityID: candidate.facilityID,
-            origin: originCoordinate,
-            evidence: .etcNormalCarActive
-          ))?.tariffBand
+        if let band = (try? planner.recommendedCircuitPairing(
+          for: circuit,
+          entranceFacilityID: candidate.facilityID,
+          origin: originCoordinate,
+          evidence: .etcNormalCarActive
+        ))?.tariffBand {
+          bands[candidate.facilityID] = band
+          if case .minimum = band, bands.count >= 3 {
+            break
+          }
+        }
       }
       let resolvedPairing = pairing
-      let resolvedReleasedRoutePlan =
-        pairing?.entrance.facilityID == releasedRoutePlan?.entryFacilityID
-        ? releasedRoutePlan : nil
       let resolvedBands = bands.compactMapValues { $0 }
       let resolvedCandidates = candidates
       await MainActor.run { [weak self] in
@@ -2347,12 +2273,8 @@ final class WholeShutoProductModel: ObservableObject {
         self.circuitEntranceCandidates = resolvedCandidates
         self.circuitEntryFacilityID =
           resolvedPairing?.entrance.facilityID
-        self.circuitExitFacilityID =
-          resolvedReleasedRoutePlan?.exitFacilityID
-          ?? resolvedPairing?.exit.facilityID
-        self.circuitPairingBand =
-          resolvedReleasedRoutePlan == nil
-          ? resolvedPairing?.tariffBand : releasedPairingBand
+        self.circuitExitFacilityID = resolvedPairing?.exit.facilityID
+        self.circuitPairingBand = resolvedPairing?.tariffBand
         self.circuitEntranceDistanceMeters =
           resolvedPairing?.entranceDistanceMeters
         self.circuitTariffBandsByFacilityID = resolvedBands
@@ -2365,51 +2287,6 @@ final class WholeShutoProductModel: ObservableObject {
         }
       }
     }
-  }
-
-  private nonisolated static func navigationReadyPairing(
-    circuit: ShutoCircuitDefinition,
-    requestedLaps: Int,
-    originCoordinate: ShutoCoordinate?,
-    candidates: [ShutoNetworkDatabase.Facility],
-    entranceOverride: String?,
-    onDemandPairing: (entranceID: String, exitID: String)?,
-    planner: ShutoRoutePlanner,
-    admissionResolver: WholeShutoLiveJourneyAdmissionResolver?
-  ) -> ShutoCircuitPairing? {
-    guard entranceOverride == nil,
-      let onDemandPairing,
-      let admissionResolver,
-      let entrance = candidates.first(where: {
-        $0.facilityID == onDemandPairing.entranceID
-      }),
-      let exits = try? planner.circuitExitCandidates(
-        for: circuit,
-        afterEntering: entrance.facilityID
-      ),
-      let exit = exits.first(where: {
-        $0.facilityID == onDemandPairing.exitID
-      }),
-      let route = try? planner.planCircuit(
-        circuit: circuit,
-        entryFacilityID: entrance.facilityID,
-        exitFacilityID: exit.facilityID,
-        laps: requestedLaps
-      ),
-      case .available = admissionResolver(route)
-    else { return nil }
-    return ShutoCircuitPairing(
-      entrance: entrance,
-      exit: exit,
-      tariffBand: try? planner.tariffBand(
-        entryFacilityID: entrance.facilityID,
-        exitFacilityID: exit.facilityID,
-        evidence: .etcNormalCarActive
-      ),
-      entranceDistanceMeters: originCoordinate.map {
-        distance($0, entrance.coordinate)
-      }
-    )
   }
 
   /// Starts the circuit journey as a round trip: the origin doubles as the

@@ -216,6 +216,15 @@ struct KaidoRoutesApp: App {
           exitFacilityID: "shuto.ic.4.shinjuku"
         )
       } else if ProcessInfo.processInfo.arguments.contains(
+        "-WHOLE-SHUTO-HATSUDAI-C1-PREVIEW"
+      ) {
+        WholeShutoRecommendedLiveRoutePreviewHost(
+          origin: ShutoCoordinate(
+            latitude: 35.6798,
+            longitude: 139.6862
+          )
+        )
+      } else if ProcessInfo.processInfo.arguments.contains(
         "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW"
       ) {
         WholeShutoRecommendedLiveRoutePreviewHost()

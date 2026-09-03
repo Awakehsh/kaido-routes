@@ -554,6 +554,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
     circuitCard.tap()
+    XCTAssertTrue(
+      element("whole-shuto-circuit-back", in: app)
+        .waitForExistence(timeout: 5)
+    )
 
     // The panel derives the pairing (entrance → exit plus tariff band)
     // asynchronously, keeps a lap control for loops, and offers one start
@@ -566,6 +570,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let pairing = element("whole-shuto-circuit-pairing", in: app)
     XCTAssertTrue(pairing.waitForExistence(timeout: 15))
     XCTAssertTrue(pairing.label.contains("根据当前位置推荐"))
+    XCTAssertTrue(pairing.label.contains("推荐出口"))
     XCTAssertTrue(
       element("whole-shuto-circuit-pairing-tariff", in: app)
         .waitForExistence(timeout: 10)
@@ -589,7 +594,50 @@ final class KaidoProductJourneyUITests: XCTestCase {
     wait(for: [lapsUpdated], timeout: 5)
 
     // Dismissing the draft returns to the circuit cards.
-    element("whole-shuto-circuit-close", in: app).tap()
+    element("whole-shuto-circuit-back", in: app).tap()
+    XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
+  }
+
+  func testHatsudaiC1ShowsLocalPairingMinimumFareAndBackAction() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-WHOLE-SHUTO-HATSUDAI-C1-PREVIEW",
+      "-app.kaidoroutes.language.interface",
+      "zh-Hans",
+      "-app.kaidoroutes.language.guidance-voice",
+      "ja-JP",
+    ]
+    app.launchSilently()
+
+    let circuitCard = element(
+      "whole-shuto-circuit-option-shuto.circuit.c1-inner",
+      in: app
+    )
+    XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
+    circuitCard.tap()
+
+    let pairing = element("whole-shuto-circuit-pairing", in: app)
+    XCTAssertTrue(pairing.waitForExistence(timeout: 15))
+    XCTAssertTrue(pairing.label.contains("初台"))
+    XCTAssertTrue(pairing.label.contains("推荐出口"))
+
+    let tariff = element("whole-shuto-circuit-pairing-tariff", in: app)
+    XCTAssertTrue(tariff.waitForExistence(timeout: 5))
+    XCTAssertTrue(tariff.label.contains("推荐"))
+    XCTAssertTrue(tariff.label.contains("¥300"))
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Hatsudai C1 location recommendation"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+
+    let back = element("whole-shuto-circuit-back", in: app)
+    XCTAssertTrue(back.exists)
+    back.tap()
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
   }
 

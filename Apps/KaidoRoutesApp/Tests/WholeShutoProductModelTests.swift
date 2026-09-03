@@ -79,9 +79,12 @@ final class WholeShutoProductModelTests: XCTestCase {
       ]
     )
 
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 37.3349, longitude: -122.0090)
+    let releasedEntrance = try XCTUnwrap(
+      database.directionalFacilities.first {
+        $0.facilityID == ShutoCircuitProductReleaseBuilder.entryFacilityID
+      }
     )
+    model.selectCurrentOrigin(releasedEntrance.coordinate)
     model.selectCircuit(.c1Inner)
     await waitForCircuitPairing(model)
 
@@ -174,9 +177,13 @@ final class WholeShutoProductModelTests: XCTestCase {
       database: model.database
     )
 
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    let releasedEntrance = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.facilityID
+          == ShutoCircuitProductReleaseBuilder.wanganEntryFacilityID
+      }
     )
+    model.selectCurrentOrigin(releasedEntrance.coordinate)
     model.selectCircuit(.wanganDaikokuRun)
     await waitForCircuitPairing(model)
 
@@ -204,9 +211,12 @@ final class WholeShutoProductModelTests: XCTestCase {
       database: model.database
     )
 
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    let releasedEntrance = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.facilityID == ShutoCircuitProductReleaseBuilder.c2EntryFacilityID
+      }
     )
+    model.selectCurrentOrigin(releasedEntrance.coordinate)
     model.selectCircuit(.c2InnerWithBayshore)
     await waitForCircuitPairing(model)
 
@@ -225,34 +235,43 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
-  func testDaikokuYokohamaCircuitAdmitsBundledForegroundNavigation()
+  func testDaikokuYokohamaCircuitUsesNearestReachableEntrance()
     async throws
   {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil
     )
-    let expected =
-      try ShutoCircuitProductReleaseBuilder
-      .plannedDaikokuRoute(database: model.database)
-
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    let releasedEntrance = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.facilityID
+          == ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
+      }
     )
+    model.selectCurrentOrigin(releasedEntrance.coordinate)
     model.selectCircuit(.daikokuYokohamaLoop)
     await waitForCircuitPairing(model)
 
     XCTAssertEqual(
       model.circuitEntryFacilityID,
+      "shuto.ic.b.ukishima"
+    )
+    XCTAssertNotEqual(
+      model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
     )
-    XCTAssertEqual(
+    XCTAssertNotNil(
       model.circuitExitFacilityID,
-      ShutoCircuitProductReleaseBuilder.daikokuExitFacilityID
+      "Selecting the entrance must derive a direction-valid exit."
     )
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
-    XCTAssertEqual(model.selectedRoute?.routePlan, expected.routePlan)
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(
+      model.selectedRoute?.routePlan.id.hasPrefix(
+        "shuto.circuit.daikoku-yokohama-loop."
+      ) == true
+    )
     XCTAssertTrue(model.canStartLiveNavigation)
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
@@ -1645,6 +1664,35 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(
       model.circuitEntranceCandidates.allSatisfy { $0.canEnter }
     )
+  }
+
+  func testReleasedC1CatalogStillRecommendsHatsudaiFromHatsudai() async {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      "shuto.ic.4.hatsudai"
+    )
+    XCTAssertNotEqual(
+      model.circuitEntryFacilityID,
+      ShutoCircuitProductReleaseBuilder.entryFacilityID
+    )
+    XCTAssertNotNil(model.circuitExitFacilityID)
+    XCTAssertEqual(model.circuitPairingBand, .minimum(yen: 300))
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
   private func waitForCircuitPairing(

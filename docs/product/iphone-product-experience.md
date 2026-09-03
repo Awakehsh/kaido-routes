@@ -57,6 +57,11 @@ entrance/exit pairing as one factual line. It does not lead with a destination
 field, and it does not show an editorial, operator, creator, or community
 recommendation feed.
 
+Selecting an experience replaces the catalog with one compact draft that has
+an explicit **All routes** return action. The draft labels the entrance and its
+automatically recommended exit separately; changing the entrance always
+recomputes the exit and tariff band as one pairing.
+
 The driver chooses a route, never designs an entrance or exit. Entrances and
 exits are derived outputs of the chosen route plus the origin and the dated
 tariff rule, not inputs the driver must assemble. The manual pairing workflow
@@ -119,10 +124,11 @@ recommended normally, between 8 and 16 km it carries an explicit far label,
 and longer approaches carry a long-access label. Straight-line distance never
 decides whether the ordinary-road leg is drivable: the bounded surface provider
 must resolve the exact directional ramp, and a missing access route blocks
-review and start. Among direction-valid automatic candidates, a route whose
-complete junction sequence can construct foreground navigation authority ranks
-ahead of a closer preview-only entrance; an explicit driver override remains
-honored and retains its precise release blocker. The
+review and start. Automatic selection always starts with the nearest reachable,
+direction-valid entrance from the current origin. Navigation authority is
+evaluated only after that exact pairing is formed and cannot replace the
+location recommendation with a distant released sample entrance. An explicit
+driver override remains honored and retains its precise release blocker. The
 surface legs themselves target the plan's own directional ramp mouths, not
 the IC representative point: a full IC's opposite-direction ramps can sit
 hundreds of meters apart, and the half/full direction facts decide which

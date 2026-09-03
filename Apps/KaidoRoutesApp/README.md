@@ -44,8 +44,8 @@ plan and survive reopen/re-save. The record may open parked Review and resolve
 fresh bounded surface legs for replay; saving/importing does not upgrade
 evidence or unblock live navigation.
 
-The `ROUTES | MAP` choice persists through the journey. `ROUTES` shows the
-Kaido-owned whole-network/whole-route track presentation; `MAP` shows the exact
+The `Diagram | Map` choice persists through the journey. `Diagram` shows the
+Kaido-owned whole-network/whole-route track presentation; `Map` shows the exact
 selected Shuto path plus bounded ordinary-road legs over MapKit. Replay exposes
 pause, resume, finish, and termination reconstruction without claiming live-road
 position or current passage status. A junction inset and one-shot speech appear

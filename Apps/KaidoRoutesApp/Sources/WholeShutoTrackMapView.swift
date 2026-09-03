@@ -46,8 +46,6 @@ struct WholeShutoTrackMapView: View {
   private enum Midnight {
     static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
     static let casing = Color(red: 0.075, green: 0.1, blue: 0.16)
-    static let baseRoute = Color(red: 1.0, green: 0.71, blue: 0.33)
-    static let bayshore = Color(red: 0.56, green: 0.66, blue: 0.91)
     static let plate = Color(red: 0.02, green: 0.031, blue: 0.063)
     static let label = Color(red: 0.62, green: 0.68, blue: 0.8)
     static let junctionLabel = Color(red: 0.79, green: 0.84, blue: 0.95)
@@ -740,7 +738,7 @@ struct WholeShutoTrackMapView: View {
   }
 
   private func spanColor(_ span: WholeShutoTrackMapSpan) -> Color {
-    span.routeID == "B" ? Midnight.bayshore : Midnight.baseRoute
+    KaidoTheme.selectedRouteLineColor(span.routeID)
   }
 
   private func rank(_ kind: RouteTrackMapLayout.FacilityKind) -> Int {

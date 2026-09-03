@@ -375,8 +375,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(product.waitForExistence(timeout: 8))
     XCTAssertEqual(product.value as? String, "REVIEW")
     XCTAssertTrue(
-      element("whole-shuto-route-selection", in: app)
+      element("whole-shuto-review-journey", in: app)
         .waitForExistence(timeout: 8)
+    )
+    XCTAssertFalse(
+      element("whole-shuto-route-selection", in: app).exists
     )
   }
 
@@ -550,6 +553,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
       in: app
     )
     XCTAssertTrue(circuitCard.waitForExistence(timeout: 5))
+    if !circuitCard.isHittable {
+      element("whole-shuto-planning-dock", in: app).swipeUp()
+    }
     circuitCard.tap()
     allowLocationWhenInUseIfRequested()
     XCTAssertTrue(

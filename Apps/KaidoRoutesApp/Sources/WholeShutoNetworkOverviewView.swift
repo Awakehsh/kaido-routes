@@ -164,7 +164,7 @@ struct WholeShutoNetworkOverviewView: View {
   }
 
   private func routeLineColor(_ routeID: String) -> Color {
-    routeColor(routeID)
+    KaidoTheme.selectedRouteLineColor(routeID)
   }
 
   var body: some View {
@@ -420,8 +420,9 @@ struct WholeShutoNetworkOverviewView: View {
     }
 
     // Rest of the network first: dark casing plus a receded blue core.
-    // A selected circuit (or planned route) keeps rainbow color on its
-    // members only; browsing with no selection leaves the whole net receded.
+    // A selected circuit lights its members in the track-map paint (gold
+    // carriageway, Bayshore blue); browsing with no selection leaves the
+    // whole net receded.
     for polyline in layout.polylines {
       context.stroke(
         path(polyline.points),
@@ -445,9 +446,9 @@ struct WholeShutoNetworkOverviewView: View {
       )
     }
 
-    // Lit members keep each route's own color, slightly thicker than the
-    // receded net. No neon halo and no white-hot core — those read as a
-    // highlighter, not a selected carriageway.
+    // Lit members use the track-map gold/Bayshore paint, slightly thicker
+    // than the receded net. No neon halo and no white-hot core — those
+    // read as a highlighter, not a selected carriageway.
     let litLines = layout.polylines.filter { !isDimmed($0.routeID) }
     for polyline in litLines {
       let color = routeLineColor(polyline.routeID)

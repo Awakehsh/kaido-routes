@@ -32,6 +32,26 @@ struct ShutoCircuitPlannerTests {
         for: .english
       ) == "Yokohama Scenic Tour"
     )
+    #expect(
+      ShutoCircuitDefinition.c1Inner.catalogDirectionLabel(
+        for: .simplifiedChinese
+      ) == "内环"
+    )
+    #expect(
+      ShutoCircuitDefinition.c1Outer.catalogDirectionLabel(
+        for: .simplifiedChinese
+      ) == "外环"
+    )
+    #expect(ShutoCircuitDefinition.c1Inner.durationClass == .short)
+    #expect(ShutoCircuitDefinition.c2InnerWithBayshore.durationClass == .long)
+    #expect(
+      ShutoCircuitDefinition.c1Inner.catalogTitle(for: .simplifiedChinese)
+        == "C1 都心环状"
+    )
+    #expect(
+      ShutoCircuitDefinition.c1Outer.catalogTitle(for: .simplifiedChinese)
+        == "C1 都心环状"
+    )
   }
 
   @Test("C2 inner circuit with Bayshore closes and repeats laps distinctly")

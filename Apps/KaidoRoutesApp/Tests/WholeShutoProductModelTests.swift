@@ -1659,6 +1659,40 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(restored.failureCode)
   }
 
+  func testCatalogPairingsFillWhenOriginIsKnown() async {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    XCTAssertTrue(model.catalogPairingsByCircuitID.isEmpty)
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    for _ in 0..<400
+    where model.isResolvingCatalogPairings
+      || model.catalogPairingsByCircuitID.isEmpty
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    XCTAssertFalse(model.isResolvingCatalogPairings)
+    XCTAssertNotNil(
+      model.catalogPairingsByCircuitID[
+        ShutoCircuitDefinition.c1Inner.circuitID
+      ]
+    )
+    XCTAssertNotNil(
+      model.catalogPairingsByCircuitID[
+        ShutoCircuitDefinition.c2InnerWithBayshore.circuitID
+      ]
+    )
+    model.selectCircuit(.c1Inner)
+    XCTAssertEqual(
+      model.circuitEntryFacilityID,
+      model.catalogPairingsByCircuitID[
+        ShutoCircuitDefinition.c1Inner.circuitID
+      ]?.entrance.facilityID
+    )
+  }
+
   func testCircuitSelectionDerivesThePairingFromOrigin() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     // Near Hatsudai, west side of the C2 loop.

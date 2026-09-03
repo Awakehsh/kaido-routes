@@ -1,7 +1,7 @@
 # iPhone product experience
 
 Status: accepted product design contract, checked against the default App on
-2026-09-03. The implementation now opens on the
+2026-09-04. The implementation now opens on the
 route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
 bands for named experiences, supports loop lap count and exact custom routes,
 and carries the selected route through review, labeled replay, finish, and
@@ -53,14 +53,19 @@ custom-route entry at the end of the catalog. Parked chrome keeps one Settings
 entry for interface language, guidance voice, known map limitations, privacy,
 and licences. OSM source and licence credit sits under the title as a compact
 caption, adjacent to the map and off the road drawing. Each catalog card presents the
-route as a finished experience: its shape thumbnail, distance and duration
-class, landmark and PA facts, and — once an origin is known — the derived
-entrance/exit pairing as one factual line. It does not lead with a destination
-field, and it does not show an editorial, operator, creator, or community
-recommendation feed.
+route as a finished experience: its shape thumbnail, direction and duration
+class first (so C1 inner and outer stay distinct), a short title, landmark
+facts, and — once an origin is known — the derived entrance/exit pairing as
+one factual line. The catalog is a two-column grid so more than one
+experience is comparable without a horizontal carousel. It does not lead with
+a destination field, and it does not show an editorial, operator, creator, or
+community recommendation feed.
 
 Selecting an experience replaces the catalog with one compact draft that has
-an explicit **All routes** return action. The draft labels the entrance and its
+an explicit **All routes** return action. Using that draft commits the
+experience and opens parked review on the track map; ranked alternative-route
+cards stay on the destination-search path and do not reappear after a catalog
+or custom commit. The draft labels the entrance and its
 automatically recommended exit separately; changing the entrance always
 recomputes the exit and tariff band as one pairing. Route sequences pair every
 shield with its official Japanese route name, so a transition such as `4 → C1`
@@ -217,7 +222,8 @@ switch away. The whole product renders in a single midnight visual identity:
 blue-black asphalt, an ink Tokyo Bay, receded unlit network, and neon-lit
 route lines, with plated labels that never sit on the carriageways. Until
 the driver chooses a route the network stays receded; selecting a catalog
-experience lights only its member routes in their route colors. Junction
+experience lights only its member routes in the selected-route paint — gold
+carriageway, with the Bayshore leg in its own blue, matching the track map. Junction
 names stay on the diagram. The unzoomed network marks classic places with
 licensed circular photographs (Tokyo Tower, Tokyo Skytree, Haneda, Minato
 Mirai, and the named bridges) and names a short PA set — Daikoku, Tatsumi

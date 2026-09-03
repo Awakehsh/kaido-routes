@@ -333,7 +333,13 @@ final class WholeShutoProductModel: ObservableObject {
       syncMapModeToPhase()
     }
   }
-  @Published private(set) var origin: WholeShutoPlace?
+  @Published private(set) var origin: WholeShutoPlace? {
+    didSet {
+      if phase == .planning {
+        refreshCatalogPairings()
+      }
+    }
+  }
   @Published private(set) var destination: WholeShutoPlace?
   @Published private(set) var recommendations: [ShutoRouteRecommendation] = []
   @Published private(set) var selectedRecommendationIndex = 0
@@ -355,6 +361,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitEntranceWasOverridden = false
   @Published private(set) var circuitThumbnailsByID: [String: [CGPoint]] =
     [:]
+  @Published private(set) var catalogPairingsByCircuitID:
+    [String: ShutoCircuitPairing] = [:]
+  @Published private(set) var isResolvingCatalogPairings = false
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
@@ -422,6 +431,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var resolvedLiveAdmission: WholeShutoLiveJourneyAdmission?
   private var liveAdmissionResolutionIssueCode: String?
   private var circuitTariffTask: Task<Void, Never>?
+  private var catalogPairingTask: Task<Void, Never>?
   private var circuitPairingOriginCoordinate: ShutoCoordinate?
   private var startsCircuitJourneyAfterPairing = false
   private var surfaceRouteRequestID: UUID?
@@ -2181,14 +2191,55 @@ final class WholeShutoProductModel: ObservableObject {
     selectedCircuit = circuit
     circuitLaps = 1
     circuitEntranceCandidates = []
-    circuitEntryFacilityID = nil
-    circuitExitFacilityID = nil
-    circuitPairingBand = nil
-    circuitEntranceDistanceMeters = nil
     circuitEntranceWasOverridden = false
     circuitTariffBandsByFacilityID = [:]
+    if let preview = catalogPairingsByCircuitID[circuit.circuitID] {
+      circuitEntryFacilityID = preview.entrance.facilityID
+      circuitExitFacilityID = preview.exit.facilityID
+      circuitPairingBand = preview.tariffBand
+      circuitEntranceDistanceMeters = preview.entranceDistanceMeters
+    } else {
+      circuitEntryFacilityID = nil
+      circuitExitFacilityID = nil
+      circuitPairingBand = nil
+      circuitEntranceDistanceMeters = nil
+    }
     if origin != nil {
       resolveCircuitPairing(entranceOverride: nil)
+    }
+  }
+
+  /// Fills each catalog card's pairing line from the current origin. The
+  /// selected-circuit draft still runs its own resolution so entrance
+  /// alternatives stay exact.
+  private func refreshCatalogPairings() {
+    catalogPairingTask?.cancel()
+    guard phase == .planning, let originCoordinate = origin?.coordinate else {
+      catalogPairingsByCircuitID = [:]
+      isResolvingCatalogPairings = false
+      catalogPairingTask = nil
+      return
+    }
+    isResolvingCatalogPairings = true
+    let planner = planner
+    let circuits = ShutoCircuitDefinition.bundled
+    catalogPairingTask = Task.detached(priority: .utility) { [weak self] in
+      var pairings: [String: ShutoCircuitPairing] = [:]
+      for circuit in circuits {
+        if Task.isCancelled { return }
+        pairings[circuit.circuitID] = try? planner.recommendedCircuitPairing(
+          for: circuit,
+          origin: originCoordinate,
+          evidence: .etcNormalCarActive
+        )
+      }
+      await MainActor.run { [weak self] in
+        guard let self, !Task.isCancelled, self.phase == .planning else {
+          return
+        }
+        self.catalogPairingsByCircuitID = pairings
+        self.isResolvingCatalogPairings = false
+      }
     }
   }
 
@@ -3539,6 +3590,10 @@ final class WholeShutoProductModel: ObservableObject {
     isPreparingLiveNavigation = false
     speechCoordinator?.stop()
     speechCoordinator = nil
+    catalogPairingTask?.cancel()
+    catalogPairingTask = nil
+    catalogPairingsByCircuitID = [:]
+    isResolvingCatalogPairings = false
     phase = .planning
     origin = nil
     destination = nil

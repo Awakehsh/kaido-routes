@@ -739,9 +739,9 @@ struct WholeShutoProductView: View {
         .network,
         symbol: "point.3.connected.trianglepath.dotted",
         label: copy.resolve(
-          japanese: "路線",
-          simplifiedChinese: "路线",
-          english: "ROUTES"
+          japanese: "路線図",
+          simplifiedChinese: "线路图",
+          english: "Diagram"
         )
       )
       mapModeButton(
@@ -749,8 +749,8 @@ struct WholeShutoProductView: View {
         symbol: "map.fill",
         label: copy.resolve(
           japanese: "地図",
-          simplifiedChinese: "地图",
-          english: "MAP"
+          simplifiedChinese: "实景",
+          english: "Map"
         )
       )
     }
@@ -978,16 +978,13 @@ struct WholeShutoProductView: View {
 
   private var routeComposer: some View {
     VStack(spacing: 12) {
+      if !showsDestinationComposer {
+        planningLocationButton
+      }
+
       circuitExperienceSection
 
-      HStack(spacing: 8) {
-        if !showsDestinationComposer {
-          // The origin chip stays on the home even while the destination
-          // composer is collapsed.
-          planningLocationButton
-        }
-        optionalDestinationDivider
-      }
+      optionalDestinationDivider
 
       if showsDestinationComposer {
         journeySearchComposer
@@ -1003,24 +1000,32 @@ struct WholeShutoProductView: View {
   /// The home leads with the route experience, not a destination field.
   private var circuitExperienceSection: some View {
     VStack(alignment: .leading, spacing: 10) {
-      Text(
-        copy.resolve(
-          japanese: "ルートを選ぶ",
-          simplifiedChinese: "选择路线",
-          english: "CHOOSE A ROUTE"
+      if model.selectedCircuit == nil {
+        Text(
+          copy.resolve(
+            japanese: "ルートを選ぶ",
+            simplifiedChinese: "选择路线",
+            english: "Choose a route"
+          )
         )
-      )
-      .font(.system(size: 11, weight: .bold))
-      .foregroundStyle(.secondary)
+        .font(.caption.weight(.bold))
+        .foregroundStyle(.secondary)
+      }
 
       if let circuit = model.selectedCircuit {
         selectedCircuitPanel(circuit)
       } else {
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(spacing: 10) {
-            ForEach(model.bundledCircuits) { circuit in
-              circuitCard(circuit)
-            }
+        LazyVGrid(
+          columns: usesExpandedTextLayout
+            ? [GridItem(.flexible(), spacing: 8)]
+            : [
+              GridItem(.flexible(), spacing: 8),
+              GridItem(.flexible(), spacing: 8),
+            ],
+          spacing: 8
+        ) {
+          ForEach(model.bundledCircuits) { circuit in
+            circuitCard(circuit)
           }
         }
 
@@ -1290,7 +1295,10 @@ struct WholeShutoProductView: View {
 
   /// The route's silhouette in the card, drawn from the precomputed
   /// normalized track shape.
-  private func circuitThumbnail(_ points: [CGPoint]) -> some View {
+  private func circuitThumbnail(
+    _ points: [CGPoint],
+    routeIDs: Set<String>
+  ) -> some View {
     Canvas { context, size in
       let xs = points.map { Double($0.x) }
       let ys = points.map { Double($0.y) }
@@ -1321,37 +1329,22 @@ struct WholeShutoProductView: View {
           path.addLine(to: mapped)
         }
       }
+      let stroke =
+        routeIDs == ["B"]
+        ? KaidoTheme.selectedBayshoreBlue
+        : KaidoTheme.selectedRouteGold
       context.stroke(
         path,
-        with: .color(KaidoTheme.routeGreen),
+        with: .color(stroke),
         style: StrokeStyle(
-          lineWidth: 2,
+          lineWidth: 2.2,
           lineCap: .round,
           lineJoin: .round
         )
       )
     }
-    .frame(height: 38)
+    .frame(height: 44)
     .accessibilityHidden(true)
-  }
-
-  private func circuitKindText(
-    _ circuit: ShutoCircuitDefinition
-  ) -> String {
-    switch circuit.kind {
-    case .loop:
-      return copy.resolve(
-        japanese: "周回ルート",
-        simplifiedChinese: "环线路线",
-        english: "CIRCUIT"
-      )
-    case .tour:
-      return copy.resolve(
-        japanese: "ワンウェイツアー",
-        simplifiedChinese: "单程巡游",
-        english: "TOUR"
-      )
-    }
   }
 
   private func circuitCard(
@@ -1366,11 +1359,11 @@ struct WholeShutoProductView: View {
         planningLocation.requestCurrentLocation()
       }
     } label: {
-      VStack(alignment: .leading, spacing: 5) {
+      VStack(alignment: .leading, spacing: 4) {
         if let thumbnail = model.circuitThumbnailsByID[circuit.circuitID],
           thumbnail.count > 1
         {
-          circuitThumbnail(thumbnail)
+          circuitThumbnail(thumbnail, routeIDs: circuit.memberRouteIDs)
         } else {
           Image(
             systemName: circuit.kind == .loop
@@ -1378,16 +1371,17 @@ struct WholeShutoProductView: View {
               : "point.topleft.down.curvedto.point.bottomright.up"
           )
           .font(.system(size: 15, weight: .bold))
-          .foregroundStyle(KaidoTheme.routeGreen)
-          .frame(height: 38)
+          .foregroundStyle(KaidoTheme.selectedRouteGold)
+          .frame(height: 44)
         }
-        Text(circuit.displayName(for: languageSettings.interfaceLocale))
+        Text(circuit.catalogKicker(for: languageSettings.interfaceLocale))
+          .font(.caption2.weight(.bold))
+          .foregroundStyle(KaidoTheme.selectedRouteGold)
+        Text(circuit.catalogTitle(for: languageSettings.interfaceLocale))
           .font(.subheadline.weight(.bold))
           .multilineTextAlignment(.leading)
+          .lineLimit(2)
           .fixedSize(horizontal: false, vertical: true)
-        Text(circuitKindText(circuit))
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
         let landmarkNames = circuit.landmarkNames(
           for: languageSettings.interfaceLocale
         )
@@ -1395,16 +1389,19 @@ struct WholeShutoProductView: View {
           Text(landmarkNames.joined(separator: "・"))
             .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            .lineLimit(1)
         }
-        if !circuit.paStopNamesJA.isEmpty {
-          Text(circuit.paStopNamesJA.joined(separator: "・"))
-            .font(.caption.weight(.bold))
-            .foregroundStyle(KaidoTheme.confirmedGreen)
-            .fixedSize(horizontal: false, vertical: true)
+        if let pairing = model.catalogPairingsByCircuitID[circuit.circuitID] {
+          Text(catalogPairingLine(pairing))
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(KaidoTheme.positionCyan)
+            .lineLimit(1)
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-catalog-pairing-\(circuit.circuitID)"
+            )
         }
       }
-      .frame(width: 168, alignment: .leading)
+      .frame(maxWidth: .infinity, alignment: .leading)
       .padding(10)
       .background(KaidoTheme.nightRaised.opacity(0.94))
       .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -1417,6 +1414,12 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(
       "whole-shuto-circuit-option-\(circuit.circuitID)"
     )
+  }
+
+  private func catalogPairingLine(_ pairing: ShutoCircuitPairing) -> String {
+    let band = pairing.tariffBand.map(circuitTariffText) ?? ""
+    let route = "\(pairing.entrance.nameJA) → \(pairing.exit.nameJA)"
+    return band.isEmpty ? route : "\(route) · \(band)"
   }
 
   private func selectedCircuitPanel(
@@ -1434,7 +1437,7 @@ struct WholeShutoProductView: View {
               copy.resolve(
                 japanese: "ルート一覧",
                 simplifiedChinese: "返回路线列表",
-                english: "ALL ROUTES"
+                english: "All routes"
               )
             )
           }
@@ -1464,7 +1467,7 @@ struct WholeShutoProductView: View {
               copy.resolve(
                 japanese: "入口を変更",
                 simplifiedChinese: "更换入口",
-                english: "CHANGE ENTRANCE"
+                english: "Change entrance"
               )
             )
             Image(
@@ -1892,9 +1895,9 @@ struct WholeShutoProductView: View {
           .frame(height: 1)
         Text(
           copy.resolve(
-            japanese: "または目的地へ",
-            simplifiedChinese: "或者：去一个地方",
-            english: "OR GO SOMEWHERE"
+            japanese: "目的地を追加（任意）",
+            simplifiedChinese: "添加目的地（可选）",
+            english: "Add a destination (optional)"
           )
         )
         .font(.system(size: 10, weight: .semibold))
@@ -2162,18 +2165,20 @@ struct WholeShutoProductView: View {
       }
       planningLocation.requestCurrentLocation()
     } label: {
-      VStack(spacing: 3) {
+      HStack(spacing: 8) {
         Image(systemName: planningLocationSymbol)
-          .font(.system(size: 15, weight: .bold))
+          .font(.system(size: 14, weight: .bold))
         Text(planningLocationShortLabel)
-          .font(.system(size: 8, weight: .bold))
+          .font(.caption.weight(.bold))
           .lineLimit(1)
+        Spacer(minLength: 0)
       }
       .foregroundStyle(
         planningLocation.state == .measured
-          ? KaidoTheme.routeWhite : KaidoTheme.positionCyan
+          ? KaidoTheme.night : KaidoTheme.positionCyan
       )
-      .frame(width: 62, height: 52)
+      .padding(.horizontal, 12)
+      .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
       .background(
         planningLocation.state == .measured
           ? KaidoTheme.positionCyan
@@ -2392,12 +2397,20 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(accessibilityIdentifier)
   }
 
+  /// Destination search still offers ranked alternatives. A catalog or
+  /// custom commit already chose the route, so those cards stay off.
+  private var showsDestinationRouteChoices: Bool {
+    !model.isCircuitRouteSelected && !model.isCustomRouteSelected
+  }
+
   private var routeReview: some View {
     VStack(spacing: 11) {
       routeReviewSummary
         .foregroundStyle(KaidoTheme.routeWhite)
 
-      routeSelection
+      if showsDestinationRouteChoices {
+        routeSelection
+      }
 
       routeBoundaryPair
 
@@ -2592,7 +2605,7 @@ struct WholeShutoProductView: View {
             copy.resolve(
               japanese: "行程を確認",
               simplifiedChinese: "确认行程",
-              english: "REVIEW JOURNEY"
+              english: "Review journey"
             )
           )
           .font(.headline.weight(.black))
@@ -3376,16 +3389,25 @@ struct WholeShutoProductView: View {
         )
     }
     return model.phase == .review
-      ? copy.resolve(
-        japanese: "ルートを選択",
-        simplifiedChinese: "选择路线",
-        english: "CHOOSE A ROUTE"
-      )
+      ? reviewPhaseTitle
       : copy.resolve(
         japanese: "首都高全体",
         simplifiedChinese: "首都高全网",
-        english: "WHOLE SHUTO"
+        english: "Whole Shuto"
       )
+  }
+
+  private var reviewPhaseTitle: String {
+    if model.isCircuitRouteSelected,
+      let circuit = model.selectedCircuit
+    {
+      return circuit.displayName(for: languageSettings.interfaceLocale)
+    }
+    return copy.resolve(
+      japanese: "ルートを選択",
+      simplifiedChinese: "选择路线",
+      english: "Choose a route"
+    )
   }
 
   private var routeSummaryTitle: String {

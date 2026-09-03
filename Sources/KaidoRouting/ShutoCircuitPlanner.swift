@@ -82,6 +82,108 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     localizedLandmarkNames[locale] ?? landmarkNamesJA
   }
 
+  /// Catalog duration band, not a measured journey time. C1 is a short
+  /// downtown lap; the Bayshore PA runs sit in the middle; C2-plus-Bayshore
+  /// and the Yokohama scenic tour are the long experiences.
+  public enum DurationClass: String, Equatable, Sendable {
+    case short = "SHORT"
+    case medium = "MEDIUM"
+    case long = "LONG"
+  }
+
+  public var durationClass: DurationClass {
+    switch circuitID {
+    case Self.c1Inner.circuitID, Self.c1Outer.circuitID:
+      .short
+    case Self.wanganDaikokuRun.circuitID, Self.daikokuYokohamaLoop.circuitID:
+      .medium
+    default:
+      .long
+    }
+  }
+
+  public func durationClassLabel(for locale: KaidoReleaseLocale) -> String {
+    switch (durationClass, locale) {
+    case (.short, .japanese): "短距離"
+    case (.short, .simplifiedChinese): "短途"
+    case (.short, .english): "Short"
+    case (.medium, .japanese): "中距離"
+    case (.medium, .simplifiedChinese): "中途"
+    case (.medium, .english): "Medium"
+    case (.long, .japanese): "長距離"
+    case (.long, .simplifiedChinese): "长途"
+    case (.long, .english): "Long"
+    }
+  }
+
+  /// Direction or course kind shown first on a catalog card, so C1 inner
+  /// and outer stay distinct before the shared loop name.
+  public func catalogDirectionLabel(for locale: KaidoReleaseLocale) -> String {
+    let raw =
+      entranceDirectionsByRouteID["C1"]
+      ?? entranceDirectionsByRouteID["C2"]
+      ?? entranceDirectionsByRouteID.values.first
+    switch raw {
+    case "内回り":
+      switch locale {
+      case .japanese: return "内回り"
+      case .simplifiedChinese: return "内环"
+      case .english: return "Inner"
+      }
+    case "外回り":
+      switch locale {
+      case .japanese: return "外回り"
+      case .simplifiedChinese: return "外环"
+      case .english: return "Outer"
+      }
+    case "西行き":
+      switch locale {
+      case .japanese: return "西行き"
+      case .simplifiedChinese: return "西行"
+      case .english: return "Westbound"
+      }
+    default:
+      break
+    }
+    switch kind {
+    case .loop:
+      switch locale {
+      case .japanese: return "周回"
+      case .simplifiedChinese: return "环线"
+      case .english: return "Loop"
+      }
+    case .tour:
+      switch locale {
+      case .japanese: return "ワンウェイ"
+      case .simplifiedChinese: return "单程"
+      case .english: return "One-way"
+      }
+    }
+  }
+
+  public func catalogKicker(for locale: KaidoReleaseLocale) -> String {
+    "\(catalogDirectionLabel(for: locale)) · \(durationClassLabel(for: locale))"
+  }
+
+  public func catalogTitle(for locale: KaidoReleaseLocale) -> String {
+    switch circuitID {
+    case Self.c1Inner.circuitID, Self.c1Outer.circuitID:
+      switch locale {
+      case .japanese: return "C1 都心環状線"
+      case .simplifiedChinese: return "C1 都心环状"
+      case .english: return "C1 Circular"
+      }
+    case Self.c2InnerWithBayshore.circuitID:
+      switch locale {
+      case .japanese: return "C2 中央環状＋湾岸"
+      case .simplifiedChinese: return "C2 中央环状＋湾岸"
+      case .english: return "C2 + Bayshore"
+      }
+    default:
+      return displayName(for: locale)
+    }
+  }
+
   /// C2 Central Circular inner loop, closed between Oi JCT and Kasai JCT by
   /// the Bayshore Route. C2 alone is not a closed ring.
   public static let c2InnerWithBayshore = ShutoCircuitDefinition(

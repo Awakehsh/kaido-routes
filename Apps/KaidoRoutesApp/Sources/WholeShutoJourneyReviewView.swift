@@ -215,7 +215,7 @@ struct WholeShutoJourneyReviewView: View {
       )
 
       endpoint(
-        symbol: "flag.checkered",
+        symbol: "flag.fill",
         eyebrow: copy.resolve(
           japanese: "目的地",
           simplifiedChinese: "目的地",
@@ -544,7 +544,7 @@ struct WholeShutoJourneyReviewView: View {
             copy.resolve(
               japanese: "案内を開始",
               simplifiedChinese: "开始导航",
-              english: "START NAVIGATION"
+              english: "Start navigation"
             )
           )
           Spacer()

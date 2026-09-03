@@ -50,6 +50,15 @@ enum KaidoTheme {
   static let nightRaised = nightRaisedToken.color
   static let nightDivider = nightDividerToken.color
   static let nightQuiet = nightQuietToken.color
+
+  /// Selected-route paint shared by the home network diagram and the
+  /// whole-route track map: gold carriageway, Bayshore in its own blue.
+  static let selectedRouteGold = Color(red: 1.0, green: 0.71, blue: 0.33)
+  static let selectedBayshoreBlue = Color(red: 0.56, green: 0.66, blue: 0.91)
+
+  static func selectedRouteLineColor(_ routeID: String) -> Color {
+    routeID == "B" ? selectedBayshoreBlue : selectedRouteGold
+  }
 }
 
 extension Color {

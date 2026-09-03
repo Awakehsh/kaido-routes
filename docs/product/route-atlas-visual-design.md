@@ -109,8 +109,9 @@ authority.
 
 - one muted line family for inactive context;
 - compact Kaido-owned route-code capsules, distinct from operator artwork;
-- warm route color for the active plan only, with component legs
-  distinguishable;
+- gold selected-route paint for the active plan, with the Bayshore leg in
+  its own blue so component routes stay distinguishable; this is the same
+  paint on the home network diagram and the track map;
 - cyan for an eligible measured position;
 - coral for recovery or blocking states;
 - neutral, action-first copy; no speed, lap-time, ranking, or racing language.

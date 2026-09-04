@@ -60,6 +60,25 @@ public actor ShutoLiveDriveSession {
     return try await session.observeEntryTransitionEvidence(evidence)
   }
 
+  @discardableResult
+  public func declareAlreadyOnRoute(
+    atMilliseconds milliseconds: Int
+  ) async -> Bool {
+    await start()
+    return await session.declareAlreadyOnRoute(atMilliseconds: milliseconds)
+  }
+
+  public func withdrawAlreadyOnRouteDeclaration() async {
+    await session.withdrawAlreadyOnRouteDeclaration()
+  }
+
+  public func observeRouteJoinEvidence(
+    _ evidence: RouteJoinEvidence
+  ) async throws -> RouteJoinSessionUpdate {
+    await start()
+    return try await session.observeRouteJoinEvidence(evidence)
+  }
+
   public func observe(
     _ observation: RouteMatcherObservation
   ) async throws -> NavigationSessionUpdate {

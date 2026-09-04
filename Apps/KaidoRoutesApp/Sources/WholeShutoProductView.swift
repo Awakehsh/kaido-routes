@@ -2881,6 +2881,86 @@ struct WholeShutoProductView: View {
   }
 
   private var drivingDock: some View {
+    VStack(spacing: 8) {
+      routeJoinBanner
+      drivingDockControls
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 10)
+    .background(KaidoTheme.night.opacity(0.96))
+    .overlay(alignment: .top) {
+      Rectangle()
+        .fill(KaidoTheme.nightDivider)
+        .frame(height: 1)
+    }
+  }
+
+  /// A drive that starts on the expressway never meets the reviewed entry
+  /// ramp, so the ramp match alone would wait forever. The driver settles what
+  /// the sensors cannot; the matcher still has to place the car itself.
+  @ViewBuilder private var routeJoinBanner: some View {
+    switch model.routeJoinState {
+    case .unavailable:
+      EmptyView()
+    case .offered, .unresolved:
+      Button {
+        Task { _ = await model.declareAlreadyOnRoute() }
+      } label: {
+        HStack(spacing: 8) {
+          Image(systemName: "arrow.turn.up.right")
+            .font(.system(size: 13, weight: .black))
+          Text(
+            model.routeJoinState == .unresolved
+              ? copy.resolve(
+                japanese: "位置を確認できません · 再試行",
+                simplifiedChinese: "未能确认位置 · 重试",
+                english: "POSITION UNCONFIRMED · RETRY"
+              )
+              : copy.resolve(
+                japanese: "すでに首都高を走行中",
+                simplifiedChinese: "我已在首都高上",
+                english: "ALREADY ON THE EXPRESSWAY"
+              )
+          )
+          .font(.system(size: 12, weight: .black, design: .rounded))
+          Spacer(minLength: 0)
+        }
+        .foregroundStyle(KaidoTheme.night)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .background(KaidoTheme.confirmedGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("whole-shuto-route-join")
+      .accessibilityValue(model.routeJoinState.rawValue)
+    case .resolving:
+      HStack(spacing: 8) {
+        ProgressView()
+          .controlSize(.small)
+          .tint(KaidoTheme.confirmedGreen)
+        Text(
+          copy.resolve(
+            japanese: "位置を確認中",
+            simplifiedChinese: "正在确认位置",
+            english: "CONFIRMING POSITION"
+          )
+        )
+        .font(.system(size: 12, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.confirmedGreen)
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal, 12)
+      .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+      .background(KaidoTheme.nightRaised)
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("whole-shuto-route-join")
+      .accessibilityValue(model.routeJoinState.rawValue)
+    }
+  }
+
+  private var drivingDockControls: some View {
     HStack(spacing: 10) {
       VStack(alignment: .leading, spacing: 5) {
         HStack(spacing: 6) {
@@ -2997,14 +3077,6 @@ struct WholeShutoProductView: View {
       .accessibilityIdentifier("whole-shuto-preview-playback")
       .accessibilityValue(model.isPlaying ? "PLAYING" : "PAUSED")
       }
-    }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 10)
-    .background(KaidoTheme.night.opacity(0.96))
-    .overlay(alignment: .top) {
-      Rectangle()
-        .fill(KaidoTheme.nightDivider)
-        .frame(height: 1)
     }
   }
 

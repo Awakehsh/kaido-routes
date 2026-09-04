@@ -99,6 +99,45 @@
       )
     }
 
+    /// Offers the same fix as an on-route position rather than an entry-ramp
+    /// step, for a driver who says they are already on the selected route.
+    ///
+    /// Nothing here is relaxed: the estimate is the matcher's own, including
+    /// the occurrence it resolved, with none of `adapt`'s first-route
+    /// continuity substitution. `RouteJoinAdmission` decides whether it holds.
+    public mutating func adaptRouteJoin(
+      _ envelope: CoreLocationObservationEnvelope
+    ) throws -> RouteJoinEvidence {
+      let observation = envelope.observation
+      let estimate = try matcherSession.observe(observation)
+      let headingError: Double? = estimate.directedEdgeID.flatMap { edgeID in
+        guard let course = observation.courseDegrees,
+          observation.speedMetersPerSecond.map({ $0 >= 2 }) == true,
+          let edge = edgeByID[edgeID],
+          let bearing = Self.closestBearing(
+            to: observation.coordinate,
+            on: edge.coordinates
+          )
+        else {
+          return nil
+        }
+        return Self.angularDifferenceDegrees(course, bearing)
+      }
+
+      return RouteJoinEvidence(
+        context: context,
+        observationID: observation.id ?? "",
+        observedAtMilliseconds: observation.observedAtMilliseconds,
+        receivedAtMilliseconds: observation.receivedAtMilliseconds,
+        occurrenceID: estimate.occurrenceID,
+        directedEdgeID: estimate.directedEdgeID,
+        candidateEdgeIDs: estimate.candidateEdgeIDs,
+        confidence: estimate.confidence,
+        headingErrorDegrees: headingError,
+        isSimulatedBySoftware: envelope.provenance.isSimulatedBySoftware
+      )
+    }
+
     public mutating func resetMatcher() {
       matcherSession.reset()
     }

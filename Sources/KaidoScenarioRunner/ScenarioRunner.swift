@@ -60,6 +60,7 @@ private struct ScenarioHarness {
   var matcherSession: RouteMatcherSession?
   var matcherCorridor: RouteMatcherCorridor?
   var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
+  var routeJoinAdmission: RouteJoinAdmission?
   var surfaceEgressMatcherSession: SurfaceEgressMatcherSession?
   var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   var routeEditorSession: ExpertRouteEditorSession?
@@ -80,6 +81,7 @@ private struct ScenarioHarness {
     matcherSession = nil
     matcherCorridor = nil
     entryTransitionAdmission = nil
+    routeJoinAdmission = nil
     surfaceEgressMatcherSession = nil
     surfaceEgressAdmission = nil
     routeEditorSession = nil
@@ -126,6 +128,10 @@ private struct ScenarioHarness {
         )
       }
       entryTransitionAdmission = EntryTransitionEvidenceAdmission(context: context)
+      routeJoinAdmission = RouteJoinAdmission(
+        context: context,
+        routePlan: routePlan
+      )
     }
     if let admissionValue = scenario.given.inputs.object(
       "surface_egress_matcher_admission"
@@ -246,6 +252,8 @@ private struct ScenarioHarness {
         ))
     case "ENTRY_TRANSITION_EVIDENCE_OBSERVED":
       try observeEntryTransitionEvidence(event)
+    case "ROUTE_JOIN_EVIDENCE_OBSERVED":
+      try observeRouteJoinEvidence(event)
     case "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED":
       try receiveSurfaceEgressMatcherObservation(event)
     case "MATCHER_SESSION_STARTED":
@@ -266,7 +274,7 @@ private struct ScenarioHarness {
         state: try event.payload.requiredString("state")
       )
     case "USER_ACTION":
-      try applyUserAction(event.payload)
+      try applyUserAction(event)
     case "TARIFF_QUOTED":
       try projectTariffQuote(event.payload)
     case "TARIFF_SELECTION_REQUESTED":
@@ -369,6 +377,73 @@ private struct ScenarioHarness {
     if let index = decision.acceptedTransitionEdgeIndex {
       adapterObservations["entry_transition.admission.accepted_edge_index"] = .integer(
         index
+      )
+    }
+  }
+
+  private mutating func observeRouteJoinEvidence(
+    _ event: ScenarioEvent
+  ) throws {
+    guard var admission = routeJoinAdmission else {
+      throw ScenarioExecutionError.missingInput("entry_transition_admission")
+    }
+    let payload = event.payload
+    let context = admission.context
+    guard
+      let evidenceSource = RouteJoinEvidenceSource(
+        rawValue: try payload.requiredString("source")
+      )
+    else {
+      throw ScenarioExecutionError.invalidInput("route_join_evidence.source")
+    }
+    let evidence = RouteJoinEvidence(
+      context: context,
+      observationID: try payload.requiredString("observation_id"),
+      observedAtMilliseconds: payload.int("observed_at_ms")
+        ?? event.atMilliseconds,
+      receivedAtMilliseconds: payload.int("received_at_ms")
+        ?? event.atMilliseconds,
+      occurrenceID: payload.string("occurrence_id"),
+      directedEdgeID: payload.string("directed_edge_id"),
+      candidateEdgeIDs: (payload.array("candidate_edge_ids") ?? []).compactMap(
+        \.stringValue
+      ),
+      confidence: payload.string("confidence")
+        .flatMap(MatcherConfidence.init(rawValue:)) ?? .lost,
+      headingErrorDegrees: payload.double("heading_error_degrees"),
+      source: evidenceSource,
+      isSimulatedBySoftware: payload.bool("is_simulated_by_software") ?? false
+    )
+    let decision = admission.admit(
+      evidence,
+      journeyPhase: engine.snapshot.journeyPhase
+    )
+    routeJoinAdmission = admission
+    if decision.status == .joined,
+      let occurrenceID = decision.joinedOccurrenceID
+    {
+      engine.joinStrictRoute(
+        atOccurrenceID: occurrenceID,
+        trigger: "DRIVER_DECLARED_ROUTE_JOIN"
+      )
+      admission.withdraw()
+      routeJoinAdmission = admission
+    }
+    adapterObservations["route_join.admission.status"] = .string(
+      decision.status.rawValue
+    )
+    if let reason = decision.rejectionReason {
+      adapterObservations["route_join.admission.rejection_reason"] = .string(
+        reason.rawValue
+      )
+    } else {
+      adapterObservations.removeValue(
+        forKey: "route_join.admission.rejection_reason"
+      )
+    }
+    if let occurrenceID = decision.joinedOccurrenceID {
+      adapterObservations["route_join.joined_occurrence_id"] = .string(
+        occurrenceID
       )
     }
   }
@@ -2629,12 +2704,25 @@ private struct ScenarioHarness {
     adapterObservations["matcher.session_status"] = .string(status)
   }
 
-  private mutating func applyUserAction(_ payload: [String: JSONValue]) throws {
+  private mutating func applyUserAction(_ event: ScenarioEvent) throws {
+    let payload = event.payload
     switch try payload.requiredString("action") {
     case "FINISH_DRIVE":
       engine.finishDrive()
     case "COMPLETE_AT_EXIT_HANDOFF":
       engine.completeAtExitHandoff()
+    case "DECLARE_ALREADY_ON_ROUTE":
+      guard var admission = routeJoinAdmission else {
+        throw ScenarioExecutionError.missingInput("entry_transition_admission")
+      }
+      admission.declare(atMilliseconds: event.atMilliseconds)
+      routeJoinAdmission = admission
+    case "WITHDRAW_ALREADY_ON_ROUTE":
+      guard var admission = routeJoinAdmission else {
+        throw ScenarioExecutionError.missingInput("entry_transition_admission")
+      }
+      admission.withdraw()
+      routeJoinAdmission = admission
     case "OPEN_PRE_DRIVE_REVIEW":
       let inputs = scenario.given.inputs
       let planned = inputs.string("planned_status") ?? "UNKNOWN"

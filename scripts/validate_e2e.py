@@ -101,6 +101,7 @@ EVENT_TYPES = {
     "NAVIGATION_STARTED",
     "LOCATION_UPDATED",
     "ENTRY_TRANSITION_EVIDENCE_OBSERVED",
+    "ROUTE_JOIN_EVIDENCE_OBSERVED",
     "SURFACE_EGRESS_MATCHER_OBSERVATION_RECEIVED",
     "MATCHER_SESSION_STARTED",
     "MATCHER_OBSERVATION_RECEIVED",
@@ -2097,6 +2098,57 @@ def validate_entry_transition_admission(
             )
 
 
+def validate_route_join_evidence(v: Validation, events: Any) -> None:
+    if not isinstance(events, list):
+        return
+    for index, event in enumerate(events):
+        if not isinstance(event, dict) or event.get("type") != (
+            "ROUTE_JOIN_EVIDENCE_OBSERVED"
+        ):
+            continue
+        payload = event.get("payload")
+        event_context = f"when[{index}].payload"
+        required_payload = {
+            "observation_id",
+            "occurrence_id",
+            "directed_edge_id",
+            "candidate_edge_ids",
+            "confidence",
+            "heading_error_degrees",
+            "source",
+        }
+        if not v.require_keys(payload, required_payload, event_context):
+            continue
+        if not isinstance(payload["observation_id"], str) or not payload[
+            "observation_id"
+        ].strip():
+            v.add(f"{event_context}.observation_id must be non-empty")
+        if not isinstance(payload["occurrence_id"], str) or not payload[
+            "occurrence_id"
+        ].strip():
+            v.add(f"{event_context}.occurrence_id must be non-empty")
+        if payload["confidence"] not in {"LOST", "LOW", "MEDIUM", "HIGH"}:
+            v.add(f"{event_context}.confidence is unknown")
+        if payload["source"] != "CORE_LOCATION_ROUTE_AWARE_MATCHER":
+            v.add(f"{event_context}.source is unknown")
+        candidates = payload["candidate_edge_ids"]
+        if not isinstance(candidates, list) or not all(
+            isinstance(edge_id, str) and edge_id.strip() for edge_id in candidates
+        ):
+            v.add(f"{event_context}.candidate_edge_ids must be a string array")
+        heading_error = payload["heading_error_degrees"]
+        if (
+            not isinstance(heading_error, (int, float))
+            or isinstance(heading_error, bool)
+            or not math.isfinite(heading_error)
+            or heading_error < 0
+            or heading_error > 180
+        ):
+            v.add(
+                f"{event_context}.heading_error_degrees must be finite from 0 through 180"
+            )
+
+
 def validate_surface_egress_matcher_admission(
     v: Validation, given: dict[str, Any], events: Any
 ) -> None:
@@ -3150,6 +3202,7 @@ def validate_scenario(path: Path, seen_ids: set[str]) -> list[str]:
         validate_released_guidance(v, given)
         validate_navigation_runtime_policy(v, given)
         validate_entry_transition_admission(v, given, scenario["when"])
+        validate_route_join_evidence(v, scenario["when"])
         validate_surface_egress_matcher_admission(
             v, given, scenario["when"]
         )

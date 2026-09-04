@@ -46,6 +46,24 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .network)
   }
 
+  func testRouteJoinIsNeitherOfferedNorDeclarableOutsideALiveEntry() async {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+
+    // The offer belongs to a live drive stalled in ENTRY_TRANSITION. A parked
+    // model must never present it, and the declaration must refuse even if a
+    // caller reaches for it anyway.
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+    let declared = await model.declareAlreadyOnRoute()
+    XCTAssertFalse(declared)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+
+    model.preparePreviewJourney()
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+    let declaredInPreview = await model.declareAlreadyOnRoute()
+    XCTAssertFalse(declaredInPreview)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+  }
+
   func testLiveDriveFailsClosedWithoutValidatedNavigationRelease() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
     model.preparePreviewJourney()

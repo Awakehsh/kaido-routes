@@ -416,6 +416,32 @@ heading sigma reduces that bearing's emission weight, while speed uncertainty
 widens the time-distance transition tolerance. Invalid negative uncertainty
 remains absent evidence. KR-S19 executes the positive and fail-closed paths.
 
+A drive can also start when the car is already on the expressway. No phone
+sensor separates an elevated Shuto carriageway from the surface road beneath
+it — factory navigation units solve this with a wheel-speed pulse, a gyro, and
+3D road elevation, and still misread the Shuto — so such a drive never meets
+the reviewed ramp and would wait in `ENTRY_TRANSITION` indefinitely. The
+product follows the same answer Japanese phone navigation settled on: give the
+driver the one-tap correction the sensors cannot make. After 60 seconds in
+`ENTRY_TRANSITION` the App offers "already on the expressway".
+
+The declaration grants no position. It opens `RouteJoinAdmission` for 45
+seconds, during which `CoreLocationEntryTransitionAdapter.adaptRouteJoin`
+offers the matcher's own estimate — including the occurrence it resolved —
+with none of `adapt`'s route-head substitution. The admission is deliberately
+stricter than ramp entry, because no reviewed edge sequence backs the
+transition: HIGH confidence only, a single candidate edge, a 30-degree heading
+window instead of 45, and three fixes that hold the same plan occurrence with
+no gap over six seconds. `NavigationEngine.joinStrictRoute` then records every
+occurrence ahead of the join as skipped rather than completed, so the journey
+never claims passage it has no evidence for, and stamps
+`DRIVER_DECLARED_ROUTE_JOIN` so a join stays distinguishable from ramp entry
+in the audit state. A declaration the matcher cannot honor lapses and the App
+says so. KR-S24 executes the positive and fail-closed paths.
+
+The join is deterministic policy only. Whether a declared join lands on the
+correct carriageway on the real network is unproven field behavior.
+
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
 definitions, and one fresh resolved occurrence/distance observation. It never

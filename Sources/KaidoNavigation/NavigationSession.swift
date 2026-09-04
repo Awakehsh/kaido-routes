@@ -47,6 +47,7 @@ public actor NavigationSession {
   private var engine: NavigationEngine
   private var matcherSession: RouteMatcherSession
   private var entryTransitionAdmission: EntryTransitionEvidenceAdmission?
+  private var routeJoinAdmission: RouteJoinAdmission?
   private var surfaceEgressAdmission: SurfaceEgressHandoffEvidenceAdmission?
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
@@ -184,6 +185,9 @@ public actor NavigationSession {
     )
     entryTransitionAdmission = entryTransitionAdmissionContext.map {
       EntryTransitionEvidenceAdmission(context: $0)
+    }
+    routeJoinAdmission = entryTransitionAdmissionContext.map {
+      RouteJoinAdmission(context: $0, routePlan: routePlan)
     }
     surfaceEgressAdmission = surfaceEgressAdmissionContext.map {
       SurfaceEgressHandoffEvidenceAdmission(context: $0)
@@ -478,6 +482,73 @@ public actor NavigationSession {
       status: decision.status,
       rejectionReason: decision.rejectionReason,
       acceptedTransitionEdgeIndex: decision.acceptedTransitionEdgeIndex,
+      navigationSnapshot: engine.snapshot
+    )
+  }
+
+  /// Records that the driver says the car is already on the selected route.
+  ///
+  /// This grants no position. It only opens `observeRouteJoinEvidence` for a
+  /// bounded window, and the matcher still has to settle on one exact plan
+  /// occurrence before the session leaves `ENTRY_TRANSITION`.
+  public func declareAlreadyOnRoute(
+    atMilliseconds milliseconds: Int
+  ) -> Bool {
+    guard var admission = routeJoinAdmission,
+      engine.snapshot.journeyPhase == .planning
+        || engine.snapshot.journeyPhase == .approachToEntry
+        || engine.snapshot.journeyPhase == .entryTransition
+    else {
+      return false
+    }
+    admission.declare(atMilliseconds: milliseconds)
+    routeJoinAdmission = admission
+    return true
+  }
+
+  public func withdrawAlreadyOnRouteDeclaration() {
+    guard var admission = routeJoinAdmission else { return }
+    admission.withdraw()
+    routeJoinAdmission = admission
+  }
+
+  public var isAlreadyOnRouteDeclared: Bool {
+    routeJoinAdmission?.isDeclared ?? false
+  }
+
+  /// Applies one matcher-resolved on-route position offered under the driver's
+  /// declaration, and joins the strict route once the run holds.
+  public func observeRouteJoinEvidence(
+    _ evidence: RouteJoinEvidence
+  ) throws -> RouteJoinSessionUpdate {
+    guard var admission = routeJoinAdmission else {
+      return RouteJoinSessionUpdate(
+        status: .rejected,
+        rejectionReason: .runtimeNotReleaseAdmitted,
+        navigationSnapshot: engine.snapshot
+      )
+    }
+
+    let decision = admission.admit(
+      evidence,
+      journeyPhase: engine.snapshot.journeyPhase
+    )
+    routeJoinAdmission = admission
+    if decision.status == .joined,
+      let occurrenceID = decision.joinedOccurrenceID
+    {
+      engine.joinStrictRoute(
+        atOccurrenceID: occurrenceID,
+        trigger: "DRIVER_DECLARED_ROUTE_JOIN"
+      )
+      try matcherSession.restart(at: occurrenceID)
+      admission.withdraw()
+      routeJoinAdmission = admission
+    }
+    return RouteJoinSessionUpdate(
+      status: decision.status,
+      rejectionReason: decision.rejectionReason,
+      joinedOccurrenceID: decision.joinedOccurrenceID,
       navigationSnapshot: engine.snapshot
     )
   }

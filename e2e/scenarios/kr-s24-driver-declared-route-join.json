@@ -1,0 +1,344 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S24",
+  "title": "A driver-declared join enters the route only where the matcher places it",
+  "layer": "SIMULATION",
+  "tags": [
+    "entry",
+    "stacked-roads",
+    "core-location",
+    "release-identity",
+    "fail-closed"
+  ],
+  "purpose": "Let a drive that starts while already on the expressway leave ENTRY_TRANSITION, because no sensor separates an elevated carriageway from the surface road beneath it, while keeping the position with the route-aware matcher: the declaration opens a bounded window, three steady HIGH fixes on one exact plan occurrence authorize the join, and every occurrence ahead of it is recorded as skipped rather than driven.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Coordinates, confidence, and heading values are synthetic; this scenario proves the deterministic admission contract only and establishes no field accuracy for stacked-road discrimination."
+    ],
+    "release_blockers": [
+      "Field evidence that a declared join lands on the correct carriageway on the real Shuto network remains required before this path is claimed as navigation-grade."
+    ]
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.route-join-v1",
+      "status": "TEST",
+      "effective_at": "2026-09-04T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.route-join",
+      "network_snapshot_id": "test.snapshot.route-join-v1",
+      "entry_facility_id": "test.entrance.route-join",
+      "exit_facility_id": "test.exit.route-join",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.occurrence.route-join.first",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.route-join.mainline"
+        },
+        {
+          "occurrence_id": "test.occurrence.route-join.second",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.route-join.downstream"
+        }
+      ]
+    },
+    "inputs": {
+      "entry_transition": {
+        "facility_id": "test.entrance.route-join",
+        "directed_edge_ids": [
+          "test.edge.route-join.surface",
+          "test.edge.route-join.ramp"
+        ],
+        "first_route_occurrence_id": "test.occurrence.route-join.first"
+      },
+      "entry_transition_admission": {
+        "product_release_id": "test.product-release.route-join",
+        "navigation_release_id": "test.navigation-release.route-join",
+        "runtime_policy_id": "test.runtime-policy.route-join"
+      },
+      "matcher_corridor": {
+        "corridor_id": "test.corridor.route-join",
+        "network_snapshot_id": "test.snapshot.route-join-v1",
+        "route_plan_id": "test.plan.route-join",
+        "edges": [
+          {
+            "directed_edge_id": "test.edge.route-join.surface",
+            "coordinates": [
+              { "latitude": 35.68, "longitude": 139.759 },
+              { "latitude": 35.68, "longitude": 139.7591 }
+            ],
+            "successor_edge_ids": [
+              "test.edge.route-join.ramp"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.route-join.ramp",
+            "coordinates": [
+              { "latitude": 35.68, "longitude": 139.7591 },
+              { "latitude": 35.68, "longitude": 139.7592 }
+            ],
+            "successor_edge_ids": [
+              "test.edge.route-join.mainline"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.route-join.mainline",
+            "coordinates": [
+              { "latitude": 35.68, "longitude": 139.7592 },
+              { "latitude": 35.68, "longitude": 139.76 }
+            ],
+            "successor_edge_ids": [
+              "test.edge.route-join.downstream"
+            ]
+          },
+          {
+            "directed_edge_id": "test.edge.route-join.downstream",
+            "coordinates": [
+              { "latitude": 35.68, "longitude": 139.76 },
+              { "latitude": 35.68, "longitude": 139.761 }
+            ],
+            "successor_edge_ids": []
+          }
+        ],
+        "occurrences": [
+          {
+            "occurrence_id": "test.occurrence.route-join.first",
+            "index": 0,
+            "directed_edge_id": "test.edge.route-join.mainline"
+          },
+          {
+            "occurrence_id": "test.occurrence.route-join.second",
+            "index": 1,
+            "directed_edge_id": "test.edge.route-join.downstream"
+          }
+        ]
+      }
+    },
+    "system_state": {
+      "journey_phase": "ENTRY_TRANSITION",
+      "active_route_plan_id": "test.plan.route-join"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "undeclared-fix",
+      "at_ms": 1000,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.undeclared",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 2,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "declare",
+      "at_ms": 2000,
+      "type": "USER_ACTION",
+      "payload": {
+        "action": "DECLARE_ALREADY_ON_ROUTE"
+      }
+    },
+    {
+      "id": "simulated-fix",
+      "at_ms": 2500,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.simulated",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 2,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER",
+        "is_simulated_by_software": true
+      }
+    },
+    {
+      "id": "wrong-way-fix",
+      "at_ms": 3000,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.wrong-way",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 40,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "first-steady-fix",
+      "at_ms": 4000,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.0",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 2,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "second-steady-fix",
+      "at_ms": 5000,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.1",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 3,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    },
+    {
+      "id": "third-steady-fix",
+      "at_ms": 6000,
+      "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
+      "payload": {
+        "observation_id": "join.2",
+        "occurrence_id": "test.occurrence.route-join.second",
+        "directed_edge_id": "test.edge.route-join.downstream",
+        "candidate_edge_ids": [
+          "test.edge.route-join.downstream"
+        ],
+        "confidence": "HIGH",
+        "heading_error_degrees": 2,
+        "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "no-declaration-no-join",
+      "after": "undeclared-fix",
+      "category": "SAFETY",
+      "subject": "route_join.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "NOT_DECLARED_BY_DRIVER",
+      "rationale": "Matcher evidence alone never joins the route; the driver has to say the car is already on it."
+    },
+    {
+      "id": "no-declaration-keeps-entry-transition",
+      "after": "undeclared-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "An unarmed join leaves the reviewed entry path in charge."
+    },
+    {
+      "id": "simulated-evidence-rejected",
+      "after": "simulated-fix",
+      "category": "SAFETY",
+      "subject": "route_join.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "SIMULATED_LOCATION",
+      "rationale": "A declaration does not admit software-simulated position."
+    },
+    {
+      "id": "heading-window-is-tighter-than-ramp-entry",
+      "after": "wrong-way-fix",
+      "category": "SAFETY",
+      "subject": "route_join.admission.rejection_reason",
+      "matcher": "EQUALS",
+      "expected": "HEADING_MISMATCH",
+      "rationale": "No reviewed edge sequence backs this transition, so the 45 degree ramp window narrows to 30."
+    },
+    {
+      "id": "two-fixes-only-observe",
+      "after": "second-steady-fix",
+      "category": "SAFETY",
+      "subject": "route_join.admission.status",
+      "matcher": "EQUALS",
+      "expected": "OBSERVING",
+      "rationale": "Two fixes cannot prove the matcher has settled on one occurrence."
+    },
+    {
+      "id": "two-fixes-keep-entry-transition",
+      "after": "second-steady-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "ENTRY_TRANSITION",
+      "rationale": "The phase changes only on the completed continuity run."
+    },
+    {
+      "id": "third-fix-joins",
+      "after": "third-steady-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.phase",
+      "matcher": "EQUALS",
+      "expected": "STRICT_ROUTE",
+      "rationale": "Three steady HIGH fixes on one exact plan occurrence authorize the declared join."
+    },
+    {
+      "id": "join-lands-on-the-matched-occurrence",
+      "after": "third-steady-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.occurrence.route-join.second",
+      "rationale": "The driver supplies the intent; the matcher supplies the position."
+    },
+    {
+      "id": "join-trigger-is-auditable",
+      "after": "third-steady-fix",
+      "category": "NAVIGATION",
+      "subject": "journey.last_phase_transition.trigger",
+      "matcher": "EQUALS",
+      "expected": "DRIVER_DECLARED_ROUTE_JOIN",
+      "rationale": "A join that skipped the reviewed entry stays distinguishable from ramp entry in the actor audit state."
+    },
+    {
+      "id": "skipped-occurrences-are-not-claimed-as-driven",
+      "after": "third-steady-fix",
+      "category": "EVIDENCE",
+      "subject": "route.skipped_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.occurrence.route-join.first"
+      ],
+      "rationale": "The drive never passed what it joined ahead of; reporting it completed would claim passage without evidence."
+    },
+    {
+      "id": "nothing-is-reported-completed",
+      "after": "third-steady-fix",
+      "category": "EVIDENCE",
+      "subject": "navigation.completed_occurrence_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "Passage is claimed only for occurrences the session observed."
+    }
+  ]
+}

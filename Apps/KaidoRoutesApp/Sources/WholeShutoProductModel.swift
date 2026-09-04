@@ -85,6 +85,19 @@ enum WholeShutoDriveMode: String, Codable, Equatable, Sendable {
   case live = "LIVE"
 }
 
+/// Where the driver's "I am already on the expressway" declaration stands.
+///
+/// Sensors cannot separate an elevated Shuto carriageway from the surface road
+/// under it, so a drive started mid-route can never match the reviewed entry
+/// ramp and would otherwise wait in ENTRY_TRANSITION forever. The declaration
+/// is the driver's, the position stays the matcher's.
+enum WholeShutoRouteJoinState: String, Equatable, Sendable {
+  case unavailable = "UNAVAILABLE"
+  case offered = "OFFERED"
+  case resolving = "RESOLVING"
+  case unresolved = "UNRESOLVED"
+}
+
 enum WholeShutoLiveLocationState: String, Equatable, Sendable {
   case inactive = "INACTIVE"
   case resumeRequired = "RESUME_REQUIRED"
@@ -368,6 +381,8 @@ final class WholeShutoProductModel: ObservableObject {
   /// foreground product runtime and the user has started live navigation.
   @Published private(set) var isLiveDrive = false
   @Published private(set) var liveLocationState: WholeShutoLiveLocationState = .inactive
+  @Published private(set) var routeJoinState: WholeShutoRouteJoinState =
+    .unavailable
   @Published private(set) var liveLocationIssueCode: String?
   @Published private(set) var failureCode: String?
   @Published private(set) var checkpointIssueCode: String?
@@ -456,6 +471,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var trackMapCacheLayout: RouteTrackMapLayout?
   private var trackMapCacheSpans: [WholeShutoTrackMapSpan] = []
   private var liveLocationStartedAtMilliseconds: Int?
+  private var entryTransitionStartedAtMilliseconds: Int?
   private var lastLiveObservationAtMilliseconds: Int?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
@@ -470,7 +486,11 @@ final class WholeShutoProductModel: ObservableObject {
   static let surfaceRerouteCooldownMilliseconds = 15_000
   static let surfaceSpeechPreannounceDistanceMeters = 250.0
   static let surfaceEntryTransitionRadiusMeters = 80.0
+  /// A ramp entry resolves within seconds. Waiting this long means the entry
+  /// the plan expects is not the one the car is on, so the offer appears.
+  static let routeJoinOfferAfterMilliseconds = 60_000
   static let surfaceRouteReroutingCode = "SURFACE_ROUTE_REROUTING"
+  static let routeJoinUnresolvedCode = "ROUTE_JOIN_POSITION_UNRESOLVED"
   static let surfaceRouteRerouteUnavailableCode =
     "SURFACE_ROUTE_REROUTE_UNAVAILABLE"
   private static let checkpointLoadFailedCode =
@@ -1785,6 +1805,46 @@ final class WholeShutoProductModel: ObservableObject {
     return route.distanceMeters * (1 - progressFraction) <= 150
   }
 
+  /// Accepts the driver's word that the car is already on the selected route.
+  ///
+  /// The declaration only opens the join admission for a bounded window. If
+  /// the matcher never settles on one exact plan occurrence, the window
+  /// closes and the drive says so rather than joining somewhere unproven.
+  @discardableResult
+  func declareAlreadyOnRoute() async -> Bool {
+    guard isLiveDrive,
+      phase == .entryTransition,
+      routeJoinState == .offered || routeJoinState == .unresolved,
+      let session = liveDriveSession
+    else {
+      return false
+    }
+    let declared = await session.declareAlreadyOnRoute(
+      atMilliseconds: nowMillisecondsProvider()
+    )
+    guard declared else { return false }
+    routeJoinState = .resolving
+    liveLocationIssueCode = nil
+    return true
+  }
+
+  private func refreshRouteJoinOffer(atMilliseconds milliseconds: Int) {
+    guard isLiveDrive, phase == .entryTransition,
+      routeJoinState == .unavailable,
+      let startedAt = entryTransitionStartedAtMilliseconds
+    else {
+      return
+    }
+    if milliseconds - startedAt >= Self.routeJoinOfferAfterMilliseconds {
+      routeJoinState = .offered
+    }
+  }
+
+  private func clearRouteJoinOffer() {
+    entryTransitionStartedAtMilliseconds = nil
+    routeJoinState = .unavailable
+  }
+
   @discardableResult
   func finishLiveExpressway() async -> Bool {
     guard canFinishLiveExpressway, let session = liveDriveSession else {
@@ -2832,6 +2892,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeCoordinate = nil
       runtimeFractionAlongOccurrence = nil
       liveMatcherWasInTunnel = false
+      clearRouteJoinOffer()
       clearTunnelEstimate()
       presentationProjection = nil
       consumedGuidancePromptIDs = []
@@ -2969,6 +3030,29 @@ final class WholeShutoProductModel: ObservableObject {
         guard var adapter = liveEntryTransitionAdapter else {
           throw WholeShutoProductError.noExpresswayRoute
         }
+        entryTransitionStartedAtMilliseconds =
+          entryTransitionStartedAtMilliseconds
+          ?? observation.receivedAtMilliseconds
+        // One fix feeds one matcher step. While the driver's declaration
+        // stands the ramp admission has nothing left to prove — it can only
+        // reject an on-route edge — so the join path takes the observation
+        // instead of both paths racing the same matcher.
+        if routeJoinState == .resolving {
+          let evidence = try adapter.adaptRouteJoin(envelope)
+          liveEntryTransitionAdapter = adapter
+          let update = try await session.observeRouteJoinEvidence(evidence)
+          matcherConfidence = evidence.confidence
+          applyLiveActorSnapshot(update.navigationSnapshot)
+          if update.status == .joined {
+            routeJoinState = .unavailable
+            liveLocationIssueCode = nil
+          } else if update.rejectionReason == .declarationExpired {
+            routeJoinState = .unresolved
+            liveLocationState = .degraded
+            liveLocationIssueCode = Self.routeJoinUnresolvedCode
+          }
+          break
+        }
         let evidence = try adapter.adapt(envelope)
         liveEntryTransitionAdapter = adapter
         let update = try await session.observeEntryTransitionEvidence(
@@ -2980,6 +3064,7 @@ final class WholeShutoProductModel: ObservableObject {
           liveLocationState = .degraded
           liveLocationIssueCode = rejection.rawValue
         }
+        refreshRouteJoinOffer(atMilliseconds: observation.receivedAtMilliseconds)
       case .expressway:
         let update = try await session.observe(observation)
         applyNavigationUpdate(update, persistsCheckpoint: false)
@@ -3274,10 +3359,12 @@ final class WholeShutoProductModel: ObservableObject {
       if phase == .surfaceAccess || phase == .entryTransition {
         cancelSurfaceReroute()
         speechCoordinator?.stopProviderSurface()
+        clearRouteJoinOffer()
         phase = .expressway
         progressFraction = 0
       }
     case .routeRecovery:
+      clearRouteJoinOffer()
       phase = .expressway
     case .exitTransition:
       guard snapshot.egress.status == .active else { return }
@@ -4007,6 +4094,7 @@ final class WholeShutoProductModel: ObservableObject {
         if persistsCheckpoint { persistCheckpoint() }
         return
       }
+      clearRouteJoinOffer()
       phase = .expressway
       progressFraction = 0
     }

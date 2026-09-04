@@ -415,6 +415,33 @@ public struct NavigationEngine: Sendable {
     advance(to: firstOccurrenceID)
   }
 
+  /// Joins STRICT_ROUTE at an occurrence no reviewed entry ramp proved.
+  ///
+  /// The driver was already on the expressway when the drive started, so the
+  /// occurrences ahead of the join were never driven. They are recorded as
+  /// skipped: `advance(to:)` would otherwise report them completed, which
+  /// would claim passage the session has no evidence for.
+  package mutating func joinStrictRoute(
+    atOccurrenceID occurrenceID: String,
+    trigger: String
+  ) {
+    guard snapshot.journeyPhase == .planning
+      || snapshot.journeyPhase == .approachToEntry
+      || snapshot.journeyPhase == .entryTransition,
+      let routePlan = configuration.routePlan,
+      let target = routePlan.occurrence(id: occurrenceID)
+    else { return }
+    for occurrence in routePlan.occurrences
+    where occurrence.index < target.index {
+      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+    }
+    snapshot.journeyPhase = .strictRoute
+    snapshot.lastPhaseTransitionTrigger = trigger
+    snapshot.strictRouteAutoCommitAllowed = true
+    snapshot.ambiguityReason = nil
+    advance(to: occurrenceID)
+  }
+
   package mutating func activateSurfaceEgress() {
     guard snapshot.journeyPhase == .exitTransition,
       snapshot.egress.status == .active

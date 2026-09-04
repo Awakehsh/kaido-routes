@@ -1,6 +1,5 @@
 import Foundation
 import KaidoRouting
-import SwiftUI
 
 enum WholeShutoAttributionError: Error, Equatable {
   case invalidNetworkMetadata
@@ -85,45 +84,4 @@ struct WholeShutoAttribution: Equatable, Sendable {
     licenceAccessibilityIdentifier = "route-atlas-attribution-licence"
     navigationAuthority = false
   }
-}
-
-struct WholeShutoMapCredit: View {
-  @Environment(\.kaidoInterfaceLocale) private var interfaceLocale
-
-  let attribution: WholeShutoAttribution
-
-  var body: some View {
-    Link(destination: attribution.sourceURL) {
-      Text("© OpenStreetMap")
-        .font(.system(size: 9, weight: .medium, design: .rounded))
-        .foregroundStyle(KaidoTheme.nightQuiet)
-        .padding(.horizontal, 6)
-        .frame(minHeight: 22)
-        .background(KaidoTheme.night.opacity(0.68))
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .frame(minHeight: 44)
-    .accessibilityLabel(
-      copy.resolve(
-        japanese: "地図データの出典、\(attribution.attribution)",
-        simplifiedChinese: "地图数据来源，\(attribution.attribution)",
-        english: "Map data source, \(attribution.attribution)"
-      )
-    )
-    .accessibilityHint(
-      copy.resolve(
-        japanese: "\(attribution.sourceLabel) の出典説明を開く",
-        simplifiedChinese: "打开 \(attribution.sourceLabel) 来源说明",
-        english: "Open the \(attribution.sourceLabel) source statement"
-      )
-    )
-    .accessibilityIdentifier("whole-shuto-map-credit")
-  }
-
-  private var copy: KaidoInterfaceText {
-    KaidoInterfaceText(locale: interfaceLocale)
-  }
-
 }

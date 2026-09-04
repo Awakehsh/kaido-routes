@@ -61,7 +61,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "The small diagram names Tokyo Tower in the interface language"
     )
     XCTAssertTrue(element("whole-shuto-current-location", in: app).exists)
-    XCTAssertTrue(element("whole-shuto-map-credit", in: app).exists)
+    // The map surface stays clear of source marks: OSM attribution and its
+    // licence live in Settings, reached from the same screen.
+    XCTAssertFalse(element("whole-shuto-map-credit", in: app).exists)
     XCTAssertFalse(
       element("route-atlas-attribution-licence", in: app).exists
     )
@@ -160,24 +162,10 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("route-atlas-attribution-licence", in: app).exists
     )
 
-    _ = revealInformationRow("whole-shuto-location-privacy", in: app)
-    _ = revealInformationRow("whole-shuto-privacy-policy", in: app)
-    let sourceLicense = revealInformationRow(
-      "whole-shuto-source-license",
-      in: app
-    )
-    sourceLicense.tap()
-    let licenseDocument = element(
-      "whole-shuto-source-license-document",
-      in: app
-    )
-    XCTAssertTrue(licenseDocument.waitForExistence(timeout: 3))
-    XCTAssertTrue(licenseDocument.label.contains("Apache License"))
-    let back = app.navigationBars.buttons.firstMatch
-    XCTAssertTrue(back.waitForExistence(timeout: 2))
-    back.tap()
+    // The map data licence text now hangs off the attribution row itself,
+    // so "About this map" carries source and licence together.
     let mapDataLicense = revealInformationRow(
-      "whole-shuto-map-data-license",
+      "route-atlas-attribution-licence",
       in: app
     )
     mapDataLicense.tap()
@@ -192,6 +180,23 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(
       mapDataLicenseDocument.label.contains("OpenStreetMap contributors")
     )
+    let back = app.navigationBars.buttons.firstMatch
+    XCTAssertTrue(back.waitForExistence(timeout: 2))
+    back.tap()
+
+    _ = revealInformationRow("whole-shuto-location-privacy", in: app)
+    _ = revealInformationRow("whole-shuto-privacy-policy", in: app)
+    let sourceLicense = revealInformationRow(
+      "whole-shuto-source-license",
+      in: app
+    )
+    sourceLicense.tap()
+    let licenseDocument = element(
+      "whole-shuto-source-license-document",
+      in: app
+    )
+    XCTAssertTrue(licenseDocument.waitForExistence(timeout: 3))
+    XCTAssertTrue(licenseDocument.label.contains("Apache License"))
     XCTAssertTrue(back.waitForExistence(timeout: 2))
     back.tap()
     let version = revealInformationRow("whole-shuto-app-version", in: app)

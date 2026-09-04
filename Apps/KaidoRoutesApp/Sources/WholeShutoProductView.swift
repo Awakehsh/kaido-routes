@@ -289,16 +289,6 @@ struct WholeShutoProductView: View {
         map
           .ignoresSafeArea()
 
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            WholeShutoMapCredit(attribution: wholeShutoAttribution)
-          }
-          .padding(.trailing, 10)
-          .padding(.bottom, mapCreditBottomPadding(for: geometry.size.height))
-        }
-
         if usesExpandedTextLayout && !isDriving
           && model.phase != .completed
         {
@@ -389,15 +379,6 @@ struct WholeShutoProductView: View {
       ZStack {
         map
           .ignoresSafeArea(edges: [.top, .bottom, .trailing])
-
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            WholeShutoMapCredit(attribution: wholeShutoAttribution)
-              .padding(10)
-          }
-        }
 
         if let prompt = model.activeJunctionInsetPrompt {
           VStack {
@@ -597,13 +578,6 @@ struct WholeShutoProductView: View {
       : isDriving
         ? 0.92
         : isPlanningDockExpanded ? 0.66 : 0.88
-  }
-
-  private func mapCreditBottomPadding(for height: CGFloat) -> CGFloat {
-    if !isDriving, model.phase != .completed, !isPlanningDockExpanded {
-      return 68
-    }
-    return height * (1 - mapVisibleBottomFraction) + 44
   }
 
   private var networkOverviewInitialZoom: Double {
@@ -6538,57 +6512,76 @@ private struct WholeShutoSettingsView: View {
           )
         }
 
+        // The map surface carries no source mark, so the required OSM
+        // attribution and its licence text live here. Each limitation is a
+        // scannable field rather than a paragraph a driver has to read.
         Section {
           Link(destination: attribution.sourceURL) {
-            Label(
-              copy.resolve(
-                japanese: "OpenStreetMap の地図データ",
-                simplifiedChinese: "OpenStreetMap 地图数据",
-                english: "OpenStreetMap map data"
-              ),
-              systemImage: "map"
-            )
+            Label(attribution.attribution, systemImage: "map")
           }
           .accessibilityIdentifier(attribution.sourceAccessibilityIdentifier)
 
-          Link(destination: attribution.licenceURL) {
-            LabeledContent(
+          NavigationLink {
+            licenseDocument(
+              text: ProductPrivacyDisclosure.mapDataLicenseText(),
+              missing: copy.resolve(
+                japanese: "地図データのライセンス文書を読み込めませんでした。",
+                simplifiedChinese: "无法读取地图数据许可证文本。",
+                english: "The map data license text could not be loaded."
+              ),
+              identifier: "whole-shuto-map-data-license-document"
+            )
+            .navigationTitle(
               copy.resolve(
                 japanese: "地図データライセンス",
-                simplifiedChinese: "地图数据许可",
-                english: "Map data licence"
+                simplifiedChinese: "地图数据许可证",
+                english: "Map Data License"
+              )
+            )
+          } label: {
+            LabeledContent(
+              copy.resolve(
+                japanese: "ライセンス",
+                simplifiedChinese: "许可",
+                english: "Licence"
               ),
               value: attribution.licenceLabel
             )
           }
           .accessibilityIdentifier(attribution.licenceAccessibilityIdentifier)
 
-          Text(
+          LabeledContent(
             copy.resolve(
-              japanese:
-                "路線・施設は首都高の公式ページ、道路形状は OSM 候補です。"
-                + "音声と分岐図は審査済みの分岐のみ。"
-                + "料金は確認日付き ETC 料金帯で、リアルタイム通行・PA 状況は未確認です。",
-              simplifiedChinese:
-                "路线与设施来自首都高官方页面，道路几何为 OSM 候选。"
-                + "语音与分岔图仅覆盖已审核路口。"
-                + "通行费为带核查日期的 ETC 档位；实时通行与 PA 状态尚未确认。",
-              english:
-                "Routes and facilities come from Shuto Expressway pages; "
-                + "road geometry is an OSM candidate. Speech and junction "
-                + "insets cover reviewed junctions only. Tolls are dated "
-                + "ETC bands; realtime passage and PA status are unconfirmed."
+              japanese: "データ",
+              simplifiedChinese: "数据",
+              english: "Data"
+            ),
+            value: copy.resolve(
+              japanese: "首都高公式 · OSM 形状候補",
+              simplifiedChinese: "首都高官方 · OSM 几何候选",
+              english: "Shuto official · OSM geometry"
             )
           )
-          .font(.footnote)
-          .foregroundStyle(.secondary)
+
+          LabeledContent(
+            copy.resolve(
+              japanese: "未確認",
+              simplifiedChinese: "未确认",
+              english: "Unconfirmed"
+            ),
+            value: copy.resolve(
+              japanese: "未審査分岐の音声 · 通行 · PA",
+              simplifiedChinese: "未审核路口语音 · 通行 · PA",
+              english: "Unreviewed junctions · passage · PA"
+            )
+          )
           .accessibilityIdentifier("whole-shuto-known-limitations")
 
           LabeledContent(
             copy.resolve(
-              japanese: "データ確認日",
-              simplifiedChinese: "数据日期",
-              english: "Data checked"
+              japanese: "確認日",
+              simplifiedChinese: "确认日",
+              english: "Checked"
             ),
             value: checkedAt
           )
@@ -6603,20 +6596,18 @@ private struct WholeShutoSettingsView: View {
         }
 
         Section {
-          Label {
-            Text(
-              copy.resolve(
-                japanese:
-                  "位置情報は現在地の選択またはナビ開始後に、このデバイス内で使います。",
-                simplifiedChinese:
-                  "定位仅在选择当前位置或开始导航后，于本机处理。",
-                english:
-                  "Location is used on this device after Current Location or Start."
-              )
+          LabeledContent(
+            copy.resolve(
+              japanese: "位置情報",
+              simplifiedChinese: "定位",
+              english: "Location"
+            ),
+            value: copy.resolve(
+              japanese: "この端末のみ",
+              simplifiedChinese: "仅本机处理",
+              english: "On this device"
             )
-          } icon: {
-            Image(systemName: "location.shield")
-          }
+          )
           .accessibilityElement(children: .combine)
           .accessibilityIdentifier("whole-shuto-location-privacy")
 
@@ -6660,35 +6651,6 @@ private struct WholeShutoSettingsView: View {
             )
           }
           .accessibilityIdentifier("whole-shuto-source-license")
-
-          NavigationLink {
-            licenseDocument(
-              text: ProductPrivacyDisclosure.mapDataLicenseText(),
-              missing: copy.resolve(
-                japanese: "地図データのライセンス文書を読み込めませんでした。",
-                simplifiedChinese: "无法读取地图数据许可证文本。",
-                english: "The map data license text could not be loaded."
-              ),
-              identifier: "whole-shuto-map-data-license-document"
-            )
-            .navigationTitle(
-              copy.resolve(
-                japanese: "地図データライセンス",
-                simplifiedChinese: "地图数据许可证",
-                english: "Map Data License"
-              )
-            )
-          } label: {
-            Label(
-              copy.resolve(
-                japanese: "地図データライセンス",
-                simplifiedChinese: "地图数据许可证",
-                english: "Map Data License"
-              ),
-              systemImage: "map"
-            )
-          }
-          .accessibilityIdentifier("whole-shuto-map-data-license")
 
           LabeledContent(
             copy.resolve(

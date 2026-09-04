@@ -5491,17 +5491,18 @@ private struct WholeShutoGeographicMap: View {
       if let accessRoute = model.accessRoute,
         model.phase == .review || model.phase == .surfaceAccess
       {
-        // Casing first, then a tight butt-capped dash. Round caps on a
-        // [7, 5] dash bloom into a chain of loose capsules that reads as
-        // debris rather than a road; the casing keeps the leg continuous
-        // while the dash still says "provider leg, not Kaido authority".
+        // Casing under a solid core, the way every driving map draws a
+        // route. A dash cannot carry "provider leg, not Kaido authority"
+        // here: the casing shows through its gaps and the leg reads as a
+        // striped ribbon rather than a road. Colour carries that meaning
+        // instead — cyan in, coral out, against the route's green.
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoTheme.night.opacity(0.62),
+          KaidoTheme.night.opacity(0.8),
           style: StrokeStyle(
-            lineWidth: 8,
+            lineWidth: 9,
             lineCap: .round,
             lineJoin: .round
           )
@@ -5512,34 +5513,39 @@ private struct WholeShutoGeographicMap: View {
         .stroke(
           KaidoTheme.positionCyan,
           style: StrokeStyle(
-            lineWidth: 4.5,
-            lineCap: .butt,
-            lineJoin: .round,
-            dash: [15, 5]
+            lineWidth: 5.5,
+            lineCap: .round,
+            lineJoin: .round
           )
         )
       }
 
       if let route = model.selectedRoute {
+        // Casing, then the route colour, then progress — the layer order
+        // every navigation renderer uses. The casing must be darker than
+        // the line it borders: a white one blends into MapKit's own white
+        // motorway fill and the route stops looking like an overlay at all.
         MapPolyline(
           coordinates: route.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          Color.white.opacity(0.88),
+          KaidoTheme.night.opacity(0.85),
           style: StrokeStyle(
-            lineWidth: 10,
+            lineWidth: 11,
             lineCap: .round,
             lineJoin: .round
           )
         )
         if let progress = model.routeProgressGeometry {
           if progress.traveledCoordinates.count > 1 {
+            // What is behind the driver recedes instead of competing: the
+            // same line, dimmed, rather than a second colour of its own.
             MapPolyline(
               coordinates:
                 progress.traveledCoordinates.map(\.mapCoordinate)
             )
             .stroke(
-              KaidoTheme.nightQuiet,
+              KaidoTheme.routeGreen.opacity(0.3),
               style: StrokeStyle(
                 lineWidth: 7,
                 lineCap: .round,
@@ -5659,9 +5665,9 @@ private struct WholeShutoGeographicMap: View {
           coordinates: egressRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
-          KaidoTheme.night.opacity(0.62),
+          KaidoTheme.night.opacity(0.8),
           style: StrokeStyle(
-            lineWidth: 8,
+            lineWidth: 9,
             lineCap: .round,
             lineJoin: .round
           )
@@ -5672,10 +5678,9 @@ private struct WholeShutoGeographicMap: View {
         .stroke(
           KaidoTheme.evidenceCoral,
           style: StrokeStyle(
-            lineWidth: 4.5,
-            lineCap: .butt,
-            lineJoin: .round,
-            dash: [15, 5]
+            lineWidth: 5.5,
+            lineCap: .round,
+            lineJoin: .round
           )
         )
       }

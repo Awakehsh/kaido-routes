@@ -176,6 +176,142 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveNavigationBlockerCode)
   }
 
+  func testLapCountChangesFromBehindTheWheel() async throws {
+    var nowMilliseconds = 1_000
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      nowMillisecondsProvider: { nowMilliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6777, longitude: 139.7708)
+    )
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    model.selectCircuitLaps(3)
+    XCTAssertEqual(model.circuitLaps, 3)
+    XCTAssertTrue(model.startCircuitJourney())
+    // Three laps of C1 outer is a large release to compile on demand.
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    XCTAssertTrue(
+      model.canStartLiveNavigation,
+      model.liveNavigationBlockerCode ?? "no blocker code"
+    )
+    XCTAssertEqual(model.phase, .review)
+
+    let threeLapRoute = try XCTUnwrap(model.selectedRoute)
+    // Three laps carry four boundary marks: one per lap start plus the end
+    // of the last, which is where the exit tail begins.
+    XCTAssertEqual(threeLapRoute.lapBoundaryOccurrenceIndices.count, 4)
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+
+    // Nothing can be changed until the drive is actually on the expressway.
+    let droppedBeforeExpressway = await model.dropOneLap()
+    XCTAssertFalse(droppedBeforeExpressway)
+    let addedBeforeExpressway = await model.addOneLap()
+    XCTAssertFalse(addedBeforeExpressway)
+
+    // Drive onto the route for real: the entry admission is what puts the
+    // session on the expressway, and there is no test door around it.
+    if let accessEnd = model.accessRoute?.coordinates.last {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "lap.access-end",
+          coordinate: accessEnd,
+          atMilliseconds: nowMilliseconds,
+          courseDegrees: Self.bearing(
+            from: threeLapRoute.coordinates[0],
+            to: threeLapRoute.coordinates[1]
+          )
+        )
+      )
+    }
+    var observationIndex = 0
+    let lapLength =
+      threeLapRoute.lapBoundaryOccurrenceIndices[1]
+      - threeLapRoute.lapBoundaryOccurrenceIndices[0]
+    // Deep enough into the first lap that the engine's own occurrence — not
+    // just the App's projection — is inside it, with two whole laps still
+    // ahead. A lap can only be dropped from inside a lap.
+    let targetEdgeIndex =
+      threeLapRoute.lapBoundaryOccurrenceIndices[1] - 40
+    for edgeIndex in threeLapRoute.edges.indices
+    where edgeIndex <= targetEdgeIndex {
+      let start = threeLapRoute.coordinates[edgeIndex]
+      let end = threeLapRoute.coordinates[edgeIndex + 1]
+      let course = Self.bearing(from: start, to: end)
+      for fraction in [0.25, 0.75] {
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "lap.route.\(observationIndex)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude
+                + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude
+                + (end.longitude - start.longitude) * fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: course,
+            speedMetersPerSecond: 18
+          )
+        )
+      }
+    }
+
+    XCTAssertEqual(model.phase, .expressway)
+    for _ in 0..<200 where model.remainingWholeLapsAhead == 0 {
+      try? await Task.sleep(nanoseconds: 25_000_000)
+    }
+    // Partway through lap one, two whole laps are still ahead to drop.
+    XCTAssertEqual(model.remainingWholeLapsAhead, 2)
+
+    let occurrenceBeforeDrop = try XCTUnwrap(model.runtimeOccurrenceID)
+    let dropped = await model.dropOneLap()
+    XCTAssertTrue(dropped)
+    let planAfterDrop = try XCTUnwrap(model.selectedRoute).routePlan
+    let indexBefore = try XCTUnwrap(
+      planAfterDrop.occurrence(id: occurrenceBeforeDrop)?.index
+    )
+    let indexAfter = try XCTUnwrap(
+      model.runtimeOccurrenceID.flatMap {
+        planAfterDrop.occurrence(id: $0)?.index
+      }
+    )
+    XCTAssertEqual(indexAfter - indexBefore, lapLength)
+    XCTAssertEqual(model.remainingWholeLapsAhead, 1)
+    // The plan itself never changed: dropping a lap moves inside it.
+    XCTAssertEqual(planAfterDrop, threeLapRoute.routePlan)
+    XCTAssertEqual(model.circuitLaps, 3)
+
+    // Adding one cannot move inside the plan, so it swaps onto a new release
+    // and rejoins where the matcher puts the car.
+    let added = await model.addOneLap()
+    XCTAssertTrue(added)
+    XCTAssertEqual(model.circuitLaps, 4)
+    let fourLapRoute = try XCTUnwrap(model.selectedRoute)
+    XCTAssertNotEqual(fourLapRoute.routePlan, threeLapRoute.routePlan)
+    XCTAssertEqual(fourLapRoute.lapBoundaryOccurrenceIndices.count, 5)
+    XCTAssertTrue(model.isLiveDrive)
+    // The car is on the road, so the new session waits at the entry boundary
+    // for the driver-declared join rather than replaying a surface leg.
+    XCTAssertEqual(model.phase, .entryTransition)
+    XCTAssertEqual(model.routeJoinState, .resolving)
+
+    model.reset()
+  }
+
   func testLongSurfaceAccessCanReachReleasedCircuitNavigation() async throws {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),

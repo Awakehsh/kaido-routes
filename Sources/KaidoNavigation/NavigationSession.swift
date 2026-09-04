@@ -52,6 +52,8 @@ public actor NavigationSession {
   private let routePlan: RoutePlan
   private let matcherCorridor: RouteMatcherCorridor
   private let configuredEntryTransition: EntryTransition?
+  private let configuredRoutePlan: RoutePlan?
+  private let configuredLapBoundaryOccurrenceIDs: [String]
   private let releasedRecoveryCandidates: [RecoveryCandidate]
   private let guidanceTargetByAnchorOccurrence: [String: DecisionZoneProgressDefinition]
   private var requiresRestorationReacquisition: Bool
@@ -174,6 +176,9 @@ public actor NavigationSession {
     self.routePlan = routePlan
     self.matcherCorridor = matcherCorridor
     configuredEntryTransition = navigationConfiguration.entryTransition
+    configuredRoutePlan = navigationConfiguration.routePlan
+    configuredLapBoundaryOccurrenceIDs =
+      navigationConfiguration.lapBoundaryOccurrenceIDs
     releasedRecoveryCandidates = navigationConfiguration.recoveryCandidates
     guidanceTargetByAnchorOccurrence = Self.guidanceTargets(
       decisionZones: decisionZones,
@@ -484,6 +489,41 @@ public actor NavigationSession {
       acceptedTransitionEdgeIndex: decision.acceptedTransitionEdgeIndex,
       navigationSnapshot: engine.snapshot
     )
+  }
+
+  /// Drops one whole lap of a loop the driver decided not to complete.
+  ///
+  /// The App asks; the released lap boundaries decide where the drive lands.
+  /// Returns the occurrence it moved to, or `nil` when no whole lap is left
+  /// ahead to drop.
+  @discardableResult
+  public func skipOneLap() -> String? {
+    guard let occurrenceID = engine.skipOneLap(
+      trigger: "DRIVER_DROPPED_ONE_LAP"
+    ) else {
+      return nil
+    }
+    try? matcherSession.restart(at: occurrenceID)
+    return occurrenceID
+  }
+
+  public var remainingWholeLapsAhead: Int {
+    guard let routePlan = configuredRoutePlan,
+      let currentIndex = engine.snapshot.currentOccurrenceIndex
+    else {
+      return 0
+    }
+    let boundaries = configuredLapBoundaryOccurrenceIDs.compactMap {
+      routePlan.occurrence(id: $0)?.index
+    }
+    guard boundaries.count >= 2,
+      let lap = boundaries.indices.dropLast().last(where: {
+        currentIndex >= boundaries[$0] && currentIndex < boundaries[$0 + 1]
+      })
+    else {
+      return 0
+    }
+    return boundaries.count - 2 - lap
   }
 
   /// Records that the driver says the car is already on the selected route.

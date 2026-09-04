@@ -14,6 +14,7 @@ public enum NavigationRuntimePolicyIssue: Equatable, Sendable {
   case missingReleasedEgress
   case invalidEgressOption(String)
   case duplicateEgressOptionID(String)
+  case invalidLapBoundaries
 
   public var code: String {
     switch self {
@@ -39,6 +40,8 @@ public enum NavigationRuntimePolicyIssue: Equatable, Sendable {
       "INVALID_RUNTIME_EGRESS_OPTION"
     case .duplicateEgressOptionID:
       "DUPLICATE_RUNTIME_EGRESS_OPTION_ID"
+    case .invalidLapBoundaries:
+      "INVALID_RUNTIME_POLICY_LAP_BOUNDARIES"
     }
   }
 
@@ -65,6 +68,14 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
   public let entryTransition: EntryTransition
   public let recoveryCandidates: [RecoveryCandidate]
   public let egressOptions: [EgressOption]
+  /// Ordered occurrences bounding each lap of a loop route: `n` laps carry
+  /// `n + 1` marks, so lap `i` runs from `[i]` up to `[i + 1]`, and the last
+  /// mark is where the exit tail begins. Empty for any route without laps.
+  ///
+  /// This is released structure, not a hint. It is what lets the navigation
+  /// core decide for itself where one lap ahead is, instead of taking a
+  /// target occurrence from the App.
+  public let lapBoundaryOccurrenceIDs: [String]
 
   public init(
     id: String,
@@ -72,7 +83,8 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
     routePlanID: String,
     entryTransition: EntryTransition,
     recoveryCandidates: [RecoveryCandidate],
-    egressOptions: [EgressOption]
+    egressOptions: [EgressOption],
+    lapBoundaryOccurrenceIDs: [String] = []
   ) {
     self.id = id
     self.networkSnapshotID = networkSnapshotID
@@ -80,6 +92,7 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
     self.entryTransition = entryTransition
     self.recoveryCandidates = recoveryCandidates
     self.egressOptions = egressOptions
+    self.lapBoundaryOccurrenceIDs = lapBoundaryOccurrenceIDs
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -89,6 +102,53 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
     case entryTransition = "entry_transition"
     case recoveryCandidates = "recovery_candidates"
     case egressOptions = "egress_options"
+    case lapBoundaryOccurrenceIDs = "lap_boundary_occurrence_ids"
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    networkSnapshotID = try container.decode(
+      String.self,
+      forKey: .networkSnapshotID
+    )
+    routePlanID = try container.decode(String.self, forKey: .routePlanID)
+    entryTransition = try container.decode(
+      EntryTransition.self,
+      forKey: .entryTransition
+    )
+    recoveryCandidates = try container.decode(
+      [RecoveryCandidate].self,
+      forKey: .recoveryCandidates
+    )
+    egressOptions = try container.decode(
+      [EgressOption].self,
+      forKey: .egressOptions
+    )
+    lapBoundaryOccurrenceIDs =
+      try container.decodeIfPresent(
+        [String].self,
+        forKey: .lapBoundaryOccurrenceIDs
+      ) ?? []
+  }
+
+  /// A route without laps has no lap structure to describe, so the key is
+  /// absent rather than empty. Released artifacts for routes that never had
+  /// laps stay byte-identical.
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(networkSnapshotID, forKey: .networkSnapshotID)
+    try container.encode(routePlanID, forKey: .routePlanID)
+    try container.encode(entryTransition, forKey: .entryTransition)
+    try container.encode(recoveryCandidates, forKey: .recoveryCandidates)
+    try container.encode(egressOptions, forKey: .egressOptions)
+    if !lapBoundaryOccurrenceIDs.isEmpty {
+      try container.encode(
+        lapBoundaryOccurrenceIDs,
+        forKey: .lapBoundaryOccurrenceIDs
+      )
+    }
   }
 
   func validationIssues(
@@ -147,6 +207,26 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
     }
     if Self.containsDuplicate(recoveryCandidates) {
       issues.append(.duplicateRecoveryCandidate)
+    }
+
+    // A lapped route carries one mark per lap plus the end of the last, every
+    // mark resolving to a real occurrence in strictly increasing order. A
+    // route without laps carries none. Anything between the two would let the
+    // core skip to a place the release never described.
+    if !lapBoundaryOccurrenceIDs.isEmpty {
+      let indices = lapBoundaryOccurrenceIDs.map {
+        routePlan.occurrence(id: $0)?.index
+      }
+      if lapBoundaryOccurrenceIDs.count < 2
+        || Set(lapBoundaryOccurrenceIDs).count != lapBoundaryOccurrenceIDs.count
+        || indices.contains(where: { $0 == nil })
+        || zip(indices, indices.dropFirst()).contains(where: { current, next in
+          guard let current, let next else { return true }
+          return next <= current
+        })
+      {
+        issues.append(.invalidLapBoundaries)
+      }
     }
 
     if egressOptions.isEmpty {

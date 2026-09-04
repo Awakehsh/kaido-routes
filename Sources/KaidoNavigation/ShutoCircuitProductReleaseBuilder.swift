@@ -370,7 +370,13 @@ public enum ShutoCircuitProductReleaseBuilder {
           egressOccurrenceIDs: [route.edges.last!.edgeID],
           isReleased: true
         )
-      ]
+      ],
+      // The planner's lap marks become released structure, so the navigation
+      // core can find one lap ahead on its own.
+      lapBoundaryOccurrenceIDs: route.lapBoundaryOccurrenceIndices.compactMap {
+        index in
+        route.routePlan.occurrences.first { $0.index == index }?.id
+      }
     )
     let networkSnapshot = NetworkSnapshot(
       id: database.networkSnapshotID,

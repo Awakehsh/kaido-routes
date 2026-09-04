@@ -2891,6 +2891,7 @@ struct WholeShutoProductView: View {
   private var drivingDock: some View {
     VStack(spacing: 8) {
       routeJoinBanner
+      lapChangeControls
       drivingDockControls
     }
     .padding(.horizontal, 16)
@@ -3000,6 +3001,98 @@ struct WholeShutoProductView: View {
       .foregroundStyle(KaidoTheme.nightQuiet)
       .frame(maxWidth: .infinity, alignment: .leading)
       .accessibilityIdentifier("whole-shuto-arrival-drive-record")
+    }
+  }
+
+  /// Changing the lap count from behind the wheel.
+  ///
+  /// Dropping one moves the drive a whole lap forward inside the plan it is
+  /// already running. Adding one cannot: a lap the plan does not contain has
+  /// to be planned, released, and joined, so the drive keeps running while
+  /// that is built.
+  @ViewBuilder private var lapChangeControls: some View {
+    if model.isLiveDrive,
+      model.phase == .expressway,
+      model.selectedCircuit?.kind == .loop
+    {
+      HStack(spacing: 8) {
+        Text(
+          copy.resolve(
+            japanese: "周回数",
+            simplifiedChinese: "圈数",
+            english: "LAPS"
+          )
+        )
+        .font(.system(size: 10, weight: .black, design: .rounded))
+        .foregroundStyle(KaidoTheme.nightQuiet)
+
+        Text("×\(model.circuitLaps)")
+          .font(.system(size: 13, weight: .black, design: .rounded))
+          .monospacedDigit()
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .accessibilityIdentifier("whole-shuto-driving-laps")
+          .accessibilityValue("\(model.circuitLaps)")
+
+        Spacer(minLength: 0)
+
+        if model.isChangingLaps {
+          ProgressView()
+            .controlSize(.small)
+            .tint(KaidoTheme.confirmedGreen)
+            .accessibilityIdentifier("whole-shuto-lap-change-progress")
+        } else {
+          Button {
+            Task { _ = await model.dropOneLap() }
+          } label: {
+            Text(
+              copy.resolve(
+                japanese: "1周減らす",
+                simplifiedChinese: "少跑一圈",
+                english: "ONE FEWER"
+              )
+            )
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .padding(.horizontal, 10)
+            .frame(height: 32)
+            .foregroundStyle(KaidoTheme.routeWhite)
+            .background(KaidoTheme.nightRaised)
+            .clipShape(Capsule())
+          }
+          .buttonStyle(.plain)
+          .disabled(model.remainingWholeLapsAhead < 1)
+          .opacity(model.remainingWholeLapsAhead < 1 ? 0.4 : 1)
+          .accessibilityIdentifier("whole-shuto-drop-lap")
+
+          Button {
+            Task { _ = await model.addOneLap() }
+          } label: {
+            Text(
+              copy.resolve(
+                japanese: "1周増やす",
+                simplifiedChinese: "多跑一圈",
+                english: "ONE MORE"
+              )
+            )
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .padding(.horizontal, 10)
+            .frame(height: 32)
+            .foregroundStyle(KaidoTheme.night)
+            .background(KaidoTheme.confirmedGreen)
+            .clipShape(Capsule())
+          }
+          .buttonStyle(.plain)
+          .disabled(
+            model.circuitLaps
+              >= ShutoCircuitDefinition.loopLapRange.upperBound
+          )
+          .opacity(
+            model.circuitLaps
+              >= ShutoCircuitDefinition.loopLapRange.upperBound ? 0.4 : 1
+          )
+          .accessibilityIdentifier("whole-shuto-add-lap")
+        }
+      }
+      .accessibilityIdentifier("whole-shuto-driving-lap-controls")
     }
   }
 

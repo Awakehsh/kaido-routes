@@ -51305,6 +51305,10 @@
         "facility_id" : "shuto.ic.c2.oujiminami",
         "first_route_occurrence_id" : "shuto.0.osm.434944289.0.forward"
       },
+      "lap_boundary_occurrence_ids" : [
+        "shuto.19.osm.28127324.0.forward",
+        "shuto.1137.osm.28127324.0.forward"
+      ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "recovery_candidates" : [
         {

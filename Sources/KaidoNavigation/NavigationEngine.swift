@@ -14,6 +14,9 @@ public struct NavigationConfiguration: Equatable, Sendable {
   public let allowsUserConfirmedExitHandoffCompletion: Bool
   public let signalReacquisitionMinimumObservations: Int
   public let signalReacquisitionMaximumGapMilliseconds: Int
+  /// Occurrences bounding each lap of a loop route, released structure that
+  /// lets the engine locate one lap ahead without being told where it is.
+  public let lapBoundaryOccurrenceIDs: [String]
 
   public init(
     routePlan: RoutePlan? = nil,
@@ -26,7 +29,8 @@ public struct NavigationConfiguration: Equatable, Sendable {
     releasedGuidance: [ReleasedGuidanceDefinition] = [],
     allowsUserConfirmedExitHandoffCompletion: Bool = false,
     signalReacquisitionMinimumObservations: Int = 2,
-    signalReacquisitionMaximumGapMilliseconds: Int = 5_000
+    signalReacquisitionMaximumGapMilliseconds: Int = 5_000,
+    lapBoundaryOccurrenceIDs: [String] = []
   ) {
     self.routePlan = routePlan
     self.entryTransition = entryTransition
@@ -46,6 +50,7 @@ public struct NavigationConfiguration: Equatable, Sendable {
       0,
       signalReacquisitionMaximumGapMilliseconds
     )
+    self.lapBoundaryOccurrenceIDs = lapBoundaryOccurrenceIDs
   }
 }
 
@@ -440,6 +445,56 @@ public struct NavigationEngine: Sendable {
     snapshot.strictRouteAutoCommitAllowed = true
     snapshot.ambiguityReason = nil
     advance(to: occurrenceID)
+  }
+
+  /// Drops one whole lap of a loop the driver chose not to complete.
+  ///
+  /// The target is not the caller's to name. It is the occurrence exactly one
+  /// lap ahead of the current one, measured against the released lap
+  /// boundaries, so the App can ask for a lap to be dropped but can never ask
+  /// the drive to jump somewhere the release did not describe. The dropped
+  /// lap is recorded as skipped: it was not driven.
+  ///
+  /// Returns the occurrence the drive moved to, or `nil` when there is no
+  /// whole lap left ahead to drop.
+  @discardableResult
+  package mutating func skipOneLap(trigger: String) -> String? {
+    guard snapshot.journeyPhase == .strictRoute,
+      let routePlan = configuration.routePlan,
+      let currentIndex = snapshot.currentOccurrenceIndex
+    else {
+      return nil
+    }
+    let boundaries = configuration.lapBoundaryOccurrenceIDs.compactMap {
+      routePlan.occurrence(id: $0)?.index
+    }
+    guard boundaries.count == configuration.lapBoundaryOccurrenceIDs.count,
+      boundaries.count >= 2
+    else {
+      return nil
+    }
+    // The lap being driven, and the one lap that must still lie ahead of it
+    // for there to be anything to drop.
+    guard let lap = boundaries.indices.dropLast().last(where: {
+      currentIndex >= boundaries[$0] && currentIndex < boundaries[$0 + 1]
+    }),
+      lap + 2 < boundaries.count
+    else {
+      return nil
+    }
+    let targetIndex = currentIndex + (boundaries[lap + 1] - boundaries[lap])
+    guard let target = routePlan.occurrences.first(where: {
+      $0.index == targetIndex
+    }) else {
+      return nil
+    }
+    for occurrence in routePlan.occurrences
+    where occurrence.index > currentIndex && occurrence.index < targetIndex {
+      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+    }
+    snapshot.lastPhaseTransitionTrigger = trigger
+    advance(to: target.id)
+    return target.id
   }
 
   package mutating func activateSurfaceEgress() {

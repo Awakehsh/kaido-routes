@@ -442,6 +442,27 @@ says so. KR-S24 executes the positive and fail-closed paths.
 The join is deterministic policy only. Whether a declared join lands on the
 correct carriageway on the real network is unproven field behavior.
 
+The lap count of a loop can also change from behind the wheel, and the two
+directions are not symmetric. Dropping one moves inside the plan the drive is
+already running: `ReleasedNavigationRuntimePolicy` now carries
+`lapBoundaryOccurrenceIDs` — `n` laps as `n + 1` marks, validated to resolve in
+the plan and strictly increase — and `NavigationEngine.skipOneLap` uses them to
+find the occurrence exactly one lap ahead. The App asks; it never names the
+target, so it cannot ask the drive to jump somewhere the release did not
+describe. The lap passed over is recorded as skipped, and the transition is
+stamped `DRIVER_DROPPED_ONE_LAP`. A route without laps carries no marks at
+all, and the key is absent from its encoded policy rather than empty, so
+released artifacts for routes that never had laps stay byte-identical.
+
+Adding a lap cannot move inside the plan, because `RoutePlan` is immutable and
+its occurrences are laid down one lap at a time. `addOneLap` therefore plans
+the route again with one more lap, builds its own release, and swaps the drive
+onto it while the current drive keeps running; nothing is swapped until the new
+release is built and valid. The car is already on the road, so the new session
+opens at the entry boundary and enters through the same driver-declared join a
+drive started mid-route uses. The drive record survives the swap; the plan does
+not.
+
 A drive can also be put down for a break. A car parked at a PA leaves the route
 corridor — PA access and return are directional facilities, not RoutePlan
 occurrences — so a drive left running there reports a degraded position and

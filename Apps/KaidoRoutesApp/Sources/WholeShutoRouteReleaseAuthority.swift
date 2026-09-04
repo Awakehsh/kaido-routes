@@ -50,15 +50,18 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
       guard reconstructed.describesSameRoad(as: selectedRoute) else {
         return .unavailable(Self.runtimeInvalidCode)
       }
+      // Built from the selected route, not the reconstruction: the two are
+      // now proven to be the same road, and only the selected one carries the
+      // planner's lap marks for the release to hold.
       let product =
         try ShutoCircuitProductReleaseBuilder
         .buildPlannedRouteProduct(
           context: runtimeContext,
-          route: reconstructed
+          route: selectedRoute
         )
       let core = try KaidoLiveJourneyAdmission(
         release: product.release,
-        selectedRoutePlan: reconstructed.routePlan,
+        selectedRoutePlan: selectedRoute.routePlan,
         journeyPlan: JourneyPlanCompiler.expresswayOnly(
           release: product.release
         )

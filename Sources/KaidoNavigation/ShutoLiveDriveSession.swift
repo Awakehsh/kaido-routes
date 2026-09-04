@@ -61,6 +61,16 @@ public actor ShutoLiveDriveSession {
   }
 
   @discardableResult
+  public func skipOneLap() async -> String? {
+    await start()
+    return await session.skipOneLap()
+  }
+
+  public func remainingWholeLapsAhead() async -> Int {
+    await session.remainingWholeLapsAhead
+  }
+
+  @discardableResult
   public func declareAlreadyOnRoute(
     atMilliseconds milliseconds: Int
   ) async -> Bool {

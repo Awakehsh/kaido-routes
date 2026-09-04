@@ -21121,6 +21121,10 @@
         "facility_id" : "shuto.ic.c1.shibakouen",
         "first_route_occurrence_id" : "shuto.0.osm.861095931.3.forward"
       },
+      "lap_boundary_occurrence_ids" : [
+        "shuto.16.osm.24039738.52.forward",
+        "shuto.566.osm.24039738.52.forward"
+      ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "recovery_candidates" : [
         {

@@ -183,7 +183,9 @@ public struct KaidoProductNavigationRuntime: Sendable {
         selectedEgressOptionID: journeyPlan.selectedEgressOptionID,
         releasedGuidance: bundle.releasedGuidance,
         allowsUserConfirmedExitHandoffCompletion:
-          journeyPlan.egressLeg == nil
+          journeyPlan.egressLeg == nil,
+        lapBoundaryOccurrenceIDs:
+          bundle.runtimePolicy.lapBoundaryOccurrenceIDs
       ),
       matcherCorridor: bundle.matcherCorridor,
       decisionZones: bundle.decisionZones,

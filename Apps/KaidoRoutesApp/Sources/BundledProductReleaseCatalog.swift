@@ -30,7 +30,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c1-inner-shibakoen-shiodome-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "0b210d571dbfa7966524ac2a3dafb3994ca86aa439b85db67b1663d1517dd8d9",
+        "81bccc53ed9e958e8fd177200c81596029ec836a71de9fbae7a2b14b365e54d4",
       expectedReleaseID:
         "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
       role: .foregroundNavigation
@@ -55,7 +55,7 @@ extension AppBundleProductReleaseDescriptor {
       resourceName: "c2-inner-oujiminami-shikahamabashi-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "4262be663b1a5434f17c7f87e830abec22838749a68e00b8e81019db6ea956fc",
+        "2daab1a42b76058dac53d33642137d061053623be2ffdcfc50665e662a08f864",
       expectedReleaseID:
         "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15",
       role: .foregroundNavigation
@@ -68,7 +68,7 @@ extension AppBundleProductReleaseDescriptor {
         "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "b276e33d981132b23681ff5cd53f46eaae97c6627abc574d9fa3caf58fe233ca",
+        "44a74156f768bb3a4dfba6789f4f280a73362e4e82bfe5be85f41f62c8231787",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15",
       role: .foregroundNavigation

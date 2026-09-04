@@ -566,40 +566,45 @@ struct WholeShutoJourneyReviewView: View {
         model.liveNavigationBlockerCode ?? "AVAILABLE"
       )
 
-      Button {
-        model.startNavigationSimulation()
-      } label: {
-        HStack(spacing: 8) {
-          Image(systemName: "play.fill")
-            .font(.system(size: 10, weight: .black))
-          Text(
-            copy.resolve(
-              japanese: "走らずにプレビュー（54 km/h 基準・20×）",
-              simplifiedChinese: "不开车，先预演（54 km/h 基准 · 20×）",
-              english: "Preview without driving (54 km/h reference, 20×)"
+      // Route playback is an internal review tool, not a driver feature. It
+      // compiles into Debug builds only, so the distributed app offers
+      // "start navigation" and nothing that looks like a second way to drive.
+      #if DEBUG
+        Button {
+          model.startNavigationSimulation()
+        } label: {
+          HStack(spacing: 8) {
+            Image(systemName: "play.fill")
+              .font(.system(size: 10, weight: .black))
+            Text(
+              copy.resolve(
+                japanese: "走らずにプレビュー（54 km/h 基準・20×）",
+                simplifiedChinese: "不开车，先预演（54 km/h 基准 · 20×）",
+                english: "Preview without driving (54 km/h reference, 20×)"
+              )
             )
+            .font(.system(size: 10, weight: .bold))
+          }
+          .foregroundStyle(
+            model.canStartLiveNavigation
+              ? KaidoTheme.nightQuiet
+              : KaidoTheme.routeWhite
           )
-          .font(.system(size: 10, weight: .bold))
+          .frame(maxWidth: .infinity)
+          .frame(height: model.canStartLiveNavigation ? 34 : 48)
+          .background(
+            model.canStartLiveNavigation
+              ? Color.clear
+              : KaidoTheme.routeGreen
+          )
+          .clipShape(RoundedRectangle(cornerRadius: 11))
+          .contentShape(Rectangle())
         }
-        .foregroundStyle(
-          model.canStartLiveNavigation
-            ? KaidoTheme.nightQuiet
-            : KaidoTheme.routeWhite
-        )
-        .frame(maxWidth: .infinity)
-        .frame(height: model.canStartLiveNavigation ? 34 : 48)
-        .background(
-          model.canStartLiveNavigation
-            ? Color.clear
-            : KaidoTheme.routeGreen
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 11))
-        .contentShape(Rectangle())
-      }
-      .buttonStyle(.plain)
-      .disabled(!model.isJourneyReadyForPreview)
-      .opacity(model.isJourneyReadyForPreview ? 1 : 0.45)
-      .accessibilityIdentifier("whole-shuto-start-simulation")
+        .buttonStyle(.plain)
+        .disabled(!model.isJourneyReadyForPreview)
+        .opacity(model.isJourneyReadyForPreview ? 1 : 0.45)
+        .accessibilityIdentifier("whole-shuto-start-simulation")
+      #endif
 
       Text(
         copy.resolve(

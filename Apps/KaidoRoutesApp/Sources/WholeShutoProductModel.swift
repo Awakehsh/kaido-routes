@@ -1875,203 +1875,208 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  func preparePreviewJourney(startsNavigation: Bool = false) {
-    cancelSurfaceRouteResolution()
-    clearRouteChoiceEvaluation()
-    clearCustomRouteSelection()
-    usePreviewPlaces()
-    do {
-      recommendations = try planner.recommend(
-        from: Self.previewOrigin.coordinate,
-        to: Self.previewDestination.coordinate,
-        preference: preference
-      )
-      guard let selectedRecommendation else {
-        failureCode = "NO_SHUTO_ROUTE"
-        return
-      }
-      accessRoute = Self.previewSurfaceRoute(
-        from: Self.previewOrigin.coordinate,
-        to: selectedRecommendation.route.entryFacility.coordinate
-      )
-      egressRoute = Self.previewSurfaceRoute(
-        from: selectedRecommendation.route.exitFacility.coordinate,
-        to: Self.previewDestination.coordinate
-      )
-      phase = .review
-      prepareLiveNavigationAdmission(for: selectedRecommendation.route)
-      persistCheckpoint()
-      if startsNavigation {
-        startNavigationSimulation()
-      }
-    } catch {
-      failureCode = Self.failureCode(error)
-    }
-  }
-
-  func prepareCompletedJourneyPreview() {
-    preparePreviewJourney()
-    guard phase == .review else { return }
-    invalidatePlaybackTask()
-    speechCoordinator?.stop()
-    speechCoordinator = nil
-    phase = .completed
-    progressFraction = 1
-    isPlaying = false
-    matcherConfidence = nil
-    runtimeOccurrenceID = nil
-    runtimeJourneyPhase = nil
-    runtimeRecoveryStatus = nil
-    runtimeRecoveryTargetOccurrenceID = nil
-    runtimeRecoveryDirectedEdgeID = nil
-    runtimeCoordinate = destination?.coordinate
-    runtimeFractionAlongOccurrence = nil
-    presentationProjection = nil
-    speechStatus = .stopped
-    consumedGuidancePromptIDs = []
-    isStaticJunctionPreview = false
-    junctionPreviewMovementID = nil
-    restoredFromCheckpoint = false
-    mapMode = .geographic
-    removeCheckpoint()
-  }
-
-  func prepareJunctionPreview(startsNavigation: Bool = false) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
-      exitFacilityID: "shuto.ic.c2.hatsudaiminami",
-      expectedMovementID:
-        "shuto.jct.oi.b-westbound-to-c2-outer",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  func prepareKasaiJunctionPreview(
-    startsNavigation: Bool = false
-  ) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.urayasu",
-      exitFacilityID: "shuto.ic.c2.funaboribashi",
-      expectedMovementID:
-        "shuto.jct.kasai.b-westbound-to-c2-inner",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  func prepareShinonomeEastboundJunctionPreview(
-    startsNavigation: Bool = false
-  ) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.ooi",
-      exitFacilityID: "shuto.ic.10.harumi",
-      expectedMovementID:
-        "shuto.jct.shinonome.b-eastbound-to-10-inbound",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  func prepareShinonomeWestboundJunctionPreview(
-    startsNavigation: Bool = false
-  ) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.shinkiba",
-      exitFacilityID: "shuto.ic.10.harumi",
-      expectedMovementID:
-        "shuto.jct.shinonome.b-westbound-to-10-inbound",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  func prepareTatsumiEastboundJunctionPreview(
-    startsNavigation: Bool = false
-  ) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.ariake",
-      exitFacilityID: "shuto.ic.9.fukudumi",
-      expectedMovementID:
-        "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  func prepareTatsumiWestboundJunctionPreview(
-    startsNavigation: Bool = false
-  ) {
-    prepareJunctionPreview(
-      entryFacilityID: "shuto.ic.b.urayasu",
-      exitFacilityID: "shuto.ic.9.fukudumi",
-      expectedMovementID:
-        "shuto.jct.tatsumi.b-westbound-to-9-inbound",
-      startsNavigation: startsNavigation
-    )
-  }
-
-  private func prepareJunctionPreview(
-    entryFacilityID: String,
-    exitFacilityID: String,
-    expectedMovementID: String,
-    startsNavigation: Bool
-  ) {
-    cancelSurfaceRouteResolution()
-    clearRouteChoiceEvaluation()
-    clearCustomRouteSelection()
-    do {
-      let route = try planner.plan(
-        entryFacilityID: entryFacilityID,
-        exitFacilityID: exitFacilityID
-      )
-      let previewOrigin = WholeShutoPlace(
-        title: route.entryFacility.nameJA,
-        coordinate: route.entryFacility.coordinate
-      )
-      let previewDestination = WholeShutoPlace(
-        title: route.exitFacility.nameJA,
-        coordinate: route.exitFacility.coordinate
-      )
-      originQuery = previewOrigin.title
-      destinationQuery = previewDestination.title
-      origin = previewOrigin
-      destination = previewDestination
-      recommendations = [
-        ShutoRouteRecommendation(
-          route: route,
-          surfaceAccessDistanceMeters: 0,
-          surfaceEgressDistanceMeters: 0,
-          totalScoreMeters: route.distanceMeters
+  /// Launch-argument journey fixtures for the automated suites and
+  /// internal review. They compile into Debug builds only, so no shipped
+  /// binary can reach a preview journey or its playback.
+  #if DEBUG
+    func preparePreviewJourney(startsNavigation: Bool = false) {
+      cancelSurfaceRouteResolution()
+      clearRouteChoiceEvaluation()
+      clearCustomRouteSelection()
+      usePreviewPlaces()
+      do {
+        recommendations = try planner.recommend(
+          from: Self.previewOrigin.coordinate,
+          to: Self.previewDestination.coordinate,
+          preference: preference
         )
-      ]
-      selectedRecommendationIndex = 0
-      accessRoute = Self.previewSurfaceRoute(
-        from: previewOrigin.coordinate,
-        to: route.entryFacility.coordinate
-      )
-      egressRoute = Self.previewSurfaceRoute(
-        from: route.exitFacility.coordinate,
-        to: previewDestination.coordinate
-      )
-      guard
-        let prompt = junctionPrompts.first(where: {
-          $0.movementID == expectedMovementID
-        })
-      else {
-        failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
-        return
-      }
-      junctionPreviewMovementID = expectedMovementID
-      if startsNavigation {
+        guard let selectedRecommendation else {
+          failureCode = "NO_SHUTO_ROUTE"
+          return
+        }
+        accessRoute = Self.previewSurfaceRoute(
+          from: Self.previewOrigin.coordinate,
+          to: selectedRecommendation.route.entryFacility.coordinate
+        )
+        egressRoute = Self.previewSurfaceRoute(
+          from: selectedRecommendation.route.exitFacility.coordinate,
+          to: Self.previewDestination.coordinate
+        )
         phase = .review
-        startNavigationSimulation(autoplay: false)
-        return
+        prepareLiveNavigationAdmission(for: selectedRecommendation.route)
+        persistCheckpoint()
+        if startsNavigation {
+          startNavigationSimulation()
+        }
+      } catch {
+        failureCode = Self.failureCode(error)
       }
-      isStaticJunctionPreview = true
-      phase = .expressway
-      progressFraction = max(0, prompt.progressFraction - 0.012)
-      isPlaying = false
-      mapMode = .geographic
-    } catch {
-      failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
     }
-  }
+
+    func prepareCompletedJourneyPreview() {
+      preparePreviewJourney()
+      guard phase == .review else { return }
+      invalidatePlaybackTask()
+      speechCoordinator?.stop()
+      speechCoordinator = nil
+      phase = .completed
+      progressFraction = 1
+      isPlaying = false
+      matcherConfidence = nil
+      runtimeOccurrenceID = nil
+      runtimeJourneyPhase = nil
+      runtimeRecoveryStatus = nil
+      runtimeRecoveryTargetOccurrenceID = nil
+      runtimeRecoveryDirectedEdgeID = nil
+      runtimeCoordinate = destination?.coordinate
+      runtimeFractionAlongOccurrence = nil
+      presentationProjection = nil
+      speechStatus = .stopped
+      consumedGuidancePromptIDs = []
+      isStaticJunctionPreview = false
+      junctionPreviewMovementID = nil
+      restoredFromCheckpoint = false
+      mapMode = .geographic
+      removeCheckpoint()
+    }
+
+    func prepareJunctionPreview(startsNavigation: Bool = false) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.rinkaihukutoshin",
+        exitFacilityID: "shuto.ic.c2.hatsudaiminami",
+        expectedMovementID:
+          "shuto.jct.oi.b-westbound-to-c2-outer",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    func prepareKasaiJunctionPreview(
+      startsNavigation: Bool = false
+    ) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.urayasu",
+        exitFacilityID: "shuto.ic.c2.funaboribashi",
+        expectedMovementID:
+          "shuto.jct.kasai.b-westbound-to-c2-inner",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    func prepareShinonomeEastboundJunctionPreview(
+      startsNavigation: Bool = false
+    ) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.ooi",
+        exitFacilityID: "shuto.ic.10.harumi",
+        expectedMovementID:
+          "shuto.jct.shinonome.b-eastbound-to-10-inbound",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    func prepareShinonomeWestboundJunctionPreview(
+      startsNavigation: Bool = false
+    ) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.shinkiba",
+        exitFacilityID: "shuto.ic.10.harumi",
+        expectedMovementID:
+          "shuto.jct.shinonome.b-westbound-to-10-inbound",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    func prepareTatsumiEastboundJunctionPreview(
+      startsNavigation: Bool = false
+    ) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.ariake",
+        exitFacilityID: "shuto.ic.9.fukudumi",
+        expectedMovementID:
+          "shuto.jct.tatsumi.b-eastbound-to-9-inbound",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    func prepareTatsumiWestboundJunctionPreview(
+      startsNavigation: Bool = false
+    ) {
+      prepareJunctionPreview(
+        entryFacilityID: "shuto.ic.b.urayasu",
+        exitFacilityID: "shuto.ic.9.fukudumi",
+        expectedMovementID:
+          "shuto.jct.tatsumi.b-westbound-to-9-inbound",
+        startsNavigation: startsNavigation
+      )
+    }
+
+    private func prepareJunctionPreview(
+      entryFacilityID: String,
+      exitFacilityID: String,
+      expectedMovementID: String,
+      startsNavigation: Bool
+    ) {
+      cancelSurfaceRouteResolution()
+      clearRouteChoiceEvaluation()
+      clearCustomRouteSelection()
+      do {
+        let route = try planner.plan(
+          entryFacilityID: entryFacilityID,
+          exitFacilityID: exitFacilityID
+        )
+        let previewOrigin = WholeShutoPlace(
+          title: route.entryFacility.nameJA,
+          coordinate: route.entryFacility.coordinate
+        )
+        let previewDestination = WholeShutoPlace(
+          title: route.exitFacility.nameJA,
+          coordinate: route.exitFacility.coordinate
+        )
+        originQuery = previewOrigin.title
+        destinationQuery = previewDestination.title
+        origin = previewOrigin
+        destination = previewDestination
+        recommendations = [
+          ShutoRouteRecommendation(
+            route: route,
+            surfaceAccessDistanceMeters: 0,
+            surfaceEgressDistanceMeters: 0,
+            totalScoreMeters: route.distanceMeters
+          )
+        ]
+        selectedRecommendationIndex = 0
+        accessRoute = Self.previewSurfaceRoute(
+          from: previewOrigin.coordinate,
+          to: route.entryFacility.coordinate
+        )
+        egressRoute = Self.previewSurfaceRoute(
+          from: route.exitFacility.coordinate,
+          to: previewDestination.coordinate
+        )
+        guard
+          let prompt = junctionPrompts.first(where: {
+            $0.movementID == expectedMovementID
+          })
+        else {
+          failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
+          return
+        }
+        junctionPreviewMovementID = expectedMovementID
+        if startsNavigation {
+          phase = .review
+          startNavigationSimulation(autoplay: false)
+          return
+        }
+        isStaticJunctionPreview = true
+        phase = .expressway
+        progressFraction = max(0, prompt.progressFraction - 0.012)
+        isPlaying = false
+        mapMode = .geographic
+      } catch {
+        failureCode = "NO_RELEASED_JUNCTION_GUIDANCE"
+      }
+    }
+  #endif
 
   func planJourney() {
     guard !isPlanning else { return }
@@ -2648,69 +2653,74 @@ final class WholeShutoProductModel: ObservableObject {
     routeChoiceMetricsByRoutePlanID = [:]
   }
 
-  func startNavigationSimulation(autoplay: Bool = true) {
-    guard phase == .review, let route = selectedRoute else { return }
-    guard isJourneyReadyForPreview else {
-      if !isUpdatingSurfaceRoute {
-        failureCode = "SURFACE_ROUTE_UNAVAILABLE"
+  /// Deterministic route playback for the automated suites and internal
+  /// review. It compiles into Debug builds only: a shipped binary has no
+  /// code path that drives the journey from anything but Core Location.
+  #if DEBUG
+    func startNavigationSimulation(autoplay: Bool = true) {
+      guard phase == .review, let route = selectedRoute else { return }
+      guard isJourneyReadyForPreview else {
+        if !isUpdatingSurfaceRoute {
+          failureCode = "SURFACE_ROUTE_UNAVAILABLE"
+        }
+        return
       }
-      return
+      do {
+        let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
+          database: database,
+          route: route
+        )
+        runtimeAssets = assets
+        driveSimulator = try NavigationDriveSimulator(
+          route: route,
+          runtimeAssets: assets,
+          configuration: NavigationDriveSimulationConfiguration(
+            sampleFractions: [0.15, 0.5, 0.85],
+            maximumSampleSpacingMeters: 30,
+            timing: .routeSpeed,
+            horizontalAccuracyMeters: 2,
+            speedMetersPerSecond:
+              Self.simulationReferenceSpeedMetersPerSecond
+          ),
+          speed: Self.simulationPlaybackSpeed
+        )
+        liveDriveSession = nil
+        liveEntryTransitionAdapter = nil
+        liveSurfaceEgressAdapter = nil
+        liveNavigationCheckpoint = nil
+        isLiveDrive = false
+        liveLocationState = .inactive
+        liveLocationIssueCode = nil
+        liveLocationFreshnessTask?.cancel()
+        liveLocationFreshnessTask = nil
+        try configureSpeech(for: route.routePlan.id)
+      } catch {
+        failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
+        return
+      }
+      failureCode = nil
+      phase = accessRoute == nil ? .entryTransition : .surfaceAccess
+      progressFraction = 0
+      isPlaying = autoplay
+      matcherConfidence = nil
+      runtimeOccurrenceID = nil
+      runtimeJourneyPhase = nil
+      runtimeRecoveryStatus = nil
+      runtimeRecoveryTargetOccurrenceID = nil
+      runtimeRecoveryDirectedEdgeID = nil
+      runtimeCoordinate = nil
+      runtimeFractionAlongOccurrence = nil
+      presentationProjection = nil
+      consumedGuidancePromptIDs = []
+      isStaticJunctionPreview = false
+      restoredFromCheckpoint = false
+      mapMode = .geographic
+      persistCheckpoint()
+      if autoplay {
+        startPlaybackLoop()
+      }
     }
-    do {
-      let assets = try ShutoPlannedRouteRuntimeCompiler.compile(
-        database: database,
-        route: route
-      )
-      runtimeAssets = assets
-      driveSimulator = try NavigationDriveSimulator(
-        route: route,
-        runtimeAssets: assets,
-        configuration: NavigationDriveSimulationConfiguration(
-          sampleFractions: [0.15, 0.5, 0.85],
-          maximumSampleSpacingMeters: 30,
-          timing: .routeSpeed,
-          horizontalAccuracyMeters: 2,
-          speedMetersPerSecond:
-            Self.simulationReferenceSpeedMetersPerSecond
-        ),
-        speed: Self.simulationPlaybackSpeed
-      )
-      liveDriveSession = nil
-      liveEntryTransitionAdapter = nil
-      liveSurfaceEgressAdapter = nil
-      liveNavigationCheckpoint = nil
-      isLiveDrive = false
-      liveLocationState = .inactive
-      liveLocationIssueCode = nil
-      liveLocationFreshnessTask?.cancel()
-      liveLocationFreshnessTask = nil
-      try configureSpeech(for: route.routePlan.id)
-    } catch {
-      failureCode = "WHOLE_SHUTO_RUNTIME_COMPILATION_FAILED"
-      return
-    }
-    failureCode = nil
-    phase = accessRoute == nil ? .entryTransition : .surfaceAccess
-    progressFraction = 0
-    isPlaying = autoplay
-    matcherConfidence = nil
-    runtimeOccurrenceID = nil
-    runtimeJourneyPhase = nil
-    runtimeRecoveryStatus = nil
-    runtimeRecoveryTargetOccurrenceID = nil
-    runtimeRecoveryDirectedEdgeID = nil
-    runtimeCoordinate = nil
-    runtimeFractionAlongOccurrence = nil
-    presentationProjection = nil
-    consumedGuidancePromptIDs = []
-    isStaticJunctionPreview = false
-    restoredFromCheckpoint = false
-    mapMode = .geographic
-    persistCheckpoint()
-    if autoplay {
-      startPlaybackLoop()
-    }
-  }
+  #endif
 
   /// Starts only after one exact release-bound journey has constructed every
   /// actor and adapter. Core Location is attached last.

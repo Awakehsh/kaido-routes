@@ -364,6 +364,27 @@ struct KaidoRoutesApp: App {
   #endif
 }
 
+extension ScenePhase {
+  var productRuntimePhase: ProductNavigationRuntimeScenePhase {
+    switch self {
+    case .active:
+      .active
+    case .inactive:
+      .inactive
+    case .background:
+      .background
+    @unknown default:
+      .inactive
+    }
+  }
+}
+
+/// Launch-argument preview and qualification hosts for the automated
+/// suites and internal review. They compile only into Debug builds — the
+/// distributed app is the product surface alone, so no internal fixture,
+/// review screen, or route playback can be reached from a shipped binary.
+#if DEBUG
+
 private enum WholeShutoJunctionPreviewMovement {
   case kasai
   case oi
@@ -926,17 +947,4 @@ private struct KR_U09AccessibilityPreviewHost: View {
   }
 }
 
-extension ScenePhase {
-  var productRuntimePhase: ProductNavigationRuntimeScenePhase {
-    switch self {
-    case .active:
-      .active
-    case .inactive:
-      .inactive
-    case .background:
-      .background
-    @unknown default:
-      .inactive
-    }
-  }
-}
+#endif

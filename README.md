@@ -102,7 +102,11 @@ internal review workbench.
   target occurrence. `kaido-release
   inspect-live-coverage` emits the exact route-local missing guidance,
   candidate-recovery, and released-recovery counts without granting authority.
-- The driving simulation covers surface access, entry, expressway travel,
+- Deterministic route playback is a Debug-only review tool. It compiles into
+  Debug builds alone: the distributed app offers **Start navigation** and no
+  second way to drive a route, and no shipped binary carries a playback entry,
+  a launch-argument preview host, or an internal fixture screen.
+  The playback covers surface access, entry, expressway travel,
   junction prompts, exit, surface egress, and completion. Entry and expressway
   playback follow the selected network geometry with a maximum 30-meter sample
   spacing. Observation timestamps, course, and the visible position all derive
@@ -125,14 +129,21 @@ internal review workbench.
   and admitted on device only when every one of its junction decisions is in
   the released guidance inventory; unmatched routes use Core Location only for
   the planning origin.
-- Starting the simulation opens the geographic driving map with a
+- Starting a drive opens the geographic driving map with a
   direction-following camera. The map separates traveled and remaining Shuto
   geometry, makes the next reviewed decision and its distance the dominant
   guidance, and keeps full-journey reference time, distance, and route-thread
   progress together in the lower instrument strip. The next reviewed movement
   may be shown before its decision-zone threshold, while junction insets and
-  one-shot speech remain actor-triggered. An explicit free-browse/follow
-  control remains available. Degraded, interrupted, and tunnel-estimated states
+  one-shot speech remain actor-triggered. Touch outranks the route: a pan,
+  pinch, or rotate releases the following camera immediately rather than
+  fighting the next position fix, and following resumes ten seconds after the
+  last touch while the drive is active. The driver's own eye altitude is kept
+  across that resume and reset only when the journey changes phase. An
+  explicit free-browse/follow control remains available, and releasing through
+  it is sticky until the driver asks for following back. A parked planning or
+  review map keeps whatever frame the driver moved it to.
+  Degraded, interrupted, and tunnel-estimated states
   return to north-up instead of inventing a route heading. In a tagged tunnel
   or covered segment, a live drive may move an amber estimated marker for at
   most 45 seconds from the last HIGH route-resolved fix using bounded speed as
@@ -143,7 +154,9 @@ internal review workbench.
   map: the entire selected route in one readable frame with every on-route
   IC, JCT, and PA always labeled, component routes visually distinct (the
   Bayshore leg of a C2 circuit renders in its own color), travel-direction
-  chevrons, and an explicit entrance mark. While driving, the current
+  chevrons that ride on the route colour instead of punching through it, and
+  an explicit entrance mark. Panning and pinching it carry inertia and yield
+  at the bounds instead of stopping dead. While driving, the current
   position renders above every other layer with a travel-direction indicator;
   nearby labels yield to it, and estimated positioning changes its appearance
   instead of hiding it. Without a selected route the whole-network line map
@@ -285,7 +298,8 @@ xcodebuild \
   build
 ```
 
-Useful visual launch arguments:
+Useful visual launch arguments. Their hosts compile into Debug builds only; a
+Release build ignores every one of them and opens the product home:
 
 - `-WHOLE-SHUTO-TRACK-MAP-PREVIEW`
 - `-WHOLE-SHUTO-TRACK-MAP-NAVIGATION-PREVIEW`

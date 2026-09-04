@@ -5443,6 +5443,17 @@ private struct WholeShutoGeographicMap: View {
   @Binding var followsRoute: Bool
   @Binding var lastStableHeadingDegrees: Double?
 
+  /// Touch outranks the route: a map gesture releases follow for
+  /// `gestureResumeDelay`, while the explicit control releases it until the
+  /// driver asks for it back.
+  @State private var gestureResumeTask: Task<Void, Never>?
+  /// The eye altitude the driver last set by hand. Follow mode re-centers
+  /// and re-orients around it instead of snapping back to the phase default.
+  @State private var userCameraDistanceMeters: Double?
+  private static let gestureResumeDelay = Duration.seconds(10)
+  private static let userCameraDistanceRange: ClosedRange<Double> =
+    120...24_000
+
   var body: some View {
     Map(position: $camera) {
       // The whole expressway network — both carriageways of every mainline —
@@ -5466,16 +5477,31 @@ private struct WholeShutoGeographicMap: View {
       if let accessRoute = model.accessRoute,
         model.phase == .review || model.phase == .surfaceAccess
       {
+        // Casing first, then a tight butt-capped dash. Round caps on a
+        // [7, 5] dash bloom into a chain of loose capsules that reads as
+        // debris rather than a road; the casing keeps the leg continuous
+        // while the dash still says "provider leg, not Kaido authority".
+        MapPolyline(
+          coordinates: accessRoute.coordinates.map(\.mapCoordinate)
+        )
+        .stroke(
+          KaidoTheme.night.opacity(0.62),
+          style: StrokeStyle(
+            lineWidth: 8,
+            lineCap: .round,
+            lineJoin: .round
+          )
+        )
         MapPolyline(
           coordinates: accessRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
           KaidoTheme.positionCyan,
           style: StrokeStyle(
-            lineWidth: 5,
-            lineCap: .round,
+            lineWidth: 4.5,
+            lineCap: .butt,
             lineJoin: .round,
-            dash: [7, 5]
+            dash: [15, 5]
           )
         )
       }
@@ -5619,12 +5645,23 @@ private struct WholeShutoGeographicMap: View {
           coordinates: egressRoute.coordinates.map(\.mapCoordinate)
         )
         .stroke(
+          KaidoTheme.night.opacity(0.62),
+          style: StrokeStyle(
+            lineWidth: 8,
+            lineCap: .round,
+            lineJoin: .round
+          )
+        )
+        MapPolyline(
+          coordinates: egressRoute.coordinates.map(\.mapCoordinate)
+        )
+        .stroke(
           KaidoTheme.evidenceCoral,
           style: StrokeStyle(
-            lineWidth: 5,
-            lineCap: .round,
+            lineWidth: 4.5,
+            lineCap: .butt,
             lineJoin: .round,
-            dash: [7, 5]
+            dash: [15, 5]
           )
         )
       }
@@ -5740,6 +5777,27 @@ private struct WholeShutoGeographicMap: View {
     .mapControls {
       MapCompass()
     }
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 6)
+        .onChanged { _ in releaseFollowForGesture() }
+    )
+    .simultaneousGesture(
+      MagnifyGesture(minimumScaleDelta: 0.01)
+        .onChanged { _ in releaseFollowForGesture() }
+    )
+    .simultaneousGesture(
+      RotateGesture(minimumAngleDelta: .degrees(2))
+        .onChanged { _ in releaseFollowForGesture() }
+    )
+    .onMapCameraChange(frequency: .onEnd) { context in
+      // Only a camera the driver came to rest on defines their zoom;
+      // follow-mode writes would otherwise record their own default back.
+      guard !followsRoute else { return }
+      userCameraDistanceMeters = min(
+        Self.userCameraDistanceRange.upperBound,
+        max(Self.userCameraDistanceRange.lowerBound, context.camera.distance)
+      )
+    }
     .accessibilityIdentifier("whole-shuto-geographic-map")
     .accessibilityValue(
       !followsRoute
@@ -5751,6 +5809,10 @@ private struct WholeShutoGeographicMap: View {
     .overlay(alignment: .trailing) {
       if isActiveNavigation {
         Button {
+          // An explicit release is sticky: it cancels the timed resume a
+          // gesture would have scheduled.
+          gestureResumeTask?.cancel()
+          gestureResumeTask = nil
           followsRoute.toggle()
           if followsRoute {
             updateCamera(force: true)
@@ -5788,7 +5850,18 @@ private struct WholeShutoGeographicMap: View {
       updateCamera()
     }
     .onChange(of: model.phase) {
-      updateCamera()
+      // A new phase is a new frame: surface, transition, and expressway want
+      // different eye altitudes, so a hand-set camera belongs to the phase
+      // the driver set it in and never strands the next one off-position.
+      userCameraDistanceMeters = nil
+      gestureResumeTask?.cancel()
+      gestureResumeTask = nil
+      followsRoute = true
+      updateCamera(force: true)
+    }
+    .onDisappear {
+      gestureResumeTask?.cancel()
+      gestureResumeTask = nil
     }
     .onChange(of: model.currentCoordinate?.latitude) {
       updateCamera()
@@ -5938,6 +6011,32 @@ private struct WholeShutoGeographicMap: View {
     KaidoInterfaceText(locale: interfaceLocale)
   }
 
+  /// A pan, pinch, or rotate hands the camera to the driver at once —
+  /// otherwise the next position fix drags the map back out from under their
+  /// finger. Only a live drive takes it back on its own, after
+  /// `gestureResumeDelay` of no touch; a parked map stays where they left it
+  /// until the journey moves to another phase.
+  private func releaseFollowForGesture() {
+    if followsRoute {
+      followsRoute = false
+    }
+    gestureResumeTask?.cancel()
+    gestureResumeTask = nil
+    guard isActiveNavigation else { return }
+    gestureResumeTask = Task { @MainActor in
+      try? await Task.sleep(for: Self.gestureResumeDelay)
+      guard !Task.isCancelled, isActiveNavigation, !followsRoute else {
+        return
+      }
+      followsRoute = true
+      updateCamera(force: true)
+    }
+  }
+
+  private var followCameraDistanceMeters: Double {
+    userCameraDistanceMeters ?? model.navigationCameraDistanceMeters
+  }
+
   private func updateCamera(force: Bool = false) {
     guard force || followsRoute else { return }
     guard isDriving, let current = model.currentCoordinate else {
@@ -5969,7 +6068,7 @@ private struct WholeShutoGeographicMap: View {
         camera = .camera(
           MapCamera(
             centerCoordinate: current.mapCoordinate,
-            distance: model.navigationCameraDistanceMeters,
+            distance: followCameraDistanceMeters,
             heading: heading,
             pitch: 45
           )
@@ -5978,7 +6077,7 @@ private struct WholeShutoGeographicMap: View {
         camera = .camera(
           MapCamera(
             centerCoordinate: current.mapCoordinate,
-            distance: model.navigationCameraDistanceMeters,
+            distance: followCameraDistanceMeters,
             heading: 0,
             pitch: 0
           )

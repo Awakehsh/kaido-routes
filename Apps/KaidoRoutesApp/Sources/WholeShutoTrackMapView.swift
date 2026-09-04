@@ -39,9 +39,18 @@ struct WholeShutoTrackMapView: View {
   /// the driver takes over with a gesture; recentering hands it back.
   @Binding var userAdjustedViewport: Bool
 
+  private static let minimumZoom = 1.0
   private static let maximumZoom = 5.0
   private static let doubleTapZoom = 2.2
   private static let followZoom = 2.4
+  /// How far past a bound a gesture may drag or pinch before it is pulled
+  /// back, and the spring that pulls it.
+  private static let zoomOvershoot = 0.14
+  private static let panOvershootConstant = 0.55
+  private static let settleAnimation = Animation.spring(
+    response: 0.42,
+    dampingFraction: 0.86
+  )
 
   private enum Midnight {
     static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
@@ -109,19 +118,45 @@ struct WholeShutoTrackMapView: View {
                 from: (startZoom, startPan),
                 fit: fit,
                 width: width,
-                visibleHeight: visibleHeight
+                visibleHeight: visibleHeight,
+                overshoots: true
               )
             }
-            .onEnded { _ in
+            .onEnded { value in
+              let startZoom = zoomAtGestureStart ?? zoom
+              let startPan = panAtGestureStart ?? pan
               zoomAtGestureStart = nil
               panAtGestureStart = nil
+              let settled = min(
+                Self.maximumZoom, max(Self.minimumZoom, zoom)
+              )
+              withAnimation(Self.settleAnimation) {
+                if settled == zoom {
+                  pan = clampedPan(
+                    pan,
+                    fit: fit,
+                    zoom: zoom,
+                    width: width,
+                    visibleHeight: visibleHeight
+                  )
+                } else {
+                  setZoom(
+                    settled,
+                    anchoredAt: value.startLocation,
+                    from: (startZoom, startPan),
+                    fit: fit,
+                    width: width,
+                    visibleHeight: visibleHeight
+                  )
+                }
+              }
             },
           DragGesture()
             .onChanged { value in
               userAdjustedViewport = true
               let start = panAtGestureStart ?? pan
               panAtGestureStart = start
-              pan = clampedPan(
+              pan = rubberBandedPan(
                 CGSize(
                   width: start.width + value.translation.width,
                   height: start.height + value.translation.height
@@ -132,7 +167,27 @@ struct WholeShutoTrackMapView: View {
                 visibleHeight: visibleHeight
               )
             }
-            .onEnded { _ in panAtGestureStart = nil }
+            .onEnded { value in
+              let start = panAtGestureStart ?? pan
+              panAtGestureStart = nil
+              // Carry the flick and settle back inside the bounds. Stopping
+              // dead at the fingertip is what makes a hand-rolled pan feel
+              // unlike a map; so is snapping out of an overscroll.
+              withAnimation(Self.settleAnimation) {
+                pan = clampedPan(
+                  CGSize(
+                    width: start.width
+                      + value.predictedEndTranslation.width,
+                    height: start.height
+                      + value.predictedEndTranslation.height
+                  ),
+                  fit: fit,
+                  zoom: zoom,
+                  width: width,
+                  visibleHeight: visibleHeight
+                )
+              }
+            }
         )
       )
       .overlay(alignment: .bottomTrailing) {
@@ -262,9 +317,16 @@ struct WholeShutoTrackMapView: View {
     from start: (zoom: Double, pan: CGSize),
     fit: Double,
     width: Double,
-    visibleHeight: Double
+    visibleHeight: Double,
+    overshoots: Bool = false
   ) {
-    let newZoom = min(Self.maximumZoom, max(1, requested))
+    let lowerZoom =
+      overshoots
+      ? Self.minimumZoom * (1 - Self.zoomOvershoot) : Self.minimumZoom
+    let upperZoom =
+      overshoots
+      ? Self.maximumZoom * (1 + Self.zoomOvershoot) : Self.maximumZoom
+    let newZoom = min(upperZoom, max(lowerZoom, requested))
     let startOffset = contentOffset(
       fit: fit,
       zoom: start.zoom,
@@ -292,6 +354,24 @@ struct WholeShutoTrackMapView: View {
     )
   }
 
+  private func panBounds(
+    fit: Double,
+    zoom: Double,
+    width: Double,
+    visibleHeight: Double
+  ) -> (x: (lower: Double, upper: Double), y: (lower: Double, upper: Double))
+  {
+    let contentWidth = RouteTrackMapLayout.designWidth * fit * zoom
+    let contentHeight = RouteTrackMapLayout.designHeight * fit * zoom
+    let baseX = (width - contentWidth) / 2
+    let baseY = (visibleHeight - contentHeight) / 2
+    let margin = 120.0
+    return (
+      (-(baseX + contentWidth) + margin, width - baseX - margin),
+      (-(baseY + contentHeight) + margin, visibleHeight - baseY - margin)
+    )
+  }
+
   private func clampedPan(
     _ pan: CGSize,
     fit: Double,
@@ -299,21 +379,68 @@ struct WholeShutoTrackMapView: View {
     width: Double,
     visibleHeight: Double
   ) -> CGSize {
-    let contentWidth = RouteTrackMapLayout.designWidth * fit * zoom
-    let contentHeight = RouteTrackMapLayout.designHeight * fit * zoom
-    let baseX = (width - contentWidth) / 2
-    let baseY = (visibleHeight - contentHeight) / 2
-    let margin = 120.0
-    var clamped = pan
-    clamped.width = min(
-      max(clamped.width, -(baseX + contentWidth) + margin),
-      width - baseX - margin
+    let bounds = panBounds(
+      fit: fit,
+      zoom: zoom,
+      width: width,
+      visibleHeight: visibleHeight
     )
-    clamped.height = min(
-      max(clamped.height, -(baseY + contentHeight) + margin),
-      visibleHeight - baseY - margin
+    return CGSize(
+      width: min(max(pan.width, bounds.x.lower), bounds.x.upper),
+      height: min(max(pan.height, bounds.y.lower), bounds.y.upper)
     )
-    return clamped
+  }
+
+  /// The pan a live gesture is allowed to reach: past a bound the content
+  /// keeps moving, but with rising resistance, so the edge is felt instead
+  /// of hit. `clampedPan` then settles it when the finger lifts.
+  private func rubberBandedPan(
+    _ pan: CGSize,
+    fit: Double,
+    zoom: Double,
+    width: Double,
+    visibleHeight: Double
+  ) -> CGSize {
+    let bounds = panBounds(
+      fit: fit,
+      zoom: zoom,
+      width: width,
+      visibleHeight: visibleHeight
+    )
+    return CGSize(
+      width: Self.rubberBanded(
+        pan.width,
+        lower: bounds.x.lower,
+        upper: bounds.x.upper,
+        dimension: width
+      ),
+      height: Self.rubberBanded(
+        pan.height,
+        lower: bounds.y.lower,
+        upper: bounds.y.upper,
+        dimension: visibleHeight
+      )
+    )
+  }
+
+  private static func rubberBanded(
+    _ value: Double,
+    lower: Double,
+    upper: Double,
+    dimension: Double
+  ) -> Double {
+    let limit = max(dimension, 1)
+    func resisted(_ distance: Double) -> Double {
+      let constant = panOvershootConstant
+      return (distance * limit * constant) / (limit + constant * distance)
+    }
+    if value < lower {
+      return lower - resisted(lower - value)
+    }
+    if value > upper {
+      return upper + resisted(value - upper)
+    }
+    return value
   }
 
   // MARK: - Drawing
@@ -414,46 +541,32 @@ struct WholeShutoTrackMapView: View {
         )
       }
     }
-    // Hot core on the remaining route.
-    for span in spans {
-      let remainingStart = max(span.startFraction, traveled)
-      guard remainingStart < span.endFraction else { continue }
-      context.stroke(
-        path(
-          layout.points(
-            fromFraction: remainingStart,
-            toFraction: span.endFraction
-          )
-        ),
-        with: .color(Color.white.opacity(0.85)),
-        style: StrokeStyle(
-          lineWidth: 1.7 * weightScale, lineCap: .round, lineJoin: .round
-        )
-      )
-    }
-
-    // Direction chevrons along the remaining route.
-    var chevronFraction = traveled + 0.035
-    while chevronFraction < 0.985 {
+    // Direction chevrons along the remaining route. They ride on top of the
+    // route colour rather than punching through it: a near-black chevron on
+    // a 5pt line removes most of the line's width and chops the route into
+    // visible pieces, so the mark is lighter than the line and narrower than
+    // it, and sits far enough apart to read as motion instead of a dash.
+    var chevronFraction = traveled + 0.05
+    while chevronFraction < 0.975 {
       let point = layout.point(atFraction: chevronFraction)
       let heading = layout.heading(atFraction: chevronFraction)
       let center = place(point.x, point.y)
       var chevron = Path()
-      chevron.move(to: CGPoint(x: -3.8, y: -3.2))
-      chevron.addLine(to: CGPoint(x: 2.6, y: 0))
-      chevron.addLine(to: CGPoint(x: -3.8, y: 3.2))
+      chevron.move(to: CGPoint(x: -2.6, y: -2.3))
+      chevron.addLine(to: CGPoint(x: 1.9, y: 0))
+      chevron.addLine(to: CGPoint(x: -2.6, y: 2.3))
       context.drawLayer { layer in
         layer.translateBy(x: center.x, y: center.y)
         layer.rotate(by: .degrees(heading))
         layer.stroke(
           chevron,
-          with: .color(Midnight.background.opacity(0.9)),
+          with: .color(Color.white.opacity(0.92)),
           style: StrokeStyle(
-            lineWidth: 2, lineCap: .round, lineJoin: .round
+            lineWidth: 1.3, lineCap: .round, lineJoin: .round
           )
         )
       }
-      chevronFraction += 0.058 / min(zoom, 2.2)
+      chevronFraction += 0.09 / min(zoom, 2.2)
     }
 
     // Checkered start grid across the carriageway at the entrance,

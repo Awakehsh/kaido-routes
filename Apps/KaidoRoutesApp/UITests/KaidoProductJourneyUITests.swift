@@ -1443,9 +1443,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(followingControl.waitForExistence(timeout: 3))
     XCTAssertEqual(followingControl.value as? String, "FOLLOWING")
+
+    // Touching the map hands the camera to the driver without asking for
+    // the control first; the control then offers the way back.
+    let geographicMap = element(
+      "whole-shuto-geographic-map",
+      in: navigationApp
+    )
+    geographicMap.swipeLeft()
+    XCTAssertEqual(followingControl.value as? String, "FREE")
+    followingControl.tap()
+    XCTAssertEqual(followingControl.value as? String, "FOLLOWING")
+
     followingControl.tap()
     XCTAssertEqual(followingControl.value as? String, "FREE")
-    element("whole-shuto-geographic-map", in: navigationApp).swipeLeft()
+    geographicMap.swipeLeft()
     followingControl.tap()
     XCTAssertEqual(followingControl.value as? String, "FOLLOWING")
   }

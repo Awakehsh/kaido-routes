@@ -227,6 +227,14 @@ The product distinguishes what is known from what is still unconfirmed:
   They do not copy operator artwork or imply unreleased lane numbers.
 - Current traffic, temporary closures, toll quotes, and PA operating status are
   `REALTIME_UNCONFIRMED` until a current provider response exists.
+- The driving map draws Apple's congestion layer and, on tap, Apple's place
+  card for a basemap point of interest — the only surface carrying its
+  operating hours, because MapKit exposes them to no API. Both are Apple's
+  answer rendered on Apple's basemap: neither reaches a Kaido route, tariff,
+  or passage decision, and the preview duration stays non-realtime. The drive
+  narrows the basemap catalog to fuel, charge, parking, and restrooms so
+  storefronts cannot bury the route; a parked map keeps the full catalog and
+  omits congestion colouring, which is unreadable at journey framing.
 - MapKit surface access and egress cannot author, optimize, replace, or recover
   the Shuto `RoutePlan`. During a live drive, accepted MapKit
   geometry and steps provide the current ordinary-road instruction and

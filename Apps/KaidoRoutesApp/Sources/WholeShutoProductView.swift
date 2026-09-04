@@ -5450,12 +5450,26 @@ private struct WholeShutoGeographicMap: View {
   /// The eye altitude the driver last set by hand. Follow mode re-centers
   /// and re-orients around it instead of snapping back to the phase default.
   @State private var userCameraDistanceMeters: Double?
+  /// The tapped basemap place, and whether the camera was following when it
+  /// was tapped, so the drive can pick following back up on dismissal.
+  @State private var selectedMapFeature: MapFeature?
+  @State private var followedBeforeFeatureSelection = false
   private static let gestureResumeDelay = Duration.seconds(10)
   private static let userCameraDistanceRange: ClosedRange<Double> =
     120...24_000
+  /// What a driver can act on from behind the wheel. The full basemap
+  /// catalog is planning material — central Tokyo puts eight restaurant
+  /// labels over the route in a single frame — so the drive keeps only what
+  /// a stop is made for, and the parked map keeps everything.
+  private static let drivingPointsOfInterest: [MKPointOfInterestCategory] = [
+    .gasStation,
+    .evCharger,
+    .parking,
+    .restroom,
+  ]
 
   var body: some View {
-    Map(position: $camera) {
+    Map(position: $camera, selection: $selectedMapFeature) {
       // The whole expressway network — both carriageways of every mainline —
       // as a muted context layer beneath the active route. It never carries
       // guidance authority; stacked carriageways may coincide in plan view.
@@ -5771,9 +5785,24 @@ private struct WholeShutoGeographicMap: View {
     }
     .mapStyle(
       model.phase == .planning || model.phase == .review
+        // Congestion colouring is unreadable at journey framing — it paints
+        // the whole Kanto basemap and the selected route stops standing out
+        // — and nothing here acts on it. The drive frames close enough for
+        // it to mean something.
         ? .standard(elevation: .flat)
-        : .standard(elevation: .realistic, pointsOfInterest: .excludingAll)
+        : .standard(
+          elevation: .realistic,
+          pointsOfInterest: .including(Self.drivingPointsOfInterest),
+          showsTraffic: true
+        )
     )
+    // Apple's place card carries the operating hours MapKit does not expose
+    // as data. It is the only way this product can answer "is it open"; that
+    // answer is Apple's, and it never reaches a Kaido route or toll decision.
+    .mapFeatureSelectionAccessory(.callout(.compact))
+    // A ward boundary or a bay is not a place to stop, and selecting one
+    // would take the camera off the route for nothing.
+    .mapFeatureSelectionDisabled { $0.kind != .pointOfInterest }
     .mapControls {
       MapCompass()
     }
@@ -5854,10 +5883,14 @@ private struct WholeShutoGeographicMap: View {
       // different eye altitudes, so a hand-set camera belongs to the phase
       // the driver set it in and never strands the next one off-position.
       userCameraDistanceMeters = nil
+      selectedMapFeature = nil
       gestureResumeTask?.cancel()
       gestureResumeTask = nil
       followsRoute = true
       updateCamera(force: true)
+    }
+    .onChange(of: selectedMapFeature != nil) { _, isSelected in
+      handleMapFeatureSelection(isSelected: isSelected)
     }
     .onDisappear {
       gestureResumeTask?.cancel()
@@ -6017,12 +6050,16 @@ private struct WholeShutoGeographicMap: View {
   /// `gestureResumeDelay` of no touch; a parked map stays where they left it
   /// until the journey moves to another phase.
   private func releaseFollowForGesture() {
+    releaseFollow(resumesAutomatically: true)
+  }
+
+  private func releaseFollow(resumesAutomatically: Bool) {
     if followsRoute {
       followsRoute = false
     }
     gestureResumeTask?.cancel()
     gestureResumeTask = nil
-    guard isActiveNavigation else { return }
+    guard resumesAutomatically, isActiveNavigation else { return }
     gestureResumeTask = Task { @MainActor in
       try? await Task.sleep(for: Self.gestureResumeDelay)
       guard !Task.isCancelled, isActiveNavigation, !followsRoute else {
@@ -6031,6 +6068,23 @@ private struct WholeShutoGeographicMap: View {
       followsRoute = true
       updateCamera(force: true)
     }
+  }
+
+  /// An open place card outranks the timer as well as the route: re-centring
+  /// underneath it would carry the callout off-screen mid-read. Following
+  /// returns when the card closes, and only if it was on beforehand.
+  private func handleMapFeatureSelection(isSelected: Bool) {
+    if isSelected {
+      followedBeforeFeatureSelection = followsRoute
+      releaseFollow(resumesAutomatically: false)
+      return
+    }
+    guard followedBeforeFeatureSelection else { return }
+    followedBeforeFeatureSelection = false
+    gestureResumeTask?.cancel()
+    gestureResumeTask = nil
+    followsRoute = true
+    updateCamera(force: true)
   }
 
   private var followCameraDistanceMeters: Double {

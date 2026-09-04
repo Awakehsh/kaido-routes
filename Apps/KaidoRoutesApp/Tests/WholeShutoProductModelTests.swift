@@ -46,6 +46,150 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.mapMode, .network)
   }
 
+  func testMajorRoadPreferenceChoosesSimplerAlternativeWithinDetourBudget() {
+    func route(
+      distanceMeters: Double,
+      travelTimeSeconds: Double,
+      instructionCount: Int
+    ) -> WholeShutoSurfaceRoute {
+      let instructions = (0..<instructionCount).map { "Step \($0)" }
+      return WholeShutoSurfaceRoute(
+        coordinates: [
+          ShutoCoordinate(latitude: 35.68, longitude: 139.76),
+          ShutoCoordinate(latitude: 35.69, longitude: 139.77),
+        ],
+        distanceMeters: distanceMeters,
+        expectedTravelTimeSeconds: travelTimeSeconds,
+        instructions: instructions
+      )
+    }
+
+    let fastest = route(
+      distanceMeters: 4_000,
+      travelTimeSeconds: 600,
+      instructionCount: 8
+    )
+    let simpler = route(
+      distanceMeters: 5_500,
+      travelTimeSeconds: 660,
+      instructionCount: 3
+    )
+
+    XCTAssertEqual(
+      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+        from: [fastest, simpler],
+        preference: .majorRoads
+      ),
+      simpler
+    )
+    XCTAssertEqual(
+      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+        from: [fastest, simpler],
+        preference: .fastest
+      ),
+      fastest
+    )
+  }
+
+  func testMajorRoadPreferenceDoesNotTakeAnUnboundedDetour() {
+    func route(
+      travelTimeSeconds: Double,
+      instructionCount: Int
+    ) -> WholeShutoSurfaceRoute {
+      WholeShutoSurfaceRoute(
+        coordinates: [
+          ShutoCoordinate(latitude: 35.68, longitude: 139.76),
+          ShutoCoordinate(latitude: 35.69, longitude: 139.77),
+        ],
+        distanceMeters: travelTimeSeconds * 8,
+        expectedTravelTimeSeconds: travelTimeSeconds,
+        instructions: (0..<instructionCount).map { "Step \($0)" }
+      )
+    }
+
+    let shortFastRoute = route(travelTimeSeconds: 600, instructionCount: 8)
+    let overPercentageLimit = route(
+      travelTimeSeconds: 700,
+      instructionCount: 2
+    )
+
+    XCTAssertEqual(
+      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+        from: [overPercentageLimit, shortFastRoute],
+        preference: .majorRoads
+      ),
+      shortFastRoute
+    )
+
+    let longFastRoute = route(
+      travelTimeSeconds: 7_200,
+      instructionCount: 8
+    )
+    let overAbsoluteLimit = route(
+      travelTimeSeconds: 7_700,
+      instructionCount: 2
+    )
+    XCTAssertEqual(
+      WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+        from: [overAbsoluteLimit, longFastRoute],
+        preference: .majorRoads
+      ),
+      longFastRoute
+    )
+  }
+
+  func testSurfaceRoutePreferenceDefaultsPersistsAndReplansReview()
+    async
+  {
+    let suiteName = "app.kaidoroutes.tests.surface-route-preference"
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defaults.removePersistentDomain(forName: suiteName)
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let resolver = WholeShutoPreferenceRecordingSurfaceRouteResolver()
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: resolver,
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
+    )
+
+    XCTAssertEqual(model.surfaceRoutePreference, .majorRoads)
+    model.setSurfaceRoutePreference(.fastest)
+    model.selectCurrentOrigin(
+      WholeShutoProductModel.previewOrigin.coordinate
+    )
+    model.selectDestinationPreview(
+      WholeShutoProductModel.previewDestination
+    )
+    model.planJourney()
+    for _ in 0..<1_000 where model.isPlanning {
+      await Task.yield()
+    }
+
+    XCTAssertEqual(model.phase, .review)
+    let plannedPreferences = await resolver.recordedPreferences()
+    XCTAssertFalse(plannedPreferences.isEmpty)
+    XCTAssertTrue(plannedPreferences.allSatisfy { $0 == .fastest })
+
+    model.setSurfaceRoutePreference(.majorRoads)
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    let replannedPreferences = await resolver.recordedPreferences()
+    XCTAssertEqual(
+      Array(replannedPreferences.suffix(2)),
+      [.majorRoads, .majorRoads]
+    )
+
+    model.setSurfaceRoutePreference(.fastest)
+    let reopened = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
+    )
+    XCTAssertEqual(reopened.surfaceRoutePreference, .fastest)
+  }
+
   func testRouteJoinIsNeitherOfferedNorDeclarableOutsideALiveEntry() async {
     let model = WholeShutoProductModel(checkpointStore: nil)
 
@@ -3709,7 +3853,8 @@ private actor WholeShutoOutOfOrderSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     let isSlow = destination == slowEntry || origin == slowExit
     let delay: UInt64 = isSlow ? 180_000_000 : 20_000_000
@@ -3737,7 +3882,8 @@ private actor WholeShutoRecoveringSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     guard isAvailable else { return nil }
     return WholeShutoSurfaceRoute(
@@ -3754,7 +3900,8 @@ private struct WholeShutoInstructionSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     WholeShutoSurfaceRoute(
       coordinates: [origin, destination],
@@ -3777,7 +3924,8 @@ private struct WholeShutoMultiStepSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     WholeShutoSurfaceRoute(
       coordinates: [origin, destination],
@@ -3815,7 +3963,8 @@ private actor WholeShutoRankingSurfaceRouteResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     let isPreferredLeg =
       destination == preferredEntry || origin == preferredExit
@@ -3883,7 +4032,8 @@ private actor WholeShutoPartiallyUnavailableChoiceResolver:
 
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     guard destination != unavailableEntry else {
       return nil
@@ -3893,6 +4043,37 @@ private actor WholeShutoPartiallyUnavailableChoiceResolver:
       distanceMeters: 1_000,
       expectedTravelTimeSeconds: 120,
       instructions: []
+    )
+  }
+}
+
+private actor WholeShutoPreferenceRecordingSurfaceRouteResolver:
+  WholeShutoSurfaceRouteResolving
+{
+  private var preferences: [WholeShutoSurfaceRoutePreference] = []
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate,
+    preference: WholeShutoSurfaceRoutePreference
+  ) async -> WholeShutoSurfaceRoute? {
+    preferences.append(preference)
+    return makeRoute(from: origin, to: destination)
+  }
+
+  func recordedPreferences() -> [WholeShutoSurfaceRoutePreference] {
+    preferences
+  }
+
+  private func makeRoute(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate
+  ) -> WholeShutoSurfaceRoute {
+    WholeShutoSurfaceRoute(
+      coordinates: [origin, destination],
+      distanceMeters: 1_000,
+      expectedTravelTimeSeconds: 120,
+      instructions: ["Continue"]
     )
   }
 }

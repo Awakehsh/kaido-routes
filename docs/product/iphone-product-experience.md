@@ -1,7 +1,7 @@
 # iPhone product experience
 
 Status: accepted product design contract, checked against the default App on
-2026-09-03. The implementation now opens on the
+2026-09-04. The implementation now opens on the
 route-first whole-Shuto home, derives entrance/exit pairings and dated tariff
 bands for named experiences, supports loop lap count and exact custom routes,
 and carries the selected route through review, labeled replay, finish, and
@@ -50,8 +50,10 @@ inner loop, the C2-plus-Bayshore grand loop,
 the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
-entry for interface language, guidance voice, known map limitations, privacy,
-and licences. OSM source and licence credit sits under the title as a compact
+entry for interface language, guidance voice, ordinary-road routing preference,
+known map limitations, privacy, and licences. **Major roads first** is the
+default; **Faster route** remains available for drivers who prefer the quickest
+provider candidate. OSM source and licence credit sits under the title as a compact
 caption, adjacent to the map and off the road drawing. Each catalog card presents the
 route as a finished experience: its shape thumbnail, distance and duration
 class, landmark and PA facts, and — once an origin is known — the derived
@@ -194,6 +196,15 @@ bounded provider resolves the egress leg to that destination under the same
 fail-closed rules as every journey: missing either surface leg blocks review
 and start rather than silently skipping part of the journey.
 
+Ordinary-road access, egress, and live rerouting use the same persisted
+preference. **Major roads first** requests provider alternatives and may accept
+a route up to 15 percent slower, capped at eight additional minutes, when it
+has fewer maneuvers or a higher implied average speed. The limit keeps the
+preference bounded; it is not a promise that every road is wide. A local street
+may remain necessary near an origin, destination, or directional ramp. The
+provider's highway and toll avoidance remains separate and no surface
+preference may alter the selected Shuto `RoutePlan`.
+
 ### Provider boundary
 
 Bounded third-party navigation providers may contribute candidate geometry,
@@ -204,7 +215,11 @@ ordered occurrences before it can become selectable. Required provider
 attribution and technical provenance remain in route details or the system map
 attribution surface rather than the primary choice row. The default iPhone
 adapter currently uses MapKit only for the ordinary-road comparison and cached
-surface legs. Google Routes and other billable services require their own
+surface legs. It asks for alternate automobile routes, removes candidates that
+MapKit identifies as highway or toll routes, and applies the persisted bounded
+ordinary-road preference to the survivors. MapKit exposes no road-width or
+road-class contract, so this remains a best available provider preference,
+not verified road-width evidence. Google Routes and other billable services require their own
 configured account, credentials, licence review, and executable comparison
 before they can occupy the same replaceable boundary.
 

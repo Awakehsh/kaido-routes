@@ -396,6 +396,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var remainingWholeLapsAhead = 0
   @Published private(set) var isChangingLaps = false
   @Published private(set) var showsDriveRecord: Bool
+  @Published private(set) var surfaceRoutePreference: WholeShutoSurfaceRoutePreference
   @Published private(set) var liveLocationIssueCode: String?
   @Published private(set) var failureCode: String?
   @Published private(set) var checkpointIssueCode: String?
@@ -487,6 +488,8 @@ final class WholeShutoProductModel: ObservableObject {
   private var entryTransitionStartedAtMilliseconds: Int?
   private let driveRecordPreferenceStore: UserDefaults
   static let showsDriveRecordDefaultsKey = "app.kaidoroutes.drive-record.shown"
+  static let surfaceRoutePreferenceDefaultsKey =
+    "app.kaidoroutes.surface-route.preference"
   private var lastLiveObservationAtMilliseconds: Int?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
@@ -593,6 +596,11 @@ final class WholeShutoProductModel: ObservableObject {
       driveRecordPreferenceStore.object(
         forKey: Self.showsDriveRecordDefaultsKey
       ) as? Bool ?? true
+    surfaceRoutePreference =
+      driveRecordPreferenceStore.string(
+        forKey: Self.surfaceRoutePreferenceDefaultsKey
+      ).flatMap(WholeShutoSurfaceRoutePreference.init(rawValue:))
+      ?? .majorRoads
     waysByID = Dictionary(
       uniqueKeysWithValues: resolvedDatabase.ways.map {
         ($0.wayID, $0)
@@ -2049,6 +2057,31 @@ final class WholeShutoProductModel: ObservableObject {
     showsDriveRecord = shown
   }
 
+  func setSurfaceRoutePreference(
+    _ preference: WholeShutoSurfaceRoutePreference
+  ) {
+    driveRecordPreferenceStore.set(
+      preference.rawValue,
+      forKey: Self.surfaceRoutePreferenceDefaultsKey
+    )
+    guard preference != surfaceRoutePreference else { return }
+    surfaceRoutePreference = preference
+    guard
+      phase == .review,
+      let recommendation = selectedRecommendation,
+      let origin,
+      let destination
+    else {
+      return
+    }
+    clearRouteChoiceEvaluation()
+    resolveSurfaceRoutes(
+      for: recommendation,
+      origin: origin,
+      destination: destination
+    )
+  }
+
   /// Accepts the driver's word that the car is already on the selected route.
   ///
   /// The declaration only opens the join admission for a bounded window. If
@@ -2435,7 +2468,8 @@ final class WholeShutoProductModel: ObservableObject {
         let evaluation = await routeChoiceEvaluator.evaluate(
           recommendations: routes,
           origin: resolvedOrigin.coordinate,
-          destination: resolvedDestination.coordinate
+          destination: resolvedDestination.coordinate,
+          preference: surfaceRoutePreference
         )
         origin = resolvedOrigin
         destination = resolvedDestination
@@ -2903,6 +2937,7 @@ final class WholeShutoProductModel: ObservableObject {
       ?? recommendation.route.exitFacility.coordinate
     let exitFallback = recommendation.route.exitFacility.coordinate
     let resolver = surfaceRouteResolver
+    let preference = surfaceRoutePreference
     surfaceRouteRequestID = requestID
     surfaceRouteTask = Task { [weak self] in
       func leg(
@@ -2910,7 +2945,11 @@ final class WholeShutoProductModel: ObservableObject {
         to target: ShutoCoordinate,
         fallback: (from: ShutoCoordinate, to: ShutoCoordinate)
       ) async -> WholeShutoSurfaceRoute? {
-        if let resolved = await resolver.route(from: start, to: target) {
+        if let resolved = await resolver.route(
+          from: start,
+          to: target,
+          preference: preference
+        ) {
           return resolved
         }
         guard !Task.isCancelled,
@@ -2918,7 +2957,8 @@ final class WholeShutoProductModel: ObservableObject {
         else { return nil }
         return await resolver.route(
           from: fallback.from,
-          to: fallback.to
+          to: fallback.to,
+          preference: preference
         )
       }
       async let access = leg(
@@ -2943,6 +2983,19 @@ final class WholeShutoProductModel: ObservableObject {
       }
       self.accessRoute = resolvedRoutes.0
       self.egressRoute = resolvedRoutes.1
+      if let access = resolvedRoutes.0, let egress = resolvedRoutes.1 {
+        let routes = WholeShutoRouteChoiceSurfaceRoutes(
+          access: access,
+          egress: egress
+        )
+        self.routeChoiceSurfaceRoutesByRoutePlanID[routePlanID] = routes
+        self.routeChoiceMetricsByRoutePlanID[routePlanID] =
+          Self.routeChoiceMetrics(
+            for: recommendation.route,
+            accessRoute: access,
+            egressRoute: egress
+          )
+      }
       self.isUpdatingSurfaceRoute = false
       self.failureCode =
         resolvedRoutes.0 == nil || resolvedRoutes.1 == nil
@@ -4087,6 +4140,7 @@ final class WholeShutoProductModel: ObservableObject {
     let requestID = UUID()
     let routePlanID = selectedRoute.routePlan.id
     let resolver = surfaceRouteResolver
+    let preference = surfaceRoutePreference
     consecutiveSurfaceOffRouteObservations = 0
     lastSurfaceRerouteAttemptAtMilliseconds = attemptedAtMilliseconds
     surfaceRerouteRequestID = requestID
@@ -4096,7 +4150,8 @@ final class WholeShutoProductModel: ObservableObject {
     surfaceRerouteTask = Task { [weak self] in
       var resolved = await resolver.route(
         from: coordinate,
-        to: destination
+        to: destination,
+        preference: preference
       )
       if resolved == nil,
         !Task.isCancelled,
@@ -4105,7 +4160,8 @@ final class WholeShutoProductModel: ObservableObject {
       {
         resolved = await resolver.route(
           from: coordinate,
-          to: fallbackDestination
+          to: fallbackDestination,
+          preference: preference
         )
       }
       guard

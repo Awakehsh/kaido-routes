@@ -1345,6 +1345,15 @@ That is a development fact, not yet the minimum deployment target.
   near the selected directional ramp. Provider steps remain ordinary-road
   presentation: they cannot mutate the exact `RoutePlan` or grant expressway
   occurrence authority.
+- The default MapKit adapter asks for alternate ordinary-road routes and rejects
+  candidates that MapKit marks as highway or toll routes. The persisted
+  ordinary-road preference defaults to `MAJOR_ROADS`: among candidates no more
+  than 15 percent slower than the fastest route, capped at eight additional
+  minutes, it prefers fewer maneuvers and then a higher implied average speed.
+  `FASTEST` selects the shortest provider ETA. The same preference is captured
+  for access, egress, and live surface rerouting. This is a bounded selection
+  policy, not road-width evidence; MapKit exposes no road-class or width
+  attribute, and neither preference may mutate the selected `RoutePlan`.
 - A junction inset is drawn from `JunctionViewDefinition` with a Kaido-owned
   vector renderer. SwiftUI must not retain or reproduce third-party junction
   artwork. The internal iPhone renderer now maps normalized path points and

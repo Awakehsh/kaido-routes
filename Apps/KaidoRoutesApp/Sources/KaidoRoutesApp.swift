@@ -662,7 +662,8 @@ private struct WholeShutoUnavailableSurfaceRouteResolver:
 {
   func route(
     from origin: ShutoCoordinate,
-    to destination: ShutoCoordinate
+    to destination: ShutoCoordinate,
+    preference _: WholeShutoSurfaceRoutePreference
   ) async -> WholeShutoSurfaceRoute? {
     nil
   }

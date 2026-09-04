@@ -209,6 +209,53 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
+  func testWholeShutoSettingsSwitchOrdinaryRoadPreference() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT",
+      "-app.kaidoroutes.language.interface",
+      "en",
+      "-app.kaidoroutes.surface-route.preference",
+      "MAJOR_ROADS",
+    ]
+    app.launchSilently()
+    returnWholeShutoToPlanning(in: app)
+
+    let settings = element("whole-shuto-settings", in: app)
+    XCTAssertTrue(settings.waitForExistence(timeout: 5))
+    settings.tap()
+
+    let preference = element(
+      "whole-shuto-surface-route-preference",
+      in: app
+    )
+    XCTAssertTrue(preference.waitForExistence(timeout: 3))
+    XCTAssertTrue(
+      [preference.label, preference.value as? String ?? ""]
+        .contains { $0.contains("Major roads first") }
+    )
+    preference.tap()
+
+    let fastest = element(
+      "whole-shuto-surface-route-preference-fastest",
+      in: app
+    )
+    XCTAssertTrue(fastest.waitForExistence(timeout: 3))
+    fastest.tap()
+    XCTAssertTrue(
+      [preference.label, preference.value as? String ?? ""]
+        .contains { $0.contains("Faster route") }
+    )
+
+    let screenshot = XCTAttachment(
+      screenshot: XCUIScreen.main.screenshot()
+    )
+    screenshot.name = "Whole Shuto ordinary-road preference"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+  }
+
   func testSettingsSheetCanBePulledDownAndReopened() {
     continueAfterFailure = false
     let app = XCUIApplication()

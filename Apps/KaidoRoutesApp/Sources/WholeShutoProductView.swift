@@ -410,6 +410,7 @@ struct WholeShutoProductView: View {
       } else if isDriving {
         if model.isLiveDrive,
           model.liveLocationState == .resumeRequired
+            || model.liveLocationState == .resting
         {
           liveResumeBanner
         }
@@ -423,11 +424,17 @@ struct WholeShutoProductView: View {
   private var liveResumeBanner: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(
-        copy.resolve(
-          japanese: "位置情報は一時停止中です",
-          simplifiedChinese: "实时定位已暂停",
-          english: "LIVE LOCATION IS PAUSED"
-        )
+        model.liveLocationState == .resting
+          ? copy.resolve(
+            japanese: "休憩中",
+            simplifiedChinese: "休息中",
+            english: "RESTING"
+          )
+          : copy.resolve(
+            japanese: "位置情報は一時停止中です",
+            simplifiedChinese: "实时定位已暂停",
+            english: "LIVE LOCATION IS PAUSED"
+          )
       )
       .font(.caption.weight(.black))
       .foregroundStyle(KaidoTheme.signalAmber)
@@ -3024,8 +3031,34 @@ struct WholeShutoProductView: View {
         .accessibilityIdentifier("whole-shuto-finish-expressway")
       }
 
-      // Transport controls belong to the preview only; a live drive
-      // follows the vehicle and cannot be stepped or paused.
+      if model.isLiveDrive, model.isPlaying {
+        Button {
+          Task { _ = await model.restLiveJourney() }
+        } label: {
+          Image(systemName: "pause.fill")
+            .font(.system(size: 15, weight: .black))
+            .frame(width: 48, height: 48)
+        }
+        .buttonStyle(WholeShutoCircleButtonStyle(isDriving: true))
+        .accessibilityLabel(
+          copy.resolve(
+            japanese: "休憩する",
+            simplifiedChinese: "休息",
+            english: "Rest"
+          )
+        )
+        .accessibilityHint(
+          copy.resolve(
+            japanese: "PA などで停まる間、案内と位置情報を止めます",
+            simplifiedChinese: "在 PA 等处停车期间，停止导航和定位",
+            english: "Stops guidance and location while you park, such as at a PA"
+          )
+        )
+        .accessibilityIdentifier("whole-shuto-rest-live-drive")
+      }
+
+      // Stepping belongs to the preview only; a live drive follows the
+      // vehicle and cannot be advanced by hand.
       if !model.isLiveDrive {
       Button {
         model.advanceSimulation()
@@ -3756,6 +3789,13 @@ struct WholeShutoProductView: View {
       )
       : ""
     switch model.positionState {
+    case .resting:
+      return prefix
+        + copy.resolve(
+          japanese: "休憩中 · 案内は待機",
+          simplifiedChinese: "休息中 · 导航等待",
+          english: "RESTING · GUIDANCE WAITING"
+        )
     case .surfacePreview:
       if model.isLiveDrive {
         return prefix
@@ -3816,6 +3856,13 @@ struct WholeShutoProductView: View {
             japanese: "現在地を確認中",
             simplifiedChinese: "正在确认当前位置",
             english: "ACQUIRING CURRENT POSITION"
+          )
+      case .resting:
+        return prefix
+          + copy.resolve(
+            japanese: "休憩中",
+            simplifiedChinese: "休息中",
+            english: "RESTING"
           )
       case .resumeRequired:
         return prefix
@@ -3980,6 +4027,8 @@ struct WholeShutoProductView: View {
       return KaidoTheme.confirmedGreen
     case .networkDegraded, .tunnelEstimated, .routeInterrupted:
       return KaidoTheme.signalAmber
+    case .resting:
+      return KaidoTheme.nightQuiet
     default:
       return KaidoTheme.positionCyan
     }

@@ -546,6 +546,84 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testRestingALiveDriveKeepsItsSessionAndResumesInPlace() async throws {
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput()
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    let midpoint = ShutoCoordinate(
+      latitude: (start.latitude + end.latitude) / 2,
+      longitude: (start.longitude + end.longitude) / 2
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "rest.midpoint", coordinate: midpoint)
+    )
+    XCTAssertEqual(model.liveLocationState, .available)
+    let restedProgress = model.progressFraction
+    let restedPhase = model.phase
+
+    let rested = await model.restLiveJourney()
+    XCTAssertTrue(rested)
+    XCTAssertEqual(model.liveLocationState, .resting)
+    // A chosen stop is not a fault: the position reads as resting rather than
+    // degraded, and the map keeps no stale bearing to rotate to.
+    XCTAssertEqual(model.positionState, .resting)
+    XCTAssertNil(model.navigationHeadingDegrees)
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertFalse(model.canConsumeForegroundNavigationLocations)
+    XCTAssertTrue(model.isLiveDrive)
+    XCTAssertEqual(model.phase, restedPhase)
+    XCTAssertEqual(model.progressFraction, restedProgress, accuracy: 0.0001)
+
+    // Resting twice is not a second stop.
+    let restedAgain = await model.restLiveJourney()
+    XCTAssertFalse(restedAgain)
+
+    let resumed = await model.resumeLiveJourney()
+    XCTAssertTrue(resumed)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertNotEqual(model.liveLocationState, .resting)
+    XCTAssertEqual(model.phase, restedPhase)
+    XCTAssertEqual(model.progressFraction, restedProgress, accuracy: 0.0001)
+
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "rest.after", coordinate: midpoint)
+    )
+    XCTAssertEqual(model.liveLocationState, .available)
+    model.reset()
+  }
+
+  func testRestRefusesOutsideALiveDrive() async {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    let restedWhileParked = await model.restLiveJourney()
+    XCTAssertFalse(restedWhileParked)
+
+    model.preparePreviewJourney()
+    let restedInPreview = await model.restLiveJourney()
+    XCTAssertFalse(restedInPreview)
+    XCTAssertNotEqual(model.liveLocationState, .resting)
+  }
+
   func testLiveSurfaceAccessReroutesAfterTwoConsecutiveOffRouteFixes()
     async throws
   {

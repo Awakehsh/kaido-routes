@@ -101,6 +101,9 @@ enum WholeShutoRouteJoinState: String, Equatable, Sendable {
 enum WholeShutoLiveLocationState: String, Equatable, Sendable {
   case inactive = "INACTIVE"
   case resumeRequired = "RESUME_REQUIRED"
+  /// The driver stopped on purpose — a PA break, a call, a photo. The session
+  /// and its occurrence survive; only the sensor and the voice go quiet.
+  case resting = "RESTING"
   case awaitingAuthorization = "AWAITING_AUTHORIZATION"
   case acquiring = "ACQUIRING"
   case available = "AVAILABLE"
@@ -185,6 +188,9 @@ enum WholeShutoPositionState: String, Equatable, Sendable {
   case boundaryTransition = "BOUNDARY_TRANSITION"
   case networkPreview = "NETWORK_PREVIEW"
   case networkDegraded = "NETWORK_DEGRADED"
+  /// The driver parked and asked the drive to wait. Not a degraded position:
+  /// there is no position because none was requested.
+  case resting = "RESTING"
   case tunnelEstimated = "TUNNEL_ESTIMATED"
   case routeInterrupted = "ROUTE_INTERRUPTED"
   case completed = "COMPLETED"
@@ -1406,6 +1412,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var positionState: WholeShutoPositionState {
+    if isLiveDrive, liveLocationState == .resting {
+      return .resting
+    }
     if isLiveDrive,
       phase == .surfaceAccess || phase == .surfaceEgress,
       liveLocationIssueCode == "SURFACE_ROUTE_GEOMETRY_UNAVAILABLE"
@@ -1742,7 +1751,7 @@ final class WholeShutoProductModel: ObservableObject {
       .networkPreview:
       break
     case .unavailable, .networkDegraded, .tunnelEstimated,
-      .routeInterrupted, .completed:
+      .routeInterrupted, .completed, .resting:
       return nil
     }
     guard let current = currentCoordinate else { return nil }
@@ -1843,6 +1852,33 @@ final class WholeShutoProductModel: ObservableObject {
   private func clearRouteJoinOffer() {
     entryTransitionStartedAtMilliseconds = nil
     routeJoinState = .unavailable
+  }
+
+  /// Puts the live drive down for a break without ending it.
+  ///
+  /// A car parked at a PA leaves the route corridor, so a drive left running
+  /// there reports a degraded position and a recovery search for a stop the
+  /// driver chose. Resting instead releases Core Location and the voice, keeps
+  /// the session and its occurrence exactly where they are, and hands the
+  /// return to `resumeLiveJourney`, which the backgrounded drive already uses.
+  @discardableResult
+  func restLiveJourney() async -> Bool {
+    guard isLiveDrive, isPlaying, phase != .completed,
+      let liveDriveSession
+    else {
+      return false
+    }
+    cancelSurfaceReroute()
+    invalidatePlaybackTask()
+    isPlaying = false
+    speechCoordinator?.stop()
+    liveLocationState = .resting
+    liveLocationIssueCode = nil
+    liveLocationFreshnessTask?.cancel()
+    liveLocationFreshnessTask = nil
+    await foregroundLiveLocationController?.stop()
+    await captureAndPersistLiveCheckpoint(from: liveDriveSession, force: true)
+    return true
   }
 
   @discardableResult
@@ -3168,7 +3204,9 @@ final class WholeShutoProductModel: ObservableObject {
     switch state {
     case .idle, .stopped:
       clearTunnelEstimate()
-      if liveLocationState != .resumeRequired {
+      if liveLocationState != .resumeRequired,
+        liveLocationState != .resting
+      {
         liveLocationState = .inactive
         liveLocationIssueCode = nil
       }

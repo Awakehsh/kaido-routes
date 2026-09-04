@@ -442,6 +442,18 @@ says so. KR-S24 executes the positive and fail-closed paths.
 The join is deterministic policy only. Whether a declared join lands on the
 correct carriageway on the real network is unproven field behavior.
 
+A drive can also be put down for a break. A car parked at a PA leaves the route
+corridor — PA access and return are directional facilities, not RoutePlan
+occurrences — so a drive left running there reports a degraded position and
+opens a recovery search for a stop the driver chose. `restLiveJourney` instead
+releases Core Location and the voice, cancels the freshness watchdog, and
+persists the checkpoint, while `NavigationSession`, its phase, and its current
+occurrence stay exactly as they were. Resting is an input suspension, not a
+journey phase; the navigation core never learns about it. The return is
+`resumeLiveJourney`, the same path a backgrounded drive already uses, and the
+matcher reacquires from wherever the car actually is, with ordinary recovery
+handling a PA return that lands further along.
+
 The pure Swift guidance and presentation path now implements this boundary.
 `GuidanceFramePlanner` consumes a `NavigationSnapshot`, RoutePlan-bound released
 definitions, and one fresh resolved occurrence/distance observation. It never

@@ -149,6 +149,7 @@ struct WholeShutoProductView: View {
     .sheet(isPresented: $showsSettings) {
       WholeShutoSettingsView(
         languageSettings: languageSettings,
+        model: model,
         checkedAt: model.database.checkedAt,
         attribution: wholeShutoAttribution
       )
@@ -2967,6 +2968,121 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The finished drive's own numbers, and each lap it actually closed.
+  @ViewBuilder private var arrivalDriveRecord: some View {
+    if model.showsDriveRecord,
+      model.driveRecord.hasSpeedRecord || !model.driveRecord.completedLaps.isEmpty
+    {
+      VStack(alignment: .leading, spacing: 5) {
+        if let summary = driveRecordSpeedSummary {
+          Text(summary)
+            .accessibilityIdentifier("whole-shuto-arrival-record-speed")
+        }
+        ForEach(model.driveRecord.completedLaps) { lap in
+          HStack(spacing: 6) {
+            Text(
+              copy.resolve(
+                japanese: "\(lap.lapNumber)周目",
+                simplifiedChinese: "第\(lap.lapNumber)圈",
+                english: "LAP \(lap.lapNumber)"
+              )
+            )
+            Spacer(minLength: 8)
+            Text(lapDuration(lap.durationMilliseconds))
+              .foregroundStyle(KaidoTheme.routeWhite)
+          }
+          .accessibilityElement(children: .combine)
+          .accessibilityIdentifier("whole-shuto-arrival-lap-\(lap.lapNumber)")
+        }
+      }
+      .font(.system(size: 11, weight: .bold, design: .rounded))
+      .monospacedDigit()
+      .foregroundStyle(KaidoTheme.nightQuiet)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .accessibilityIdentifier("whole-shuto-arrival-drive-record")
+    }
+  }
+
+  /// The drive's own numbers, on the expressway leg where they mean anything.
+  /// A record, not a target: no goal, no comparison, no encouragement.
+  @ViewBuilder private var driveRecordStrip: some View {
+    if model.showsDriveRecord,
+      model.phase == .expressway,
+      model.driveRecord.hasSpeedRecord || model.driveRecord.hasLapRecord
+    {
+      HStack(spacing: 8) {
+        if let summary = driveRecordSpeedSummary {
+          Text(summary)
+            .accessibilityIdentifier("whole-shuto-drive-record-speed")
+        }
+        if let lap = driveRecordLapSummary {
+          if driveRecordSpeedSummary != nil {
+            Text("·").foregroundStyle(KaidoTheme.nightDivider)
+          }
+          Text(lap)
+            .accessibilityIdentifier("whole-shuto-drive-record-lap")
+        }
+        Spacer(minLength: 0)
+      }
+      .font(.system(size: 11, weight: .bold, design: .rounded))
+      .monospacedDigit()
+      .foregroundStyle(KaidoTheme.nightQuiet)
+      .lineLimit(1)
+      .minimumScaleFactor(0.8)
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("whole-shuto-drive-record")
+    }
+  }
+
+  private var driveRecordSpeedSummary: String? {
+    let record = model.driveRecord
+    guard let average = record.averageSpeedMetersPerSecond,
+      let maximum = record.maximumSpeedMetersPerSecond,
+      let minimum = record.minimumSpeedMetersPerSecond
+    else {
+      return nil
+    }
+    return copy.resolve(
+      japanese: "平均 \(kilometersPerHour(average))"
+        + " · 最高 \(kilometersPerHour(maximum))"
+        + " · 最低 \(kilometersPerHour(minimum)) km/h",
+      simplifiedChinese: "平均 \(kilometersPerHour(average))"
+        + " · 最高 \(kilometersPerHour(maximum))"
+        + " · 最低 \(kilometersPerHour(minimum)) km/h",
+      english: "AVG \(kilometersPerHour(average))"
+        + " · MAX \(kilometersPerHour(maximum))"
+        + " · MIN \(kilometersPerHour(minimum)) KM/H"
+    )
+  }
+
+  private var driveRecordLapSummary: String? {
+    let record = model.driveRecord
+    if let lastLap = record.completedLaps.last {
+      return copy.resolve(
+        japanese: "\(lastLap.lapNumber)周目 \(lapDuration(lastLap.durationMilliseconds))",
+        simplifiedChinese: "第\(lastLap.lapNumber)圈 \(lapDuration(lastLap.durationMilliseconds))",
+        english: "LAP \(lastLap.lapNumber) \(lapDuration(lastLap.durationMilliseconds))"
+      )
+    }
+    guard let lapNumber = record.currentLapNumber else { return nil }
+    return copy.resolve(
+      japanese: "\(lapNumber)周目",
+      simplifiedChinese: "第\(lapNumber)圈",
+      english: "LAP \(lapNumber)"
+    )
+  }
+
+  private func kilometersPerHour(_ metersPerSecond: Double) -> String {
+    "\(Int((metersPerSecond * 3.6).rounded()))"
+  }
+
+  private func lapDuration(_ milliseconds: Int) -> String {
+    let totalSeconds = max(0, milliseconds / 1_000)
+    let minutes = totalSeconds / 60
+    let seconds = totalSeconds % 60
+    return String(format: "%d:%02d", minutes, seconds)
+  }
+
   private var drivingDockControls: some View {
     HStack(spacing: 10) {
       VStack(alignment: .leading, spacing: 5) {
@@ -3008,6 +3124,8 @@ struct WholeShutoProductView: View {
           .font(.system(size: 11, weight: .bold))
           .foregroundStyle(KaidoTheme.nightQuiet)
           .lineLimit(1)
+
+        driveRecordStrip
       }
 
       Spacer(minLength: 4)
@@ -3213,6 +3331,8 @@ struct WholeShutoProductView: View {
           .minimumScaleFactor(0.72)
         Spacer()
       }
+
+      arrivalDriveRecord
 
       Button {
         model.reset()
@@ -6562,6 +6682,7 @@ private struct WholeShutoJunctionInset: View {
 
 private struct WholeShutoSettingsView: View {
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
+  @ObservedObject var model: WholeShutoProductModel
   let checkedAt: String
   let attribution: WholeShutoAttribution
   @Environment(\.dismiss) private var dismiss
@@ -6629,6 +6750,29 @@ private struct WholeShutoSettingsView: View {
               japanese: "標識とルート番号は日本語のまま表示します。",
               simplifiedChinese: "路牌和路线编号仍显示日文。",
               english: "Road signs and route shields stay in Japanese."
+            )
+          )
+        }
+
+        Section {
+          Toggle(
+            copy.resolve(
+              japanese: "走行記録",
+              simplifiedChinese: "行驶记录",
+              english: "Drive record"
+            ),
+            isOn: Binding(
+              get: { model.showsDriveRecord },
+              set: { model.setShowsDriveRecord($0) }
+            )
+          )
+          .accessibilityIdentifier("whole-shuto-drive-record-setting")
+        } footer: {
+          Text(
+            copy.resolve(
+              japanese: "平均・最高・最低速度と周回タイムを表示します。",
+              simplifiedChinese: "显示平均、最高、最低速度和圈速。",
+              english: "Shows average, maximum, and minimum speed and lap times."
             )
           )
         }

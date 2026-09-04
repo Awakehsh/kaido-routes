@@ -65,6 +65,22 @@ struct ShutoCircuitPlannerTests {
     #expect(twoLaps.routePlan.exitFacilityID == "shuto.ic.c2.tomigaya")
     #expect(twoLaps.coordinates.count == twoLaps.edges.count + 1)
 
+    // n laps carry n + 1 boundaries, so every lap has both an end and a
+    // start and a per-lap split reads directly against the plan's occurrences.
+    #expect(oneLap.lapBoundaryOccurrenceIndices.count == 2)
+    #expect(twoLaps.lapBoundaryOccurrenceIndices.count == 3)
+    let bounds = twoLaps.lapBoundaryOccurrenceIndices
+    #expect(bounds == bounds.sorted())
+    #expect(Set(bounds).count == bounds.count)
+    #expect(bounds.allSatisfy { $0 <= twoLaps.routePlan.occurrences.count })
+    // Both laps drive the same ring, so they start on the same edge.
+    #expect(twoLaps.edges[bounds[0]].edgeID == twoLaps.edges[bounds[1]].edgeID)
+    // Adding a lap adds exactly one ring's worth of edges, and that is the
+    // span of each recorded lap.
+    #expect(twoLaps.edges.count - oneLap.edges.count == bounds[1] - bounds[0])
+    #expect(bounds[2] - bounds[1] == bounds[1] - bounds[0])
+    #expect(oneLap.lapBoundaryOccurrenceIndices[0] == bounds[0])
+
     // Repeated laps preserve occurrence identity: IDs and indexes stay
     // unique while the underlying edges repeat.
     let occurrences = twoLaps.routePlan.occurrences

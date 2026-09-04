@@ -44,7 +44,10 @@ struct WholeShutoRouteReleaseAuthority: Sendable {
     do {
       let reconstructed = try ShutoRoutePlanner(database: database)
         .restore(routePlan: selectedRoute.routePlan)
-      guard reconstructed == selectedRoute else {
+      // The round trip proves the saved plan rebuilds the same road from the
+      // bundled database. It cannot rebuild lap marks, which the plan does not
+      // carry, so road identity is compared rather than whole-value equality.
+      guard reconstructed.describesSameRoad(as: selectedRoute) else {
         return .unavailable(Self.runtimeInvalidCode)
       }
       let product =

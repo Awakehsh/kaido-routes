@@ -260,7 +260,11 @@ struct ShutoNetworkTests {
 
     let restored = try planner.restore(routePlan: planned.routePlan)
 
-    #expect(restored == planned)
+    // A bare RoutePlan carries no lap marks, so restore rebuilds the same road
+    // without them. Everything that is road identity still round-trips.
+    #expect(restored.describesSameRoad(as: planned))
+    #expect(restored.lapBoundaryOccurrenceIndices.isEmpty)
+    #expect(!planned.lapBoundaryOccurrenceIndices.isEmpty)
     #expect(Set(restored.edges.map(\.edgeID)).count < restored.edges.count)
   }
 

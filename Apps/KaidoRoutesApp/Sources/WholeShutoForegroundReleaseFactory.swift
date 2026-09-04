@@ -13,7 +13,8 @@ enum WholeShutoForegroundReleaseFactory {
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     nowMillisecondsProvider: @escaping () -> Int = {
       Int((Date().timeIntervalSince1970 * 1_000).rounded())
-    }
+    },
+    driveRecordPreferenceStore: UserDefaults = .standard
   ) -> WholeShutoProductModel {
     do {
       let database = try WholeShutoNetworkCatalog.bundled()
@@ -71,7 +72,8 @@ enum WholeShutoForegroundReleaseFactory {
           }
         },
         liveLocationSource: liveLocationSource,
-        nowMillisecondsProvider: nowMillisecondsProvider
+        nowMillisecondsProvider: nowMillisecondsProvider,
+        driveRecordPreferenceStore: driveRecordPreferenceStore
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

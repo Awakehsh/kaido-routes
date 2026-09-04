@@ -448,6 +448,13 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
   public let routeIDsInOrder: [String]
   public let distanceMeters: Double
   public let preference: ShutoRoutePreference
+  /// Ordered occurrence indices bounding each loop lap: `n` laps carry `n + 1`
+  /// marks, so lap `i` spans `[boundary[i], boundary[i + 1])` and the last one
+  /// ends where the exit tail begins. Empty unless the route is a loop
+  /// circuit — a tour and a point-to-point route have no laps. Occurrence
+  /// index equals route-edge index, so these read directly against
+  /// `routePlan.occurrences`.
+  public let lapBoundaryOccurrenceIndices: [Int]
 
   public init(
     routePlan: RoutePlan,
@@ -457,7 +464,8 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
     coordinates: [ShutoCoordinate],
     routeIDsInOrder: [String],
     distanceMeters: Double,
-    preference: ShutoRoutePreference
+    preference: ShutoRoutePreference,
+    lapBoundaryOccurrenceIndices: [Int] = []
   ) {
     self.routePlan = routePlan
     self.entryFacility = entryFacility
@@ -467,6 +475,25 @@ public struct ShutoPlannedRoute: Equatable, Sendable {
     self.routeIDsInOrder = routeIDsInOrder
     self.distanceMeters = distanceMeters
     self.preference = preference
+    self.lapBoundaryOccurrenceIndices = lapBoundaryOccurrenceIndices
+  }
+
+  /// Whether both values describe the same road: the same plan, the same
+  /// ordered edges and geometry, the same facilities and preference.
+  ///
+  /// Lap marks are deliberately excluded. They are lap bookkeeping the
+  /// circuit planner knows, not road identity, and a bare `RoutePlan` does not
+  /// carry them — so a route rebuilt by `restore` has none to compare, while
+  /// still reconstructing the identical road.
+  public func describesSameRoad(as other: ShutoPlannedRoute) -> Bool {
+    routePlan == other.routePlan
+      && entryFacility == other.entryFacility
+      && exitFacility == other.exitFacility
+      && edges == other.edges
+      && coordinates == other.coordinates
+      && routeIDsInOrder == other.routeIDsInOrder
+      && distanceMeters == other.distanceMeters
+      && preference == other.preference
   }
 }
 
@@ -827,7 +854,8 @@ public struct ShutoRoutePlanner: Sendable {
     planID: String,
     entryFacility: ShutoNetworkDatabase.Facility,
     exitFacility: ShutoNetworkDatabase.Facility,
-    preference: ShutoRoutePreference
+    preference: ShutoRoutePreference,
+    lapBoundaryOccurrenceIndices: [Int] = []
   ) -> ShutoPlannedRoute {
     let coordinates = routeCoordinates(routeEdges)
     let routeIDs = orderedRouteIDs(routeEdges)
@@ -866,7 +894,8 @@ public struct ShutoRoutePlanner: Sendable {
       coordinates: coordinates,
       routeIDsInOrder: routeIDs,
       distanceMeters: distanceMeters,
-      preference: preference
+      preference: preference,
+      lapBoundaryOccurrenceIndices: lapBoundaryOccurrenceIndices
     )
   }
 

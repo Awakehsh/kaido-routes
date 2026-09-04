@@ -804,25 +804,34 @@ extension ShutoRoutePlanner {
     }
 
     // Assemble: approach + one-time entry + body + tail, with distinct
-    // occurrences per lap.
-    var routeEdges = traversal.approachEdges
-    routeEdges.append(contentsOf: traversal.entryEdges)
+    // occurrences per lap. Laps legitimately repeat edge IDs, but never the
+    // same edge twice in a row — adjacent duplicates would be a stitching
+    // fault — so the collapse happens as the route is stitched, letting each
+    // lap's true first occurrence index be recorded on the way past.
+    var routeEdges: [ShutoNetworkDatabase.Edge] = []
+    func appendStretch(_ edges: [ShutoNetworkDatabase.Edge]) {
+      for edge in edges where routeEdges.last?.edgeID != edge.edgeID {
+        routeEdges.append(edge)
+      }
+    }
+    appendStretch(traversal.approachEdges)
+    appendStretch(traversal.entryEdges)
+    var lapBoundaryOccurrenceIndices: [Int] = []
     switch circuit.kind {
     case .loop:
       for _ in 0..<laps {
-        routeEdges.append(contentsOf: traversal.bodyEdges)
+        let lapStart = routeEdges.count
+        appendStretch(traversal.bodyEdges)
+        lapBoundaryOccurrenceIndices.append(
+          min(lapStart, max(0, routeEdges.count - 1))
+        )
       }
+      // The final lap ends where the exit tail begins.
+      lapBoundaryOccurrenceIndices.append(routeEdges.count)
     case .tour:
-      routeEdges.append(contentsOf: traversal.bodyEdges)
+      appendStretch(traversal.bodyEdges)
     }
-    routeEdges.append(contentsOf: tailEdges)
-    // Laps legitimately repeat edge IDs, but never the same edge twice in a
-    // row — adjacent duplicates would be a stitching fault.
-    routeEdges = routeEdges.reduce(into: []) { result, edge in
-      if result.last?.edgeID != edge.edgeID {
-        result.append(edge)
-      }
-    }
+    appendStretch(tailEdges)
 
     return assemblePlannedRoute(
       routeEdges: routeEdges,
@@ -832,7 +841,8 @@ extension ShutoRoutePlanner {
         + preference.rawValue.lowercased(),
       entryFacility: entryFacility,
       exitFacility: exitFacility,
-      preference: preference
+      preference: preference,
+      lapBoundaryOccurrenceIndices: lapBoundaryOccurrenceIndices
     )
   }
 

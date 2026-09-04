@@ -546,6 +546,87 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testDriveRecordCollectsSpeedFromTheDriveAndCanBeSwitchedOff() async throws
+  {
+    let defaults = try XCTUnwrap(
+      UserDefaults(suiteName: "app.kaidoroutes.tests.drive-record")
+    )
+    defaults.removePersistentDomain(
+      forName: "app.kaidoroutes.tests.drive-record"
+    )
+    let locationSource = WholeShutoBackgroundNavigationLocationSource()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: locationSource,
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      driveRecordPreferenceStore: defaults
+    )
+    // Shown unless the driver has said otherwise.
+    XCTAssertTrue(model.showsDriveRecord)
+
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
+    )
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    // A fresh journey starts from an empty record.
+    XCTAssertFalse(model.driveRecord.hasSpeedRecord)
+
+    let route = try XCTUnwrap(model.accessRoute)
+    let midpoint = try XCTUnwrap(route.coordinates.first)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "record.0",
+        coordinate: midpoint,
+        atMilliseconds: 1_000,
+        speedMetersPerSecond: 20
+      )
+    )
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "record.1",
+        coordinate: midpoint,
+        atMilliseconds: 6_000,
+        speedMetersPerSecond: 10
+      )
+    )
+
+    XCTAssertEqual(model.driveRecord.maximumSpeedMetersPerSecond, 20)
+    XCTAssertEqual(model.driveRecord.minimumSpeedMetersPerSecond, 10)
+    XCTAssertEqual(
+      try XCTUnwrap(model.driveRecord.averageSpeedMetersPerSecond),
+      15,
+      accuracy: 0.001
+    )
+
+    // Switching it off is the driver's, and it survives a new model.
+    model.setShowsDriveRecord(false)
+    XCTAssertFalse(model.showsDriveRecord)
+    let reopened = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      checkpointStore: nil,
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      driveRecordPreferenceStore: defaults
+    )
+    XCTAssertFalse(reopened.showsDriveRecord)
+
+    // The record is the journey's, not the app's: resetting clears it.
+    model.reset()
+    XCTAssertFalse(model.driveRecord.hasSpeedRecord)
+    defaults.removePersistentDomain(
+      forName: "app.kaidoroutes.tests.drive-record"
+    )
+  }
+
   func testRestingALiveDriveKeepsItsSessionAndResumesInPlace() async throws {
     let locationSource = WholeShutoBackgroundNavigationLocationSource()
     let model = WholeShutoForegroundReleaseFactory.makeModel(

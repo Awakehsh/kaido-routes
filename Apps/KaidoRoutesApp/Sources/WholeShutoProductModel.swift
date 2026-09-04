@@ -389,6 +389,10 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var liveLocationState: WholeShutoLiveLocationState = .inactive
   @Published private(set) var routeJoinState: WholeShutoRouteJoinState =
     .unavailable
+  /// What this drive did. A record, never a target — see the safety invariant
+  /// in AGENTS.md. The driver can switch it off.
+  @Published private(set) var driveRecord = WholeShutoDriveRecord()
+  @Published private(set) var showsDriveRecord: Bool
   @Published private(set) var liveLocationIssueCode: String?
   @Published private(set) var failureCode: String?
   @Published private(set) var checkpointIssueCode: String?
@@ -478,6 +482,8 @@ final class WholeShutoProductModel: ObservableObject {
   private var trackMapCacheSpans: [WholeShutoTrackMapSpan] = []
   private var liveLocationStartedAtMilliseconds: Int?
   private var entryTransitionStartedAtMilliseconds: Int?
+  private let driveRecordPreferenceStore: UserDefaults
+  static let showsDriveRecordDefaultsKey = "app.kaidoroutes.drive-record.shown"
   private var lastLiveObservationAtMilliseconds: Int?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
@@ -548,7 +554,8 @@ final class WholeShutoProductModel: ObservableObject {
           guidanceVoiceLocale:
             settings.guidanceVoiceLocale() ?? .japanese
         )
-      }
+      },
+    driveRecordPreferenceStore: UserDefaults = .standard
   ) {
     let resolvedDatabase: ShutoNetworkDatabase
     do {
@@ -576,6 +583,12 @@ final class WholeShutoProductModel: ObservableObject {
     self.liveLocationSource = liveLocationSource
     self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
+    self.driveRecordPreferenceStore = driveRecordPreferenceStore
+    // Shown unless the driver has said otherwise.
+    showsDriveRecord =
+      driveRecordPreferenceStore.object(
+        forKey: Self.showsDriveRecordDefaultsKey
+      ) as? Bool ?? true
     waysByID = Dictionary(
       uniqueKeysWithValues: resolvedDatabase.ways.map {
         ($0.wayID, $0)
@@ -1814,6 +1827,30 @@ final class WholeShutoProductModel: ObservableObject {
     return route.distanceMeters * (1 - progressFraction) <= 150
   }
 
+  private func recordLapProgress(
+    occurrenceID: String?,
+    atMilliseconds milliseconds: Int
+  ) {
+    guard let occurrenceID,
+      let route = selectedRoute,
+      !route.lapBoundaryOccurrenceIndices.isEmpty,
+      let occurrence = route.routePlan.occurrence(id: occurrenceID)
+    else {
+      return
+    }
+    driveRecord.observe(
+      occurrenceIndex: occurrence.index,
+      boundaries: route.lapBoundaryOccurrenceIndices,
+      atMilliseconds: milliseconds
+    )
+  }
+
+  func setShowsDriveRecord(_ shown: Bool) {
+    driveRecordPreferenceStore.set(shown, forKey: Self.showsDriveRecordDefaultsKey)
+    guard shown != showsDriveRecord else { return }
+    showsDriveRecord = shown
+  }
+
   /// Accepts the driver's word that the car is already on the selected route.
   ///
   /// The declaration only opens the join admission for a bounded window. If
@@ -2929,6 +2966,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeFractionAlongOccurrence = nil
       liveMatcherWasInTunnel = false
       clearRouteJoinOffer()
+      driveRecord = WholeShutoDriveRecord()
       clearTunnelEstimate()
       presentationProjection = nil
       consumedGuidancePromptIDs = []
@@ -3015,6 +3053,10 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationState = .available
     scheduleLiveLocationFreshnessCheck()
+    driveRecord.observe(
+      speedMetersPerSecond: observation.speedMetersPerSecond,
+      atMilliseconds: observation.receivedAtMilliseconds
+    )
 
     do {
       switch phase {
@@ -3656,6 +3698,8 @@ final class WholeShutoProductModel: ObservableObject {
 
   func reset() {
     stopForegroundLiveLocationController()
+    driveRecord = WholeShutoDriveRecord()
+    clearRouteJoinOffer()
     invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
     cancelSurfaceReroute()
@@ -4147,6 +4191,10 @@ final class WholeShutoProductModel: ObservableObject {
     }
     progressFraction = progress.routeProgressFraction
     runtimeOccurrenceID = progress.occurrenceID
+    recordLapProgress(
+      occurrenceID: progress.occurrenceID,
+      atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds
+    )
     runtimeFractionAlongOccurrence =
       progress.fractionAlongOccurrence
     runtimeCoordinate = progress.coordinate

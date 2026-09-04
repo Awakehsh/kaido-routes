@@ -87,8 +87,8 @@ struct WholeShutoTrackMapView: View {
           .onEnded { value in
             userAdjustedViewport = true
             withAnimation(.easeOut(duration: 0.28)) {
-              if zoom > 1.01 {
-                zoom = 1
+              if zoom > Self.minimumZoom + 0.01 {
+                zoom = Self.minimumZoom
                 pan = .zero
               } else {
                 setZoom(
@@ -247,7 +247,7 @@ struct WholeShutoTrackMapView: View {
       .onChange(of: currentCoordinate == nil) {
         if currentCoordinate == nil {
           userAdjustedViewport = false
-          zoom = 1
+          zoom = Self.minimumZoom
           pan = .zero
         }
       }

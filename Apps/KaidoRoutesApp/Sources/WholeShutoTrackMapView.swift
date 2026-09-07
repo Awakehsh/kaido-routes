@@ -52,17 +52,7 @@ struct WholeShutoTrackMapView: View {
     dampingFraction: 0.86
   )
 
-  private enum Midnight {
-    static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
-    static let casing = Color(red: 0.075, green: 0.1, blue: 0.16)
-    static let baseRoute = Color(red: 1.0, green: 0.71, blue: 0.33)
-    static let bayshore = Color(red: 0.56, green: 0.66, blue: 0.91)
-    static let plate = Color(red: 0.02, green: 0.031, blue: 0.063)
-    static let label = Color(red: 0.62, green: 0.68, blue: 0.8)
-    static let junctionLabel = Color(red: 0.79, green: 0.84, blue: 0.95)
-    static let leader = Color(red: 0.192, green: 0.251, blue: 0.369)
-    static let position = KaidoTheme.positionCyan
-  }
+  private typealias Palette = KaidoMapPalette
 
   var body: some View {
     GeometryReader { geometry in
@@ -80,7 +70,7 @@ struct WholeShutoTrackMapView: View {
           visibleHeight: visibleHeight
         )
       }
-      .background(Midnight.background)
+      .background(Palette.background)
       .contentShape(Rectangle())
       .simultaneousGesture(
         SpatialTapGesture(count: 2)
@@ -204,13 +194,13 @@ struct WholeShutoTrackMapView: View {
           } label: {
             Image(systemName: "location.fill")
               .font(.system(size: 15, weight: .black))
-              .foregroundStyle(Midnight.position)
+              .foregroundStyle(Palette.position)
               .frame(width: 44, height: 44)
-              .background(Midnight.plate.opacity(0.92))
+              .background(Palette.plate.opacity(0.92))
               .clipShape(Circle())
               .overlay {
                 Circle()
-                  .stroke(Midnight.leader, lineWidth: 1)
+                  .stroke(Palette.leader, lineWidth: 1)
               }
           }
           .buttonStyle(.plain)
@@ -480,7 +470,7 @@ struct WholeShutoTrackMapView: View {
     // Casing under everything.
     context.stroke(
       path(layout.trackPoints),
-      with: .color(Midnight.casing),
+      with: .color(Palette.casing),
       style: StrokeStyle(
         lineWidth: 9 * weightScale, lineCap: .round, lineJoin: .round
       )
@@ -592,7 +582,7 @@ struct WholeShutoTrackMapView: View {
               with: .color(
                 (column + row) % 2 == 0
                   ? Color.white.opacity(0.92)
-                  : Midnight.plate
+                  : Palette.plate
               )
             )
           }
@@ -693,9 +683,9 @@ struct WholeShutoTrackMapView: View {
       }
       let tint: Color =
         switch mark.kind {
-        case .junction: Midnight.junctionLabel
+        case .junction: Palette.junctionLabel
         case .parkingArea: KaidoTheme.confirmedGreen
-        case .interchange: Midnight.label
+        case .interchange: Palette.label
         }
       labels.append(
         PlacedLabel(
@@ -709,7 +699,7 @@ struct WholeShutoTrackMapView: View {
             .foregroundColor(isNext ? Color.white : tint),
           plate: plate,
           leaderFrom: center,
-          accent: isNext ? Midnight.position : nil
+          accent: isNext ? Palette.position : nil
         )
       )
     }
@@ -725,10 +715,10 @@ struct WholeShutoTrackMapView: View {
         diamond.addLine(to: CGPoint(x: center.x, y: center.y + 4.2))
         diamond.addLine(to: CGPoint(x: center.x - 4.2, y: center.y))
         diamond.closeSubpath()
-        context.fill(diamond, with: .color(Midnight.plate))
+        context.fill(diamond, with: .color(Palette.plate))
         context.stroke(
           diamond,
-          with: .color(Midnight.junctionLabel),
+          with: .color(Palette.junctionLabel),
           style: StrokeStyle(lineWidth: 1.4)
         )
       case .parkingArea:
@@ -742,7 +732,7 @@ struct WholeShutoTrackMapView: View {
         context.draw(
           Text("P")
             .font(.system(size: 5.5, weight: .black))
-            .foregroundColor(Midnight.background),
+            .foregroundColor(Palette.background),
           at: center,
           anchor: .center
         )
@@ -752,10 +742,10 @@ struct WholeShutoTrackMapView: View {
             x: center.x - 3, y: center.y - 3, width: 6, height: 6
           )
         )
-        context.fill(dot, with: .color(Midnight.background))
+        context.fill(dot, with: .color(Palette.background))
         context.stroke(
           dot,
-          with: .color(Midnight.label),
+          with: .color(Palette.label),
           style: StrokeStyle(lineWidth: 1.4)
         )
       }
@@ -773,12 +763,12 @@ struct WholeShutoTrackMapView: View {
       leader.addLine(to: plateEdge)
       context.stroke(
         leader,
-        with: .color(Midnight.leader),
+        with: .color(Palette.leader),
         style: StrokeStyle(lineWidth: 1.1)
       )
       context.fill(
         Path(roundedRect: label.plate, cornerRadius: 6),
-        with: .color(Midnight.plate.opacity(0.88))
+        with: .color(Palette.plate.opacity(0.88))
       )
       if let accent = label.accent {
         context.stroke(
@@ -803,24 +793,24 @@ struct WholeShutoTrackMapView: View {
           x: center.x - 12, y: center.y - 12, width: 24, height: 24
         )
       )
-      context.fill(halo, with: .color(Midnight.position.opacity(0.22)))
+      context.fill(halo, with: .color(Palette.position.opacity(0.22)))
       let dot = Path(
         ellipseIn: CGRect(
           x: center.x - 7, y: center.y - 7, width: 14, height: 14
         )
       )
       if isPositionEstimated {
-        context.fill(dot, with: .color(Midnight.background))
+        context.fill(dot, with: .color(Palette.background))
         context.stroke(
           dot,
-          with: .color(Midnight.position),
+          with: .color(Palette.position),
           style: StrokeStyle(lineWidth: 2.4, dash: [3, 2.4])
         )
       } else {
-        context.fill(dot, with: .color(Midnight.position))
+        context.fill(dot, with: .color(Palette.position))
         context.stroke(
           dot,
-          with: .color(Midnight.background),
+          with: .color(Palette.background),
           style: StrokeStyle(lineWidth: 1.6)
         )
         var arrow = Path()
@@ -831,7 +821,7 @@ struct WholeShutoTrackMapView: View {
         context.drawLayer { layer in
           layer.translateBy(x: center.x, y: center.y)
           layer.rotate(by: .degrees(heading + 90))
-          layer.fill(arrow, with: .color(Midnight.background))
+          layer.fill(arrow, with: .color(Palette.background))
         }
       }
     }
@@ -853,7 +843,7 @@ struct WholeShutoTrackMapView: View {
   }
 
   private func spanColor(_ span: WholeShutoTrackMapSpan) -> Color {
-    span.routeID == "B" ? Midnight.bayshore : Midnight.baseRoute
+    span.routeID == "B" ? Palette.bayshore : Palette.baseRoute
   }
 
   private func rank(_ kind: RouteTrackMapLayout.FacilityKind) -> Int {

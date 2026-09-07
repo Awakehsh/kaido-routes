@@ -1965,6 +1965,11 @@ assuming every head unit supplies better tunnel positioning.
 
 ## Guidance architecture
 
+Session construction resolves route occurrence indices once when building the
+guidance-target lookup. Every segment still chooses its nearest applicable
+decision, including overlapping stages; preparation does not repeatedly scan the
+entire RoutePlan for each anchor on each segment.
+
 The driver can select full, concise, or muted speech without pausing navigation.
 Concise mode omits advance stages and expressway mainline confirmations while
 retaining commit movements and ordinary-road instructions. Volume and installed

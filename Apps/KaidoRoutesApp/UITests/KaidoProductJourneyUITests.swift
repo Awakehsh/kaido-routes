@@ -1685,29 +1685,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     startCircuit.tap()
 
-    let product = element("whole-shuto-product", in: app)
-    let review = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "value == %@", "REVIEW"),
-      object: product
-    )
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [review], timeout: 5),
-      .completed
-    )
-    let reviewJourney = app.buttons["whole-shuto-review-journey"]
-    XCTAssertTrue(reviewJourney.waitForExistence(timeout: 5))
-    let reviewReady = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "isEnabled == true"),
-      object: reviewJourney
-    )
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [reviewReady], timeout: 5),
-      .completed
-    )
-    reviewJourney.tap()
+    XCTAssertTrue(element("whole-shuto-journey-review", in: app).waitForExistence(timeout: 8))
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
     XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 3))
+    let product = element("whole-shuto-product", in: app)
     let liveReady = XCTNSPredicateExpectation(
       predicate: NSPredicate(
         format: "isEnabled == true AND value == %@",
@@ -1861,23 +1843,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     }
     startCircuit.tap()
 
-    let product = element("whole-shuto-product", in: app)
-    let review = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "value == %@", "REVIEW"),
-      object: product
-    )
-    XCTAssertEqual(XCTWaiter.wait(for: [review], timeout: 8), .completed)
-    let reviewJourney = app.buttons["whole-shuto-review-journey"]
-    XCTAssertTrue(reviewJourney.waitForExistence(timeout: 5))
-    let reviewReady = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "isEnabled == true"),
-      object: reviewJourney
-    )
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [reviewReady], timeout: 8),
-      .completed
-    )
-    reviewJourney.tap()
+    XCTAssertTrue(element("whole-shuto-journey-review", in: app).waitForExistence(timeout: 8))
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
     XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 5))

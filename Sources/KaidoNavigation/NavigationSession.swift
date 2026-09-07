@@ -805,14 +805,25 @@ public actor NavigationSession {
     releasedGuidance: [ReleasedGuidanceDefinition]
   ) -> [String: DecisionZoneProgressDefinition] {
     let zonesByID = Dictionary(uniqueKeysWithValues: decisionZones.map { ($0.id, $0) })
+    // Repeated RoutePlan scans for every anchor on every segment make long
+    // circuit startup quadratic. Resolve indices once before filling the map.
+    let indicesByID = Dictionary(uniqueKeysWithValues: routePlan.occurrences.map { ($0.id, $0.index) })
+    let targets = releasedGuidance.compactMap { definition
+      -> (anchor: Int, movement: Int, zone: DecisionZoneProgressDefinition)? in
+      guard let anchor = indicesByID[definition.anchor.occurrenceID],
+        let movement = indicesByID[definition.frameTemplate.movementOccurrenceID],
+        let zone = zonesByID[definition.frameTemplate.decisionZoneID]
+      else { return nil }
+      return (anchor, movement, zone)
+    }
     var result: [String: DecisionZoneProgressDefinition] = [:]
     for occurrence in routePlan.occurrences {
-      guard
-        let definition = GuidanceFramePlanner.applicableDefinitions(
-          releasedGuidance, routePlan: routePlan, occurrenceID: occurrence.id
-        ).first
+      guard let target = targets.lazy.filter({
+        $0.anchor <= occurrence.index
+          && (occurrence.index < $0.movement || $0.anchor == occurrence.index)
+      }).min(by: { $0.movement < $1.movement })
       else { continue }
-      result[occurrence.id] = zonesByID[definition.frameTemplate.decisionZoneID]
+      result[occurrence.id] = target.zone
     }
     return result
   }

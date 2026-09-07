@@ -13,7 +13,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let foreground = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+          == "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07"
       }
     )
 
@@ -22,7 +22,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     XCTAssertTrue(catalog.demoEntries.isEmpty)
     XCTAssertEqual(
       foreground.release.releaseID,
-      "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+      "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07"
     )
     XCTAssertEqual(
       foreground.release.navigation.bundle.routePlan.entryFacilityID,
@@ -41,7 +41,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let wangan = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15"
+          == "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07"
       }
     )
     XCTAssertEqual(
@@ -61,7 +61,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     let c2 = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15"
+          == "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07"
       }
     )
     XCTAssertEqual(
@@ -76,13 +76,13 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       c2.release.navigation.bundle.routePlan.occurrences.count,
       2_196
     )
-    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 24)
+    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 48)
     XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
 
     let daikoku = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-08-15"
+          == "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-09-07"
       }
     )
     XCTAssertEqual(
@@ -99,14 +99,14 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
-      9
+      14
     )
     XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
 
     let scenic = try XCTUnwrap(
       catalog.foregroundNavigationEntries.first {
         $0.release.releaseID
-          == "shutoko.product.scenic-harumi-daikokufutou.2026-08-15"
+          == "shutoko.product.scenic-harumi-daikokufutou.2026-09-07"
       }
     )
     XCTAssertEqual(
@@ -123,7 +123,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
-      10
+      17
     )
     XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }

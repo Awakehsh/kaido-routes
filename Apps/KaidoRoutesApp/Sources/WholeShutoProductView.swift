@@ -3864,6 +3864,9 @@ struct WholeShutoProductView: View {
         english: "ENTER SHUTO EXPRESSWAY"
       )
     case .expressway:
+      if model.presentationProjection?.voice.stage == .prepare {
+        copy.resolve(japanese: "この先の分岐", simplifiedChinese: "前方分岔", english: "UPCOMING JUNCTION")
+      } else {
       // Only a reviewed branch is "approaching a junction"; a mainline
       // continuation keeps the ordinary upcoming-junction kicker.
       model.activeJunctionInsetPrompt == nil
@@ -3873,6 +3876,7 @@ struct WholeShutoProductView: View {
           simplifiedChinese: "接近分岔",
           english: "JUNCTION AHEAD"
         )
+      }
     case .exitTransition:
       copy.resolve(
         japanese: "首都高を退出",

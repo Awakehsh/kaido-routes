@@ -58,7 +58,7 @@ C1_PRODUCT_RELEASE_SOURCE = (
     "c1-inner-shibakoen-to-shiodome-product-release.json"
 )
 C1_PRODUCT_RELEASE_ID = (
-    "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15"
+    "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07"
 )
 C1_ROUTE_PLAN_ID = (
     "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen."
@@ -75,7 +75,7 @@ WANGAN_PRODUCT_RELEASE_SOURCE = (
     "wangan-westbound-chidoricho-daikokufutou-product-release.json"
 )
 WANGAN_PRODUCT_RELEASE_ID = (
-    "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15"
+    "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07"
 )
 WANGAN_ROUTE_PLAN_ID = (
     "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho."
@@ -92,7 +92,7 @@ C2_PRODUCT_RELEASE_SOURCE = (
     "c2-inner-oujiminami-shikahamabashi-product-release.json"
 )
 C2_PRODUCT_RELEASE_ID = (
-    "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15"
+    "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07"
 )
 C2_ROUTE_PLAN_ID = (
     "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami."
@@ -110,7 +110,7 @@ DAIKOKU_PRODUCT_RELEASE_SOURCE = (
 )
 DAIKOKU_PRODUCT_RELEASE_ID = (
     "shutoko.product.daikoku-yokohama-wangankanpachi-"
-    "daikokufutou.2026-08-15"
+    "daikokufutou.2026-09-07"
 )
 DAIKOKU_ROUTE_PLAN_ID = (
     "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi."
@@ -126,7 +126,7 @@ SCENIC_PRODUCT_RELEASE_SOURCE = (
     "data/product/releases/scenic-harumi-daikokufutou-product-release.json"
 )
 SCENIC_PRODUCT_RELEASE_ID = (
-    "shutoko.product.scenic-harumi-daikokufutou.2026-08-15"
+    "shutoko.product.scenic-harumi-daikokufutou.2026-09-07"
 )
 SCENIC_ROUTE_PLAN_ID = (
     "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi."

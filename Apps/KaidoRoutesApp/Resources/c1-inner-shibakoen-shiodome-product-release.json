@@ -2,8 +2,8 @@
   "navigation_release" : {
     "asset_evidence" : [
       {
-        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-catalog.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-catalog.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_CATALOG",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -17,8 +17,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-presentation.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-presentation.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_PRESENTATION",
         "source_reference_ids" : [
           "shutoko-official-catalog-2026-07-29",
@@ -31,8 +31,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shutoko.runtime.c1-inner-shibakoen-shiodome.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shutoko.runtime.c1-inner-shibakoen-shiodome.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "RUNTIME_POLICY",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -41,8 +41,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.matcher-corridor.v1.release.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.matcher-corridor.v1.release.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "MATCHER_CORRIDOR",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
@@ -51,7 +51,7 @@
       },
       {
         "asset_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.edobashi.c1-inner-stays-on-c1"
@@ -60,7 +60,7 @@
       },
       {
         "asset_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1"
@@ -69,7 +69,7 @@
       },
       {
         "asset_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.miyakezaka.c1-inner-stays-on-c1"
@@ -78,7 +78,7 @@
       },
       {
         "asset_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1"
@@ -87,7 +87,7 @@
       },
       {
         "asset_id" : "shuto.jct.ichinohashi.c1-inner-stays-on-c1.shuto.487.osm.23297444.20.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1"
@@ -95,8 +95,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.edobashi.c1-inner-stays-on-c1"
@@ -104,8 +104,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.edobashi.c1-inner-stays-on-c1"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1"
@@ -113,8 +122,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.takehashi.c1-inner-stays-on-c1"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.miyakezaka.c1-inner-stays-on-c1"
@@ -122,8 +140,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.miyakezaka.c1-inner-stays-on-c1"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1"
@@ -131,8 +158,26 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.tanimachi.c1-inner-stays-on-c1"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ichinohashi.c1-inner-stays-on-c1.shuto.487.osm.23297444.20.forward.prepare",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "shuto.jct.ichinohashi.c1-inner-stays-on-c1.shuto.487.osm.23297444.20.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ichinohashi.c1-inner-stays-on-c1"
@@ -281,7 +326,7 @@
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04"
     },
-    "editor_catalog_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-catalog.2026-08-15",
+    "editor_catalog_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-catalog.2026-09-07",
     "editor_presentation_catalog" : {
       "choices" : [
         {
@@ -403,13 +448,13 @@
         }
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
-      "presentation_catalog_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-presentation.2026-08-15"
+      "presentation_catalog_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.editor-presentation.2026-09-07"
     },
     "junction_views" : [
 
     ],
     "matcher_corridor" : {
-      "corridor_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.matcher-corridor.v1.release.2026-08-15",
+      "corridor_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended.matcher-corridor.v1.release.2026-09-07",
       "edges" : [
         {
           "coordinates" : [
@@ -15756,9 +15801,64 @@
       "id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "status" : "ACTIVE"
     },
-    "release_id" : "shutoko.navigation.c1-inner-shibakoen-shiodome.2026-08-15",
-    "released_at" : "2026-08-15T00:00:00+09:00",
+    "release_id" : "shutoko.navigation.c1-inner-shibakoen-shiodome.2026-09-07",
+    "released_at" : "2026-09-07T00:00:00+09:00",
     "released_guidance" : [
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.157.osm.378284506.0.forward",
+          "prompt_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "江戸橋JCT",
+          "decision_zone_id" : "shuto.jct.edobashi.c1-inner-stays-on-c1.shuto.167.osm.1085022601.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Edobashi JCT",
+            "ja-JP" : "江戸橋JCT",
+            "zh-Hans" : "江户桥 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.167.osm.1085022601.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "神田橋",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 神田橋",
+                "preserved_japanese_sign_text" : "神田橋",
+                "spoken_forms" : {
+                  "Inner Circular Route" : "Inner Circular Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Edobashi JCT, stay on the Inner Circular Route toward 神田橋"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、都心環状線 神田橋方面へ",
+                "preserved_japanese_sign_text" : "神田橋",
+                "spoken_forms" : {
+                  "江戸橋" : "えどばし",
+                  "神田橋" : "かんだばし",
+                  "都心環状線" : "としんかんじょうせん"
+                },
+                "spoken_text" : "この先の分岐で、江戸橋ジャンクションは分岐せず、都心環状線 神田橋方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 神田橋 方向",
+                "preserved_japanese_sign_text" : "神田橋",
+                "spoken_forms" : {
+                  "神田橋" : "神田橋"
+                },
+                "spoken_text" : "前方分岔，在江户桥 JCT不要分岔，沿都心环状线继续前往 神田橋 方向"
+              }
+            },
+            "route_shields" : [
+              "C1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
@@ -15813,6 +15913,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 400
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.235.osm.44805845.24.forward",
+          "prompt_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "竹橋JCT",
+          "decision_zone_id" : "shuto.jct.takehashi.c1-inner-stays-on-c1.shuto.283.osm.44779774.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Takehashi JCT",
+            "ja-JP" : "竹橋JCT",
+            "zh-Hans" : "竹桥 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.283.osm.44779774.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "霞が関",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 霞が関",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "Inner Circular Route" : "Inner Circular Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Takehashi JCT, stay on the Inner Circular Route toward 霞が関"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "竹橋" : "たけはし",
+                  "都心環状線" : "としんかんじょうせん",
+                  "霞が関" : "かすみがせき"
+                },
+                "spoken_text" : "この先の分岐で、竹橋ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 霞が関 方向",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "霞が関" : "霞が関"
+                },
+                "spoken_text" : "前方分岔，在竹桥 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
+              }
+            },
+            "route_shields" : [
+              "C1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -15871,6 +16026,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.327.osm.27536429.3.forward",
+          "prompt_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "三宅坂JCT",
+          "decision_zone_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Miyakezaka JCT",
+            "ja-JP" : "三宅坂JCT",
+            "zh-Hans" : "三宅坂 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.356.osm.24402540.7.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "霞が関",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 霞が関",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "Inner Circular Route" : "Inner Circular Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Miyakezaka JCT, stay on the Inner Circular Route toward 霞が関"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、都心環状線 霞が関方面へ",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "三宅坂" : "みやけざか",
+                  "都心環状線" : "としんかんじょうせん",
+                  "霞が関" : "かすみがせき"
+                },
+                "spoken_text" : "この先の分岐で、三宅坂ジャンクションは分岐せず、都心環状線 霞が関方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 霞が関 方向",
+                "preserved_japanese_sign_text" : "霞が関",
+                "spoken_forms" : {
+                  "霞が関" : "霞が関"
+                },
+                "spoken_text" : "前方分岔，在三宅坂 JCT不要分岔，沿都心环状线继续前往 霞が関 方向"
+              }
+            },
+            "route_shields" : [
+              "C1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.352.osm.24402540.3.forward",
           "prompt_id" : "shuto.jct.miyakezaka.c1-inner-stays-on-c1.shuto.356.osm.24402540.7.forward.commit"
@@ -15926,6 +16136,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.421.osm.24402541.13.forward",
+          "prompt_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "谷町JCT",
+          "decision_zone_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Tanimachi JCT",
+            "ja-JP" : "谷町JCT",
+            "zh-Hans" : "谷町 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.451.osm.316123950.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "芝公園",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 芝公園",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "Inner Circular Route" : "Inner Circular Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Tanimachi JCT, stay on the Inner Circular Route toward 芝公園"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "芝公園" : "しばこうえん",
+                  "谷町" : "たにまち",
+                  "都心環状線" : "としんかんじょうせん"
+                },
+                "spoken_text" : "この先の分岐で、谷町ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 芝公園 方向",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "芝公園" : "芝公園"
+                },
+                "spoken_text" : "前方分岔，在谷町 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
+              }
+            },
+            "route_shields" : [
+              "C1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.447.osm.24402611.7.forward",
           "prompt_id" : "shuto.jct.tanimachi.c1-inner-stays-on-c1.shuto.451.osm.316123950.0.forward.commit"
@@ -15978,6 +16243,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.462.osm.316123950.11.forward",
+          "prompt_id" : "shuto.jct.ichinohashi.c1-inner-stays-on-c1.shuto.487.osm.23297444.20.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "一ノ橋JCT",
+          "decision_zone_id" : "shuto.jct.ichinohashi.c1-inner-stays-on-c1.shuto.487.osm.23297444.20.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ichinohashi JCT",
+            "ja-JP" : "一ノ橋JCT",
+            "zh-Hans" : "一之桥 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.487.osm.23297444.20.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "芝公園",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Inner Circular Route toward 芝公園",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "Inner Circular Route" : "Inner Circular Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Ichinohashi JCT, stay on the Inner Circular Route toward 芝公園"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、都心環状線 芝公園方面へ",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "一ノ橋" : "いちのはし",
+                  "芝公園" : "しばこうえん",
+                  "都心環状線" : "としんかんじょうせん"
+                },
+                "spoken_text" : "この先の分岐で、一ノ橋ジャンクションは分岐せず、都心環状線 芝公園方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿都心环状线前往 芝公園 方向",
+                "preserved_japanese_sign_text" : "芝公園",
+                "spoken_forms" : {
+                  "芝公園" : "芝公園"
+                },
+                "spoken_text" : "前方分岔，在一之桥 JCT不要分岔，沿都心环状线继续前往 芝公園 方向"
+              }
+            },
+            "route_shields" : [
+              "C1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -21107,7 +21427,7 @@
           "egress_occurrence_ids" : [
             "osm.45068171.1.forward"
           ],
-          "egress_option_id" : "shutoko.egress.c1-shiodome-handoff.2026-08-15",
+          "egress_option_id" : "shutoko.egress.c1-shiodome-handoff.2026-09-07",
           "exit_facility_id" : "shuto.ic.c1.shiodome",
           "first_eligible_occurrence_id" : "shuto.631.osm.45068171.1.forward",
           "released" : true
@@ -21299,7 +21619,7 @@
         }
       ],
       "route_plan_id" : "shuto.circuit.c1-inner.shuto.ic.c1.shibakouen.shuto.ic.c1.shiodome.x1.recommended",
-      "runtime_policy_id" : "shutoko.runtime.c1-inner-shibakoen-shiodome.2026-08-15"
+      "runtime_policy_id" : "shutoko.runtime.c1-inner-shibakoen-shiodome.2026-09-07"
     },
     "schema_version" : "6.0",
     "source_registry" : {
@@ -21403,13 +21723,13 @@
       ]
     }
   },
-  "release_id" : "shutoko.product.c1-inner-shibakoen-shiodome.2026-08-15",
-  "released_at" : "2026-08-15T00:00:00+09:00",
+  "release_id" : "shutoko.product.c1-inner-shibakoen-shiodome.2026-09-07",
+  "released_at" : "2026-09-07T00:00:00+09:00",
   "route_atlas_release" : {
     "definition" : {
-      "atlas_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.2026-08-15",
+      "atlas_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.2026-09-07",
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -39482,7 +39802,7 @@
           "topology_edge_id" : "c1.topology.edge.572"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.topology.2026-09-07"
     },
     "network_snapshot" : {
       "effective_at" : "2026-08-04T20:20:51Z",
@@ -49734,7 +50054,7 @@
         }
       ],
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -51462,7 +51782,7 @@
           "node_id" : "osm.node.13049760556"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.c1-inner-shibakoen-shiodome.topology.2026-09-07"
     }
   },
   "runtime_use" : {

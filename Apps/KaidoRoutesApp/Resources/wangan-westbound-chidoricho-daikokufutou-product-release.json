@@ -2,8 +2,8 @@
   "navigation_release" : {
     "asset_evidence" : [
       {
-        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-catalog.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-catalog.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_CATALOG",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -20,8 +20,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-presentation.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-presentation.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_PRESENTATION",
         "source_reference_ids" : [
           "shutoko-official-catalog-2026-07-29",
@@ -37,8 +37,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shutoko.runtime.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shutoko.runtime.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "RUNTIME_POLICY",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -47,8 +47,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.matcher-corridor.v1.release.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.matcher-corridor.v1.release.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "MATCHER_CORRIDOR",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
@@ -57,7 +57,7 @@
       },
       {
         "asset_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b"
@@ -66,7 +66,7 @@
       },
       {
         "asset_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b"
@@ -75,7 +75,7 @@
       },
       {
         "asset_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b"
@@ -84,7 +84,7 @@
       },
       {
         "asset_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.130.osm.1313249025.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-westbound-stays-on-b"
@@ -93,7 +93,7 @@
       },
       {
         "asset_id" : "shuto.jct.oi.b-westbound-stays-on-b.shuto.160.osm.266086991.12.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b"
@@ -102,7 +102,7 @@
       },
       {
         "asset_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b"
@@ -111,7 +111,7 @@
       },
       {
         "asset_id" : "shuto.jct.kawasaki.b-westbound-stays-on-b.shuto.285.osm.5204789.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b"
@@ -120,7 +120,7 @@
       },
       {
         "asset_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b"
@@ -128,8 +128,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b"
@@ -137,8 +137,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kasai.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b"
@@ -146,8 +155,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.tatsumi.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b"
@@ -155,8 +173,26 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.shinonome.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.130.osm.1313249025.0.forward.prepare",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ariake.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.130.osm.1313249025.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-westbound-stays-on-b"
@@ -165,7 +201,7 @@
       },
       {
         "asset_id" : "shuto.jct.oi.b-westbound-stays-on-b.shuto.160.osm.266086991.12.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.b-westbound-stays-on-b"
@@ -173,8 +209,17 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.prepare",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tokai.b-westbound-stays-on-b"
@@ -183,7 +228,7 @@
       },
       {
         "asset_id" : "shuto.jct.kawasaki.b-westbound-stays-on-b.shuto.285.osm.5204789.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kawasaki.b-westbound-stays-on-b"
@@ -191,8 +236,17 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.prepare",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.daikoku.b-westbound-stays-on-b"
@@ -413,7 +467,7 @@
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04"
     },
-    "editor_catalog_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-catalog.2026-08-15",
+    "editor_catalog_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-catalog.2026-09-07",
     "editor_presentation_catalog" : {
       "choices" : [
         {
@@ -598,13 +652,13 @@
         }
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
-      "presentation_catalog_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-presentation.2026-08-15"
+      "presentation_catalog_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.editor-presentation.2026-09-07"
     },
     "junction_views" : [
 
     ],
     "matcher_corridor" : {
-      "corridor_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.matcher-corridor.v1.release.2026-08-15",
+      "corridor_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended.matcher-corridor.v1.release.2026-09-07",
       "edges" : [
         {
           "coordinates" : [
@@ -13466,7 +13520,7 @@
               "longitude" : 139.9288687
             }
           ],
-          "directed_edge_id" : "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-08-15",
+          "directed_edge_id" : "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-09-07",
           "successor_edge_ids" : [
             "osm.915743994.0.forward"
           ]
@@ -15177,9 +15231,64 @@
       "id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "status" : "ACTIVE"
     },
-    "release_id" : "shutoko.navigation.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
-    "released_at" : "2026-08-15T00:00:00+09:00",
+    "release_id" : "shutoko.navigation.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
+    "released_at" : "2026-09-07T00:00:00+09:00",
     "released_guidance" : [
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.78.osm.46876343.0.forward",
+          "prompt_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "葛西JCT",
+          "decision_zone_id" : "shuto.jct.kasai.b-westbound-stays-on-b.shuto.88.osm.44129629.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kasai JCT",
+            "ja-JP" : "葛西JCT",
+            "zh-Hans" : "葛西 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.88.osm.44129629.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "横浜",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Kasai JCT, stay on the Bayshore Route toward 横浜"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "よこはま",
+                  "湾岸線" : "わんがんせん",
+                  "葛西" : "かさい"
+                },
+                "spoken_text" : "この先の分岐で、葛西ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "横浜"
+                },
+                "spoken_text" : "前方分岔，在葛西 JCT 不要分岔，沿湾岸线继续前往 横浜 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
@@ -15234,6 +15343,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.102.osm.44882722.0.forward",
+          "prompt_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "辰巳JCT",
+          "decision_zone_id" : "shuto.jct.tatsumi.b-westbound-stays-on-b.shuto.107.osm.679272067.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Tatsumi JCT",
+            "ja-JP" : "辰巳JCT",
+            "zh-Hans" : "辰巳 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.107.osm.679272067.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "横浜",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Tatsumi JCT, stay on the Bayshore Route toward 横浜"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "よこはま",
+                  "湾岸線" : "わんがんせん",
+                  "辰巳" : "たつみ"
+                },
+                "spoken_text" : "この先の分岐で、辰巳ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "横浜"
+                },
+                "spoken_text" : "前方分岔，在辰巳 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -15292,6 +15456,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.118.osm.679272067.11.forward",
+          "prompt_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "東雲JCT",
+          "decision_zone_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Shinonome JCT",
+            "ja-JP" : "東雲JCT",
+            "zh-Hans" : "东云 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.123.osm.678697940.2.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "横浜",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Shinonome JCT, stay on the Bayshore Route toward 横浜"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "東雲" : "しののめ",
+                  "横浜" : "よこはま",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、東雲ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "横浜"
+                },
+                "spoken_text" : "前方分岔，在东云 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.119.osm.679272067.12.forward",
           "prompt_id" : "shuto.jct.shinonome.b-westbound-stays-on-b.shuto.123.osm.678697940.2.forward.commit"
@@ -15344,6 +15563,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.128.osm.4847507.3.forward",
+          "prompt_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.130.osm.1313249025.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "有明JCT",
+          "decision_zone_id" : "shuto.jct.ariake.b-westbound-stays-on-b.shuto.130.osm.1313249025.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ariake JCT",
+            "ja-JP" : "有明JCT",
+            "zh-Hans" : "有明 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.130.osm.1313249025.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "横浜",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Ariake JCT, stay on the Bayshore Route toward 横浜"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜方面へ",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "有明" : "ありあけ",
+                  "横浜" : "よこはま",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、有明ジャンクションは分岐せず、湾岸線 横浜方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜 方向",
+                "preserved_japanese_sign_text" : "横浜",
+                "spoken_forms" : {
+                  "横浜" : "横浜"
+                },
+                "spoken_text" : "前方分岔，在有明 JCT不要分岔，沿湾岸线继续前往 横浜 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -15457,6 +15731,62 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.185.osm.5171105.1.forward",
+          "prompt_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "東海JCT",
+          "decision_zone_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Tokai JCT",
+            "ja-JP" : "東海JCT",
+            "zh-Hans" : "东海 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.188.osm.45683111.2.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "空港中央・大黒ふ頭",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 空港中央・大黒ふ頭",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Tokai JCT, stay on the Bayshore Route toward 空港中央・大黒ふ頭"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 空港中央・大黒ふ頭方面へ",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
+                "spoken_forms" : {
+                  "大黒ふ頭" : "だいこくふとう",
+                  "東海" : "とうかい",
+                  "湾岸線" : "わんがんせん",
+                  "空港中央" : "くうこうちゅうおう"
+                },
+                "spoken_text" : "この先の分岐で、東海ジャンクションは分岐せず、湾岸線 空港中央・大黒ふ頭方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 空港中央・大黒ふ頭 方向",
+                "preserved_japanese_sign_text" : "空港中央・大黒ふ頭",
+                "spoken_forms" : {
+                  "空港中央・大黒ふ頭" : "空港中央・大黒ふ頭"
+                },
+                "spoken_text" : "前方分岔，在东海 JCT 不要分岔，沿湾岸线继续前往 空港中央・大黒ふ頭 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.186.osm.45683111.0.forward",
           "prompt_id" : "shuto.jct.tokai.b-westbound-stays-on-b.shuto.188.osm.45683111.2.forward.commit"
@@ -15565,6 +15895,64 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.321.osm.1449791735.0.forward",
+          "prompt_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "大黒JCT",
+          "decision_zone_id" : "shuto.jct.daikoku.b-westbound-stays-on-b.shuto.324.osm.489510478.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Daikoku JCT",
+            "ja-JP" : "大黒JCT",
+            "zh-Hans" : "大黑 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.324.osm.489510478.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "横浜公園・横横道路",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 横浜公園 and 横横道路",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Daikoku JCT, stay on the Bayshore Route toward 横浜公園 and 横横道路"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 横浜公園・横横道路方面へ",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
+                "spoken_forms" : {
+                  "大黒" : "だいこく",
+                  "横横道路" : "よこよこどうろ",
+                  "横浜公園" : "よこはまこうえん",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、大黒ジャンクションは分岐せず、湾岸線 横浜公園・横横道路方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 横浜公園・横横道路 方向",
+                "preserved_japanese_sign_text" : "横浜公園・横横道路",
+                "spoken_forms" : {
+                  "横浜公園・横横道路" : "横浜公園・横横道路"
+                },
+                "spoken_text" : "前方分岔，在大黑 JCT不要分岔，沿湾岸线继续前往 横浜公園・横横道路 方向"
+              }
+            },
+            "route_shields" : [
+              "B",
+              "K3",
+              "E16"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -18353,7 +18741,7 @@
           "egress_occurrence_ids" : [
             "osm.489510478.14.forward"
           ],
-          "egress_option_id" : "shutoko.egress.wangan-westbound-chidoricho-daikokufutou-handoff.2026-08-15",
+          "egress_option_id" : "shutoko.egress.wangan-westbound-chidoricho-daikokufutou-handoff.2026-09-07",
           "exit_facility_id" : "shuto.ic.b.daikokufutou",
           "first_eligible_occurrence_id" : "shuto.338.osm.489510478.14.forward",
           "released" : true
@@ -18361,7 +18749,7 @@
       ],
       "entry_transition" : {
         "directed_edge_ids" : [
-          "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-08-15",
+          "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-09-07",
           "osm.915743994.0.forward"
         ],
         "facility_id" : "shuto.ic.b.chidoricho",
@@ -18810,7 +19198,7 @@
         }
       ],
       "route_plan_id" : "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho.shuto.ic.b.daikokufutou.x1.recommended",
-      "runtime_policy_id" : "shutoko.runtime.wangan-westbound-chidoricho-daikokufutou.2026-08-15"
+      "runtime_policy_id" : "shutoko.runtime.wangan-westbound-chidoricho-daikokufutou.2026-09-07"
     },
     "schema_version" : "6.0",
     "source_registry" : {
@@ -18956,13 +19344,13 @@
       ]
     }
   },
-  "release_id" : "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
-  "released_at" : "2026-08-15T00:00:00+09:00",
+  "release_id" : "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
+  "released_at" : "2026-09-07T00:00:00+09:00",
   "route_atlas_release" : {
     "definition" : {
-      "atlas_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.2026-08-15",
+      "atlas_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -29492,7 +29880,7 @@
           "topology_edge_id" : "wangan-westbound-chidoricho-daikokufutou.topology.edge.338"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.topology.2026-09-07"
     },
     "network_snapshot" : {
       "effective_at" : "2026-08-04T20:20:51Z",
@@ -35293,7 +35681,7 @@
         }
       ],
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -36322,7 +36710,7 @@
           "node_id" : "osm.node.13330141054"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.wangan-westbound-chidoricho-daikokufutou.topology.2026-09-07"
     }
   },
   "runtime_use" : {

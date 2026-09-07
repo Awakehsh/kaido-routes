@@ -41,8 +41,9 @@ before trusting any guidance this product gives.
   access, the exact Shuto route, and surface egress. A missing surface leg
   blocks the start rather than silently skipping part of the journey.
 - Drives with a direction-following camera, a dominant next-decision prompt,
-  junction insets, and one-shot speech drawn from 144 reviewed exact JCT
-  movements. Movements without approach-specific operator evidence stay silent.
+  junction insets, and preparation followed by final maneuver guidance drawn
+  from reviewed exact JCT movements. Each stage speaks once; short approaches
+  retain the final cue. Movements without approach-specific operator evidence stay silent.
   Touch outranks the route: a pan or pinch releases the camera immediately.
 - Keeps facility labels, route shields, and sign targets in Japanese, with
   Japanese, Simplified Chinese, and English interface controls and an

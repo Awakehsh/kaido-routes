@@ -4,6 +4,11 @@ import XCTest
 @testable import KaidoRoutesApp
 
 final class NavigationDirectionPresentationTests: XCTestCase {
+  @MainActor
+  func testUnitTestHostUsesSilentNavigationOutput() {
+    XCTAssertTrue(AppGuidanceSpeechOutputFactory.isSilent)
+  }
+
   func testProviderTurnTextSelectsTheSameDirectionInSupportedLanguages() {
     let cases: [(String, SurfaceManeuver)] = [
       ("稍向左转，朝 Hatchobori 方向进入", .slightLeft),

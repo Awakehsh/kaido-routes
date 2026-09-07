@@ -2,8 +2,8 @@
   "navigation_release" : {
     "asset_evidence" : [
       {
-        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-catalog.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-catalog.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_CATALOG",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -25,8 +25,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-presentation.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-presentation.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "EDITOR_PRESENTATION",
         "source_reference_ids" : [
           "shutoko-official-catalog-2026-07-29",
@@ -47,8 +47,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shutoko.runtime.c2-inner-oujiminami-shikahamabashi.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shutoko.runtime.c2-inner-oujiminami-shikahamabashi.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "RUNTIME_POLICY",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04",
@@ -57,8 +57,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.matcher-corridor.v1.release.2026-08-15",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.matcher-corridor.v1.release.2026-09-07",
+        "checked_at" : "2026-09-07",
         "role" : "MATCHER_CORRIDOR",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
@@ -67,7 +67,7 @@
       },
       {
         "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
@@ -76,7 +76,7 @@
       },
       {
         "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
@@ -85,7 +85,7 @@
       },
       {
         "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
@@ -94,7 +94,7 @@
       },
       {
         "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
@@ -103,7 +103,7 @@
       },
       {
         "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
@@ -112,7 +112,7 @@
       },
       {
         "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
@@ -121,7 +121,7 @@
       },
       {
         "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
@@ -130,7 +130,7 @@
       },
       {
         "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
@@ -139,7 +139,7 @@
       },
       {
         "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
@@ -148,7 +148,7 @@
       },
       {
         "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
@@ -157,7 +157,7 @@
       },
       {
         "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
@@ -166,7 +166,7 @@
       },
       {
         "asset_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-stays-on-c2"
@@ -175,7 +175,7 @@
       },
       {
         "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
@@ -184,7 +184,7 @@
       },
       {
         "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
@@ -193,7 +193,7 @@
       },
       {
         "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
@@ -202,7 +202,7 @@
       },
       {
         "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
@@ -211,7 +211,7 @@
       },
       {
         "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
@@ -220,7 +220,7 @@
       },
       {
         "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
@@ -229,7 +229,7 @@
       },
       {
         "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
@@ -238,7 +238,7 @@
       },
       {
         "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
@@ -247,7 +247,7 @@
       },
       {
         "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
@@ -256,7 +256,7 @@
       },
       {
         "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
@@ -265,7 +265,7 @@
       },
       {
         "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
@@ -274,7 +274,7 @@
       },
       {
         "asset_id" : "shuto.jct.kohoku.c2-inner-to-s1-outbound.shuto.2149.osm.44179919.0.forward.decision-zone",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "DECISION_ZONE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-to-s1-outbound"
@@ -282,8 +282,8 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
@@ -291,8 +291,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
@@ -300,8 +309,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
@@ -309,8 +327,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
@@ -318,8 +345,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
@@ -327,8 +363,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
@@ -336,8 +381,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
@@ -345,8 +399,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
@@ -354,8 +417,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
@@ -363,8 +435,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
@@ -372,8 +453,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
@@ -381,8 +471,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-stays-on-c2"
@@ -390,8 +489,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kohoku.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
@@ -399,8 +507,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
@@ -408,8 +525,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kumanocho.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
@@ -417,8 +543,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.nishishinjuku.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
@@ -426,8 +561,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ohashi.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
@@ -435,8 +579,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.oi.c2-inner-to-b-eastbound"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
@@ -444,8 +597,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.ariake.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
@@ -453,8 +615,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.shinonome.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
@@ -462,8 +633,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.tatsumi.b-eastbound-stays-on-b"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
@@ -471,8 +651,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kasai.b-eastbound-to-c2-inner"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
@@ -480,8 +669,17 @@
         "state" : "RELEASED"
       },
       {
-        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "asset_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.horikiri.c2-inner-toward-kosuge"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.prepare",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
@@ -489,8 +687,26 @@
         "state" : "RELEASED"
       },
       {
+        "asset_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.commit",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kosuge.c2-inner-stays-on-c2"
+        ],
+        "state" : "RELEASED"
+      },
+      {
+        "asset_id" : "shuto.jct.kohoku.c2-inner-to-s1-outbound.shuto.2149.osm.44179919.0.forward.prepare",
+        "checked_at" : "2026-09-07",
+        "role" : "GUIDANCE",
+        "source_reference_ids" : [
+          "shutoko-guidance-shuto.jct.kohoku.c2-inner-to-s1-outbound"
+        ],
+        "state" : "RELEASED"
+      },
+      {
         "asset_id" : "shuto.jct.kohoku.c2-inner-to-s1-outbound.shuto.2149.osm.44179919.0.forward.commit",
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "role" : "GUIDANCE",
         "source_reference_ids" : [
           "shutoko-guidance-shuto.jct.kohoku.c2-inner-to-s1-outbound"
@@ -1095,7 +1311,7 @@
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04"
     },
-    "editor_catalog_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-catalog.2026-08-15",
+    "editor_catalog_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-catalog.2026-09-07",
     "editor_presentation_catalog" : {
       "choices" : [
         {
@@ -1616,13 +1832,13 @@
         }
       ],
       "network_snapshot_id" : "shuto-official-2026-07-29-osm-2026-08-04",
-      "presentation_catalog_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-presentation.2026-08-15"
+      "presentation_catalog_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.editor-presentation.2026-09-07"
     },
     "junction_views" : [
 
     ],
     "matcher_corridor" : {
-      "corridor_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.matcher-corridor.v1.release.2026-08-15",
+      "corridor_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended.matcher-corridor.v1.release.2026-09-07",
       "edges" : [
         {
           "coordinates" : [
@@ -21388,7 +21604,7 @@
               "longitude" : 139.742597
             }
           ],
-          "directed_edge_id" : "shutoko.entry.shuto.ic.c2.oujiminami.approach.2026-08-15",
+          "directed_edge_id" : "shutoko.entry.shuto.ic.c2.oujiminami.approach.2026-09-07",
           "successor_edge_ids" : [
             "osm.434944289.0.forward"
           ]
@@ -32384,9 +32600,65 @@
       "id" : "shuto-official-2026-07-29-osm-2026-08-04",
       "status" : "ACTIVE"
     },
-    "release_id" : "shutoko.navigation.c2-inner-oujiminami-shikahamabashi.2026-08-15",
-    "released_at" : "2026-08-15T00:00:00+09:00",
+    "release_id" : "shutoko.navigation.c2-inner-oujiminami-shikahamabashi.2026-09-07",
+    "released_at" : "2026-09-07T00:00:00+09:00",
     "released_guidance" : [
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.58.osm.156344609.29.forward",
+          "prompt_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "板橋JCT・熊野町JCT",
+          "decision_zone_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.78.osm.28195150.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Itabashi and Kumanocho Junctions",
+            "ja-JP" : "板橋JCT・熊野町JCT",
+            "zh-Hans" : "板桥 JCT・熊野町 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.78.osm.28195150.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "中央道・東名",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Keep Right for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, keep right for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、右方向を保ち、C2 内回りへ",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向を保ち、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，保持右侧，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT保持右侧，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E20",
+              "E1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
       {
         "anchor" : {
           "anchor_id" : "COMMIT",
@@ -32445,6 +32717,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.86.osm.28195150.8.forward",
+          "prompt_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "板橋JCT・熊野町JCT",
+          "decision_zone_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Itabashi and Kumanocho Junctions",
+            "ja-JP" : "板橋JCT・熊野町JCT",
+            "zh-Hans" : "板桥 JCT・熊野町 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.127.osm.28126649.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "中央道・東名",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Right for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "the C2 Inner Loop" : "the C2 Inner Loop"
+                },
+                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, branch right for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、右方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2 内回り" : "C2 内回り"
+                },
+                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向右分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2 内环" : "C2 内环"
+                },
+                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT向右分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E20",
+              "E1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.116.osm.28127112.2.forward",
           "prompt_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.127.osm.28126649.0.forward.commit"
@@ -32497,6 +32824,60 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.216.osm.190617333.36.forward",
+          "prompt_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "西新宿JCT",
+          "decision_zone_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.234.osm.190617333.54.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Nishi-shinjuku JCT",
+            "ja-JP" : "西新宿JCT",
+            "zh-Hans" : "西新宿 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.234.osm.190617333.54.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "湾岸線",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Continue Straight for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Nishi-shinjuku JCT, continue straight for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、C2 内回りへ",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、西新宿JCTでは分岐せず、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在西新宿 JCT不要分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -32554,6 +32935,60 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.307.osm.80581127.43.forward",
+          "prompt_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "大橋JCT",
+          "decision_zone_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ohashi JCT",
+            "ja-JP" : "大橋JCT",
+            "zh-Hans" : "大桥 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.343.osm.331692348.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "湾岸線",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Ohashi JCT, branch left for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、大橋JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在大桥 JCT向左分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.336.osm.80581127.72.forward",
           "prompt_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.343.osm.331692348.0.forward.commit"
@@ -32608,6 +33043,60 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.540.osm.331922708.136.forward",
+          "prompt_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "大井JCT",
+          "decision_zone_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Oi JCT",
+            "ja-JP" : "大井JCT",
+            "zh-Hans" : "大井 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.558.osm.1308572351.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東関東道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the Bayshore Route eastbound",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Oi JCT, branch left for the Bayshore Route eastbound"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、湾岸線 東行きへ",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、大井JCTでは左方向へ分岐し、湾岸線 東行きへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 湾岸线东行方向",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在大井 JCT向左分岔，驶往 湾岸线东行方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.555.osm.331692344.0.forward",
           "prompt_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.558.osm.1308572351.0.forward.commit"
@@ -32659,6 +33148,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.619.osm.1120936394.0.forward",
+          "prompt_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "有明JCT",
+          "decision_zone_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.626.osm.266086989.3.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ariake JCT",
+            "ja-JP" : "有明JCT",
+            "zh-Hans" : "有明 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.626.osm.266086989.3.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "葛西",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 葛西",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Ariake JCT, stay on the Bayshore Route toward 葛西"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 葛西方面へ",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "有明" : "ありあけ",
+                  "湾岸線" : "わんがんせん",
+                  "葛西" : "かさい"
+                },
+                "spoken_text" : "この先の分岐で、有明ジャンクションは分岐せず、湾岸線 葛西方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 葛西 方向",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "葛西" : "葛西"
+                },
+                "spoken_text" : "前方分岔，在有明 JCT不要分岔，沿湾岸线继续前往 葛西 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -32717,6 +33261,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.630.osm.45019024.1.forward",
+          "prompt_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "東雲JCT",
+          "decision_zone_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Shinonome JCT",
+            "ja-JP" : "東雲JCT",
+            "zh-Hans" : "东云 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.634.osm.23169038.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "浦安",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Shinonome JCT, stay on the Bayshore Route toward 浦安"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "東雲" : "しののめ",
+                  "浦安" : "うらやす",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、東雲ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "浦安"
+                },
+                "spoken_text" : "前方分岔，在东云 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.633.osm.888066406.1.forward",
           "prompt_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.634.osm.23169038.0.forward.commit"
@@ -32772,6 +33371,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.635.osm.23169038.1.forward",
+          "prompt_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "辰巳JCT",
+          "decision_zone_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Tatsumi JCT",
+            "ja-JP" : "辰巳JCT",
+            "zh-Hans" : "辰巳 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.645.osm.678761503.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "浦安",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Tatsumi JCT, stay on the Bayshore Route toward 浦安"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "うらやす",
+                  "湾岸線" : "わんがんせん",
+                  "辰巳" : "たつみ"
+                },
+                "spoken_text" : "この先の分岐で、辰巳ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "浦安"
+                },
+                "spoken_text" : "前方分岔，在辰巳 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.639.osm.888066405.1.forward",
           "prompt_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.645.osm.678761503.0.forward.commit"
@@ -32824,6 +33478,62 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.661.osm.44882721.1.forward",
+          "prompt_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "葛西JCT",
+          "decision_zone_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.671.osm.888066403.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kasai JCT",
+            "ja-JP" : "葛西JCT",
+            "zh-Hans" : "葛西 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.671.osm.888066403.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・常磐道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Kasai JCT, branch left for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、葛西JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在葛西 JCT向左分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "E6"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -32883,6 +33593,62 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.859.osm.184872024.21.forward",
+          "prompt_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "小菅JCT・堀切JCT",
+          "decision_zone_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kosuge and Horikiri Junctions",
+            "ja-JP" : "小菅JCT・堀切JCT",
+            "zh-Hans" : "小菅 JCT・堀切 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.876.osm.44422827.9.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・常磐道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Continue Straight for Kosuge Junction for the Tohoku or Joban Expressway",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "Kosuge Junction for the Tohoku or Joban Expressway" : "Kosuge Junction for the Tohoku or Joban Expressway"
+                },
+                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, continue straight for Kosuge Junction for the Tohoku or Joban Expressway"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、小菅JCT 東北道・常磐道方面へ",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "小菅JCT 東北道・常磐道方面" : "小菅JCT 東北道・常磐道方面"
+                },
+                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは分岐せず、小菅JCT 東北道・常磐道方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "小菅 JCT 东北自动车道、常磐自动车道方向" : "小菅 JCT 东北自动车道、常磐自动车道方向"
+                },
+                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "6",
+              "E6"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.872.osm.44422827.5.forward",
           "prompt_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.876.osm.44422827.9.forward.commit"
@@ -32936,6 +33702,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.879.osm.44422826.0.forward",
+          "prompt_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "小菅JCT・堀切JCT",
+          "decision_zone_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.894.osm.28194807.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kosuge and Horikiri Junctions",
+            "ja-JP" : "小菅JCT・堀切JCT",
+            "zh-Hans" : "小菅 JCT・堀切 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.894.osm.28194807.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・大宮",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Keep Left for the C2 Inner Loop toward the Tohoku Expressway and Omiya",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "the C2 Inner Loop toward the Tohoku Expressway and Omiya" : "the C2 Inner Loop toward the Tohoku Expressway and Omiya"
+                },
+                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, keep left for the C2 Inner Loop toward the Tohoku Expressway and Omiya"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向を保ち、C2 内回り 東北道・大宮方面へ",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "C2 内回り 東北道・大宮方面" : "C2 内回り 東北道・大宮方面"
+                },
+                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは左方向を保ち、C2 内回り 東北道・大宮方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，保持左侧，驶往 C2 内环东北自动车道、大宫方向",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "C2 内环东北自动车道、大宫方向" : "C2 内环东北自动车道、大宫方向"
+                },
+                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT保持左侧，驶往 C2 内环东北自动车道、大宫方向"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "S1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -32994,6 +33815,60 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1010.osm.28194811.73.forward",
+          "prompt_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "江北JCT",
+          "decision_zone_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kohoku JCT",
+            "ja-JP" : "江北JCT",
+            "zh-Hans" : "江北 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.1031.osm.44180277.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東池袋・東名",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "東池袋・東名",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Kohoku JCT, branch left for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "東池袋・東名",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、江北JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "東池袋・東名",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在江北 JCT向左分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1024.osm.28194811.87.forward",
           "prompt_id" : "shuto.jct.kohoku.c2-inner-stays-on-c2.shuto.1031.osm.44180277.0.forward.commit"
@@ -33045,6 +33920,62 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1176.osm.156344609.29.forward",
+          "prompt_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "板橋JCT・熊野町JCT",
+          "decision_zone_id" : "shuto.jct.itabashi.c2-inner-keeps-right-through-kumanocho.shuto.1196.osm.28195150.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Itabashi and Kumanocho Junctions",
+            "ja-JP" : "板橋JCT・熊野町JCT",
+            "zh-Hans" : "板桥 JCT・熊野町 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.1196.osm.28195150.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "中央道・東名",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Keep Right for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, keep right for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、右方向を保ち、C2 内回りへ",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向を保ち、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，保持右侧，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT保持右侧，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E20",
+              "E1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -33104,6 +34035,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1204.osm.28195150.8.forward",
+          "prompt_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "板橋JCT・熊野町JCT",
+          "decision_zone_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Itabashi and Kumanocho Junctions",
+            "ja-JP" : "板橋JCT・熊野町JCT",
+            "zh-Hans" : "板桥 JCT・熊野町 JCT"
+          },
+          "maneuver" : "BRANCH_RIGHT",
+          "movement_occurrence_id" : "shuto.1245.osm.28126649.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "中央道・東名",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Right for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "the C2 Inner Loop" : "the C2 Inner Loop"
+                },
+                "spoken_text" : "At the upcoming junction, At Itabashi and Kumanocho Junctions, branch right for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、右方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2 内回り" : "C2 内回り"
+                },
+                "spoken_text" : "この先の分岐で、板橋JCT・熊野町JCTでは右方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向右分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "中央道・東名",
+                "spoken_forms" : {
+                  "C2 内环" : "C2 内环"
+                },
+                "spoken_text" : "前方分岔，在板桥 JCT・熊野町 JCT向右分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E20",
+              "E1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1234.osm.28127112.2.forward",
           "prompt_id" : "shuto.jct.kumanocho.c2-inner-stays-on-c2.shuto.1245.osm.28126649.0.forward.commit"
@@ -33156,6 +34142,60 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1334.osm.190617333.36.forward",
+          "prompt_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "西新宿JCT",
+          "decision_zone_id" : "shuto.jct.nishishinjuku.c2-inner-stays-on-c2.shuto.1352.osm.190617333.54.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Nishi-shinjuku JCT",
+            "ja-JP" : "西新宿JCT",
+            "zh-Hans" : "西新宿 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.1352.osm.190617333.54.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "湾岸線",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Continue Straight for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Nishi-shinjuku JCT, continue straight for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、C2 内回りへ",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、西新宿JCTでは分岐せず、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在西新宿 JCT不要分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -33213,6 +34253,60 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1425.osm.80581127.43.forward",
+          "prompt_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "大橋JCT",
+          "decision_zone_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ohashi JCT",
+            "ja-JP" : "大橋JCT",
+            "zh-Hans" : "大桥 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.1461.osm.331692348.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "湾岸線",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Ohashi JCT, branch left for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、大橋JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "湾岸線",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在大桥 JCT向左分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1454.osm.80581127.72.forward",
           "prompt_id" : "shuto.jct.ohashi.c2-inner-stays-on-c2.shuto.1461.osm.331692348.0.forward.commit"
@@ -33267,6 +34361,60 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1658.osm.331922708.136.forward",
+          "prompt_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "大井JCT",
+          "decision_zone_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Oi JCT",
+            "ja-JP" : "大井JCT",
+            "zh-Hans" : "大井 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.1676.osm.1308572351.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東関東道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the Bayshore Route eastbound",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Oi JCT, branch left for the Bayshore Route eastbound"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、湾岸線 東行きへ",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、大井JCTでは左方向へ分岐し、湾岸線 東行きへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 湾岸线东行方向",
+                "preserved_japanese_sign_text" : "東関東道",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在大井 JCT向左分岔，驶往 湾岸线东行方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1673.osm.331692344.0.forward",
           "prompt_id" : "shuto.jct.oi.c2-inner-to-b-eastbound.shuto.1676.osm.1308572351.0.forward.commit"
@@ -33318,6 +34466,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1737.osm.1120936394.0.forward",
+          "prompt_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "有明JCT",
+          "decision_zone_id" : "shuto.jct.ariake.b-eastbound-stays-on-b.shuto.1744.osm.266086989.3.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Ariake JCT",
+            "ja-JP" : "有明JCT",
+            "zh-Hans" : "有明 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.1744.osm.266086989.3.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "葛西",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 葛西",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Ariake JCT, stay on the Bayshore Route toward 葛西"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 葛西方面へ",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "有明" : "ありあけ",
+                  "湾岸線" : "わんがんせん",
+                  "葛西" : "かさい"
+                },
+                "spoken_text" : "この先の分岐で、有明ジャンクションは分岐せず、湾岸線 葛西方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 葛西 方向",
+                "preserved_japanese_sign_text" : "葛西",
+                "spoken_forms" : {
+                  "葛西" : "葛西"
+                },
+                "spoken_text" : "前方分岔，在有明 JCT不要分岔，沿湾岸线继续前往 葛西 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -33376,6 +34579,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1748.osm.45019024.1.forward",
+          "prompt_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "東雲JCT",
+          "decision_zone_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Shinonome JCT",
+            "ja-JP" : "東雲JCT",
+            "zh-Hans" : "东云 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.1752.osm.23169038.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "浦安",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Shinonome JCT, stay on the Bayshore Route toward 浦安"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "東雲" : "しののめ",
+                  "浦安" : "うらやす",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、東雲ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "浦安"
+                },
+                "spoken_text" : "前方分岔，在东云 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1751.osm.888066406.1.forward",
           "prompt_id" : "shuto.jct.shinonome.b-eastbound-stays-on-b.shuto.1752.osm.23169038.0.forward.commit"
@@ -33431,6 +34689,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1753.osm.23169038.1.forward",
+          "prompt_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "辰巳JCT",
+          "decision_zone_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Tatsumi JCT",
+            "ja-JP" : "辰巳JCT",
+            "zh-Hans" : "辰巳 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.1763.osm.678761503.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "浦安",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Stay on the Bayshore Route toward 浦安",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "Bayshore Route" : "Bayshore Route"
+                },
+                "spoken_text" : "At the upcoming junction, At Tatsumi JCT, stay on the Bayshore Route toward 浦安"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、湾岸線 浦安方面へ",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "うらやす",
+                  "湾岸線" : "わんがんせん",
+                  "辰巳" : "たつみ"
+                },
+                "spoken_text" : "この先の分岐で、辰巳ジャンクションは分岐せず、湾岸線 浦安方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，沿湾岸线前往 浦安 方向",
+                "preserved_japanese_sign_text" : "浦安",
+                "spoken_forms" : {
+                  "浦安" : "浦安"
+                },
+                "spoken_text" : "前方分岔，在辰巳 JCT不要分岔，沿湾岸线继续前往 浦安 方向"
+              }
+            },
+            "route_shields" : [
+              "B"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1757.osm.888066405.1.forward",
           "prompt_id" : "shuto.jct.tatsumi.b-eastbound-stays-on-b.shuto.1763.osm.678761503.0.forward.commit"
@@ -33483,6 +34796,62 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1779.osm.44882721.1.forward",
+          "prompt_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "葛西JCT",
+          "decision_zone_id" : "shuto.jct.kasai.b-eastbound-to-c2-inner.shuto.1789.osm.888066403.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kasai JCT",
+            "ja-JP" : "葛西JCT",
+            "zh-Hans" : "葛西 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.1789.osm.888066403.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・常磐道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Branch Left for the C2 Inner Loop",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Kasai JCT, branch left for the C2 Inner Loop"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向へ分岐し、C2 内回りへ",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、葛西JCTでは左方向へ分岐し、C2 内回りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，向左分岔，驶往 C2 内环",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在葛西 JCT向左分岔，驶往 C2 内环"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "E6"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -33542,6 +34911,62 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1977.osm.184872024.21.forward",
+          "prompt_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "小菅JCT・堀切JCT",
+          "decision_zone_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kosuge and Horikiri Junctions",
+            "ja-JP" : "小菅JCT・堀切JCT",
+            "zh-Hans" : "小菅 JCT・堀切 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.1994.osm.44422827.9.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・常磐道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Continue Straight for Kosuge Junction for the Tohoku or Joban Expressway",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "Kosuge Junction for the Tohoku or Joban Expressway" : "Kosuge Junction for the Tohoku or Joban Expressway"
+                },
+                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, continue straight for Kosuge Junction for the Tohoku or Joban Expressway"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、小菅JCT 東北道・常磐道方面へ",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "小菅JCT 東北道・常磐道方面" : "小菅JCT 東北道・常磐道方面"
+                },
+                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは分岐せず、小菅JCT 東北道・常磐道方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向",
+                "preserved_japanese_sign_text" : "東北道・常磐道",
+                "spoken_forms" : {
+                  "小菅 JCT 东北自动车道、常磐自动车道方向" : "小菅 JCT 东北自动车道、常磐自动车道方向"
+                },
+                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT不要分岔，驶往 小菅 JCT 东北自动车道、常磐自动车道方向"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "6",
+              "E6"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.1990.osm.44422827.5.forward",
           "prompt_id" : "shuto.jct.horikiri.c2-inner-toward-kosuge.shuto.1994.osm.44422827.9.forward.commit"
@@ -33598,6 +35023,61 @@
       },
       {
         "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.1997.osm.44422826.0.forward",
+          "prompt_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "小菅JCT・堀切JCT",
+          "decision_zone_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kosuge and Horikiri Junctions",
+            "ja-JP" : "小菅JCT・堀切JCT",
+            "zh-Hans" : "小菅 JCT・堀切 JCT"
+          },
+          "maneuver" : "BRANCH_LEFT",
+          "movement_occurrence_id" : "shuto.2012.osm.28194807.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道・大宮",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Keep Left for the C2 Inner Loop toward the Tohoku Expressway and Omiya",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "the C2 Inner Loop toward the Tohoku Expressway and Omiya" : "the C2 Inner Loop toward the Tohoku Expressway and Omiya"
+                },
+                "spoken_text" : "At the upcoming junction, At Kosuge and Horikiri Junctions, keep left for the C2 Inner Loop toward the Tohoku Expressway and Omiya"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、左方向を保ち、C2 内回り 東北道・大宮方面へ",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "C2 内回り 東北道・大宮方面" : "C2 内回り 東北道・大宮方面"
+                },
+                "spoken_text" : "この先の分岐で、小菅JCT・堀切JCTでは左方向を保ち、C2 内回り 東北道・大宮方面へ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，保持左侧，驶往 C2 内环东北自动车道、大宫方向",
+                "preserved_japanese_sign_text" : "東北道・大宮",
+                "spoken_forms" : {
+                  "C2 内环东北自动车道、大宫方向" : "C2 内环东北自动车道、大宫方向"
+                },
+                "spoken_text" : "前方分岔，在小菅 JCT・堀切 JCT保持左侧，驶往 C2 内环东北自动车道、大宫方向"
+              }
+            },
+            "route_shields" : [
+              "C2",
+              "E4",
+              "S1"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
+      },
+      {
+        "anchor" : {
           "anchor_id" : "COMMIT",
           "occurrence_id" : "shuto.2004.osm.44130134.5.forward",
           "prompt_id" : "shuto.jct.kosuge.c2-inner-stays-on-c2.shuto.2012.osm.28194807.0.forward.commit"
@@ -33650,6 +35130,61 @@
           "stage" : "COMMIT"
         },
         "trigger_distance_meters" : 300
+      },
+      {
+        "anchor" : {
+          "anchor_id" : "PREPARE",
+          "occurrence_id" : "shuto.2128.osm.28194811.73.forward",
+          "prompt_id" : "shuto.jct.kohoku.c2-inner-to-s1-outbound.shuto.2149.osm.44179919.0.forward.prepare"
+        },
+        "frame_template" : {
+          "decision_point_name_ja" : "江北JCT",
+          "decision_zone_id" : "shuto.jct.kohoku.c2-inner-to-s1-outbound.shuto.2149.osm.44179919.0.forward.decision-zone",
+          "lane_preparation" : "NONE",
+          "localized_decision_point_names" : {
+            "en" : "Kohoku JCT",
+            "ja-JP" : "江北JCT",
+            "zh-Hans" : "江北 JCT"
+          },
+          "maneuver" : "STAY_MAINLINE",
+          "movement_occurrence_id" : "shuto.2149.osm.44179919.0.forward",
+          "presentation_source" : {
+            "japanese_sign_text" : "東北道",
+            "localized_content" : {
+              "en" : {
+                "display_text" : "At the upcoming junction, Continue Straight for Route S1 outbound",
+                "preserved_japanese_sign_text" : "東北道",
+                "spoken_forms" : {
+                  "C2" : "C two"
+                },
+                "spoken_text" : "At the upcoming junction, At Kohoku JCT, continue straight for Route S1 outbound"
+              },
+              "ja-JP" : {
+                "display_text" : "この先の分岐で、分岐せず、S1 川口線 下りへ",
+                "preserved_japanese_sign_text" : "東北道",
+                "spoken_forms" : {
+                  "C2" : "シーツー",
+                  "湾岸線" : "わんがんせん"
+                },
+                "spoken_text" : "この先の分岐で、江北JCTでは分岐せず、S1 川口線 下りへ進んでください"
+              },
+              "zh-Hans" : {
+                "display_text" : "前方分岔，不要分岔，驶往 S1 川口线下行方向",
+                "preserved_japanese_sign_text" : "東北道",
+                "spoken_forms" : {
+                  "C2" : "C 二"
+                },
+                "spoken_text" : "前方分岔，在江北 JCT不要分岔，驶往 S1 川口线下行方向"
+              }
+            },
+            "route_shields" : [
+              "S1",
+              "E4"
+            ]
+          },
+          "stage" : "PREPARE"
+        },
+        "trigger_distance_meters" : 900
       },
       {
         "anchor" : {
@@ -51291,7 +52826,7 @@
           "egress_occurrence_ids" : [
             "osm.563799389.4.forward"
           ],
-          "egress_option_id" : "shutoko.egress.c2-inner-oujiminami-shikahamabashi-handoff.2026-08-15",
+          "egress_option_id" : "shutoko.egress.c2-inner-oujiminami-shikahamabashi-handoff.2026-09-07",
           "exit_facility_id" : "shuto.ic.s1.shikahamabashi",
           "first_eligible_occurrence_id" : "shuto.2195.osm.563799389.4.forward",
           "released" : true
@@ -51299,7 +52834,7 @@
       ],
       "entry_transition" : {
         "directed_edge_ids" : [
-          "shutoko.entry.shuto.ic.c2.oujiminami.approach.2026-08-15",
+          "shutoko.entry.shuto.ic.c2.oujiminami.approach.2026-09-07",
           "osm.434944289.0.forward"
         ],
         "facility_id" : "shuto.ic.c2.oujiminami",
@@ -51323,7 +52858,7 @@
         }
       ],
       "route_plan_id" : "shuto.circuit.c2-inner-bayshore.shuto.ic.c2.oujiminami.shuto.ic.s1.shikahamabashi.x1.recommended",
-      "runtime_policy_id" : "shutoko.runtime.c2-inner-oujiminami-shikahamabashi.2026-08-15"
+      "runtime_policy_id" : "shutoko.runtime.c2-inner-oujiminami-shikahamabashi.2026-09-07"
     },
     "schema_version" : "6.0",
     "source_registry" : {
@@ -51539,13 +53074,13 @@
       ]
     }
   },
-  "release_id" : "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-08-15",
-  "released_at" : "2026-08-15T00:00:00+09:00",
+  "release_id" : "shutoko.product.c2-inner-oujiminami-shikahamabashi.2026-09-07",
+  "released_at" : "2026-09-07T00:00:00+09:00",
   "route_atlas_release" : {
     "definition" : {
-      "atlas_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.2026-08-15",
+      "atlas_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.2026-09-07",
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -93324,7 +94859,7 @@
           "topology_edge_id" : "c2-inner-oujiminami-shikahamabashi.topology.edge.1183"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.topology.2026-09-07"
     },
     "network_snapshot" : {
       "effective_at" : "2026-08-04T20:20:51Z",
@@ -121587,7 +123122,7 @@
         }
       ],
       "evidence" : {
-        "checked_at" : "2026-08-15",
+        "checked_at" : "2026-09-07",
         "source_reference_ids" : [
           "osm-kanto-2026-08-04"
         ],
@@ -125148,7 +126683,7 @@
           "node_id" : "osm.node.13360735132"
         }
       ],
-      "topology_slice_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.topology.2026-08-15"
+      "topology_slice_id" : "shutoko.atlas.c2-inner-oujiminami-shikahamabashi.topology.2026-09-07"
     }
   },
   "runtime_use" : {

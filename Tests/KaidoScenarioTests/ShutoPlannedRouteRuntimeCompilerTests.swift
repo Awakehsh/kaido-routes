@@ -11,6 +11,32 @@ import Testing
 
 @Suite("Whole Shuto observation runtime compiler")
 struct ShutoPlannedRouteRuntimeCompilerTests {
+  @Test("junction preparation precedes commit at different driving speeds", arguments: [8.33, 16.67, 22.22])
+  func preparationLeavesTimeBeforeCommit(speed: Double) async throws {
+    let database = try loadWholeShutoDatabase()
+    let route = try ShutoRoutePlanner(database: database).plan(
+      entryFacilityID: "shuto.ic.b.urayasu", exitFacilityID: "shuto.ic.c2.funaboribashi"
+    )
+    let assets = try ShutoPlannedRouteRuntimeCompiler.compile(database: database, route: route)
+    let simulator = try NavigationDriveSimulator(
+      route: route, runtimeAssets: assets,
+      configuration: .init(
+        maximumSampleSpacingMeters: 20, timing: .routeSpeed,
+        horizontalAccuracyMeters: 2, speedMetersPerSecond: speed
+      )
+    )
+    let results = try await simulator.runToEnd()
+    let spoken = results.filter { $0.navigationUpdate?.guidancePromptEmission != nil }
+    #expect(spoken.count == 2)
+    #expect(spoken.map { $0.navigationSnapshot.activeGuidanceFrame?.stage } == [.prepare, .commit])
+    let prepare = try #require(spoken.first)
+    let commit = try #require(spoken.last)
+    #expect(commit.event.atMilliseconds - prepare.event.atMilliseconds > 20_000)
+    #expect(prepare.navigationSnapshot.activeGuidanceFrame?.lanePreparation == GuidanceLanePreparation.none)
+    #expect(prepare.navigationSnapshot.activeGuidanceFrame?.presentationSource.japaneseSignText
+      == commit.navigationSnapshot.activeGuidanceFrame?.presentationSource.japaneseSignText)
+  }
+
   @Test("whole-network live coverage inventories every candidate JCT movement")
   func inventoriesWholeNetworkJunctionMovementCoverage() throws {
     let database = try loadWholeShutoDatabase()
@@ -1003,7 +1029,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
-  @Test("both reviewed Tatsumi approaches emit one actor-owned prompt")
+  @Test("both reviewed Tatsumi approaches emit each actor-owned stage once")
   func emitsReviewedTatsumiGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()
     let cases:
@@ -1063,7 +1089,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       #expect(
         assets.releasedGuidance.filter {
           $0.frameTemplate.movementOccurrenceID == movementOccurrenceID
-        }.count == 1
+        }.count == 2
       )
       #expect(guidance.frameTemplate.maneuver == .branchLeft)
       #expect(guidance.frameTemplate.lanePreparation == .none)
@@ -1088,8 +1114,9 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       let emissions = results.compactMap {
         $0.navigationUpdate?.guidancePromptEmission
       }
-      // The movement under test speaks exactly once; other reviewed
-      // junctions on the same run speak their own prompts.
+      for stage in assets.releasedGuidance where stage.frameTemplate.movementOccurrenceID == movementOccurrenceID {
+        #expect(emissions.filter { $0.promptID == stage.anchor.promptID }.count == 1)
+      }
       #expect(
         emissions.filter { $0.promptID == guidance.anchor.promptID }
           .count == 1,
@@ -1108,7 +1135,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     }
   }
 
-  @Test("both reviewed Shinonome approaches emit one actor-owned prompt")
+  @Test("both reviewed Shinonome approaches emit each actor-owned stage once")
   func emitsReviewedShinonomeGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()
     let cases:
@@ -1168,7 +1195,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       #expect(
         assets.releasedGuidance.filter {
           $0.frameTemplate.movementOccurrenceID == movementOccurrenceID
-        }.count == 1
+        }.count == 2
       )
       #expect(guidance.frameTemplate.maneuver == testCase.maneuver)
       #expect(guidance.frameTemplate.lanePreparation == .none)
@@ -1194,8 +1221,9 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
         $0.navigationUpdate?.guidancePromptEmission
       }
 
-      // The movement under test speaks exactly once; other reviewed
-      // junctions on the same run speak their own prompts.
+      for stage in assets.releasedGuidance where stage.frameTemplate.movementOccurrenceID == movementOccurrenceID {
+        #expect(emissions.filter { $0.promptID == stage.anchor.promptID }.count == 1)
+      }
       #expect(
         emissions.filter { $0.promptID == guidance.anchor.promptID }
           .count == 1,
@@ -1279,7 +1307,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
   }
 
-  @Test("reviewed Kasai movement emits one actor-owned branch prompt")
+  @Test("reviewed Kasai movement emits preparation then commit")
   func emitsReviewedKasaiMovementGuidanceExactlyOnce() async throws {
     let database = try loadWholeShutoDatabase()
     let route = try ShutoRoutePlanner(database: database).plan(
@@ -1292,7 +1320,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     )
 
     #expect(assets.decisionZones.count == 1)
-    #expect(assets.releasedGuidance.count == 1)
+    #expect(assets.releasedGuidance.count == 2)
     let decisionZone = try #require(assets.decisionZones.first)
     let guidance = try #require(assets.releasedGuidance.first)
     #expect(
@@ -1320,8 +1348,8 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
       $0.navigationUpdate?.guidancePromptEmission
     }
 
-    #expect(emissions.count == 1)
-    #expect(emissions.first?.promptID == guidance.anchor.promptID)
+    #expect(emissions.map(\.promptID) == assets.releasedGuidance.map { $0.anchor.promptID })
+    #expect(assets.releasedGuidance.map { $0.frameTemplate.stage } == [.prepare, .commit])
     #expect(
       results.compactMap {
         $0.navigationUpdate?.navigationSnapshot.activeGuidanceFrame

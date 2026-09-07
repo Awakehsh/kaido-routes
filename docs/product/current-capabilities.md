@@ -159,8 +159,9 @@ internal review workbench.
   directions, and the currently released radial and Yokohama approaches.
   Their Kaido vectors, branch or continuation instructions,
   Japanese sign targets, and route shields are operator-source-traceable. Each
-  exact outgoing occurrence compiles into actor-owned screen and one-shot
-  speech guidance. Lane indices remain explicitly unreleased, and transitions
+  exact outgoing occurrence compiles into actor-owned screen guidance and
+  one-shot speech per stage: advance preparation where the current approach
+  has room, followed by the final branch or continuation cue. Lane indices remain explicitly unreleased, and transitions
   without sufficient approach-specific evidence remain silent.
   The remaining 23 candidate JCT movements stay preview-only until their
   approach-specific signs and legal continuations are released.

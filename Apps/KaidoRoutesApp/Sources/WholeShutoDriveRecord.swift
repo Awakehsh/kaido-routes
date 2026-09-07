@@ -6,9 +6,9 @@ import Foundation
 /// compares it: no target, no goal, no previous drive, no other driver, and
 /// nothing that reads as an invitation to go faster. The driver can switch the
 /// whole thing off.
-struct WholeShutoDriveRecord: Equatable, Sendable {
+struct WholeShutoDriveRecord: Codable, Equatable, Sendable {
   /// One completed lap of a loop circuit.
-  struct LapSplit: Equatable, Sendable, Identifiable {
+  struct LapSplit: Codable, Equatable, Sendable, Identifiable {
     let lapNumber: Int
     let durationMilliseconds: Int
 
@@ -21,6 +21,10 @@ struct WholeShutoDriveRecord: Equatable, Sendable {
   /// speed throughout.
   static let maximumSampleGapMilliseconds = 10_000
 
+  private(set) var id = UUID()
+  private(set) var startedAtMilliseconds: Int?
+  private(set) var endedAtMilliseconds: Int?
+
   private(set) var maximumSpeedMetersPerSecond: Double?
   private(set) var minimumSpeedMetersPerSecond: Double?
   private(set) var completedLaps: [LapSplit] = []
@@ -32,6 +36,33 @@ struct WholeShutoDriveRecord: Equatable, Sendable {
   private var lastSpeedMetersPerSecond: Double?
   private var currentLapStartedAtMilliseconds: Int?
   private var crossedBoundaryIndex = -1
+  private var lastOccurrenceIndex: Int?
+
+  init(startedAtMilliseconds: Int? = nil) {
+    self.startedAtMilliseconds = startedAtMilliseconds
+  }
+
+  // Restore aggregates and lap progress, not the last raw speed sample.
+  private enum CodingKeys: String, CodingKey {
+    case id, startedAtMilliseconds, endedAtMilliseconds
+    case maximumSpeedMetersPerSecond, minimumSpeedMetersPerSecond
+    case completedLaps, currentLapNumber, speedTimeIntegral, integratedMilliseconds
+    case currentLapStartedAtMilliseconds, crossedBoundaryIndex, lastOccurrenceIndex
+  }
+
+  var recordedDistanceMeters: Double { speedTimeIntegral }
+  var recordedDurationMilliseconds: Int { integratedMilliseconds }
+  var hasRecordedIntervals: Bool { integratedMilliseconds > 0 || !completedLaps.isEmpty }
+
+  mutating func finish(atMilliseconds milliseconds: Int) {
+    guard endedAtMilliseconds == nil else { return }
+    endedAtMilliseconds = max(startedAtMilliseconds ?? milliseconds, milliseconds)
+  }
+
+  mutating func interruptSamples() {
+    lastSampleAtMilliseconds = nil
+    lastSpeedMetersPerSecond = nil
+  }
 
   /// Time-weighted so a burst of fixes in slow traffic cannot outvote a long
   /// steady stretch. Absent until two fixes have bounded an interval.
@@ -92,6 +123,18 @@ struct WholeShutoDriveRecord: Equatable, Sendable {
     atMilliseconds milliseconds: Int
   ) {
     guard boundaries.count >= 2 else { return }
+    defer { lastOccurrenceIndex = occurrenceIndex }
+    guard let reached = boundaries.lastIndex(where: { $0 <= occurrenceIndex }) else { return }
+    if lastOccurrenceIndex == nil || reached > crossedBoundaryIndex + 1 {
+      crossedBoundaryIndex = reached
+      currentLapNumber = nil
+      currentLapStartedAtMilliseconds = nil
+      if occurrenceIndex == boundaries[reached], reached < boundaries.count - 1 {
+        currentLapNumber = completedLaps.count + 1
+        currentLapStartedAtMilliseconds = milliseconds
+      }
+      return
+    }
     while crossedBoundaryIndex + 1 < boundaries.count,
       occurrenceIndex >= boundaries[crossedBoundaryIndex + 1]
     {
@@ -107,12 +150,17 @@ struct WholeShutoDriveRecord: Equatable, Sendable {
         )
       }
       if crossedBoundaryIndex < boundaries.count - 1 {
-        currentLapNumber = crossedBoundaryIndex + 1
+        currentLapNumber = completedLaps.count + 1
         currentLapStartedAtMilliseconds = milliseconds
       } else {
         currentLapNumber = nil
         currentLapStartedAtMilliseconds = nil
       }
     }
+  }
+
+  mutating func skipPlannedLap(toOccurrenceIndex index: Int, boundaries: [Int]) {
+    crossedBoundaryIndex = boundaries.lastIndex(where: { $0 <= index }) ?? -1
+    lastOccurrenceIndex = index
   }
 }

@@ -82,6 +82,20 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         LSApplicationCategoryType: public.app-category.navigation
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Kaido Route
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - app.kaidoroutes.route
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: app.kaidoroutes.route
+            UTTypeDescription: Kaido Route
+            UTTypeConformsTo:
+              - public.json
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - kaidoroute
+              public.mime-type: application/vnd.kaidoroutes.route+json
         NSLocationWhenInUseUsageDescription: Kaido Routes uses your location after you choose Current Location or start route navigation, including while the screen is locked or another app is visible during active navigation.
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true

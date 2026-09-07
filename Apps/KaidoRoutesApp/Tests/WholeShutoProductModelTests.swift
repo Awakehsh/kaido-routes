@@ -986,13 +986,17 @@ final class WholeShutoProductModelTests: XCTestCase {
     defaults.removePersistentDomain(
       forName: "app.kaidoroutes.tests.drive-record"
     )
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let history = FileDriveHistoryStore(directory: directory)
     let locationSource = WholeShutoBackgroundNavigationLocationSource()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
       liveLocationSource: locationSource,
       speechOutput: WholeShutoRecordingSpeechOutput(),
-      driveRecordPreferenceStore: defaults
+      driveRecordPreferenceStore: defaults,
+      driveHistoryStore: history
     )
     // Shown unless the driver has said otherwise.
     XCTAssertTrue(model.showsDriveRecord)
@@ -1039,6 +1043,34 @@ final class WholeShutoProductModelTests: XCTestCase {
       15,
       accuracy: 0.001
     )
+
+    ActiveDriveControl.model = model
+    defer { ActiveDriveControl.model = nil }
+    _ = try await DriveControlIntent(action: .mute).perform()
+    XCTAssertEqual(model.speechMode, .muted)
+    XCTAssertTrue(model.isPlaying)
+    _ = try await DriveControlIntent(action: .unmute).perform()
+    XCTAssertEqual(model.speechMode, .full)
+    _ = try await DriveControlIntent(action: .rest).perform()
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertTrue(try history.load().isEmpty)
+    _ = try await DriveControlIntent(action: .resume).perform()
+    XCTAssertTrue(model.isPlaying)
+    let selectedPlan = try XCTUnwrap(model.selectedRoute?.routePlan)
+    let savedRoute = Self.savedRouteRecord(
+      selectedPlan,
+      templateParameters: model.savedRouteTemplateParameters
+    )
+    XCTAssertTrue(model.openSavedRoute(savedRoute, origin: midpoint))
+    XCTAssertEqual(model.phase, .review)
+    XCTAssertFalse(model.isLiveDrive)
+    XCTAssertEqual(model.selectedRoute?.routePlan, selectedPlan)
+    XCTAssertEqual(model.origin?.coordinate, midpoint)
+    let saved = try XCTUnwrap(history.load().first)
+    XCTAssertEqual(saved.recordedDistanceMeters, 75, accuracy: 0.001)
+    XCTAssertEqual(saved.recordedDurationMilliseconds, 5_000)
+    XCTAssertEqual(saved.averageSpeedMetersPerSecond, 15)
+    XCTAssertFalse(saved.arrived)
 
     // Switching it off is the driver's, and it survives a new model.
     model.setShowsDriveRecord(false)

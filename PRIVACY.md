@@ -1,6 +1,6 @@
 # Kaido Routes Privacy Policy
 
-Effective date: August 16, 2026
+Effective date: September 7, 2026
 
 Kaido Routes is a route-first driving navigation app. This policy describes
 the behavior of the current open-source iPhone release.
@@ -42,6 +42,17 @@ container unless the user deliberately exports a route document or a
 development-build calibration report. Finishing, ending, or resetting a
 journey removes its checkpoint.
 
+When drive recording is enabled, the app also keeps private drive history:
+the planned route, recording dates, recorded distance and time, speed summaries,
+and observed lap summaries. Unfinished checkpoints can retain those aggregates
+and lap progress, but not the last raw speed sample. Missing observation intervals
+are not filled in. Turning recording off stops new recording; saved history can
+be deleted individually in the app and is not sent to the project.
+
+Sharing a planned route exports its route document, without the drive statistics
+or the current-position observation. Opening a shared route file imports it into
+the saved-route library; it does not replace an active navigation session.
+
 Deleting the app removes its private container. Location access can be revoked
 at any time in iOS Settings. The app does not require an account, so there is
 no server-side account or personal-data record to delete.
@@ -58,6 +69,10 @@ they need; Apple's privacy practices apply to them.
 
 Links to official road information, map-data attribution, licences, and this
 policy open external websites; those sites apply their own privacy practices.
+
+Siri and Shortcuts requests are handled by iOS under Apple's privacy practices.
+The app receives the selected drive action and may return its current instruction
+as a response. Kaido Routes does not record microphone audio for these controls.
 
 A later release that adds another network service must update this policy and
 its App Store privacy disclosures before distribution.

@@ -6,6 +6,31 @@ import XCTest
 
 @MainActor
 final class SavedRouteLibraryModelTests: XCTestCase {
+  func testSharedRouteFileOpensThroughTheExistingExactPlanValidator() throws {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("kaidoroute")
+    defer { try? FileManager.default.removeItem(at: url) }
+    let plan = makeRepeatedSavedRoutePlan()
+    let document = SharedRouteDocument(evidenceState: .communityCandidate,
+      templateParameters: ["lap_count": "2"], routePlan: plan)
+    try SharedRouteCodec.encode(document).write(to: url)
+    let model = SavedRouteLibraryModel(store: MemorySavedRouteLibraryStore(), foregroundEntries: [])
+    XCTAssertNil(importSavedRouteFile(.success([url]), into: model))
+    XCTAssertEqual(model.records.first?.document, document)
+    XCTAssertTrue(SharedRouteFileDocument.readableContentTypes.contains { $0.identifier == "app.kaidoroutes.route" })
+    XCTAssertTrue(SharedRouteFileDocument.readableContentTypes.contains { $0.identifier == "public.json" })
+    XCTAssertEqual(importSavedRouteFile(.success([try XCTUnwrap(URL(string: "https://example.invalid/route.kaidoroute"))]), into: model), "SAVED_ROUTE_IMPORT_READ_FAILED")
+    XCTAssertEqual(model.records.count, 1)
+  }
+
+  func testOversizedSharedRouteFilesAreRejectedBeforeDecode() throws {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("kaidoroute")
+    defer { try? FileManager.default.removeItem(at: url) }
+    try Data(repeating: 0x20, count: 16 * 1_024 * 1_024 + 1).write(to: url)
+    let model = SavedRouteLibraryModel(store: MemorySavedRouteLibraryStore(), foregroundEntries: [])
+    XCTAssertEqual(importSavedRouteFile(.success([url]), into: model), "SAVED_ROUTE_IMPORT_READ_FAILED")
+    XCTAssertTrue(model.records.isEmpty)
+  }
+
   func testSavingSyntheticRoutePersistsCommunityCandidateWithoutDeduplication()
     throws
   {

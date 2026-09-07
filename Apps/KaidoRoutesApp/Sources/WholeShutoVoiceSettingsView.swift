@@ -1,3 +1,4 @@
+import AppIntents
 import KaidoAppleAdapters
 import KaidoDomain
 import SwiftUI
@@ -43,6 +44,15 @@ struct WholeShutoVoiceSettingsView: View {
 
   var body: some View {
     Form {
+      Section {
+        ShortcutsLink()
+        Text(copy.resolve(
+          japanese: "Siri で案内の消音、周回数の変更、休憩と再開を操作できます。",
+          simplifiedChinese: "可通过 Siri 静音、调整圈数、休息和继续导航。",
+          english: "Use Siri to mute guidance, change laps, take a break, or resume navigation."
+        ))
+        .font(.footnote)
+      }
       Section {
         Picker(copy.resolve(japanese: "案内", simplifiedChinese: "播报方式", english: "Guidance"), selection: Binding(
           get: { model.speechMode }, set: { model.setSpeechMode($0) }

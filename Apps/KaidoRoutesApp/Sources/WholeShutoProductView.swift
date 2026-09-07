@@ -38,6 +38,7 @@ struct WholeShutoProductView: View {
   @State private var showsRouteCustomization = false
   @State private var showsJourneyReview = false
   @State private var showsSavedRoutes = false
+  @State private var showsDriveHistory = false
   @State private var isImportingSavedRoute = false
   @State private var showsManualOrigin = false
   @State private var waitsForPlanningLocation = false
@@ -140,9 +141,19 @@ struct WholeShutoProductView: View {
       savedRouteLibrarySheet
         .environment(\.colorScheme, .dark)
     }
+    .sheet(isPresented: $showsDriveHistory) {
+      NavigationStack {
+        DriveHistoryView(model: model, savedRoutes: savedRoutes, locale: languageSettings.interfaceLocale)
+          .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+              Button(copy.resolve(japanese: "完了", simplifiedChinese: "完成", english: "Done")) { showsDriveHistory = false }
+            }
+          }
+      }
+    }
     .fileImporter(
       isPresented: $isImportingSavedRoute,
-      allowedContentTypes: [.json],
+      allowedContentTypes: [.kaidoRoute, .json],
       allowsMultipleSelection: false
     ) { result in
       savedRouteImportErrorCode = importSavedRouteFile(
@@ -154,6 +165,7 @@ struct WholeShutoProductView: View {
       WholeShutoSettingsView(
         languageSettings: languageSettings,
         model: model,
+        savedRoutes: savedRoutes,
         checkedAt: model.database.checkedAt,
         attribution: wholeShutoAttribution
       )
@@ -210,7 +222,15 @@ struct WholeShutoProductView: View {
       }
     }
     .onDisappear {
+      if ActiveDriveControl.model === model { ActiveDriveControl.model = nil }
       UIApplication.shared.isIdleTimerDisabled = false
+    }
+    .onAppear { ActiveDriveControl.model = model }
+    .onOpenURL { url in
+      guard url.isFileURL else { return }
+      savedRouteImportErrorCode = importSavedRouteFile(.success([url]), into: savedRoutes)
+        ?? savedRoutes.lastErrorCode
+      showsSavedRoutes = true
     }
     .onChange(of: model.destinationQuery, initial: true) {
       updatePlanningPlaceSearch()
@@ -411,6 +431,12 @@ struct WholeShutoProductView: View {
     VStack(spacing: 0) {
       if let checkpointIssueCode = model.checkpointIssueCode {
         checkpointIssueBanner(checkpointIssueCode)
+      }
+      if model.driveHistoryIssue != nil {
+        Text(copy.resolve(japanese: "今回の走行記録を保存できませんでした。", simplifiedChinese: "未能保存本次行程记录。", english: "This drive record could not be saved."))
+          .font(.subheadline)
+          .foregroundStyle(KaidoTheme.signalAmber)
+          .padding(12)
       }
 
       if model.phase == .completed {
@@ -701,25 +727,33 @@ struct WholeShutoProductView: View {
     .background(KaidoTheme.night.opacity(0.94), in: RoundedRectangle(cornerRadius: 10))
   }
 
-  @ViewBuilder
   private var topBarUtilityButtons: some View {
-    if !isDriving {
-      Button {
-        showsSettings = true
-      } label: {
+    HStack(spacing: 6) {
+      Button { showsSettings = true } label: {
         Image(systemName: "gearshape")
           .font(.system(size: 14, weight: .black))
           .frame(width: 44, height: 44)
       }
-      .buttonStyle(WholeShutoCircleButtonStyle(isDriving: false))
-      .accessibilityLabel(
-        copy.resolve(
-          japanese: "設定",
-          simplifiedChinese: "设置",
-          english: "Settings"
-        )
-      )
+      .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
+      .accessibilityLabel(copy.resolve(japanese: "設定", simplifiedChinese: "设置", english: "Settings"))
       .accessibilityIdentifier("whole-shuto-settings")
+      Menu {
+        Button { showsSavedRoutes = true } label: {
+          Label(copy.resolve(japanese: "保存したルート", simplifiedChinese: "已保存路线", english: "Saved routes"), systemImage: "bookmark")
+        }
+        .accessibilityIdentifier("whole-shuto-menu-saved-routes")
+        Button { showsDriveHistory = true } label: {
+          Label(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"), systemImage: "clock.arrow.circlepath")
+        }
+        .accessibilityIdentifier("whole-shuto-menu-history")
+      } label: {
+        Image(systemName: "ellipsis")
+          .font(.system(size: 14, weight: .black))
+          .frame(width: 44, height: 44)
+      }
+      .buttonStyle(WholeShutoCircleButtonStyle(isDriving: isDriving))
+      .accessibilityLabel(copy.resolve(japanese: "メニュー", simplifiedChinese: "菜单", english: "Menu"))
+      .accessibilityIdentifier("whole-shuto-menu")
     }
   }
 
@@ -1028,6 +1062,18 @@ struct WholeShutoProductView: View {
         .foregroundStyle(KaidoTheme.nightQuiet)
 
         savedRouteHomeEntry
+        Button { showsDriveHistory = true } label: {
+          HStack {
+            Label(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"), systemImage: "clock.arrow.circlepath")
+            Spacer()
+            Image(systemName: "chevron.right")
+          }
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(KaidoTheme.positionCyan)
+          .frame(minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("whole-shuto-drive-history-open")
         customRouteHomeEntry
       }
     }
@@ -1035,7 +1081,6 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier("whole-shuto-circuit-experiences")
   }
 
-  /// Saved experiences stay route-first and reopen only while parked.
   private var savedRouteHomeEntry: some View {
     Button {
       pendingSavedRouteRecordID = nil
@@ -1175,7 +1220,7 @@ struct WholeShutoProductView: View {
         SavedRouteLibraryModelError.recordUnavailable.rawValue
       return
     }
-    if planningLocation.snapshot != nil || model.origin != nil {
+    if model.currentCoordinate != nil || planningLocation.snapshot != nil || model.origin != nil {
       finishOpeningSavedRoute(record)
       return
     }
@@ -1193,7 +1238,7 @@ struct WholeShutoProductView: View {
   private func finishOpeningSavedRoute(_ record: SavedRouteRecord) {
     let opened = model.openSavedRoute(
       record,
-      origin: planningLocation.snapshot?.coordinate
+      origin: (isDriving ? model.currentCoordinate : nil) ?? planningLocation.snapshot?.coordinate
     )
     pendingSavedRouteRecordID = nil
     if opened {
@@ -3498,6 +3543,12 @@ struct WholeShutoProductView: View {
       }
 
       arrivalDriveRecord
+      if model.showsDriveRecord, model.driveRecord.hasRecordedIntervals {
+        Button(copy.resolve(japanese: "走行履歴を見る", simplifiedChinese: "查看行程记录", english: "View drive history")) {
+          showsDriveHistory = true
+        }
+        .frame(minHeight: 44)
+      }
 
       Button {
         model.reset()
@@ -6890,6 +6941,7 @@ private struct WholeShutoSettingsView: View {
   @AppStorage(KaidoMapAppearance.preferenceKey) private var mapAppearance: KaidoMapAppearance = .automatic
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
   @ObservedObject var model: WholeShutoProductModel
+  @ObservedObject var savedRoutes: SavedRouteLibraryModel
   let checkedAt: String
   let attribution: WholeShutoAttribution
   @Environment(\.dismiss) private var dismiss
@@ -7066,12 +7118,18 @@ private struct WholeShutoSettingsView: View {
             )
           )
           .accessibilityIdentifier("whole-shuto-drive-record-setting")
+          NavigationLink {
+            DriveHistoryView(model: model, savedRoutes: savedRoutes, locale: languageSettings.interfaceLocale)
+          } label: {
+            Label(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"), systemImage: "clock.arrow.circlepath")
+          }
+          .disabled(model.isLiveDrive && model.phase != .completed)
         } footer: {
           Text(
             copy.resolve(
-              japanese: "平均・最高・最低速度と周回タイムを表示します。",
-              simplifiedChinese: "显示平均、最高、最低速度和圈速。",
-              english: "Shows average, maximum, and minimum speed and lap times."
+              japanese: "端末内に走行記録を保存します。オフにすると新しい記録を停止します。保存済みの記録は履歴から削除できます。",
+              simplifiedChinese: "记录保存在本机。关闭后停止记录新行程，已存记录可在历史中删除。",
+              english: "Records stay on this device. Turning this off stops new recording; saved records can be deleted in history."
             )
           )
         }

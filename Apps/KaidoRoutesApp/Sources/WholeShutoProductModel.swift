@@ -1463,7 +1463,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// only; a mainline continuation speaks and shows its card without
   /// implying a diagram the evidence does not support.
   var activeJunctionInsetPrompt: WholeShutoJunctionPrompt? {
-    guard let prompt = activeJunctionPrompt,
+    guard hasCurrentGuidancePosition, let prompt = activeJunctionPrompt,
       prompt.branchSide == .left || prompt.branchSide == .right
     else {
       return nil
@@ -1497,6 +1497,18 @@ final class WholeShutoProductModel: ObservableObject {
       return false
     }
     return speechCoordinator?.completedIdentities.contains { $0.promptID == promptID } == true
+  }
+
+  var hasCurrentGuidancePosition: Bool {
+    guard isLiveDrive else { return true }
+    switch positionState {
+    case .surfacePreview, .boundaryTransition, .networkPreview, .completed:
+      return true
+    case .tunnelEstimated:
+      return liveLocationState == .available && matcherConfidence == .high
+    case .unavailable, .surfaceRoutePending, .networkDegraded, .resting, .routeInterrupted:
+      return false
+    }
   }
 
   var positionState: WholeShutoPositionState {

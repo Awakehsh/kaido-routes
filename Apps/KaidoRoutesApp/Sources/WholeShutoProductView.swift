@@ -3192,7 +3192,7 @@ struct WholeShutoProductView: View {
             )
             .font(.system(size: 11, weight: .black, design: .rounded))
             .padding(.horizontal, 10)
-            .frame(height: 32)
+            .frame(height: 44)
             .foregroundStyle(KaidoTheme.night)
             .background(KaidoTheme.confirmedGreen)
             .clipShape(Capsule())
@@ -3945,6 +3945,7 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionSymbol: String {
+    if !model.hasCurrentGuidancePosition { return "location.circle" }
     if model.isReroutingSurfaceRoute {
       return "arrow.triangle.2.circlepath"
     }
@@ -3965,6 +3966,9 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionKicker: String {
+    if !model.hasCurrentGuidancePosition {
+      return copy.resolve(japanese: "現在地", simplifiedChinese: "当前位置", english: "CURRENT POSITION")
+    }
     if model.isReroutingSurfaceRoute {
       return copy.resolve(
         japanese: "新しい経路を検索中",
@@ -4022,6 +4026,7 @@ struct WholeShutoProductView: View {
   }
 
   private var instructionTitle: String {
+    if !model.hasCurrentGuidancePosition { return positionStatusLabel }
     guard let route = model.selectedRoute else { return "" }
     if model.isReroutingSurfaceRoute {
       return copy.resolve(
@@ -4110,7 +4115,7 @@ struct WholeShutoProductView: View {
   }
 
   private var displayedJunctionPrompt: WholeShutoJunctionPrompt? {
-    guard model.phase == .expressway else { return nil }
+    guard model.phase == .expressway, model.hasCurrentGuidancePosition else { return nil }
     return model.activeJunctionPrompt
       ?? model.nextReviewedJunctionPrompt
   }
@@ -4403,6 +4408,7 @@ struct WholeShutoProductView: View {
   }
 
   private var primaryGuidanceDistanceLabel: String {
+    guard model.hasCurrentGuidancePosition else { return "—" }
     guard let route = model.selectedRoute else { return "—" }
     if model.isReroutingSurfaceRoute { return "…" }
     switch model.phase {
@@ -4488,7 +4494,7 @@ struct WholeShutoProductView: View {
   }
 
   private var nextJunctionDistanceLabel: String? {
-    guard
+    guard model.hasCurrentGuidancePosition,
       let prompt = model.nextReviewedJunctionPrompt,
       let distance = model.distanceToNextReviewedJunctionMeters
     else {
@@ -6736,16 +6742,8 @@ private struct WholeShutoJunctionInset: View {
             english: "JUNCTION AHEAD · \(localizedJunctionName)"
           )
         )
-        .font(.system(size: 11, weight: .black, design: .rounded))
+        .font(.system(size: 14, weight: .bold, design: .rounded))
         .foregroundStyle(KaidoTheme.confirmedGreen)
-        if let distanceText {
-          Text(distanceText)
-            .font(.system(size: 18, weight: .black, design: .rounded))
-            .foregroundStyle(KaidoTheme.routeWhite)
-        }
-        Text(localizedDisplayText)
-          .font(.system(size: 19, weight: .black, design: .rounded))
-          .foregroundStyle(KaidoTheme.routeWhite)
         HStack(spacing: 6) {
           Text(shieldLabel(prompt.incomingRouteID))
             .junctionShield(color: routeColor(prompt.incomingRouteID))
@@ -6755,17 +6753,9 @@ private struct WholeShutoJunctionInset: View {
             .junctionShield(color: routeColor(prompt.outgoingRouteID))
         }
         Text(verbatim: prompt.japaneseSignText)
-          .font(.system(size: 12, weight: .black, design: .rounded))
+          .font(.system(size: 17, weight: .bold, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
-        Text(
-          prompt.routeShields.map(shieldLabel)
-            .joined(separator: " · ")
-        )
-        .font(.system(size: 10, weight: .bold, design: .monospaced))
-        .foregroundStyle(KaidoTheme.nightQuiet)
-        Text(laneGuidanceLabel)
-          .font(.system(size: 10, weight: .bold))
-          .foregroundStyle(KaidoTheme.nightQuiet)
+
       }
       Spacer(minLength: 0)
     }

@@ -411,7 +411,8 @@ continuous route-thread progress rail. It must not promote the route's total
 remaining distance above the next decision distance.
 
 The driver may switch between the geographic map and the track map at any
-time, but cannot edit the route while moving. Both show the active route and
+time. Settings and route selection are also available to passengers during
+navigation, without a motion-based lock. Both maps show the active route and
 eligible current position. On the track map, the marker communicates the exact
 route occurrence and progress without implying geographic precision. A
 route-bound junction inset temporarily becomes the strongest visual when it
@@ -420,7 +421,10 @@ map mode. In labeled replay it appears only after a supported left or right
 DecisionZone frame crosses its bound prompt threshold, then disappears after
 that frame clears. The normal guidance card may preview the stored instruction
 before that threshold. The inset preserves the bound Japanese sign target,
-route shield, distance, and selected branch. It renders its own road scene; operator
+route shield and selected branch. The primary banner owns the distance and
+maneuver; the inset does not repeat those lines. Unresolved live positioning
+replaces the primary maneuver and exact distance with the position status until
+a current position is available again. It renders its own road scene; operator
 photographs may be used for private comparison but are never copied into the
 product. Low-confidence or tunnel positioning is shown as estimated without
 fabricating a precise marker.

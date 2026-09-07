@@ -506,3 +506,16 @@ text and declared language. Street-name speech localization is not claimed.
 
 These maneuver phrases are bundled and require no translation-model download.
 Voice settings and audition remain available during navigation for passengers.
+
+## Finish the current lap
+
+During a loop drive, the navigation menu and native drive action offer **Finish
+this lap**. This skips all subsequent full laps in one operation and keeps the
+current partial lap, original exit, and original destination. It does not select
+an unplanned nearby exit. The loop strip shows the complete laps remaining after
+the current lap, so dropping laps is immediately reflected.
+
+Skipped occurrences remain separate from driven history. The update keeps the
+same physical route position, uses actual edge lengths for displayed progress,
+and cancels guidance for the previous occurrence sequence until the next current
+instruction is available.

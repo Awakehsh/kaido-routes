@@ -514,6 +514,17 @@ public actor NavigationSession {
     return occurrenceID
   }
 
+  @discardableResult
+  public func skipRemainingLaps() throws -> String? {
+    var updatedEngine = engine
+    guard let occurrenceID = updatedEngine.skipRemainingLaps(
+      trigger: "DRIVER_FINISHING_CURRENT_LAP"
+    ) else { return nil }
+    try matcherSession.restart(at: occurrenceID)
+    engine = updatedEngine
+    return occurrenceID
+  }
+
   public var remainingWholeLapsAhead: Int {
     guard let routePlan = configuredRoutePlan,
       let currentIndex = engine.snapshot.currentOccurrenceIndex

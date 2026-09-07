@@ -27,3 +27,6 @@
 "End navigation? Route guidance will stop." = "ナビを終了しますか？ルート案内が停止します。";
 "The navigation session has already ended." = "ナビはすでに終了しています。";
 "Navigation ended." = "ナビを終了しました。";
+"Finish this lap" = "この周回で終了";
+"Finish this lap, then follow the planned exit and destination." = "この周回を終えたら、予定の出口と目的地へ案内します。";
+"There are no later complete laps to remove at this position." = "この位置では減らせる後続の周回がありません。";

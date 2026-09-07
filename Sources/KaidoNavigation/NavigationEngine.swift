@@ -497,6 +497,37 @@ public struct NavigationEngine: Sendable {
     return target.id
   }
 
+  /// Retains the current partial lap and the released exit tail in one change.
+  /// Intermediate lap copies are skipped, never published as visited positions.
+  @discardableResult
+  package mutating func skipRemainingLaps(trigger: String) -> String? {
+    guard snapshot.journeyPhase == .strictRoute,
+      let routePlan = configuration.routePlan,
+      let currentIndex = snapshot.currentOccurrenceIndex
+    else { return nil }
+    let boundaries = configuration.lapBoundaryOccurrenceIDs.compactMap {
+      routePlan.occurrence(id: $0)?.index
+    }
+    guard boundaries.count == configuration.lapBoundaryOccurrenceIDs.count,
+      boundaries.count >= 3,
+      let lap = boundaries.indices.dropLast().last(where: {
+        currentIndex >= boundaries[$0] && currentIndex < boundaries[$0 + 1]
+      }), lap < boundaries.count - 2
+    else { return nil }
+    let offset = currentIndex - boundaries[lap]
+    let targetIndex = boundaries[boundaries.count - 2] + offset
+    guard targetIndex < boundaries.last!,
+      let target = routePlan.occurrences.first(where: { $0.index == targetIndex })
+    else { return nil }
+    for occurrence in routePlan.occurrences
+    where occurrence.index > currentIndex && occurrence.index < targetIndex {
+      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+    }
+    snapshot.lastPhaseTransitionTrigger = trigger
+    advance(to: target.id)
+    return target.id
+  }
+
   package mutating func activateSurfaceEgress() {
     guard snapshot.journeyPhase == .exitTransition,
       snapshot.egress.status == .active

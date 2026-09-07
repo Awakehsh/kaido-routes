@@ -739,6 +739,15 @@ struct WholeShutoProductView: View {
       .accessibilityLabel(copy.resolve(japanese: "設定", simplifiedChinese: "设置", english: "Settings"))
       .accessibilityIdentifier("whole-shuto-settings")
       Menu {
+        if model.selectedCircuit?.kind == .loop && model.isLiveDrive {
+          Button {
+            Task { _ = await model.finishCurrentLap() }
+          } label: {
+            Label(copy.resolve(japanese: "この周回で終了", simplifiedChinese: "本圈结束后离开", english: "Finish this lap"), systemImage: "flag.checkered")
+          }
+          .disabled(!model.canFinishCurrentLap)
+          .accessibilityIdentifier("whole-shuto-finish-current-lap")
+        }
         Button { showsSavedRoutes = true } label: {
           Label(copy.resolve(japanese: "保存したルート", simplifiedChinese: "已保存路线", english: "Saved routes"), systemImage: "bookmark")
         }
@@ -3136,20 +3145,24 @@ struct WholeShutoProductView: View {
       HStack(spacing: 8) {
         Text(
           copy.resolve(
-            japanese: "周回数",
-            simplifiedChinese: "圈数",
-            english: "LAPS"
+            japanese: "この周回の後",
+            simplifiedChinese: "本圈之后",
+            english: "AFTER THIS LAP"
           )
         )
         .font(.system(size: 10, weight: .black, design: .rounded))
         .foregroundStyle(KaidoTheme.nightQuiet)
 
-        Text("×\(model.circuitLaps)")
+        Text(copy.resolve(
+          japanese: "\(model.remainingWholeLapsAhead) 周",
+          simplifiedChinese: "\(model.remainingWholeLapsAhead) 圈",
+          english: "\(model.remainingWholeLapsAhead) laps"
+        ))
           .font(.system(size: 13, weight: .black, design: .rounded))
           .monospacedDigit()
           .foregroundStyle(KaidoTheme.routeWhite)
           .accessibilityIdentifier("whole-shuto-driving-laps")
-          .accessibilityValue("\(model.circuitLaps)")
+          .accessibilityValue("\(model.remainingWholeLapsAhead)")
 
         Spacer(minLength: 0)
 
@@ -3171,7 +3184,7 @@ struct WholeShutoProductView: View {
             )
             .font(.system(size: 11, weight: .black, design: .rounded))
             .padding(.horizontal, 10)
-            .frame(height: 32)
+            .frame(height: 44)
             .foregroundStyle(KaidoTheme.routeWhite)
             .background(KaidoTheme.nightRaised)
             .clipShape(Capsule())
@@ -3378,9 +3391,9 @@ struct WholeShutoProductView: View {
         )
         .accessibilityHint(
           copy.resolve(
-            japanese: "PA などで停まる間、案内と位置情報を止めます",
-            simplifiedChinese: "在 PA 等处停车期间，停止导航和定位",
-            english: "Stops guidance and location while you park, such as at a PA"
+            japanese: "案内と位置情報を一時停止し、あとで再開できます",
+            simplifiedChinese: "暂停导航和定位，之后可继续",
+            english: "Pauses guidance and location until you resume"
           )
         )
         .accessibilityIdentifier("whole-shuto-rest-live-drive")

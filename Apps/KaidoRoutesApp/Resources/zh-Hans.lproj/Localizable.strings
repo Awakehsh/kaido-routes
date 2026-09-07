@@ -27,3 +27,6 @@
 "End navigation? Route guidance will stop." = "结束导航？结束后将停止路线引导。";
 "The navigation session has already ended." = "本次导航已经结束。";
 "Navigation ended." = "导航已结束。";
+"Finish this lap" = "本圈结束后离开";
+"Finish this lap, then follow the planned exit and destination." = "本圈结束后，将继续引导至原定出口和终点。";
+"There are no later complete laps to remove at this position." = "当前位置没有可取消的后续整圈。";

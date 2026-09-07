@@ -1972,21 +1972,47 @@ final class WholeShutoProductModel: ObservableObject {
     isChangingLaps = true
     defer { isChangingLaps = false }
     guard let occurrenceID = await session.skipOneLap() else { return false }
-    // The core just said where the drive now is; the display should not wait
-    // for the next fix to catch up.
+    await applySkippedLaps(at: occurrenceID, session: session)
+    return true
+  }
+
+  var canFinishCurrentLap: Bool {
+    isLiveDrive && !isChangingLaps && phase == .expressway
+      && runtimeJourneyPhase == .strictRoute && selectedCircuit?.kind == .loop
+      && remainingWholeLapsAhead > 0
+  }
+
+  @discardableResult
+  func finishCurrentLap() async -> Bool {
+    guard canFinishCurrentLap, let session = liveDriveSession else { return false }
+    isChangingLaps = true
+    defer { isChangingLaps = false }
+    do {
+      guard let occurrenceID = try await session.skipRemainingLaps() else { return false }
+      await applySkippedLaps(at: occurrenceID, session: session)
+      return true
+    } catch {
+      failureCode = "LAP_CHANGE_UNAVAILABLE"
+      return false
+    }
+  }
+
+  private func applySkippedLaps(at occurrenceID: String, session: ShutoLiveDriveSession) async {
+    speechCoordinator?.invalidateGuidance(keepingNotices: true)
+    presentationProjection = nil
+    clearTunnelEstimate()
     runtimeOccurrenceID = occurrenceID
-    if let index = selectedRoute?.routePlan.occurrence(id: occurrenceID)?.index,
-      let total = selectedRoute?.routePlan.occurrences.count,
-      total > 1
+    if let route = selectedRoute,
+      let index = route.routePlan.occurrence(id: occurrenceID)?.index,
+      route.edges.indices.contains(index), route.distanceMeters > 0
     {
-      if let boundaries = selectedRoute?.lapBoundaryOccurrenceIndices {
-        driveRecord.skipPlannedLap(toOccurrenceIndex: index, boundaries: boundaries)
-      }
-      progressFraction = Double(index) / Double(total - 1)
+      driveRecord.skipPlannedLap(toOccurrenceIndex: index, boundaries: route.lapBoundaryOccurrenceIndices)
+      let traveled = route.edges.prefix(index).reduce(0) { $0 + $1.lengthMeters }
+        + route.edges[index].lengthMeters * (runtimeFractionAlongOccurrence ?? 0)
+      progressFraction = min(1, max(0, traveled / route.distanceMeters))
     }
     await refreshRemainingLaps(from: session)
     await captureAndPersistLiveCheckpoint(from: session, force: true)
-    return true
   }
 
   /// Adds a lap to a loop the driver wants to keep running.

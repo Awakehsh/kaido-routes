@@ -32,6 +32,18 @@ func skipOneLapMovesExactlyOneLapForward() {
   #expect(!engine.snapshot.completedOccurrenceIDs.contains("lap.occurrence.3"))
 }
 
+@Test("Finishing the current lap skips every later lap and retains the exit tail")
+func finishCurrentLapKeepsCurrentPositionAndExitTail() {
+  var engine = lapEngine()
+  engine.enterStrictRoute(firstOccurrenceID: "lap.occurrence.2", trigger: "TEST_ENTER")
+  #expect(engine.skipRemainingLaps(trigger: "DRIVER_FINISHING_CURRENT_LAP") == "lap.occurrence.10")
+  #expect(engine.snapshot.journeyPhase == .strictRoute)
+  #expect(engine.snapshot.skippedOccurrenceIDs == (3...9).map { "lap.occurrence.\($0)" })
+  #expect(!engine.snapshot.completedOccurrenceIDs.contains("lap.occurrence.6"))
+  #expect(engine.snapshot.pendingOccurrenceIDs.contains("lap.occurrence.13"))
+  #expect(engine.skipRemainingLaps(trigger: "DRIVER_FINISHING_CURRENT_LAP") == nil)
+}
+
 @Test("The last lap has nothing left to drop")
 func skipOneLapRefusesOnTheFinalLap() {
   var engine = lapEngine()

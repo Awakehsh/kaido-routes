@@ -2256,3 +2256,17 @@ a street name. Fixed maneuver wording avoids that semantic change. Explicit
 repetition uses the current localized instruction and retains the existing
 automatic speech ledger. Street-name speech localization remains outside this
 projection.
+
+## Finish-current-lap action
+
+The engine selects the equivalent position in the final released lap and records
+one skipped occurrence range. Intermediate lap copies are never published as
+visited positions. NavigationSession stages this update, restarts its matcher at
+the selected occurrence, and commits the engine change together. The App cannot
+name a different target occurrence or exit.
+
+The App retains the current edge fraction and computes progress using actual
+route-edge lengths, not occurrence count. It clears obsolete guidance and tunnel
+projections after the logical lap change, then persists the existing checkpoint
+structure. The original RoutePlan, exit tail, destination, and observed lap
+records remain unchanged.

@@ -55,11 +55,18 @@ known map limitations, privacy, and licences. **Major roads first** is the
 default; **Faster route** remains available for drivers who prefer the quickest
 provider candidate. OSM source and licence credit sits under the title as a compact
 caption, adjacent to the map and off the road drawing. Each catalog card presents the
-route as a finished experience: its shape thumbnail, distance and duration
-class, landmark and PA facts, and — once an origin is known — the derived
+route as a finished experience: its directional shape thumbnail, reference
+distance and duration, reviewed junction count, mapped tunnel share, landmark
+and PA facts, and — once an origin is known — the derived
 entrance/exit pairing as one factual line. It does not lead with a destination
 field, and it does not show an editorial, operator, creator, or community
 recommendation feed.
+
+Catalog reference figures come from the same representative snapshot-bound
+route as the thumbnail and describe one Shuto traversal. They explicitly exclude
+ordinary-road access, egress, and live traffic. Using a named route opens the
+parked journey review directly; revisiting the planning map exposes entrance/exit
+editing as a compact secondary action rather than an empty full-size choice card.
 
 Selecting an experience replaces the catalog with one compact draft that has
 an explicit **All routes** return action. The draft labels the entrance and its
@@ -228,9 +235,11 @@ before they can occupy the same replaceable boundary.
 The map occupies most of the screen. The self-drawn Kaido presentation — the
 whole-network line diagram before a route exists, the track map after — is the
 primary canvas, and a persistent control keeps the geographic presentation one
-switch away. The whole product renders in a single midnight visual identity:
-blue-black asphalt, an ink Tokyo Bay, receded unlit network, and neon-lit
-route lines, with plated labels that never sit on the carriageways. Until
+switch away. The map supports automatic, day, and night appearance. Day uses a
+cool pale map, dark labels, and high-contrast route colors; night retains blue-black
+asphalt, an ink Tokyo Bay, and illuminated route lines. Both use plated labels
+that never sit on the carriageways. Instrument controls remain dark and legible
+against either map. Until
 the driver chooses a route the network stays receded; selecting a catalog
 experience lights only its member routes in their route colors. Junction
 names stay on the diagram. The unzoomed network marks classic places with

@@ -3,6 +3,7 @@ import KaidoPresentation
 
 #if os(iOS) || os(tvOS) || os(watchOS) || targetEnvironment(macCatalyst)
   import AVFAudio
+  import OSLog
 #endif
 
 public enum GuidanceSpeechOutputFailureCode: String, Equatable, Sendable {
@@ -271,6 +272,9 @@ public final class GuidanceSpeechCoordinator {
   /// interruption cancels the prompt and deliberately does not resume it.
   @MainActor
   public final class AVSpeechGuidanceOutput: NSObject, GuidanceSpeechOutput {
+    private static let log = OSLog(
+      subsystem: "app.kaidoroutes", category: "GuidanceAudio"
+    )
     public var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
     public private(set) var selectedVoiceProfile: GuidanceSpeechVoiceProfile?
 
@@ -338,26 +342,28 @@ public final class GuidanceSpeechCoordinator {
           ]
         )
       } catch {
+        os_log("Audio configuration failed: %ld", log: Self.log, type: .error, (error as NSError).code)
         throw GuidanceSpeechOutputError.audioSessionConfigurationFailed
       }
       do {
         try audioSession.setActive(true)
       } catch {
+        os_log("Audio activation failed: %ld", log: Self.log, type: .error, (error as NSError).code)
         throw GuidanceSpeechOutputError.audioSessionActivationFailed
       }
 
       let utterance = AVSpeechUtterance(string: command.synthesisText)
       utterance.voice = selection.voice
-      // Bluetooth receivers commonly need a short lead-in after the playback
-      // session activates; otherwise the first word can be clipped.
-      utterance.preUtteranceDelay = 0.6
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: command.languageCode
       )
-      utterance.applyGuidanceProsody(prosody)
+      // Bluetooth receivers need time to open the newly activated route.
+      utterance.applyGuidanceProsody(prosody, minimumLeadIn: 0.6)
       let utteranceID = ObjectIdentifier(utterance)
       identityByUtterance[utteranceID] = command.identity
       activeUtteranceID = utteranceID
+      let ports = audioSession.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+      os_log("Speech submitted; output ports: %{public}@", log: Self.log, type: .default, ports)
       synthesizer.speak(utterance)
     }
 
@@ -483,6 +489,7 @@ public final class GuidanceSpeechCoordinator {
 
       switch type {
       case .began:
+        os_log("Audio interruption began", log: Self.log, type: .default)
         eventHandler?(.interruptionBegan)
         cancelActiveUtterance()
         // Some routes (notably Bluetooth handoffs and Siri) never deliver a
@@ -490,6 +497,7 @@ public final class GuidanceSpeechCoordinator {
         // utterance remains consumed, but future prompts must stay eligible.
         eventHandler?(.interruptionEnded)
       case .ended:
+        os_log("Audio interruption ended", log: Self.log, type: .default)
         eventHandler?(.interruptionEnded)
       @unknown default:
         break
@@ -530,6 +538,7 @@ public final class GuidanceSpeechCoordinator {
         return
       }
       let wasActive = activeUtteranceID == utteranceID
+      os_log("Speech callback completed; active: %d", log: Self.log, type: .default, wasActive)
       if wasActive {
         activeUtteranceID = nil
         deactivateAudioSession()
@@ -538,10 +547,11 @@ public final class GuidanceSpeechCoordinator {
     }
 
     private func deactivateAudioSession() {
-      try? audioSession.setActive(
-        false,
-        options: .notifyOthersOnDeactivation
-      )
+      do {
+        try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+      } catch {
+        os_log("Audio deactivation failed: %ld", log: Self.log, type: .error, (error as NSError).code)
+      }
     }
 
     private static func quality(
@@ -584,6 +594,7 @@ public final class GuidanceSpeechCoordinator {
       else {
         return
       }
+      os_log("Speech synthesis started", log: Self.log, type: .default)
       eventHandler?(.didStart(identity))
     }
 

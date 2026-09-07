@@ -4,6 +4,14 @@ import XCTest
 @testable import KaidoAppleAdapters
 
 final class GuidanceSpeechProsodyTests: XCTestCase {
+  func testNavigationProsodyPreservesBluetoothLeadIn() {
+    let utterance = AVSpeechUtterance(string: "test")
+    utterance.applyGuidanceProsody(
+      .navigation(languageCode: "ja-JP"), minimumLeadIn: 0.6
+    )
+    XCTAssertEqual(utterance.preUtteranceDelay, 0.6)
+  }
+
   func testSharedUtteranceConfigurationAppliesTheWholeNavigationProsody() {
     let prosody = GuidanceSpeechProsody.navigation(languageCode: "ja-JP")
     let utterance = AVSpeechUtterance(string: "test")

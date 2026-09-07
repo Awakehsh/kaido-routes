@@ -592,7 +592,10 @@ public struct NavigationEngine: Sendable {
     with observation: LocationObservation,
     confidence: LocationConfidence
   ) {
-    guard confidence == .high else { return }
+    guard confidence == .high else {
+      resetSignalReacquisition(status: .pending)
+      return
+    }
     snapshot.locationConfidence = .low
     snapshot.markerStyle = "UNRESOLVED"
 
@@ -609,14 +612,30 @@ public struct NavigationEngine: Sendable {
     }
 
     let gap = observedAt - previousObservedAt
-    guard gap >= 0,
-      gap <= configuration.signalReacquisitionMaximumGapMilliseconds
+    guard gap > 0 else { return }
+    guard gap <= configuration.signalReacquisitionMaximumGapMilliseconds
     else {
       beginReacquisitionWindow(candidates: candidates, observedAt: observedAt)
       return
     }
 
-    let consistentCandidates = reacquisitionCandidateOccurrenceIDs.intersection(candidates)
+    var consistentCandidates = reacquisitionCandidateOccurrenceIDs.intersection(candidates)
+    // Exact adjacent occurrences are a continuous window even when short
+    // road segments put consecutive fixes on different edges. Never bridge
+    // a skipped movement or an ambiguous branch to complete reacquisition.
+    if consistentCandidates.isEmpty,
+      observation.candidateResolution == .resolved,
+      candidates.count == 1,
+      reacquisitionCandidateOccurrenceIDs.count == 1,
+      let previousID = reacquisitionCandidateOccurrenceIDs.first,
+      let currentID = candidates.first,
+      let plan = configuration.routePlan,
+      let previous = plan.occurrence(id: previousID),
+      let current = plan.occurrence(id: currentID),
+      current.index == previous.index + 1
+    {
+      consistentCandidates = candidates
+    }
     guard !consistentCandidates.isEmpty else {
       beginReacquisitionWindow(candidates: candidates, observedAt: observedAt)
       return

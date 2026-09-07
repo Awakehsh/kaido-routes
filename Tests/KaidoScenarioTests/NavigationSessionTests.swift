@@ -36,6 +36,35 @@ func navigationSessionBridgesMatcherToGuidance() async throws {
   #expect(second.navigationSnapshot.emittedGuidancePromptIDs == ["test.prompt.prepare"])
 }
 
+@Test("Tunnel reacquisition withholds precise output until the actor confirms the window")
+func navigationSessionTunnelReacquisitionGatesProjection() async throws {
+  let fixture = navigationSessionFixture()
+  let session = try NavigationSession(
+    navigationConfiguration: fixture.configuration,
+    matcherCorridor: fixture.corridor,
+    decisionZones: [fixture.decisionZone],
+    initialNavigationSnapshot: fixture.initialSnapshot,
+    initialMatcherOccurrenceID: "test.occurrence.approach"
+  )
+  _ = await session.start()
+  _ = try await session.observe(matcherObservation(longitude: 139.7605, observedAt: 1_000))
+  _ = await session.enterTunnel()
+  // The first fix after a long outage is deliberately LOW in the matcher.
+  _ = try await session.observe(matcherObservation(longitude: 139.7606, observedAt: 181_000))
+  _ = await session.exitTunnel()
+  let pending = try await session.observe(
+    matcherObservation(longitude: 139.7607, observedAt: 182_000)
+  )
+  #expect(pending.navigationSnapshot.signalReacquisitionStatus == .pending)
+  #expect(pending.matcherEstimate.confidence == .low)
+  #expect(pending.guidancePromptEmission == nil)
+  let confirmed = try await session.observe(
+    matcherObservation(longitude: 139.7608, observedAt: 183_000)
+  )
+  #expect(confirmed.navigationSnapshot.signalReacquisitionStatus == .confirmed)
+  #expect(confirmed.matcherEstimate.confidence == .high)
+}
+
 @Test("NavigationSession rejects cross-RoutePlan runtime composition")
 func navigationSessionRejectsMismatchedComposition() {
   let fixture = navigationSessionFixture(corridorRoutePlanID: "test.plan.other")

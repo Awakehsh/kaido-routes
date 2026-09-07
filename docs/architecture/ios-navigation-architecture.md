@@ -550,6 +550,10 @@ prompt, and deactivates with `notifyOthersOnDeactivation`. It observes Apple
 audio interruptions, cancels current synthesis, and deliberately does not
 resume stale navigation speech. Missing installed voices and audio-session
 configuration or activation failures remain typed, observable blocked states.
+The Bluetooth lead-in remains at least 0.6 seconds after applying prosody.
+The `app.kaidoroutes` / `GuidanceAudio` system log records submission, synthesis
+start/completion, interruption, output port types, and audio-session error codes.
+It does not record coordinates, spoken text, or Bluetooth device names.
 This implements reviewed-form delivery, scheduling, and lifecycle ownership;
 actual pronunciation, output-route timing, interruption behavior on real
 phone/CarPlay hardware, and driver comprehension remain device evidence gates.
@@ -1835,6 +1839,38 @@ or battery profile exists. Actual device evidence is the next core gate. C++ or
 Rust is not justified unless profiling this bounded implementation exposes a
 measured failure that cannot be fixed within the Swift boundary.
 
+## Navigation continuity
+
+Navigation continuity takes priority over feature expansion. A started journey
+must retain its route through recoverable positioning, network, and audio
+interruptions. Recovery is automatic when trustworthy input returns; a retry
+button is not the acceptance criterion for a transient failure.
+
+Primary-source comparison checked on 2026-09-07:
+
+- [Google Maps GPS guidance](https://support.google.com/maps/answer/12244322?hl=en)
+  distinguishes an unreliable navigation fix from merely displaying a location.
+  Kaido must expose loss of confidence and resume after a consistent window,
+  including windows that cross short consecutive route occurrences.
+- [Google Maps offline navigation](https://support.google.com/maps/answer/6291838?co=GENIE.Platform%3DiOS&hl=en)
+  keeps driving guidance available within a downloaded area without live traffic
+  or alternate routes. Kaido's bundled Shuto route must similarly survive loss
+  of connectivity. Provider basemap availability and online ordinary-road
+  recalculation remain separate limitations, not reasons to end that route.
+- [Mapbox automatic rerouting](https://docs.mapbox.com/ios/navigation/guides/turn-by-turn-navigation/rerouting/)
+  starts from the current location after detecting a deviation. Kaido's ordinary
+  road legs automatically recalculate after consistent accurate off-route fixes;
+  failed requests retain the route and remain eligible after the cooldown.
+  Expressway recovery continues to obey the selected route's legal later-rejoin
+  contract. Weak GPS alone must not authorize a different road.
+- [Apple audio interruption handling](https://developer.apple.com/documentation/avfaudio/handling-audio-interruptions)
+  requires audio lifecycle recovery. Kaido must admit fresh guidance after an
+  interruption without replaying obsolete instructions or stopping positioning.
+
+Acceptance exercises loss and return of input through the live App path, not
+only a changed status label. Deterministic evidence does not establish Bluetooth
+acoustic reliability or Yamate Tunnel field accuracy.
+
 ## Tunnel behavior
 
 When GPS observations stop:
@@ -1856,12 +1892,27 @@ and freezes it after 45 seconds. The authoritative matcher progress and
 occurrence stay unchanged, so no prompt or route transition can be emitted from
 coasting. Core Motion and field-calibrated dead reckoning remain absent.
 
+The location source remains active through transient `locationUnknown` errors;
+the driving status explicitly says it is reacquiring or waiting for positioning.
+This retries through Core Location's ongoing updates without restarting the
+journey or advancing from a tunnel estimate.
+After a terminal source failure, an explicit resume may start the source again
+when the same release-bound runtime, foreground state, background capability,
+and location permission allow it. A transient outage does not require resume.
+
 The feasibility reducer makes that final step explicit. After a low or lost
 tunnel observation, signal reacquisition is `PENDING`. A single good coordinate
 does not advance the route or restore a precise topology marker. At least two
-high-confidence occurrence-level candidate sets must arrive within a bounded
-gap and intersect to one exact current-or-later occurrence before the state is
-`CONFIRMED`. Entity IDs are insufficient because the same road may appear in
+high-confidence occurrence-level candidate sets must arrive at distinct,
+increasing timestamps within a bounded gap. They must intersect to one exact
+current-or-later occurrence, or identify singleton consecutive occurrences
+with the new observation explicitly resolved, before the state is `CONFIRMED`.
+The latter permits a moving car to cross a short edge between fixes without
+resetting recovery; it never bridges skipped occurrences or an ambiguous branch.
+A low-confidence observation resets the pending window. While confirmation is
+pending, the live session also withholds precise matcher output and speech.
+KR-S33 covers moving recovery alongside the repeated-road ambiguity in KR-S03.
+Entity IDs are insufficient because the same road may appear in
 multiple route occurrences. The initial two-observation and five-second values
 are deterministic spike parameters, not field-calibrated release thresholds;
 replay and field evidence must calibrate them separately for phone, wired,

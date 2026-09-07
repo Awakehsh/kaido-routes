@@ -288,15 +288,16 @@ final class ForegroundNavigationLocationController: ObservableObject {
     guard
       case .releasedProduct = authority,
       scenePhase == .active,
+      source?.supportsBackgroundNavigation == true,
       consumer?.canConsumeForegroundNavigationLocations == true
     else {
       return false
     }
     return switch state {
-    case .idle, .stopped:
+    case .idle, .stopped, .failed:
       true
     case .releaseBlocked, .runtimeUnavailable, .awaitingAuthorization,
-      .running, .sceneInactive, .permissionDenied, .failed:
+      .running, .sceneInactive, .permissionDenied:
       false
     }
   }

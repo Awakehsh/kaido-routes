@@ -412,6 +412,7 @@ struct WholeShutoProductView: View {
         if model.isLiveDrive,
           model.liveLocationState == .resumeRequired
             || model.liveLocationState == .resting
+            || model.liveLocationState == .failed
         {
           liveResumeBanner
         }
@@ -4101,18 +4102,26 @@ struct WholeShutoProductView: View {
       case .available, .degraded, .stale:
         return prefix
           + copy.resolve(
-            japanese: "位置不確か · 停止中",
-            simplifiedChinese: "定位弱 · 暂停推进",
-            english: "WEAK POSITION · HELD"
+            japanese: "位置不確か · 自動再取得中",
+            simplifiedChinese: "定位弱 · 正在自动重新定位",
+            english: "WEAK POSITION · REACQUIRING"
           )
       }
     case .tunnelEstimated:
       if model.isLiveDrive {
+        if model.liveLocationState == .available {
+          return prefix
+            + copy.resolve(
+              japanese: "トンネル位置推定 · 低信頼",
+              simplifiedChinese: "隧道位置估算 · 低置信",
+              english: "TUNNEL ESTIMATE · LOW CONFIDENCE"
+            )
+        }
         return prefix
           + copy.resolve(
-            japanese: "トンネル位置推定 · 低信頼",
-            simplifiedChinese: "隧道位置估算 · 低置信",
-            english: "TUNNEL ESTIMATE · LOW CONFIDENCE"
+            japanese: "トンネル位置推定 · 位置情報を待機中",
+            simplifiedChinese: "隧道位置估算 · 等待定位恢复",
+            english: "TUNNEL ESTIMATE · AWAITING POSITION"
           )
       }
       return prefix

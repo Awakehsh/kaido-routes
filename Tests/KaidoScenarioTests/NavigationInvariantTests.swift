@@ -587,6 +587,54 @@ func carPlayDisconnectPreservesSharedNavigationState() {
       == ["prompt.first.prepare", "prompt.second.prepare"])
 }
 
+@Test("Tunnel reacquisition follows resolved adjacent occurrences while the car moves")
+func tunnelReacquisitionAcrossAdjacentOccurrences() {
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: testRoutePlan()),
+    initialSnapshot: NavigationSnapshot(
+      journeyPhase: .strictRoute,
+      currentOccurrenceID: "first",
+      locationConfidence: .high
+    )
+  )
+  engine.enterTunnel()
+  engine.observeLocation(LocationObservation(horizontalAccuracyMeters: -1))
+  engine.exitTunnel()
+  for (index, id) in ["first", "second"].enumerated() {
+    engine.observeLocation(LocationObservation(
+      matchedOccurrenceID: id,
+      candidateOccurrenceIDs: [id],
+      candidateResolution: .resolved,
+      observedAtMilliseconds: 1_000 + index * 1_000,
+      reportedConfidence: .high
+    ))
+    if index == 0 {
+      #expect(engine.snapshot.signalReacquisitionStatus == .pending)
+    }
+  }
+  #expect(engine.snapshot.signalReacquisitionStatus == .confirmed)
+  #expect(engine.snapshot.currentOccurrenceID == "second")
+}
+
+@Test("A duplicated timestamp cannot confirm tunnel reacquisition")
+func tunnelReacquisitionRejectsDuplicateTimestamp() {
+  var engine = NavigationEngine(
+    configuration: NavigationConfiguration(routePlan: testRoutePlan()),
+    initialSnapshot: NavigationSnapshot(journeyPhase: .strictRoute, currentOccurrenceID: "first")
+  )
+  engine.enterTunnel()
+  engine.observeLocation(LocationObservation(horizontalAccuracyMeters: -1))
+  engine.exitTunnel()
+  let observation = LocationObservation(
+    candidateOccurrenceIDs: ["second"],
+    observedAtMilliseconds: 1_000,
+    reportedConfidence: .high
+  )
+  engine.observeLocation(observation)
+  engine.observeLocation(observation)
+  #expect(engine.snapshot.signalReacquisitionStatus == .pending)
+}
+
 private func testRoutePlan() -> RoutePlan {
   RoutePlan(
     id: "test.plan",

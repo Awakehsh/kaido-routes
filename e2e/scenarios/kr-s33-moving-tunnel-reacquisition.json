@@ -1,0 +1,226 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S33",
+  "title": "Tunnel signal recovery follows adjacent short route occurrences",
+  "layer": "SIMULATION",
+  "tags": [
+    "confidence",
+    "tunnel",
+    "reacquisition"
+  ],
+  "purpose": "Resume a moving vehicle from consecutive resolved adjacent occurrences without requiring two fixes on one short edge.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "The observation timing and candidate sets are synthetic and do not claim universal Yamate Tunnel behavior.",
+      "A field replay must calibrate the observation count and maximum time gap for each location-source class."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.reacquisition-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-22T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.repeated-tunnel-edge",
+      "network_snapshot_id": "test.snapshot.reacquisition-v1",
+      "entry_facility_id": "test.access.before-tunnel",
+      "exit_facility_id": "test.access.after-loop",
+      "recovery_policy": "SAFE_REJOIN",
+      "occurrences": [
+        {
+          "occurrence_id": "pre-tunnel-shared-edge",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared-geometry"
+        },
+        {
+          "occurrence_id": "tunnel-entry-movement",
+          "index": 1,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.tunnel-entry"
+        },
+        {
+          "occurrence_id": "tunnel-edge",
+          "index": 2,
+          "kind": "EDGE",
+          "entity_id": "test.edge.tunnel"
+        },
+        {
+          "occurrence_id": "tunnel-exit-movement",
+          "index": 3,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.tunnel-exit"
+        },
+        {
+          "occurrence_id": "after-tunnel-shared-edge",
+          "index": 4,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared-geometry"
+        },
+        {
+          "occurrence_id": "later-loop-movement",
+          "index": 5,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.loop"
+        },
+        {
+          "occurrence_id": "later-loop-shared-edge",
+          "index": 6,
+          "kind": "EDGE",
+          "entity_id": "test.edge.shared-geometry"
+        }
+      ]
+    },
+    "inputs": {},
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "location_confidence": "HIGH",
+      "current_occurrence_id": "pre-tunnel-shared-edge"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "tunnel-entry",
+      "at_ms": 5000,
+      "type": "TUNNEL_ENTERED",
+      "payload": {
+        "portal_id": "test.portal.tunnel-entry"
+      }
+    },
+    {
+      "id": "signal-lost",
+      "at_ms": 20000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": -1,
+        "age_ms": 15000,
+        "source": "PHONE",
+        "projected_occurrence_id": "tunnel-edge"
+      }
+    },
+    {
+      "id": "tunnel-exit",
+      "at_ms": 30000,
+      "type": "TUNNEL_EXITED",
+      "payload": {
+        "portal_id": "test.portal.tunnel-exit"
+      }
+    },
+    {
+      "id": "first-reacquired-fix",
+      "at_ms": 31000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 7,
+        "age_ms": 0,
+        "confidence": "HIGH",
+        "source": "PHONE",
+        "matched_entity_id": "test.movement.tunnel-exit",
+        "candidate_occurrence_ids": [
+          "tunnel-exit-movement"
+        ],
+        "candidate_resolution": "RESOLVED"
+      }
+    },
+    {
+      "id": "consistent-reacquired-fix",
+      "at_ms": 33000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "horizontal_accuracy_m": 6,
+        "age_ms": 0,
+        "confidence": "HIGH",
+        "source": "PHONE",
+        "matched_entity_id": "test.edge.shared-geometry",
+        "candidate_occurrence_ids": [
+          "after-tunnel-shared-edge"
+        ],
+        "candidate_resolution": "RESOLVED"
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "first-fix-remains-pending",
+      "after": "first-reacquired-fix",
+      "category": "SAFETY",
+      "subject": "navigation.signal_reacquisition_status",
+      "matcher": "EQUALS",
+      "expected": "PENDING",
+      "rationale": "One good fix after a tunnel gap is not enough to commit route progress."
+    },
+    {
+      "id": "first-fix-does-not-jump",
+      "after": "first-reacquired-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "pre-tunnel-shared-edge",
+      "rationale": "One resolved observation cannot complete recovery."
+    },
+    {
+      "id": "first-fix-is-visually-unresolved",
+      "after": "first-reacquired-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "UNRESOLVED",
+      "rationale": "Good coordinate accuracy does not erase route-occurrence ambiguity."
+    },
+    {
+      "id": "first-fix-confidence-remains-low",
+      "after": "first-reacquired-fix",
+      "category": "SAFETY",
+      "subject": "navigation.location_confidence",
+      "matcher": "EQUALS",
+      "expected": "LOW",
+      "rationale": "One post-gap fix may seed the evidence window but cannot restore HIGH navigation confidence."
+    },
+    {
+      "id": "window-confirms-one-occurrence",
+      "after": "consistent-reacquired-fix",
+      "category": "NAVIGATION",
+      "subject": "navigation.signal_reacquisition_status",
+      "matcher": "EQUALS",
+      "expected": "CONFIRMED",
+      "rationale": "Consecutive exact adjacent occurrences form a forward observation window."
+    },
+    {
+      "id": "correct-later-occurrence-resumed",
+      "after": "consistent-reacquired-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.current_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "after-tunnel-shared-edge",
+      "rationale": "Reacquisition resumes the first evidence-supported later occurrence, not a later lap."
+    },
+    {
+      "id": "correct-later-index-resumed",
+      "after": "consistent-reacquired-fix",
+      "category": "DOMAIN",
+      "subject": "navigation.occurrence_index",
+      "matcher": "EQUALS",
+      "expected": 4,
+      "rationale": "The occurrence index proves that repeated geometry did not select the wrong lap."
+    },
+    {
+      "id": "confirmed-marker-is-measured",
+      "after": "consistent-reacquired-fix",
+      "category": "UI",
+      "subject": "navigation.marker_style",
+      "matcher": "EQUALS",
+      "expected": "MEASURED",
+      "rationale": "Only the resolved replay window restores the measured topology marker."
+    }
+  ]
+}

@@ -989,8 +989,9 @@ final class WholeShutoProductModelTests: XCTestCase {
     async throws
   {
     let locationSource = WholeShutoBackgroundNavigationLocationSource()
+    let resolver = WholeShutoRecoverableSurfaceRouteResolver()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
-      surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
+      surfaceRouteResolver: resolver,
       checkpointStore: nil,
       liveLocationSource: locationSource,
       speechOutput: WholeShutoRecordingSpeechOutput()
@@ -1067,6 +1068,45 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNil(model.liveLocationIssueCode)
     XCTAssertEqual(model.positionState, .surfacePreview)
     XCTAssertFalse(model.isReroutingSurfaceRoute)
+    let retainedRoute = model.accessRoute
+    let nextOffRoute = ShutoCoordinate(
+      latitude: offRoute.latitude + 0.01,
+      longitude: offRoute.longitude
+    )
+    await resolver.setUnavailable(true)
+    for timestamp in [20_000, 21_000] {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "surface.offline.\(timestamp)", coordinate: nextOffRoute,
+          atMilliseconds: timestamp
+        )
+      )
+    }
+    for _ in 0..<100 where model.isReroutingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(model.accessRoute, retainedRoute)
+    XCTAssertEqual(model.selectedRoute?.routePlan, routePlan)
+    XCTAssertEqual(model.liveLocationIssueCode, "SURFACE_ROUTE_REROUTE_UNAVAILABLE")
+
+    await resolver.setUnavailable(false)
+    for timestamp in [37_000, 38_000] {
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "surface.online.\(timestamp)", coordinate: nextOffRoute,
+          atMilliseconds: timestamp
+        )
+      )
+    }
+    for _ in 0..<100 where model.isReroutingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 10_000_000)
+    }
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(model.accessRoute?.coordinates.first, nextOffRoute)
+    XCTAssertEqual(model.selectedRoute?.routePlan, routePlan)
+    XCTAssertEqual(model.egressRoute, originalEgressRoute)
+    XCTAssertEqual(model.liveLocationState, .available)
     model.reset()
   }
 
@@ -1414,6 +1454,36 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.runtimeOccurrenceID, authoritativeOccurrence)
     XCTAssertEqual(model.progressFraction, authoritativeProgress)
     XCTAssertEqual(output.commands.count, spokenPromptCount)
+    let resumeIndex = try XCTUnwrap(
+      route.routePlan.occurrence(id: authoritativeOccurrence)
+    ).index
+    // Resume the real live-observation path after a multi-minute outage.
+    nowMilliseconds += 180_000
+    for edgeIndex in resumeIndex..<route.edges.count {
+      let start = route.coordinates[edgeIndex]
+      let end = route.coordinates[edgeIndex + 1]
+      nowMilliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "tunnel.return.\(edgeIndex)",
+          coordinate: ShutoCoordinate(
+            latitude: (start.latitude + end.latitude) / 2,
+            longitude: (start.longitude + end.longitude) / 2
+          ),
+          atMilliseconds: nowMilliseconds,
+          courseDegrees: Self.bearing(from: start, to: end),
+          speedMetersPerSecond: 18
+        )
+      )
+      if model.liveLocationState == .available,
+        model.progressFraction > authoritativeProgress + 0.01
+      {
+        break
+      }
+    }
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertGreaterThan(model.progressFraction, authoritativeProgress + 0.01)
     model.reset()
   }
 
@@ -1460,11 +1530,23 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.isPlaying)
     XCTAssertEqual(locationSource.startCount, 1)
 
+    locationSource.delegate?.foregroundNavigationLocationSource(
+      locationSource, didFailWithCode: "CORE_LOCATION_FAILURE", isTransient: false
+    )
+    XCTAssertFalse(model.isPlaying)
+    XCTAssertEqual(model.liveLocationState, .failed)
+    XCTAssertEqual(locationSource.stopCount, 1)
+    let resumed = await model.resumeLiveJourney()
+    XCTAssertTrue(resumed)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertEqual(locationSource.startCount, 2)
+    XCTAssertTrue(locationSource.backgroundNavigationEnabled)
+
     model.reset()
-    for _ in 0..<100 where locationSource.stopCount == 0 {
+    for _ in 0..<100 where locationSource.stopCount == 1 {
       try? await Task.sleep(nanoseconds: 10_000_000)
     }
-    XCTAssertEqual(locationSource.stopCount, 1)
+    XCTAssertEqual(locationSource.stopCount, 2)
     XCTAssertFalse(locationSource.backgroundNavigationEnabled)
   }
 
@@ -3891,6 +3973,25 @@ private actor WholeShutoRecoveringSurfaceRouteResolver:
       distanceMeters: 1_200,
       expectedTravelTimeSeconds: 180,
       instructions: []
+    )
+  }
+}
+
+private actor WholeShutoRecoverableSurfaceRouteResolver: WholeShutoSurfaceRouteResolving {
+  private var unavailable = false
+
+  func setUnavailable(_ value: Bool) {
+    unavailable = value
+  }
+
+  func route(
+    from origin: ShutoCoordinate,
+    to destination: ShutoCoordinate,
+    preference: WholeShutoSurfaceRoutePreference
+  ) async -> WholeShutoSurfaceRoute? {
+    guard !unavailable else { return nil }
+    return await WholeShutoInstructionSurfaceRouteResolver().route(
+      from: origin, to: destination, preference: preference
     )
   }
 }

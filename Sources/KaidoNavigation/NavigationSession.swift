@@ -263,6 +263,12 @@ public actor NavigationSession {
         resolvesLongitudinalCandidates: resolvesLongitudinalCandidates
       )
     )
+    if engine.snapshot.signalReacquisitionStatus == .pending {
+      return update(
+        estimate: Self.restorationEstimate(from: estimate),
+        guidanceProgressState: .insufficientMatcherEvidence
+      )
+    }
     if detectsOffPlanDeviation,
       estimate.confidence == .high,
       estimate.occurrenceID == nil,

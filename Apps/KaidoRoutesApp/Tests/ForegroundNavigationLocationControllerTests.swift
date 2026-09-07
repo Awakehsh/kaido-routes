@@ -412,6 +412,11 @@ final class ForegroundNavigationLocationControllerTests: XCTestCase {
 
     XCTAssertEqual(controller.state, .failed("CORE_LOCATION_1"))
     XCTAssertEqual(source.stopCount, 1)
+    XCTAssertEqual(source.startCount, 1)
+    XCTAssertTrue(controller.canStart)
+    controller.start()
+    XCTAssertEqual(controller.state, .running)
+    XCTAssertEqual(source.startCount, 2)
   }
 
   @MainActor

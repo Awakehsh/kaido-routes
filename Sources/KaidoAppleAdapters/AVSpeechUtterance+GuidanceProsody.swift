@@ -2,10 +2,13 @@
   import AVFAudio
 
   extension AVSpeechUtterance {
-    func applyGuidanceProsody(_ prosody: GuidanceSpeechProsody) {
+    func applyGuidanceProsody(
+      _ prosody: GuidanceSpeechProsody,
+      minimumLeadIn: TimeInterval = 0
+    ) {
       rate = prosody.rate
       pitchMultiplier = prosody.pitchMultiplier
-      preUtteranceDelay = prosody.preUtteranceDelay
+      preUtteranceDelay = max(prosody.preUtteranceDelay, minimumLeadIn)
       postUtteranceDelay = prosody.postUtteranceDelay
     }
   }

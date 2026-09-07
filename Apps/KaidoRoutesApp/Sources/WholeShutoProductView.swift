@@ -1432,6 +1432,32 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The route marks the card's experience actually drives, in course order:
+  /// the same shields the overhead signs carry, so a driver recognises the
+  /// experience by road before reading the name.
+  private func circuitShields(
+    _ routeIDs: [String],
+    circuitID: String
+  ) -> some View {
+    HStack(spacing: 4) {
+      ForEach(Array(routeIDs.enumerated()), id: \.offset) { _, routeID in
+        Text(shieldLabel(routeID))
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .padding(.horizontal, 5)
+          .frame(height: 18)
+          .background(routeColor(routeID))
+          .clipShape(RoundedRectangle(cornerRadius: 4))
+      }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(
+      routeIDs.map { routeDisplayLabel($0, in: model.database) }
+        .joined(separator: " → ")
+    )
+    .accessibilityIdentifier("whole-shuto-circuit-shields-\(circuitID)")
+  }
+
   private func circuitCard(
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
@@ -1459,6 +1485,11 @@ struct WholeShutoProductView: View {
           .foregroundStyle(KaidoTheme.routeGreen)
           .frame(height: 38)
         }
+        if let preview = model.circuitPreviewsByID[circuit.circuitID],
+          !preview.routeIDsInOrder.isEmpty
+        {
+          circuitShields(preview.routeIDsInOrder, circuitID: circuit.circuitID)
+        }
         Text(circuit.displayName(for: languageSettings.interfaceLocale))
           .font(.subheadline.weight(.bold))
           .multilineTextAlignment(.leading)
@@ -1477,9 +1508,9 @@ struct WholeShutoProductView: View {
           .monospacedDigit()
           .accessibilityIdentifier("whole-shuto-circuit-metrics-\(circuit.circuitID)")
           Text(copy.resolve(
-            japanese: "分岐案内 \(preview.junctionCount)か所 · トンネル \(preview.tunnelPercent)%",
-            simplifiedChinese: "\(preview.junctionCount) 处路口提示 · 隧道 \(preview.tunnelPercent)%",
-            english: "\(preview.junctionCount) junction cues · \(preview.tunnelPercent)% tunnel"
+            japanese: "分岐案内 \(preview.junctionCount)か所",
+            simplifiedChinese: "\(preview.junctionCount) 处路口提示",
+            english: "\(preview.junctionCount) junction cues"
           ))
           .font(.caption)
           .foregroundStyle(KaidoTheme.nightQuiet)
@@ -1687,20 +1718,28 @@ struct WholeShutoProductView: View {
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
     Group {
-      if model.isResolvingCircuitPairing {
+      if model.isResolvingCircuitPairing || awaitsCircuitPairingOrigin {
         HStack(spacing: 8) {
           ProgressView()
             .controlSize(.small)
           Text(
-            copy.resolve(
-              japanese: "現在地から入口・出口を導出中",
-              simplifiedChinese: "正在按当前位置推导入口/出口",
-              english: "Deriving entrance and exit"
-            )
+            awaitsCircuitPairingOrigin
+              ? copy.resolve(
+                japanese: "現在地を確認中",
+                simplifiedChinese: "正在定位",
+                english: "Finding your location"
+              )
+              : copy.resolve(
+                japanese: "現在地から入口・出口を導出中",
+                simplifiedChinese: "正在按当前位置推导入口/出口",
+                english: "Deriving entrance and exit"
+              )
           )
           .font(.system(size: 11.5, weight: .semibold))
           .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("whole-shuto-circuit-pairing-progress")
       } else if let entry = model.circuitEntryFacility,
         let exit = model.circuitExitFacility
       {
@@ -1818,15 +1857,34 @@ struct WholeShutoProductView: View {
         .accessibilityIdentifier("whole-shuto-circuit-pairing")
       } else {
         Text(
-          copy.resolve(
-            japanese: "この付近から入れる方向対応の入口が見つかりません",
-            simplifiedChinese: "附近没有方向匹配的可用入口",
-            english: "No direction-valid entrance reachable from here"
-          )
+          model.origin == nil
+            ? copy.resolve(
+              japanese: "現在地を取得できません。出発地を入力してください",
+              simplifiedChinese: "无法获取当前位置，请输入出发地",
+              english: "Current location unavailable — enter an origin"
+            )
+            : copy.resolve(
+              japanese: "この付近から入れる方向対応の入口が見つかりません",
+              simplifiedChinese: "附近没有方向匹配的可用入口",
+              english: "No direction-valid entrance reachable from here"
+            )
         )
         .font(.system(size: 11.5, weight: .semibold))
         .foregroundStyle(.secondary)
       }
+    }
+  }
+
+  /// A card tapped before the location fix lands has no origin to derive
+  /// from yet: the pairing is pending, not empty. Only a settled denial or
+  /// failure ends the wait.
+  private var awaitsCircuitPairingOrigin: Bool {
+    guard model.origin == nil else { return false }
+    switch planningLocation.state {
+    case .idle, .permissionRequired, .locating, .measured, .stopped:
+      return true
+    case .denied, .unavailable:
+      return false
     }
   }
 

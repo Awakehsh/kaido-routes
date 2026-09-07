@@ -18,10 +18,14 @@ final class RouteExperiencePresentationTests: XCTestCase {
     XCTAssertGreaterThan(c1.junctionCount, 0)
     XCTAssertGreaterThan(c2.distanceMeters, c1.distanceMeters)
     XCTAssertGreaterThan(c2.referenceMinutes, c1.referenceMinutes)
-    XCTAssertGreaterThan(c2.tunnelDistanceMeters, c1.tunnelDistanceMeters)
+    XCTAssertEqual(c1.routeIDsInOrder, ["C1"])
+    XCTAssertEqual(c2.routeIDsInOrder, ["C2", "B", "C2"])
     for preview in model.circuitPreviewsByID.values {
-      XCTAssertTrue((0...100).contains(preview.tunnelPercent))
-      XCTAssertLessThanOrEqual(preview.tunnelDistanceMeters, preview.distanceMeters)
+      XCTAssertFalse(preview.routeIDsInOrder.isEmpty)
+      XCTAssertFalse(
+        preview.routeIDsInOrder.contains(where: \.isEmpty),
+        "every card shield needs a route code to print"
+      )
     }
   }
 

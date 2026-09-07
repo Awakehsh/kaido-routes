@@ -128,6 +128,7 @@ struct WholeShutoJourneyReviewView: View {
           english: "Including surface legs"
         ),
         tint: KaidoTheme.routeGreen,
+        isPending: model.isUpdatingSurfaceRoute,
         accessibilityIdentifier: "whole-shuto-journey-total-distance"
       )
       metric(
@@ -143,6 +144,7 @@ struct WholeShutoJourneyReviewView: View {
           english: "No realtime traffic"
         ),
         tint: KaidoTheme.signalAmber,
+        isPending: model.isUpdatingSurfaceRoute,
         accessibilityIdentifier: "whole-shuto-journey-estimated-duration"
       )
     }
@@ -666,6 +668,7 @@ struct WholeShutoJourneyReviewView: View {
     value: String,
     detail: String,
     tint: Color,
+    isPending: Bool = false,
     accessibilityIdentifier: String
   ) -> some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -676,9 +679,16 @@ struct WholeShutoJourneyReviewView: View {
         .font(.system(size: 8, weight: .black, design: .rounded))
         .tracking(0.7)
         .foregroundStyle(KaidoTheme.nightQuiet)
-      Text(value)
-        .font(.system(size: 20, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.routeWhite)
+      if isPending {
+        ProgressView()
+          .controlSize(.small)
+          .tint(tint)
+          .frame(height: 24, alignment: .leading)
+      } else {
+        Text(value)
+          .font(.system(size: 20, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+      }
       Text(detail)
         .font(.system(size: 8, weight: .bold))
         .foregroundStyle(KaidoTheme.nightQuiet)
@@ -695,6 +705,7 @@ struct WholeShutoJourneyReviewView: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier(accessibilityIdentifier)
+    .accessibilityValue(isPending ? "RESOLVING" : value)
   }
 
   private func distanceLabel(_ value: Double?) -> String {

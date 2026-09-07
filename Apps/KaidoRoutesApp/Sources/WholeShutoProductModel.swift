@@ -532,6 +532,7 @@ final class WholeShutoProductModel: ObservableObject {
   static let surfaceRoutePreferenceDefaultsKey =
     "app.kaidoroutes.surface-route.preference"
   private var lastLiveObservationAtMilliseconds: Int?
+  @Published private var liveVehicleCourseDegrees: Double?
   private var lastLiveCheckpointPersistedAtMilliseconds: Int?
   private var liveLocationFreshnessTask: Task<Void, Never>?
   private var tunnelEstimateAnchor: TunnelEstimateAnchor?
@@ -1811,6 +1812,17 @@ final class WholeShutoProductModel: ObservableObject {
     return result
   }
 
+  var vehicleHeadingDegrees: Double? {
+    guard isLiveDrive else { return navigationHeadingDegrees }
+    guard isPlaying, liveLocationState == .available else { return nil }
+    switch positionState {
+    case .surfacePreview, .surfaceRoutePending, .boundaryTransition, .networkPreview:
+      return liveVehicleCourseDegrees
+    default:
+      return nil
+    }
+  }
+
   var navigationHeadingDegrees: Double? {
     switch positionState {
     case .surfacePreview, .surfaceRoutePending, .boundaryTransition,
@@ -1819,6 +1831,9 @@ final class WholeShutoProductModel: ObservableObject {
     case .unavailable, .networkDegraded, .tunnelEstimated,
       .routeInterrupted, .completed, .resting:
       return nil
+    }
+    if isLiveDrive, phase == .surfaceAccess || phase == .surfaceEgress {
+      return vehicleHeadingDegrees
     }
     guard let current = currentCoordinate else { return nil }
     let target: ShutoCoordinate?
@@ -3176,6 +3191,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     cancelSurfaceReroute()
     guard matchingLiveAdmissions.count == 1,
@@ -3271,6 +3287,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationIssueCode = nil
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
+      liveVehicleCourseDegrees = nil
       failureCode = nil
 
       let initialSnapshot = await session.start()
@@ -3355,6 +3372,7 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeCoordinate = coordinate
     }
     lastLiveObservationAtMilliseconds = observation.receivedAtMilliseconds
+    liveVehicleCourseDegrees = NavigationDirectionPresentation.vehicleCourse(from: observation)
     liveLocationStartedAtMilliseconds =
       liveLocationStartedAtMilliseconds
       ?? observation.receivedAtMilliseconds
@@ -3647,6 +3665,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
     lastLiveObservationAtMilliseconds = nil
+    liveVehicleCourseDegrees = nil
     matcherConfidence = .low
     clearTunnelEstimate()
     scheduleLiveLocationFreshnessCheck()
@@ -3710,6 +3729,7 @@ final class WholeShutoProductModel: ObservableObject {
       liveLocationIssueCode = nil
       liveLocationStartedAtMilliseconds = nowMillisecondsProvider()
       lastLiveObservationAtMilliseconds = nil
+      liveVehicleCourseDegrees = nil
       matcherConfidence = .low
       clearTunnelEstimate()
       speechCoordinator?.resume()
@@ -4088,6 +4108,7 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationStartedAtMilliseconds = nil
     lastLiveObservationAtMilliseconds = nil
+    liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
     lastSurfaceRerouteAttemptAtMilliseconds = nil
     liveLocationFreshnessTask?.cancel()
@@ -5827,10 +5848,8 @@ final class WholeShutoProductModel: ObservableObject {
     in coordinates: [ShutoCoordinate],
     fraction: Double
   ) -> ShutoCoordinate? {
-    interpolatedCoordinate(
-      in: coordinates,
-      fraction: min(1, max(0, fraction) + 0.025)
-    )
+    Self.split(coordinates, distanceFraction: min(1, max(0, fraction)))
+      .remainingCoordinates.dropFirst().first
   }
 
   private static func split(

@@ -903,6 +903,23 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(command.languageCode, "en-US")
     XCTAssertEqual(command.spokenText, "Continue on local road")
     XCTAssertTrue(command.identity.promptID.hasPrefix("provider.surface."))
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "surface.course", coordinate: try XCTUnwrap(model.origin?.coordinate),
+        courseDegrees: 180, courseAccuracyDegrees: 2
+      )
+    )
+    XCTAssertEqual(model.vehicleHeadingDegrees, 180)
+    XCTAssertEqual(model.navigationHeadingDegrees, 180)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "surface.stationary", coordinate: try XCTUnwrap(model.origin?.coordinate),
+        atMilliseconds: 2_000, courseDegrees: 180, courseAccuracyDegrees: 2,
+        speedMetersPerSecond: 0
+      )
+    )
+    XCTAssertNil(model.vehicleHeadingDegrees)
+    XCTAssertNil(model.navigationHeadingDegrees)
     model.reset()
   }
 
@@ -3915,6 +3932,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     coordinate: ShutoCoordinate,
     atMilliseconds: Int = 1_000,
     courseDegrees: Double = 90,
+    courseAccuracyDegrees: Double? = nil,
     speedMetersPerSecond: Double = 10
   ) -> CoreLocationObservationEnvelope {
     CoreLocationObservationEnvelope(
@@ -3928,6 +3946,7 @@ final class WholeShutoProductModelTests: XCTestCase {
         ),
         horizontalAccuracyMeters: 5,
         courseDegrees: courseDegrees,
+        courseAccuracyDegrees: courseAccuracyDegrees,
         speedMetersPerSecond: speedMetersPerSecond,
         speedAccuracyMetersPerSecond: 1,
         source: .phone

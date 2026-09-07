@@ -3470,6 +3470,8 @@ struct WholeShutoProductView: View {
         Image(systemName: instructionSymbol)
           .font(.system(size: 25, weight: .black))
           .foregroundStyle(KaidoTheme.routeWhite)
+          .accessibilityIdentifier("whole-shuto-guidance-maneuver")
+          .accessibilityLabel(instructionTitle)
       }
 
       VStack(alignment: .leading, spacing: 1) {
@@ -3493,10 +3495,9 @@ struct WholeShutoProductView: View {
           .accessibilityIdentifier("whole-shuto-guidance-distance")
 
         Text(instructionTitle)
-          .font(.system(size: 16, weight: .black, design: .rounded))
+          .font(.system(size: 20, weight: .bold, design: .rounded))
           .foregroundStyle(KaidoTheme.routeWhite)
-          .lineLimit(1)
-          .minimumScaleFactor(0.68)
+          .fixedSize(horizontal: false, vertical: true)
           .accessibilityIdentifier("whole-shuto-guidance-instruction")
       }
 
@@ -3812,13 +3813,16 @@ struct WholeShutoProductView: View {
       return "arrow.triangle.2.circlepath"
     }
     return switch model.phase {
-    case .surfaceAccess: "arrow.turn.up.right"
-    case .entryTransition: "arrow.up.right"
+    case .surfaceAccess, .surfaceEgress:
+      SurfaceManeuver.from(instruction: model.activeSurfaceInstruction ?? "").symbol
+    case .entryTransition: "mappin.and.ellipse"
     case .expressway:
-      displayedJunctionPrompt == nil
-        ? "arrow.up" : "arrow.triangle.branch"
-    case .exitTransition: "arrow.up.right"
-    case .surfaceEgress: "arrow.turn.up.left"
+      switch displayedJunctionPrompt?.branchSide {
+      case .left: "arrow.up.left"
+      case .right: "arrow.up.right"
+      case .straight, nil: "arrow.up"
+      }
+    case .exitTransition: "mappin.and.ellipse"
     case .completed: "checkmark"
     case .planning, .review: "map"
     }
@@ -5771,6 +5775,8 @@ private struct WholeShutoGeographicMap: View {
   /// was tapped, so the drive can pick following back up on dismissal.
   @State private var selectedMapFeature: MapFeature?
   @State private var followedBeforeFeatureSelection = false
+  @State private var cameraHeadingDegrees = 0.0
+  @State private var cameraPitchDegrees = 0.0
   private static let gestureResumeDelay = Duration.seconds(10)
   private static let userCameraDistanceRange: ClosedRange<Double> =
     120...24_000
@@ -6097,8 +6103,15 @@ private struct WholeShutoGeographicMap: View {
                 ? KaidoTheme.signalAmber : KaidoTheme.positionCyan
             )
             .rotationEffect(
-              .degrees(displayedHeadingDegrees ?? 0)
+              .degrees(
+                NavigationDirectionPresentation.screenAngle(
+                  bearing: displayedHeadingDegrees ?? 0,
+                  cameraHeading: cameraHeadingDegrees,
+                  cameraPitch: cameraPitchDegrees
+                )
+              )
             )
+            .transaction { $0.animation = nil }
           }
           .accessibilityIdentifier("whole-shuto-current-position")
           .accessibilityLabel(positionAnnotationLabel)
@@ -6140,7 +6153,9 @@ private struct WholeShutoGeographicMap: View {
       RotateGesture(minimumAngleDelta: .degrees(2))
         .onChanged { _ in releaseFollowForGesture() }
     )
-    .onMapCameraChange(frequency: .onEnd) { context in
+    .onMapCameraChange(frequency: .continuous) { context in
+      cameraHeadingDegrees = context.camera.heading
+      cameraPitchDegrees = context.camera.pitch
       // Only a camera the driver came to rest on defines their zoom;
       // follow-mode writes would otherwise record their own default back.
       guard !followsRoute else { return }
@@ -6302,7 +6317,7 @@ private struct WholeShutoGeographicMap: View {
 
   private var displayedHeadingDegrees: Double? {
     isDriving
-      ? model.navigationHeadingDegrees
+      ? model.vehicleHeadingDegrees
       : planningLocation?.courseDegrees
   }
 
@@ -6436,9 +6451,7 @@ private struct WholeShutoGeographicMap: View {
       }
       return
     }
-    if let heading = model.navigationHeadingDegrees {
-      lastStableHeadingDegrees = heading
-    }
+    lastStableHeadingDegrees = model.navigationHeadingDegrees
     withAnimation(.easeOut(duration: 0.35)) {
       if let heading = lastStableHeadingDegrees {
         camera = .camera(

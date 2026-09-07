@@ -1865,6 +1865,19 @@ measured failure that cannot be fixed within the Swift boundary.
 
 ## Navigation continuity
 
+The geographic vehicle marker uses a fresh, accurate moving course for live
+input, independently of the route tangent used by the expressway following
+camera. Stationary, uncertain, stale, and degraded input shows a position dot.
+Its screen direction compensates for the camera's current heading and pitch,
+including user rotation and camera animation. Preview surface heading uses the
+current route segment rather than looking a percentage of the entire leg ahead.
+
+Ordinary-road maneuver icons recognize only explicit leading actions in the
+provider's supported localized instructions; unrecognized actions use a neutral
+marker. Journey phase never supplies a left or right turn. Reviewed expressway
+icons use the exact movement's branch side. The critical instruction wraps at a
+readable size rather than shrinking or truncating the destination road name.
+
 Navigation continuity takes priority over feature expansion. A started journey
 must retain its route through recoverable positioning, network, and audio
 interruptions. Recovery is automatic when trustworthy input returns; a retry

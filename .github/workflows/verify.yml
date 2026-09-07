@@ -40,7 +40,9 @@ jobs:
           else
             while IFS= read -r path; do
               case "$path" in
-                README.md|AGENTS.md|CLAUDE.md|PRIVACY.md|docs/*|research/*|data/route-atlas/design/*.html)
+                README.md|AGENTS.md|CLAUDE.md|PRIVACY.md|CONTRIBUTING.md|SECURITY.md \
+                  |.github/pull_request_template.md|.github/CODEOWNERS \
+                  |docs/*|research/*|data/route-atlas/design/*.html)
                   ;;
                 *)
                   required=true

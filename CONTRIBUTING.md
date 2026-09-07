@@ -85,8 +85,10 @@ genuinely changed, change the scenario and say so.
   or `docs/` plus a short description of the actual change.
 - `feat`, `fix`, `refactor`, `perf`, and `security` commits need a body
   covering why, impact, and verification.
-- `main` is protected: pull requests only, `Verification gate` must pass, and
-  an outside contribution needs maintainer approval. Merges are squashed.
+- `main` is protected: pull requests only, `Verification gate` must pass, no
+  direct pushes, no force pushes. Merges are squashed. Only the maintainer can
+  merge, so an outside pull request is reviewed before it lands whether or not
+  a GitHub rule demands an approval.
 - Arm `gh pr merge --auto --squash --delete-branch` and move on rather than
   watching the run. The iPhone job takes roughly eight minutes, most of it
   compiling and exercising the simulator.

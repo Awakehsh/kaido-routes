@@ -10,6 +10,7 @@ enum AppGuidanceSpeechOutputFactory {
   static var isSilent: Bool {
     #if DEBUG
       ProcessInfo.processInfo.arguments.contains(silentLaunchArgument)
+        || NSClassFromString("XCTestCase") != nil
     #else
       false
     #endif

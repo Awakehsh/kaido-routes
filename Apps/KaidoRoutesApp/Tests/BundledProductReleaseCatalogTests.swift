@@ -76,7 +76,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       c2.release.navigation.bundle.routePlan.occurrences.count,
       2_196
     )
-    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 24)
+    XCTAssertEqual(c2.release.navigation.bundle.releasedGuidance.count, 48)
     XCTAssertNotNil(c2.release.foregroundLiveInputAuthority)
 
     let daikoku = try XCTUnwrap(
@@ -99,7 +99,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       daikoku.release.navigation.bundle.releasedGuidance.count,
-      9
+      14
     )
     XCTAssertNotNil(daikoku.release.foregroundLiveInputAuthority)
 
@@ -123,7 +123,7 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
-      10
+      17
     )
     XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }

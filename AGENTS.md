@@ -33,18 +33,29 @@
 - The project owner authorizes agents to modify repository rules, product
   code, tests, data contracts, adapters, dependencies, and documentation when
   needed to finish the product.
-- Work directly on `main`; do not create process-only branches or pull
-  requests. Within Kaido scope, normal implementation, dependency
-  installation, deterministic data generation, simulator testing,
-  physical-device build/install/launch, commits, and pushes do not require a
-  separate approval checkpoint.
+- Deliver through a short-lived branch in a Git worktree and a pull request.
+  Name branches `feat/`, `fix/`, `perf/`, `refactor/`, `chore/`, or `docs/`
+  followed by a short description of the actual change. Open the pull request,
+  wait for the `Verification gate` check, then squash-merge and delete the
+  branch. The implementing agent merges its own pull request; no separate
+  human approval is required inside Kaido scope.
+- Push straight to `main` only for a single-file documentation revision, or
+  when the pull-request path itself is unavailable. Record the reason in the
+  commit body. Never force-push `main`; never rewrite pushed history.
+- Within Kaido scope, normal implementation, dependency installation,
+  deterministic data generation, simulator testing, physical-device
+  build/install/launch, commits, branches, pull requests, merges, and pushes
+  do not require a separate approval checkpoint.
 - Continue from one completed milestone to the next highest-value executable
   milestone, where value means a user-visible outcome for the audience in
   "Product direction and audience". Evidence envelopes, release machinery,
   qualification harnesses, and other process artifacts are support work, not
   milestones; do not expand them beyond what an active user-facing milestone
-  needs. Do not stop merely because an old handoff called something a future
-  gate, or because a synthetic reviewer/team label is absent.
+  needs. Repository governance the owner has explicitly asked for — branch
+  protection, contribution rules, documentation structure — is exempt from
+  that limit and is delivered as requested. Do not stop merely because an old
+  handoff called something a future gate, or because a synthetic reviewer/team
+  label is absent.
 - Automated review may be run by the implementing agent. Require a distinct
   human or field reviewer only when the evidence itself is a human observation
   or independent field measurement; never invent that evidence.
@@ -60,8 +71,8 @@
 ## Context loading
 
 1. Read this file and the current Git state first.
-2. Read `README.md` and only the product, architecture, or test document needed
-   for the active milestone.
+2. Read `README.md` for orientation and its documentation map, then load only
+   the product, architecture, or test document the active milestone needs.
 3. For behavior changes, load the exact scenario under `e2e/scenarios/` before
    broad background material.
 4. Treat `research/` as an ignored private notebook. Recheck any discovery
@@ -163,7 +174,8 @@
 5. Run the narrowest useful checks, then the full affected regression.
 6. Exercise the real App path on a simulator and connected device when
    applicable; distinguish runtime proof from field proof.
-7. Update authoritative docs, commit the milestone, and push `main`.
+7. Update authoritative docs, commit the milestone, open the pull request,
+   and squash-merge it once `Verification gate` passes.
 8. Continue to the next executable product gap without waiting for another
    prompt. Stop only at a genuine external boundary and leave one exact
    continuation command or artifact.

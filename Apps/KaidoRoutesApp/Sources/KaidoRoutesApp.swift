@@ -1,3 +1,4 @@
+import AppIntents
 import Foundation
 import KaidoAppleAdapters
 import KaidoDomain
@@ -8,6 +9,7 @@ import SwiftUI
 @main
 struct KaidoRoutesApp: App {
   init() {
+    KaidoDriveShortcuts.updateAppShortcutParameters()
     #if DEBUG
       if ProcessInfo.processInfo.arguments.contains(
         "-RESET-NAVIGATION-CHECKPOINT"

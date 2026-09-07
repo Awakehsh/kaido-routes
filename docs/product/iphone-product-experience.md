@@ -42,6 +42,19 @@ appear in the default product journey.
 
 ## Home
 
+Drive history, saved routes, and settings remain available during navigation,
+including for passenger operation. No parking prompt or motion-based lock is shown. Recording uses the existing single
+drive-record setting, stores summaries privately on the device, and can be
+disabled without deleting older records. History distinguishes recorded intervals
+from missing observation periods and actual observed laps from skipped plan laps.
+Each record can be deleted individually, and its planned route can be saved or
+shared without including speed statistics or current-position observations.
+
+Shared `.kaidoroute` documents open in the saved-route library; legacy JSON import
+remains available. Import validates the exact plan and does not replace an active
+navigation session until the user selects the route. Selecting a valid saved
+route ends the previous session and opens the new journey review.
+
 The home surface asks one question: which route to drive. It shows the network
 map as context, an explicit current-location origin chip, and the named
 route-experience catalog — versioned candidate templates over the bundled
@@ -231,6 +244,13 @@ configured account, credentials, licence review, and executable comparison
 before they can occupy the same replaceable boundary.
 
 ## Plan
+
+Siri and Shortcuts expose bounded drive actions: repeat the current direction,
+mute/unmute guidance, add/remove a lap, take a break, resume, and end navigation.
+Each action uses the active App session and its existing guards. Ending guidance
+requires confirmation and rechecks that the same session is still active. It is
+distinct from choosing an earlier exit. Siri reads repeat text through its own
+response rather than competing with the navigation audio session.
 
 The map occupies most of the screen. The self-drawn Kaido presentation — the
 whole-network line diagram before a route exists, the track map after — is the

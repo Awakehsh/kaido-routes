@@ -992,7 +992,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
         .waitForExistence(timeout: 5)
     )
     XCTAssertTrue(
-      reopeningApp.staticTexts["CURRENT SNAPSHOT"]
+      reopeningApp.staticTexts["Available"]
         .waitForExistence(timeout: 5)
     )
 
@@ -1003,7 +1003,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       )
     ).firstMatch
     XCTAssertTrue(openSavedRoute.waitForExistence(timeout: 5))
-    XCTAssertEqual(openSavedRoute.value as? String, "CURRENT SNAPSHOT")
+    XCTAssertEqual(openSavedRoute.value as? String, "Available")
     openSavedRoute.tap()
     XCTAssertTrue(savedRouteSheet.waitForNonExistence(timeout: 5))
 

@@ -14,7 +14,8 @@ enum WholeShutoForegroundReleaseFactory {
     nowMillisecondsProvider: @escaping () -> Int = {
       Int((Date().timeIntervalSince1970 * 1_000).rounded())
     },
-    driveRecordPreferenceStore: UserDefaults = .standard
+    driveRecordPreferenceStore: UserDefaults = .standard,
+    driveHistoryStore: (any DriveHistoryStoring)? = nil
   ) -> WholeShutoProductModel {
     do {
       let database = try WholeShutoNetworkCatalog.bundled()
@@ -73,7 +74,8 @@ enum WholeShutoForegroundReleaseFactory {
         },
         liveLocationSource: liveLocationSource,
         nowMillisecondsProvider: nowMillisecondsProvider,
-        driveRecordPreferenceStore: driveRecordPreferenceStore
+        driveRecordPreferenceStore: driveRecordPreferenceStore,
+        driveHistoryStore: driveHistoryStore
       )
     } catch {
       preconditionFailure("Invalid bundled Whole-Shuto foreground release: \(error)")

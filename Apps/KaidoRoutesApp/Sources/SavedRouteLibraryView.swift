@@ -12,13 +12,19 @@ func importSavedRouteFile(
     guard let url = try result.get().first else {
       return "SAVED_ROUTE_IMPORT_SELECTION_EMPTY"
     }
+    guard url.isFileURL else { return "SAVED_ROUTE_IMPORT_READ_FAILED" }
     let accessed = url.startAccessingSecurityScopedResource()
     defer {
       if accessed {
         url.stopAccessingSecurityScopedResource()
       }
     }
-    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+    let file = try FileHandle(forReadingFrom: url)
+    defer { try? file.close() }
+    let maximumBytes = 16 * 1_024 * 1_024
+    guard let data = try file.read(upToCount: maximumBytes + 1), data.count <= maximumBytes else {
+      return "SAVED_ROUTE_IMPORT_READ_FAILED"
+    }
     let suggestedName = url.deletingPathExtension().lastPathComponent
     model.importSharedRoute(
       data,
@@ -42,7 +48,7 @@ private struct SavedRouteImportModifier: ViewModifier {
     if enabled {
       content.fileImporter(
         isPresented: $isPresented,
-        allowedContentTypes: [.json],
+      allowedContentTypes: [.kaidoRoute, .json],
         allowsMultipleSelection: false,
         onCompletion: onCompletion
       )
@@ -83,8 +89,8 @@ struct SavedRouteLibraryPanel: View {
         }
       }
 
-      if let transferErrorCode {
-        Text(transferErrorCode)
+      if transferErrorCode != nil {
+        Text(copy.resolve(japanese: "ルートを読み込み・書き出しできませんでした。もう一度お試しください。", simplifiedChinese: "未能导入或导出路线，请重试。", english: "The route could not be imported or exported. Try again."))
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .foregroundStyle(KaidoTheme.evidenceCoral)
           .accessibilityIdentifier("saved-route-transfer-error")
@@ -113,7 +119,7 @@ struct SavedRouteLibraryPanel: View {
     .fileExporter(
       isPresented: $isExporting,
       document: exportDocument,
-      contentType: .json,
+      contentType: .kaidoRoute,
       defaultFilename: exportFileName
     ) { result in
       if case .failure = result {
@@ -173,11 +179,11 @@ struct SavedRouteLibraryPanel: View {
       Text(
         copy.resolve(
           japanese:
-            "表示名だけを変更します。RoutePlan、snapshot、証拠、occurrence は変更しません。",
+            "ルートの新しい名前を入力してください。",
           simplifiedChinese:
-            "只修改显示名称；RoutePlan、snapshot、证据和 occurrence 保持不变。",
+            "输入路线的新名称。",
           english:
-            "Only the display name changes. RoutePlan, snapshot, evidence, and occurrences remain unchanged."
+            "Enter a new name for this route."
         )
       )
     }
@@ -231,25 +237,15 @@ struct SavedRouteLibraryPanel: View {
       VStack(alignment: .leading, spacing: 4) {
         Text(
           copy.resolve(
-            japanese: "保存したルート",
-            simplifiedChinese: "已保存路线",
-            english: "Saved routes"
-          )
-        )
-        .font(.system(size: 18, weight: .black, design: .rounded))
-        .foregroundStyle(KaidoTheme.routeWhite)
-
-        Text(
-          copy.resolve(
             japanese:
-              "保存はナビ権限を作りません。現在の製品データと RoutePlan 全体が一致したルートだけを駐車中の編集画面で開けます。ナビには別途リリースが必要です。",
+              "保存したルートを選んで、経路を確認できます。",
             simplifiedChinese:
-              "保存不会产生导航权限；只有与当前产品数据完整 RoutePlan 一致的路线才能在停车编辑器中重新打开，导航仍需单独发布。",
+              "选择已保存的路线，查看行程。",
             english:
-              "Saving grants no navigation authority. Only a whole-RoutePlan match to the current product data can reopen in the parked editor; navigation still requires a release."
+              "Choose a saved route to review your journey."
           )
         )
-        .font(.system(size: 9, weight: .semibold))
+        .font(.system(size: 13, weight: .medium))
         .foregroundStyle(KaidoTheme.muted)
         .fixedSize(horizontal: false, vertical: true)
       }
@@ -257,7 +253,7 @@ struct SavedRouteLibraryPanel: View {
       Spacer(minLength: 8)
 
       StatusCapsule(
-        title: "\(model.records.count) SAVED",
+        title: copy.resolve(japanese: "\(model.records.count) 件", simplifiedChinese: "\(model.records.count) 条", english: "\(model.records.count) saved"),
         color:
           model.storageAvailable
           ? KaidoTheme.signalAmber
@@ -296,11 +292,11 @@ struct SavedRouteLibraryPanel: View {
         )
         : copy.resolve(
           japanese:
-            "Application Support を使用できないため、メモリだけの保存にはフォールバックしません。",
+            "ルートを保存できません。アプリを開き直してお試しください。",
           simplifiedChinese:
-            "Application Support 不可用，因此不会退回到假装持久化的内存存储。",
+            "无法保存路线，请重新打开应用后重试。",
           english:
-            "Application Support is unavailable, so the app does not pretend an in-memory value was persisted."
+            "Routes could not be saved. Reopen the app and try again."
         ),
       code:
         model.lastErrorCode
@@ -330,17 +326,15 @@ struct SavedRouteLibraryPanel: View {
           )
         )
         Spacer()
-        Text("JSON")
-          .font(.system(size: 8, weight: .black, design: .monospaced))
       }
-      .font(.system(size: 10, weight: .black))
+      .font(.system(size: 14, weight: .bold))
       .foregroundStyle(
         model.storageAvailable
           ? KaidoTheme.positionCyan
           : KaidoTheme.muted
       )
       .padding(.horizontal, 11)
-      .frame(height: 38)
+      .frame(height: 44)
       .background(KaidoTheme.asphalt.opacity(0.72))
       .clipShape(RoundedRectangle(cornerRadius: 10))
     }
@@ -358,12 +352,9 @@ struct SavedRouteLibraryPanel: View {
             .font(.system(size: 15, weight: .black, design: .rounded))
             .foregroundStyle(KaidoTheme.routeWhite)
 
-          Text(
-            "\(record.document.routePlan.occurrences.count) OCCURRENCES"
-              + " · \(record.origin.rawValue)"
-          )
-          .font(.system(size: 8, weight: .black, design: .monospaced))
-          .foregroundStyle(KaidoTheme.muted)
+          Text(String(record.savedAt.prefix(10)))
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(KaidoTheme.muted)
         }
 
         Spacer(minLength: 8)
@@ -374,16 +365,6 @@ struct SavedRouteLibraryPanel: View {
         )
       }
 
-      Text(verbatim: record.document.routePlan.id)
-        .font(.system(size: 8, weight: .semibold, design: .monospaced))
-        .foregroundStyle(KaidoTheme.muted)
-        .lineLimit(2)
-
-      Text(verbatim: record.document.routePlan.networkSnapshotID)
-        .font(.system(size: 8, weight: .semibold, design: .monospaced))
-        .foregroundStyle(KaidoTheme.muted)
-        .lineLimit(2)
-
       Button {
         openRecord(record.id)
       } label: {
@@ -391,22 +372,22 @@ struct SavedRouteLibraryPanel: View {
           Image(systemName: "arrowshape.turn.up.right.fill")
           Text(
             copy.resolve(
-              japanese: "駐車中 editor で開く",
-              simplifiedChinese: "在停车编辑器中打开",
-              english: "Open in parked editor"
+              japanese: "このルートを選ぶ",
+              simplifiedChinese: "选择此路线",
+              english: "Select this route"
             )
           )
           Spacer()
           Image(systemName: "chevron.right")
         }
-        .font(.system(size: 11, weight: .black))
+        .font(.system(size: 15, weight: .bold))
         .foregroundStyle(
           canOpen(availability)
             ? KaidoTheme.asphalt
             : KaidoTheme.muted
         )
         .padding(.horizontal, 12)
-        .frame(height: 40)
+        .frame(height: 44)
         .background(
           canOpen(availability)
             ? KaidoTheme.positionCyan
@@ -482,10 +463,10 @@ struct SavedRouteLibraryPanel: View {
         Image(systemName: symbol)
         Text(title)
       }
-      .font(.system(size: 8, weight: .black))
+      .font(.system(size: 12, weight: .semibold))
       .foregroundStyle(color)
       .frame(maxWidth: .infinity)
-      .frame(height: 38)
+      .frame(height: 44)
       .background(KaidoTheme.steel.opacity(0.22))
       .clipShape(RoundedRectangle(cornerRadius: 9))
     }
@@ -501,7 +482,7 @@ struct SavedRouteLibraryPanel: View {
     }
     do {
       exportDocument = try SharedRouteFileDocument(data: data)
-      exportFileName = safeExportFileName(record.displayName)
+      exportFileName = SharedRouteFileDocument.exportFileName(record.displayName)
       transferErrorCode = nil
       isExporting = true
     } catch {
@@ -518,18 +499,6 @@ struct SavedRouteLibraryPanel: View {
     _ result: Result<[URL], Error>
   ) {
     transferErrorCode = importSavedRouteFile(result, into: model)
-  }
-
-  private func safeExportFileName(_ displayName: String) -> String {
-    let disallowed = CharacterSet.alphanumerics
-      .union(.whitespaces)
-      .union(CharacterSet(charactersIn: "-_"))
-      .inverted
-    let cleaned = displayName.components(
-      separatedBy: disallowed
-    ).joined(separator: "-")
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-    return cleaned.isEmpty ? "kaido-route" : cleaned
   }
 
   private var renamePresentation: Binding<Bool> {
@@ -570,15 +539,15 @@ struct SavedRouteLibraryPanel: View {
   ) -> String {
     switch availability {
     case .selected:
-      "CURRENT RELEASE"
+      copy.resolve(japanese: "選択可能", simplifiedChinese: "可选择", english: "Available")
     case .currentSnapshot:
-      "CURRENT SNAPSHOT"
+      copy.resolve(japanese: "選択可能", simplifiedChinese: "可选择", english: "Available")
     case .unavailable:
-      "REVIEW REQUIRED"
+      copy.resolve(japanese: "地図の更新が必要", simplifiedChinese: "需要更新地图", english: "Map update needed")
     case .ambiguous:
-      "AMBIGUOUS"
+      copy.resolve(japanese: "ルートを確認できません", simplifiedChinese: "无法确认路线", english: "Route unavailable")
     case .invalid:
-      "INVALID"
+      copy.resolve(japanese: "無効なファイル", simplifiedChinese: "文件无效", english: "Invalid file")
     }
   }
 
@@ -630,7 +599,7 @@ struct SavedRouteSavePanel: View {
             "The RoutePlan, snapshot, and every occurrence are saved as one value. Saving alone never makes it navigable."
         )
       )
-      .font(.system(size: 9, weight: .semibold))
+      .font(.system(size: 13, weight: .medium))
       .foregroundStyle(KaidoTheme.muted)
       .fixedSize(horizontal: false, vertical: true)
 
@@ -658,14 +627,14 @@ struct SavedRouteSavePanel: View {
           Image(systemName: "bookmark.fill")
           Text(
             copy.resolve(
-              japanese: "Application Support に保存",
-              simplifiedChinese: "保存到 Application Support",
-              english: "Save to Application Support"
+              japanese: "ルートを保存",
+              simplifiedChinese: "保存路线",
+              english: "Save route"
             )
           )
           Spacer()
         }
-        .font(.system(size: 11, weight: .black))
+        .font(.system(size: 15, weight: .bold))
         .foregroundStyle(
           canSave ? KaidoTheme.asphalt : KaidoTheme.muted
         )
@@ -683,8 +652,8 @@ struct SavedRouteSavePanel: View {
       .accessibilityIdentifier("saved-route-save")
       .accessibilityValue(library.lastErrorCode ?? "READY")
 
-      if let savedID = library.lastSavedRecordID {
-        Text("SAVED · \(savedID)")
+      if library.lastSavedRecordID != nil {
+        Text(copy.resolve(japanese: "保存しました", simplifiedChinese: "已保存", english: "Route saved"))
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .foregroundStyle(KaidoTheme.positionCyan)
           .accessibilityIdentifier("saved-route-save-success")

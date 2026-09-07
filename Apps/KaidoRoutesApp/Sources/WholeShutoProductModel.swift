@@ -261,6 +261,7 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let circuitLaps: Int?
   let runtimeAssetIdentity: ShutoRuntimeAssetIdentity?
   let liveNavigationCheckpoint: NavigationSessionCheckpoint?
+  var driveRecord: WholeShutoDriveRecord? = nil
 }
 
 @MainActor
@@ -430,6 +431,8 @@ final class WholeShutoProductModel: ObservableObject {
   /// What this drive did. A record, never a target — see the safety invariant
   /// in AGENTS.md. The driver can switch it off.
   @Published private(set) var driveRecord = WholeShutoDriveRecord()
+  @Published private(set) var driveHistoryIssue: String?
+  let driveHistoryStore: any DriveHistoryStoring
   /// Whole laps still ahead of the car, so the drive can offer to drop one.
   @Published private(set) var remainingWholeLapsAhead = 0
   @Published private(set) var isChangingLaps = false
@@ -607,7 +610,8 @@ final class WholeShutoProductModel: ObservableObject {
             settings.guidanceVoiceLocale() ?? .japanese
         )
       },
-    driveRecordPreferenceStore: UserDefaults = .standard
+    driveRecordPreferenceStore: UserDefaults = .standard,
+    driveHistoryStore: (any DriveHistoryStoring)? = nil
   ) {
     let resolvedDatabase: ShutoNetworkDatabase
     do {
@@ -636,6 +640,7 @@ final class WholeShutoProductModel: ObservableObject {
     self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
     self.driveRecordPreferenceStore = driveRecordPreferenceStore
+    self.driveHistoryStore = driveHistoryStore ?? FileDriveHistoryStore.defaultStore()
     speechMode = driveRecordPreferenceStore.string(forKey: Self.speechModeDefaultsKey)
       .flatMap(GuidanceSpeechMode.init(rawValue:)) ?? .full
     speechVolume = GuidanceSpeechVolume.stored(in: driveRecordPreferenceStore)
@@ -1105,7 +1110,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  /// Opens an exact saved route from the parked planning state and resolves
+  /// Opens an exact saved route and resolves
   /// fresh provider surface legs around it. The embedded RoutePlan remains
   /// unchanged, including repeated circuit occurrences.
   @discardableResult
@@ -1113,10 +1118,6 @@ final class WholeShutoProductModel: ObservableObject {
     _ record: SavedRouteRecord,
     origin requestedOrigin: ShutoCoordinate?
   ) -> Bool {
-    guard phase == .planning else {
-      failureCode = "SAVED_ROUTE_OPEN_REQUIRES_PARKED_PLANNING"
-      return false
-    }
     guard let originCoordinate = requestedOrigin ?? origin?.coordinate else {
       failureCode = "LOCATION_UNAVAILABLE"
       return false
@@ -1133,6 +1134,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
     let route = resolved.route
 
+    if phase != .planning { reset() }
     cancelSurfaceRouteResolution()
     clearRouteChoiceEvaluation()
     clearCustomRouteSelection()
@@ -1918,7 +1920,7 @@ final class WholeShutoProductModel: ObservableObject {
     occurrenceID: String?,
     atMilliseconds milliseconds: Int
   ) {
-    guard let occurrenceID,
+    guard showsDriveRecord, let occurrenceID,
       let route = selectedRoute,
       !route.lapBoundaryOccurrenceIndices.isEmpty,
       let occurrence = route.routePlan.occurrence(id: occurrenceID)
@@ -1956,6 +1958,9 @@ final class WholeShutoProductModel: ObservableObject {
       let total = selectedRoute?.routePlan.occurrences.count,
       total > 1
     {
+      if let boundaries = selectedRoute?.lapBoundaryOccurrenceIndices {
+        driveRecord.skipPlannedLap(toOccurrenceIndex: index, boundaries: boundaries)
+      }
       progressFraction = Double(index) / Double(total - 1)
     }
     await refreshRemainingLaps(from: session)
@@ -2130,6 +2135,9 @@ final class WholeShutoProductModel: ObservableObject {
     driveRecordPreferenceStore.set(shown, forKey: Self.showsDriveRecordDefaultsKey)
     guard shown != showsDriveRecord else { return }
     showsDriveRecord = shown
+    driveRecord = WholeShutoDriveRecord(
+      startedAtMilliseconds: shown && isLiveDrive ? nowMillisecondsProvider() : nil
+    )
   }
 
   func setSurfaceRoutePreference(
@@ -2212,6 +2220,7 @@ final class WholeShutoProductModel: ObservableObject {
       return false
     }
     cancelSurfaceReroute()
+    driveRecord.interruptSamples()
     invalidatePlaybackTask()
     isPlaying = false
     speechCoordinator?.stop()
@@ -3295,7 +3304,10 @@ final class WholeShutoProductModel: ObservableObject {
       runtimeFractionAlongOccurrence = nil
       liveMatcherWasInTunnel = false
       clearRouteJoinOffer()
-      driveRecord = WholeShutoDriveRecord()
+      driveRecord = WholeShutoDriveRecord(
+        startedAtMilliseconds: showsDriveRecord ? nowMillisecondsProvider() : nil
+      )
+      driveHistoryIssue = nil
       remainingWholeLapsAhead = 0
       clearTunnelEstimate()
       presentationProjection = nil
@@ -3398,10 +3410,12 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationIssueCode = nil
     liveLocationState = .available
     scheduleLiveLocationFreshnessCheck()
-    driveRecord.observe(
-      speedMetersPerSecond: observation.speedMetersPerSecond,
-      atMilliseconds: observation.receivedAtMilliseconds
-    )
+    if showsDriveRecord {
+      driveRecord.observe(
+        speedMetersPerSecond: observation.speedMetersPerSecond,
+        atMilliseconds: observation.receivedAtMilliseconds
+      )
+    }
 
     do {
       switch phase {
@@ -3894,6 +3908,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func completeLiveJourney() {
+    finishDriveRecord(arrived: true)
     cancelSurfaceReroute()
     stopForegroundLiveLocationController()
     phase = .completed
@@ -3907,6 +3922,25 @@ final class WholeShutoProductModel: ObservableObject {
     removeCheckpoint()
     speechCoordinator?.resume()
     announceJourneyNotice(.arrived)
+  }
+
+  private func finishDriveRecord(arrived: Bool) {
+    guard isLiveDrive, showsDriveRecord, driveRecord.endedAtMilliseconds == nil,
+      let route = selectedRoute
+    else { return }
+    driveRecord.finish(atMilliseconds: nowMillisecondsProvider())
+    guard let entry = DriveHistoryEntry(
+      record: driveRecord, routePlan: route.routePlan,
+      routeName: route.routeIDsInOrder.joined(separator: " · ") + " · "
+        + route.entryFacility.nameJA + " → " + route.exitFacility.nameJA,
+      templateParameters: savedRouteTemplateParameters, arrived: arrived
+    ) else { return }
+    do {
+      try driveHistoryStore.save(entry)
+      driveHistoryIssue = nil
+    } catch {
+      driveHistoryIssue = "DRIVE_HISTORY_SAVE_FAILED"
+    }
   }
 
   private func continueAfterExpresswayExit(
@@ -4059,6 +4093,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   func reset() {
+    finishDriveRecord(arrived: false)
     stopForegroundLiveLocationController()
     driveRecord = WholeShutoDriveRecord()
     remainingWholeLapsAhead = 0
@@ -4661,6 +4696,17 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  var currentInstructionForRepeat: String? {
+    guard canRepeatGuidance else { return nil }
+    if phase == .expressway { return presentationProjection?.voice.synthesisText }
+    guard let progress = activeSurfaceStepProgress else { return nil }
+    return surfaceSpeechCommand(at: progress.index)?.synthesisText
+  }
+
+  var liveSessionIdentity: ObjectIdentifier? {
+    liveDriveSession.map(ObjectIdentifier.init)
+  }
+
   private func announceJourneyNotice(_ notice: WholeShutoJourneyNotice) {
     guard isLiveDrive, let routePlanID = selectedRoute?.routePlan.id else { return }
     noticeSequence += 1
@@ -4979,6 +5025,10 @@ final class WholeShutoProductModel: ObservableObject {
       pendingLiveNavigationCheckpoint = navigationCheckpoint
       isLiveDrive = true
       liveLocationState = .resumeRequired
+      if showsDriveRecord {
+        driveRecord = checkpoint.driveRecord
+          ?? WholeShutoDriveRecord(startedAtMilliseconds: nowMillisecondsProvider())
+      }
       liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
       matcherConfidence = .low
       runtimeOccurrenceID = checkpoint.runtimeOccurrenceID
@@ -5110,7 +5160,8 @@ final class WholeShutoProductModel: ObservableObject {
         phase == .entryTransition || phase == .expressway
         ? runtimeAssets?.runtimeAssetIdentity : nil,
       liveNavigationCheckpoint:
-        isLiveDrive ? liveNavigationCheckpoint : nil
+        isLiveDrive ? liveNavigationCheckpoint : nil,
+      driveRecord: isLiveDrive && showsDriveRecord ? driveRecord : nil
     )
     guard let checkpointStore else { return }
     do {

@@ -3,6 +3,47 @@ import XCTest
 @testable import KaidoRoutesApp
 
 final class WholeShutoDriveRecordTests: XCTestCase {
+  func testRestorationKeepsAggregatesWithoutBridgingTheMissingSpeedSample() throws {
+    var record = WholeShutoDriveRecord(startedAtMilliseconds: 1_000)
+    record.observe(speedMetersPerSecond: 20, atMilliseconds: 1_000)
+    record.observe(speedMetersPerSecond: 20, atMilliseconds: 6_000)
+    let encoded = try JSONEncoder().encode(record)
+    let json = try XCTUnwrap(String(data: encoded, encoding: .utf8))
+    XCTAssertFalse(json.contains("lastSampleAtMilliseconds"))
+    XCTAssertFalse(json.contains("lastSpeedMetersPerSecond"))
+    var restored = try JSONDecoder().decode(WholeShutoDriveRecord.self, from: encoded)
+    XCTAssertEqual(restored.id, record.id)
+    XCTAssertEqual(restored.recordedDistanceMeters, 100, accuracy: 0.001)
+    restored.observe(speedMetersPerSecond: 30, atMilliseconds: 7_000)
+    XCTAssertEqual(restored.recordedDistanceMeters, 100, accuracy: 0.001)
+    restored.observe(speedMetersPerSecond: 10, atMilliseconds: 8_000)
+    XCTAssertEqual(restored.recordedDistanceMeters, 120, accuracy: 0.001)
+    XCTAssertEqual(restored.recordedDurationMilliseconds, 6_000)
+  }
+
+  func testJoiningMidRouteDoesNotInventCompletedLaps() {
+    var record = WholeShutoDriveRecord()
+    record.observe(occurrenceIndex: 15, boundaries: [0, 10, 20, 30], atMilliseconds: 1_000)
+    XCTAssertTrue(record.completedLaps.isEmpty)
+    XCTAssertNil(record.currentLapNumber)
+    record.observe(occurrenceIndex: 20, boundaries: [0, 10, 20, 30], atMilliseconds: 2_000)
+    record.observe(occurrenceIndex: 30, boundaries: [0, 10, 20, 30], atMilliseconds: 5_000)
+    XCTAssertEqual(record.completedLaps.count, 1)
+    XCTAssertEqual(record.completedLaps.first?.durationMilliseconds, 3_000)
+  }
+
+  func testRemovingAPlannedLapDoesNotRecordItAsDriven() {
+    var record = WholeShutoDriveRecord()
+    record.observe(occurrenceIndex: 0, boundaries: [0, 10, 20], atMilliseconds: 1_000)
+    record.observe(occurrenceIndex: 5, boundaries: [0, 10, 20], atMilliseconds: 2_000)
+    record.skipPlannedLap(toOccurrenceIndex: 15, boundaries: [0, 10, 20])
+    record.observe(occurrenceIndex: 16, boundaries: [0, 10, 20], atMilliseconds: 3_000)
+    XCTAssertTrue(record.completedLaps.isEmpty)
+    record.observe(occurrenceIndex: 20, boundaries: [0, 10, 20], atMilliseconds: 5_000)
+    XCTAssertEqual(record.completedLaps.count, 1)
+    XCTAssertEqual(record.completedLaps.first?.durationMilliseconds, 4_000)
+  }
+
   func testSpeedRecordIsTimeWeightedAndBoundedByRealSamples() {
     var record = WholeShutoDriveRecord()
     XCTAssertNil(record.averageSpeedMetersPerSecond)
@@ -89,15 +130,14 @@ final class WholeShutoDriveRecordTests: XCTestCase {
     XCTAssertEqual(record.completedLaps.count, 2)
   }
 
-  func testASingleFixCanCloseSeveralBoundariesAtOnce() {
-    // A tunnel or a dropped signal can leave the matcher's next resolved
-    // occurrence well past a lap boundary. Every crossed lap still closes.
+  func testMissedBoundariesDoNotInventCompletedLapRecords() {
+    // Separate lap times were not observed across this gap.
     let boundaries = [0, 10, 20]
     var record = WholeShutoDriveRecord()
     record.observe(occurrenceIndex: 0, boundaries: boundaries, atMilliseconds: 0)
     record.observe(occurrenceIndex: 22, boundaries: boundaries, atMilliseconds: 900_000)
 
-    XCTAssertEqual(record.completedLaps.count, 2)
+    XCTAssertTrue(record.completedLaps.isEmpty)
     XCTAssertNil(record.currentLapNumber)
   }
 

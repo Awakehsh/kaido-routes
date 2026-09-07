@@ -2219,3 +2219,24 @@ bounded role it may own.
 - [Google road-snapped location updates](https://developers.google.com/maps/documentation/navigation/ios-sdk/reference/objc/Protocols/GMSRoadSnappedLocationProviderListener)
 - [Google route location simulation](https://developers.google.com/maps/documentation/navigation/ios-sdk/reference/objc/Classes/GMSLocationSimulator)
 - [Mapbox navigation pricing reference](https://www.mapbox.com/pricing)
+
+## Drive controls, history, and shared routes
+
+App Intents expose the foreground live model's existing repeat, speech mode,
+lap, rest, resume, and end actions. Siri returns the current valid instruction
+through its own dialog output. The app does not record microphone input or send
+commands to an application server. Foreground scene registration owns the weak
+model reference; it does not introduce a second navigation session.
+
+Drive history persists aggregate recorded intervals, observed lap splits, and
+the exact planned route locally. A checkpoint may retain the aggregate record
+without retaining the last raw speed sample. Rest interrupts speed integration;
+missing samples and skipped planned laps never become recorded driving. The
+existing recording setting also controls collection and history persistence.
+
+Shared `.kaidoroute` files use the existing SharedRouteDocument codec. File
+opening imports into the library without replacing navigation. Settings, history,
+and the library remain accessible during navigation for passenger operation,
+without a parking prompt or motion-based lock. Explicit selection validates the
+saved route, closes the previous session, and resolves the new journey from the
+current origin. Invalid files do not tear down the active session.

@@ -538,12 +538,11 @@ release identifier is translated to an exact synthesis locale before voice
 resolution: Japanese uses `ja-JP`, Simplified Chinese uses `zh-CN`, and English
 uses `en-US`. A generic release-language tag such as `zh-Hans` or `en` is not
 passed directly to the Apple voice API.
-The locale's
-system default is only an equal-quality tie-break, so a generic accessibility
-character cannot displace a higher-quality normal voice. A persisted explicit
-identifier is stored independently for each synthesis locale and may override
-automatic quality ranking only while it remains an eligible exact-locale
-installed voice; removal falls back to the ranked result.
+The parked voice list ranks installed voices by quality. Playback and audition
+both resolve the explicit eligible selection or the system locale default,
+without enumerating all installed voices during a navigation prompt. A persisted
+identifier is stored independently for each synthesis locale. A removed selection
+uses the system default and is shown as unavailable when the parked list refreshes.
 The chosen identifier, name, locale, and quality remain observable without
 granting speech authority.
 Short guidance keeps Apple's neutral rate and pitch; app-side tuning does not
@@ -1962,6 +1961,20 @@ by a CarPlay accessory; record that source and compare it separately rather than
 assuming every head unit supplies better tunnel positioning.
 
 ## Guidance architecture
+
+The driver can select full, concise, or muted speech without pausing navigation.
+Concise mode omits advance stages and expressway mainline confirmations while
+retaining commit movements and ordinary-road instructions. Volume and installed
+voice selection live in parked settings, whose audition uses the same voice and
+volume resolution as navigation. Routine test launches substitute silent output
+for this audition as well as navigation speech.
+
+Explicit repeat reads only the current valid instruction already delivered on
+this route. The App rejects repeat while positioning is degraded, navigation is
+paused, or the instruction is obsolete. Automatic occurrence consumption remains
+unchanged; each requested delivery has a separate callback identity so completion
+of an older playback cannot cancel the repeat. Exact recorded-audio lookup retains
+the original prompt and occurrence identity.
 
 Guidance is derived from released movement semantics and deterministic anchors:
 

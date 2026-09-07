@@ -4,15 +4,18 @@ public struct GuidanceSpeechIdentity: Equatable, Hashable, Sendable {
   public let promptID: String
   public let anchorID: String
   public let anchorOccurrenceID: String
+  public let deliveryID: UUID?
 
   public init(
     promptID: String,
     anchorID: String,
-    anchorOccurrenceID: String
+    anchorOccurrenceID: String,
+    deliveryID: UUID? = nil
   ) {
     self.promptID = promptID
     self.anchorID = anchorID
     self.anchorOccurrenceID = anchorOccurrenceID
+    self.deliveryID = deliveryID
   }
 }
 
@@ -44,6 +47,7 @@ public enum GuidanceSpeechSuppressionReason: String, Equatable, Sendable {
   case interrupted = "INTERRUPTED"
   case stopped = "STOPPED"
   case retryPending = "RETRY_PENDING"
+  case voicePreference = "VOICE_PREFERENCE"
 }
 
 public enum GuidanceSpeechScheduleResult: Equatable, Sendable {
@@ -88,16 +92,30 @@ public struct GuidanceSpeechScheduler: Sendable {
   }
 
   public mutating func submit(
-    _ projection: NavigationPresentationProjection
+    _ projection: NavigationPresentationProjection,
+    requestedRepeat: Bool = false
   ) throws -> GuidanceSpeechScheduleResult {
-    guard projection.voice.shouldSpeak else {
+    guard projection.voice.shouldSpeak || requestedRepeat else {
       return .suppressed(.notAuthorized)
     }
 
-    let identity = try validatedIdentity(projection)
-    guard !consumedIdentities.contains(identity) else {
+    let originalIdentity = try validatedIdentity(projection)
+    if requestedRepeat {
+      guard consumedIdentities.contains(originalIdentity),
+        projection.iPhone.marker == .measured,
+        projection.iPhone.passage.tone != .blocked,
+        projection.voice.distanceMeters > 0
+      else { return .suppressed(.notAuthorized) }
+    } else if consumedIdentities.contains(originalIdentity) {
       return .suppressed(.duplicate)
     }
+    let identity = requestedRepeat
+      ? GuidanceSpeechIdentity(
+        promptID: originalIdentity.promptID,
+        anchorID: originalIdentity.anchorID,
+        anchorOccurrenceID: originalIdentity.anchorOccurrenceID,
+        deliveryID: UUID()
+      ) : originalIdentity
 
     let text = Self.normalized(projection.voice.spokenText)
     guard !text.isEmpty else {
@@ -116,7 +134,7 @@ public struct GuidanceSpeechScheduler: Sendable {
     guard state != .stopped else {
       return .suppressed(.stopped)
     }
-    consumedIdentities.insert(identity)
+    if !requestedRepeat { consumedIdentities.insert(identity) }
 
     let replacedIdentity = activeCommand?.identity
     let command = GuidanceSpeechCommand(

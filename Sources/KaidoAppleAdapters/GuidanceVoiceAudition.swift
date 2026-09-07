@@ -115,12 +115,9 @@ public protocol GuidanceVoiceAuditionOutput: AnyObject {
         throw GuidanceVoiceAuditionOutputError.invalidRequest
       }
       guard
-        let profile = AVSpeechGuidanceOutput.preferredInstalledVoiceProfile(
+        let selection = AVSpeechGuidanceOutput.navigationVoiceSelection(
           for: languageCode,
           preferredIdentifier: request.preferredVoiceIdentifier
-        ),
-        let voice = AVSpeechSynthesisVoice(
-          identifier: profile.identifier
         )
       else {
         throw GuidanceVoiceAuditionOutputError.voiceUnavailable(
@@ -128,6 +125,8 @@ public protocol GuidanceVoiceAuditionOutput: AnyObject {
         )
       }
 
+      let profile = selection.profile
+      let voice = selection.voice
       do {
         try audioSession.setCategory(
           .playback,
@@ -145,6 +144,7 @@ public protocol GuidanceVoiceAuditionOutput: AnyObject {
       }
 
       let utterance = AVSpeechUtterance(string: spokenText)
+      utterance.volume = GuidanceSpeechVolume.stored().gain
       utterance.voice = voice
       let prosody = GuidanceSpeechProsody.navigation(
         languageCode: languageCode

@@ -452,6 +452,9 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var runtimeRecoveryDirectedEdgeID: String?
   @Published private(set) var presentationProjection: NavigationPresentationProjection?
   @Published private(set) var speechStatus: GuidanceSpeechCoordinatorStatus = .idle
+  @Published private(set) var speechMode: GuidanceSpeechMode = .full
+  @Published private(set) var speechVolume: GuidanceSpeechVolume = .loud
+  static let speechModeDefaultsKey = "app.kaidoroutes.guidance.mode"
   @Published private(set) var tunnelEstimatedProgressFraction: Double?
   @Published private(set) var tunnelEstimateUncertaintyMeters: Double?
 
@@ -633,6 +636,9 @@ final class WholeShutoProductModel: ObservableObject {
     self.nowMillisecondsProvider = nowMillisecondsProvider
     self.languageSelectionProvider = languageSelectionProvider
     self.driveRecordPreferenceStore = driveRecordPreferenceStore
+    speechMode = driveRecordPreferenceStore.string(forKey: Self.speechModeDefaultsKey)
+      .flatMap(GuidanceSpeechMode.init(rawValue:)) ?? .full
+    speechVolume = GuidanceSpeechVolume.stored(in: driveRecordPreferenceStore)
     // Shown unless the driver has said otherwise.
     showsDriveRecord =
       driveRecordPreferenceStore.object(
@@ -4584,7 +4590,62 @@ final class WholeShutoProductModel: ObservableObject {
       self.speechStatus = status
     }
     speechCoordinator = coordinator
+    coordinator.setMode(speechMode)
     speechStatus = .idle
+  }
+
+  func setSpeechMode(_ mode: GuidanceSpeechMode) {
+    speechMode = mode
+    driveRecordPreferenceStore.set(mode.rawValue, forKey: Self.speechModeDefaultsKey)
+    speechCoordinator?.setMode(mode)
+  }
+
+  func setSpeechVolume(_ volume: GuidanceSpeechVolume) {
+    speechVolume = volume
+    driveRecordPreferenceStore.set(volume.rawValue, forKey: GuidanceSpeechVolume.preferenceKey)
+  }
+
+  var canRepeatGuidance: Bool {
+    guard isPlaying, speechMode != .muted, let speechCoordinator else { return false }
+    if isLiveDrive, liveLocationState != .available { return false }
+    switch phase {
+    case .surfaceAccess, .surfaceEgress:
+      guard positionState == .surfacePreview,
+        let progress = activeSurfaceStepProgress,
+        let command = surfaceSpeechCommand(at: progress.index)
+      else { return false }
+      return speechCoordinator.startedIdentities.contains(command.identity)
+    case .expressway:
+      guard matcherConfidence == .high,
+        let projection = presentationProjection,
+        projection.voice.distanceMeters > 0
+      else { return false }
+      return speechCoordinator.startedIdentities.contains(
+        GuidanceSpeechIdentity(
+          promptID: projection.voice.promptID,
+          anchorID: projection.iPhone.guidanceAnchorID,
+          anchorOccurrenceID: projection.iPhone.guidanceAnchorOccurrenceID
+        )
+      )
+    default: return false
+    }
+  }
+
+  @discardableResult
+  func repeatGuidance() -> Bool {
+    guard canRepeatGuidance, let speechCoordinator else { return false }
+    let status: GuidanceSpeechCoordinatorStatus
+    if phase == .expressway, let projection = presentationProjection {
+      status = speechCoordinator.repeatCurrent(projection)
+    } else if let progress = activeSurfaceStepProgress,
+      let command = surfaceSpeechCommand(at: progress.index)
+    {
+      status = speechCoordinator.repeatCurrentSurface(command)
+    } else { return false }
+    switch status {
+    case .idle, .scheduled, .speaking: return true
+    default: return false
+    }
   }
 
   private func announceJourneyNotice(_ notice: WholeShutoJourneyNotice) {
@@ -4611,50 +4672,43 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func scheduleLiveSurfaceSpeech(forceCurrentStep: Bool) {
-    guard
-      isLiveDrive,
-      isPlaying,
-      phase == .surfaceAccess || phase == .surfaceEgress,
-      let route = activeSurfaceRoute,
+    guard isLiveDrive, isPlaying,
       let progress = activeSurfaceStepProgress,
-      let routePlanID = selectedRoute?.routePlan.id,
+      let current = surfaceSpeechCommand(at: progress.index),
       let speechCoordinator
-    else {
-      return
-    }
-
-    let phaseID = phase.rawValue.lowercased()
-    func identity(for index: Int) -> GuidanceSpeechIdentity {
-      let id = "provider.surface.\(phaseID).\(surfaceSpeechGeneration).\(index)"
-      return GuidanceSpeechIdentity(
-        promptID: id, anchorID: "PROVIDER_SURFACE_STEP", anchorOccurrenceID: id)
-    }
-    let stepIndex: Int
+    else { return }
+    let command: GuidanceSpeechCommand
     if !forceCurrentStep,
-      speechCoordinator.startedIdentities.contains(identity(for: progress.index)),
-      progress.remainingMeters
-        <= Self.surfaceSpeechPreannounceDistanceMeters,
-      progress.index + 1 < progress.steps.count
+      speechCoordinator.startedIdentities.contains(current.identity),
+      progress.remainingMeters <= Self.surfaceSpeechPreannounceDistanceMeters,
+      let next = surfaceSpeechCommand(at: progress.index + 1)
     {
-      stepIndex = progress.index + 1
+      command = next
     } else {
-      stepIndex = progress.index
+      command = current
     }
-    let instruction = progress.steps[stepIndex].instruction
+    _ = speechCoordinator.submitProviderSurface(command)
+  }
+
+  private func surfaceSpeechCommand(at index: Int) -> GuidanceSpeechCommand? {
+    guard let route = activeSurfaceRoute,
+      let progress = activeSurfaceStepProgress,
+      progress.steps.indices.contains(index),
+      let routePlanID = selectedRoute?.routePlan.id
+    else { return nil }
+    let instruction = progress.steps[index].instruction
       .trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !instruction.isEmpty else { return }
+    guard !instruction.isEmpty else { return nil }
     let routeLanguageCode = route.guidanceLanguageCode?
       .trimmingCharacters(in: .whitespacesAndNewlines)
-    let languageCode =
-      routeLanguageCode.flatMap { $0.isEmpty ? nil : $0 }
+    let languageCode = routeLanguageCode.flatMap { $0.isEmpty ? nil : $0 }
       ?? languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
-    _ = speechCoordinator.submitProviderSurface(
-      GuidanceSpeechCommand(
-        identity: identity(for: stepIndex),
-        routePlanID: routePlanID,
-        languageCode: languageCode,
-        spokenText: instruction
-      )
+    let id = "provider.surface.\(phase.rawValue.lowercased()).\(surfaceSpeechGeneration).\(index)"
+    return GuidanceSpeechCommand(
+      identity: GuidanceSpeechIdentity(
+        promptID: id, anchorID: "PROVIDER_SURFACE_STEP", anchorOccurrenceID: id
+      ),
+      routePlanID: routePlanID, languageCode: languageCode, spokenText: instruction
     )
   }
 

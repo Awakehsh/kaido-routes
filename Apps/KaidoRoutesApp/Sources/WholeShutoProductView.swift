@@ -3461,6 +3461,35 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier("whole-shuto-arrival-dock")
   }
 
+  private var speechControls: some View {
+    Menu {
+      Picker(copy.resolve(japanese: "案内", simplifiedChinese: "播报方式", english: "Guidance"), selection: Binding(
+        get: { model.speechMode }, set: { model.setSpeechMode($0) }
+      )) {
+        ForEach(GuidanceSpeechMode.allCases, id: \.self) { mode in
+          Text(mode.title(in: languageSettings.interfaceLocale)).tag(mode)
+        }
+      }
+      Button {
+        model.repeatGuidance()
+      } label: {
+        Label(copy.resolve(japanese: "もう一度聞く", simplifiedChinese: "重听当前指令", english: "Repeat current direction"),
+          systemImage: "arrow.counterclockwise")
+      }
+      .disabled(!model.canRepeatGuidance)
+      .accessibilityIdentifier("whole-shuto-repeat-guidance")
+    } label: {
+      Image(systemName: speechStatusSymbol)
+        .font(.system(size: 18, weight: .semibold))
+        .foregroundStyle(speechStatusIsBlocked ? KaidoTheme.signalAmber : KaidoTheme.routeWhite)
+        .frame(width: 44, height: 44)
+        .contentShape(Rectangle())
+    }
+    .accessibilityIdentifier("whole-shuto-guidance-speech")
+    .accessibilityLabel(copy.resolve(japanese: "音声案内", simplifiedChinese: "导航语音", english: "Guidance voice"))
+    .accessibilityValue(model.speechMode.title(in: languageSettings.interfaceLocale) + " · " + speechStatusLabel)
+  }
+
   private var instructionBanner: some View {
     HStack(spacing: 13) {
       ZStack {
@@ -3504,22 +3533,7 @@ struct WholeShutoProductView: View {
       Spacer()
 
       VStack(spacing: 8) {
-        Image(systemName: speechStatusSymbol)
-          .font(.system(size: 13, weight: .bold))
-          .foregroundStyle(
-            speechStatusIsBlocked
-              ? KaidoTheme.signalAmber
-              : KaidoTheme.routeWhite
-          )
-          .accessibilityIdentifier("whole-shuto-guidance-speech")
-          .accessibilityLabel(
-            copy.resolve(
-              japanese: "音声案内",
-              simplifiedChinese: "导航语音",
-              english: "Guidance voice"
-            )
-          )
-          .accessibilityValue(speechStatusLabel)
+        speechControls
 
         if let routeID = activeRouteShield {
           Text(shieldLabel(routeID))
@@ -4161,7 +4175,8 @@ struct WholeShutoProductView: View {
   }
 
   private var speechStatusSymbol: String {
-    switch model.speechStatus {
+    if model.speechMode == .muted { return "speaker.slash.fill" }
+    return switch model.speechStatus {
     case .scheduled, .speaking:
       "speaker.wave.2.fill"
     case .interrupted, .failed, .invalidProjection:
@@ -4172,7 +4187,8 @@ struct WholeShutoProductView: View {
   }
 
   private var speechStatusLabel: String {
-    switch model.speechStatus {
+    if model.speechMode == .muted { return model.speechMode.title(in: languageSettings.interfaceLocale) }
+    return switch model.speechStatus {
     case .idle:
       model.hasCompletedActiveGuidancePrompt
         ? copy.resolve(
@@ -6851,6 +6867,14 @@ private struct WholeShutoSettingsView: View {
             )
           }
           .accessibilityIdentifier("whole-shuto-guidance-voice-language")
+          NavigationLink {
+            WholeShutoVoiceSettingsView(model: model, languages: languageSettings)
+          } label: {
+            Label(copy.resolve(japanese: "声と案内", simplifiedChinese: "声音与播报", english: "Voice and guidance"),
+              systemImage: "speaker.wave.2")
+          }
+          .disabled(model.isLiveDrive)
+          .accessibilityIdentifier("whole-shuto-voice-settings")
           Text(
             copy.resolve(
               japanese: "高速道路と走行状態の案内に適用されます。一般道の案内はシステムの地図言語を使用します。",

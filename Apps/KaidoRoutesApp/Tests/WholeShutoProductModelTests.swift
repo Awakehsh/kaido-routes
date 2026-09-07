@@ -965,6 +965,16 @@ final class WholeShutoProductModelTests: XCTestCase {
       output.commands.map(\.spokenText),
       ["Continue straight", "Turn left"]
     )
+    XCTAssertTrue(model.canRepeatGuidance)
+    XCTAssertTrue(model.repeatGuidance())
+    XCTAssertEqual(output.commands.last?.spokenText, "Continue straight")
+    XCTAssertEqual(output.commands.count, 3)
+    model.setSpeechMode(.muted)
+    XCTAssertTrue(model.isPlaying)
+    XCTAssertFalse(model.canRepeatGuidance)
+    XCTAssertFalse(model.repeatGuidance())
+    XCTAssertEqual(output.commands.count, 3)
+    model.setSpeechMode(.full)
     model.reset()
   }
 

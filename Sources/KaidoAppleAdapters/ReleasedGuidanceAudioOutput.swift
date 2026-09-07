@@ -298,7 +298,7 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
       do {
         let player = try AVAudioPlayer(contentsOf: asset.resourceURL)
         player.delegate = self
-        player.volume = 1
+        player.volume = GuidanceSpeechVolume.stored().gain
         guard player.prepareToPlay(), player.play() else {
           deactivateAudioSession()
           throw GuidanceSpeechOutputError.recordedAudioPlaybackFailed

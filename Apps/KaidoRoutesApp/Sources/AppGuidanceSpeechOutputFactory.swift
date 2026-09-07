@@ -1,3 +1,4 @@
+import AVFAudio
 import Foundation
 import KaidoAppleAdapters
 import KaidoPresentation
@@ -26,6 +27,27 @@ enum AppGuidanceSpeechOutputFactory {
       preferredVoiceIdentifierProvider: preferredVoiceIdentifierProvider
     )
   }
+
+  static func makeAudition() -> any GuidanceVoiceAuditionOutput {
+    isSilent ? SilentAppVoiceAuditionOutput() : LazyAVSpeechVoiceAuditionOutput()
+  }
+}
+
+@MainActor
+private final class SilentAppVoiceAuditionOutput: GuidanceVoiceAuditionOutput {
+  var eventHandler: ((GuidanceVoiceAuditionOutputEvent) -> Void)?
+
+  func audition(_ request: GuidanceVoiceAuditionRequest) throws {
+    guard let profile = AVSpeechGuidanceOutput.preferredInstalledVoiceProfile(
+      for: request.languageCode,
+      preferredIdentifier: request.preferredVoiceIdentifier
+        ?? AVSpeechSynthesisVoice(language: request.languageCode)?.identifier
+    ) else { throw GuidanceVoiceAuditionOutputError.voiceUnavailable(request.languageCode) }
+    eventHandler?(.didStart(profile))
+    eventHandler?(.didFinish(profile))
+  }
+
+  func stop() {}
 }
 
 @MainActor

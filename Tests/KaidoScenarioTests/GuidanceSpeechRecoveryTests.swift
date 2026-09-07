@@ -48,6 +48,76 @@ private final class RecoverySpeechOutput: GuidanceSpeechOutput {
   #expect(!coordinator.completedIdentities.contains(output.commands[0].identity))
 }
 
+@MainActor @Test func speechControlsMuteStopsOutputWithoutEndingNavigationSpeechState() throws {
+  let output = RecoverySpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech", output: output)
+  let first = surfaceSpeechCommand(promptID: "surface.first")
+  _ = coordinator.submitProviderSurface(first)
+  coordinator.setMode(.muted)
+  #expect(coordinator.scheduler.state != .stopped)
+  #expect(coordinator.submitProviderSurface(surfaceSpeechCommand(promptID: "surface.next"))
+    == .suppressed(.voicePreference))
+  #expect(output.commands.count == 1)
+  coordinator.setMode(.full)
+  _ = coordinator.submitProviderSurface(surfaceSpeechCommand(promptID: "surface.next"))
+  #expect(output.commands.count == 2)
+}
+
+@MainActor @Test func speechControlsRepeatKeepsAutomaticLedgerAndRejectsLateCompletion() throws {
+  let output = RecoverySpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech", output: output)
+  let projection = try speechProjection(promptID: "junction.current", anchorOccurrenceID: "anchor.current")
+  _ = coordinator.submit(projection)
+  let original = try #require(output.commands.first)
+  _ = coordinator.repeatCurrent(projection)
+  let repeated = try #require(output.commands.last)
+  #expect(output.commands.count == 2)
+  #expect(repeated.identity.promptID == original.identity.promptID)
+  #expect(repeated.identity.anchorOccurrenceID == original.identity.anchorOccurrenceID)
+  #expect(repeated.identity.deliveryID != nil)
+  #expect(repeated.identity != original.identity)
+  output.finish(original.identity)
+  #expect(coordinator.status == .speaking(repeated.identity))
+  output.finish(repeated.identity)
+  #expect(coordinator.submit(projection) == .suppressed(.duplicate))
+  #expect(output.commands.count == 2)
+  let neverSpoken = try speechProjection(promptID: "junction.other", anchorOccurrenceID: "anchor.other")
+  #expect(coordinator.repeatCurrent(neverSpoken) == .suppressed(.notAuthorized))
+}
+
+@MainActor @Test func speechControlsSurfaceRepeatDoesNotReadAnUnstartedPreview() throws {
+  let output = RecoverySpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech", output: output)
+  let current = surfaceSpeechCommand(promptID: "surface.current")
+  let next = surfaceSpeechCommand(promptID: "surface.next")
+  _ = coordinator.submitProviderSurface(current)
+  #expect(coordinator.repeatCurrentSurface(next) == .suppressed(.notAuthorized))
+  _ = coordinator.repeatCurrentSurface(current)
+  #expect(output.commands.count == 2)
+  #expect(output.commands.last?.spokenText == current.spokenText)
+  coordinator.setMode(.muted)
+  #expect(coordinator.repeatCurrentSurface(current) == .suppressed(.notAuthorized))
+}
+
+@MainActor @Test func speechControlsConciseModeKeepsCommitDirections() throws {
+  let output = RecoverySpeechOutput()
+  let coordinator = try GuidanceSpeechCoordinator(
+    expectedRoutePlanID: "test.plan.speech", output: output)
+  coordinator.setMode(.concise)
+  let prepare = try speechProjection(promptID: "junction.prepare", anchorOccurrenceID: "anchor.prepare")
+  #expect(coordinator.submit(prepare) == .suppressed(.voicePreference))
+  let commit = try speechProjection(
+    promptID: "junction.commit", anchorOccurrenceID: "anchor.commit", stage: .commit)
+  guard case .speaking = coordinator.submit(commit) else {
+    Issue.record("Concise mode must retain commit guidance")
+    return
+  }
+  #expect(output.commands.count == 1)
+}
+
 @MainActor @Test func speechRecoveryRetriesUnstartedSurfaceAndExpresswayPrompts() throws {
   var now: TimeInterval = 0
   let surfaceOutput = RecoverySpeechOutput()
@@ -252,7 +322,8 @@ private func speechProjection(
   promptID: String,
   anchorOccurrenceID: String,
   emitsPrompt: Bool = true,
-  guidanceVoiceLocale: KaidoReleaseLocale = .japanese
+  guidanceVoiceLocale: KaidoReleaseLocale = .japanese,
+  stage: GuidancePromptStage = .prepare
 ) throws -> NavigationPresentationProjection {
   let sign = "B 湾岸線・横浜方面"
   let source = GuidancePresentationSource(
@@ -285,7 +356,7 @@ private func speechProjection(
     anchorOccurrenceID: anchorOccurrenceID,
     movementOccurrenceID: "test.occurrence.movement",
     decisionZoneID: "test.zone.speech",
-    stage: .prepare,
+    stage: stage,
     distanceMeters: 500,
     decisionPointNameJapanese: "テストJCT",
     localizedDecisionPointNames: [

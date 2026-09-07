@@ -520,6 +520,8 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       "The occurrence-scoped prompt was already consumed."
     case .suppressed(.retryPending):
       "Waiting before retrying the current unstarted instruction."
+    case .suppressed(.voicePreference):
+      "The driver's voice preference suppresses this instruction."
     case .suppressed(.interrupted):
       "The interrupted prompt was dropped without catch-up replay."
     case .suppressed(.stopped), .stopped:

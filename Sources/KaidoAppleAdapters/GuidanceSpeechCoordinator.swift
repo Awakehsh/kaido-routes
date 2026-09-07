@@ -77,6 +77,32 @@ public enum GuidanceSpeechCoordinatorStatus: Equatable, Sendable {
   case invalidProjection
 }
 
+public enum GuidanceSpeechMode: String, CaseIterable, Sendable {
+  case full = "FULL"
+  case concise = "CONCISE"
+  case muted = "MUTED"
+}
+
+public enum GuidanceSpeechVolume: String, CaseIterable, Sendable {
+  case soft = "SOFT"
+  case normal = "NORMAL"
+  case loud = "LOUD"
+
+  public static let preferenceKey = "app.kaidoroutes.guidance.volume"
+
+  public var gain: Float {
+    switch self {
+    case .soft: 0.45
+    case .normal: 0.75
+    case .loud: 1
+    }
+  }
+
+  public static func stored(in defaults: UserDefaults = .standard) -> Self {
+    defaults.string(forKey: preferenceKey).flatMap(Self.init(rawValue:)) ?? .loud
+  }
+}
+
 /// Connects the pure exactly-once speech scheduler to one Apple audio output.
 ///
 /// Output callbacks may arrive after a newer command replaces an old one. The
@@ -97,6 +123,7 @@ public final class GuidanceSpeechCoordinator {
     }
   }
   public var statusDidChange: ((GuidanceSpeechCoordinatorStatus) -> Void)?
+  public private(set) var mode: GuidanceSpeechMode = .full
   public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? { output.selectedVoiceProfile }
 
   public static let playbackTimeoutSeconds: TimeInterval = 30
@@ -126,10 +153,42 @@ public final class GuidanceSpeechCoordinator {
   public func submit(_ projection: NavigationPresentationProjection)
     -> GuidanceSpeechCoordinatorStatus
   {
+    submit(projection, requestedRepeat: false)
+  }
+
+  public func setMode(_ mode: GuidanceSpeechMode) {
+    guard self.mode != mode else { return }
+    self.mode = mode
+    invalidateGuidance()
+    if mode == .muted { status = .suppressed(.voicePreference) }
+  }
+
+  @discardableResult
+  public func repeatCurrent(_ projection: NavigationPresentationProjection)
+    -> GuidanceSpeechCoordinatorStatus
+  {
+    let identity = GuidanceSpeechIdentity(
+      promptID: projection.voice.promptID,
+      anchorID: projection.iPhone.guidanceAnchorID,
+      anchorOccurrenceID: projection.iPhone.guidanceAnchorOccurrenceID
+    )
+    guard startedIdentities.contains(identity) else { return suppress(.notAuthorized) }
+    return submit(projection, requestedRepeat: true)
+  }
+
+  private func submit(
+    _ projection: NavigationPresentationProjection, requestedRepeat: Bool
+  ) -> GuidanceSpeechCoordinatorStatus
+  {
+    guard mode != .muted else { return suppress(.voicePreference) }
+    if !requestedRepeat, mode == .concise,
+      projection.voice.stage == .prepare || projection.voice.stage == .preview
+        || projection.voice.maneuver == .stayMainline
+    { return suppress(.voicePreference) }
     checkPlaybackDeadline()
     guard recoverOutputIfNeeded() else { return status }
     do {
-      switch try scheduler.submit(projection) {
+      switch try scheduler.submit(projection, requestedRepeat: requestedRepeat) {
       case .suppressed(let reason):
         return suppress(reason)
       case .speak(let command, let replacing):
@@ -153,6 +212,7 @@ public final class GuidanceSpeechCoordinator {
   public func submitProviderSurface(_ command: GuidanceSpeechCommand)
     -> GuidanceSpeechCoordinatorStatus
   {
+    guard mode != .muted else { return suppress(.voicePreference) }
     checkPlaybackDeadline()
     guard
       command.routePlanID.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -183,6 +243,30 @@ public final class GuidanceSpeechCoordinator {
     activeSurfaceCommand = command
     play(command)
     return status
+  }
+
+  @discardableResult
+  public func repeatCurrentSurface(_ command: GuidanceSpeechCommand)
+    -> GuidanceSpeechCoordinatorStatus
+  {
+    guard mode != .muted,
+      command.identity.anchorID == "PROVIDER_SURFACE_STEP",
+      startedIdentities.contains(command.identity),
+      scheduler.activeCommand == nil
+    else { return suppress(.notAuthorized) }
+    stopProviderSurface()
+    return submitProviderSurface(
+      GuidanceSpeechCommand(
+        identity: GuidanceSpeechIdentity(
+          promptID: command.identity.promptID,
+          anchorID: command.identity.anchorID,
+          anchorOccurrenceID: command.identity.anchorOccurrenceID,
+          deliveryID: UUID()
+        ),
+        routePlanID: command.routePlanID, languageCode: command.languageCode,
+        spokenText: command.spokenText, synthesisText: command.synthesisText
+      )
+    )
   }
 
   /// Informational journey notices use the same bounded output and yield to
@@ -475,6 +559,7 @@ public final class GuidanceSpeechCoordinator {
       try activateAudioSession()
 
       let utterance = AVSpeechUtterance(string: command.synthesisText)
+      utterance.volume = GuidanceSpeechVolume.stored().gain
       utterance.voice = selection.voice
       let prosody = GuidanceSpeechProsody.navigation(languageCode: command.languageCode)
       utterance.applyGuidanceProsody(prosody, minimumLeadIn: 0.6)
@@ -521,7 +606,7 @@ public final class GuidanceSpeechCoordinator {
     /// Resolves only the explicit preference and the system locale default.
     /// Enumerating every installed voice is reserved for the parked settings
     /// screen because `speechVoices()` can synchronously block first playback.
-    private static func navigationVoiceSelection(
+    static func navigationVoiceSelection(
       for languageCode: String,
       preferredIdentifier: String?
     ) -> (voice: AVSpeechSynthesisVoice, profile: GuidanceSpeechVoiceProfile)? {

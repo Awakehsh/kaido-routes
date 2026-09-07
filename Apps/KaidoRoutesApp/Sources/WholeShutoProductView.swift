@@ -26,6 +26,7 @@ struct WholeShutoProductView: View {
   @Environment(\.scenePhase) private var scenePhase
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(\.verticalSizeClass) private var verticalSizeClass
+  @AppStorage(KaidoMapAppearance.preferenceKey) private var mapAppearance: KaidoMapAppearance = .automatic
   @ScaledMetric(relativeTo: .body) private var routeSelectionCardHeight: CGFloat = 160
   @StateObject private var model: WholeShutoProductModel
   @StateObject private var languageSettings: KaidoLanguageSettingsModel
@@ -121,9 +122,10 @@ struct WholeShutoProductView: View {
       .easeOut(duration: 0.22),
       value: model.activeJunctionPrompt
     )
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(mapAppearance.colorScheme)
     .sheet(isPresented: $showsRouteCustomization) {
       WholeShutoCustomRouteSheet(model: model)
+        .environment(\.colorScheme, .dark)
     }
     .sheet(isPresented: $showsJourneyReview) {
       WholeShutoJourneyReviewView(
@@ -132,9 +134,11 @@ struct WholeShutoProductView: View {
         savedRoutes: savedRoutes,
         onStartLiveDrive: beginLiveDrive
       )
+      .environment(\.colorScheme, .dark)
     }
     .sheet(isPresented: $showsSavedRoutes) {
       savedRouteLibrarySheet
+        .environment(\.colorScheme, .dark)
     }
     .fileImporter(
       isPresented: $isImportingSavedRoute,
@@ -201,6 +205,9 @@ struct WholeShutoProductView: View {
     }
     .onChange(of: model.phase) {
       updateIdleTimer()
+      if model.phase == .review, model.isCircuitRouteSelected {
+        showsJourneyReview = true
+      }
     }
     .onDisappear {
       UIApplication.shared.isIdleTimerDisabled = false
@@ -421,6 +428,7 @@ struct WholeShutoProductView: View {
         planningDock
       }
     }
+    .environment(\.colorScheme, .dark)
   }
 
   private var liveResumeBanner: some View {
@@ -636,6 +644,7 @@ struct WholeShutoProductView: View {
     }
     .padding(.horizontal, 14)
     .padding(.top, 7)
+    .environment(\.colorScheme, .dark)
   }
 
   @ViewBuilder
@@ -687,6 +696,9 @@ struct WholeShutoProductView: View {
     }
     .fixedSize(horizontal: false, vertical: true)
     .layoutPriority(1)
+    .padding(.horizontal, 9)
+    .padding(.vertical, 6)
+    .background(KaidoTheme.night.opacity(0.94), in: RoundedRectangle(cornerRadius: 10))
   }
 
   @ViewBuilder
@@ -1007,6 +1019,14 @@ struct WholeShutoProductView: View {
           }
         }
 
+        Text(copy.resolve(
+          japanese: "首都高区間の参考値 · 接続道路と渋滞は含みません",
+          simplifiedChinese: "首都高路段参考 · 不含接驳与实时路况",
+          english: "Shuto reference · excludes access roads and live traffic"
+        ))
+        .font(.caption)
+        .foregroundStyle(KaidoTheme.nightQuiet)
+
         savedRouteHomeEntry
         customRouteHomeEntry
       }
@@ -1306,15 +1326,35 @@ struct WholeShutoProductView: View {
       }
       context.stroke(
         path,
-        with: .color(KaidoTheme.routeGreen),
+        with: .color(KaidoTheme.confirmedGreen),
         style: StrokeStyle(
-          lineWidth: 2,
+          lineWidth: 3,
           lineCap: .round,
           lineJoin: .round
         )
       )
+      if points.count > 3 {
+        let index = points.count / 3
+        let point = CGPoint(
+          x: offsetX + (Double(points[index].x) - minX) * scale,
+          y: offsetY + (Double(points[index].y) - minY) * scale
+        )
+        let angle = atan2(
+          Double(points[index + 1].y - points[index].y),
+          Double(points[index + 1].x - points[index].x)
+        )
+        var arrow = Path()
+        arrow.move(to: CGPoint(x: -4, y: -4))
+        arrow.addLine(to: CGPoint(x: 3, y: 0))
+        arrow.addLine(to: CGPoint(x: -4, y: 4))
+        context.drawLayer { layer in
+          layer.translateBy(x: point.x, y: point.y)
+          layer.rotate(by: .radians(angle))
+          layer.stroke(arrow, with: .color(KaidoTheme.routeWhite), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+        }
+      }
     }
-    .frame(height: 38)
+    .frame(height: 52)
     .accessibilityHidden(true)
   }
 
@@ -1350,10 +1390,10 @@ struct WholeShutoProductView: View {
       }
     } label: {
       VStack(alignment: .leading, spacing: 5) {
-        if let thumbnail = model.circuitThumbnailsByID[circuit.circuitID],
-          thumbnail.count > 1
+        if let preview = model.circuitPreviewsByID[circuit.circuitID],
+          preview.points.count > 1
         {
-          circuitThumbnail(thumbnail)
+          circuitThumbnail(preview.points)
         } else {
           Image(
             systemName: circuit.kind == .loop
@@ -1371,6 +1411,24 @@ struct WholeShutoProductView: View {
         Text(circuitKindText(circuit))
           .font(.caption.weight(.semibold))
           .foregroundStyle(.secondary)
+        if let preview = model.circuitPreviewsByID[circuit.circuitID] {
+          Text(copy.resolve(
+            japanese: "約\(preview.referenceMinutes)分 · \(distanceLabel(preview.distanceMeters))",
+            simplifiedChinese: "约 \(preview.referenceMinutes) 分钟 · \(distanceLabel(preview.distanceMeters))",
+            english: "~\(preview.referenceMinutes) min · \(distanceLabel(preview.distanceMeters))"
+          ))
+          .font(.system(.headline, design: .rounded).weight(.bold))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .monospacedDigit()
+          .accessibilityIdentifier("whole-shuto-circuit-metrics-\(circuit.circuitID)")
+          Text(copy.resolve(
+            japanese: "分岐案内 \(preview.junctionCount)か所 · トンネル \(preview.tunnelPercent)%",
+            simplifiedChinese: "\(preview.junctionCount) 处路口提示 · 隧道 \(preview.tunnelPercent)%",
+            english: "\(preview.junctionCount) junction cues · \(preview.tunnelPercent)% tunnel"
+          ))
+          .font(.caption)
+          .foregroundStyle(KaidoTheme.nightQuiet)
+        }
         let landmarkNames = circuit.landmarkNames(
           for: languageSettings.interfaceLocale
         )
@@ -1387,8 +1445,8 @@ struct WholeShutoProductView: View {
             .fixedSize(horizontal: false, vertical: true)
         }
       }
-      .frame(width: 168, alignment: .leading)
-      .padding(10)
+      .frame(width: 222, alignment: .leading)
+      .padding(14)
       .background(KaidoTheme.nightRaised.opacity(0.94))
       .clipShape(RoundedRectangle(cornerRadius: 12))
       .overlay {
@@ -2380,7 +2438,20 @@ struct WholeShutoProductView: View {
       routeReviewSummary
         .foregroundStyle(KaidoTheme.routeWhite)
 
-      routeSelection
+      if model.isCircuitRouteSelected {
+        Button {
+          model.prepareCustomRouteDraft()
+          showsRouteCustomization = true
+        } label: {
+          Label(copy.resolve(japanese: "入口と出口を変更", simplifiedChinese: "修改入口与出口", english: "Change entrance and exit"),
+            systemImage: "slider.horizontal.3")
+          .font(.subheadline.weight(.semibold))
+          .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        }
+        .accessibilityIdentifier("whole-shuto-route-selection")
+      } else {
+        routeSelection
+      }
 
       routeBoundaryPair
 
@@ -6816,6 +6887,7 @@ private struct WholeShutoJunctionInset: View {
 }
 
 private struct WholeShutoSettingsView: View {
+  @AppStorage(KaidoMapAppearance.preferenceKey) private var mapAppearance: KaidoMapAppearance = .automatic
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
   @ObservedObject var model: WholeShutoProductModel
   let checkedAt: String
@@ -6825,6 +6897,14 @@ private struct WholeShutoSettingsView: View {
   var body: some View {
     NavigationStack {
       List {
+        Section {
+          Picker(copy.resolve(japanese: "地図の表示", simplifiedChinese: "地图外观", english: "Map appearance"), selection: $mapAppearance) {
+            Text(copy.resolve(japanese: "自動", simplifiedChinese: "跟随系统", english: "Automatic")).tag(KaidoMapAppearance.automatic)
+            Text(copy.resolve(japanese: "昼", simplifiedChinese: "日间", english: "Day")).tag(KaidoMapAppearance.day)
+            Text(copy.resolve(japanese: "夜", simplifiedChinese: "夜间", english: "Night")).tag(KaidoMapAppearance.night)
+          }
+          .accessibilityIdentifier("whole-shuto-map-appearance")
+        }
         Section {
           NavigationLink {
             WholeShutoLanguagePickerPage(

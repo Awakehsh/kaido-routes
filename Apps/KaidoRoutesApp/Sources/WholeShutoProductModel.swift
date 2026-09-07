@@ -410,7 +410,7 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var circuitPairingBand: ShutoTariffBand?
   @Published private(set) var circuitEntranceDistanceMeters: Double?
   @Published private(set) var circuitEntranceWasOverridden = false
-  @Published private(set) var circuitThumbnailsByID: [String: [CGPoint]] =
+  @Published private(set) var circuitPreviewsByID: [String: WholeShutoCircuitPreview] =
     [:]
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
@@ -675,9 +675,12 @@ final class WholeShutoProductModel: ObservableObject {
 
   private func resolveCircuitThumbnails() {
     let planner = planner
+    let database = database
+    let waysByID = waysByID
     circuitThumbnailTask?.cancel()
     circuitThumbnailTask = Task.detached(priority: .utility) { [weak self] in
-      var thumbnails: [String: [CGPoint]] = [:]
+      var previews: [String: WholeShutoCircuitPreview] = [:]
+      let movementContext = ShutoJunctionMovementCatalog.ReleasedContext(database: database)
       for circuit in ShutoCircuitDefinition.bundled {
         guard !Task.isCancelled else { return }
         guard
@@ -726,12 +729,22 @@ final class WholeShutoProductModel: ObservableObject {
             )
           )
         }
-        thumbnails[circuit.circuitID] = sampled
+        let tunnelDistance = route.edges.filter { edge in
+          guard let tunnel = waysByID[edge.wayID]?.tags["tunnel"] else { return false }
+          return tunnel != "no"
+        }.reduce(0) { $0 + $1.lengthMeters }
+        previews[circuit.circuitID] = WholeShutoCircuitPreview(
+          points: sampled, distanceMeters: route.distanceMeters,
+          junctionCount: ShutoJunctionGuidanceCompiler.compile(
+            database: database, route: route, releasedContext: movementContext
+          ).count,
+          tunnelDistanceMeters: tunnelDistance
+        )
       }
-      let resolved = thumbnails
+      let resolved = previews
       guard !Task.isCancelled else { return }
       await MainActor.run { [weak self] in
-        self?.circuitThumbnailsByID = resolved
+        self?.circuitPreviewsByID = resolved
         self?.circuitThumbnailTask = nil
       }
     }

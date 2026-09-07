@@ -146,22 +146,7 @@ struct WholeShutoNetworkOverviewView: View {
   /// The single midnight palette: near-black blue asphalt, ink bay, receded
   /// blue rest-of-network, and plated labels. The diagram renders identically
   /// day and night — the product's visual identity is the lit expressway.
-  private enum Midnight {
-    static let background = Color(red: 0.031, green: 0.043, blue: 0.078)
-    static let water = Color(red: 0.039, green: 0.067, blue: 0.133)
-    static let casing = Color(red: 0.075, green: 0.1, blue: 0.16)
-    static let restCore = Color(red: 0.173, green: 0.227, blue: 0.36)
-    static let leader = Color(red: 0.192, green: 0.251, blue: 0.369)
-    static let plate = Color(red: 0.02, green: 0.031, blue: 0.063)
-    static let label = Color(red: 0.62, green: 0.68, blue: 0.8)
-    static let junctionLabel = Color(red: 0.79, green: 0.84, blue: 0.95)
-    static let entranceFull = Color(red: 0.22, green: 0.72, blue: 0.44)
-    static let entranceHalf = Color(red: 0.5, green: 0.78, blue: 0.62)
-    static let exitFull = Color(red: 0.82, green: 0.4, blue: 0.34)
-    static let exitHalf = Color(red: 0.88, green: 0.63, blue: 0.59)
-    static let pa = Color(red: 0.42, green: 0.82, blue: 0.58)
-    static let place = Color(red: 0.93, green: 0.82, blue: 0.55)
-  }
+  private typealias Palette = KaidoMapPalette
 
   private func routeLineColor(_ routeID: String) -> Color {
     routeColor(routeID)
@@ -183,7 +168,7 @@ struct WholeShutoNetworkOverviewView: View {
           visibleHeight: visibleHeight
         )
       }
-      .background(Midnight.background)
+      .background(Palette.background)
       .contentShape(Rectangle())
       .simultaneousGesture(
         SpatialTapGesture(count: 2)
@@ -400,7 +385,7 @@ struct WholeShutoNetworkOverviewView: View {
     // fisheye so the Bayshore Route hugs its coast. Presentation only.
     var water = path(Self.bayOutline(projection: layout.projection))
     water.closeSubpath()
-    context.fill(water, with: .color(Midnight.water))
+    context.fill(water, with: .color(Palette.water))
 
     let highlighted = overlay.highlightedRouteIDs
     func isDimmed(_ routeID: String) -> Bool {
@@ -425,7 +410,7 @@ struct WholeShutoNetworkOverviewView: View {
     for polyline in layout.polylines {
       context.stroke(
         path(polyline.points),
-        with: .color(Midnight.casing),
+        with: .color(Palette.casing),
         style: StrokeStyle(
           lineWidth: lineWidth(polyline.routeID) + 2.8,
           lineCap: .round,
@@ -436,7 +421,7 @@ struct WholeShutoNetworkOverviewView: View {
     for polyline in layout.polylines where isDimmed(polyline.routeID) {
       context.stroke(
         path(polyline.points),
-        with: .color(Midnight.restCore),
+        with: .color(Palette.restCore),
         style: StrokeStyle(
           lineWidth: 2.2 * weightScale,
           lineCap: .round,
@@ -500,7 +485,7 @@ struct WholeShutoNetworkOverviewView: View {
         height: 22
       )
       let shield = Path(roundedRect: frame, cornerRadius: 5)
-      context.fill(shield, with: .color(Midnight.plate))
+      context.fill(shield, with: .color(Palette.plate))
       context.stroke(
         shield,
         with: .color(routeLineColor(badge.routeID)),
@@ -560,17 +545,17 @@ struct WholeShutoNetworkOverviewView: View {
       leader.addLine(to: CGPoint(x: rect.minX + 4, y: rect.maxY - 2))
       context.stroke(
         leader,
-        with: .color(Midnight.leader),
+        with: .color(Palette.leader),
         style: StrokeStyle(lineWidth: 1.2)
       )
       context.fill(
         Path(roundedRect: rect, cornerRadius: 6),
-        with: .color(Midnight.plate.opacity(emphasized ? 0.85 : 0.62))
+        with: .color(Palette.plate.opacity(emphasized ? 0.85 : 0.62))
       )
       context.draw(
         Text(name)
           .font(.system(size: 11, weight: .bold))
-          .foregroundColor(emphasized ? color : Midnight.label),
+          .foregroundColor(emphasized ? color : Palette.label),
         at: CGPoint(x: rect.minX + 8, y: rect.midY),
         anchor: .leading
       )
@@ -589,14 +574,14 @@ struct WholeShutoNetworkOverviewView: View {
         placeID: mark.id,
         at: center,
         emphasized: emphasized,
-        ring: emphasized ? Midnight.place : Midnight.label,
+        ring: emphasized ? Palette.place : Palette.label,
         context: &context
       ) {
         NetworkOverviewPlaceGlyph.draw(
           mark.icon,
           at: center,
-          color: emphasized ? Midnight.place : Midnight.label,
-          plate: Midnight.plate.opacity(emphasized ? 0.9 : 0.7),
+          color: emphasized ? Palette.place : Palette.label,
+          plate: Palette.plate.opacity(emphasized ? 0.9 : 0.7),
           context: &context
         )
       }
@@ -604,7 +589,7 @@ struct WholeShutoNetworkOverviewView: View {
         plateName(
           mark.name(for: interfaceLocale),
           at: center,
-          color: Midnight.place,
+          color: Palette.place,
           emphasized: emphasized,
           offset: CGSize(width: 16, height: -8),
           context: &context
@@ -626,10 +611,10 @@ struct WholeShutoNetworkOverviewView: View {
         ),
         cornerRadius: 1.4
       )
-      context.fill(square, with: .color(Midnight.plate))
+      context.fill(square, with: .color(Palette.plate))
       context.stroke(
         square,
-        with: .color(emphasized ? Midnight.pa : Midnight.label),
+        with: .color(emphasized ? Palette.pa : Palette.label),
         style: StrokeStyle(lineWidth: 1.3)
       )
       let name: String
@@ -643,7 +628,7 @@ struct WholeShutoNetworkOverviewView: View {
       plateName(
         name,
         at: center,
-        color: Midnight.pa,
+        color: Palette.pa,
         emphasized: emphasized,
         context: &context
       )
@@ -663,11 +648,11 @@ struct WholeShutoNetworkOverviewView: View {
       diamond.addLine(to: CGPoint(x: center.x, y: center.y + 3.6))
       diamond.addLine(to: CGPoint(x: center.x - 3.6, y: center.y))
       diamond.closeSubpath()
-      context.fill(diamond, with: .color(Midnight.plate))
+      context.fill(diamond, with: .color(Palette.plate))
       context.stroke(
         diamond,
         with: .color(
-          emphasized ? Midnight.junctionLabel : Midnight.label
+          emphasized ? Palette.junctionLabel : Palette.label
         ),
         style: StrokeStyle(lineWidth: 1.2)
       )
@@ -698,18 +683,18 @@ struct WholeShutoNetworkOverviewView: View {
       leader.addLine(to: CGPoint(x: plate.minX + 4, y: plate.maxY - 2))
       context.stroke(
         leader,
-        with: .color(Midnight.leader),
+        with: .color(Palette.leader),
         style: StrokeStyle(lineWidth: 1.2)
       )
       context.fill(
         Path(roundedRect: plate, cornerRadius: 6),
-        with: .color(Midnight.plate.opacity(label.emphasized ? 0.85 : 0.62))
+        with: .color(Palette.plate.opacity(label.emphasized ? 0.85 : 0.62))
       )
       context.draw(
         Text(label.name)
           .font(.system(size: 11, weight: .bold))
           .foregroundColor(
-            label.emphasized ? Midnight.junctionLabel : Midnight.label
+            label.emphasized ? Palette.junctionLabel : Palette.label
           ),
         at: CGPoint(x: plate.minX + 8, y: plate.midY),
         anchor: .leading
@@ -741,10 +726,10 @@ struct WholeShutoNetworkOverviewView: View {
           x: center.x - 2.4, y: center.y - 2.4, width: 4.8, height: 4.8
         )
       )
-      context.fill(dot, with: .color(Midnight.background))
+      context.fill(dot, with: .color(Palette.background))
       context.stroke(
         dot,
-        with: .color(Midnight.label),
+        with: .color(Palette.label),
         style: StrokeStyle(lineWidth: 1.2)
       )
       let name = mark.nameJA
@@ -758,7 +743,7 @@ struct WholeShutoNetworkOverviewView: View {
       guard claim(rect) else { continue }
       var label = Text(name)
         .font(.system(size: 9, weight: .semibold))
-        .foregroundColor(Midnight.label)
+        .foregroundColor(Palette.label)
       if mark.etcOnly {
         label =
           label
@@ -784,7 +769,7 @@ struct WholeShutoNetworkOverviewView: View {
           triangle,
           with: .color(
             mark.entrance == .full
-              ? Midnight.entranceFull : Midnight.entranceHalf
+              ? Palette.entranceFull : Palette.entranceHalf
           )
         )
       }
@@ -797,7 +782,7 @@ struct WholeShutoNetworkOverviewView: View {
         context.fill(
           triangle,
           with: .color(
-            mark.exit == .full ? Midnight.exitFull : Midnight.exitHalf
+            mark.exit == .full ? Palette.exitFull : Palette.exitHalf
           )
         )
       }
@@ -822,13 +807,13 @@ struct WholeShutoNetworkOverviewView: View {
       context.fill(disc, with: .color(color))
       context.stroke(
         disc,
-        with: .color(Midnight.background),
+        with: .color(Palette.background),
         style: StrokeStyle(lineWidth: 2)
       )
       context.draw(
         Text(glyph)
           .font(.system(size: 10, weight: .heavy))
-          .foregroundColor(Midnight.background),
+          .foregroundColor(Palette.background),
         at: center,
         anchor: .center
       )
@@ -840,12 +825,12 @@ struct WholeShutoNetworkOverviewView: View {
       )
       context.fill(
         Path(roundedRect: labelFrame, cornerRadius: 5),
-        with: .color(Midnight.plate.opacity(0.85))
+        with: .color(Palette.plate.opacity(0.85))
       )
       context.draw(
         Text(mark.nameJA)
           .font(.system(size: 12, weight: .bold))
-          .foregroundColor(Midnight.junctionLabel),
+          .foregroundColor(Palette.junctionLabel),
         at: CGPoint(x: labelFrame.minX + 6, y: labelFrame.midY),
         anchor: .leading
       )
@@ -878,7 +863,7 @@ struct WholeShutoNetworkOverviewView: View {
                 with: .color(
                   (column + row) % 2 == 0
                     ? Color.white.opacity(0.92)
-                    : Midnight.plate
+                    : Palette.plate
                 )
               )
             }

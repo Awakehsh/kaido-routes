@@ -173,6 +173,7 @@ jobs:
             -only-testing:KaidoRoutesAppTests/AppSafetyStateTests \
             -only-testing:KaidoRoutesAppTests/BundledProductReleaseCatalogTests \
             -only-testing:KaidoRoutesAppTests/ForegroundNavigationLocationControllerTests \
+            -only-testing:KaidoRoutesAppTests/GuidanceSpeechProsodyTests \
             -only-testing:KaidoRoutesAppTests/KaidoProductJourneyModelTests \
             -only-testing:KaidoRoutesAppTests/PreDriveEvidenceUpdateModelTests \
             -only-testing:KaidoRoutesAppTests/ProductNavigationRuntimeModelTests \
@@ -185,6 +186,10 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testEntryTransitionRequiresOrderedObservationsBeforeExpressway \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testLiveJourneyContinuesWhenScreenLocksAndStopsWhenEnded \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testReleasedLiveRecoveryKeepsConsumingLocationUntilRouteRejoin \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryStalePositionCancelsObsoleteManeuver \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryCurrentStepPrecedesPreviewAfterFixGap \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRetriesAnUnstartedJunctionThroughLiveObservations \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
             CODE_SIGNING_ALLOWED=NO \

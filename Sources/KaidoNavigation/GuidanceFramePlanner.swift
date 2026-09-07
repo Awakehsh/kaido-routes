@@ -41,9 +41,9 @@ public enum GuidanceFramePlanner {
       return GuidancePlanningResult(status: .insufficientRouteEvidence)
     }
 
-    let currentDefinitions = definitions.filter {
-      $0.anchor.occurrenceID == observation.occurrenceID
-    }
+    let currentDefinitions = applicableDefinitions(
+      definitions, routePlan: routePlan, occurrenceID: observation.occurrenceID
+    )
     guard !currentDefinitions.isEmpty else {
       return GuidancePlanningResult(status: .noReleasedDefinition)
     }
@@ -104,6 +104,29 @@ public enum GuidanceFramePlanner {
       return true
     case .planning, .approachToEntry, .entryTransition, .surfaceEgress, .completed:
       return false
+    }
+  }
+
+  static func applicableDefinitions(
+    _ definitions: [ReleasedGuidanceDefinition],
+    routePlan: RoutePlan,
+    occurrenceID: String
+  ) -> [ReleasedGuidanceDefinition] {
+    guard let current = routePlan.occurrence(id: occurrenceID) else { return [] }
+    let upcoming = definitions.filter { definition in
+      guard let anchor = routePlan.occurrence(id: definition.anchor.occurrenceID),
+        let movement = routePlan.occurrence(id: definition.frameTemplate.movementOccurrenceID)
+      else { return false }
+      return anchor.index <= current.index
+        && (current.index < movement.index || anchor.id == current.id)
+    }
+    guard
+      let nearestIndex = upcoming.compactMap({
+        routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index
+      }).min()
+    else { return [] }
+    return upcoming.filter {
+      routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index == nearestIndex
     }
   }
 

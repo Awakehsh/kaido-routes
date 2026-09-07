@@ -4170,7 +4170,7 @@ struct WholeShutoProductView: View {
   private var speechStatusLabel: String {
     switch model.speechStatus {
     case .idle:
-      model.hasConsumedActiveGuidancePrompt
+      model.hasCompletedActiveGuidancePrompt
         ? copy.resolve(
           japanese: "案内済み",
           simplifiedChinese: "已播报",
@@ -6838,6 +6838,16 @@ private struct WholeShutoSettingsView: View {
             )
           }
           .accessibilityIdentifier("whole-shuto-guidance-voice-language")
+          Text(
+            copy.resolve(
+              japanese: "高速道路と走行状態の案内に適用されます。一般道の案内はシステムの地図言語を使用します。",
+              simplifiedChinese: "适用于高速路线和行程状态播报。普通道路指令使用系统地图语言。",
+              english:
+                "Applies to expressway and journey announcements. Ordinary-road instructions use the system map language."
+            )
+          )
+          .font(.footnote)
+          .foregroundStyle(.secondary)
         } header: {
           Text(
             copy.resolve(

@@ -498,21 +498,37 @@ request carries an emission matching the frame and persisted engine ledger.
 bound to one exact RoutePlan and keys consumption by prompt, anchor, and anchor
 occurrence. Persistent frames, duplicate adapter delivery, another RoutePlan,
 and inconsistent phone/CarPlay identities cannot create speech. A newer
-occurrence-scoped prompt may replace an older active prompt. An interruption
-consumes and drops the active prompt; ending the interruption never replays it or
-any prompt that arrived while audio was unavailable.
+occurrence-scoped prompt may replace an older active prompt. An instruction
+that actually started remains consumed after interruption. A rejected start
+releases its output reservation; only a fresh actor-resolved frame for the same
+still-upcoming, previously emitted prompt can authorize another attempt. A
+persistent frame alone never creates a new authorization.
 
 `GuidanceSpeechCoordinator` connects that scheduler to an injected output.
 During live surface access and egress it also accepts provider-owned ordinary-
 road step commands bound to the same exact RoutePlan. The model speaks the
-current step at surface-leg start, admits the next step once within 250 meters,
+current step at surface-leg start, admits the next step once within 250 meters
+only after the current step has started,
 and gives each recalculated leg a new generation so a changed first step can be
-spoken. The coordinator consumes each provider step identity exactly once,
-drops it across interruption, and silences it at the expressway boundary.
+spoken. Refusal due to priority or unavailable audio does not consume an unplayed
+step. Each identity permits three start attempts, spaced at least two seconds
+apart; a real interruption recovery opens a new attempt opportunity. Output
+occupancy expires after 30 seconds, with a typed timeout status. These are
+delivery bounds for short guidance, not road-authority or acoustic claims.
+The coordinator silences obsolete maneuvers at evidence loss and phase changes.
 Released expressway speech may replace surface speech; surface speech cannot
 replace an active released prompt. Provider text, geometry, and timing remain
 bounded presentation inputs and never create or mutate expressway guidance
 authority.
+The exit handoff explicitly ends obsolete expressway speech before admitting
+the first surface instruction. Current-step delivery precedes preannouncement
+after a positioning gap. Ordinary-road maneuver progress rejects fixes at least
+ten seconds old or with at least 30 meters of reported uncertainty, matching the
+existing matcher's stale/low evidence boundaries. Informational start, entry, exit, rerouting, rejoin,
+position-loss/recovery, rest/resume and completion notices use the selected
+voice language, are episode-scoped, and yield to maneuver guidance. A lost
+position produces one notice per outage. MapKit ordinary-road text retains its
+provider language, and the language settings explicitly disclose that boundary.
 For released expressway prompts, the iOS `AVSpeechGuidanceOutput` resolves only
 the requested reviewed locale. Provider surface commands instead retain the
 language code associated with the provider's localized instruction. The output
@@ -550,9 +566,17 @@ prompt, and deactivates with `notifyOthersOnDeactivation`. It observes Apple
 audio interruptions, cancels current synthesis, and deliberately does not
 resume stale navigation speech. Missing installed voices and audio-session
 configuration or activation failures remain typed, observable blocked states.
+An interruption-began event never synthesizes an interruption-ended event.
+If the end notification is absent, a current valid instruction can attempt
+actual audio-session activation at most once every two seconds. Only success
+confirms recovery. Bluetooth output changes invalidate the old playback; media
+services reset detaches and recreates the synthesizer. Explicit stop remains
+stopped across audio notifications. The alternate WAV output also supports
+activation-based recovery and ignores callbacks from obsolete player objects.
 The Bluetooth lead-in remains at least 0.6 seconds after applying prosody.
 The `app.kaidoroutes` / `GuidanceAudio` system log records submission, synthesis
-start/completion, interruption, output port types, and audio-session error codes.
+start/completion, interruption, output port types, audio-session error codes,
+playback deadline expiry and exhausted start retries.
 It does not record coordinates, spoken text, or Bluetooth device names.
 This implements reviewed-form delivery, scheduling, and lifecycle ownership;
 actual pronunciation, output-route timing, interruption behavior on real
@@ -1949,21 +1973,26 @@ change the target movement or reconstruct missing guidance semantics.
 Prompt scheduling is occurrence-scoped. Each released
 `GuidanceAnchorDefinition` binds one `occurrence_id + anchor_id` pair to one
 unique prompt ID. The navigation engine emits that pair once, suppresses repeated
-location triggers, and rejects delayed anchors that no longer belong to the
-current occurrence. An equivalent anchor on a later lap remains eligible because
+location triggers. Distance-based guidance remains eligible on the exact
+remaining approach from its released anchor until the target movement; skipping
+the anchor edge does not discard the upcoming instruction. The nearest eligible
+movement owns the frame, and reaching that movement clears its old frame.
+The presentation accepts an original-anchor frame at a later occurrence only
+when it is the actor's actual active frame. An equivalent anchor on a later lap remains eligible because
 its occurrence ID is different. The ledger belongs to the shared navigation
-core; phone, CarPlay, and speech adapters consume emissions but cannot retrigger
-them independently. Restoring a navigation snapshot also restores emitted keys
-from prompt IDs, so an adapter or process lifecycle transition does not replay a
-prompt merely because the engine value was reconstructed.
+core. The default App retains the separate actually-started speech ledger and
+persists it at the start callback. A fresh resolved update may authorize a
+bounded retry of a previously emitted but unstarted current instruction;
+restoration alone and historical frames cannot trigger that retry.
 
 The speech adapter retains a second, output-local consumed set using the full
 `prompt_id + anchor_id + anchor_occurrence_id` identity. This does not replace
 the engine ledger; it prevents duplicate projection delivery or delayed speech
 callbacks from replaying an already admitted command. A new command replaces
 older in-flight speech, while stale completion callbacks cannot clear the newer
-identity. Audio interruptions drop, rather than queue, prompts so resumption
-does not deliver obsolete maneuver guidance.
+identity. Completion is recorded separately from cancellation, so a canceled
+prompt is never labeled spoken. Audio interruptions never queue obsolete
+maneuver guidance for catch-up playback.
 
 An optional `GuidanceAudioRelease` is complete and occurrence-scoped rather than
 a generic phrase cache. The manifest covers every released anchor and locale,

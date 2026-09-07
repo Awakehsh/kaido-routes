@@ -20,6 +20,43 @@ enum WholeShutoJourneyPhase:
   case completed = "COMPLETED"
 }
 
+private enum WholeShutoJourneyNotice: String {
+  case started, enteredExpressway, positionLost, positionRecovered
+  case rerouting, rejoined, exiting, resting, resumed, arrived
+
+  func text(locale: KaidoReleaseLocale) -> String {
+    let words: (String, String, String)
+    switch self {
+    case .started:
+      words = (
+        "ナビを開始します。位置情報を確認しています。", "导航已开始，正在确认位置。", "Navigation started. Acquiring your position."
+      )
+    case .enteredExpressway:
+      words = ("高速道路のルート案内を開始します。", "已进入高速路线导航。", "Expressway route guidance started.")
+    case .positionLost:
+      words = (
+        "位置情報が不確かです。自動で再取得しています。", "定位暂不稳定，正在自动恢复。",
+        "Position is uncertain. Reacquiring automatically."
+      )
+    case .positionRecovered: words = ("位置情報が復帰しました。", "定位已恢复。", "Position restored.")
+    case .rerouting: words = ("ルートを再確認しています。", "正在重新确认路线。", "Rechecking the route.")
+    case .rejoined: words = ("選択したルートに復帰しました。", "已回到所选路线。", "Rejoined the selected route.")
+    case .exiting: words = ("出口ルートの案内を開始します。", "开始出口路线导航。", "Exit route guidance started.")
+    case .resting: words = ("ナビを一時停止しました。", "导航已暂停。", "Navigation paused.")
+    case .resumed:
+      words = (
+        "ナビを再開します。位置情報を確認しています。", "导航已恢复，正在确认位置。", "Navigation resumed. Acquiring your position."
+      )
+    case .arrived: words = ("ルートの走行が完了しました。", "本次路线已完成。", "Your route is complete.")
+    }
+    switch locale {
+    case .japanese: return words.0
+    case .simplifiedChinese: return words.1
+    case .english: return words.2
+    }
+  }
+}
+
 extension WholeShutoProductModel: ForegroundNavigationLocationConsuming {
   var foregroundNavigationRuntimeIdentity: KaidoProductRuntimeIdentity {
     guard let activeLiveAdmission else {
@@ -57,6 +94,7 @@ extension WholeShutoProductModel: ForegroundNavigationLocationConsuming {
       case .accepted(let envelope):
         await consumeLiveObservationForTesting(envelope)
       case .rejected(let rejection):
+        speechCoordinator?.invalidateGuidance(keepingNotices: true)
         liveLocationState = .degraded
         liveLocationIssueCode = rejection.reason.rawValue
         matcherConfidence = .low
@@ -477,6 +515,9 @@ final class WholeShutoProductModel: ObservableObject {
   private var speechCoordinator: GuidanceSpeechCoordinator?
   private var consumedGuidancePromptIDs: Set<String> = []
   private var surfaceSpeechGeneration = 0
+  private var noticeSequence = 0
+  private var pendingNotice: GuidanceSpeechCommand?
+  private var positionLossAnnounced = false
   private var isStaticJunctionPreview = false
   private var selectedOriginTitle: String?
   private var selectedDestinationTitle: String?
@@ -1429,11 +1470,11 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
-  var hasConsumedActiveGuidancePrompt: Bool {
+  var hasCompletedActiveGuidancePrompt: Bool {
     guard let promptID = presentationProjection?.voice.promptID else {
       return false
     }
-    return consumedGuidancePromptIDs.contains(promptID)
+    return speechCoordinator?.completedIdentities.contains { $0.promptID == promptID } == true
   }
 
   var positionState: WholeShutoPositionState {
@@ -2145,6 +2186,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationFreshnessTask?.cancel()
     liveLocationFreshnessTask = nil
     await foregroundLiveLocationController?.stop()
+    speechCoordinator?.resume()
+    announceJourneyNotice(.resting)
     await captureAndPersistLiveCheckpoint(from: liveDriveSession, force: true)
     return true
   }
@@ -3240,6 +3283,7 @@ final class WholeShutoProductModel: ObservableObject {
         applyLiveActorSnapshot(initialSnapshot)
       }
       scheduleLiveSurfaceSpeech(forceCurrentStep: true)
+      if phase == .entryTransition { announceJourneyNotice(.started) }
       scheduleLiveLocationFreshnessCheck()
       await captureAndPersistLiveCheckpoint(from: session, force: true)
       controller.start()
@@ -3288,6 +3332,18 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     let observation = envelope.observation
+    if phase == .surfaceAccess || phase == .surfaceEgress {
+      guard observation.receivedAtMilliseconds - observation.observedAtMilliseconds < 10_000,
+        observation.horizontalAccuracyMeters > 0,
+        observation.horizontalAccuracyMeters < 30
+      else {
+        liveLocationState = .degraded
+        liveLocationIssueCode = "CORE_LOCATION_SURFACE_FIX_UNCERTAIN"
+        matcherConfidence = .low
+        speechCoordinator?.invalidateGuidance(keepingNotices: true)
+        return
+      }
+    }
     let coordinate = ShutoCoordinate(
       latitude: observation.coordinate.latitude,
       longitude: observation.coordinate.longitude
@@ -3477,6 +3533,11 @@ final class WholeShutoProductModel: ObservableObject {
         return
       }
       if phase != .completed {
+        if liveLocationState == .available, positionLossAnnounced {
+          positionLossAnnounced = false
+          announceJourneyNotice(.positionRecovered)
+        }
+        flushJourneyNotice()
         await captureAndPersistLiveCheckpoint(from: session)
       }
     } catch {
@@ -3592,6 +3653,7 @@ final class WholeShutoProductModel: ObservableObject {
     speechCoordinator?.resume()
     foregroundLiveLocationController?.refreshRuntimeAvailability()
     foregroundLiveLocationController?.start()
+    announceJourneyNotice(.resumed)
     persistCheckpoint()
     return true
   }
@@ -3653,7 +3715,7 @@ final class WholeShutoProductModel: ObservableObject {
       speechCoordinator?.resume()
       let snapshot = await session.start()
       applyLiveActorSnapshot(snapshot)
-      scheduleLiveSurfaceSpeech(forceCurrentStep: true)
+      announceJourneyNotice(.resumed)
       scheduleLiveLocationFreshnessCheck()
       await captureAndPersistLiveCheckpoint(from: session, force: true)
       controller.start()
@@ -3694,17 +3756,21 @@ final class WholeShutoProductModel: ObservableObject {
         clearRouteJoinOffer()
         phase = .expressway
         progressFraction = 0
+        announceJourneyNotice(.enteredExpressway)
       }
     case .routeRecovery:
       clearRouteJoinOffer()
       phase = .expressway
     case .exitTransition:
       guard snapshot.egress.status == .active else { return }
+      speechCoordinator?.invalidateGuidance()
       clearTunnelEstimate()
       phase = .exitTransition
       progressFraction = 0
       presentationProjection = nil
+      announceJourneyNotice(.exiting)
     case .surfaceEgress:
+      speechCoordinator?.invalidateGuidance()
       clearTunnelEstimate()
       phase = .surfaceEgress
       progressFraction = 0
@@ -3728,6 +3794,7 @@ final class WholeShutoProductModel: ObservableObject {
         along: route.coordinates
       )
     else {
+      speechCoordinator?.invalidateGuidance(keepingNotices: true)
       recordSurfaceOffRouteObservation(
         coordinate: coordinate,
         observedAtMilliseconds:
@@ -3747,6 +3814,7 @@ final class WholeShutoProductModel: ObservableObject {
       measurement.lateralDistanceMeters
         <= maximumLateralDistance
     else {
+      speechCoordinator?.invalidateGuidance(keepingNotices: true)
       recordSurfaceOffRouteObservation(
         coordinate: coordinate,
         observedAtMilliseconds:
@@ -3798,6 +3866,8 @@ final class WholeShutoProductModel: ObservableObject {
     liveLocationFreshnessTask = nil
     speechCoordinator?.stop()
     removeCheckpoint()
+    speechCoordinator?.resume()
+    announceJourneyNotice(.arrived)
   }
 
   private func continueAfterExpresswayExit(
@@ -3805,6 +3875,7 @@ final class WholeShutoProductModel: ObservableObject {
   ) async {
     guard liveSurfaceEgressAdapter == nil else { return }
     if egressRoute != nil {
+      speechCoordinator?.invalidateGuidance()
       phase = .surfaceEgress
       progressFraction = 0
       presentationProjection = nil
@@ -4001,6 +4072,8 @@ final class WholeShutoProductModel: ObservableObject {
     speechStatus = .idle
     consumedGuidancePromptIDs = []
     surfaceSpeechGeneration = 0
+    pendingNotice = nil
+    positionLossAnnounced = false
     runtimeAssets = nil
     driveSimulator = nil
     liveDriveSession = nil
@@ -4147,6 +4220,8 @@ final class WholeShutoProductModel: ObservableObject {
     isReroutingSurfaceRoute = true
     liveLocationState = .degraded
     liveLocationIssueCode = Self.surfaceRouteReroutingCode
+    speechCoordinator?.invalidateGuidance()
+    announceJourneyNotice(.rerouting)
     surfaceRerouteTask = Task { [weak self] in
       var resolved = await resolver.route(
         from: coordinate,
@@ -4407,9 +4482,18 @@ final class WholeShutoProductModel: ObservableObject {
     _ update: NavigationSessionUpdate,
     persistsCheckpoint: Bool = true
   ) {
+    let wasRecovering = runtimeRecoveryStatus == .active
+    if update.guidanceProgressState != .resolved {
+      speechCoordinator?.invalidateGuidance(keepingNotices: true)
+    }
     matcherConfidence = update.matcherEstimate.confidence
     runtimeJourneyPhase = update.navigationSnapshot.journeyPhase
     runtimeRecoveryStatus = update.navigationSnapshot.recovery.status
+    if isLiveDrive, wasRecovering, update.navigationSnapshot.journeyPhase == .strictRoute {
+      announceJourneyNotice(.rejoined)
+    } else if isLiveDrive, !wasRecovering, runtimeRecoveryStatus == .active {
+      announceJourneyNotice(.rerouting)
+    }
     runtimeRecoveryTargetOccurrenceID =
       update.navigationSnapshot.recovery.chosenRejoinOccurrenceID
     publishPresentationAndScheduleSpeech(from: update)
@@ -4462,15 +4546,47 @@ final class WholeShutoProductModel: ObservableObject {
 
   private func configureSpeech(for routePlanID: String) throws {
     speechCoordinator?.stop()
+    pendingNotice = nil
+    positionLossAnnounced = false
     let coordinator = try GuidanceSpeechCoordinator(
       expectedRoutePlanID: routePlanID,
       output: speechOutput
     )
-    coordinator.statusDidChange = { [weak self] status in
-      self?.speechStatus = status
+    coordinator.statusDidChange = { [weak self, weak coordinator] status in
+      guard let self else { return }
+      if case .speaking(let identity) = status,
+        coordinator?.scheduler.activeCommand?.identity == identity
+      {
+        self.consumedGuidancePromptIDs.insert(identity.promptID)
+        if self.isLiveDrive { self.persistCheckpoint() }
+      }
+      self.speechStatus = status
     }
     speechCoordinator = coordinator
     speechStatus = .idle
+  }
+
+  private func announceJourneyNotice(_ notice: WholeShutoJourneyNotice) {
+    guard isLiveDrive, let routePlanID = selectedRoute?.routePlan.id else { return }
+    noticeSequence += 1
+    let id = "journey.\(notice.rawValue).\(noticeSequence)"
+    let locale = languageSelectionProvider().guidanceVoiceLocale
+    pendingNotice = GuidanceSpeechCommand(
+      identity: GuidanceSpeechIdentity(
+        promptID: id, anchorID: "JOURNEY_STATUS", anchorOccurrenceID: id),
+      routePlanID: routePlanID, languageCode: locale.speechLanguageCode,
+      spokenText: notice.text(locale: locale)
+    )
+    flushJourneyNotice()
+  }
+
+  private func flushJourneyNotice() {
+    guard let command = pendingNotice, let speechCoordinator else { return }
+    if speechCoordinator.startedIdentities.contains(command.identity) {
+      pendingNotice = nil
+      return
+    }
+    _ = speechCoordinator.submitNotice(command)
   }
 
   private func scheduleLiveSurfaceSpeech(forceCurrentStep: Bool) {
@@ -4486,8 +4602,15 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
 
+    let phaseID = phase.rawValue.lowercased()
+    func identity(for index: Int) -> GuidanceSpeechIdentity {
+      let id = "provider.surface.\(phaseID).\(surfaceSpeechGeneration).\(index)"
+      return GuidanceSpeechIdentity(
+        promptID: id, anchorID: "PROVIDER_SURFACE_STEP", anchorOccurrenceID: id)
+    }
     let stepIndex: Int
     if !forceCurrentStep,
+      speechCoordinator.startedIdentities.contains(identity(for: progress.index)),
       progress.remainingMeters
         <= Self.surfaceSpeechPreannounceDistanceMeters,
       progress.index + 1 < progress.steps.count
@@ -4499,21 +4622,14 @@ final class WholeShutoProductModel: ObservableObject {
     let instruction = progress.steps[stepIndex].instruction
       .trimmingCharacters(in: .whitespacesAndNewlines)
     guard !instruction.isEmpty else { return }
-    let phaseID = phase.rawValue.lowercased()
-    let promptID =
-      "provider.surface.\(phaseID).\(surfaceSpeechGeneration).\(stepIndex)"
     let routeLanguageCode = route.guidanceLanguageCode?
       .trimmingCharacters(in: .whitespacesAndNewlines)
     let languageCode =
       routeLanguageCode.flatMap { $0.isEmpty ? nil : $0 }
       ?? languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
-    speechStatus = speechCoordinator.submitProviderSurface(
+    _ = speechCoordinator.submitProviderSurface(
       GuidanceSpeechCommand(
-        identity: GuidanceSpeechIdentity(
-          promptID: promptID,
-          anchorID: "PROVIDER_SURFACE_STEP",
-          anchorOccurrenceID: promptID
-        ),
+        identity: identity(for: stepIndex),
         routePlanID: routePlanID,
         languageCode: languageCode,
         spokenText: instruction
@@ -4532,12 +4648,24 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     do {
+      let retry =
+        update.guidanceProgressState == .resolved
+        && update.navigationSnapshot.guidancePlanningStatus == .frameUpdated
+        && update.navigationSnapshot.lastGuidancePromptID == frame.promptID
+        && !consumedGuidancePromptIDs.contains(frame.promptID)
+      let emission =
+        update.guidancePromptEmission
+        ?? (retry
+          ? GuidancePromptEmission(
+            promptID: frame.promptID, anchorID: frame.anchorID,
+            anchorOccurrenceID: frame.anchorOccurrenceID
+          ) : nil)
       let projection = try NavigationPresentationProjector.project(
         NavigationPresentationRequest(
           snapshot: update.navigationSnapshot,
           networkSnapshotID: database.networkSnapshotID,
           guidanceFrame: frame,
-          promptEmission: update.guidancePromptEmission,
+          promptEmission: emission,
           languages: languageSelectionProvider(),
           passageEvidence: .noKnownConflictRealtimeUnconfirmed,
           drivingContext: PresentationDrivingContext(
@@ -4547,11 +4675,11 @@ final class WholeShutoProductModel: ObservableObject {
         )
       )
       presentationProjection = projection
-      guard let emission = update.guidancePromptEmission else {
+      guard let emission else {
         return
       }
       guard
-        consumedGuidancePromptIDs.insert(emission.promptID).inserted
+        !consumedGuidancePromptIDs.contains(emission.promptID)
       else {
         speechStatus = .suppressed(.duplicate)
         return
@@ -4560,7 +4688,7 @@ final class WholeShutoProductModel: ObservableObject {
         speechStatus = .invalidProjection
         return
       }
-      speechStatus = speechCoordinator.submit(projection)
+      _ = speechCoordinator.submit(projection)
     } catch {
       presentationProjection = nil
       if update.guidancePromptEmission != nil {
@@ -4984,15 +5112,6 @@ final class WholeShutoProductModel: ObservableObject {
     atMilliseconds nowMilliseconds: Int
   ) {
     guard isLiveDrive, isPlaying else { return }
-    if liveLocationState == .degraded,
-      tunnelEstimateAnchor != nil
-    {
-      updateTunnelEstimate(atMilliseconds: nowMilliseconds)
-      scheduleTunnelEstimateRefreshIfNeeded(
-        atMilliseconds: nowMilliseconds
-      )
-      return
-    }
     let reference =
       lastLiveObservationAtMilliseconds
       ?? liveLocationStartedAtMilliseconds
@@ -5000,10 +5119,20 @@ final class WholeShutoProductModel: ObservableObject {
       nowMilliseconds - reference
         >= Self.liveLocationStaleAfterMilliseconds
     else {
+      if liveLocationState == .degraded, tunnelEstimateAnchor != nil {
+        updateTunnelEstimate(atMilliseconds: nowMilliseconds)
+        scheduleTunnelEstimateRefreshIfNeeded(atMilliseconds: nowMilliseconds)
+        return
+      }
       scheduleLiveLocationFreshnessCheck()
       return
     }
     liveLocationState = .stale
+    speechCoordinator?.invalidateGuidance(keepingNotices: true)
+    if !positionLossAnnounced {
+      positionLossAnnounced = true
+      announceJourneyNotice(.positionLost)
+    }
     liveLocationIssueCode = "CORE_LOCATION_NO_RECENT_FIX"
     matcherConfidence = .low
     updateTunnelEstimate(atMilliseconds: nowMilliseconds)

@@ -11,6 +11,131 @@ import XCTest
 
 @MainActor
 final class WholeShutoProductModelTests: XCTestCase {
+
+  func testSpeechRecoveryStalePositionCancelsObsoleteManeuver() async throws {
+    let output = SpeechRecoveryAppOutput()
+    let model = try await speechRecoveryModel(output: output)
+    let stops = output.stopCount
+    XCTAssertNotNil(output.active)
+    model.evaluateLiveLocationFreshness(atMilliseconds: 100_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(output.active?.anchorID, "JOURNEY_STATUS")
+    XCTAssertGreaterThan(output.stopCount, stops)
+    XCTAssertTrue(output.commands.last?.identity.promptID.contains("positionLost") == true)
+    let notices = output.commands.count
+    model.evaluateLiveLocationFreshness(atMilliseconds: 101_000)
+    XCTAssertEqual(output.commands.count, notices)
+    model.reset()
+  }
+
+  func testSpeechRecoveryCurrentStepPrecedesPreviewAfterFixGap() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(
+      output: output, resolver: SpeechRecoveryShortStepResolver())
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    let coordinate = ShutoCoordinate(
+      latitude: start.latitude + (end.latitude - start.latitude) * 0.325,
+      longitude: start.longitude + (end.longitude - start.longitude) * 0.325)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "speech-recovery.fix-return", coordinate: coordinate, atMilliseconds: 30_000))
+    XCTAssertEqual(model.activeSurfaceInstruction, "Turn left at A")
+    XCTAssertEqual(output.commands.map(\.spokenText), ["Continue straight", "Turn left at A"])
+    model.reset()
+  }
+
+  func testSpeechRecoveryRetriesAnUnstartedJunctionThroughLiveObservations() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    output.failNextReleased = true
+    let model = try await speechRecoveryModel(output: output)
+    let route = try XCTUnwrap(model.selectedRoute)
+    var timestamp = 1_000
+    var lastCoordinate = try XCTUnwrap(model.accessRoute?.coordinates.last)
+    var lastCourse = Self.bearing(from: route.coordinates[0], to: route.coordinates[1])
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "speech-recovery.entry", coordinate: lastCoordinate,
+        atMilliseconds: timestamp, courseDegrees: lastCourse))
+    for index in route.edges.indices {
+      let start = route.coordinates[index]
+      let end = route.coordinates[index + 1]
+      lastCourse = Self.bearing(from: start, to: end)
+      for fraction in [0.25, 0.75] {
+        timestamp += 1_000
+        lastCoordinate = ShutoCoordinate(
+          latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+          longitude: start.longitude + (end.longitude - start.longitude) * fraction)
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "speech-recovery.\(timestamp)", coordinate: lastCoordinate,
+            atMilliseconds: timestamp, courseDegrees: lastCourse, speedMetersPerSecond: 18))
+        if output.failedCommand != nil { break }
+      }
+      if output.failedCommand != nil { break }
+    }
+    let failed = try XCTUnwrap(output.failedCommand)
+    XCTAssertFalse(model.hasCompletedActiveGuidancePrompt)
+    XCTAssertFalse(output.commands.contains { $0.identity == failed.identity })
+    try await Task.sleep(nanoseconds: 2_100_000_000)
+    output.autoFinish = false
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "speech-recovery.retry", coordinate: lastCoordinate,
+        atMilliseconds: timestamp + 1_000, courseDegrees: lastCourse, speedMetersPerSecond: 18))
+    XCTAssertEqual(output.commands.filter { $0.identity == failed.identity }.count, 1)
+    XCTAssertFalse(model.hasCompletedActiveGuidancePrompt)
+    output.finishActive()
+    XCTAssertTrue(model.hasCompletedActiveGuidancePrompt)
+    model.reset()
+  }
+
+  func testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes() async throws {
+    for (observedAt, accuracy) in [(10.0, 5.0), (30.0, 100.0)] {
+      let output = SpeechRecoveryAppOutput()
+      output.autoFinish = true
+      let model = try await speechRecoveryModel(output: output, resolver: SpeechRecoveryShortStepResolver())
+      let route = try XCTUnwrap(model.accessRoute)
+      let start = try XCTUnwrap(route.coordinates.first)
+      let end = try XCTUnwrap(route.coordinates.last)
+      let location = CLLocation(
+        coordinate: CLLocationCoordinate2D(
+          latitude: start.latitude + (end.latitude - start.latitude) * 0.325,
+          longitude: start.longitude + (end.longitude - start.longitude) * 0.325),
+        altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 1,
+        timestamp: Date(timeIntervalSince1970: observedAt))
+      await model.consumeForegroundNavigationLocations([location], receivedAt: Date(timeIntervalSince1970: 30))
+      XCTAssertEqual(model.liveLocationState, .degraded)
+      XCTAssertEqual(model.progressFraction, 0)
+      XCTAssertEqual(output.commands.filter { $0.identity.anchorID == "PROVIDER_SURFACE_STEP" }.count, 1)
+      model.reset()
+    }
+  }
+
+  private func speechRecoveryModel(
+    output: SpeechRecoveryAppOutput,
+    resolver: any WholeShutoSurfaceRouteResolving = WholeShutoInstructionSurfaceRouteResolver()
+  ) async throws -> WholeShutoProductModel {
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: resolver, checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: output, nowMillisecondsProvider: { 1_000 })
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6812, longitude: 139.7671))
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300 where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    return model
+  }
+
   func testIdleTimerStaysDisabledOnlyDuringLiveJourney() {
     XCTAssertTrue(
       WholeShutoIdleTimerPolicy.disablesIdleTimer(
@@ -1413,7 +1538,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     let authoritativeOccurrence = try XCTUnwrap(model.runtimeOccurrenceID)
     let authoritativeProgress = model.progressFraction
     let authoritativeCoordinate = try XCTUnwrap(model.currentCoordinate)
-    let spokenPromptCount = output.commands.count
+    let spokenPromptCount = output.commands.filter { $0.identity.anchorID != "JOURNEY_STATUS" }
+      .count
 
     nowMilliseconds += WholeShutoProductModel.liveLocationStaleAfterMilliseconds
     model.evaluateLiveLocationFreshness(
@@ -1433,7 +1559,10 @@ final class WholeShutoProductModelTests: XCTestCase {
       TunnelPositionEstimator.minimumUncertaintyRadiusMeters
     )
     XCTAssertNotEqual(model.currentCoordinate, authoritativeCoordinate)
-    XCTAssertEqual(output.commands.count, spokenPromptCount)
+    XCTAssertEqual(
+      output.commands.filter { $0.identity.anchorID != "JOURNEY_STATUS" }.count, spokenPromptCount)
+    XCTAssertEqual(
+      output.commands.filter { $0.identity.promptID.contains("positionLost") }.count, 1)
 
     nowMilliseconds += 1_000
     let unrelatedRawCoordinate = ShutoCoordinate(
@@ -1453,7 +1582,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotEqual(model.currentCoordinate, unrelatedRawCoordinate)
     XCTAssertEqual(model.runtimeOccurrenceID, authoritativeOccurrence)
     XCTAssertEqual(model.progressFraction, authoritativeProgress)
-    XCTAssertEqual(output.commands.count, spokenPromptCount)
+    XCTAssertEqual(
+      output.commands.filter { $0.identity.anchorID != "JOURNEY_STATUS" }.count, spokenPromptCount)
     let resumeIndex = try XCTUnwrap(
       route.routePlan.occurrence(id: authoritativeOccurrence)
     ).index
@@ -4336,6 +4466,60 @@ private final class WholeShutoRecordingPlaceResolver:
 }
 
 @MainActor
+
+private final class SpeechRecoveryAppOutput: GuidanceSpeechOutput {
+  var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
+  var autoFinish = false
+  var active: GuidanceSpeechIdentity?
+  var commands: [GuidanceSpeechCommand] = []
+  var stopCount = 0
+  var failNextReleased = false
+  var failedCommand: GuidanceSpeechCommand?
+  func speak(_ command: GuidanceSpeechCommand) throws {
+    if failNextReleased, command.identity.anchorID != "PROVIDER_SURFACE_STEP",
+      command.identity.anchorID != "JOURNEY_STATUS"
+    {
+      failNextReleased = false
+      failedCommand = command
+      throw GuidanceSpeechOutputError.audioSessionActivationFailed
+    }
+    commands.append(command)
+    active = command.identity
+    eventHandler?(.didStart(command.identity))
+    if autoFinish {
+      active = nil
+      eventHandler?(.didFinish(command.identity))
+    }
+  }
+  func finishActive() {
+    guard let identity = active else { return }
+    active = nil
+    eventHandler?(.didFinish(identity))
+  }
+  func stop() {
+    stopCount += 1
+    active = nil
+  }
+}
+private struct SpeechRecoveryShortStepResolver: WholeShutoSurfaceRouteResolving {
+  func route(
+    from origin: ShutoCoordinate, to destination: ShutoCoordinate,
+    preference: WholeShutoSurfaceRoutePreference
+  ) async -> WholeShutoSurfaceRoute? {
+    WholeShutoSurfaceRoute(
+      coordinates: [origin, destination], distanceMeters: 1_200,
+      expectedTravelTimeSeconds: 180,
+      instructions: ["Continue straight", "Turn left at A", "Turn right at B"],
+      steps: [
+        .init(instruction: "Continue straight", distanceMeters: 350),
+        .init(instruction: "Turn left at A", distanceMeters: 100),
+        .init(instruction: "Turn right at B", distanceMeters: 750),
+      ], guidanceLanguageCode: "en-US")
+  }
+}
+
+@MainActor
+
 private final class WholeShutoRecordingSpeechOutput:
   GuidanceSpeechOutput
 {

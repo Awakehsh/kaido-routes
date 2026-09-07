@@ -603,6 +603,14 @@ same update's matching one-shot emission passes through the RoutePlan-bound
 speech scheduler into an injected output exactly once. Focused tests execute
 replacement-safe callback identity, interruption without catch-up replay,
 provider surface-step exactly-once delivery and released-prompt priority,
+unstarted activation retries and retry limits, missing-terminal-callback expiry,
+Bluetooth route-change and media-reset handling without physical speech,
+current-turn priority after a fix gap, and explicit-stop preservation.
+KR-S34 checks an anchor-edge gap without losing a still-upcoming maneuver or
+replaying it after passage. App tests also verify a failed junction start can
+retry through fresh live observations, and a lost-position notice does not
+authorize maneuver progress.
+The remaining presentation checks cover
 reviewed-form rendering without cascade or duplicate expansion, exact
 offline-audio lookup against unchanged release text, and a typed missing-voice
 failure. The real iOS output is compile- and launch-checked
@@ -610,6 +618,10 @@ with Apple's `voicePrompt` audio-session configuration; acoustic output remains
 a device test. A launch-only XCUITest verifies that the visible preview starts
 in `PLANNING`, keeps strict entry locked, exposes `INPUT DISCONNECTED`, and keeps
 guidance audio `IDLE`.
+The explicit physical-audio page now exercises the production AVSpeech guidance
+output across three sequential language samples with a one-second quiet interval
+between them. Its entire source is Debug-only. Routine App tests still use
+silent outputs; a synthetic notification is not a Bluetooth acoustic result.
 
 The same L3 target tests the Apple bundle distribution gate above the portable
 release contracts. Catalog tests require the checked-in demo resource to

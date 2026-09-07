@@ -152,7 +152,8 @@ public enum NavigationPresentationProjector {
       }
     }
     if let currentOccurrenceID = request.snapshot.currentOccurrenceID,
-      currentOccurrenceID != request.guidanceFrame.anchorOccurrenceID
+      currentOccurrenceID != request.guidanceFrame.anchorOccurrenceID,
+      request.snapshot.activeGuidanceFrame != request.guidanceFrame
     {
       throw NavigationPresentationProjectionError.guidanceFrameNotCurrentOccurrence
     }

@@ -43,6 +43,7 @@ public enum GuidanceSpeechSuppressionReason: String, Equatable, Sendable {
   case duplicate = "DUPLICATE"
   case interrupted = "INTERRUPTED"
   case stopped = "STOPPED"
+  case retryPending = "RETRY_PENDING"
 }
 
 public enum GuidanceSpeechScheduleResult: Equatable, Sendable {
@@ -138,6 +139,15 @@ public struct GuidanceSpeechScheduler: Sendable {
   @discardableResult
   public mutating func didCancel(_ identity: GuidanceSpeechIdentity) -> Bool {
     finishIfActive(identity)
+  }
+
+  /// A rejected start has not delivered speech. A caller may retry only after
+  /// obtaining fresh authorization for the same still-upcoming instruction.
+  @discardableResult
+  public mutating func didFailToStart(_ identity: GuidanceSpeechIdentity) -> Bool {
+    guard activeCommand?.identity == identity else { return false }
+    consumedIdentities.remove(identity)
+    return finishIfActive(identity)
   }
 
   @discardableResult

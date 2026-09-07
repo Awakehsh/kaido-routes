@@ -28,6 +28,11 @@ public protocol GuidanceRecordedAudioPlaying: AnyObject {
     playbackID: UUID
   ) throws
   func stop()
+  func recoverAfterInterruption() throws -> Bool
+}
+
+extension GuidanceRecordedAudioPlaying {
+  public func recoverAfterInterruption() throws -> Bool { false }
 }
 
 /// Uses a complete reviewed audio release before falling back to Apple TTS.
@@ -38,6 +43,7 @@ public protocol GuidanceRecordedAudioPlaying: AnyObject {
 /// failure or interruption is terminal and is never replayed through fallback.
 @MainActor
 public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
+  public var isInterrupted: Bool { interruptedSource != nil || fallback.isInterrupted }
   public var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
   public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
     isUsingFallback ? fallback.selectedVoiceProfile : nil
@@ -106,7 +112,6 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
   }
 
   public func stop() {
-    interruptedSource = nil
     guard let activeSource else { return }
     self.activeSource = nil
 
@@ -117,6 +122,17 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
     case .fallback(let identity):
       fallback.stop()
       eventHandler?(.didCancel(identity))
+    }
+  }
+
+  public func recoverAfterInterruption() throws -> Bool {
+    switch interruptedSource {
+    case .recorded:
+      return try player.recoverAfterInterruption()
+    case .fallback:
+      return try fallback.recoverAfterInterruption()
+    case nil:
+      return try fallback.recoverAfterInterruption()
     }
   }
 
@@ -244,6 +260,10 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
         name: AVAudioSession.interruptionNotification,
         object: audioSession
       )
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(handleMediaServicesReset(_:)),
+        name: AVAudioSession.mediaServicesWereResetNotification, object: audioSession
+      )
     }
 
     deinit {
@@ -303,6 +323,33 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
       eventHandler?(.didCancel(playbackID))
     }
 
+    public func recoverAfterInterruption() throws -> Bool {
+      guard let playbackID = interruptedPlaybackID else { return false }
+      do {
+        try audioSession.setCategory(
+          .playback, mode: .voicePrompt,
+          options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers]
+        )
+        try audioSession.setActive(true)
+      } catch {
+        throw GuidanceSpeechOutputError.audioSessionActivationFailed
+      }
+      interruptedPlaybackID = nil
+      eventHandler?(.interruptionEnded(playbackID))
+      return true
+    }
+
+    @objc
+    private func handleMediaServicesReset(_ notification: Notification) {
+      if let playbackID = activePlaybackID {
+        interruptedPlaybackID = playbackID
+        eventHandler?(.interruptionBegan(playbackID))
+      }
+      activePlaybackID = nil
+      audioPlayer?.delegate = nil
+      audioPlayer = nil
+    }
+
     @objc
     private func handleAudioInterruption(_ notification: Notification) {
       guard
@@ -351,16 +398,18 @@ public final class ReleasedGuidanceAudioOutput: GuidanceSpeechOutput {
     @preconcurrency AVAudioPlayerDelegate
   {
     public func audioPlayerDidFinishPlaying(
-      _: AVAudioPlayer,
+      _ player: AVAudioPlayer,
       successfully flag: Bool
     ) {
+      guard player === audioPlayer else { return }
       complete(flag)
     }
 
     public func audioPlayerDecodeErrorDidOccur(
-      _: AVAudioPlayer,
+      _ player: AVAudioPlayer,
       error _: (any Error)?
     ) {
+      guard player === audioPlayer else { return }
       complete(false)
     }
   }

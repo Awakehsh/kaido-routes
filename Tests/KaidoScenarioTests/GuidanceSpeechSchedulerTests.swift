@@ -336,7 +336,7 @@ func providerSurfaceSpeechCannotReplaceReleasedSpeech() throws {
 }
 
 @MainActor
-@Test("Interrupted provider surface speech is consumed without catch-up replay")
+@Test("Interrupted started speech stays consumed while a current unplayed step can retry")
 func providerSurfaceSpeechDoesNotReplayAfterInterruption() throws {
   let output = RecordingSpeechOutput()
   let coordinator = try GuidanceSpeechCoordinator(
@@ -350,7 +350,7 @@ func providerSurfaceSpeechDoesNotReplayAfterInterruption() throws {
   #expect(coordinator.status == .interrupted)
   let during = surfaceSpeechCommand(promptID: "surface.access.1")
   #expect(
-    coordinator.submitProviderSurface(during) == .suppressed(.interrupted)
+    coordinator.submitProviderSurface(during) == .interrupted
   )
   output.endInterruption()
   #expect(coordinator.status == .idle)
@@ -360,7 +360,7 @@ func providerSurfaceSpeechDoesNotReplayAfterInterruption() throws {
   )
   #expect(
     coordinator.submitProviderSurface(during)
-      == .suppressed(.duplicate)
+      == .speaking(during.identity)
   )
 }
 

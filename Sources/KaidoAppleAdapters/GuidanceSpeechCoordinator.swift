@@ -1,6 +1,10 @@
 import Foundation
 import KaidoPresentation
 
+#if canImport(OSLog)
+  import OSLog
+#endif
+
 #if os(iOS) || os(tvOS) || os(watchOS) || targetEnvironment(macCatalyst)
   import AVFAudio
   import OSLog
@@ -11,6 +15,8 @@ public enum GuidanceSpeechOutputFailureCode: String, Equatable, Sendable {
   case audioSessionConfigurationFailed = "AUDIO_SESSION_CONFIGURATION_FAILED"
   case audioSessionActivationFailed = "AUDIO_SESSION_ACTIVATION_FAILED"
   case recordedAudioPlaybackFailed = "RECORDED_AUDIO_PLAYBACK_FAILED"
+  case playbackTimedOut = "PLAYBACK_TIMED_OUT"
+  case retryLimitReached = "RETRY_LIMIT_REACHED"
 }
 
 public enum GuidanceSpeechOutputError: Error, Equatable, Sendable {
@@ -45,12 +51,16 @@ public enum GuidanceSpeechOutputEvent: Equatable, Sendable {
 public protocol GuidanceSpeechOutput: AnyObject {
   var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)? { get set }
   var selectedVoiceProfile: GuidanceSpeechVoiceProfile? { get }
+  var isInterrupted: Bool { get }
 
   func speak(_ command: GuidanceSpeechCommand) throws
   func stop()
+  func recoverAfterInterruption() throws -> Bool
 }
 
 extension GuidanceSpeechOutput {
+  public var isInterrupted: Bool { false }
+  public func recoverAfterInterruption() throws -> Bool { false }
   public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
     nil
   }
@@ -74,7 +84,12 @@ public enum GuidanceSpeechCoordinatorStatus: Equatable, Sendable {
 /// identity, so they cannot stop or replay current guidance.
 @MainActor
 public final class GuidanceSpeechCoordinator {
+  #if canImport(OSLog)
+    private static let log = OSLog(subsystem: "app.kaidoroutes", category: "GuidanceAudio")
+  #endif
   public private(set) var scheduler: GuidanceSpeechScheduler
+  public private(set) var startedIdentities: Set<GuidanceSpeechIdentity> = []
+  public private(set) var completedIdentities: Set<GuidanceSpeechIdentity> = []
   public private(set) var status: GuidanceSpeechCoordinatorStatus = .idle {
     didSet {
       guard status != oldValue else { return }
@@ -82,185 +97,294 @@ public final class GuidanceSpeechCoordinator {
     }
   }
   public var statusDidChange: ((GuidanceSpeechCoordinatorStatus) -> Void)?
-  public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? {
-    output.selectedVoiceProfile
-  }
+  public var selectedVoiceProfile: GuidanceSpeechVoiceProfile? { output.selectedVoiceProfile }
 
+  public static let playbackTimeoutSeconds: TimeInterval = 30
+  private static let retryIntervalSeconds: TimeInterval = 2
+  private static let maximumStartAttempts = 3
   private let output: any GuidanceSpeechOutput
+  private let now: () -> TimeInterval
   private var activeSurfaceCommand: GuidanceSpeechCommand?
   private var consumedSurfaceIdentities: Set<GuidanceSpeechIdentity> = []
+  private var attempts: [GuidanceSpeechIdentity: (count: Int, at: TimeInterval)] = [:]
+  private var lastRecoveryAttempt: TimeInterval = -.infinity
+  private var deadline: (identity: GuidanceSpeechIdentity, at: TimeInterval)?
+  private var deadlineTask: Task<Void, Never>?
 
   public init(
     expectedRoutePlanID: String,
-    output: any GuidanceSpeechOutput
+    output: any GuidanceSpeechOutput,
+    now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
   ) throws {
-    scheduler = try GuidanceSpeechScheduler(
-      expectedRoutePlanID: expectedRoutePlanID
-    )
+    scheduler = try GuidanceSpeechScheduler(expectedRoutePlanID: expectedRoutePlanID)
     self.output = output
-    output.eventHandler = { [weak self] event in
-      self?.handle(event)
-    }
+    self.now = now
+    output.eventHandler = { [weak self] event in self?.handle(event) }
   }
 
   @discardableResult
-  public func submit(
-    _ projection: NavigationPresentationProjection
-  ) -> GuidanceSpeechCoordinatorStatus {
+  public func submit(_ projection: NavigationPresentationProjection)
+    -> GuidanceSpeechCoordinatorStatus
+  {
+    checkPlaybackDeadline()
+    guard recoverOutputIfNeeded() else { return status }
     do {
       switch try scheduler.submit(projection) {
       case .suppressed(let reason):
-        status = .suppressed(reason)
+        return suppress(reason)
       case .speak(let command, let replacing):
-        do {
-          if activeSurfaceCommand != nil {
-            activeSurfaceCommand = nil
-            output.stop()
-          }
-          if replacing != nil {
-            output.stop()
-          }
-          status = .scheduled(command.identity)
-          try output.speak(command)
-        } catch let error as GuidanceSpeechOutputError {
-          _ = scheduler.didCancel(command.identity)
-          status = .failed(error.code)
-        } catch {
-          _ = scheduler.didCancel(command.identity)
-          status = .failed(.audioSessionActivationFailed)
+        if activeSurfaceCommand != nil {
+          releaseActiveSurfaceCommand()
+          output.stop()
         }
+        if replacing != nil { output.stop() }
+        play(command)
       }
-    } catch is GuidanceSpeechSchedulerError {
-      status = .invalidProjection
     } catch {
       status = .invalidProjection
     }
     return status
   }
 
-  /// Speaks one provider-owned ordinary-road instruction without granting it
-  /// authority over the released expressway plan. The caller supplies a
-  /// route-bound, step-scoped identity and is responsible for deciding when a
-  /// new provider step becomes current. Exact identities remain consumed after
-  /// interruption or replacement so UI updates cannot replay them.
+  /// Provider text remains route-bound but cannot preempt released guidance.
+  /// A refused or unstarted step is not delivered and remains retryable while
+  /// the caller continues to identify it as the current valid instruction.
   @discardableResult
-  public func submitProviderSurface(
-    _ command: GuidanceSpeechCommand
-  ) -> GuidanceSpeechCoordinatorStatus {
+  public func submitProviderSurface(_ command: GuidanceSpeechCommand)
+    -> GuidanceSpeechCoordinatorStatus
+  {
+    checkPlaybackDeadline()
     guard
-      normalized(command.routePlanID) == scheduler.expectedRoutePlanID,
-      !normalized(command.identity.promptID).isEmpty,
-      !normalized(command.identity.anchorID).isEmpty,
-      !normalized(command.identity.anchorOccurrenceID).isEmpty,
-      !normalized(command.languageCode).isEmpty,
-      !normalized(command.spokenText).isEmpty,
-      !normalized(command.synthesisText).isEmpty
+      command.routePlanID.trimmingCharacters(in: .whitespacesAndNewlines)
+        == scheduler.expectedRoutePlanID,
+      [
+        command.identity.promptID, command.identity.anchorID, command.identity.anchorOccurrenceID,
+        command.languageCode, command.spokenText, command.synthesisText,
+      ].allSatisfy({
+        !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      })
     else {
       status = .invalidProjection
       return status
     }
-    guard !consumedSurfaceIdentities.contains(command.identity) else {
-      status = .suppressed(.duplicate)
-      return status
+    guard !consumedSurfaceIdentities.contains(command.identity) else { return suppress(.duplicate) }
+    guard recoverOutputIfNeeded() else { return status }
+    guard scheduler.state != .stopped else { return suppress(.stopped) }
+    guard scheduler.activeCommand == nil else { return suppress(.notAuthorized) }
+    if let activeSurfaceCommand,
+      activeSurfaceCommand.identity.anchorID == "JOURNEY_STATUS",
+      command.identity.anchorID != "JOURNEY_STATUS"
+    {
+      releaseActiveSurfaceCommand()
+      output.stop()
     }
-    switch scheduler.state {
-    case .interrupted:
-      consumedSurfaceIdentities.insert(command.identity)
-      status = .suppressed(.interrupted)
-      return status
-    case .stopped:
-      consumedSurfaceIdentities.insert(command.identity)
-      status = .suppressed(.stopped)
-      return status
-    case .idle, .speaking:
-      break
-    }
-
-    guard scheduler.activeCommand == nil else {
-      consumedSurfaceIdentities.insert(command.identity)
-      status = .suppressed(.notAuthorized)
-      return status
-    }
-    guard activeSurfaceCommand == nil else {
-      status = .suppressed(.notAuthorized)
-      return status
-    }
-
+    guard activeSurfaceCommand == nil else { return suppress(.notAuthorized) }
     consumedSurfaceIdentities.insert(command.identity)
     activeSurfaceCommand = command
-    status = .scheduled(command.identity)
-    do {
-      try output.speak(command)
-    } catch let error as GuidanceSpeechOutputError {
-      activeSurfaceCommand = nil
-      status = .failed(error.code)
-    } catch {
-      activeSurfaceCommand = nil
-      status = .failed(.audioSessionActivationFailed)
-    }
+    play(command)
     return status
   }
 
-  /// Silences only provider-owned ordinary-road speech at an expressway
-  /// boundary. Released guidance, when present, remains untouched.
+  /// Informational journey notices use the same bounded output and yield to
+  /// maneuver speech. They do not authorize any route movement.
+  @discardableResult
+  public func submitNotice(_ command: GuidanceSpeechCommand) -> GuidanceSpeechCoordinatorStatus {
+    guard command.identity.anchorID == "JOURNEY_STATUS" else {
+      status = .invalidProjection
+      return status
+    }
+    if let activeSurfaceCommand,
+      activeSurfaceCommand.identity.anchorID == "JOURNEY_STATUS",
+      activeSurfaceCommand.identity != command.identity
+    {
+      stopProviderSurface()
+    }
+    return submitProviderSurface(command)
+  }
+
   public func stopProviderSurface() {
     guard activeSurfaceCommand != nil else { return }
-    activeSurfaceCommand = nil
+    clearDeadline()
+    releaseActiveSurfaceCommand()
     output.stop()
     status = .idle
   }
 
-  public func stop() {
-    _ = scheduler.stop()
-    activeSurfaceCommand = nil
+  /// Called when positioning, phase or route validity withdraws a maneuver.
+  /// It does not stop the journey or replay an obsolete instruction.
+  public func invalidateGuidance(keepingNotices: Bool = false) {
+    if keepingNotices, activeSurfaceCommand?.identity.anchorID == "JOURNEY_STATUS" { return }
+    clearDeadline()
+    if let identity = scheduler.activeCommand?.identity {
+      releaseReleasedCommand(identity)
+    }
+    releaseActiveSurfaceCommand()
     output.stop()
+    if scheduler.state != .interrupted && scheduler.state != .stopped { status = .idle }
+  }
+
+  public func stop() {
+    invalidateGuidance()
+    _ = scheduler.stop()
     status = .stopped
   }
 
   public func resume() {
+    checkPlaybackDeadline()
     scheduler.resume()
-    guard scheduler.state == .idle else { return }
-    status = .idle
+    if scheduler.state == .idle { status = .idle }
+  }
+
+  public func checkPlaybackDeadline() {
+    guard let deadline, now() >= deadline.at else { return }
+    guard activeIdentity == deadline.identity else {
+      clearDeadline()
+      return
+    }
+    #if canImport(OSLog)
+      os_log("Guidance playback deadline expired", log: Self.log, type: .error)
+    #endif
+    invalidateGuidance()
+    status = .failed(.playbackTimedOut)
+  }
+
+  private var activeIdentity: GuidanceSpeechIdentity? {
+    activeSurfaceCommand?.identity ?? scheduler.activeCommand?.identity
+  }
+
+  private func play(_ command: GuidanceSpeechCommand) {
+    clearDeadline()
+    let time = now()
+    if let previous = attempts[command.identity] {
+      if previous.count >= Self.maximumStartAttempts {
+        #if canImport(OSLog)
+          if status != .failed(.retryLimitReached) {
+            os_log("Guidance start retry limit reached", log: Self.log, type: .error)
+          }
+        #endif
+        releaseCommand(command.identity)
+        status = .failed(.retryLimitReached)
+        return
+      }
+      if time - previous.at < Self.retryIntervalSeconds {
+        releaseCommand(command.identity)
+        status = .suppressed(.retryPending)
+        return
+      }
+    }
+    attempts[command.identity] = ((attempts[command.identity]?.count ?? 0) + 1, time)
+    status = .scheduled(command.identity)
+    do {
+      try output.speak(command)
+      guard activeIdentity == command.identity else { return }
+      deadline = (command.identity, time + Self.playbackTimeoutSeconds)
+      deadlineTask = Task { [weak self] in
+        try? await Task.sleep(nanoseconds: 30_000_000_000)
+        guard !Task.isCancelled else { return }
+        self?.checkPlaybackDeadline()
+      }
+    } catch let error as GuidanceSpeechOutputError {
+      releaseCommand(command.identity)
+      output.stop()
+      status = .failed(error.code)
+    } catch {
+      releaseCommand(command.identity)
+      output.stop()
+      status = .failed(.audioSessionActivationFailed)
+    }
+  }
+
+  private func recoverOutputIfNeeded() -> Bool {
+    guard scheduler.state != .stopped else { return true }
+    guard scheduler.state == .interrupted || output.isInterrupted else { return true }
+    let time = now()
+    guard time - lastRecoveryAttempt >= Self.retryIntervalSeconds else { return false }
+    lastRecoveryAttempt = time
+    do {
+      guard try output.recoverAfterInterruption() else {
+        status = .interrupted
+        return false
+      }
+      // Outputs confirm recovery only after actual session activation.
+      return scheduler.state != .interrupted
+    } catch let error as GuidanceSpeechOutputError {
+      status = .failed(error.code)
+    } catch {
+      status = .failed(.audioSessionActivationFailed)
+    }
+    return false
+  }
+
+  private func suppress(_ reason: GuidanceSpeechSuppressionReason)
+    -> GuidanceSpeechCoordinatorStatus
+  {
+    let result = GuidanceSpeechCoordinatorStatus.suppressed(reason)
+    if activeIdentity == nil { status = result }
+    return result
+  }
+
+  private func clearDeadline() {
+    deadlineTask?.cancel()
+    deadlineTask = nil
+    deadline = nil
+  }
+
+  private func releaseReleasedCommand(_ identity: GuidanceSpeechIdentity) {
+    if startedIdentities.contains(identity) {
+      _ = scheduler.didCancel(identity)
+    } else {
+      _ = scheduler.didFailToStart(identity)
+    }
+  }
+
+  private func releaseActiveSurfaceCommand() {
+    guard let command = activeSurfaceCommand else { return }
+    if !startedIdentities.contains(command.identity) {
+      consumedSurfaceIdentities.remove(command.identity)
+    }
+    activeSurfaceCommand = nil
+  }
+
+  private func releaseCommand(_ identity: GuidanceSpeechIdentity) {
+    if activeSurfaceCommand?.identity == identity {
+      releaseActiveSurfaceCommand()
+    } else {
+      releaseReleasedCommand(identity)
+    }
   }
 
   private func handle(_ event: GuidanceSpeechOutputEvent) {
     switch event {
     case .didStart(let identity):
-      if activeSurfaceCommand?.identity == identity {
-        status = .speaking(identity)
-        return
-      }
-      guard scheduler.activeCommand?.identity == identity else { return }
+      guard activeIdentity == identity else { return }
+      startedIdentities.insert(identity)
       status = .speaking(identity)
     case .didFinish(let identity):
-      if activeSurfaceCommand?.identity == identity {
-        activeSurfaceCommand = nil
-        status = .idle
-        return
-      }
-      guard scheduler.didFinish(identity) else { return }
+      guard activeIdentity == identity else { return }
+      startedIdentities.insert(identity)
+      completedIdentities.insert(identity)
+      clearDeadline()
+      releaseCommand(identity)
       status = .idle
     case .didCancel(let identity):
-      if activeSurfaceCommand?.identity == identity {
-        activeSurfaceCommand = nil
-        status = .idle
-        return
-      }
-      guard scheduler.didCancel(identity) else { return }
+      guard activeIdentity == identity else { return }
+      clearDeadline()
+      releaseCommand(identity)
       status = .idle
     case .interruptionBegan:
-      activeSurfaceCommand = nil
+      guard scheduler.state != .stopped else { return }
+      clearDeadline()
+      if let identity = scheduler.activeCommand?.identity { releaseReleasedCommand(identity) }
+      releaseActiveSurfaceCommand()
       _ = scheduler.interruptionBegan()
+      lastRecoveryAttempt = -.infinity
       status = .interrupted
     case .interruptionEnded:
       scheduler.interruptionEnded()
+      attempts.removeAll()
       guard scheduler.state == .idle else { return }
       status = .idle
     }
-  }
-
-  private func normalized(_ value: String) -> String {
-    value.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
 
@@ -278,7 +402,11 @@ public final class GuidanceSpeechCoordinator {
     public var eventHandler: ((GuidanceSpeechOutputEvent) -> Void)?
     public private(set) var selectedVoiceProfile: GuidanceSpeechVoiceProfile?
 
-    private let synthesizer: AVSpeechSynthesizer
+    private var synthesizer: AVSpeechSynthesizer
+    private let notifications: NotificationCenter
+    private let synthesizerFactory: () -> AVSpeechSynthesizer
+    private var interruptionPending = false
+    public var isInterrupted: Bool { interruptionPending }
     private let audioSession: AVAudioSession
     private let preferredVoiceIdentifierProvider: (String) -> String?
     private var identityByUtterance: [ObjectIdentifier: GuidanceSpeechIdentity] = [:]
@@ -287,26 +415,38 @@ public final class GuidanceSpeechCoordinator {
     public init(
       synthesizer: AVSpeechSynthesizer = AVSpeechSynthesizer(),
       audioSession: AVAudioSession = .sharedInstance(),
+      synthesizerFactory: @escaping () -> AVSpeechSynthesizer = { AVSpeechSynthesizer() },
+      notifications: NotificationCenter = .default,
       preferredVoiceIdentifierProvider: @escaping (String) -> String? = {
         _ in nil
       }
     ) {
       self.synthesizer = synthesizer
+      self.notifications = notifications
+      self.synthesizerFactory = synthesizerFactory
       self.audioSession = audioSession
       self.preferredVoiceIdentifierProvider =
         preferredVoiceIdentifierProvider
       super.init()
       synthesizer.delegate = self
-      NotificationCenter.default.addObserver(
+      notifications.addObserver(
         self,
         selector: #selector(handleAudioInterruption(_:)),
         name: AVAudioSession.interruptionNotification,
         object: audioSession
       )
+      notifications.addObserver(
+        self, selector: #selector(handleMediaServicesReset(_:)),
+        name: AVAudioSession.mediaServicesWereResetNotification, object: audioSession
+      )
+      notifications.addObserver(
+        self, selector: #selector(handleAudioRouteChange(_:)),
+        name: AVAudioSession.routeChangeNotification, object: audioSession
+      )
     }
 
     deinit {
-      NotificationCenter.default.removeObserver(self)
+      notifications.removeObserver(self)
     }
 
     public func speak(_ command: GuidanceSpeechCommand) throws {
@@ -332,6 +472,22 @@ public final class GuidanceSpeechCoordinator {
       }
       selectedVoiceProfile = selection.profile
 
+      try activateAudioSession()
+
+      let utterance = AVSpeechUtterance(string: command.synthesisText)
+      utterance.voice = selection.voice
+      let prosody = GuidanceSpeechProsody.navigation(languageCode: command.languageCode)
+      utterance.applyGuidanceProsody(prosody, minimumLeadIn: 0.6)
+      let utteranceID = ObjectIdentifier(utterance)
+      identityByUtterance[utteranceID] = command.identity
+      activeUtteranceID = utteranceID
+      let ports = audioSession.currentRoute.outputs.map { $0.portType.rawValue }.joined(
+        separator: ",")
+      os_log("Speech submitted; output ports: %{public}@", log: Self.log, type: .default, ports)
+      synthesizer.speak(utterance)
+    }
+
+    private func activateAudioSession() throws {
       do {
         try audioSession.setCategory(
           .playback,
@@ -349,22 +505,17 @@ public final class GuidanceSpeechCoordinator {
         try audioSession.setActive(true)
       } catch {
         os_log("Audio activation failed: %ld", log: Self.log, type: .error, (error as NSError).code)
+        if !interruptionPending {
+          interruptionPending = true
+          eventHandler?(.interruptionBegan)
+        }
         throw GuidanceSpeechOutputError.audioSessionActivationFailed
       }
 
-      let utterance = AVSpeechUtterance(string: command.synthesisText)
-      utterance.voice = selection.voice
-      let prosody = GuidanceSpeechProsody.navigation(
-        languageCode: command.languageCode
-      )
-      // Bluetooth receivers need time to open the newly activated route.
-      utterance.applyGuidanceProsody(prosody, minimumLeadIn: 0.6)
-      let utteranceID = ObjectIdentifier(utterance)
-      identityByUtterance[utteranceID] = command.identity
-      activeUtteranceID = utteranceID
-      let ports = audioSession.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
-      os_log("Speech submitted; output ports: %{public}@", log: Self.log, type: .default, ports)
-      synthesizer.speak(utterance)
+      if interruptionPending {
+        interruptionPending = false
+        eventHandler?(.interruptionEnded)
+      }
     }
 
     /// Resolves only the explicit preference and the system locale default.
@@ -476,6 +627,35 @@ public final class GuidanceSpeechCoordinator {
       cancelActiveUtterance()
     }
 
+    public func recoverAfterInterruption() throws -> Bool {
+      try activateAudioSession()
+      return true
+    }
+
+    @objc
+    private func handleMediaServicesReset(_ notification: Notification) {
+      interruptionPending = true
+      eventHandler?(.interruptionBegan)
+      synthesizer.delegate = nil
+      identityByUtterance.removeAll()
+      activeUtteranceID = nil
+      synthesizer = synthesizerFactory()
+      synthesizer.delegate = self
+      os_log("Speech output rebuilt after media services reset", log: Self.log, type: .default)
+    }
+
+    @objc
+    private func handleAudioRouteChange(_ notification: Notification) {
+      guard let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+        let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason),
+        reason == .oldDeviceUnavailable || reason == .newDeviceAvailable
+      else { return }
+      interruptionPending = true
+      eventHandler?(.interruptionBegan)
+      cancelActiveUtterance()
+      os_log("Speech output route changed", log: Self.log, type: .default)
+    }
+
     @objc
     private func handleAudioInterruption(_ notification: Notification) {
       guard
@@ -490,14 +670,12 @@ public final class GuidanceSpeechCoordinator {
       switch type {
       case .began:
         os_log("Audio interruption began", log: Self.log, type: .default)
+        interruptionPending = true
         eventHandler?(.interruptionBegan)
         cancelActiveUtterance()
-        // Some routes (notably Bluetooth handoffs and Siri) never deliver a
-        // matching `.ended` notification to this session. The interrupted
-        // utterance remains consumed, but future prompts must stay eligible.
-        eventHandler?(.interruptionEnded)
       case .ended:
         os_log("Audio interruption ended", log: Self.log, type: .default)
+        interruptionPending = false
         eventHandler?(.interruptionEnded)
       @unknown default:
         break

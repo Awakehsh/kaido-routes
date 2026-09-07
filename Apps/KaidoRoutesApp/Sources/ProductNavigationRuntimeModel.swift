@@ -518,6 +518,8 @@ final class ProductNavigationRuntimeModel: ObservableObject {
       "A persistent guidance frame cannot authorize speech."
     case .suppressed(.duplicate):
       "The occurrence-scoped prompt was already consumed."
+    case .suppressed(.retryPending):
+      "Waiting before retrying the current unstarted instruction."
     case .suppressed(.interrupted):
       "The interrupted prompt was dropped without catch-up replay."
     case .suppressed(.stopped), .stopped:

@@ -1001,6 +1001,33 @@ func releasedGuidanceAudioOutputDoesNotReplayAfterInterruption() throws {
   )
 }
 
+@MainActor
+@Test("Recorded output recovers without a paired end notification and never replays the old audio")
+func releasedGuidanceAudioRecoversWithoutEndNotification() throws {
+  let product = try guidanceAudioProductRelease()
+  let fixture = guidanceAudioManifestFixture(product)
+  let release = try GuidanceAudioRelease(
+    manifest: fixture.manifest, productRelease: product,
+    resourceProvider: { fixture.resources[$0] })
+  let command = guidanceAudioCommand(
+    record: try #require(release.assets.first?.record), routePlanID: release.manifest.routePlanID)
+  let player = RecordingGuidanceAudioPlayer()
+  let fallback = RecordingGuidanceAudioFallback()
+  let output = ReleasedGuidanceAudioOutput(release: release, player: player, fallback: fallback)
+  try output.speak(command)
+  let playbackID = try #require(player.requests.last?.playbackID)
+  player.pendingRecoveryID = playbackID
+  player.eventHandler?(.interruptionBegan(playbackID))
+  output.stop()
+  #expect(output.isInterrupted)
+  #expect(try output.recoverAfterInterruption())
+  #expect(!output.isInterrupted)
+  #expect(player.requests.count == 1)
+  #expect(fallback.commands.isEmpty)
+  try output.speak(command)
+  #expect(player.requests.count == 2)
+}
+
 struct GuidanceAudioManifestFixture {
   let manifest: GuidanceAudioReleaseManifest
   let resources: [String: GuidanceAudioResource]
@@ -1270,6 +1297,7 @@ private final class RecordingGuidanceAudioPlayer:
 
   var eventHandler: ((GuidanceRecordedAudioPlaybackEvent) -> Void)?
   var shouldFailToStart = false
+  var pendingRecoveryID: UUID?
   private(set) var requests: [Request] = []
 
   func play(
@@ -1284,6 +1312,13 @@ private final class RecordingGuidanceAudioPlayer:
   }
 
   func stop() {}
+
+  func recoverAfterInterruption() throws -> Bool {
+    guard let id = pendingRecoveryID else { return false }
+    pendingRecoveryID = nil
+    eventHandler?(.interruptionEnded(id))
+    return true
+  }
 
   func finish(_ playbackID: UUID) {
     eventHandler?(.didFinish(playbackID))

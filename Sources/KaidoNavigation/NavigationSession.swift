@@ -181,6 +181,7 @@ public actor NavigationSession {
       navigationConfiguration.lapBoundaryOccurrenceIDs
     releasedRecoveryCandidates = navigationConfiguration.recoveryCandidates
     guidanceTargetByAnchorOccurrence = Self.guidanceTargets(
+      routePlan: routePlan,
       decisionZones: decisionZones,
       releasedGuidance: navigationConfiguration.releasedGuidance
     )
@@ -799,16 +800,19 @@ public actor NavigationSession {
   }
 
   private static func guidanceTargets(
+    routePlan: RoutePlan,
     decisionZones: [DecisionZoneProgressDefinition],
     releasedGuidance: [ReleasedGuidanceDefinition]
   ) -> [String: DecisionZoneProgressDefinition] {
     let zonesByID = Dictionary(uniqueKeysWithValues: decisionZones.map { ($0.id, $0) })
     var result: [String: DecisionZoneProgressDefinition] = [:]
-    for definition in releasedGuidance where result[definition.anchor.occurrenceID] == nil {
-      result[definition.anchor.occurrenceID] =
-        zonesByID[
-          definition.frameTemplate.decisionZoneID
-        ]
+    for occurrence in routePlan.occurrences {
+      guard
+        let definition = GuidanceFramePlanner.applicableDefinitions(
+          releasedGuidance, routePlan: routePlan, occurrenceID: occurrence.id
+        ).first
+      else { continue }
+      result[occurrence.id] = zonesByID[definition.frameTemplate.decisionZoneID]
     }
     return result
   }

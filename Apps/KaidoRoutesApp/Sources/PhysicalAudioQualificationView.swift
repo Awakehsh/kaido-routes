@@ -1,6 +1,8 @@
-import AVFAudio
+#if DEBUG
+  import AVFAudio
 import KaidoAppleAdapters
-import SwiftUI
+  import KaidoPresentation
+  import SwiftUI
 
 private struct PhysicalAudioQualificationSample: Equatable {
   let languageCode: String
@@ -23,20 +25,20 @@ private enum PhysicalAudioQualificationState: Equatable {
 private final class PhysicalAudioQualificationModel: ObservableObject {
   @Published private(set) var state: PhysicalAudioQualificationState = .ready
 
-  private let output: any GuidanceVoiceAuditionOutput
-  private let samples = [
+    private let output: any GuidanceSpeechOutput
+    private let samples = [
     PhysicalAudioQualificationSample(
       languageCode: "ja-JP",
-      spokenText: "K7、第三京浜・出口へ"
-    ),
+        spokenText: "音声テスト。一、二、三。"
+      ),
     PhysicalAudioQualificationSample(
       languageCode: "zh-CN",
-      spokenText: "K7，前往第三京浜・出口へ"
-    ),
+        spokenText: "语音测试：一、二、三。"
+      ),
     PhysicalAudioQualificationSample(
       languageCode: "en-US",
-      spokenText: "K7, toward 第三京浜・出口へ"
-    ),
+        spokenText: "Voice test. One, two, three."
+      ),
   ]
 
   private var sampleIndex = 0
@@ -44,9 +46,8 @@ private final class PhysicalAudioQualificationModel: ObservableObject {
   private var completedRecords: [PhysicalAudioQualificationRecord] = []
 
   init(
-    output: any GuidanceVoiceAuditionOutput =
-      LazyAVSpeechVoiceAuditionOutput()
-  ) {
+      output: any GuidanceSpeechOutput = AVSpeechGuidanceOutput()
+    ) {
     self.output = output
     output.eventHandler = { [weak self] event in
       self?.handle(event)
@@ -98,31 +99,36 @@ private final class PhysicalAudioQualificationModel: ObservableObject {
     let sample = samples[sampleIndex]
     state = .playing(sample.languageCode)
     do {
-      try output.audition(
-        GuidanceVoiceAuditionRequest(
-          languageCode: sample.languageCode,
-          preferredVoiceIdentifier: nil,
+        let id = "physical-audio.\(sampleIndex)"
+        try output.speak(
+          GuidanceSpeechCommand(
+            identity: GuidanceSpeechIdentity(
+              promptID: id, anchorID: "TEST", anchorOccurrenceID: id),
+            routePlanID: "physical-audio",
+            languageCode: sample.languageCode,
           spokenText: sample.spokenText
         )
       )
-    } catch let error as GuidanceVoiceAuditionOutputError {
-      state = .blocked(error.code.rawValue)
+      } catch let error as GuidanceSpeechOutputError {
+        state = .blocked(error.code.rawValue)
     } catch {
       state = .blocked("PHYSICAL_AUDIO_OUTPUT_FAILED")
     }
   }
 
-  private func handle(_ event: GuidanceVoiceAuditionOutputEvent) {
-    guard samples.indices.contains(sampleIndex) else {
+    private func handle(_ event: GuidanceSpeechOutputEvent) {
+      guard samples.indices.contains(sampleIndex) else {
       state = .blocked("PHYSICAL_AUDIO_UNEXPECTED_CALLBACK")
       return
     }
     let expectedLanguageCode = samples[sampleIndex].languageCode
     switch event {
-    case .didStart(let profile):
-      let audioSession = AVAudioSession.sharedInstance()
+      case .didStart(let identity):
+        let audioSession = AVAudioSession.sharedInstance()
       guard
-        profile.languageCode == expectedLanguageCode,
+          identity.promptID == "physical-audio.\(sampleIndex)",
+          let profile = output.selectedVoiceProfile,
+          profile.languageCode == expectedLanguageCode,
         audioSession.category == .playback,
         audioSession.mode == .voicePrompt
       else {
@@ -143,9 +149,11 @@ private final class PhysicalAudioQualificationModel: ObservableObject {
         profile: profile,
         outputPortTypes: portTypes
       )
-    case .didFinish(let profile):
-      guard
-        let activeRecord,
+      case .didFinish(let identity):
+        guard
+          identity.promptID == "physical-audio.\(sampleIndex)",
+          let profile = output.selectedVoiceProfile,
+          let activeRecord,
         activeRecord.profile == profile,
         profile.languageCode == expectedLanguageCode
       else {
@@ -156,14 +164,17 @@ private final class PhysicalAudioQualificationModel: ObservableObject {
       self.activeRecord = nil
       sampleIndex += 1
       Task { @MainActor [weak self] in
-        self?.playCurrentSample()
+          try? await Task.sleep(nanoseconds: 1_000_000_000)
+          self?.playCurrentSample()
       }
-    case .didCancel:
-      if case .blocked = state {
+      case .didCancel, .interruptionBegan:
+        if case .blocked = state {
         return
       }
       state = .blocked("PHYSICAL_AUDIO_CANCELLED")
-    }
+      case .interruptionEnded:
+        break
+      }
   }
 }
 
@@ -199,3 +210,4 @@ struct PhysicalAudioQualificationHost: View {
     .foregroundStyle(KaidoTheme.routeWhite)
   }
 }
+#endif

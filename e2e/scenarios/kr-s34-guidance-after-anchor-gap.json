@@ -1,0 +1,267 @@
+{
+  "schema_version": "1.0",
+  "id": "KR-S34",
+  "title": "A junction remains speakable after a missed anchor edge",
+  "layer": "SIMULATION",
+  "tags": [
+    "guidance",
+    "reacquisition",
+    "voice",
+    "occurrence"
+  ],
+  "purpose": "Use fresh resolved progress on the remaining exact approach after an anchor-edge gap, while preserving prompt identity and refusing late playback after the movement.",
+  "evidence": {
+    "classification": "SYNTHETIC",
+    "sources": [],
+    "limitations": [
+      "Synthetic distances prove planner ordering and ledger behavior only; release thresholds, sign wording, lane advice, timing, and pronunciation require reviewed road evidence and device tests."
+    ],
+    "release_blockers": []
+  },
+  "given": {
+    "network_snapshot": {
+      "id": "test.snapshot.progress-guidance-v1",
+      "status": "TEST",
+      "effective_at": "2026-07-23T00:00:00+09:00"
+    },
+    "route_plan": {
+      "plan_id": "test.plan.progress-guidance",
+      "network_snapshot_id": "test.snapshot.progress-guidance-v1",
+      "entry_facility_id": "test.access.entry",
+      "exit_facility_id": "test.access.exit",
+      "recovery_policy": "STRICT",
+      "occurrences": [
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "index": 0,
+          "kind": "EDGE",
+          "entity_id": "test.edge.before-jct.entity"
+        },
+        {
+          "occurrence_id": "test.edge.after-anchor",
+          "index": 1,
+          "kind": "EDGE",
+          "entity_id": "test.edge.after-anchor.entity"
+        },
+        {
+          "occurrence_id": "test.movement.at-jct",
+          "index": 2,
+          "kind": "JUNCTION_MOVEMENT",
+          "entity_id": "test.movement.at-jct.entity"
+        }
+      ]
+    },
+    "inputs": {
+      "released_guidance": [
+        {
+          "occurrence_id": "test.edge.before-jct",
+          "anchor_id": "COMMIT",
+          "prompt_id": "test.prompt.commit",
+          "trigger_distance_meters": 250,
+          "frame": {
+            "movement_occurrence_id": "test.movement.at-jct",
+            "decision_zone_id": "test.zone.jct",
+            "stage": "COMMIT",
+            "decision_point_name_ja": "テストJCT",
+            "localized_decision_point_names": {
+              "ja-JP": "テストJCT",
+              "zh-Hans": "测试 JCT",
+              "en": "Test JCT"
+            },
+            "maneuver": "KEEP_LEFT",
+            "lane_preparation": "USE_LEFT_LANES",
+            "route_shields": [
+              "B"
+            ],
+            "japanese_sign_text": "B 湾岸線・横浜方面",
+            "localized_content": {
+              "ja-JP": {
+                "display_text": "左側を進み B 湾岸線へ",
+                "spoken_text": "左側を進み、B 湾岸線へ進んでください",
+                "spoken_forms": {
+                  "B": "ビー"
+                },
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "zh-Hans": {
+                "display_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_text": "保持左侧，驶入 B 湾岸线",
+                "spoken_forms": {
+                  "B": "B 路线"
+                },
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              },
+              "en": {
+                "display_text": "Keep left for Route B",
+                "spoken_text": "Keep left for Route B",
+                "spoken_forms": {
+                  "B": "Route B"
+                },
+                "preserved_japanese_sign_text": "B 湾岸線・横浜方面"
+              }
+            }
+          }
+        }
+      ],
+      "presentation": {
+        "guidance_source": "NAVIGATION_ACTIVE",
+        "language_selection": {
+          "interface_locale": "zh-Hans",
+          "guidance_voice_locale": "en"
+        },
+        "passage_evidence": "NO_KNOWN_CONFLICT_REALTIME_UNCONFIRMED",
+        "driving_context": {
+          "vehicle_moving": true,
+          "inside_decision_zone": false
+        }
+      }
+    },
+    "system_state": {
+      "journey_phase": "STRICT_ROUTE",
+      "active_route_plan_id": "test.plan.progress-guidance",
+      "current_occurrence_id": "test.edge.before-jct",
+      "location_confidence": "HIGH"
+    }
+  },
+  "when": [
+    {
+      "id": "start",
+      "at_ms": 0,
+      "type": "NAVIGATION_STARTED",
+      "payload": {}
+    },
+    {
+      "id": "weak-anchor",
+      "at_ms": 1000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_occurrence_id": "test.edge.before-jct",
+        "confidence": "LOW",
+        "horizontal_accuracy_m": 100
+      }
+    },
+    {
+      "id": "missed-anchor",
+      "at_ms": 1100,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.before-jct",
+        "distance_to_decision_point_meters": 200
+      }
+    },
+    {
+      "id": "fresh-approach",
+      "at_ms": 2000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_occurrence_id": "test.edge.after-anchor",
+        "candidate_occurrence_ids": [
+          "test.edge.after-anchor"
+        ],
+        "candidate_resolution": "RESOLVED",
+        "confidence": "HIGH",
+        "horizontal_accuracy_m": 5
+      }
+    },
+    {
+      "id": "upcoming-junction",
+      "at_ms": 2100,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.edge.after-anchor",
+        "distance_to_decision_point_meters": 100
+      }
+    },
+    {
+      "id": "movement-reached",
+      "at_ms": 3000,
+      "type": "LOCATION_UPDATED",
+      "payload": {
+        "matched_occurrence_id": "test.movement.at-jct",
+        "candidate_occurrence_ids": [
+          "test.movement.at-jct"
+        ],
+        "candidate_resolution": "RESOLVED",
+        "confidence": "HIGH",
+        "horizontal_accuracy_m": 5
+      }
+    },
+    {
+      "id": "too-late",
+      "at_ms": 3100,
+      "type": "GUIDANCE_PROGRESS_UPDATED",
+      "payload": {
+        "occurrence_id": "test.movement.at-jct",
+        "distance_to_decision_point_meters": 0
+      }
+    }
+  ],
+  "then": [
+    {
+      "id": "no-weak-emission",
+      "after": "missed-anchor",
+      "category": "SAFETY",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": [],
+      "rationale": "Weak evidence cannot authorize a maneuver."
+    },
+    {
+      "id": "upcoming-emits",
+      "after": "upcoming-junction",
+      "category": "SAFETY",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.prompt.commit"
+      ],
+      "rationale": "The valid remaining approach retains the released prompt."
+    },
+    {
+      "id": "anchor-preserved",
+      "after": "upcoming-junction",
+      "category": "SAFETY",
+      "subject": "guidance.active_frame.anchor_occurrence_id",
+      "matcher": "EQUALS",
+      "expected": "test.edge.before-jct",
+      "rationale": "Recovery preserves the released anchor identity."
+    },
+    {
+      "id": "progress-not-rewound",
+      "after": "upcoming-junction",
+      "category": "SAFETY",
+      "subject": "navigation.occurrence_index",
+      "matcher": "EQUALS",
+      "expected": 1,
+      "rationale": "Speech recovery cannot rewind the route."
+    },
+    {
+      "id": "fresh-approach-speaks",
+      "after": "upcoming-junction",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "EQUALS",
+      "expected": true,
+      "rationale": "The actor emits while the exact movement is still ahead."
+    },
+    {
+      "id": "no-late-emission",
+      "after": "too-late",
+      "category": "SAFETY",
+      "subject": "guidance.emitted_prompt_ids",
+      "matcher": "EQUALS",
+      "expected": [
+        "test.prompt.commit"
+      ],
+      "rationale": "Reaching the junction never replays the earlier instruction."
+    },
+    {
+      "id": "no-late-speech",
+      "after": "too-late",
+      "category": "SAFETY",
+      "subject": "presentation.kernel.voice.should_speak",
+      "matcher": "ABSENT",
+      "rationale": "Reaching the movement clears the old guidance frame, leaving no late voice projection."
+    }
+  ]
+}

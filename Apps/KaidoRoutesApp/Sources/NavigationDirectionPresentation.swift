@@ -2,27 +2,37 @@ import Foundation
 import KaidoNavigation
 
 enum SurfaceManeuver: Equatable {
-  case left, right, slightLeft, slightRight, straight, uTurn, unknown
+  case left, right, slightLeft, slightRight, keepLeft, keepRight, straight, uTurn, unknown
 
   var symbol: String {
     switch self {
     case .left: "arrow.turn.up.left"
     case .right: "arrow.turn.up.right"
-    case .slightLeft: "arrow.up.left"
-    case .slightRight: "arrow.up.right"
+    case .slightLeft, .keepLeft: "arrow.up.left"
+    case .slightRight, .keepRight: "arrow.up.right"
     case .straight: "arrow.up"
     case .uTurn: "arrow.uturn.down"
     case .unknown: "mappin.and.ellipse"
     }
   }
 
-  // MapKit supplies localized text, not a maneuver enum. Match only an
-  // explicit leading action; a direction inside a street name is not a turn.
+  // MapKit supplies localized text, not a maneuver enum. Match an explicit
+  // action clause; a direction inside a street name is not a turn.
   static func from(instruction: String) -> Self {
     let text = instruction.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    let pattern = #"^在[^，,。]+[，,]\s*(?:朝[^，,。]+?方向)?\s*(稍向左转|稍向右转|向左转|向右转|左转|右转|掉头)(?=进入|進入|[，,。]|$)"#
+    if let match = text.range(of: pattern, options: .regularExpression) {
+      let clause = String(text[match])
+      for action in ["稍向左转", "稍向右转", "向左转", "向右转", "左转", "右转", "掉头"]
+      where clause.hasSuffix(action) {
+        return from(instruction: action)
+      }
+    }
     let actions: [(Self, [String])] = [
-      (.slightLeft, ["slight left", "bear left", "keep left", "稍向左", "靠左", "左方向", "斜め左"]),
-      (.slightRight, ["slight right", "bear right", "keep right", "稍向右", "靠右", "右方向", "斜め右"]),
+      (.keepLeft, ["keep left", "stay left", "靠左", "保持左侧", "左側を"]),
+      (.keepRight, ["keep right", "stay right", "靠右", "保持右侧", "右側を"]),
+      (.slightLeft, ["slight left", "bear left", "稍向左", "左方向", "斜め左"]),
+      (.slightRight, ["slight right", "bear right", "稍向右", "右方向", "斜め右"]),
       (.uTurn, ["make a u-turn", "make a u turn", "u-turn", "掉头", "掉頭", "uターン"]),
       (.left, ["turn left", "左转", "左轉", "向左转", "向左轉", "左折"]),
       (.right, ["turn right", "右转", "右轉", "向右转", "向右轉", "右折"]),

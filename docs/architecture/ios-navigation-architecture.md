@@ -1973,7 +1973,7 @@ entire RoutePlan for each anchor on each segment.
 The driver can select full, concise, or muted speech without pausing navigation.
 Concise mode omits advance stages and expressway mainline confirmations while
 retaining commit movements and ordinary-road instructions. Volume and installed
-voice selection live in parked settings, whose audition uses the same voice and
+voice selection live in settings, whose audition uses the same voice and
 volume resolution as navigation. Routine test launches substitute silent output
 for this audition as well as navigation speech.
 
@@ -2240,3 +2240,19 @@ and the library remain accessible during navigation for passenger operation,
 without a parking prompt or motion-based lock. Explicit selection validates the
 saved route, closes the previous session, and resolves the new journey from the
 current origin. Invalid files do not tear down the active session.
+
+## Surface instruction languages
+
+`SurfaceGuidancePresentation` projects a recognized provider maneuver into fixed
+wording for the independently selected interface and voice locales. Keep-side
+and turn maneuvers remain distinct. Same-language or unknown instructions retain
+the full provider text and actual declared language. Original street/sign text
+stays visible beside cross-language cues; no translated text can mutate route
+geometry, occurrence identity, or the maneuver icon.
+
+Whole-instruction machine translation is not used for navigation. A native
+translation probe changed a keep-right instruction into a right turn and changed
+a street name. Fixed maneuver wording avoids that semantic change. Explicit
+repetition uses the current localized instruction and retains the existing
+automatic speech ledger. Street-name speech localization remains outside this
+projection.

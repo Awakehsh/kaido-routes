@@ -660,6 +660,7 @@ struct WholeShutoProductView: View {
           VStack(alignment: .trailing, spacing: 6) {
             topBarUtilityButtons
             mapModeControl
+              .fixedSize(horizontal: true, vertical: false)
           }
         }
       }
@@ -3650,6 +3651,16 @@ struct WholeShutoProductView: View {
           .foregroundStyle(KaidoTheme.routeWhite)
           .fixedSize(horizontal: false, vertical: true)
           .accessibilityIdentifier("whole-shuto-guidance-instruction")
+        if model.hasCurrentGuidancePosition,
+          let original = model.activeSurfaceInstruction,
+          original != model.surfaceInstruction(in: languageSettings.interfaceLocale)
+        {
+          Text(original)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(KaidoTheme.nightQuiet)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("whole-shuto-source-instruction")
+        }
       }
 
       Spacer()
@@ -4037,7 +4048,7 @@ struct WholeShutoProductView: View {
     }
     switch model.phase {
     case .surfaceAccess:
-      return model.activeSurfaceInstruction
+      return model.surfaceInstruction(in: languageSettings.interfaceLocale)
         ?? copy.resolve(
           japanese: "\(entryName(route.entryFacility.nameJA))へ進む",
           simplifiedChinese: "前往 \(entryName(route.entryFacility.nameJA))",
@@ -4090,7 +4101,7 @@ struct WholeShutoProductView: View {
           simplifiedChinese: "目的地",
           english: "destination"
         )
-      return model.activeSurfaceInstruction
+      return model.surfaceInstruction(in: languageSettings.interfaceLocale)
         ?? copy.resolve(
           japanese: "\(destination)へ進む",
           simplifiedChinese: "继续前往 \(destination)",
@@ -7002,10 +7013,10 @@ private struct WholeShutoSettingsView: View {
           .accessibilityIdentifier("whole-shuto-voice-settings")
           Text(
             copy.resolve(
-              japanese: "高速道路と走行状態の案内に適用されます。一般道の案内はシステムの地図言語を使用します。",
-              simplifiedChinese: "适用于高速路线和行程状态播报。普通道路指令使用系统地图语言。",
+              japanese: "一般道の曲がる方向は選択した言語で案内し、道路名は地図の原文を表示します。",
+              simplifiedChinese: "普通道路的转向使用所选语言，路名保留地图原文供查看。",
               english:
-                "Applies to expressway and journey announcements. Ordinary-road instructions use the system map language."
+                "Ordinary-road turns use the selected language. Street names remain visible in the original map instruction."
             )
           )
           .font(.footnote)

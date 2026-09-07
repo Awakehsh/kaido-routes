@@ -1750,6 +1750,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(voiceSettings.isEnabled)
     voiceSettings.tap()
     XCTAssertTrue(element("whole-shuto-speech-volume", in: app).waitForExistence(timeout: 5))
+    let audition = element("whole-shuto-voice-audition", in: app)
+    for _ in 0..<3 where !audition.isHittable { app.swipeUp() }
+    XCTAssertTrue(audition.isEnabled)
+    audition.tap()
+    XCTAssertTrue(element("whole-shuto-voice-audition-complete", in: app).waitForExistence(timeout: 5))
     app.navigationBars.buttons["Settings"].tap()
     let history = app.buttons["Drive history"]
     for _ in 0..<3 where !history.isHittable { app.swipeUp() }

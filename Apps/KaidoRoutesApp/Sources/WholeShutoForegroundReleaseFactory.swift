@@ -1,6 +1,7 @@
 import Foundation
 import KaidoAppleAdapters
 import KaidoNavigation
+import KaidoPresentation
 
 @MainActor
 enum WholeShutoForegroundReleaseFactory {
@@ -13,6 +14,9 @@ enum WholeShutoForegroundReleaseFactory {
     speechOutput: (any GuidanceSpeechOutput)? = nil,
     nowMillisecondsProvider: @escaping () -> Int = {
       Int((Date().timeIntervalSince1970 * 1_000).rounded())
+    },
+    languageSelectionProvider: @escaping () -> NavigationLanguageSelection = {
+      WholeShutoProductModel.storedLanguageSelection()
     },
     driveRecordPreferenceStore: UserDefaults = .standard,
     driveHistoryStore: (any DriveHistoryStoring)? = nil
@@ -74,6 +78,7 @@ enum WholeShutoForegroundReleaseFactory {
         },
         liveLocationSource: liveLocationSource,
         nowMillisecondsProvider: nowMillisecondsProvider,
+        languageSelectionProvider: languageSelectionProvider,
         driveRecordPreferenceStore: driveRecordPreferenceStore,
         driveHistoryStore: driveHistoryStore
       )

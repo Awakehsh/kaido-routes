@@ -592,11 +592,11 @@ struct SavedRouteSavePanel: View {
       Text(
         copy.resolve(
           japanese:
-            "RoutePlan、snapshot、全 occurrence を一つの値として保存します。保存だけではナビ可能になりません。",
+            "名前を付けて保存すると、保存したルートから選べます。",
           simplifiedChinese:
-            "RoutePlan、snapshot 与全部 occurrence 会作为一个完整值保存；保存本身不会使路线可导航。",
+            "为路线命名，之后可在已保存路线中选择。",
           english:
-            "The RoutePlan, snapshot, and every occurrence are saved as one value. Saving alone never makes it navigable."
+            "Name this route to find it again in saved routes."
         )
       )
       .font(.system(size: 13, weight: .medium))

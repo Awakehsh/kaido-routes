@@ -602,13 +602,7 @@ final class WholeShutoProductModel: ObservableObject {
     },
     languageSelectionProvider:
       @escaping () -> NavigationLanguageSelection = {
-        let settings = UserDefaultsKaidoLanguagePreferenceStore()
-        return NavigationLanguageSelection(
-          interfaceLocale:
-            settings.interfaceLocale() ?? .simplifiedChinese,
-          guidanceVoiceLocale:
-            settings.guidanceVoiceLocale() ?? .japanese
-        )
+        WholeShutoProductModel.storedLanguageSelection()
       },
     driveRecordPreferenceStore: UserDefaults = .standard,
     driveHistoryStore: (any DriveHistoryStoring)? = nil
@@ -1009,6 +1003,21 @@ final class WholeShutoProductModel: ObservableObject {
 
   var activeSurfaceInstruction: String? {
     activeSurfaceStep?.instruction
+  }
+
+  static func storedLanguageSelection() -> NavigationLanguageSelection {
+    let settings = UserDefaultsKaidoLanguagePreferenceStore()
+    return NavigationLanguageSelection(
+      interfaceLocale: settings.interfaceLocale() ?? .simplifiedChinese,
+      guidanceVoiceLocale: settings.guidanceVoiceLocale() ?? .japanese
+    )
+  }
+
+  func surfaceInstruction(in locale: KaidoReleaseLocale) -> String? {
+    guard let original = activeSurfaceInstruction else { return nil }
+    return SurfaceGuidancePresentation.instruction(
+      original, sourceLanguageCode: activeSurfaceRoute?.guidanceLanguageCode, locale: locale
+    ).text
   }
 
   var activeSurfaceInstructionRemainingMeters: Double? {
@@ -4767,19 +4776,20 @@ final class WholeShutoProductModel: ObservableObject {
       progress.steps.indices.contains(index),
       let routePlanID = selectedRoute?.routePlan.id
     else { return nil }
-    let instruction = progress.steps[index].instruction
+    let originalInstruction = progress.steps[index].instruction
+    let instruction = originalInstruction
       .trimmingCharacters(in: .whitespacesAndNewlines)
     guard !instruction.isEmpty else { return nil }
-    let routeLanguageCode = route.guidanceLanguageCode?
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-    let languageCode = routeLanguageCode.flatMap { $0.isEmpty ? nil : $0 }
-      ?? languageSelectionProvider().guidanceVoiceLocale.speechLanguageCode
+    let localized = SurfaceGuidancePresentation.instruction(
+      originalInstruction, sourceLanguageCode: route.guidanceLanguageCode,
+      locale: languageSelectionProvider().guidanceVoiceLocale
+    )
     let id = "provider.surface.\(phase.rawValue.lowercased()).\(surfaceSpeechGeneration).\(index)"
     return GuidanceSpeechCommand(
       identity: GuidanceSpeechIdentity(
         promptID: id, anchorID: "PROVIDER_SURFACE_STEP", anchorOccurrenceID: id
       ),
-      routePlanID: routePlanID, languageCode: languageCode, spokenText: instruction
+      routePlanID: routePlanID, languageCode: localized.languageCode, spokenText: localized.text
     )
   }
 

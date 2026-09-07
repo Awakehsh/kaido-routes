@@ -575,6 +575,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.remainingWholeLapsAhead, 2)
 
     let occurrenceBeforeDrop = try XCTUnwrap(model.runtimeOccurrenceID)
+    let progressBeforeDrop = model.progressFraction
     let dropped = await model.dropOneLap()
     XCTAssertTrue(dropped)
     let planAfterDrop = try XCTUnwrap(model.selectedRoute).routePlan
@@ -587,10 +588,30 @@ final class WholeShutoProductModelTests: XCTestCase {
       }
     )
     XCTAssertEqual(indexAfter - indexBefore, lapLength)
+    let skippedDistance = threeLapRoute.edges[indexBefore..<indexAfter].reduce(0) { $0 + $1.lengthMeters }
+    XCTAssertEqual(model.progressFraction, progressBeforeDrop + skippedDistance / threeLapRoute.distanceMeters, accuracy: 0.000_001)
     XCTAssertEqual(model.remainingWholeLapsAhead, 1)
     // The plan itself never changed: dropping a lap moves inside it.
     XCTAssertEqual(planAfterDrop, threeLapRoute.routePlan)
     XCTAssertEqual(model.circuitLaps, 3)
+
+    let coordinateBeforeFinish = model.currentCoordinate
+    let progressBeforeFinish = model.progressFraction
+    let recordedLaps = model.driveRecord.completedLaps
+    let destinationBeforeFinish = model.destination
+    ActiveDriveControl.model = model
+    defer { ActiveDriveControl.model = nil }
+    _ = try await DriveControlIntent(action: .finishLap).perform()
+    XCTAssertEqual(model.remainingWholeLapsAhead, 0)
+    XCTAssertEqual(model.currentCoordinate, coordinateBeforeFinish)
+    XCTAssertEqual(model.destination?.coordinate, destinationBeforeFinish?.coordinate)
+    XCTAssertEqual(model.driveRecord.completedLaps, recordedLaps)
+    XCTAssertEqual(model.selectedRoute?.routePlan, threeLapRoute.routePlan)
+    XCTAssertNil(model.presentationProjection)
+    let finishedIndex = try XCTUnwrap(model.runtimeOccurrenceID.flatMap { threeLapRoute.routePlan.occurrence(id: $0)?.index })
+    XCTAssertEqual(finishedIndex - indexAfter, lapLength)
+    let remainingLapDistance = threeLapRoute.edges[indexAfter..<finishedIndex].reduce(0) { $0 + $1.lengthMeters }
+    XCTAssertEqual(model.progressFraction, progressBeforeFinish + remainingLapDistance / threeLapRoute.distanceMeters, accuracy: 0.000_001)
 
     // Adding one cannot move inside the plan, so it swaps onto a new release
     // and rejoins where the matcher puts the car.

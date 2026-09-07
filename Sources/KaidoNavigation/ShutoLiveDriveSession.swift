@@ -66,6 +66,12 @@ public actor ShutoLiveDriveSession {
     return await session.skipOneLap()
   }
 
+  @discardableResult
+  public func skipRemainingLaps() async throws -> String? {
+    await start()
+    return try await session.skipRemainingLaps()
+  }
+
   public func remainingWholeLapsAhead() async -> Int {
     await session.remainingWholeLapsAhead
   }

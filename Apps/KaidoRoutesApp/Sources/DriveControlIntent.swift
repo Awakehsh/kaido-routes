@@ -2,7 +2,7 @@ import AppIntents
 import KaidoAppleAdapters
 
 enum DriveControlAction: String, AppEnum {
-  case repeatDirection, mute, unmute, addLap, removeLap, rest, resume, endNavigation
+  case repeatDirection, mute, unmute, addLap, removeLap, finishLap, rest, resume, endNavigation
 
   static let typeDisplayRepresentation: TypeDisplayRepresentation = "Drive action"
   static let caseDisplayRepresentations: [Self: DisplayRepresentation] = [
@@ -11,6 +11,7 @@ enum DriveControlAction: String, AppEnum {
     .unmute: "Unmute guidance",
     .addLap: "Add one lap",
     .removeLap: "Remove one lap",
+    .finishLap: "Finish this lap",
     .rest: "Take a break",
     .resume: "Resume navigation",
     .endNavigation: "End navigation",
@@ -71,6 +72,11 @@ struct DriveControlIntent: AppIntent {
     case .removeLap:
       if await model.dropOneLap() { return .result(dialog: "One lap removed.") }
       return .result(dialog: "There is no complete remaining lap to remove.")
+    case .finishLap:
+      if await model.finishCurrentLap() {
+        return .result(dialog: "Finish this lap, then follow the planned exit and destination.")
+      }
+      return .result(dialog: "There are no later complete laps to remove at this position.")
     case .rest:
       if model.liveLocationState == .resting {
         return .result(dialog: "Navigation is paused for your break.")

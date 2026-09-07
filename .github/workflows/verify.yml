@@ -154,11 +154,11 @@ jobs:
           DEVICE_STATE: ${{ steps.simulator.outputs.device-state }}
         run: |
           set -euo pipefail
-          if [[ "$DEVICE_STATE" != "Booted" ]]; then
-            xcrun simctl boot "$DEVICE_ID"
-          fi
           (
             set -euo pipefail
+            if [[ "$DEVICE_STATE" != "Booted" ]]; then
+              xcrun simctl boot "$DEVICE_ID"
+            fi
             xcrun simctl bootstatus "$DEVICE_ID"
             xcrun simctl location "$DEVICE_ID" set 35.6586,139.7454
             xcrun simctl ui "$DEVICE_ID" content_size large

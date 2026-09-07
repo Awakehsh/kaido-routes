@@ -87,6 +87,9 @@ genuinely changed, change the scenario and say so.
   covering why, impact, and verification.
 - `main` is protected: pull requests only, `Verification gate` must pass, and
   an outside contribution needs maintainer approval. Merges are squashed.
+- Arm `gh pr merge --auto --squash --delete-branch` and move on rather than
+  watching the run. The iPhone job takes roughly eight minutes, most of it
+  compiling and exercising the simulator.
 
 ## Evidence, data, and licensing
 

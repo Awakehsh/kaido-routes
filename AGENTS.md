@@ -36,9 +36,12 @@
 - Deliver through a short-lived branch in a Git worktree and a pull request.
   Name branches `feat/`, `fix/`, `perf/`, `refactor/`, `chore/`, or `docs/`
   followed by a short description of the actual change. Open the pull request,
-  wait for the `Verification gate` check, then squash-merge and delete the
-  branch. The implementing agent merges its own pull request; no separate
-  human approval is required inside Kaido scope.
+  arm it with `gh pr merge --auto --squash --delete-branch`, and continue
+  working. GitHub merges it when `Verification gate` passes. Do not sit and
+  watch a run: verification is asynchronous, and blocking on it is the one
+  habit that makes this workflow feel slower than pushing to `main`. The
+  implementing agent merges its own pull request; no separate human approval is
+  required inside Kaido scope.
 - Push straight to `main` only for a single-file documentation revision, or
   when the pull-request path itself is unavailable. Record the reason in the
   commit body. Never force-push `main`; never rewrite pushed history.
@@ -175,7 +178,9 @@
 6. Exercise the real App path on a simulator and connected device when
    applicable; distinguish runtime proof from field proof.
 7. Update authoritative docs, commit the milestone, open the pull request,
-   and squash-merge it once `Verification gate` passes.
+   and arm auto-merge. Check the outcome when the next natural pause arrives;
+   a failed `Verification gate` leaves the branch unmerged and is picked up
+   then, not by waiting on it now.
 8. Continue to the next executable product gap without waiting for another
    prompt. Stop only at a genuine external boundary and leave one exact
    continuation command or artifact.

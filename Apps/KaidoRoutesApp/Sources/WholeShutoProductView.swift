@@ -7507,20 +7507,24 @@ func routeDisplayLabel(
   return "\(shield) · \(officialName)"
 }
 
+/// Shield grounds, each dark enough that `KaidoTheme.routeWhite` route marks
+/// clear 4.5:1 at the small sizes the shields are actually printed at. The
+/// hues stay the operator's route families; the amber `7`/`10` ground moves
+/// furthest because a highway-bright orange cannot carry light text.
 func routeColor(_ routeID: String) -> Color {
   switch routeID {
   case "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5":
-    return Color(hex: 0x2877B7)
+    return Color(hex: 0x2670AD)
   case "C2", "6_MUKOJIMA", "6_MISATO", "K6":
-    return Color(hex: 0x2F8E63)
+    return Color(hex: 0x297A55)
   case "B", "9", "11", "K5":
-    return Color(hex: 0x8065A7)
+    return Color(hex: 0x7B5FA4)
   case "3", "K1", "K2", "K3":
     return Color(hex: 0x34658D)
   case "4", "K7_YOKOHAMA_KITA", "K7_YOKOHAMA_HOKUSEI":
-    return Color(hex: 0xC84E45)
+    return Color(hex: 0xBE4238)
   case "7", "10":
-    return Color(hex: 0xC9822E)
+    return Color(hex: 0x966122)
   case "2":
     return Color(hex: 0x7C5E99)
   default:

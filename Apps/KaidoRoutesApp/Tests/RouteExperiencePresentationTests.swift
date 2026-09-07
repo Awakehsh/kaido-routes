@@ -29,6 +29,29 @@ final class RouteExperiencePresentationTests: XCTestCase {
     }
   }
 
+  /// Route marks are printed small — 10pt on the catalog card — so every
+  /// shield ground has to carry `routeWhite` at the 4.5:1 normal-text bar,
+  /// not the 3:1 large-text one the audit falls back to.
+  func testRouteShieldGroundsCarryRouteWhiteAtSmallSizes() {
+    let routeIDs = [
+      "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5",
+      "C2", "6_MUKOJIMA", "6_MISATO", "K6",
+      "B", "9", "11", "K5",
+      "3", "K1", "K2", "K3",
+      "4", "K7_YOKOHAMA_KITA", "K7_YOKOHAMA_HOKUSEI",
+      "7", "10", "2", "Y",
+    ]
+    for routeID in routeIDs {
+      for style in [UIUserInterfaceStyle.light, .dark] {
+        XCTAssertGreaterThanOrEqual(
+          contrast(KaidoTheme.routeWhite, routeColor(routeID), style: style),
+          4.5,
+          "shield \(shieldLabel(routeID)) is unreadable in \(style.rawValue)"
+        )
+      }
+    }
+  }
+
   func testMapLabelsRemainReadableInDayAndNightPalettes() {
     for style in [UIUserInterfaceStyle.light, .dark] {
       for label in [KaidoMapPalette.label, KaidoMapPalette.junctionLabel, KaidoMapPalette.pa] {

@@ -916,6 +916,38 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
   }
 
+  func testLiveStartWaitsForSurfaceRouteRequestsToFinish() async throws {
+    let resolver = WholeShutoGatedSurfaceRouteResolver()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: resolver, checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: WholeShutoRecordingSpeechOutput())
+    model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6812, longitude: 139.7671))
+    model.prepareCustomRouteDraft()
+    model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
+    model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
+    XCTAssertTrue(model.applyCustomRoute())
+    for _ in 0..<300 where model.isPreparingLiveNavigation {
+      try await Task.sleep(for: .milliseconds(25))
+    }
+    XCTAssertFalse(model.isPreparingLiveNavigation)
+    XCTAssertTrue(model.isUpdatingSurfaceRoute)
+    XCTAssertFalse(model.canStartLiveNavigation)
+    XCTAssertEqual(model.liveNavigationBlockerCode, "SURFACE_ROUTE_PREPARING")
+    let prematureStart = await model.startLiveJourney()
+    XCTAssertFalse(prematureStart)
+    XCTAssertEqual(model.phase, .review)
+    await resolver.release()
+    for _ in 0..<300 where model.isUpdatingSurfaceRoute {
+      try await Task.sleep(for: .milliseconds(25))
+    }
+    XCTAssertTrue(model.canStartLiveNavigation)
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started)
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    model.reset()
+  }
+
   func testLiveJourneyStartsAtCurrentPositionWithSurfaceInstruction()
     async throws
   {
@@ -4650,4 +4682,22 @@ private final class WholeShutoRecordingSpeechOutput:
   }
 
   func stop() {}
+}
+
+private actor WholeShutoGatedSurfaceRouteResolver: WholeShutoSurfaceRouteResolving {
+  private var isReleased = false
+  private var pending: [CheckedContinuation<Void, Never>] = []
+
+  func release() {
+    isReleased = true
+    let requests = pending
+    pending.removeAll()
+    for request in requests { request.resume() }
+  }
+
+  func route(from origin: ShutoCoordinate, to destination: ShutoCoordinate,
+    preference: WholeShutoSurfaceRoutePreference) async -> WholeShutoSurfaceRoute? {
+    if !isReleased { await withCheckedContinuation { pending.append($0) } }
+    return await WholeShutoPreviewSurfaceRouteResolver().route(from: origin, to: destination, preference: preference)
+  }
 }

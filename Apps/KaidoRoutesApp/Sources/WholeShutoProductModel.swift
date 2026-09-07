@@ -782,6 +782,7 @@ final class WholeShutoProductModel: ObservableObject {
     WholeShutoRouteReleaseAuthority.ambiguousReleaseCode
   static let liveNavigationPreparingCode =
     "WHOLE_SHUTO_NAVIGATION_PREPARING"
+  static let surfaceRoutePreparingCode = "SURFACE_ROUTE_PREPARING"
   static let liveNavigationRuntimeInvalidCode =
     "WHOLE_SHUTO_NAVIGATION_RUNTIME_INVALID"
 
@@ -789,6 +790,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// admission matches the full selected RoutePlan value.
   var canStartLiveNavigation: Bool {
     !isStartingLiveNavigation
+      && !isUpdatingSurfaceRoute
       && matchingLiveAdmissions.count == 1
       && matchingLiveRuntimeAssets != nil
       && matchingPreparedLiveRuntime != nil
@@ -798,6 +800,9 @@ final class WholeShutoProductModel: ObservableObject {
   var liveNavigationBlockerCode: String? {
     if isStartingLiveNavigation {
       return Self.liveNavigationPreparingCode
+    }
+    if isUpdatingSurfaceRoute {
+      return Self.surfaceRoutePreparingCode
     }
     let count = matchingLiveAdmissions.count
     if count == 1,
@@ -3247,6 +3252,10 @@ final class WholeShutoProductModel: ObservableObject {
       phase == .review,
       let route = selectedRoute
     else {
+      return false
+    }
+    guard !isUpdatingSurfaceRoute else {
+      failureCode = Self.surfaceRoutePreparingCode
       return false
     }
     let providerAccessRoute = accessRoute

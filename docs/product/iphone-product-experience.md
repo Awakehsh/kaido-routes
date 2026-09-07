@@ -349,6 +349,9 @@ Only an actionable blocker expands automatically. Evidence sources and release
 identity remain in a secondary detail sheet. Review preserves the exact selected
 journey for both start intents; replay remains synthetic, while navigation stays
 disabled unless an authority-bearing release admits it.
+Navigation also waits for any in-flight ordinary-road access and egress requests
+to finish. An early start request stays in Review, so a pending access leg cannot
+be mistaken for a journey that begins at the expressway entrance.
 
 The compiled whole-Shuto runtime carries a deterministic asset identity: one
 hash binds the complete decoded graph plus its bounds, limitations, source, and

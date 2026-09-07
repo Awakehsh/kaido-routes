@@ -633,6 +633,12 @@ struct WholeShutoJourneyReviewView: View {
 
   private func liveNavigationBlockerMessage(_ code: String) -> String {
     switch code {
+    case WholeShutoProductModel.surfaceRoutePreparingCode:
+      copy.resolve(
+        japanese: "入口までと出口からの一般道ルートを計算しています。",
+        simplifiedChinese: "正在计算入口前和出口后的普通道路路线。",
+        english: "Calculating local-road routes to the entrance and from the exit."
+      )
     case WholeShutoProductModel.liveNavigationPreparingCode:
       copy.resolve(
         japanese: "このルートの完全な経路、分岐案内、復帰経路を確認しています。",

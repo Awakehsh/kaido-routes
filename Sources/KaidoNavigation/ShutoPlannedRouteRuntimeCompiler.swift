@@ -748,7 +748,7 @@ public enum ShutoPlannedRouteRuntimeCompiler {
       }
     )
     var claimedGuidanceAnchorOccurrenceIDs: Set<String> = []
-    let releasedGuidance = guidanceMatches.compactMap {
+    let commitGuidance = guidanceMatches.compactMap {
       match -> ReleasedGuidanceDefinition? in
       guard
         let decisionZone =
@@ -837,6 +837,67 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           )
         )
       )
+    }
+    let releasedGuidance = commitGuidance.flatMap { commit -> [ReleasedGuidanceDefinition] in
+      guard let movement = route.routePlan.occurrence(id: commit.frameTemplate.movementOccurrenceID),
+        let commitAnchor = route.routePlan.occurrence(id: commit.anchor.occurrenceID)
+      else { return [commit] }
+      let previousMovementIndex = commitGuidance.compactMap {
+        route.routePlan.occurrence(id: $0.frameTemplate.movementOccurrenceID)?.index
+      }.filter { $0 < movement.index }.max() ?? 0
+      var distance = 0.0
+      var prepareAnchorIndex: Int?
+      // Keep preparation on the current approach, after the preceding
+      // decision. Closely spaced movements retain their compound/commit cue.
+      for index in stride(from: movement.index - 1, through: previousMovementIndex, by: -1) {
+        distance += route.edges[index].lengthMeters
+        if distance > 900 { break }
+        if distance >= commit.triggerDistanceMeters + 200,
+          index < commitAnchor.index,
+          !claimedGuidanceAnchorOccurrenceIDs.contains(route.routePlan.occurrences[index].id)
+        {
+          prepareAnchorIndex = index
+        }
+      }
+      guard let prepareAnchorIndex else { return [commit] }
+      let anchor = route.routePlan.occurrences[prepareAnchorIndex]
+      claimedGuidanceAnchorOccurrenceIDs.insert(anchor.id)
+      let template = commit.frameTemplate
+      var preparationContent: [KaidoReleaseLocale: LocalizedGuidanceContent] = [:]
+      for (locale, original) in template.presentationSource.localizedContent {
+        let prefix: String
+        switch locale {
+        case .japanese: prefix = "この先の分岐で、"
+        case .simplifiedChinese: prefix = "前方分岔，"
+        case .english: prefix = "At the upcoming junction, "
+        }
+        preparationContent[locale] = LocalizedGuidanceContent(
+          displayText: prefix + original.displayText,
+          spokenText: prefix + original.spokenText,
+          spokenForms: original.spokenForms,
+          preservedJapaneseSignText: original.preservedJapaneseSignText
+        )
+      }
+      let prepare = ReleasedGuidanceDefinition(
+        anchor: GuidanceAnchorDefinition(
+          occurrenceID: anchor.id, anchorID: "PREPARE",
+          promptID: String(commit.anchor.promptID.dropLast("commit".count)) + "prepare"
+        ),
+        triggerDistanceMeters: 900,
+        frameTemplate: GuidanceFrameTemplate(
+          movementOccurrenceID: template.movementOccurrenceID,
+          decisionZoneID: template.decisionZoneID, stage: .prepare,
+          decisionPointNameJapanese: template.decisionPointNameJapanese,
+          localizedDecisionPointNames: template.localizedDecisionPointNames,
+          maneuver: template.maneuver, lanePreparation: .none,
+          presentationSource: GuidancePresentationSource(
+            routeShields: template.presentationSource.routeShields,
+            japaneseSignText: template.presentationSource.japaneseSignText,
+            localizedContent: preparationContent
+          )
+        )
+      )
+      return [prepare, commit]
     }
     let issues = NavigationRuntimeConfigurationValidator.issues(
       routePlan: route.routePlan,

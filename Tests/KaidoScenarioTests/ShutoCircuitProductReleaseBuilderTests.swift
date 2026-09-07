@@ -22,7 +22,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
       release.navigation.bundle.routePlan.occurrences.count
         == route.edges.count
     )
-    #expect(release.navigation.bundle.releasedGuidance.count == 5)
+    #expect(release.navigation.bundle.releasedGuidance.count == 10)
     #expect(release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates[0]
@@ -48,7 +48,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 8)
+    #expect(release.navigation.bundle.releasedGuidance.count == 14)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )
@@ -59,7 +59,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
       }
     )
     let approachID =
-      "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-08-15"
+      "shutoko.entry.shuto.ic.b.chidoricho.approach.2026-09-07"
     #expect(
       release.navigation.bundle.runtimePolicy.entryTransition
         .directedEdgeIDs.first == approachID
@@ -90,7 +90,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 24)
+    #expect(release.navigation.bundle.releasedGuidance.count == 48)
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )
@@ -133,7 +133,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 9)
+    #expect(release.navigation.bundle.releasedGuidance.count == 14)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -155,7 +155,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 10)
+    #expect(release.navigation.bundle.releasedGuidance.count == 17)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -278,7 +278,8 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 6)
+    #expect(release.navigation.bundle.releasedGuidance.filter { $0.frameTemplate.stage == .commit }.count == 6)
+    #expect(release.navigation.bundle.releasedGuidance.contains { $0.frameTemplate.stage == .prepare })
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,

@@ -1478,7 +1478,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(speech.exists)
     XCTAssertTrue(
-      ["已安排", "播报中", "已播报"].contains(
+      ["已安排", "播报中", "已播报"].map { "全部播报 · " + $0 }.contains(
         speech.value as? String ?? ""
       )
     )
@@ -1541,7 +1541,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(speech.exists)
     XCTAssertTrue(
-      ["已安排", "播报中", "已播报"].contains(
+      ["已安排", "播报中", "已播报"].map { "全部播报 · " + $0 }.contains(
         speech.value as? String ?? ""
       )
     )
@@ -1581,7 +1581,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(speech.exists)
     XCTAssertTrue(
-      ["已安排", "播报中", "已播报"].contains(
+      ["已安排", "播报中", "已播报"].map { "全部播报 · " + $0 }.contains(
         speech.value as? String ?? ""
       )
     )
@@ -1621,7 +1621,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(speech.exists)
     XCTAssertTrue(
-      ["已安排", "播报中", "已播报"].contains(
+      ["已安排", "播报中", "已播报"].map { "全部播报 · " + $0 }.contains(
         speech.value as? String ?? ""
       )
     )

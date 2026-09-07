@@ -673,12 +673,15 @@ their reviewed branch path, Japanese sign target, and shields while stating
 that lane indices are not released. Any source-hash, snapshot, direction, node,
 edge, or occurrence drift suppresses the inset.
 
-For the current candidate snapshot, the 27 exact definitions cover every
-divergent JCT on both C1 catalog loops and on the Bayshore corridor in both
-directions. The route planner promotes each exact reviewed outgoing edge
+The released movement catalog covers the admitted exact junction approaches.
+The route planner promotes each exact reviewed outgoing edge
 occurrence to `JUNCTION_MOVEMENT`; `ShutoPlannedRouteRuntimeCompiler` then binds
-its incoming occurrence as the anchor and compiles one DecisionZone plus one
-commit-stage `ReleasedGuidanceDefinition` for that occurrence. The catalog
+the approach occurrences as anchors and compiles one DecisionZone with a final
+commit cue and, where the approach allows it, a preparation cue up to 900 meters
+ahead. Preparation stays after the preceding decision and needs at least 200
+meters of separation from the commit threshold. Short approaches retain only
+their commit or reviewed compound instruction. Each stage emits once, with no
+historical preparation playback after a skipped anchor or a later commit. The catalog
 preserves approach-specific Japanese sign targets, route shields, and a reviewed
 left, right, or mainline-continuation instruction. The App projects phone and
 voice from the same `NavigationSessionUpdate`. None of these definitions

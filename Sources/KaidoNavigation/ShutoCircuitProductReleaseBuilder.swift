@@ -36,8 +36,8 @@ public enum ShutoCircuitProductReleaseBuilder {
   public static let circuitID = "shuto.circuit.c1-inner"
   public static let entryFacilityID = "shuto.ic.c1.shibakouen"
   public static let exitFacilityID = "shuto.ic.c1.shiodome"
-  public static let releaseDate = "2026-08-15"
-  public static let releasedAt = "2026-08-15T00:00:00+09:00"
+  public static let releaseDate = "2026-09-07"
+  public static let releasedAt = "2026-09-07T00:00:00+09:00"
   public static let wanganCircuitID =
     "shuto.circuit.wangan-daikoku-run"
   public static let wanganEntryFacilityID =
@@ -350,10 +350,10 @@ public enum ShutoCircuitProductReleaseBuilder {
     )
     let egressOptionID =
       releaseKey == "c1-inner-shibakoen-shiodome"
-      ? "shutoko.egress.c1-shiodome-handoff.2026-08-15"
-      : "shutoko.egress.\(releaseKey)-handoff.2026-08-15"
+      ? "shutoko.egress.c1-shiodome-handoff.2026-09-07"
+      : "shutoko.egress.\(releaseKey)-handoff.2026-09-07"
     let runtimePolicy = ReleasedNavigationRuntimePolicy(
-      id: "shutoko.runtime.\(releaseKey).2026-08-15",
+      id: "shutoko.runtime.\(releaseKey).2026-09-07",
       networkSnapshotID: database.networkSnapshotID,
       routePlanID: route.routePlan.id,
       entryTransition: EntryTransition(
@@ -388,7 +388,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       movements: reviewedMovements
     )
     let navigationArtifact = NavigationReleaseArtifact(
-      releaseID: "shutoko.navigation.\(releaseKey).2026-08-15",
+      releaseID: "shutoko.navigation.\(releaseKey).2026-09-07",
       releasedAt: releasedAt,
       editorCatalogID: editor.catalogID,
       networkSnapshot: networkSnapshot,
@@ -417,7 +417,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       releaseKey: releaseKey
     )
     let product = KaidoProductReleaseArtifact(
-      releaseID: "shutoko.product.\(releaseKey).2026-08-15",
+      releaseID: "shutoko.product.\(releaseKey).2026-09-07",
       releasedAt: releasedAt,
       runtimeUse: KaidoProductRuntimeUseDeclaration(
         evidenceScope: .releasedRoad,
@@ -537,7 +537,7 @@ public enum ShutoCircuitProductReleaseBuilder {
         )
       }
     )
-    let presentationID = "\(route.routePlan.id).editor-presentation.2026-08-15"
+    let presentationID = "\(route.routePlan.id).editor-presentation.2026-09-07"
     let entranceTitle: [KaidoReleaseLocale: String]
     switch releaseKey {
     case "c1-inner-shibakoen-shiodome":
@@ -609,7 +609,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       }
     )
     return EditorAssets(
-      catalogID: "\(route.routePlan.id).editor-catalog.2026-08-15",
+      catalogID: "\(route.routePlan.id).editor-catalog.2026-09-07",
       catalog: catalog,
       presentation: presentation
     )
@@ -663,7 +663,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       } == true
     if distance > 1, distance <= 75 || isBoundedMatchedRamp {
       let virtualID =
-        "shutoko.entry.\(route.entryFacility.facilityID).approach.2026-08-15"
+        "shutoko.entry.\(route.entryFacility.facilityID).approach.2026-09-07"
       return ReleasedEntryApproach(
         transitionEdgeIDs: [virtualID, first.edgeID],
         virtualMatcherEdge: RouteMatcherDirectedEdge(
@@ -793,7 +793,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       edges.sort { $0.id < $1.id }
     }
     return RouteMatcherCorridor(
-      id: "\(assets.matcherCorridor.id).release.2026-08-15",
+      id: "\(assets.matcherCorridor.id).release.2026-09-07",
       networkSnapshotID: assets.matcherCorridor.networkSnapshotID,
       routePlanID: assets.matcherCorridor.routePlanID,
       edges: edges,
@@ -1010,7 +1010,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       sourceReferenceIDs: [sourceID]
     )
     let topologyID =
-      "shutoko.atlas.\(releaseKey).topology.2026-08-15"
+      "shutoko.atlas.\(releaseKey).topology.2026-09-07"
     let topology = RouteAtlasTopologySlice(
       id: topologyID,
       networkSnapshotID: database.networkSnapshotID,
@@ -1062,7 +1062,7 @@ public enum ShutoCircuitProductReleaseBuilder {
       )
     }
     let definition = RouteAtlasDefinition(
-      id: "shutoko.atlas.\(releaseKey).2026-08-15",
+      id: "shutoko.atlas.\(releaseKey).2026-09-07",
       networkSnapshotID: database.networkSnapshotID,
       routePlanID: route.routePlan.id,
       topologySliceID: topologyID,

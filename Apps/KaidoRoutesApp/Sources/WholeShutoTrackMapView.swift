@@ -582,7 +582,7 @@ struct WholeShutoTrackMapView: View {
               with: .color(
                 (column + row) % 2 == 0
                   ? Color.white.opacity(0.92)
-                  : Palette.plate
+                  : KaidoTheme.night
               )
             )
           }
@@ -644,7 +644,7 @@ struct WholeShutoTrackMapView: View {
       let isNext = mark.id == nextMark?.id
       let name = mark.nameJA.replacingOccurrences(of: "JCT・", with: "・")
       let title: String
-      if isNext, routeDistanceMeters > 0 {
+      if isNext, mark.kind != .junction, routeDistanceMeters > 0 {
         let remaining =
           (mark.fraction - traveled) * routeDistanceMeters
         title = "\(distanceText(remaining)) \(name)"
@@ -684,7 +684,7 @@ struct WholeShutoTrackMapView: View {
       let tint: Color =
         switch mark.kind {
         case .junction: Palette.junctionLabel
-        case .parkingArea: KaidoTheme.confirmedGreen
+        case .parkingArea: Palette.pa
         case .interchange: Palette.label
         }
       labels.append(
@@ -696,7 +696,7 @@ struct WholeShutoTrackMapView: View {
                 weight: mark.kind == .junction || isNext ? .bold : .semibold
               )
             )
-            .foregroundColor(isNext ? Color.white : tint),
+            .foregroundColor(isNext ? Palette.junctionLabel : tint),
           plate: plate,
           leaderFrom: center,
           accent: isNext ? Palette.position : nil
@@ -728,7 +728,7 @@ struct WholeShutoTrackMapView: View {
           ),
           cornerRadius: 2
         )
-        context.fill(square, with: .color(KaidoTheme.confirmedGreen))
+        context.fill(square, with: .color(Palette.pa))
         context.draw(
           Text("P")
             .font(.system(size: 5.5, weight: .black))

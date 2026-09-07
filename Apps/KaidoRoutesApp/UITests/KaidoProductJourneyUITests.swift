@@ -1744,6 +1744,22 @@ final class KaidoProductJourneyUITests: XCTestCase {
       .completed
     )
 
+    element("whole-shuto-settings", in: app).tap()
+    let voiceSettings = element("whole-shuto-voice-settings", in: app)
+    XCTAssertTrue(voiceSettings.waitForExistence(timeout: 5))
+    XCTAssertTrue(voiceSettings.isEnabled)
+    voiceSettings.tap()
+    XCTAssertTrue(element("whole-shuto-speech-volume", in: app).waitForExistence(timeout: 5))
+    app.navigationBars.buttons["Settings"].tap()
+    let history = app.buttons["Drive history"]
+    for _ in 0..<3 where !history.isHittable { app.swipeUp() }
+    XCTAssertTrue(history.isEnabled)
+    history.tap()
+    XCTAssertTrue(app.navigationBars["Drive history"].waitForExistence(timeout: 5))
+    app.navigationBars.buttons["Settings"].tap()
+    app.buttons["whole-shuto-settings-done"].tap()
+    XCTAssertEqual(product.value as? String, "SURFACE_ACCESS")
+
     XCUIDevice.shared.press(.home)
     let backgrounded = XCTNSPredicateExpectation(
       predicate: NSPredicate { object, _ in

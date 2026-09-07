@@ -19,6 +19,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotNil(output.active)
     model.evaluateLiveLocationFreshness(atMilliseconds: 100_000)
     XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertFalse(model.hasCurrentGuidancePosition)
+    XCTAssertNil(model.activeJunctionInsetPrompt)
     XCTAssertEqual(output.active?.anchorID, "JOURNEY_STATUS")
     XCTAssertGreaterThan(output.stopCount, stops)
     XCTAssertTrue(output.commands.last?.identity.promptID.contains("positionLost") == true)
@@ -42,6 +44,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     await model.consumeLiveObservationForTesting(
       Self.liveLocationEnvelope(
         id: "speech-recovery.fix-return", coordinate: coordinate, atMilliseconds: 30_000))
+    XCTAssertTrue(model.hasCurrentGuidancePosition)
     XCTAssertEqual(model.activeSurfaceInstruction, "Turn left at A")
     XCTAssertEqual(output.commands.map(\.spokenText), ["Continue straight", "Turn left at A"])
     model.reset()
@@ -109,6 +112,7 @@ final class WholeShutoProductModelTests: XCTestCase {
         timestamp: Date(timeIntervalSince1970: observedAt))
       await model.consumeForegroundNavigationLocations([location], receivedAt: Date(timeIntervalSince1970: 30))
       XCTAssertEqual(model.liveLocationState, .degraded)
+      XCTAssertFalse(model.hasCurrentGuidancePosition)
       XCTAssertEqual(model.progressFraction, 0)
       XCTAssertEqual(output.commands.filter { $0.identity.anchorID == "PROVIDER_SURFACE_STEP" }.count, 1)
       model.reset()

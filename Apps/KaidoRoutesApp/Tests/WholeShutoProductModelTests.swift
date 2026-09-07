@@ -30,6 +30,26 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testLocalizedSurfaceSpeechKeepsTheSelectedRouteAndInterfaceText() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output, guidanceLocale: .japanese)
+    model.setSpeechMode(.full)
+    let route = try XCTUnwrap(model.accessRoute)
+    let plan = try XCTUnwrap(model.selectedRoute?.routePlan)
+    await model.consumeLiveObservationForTesting(Self.liveLocationEnvelope(
+      id: "translated-surface.current", coordinate: try XCTUnwrap(route.coordinates.first), atMilliseconds: 1_000))
+    let localized = "そのまま直進してください"
+    XCTAssertEqual(model.surfaceInstruction(in: .english), "Continue on local road")
+    XCTAssertEqual(model.currentInstructionForRepeat, localized)
+    XCTAssertTrue(model.repeatGuidance())
+    XCTAssertEqual(output.commands.last?.spokenText, localized)
+    XCTAssertEqual(output.commands.last?.languageCode, "ja-JP")
+    XCTAssertEqual(model.accessRoute, route)
+    XCTAssertEqual(model.selectedRoute?.routePlan, plan)
+    model.reset()
+  }
+
   func testSpeechRecoveryCurrentStepPrecedesPreviewAfterFixGap() async throws {
     let output = SpeechRecoveryAppOutput()
     output.autoFinish = true
@@ -121,12 +141,16 @@ final class WholeShutoProductModelTests: XCTestCase {
 
   private func speechRecoveryModel(
     output: SpeechRecoveryAppOutput,
-    resolver: any WholeShutoSurfaceRouteResolving = WholeShutoInstructionSurfaceRouteResolver()
+    resolver: any WholeShutoSurfaceRouteResolving = WholeShutoInstructionSurfaceRouteResolver(),
+    guidanceLocale: KaidoReleaseLocale = .english
   ) async throws -> WholeShutoProductModel {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: resolver, checkpointStore: nil,
       liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
-      speechOutput: output, nowMillisecondsProvider: { 1_000 })
+      speechOutput: output, nowMillisecondsProvider: { 1_000 },
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: guidanceLocale)
+      })
     model.selectCurrentOrigin(ShutoCoordinate(latitude: 35.6812, longitude: 139.7671))
     model.prepareCustomRouteDraft()
     model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
@@ -878,7 +902,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoInstructionSurfaceRouteResolver(),
       checkpointStore: nil,
-      speechOutput: output
+      speechOutput: output,
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      }
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
@@ -934,7 +961,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoMultiStepSurfaceRouteResolver(),
       checkpointStore: nil,
-      speechOutput: output
+      speechOutput: output,
+      languageSelectionProvider: {
+        NavigationLanguageSelection(interfaceLocale: .english, guidanceVoiceLocale: .english)
+      }
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)

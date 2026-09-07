@@ -93,12 +93,12 @@ struct WholeShutoVoiceSettingsView: View {
         .accessibilityIdentifier("whole-shuto-installed-voice")
         Text(voice.auditionText).font(.body)
         Button {
-          voice.audition(isVehicleMoving: model.isLiveDrive)
+          voice.audition()
         } label: {
           Label(copy.resolve(japanese: "声を試す", simplifiedChinese: "试听声音", english: "Preview voice"),
             systemImage: "speaker.wave.2")
         }
-        .disabled(!voice.canAudition || model.isLiveDrive)
+        .disabled(!voice.canAudition)
         .accessibilityIdentifier("whole-shuto-voice-audition")
         if case .speaking = voice.state {
           Button(copy.resolve(japanese: "停止", simplifiedChinese: "停止试听", english: "Stop preview")) { voice.stop() }
@@ -121,9 +121,9 @@ struct WholeShutoVoiceSettingsView: View {
         }
       } footer: {
         Text(copy.resolve(
-          japanese: "端末にインストール済みの声を使用します。停車中に、実際に使うスピーカーで音量を確認してください。",
-          simplifiedChinese: "使用设备已安装的声音。请在停车时，通过实际使用的扬声器确认音量。",
-          english: "Uses voices installed on this device. Check the volume through your driving audio output while parked."
+          japanese: "端末にインストール済みの声を使用します。",
+          simplifiedChinese: "使用设备已安装的声音。",
+          english: "Uses voices installed on this device."
         ))
       }
     }

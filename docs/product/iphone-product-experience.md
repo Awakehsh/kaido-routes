@@ -493,3 +493,16 @@ facilities, durations, and current-origin scenarios. Those values are
 interaction examples only. They do not represent a released road dataset, live
 traffic state, toll quote, navigation-ready route, or the accepted route-first
 home.
+
+## Ordinary-road guidance languages
+
+Ordinary-road turn cues use the independently selected interface and guidance
+voice languages. A recognized maneuver has fixed Japanese, Chinese, and English
+wording, with keep-left/right distinct from turning left/right. The original
+provider instruction remains visible below a localized cue so street names and
+sign references are not rewritten. The route and source-based maneuver icon stay
+unchanged. Same-language and unrecognized instructions retain the provider's full
+text and declared language. Street-name speech localization is not claimed.
+
+These maneuver phrases are bundled and require no translation-model download.
+Voice settings and audition remain available during navigation for passengers.

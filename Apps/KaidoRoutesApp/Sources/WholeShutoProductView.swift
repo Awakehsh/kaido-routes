@@ -6999,7 +6999,6 @@ private struct WholeShutoSettingsView: View {
             Label(copy.resolve(japanese: "声と案内", simplifiedChinese: "声音与播报", english: "Voice and guidance"),
               systemImage: "speaker.wave.2")
           }
-          .disabled(model.isLiveDrive)
           .accessibilityIdentifier("whole-shuto-voice-settings")
           Text(
             copy.resolve(
@@ -7113,7 +7112,6 @@ private struct WholeShutoSettingsView: View {
           } label: {
             Label(copy.resolve(japanese: "走行履歴", simplifiedChinese: "行程记录", english: "Drive history"), systemImage: "clock.arrow.circlepath")
           }
-          .disabled(model.isLiveDrive && model.phase != .completed)
         } footer: {
           Text(
             copy.resolve(

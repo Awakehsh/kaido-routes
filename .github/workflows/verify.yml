@@ -206,3 +206,18 @@ jobs:
             ${{ runner.temp }}/KaidoRoutesApp-critical.xcresult
           if-no-files-found: warn
           retention-days: 7
+
+  gate:
+    name: Verification gate
+    needs: [changes, deterministic, app]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject a run whose verification did not pass
+        if: >-
+          contains(needs.*.result, 'failure')
+          || contains(needs.*.result, 'cancelled')
+        run: |
+          echo 'Upstream verification did not pass:'
+          echo '${{ toJSON(needs) }}'
+          exit 1

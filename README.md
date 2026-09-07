@@ -12,289 +12,49 @@ screen lock and temporary app switching.
 The project is not affiliated with or endorsed by Metropolitan Expressway
 Company Limited.
 
-## Product
+## Status
 
-The default app opens on the whole Shuto network, not a sample route or an
-internal review workbench.
+Active product delivery. There is a real iPhone target, a bundled
+whole-Shuto network snapshot, and a physical-device deployment path.
 
-- The full-network line map shows all 26 current official route entries,
-  directional IC facilities, JCTs, and PAs.
-- The geographic map shows the selected route on MapKit and keeps the exact
-  Kaido-owned Shuto path separate from bounded surface access and egress.
-  Beneath the highlighted route it draws every mainline carriageway — both
-  directions — as a muted context layer with no guidance authority.
-- The home is route-first: a named route-experience catalog leads the
-  planning surface — the C1 inner loop, the C2 inner loop closed by the
-  Bayshore Route, the Bayshore westbound run ending at Daikoku PA, the
-  Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge finishing beside Daikoku PA. The driver
-  chooses a route, never designs an entrance or exit: selecting an
-  experience derives the pairing automatically (nearest reachable
-  direction-valid entrance, and for loops the exit whose pairing lands in
-  the lowest tariff band), shows it as one factual line with ranked
-  alternatives one disclosure away, offers a 1–9 lap count on loops, plans
-  the experience as one ordered occurrence sequence, and runs it as a round
-  trip through the normal review gate. Tariff bands come from dated ACTIVE
-  evidence (normal car, ETC): the minimum band is asserted only with a
-  distance safety margin, mid-range amounts stay explicit estimates, and
-  nothing is shown until a band is computed. Because the tariff uses the
-  shortest all-Shuto path between entry and exit, lap count never changes
-  the band. Destination search remains an optional continuation below the
-  catalog.
-- Routing ranks compatible entrances and exits for arbitrary origin and
-  destination coordinates, then searches the directed whole-network graph.
-- Route choice keeps recommendations and exact customization together. Every
-  candidate identifies its directional entrance and exit. When the bounded
-  surface provider resolves both ordinary-road legs for every exact candidate,
-  the row uses those comparable ETAs for ordering and shows full-journey preview
-  time and distance. A partial provider result preserves deterministic Kaido
-  order and labels every card as Shuto-only rather than mixing incomparable
-  estimates. Custom selection pins one direction-valid entrance, one
-  direction-valid exit, and a route style, previews the resulting route thread,
-  and applies its own Kaido-owned `RoutePlan` without turning the map into
-  another home surface.
-- Route choice leads to one parked route pass before the drive starts. It
-  combines the bounded surface access and egress legs with the exact selected
-  Shuto route, shows full-journey distance and a non-realtime preview duration,
-  and keeps passage and toll information explicitly unconfirmed when no current
-  source exists. Missing either surface leg blocks review and start rather than
-  silently skipping that part of the journey.
-- Saved-route import preserves the complete shared `RoutePlan` and never
-  upgrades its evidence. A record labeled `CURRENT SNAPSHOT` has been
-  reconstructed and revalidated against the exact bundled whole-Shuto snapshot,
-  including repeated occurrences and circuit laps; it may reopen parked review
-  and replay only. Live start still requires an authority-bearing
-  `KaidoProductRelease`.
-- Route occurrences remain ordered and distinct. Directed links represent
-  candidate entrances, exits, and junction connectivity; official facility
-  facts remain distinguishable from OSM topology.
-- The bundled whole-Shuto graph remains a candidate asset rather than blanket
-  navigation authority. Five representative foreground releases are prebuilt
-  for startup regression. Every other plannable exact `RoutePlan` is rebuilt
-  and content-addressed on device from the same validated snapshot and 161
-  released movement bindings before **Start navigation** is enabled. The
-  exhaustive admission audit covers all 51,582 direction-valid facility route
-  combinations; malformed, mismatched, or incomplete plans still fail closed.
-- Every compiled whole-Shuto runtime exposes a deterministic asset identity.
-  Its network-artifact hash covers the complete decoded network, including
-  source, licence, limitation, and bounds metadata; its route-runtime hash
-  additionally covers the exact `RoutePlan`, matcher corridor, decision zones,
-  guidance, recovery candidates, and route-edge lengths. This is not a
-  `KaidoProductRelease`: the hashes detect input drift but do not grant live-input
-  authority or upgrade the graph's evidence status. Entry-transition and
-  expressway replay checkpoints persist that identity and return to parked
-  review instead of restoring runtime progress when either hash drifts.
-- Selecting an exact route prepares its compiled assets, release-bound runtime,
-  and reviewed JCT prompt projection off the main actor. **Start navigation**
-  stays in `PREPARING` until all three match the full `RoutePlan`; start then
-  reuses those values and attaches Core Location last. Changing or abandoning
-  the route cancels its preparation. Driving UI reads one route-scoped prompt
-  cache instead of recompiling the junction catalog during every map refresh.
-- Graph search derives candidate wrong-turn rejoin shapes separately for every
-  divergent directed edge. Each candidate is bound to the exact RoutePlan
-  divergence occurrence and the observed wrong-turn edge, so one branch cannot
-  borrow another branch's recovery. Compiler output alone remains unreleased.
-  An exact foreground product release may bind one in-domain candidate into
-  its runtime policy; all other deviations remain unavailable rather than
-  executing an unreviewed movement. While that released recovery is active,
-  the App keeps consuming serialized location observations, renders the
-  remaining rejoin path, and returns to the unchanged RoutePlan at its bound
-  target occurrence. `kaido-release
-  inspect-live-coverage` emits the exact route-local missing guidance,
-  candidate-recovery, and released-recovery counts without granting authority.
-- Deterministic route playback is a Debug-only review tool. It compiles into
-  Debug builds alone: the distributed app offers **Start navigation** and no
-  second way to drive a route, and no shipped binary carries a playback entry,
-  a launch-argument preview host, or an internal fixture screen.
-  The playback covers surface access, entry, expressway travel,
-  junction prompts, exit, surface egress, and completion. Entry and expressway
-  playback follow the selected network geometry with a maximum 30-meter sample
-  spacing. Observation timestamps, course, and the visible position all derive
-  from the same 54 km/h reference trace before the explicit 20x presentation
-  speed is applied. Every observation still runs through the route-aware
-  matcher and actor-owned navigation session. Entry requires ordered, unique
-  HIGH continuity on the selected directional entrance, and only an exact HIGH
-  occurrence match can advance expressway progress.
-- A deterministic whole-route accuracy suite retains exact occurrence,
-  directed-edge, fraction, and route-distance truth before adding noise. Three
-  representative whole-Shuto routes must keep wrong HIGH edge/occurrence
-  commits at zero. The clean profile must meet the default accuracy floor; an
-  eight-meter radial-drift profile must retain 100% HIGH occurrence precision,
-  at least 20% HIGH coverage, and at most 15 meters p95 route-progress error.
-- The Core Location adaptation boundary preserves course and speed uncertainty
-  for release-enrolled runtimes. Uncertain course expands the heading model
-  instead of being trusted like a precise bearing, and speed uncertainty widens
-  travel-distance tolerance. Five foreground releases are bundled for
-  deterministic startup. Any other exact selected route is content-addressed
-  and admitted on device only when every one of its junction decisions is in
-  the released guidance inventory; unmatched routes use Core Location only for
-  the planning origin.
-- Starting a drive opens the geographic driving map with a
-  direction-following camera. The map separates traveled and remaining Shuto
-  geometry, makes the next reviewed decision and its distance the dominant
-  guidance, and keeps full-journey reference time, distance, and route-thread
-  progress together in the lower instrument strip. The next reviewed movement
-  may be shown before its decision-zone threshold, while junction insets and
-  one-shot speech remain actor-triggered. Touch outranks the route: a pan,
-  pinch, or rotate releases the following camera immediately rather than
-  fighting the next position fix, and following resumes ten seconds after the
-  last touch while the drive is active. The driver's own eye altitude is kept
-  across that resume and reset only when the journey changes phase. An
-  explicit free-browse/follow control remains available, and releasing through
-  it is sticky until the driver asks for following back. A parked planning or
-  review map keeps whatever frame the driver moved it to.
-  Degraded, interrupted, and tunnel-estimated states
-  return to north-up instead of inventing a route heading. In a tagged tunnel
-  or covered segment, a live drive may move an amber estimated marker for at
-  most 45 seconds from the last HIGH route-resolved fix using bounded speed as
-  weak evidence. Its uncertainty halo grows continuously and the marker stops
-  before the next released junction movement; the estimate cannot advance the
-  matcher, NavigationSession, spoken guidance, exit handoff, or completion.
-- With a route selected, the second map presentation is the whole-route track
-  map: the entire selected route in one readable frame with every on-route
-  IC, JCT, and PA always labeled, component routes visually distinct (the
-  Bayshore leg of a C2 circuit renders in its own color), travel-direction
-  chevrons that ride on the route colour instead of punching through it, and
-  an explicit entrance mark. Panning and pinching it carry inertia and yield
-  at the bounds instead of stopping dead. While driving, the current
-  position renders above every other layer with a travel-direction indicator;
-  nearby labels yield to it, and estimated positioning changes its appearance
-  instead of hiding it. Without a selected route the whole-network line map
-  remains the network presentation.
-- During expressway travel the driver can switch between the normal geographic
-  map and the whole-network line map. A junction inset appears only when an
-  exact adjacent-edge movement matches a reviewed, snapshot-bound definition;
-  route-label changes and nearest-JCT geometry cannot create one.
-- The reviewed whole-network catalog contains 144 exact movements. It covers
-  every divergent JCT on both C1 catalog loops, the Bayshore corridor in both
-  directions, and the currently released radial and Yokohama approaches.
-  Their Kaido vectors, branch or continuation instructions,
-  Japanese sign targets, and route shields are operator-source-traceable. Each
-  exact outgoing occurrence compiles into actor-owned screen and one-shot
-  speech guidance. Lane indices remain explicitly unreleased, and transitions
-  without sufficient approach-specific evidence remain silent.
-  The remaining 23 candidate JCT movements stay preview-only until their
-  approach-specific signs and legal continuations are released.
-- Map facility labels for IC, JCT, and PA, route shields, and physical sign
-  targets stay in Japanese. The default whole-network journey provides
-  persisted Japanese, Simplified Chinese, and English interface controls plus
-  an independently persisted guidance-voice language.
+Live navigation is deliberately narrow: it is admitted only for a route whose
+every junction decision is covered by the released movement bindings. Broader
+road coverage, CarPlay, tunnel dead-reckoning, and field qualification are not
+claimed. Read the [accuracy boundary](docs/product/accuracy-boundary.md)
+before trusting any guidance this product gives.
 
-The previous C2 and K7 artifacts remain useful deterministic fixtures. They are
-not the default product, do not constrain where a journey may start, and are not
-special routing modes.
+## What it does
 
-## Current network snapshot
+- Opens on the whole Shuto network — all 26 current official route entries,
+  directional IC facilities, JCTs, and PAs — not a sample route or an internal
+  workbench.
+- Leads with a named route-experience catalog: the C1 inner loop, the C2 inner
+  loop closed by the Bayshore Route, the Bayshore westbound run to Daikoku PA,
+  the Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
+  Mirai, and the Yokohama Bay Bridge. The driver picks a route, never designs
+  an entrance: selecting one derives the direction-valid pairing, offers a 1–9
+  lap count on loops, and shows a tariff band from dated operator evidence.
+- Presents three maps for one selected route — the whole-network line map, the
+  geographic MapKit map, and a whole-route track map that fits the entire route
+  in one readable frame with every on-route IC, JCT, and PA labeled.
+- Gates every drive behind one parked review pass that combines bounded surface
+  access, the exact Shuto route, and surface egress. A missing surface leg
+  blocks the start rather than silently skipping part of the journey.
+- Drives with a direction-following camera, a dominant next-decision prompt,
+  junction insets, and one-shot speech drawn from 144 reviewed exact JCT
+  movements. Movements without approach-specific operator evidence stay silent.
+  Touch outranks the route: a pan or pinch releases the camera immediately.
+- Keeps facility labels, route shields, and sign targets in Japanese, with
+  Japanese, Simplified Chinese, and English interface controls and an
+  independently chosen guidance-voice language.
 
-The bundled `2026-08-04` OSM geometry snapshot is joined to operator facts
-checked on `2026-07-29`:
-
-| Item | Bundled coverage |
-|---|---:|
-| Official route entries | 26 |
-| Directed graph edges | 24,299 |
-| IC names | 151 |
-| Usable IC geometry matches | 148 / 148 |
-| Official JCT matches | 39 / 39 |
-| PA entries | 19 |
-
-The three IC names without routable geometry belong to the officially
-unavailable, long-term-closed Yaesu Route. They remain visible as unavailable
-facts and are never admitted to route search.
-
-Operator pages establish route names, IC direction availability, the current
-JCT directory, and the PA directory. The pinned OpenStreetMap extract supplies
-candidate geometry and topology. Each route's official direction vocabulary is
-derived from those directional IC facts; exact reviewed movement definitions,
-not incomplete OSM relation roles, bind that vocabulary to directed JCT edges.
-Operator maps, junction images, and logos are not copied into the repository.
-
-## Accuracy boundary
-
-The product distinguishes what is known from what is still unconfirmed:
-
-- Static operator facility facts and the exact source dates are bundled.
-- OSM geometry and connectivity are candidate data under ODbL 1.0; they are not
-  operator-authored lane or stacked-road authority.
-- The line map and junction inset are Kaido-generated vectors. Every JCT keeps
-  the current official detail-image URL and content hash for audit. Reviewed
-  movement guidance must also match the exact network snapshot, adjacent edge
-  IDs, shared JCT node, direction, and official content hash. The admitted
-  definitions cover all divergent JCTs in the bundled snapshot; the
-  whole-network inventory resolves all 161 exact movement bindings. They
-  authorize only the
-  reviewed branch or continuation and approach-specific Japanese sign target.
-  They do not copy operator artwork or imply unreleased lane numbers.
-- Current traffic, temporary closures, toll quotes, and PA operating status are
-  `REALTIME_UNCONFIRMED` until a current provider response exists.
-- The driving map draws Apple's congestion layer and, on tap, Apple's place
-  card for a basemap point of interest — the only surface carrying its
-  operating hours, because MapKit exposes them to no API. Both are Apple's
-  answer rendered on Apple's basemap: neither reaches a Kaido route, tariff,
-  or passage decision, and the preview duration stays non-realtime. The drive
-  narrows the basemap catalog to fuel, charge, parking, and restrooms so
-  storefronts cannot bury the route; a parked map keeps the full catalog and
-  omits congestion colouring, which is unreadable at journey framing.
-- MapKit surface access and egress cannot author, optimize, replace, or recover
-  the Shuto `RoutePlan`. During a live drive, accepted MapKit
-  geometry and steps provide the current ordinary-road instruction and
-  distance. Live navigation speaks the current provider step and preannounces
-  the next step once within 250 meters; these route-bound provider commands
-  share the interruption-safe audio output but never gain expressway guidance
-  authority. Two consecutive accurate off-route observations trigger a bounded
-  MapKit recalculation of only the active ordinary-road leg, with a cooldown;
-  the exact Shuto plan and the opposite surface leg remain unchanged. Entry
-  evidence takes over only near the exact directional ramp. A valid device fix
-  that has not joined the surface route is labeled as waiting to join the route,
-  not as weak positioning; genuinely stale or low-confidence positioning keeps
-  the separate degraded warning.
-- The default App's Core Location lifecycle keeps planning location
-  foreground-only, while an explicitly foreground-started live navigation
-  session continues through screen lock or temporary app switching and stops
-  when the journey ends, permission is revoked, or the pipeline fails. It
-  supplies the planning origin, five prebuilt releases, the C1 outer on-demand release, and other
-  on-device exact routes whose complete decision sequence is covered by the
-  161 released movement bindings. Live admission and replay do not grant
-  tunnel, field, acoustic, or CarPlay qualification. Tunnel coasting is an
-  explicitly low-confidence presentation aid, not dead-reckoning authority;
-  spoken expressway guidance still covers reviewed junction movements only.
-
-Inspect one exact planned route's expressway release gaps:
-
-```sh
-swift run kaido-release inspect-live-coverage \
-  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
-  --entry shuto.ic.3.shibuya \
-  --exit shuto.ic.k1.minatomirai
-```
-
-Export the snapshot-wide candidate JCT movement review worklist:
-
-```sh
-swift run kaido-release inspect-network-live-coverage \
-  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json
-```
-
-Inspect one bundled circuit without flattening its repeated occurrences:
-
-```sh
-swift run kaido-release inspect-circuit-live-coverage \
-  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
-  --circuit shuto.circuit.c1-inner \
-  --entry shuto.ic.c1.shibakouen --exit shuto.ic.c1.shiodome --laps 1
-```
-
-The report includes each graph-derived recovery candidate's exact trigger,
-ordered edge path, and later RoutePlan target; every candidate remains
-unreleased until it is present in a validated product release.
+Full behaviour and the guarantee behind each capability:
+[current capabilities](docs/product/current-capabilities.md).
+Bundled data coverage: [network snapshot](docs/product/network-snapshot.md).
 
 ## Build and run
 
-Requirements:
-
-- Xcode 26 or newer
-- XcodeGen
-- iOS 18 or newer
+Requirements: Xcode 26 or newer, XcodeGen, iOS 18 or newer.
 
 ```sh
 xcodegen generate
@@ -306,28 +66,9 @@ xcodebuild \
   build
 ```
 
-Useful visual launch arguments. Their hosts compile into Debug builds only; a
-Release build ignores every one of them and opens the product home:
-
-- `-WHOLE-SHUTO-TRACK-MAP-PREVIEW`
-- `-WHOLE-SHUTO-TRACK-MAP-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-TRACK-MAP-LINEAR-PREVIEW`
-- `-WHOLE-SHUTO-NETWORK-BROWSE-PREVIEW`
-- `-WHOLE-SHUTO-SEARCH-PREVIEW`
-- `-WHOLE-SHUTO-SURFACE-FAILURE-PREVIEW`
-- `-WHOLE-SHUTO-ROUTE-PREVIEW`
-- `-WHOLE-SHUTO-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-ARRIVAL-PREVIEW`
-- `-WHOLE-SHUTO-JUNCTION-PREVIEW`
-- `-WHOLE-SHUTO-JUNCTION-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-KASAI-JUNCTION-PREVIEW`
-- `-WHOLE-SHUTO-KASAI-JUNCTION-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-SHINONOME-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-SHINONOME-WESTBOUND-JUNCTION-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-TATSUMI-EASTBOUND-JUNCTION-NAVIGATION-PREVIEW`
-- `-WHOLE-SHUTO-TATSUMI-WESTBOUND-JUNCTION-NAVIGATION-PREVIEW`
-- `-C2-FULL-NAVIGATION-DEMO` for the retained C2 deterministic fixture
-- `-K7-OPERATIONAL-E2E` for the retained K7 release fixture
+Debug builds accept preview launch arguments that open one surface directly; a
+Release build ignores every one of them and opens the product home. They are
+listed in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Verify
 
@@ -341,54 +82,39 @@ swift run kaido-release validate-product \
   data/product/releases/k7-northwest-up-aoba-to-kohoku-product-release.json
 ```
 
-The focused whole-network tests decode the distributed database, validate
-coverage and identity, plan a cross-network IC-to-IC route, and rank entrances
-and exits from both nearby and long-access origins.
+Every pull request runs the `verify` workflow, which classifies the changed
+paths, then runs the deterministic suites, 11 critical App unit classes, six
+whole-Shuto App-model journeys, and one route-selection-to-live-navigation UI
+smoke in a single stable `xcodebuild` session. Documentation-only changes
+finish after the lightweight classification. The `Verification gate` job
+reports the single required result. The production joint-release validator
+checks the retained K7 product artifact as a deterministic regression anchor;
+it does not enroll the candidate whole-Shuto graph or grant live-navigation
+authority.
 
-The per-change verification workflow runs the complete deterministic suites,
-11 critical App unit classes, six whole-Shuto App-model journeys, and one
-route-selection-to-live-navigation UI smoke in one stable xcodebuild session.
-Documentation-only changes finish after lightweight path classification. The
-production joint-release validator still checks the retained K7 product
-artifact as a deterministic regression anchor; it does not enroll the candidate
-whole-Shuto graph, refresh its evidence, or grant live-navigation authority.
+Before a road test or release qualification, manually run the
+`iOS qualification` workflow once `verify` is green. It runs the complete App
+unit suite, a broader journey and compact accessibility matrix, and publishes a
+validated unsigned Release archive. That artifact is not signed, installable
+device evidence, TestFlight delivery, or an App Store submission.
 
-Before a road-test or release qualification, manually run the
-`iOS qualification` GitHub Actions workflow after `verify` is green. It runs
-the complete App unit suite, broader journey and compact accessibility matrix,
-and publishes a validated unsigned Release archive. That artifact is not
-signed, installable device evidence, TestFlight delivery, or an App Store
-submission.
+## Documentation
 
-## Rebuild the network
+| Area | Start here |
+|---|---|
+| Product | [principles](docs/product/principles.md) · [iPhone experience](docs/product/iphone-product-experience.md) · [current capabilities](docs/product/current-capabilities.md) · [accuracy boundary](docs/product/accuracy-boundary.md) |
+| Architecture | [domain contract](docs/architecture/domain-contract.md) · [iOS navigation](docs/architecture/ios-navigation-architecture.md) · [journey lifecycle](docs/architecture/journey-lifecycle.md) |
+| Testing | [E2E strategy](docs/testing/e2e-strategy.md) · [scenario catalog](docs/testing/scenario-catalog.md) · [device qualification](docs/testing/ios-physical-device-qualification.md) |
+| Data and releases | [rebuilding the network](docs/contributing/rebuilding-the-network.md) · [route evidence](docs/contributing/route-evidence.md) · [product release authoring](docs/contributing/product-release-authoring.md) · [licensing](docs/contributing/licensing.md) |
+| Working in this repo | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`AGENTS.md`](AGENTS.md) · [`SECURITY.md`](SECURITY.md) |
 
-The builders use Beautiful Soup and pinned pyosmium:
+## Contributing
 
-```sh
-python3 -m venv /tmp/kaido-shuto-osmium
-/tmp/kaido-shuto-osmium/bin/pip install \
-  beautifulsoup4 \
-  osmium==4.3.1
-/tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_official_catalog.py \
-  --checked-at 2026-07-29 \
-  --output data/network/shuto-official-catalog-20260729.json
-/tmp/kaido-shuto-osmium/bin/python scripts/build_shuto_network.py \
-  --input /path/to/kanto-260804.osm.pbf \
-  --official-catalog data/network/shuto-official-catalog-20260729.json \
-  --facility-candidate-review \
-    data/network/shuto-facility-candidate-review-20260815.json \
-  --output data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
-  --expected-input-sha256 \
-    a6835449bd93144cf6724e9682d691494a1b6ead5aeb4f42f1b5bf2f26e6412c \
-  --source-uri \
-    https://download.geofabrik.de/asia/japan/kanto-260804.osm.pbf
-```
-
-The builder selects the 26 Shuto route relations, adds only connected motorway
-links, respects directed access, excludes abandoned and unavailable roads,
-applies hash-bound facility exclusions, forward entry-boundary corrections,
-and exact direction-reviewed candidate replacements,
-matches every usable official IC and JCT, and fails on source or coverage drift.
+This is a maintainer-led project. Issues — wrong road data, behaviour that
+contradicts the documented contract, a build failure from a clean checkout —
+are the most useful contribution. Please open an issue and wait for a reply
+before writing a feature. [`CONTRIBUTING.md`](CONTRIBUTING.md) has the setup,
+verification, and pull-request rules.
 
 ## Licence and privacy
 

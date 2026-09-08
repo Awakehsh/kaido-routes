@@ -115,9 +115,9 @@
   the driver can switch off, and it reports what happened without ever
   encouraging what happens next. Never turn it into competition: no targets,
   goals, rankings, leaderboards, comparison against other drivers or past
-  drives, records to beat, or any prompt to go faster. Do not add evasion or
-  unsafe interaction mechanics, and never require touch while driving to
-  reach any of it.
+  drives, records to beat, or any prompt to go faster. Do not add unsafe
+  interaction mechanics, and never require touch while driving to reach any
+  of it.
 
 ## Architecture boundaries
 

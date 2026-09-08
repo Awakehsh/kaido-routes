@@ -43,7 +43,7 @@ extension AppBundleProductReleaseDescriptor {
         "wangan-westbound-chidoricho-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "86b6791f3e5de888923b5e449035a3849019e3e0a8d9bd38536df3554cec7dc6",
+        "a3e467b486d52250e875d7045f44c39e389d30b0de1cea14845159bca3d5626e",
       expectedReleaseID:
         "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07",
       role: .foregroundNavigation
@@ -68,7 +68,7 @@ extension AppBundleProductReleaseDescriptor {
         "daikoku-yokohama-wangankanpachi-daikokufutou-product-release",
       resourceExtension: "json",
       expectedSHA256:
-        "f43ef1a352f2f40c249f0a85988a03942bc0ff930e7a76984653e3852ca82eaf",
+        "ae6c4c65f1caa816931ff6db235c62afd525b636c4a1e7974af65fdd3c76ff23",
       expectedReleaseID:
         "shutoko.product.daikoku-yokohama-wangankanpachi-daikokufutou.2026-09-07",
       role: .foregroundNavigation

@@ -52,9 +52,16 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
       wangan.release.navigation.bundle.routePlan.exitFacilityID,
       "shuto.ic.b.daikokufutou"
     )
+    // The run drives into Daikoku PA rather than passing its sign, so the
+    // plan carries the interchange loop and the parking area itself.
     XCTAssertEqual(
       wangan.release.navigation.bundle.routePlan.occurrences.count,
-      339
+      562
+    )
+    XCTAssertTrue(
+      wangan.release.navigation.bundle.routePlan.occurrences.contains {
+        $0.kind == .paVisit && $0.parkingAreaID == "shuto.pa.daikoku"
+      }
     )
     XCTAssertNotNil(wangan.release.foregroundLiveInputAuthority)
 

@@ -29,7 +29,8 @@ before trusting any guidance this product gives.
   directional IC facilities, JCTs, and PAs — not a sample route or an internal
   workbench.
 - Leads with a named route-experience catalog: the C1 inner loop, the C2 inner
-  loop closed by the Bayshore Route, the Bayshore westbound run to Daikoku PA,
+  loop closed by the Bayshore Route, the Bayshore westbound run that leaves
+  the Bayshore at Daikoku to drive into Daikoku PA itself,
   the Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
   Mirai, and the Yokohama Bay Bridge. The driver picks a route, never designs
   an entrance: selecting one derives the direction-valid pairing, offers a 1–9

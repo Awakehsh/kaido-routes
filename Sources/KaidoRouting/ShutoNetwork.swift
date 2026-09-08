@@ -280,6 +280,19 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
     public let directionJA: String?
     public let dynamicStatus: String
     public let coordinate: ShutoCoordinate
+    /// Where the access ramp puts a driver inside the parking area, and
+    /// where the return ramp picks them back up. Both are `nil` until a
+    /// parking-access review supplies the interior the network build drops,
+    /// and a parking area without them can be labelled but never driven to.
+    public let accessNodeID: Int64?
+    public let returnNodeID: Int64?
+    public let interiorEdgeIDs: [String]?
+    public let interiorDistanceMeters: Double?
+
+    /// Whether a route may stop here rather than only pass the sign for it.
+    public var isDrivable: Bool {
+      accessNodeID != nil && returnNodeID != nil
+    }
 
     private enum CodingKeys: String, CodingKey {
       case parkingAreaID = "parking_area_id"
@@ -290,6 +303,10 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
       case directionJA = "direction_ja"
       case dynamicStatus = "dynamic_status"
       case coordinate
+      case accessNodeID = "access_node_id"
+      case returnNodeID = "return_node_id"
+      case interiorEdgeIDs = "interior_edge_ids"
+      case interiorDistanceMeters = "interior_distance_meters"
     }
   }
 
@@ -862,6 +879,14 @@ public struct ShutoRoutePlanner: Sendable {
     let distanceMeters = routeEdges.reduce(0) {
       $0 + $1.lengthMeters
     }
+    // A parking interior carries no route membership, so the edge alone
+    // cannot say which parking area it belongs to; the database binds them.
+    let parkingAreaIDByEdgeID: [String: String] = database.parkingAreas
+      .reduce(into: [:]) { result, parkingArea in
+        for edgeID in parkingArea.interiorEdgeIDs ?? [] {
+          result[edgeID] = parkingArea.parkingAreaID
+        }
+      }
     let occurrences = routeEdges.enumerated().map { index, edge in
       let reviewedMovement =
         index > 0
@@ -869,6 +894,19 @@ public struct ShutoRoutePlanner: Sendable {
           routeEdges: routeEdges,
           decisionIndex: index - 1
         ) : nil
+      if let parkingAreaID = parkingAreaIDByEdgeID[edge.edgeID] {
+        // Driving the parking area is off the tolled carriageway but still
+        // inside the toll domain — the driver has not exited — so distance
+        // accrues here while the tariff pairing stays untouched.
+        return RouteOccurrence(
+          id: "shuto.\(index).\(edge.edgeID)",
+          index: index,
+          kind: .paVisit,
+          entityID: edge.edgeID,
+          parkingAreaID: parkingAreaID,
+          tollDomainID: "shuto.toll-domain"
+        )
+      }
       return RouteOccurrence(
         id: "shuto.\(index).\(edge.edgeID)",
         index: index,

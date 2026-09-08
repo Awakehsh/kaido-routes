@@ -1432,6 +1432,20 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The parking areas the course stops at, named from the snapshot. A
+  /// course that only passes a parking area contributes nothing here: the
+  /// green line means the route drives in, not that a PA is somewhere along
+  /// the way.
+  private func circuitParkingStopNames(
+    _ circuit: ShutoCircuitDefinition
+  ) -> [String] {
+    circuit.parkingAreaStopIDs.compactMap { parkingAreaID in
+      model.database.parkingAreas
+        .first { $0.parkingAreaID == parkingAreaID }?
+        .nameJA
+    }
+  }
+
   /// The route marks the card's experience actually drives, in course order:
   /// the same shields the overhead signs carry, so a driver recognises the
   /// experience by road before reading the name.
@@ -1524,11 +1538,18 @@ struct WholeShutoProductView: View {
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         }
-        if !circuit.paStopNamesJA.isEmpty {
-          Text(circuit.paStopNamesJA.joined(separator: "・"))
+        let parkingStopNames = circuitParkingStopNames(circuit)
+        if !parkingStopNames.isEmpty {
+          // Text alone, no parking glyph: the filled SF parking symbol
+          // renders its counter in the card ground and fails the home's
+          // contrast audit, and the green line already reads as a stop.
+          Text(parkingStopNames.joined(separator: "・"))
             .font(.caption.weight(.bold))
             .foregroundStyle(KaidoTheme.confirmedGreen)
             .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-pa-stops-\(circuit.circuitID)"
+            )
         }
       }
       .frame(width: 222, alignment: .leading)

@@ -586,6 +586,16 @@ public enum ShutoPlannedRouteRuntimeCompiler {
         return (index, definition)
       }
     )
+    // A parking interior is driven, so it occupies an occurrence like any
+    // other edge, but it is a stop rather than a carriageway: the database
+    // is what says which edges belong to which parking area, so the binding
+    // is checked against that rather than taken from the occurrence.
+    let parkingAreaIDByEdgeID: [String: String] = database.parkingAreas
+      .reduce(into: [:]) { result, parkingArea in
+        for edgeID in parkingArea.interiorEdgeIDs ?? [] {
+          result[edgeID] = parkingArea.parkingAreaID
+        }
+      }
     guard
       route.edges.count == route.routePlan.occurrences.count,
       !route.edges.isEmpty,
@@ -594,6 +604,11 @@ public enum ShutoPlannedRouteRuntimeCompiler {
           offset, binding in
           let (occurrence, edge) = binding
           guard occurrence.index == offset else { return false }
+          if let parkingAreaID = parkingAreaIDByEdgeID[edge.edgeID] {
+            return occurrence.kind == .paVisit
+              && occurrence.entityID == edge.edgeID
+              && occurrence.parkingAreaID == parkingAreaID
+          }
           if let reviewedMovement = reviewedMovementByIndex[offset] {
             return occurrence.kind == .junctionMovement
               && occurrence.entityID == reviewedMovement.id

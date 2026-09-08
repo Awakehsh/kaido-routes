@@ -93,11 +93,15 @@ final class KRU09AccessibilityUITests: XCTestCase {
       let element = issue.element
       let identifier = element?.identifier ?? "<none>"
       let label = element?.label ?? "<none>"
+      // A decorative node carries neither identifier nor label, so the frame
+      // is the only thing that says which pixels failed.
+      let frame = element.map { "\($0.frame)" } ?? "<none>"
       print(
         "KAIDO_A11Y_AUDIT "
           + "type=\(issue.auditType.rawValue) "
           + "identifier=\(identifier) "
           + "label=\(label) "
+          + "frame=\(frame) "
           + "detail=\(issue.detailedDescription)"
       )
       return false

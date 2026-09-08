@@ -25,6 +25,34 @@ final class RouteExperiencePresentationTests: XCTestCase {
     }
   }
 
+  /// The green parking line on a catalog card means the route drives in,
+  /// so it has to come from the course itself. Three experiences used to
+  /// advertise a PA they only pass; a card may only name a parking area the
+  /// planner actually routes through.
+  func testOnlyRoutesThatEnterAParkingAreaAdvertiseOne() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    let drivable = Dictionary(
+      uniqueKeysWithValues: model.database.parkingAreas.map {
+        ($0.parkingAreaID, $0)
+      }
+    )
+    var advertised: [String: [String]] = [:]
+    for circuit in model.bundledCircuits where !circuit.parkingAreaStopIDs.isEmpty {
+      advertised[circuit.circuitID] = circuit.parkingAreaStopIDs
+    }
+    XCTAssertEqual(
+      advertised,
+      ["shuto.circuit.wangan-daikoku-run": ["shuto.pa.daikoku"]]
+    )
+    // A course cannot anchor on a parking area the snapshot cannot enter.
+    for stopIDs in advertised.values {
+      for stopID in stopIDs {
+        let parkingArea = try XCTUnwrap(drivable[stopID])
+        XCTAssertTrue(parkingArea.isDrivable, "\(stopID) is not drivable")
+      }
+    }
+  }
+
   func testMapLabelsRemainReadableInDayAndNightPalettes() {
     for style in [UIUserInterfaceStyle.light, .dark] {
       for label in [KaidoMapPalette.label, KaidoMapPalette.junctionLabel, KaidoMapPalette.pa] {

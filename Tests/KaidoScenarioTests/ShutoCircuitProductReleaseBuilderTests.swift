@@ -48,7 +48,15 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 14)
+    // Two more than the run that skipped the parking area: reaching it
+    // crosses the Daikoku interchange going in and coming back out.
+    #expect(release.navigation.bundle.releasedGuidance.count == 16)
+    // The parking area is driven, and driving it is recorded as such.
+    #expect(
+      release.navigation.bundle.routePlan.occurrences.contains {
+        $0.kind == .paVisit && $0.parkingAreaID == "shuto.pa.daikoku"
+      }
+    )
     #expect(
       release.navigation.bundle.runtimePolicy.recoveryCandidates.count == 1
     )

@@ -14,9 +14,9 @@ internal review workbench.
   directions — as a muted context layer with no guidance authority.
 - The home is route-first: a named route-experience catalog leads the
   planning surface — the C1 inner loop, the C2 inner loop closed by the
-  Bayshore Route, the Bayshore westbound run ending at Daikoku PA, the
+  Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
   Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge finishing beside Daikoku PA. The driver
+  Mirai, and the Yokohama Bay Bridge finishing at the Daikoku-Futo exit. The driver
   chooses a route, never designs an entrance or exit: selecting an
   experience derives the pairing automatically (nearest reachable
   direction-valid entrance, and for loops the exit whose pairing lands in
@@ -60,7 +60,7 @@ internal review workbench.
 - The bundled whole-Shuto graph remains a candidate asset rather than blanket
   navigation authority. Five representative foreground releases are prebuilt
   for startup regression. Every other plannable exact `RoutePlan` is rebuilt
-  and content-addressed on device from the same validated snapshot and 161
+  and content-addressed on device from the same validated snapshot and 163
   released movement bindings before **Start navigation** is enabled. The
   exhaustive admission audit covers all 51,582 direction-valid facility route
   combinations; malformed, mismatched, or incomplete plans still fail closed.

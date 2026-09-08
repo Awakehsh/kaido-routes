@@ -11,7 +11,11 @@ enum WholeShutoAttributionError: Error, Equatable {
 /// Route Atlas catalog reviewed for the retained K7 produced work.
 struct WholeShutoAttribution: Equatable, Sendable {
   static let resourceName = "shuto-whole-network-20260804"
-  static let expectedDatabaseID = "kaido.shuto.whole-network.2026-08-04"
+  // The parking-access review adds the parking-area interiors the network
+  // build drops, so the bundled graph is not the unrevised build and does
+  // not answer to its identity.
+  static let expectedDatabaseID =
+    "kaido.shuto.whole-network.2026-08-04+pa-access-20260908"
   static let expectedNetworkSnapshotID =
     "shuto-official-2026-07-29-osm-2026-08-04"
   static let expectedVerificationState =

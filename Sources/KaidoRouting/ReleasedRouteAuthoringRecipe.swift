@@ -138,7 +138,9 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     var offset = 1
     while offset < occurrences.count {
       let occurrence = occurrences[offset]
-      if Self.isSupportedEdge(occurrence) {
+      if Self.isSupportedEdge(occurrence)
+        || Self.isSupportedParkingVisit(occurrence)
+      {
         offset += 1
         continue
       }
@@ -286,6 +288,18 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
   private static func isSupportedEdge(_ occurrence: RouteOccurrence) -> Bool {
     occurrence.kind == .edge
       && occurrence.parkingAreaID == nil
+      && !occurrence.isOptional
+  }
+
+  /// Driving a parking area is geometry between decisions, not a decision:
+  /// there is one way in and one way out, so the editor has nothing to
+  /// offer here. It is skipped like a plain edge, but kept distinct from
+  /// one so it can never stand in as a junction's outgoing carriageway.
+  private static func isSupportedParkingVisit(
+    _ occurrence: RouteOccurrence
+  ) -> Bool {
+    occurrence.kind == .paVisit
+      && occurrence.parkingAreaID != nil
       && !occurrence.isOptional
   }
 

@@ -85,8 +85,10 @@ final class RouteAtlasAttributionTests: XCTestCase {
     )
     XCTAssertEqual(
       attribution.databaseID,
-      "kaido.shuto.whole-network.2026-08-04"
+      "kaido.shuto.whole-network.2026-08-04+pa-access-20260908"
     )
+    // The parking-access review adds geometry the same OSM extract already
+    // contained, so the snapshot the extract and catalog name is unchanged.
     XCTAssertEqual(
       attribution.networkSnapshotID,
       "shuto-official-2026-07-29-osm-2026-08-04"

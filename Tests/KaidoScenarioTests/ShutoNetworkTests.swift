@@ -20,7 +20,30 @@ struct ShutoNetworkTests {
       }
     )
     #expect(database.parkingAreas.count == 19)
-    #expect(database.edges.count == 24_299)
+    #expect(database.edges.count == 24_573)
+    #expect(database.parkingAreas.allSatisfy { $0.isDrivable })
+    let edgesByID = Dictionary(uniqueKeysWithValues: database.edges.map { ($0.edgeID, $0) })
+    for parkingArea in database.parkingAreas {
+      var cursor = try #require(parkingArea.accessNodeID)
+      for edgeID in try #require(parkingArea.interiorEdgeIDs) {
+        let edge = try #require(edgesByID[edgeID])
+        #expect(edge.fromNodeID == cursor)
+        #expect(edge.kind == "PARKING")
+        #expect(edge.routeMemberships.isEmpty)
+        cursor = edge.toNodeID
+      }
+      #expect(cursor == parkingArea.returnNodeID)
+    }
+    let daikokuPA = try #require(
+      database.parkingAreas.first { $0.parkingAreaID == "shuto.pa.daikoku" }
+    )
+    #expect(daikokuPA.isDrivable)
+    #expect(daikokuPA.interiorEdgeIDs?.count == 24)
+    #expect(
+      database.edges
+        .filter { $0.kind == "PARKING" }
+        .allSatisfy { $0.routeMemberships.isEmpty }
+    )
     let komatsugawa = try #require(
       database.junctions.first {
         $0.junctionID == "shuto.jct.jct_komatsugawa"

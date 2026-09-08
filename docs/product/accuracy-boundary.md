@@ -13,7 +13,7 @@ The product distinguishes what is known from what is still unconfirmed:
   movement guidance must also match the exact network snapshot, adjacent edge
   IDs, shared JCT node, direction, and official content hash. The admitted
   definitions cover all divergent JCTs in the bundled snapshot; the
-  whole-network inventory resolves all 161 exact movement bindings. They
+  whole-network inventory resolves all 163 exact movement bindings. They
   authorize only the
   reviewed branch or continuation and approach-specific Japanese sign target.
   They do not copy operator artwork or imply unreleased lane numbers.
@@ -46,7 +46,7 @@ The product distinguishes what is known from what is still unconfirmed:
   when the journey ends, permission is revoked, or the pipeline fails. It
   supplies the planning origin, five prebuilt releases, the C1 outer on-demand release, and other
   on-device exact routes whose complete decision sequence is covered by the
-  161 released movement bindings. Live admission and replay do not grant
+  163 released movement bindings. Live admission and replay do not grant
   tunnel, field, acoustic, or CarPlay qualification. Tunnel coasting is an
   explicitly low-confidence presentation aid, not dead-reckoning authority;
   spoken expressway guidance still covers reviewed junction movements only.

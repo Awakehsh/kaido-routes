@@ -240,6 +240,7 @@ public enum ShutoJunctionMovementCatalog {
     destinationZH: String,
     destinationEN: String,
     commitTriggerDistanceMeters: Double = 300,
+    checkedAt: String = "2026-08-15",
     expectedJunctionDetailSHA256: String,
     officialDetailReference: String,
     additionalSources: [String]
@@ -310,7 +311,7 @@ public enum ShutoJunctionMovementCatalog {
         ),
       ],
       commitTriggerDistanceMeters: commitTriggerDistanceMeters,
-      checkedAt: "2026-08-15",
+      checkedAt: checkedAt,
       expectedJunctionDetailSHA256: expectedJunctionDetailSHA256,
       sources: [
         ShutoJunctionGuidanceSource(
@@ -552,6 +553,58 @@ public enum ShutoJunctionMovementCatalog {
         "https://www.shutoko.jp/use/network/map/route-c2/",
         "https://www.shutoko.jp/use/network/map/route-3/",
       ]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.oi.b-eastbound-stays-on-b",
+      junctionID: "shuto.jct.jct_oi",
+      junctionNodeID: 31_298_983,
+      incomingEdgeID: "osm.1059139534.2.forward",
+      outgoingEdgeID: "osm.1059139534.3.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "B",
+      outgoingDirectionJA: "東行き",
+      branchSide: .straight,
+      japaneseSignText: "東関東道",
+      routeShields: ["B", "E51"],
+      junctionNameJA: "大井JCT",
+      junctionNameZH: "大井 JCT",
+      junctionNameEN: "Oi JCT",
+      destinationJA: "湾岸線 東関東道方面",
+      destinationZH: "湾岸线东关东道方向",
+      destinationEN: "the Bayshore Route toward the Higashi-Kanto Expressway",
+      checkedAt: "2026-09-08",
+      expectedJunctionDetailSHA256:
+        "4bfe3cb6117273ec547a62872b971a87fcc944fff70b3267022888612aacfc2b",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_oi",
+      additionalSources: ["https://www.shutoko.jp/use/network/map/route-b/"]
+    ),
+    reviewedMovement(
+      id: "shuto.jct.oi.b-eastbound-to-c2-outer",
+      junctionID: "shuto.jct.jct_oi",
+      junctionNodeID: 31_298_983,
+      incomingEdgeID: "osm.1059139534.2.forward",
+      outgoingEdgeID: "osm.4854099.0.forward",
+      incomingRouteID: "B",
+      incomingDirectionJA: "東行き",
+      outgoingRouteID: "C2",
+      outgoingDirectionJA: "外回り",
+      branchSide: .left,
+      japaneseSignText: "中央道・都心環状",
+      routeShields: ["C2", "E20", "1"],
+      junctionNameJA: "大井JCT",
+      junctionNameZH: "大井 JCT",
+      junctionNameEN: "Oi JCT",
+      destinationJA: "中央環状線 中央道・都心環状方面",
+      destinationZH: "中央环状线中央道、都心环状方向",
+      destinationEN: "the Central Circular Route toward Chuo and the Inner Circular Route",
+      checkedAt: "2026-09-08",
+      expectedJunctionDetailSHA256:
+        "4bfe3cb6117273ec547a62872b971a87fcc944fff70b3267022888612aacfc2b",
+      officialDetailReference:
+        "https://www.shutoko.jp/-/media/images/responsive/customer/use/network/jct/routeguide/jct_oi",
+      additionalSources: ["https://www.shutoko.jp/use/network/map/route-b/"]
     ),
     c2InnerMovement(
       id: "shuto.jct.oi.c2-inner-to-b-eastbound",

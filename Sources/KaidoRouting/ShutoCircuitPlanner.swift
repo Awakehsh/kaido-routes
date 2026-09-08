@@ -25,6 +25,10 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public enum Anchor: Equatable, Sendable {
     case facility(String)
     case junction(String)
+    /// A parking area the course stops at rather than passes. Unlike a
+    /// facility or junction anchor, this requires the entire reviewed
+    /// directional path, including any repeated edges inside the PA.
+    case parkingArea(String)
   }
 
   public var id: String { circuitID }
@@ -44,7 +48,15 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public let exitDirectionsByRouteID: [String: String]?
   /// Unordered for `.loop`, ordered course for `.tour`.
   public let anchors: [Anchor]
-  public let paStopNamesJA: [String]
+  /// Parking areas the course actually drives into, in course order. This
+  /// is read off the anchors rather than listed separately so a card can
+  /// never advertise a stop the route does not make.
+  public var parkingAreaStopIDs: [String] {
+    anchors.compactMap {
+      if case .parkingArea(let parkingAreaID) = $0 { parkingAreaID }
+      else { nil }
+    }
+  }
   public let landmarkNamesJA: [String]
   public let localizedLandmarkNames: [KaidoReleaseLocale: [String]]
 
@@ -57,7 +69,6 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     entranceDirectionsByRouteID: [String: String],
     exitDirectionsByRouteID: [String: String]? = nil,
     anchors: [Anchor],
-    paStopNamesJA: [String] = [],
     landmarkNamesJA: [String] = [],
     localizedLandmarkNames: [KaidoReleaseLocale: [String]] = [:]
   ) {
@@ -69,7 +80,6 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     self.entranceDirectionsByRouteID = entranceDirectionsByRouteID
     self.exitDirectionsByRouteID = exitDirectionsByRouteID
     self.anchors = anchors
-    self.paStopNamesJA = paStopNamesJA
     self.landmarkNamesJA = landmarkNamesJA
     self.localizedLandmarkNames = localizedLandmarkNames
   }
@@ -103,7 +113,6 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.c2.shinitabashi"),
       .facility("shuto.ic.c2.nakanochoujabashi"),
     ],
-    paStopNamesJA: ["大井PA"],
     landmarkNamesJA: ["山手トンネル", "東京港トンネル"],
     localizedLandmarkNames: [
       .japanese: ["山手トンネル", "東京港トンネル"],
@@ -165,9 +174,11 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     ]
   )
 
-  /// Bayshore westbound run ending at Daikoku PA: Tokyo waterfront onto the
-  /// Bayshore Route, across the Tsurumi Tsubasa Bridge, off at Daikoku Futo
-  /// beside the PA.
+  /// Bayshore westbound run into Daikoku PA: Tokyo waterfront onto the
+  /// Bayshore Route, across the Tsurumi Tsubasa Bridge, into the parking
+  /// area itself, then back onto the Bayshore for the Daikoku Futo exit.
+  /// The parking area is the point of the run, so it is an anchor the
+  /// course drives through, not a landmark it passes.
   public static let wanganDaikokuRun = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.wangan-daikoku-run",
     displayNameJA: "湾岸線 大黒PAラン",
@@ -177,13 +188,17 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .english: "Bayshore to Daikoku PA",
     ],
     kind: .tour,
-    memberRouteIDs: ["B"],
+    // K5 carries the through carriageway inside the Daikoku interchange and
+    // the parking area's own ramps, so the course needs it as a connector
+    // even though no entrance or exit is ever offered on it.
+    memberRouteIDs: ["B", "K5"],
     entranceDirectionsByRouteID: ["B": "西行き"],
+    exitDirectionsByRouteID: ["B": "西行き"],
     anchors: [
       .junction("shuto.jct.jct_tokai"),
+      .parkingArea("shuto.pa.daikoku"),
       .facility("shuto.ic.b.daikokufutou"),
     ],
-    paStopNamesJA: ["大黒PA"],
     landmarkNamesJA: ["東京港トンネル", "羽田空港", "鶴見つばさ橋"],
     localizedLandmarkNames: [
       .japanese: ["東京港トンネル", "羽田空港", "鶴見つばさ橋"],
@@ -228,7 +243,6 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.k6.tonomachi"),
       .facility("shuto.ic.b.higashiogishima"),
     ],
-    paStopNamesJA: ["大黒PA"],
     landmarkNamesJA: ["鶴見つばさ橋", "川崎臨海部"],
     localizedLandmarkNames: [
       .japanese: ["鶴見つばさ橋", "川崎臨海部"],
@@ -264,7 +278,6 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.k1.minatomirai"),
       .facility("shuto.ic.k3.shinyamashita"),
     ],
-    paStopNamesJA: ["大黒PA"],
     landmarkNamesJA: [
       "羽田空港",
       "みなとみらい",
@@ -462,7 +475,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     guard
@@ -536,6 +549,10 @@ extension ShutoRoutePlanner {
             }
           }
         }
+        if circuit.kind == .tour, let first = anchorReaches.first,
+          anchorReaches.dropFirst().contains(where: { $0.distance + 1_000 < first.distance }) {
+          return false
+        }
         // A loop entrance must feed an actual cycle: from the farthest
         // anchor the lap must close back to the first anchor within the
         // closing-arc budget. The landing itself may sit on a one-way
@@ -575,7 +592,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     let traversal = try circuitTraversal(
@@ -766,7 +783,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     let traversal = try circuitTraversal(
@@ -923,7 +940,7 @@ extension ShutoRoutePlanner {
     cost: (ShutoNetworkDatabase.Edge) -> Double
   ) throws -> CircuitTraversal {
     let landing = approach.target
-    let orderedSets: [Set<Int64>]
+    let orderedIndices: [Int]
     switch circuit.kind {
     case .loop:
       // The cyclic anchor sequence pins the carriageway direction; the
@@ -943,16 +960,17 @@ extension ShutoRoutePlanner {
           startIndex = index
         }
       }
-      orderedSets = (0..<anchorSets.count).map {
-        anchorSets[(startIndex + $0) % anchorSets.count]
+      orderedIndices = (0..<anchorSets.count).map {
+        (startIndex + $0) % anchorSets.count
       }
     case .tour:
-      orderedSets = anchorSets
+      orderedIndices = Array(anchorSets.indices)
     }
 
     var bodyEdges: [ShutoNetworkDatabase.Edge] = []
     var currentNode = landing
-    for nodes in orderedSets {
+    for index in orderedIndices {
+      let nodes = anchorSets[index]
       guard
         let leg = circuitDijkstra(
           from: currentNode,
@@ -964,6 +982,24 @@ extension ShutoRoutePlanner {
       }
       bodyEdges.append(contentsOf: leg.edges)
       currentNode = leg.target
+      if case .parkingArea(let parkingAreaID) = circuit.anchors[index] {
+        guard let parkingArea = database.parkingAreas.first(where: {
+          $0.parkingAreaID == parkingAreaID
+        }), let edgeIDs = parkingArea.interiorEdgeIDs, !edgeIDs.isEmpty else {
+          throw ShutoNetworkError.facilityUnavailable
+        }
+        for edgeID in edgeIDs {
+          guard let edge = edgesByID[edgeID], edge.kind == "PARKING",
+            edge.fromNodeID == currentNode else {
+            throw ShutoNetworkError.routeUnavailable
+          }
+          bodyEdges.append(edge)
+          currentNode = edge.toNodeID
+        }
+        guard currentNode == parkingArea.returnNodeID else {
+          throw ShutoNetworkError.routeUnavailable
+        }
+      }
     }
     switch circuit.kind {
     case .loop:
@@ -1047,6 +1083,21 @@ extension ShutoRoutePlanner {
         // A junction is a sprawling ramp complex: a narrow radius can catch
         // only one carriageway and force giant detours onto the legs.
         initialRadius = 800
+      case .parkingArea(let parkingAreaID):
+        guard
+          let parkingArea = database.parkingAreas.first(where: {
+            $0.parkingAreaID == parkingAreaID
+          }),
+          let accessNodeID = parkingArea.accessNodeID
+        else {
+          // A parking area with no reviewed interior can be signed but not
+          // stopped at, and a course that claims to stop there is wrong
+          // rather than approximately right.
+          throw ShutoNetworkError.facilityUnavailable
+        }
+        anchorSets.append([accessNodeID])
+        anchorCoordinates.append(parkingArea.coordinate)
+        continue
       }
       var radius = initialRadius
       var nodes: Set<Int64> = []

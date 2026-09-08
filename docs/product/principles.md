@@ -52,7 +52,7 @@ traffic control.
 6. **The driver prepares before moving.** Complex editing and study happen while
    parked. Driving mode remains glanceable and low-interaction.
 7. **Culture without racing.** Night scenery, engineering, JDM history, and PA
-   etiquette are useful content. Speed and enforcement-evasion mechanics are not.
+   etiquette are useful content. Speed mechanics are not.
 8. **Recovery preserves the route.** With released rejoin evidence, a missed
    movement finds a safe legal path to a later occurrence in the selected route;
    it does not replace the drive with destination-first navigation. Without

@@ -227,10 +227,9 @@ leave the existing plan intact. Optional onward guidance starts automatically
 after the highway segment; the app does not require a destination prompt at the
 exit while driving.
 
-The map header says **Choose a route** before selection, with Shuto as its
-browsing scope. It then shows the selected circuit name or entrance-to-exit name;
-loop lap count is secondary. The network overview keeps its own whole-network
-title, and **Route map / Map** names the two map presentations.
+The map corner shows only the KAIDO wordmark. Route choice, scope, route names,
+and lap counts belong in the route controls and review, not in the brand mark.
+**Route map / Map** names the two map presentations.
 
 Ordinary-road access, egress, and live rerouting use the same persisted
 preference. **Major roads first** requests provider alternatives and may accept

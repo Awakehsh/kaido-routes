@@ -172,8 +172,8 @@ internal review workbench.
 
 Journey review offers return to the fixed start, finish at the selected exit, or
 continue to a searched place. Loops default to return; tours and custom routes
-default to exit. Exit-only journeys have no onward surface leg. The header names
-the selected route; whole-network coverage is a browsing scope, not its title.
+default to exit. Exit-only journeys have no onward surface leg. The map corner
+shows only the KAIDO wordmark; route details remain in the route controls and review.
 
 The previous C2 and K7 artifacts remain useful deterministic fixtures. They are
 not the default product, do not constrain where a journey may start, and are not

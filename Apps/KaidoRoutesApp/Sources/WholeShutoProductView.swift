@@ -715,46 +715,16 @@ struct WholeShutoProductView: View {
   }
 
   private var topBarTitle: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      if model.phase == .planning {
-        Text("KAIDO")
-          .font(.caption2.weight(.black))
-          .fontDesign(.rounded)
-          .tracking(1.7)
-          .foregroundStyle(KaidoTheme.routeWhite)
-      }
-      Text(topTitle)
-        .accessibilityIdentifier("whole-shuto-route-title")
-        .font(.headline.weight(.black))
-        .fontDesign(.rounded)
-        .foregroundStyle(KaidoTheme.routeWhite)
-        .lineLimit(3)
-      if model.phase == .completed {
-        Text(copy.resolve(japanese: "行程完了", simplifiedChinese: "行程完成", english: "Journey complete"))
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(KaidoTheme.nightQuiet)
-      } else if isDriving && !model.isLiveDrive {
-        Text(copy.resolve(japanese: "ナビプレビュー", simplifiedChinese: "导航预演", english: "Navigation preview"))
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(KaidoTheme.nightQuiet)
-      }
-      if let circuit = model.selectedCircuit,
-        model.phase == .planning || model.isCircuitRouteSelected,
-        circuit.kind == .loop {
-        Text(copy.resolve(japanese: "\(model.circuitLaps)周", simplifiedChinese: "\(model.circuitLaps) 圈", english: model.circuitLaps == 1 ? "1 lap" : "\(model.circuitLaps) laps"))
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(KaidoTheme.nightQuiet)
-      } else if model.phase == .planning && model.selectedCircuit == nil {
-        Text(copy.resolve(japanese: "首都高", simplifiedChinese: "首都高", english: "Shuto"))
-          .font(.caption2)
-          .foregroundStyle(KaidoTheme.nightQuiet)
-      }
-    }
-    .fixedSize(horizontal: false, vertical: true)
-    .layoutPriority(1)
-    .padding(.horizontal, 9)
-    .padding(.vertical, 6)
-    .background(KaidoTheme.night.opacity(0.94), in: RoundedRectangle(cornerRadius: 10))
+    Text("KAIDO")
+      .font(.headline.weight(.black))
+      .fontDesign(.rounded)
+      .tracking(1.7)
+      .foregroundStyle(KaidoTheme.routeWhite)
+      .accessibilityIdentifier("whole-shuto-brand")
+      .fixedSize()
+      .padding(.horizontal, 9)
+      .padding(.vertical, 6)
+      .background(KaidoTheme.night.opacity(0.94), in: RoundedRectangle(cornerRadius: 10))
   }
 
   private var topBarUtilityButtons: some View {
@@ -3941,19 +3911,6 @@ struct WholeShutoProductView: View {
       return
     }
     model.resumePlayback()
-  }
-
-  private var topTitle: String {
-    if let circuit = model.selectedCircuit,
-      model.phase == .planning || model.isCircuitRouteSelected {
-      return circuit.displayName(for: languageSettings.interfaceLocale)
-    }
-    if let route = model.selectedRoute {
-      return "\(route.entryFacility.nameJA) → \(route.exitFacility.nameJA)"
-    }
-    return copy.resolve(
-      japanese: "ルートを選ぶ", simplifiedChinese: "选择路线", english: "Choose a route"
-    )
   }
 
   private var routeSummaryTitle: String {

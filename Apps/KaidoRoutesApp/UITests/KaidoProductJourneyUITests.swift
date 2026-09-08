@@ -11,7 +11,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface", "zh-Hans"
     ]
     app.launchSilently()
-    let title = element("whole-shuto-route-title", in: app)
+    let title = element("whole-shuto-route-summary-title", in: app)
     XCTAssertTrue(title.waitForExistence(timeout: 8))
     let routeTitle = title.label
     XCTAssertFalse(routeTitle.contains("首都高全体"))
@@ -63,8 +63,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let close = element("whole-shuto-review-close", in: app)
     XCTAssertTrue(close.waitForExistence(timeout: 8))
     close.tap()
-    let title = element("whole-shuto-route-title", in: app).label
-    XCTAssertTrue(title.contains("都心环状线"))
+    let title = element("whole-shuto-route-summary-title", in: app).label
+    XCTAssertTrue(title.contains("C1"))
     element("whole-shuto-edit-ending", in: app).tap()
     element("whole-shuto-ending-destination", in: app).tap()
     let field = element("whole-shuto-ending-search", in: app)
@@ -76,7 +76,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     element("whole-shuto-ending-apply", in: app).tap()
     let review = element("whole-shuto-review-journey", in: app)
     XCTAssertTrue(review.waitForExistence(timeout: 5))
-    XCTAssertEqual(element("whole-shuto-route-title", in: app).label, title)
+    XCTAssertEqual(element("whole-shuto-route-summary-title", in: app).label, title)
     review.tap()
     XCTAssertTrue(app.staticTexts["东京塔"].waitForExistence(timeout: 5))
     XCTAssertTrue(element("whole-shuto-start-simulation", in: app).isEnabled)
@@ -125,7 +125,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-network-map", in: app)
         .waitForExistence(timeout: 3)
     )
-    XCTAssertEqual(element("whole-shuto-route-title", in: app).label, "选择路线")
+    XCTAssertEqual(element("whole-shuto-brand", in: app).label, "KAIDO")
     let networkMap = element("whole-shuto-network-map", in: app)
     let browseValue = networkMap.value as? String ?? ""
     XCTAssertFalse(

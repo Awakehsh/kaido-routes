@@ -80,7 +80,9 @@ network; synthetic/runtime checks are distinct from field evidence.
   update; the saved-route test now submits through the keyboard action instead
   of an English button label. The final affected set passed all seven tests,
   with no skips or expected failures.
-- Physical iPhone: Debug signing/build verification passed and the bundled
-  database exactly matches the repository with 19 PA interiors. Installation
-  is blocked by `DeviceLocked`; installation, launch and field behavior are
-  not claimed by this result.
+- Physical iPhone: Debug signing/build verification passed; after unlocking,
+  installation and foreground launch succeeded. Device process inspection
+  confirmed the launched executable belongs to the just-installed App. Its
+  bundled database exactly matches the repository with 19 PA interiors and
+  SHA-256 `c4602ba48c84dcf3305775d335d2be7438c4ba284cb8111b32ebeb764fd7a2b3`.
+  This proves device deployment and startup, not road/field reliability.

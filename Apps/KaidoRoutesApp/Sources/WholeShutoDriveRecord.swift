@@ -2,10 +2,8 @@ import Foundation
 
 /// What the drive did, accumulated from the fixes the drive already consumes.
 ///
-/// This is a record and only a record. It reports what happened and never
-/// compares it: no target, no goal, no previous drive, no other driver, and
-/// nothing that reads as an invitation to go faster. The driver can switch the
-/// whole thing off.
+/// This is a record and only a record: it reports what happened. The driver
+/// can switch the whole thing off.
 struct WholeShutoDriveRecord: Codable, Equatable, Sendable {
   /// One completed lap of a loop circuit.
   struct LapSplit: Codable, Equatable, Sendable, Identifiable {

@@ -839,7 +839,7 @@ struct WholeShutoNetworkOverviewView: View {
     if let entrance = overlay.entranceMark {
       // Circuit-sheet start grid: a checkered bar across the carriageway
       // just ahead of the entrance, oriented along the nearest member
-      // route segment. Pure presentation, no competitive semantics.
+      // route segment. Pure presentation.
       if !overlay.highlightedRouteIDs.isEmpty,
         let angle = nearestHighlightedSegmentAngle(to: entrance.point)
       {

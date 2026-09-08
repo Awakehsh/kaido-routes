@@ -268,8 +268,7 @@ Mirai, and the named bridges) and names a short PA set — Daikoku, Tatsumi
 First, Shibaura, Heiwajima, Oi, and Hakozaki. Pinching past the detail
 threshold names those places and every bundled PA. A
 checkered start-grid glyph may mark the derived entrance direction; it is
-purely presentational and no copy anywhere adopts competitive or performance
-framing. Each journey phase re-establishes its natural default (planning,
+purely presentational. Each journey phase re-establishes its natural default (planning,
 review, and the expressway body open on the Kaido presentation; ordinary-road
 legs open on the geographic map), and the driver may override it at any time.
 While planning, the diagram carries the driver's current position, the selected
@@ -302,8 +301,7 @@ only as quiet context or not at all. Repeated laps remain separate occurrences; 
 repeated traversals and exposes their ordinal and count instead of
 deduplicating them. A compact summary reports the entrance, JCT, PA, and exit
 counts. Facility names follow the interface locale while Japanese sign text
-and route shields remain available. The track map carries no speed, lap-time,
-ranking, or racing elements.
+and route shields remain available.
 
 Dense circuits keep the complete entrance and exit names in the header and
 visually distinguish each required route section. A practical C2 circuit

@@ -108,7 +108,6 @@ should become scenarios when their layer is built.
 
 The following are permanent rejection tests once UI or analytics exist:
 
-- no speed, lap-time, or public-road performance leaderboard;
 - no instruction to stop, reverse, or make an abrupt lane change after a miss;
 - no destination-first reroute presented as recovery of the selected route;
 - no exit ramp selected during a loop unless an egress plan is explicitly active;

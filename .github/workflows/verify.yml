@@ -182,6 +182,7 @@ jobs:
             -only-testing:KaidoRoutesAppTests/ProductPrivacyDisclosureTests \
             -only-testing:KaidoRoutesAppTests/ReleasedProductRouteAuthoringModelTests \
             -only-testing:KaidoRoutesAppTests/RouteAtlasAttributionTests \
+            -only-testing:KaidoRoutesAppTests/RouteExperiencePresentationTests \
             -only-testing:KaidoRoutesAppTests/SavedRouteLibraryModelTests \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExactCustomRouteWithCompleteGuidanceAdmitsOnDeviceNavigation \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testFirstLocationPermissionRoundTripStartsTheSameLiveJourney \
@@ -194,6 +195,7 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
+            -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"
           wait "$SIMULATOR_PID"

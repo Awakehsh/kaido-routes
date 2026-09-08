@@ -675,7 +675,6 @@ final class WholeShutoProductModel: ObservableObject {
   private func resolveCircuitThumbnails() {
     let planner = planner
     let database = database
-    let waysByID = waysByID
     circuitThumbnailTask?.cancel()
     circuitThumbnailTask = Task.detached(priority: .utility) { [weak self] in
       var previews: [String: WholeShutoCircuitPreview] = [:]
@@ -728,16 +727,12 @@ final class WholeShutoProductModel: ObservableObject {
             )
           )
         }
-        let tunnelDistance = route.edges.filter { edge in
-          guard let tunnel = waysByID[edge.wayID]?.tags["tunnel"] else { return false }
-          return tunnel != "no"
-        }.reduce(0) { $0 + $1.lengthMeters }
         previews[circuit.circuitID] = WholeShutoCircuitPreview(
           points: sampled, distanceMeters: route.distanceMeters,
           junctionCount: ShutoJunctionGuidanceCompiler.compile(
             database: database, route: route, releasedContext: movementContext
           ).count,
-          tunnelDistanceMeters: tunnelDistance
+          routeIDsInOrder: route.routeIDsInOrder
         )
       }
       let resolved = previews

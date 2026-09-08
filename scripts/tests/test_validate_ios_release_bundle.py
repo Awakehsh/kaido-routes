@@ -417,6 +417,29 @@ class ValidateIOSReleaseBundleTests(unittest.TestCase):
         ):
             self.validate()
 
+    def test_reviewed_app_intents_outputs_are_allowed(self) -> None:
+        for name in (
+            "Metadata.appintents/extract.actionsdata",
+            "Metadata.appintents/version.json",
+            "ja.lproj/AppShortcuts.strings",
+            "ja.lproj/Localizable.strings",
+            "zh-Hans.lproj/AppShortcuts.strings",
+            "zh-Hans.lproj/Localizable.strings",
+        ):
+            path = self.app / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"compiled fixture")
+        self.validate()
+
+    def test_unreviewed_app_intents_file_is_rejected(self) -> None:
+        path = self.app / "Metadata.appintents/unreviewed.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}")
+        with self.assertRaisesRegex(
+            validator.ReleaseBundleValidationError, "outside the distribution allowlist"
+        ):
+            self.validate()
+
     def test_unexpected_distribution_file_is_rejected(self) -> None:
         (self.app / "unreviewed.json").write_text("{}", encoding="utf-8")
 

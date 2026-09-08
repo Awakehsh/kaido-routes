@@ -181,5 +181,64 @@ class ApplyParkingAccessReviewTests(unittest.TestCase):
             self.assertEqual(applied_by_id[edge["edge_id"]], edge)
 
 
+def segment_review() -> dict:
+    old = review()
+    item = old["parking_areas"][0]
+    return {
+        "schema_version": "1.1", "network_snapshot_id": old["network_snapshot_id"],
+        "ways": [item["interior_way"]], "parking_areas": [{
+            "parking_area_id": "test.pa", "verification_state": "SOURCE_REVIEWED",
+            "access_node_id": 2, "return_node_id": 3,
+            "interior_segments": [{"way_id": 12, "segment_index": i} for i in (0, 1)]
+        }]
+    }
+
+
+class ApplyParkingSegmentReviewTests(unittest.TestCase):
+    def test_through_node_access_requires_the_explicit_interior(self):
+        source = network()
+        source["edges"].append(dict(source["edges"][0], edge_id="bypass", from_node_id=2, to_node_id=3))
+        applied = APPLY.apply_review(source, segment_review())
+        APPLY.validate(applied, segment_review())
+        self.assertEqual(applied["parking_areas"][0]["interior_edge_ids"], ["osm.12.0.forward", "osm.12.1.forward"])
+        self.assertTrue(any(e["edge_id"] == "bypass" for e in applied["edges"]))
+
+    def test_disconnected_segments_are_rejected(self):
+        invalid = segment_review()
+        invalid["parking_areas"][0]["interior_segments"].reverse()
+        with self.assertRaisesRegex(APPLY.ParkingAccessApplyError, "continuous"):
+            APPLY.apply_review(network(), invalid)
+
+    def test_opposite_parking_areas_cannot_share_an_interior(self):
+        source = network()
+        source["parking_areas"].append(dict(source["parking_areas"][0], parking_area_id="test.other"))
+        invalid = segment_review()
+        invalid["parking_areas"].append(dict(invalid["parking_areas"][0], parking_area_id="test.other"))
+        with self.assertRaisesRegex(APPLY.ParkingAccessApplyError, "two directional"):
+            APPLY.apply_review(source, invalid)
+
+    def test_private_service_road_is_rejected(self):
+        invalid = segment_review()
+        invalid["ways"][0]["tags"]["access"] = "private"
+        with self.assertRaisesRegex(APPLY.ParkingAccessApplyError, "motorcar access"):
+            APPLY.apply_review(network(), invalid)
+
+    def test_unreviewed_candidate_is_rejected(self):
+        invalid = segment_review()
+        invalid["parking_areas"][0]["verification_state"] = "CANDIDATE"
+        with self.assertRaisesRegex(APPLY.ParkingAccessApplyError, "unreviewed"):
+            APPLY.apply_review(network(), invalid)
+
+    def test_existing_interior_is_reclassified_without_changing_its_identity(self):
+        source = APPLY.apply_single_way_review(network(), review())
+        for edge in source["edges"]:
+            if edge["way_id"] == 12:
+                edge["kind"] = "LINK"
+                edge["route_memberships"] = [{"route_id": "4"}]
+        applied = APPLY.apply_review(source, segment_review())
+        self.assertTrue(all(e["route_memberships"] == [] for e in applied["edges"] if e["way_id"] == 12))
+        self.assertEqual(len(applied["edges"]), 4)
+
+
 if __name__ == "__main__":
     unittest.main()

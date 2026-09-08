@@ -1,5 +1,10 @@
 # iOS physical-device Debug baseline and Release smoke
 
+The combined Debug/Release runner below is for separately authorized test
+devices. The owner's iPhone must keep only the production `app.kaidoroutes`
+Release app, updated in place; never run the Preview-installing baseline on
+that phone.
+
 `scripts/run_ios_device_qualification.py` first runs the default silent Debug
 `KaidoRoutesApp` test scheme, then runs one information/privacy UI smoke through
 the Release-only `KaidoRoutesReleaseSmoke` scheme on the same exact online

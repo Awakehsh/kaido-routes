@@ -673,6 +673,9 @@ final class WholeShutoProductModel: ObservableObject {
   ]
 
   private func resolveCircuitThumbnails() {
+    #if DEBUG
+      if ProcessInfo.processInfo.arguments.contains("-HOLD-CIRCUIT-PREVIEWS") { return }
+    #endif
     let planner = planner
     let database = database
     circuitThumbnailTask?.cancel()

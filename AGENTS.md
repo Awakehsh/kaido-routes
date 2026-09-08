@@ -49,6 +49,11 @@
   deterministic data generation, simulator testing, physical-device
   build/install/launch, commits, branches, pull requests, merges, and pushes
   do not require a separate approval checkpoint.
+- On the owner's iPhone, install only the Release build with bundle identifier
+  `app.kaidoroutes`, updating it in place and keeping one installed Kaido app.
+  Never install `app.kaidoroutes.preview` on that phone. Debug/Preview builds
+  belong on simulators or separately authorized test devices; an unavailable
+  Release signing path is a blocker, not permission to substitute Preview.
 - Continue from one completed milestone to the next highest-value executable
   milestone, where value means a user-visible outcome for the audience in
   "Product direction and audience". Evidence envelopes, release machinery,

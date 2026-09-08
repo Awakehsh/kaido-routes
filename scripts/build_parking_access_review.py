@@ -19,6 +19,7 @@ whose interior OSM does not describe is reported and skipped, not invented.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -50,6 +51,7 @@ class ParkingAccessReviewError(RuntimeError):
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--network", required=True, type=Path)
+    parser.add_argument("--selection", type=Path, help="Refresh the exact segments of a source-reviewed 1.1 path inventory.")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--read-at", required=True)
     parser.add_argument("--review-id", required=True)
@@ -185,6 +187,27 @@ def review_parking_area(
 
 def build(arguments: argparse.Namespace) -> dict[str, Any]:
     network = json.loads(arguments.network.read_text())
+    if arguments.selection:
+        review = json.loads(arguments.selection.read_text())
+        if review.get("schema_version") != "1.1":
+            raise ParkingAccessReviewError("segment selection requires review schema 1.1")
+        if review.get("network_snapshot_id") != network["network_snapshot_id"]:
+            raise ParkingAccessReviewError("selection belongs to a different network snapshot")
+        for way in review["ways"]:
+            full = fetch(f"way/{way['way_id']}/full.json")
+            detail = next(e for e in full["elements"] if e["type"] == "way")
+            # Segment indices are identities, not a request to select new roads.
+            if detail["nodes"] != way["node_ids"]:
+                raise ParkingAccessReviewError(f"node sequence changed for way {way['way_id']}; review the path again")
+            nodes = {e["id"]: e for e in full["elements"] if e["type"] == "node"}
+            way.update(version=detail["version"], timestamp=detail["timestamp"], tags=detail["tags"],
+                       nodes=[{"node_id": i, "latitude": nodes[i]["lat"], "longitude": nodes[i]["lon"],
+                               "version": nodes[i]["version"], "timestamp": nodes[i]["timestamp"]} for i in detail["nodes"]])
+        review.update(review_id=arguments.review_id, checked_at=arguments.read_at[:10],
+                      network_snapshot_id=network["network_snapshot_id"],
+                      input_database_sha256=hashlib.sha256(arguments.network.read_bytes()).hexdigest())
+        review["source"]["read_at"] = arguments.read_at
+        return review
     coordinates = {
         node["node_id"]: (node["latitude"], node["longitude"])
         for node in network["nodes"]

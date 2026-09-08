@@ -16,7 +16,7 @@ of rejecting it by straight-line distance.
 The selected Kaido-owned `RoutePlan` then drives review and a labeled replay of
 bounded surface legs, entry, expressway progress, exit, egress, finish, and
 checkpoint reconstruction. Every plannable direction-valid facility route in
-the current snapshot can compile from the 161 released movement bindings into
+the current snapshot can compile from the 163 released movement bindings into
 one exact foreground release; malformed, mismatched, or incomplete plans remain
 fail-closed with their precise release blocker.
 
@@ -55,8 +55,8 @@ realtime, or field authority.
 `inspect-network-live-coverage` builds the snapshot-wide authoring worklist
 without enumerating every possible entry/exit RoutePlan. For the 2026-08-04
 snapshot it identifies 29 JCTs with choices between available expressway
-mainlines, 80 incoming approaches, and 161 candidate incoming/outgoing movement
-pairs. All 161 exact definitions are source-bound and released. The former KK
+mainlines, 81 incoming approaches, and 163 candidate incoming/outgoing movement
+pairs. All 163 exact definitions are source-bound and released. The former KK
 Line branch at Kyobashi is bound to the retained
 East Ginza surface exit under the operator's 2025-04-05 closure notice, so it is
 not inventoried as an available expressway movement. Terminal exits and
@@ -112,7 +112,7 @@ occurrence. Raw LOW or ambiguous coordinates cannot replace the last accepted
 route projection. This estimate never mutates `NavigationSession`, occurrence
 identity, guidance emission, exit handoff, or completion.
 
-`ShutoJunctionGuidanceCompiler` contains 161 snapshot- and source-hash-bound
+`ShutoJunctionGuidanceCompiler` contains 163 snapshot- and source-hash-bound
 movement definitions. They cover every inventoried available mainline movement
 and admit an exact plan only when its entire decision sequence is covered.
 Admission still requires
@@ -2270,3 +2270,13 @@ route-edge lengths, not occurrence count. It clears obsolete guidance and tunnel
 projections after the logical lap change, then persists the existing checkpoint
 structure. The original RoutePlan, exit tail, destination, and observed lap
 records remain unchanged.
+
+### Directional parking-area paths
+
+The whole-network parking review binds an ordered list of exact source edges
+from access to return. A circuit PA anchor appends that path explicitly, even
+when its access node also has a bypass or the path repeats a segment. Ordinary
+routing excludes `PARKING` edges; the interior carries no numbered-route
+membership and never becomes a fare shortcut. Shared approach/return roads keep
+their original role. A modelled interior alone does not authorize an unsupported
+external-expressway entrance or enroll the route for live navigation.

@@ -60,7 +60,7 @@ internal review workbench.
 - The bundled whole-Shuto graph remains a candidate asset rather than blanket
   navigation authority. Five representative foreground releases are prebuilt
   for startup regression. Every other plannable exact `RoutePlan` is rebuilt
-  and content-addressed on device from the same validated snapshot and 161
+  and content-addressed on device from the same validated snapshot and 163
   released movement bindings before **Start navigation** is enabled. The
   exhaustive admission audit covers all 51,582 direction-valid facility route
   combinations; malformed, mismatched, or incomplete plans still fail closed.

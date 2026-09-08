@@ -63,7 +63,7 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def apply_review(
+def apply_single_way_review(
     network: dict[str, Any],
     review: dict[str, Any],
 ) -> dict[str, Any]:
@@ -208,6 +208,98 @@ def apply_review(
     return network
 
 
+def apply_review(network: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
+    if review.get("schema_version") == "1.0":
+        return apply_single_way_review(network, review)
+    if review.get("schema_version") != "1.1":
+        raise ParkingAccessApplyError("unsupported parking access review schema")
+    if review.get("network_snapshot_id") != network["network_snapshot_id"]:
+        raise ParkingAccessApplyError("review was taken against a different network snapshot")
+    coordinates = {n["node_id"]: (n["latitude"], n["longitude"]) for n in network["nodes"]}
+    ways = {w["way_id"]: w for w in network["ways"]}
+    edges = {e["edge_id"]: e for e in network["edges"]}
+    source_ways = {w["way_id"]: w for w in review["ways"]}
+    parking = {p["parking_area_id"]: p for p in network["parking_areas"]}
+    owners = {e: p["parking_area_id"] for p in network["parking_areas"] for e in p.get("interior_edge_ids", [])}
+
+    def add_segment(way_id, index, kind, memberships):
+        way = source_ways[way_id]
+        tags = way["tags"]
+        access = next((tags[k] for k in ("motorcar", "motor_vehicle", "vehicle", "access") if k in tags), None)
+        if tags.get("oneway") != "yes" or access not in (None, "yes", "designated", "permissive", "customers"):
+            raise ParkingAccessApplyError(f"way {way_id} lacks unrestricted forward motorcar access")
+        allowed = ("service", "motorway_link") if kind == PARKING_EDGE_KIND else ("motorway",)
+        if tags.get("highway") not in allowed or any(k.endswith(":conditional") for k in tags):
+            raise ParkingAccessApplyError(f"way {way_id} is not a reviewed unconditional {kind} road")
+        if not 0 <= index < len(way["node_ids"]) - 1:
+            raise ParkingAccessApplyError("reviewed segment index is outside the source way")
+        for node in way["nodes"]:
+            position = (node["latitude"], node["longitude"])
+            existing = coordinates.get(node["node_id"])
+            if existing is not None and haversine_meters(existing, position) > 1:
+                raise ParkingAccessApplyError(f"coordinate drift for OSM node {node['node_id']}")
+            if existing is None:
+                network["nodes"].append({"node_id": node["node_id"], "latitude": position[0], "longitude": position[1], "tags": {}})
+                coordinates[node["node_id"]] = position
+        if way_id not in ways:
+            ways[way_id] = {"way_id": way_id, "version": way["version"], "kind": kind,
+                            "node_ids": way["node_ids"], "route_memberships": memberships, "tags": tags}
+        elif ways[way_id]["node_ids"] != way["node_ids"]:
+            raise ParkingAccessApplyError(f"node sequence drift for OSM way {way_id}")
+        a, b = way["node_ids"][index:index+2]
+        edge_id = f"osm.{way_id}.{index}.forward"
+        existing = edges.get(edge_id)
+        if existing and (existing["from_node_id"], existing["to_node_id"]) != (a, b):
+            raise ParkingAccessApplyError(f"edge identity drift for {edge_id}")
+        edges[edge_id] = {"edge_id": edge_id, "from_node_id": a, "to_node_id": b, "way_id": way_id,
+                          "segment_index": index, "kind": kind, "direction": "forward",
+                          "length_meters": round(haversine_meters(coordinates[a], coordinates[b]), 3),
+                          "route_memberships": memberships}
+        return edges[edge_id]
+
+    for connection in review.get("connecting_ways", []):
+        way = source_ways[connection["way_id"]]
+        if way["node_ids"][0] not in coordinates or way["node_ids"][-1] not in coordinates:
+            raise ParkingAccessApplyError("connecting road must join existing snapshot nodes")
+        if connection["kind"] != "MAINLINE" or way["tags"].get("ref") != connection["route_id"]:
+            raise ParkingAccessApplyError("connecting road route identity disagrees with OSM")
+        for index in range(len(way["node_ids"]) - 1):
+            add_segment(way["way_id"], index, "MAINLINE", [{"route_id": connection["route_id"], "directions_ja": []}])
+
+    for item in review["parking_areas"]:
+        pid = item["parking_area_id"]
+        if pid not in parking or item.get("verification_state") != "SOURCE_REVIEWED":
+            raise ParkingAccessApplyError("unknown or unreviewed parking area")
+        if item["access_node_id"] not in coordinates or item["return_node_id"] not in coordinates:
+            raise ParkingAccessApplyError("parking path must join existing network nodes")
+        cursor = item["access_node_id"]
+        path = []
+        for segment in item["interior_segments"]:
+            edge = add_segment(segment["way_id"], segment["segment_index"], PARKING_EDGE_KIND, [])
+            if edge["from_node_id"] != cursor:
+                raise ParkingAccessApplyError("parking path is not directionally continuous")
+            if edge["edge_id"] in owners and owners[edge["edge_id"]] != pid:
+                raise ParkingAccessApplyError("a parking edge cannot bind two directional parking areas")
+            owners[edge["edge_id"]] = pid
+            path.append(edge["edge_id"])
+            cursor = edge["to_node_id"]
+        if not path or cursor != item["return_node_id"]:
+            raise ParkingAccessApplyError("parking path does not reach the reviewed return")
+        parking[pid].update(access_node_id=item["access_node_id"], return_node_id=cursor,
+                            interior_edge_ids=path, interior_distance_meters=round(sum(edges[e]["length_meters"] for e in path), 3))
+        if "coordinate" in item:
+            parking[pid]["coordinate"] = item["coordinate"]
+    for way in ways.values():
+        members = [e for e in edges.values() if e["way_id"] == way["way_id"]]
+        if members and all(e["kind"] == PARKING_EDGE_KIND for e in members):
+            way["kind"] = PARKING_EDGE_KIND
+            way["route_memberships"] = []
+    network["nodes"].sort(key=lambda n: n["node_id"])
+    network["ways"] = sorted(ways.values(), key=lambda w: w["way_id"])
+    network["edges"] = sorted(edges.values(), key=lambda e: e["edge_id"])
+    return network
+
+
 def validate(network: dict[str, Any], review: dict[str, Any]) -> None:
     node_ids = {node["node_id"] for node in network["nodes"]}
     outgoing: dict[int, int] = {}
@@ -256,13 +348,18 @@ def main() -> int:
     network = json.loads(arguments.network.read_text())
     review = json.loads(arguments.review.read_text())
     try:
+        if review.get("schema_version") == "1.1" and review.get("input_database_sha256") != sha256(arguments.network):
+            raise ParkingAccessApplyError("review input database hash does not match")
         applied = apply_review(network, review)
+        previous_review = network["sources"].get("parking_access_review")
         applied["sources"]["parking_access_review"] = {
             "review_id": review["review_id"],
             "checked_at": review["checked_at"],
             "sha256": sha256(arguments.review),
-            "parking_area_count": len(review["parking_areas"]),
+            "parking_area_count": sum(bool(p.get("interior_edge_ids")) for p in applied["parking_areas"]),
         }
+        if review.get("schema_version") == "1.1":
+            applied["sources"]["parking_access_review"]["previous_review"] = previous_review
         applied["database_id"] = (
             applied["database_id"].split("+", 1)[0]
             + "+pa-access-"

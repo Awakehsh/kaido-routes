@@ -952,10 +952,9 @@ final class KaidoProductJourneyUITests: XCTestCase {
 
     let nameField = reveal("saved-route-name", in: authoringApp)
     nameField.tap()
-    nameField.typeText(savedRouteName)
-    let keyboardReturn = authoringApp.keyboards.buttons["return"]
-    XCTAssertTrue(keyboardReturn.waitForExistence(timeout: 2))
-    keyboardReturn.tap()
+    nameField.typeText(savedRouteName + "\n")
+    XCTAssertEqual(nameField.value as? String, savedRouteName)
+    XCTAssertTrue(authoringApp.keyboards.firstMatch.waitForNonExistence(timeout: 3))
     reveal("saved-route-save", in: authoringApp).tap()
     XCTAssertTrue(
       element("saved-route-save-success", in: authoringApp)

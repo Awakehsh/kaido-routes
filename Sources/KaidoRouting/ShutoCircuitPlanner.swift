@@ -26,10 +26,8 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
     case facility(String)
     case junction(String)
     /// A parking area the course stops at rather than passes. Unlike a
-    /// facility or junction anchor, which settles on whichever nearby
-    /// carriageway node is cheapest, this one is the exact node the access
-    /// ramp ends at: there is one way in, and the interior is the only way
-    /// back out, so the following leg drives the whole parking area.
+    /// facility or junction anchor, this requires the entire reviewed
+    /// directional path, including any repeated edges inside the PA.
     case parkingArea(String)
   }
 
@@ -477,7 +475,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     guard
@@ -551,6 +549,10 @@ extension ShutoRoutePlanner {
             }
           }
         }
+        if circuit.kind == .tour, let first = anchorReaches.first,
+          anchorReaches.dropFirst().contains(where: { $0.distance + 1_000 < first.distance }) {
+          return false
+        }
         // A loop entrance must feed an actual cycle: from the farthest
         // anchor the lap must close back to the first anchor within the
         // closing-arc budget. The landing itself may sit on a one-way
@@ -590,7 +592,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     let traversal = try circuitTraversal(
@@ -781,7 +783,7 @@ extension ShutoRoutePlanner {
       }
     }
     let cost: (ShutoNetworkDatabase.Edge) -> Double = { edge in
-      edge.lengthMeters * (isMember(edge) ? 1 : 25)
+      edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
     let traversal = try circuitTraversal(
@@ -938,7 +940,7 @@ extension ShutoRoutePlanner {
     cost: (ShutoNetworkDatabase.Edge) -> Double
   ) throws -> CircuitTraversal {
     let landing = approach.target
-    let orderedSets: [Set<Int64>]
+    let orderedIndices: [Int]
     switch circuit.kind {
     case .loop:
       // The cyclic anchor sequence pins the carriageway direction; the
@@ -958,16 +960,17 @@ extension ShutoRoutePlanner {
           startIndex = index
         }
       }
-      orderedSets = (0..<anchorSets.count).map {
-        anchorSets[(startIndex + $0) % anchorSets.count]
+      orderedIndices = (0..<anchorSets.count).map {
+        (startIndex + $0) % anchorSets.count
       }
     case .tour:
-      orderedSets = anchorSets
+      orderedIndices = Array(anchorSets.indices)
     }
 
     var bodyEdges: [ShutoNetworkDatabase.Edge] = []
     var currentNode = landing
-    for nodes in orderedSets {
+    for index in orderedIndices {
+      let nodes = anchorSets[index]
       guard
         let leg = circuitDijkstra(
           from: currentNode,
@@ -979,6 +982,24 @@ extension ShutoRoutePlanner {
       }
       bodyEdges.append(contentsOf: leg.edges)
       currentNode = leg.target
+      if case .parkingArea(let parkingAreaID) = circuit.anchors[index] {
+        guard let parkingArea = database.parkingAreas.first(where: {
+          $0.parkingAreaID == parkingAreaID
+        }), let edgeIDs = parkingArea.interiorEdgeIDs, !edgeIDs.isEmpty else {
+          throw ShutoNetworkError.facilityUnavailable
+        }
+        for edgeID in edgeIDs {
+          guard let edge = edgesByID[edgeID], edge.kind == "PARKING",
+            edge.fromNodeID == currentNode else {
+            throw ShutoNetworkError.routeUnavailable
+          }
+          bodyEdges.append(edge)
+          currentNode = edge.toNodeID
+        }
+        guard currentNode == parkingArea.returnNodeID else {
+          throw ShutoNetworkError.routeUnavailable
+        }
+      }
     }
     switch circuit.kind {
     case .loop:

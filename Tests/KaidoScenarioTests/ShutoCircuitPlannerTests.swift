@@ -5,6 +5,83 @@ import Testing
 
 @Suite("Shuto circuit planner")
 struct ShutoCircuitPlannerTests {
+  @Test("reviewed PA paths are traversed in full or reject unsupported external entrances", arguments: ["heiwajima-inbound", "heiwajima-outbound", "yoga", "eifuku", "yoyogi", "shimura", "minami-ikebukuro", "hakozaki", "komagata", "kahei", "yashio", "tatsumi-1", "tatsumi-2", "shibaura", "ichikawa", "oi-westbound", "oi-eastbound", "daikoku", "kawaguchi"])
+  func plansEveryReviewedParkingArea(name: String) throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let parkingArea = try #require(database.parkingAreas.first {
+      $0.parkingAreaID == "shuto.pa.\(name)"
+    })
+    let routeID = try #require(parkingArea.routeID)
+    let direction = parkingArea.directionJA ?? (routeID == "B" ? "西行き" : "上り")
+    var entrances = [routeID: direction]
+    var exits = [routeID: direction]
+    if name == "tatsumi-1" { entrances = ["B": "東行き"] }
+    if name == "tatsumi-2" { entrances = ["B": "西行き"] }
+    if name == "kahei" { entrances = ["6_MUKOJIMA": "下り"] }
+    if name == "shibaura" { exits = ["C1": "内回り"] }
+    let members = Set(entrances.keys).union(exits.keys).union([routeID])
+      .union(name == "daikoku" ? ["K5"] : [])
+    let circuit = ShutoCircuitDefinition(
+      circuitID: "test.parking.\(name)", displayNameJA: parkingArea.nameJA,
+      kind: .tour, memberRouteIDs: members,
+      entranceDirectionsByRouteID: entrances, exitDirectionsByRouteID: exits,
+      anchors: [.parkingArea(parkingArea.parkingAreaID)]
+    )
+    if name == "yoga" || name == "ichikawa" {
+      // Both PAs precede the first supported inbound Shuto entrance;
+      // reaching them requires the connecting expressway outside this graph.
+      #expect(planner.circuitEntranceCandidates(for: circuit).isEmpty)
+      #expect(throws: ShutoNetworkError.facilityUnavailable) {
+        _ = try planner.recommendedCircuitPairing(
+          for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarActive
+        )
+      }
+      return
+    }
+    let pairing = try planner.recommendedCircuitPairing(
+      for: circuit, origin: parkingArea.coordinate, evidence: .etcNormalCarActive
+    )
+    let route = try planner.planCircuit(
+      circuit: circuit, entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID, laps: 1
+    )
+    #expect(assertContinuity(route.edges))
+    let visits = route.routePlan.occurrences.filter { $0.kind == .paVisit }
+    #expect(visits.count == parkingArea.interiorEdgeIDs?.count)
+    #expect(visits.allSatisfy { $0.parkingAreaID == parkingArea.parkingAreaID })
+    let parkingEdges = route.edges.filter { $0.kind == "PARKING" }.map(\.edgeID)
+    #expect(parkingEdges == parkingArea.interiorEdgeIDs)
+    #expect(route.routeIDsInOrder.allSatisfy { !$0.isEmpty })
+  }
+
+  @Test("a PA stop is completed on each lap without becoming a route shortcut")
+  func repeatsParkingStopOnEachLap() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let original = ShutoCircuitDefinition.daikokuYokohamaLoop
+    let circuit = ShutoCircuitDefinition(
+      circuitID: "test.parking-loop", displayNameJA: original.displayNameJA,
+      kind: .loop, memberRouteIDs: original.memberRouteIDs,
+      entranceDirectionsByRouteID: original.entranceDirectionsByRouteID,
+      exitDirectionsByRouteID: original.exitDirectionsByRouteID,
+      anchors: original.anchors + [.parkingArea("shuto.pa.daikoku")]
+    )
+    #expect(!planner.circuitEntranceCandidates(for: circuit).isEmpty)
+    let one = try planner.planCircuit(
+      circuit: circuit, entryFacilityID: "shuto.ic.b.wangankanpachi",
+      exitFacilityID: "shuto.ic.b.daikokufutou", laps: 1
+    )
+    let two = try planner.planCircuit(
+      circuit: circuit, entryFacilityID: "shuto.ic.b.wangankanpachi",
+      exitFacilityID: "shuto.ic.b.daikokufutou", laps: 2
+    )
+    #expect(assertContinuity(two.edges))
+    #expect(two.routePlan.occurrences.filter { $0.kind == .paVisit }.count
+      == one.routePlan.occurrences.filter { $0.kind == .paVisit }.count * 2)
+    #expect(Set(two.routePlan.occurrences.map(\.id)).count == two.routePlan.occurrences.count)
+  }
+
   @Test("route catalog names and landmarks cover every interface language")
   func localizesBundledRouteCatalog() {
     for circuit in ShutoCircuitDefinition.bundled {

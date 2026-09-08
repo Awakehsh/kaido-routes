@@ -1,63 +1,88 @@
-# Parking-area access review — 2026-09-08
+# Parking-area access — 2026-09-08
 
-Status: **candidate investigation complete; no additional PA is approved or released**.
+All 19 bundled PA interiors have reviewed directional paths. Seventeen have
+executable Shuto entrance-to-PA-to-exit tests. Yoga and Ichikawa require
+connecting-expressway entrances outside the supported graph.
 
-This follows the local `handoffs/parking-area-modelling/2026-09-08-remaining-parking-areas.md`. Its table contains 12 unmodelled “ready” PAs and six investigation PAs, plus Daikoku; the headings miscount them. Its dead-end-only mechanism does not cover the actual graph.
+The [source review](../../data/route-atlas/reviews/shuto-parking-access-review-20260908.json)
+records exact way versions, node versions, ordered segments and operator page
+references. The [candidate inventory](../../data/route-atlas/osm-derived/shuto-parking-access-candidates-20260908.json)
+is historical discovery evidence, not an approved importer input. Nearby labels
+alone do not establish direction: both Oi and Heiwajima searches can return
+roads belonging to the other carriageway.
 
-## Evidence and reproduction
+## Reproduction
 
-The read used snapshot `shuto-official-2026-07-29-osm-2026-08-04`, SHA-256 `831a162e7260447fc130dcf0dc4d3e4b39cd2f5d3c5ae19d6197f29e813d4c26`. These are the local inherited Daikoku-overlay bytes, not the clean ancestor `adc1086`. The original checkout and its uncommitted delivery work were preserved. No additional parking geometry was applied.
+Apply the 2026-09-07 Daikoku review and then the 2026-09-08 review to the
+unaugmented 2026-08-04 database. The second review checks its exact input hash.
+The [review instructions](../../data/route-atlas/reviews/README.md) describe the
+source refresh and ODbL distribution. Raw operator images and map responses
+remain outside tracked files.
 
-The coordinate-free [candidate inventory](../../data/route-atlas/osm-derived/shuto-parking-access-candidates-20260908.json) records source URLs and hashes, way versions/timestamps, ordered segments, nearby named OSM PA polygons, and whether a node-only stop can bypass the PA. It is deliberately not importer input. Current OSM readings do not establish that every way/node version existed in the historical extract.
+## Selected paths
 
-```sh
-python3 scripts/audit_parking_area_access.py \
-  --network data/route-atlas/osm-derived/shuto-whole-network-20260804.json \
-  --cache-dir /tmp/kaido-pa-review \
-  --output /tmp/kaido-pa-review.json --read-at <actual-read-time>
-```
-
-The live read is bounded; its shortest paths are candidates, not an exhaustive lane inventory. Use `--offline` only with retained payloads from the stated read time. Raw OSM map payloads and geometry plots remain outside tracked files.
-
-## Review each PA
-
-A reviewer must confirm the exact access, parking path and return for the stated direction using the linked operator identity and OSM way evidence. The OSM polygon name is a useful cross-check, not legal or field verification.
-
-| PA / operator identity | Candidate way IDs (ordered) | Finding / required decision |
+| PA / operator identity | Source ways in traversal order | Availability |
 |---|---|---|
-| [平和島PA（上り）](https://www.shutoko-sv.jp/pa/heiwajima-inbound) | [507859758](https://www.openstreetmap.org/way/507859758) → [853831007](https://www.openstreetmap.org/way/853831007) → [507859759](https://www.openstreetmap.org/way/507859759) → [507859762](https://www.openstreetmap.org/way/507859762) → [507859763](https://www.openstreetmap.org/way/507859763) → [507859760](https://www.openstreetmap.org/way/507859760) → [853831008](https://www.openstreetmap.org/way/853831008)<br>[586347926](https://www.openstreetmap.org/way/586347926) | Seven-way candidate intersects the inbound OSM PA polygon; the other candidate intersects the outbound polygon. The access node has an onward bypass. |
-| [平和島PA（下り）](https://www.shutoko-sv.jp/pa/heiwajima-outbound) | [507859758](https://www.openstreetmap.org/way/507859758) → [853831007](https://www.openstreetmap.org/way/853831007) → [507859759](https://www.openstreetmap.org/way/507859759) → [507859762](https://www.openstreetmap.org/way/507859762) → [507859763](https://www.openstreetmap.org/way/507859763) → [507859760](https://www.openstreetmap.org/way/507859760) → [853831008](https://www.openstreetmap.org/way/853831008)<br>[586347926](https://www.openstreetmap.org/way/586347926) | Way 586347926 intersects the outbound OSM PA polygon. Do not select the seven-way inbound candidate by proximity. The access node has an onward bypass. |
-| [用賀PA（上り）](https://www.shutoko-sv.jp/pa/yoga) | [678426242](https://www.openstreetmap.org/way/678426242) → [678426243](https://www.openstreetmap.org/way/678426243) → [678426244](https://www.openstreetmap.org/way/678426244) | Three service ways connect existing through nodes, not dead ends. A node anchor alone can skip the PA. |
-| [永福PA（上り）](https://www.shutoko-sv.jp/pa/eifuku) | [1449651626](https://www.openstreetmap.org/way/1449651626) → [1449651625](https://www.openstreetmap.org/way/1449651625) → [27514034](https://www.openstreetmap.org/way/27514034) | Three service ways connect a through ramp. A node anchor alone can skip the PA. |
-| [代々木PA（上り）](https://www.shutoko-sv.jp/pa/yoyogi) | [107771259](https://www.openstreetmap.org/way/107771259) | Single service-way candidate; exact identity, direction, and historical geometry still require review. |
-| [志村PA（上り）](https://www.shutoko-sv.jp/pa/shimura) | [659036654](https://www.openstreetmap.org/way/659036654) → [1023392643](https://www.openstreetmap.org/way/1023392643) → [659036655](https://www.openstreetmap.org/way/659036655) | Three service ways connect mainline nodes. A node anchor alone can skip the PA. |
-| [南池袋PA（上り）](https://www.shutoko-sv.jp/pa/minami-ikebukuro) | No new connected path in the original bounded read | Named motorway_link 292083252 is already present with Route 5 membership. This needs PA binding/classification review, not a fabricated interior. |
-| [箱崎PA](https://www.shutoko-sv.jp/pa/hakozaki) | [263330206](https://www.openstreetmap.org/way/263330206) → [633246923](https://www.openstreetmap.org/way/633246923) → [263330211](https://www.openstreetmap.org/way/263330211) | Candidate traverses the named OSM PA polygon. A separate nearby service chain contains private access and is excluded. The rotary access node is not a dead end. |
-| [駒形PA（上り）](https://www.shutoko-sv.jp/pa/komagata) | [154971211](https://www.openstreetmap.org/way/154971211) | Service way 154971211 begins on a mainline through node and rejoins an existing link. No missing half needs to be synthesized. |
-| [加平PA（下り）](https://www.shutoko-sv.jp/pa/kahei) | [250488079](https://www.openstreetmap.org/way/250488079) | Single service-way candidate intersects the outbound PA polygon. Neighboring facility dead ends are not evidence for this PA. |
-| [八潮PA（上り）](https://www.shutoko-sv.jp/pa/yashio) | [288901861](https://www.openstreetmap.org/way/288901861) → [288901862](https://www.openstreetmap.org/way/288901862) | The shortest candidate uses segments of two parking aisles; the old reader chooses one whole way. Select an explicit reviewed path, not every aisle. |
-| [辰巳第一PA（上り）](https://www.shutoko-sv.jp/pa/tatsumi-1) | [809137047](https://www.openstreetmap.org/way/809137047) | Way 809137047 is a connected candidate, but the bounded read supplies no matching named rest-area polygon along it. Identity remains unresolved. |
-| [辰巳第二PA（上り）](https://www.shutoko-sv.jp/pa/tatsumi-2) | [809137047](https://www.openstreetmap.org/way/809137047)<br>[809140340](https://www.openstreetmap.org/way/809140340) → [376509517](https://www.openstreetmap.org/way/376509517) | The two-way-ID chain intersects the second PA polygon. The neighboring first-PA candidate must not be selected for the second PA. |
-| [芝浦PA（上り）](https://www.shutoko-sv.jp/pa/shibaura) | [4848741](https://www.openstreetmap.org/way/4848741) → [820360944](https://www.openstreetmap.org/way/820360944) → [45067778](https://www.openstreetmap.org/way/45067778) → [45067779](https://www.openstreetmap.org/way/45067779) → [820360945](https://www.openstreetmap.org/way/820360945) | Five service ways connect through nodes and intersect the PA polygon. A node anchor alone can skip the PA. |
-| [市川PA（西行き）](https://www.shutoko-sv.jp/pa/ichikawa) | No new connected path in the original bounded read | The snapshot label is about 720 m west of the OSM PA polygon (way 585560634), outside the original search box. An expanded read finds existing motorway links 46897953, 25823832, 25823833 and 1133924269. Review the coordinate and exact PA segment binding; the empty original search does not establish missing roads. |
-| [大井PA（西行き）](https://www.shutoko-sv.jp/pa/oi-westbound) | [675182036](https://www.openstreetmap.org/way/675182036) | Way 675182036 intersects the westbound PA polygon. Its proximity to the eastbound label does not make it eastbound. |
-| [大井PA（東行き）](https://www.shutoko-sv.jp/pa/oi-eastbound) | [675182036](https://www.openstreetmap.org/way/675182036) | The only complete bounded candidate is WESTBOUND and must be rejected for this PA. Actual eastbound service way 675182035 continues through missing link 675182038 to node 4157120422 on motorway way 1059139534, which is absent from the snapshot. This is a mainline coverage issue, not an interior-only overlay. |
-| [川口PA（上り）（川口ハイウェイオアシス）](https://www.shutoko-sv.jp/pa/kawaguchi) | [1299417625](https://www.openstreetmap.org/way/1299417625) → [687045302](https://www.openstreetmap.org/way/687045302) → [44351819](https://www.openstreetmap.org/way/44351819) | Three service ways connect the dead ends and intersect the PA polygon; the single-way reader cannot represent them. |
+| [平和島PA（上り）](https://www.shutoko-sv.jp/pa/heiwajima-inbound) | [507859758](https://www.openstreetmap.org/way/507859758) → [853831007](https://www.openstreetmap.org/way/853831007) → [507859759](https://www.openstreetmap.org/way/507859759) → [507859762](https://www.openstreetmap.org/way/507859762) → [507859763](https://www.openstreetmap.org/way/507859763) → [507859760](https://www.openstreetmap.org/way/507859760) → [853831008](https://www.openstreetmap.org/way/853831008) | Complete Shuto entry / PA / exit path tested |
+| [平和島PA（下り）](https://www.shutoko-sv.jp/pa/heiwajima-outbound) | [586347926](https://www.openstreetmap.org/way/586347926) | Complete Shuto entry / PA / exit path tested |
+| [用賀PA](https://www.shutoko-sv.jp/pa/yoga) | [678426242](https://www.openstreetmap.org/way/678426242) → [678426243](https://www.openstreetmap.org/way/678426243) → [678426244](https://www.openstreetmap.org/way/678426244) | Interior modelled; connecting-expressway entrance unsupported |
+| [永福PA](https://www.shutoko-sv.jp/pa/eifuku) | [1449651626](https://www.openstreetmap.org/way/1449651626) → [1449651625](https://www.openstreetmap.org/way/1449651625) → [27514034](https://www.openstreetmap.org/way/27514034) | Complete Shuto entry / PA / exit path tested |
+| [代々木PA](https://www.shutoko-sv.jp/pa/yoyogi) | [107771259](https://www.openstreetmap.org/way/107771259) | Complete Shuto entry / PA / exit path tested |
+| [志村PA](https://www.shutoko-sv.jp/pa/shimura) | [659036654](https://www.openstreetmap.org/way/659036654) → [1023392643](https://www.openstreetmap.org/way/1023392643) → [659036655](https://www.openstreetmap.org/way/659036655) | Complete Shuto entry / PA / exit path tested |
+| [南池袋PA](https://www.shutoko-sv.jp/pa/minami-ikebukuro) | [292083252](https://www.openstreetmap.org/way/292083252) | Complete Shuto entry / PA / exit path tested |
+| [箱崎PA](https://www.shutoko-sv.jp/pa/hakozaki) | [263330206](https://www.openstreetmap.org/way/263330206) → [633246923](https://www.openstreetmap.org/way/633246923) → [263330211](https://www.openstreetmap.org/way/263330211) | Complete Shuto entry / PA / exit path tested |
+| [駒形PA](https://www.shutoko-sv.jp/pa/komagata) | [154971211](https://www.openstreetmap.org/way/154971211) | Complete Shuto entry / PA / exit path tested |
+| [加平PA](https://www.shutoko-sv.jp/pa/kahei) | [250488079](https://www.openstreetmap.org/way/250488079) | Complete Shuto entry / PA / exit path tested |
+| [八潮PA](https://www.shutoko-sv.jp/pa/yashio) | [288901861](https://www.openstreetmap.org/way/288901861) | Complete Shuto entry / PA / exit path tested |
+| [辰巳第一PA](https://www.shutoko-sv.jp/pa/tatsumi-1) | [809137047](https://www.openstreetmap.org/way/809137047) → [376496465](https://www.openstreetmap.org/way/376496465) | Complete Shuto entry / PA / exit path tested |
+| [辰巳第二PA](https://www.shutoko-sv.jp/pa/tatsumi-2) | [809140340](https://www.openstreetmap.org/way/809140340) → [376509517](https://www.openstreetmap.org/way/376509517) | Complete Shuto entry / PA / exit path tested |
+| [芝浦PA](https://www.shutoko-sv.jp/pa/shibaura) | [4848741](https://www.openstreetmap.org/way/4848741) → [820360944](https://www.openstreetmap.org/way/820360944) → [45067778](https://www.openstreetmap.org/way/45067778) → [45067779](https://www.openstreetmap.org/way/45067779) → [820360945](https://www.openstreetmap.org/way/820360945) | Complete Shuto entry / PA / exit path tested |
+| [市川PA](https://www.shutoko-sv.jp/pa/ichikawa) | [25823832](https://www.openstreetmap.org/way/25823832) | Interior modelled; connecting-expressway entrance unsupported |
+| [大井PA（西行き）](https://www.shutoko-sv.jp/pa/oi-westbound) | [675182036](https://www.openstreetmap.org/way/675182036) | Complete Shuto entry / PA / exit path tested |
+| [大井PA（東行き）](https://www.shutoko-sv.jp/pa/oi-eastbound) | [675182035](https://www.openstreetmap.org/way/675182035) → [675182038](https://www.openstreetmap.org/way/675182038) | Complete Shuto entry / PA / exit path tested |
+| [川口ハイウェイオアシス](https://www.shutoko-sv.jp/pa/kawaguchi) | [1299417625](https://www.openstreetmap.org/way/1299417625) → [687045302](https://www.openstreetmap.org/way/687045302) → [44351819](https://www.openstreetmap.org/way/44351819) | Complete Shuto entry / PA / exit path tested |
 
-## Implementation required after identity review
+## Delivered modelling
 
-- Extend the interior review/importer to ordered multi-way segments, retaining original segment indices and evidence; do not flatten them into an invented OSM way.
-- Make a requested stop traverse the complete reviewed PA path explicitly. Several valid access nodes also lead onward without entering the PA, so the inherited access-node anchor is insufficient.
-- Bind existing PA links only after auditing their route/fare use. Do not remove route membership from shared approach or return roads just because they touch a PA polygon.
-- Resolve Oi eastbound mainline coverage and Ichikawa position/binding from source evidence before claiming those stops. Do not invent missing mainline geometry.
-- After applying approved changes, rebuild affected releases, refresh bundled hashes, and run the handoff core/scenario/App/device checks. None of those runtime checks was performed for this candidate-only audit.
+- All 19 PAs have exact ordered parking edges without route membership. The 18 newly reviewed paths add 250 edges net, for 24,573 total graph edges.
+- A PA anchor explicitly appends its whole reviewed path and resumes from the return node. Ordinary route searches do not take parking interiors as shortcuts. Tatsumi first preserves a repeated source segment as separate route occurrences.
+- Minami-Ikebukuro and Ichikawa reuse and classify existing interior links. Their shared approach and return roads retain their original role. Ichikawa's point is corrected from its named OSM PA polygon.
+- Oi eastbound's missing mainline way 1059139534 is restored from dated OSM geometry and retains B membership. Both newly reachable Oi JCT choices are bound to the operator diagram whose SHA-256 is `4bfe3cb6117273ec547a62872b971a87fcc944fff70b3267022888612aacfc2b`, fetched and visually reviewed on 2026-09-08.
+- Every selected way and node version predates the 2026-08-04 extract. This is an explicit hash-bound supplement to that snapshot; no current opening or field-reliability claim is added.
 
-The deferred recovery-candidate ordering and Ohashi JCT issue remain outside this work.
+## Executable availability boundary
 
-## Required human checkpoint
+The real circuit planner traverses the complete reviewed paths for 17 PAs,
+including approach from the Bayshore for Tatsumi first/second and continuation
+onto C1 after Shibaura. Yoga and Ichikawa precede the first supported inbound
+Shuto entrance: their interiors exist, but a stop from a supported Shuto entry
+is unavailable. Their tests require explicit rejection instead of inventing
+an entrance on the connecting expressway.
 
-The handoff explicitly says each candidate “still needs a human to confirm the service way is the parking area and not an adjacent depot road or a surface interchange.” No human sign-off is recorded here. The review must identify approved paths and direction for each PA; a general code-test pass cannot supply it.
+Default route recipes retain their existing stops. Modelling a PA does not
+silently add a stop to every route that passes it, or enroll arbitrary routes
+for live navigation. Route cards continue to advertise only actual stops.
 
-## Verification
+The deferred recovery-candidate ordering and Ohashi JCT issue remain outside
+this work. Product releases and bundle hashes are rebuilt from the updated
+network; synthetic/runtime checks are distinct from field evidence.
 
-The audit CLI read all 18 remaining PAs from the captured live OSM responses and emitted 19 unapproved path candidates. Six deterministic tests cover multi-way through-node paths, restricted/reverse/missing returns, existing PA links, ambiguous alternatives and polygon evidence without approval. This audit changes no App or navigation runtime behavior.
+## Verification on 2026-09-08
+
+- Swift core: 556 tests passed, including all 19 PA cases and repeated-lap visits.
+- Portable E2E: 73 scenarios and 517 assertions passed; schema validation passed.
+- Python: 258 tests and facility-candidate review verification passed.
+- Live source refresh reproduces the review bytes; replaying the two reviews
+  reproduces the distributed database bytes. All five rebuilt foreground
+  products and the retained joint-release fixture passed validation.
+- iPhone 17 Pro / iOS 26.5 Simulator: the initial full run passed 368 of 371
+  tests. Two existing UI assertions were repaired by the concurrent main-branch
+  update; the saved-route test now submits through the keyboard action instead
+  of an English button label. The final affected set passed all seven tests,
+  with no skips or expected failures.
+- Physical iPhone: Debug signing/build verification passed; after unlocking,
+  installation and foreground launch succeeded. Device process inspection
+  confirmed the launched executable belongs to the just-installed App. Its
+  bundled database exactly matches the repository with 19 PA interiors and
+  SHA-256 `c4602ba48c84dcf3305775d335d2be7438c4ba284cb8111b32ebeb764fd7a2b3`.
+  This proves device deployment and startup, not road/field reliability.

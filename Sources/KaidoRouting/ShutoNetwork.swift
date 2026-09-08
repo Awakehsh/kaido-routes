@@ -291,7 +291,7 @@ public struct ShutoNetworkDatabase: Codable, Sendable {
 
     /// Whether a route may stop here rather than only pass the sign for it.
     public var isDrivable: Bool {
-      accessNodeID != nil && returnNodeID != nil
+      accessNodeID != nil && returnNodeID != nil && !(interiorEdgeIDs ?? []).isEmpty
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -941,6 +941,7 @@ public struct ShutoRoutePlanner: Sendable {
     _ edge: ShutoNetworkDatabase.Edge,
     preference: ShutoRoutePreference
   ) -> Double {
+    if edge.kind == "PARKING" { return .infinity }
     let routeIDs = Set(edge.routeMemberships.map(\.routeID))
     switch preference {
     case .recommended:

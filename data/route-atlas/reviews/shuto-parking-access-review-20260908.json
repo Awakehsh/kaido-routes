@@ -1,0 +1,5116 @@
+{
+  "checked_at": "2026-09-08",
+  "connecting_ways": [
+    {
+      "kind": "MAINLINE",
+      "reason": "Eastbound Oi PA return joins this explicitly tagged Bayshore motorway; both ends match existing snapshot nodes.",
+      "route_id": "B",
+      "way_id": 1059139534
+    }
+  ],
+  "input_database_sha256": "831a162e7260447fc130dcf0dc4d3e4b39cd2f5d3c5ae19d6197f29e813d4c26",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "parking_areas": [
+    {
+      "access_node_id": 2618098829,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 507859758
+        },
+        {
+          "segment_index": 1,
+          "way_id": 507859758
+        },
+        {
+          "segment_index": 2,
+          "way_id": 507859758
+        },
+        {
+          "segment_index": 3,
+          "way_id": 507859758
+        },
+        {
+          "segment_index": 0,
+          "way_id": 853831007
+        },
+        {
+          "segment_index": 0,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 1,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 2,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 3,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 4,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 5,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 6,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 7,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 8,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 9,
+          "way_id": 507859759
+        },
+        {
+          "segment_index": 0,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 1,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 2,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 3,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 4,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 5,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 6,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 7,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 8,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 9,
+          "way_id": 507859762
+        },
+        {
+          "segment_index": 0,
+          "way_id": 507859763
+        },
+        {
+          "segment_index": 1,
+          "way_id": 507859763
+        },
+        {
+          "segment_index": 2,
+          "way_id": 507859763
+        },
+        {
+          "segment_index": 3,
+          "way_id": 507859763
+        },
+        {
+          "segment_index": 0,
+          "way_id": 507859760
+        },
+        {
+          "segment_index": 0,
+          "way_id": 853831008
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.heiwajima-inbound",
+        "sha256": "e01608f1fa6a7991c05c7351b8aa53897678222e418404d1e578eb3312395b65",
+        "title": "平和島PA（上り） | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/heiwajima-inbound"
+      },
+      "parking_area_id": "shuto.pa.heiwajima-inbound",
+      "return_node_id": 4972837154,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 4362178705,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 586347926
+        },
+        {
+          "segment_index": 1,
+          "way_id": 586347926
+        },
+        {
+          "segment_index": 2,
+          "way_id": 586347926
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.heiwajima-outbound",
+        "sha256": "9374b92f7dfd17cce3193e4362278142033a910fadbf92b282b5af0235db6888",
+        "title": "平和島PA（下り） | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/heiwajima-outbound"
+      },
+      "parking_area_id": "shuto.pa.heiwajima-outbound",
+      "return_node_id": 5602329959,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 6352448395,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 678426242
+        },
+        {
+          "segment_index": 0,
+          "way_id": 678426243
+        },
+        {
+          "segment_index": 1,
+          "way_id": 678426243
+        },
+        {
+          "segment_index": 2,
+          "way_id": 678426243
+        },
+        {
+          "segment_index": 0,
+          "way_id": 678426244
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.yoga",
+        "sha256": "8dae398fd5b8537958f03e1c23fffc60ff38cf8b447d0fa3b551d7bd564414ab",
+        "title": "用賀PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/yoga"
+      },
+      "parking_area_id": "shuto.pa.yoga",
+      "return_node_id": 6447380792,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 295431505,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 1449651626
+        },
+        {
+          "segment_index": 0,
+          "way_id": 1449651625
+        },
+        {
+          "segment_index": 0,
+          "way_id": 27514034
+        },
+        {
+          "segment_index": 1,
+          "way_id": 27514034
+        },
+        {
+          "segment_index": 2,
+          "way_id": 27514034
+        },
+        {
+          "segment_index": 3,
+          "way_id": 27514034
+        },
+        {
+          "segment_index": 4,
+          "way_id": 27514034
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.eifuku",
+        "sha256": "72d11ec5255b218c410f605a7fb4577deeae5f6eafa2a868ff9f8271f36b305a",
+        "title": "永福PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/eifuku"
+      },
+      "parking_area_id": "shuto.pa.eifuku",
+      "return_node_id": 279076838,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 1237984842,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 1,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 2,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 3,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 4,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 5,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 6,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 7,
+          "way_id": 107771259
+        },
+        {
+          "segment_index": 8,
+          "way_id": 107771259
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.yoyogi",
+        "sha256": "f86194c45dc3df1000bf13f668b9d21615eacd1a07c0f976b6d1e1c0dd2ad014",
+        "title": "代々木PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/yoyogi"
+      },
+      "parking_area_id": "shuto.pa.yoyogi",
+      "return_node_id": 295394427,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 6170336607,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 659036654
+        },
+        {
+          "segment_index": 1,
+          "way_id": 659036654
+        },
+        {
+          "segment_index": 2,
+          "way_id": 659036654
+        },
+        {
+          "segment_index": 3,
+          "way_id": 659036654
+        },
+        {
+          "segment_index": 4,
+          "way_id": 659036654
+        },
+        {
+          "segment_index": 0,
+          "way_id": 1023392643
+        },
+        {
+          "segment_index": 1,
+          "way_id": 1023392643
+        },
+        {
+          "segment_index": 2,
+          "way_id": 1023392643
+        },
+        {
+          "segment_index": 3,
+          "way_id": 1023392643
+        },
+        {
+          "segment_index": 0,
+          "way_id": 659036655
+        },
+        {
+          "segment_index": 1,
+          "way_id": 659036655
+        },
+        {
+          "segment_index": 2,
+          "way_id": 659036655
+        },
+        {
+          "segment_index": 3,
+          "way_id": 659036655
+        },
+        {
+          "segment_index": 4,
+          "way_id": 659036655
+        },
+        {
+          "segment_index": 5,
+          "way_id": 659036655
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.shimura",
+        "sha256": "a77caf43e159cce93e7e3304a9d0a8ab77e17ea8b7ba2a1d861e98f75ceb42b7",
+        "title": "志村PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/shimura"
+      },
+      "parking_area_id": "shuto.pa.shimura",
+      "return_node_id": 6170336612,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 2955985467,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 1,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 2,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 3,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 4,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 5,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 6,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 7,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 8,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 9,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 10,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 11,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 12,
+          "way_id": 292083252
+        },
+        {
+          "segment_index": 13,
+          "way_id": 292083252
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.minami-ikebukuro",
+        "sha256": "298a37c3a94624b55d6a930bd5fe575dbc3dabdc829a2433d6cae912b859ef8f",
+        "title": "南池袋PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/minami-ikebukuro"
+      },
+      "parking_area_id": "shuto.pa.minami-ikebukuro",
+      "return_node_id": 2955984615,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 13601079254,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 263330206
+        },
+        {
+          "segment_index": 1,
+          "way_id": 263330206
+        },
+        {
+          "segment_index": 0,
+          "way_id": 633246923
+        },
+        {
+          "segment_index": 1,
+          "way_id": 633246923
+        },
+        {
+          "segment_index": 2,
+          "way_id": 633246923
+        },
+        {
+          "segment_index": 0,
+          "way_id": 263330211
+        },
+        {
+          "segment_index": 1,
+          "way_id": 263330211
+        },
+        {
+          "segment_index": 2,
+          "way_id": 263330211
+        },
+        {
+          "segment_index": 3,
+          "way_id": 263330211
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.hakozaki",
+        "sha256": "fa56df6c5b23d17a638cff1aedddaa831bab8d6243ebd71f217b7b922928df65",
+        "title": "箱崎PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/hakozaki"
+      },
+      "parking_area_id": "shuto.pa.hakozaki",
+      "return_node_id": 2689533451,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 1671664572,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 154971211
+        },
+        {
+          "segment_index": 1,
+          "way_id": 154971211
+        },
+        {
+          "segment_index": 2,
+          "way_id": 154971211
+        },
+        {
+          "segment_index": 3,
+          "way_id": 154971211
+        },
+        {
+          "segment_index": 4,
+          "way_id": 154971211
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.komagata",
+        "sha256": "001848ce4c7c757362c1aacf661a73fdfae27801bf352d2a3f518f61d6c96115",
+        "title": "駒形PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/komagata"
+      },
+      "parking_area_id": "shuto.pa.komagata",
+      "return_node_id": 3935796661,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 2569233045,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 250488079
+        },
+        {
+          "segment_index": 1,
+          "way_id": 250488079
+        },
+        {
+          "segment_index": 2,
+          "way_id": 250488079
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.kahei",
+        "sha256": "3bced6d8d5641354fe92c0b5831ae1830e6f650dbd524a93ab5ed9f226d55492",
+        "title": "加平PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/kahei"
+      },
+      "parking_area_id": "shuto.pa.kahei",
+      "return_node_id": 2569233094,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 953997769,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 1,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 2,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 3,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 4,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 5,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 6,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 7,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 8,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 9,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 10,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 11,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 12,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 13,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 14,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 15,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 16,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 17,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 18,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 19,
+          "way_id": 288901861
+        },
+        {
+          "segment_index": 20,
+          "way_id": 288901861
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.yashio",
+        "sha256": "15e3ba3e9474679a44095225efc2332375b0d2930af0b2e594d9f9fb5b3bb07f",
+        "title": "八潮PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/yashio"
+      },
+      "parking_area_id": "shuto.pa.yashio",
+      "return_node_id": 953997785,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 31300447,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 809137047
+        },
+        {
+          "segment_index": 1,
+          "way_id": 809137047
+        },
+        {
+          "segment_index": 0,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 1,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 2,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 3,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 4,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 5,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 6,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 7,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 8,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 9,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 10,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 11,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 12,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 13,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 14,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 15,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 16,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 17,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 18,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 19,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 20,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 21,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 22,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 23,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 24,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 25,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 26,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 27,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 28,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 29,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 30,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 31,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 32,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 33,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 34,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 35,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 36,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 37,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 38,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 39,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 40,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 41,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 42,
+          "way_id": 376496465
+        },
+        {
+          "segment_index": 1,
+          "way_id": 809137047
+        },
+        {
+          "segment_index": 2,
+          "way_id": 809137047
+        },
+        {
+          "segment_index": 3,
+          "way_id": 809137047
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.tatsumi-1",
+        "sha256": "038097d7b8c1b45526e1e052ef3d567c935ebc821c02ff1b804e60d69878cce4",
+        "title": "辰巳第一PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/tatsumi-1"
+      },
+      "parking_area_id": "shuto.pa.tatsumi-1",
+      "return_node_id": 7565871411,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 7565908026,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 809140340
+        },
+        {
+          "segment_index": 15,
+          "way_id": 376509517
+        },
+        {
+          "segment_index": 16,
+          "way_id": 376509517
+        },
+        {
+          "segment_index": 17,
+          "way_id": 376509517
+        },
+        {
+          "segment_index": 18,
+          "way_id": 376509517
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.tatsumi-2",
+        "sha256": "0c97ac11df13f157201b574a4313f2fec7229318376535eb08da72788cedfec2",
+        "title": "辰巳第二PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/tatsumi-2"
+      },
+      "parking_area_id": "shuto.pa.tatsumi-2",
+      "return_node_id": 3799199133,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 31252809,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 4848741
+        },
+        {
+          "segment_index": 1,
+          "way_id": 4848741
+        },
+        {
+          "segment_index": 2,
+          "way_id": 4848741
+        },
+        {
+          "segment_index": 0,
+          "way_id": 820360944
+        },
+        {
+          "segment_index": 1,
+          "way_id": 820360944
+        },
+        {
+          "segment_index": 2,
+          "way_id": 820360944
+        },
+        {
+          "segment_index": 0,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 1,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 2,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 3,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 4,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 5,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 6,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 7,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 8,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 9,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 10,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 11,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 12,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 13,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 14,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 15,
+          "way_id": 45067778
+        },
+        {
+          "segment_index": 0,
+          "way_id": 45067779
+        },
+        {
+          "segment_index": 1,
+          "way_id": 45067779
+        },
+        {
+          "segment_index": 2,
+          "way_id": 45067779
+        },
+        {
+          "segment_index": 0,
+          "way_id": 820360945
+        },
+        {
+          "segment_index": 1,
+          "way_id": 820360945
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.shibaura",
+        "sha256": "8b365f12380ebe8e02fc92018afc6d0c590953611a42f5aa8d69d29504497fd8",
+        "title": "芝浦PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/shibaura"
+      },
+      "parking_area_id": "shuto.pa.shibaura",
+      "return_node_id": 31252808,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 281676391,
+      "checked_at": "2026-09-08",
+      "coordinate": {
+        "latitude": 35.67671645,
+        "longitude": 139.932341525
+      },
+      "coordinate_source": "https://www.openstreetmap.org/way/585560634",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 1,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 2,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 3,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 4,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 5,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 6,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 7,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 8,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 9,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 10,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 11,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 12,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 13,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 14,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 15,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 16,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 17,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 18,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 19,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 20,
+          "way_id": 25823832
+        },
+        {
+          "segment_index": 21,
+          "way_id": 25823832
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.ichikawa",
+        "sha256": "6afc07a0bce70d8674d4fdab83c02b7802a00db3edf8a4064595804c88217c22",
+        "title": "市川PA | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/ichikawa"
+      },
+      "parking_area_id": "shuto.pa.ichikawa",
+      "return_node_id": 281676564,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 4157120425,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 1,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 2,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 3,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 4,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 5,
+          "way_id": 675182036
+        },
+        {
+          "segment_index": 6,
+          "way_id": 675182036
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.oi-westbound",
+        "sha256": "642c275c76a9de90c82a0a6a1a24d1beca434555841e24533278e0db1f0c7ac7",
+        "title": "大井PA（西行き） | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/oi-westbound"
+      },
+      "parking_area_id": "shuto.pa.oi-westbound",
+      "return_node_id": 4157120428,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 4157120415,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 1,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 2,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 3,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 4,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 5,
+          "way_id": 675182035
+        },
+        {
+          "segment_index": 0,
+          "way_id": 675182038
+        },
+        {
+          "segment_index": 1,
+          "way_id": 675182038
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.oi-eastbound",
+        "sha256": "a8cf540ee31ed00e3e39803051e8c49c0498ffcb502eecd4fd06c0d4e91c7126",
+        "title": "大井PA（東行き） | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/oi-eastbound"
+      },
+      "parking_area_id": "shuto.pa.oi-eastbound",
+      "return_node_id": 4157120422,
+      "verification_state": "SOURCE_REVIEWED"
+    },
+    {
+      "access_node_id": 308934727,
+      "checked_at": "2026-09-08",
+      "interior_segments": [
+        {
+          "segment_index": 0,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 1,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 2,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 3,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 4,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 5,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 6,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 7,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 8,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 9,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 10,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 11,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 12,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 13,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 14,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 15,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 16,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 17,
+          "way_id": 1299417625
+        },
+        {
+          "segment_index": 0,
+          "way_id": 687045302
+        },
+        {
+          "segment_index": 1,
+          "way_id": 687045302
+        },
+        {
+          "segment_index": 2,
+          "way_id": 687045302
+        },
+        {
+          "segment_index": 4,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 5,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 6,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 7,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 8,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 9,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 10,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 11,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 12,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 13,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 14,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 15,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 16,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 17,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 18,
+          "way_id": 44351819
+        },
+        {
+          "segment_index": 19,
+          "way_id": 44351819
+        }
+      ],
+      "operator_evidence": {
+        "parking_area_id": "shuto.pa.kawaguchi",
+        "sha256": "384d7ce7f0b4e96eadf02e78a95daa383190e4bb48774117a086e64714ab57f8",
+        "title": "川口ハイウェイオアシス | パーキングエリアを探す | 首都高速道路サービス株式会社",
+        "url": "https://www.shutoko-sv.jp/pa/kawaguchi"
+      },
+      "parking_area_id": "shuto.pa.kawaguchi",
+      "return_node_id": 308934811,
+      "verification_state": "SOURCE_REVIEWED"
+    }
+  ],
+  "review_id": "shuto-parking-access-review-20260908",
+  "schema_version": "1.1",
+  "source": {
+    "api": "https://api.openstreetmap.org/api/0.6",
+    "attribution": "© OpenStreetMap contributors",
+    "licence": "ODbL-1.0",
+    "licence_uri": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "read_at": "2026-09-08"
+  },
+  "ways": [
+    {
+      "node_ids": [
+        2618098829,
+        4972837136,
+        9695318789,
+        4972837137,
+        7963668437
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5855019,
+          "longitude": 139.7427867,
+          "node_id": 2618098829,
+          "timestamp": "2022-04-26T14:57:21Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.5856707,
+          "longitude": 139.7426625,
+          "node_id": 4972837136,
+          "timestamp": "2022-04-26T14:57:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5857427,
+          "longitude": 139.7425751,
+          "node_id": 9695318789,
+          "timestamp": "2022-04-26T14:57:21Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5859162,
+          "longitude": 139.7422569,
+          "node_id": 4972837137,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5860931,
+          "longitude": 139.7421108,
+          "node_id": 7963668437,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "covered": "yes",
+        "highway": "service",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2022-04-26T14:57:21Z",
+      "version": 3,
+      "way_id": 507859758
+    },
+    {
+      "node_ids": [
+        7963668437,
+        4972837138
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5860931,
+          "longitude": 139.7421108,
+          "node_id": 7963668437,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5864115,
+          "longitude": 139.7418479,
+          "node_id": 4972837138,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2020-10-01T14:37:16Z",
+      "version": 1,
+      "way_id": 853831007
+    },
+    {
+      "node_ids": [
+        4972837138,
+        4972837139,
+        4972837140,
+        7963668439,
+        4972837141,
+        7963668440,
+        4972837142,
+        4972837143,
+        7963668441,
+        4972837144,
+        4972837160
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5864115,
+          "longitude": 139.7418479,
+          "node_id": 4972837138,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5865696,
+          "longitude": 139.7417157,
+          "node_id": 4972837139,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5866073,
+          "longitude": 139.7417031,
+          "node_id": 4972837140,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5866561,
+          "longitude": 139.7417018,
+          "node_id": 7963668439,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5866972,
+          "longitude": 139.74172,
+          "node_id": 4972837141,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5867141,
+          "longitude": 139.7417375,
+          "node_id": 7963668440,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.58673,
+          "longitude": 139.7417688,
+          "node_id": 4972837142,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5867327,
+          "longitude": 139.7418159,
+          "node_id": 4972837143,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5867272,
+          "longitude": 139.7418663,
+          "node_id": 7963668441,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5867034,
+          "longitude": 139.7419245,
+          "node_id": 4972837144,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5866431,
+          "longitude": 139.741996,
+          "node_id": 4972837160,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2020-10-01T14:37:16Z",
+      "version": 2,
+      "way_id": 507859759
+    },
+    {
+      "node_ids": [
+        4972837160,
+        10588753877,
+        6323119739,
+        4972837145,
+        6323119738,
+        6323119737,
+        4972837146,
+        4972837147,
+        4972837148,
+        10588753879,
+        4972837149,
+        10588753878,
+        7963668442,
+        4972837155,
+        4972837156,
+        4972837158,
+        4972837159,
+        4972837160
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5866431,
+          "longitude": 139.741996,
+          "node_id": 4972837160,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5865751,
+          "longitude": 139.7420884,
+          "node_id": 10588753877,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5861349,
+          "longitude": 139.7425856,
+          "node_id": 6323119739,
+          "timestamp": "2019-03-07T14:25:06Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5861146,
+          "longitude": 139.7426023,
+          "node_id": 4972837145,
+          "timestamp": "2019-03-07T14:25:06Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5860909,
+          "longitude": 139.7426119,
+          "node_id": 6323119738,
+          "timestamp": "2019-03-07T14:25:06Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5860613,
+          "longitude": 139.7426139,
+          "node_id": 6323119737,
+          "timestamp": "2019-03-07T14:25:06Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5860349,
+          "longitude": 139.7426119,
+          "node_id": 4972837146,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5860099,
+          "longitude": 139.742603,
+          "node_id": 4972837147,
+          "timestamp": "2019-03-07T14:25:06Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5859747,
+          "longitude": 139.7425812,
+          "node_id": 4972837148,
+          "timestamp": "2023-02-10T10:29:29Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.5859433,
+          "longitude": 139.7425631,
+          "node_id": 10588753879,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5858987,
+          "longitude": 139.7425056,
+          "node_id": 4972837149,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5859813,
+          "longitude": 139.7424393,
+          "node_id": 10588753878,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5862367,
+          "longitude": 139.7422342,
+          "node_id": 7963668442,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5865127,
+          "longitude": 139.741998,
+          "node_id": 4972837155,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.586604,
+          "longitude": 139.7419212,
+          "node_id": 4972837156,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5866259,
+          "longitude": 139.7419362,
+          "node_id": 4972837158,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.586644,
+          "longitude": 139.7419668,
+          "node_id": 4972837159,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5866431,
+          "longitude": 139.741996,
+          "node_id": 4972837160,
+          "timestamp": "2023-01-28T11:31:43Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes",
+        "service": "parking_aisle"
+      },
+      "timestamp": "2023-01-28T11:31:43Z",
+      "version": 4,
+      "way_id": 507859762
+    },
+    {
+      "node_ids": [
+        4972837149,
+        4972837150,
+        4972837151,
+        4972837152,
+        4972837153
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5858987,
+          "longitude": 139.7425056,
+          "node_id": 4972837149,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5858767,
+          "longitude": 139.7424533,
+          "node_id": 4972837150,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5858796,
+          "longitude": 139.7423993,
+          "node_id": 4972837151,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5859045,
+          "longitude": 139.742347,
+          "node_id": 4972837152,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5859456,
+          "longitude": 139.7423038,
+          "node_id": 4972837153,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2020-10-01T14:37:16Z",
+      "version": 3,
+      "way_id": 507859763
+    },
+    {
+      "node_ids": [
+        4972837153,
+        7963668438
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5859456,
+          "longitude": 139.7423038,
+          "node_id": 4972837153,
+          "timestamp": "2017-07-15T23:04:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5862772,
+          "longitude": 139.7420143,
+          "node_id": 7963668438,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2020-10-01T14:37:16Z",
+      "version": 3,
+      "way_id": 507859760
+    },
+    {
+      "node_ids": [
+        7963668438,
+        4972837154
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5862772,
+          "longitude": 139.7420143,
+          "node_id": 7963668438,
+          "timestamp": "2020-10-01T14:37:16Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5867099,
+          "longitude": 139.7416365,
+          "node_id": 4972837154,
+          "timestamp": "2019-06-30T10:09:29Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2020-10-01T14:37:16Z",
+      "version": 1,
+      "way_id": 853831008
+    },
+    {
+      "node_ids": [
+        4362178705,
+        5602329957,
+        5602329958,
+        5602329959
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5863644,
+          "longitude": 139.7424506,
+          "node_id": 4362178705,
+          "timestamp": "2016-08-22T22:38:02Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5856576,
+          "longitude": 139.7430305,
+          "node_id": 5602329957,
+          "timestamp": "2018-05-07T13:40:20Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5851817,
+          "longitude": 139.7433217,
+          "node_id": 5602329958,
+          "timestamp": "2018-05-07T13:40:20Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5829846,
+          "longitude": 139.7444508,
+          "node_id": 5602329959,
+          "timestamp": "2024-07-31T05:29:57Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2019-03-07T14:25:06Z",
+      "version": 2,
+      "way_id": 586347926
+    },
+    {
+      "node_ids": [
+        6352448395,
+        6352448396
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6264039,
+          "longitude": 139.6311473,
+          "node_id": 6352448395,
+          "timestamp": "2020-09-05T07:07:36Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6265132,
+          "longitude": 139.6312961,
+          "node_id": 6352448396,
+          "timestamp": "2019-03-21T15:06:35Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-09-05T07:07:36Z",
+      "version": 3,
+      "way_id": 678426242
+    },
+    {
+      "node_ids": [
+        6352448396,
+        6456705535,
+        6352448397,
+        6352448398
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6265132,
+          "longitude": 139.6312961,
+          "node_id": 6352448396,
+          "timestamp": "2019-03-21T15:06:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6265336,
+          "longitude": 139.6314754,
+          "node_id": 6456705535,
+          "timestamp": "2019-05-08T00:28:50Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6264982,
+          "longitude": 139.6315441,
+          "node_id": 6352448397,
+          "timestamp": "2019-05-08T00:28:50Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6263715,
+          "longitude": 139.6315617,
+          "node_id": 6352448398,
+          "timestamp": "2019-03-21T15:06:35Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "parking_aisle"
+      },
+      "timestamp": "2019-05-08T00:28:50Z",
+      "version": 2,
+      "way_id": 678426243
+    },
+    {
+      "node_ids": [
+        6352448398,
+        6447380792
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6263715,
+          "longitude": 139.6315617,
+          "node_id": 6352448398,
+          "timestamp": "2019-03-21T15:06:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6262028,
+          "longitude": 139.631531,
+          "node_id": 6447380792,
+          "timestamp": "2019-05-04T10:01:51Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-09-05T07:07:36Z",
+      "version": 3,
+      "way_id": 678426244
+    },
+    {
+      "node_ids": [
+        295431505,
+        13296669194
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6679545,
+          "longitude": 139.6432285,
+          "node_id": 295431505,
+          "timestamp": "2021-01-08T14:26:45Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6680131,
+          "longitude": 139.6432827,
+          "node_id": 13296669194,
+          "timestamp": "2025-11-11T13:29:32Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes"
+      },
+      "timestamp": "2025-11-11T13:29:32Z",
+      "version": 1,
+      "way_id": 1449651626
+    },
+    {
+      "node_ids": [
+        13296669194,
+        13296669193
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6680131,
+          "longitude": 139.6432827,
+          "node_id": 13296669194,
+          "timestamp": "2025-11-11T13:29:32Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6680724,
+          "longitude": 139.6433375,
+          "node_id": 13296669193,
+          "timestamp": "2025-11-11T13:29:32Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes"
+      },
+      "timestamp": "2025-11-11T13:29:32Z",
+      "version": 1,
+      "way_id": 1449651625
+    },
+    {
+      "node_ids": [
+        13296669193,
+        279076834,
+        279076835,
+        295431506,
+        279076837,
+        279076838
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6680724,
+          "longitude": 139.6433375,
+          "node_id": 13296669193,
+          "timestamp": "2025-11-11T13:29:32Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6682052,
+          "longitude": 139.6434603,
+          "node_id": 279076834,
+          "timestamp": "2021-01-08T14:26:45Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6682265,
+          "longitude": 139.6435011,
+          "node_id": 279076835,
+          "timestamp": "2008-10-04T17:57:27Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6682417,
+          "longitude": 139.6438658,
+          "node_id": 295431506,
+          "timestamp": "2021-01-08T14:26:45Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6682283,
+          "longitude": 139.643903,
+          "node_id": 279076837,
+          "timestamp": "2021-01-08T14:26:45Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.668139,
+          "longitude": 139.6439569,
+          "node_id": 279076838,
+          "timestamp": "2018-12-29T08:33:14Z",
+          "version": 4
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes"
+      },
+      "timestamp": "2025-11-11T13:29:32Z",
+      "version": 4,
+      "way_id": 27514034
+    },
+    {
+      "node_ids": [
+        1237984842,
+        8384640341,
+        1521126914,
+        8384640339,
+        295394417,
+        295394418,
+        1237984823,
+        8384640340,
+        295394419,
+        295394427
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6810314,
+          "longitude": 139.6975371,
+          "node_id": 1237984842,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6810679,
+          "longitude": 139.6976153,
+          "node_id": 8384640341,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6811174,
+          "longitude": 139.697739,
+          "node_id": 1521126914,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.681151,
+          "longitude": 139.6978541,
+          "node_id": 8384640339,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6811727,
+          "longitude": 139.697992,
+          "node_id": 295394417,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.6811781,
+          "longitude": 139.6981304,
+          "node_id": 295394418,
+          "timestamp": "2018-12-29T09:26:06Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.6811769,
+          "longitude": 139.6982759,
+          "node_id": 1237984823,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6811614,
+          "longitude": 139.6984036,
+          "node_id": 8384640340,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6811296,
+          "longitude": 139.6985353,
+          "node_id": 295394419,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.681085,
+          "longitude": 139.6986631,
+          "node_id": 295394427,
+          "timestamp": "2021-02-01T17:21:49Z",
+          "version": 3
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes"
+      },
+      "timestamp": "2026-01-03T11:27:42Z",
+      "version": 4,
+      "way_id": 107771259
+    },
+    {
+      "node_ids": [
+        6170336607,
+        6170336608,
+        6170336610,
+        6170336611,
+        6170336622,
+        6170336623
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7746913,
+          "longitude": 139.6843337,
+          "node_id": 6170336607,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7744645,
+          "longitude": 139.6848053,
+          "node_id": 6170336608,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7744334,
+          "longitude": 139.6848506,
+          "node_id": 6170336610,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.774391,
+          "longitude": 139.6848889,
+          "node_id": 6170336611,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7743387,
+          "longitude": 139.6849011,
+          "node_id": 6170336622,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7742787,
+          "longitude": 139.6848767,
+          "node_id": 6170336623,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2025-01-05T09:51:17Z",
+      "version": 4,
+      "way_id": 659036654
+    },
+    {
+      "node_ids": [
+        6170336623,
+        12475367833,
+        6170336624,
+        12475367877,
+        6170336600
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7742787,
+          "longitude": 139.6848767,
+          "node_id": 6170336623,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7742336,
+          "longitude": 139.6848698,
+          "node_id": 12475367833,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7741971,
+          "longitude": 139.6848828,
+          "node_id": 6170336624,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7741728,
+          "longitude": 139.6849065,
+          "node_id": 12475367877,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7741537,
+          "longitude": 139.6849377,
+          "node_id": 6170336600,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2025-01-05T09:51:17Z",
+      "version": 2,
+      "way_id": 1023392643
+    },
+    {
+      "node_ids": [
+        6170336600,
+        12475367834,
+        6170336614,
+        6170336613,
+        12475367878,
+        12475367879,
+        6170336612
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7741537,
+          "longitude": 139.6849377,
+          "node_id": 6170336600,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7741933,
+          "longitude": 139.6849323,
+          "node_id": 12475367834,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7742187,
+          "longitude": 139.6849377,
+          "node_id": 6170336614,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7743189,
+          "longitude": 139.684997,
+          "node_id": 6170336613,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.774343,
+          "longitude": 139.6850252,
+          "node_id": 12475367878,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7743626,
+          "longitude": 139.6850618,
+          "node_id": 12475367879,
+          "timestamp": "2025-01-05T09:51:17Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.774406,
+          "longitude": 139.6851951,
+          "node_id": 6170336612,
+          "timestamp": "2018-12-29T11:12:00Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes",
+        "service": "driveway"
+      },
+      "timestamp": "2025-01-05T09:51:17Z",
+      "version": 4,
+      "way_id": 659036655
+    },
+    {
+      "node_ids": [
+        2955985467,
+        2955985463,
+        2955985457,
+        2955985453,
+        2955985449,
+        7717468720,
+        2955985442,
+        2955985437,
+        2955984630,
+        2955984623,
+        2955984621,
+        7717468721,
+        2955984618,
+        2955984617,
+        2955984615
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7239199,
+          "longitude": 139.7219965,
+          "node_id": 2955985467,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.7237417,
+          "longitude": 139.7224172,
+          "node_id": 2955985463,
+          "timestamp": "2024-02-24T06:53:07Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.7236861,
+          "longitude": 139.7225286,
+          "node_id": 2955985457,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7236318,
+          "longitude": 139.7226169,
+          "node_id": 2955985453,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7235641,
+          "longitude": 139.7226988,
+          "node_id": 2955985449,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7234961,
+          "longitude": 139.7227731,
+          "node_id": 7717468720,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7234199,
+          "longitude": 139.7228374,
+          "node_id": 2955985442,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7233325,
+          "longitude": 139.7228918,
+          "node_id": 2955985437,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7232363,
+          "longitude": 139.7229441,
+          "node_id": 2955984630,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.72313,
+          "longitude": 139.7229919,
+          "node_id": 2955984623,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7230188,
+          "longitude": 139.7230327,
+          "node_id": 2955984621,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7229165,
+          "longitude": 139.7230575,
+          "node_id": 7717468721,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7228093,
+          "longitude": 139.7230669,
+          "node_id": 2955984618,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7225287,
+          "longitude": 139.7230675,
+          "node_id": 2955984617,
+          "timestamp": "2018-12-29T11:43:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.7221624,
+          "longitude": 139.723089,
+          "node_id": 2955984615,
+          "timestamp": "2020-07-15T17:56:39Z",
+          "version": 3
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "motorway_link",
+        "lanes": "1",
+        "layer": "3",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "南池袋パーキングエリア",
+        "oneway": "yes",
+        "smoothness": "excellent",
+        "source": "Bing 2012",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2024-02-24T06:53:07Z",
+      "version": 5,
+      "way_id": 292083252
+    },
+    {
+      "node_ids": [
+        13601079254,
+        8027503087,
+        4972829161
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6826233,
+          "longitude": 139.7889557,
+          "node_id": 13601079254,
+          "timestamp": "2026-02-26T05:34:43Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6825256,
+          "longitude": 139.7890082,
+          "node_id": 8027503087,
+          "timestamp": "2026-02-26T05:34:43Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6824575,
+          "longitude": 139.789053,
+          "node_id": 4972829161,
+          "timestamp": "2021-07-26T13:38:05Z",
+          "version": 4
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "service",
+        "layer": "2",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "oneway": "yes",
+        "smoothness": "excellent",
+        "source": "Bing 2014",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2026-02-26T05:34:43Z",
+      "version": 13,
+      "way_id": 263330206
+    },
+    {
+      "node_ids": [
+        4972829161,
+        5977851146,
+        5977851145,
+        2689533506
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6824575,
+          "longitude": 139.789053,
+          "node_id": 4972829161,
+          "timestamp": "2021-07-26T13:38:05Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.682328,
+          "longitude": 139.7892052,
+          "node_id": 5977851146,
+          "timestamp": "2018-10-12T08:55:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6821833,
+          "longitude": 139.7890347,
+          "node_id": 5977851145,
+          "timestamp": "2018-10-12T08:55:35Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6823169,
+          "longitude": 139.7888787,
+          "node_id": 2689533506,
+          "timestamp": "2018-01-19T07:20:59Z",
+          "version": 3
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "layer": "-1",
+        "oneway": "yes",
+        "service": "parking_aisle",
+        "tunnel": "yes"
+      },
+      "timestamp": "2020-01-26T16:50:45Z",
+      "version": 3,
+      "way_id": 633246923
+    },
+    {
+      "node_ids": [
+        2689533506,
+        5348554378,
+        2689533503,
+        5348554395,
+        2689533451
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6823169,
+          "longitude": 139.7888787,
+          "node_id": 2689533506,
+          "timestamp": "2018-01-19T07:20:59Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6823208,
+          "longitude": 139.7888585,
+          "node_id": 5348554378,
+          "timestamp": "2021-07-26T13:38:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6823194,
+          "longitude": 139.7888328,
+          "node_id": 2689533503,
+          "timestamp": "2021-07-26T13:38:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.682295,
+          "longitude": 139.7886687,
+          "node_id": 5348554395,
+          "timestamp": "2018-01-19T07:20:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6822845,
+          "longitude": 139.7885564,
+          "node_id": 2689533451,
+          "timestamp": "2014-02-25T11:20:08Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "service",
+        "layer": "2",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "oneway": "yes",
+        "smoothness": "excellent",
+        "source": "Bing 2014",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2024-05-29T12:11:18Z",
+      "version": 9,
+      "way_id": 263330211
+    },
+    {
+      "node_ids": [
+        1671664572,
+        1674175126,
+        1674175096,
+        4972827102,
+        1674175074,
+        3935796661
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7057458,
+          "longitude": 139.7970494,
+          "node_id": 1671664572,
+          "timestamp": "2022-10-28T07:17:08Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.705057,
+          "longitude": 139.7967256,
+          "node_id": 1674175126,
+          "timestamp": "2012-03-14T04:57:48Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7045694,
+          "longitude": 139.7964453,
+          "node_id": 1674175096,
+          "timestamp": "2012-03-14T04:57:48Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7044128,
+          "longitude": 139.7963216,
+          "node_id": 4972827102,
+          "timestamp": "2017-07-15T22:46:13Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7044086,
+          "longitude": 139.7963183,
+          "node_id": 1674175074,
+          "timestamp": "2012-03-14T04:57:47Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7043312,
+          "longitude": 139.7962311,
+          "node_id": 3935796661,
+          "timestamp": "2016-01-09T12:30:48Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "service",
+        "lanes": "2",
+        "layer": "4",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "oneway": "yes",
+        "source": "Bing 2014",
+        "surface": "asphalt",
+        "toll": "yes"
+      },
+      "timestamp": "2025-05-06T12:30:53Z",
+      "version": 9,
+      "way_id": 154971211
+    },
+    {
+      "node_ids": [
+        2569233045,
+        2569233048,
+        2569233089,
+        2569233094
+      ],
+      "nodes": [
+        {
+          "latitude": 35.7765974,
+          "longitude": 139.8245655,
+          "node_id": 2569233045,
+          "timestamp": "2019-06-16T05:17:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.776615,
+          "longitude": 139.8246012,
+          "node_id": 2569233048,
+          "timestamp": "2013-12-07T04:02:47Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7770748,
+          "longitude": 139.8247319,
+          "node_id": 2569233089,
+          "timestamp": "2013-12-07T04:02:48Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.7771285,
+          "longitude": 139.8247204,
+          "node_id": 2569233094,
+          "timestamp": "2013-12-07T04:02:48Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "2",
+        "oneway": "yes",
+        "service": "parking_aisle",
+        "source": "Bing"
+      },
+      "timestamp": "2013-12-07T05:13:22Z",
+      "version": 2,
+      "way_id": 250488079
+    },
+    {
+      "node_ids": [
+        953997769,
+        13093727858,
+        2924564861,
+        2924564862,
+        2924564863,
+        2924564864,
+        2924564865,
+        2924564866,
+        2924564867,
+        13093727847,
+        2924564874,
+        2924564868,
+        2924564869,
+        2924564870,
+        2924564871,
+        12491740577,
+        2924564872,
+        2924564873,
+        12491740558,
+        2924564878,
+        12491740545,
+        953997785
+      ],
+      "nodes": [
+        {
+          "latitude": 35.8098736,
+          "longitude": 139.8433084,
+          "node_id": 953997769,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 6
+        },
+        {
+          "latitude": 35.8098872,
+          "longitude": 139.8432675,
+          "node_id": 13093727858,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8098889,
+          "longitude": 139.8432108,
+          "node_id": 2924564861,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8098773,
+          "longitude": 139.8431722,
+          "node_id": 2924564862,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8098541,
+          "longitude": 139.8431349,
+          "node_id": 2924564863,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8098332,
+          "longitude": 139.8431222,
+          "node_id": 2924564864,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8095255,
+          "longitude": 139.8429858,
+          "node_id": 2924564865,
+          "timestamp": "2014-06-21T01:32:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8094888,
+          "longitude": 139.8429408,
+          "node_id": 2924564866,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8094669,
+          "longitude": 139.8428942,
+          "node_id": 2924564867,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8094538,
+          "longitude": 139.8428357,
+          "node_id": 13093727847,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8094603,
+          "longitude": 139.8427422,
+          "node_id": 2924564874,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8095048,
+          "longitude": 139.8425437,
+          "node_id": 2924564868,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8095181,
+          "longitude": 139.8424927,
+          "node_id": 2924564869,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8095373,
+          "longitude": 139.8424782,
+          "node_id": 2924564870,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8095565,
+          "longitude": 139.8424727,
+          "node_id": 2924564871,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8095894,
+          "longitude": 139.8424869,
+          "node_id": 12491740577,
+          "timestamp": "2025-01-11T03:56:55Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8096155,
+          "longitude": 139.8424982,
+          "node_id": 2924564872,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8100935,
+          "longitude": 139.8427092,
+          "node_id": 2924564873,
+          "timestamp": "2014-06-21T01:32:33Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8100413,
+          "longitude": 139.8428759,
+          "node_id": 12491740558,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8100318,
+          "longitude": 139.842914,
+          "node_id": 2924564878,
+          "timestamp": "2025-08-24T03:22:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8099054,
+          "longitude": 139.8434198,
+          "node_id": 12491740545,
+          "timestamp": "2025-01-11T03:56:55Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8098697,
+          "longitude": 139.8434701,
+          "node_id": 953997785,
+          "timestamp": "2025-01-11T03:56:55Z",
+          "version": 7
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "parking_aisle",
+        "source": "GSImaps/ort",
+        "surface": "paved"
+      },
+      "timestamp": "2025-08-24T03:22:05Z",
+      "version": 5,
+      "way_id": 288901861
+    },
+    {
+      "node_ids": [
+        31300447,
+        3799088497,
+        31300454,
+        7565871410,
+        7565871411
+      ],
+      "nodes": [
+        {
+          "latitude": 35.643145,
+          "longitude": 139.8085755,
+          "node_id": 31300447,
+          "timestamp": "2023-10-30T21:55:15Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.6433819,
+          "longitude": 139.8094984,
+          "node_id": 3799088497,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6436258,
+          "longitude": 139.810258,
+          "node_id": 31300454,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6436612,
+          "longitude": 139.8103593,
+          "node_id": 7565871410,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6438637,
+          "longitude": 139.8108221,
+          "node_id": 7565871411,
+          "timestamp": "2023-10-30T21:55:15Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "bridge": "yes",
+        "foot": "no",
+        "highway": "service",
+        "layer": "3",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "oneway": "yes",
+        "smoothness": "excellent",
+        "source": "Bing 2014",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2023-10-30T21:55:15Z",
+      "version": 2,
+      "way_id": 809137047
+    },
+    {
+      "node_ids": [
+        31300454,
+        7565871409,
+        7565871432,
+        3799088506,
+        7565871431,
+        3799088505,
+        7565871429,
+        3799088504,
+        7565871430,
+        3799088503,
+        7565871433,
+        3799088502,
+        7565871434,
+        3799088500,
+        7565871435,
+        3799088499,
+        7565871436,
+        3799088498,
+        7565871437,
+        7565871408,
+        7565871438,
+        6439922833,
+        7565871447,
+        3799088489,
+        7565871446,
+        3799088490,
+        7565871445,
+        3799088491,
+        7565871444,
+        3799088492,
+        7565871443,
+        3799088493,
+        7565871442,
+        3799088494,
+        7565871441,
+        3799088495,
+        7565871440,
+        7565871407,
+        7565871439,
+        3799088496,
+        7565871448,
+        7565871406,
+        7565871449,
+        3799088497
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6436258,
+          "longitude": 139.810258,
+          "node_id": 31300454,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6436377,
+          "longitude": 139.8103071,
+          "node_id": 7565871409,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6436439,
+          "longitude": 139.8103359,
+          "node_id": 7565871432,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.643647,
+          "longitude": 139.8103587,
+          "node_id": 3799088506,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.643649,
+          "longitude": 139.8103827,
+          "node_id": 7565871431,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6436487,
+          "longitude": 139.8104085,
+          "node_id": 3799088505,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.643645,
+          "longitude": 139.8104317,
+          "node_id": 7565871429,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6436384,
+          "longitude": 139.8104542,
+          "node_id": 3799088504,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6436273,
+          "longitude": 139.8104769,
+          "node_id": 7565871430,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.643614,
+          "longitude": 139.8104975,
+          "node_id": 3799088503,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6435978,
+          "longitude": 139.8105136,
+          "node_id": 7565871433,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.64358,
+          "longitude": 139.8105266,
+          "node_id": 3799088502,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6435603,
+          "longitude": 139.8105352,
+          "node_id": 7565871434,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6435398,
+          "longitude": 139.8105398,
+          "node_id": 3799088500,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6435182,
+          "longitude": 139.8105398,
+          "node_id": 7565871435,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6434973,
+          "longitude": 139.8105357,
+          "node_id": 3799088499,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6434778,
+          "longitude": 139.810527,
+          "node_id": 7565871436,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6434594,
+          "longitude": 139.810514,
+          "node_id": 3799088498,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6434435,
+          "longitude": 139.8104982,
+          "node_id": 7565871437,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6434298,
+          "longitude": 139.8104786,
+          "node_id": 7565871408,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6434202,
+          "longitude": 139.8104566,
+          "node_id": 7565871438,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.643412,
+          "longitude": 139.8104328,
+          "node_id": 6439922833,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431423,
+          "longitude": 139.8095894,
+          "node_id": 7565871447,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6431343,
+          "longitude": 139.8095627,
+          "node_id": 3799088489,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431301,
+          "longitude": 139.8095368,
+          "node_id": 7565871446,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6431293,
+          "longitude": 139.8095101,
+          "node_id": 3799088490,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431334,
+          "longitude": 139.8094853,
+          "node_id": 7565871445,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.64314,
+          "longitude": 139.8094615,
+          "node_id": 3799088491,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431497,
+          "longitude": 139.8094404,
+          "node_id": 7565871444,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.643161,
+          "longitude": 139.8094219,
+          "node_id": 3799088492,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431747,
+          "longitude": 139.8094062,
+          "node_id": 7565871443,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.64319,
+          "longitude": 139.8093929,
+          "node_id": 3799088493,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6432083,
+          "longitude": 139.8093823,
+          "node_id": 7565871442,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6432268,
+          "longitude": 139.8093757,
+          "node_id": 3799088494,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.643246,
+          "longitude": 139.8093728,
+          "node_id": 7565871441,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6432652,
+          "longitude": 139.8093739,
+          "node_id": 3799088495,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6432836,
+          "longitude": 139.8093789,
+          "node_id": 7565871440,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433011,
+          "longitude": 139.8093862,
+          "node_id": 7565871407,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433176,
+          "longitude": 139.8093981,
+          "node_id": 7565871439,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433331,
+          "longitude": 139.8094123,
+          "node_id": 3799088496,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6433465,
+          "longitude": 139.8094301,
+          "node_id": 7565871448,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433583,
+          "longitude": 139.8094496,
+          "node_id": 7565871406,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433697,
+          "longitude": 139.8094715,
+          "node_id": 7565871449,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6433819,
+          "longitude": 139.8094984,
+          "node_id": 3799088497,
+          "timestamp": "2020-05-28T11:01:05Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "3",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-05-28T11:01:05Z",
+      "version": 3,
+      "way_id": 376496465
+    },
+    {
+      "node_ids": [
+        7565908026,
+        3799199135,
+        7565908018,
+        7565908019,
+        3799199134,
+        6435733557,
+        6435733555,
+        3799199123,
+        7565908005,
+        3799199124,
+        7565908004,
+        7565907997,
+        7565908003,
+        7565907996,
+        7565908002,
+        3799199125,
+        7565908001,
+        3799199126,
+        7565908000,
+        3799199127,
+        7565907999,
+        3799199128,
+        7565907998,
+        3799199129,
+        6435733556,
+        3799199143
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6453864,
+          "longitude": 139.81653,
+          "node_id": 7565908026,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453472,
+          "longitude": 139.8163238,
+          "node_id": 3799199135,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6453286,
+          "longitude": 139.8162299,
+          "node_id": 7565908018,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453193,
+          "longitude": 139.8161876,
+          "node_id": 7565908019,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453083,
+          "longitude": 139.8161453,
+          "node_id": 3799199134,
+          "timestamp": "2015-10-23T10:41:45Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6452429,
+          "longitude": 139.8159366,
+          "node_id": 6435733557,
+          "timestamp": "2019-04-29T10:40:07Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450599,
+          "longitude": 139.8153377,
+          "node_id": 6435733555,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6450558,
+          "longitude": 139.815324,
+          "node_id": 3799199123,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6450533,
+          "longitude": 139.8153082,
+          "node_id": 7565908005,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450524,
+          "longitude": 139.8152924,
+          "node_id": 3799199124,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6450539,
+          "longitude": 139.8152762,
+          "node_id": 7565908004,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450581,
+          "longitude": 139.8152606,
+          "node_id": 7565907997,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450638,
+          "longitude": 139.815247,
+          "node_id": 7565908003,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450717,
+          "longitude": 139.8152346,
+          "node_id": 7565907996,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450811,
+          "longitude": 139.8152227,
+          "node_id": 7565908002,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6450922,
+          "longitude": 139.8152141,
+          "node_id": 3799199125,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6451043,
+          "longitude": 139.8152077,
+          "node_id": 7565908001,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6451176,
+          "longitude": 139.8152046,
+          "node_id": 3799199126,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6451307,
+          "longitude": 139.8152038,
+          "node_id": 7565908000,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6451441,
+          "longitude": 139.8152048,
+          "node_id": 3799199127,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6451637,
+          "longitude": 139.8152128,
+          "node_id": 7565907999,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6451764,
+          "longitude": 139.8152232,
+          "node_id": 3799199128,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6451897,
+          "longitude": 139.8152383,
+          "node_id": 7565907998,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.645202,
+          "longitude": 139.8152561,
+          "node_id": 3799199129,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.645211,
+          "longitude": 139.8152779,
+          "node_id": 6435733556,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6454979,
+          "longitude": 139.8161768,
+          "node_id": 3799199143,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "3",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-05-28T11:12:58Z",
+      "version": 1,
+      "way_id": 809140340
+    },
+    {
+      "node_ids": [
+        3799199143,
+        3799199145,
+        3799199144,
+        7565908006,
+        3799199142,
+        7565908007,
+        3799199141,
+        7565908011,
+        7565908008,
+        3799199140,
+        3799199138,
+        7565908009,
+        3799199136,
+        7565908012,
+        7565908010,
+        3799199135,
+        7565908013,
+        7565908014,
+        7565908017,
+        3799199133
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6454979,
+          "longitude": 139.8161768,
+          "node_id": 3799199143,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6455036,
+          "longitude": 139.8162115,
+          "node_id": 3799199145,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6455048,
+          "longitude": 139.8162344,
+          "node_id": 3799199144,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6455016,
+          "longitude": 139.8162608,
+          "node_id": 7565908006,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6454956,
+          "longitude": 139.8162833,
+          "node_id": 3799199142,
+          "timestamp": "2015-10-23T10:41:45Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6454871,
+          "longitude": 139.8163029,
+          "node_id": 7565908007,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6454774,
+          "longitude": 139.8163185,
+          "node_id": 3799199141,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6454682,
+          "longitude": 139.8163307,
+          "node_id": 7565908011,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6454543,
+          "longitude": 139.8163421,
+          "node_id": 7565908008,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6454371,
+          "longitude": 139.8163509,
+          "node_id": 3799199140,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6454209,
+          "longitude": 139.816355,
+          "node_id": 3799199138,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.645403,
+          "longitude": 139.8163559,
+          "node_id": 7565908009,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453863,
+          "longitude": 139.8163531,
+          "node_id": 3799199136,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6453715,
+          "longitude": 139.8163469,
+          "node_id": 7565908012,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453594,
+          "longitude": 139.8163376,
+          "node_id": 7565908010,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453472,
+          "longitude": 139.8163238,
+          "node_id": 3799199135,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6453231,
+          "longitude": 139.8162893,
+          "node_id": 7565908013,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6453074,
+          "longitude": 139.8162637,
+          "node_id": 7565908014,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.645291,
+          "longitude": 139.8162309,
+          "node_id": 7565908017,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.645276,
+          "longitude": 139.8161938,
+          "node_id": 3799199133,
+          "timestamp": "2020-05-28T11:12:58Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "3",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-05-28T11:12:58Z",
+      "version": 2,
+      "way_id": 376509517
+    },
+    {
+      "node_ids": [
+        31252809,
+        1832774286,
+        1832774287,
+        1832774288
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6440249,
+          "longitude": 139.7576247,
+          "node_id": 31252809,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6441152,
+          "longitude": 139.7575736,
+          "node_id": 1832774286,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6441536,
+          "longitude": 139.7575382,
+          "node_id": 1832774287,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.64421,
+          "longitude": 139.7574909,
+          "node_id": 1832774288,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "4",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-06-28T07:08:28Z",
+      "version": 7,
+      "way_id": 4848741
+    },
+    {
+      "node_ids": [
+        1832774288,
+        1832774289,
+        31252823,
+        31252824
+      ],
+      "nodes": [
+        {
+          "latitude": 35.64421,
+          "longitude": 139.7574909,
+          "node_id": 1832774288,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6442491,
+          "longitude": 139.7574735,
+          "node_id": 1832774289,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6442968,
+          "longitude": 139.7574656,
+          "node_id": 31252823,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6446799,
+          "longitude": 139.7574665,
+          "node_id": 31252824,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "3",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-06-28T07:08:28Z",
+      "version": 1,
+      "way_id": 820360944
+    },
+    {
+      "node_ids": [
+        31252824,
+        1832774290,
+        1832774291,
+        31252825,
+        570804525,
+        570804527,
+        570804528,
+        570804530,
+        570804532,
+        570804535,
+        570804536,
+        570804538,
+        570804540,
+        1832774281,
+        1832774282,
+        31252820,
+        31252821
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6446799,
+          "longitude": 139.7574665,
+          "node_id": 31252824,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6447163,
+          "longitude": 139.7574775,
+          "node_id": 1832774290,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6447505,
+          "longitude": 139.7575042,
+          "node_id": 1832774291,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6447743,
+          "longitude": 139.7575398,
+          "node_id": 31252825,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6447832,
+          "longitude": 139.757585,
+          "node_id": 570804525,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.644783,
+          "longitude": 139.7576519,
+          "node_id": 570804527,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6447647,
+          "longitude": 139.7576972,
+          "node_id": 570804528,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6447304,
+          "longitude": 139.7577152,
+          "node_id": 570804530,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6446862,
+          "longitude": 139.7577289,
+          "node_id": 570804532,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.643162,
+          "longitude": 139.7577338,
+          "node_id": 570804535,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431238,
+          "longitude": 139.7577022,
+          "node_id": 570804536,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6430939,
+          "longitude": 139.7576621,
+          "node_id": 570804538,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6430807,
+          "longitude": 139.7576108,
+          "node_id": 570804540,
+          "timestamp": "2012-07-21T06:40:34Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6430819,
+          "longitude": 139.7575736,
+          "node_id": 1832774281,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6430977,
+          "longitude": 139.7575349,
+          "node_id": 1832774282,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.643118,
+          "longitude": 139.7575085,
+          "node_id": 31252820,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6431521,
+          "longitude": 139.7574834,
+          "node_id": 31252821,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "1",
+        "oneway": "yes"
+      },
+      "timestamp": "2015-04-22T17:36:25Z",
+      "version": 4,
+      "way_id": 45067778
+    },
+    {
+      "node_ids": [
+        31252821,
+        31252822,
+        1832774283,
+        1832774284
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6431521,
+          "longitude": 139.7574834,
+          "node_id": 31252821,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6436239,
+          "longitude": 139.7574742,
+          "node_id": 31252822,
+          "timestamp": "2012-07-21T06:40:32Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6436604,
+          "longitude": 139.7574788,
+          "node_id": 1832774283,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6436869,
+          "longitude": 139.7574955,
+          "node_id": 1832774284,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "3",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-06-28T07:08:28Z",
+      "version": 5,
+      "way_id": 45067779
+    },
+    {
+      "node_ids": [
+        1832774284,
+        5598363629,
+        31252808
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6436869,
+          "longitude": 139.7574955,
+          "node_id": 1832774284,
+          "timestamp": "2012-07-21T06:40:09Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6437715,
+          "longitude": 139.7575765,
+          "node_id": 5598363629,
+          "timestamp": "2018-05-05T09:52:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6438273,
+          "longitude": 139.7576276,
+          "node_id": 31252808,
+          "timestamp": "2019-11-24T15:11:18Z",
+          "version": 4
+        }
+      ],
+      "tags": {
+        "bridge": "yes",
+        "highway": "service",
+        "layer": "4",
+        "oneway": "yes"
+      },
+      "timestamp": "2020-06-28T07:08:28Z",
+      "version": 1,
+      "way_id": 820360945
+    },
+    {
+      "node_ids": [
+        281676391,
+        281676435,
+        281676436,
+        281676437,
+        281676438,
+        281676442,
+        281676443,
+        281676449,
+        281676464,
+        281676490,
+        281676501,
+        8506194346,
+        281676502,
+        8506194345,
+        8506194344,
+        281676513,
+        281676528,
+        281676542,
+        281676558,
+        281676560,
+        281676562,
+        281676563,
+        281676564
+      ],
+      "nodes": [
+        {
+          "latitude": 35.6759237,
+          "longitude": 139.9317717,
+          "node_id": 281676391,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6757755,
+          "longitude": 139.9315953,
+          "node_id": 281676435,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6757455,
+          "longitude": 139.9315477,
+          "node_id": 281676436,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.6757384,
+          "longitude": 139.931484,
+          "node_id": 281676437,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6757542,
+          "longitude": 139.9314297,
+          "node_id": 281676438,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6758921,
+          "longitude": 139.9312426,
+          "node_id": 281676442,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6759264,
+          "longitude": 139.9312118,
+          "node_id": 281676443,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6759716,
+          "longitude": 139.9312064,
+          "node_id": 281676449,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6760081,
+          "longitude": 139.9312238,
+          "node_id": 281676464,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6760876,
+          "longitude": 139.9312956,
+          "node_id": 281676490,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6768556,
+          "longitude": 139.9321868,
+          "node_id": 281676501,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6769166,
+          "longitude": 139.9322961,
+          "node_id": 8506194346,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6769924,
+          "longitude": 139.932398,
+          "node_id": 281676502,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6770659,
+          "longitude": 139.9324851,
+          "node_id": 8506194345,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6771117,
+          "longitude": 139.9325556,
+          "node_id": 8506194344,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6771264,
+          "longitude": 139.932626,
+          "node_id": 281676513,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.677116,
+          "longitude": 139.9327037,
+          "node_id": 281676528,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6771002,
+          "longitude": 139.9327701,
+          "node_id": 281676542,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6770561,
+          "longitude": 139.9328265,
+          "node_id": 281676558,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6770103,
+          "longitude": 139.9328654,
+          "node_id": 281676560,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6769651,
+          "longitude": 139.9328721,
+          "node_id": 281676562,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.6769205,
+          "longitude": 139.9328432,
+          "node_id": 281676563,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6768518,
+          "longitude": 139.9327688,
+          "node_id": 281676564,
+          "timestamp": "2021-03-11T08:29:21Z",
+          "version": 3
+        }
+      ],
+      "tags": {
+        "highway": "motorway_link",
+        "lanes": "1",
+        "oneway": "yes"
+      },
+      "timestamp": "2021-03-11T08:29:21Z",
+      "version": 6,
+      "way_id": 25823832
+    },
+    {
+      "node_ids": [
+        4157120425,
+        4157120434,
+        4157120433,
+        4157120432,
+        4157120431,
+        4157120430,
+        4157120429,
+        4157120428
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5959945,
+          "longitude": 139.7555647,
+          "node_id": 4157120425,
+          "timestamp": "2019-03-07T14:19:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5957744,
+          "longitude": 139.7555677,
+          "node_id": 4157120434,
+          "timestamp": "2019-03-07T14:19:21Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5950318,
+          "longitude": 139.7554718,
+          "node_id": 4157120433,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5942837,
+          "longitude": 139.7554637,
+          "node_id": 4157120432,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5937755,
+          "longitude": 139.7554637,
+          "node_id": 4157120431,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5934767,
+          "longitude": 139.7555308,
+          "node_id": 4157120430,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5924974,
+          "longitude": 139.7554986,
+          "node_id": 4157120429,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5922553,
+          "longitude": 139.7554852,
+          "node_id": 4157120428,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "driveway",
+        "source": "digitalglobe"
+      },
+      "timestamp": "2019-03-07T14:19:21Z",
+      "version": 1,
+      "way_id": 675182036
+    },
+    {
+      "node_ids": [
+        4157120415,
+        4157120416,
+        4157120417,
+        4157120418,
+        4157120419,
+        4157120420,
+        6323119371
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5917035,
+          "longitude": 139.7550399,
+          "node_id": 4157120415,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5919739,
+          "longitude": 139.7550373,
+          "node_id": 4157120416,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5921877,
+          "longitude": 139.7550775,
+          "node_id": 4157120417,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5929009,
+          "longitude": 139.7550828,
+          "node_id": 4157120418,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5931975,
+          "longitude": 139.7550426,
+          "node_id": 4157120419,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5935225,
+          "longitude": 139.7550426,
+          "node_id": 4157120420,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5936709,
+          "longitude": 139.7550546,
+          "node_id": 6323119371,
+          "timestamp": "2019-03-07T14:19:21Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "driveway",
+        "source": "digitalglobe"
+      },
+      "timestamp": "2019-03-07T14:19:21Z",
+      "version": 1,
+      "way_id": 675182035
+    },
+    {
+      "node_ids": [
+        6323119371,
+        4157120421,
+        4157120422
+      ],
+      "nodes": [
+        {
+          "latitude": 35.5936709,
+          "longitude": 139.7550546,
+          "node_id": 6323119371,
+          "timestamp": "2019-03-07T14:19:21Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.594251,
+          "longitude": 139.7551016,
+          "node_id": 4157120421,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5949357,
+          "longitude": 139.7551737,
+          "node_id": 4157120422,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        }
+      ],
+      "tags": {
+        "highway": "motorway_link",
+        "oneway": "yes",
+        "source": "digitalglobe"
+      },
+      "timestamp": "2019-03-07T14:19:21Z",
+      "version": 1,
+      "way_id": 675182038
+    },
+    {
+      "node_ids": [
+        308934727,
+        12036909945,
+        5982528969,
+        12036909944,
+        308934728,
+        6440443721,
+        12036909943,
+        308934729,
+        6440443722,
+        308934730,
+        6440443723,
+        12036909942,
+        308934750,
+        6440443724,
+        12036909941,
+        308934756,
+        12036909950,
+        308934757,
+        308934764
+      ],
+      "nodes": [
+        {
+          "latitude": 35.8473252,
+          "longitude": 139.7426776,
+          "node_id": 308934727,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8473591,
+          "longitude": 139.7426966,
+          "node_id": 12036909945,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8473905,
+          "longitude": 139.7427172,
+          "node_id": 5982528969,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8474357,
+          "longitude": 139.7427509,
+          "node_id": 12036909944,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8474731,
+          "longitude": 139.7427926,
+          "node_id": 308934728,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8475171,
+          "longitude": 139.742857,
+          "node_id": 6440443721,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.847558,
+          "longitude": 139.742942,
+          "node_id": 12036909943,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8475781,
+          "longitude": 139.7430118,
+          "node_id": 308934729,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8475807,
+          "longitude": 139.7430339,
+          "node_id": 6440443722,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8475889,
+          "longitude": 139.7431054,
+          "node_id": 308934730,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8475868,
+          "longitude": 139.7431866,
+          "node_id": 6440443723,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8475733,
+          "longitude": 139.74326,
+          "node_id": 12036909942,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8475571,
+          "longitude": 139.743319,
+          "node_id": 308934750,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8475247,
+          "longitude": 139.7433901,
+          "node_id": 6440443724,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8474919,
+          "longitude": 139.743443,
+          "node_id": 12036909941,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8474539,
+          "longitude": 139.7434944,
+          "node_id": 308934756,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8473463,
+          "longitude": 139.7436274,
+          "node_id": 12036909950,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8472892,
+          "longitude": 139.7436979,
+          "node_id": 308934757,
+          "timestamp": "2022-04-23T00:15:50Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.847195,
+          "longitude": 139.7438155,
+          "node_id": 308934764,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "parking_aisle"
+      },
+      "timestamp": "2024-07-06T02:04:12Z",
+      "version": 1,
+      "way_id": 1299417625
+    },
+    {
+      "node_ids": [
+        308934764,
+        6440443725,
+        12036936304,
+        6440443726
+      ],
+      "nodes": [
+        {
+          "latitude": 35.847195,
+          "longitude": 139.7438155,
+          "node_id": 308934764,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.8470731,
+          "longitude": 139.7437223,
+          "node_id": 6440443725,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8470701,
+          "longitude": 139.7437017,
+          "node_id": 12036936304,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8472135,
+          "longitude": 139.74316,
+          "node_id": 6440443726,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "parking_aisle"
+      },
+      "timestamp": "2024-07-06T02:04:12Z",
+      "version": 2,
+      "way_id": 687045302
+    },
+    {
+      "node_ids": [
+        308934771,
+        308934774,
+        308934775,
+        12036936305,
+        6440443726,
+        9687044705,
+        9687044704,
+        9687044706,
+        308934786,
+        308934788,
+        12036909949,
+        308934792,
+        12036909948,
+        308934794,
+        12036909947,
+        308934797,
+        308934868,
+        12036909946,
+        308934803,
+        5982528970,
+        308934811
+      ],
+      "nodes": [
+        {
+          "latitude": 35.847082,
+          "longitude": 139.7439382,
+          "node_id": 308934771,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.8467696,
+          "longitude": 139.7437542,
+          "node_id": 308934774,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.8469516,
+          "longitude": 139.7430195,
+          "node_id": 308934775,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8471166,
+          "longitude": 139.7430839,
+          "node_id": 12036936305,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8472135,
+          "longitude": 139.74316,
+          "node_id": 6440443726,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8472495,
+          "longitude": 139.7431974,
+          "node_id": 9687044705,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8472794,
+          "longitude": 139.7432265,
+          "node_id": 9687044704,
+          "timestamp": "2022-04-23T00:15:47Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8473185,
+          "longitude": 139.7432613,
+          "node_id": 9687044706,
+          "timestamp": "2022-04-23T00:15:47Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.84738,
+          "longitude": 139.7432867,
+          "node_id": 308934786,
+          "timestamp": "2022-04-23T00:15:50Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8474057,
+          "longitude": 139.7432864,
+          "node_id": 308934788,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        },
+        {
+          "latitude": 35.8474383,
+          "longitude": 139.7432741,
+          "node_id": 12036909949,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8474741,
+          "longitude": 139.7432522,
+          "node_id": 308934792,
+          "timestamp": "2022-04-23T00:15:50Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8474984,
+          "longitude": 139.7432147,
+          "node_id": 12036909948,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8475137,
+          "longitude": 139.743166,
+          "node_id": 308934794,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8475188,
+          "longitude": 139.7431073,
+          "node_id": 12036909947,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8475104,
+          "longitude": 139.7430351,
+          "node_id": 308934797,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 4
+        },
+        {
+          "latitude": 35.8474831,
+          "longitude": 139.7429335,
+          "node_id": 308934868,
+          "timestamp": "2018-10-14T06:32:45Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8474507,
+          "longitude": 139.7428802,
+          "node_id": 12036909946,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.8474144,
+          "longitude": 139.7428318,
+          "node_id": 308934803,
+          "timestamp": "2018-10-14T06:32:45Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.8473595,
+          "longitude": 139.7427822,
+          "node_id": 5982528970,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.8473054,
+          "longitude": 139.7427481,
+          "node_id": 308934811,
+          "timestamp": "2024-07-06T02:04:12Z",
+          "version": 5
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "oneway": "yes",
+        "service": "parking_aisle"
+      },
+      "timestamp": "2024-07-06T02:04:12Z",
+      "version": 6,
+      "way_id": 44351819
+    },
+    {
+      "node_ids": [
+        35938024,
+        4157120422,
+        10974178239,
+        31298983,
+        9667135198,
+        9667135197,
+        9667135196,
+        9667135195,
+        9667135194,
+        9667135193,
+        9667135192,
+        31298969
+      ],
+      "nodes": [
+        {
+          "latitude": 35.594014,
+          "longitude": 139.7551607,
+          "node_id": 35938024,
+          "timestamp": "2009-07-18T12:50:14Z",
+          "version": 2
+        },
+        {
+          "latitude": 35.5949357,
+          "longitude": 139.7551737,
+          "node_id": 4157120422,
+          "timestamp": "2016-04-30T10:04:49Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5975093,
+          "longitude": 139.7552122,
+          "node_id": 10974178239,
+          "timestamp": "2023-06-13T16:26:36Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.5982388,
+          "longitude": 139.7552349,
+          "node_id": 31298983,
+          "timestamp": "2023-06-13T16:26:36Z",
+          "version": 8
+        },
+        {
+          "latitude": 35.5997687,
+          "longitude": 139.7553248,
+          "node_id": 9667135198,
+          "timestamp": "2023-06-13T16:26:36Z",
+          "version": 3
+        },
+        {
+          "latitude": 35.6001774,
+          "longitude": 139.7553431,
+          "node_id": 9667135197,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.600751,
+          "longitude": 139.7553528,
+          "node_id": 9667135196,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6012198,
+          "longitude": 139.755336,
+          "node_id": 9667135195,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6017495,
+          "longitude": 139.7553156,
+          "node_id": 9667135194,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6024452,
+          "longitude": 139.755279,
+          "node_id": 9667135193,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.6030646,
+          "longitude": 139.7552555,
+          "node_id": 9667135192,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 1
+        },
+        {
+          "latitude": 35.603831,
+          "longitude": 139.7552415,
+          "node_id": 31298969,
+          "timestamp": "2022-04-15T02:09:34Z",
+          "version": 4
+        }
+      ],
+      "tags": {
+        "bicycle": "no",
+        "foot": "no",
+        "highway": "motorway",
+        "lanes": "3",
+        "maxspeed": "80",
+        "motorcar": "designated",
+        "motorcycle": "designated",
+        "name": "首都高速湾岸線",
+        "name:en": "Bayshore Route",
+        "name:es": "Ruta Bayshore",
+        "name:ja": "首都高速湾岸線",
+        "name:ko": "수도고속도로 완간선",
+        "name:ru": "Прибрежная дорога",
+        "oneway": "yes",
+        "ref": "B",
+        "smoothness": "excellent",
+        "source": "GSImaps/std",
+        "surface": "paved",
+        "toll": "yes"
+      },
+      "timestamp": "2023-08-22T03:37:39Z",
+      "version": 9,
+      "way_id": 1059139534
+    }
+  ]
+}

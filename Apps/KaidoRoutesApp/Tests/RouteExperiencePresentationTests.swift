@@ -18,10 +18,65 @@ final class RouteExperiencePresentationTests: XCTestCase {
     XCTAssertGreaterThan(c1.junctionCount, 0)
     XCTAssertGreaterThan(c2.distanceMeters, c1.distanceMeters)
     XCTAssertGreaterThan(c2.referenceMinutes, c1.referenceMinutes)
-    XCTAssertGreaterThan(c2.tunnelDistanceMeters, c1.tunnelDistanceMeters)
+    XCTAssertEqual(c1.routeIDsInOrder, ["C1"])
+    XCTAssertEqual(c2.routeIDsInOrder, ["C2", "B", "C2"])
     for preview in model.circuitPreviewsByID.values {
-      XCTAssertTrue((0...100).contains(preview.tunnelPercent))
-      XCTAssertLessThanOrEqual(preview.tunnelDistanceMeters, preview.distanceMeters)
+      XCTAssertFalse(preview.routeIDsInOrder.isEmpty)
+      XCTAssertFalse(
+        preview.routeIDsInOrder.contains(where: \.isEmpty),
+        "every card shield needs a route code to print"
+      )
+    }
+  }
+
+  /// The green parking line on a catalog card means the route drives in,
+  /// so it has to come from the course itself. Three experiences used to
+  /// advertise a PA they only pass; a card may only name a parking area the
+  /// planner actually routes through.
+  func testOnlyRoutesThatEnterAParkingAreaAdvertiseOne() throws {
+    let model = WholeShutoProductModel(checkpointStore: nil)
+    let drivable = Dictionary(
+      uniqueKeysWithValues: model.database.parkingAreas.map {
+        ($0.parkingAreaID, $0)
+      }
+    )
+    var advertised: [String: [String]] = [:]
+    for circuit in model.bundledCircuits where !circuit.parkingAreaStopIDs.isEmpty {
+      advertised[circuit.circuitID] = circuit.parkingAreaStopIDs
+    }
+    XCTAssertEqual(
+      advertised,
+      ["shuto.circuit.wangan-daikoku-run": ["shuto.pa.daikoku"]]
+    )
+    // A course cannot anchor on a parking area the snapshot cannot enter.
+    for stopIDs in advertised.values {
+      for stopID in stopIDs {
+        let parkingArea = try XCTUnwrap(drivable[stopID])
+        XCTAssertTrue(parkingArea.isDrivable, "\(stopID) is not drivable")
+      }
+    }
+  }
+
+  /// Route marks are printed small — 10pt on the catalog card — so every
+  /// shield ground has to carry `routeWhite` at the 4.5:1 normal-text bar,
+  /// not the 3:1 large-text one the audit falls back to.
+  func testRouteShieldGroundsCarryRouteWhiteAtSmallSizes() {
+    let routeIDs = [
+      "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5",
+      "C2", "6_MUKOJIMA", "6_MISATO", "K6",
+      "B", "9", "11", "K5",
+      "3", "K1", "K2", "K3",
+      "4", "K7_YOKOHAMA_KITA", "K7_YOKOHAMA_HOKUSEI",
+      "7", "10", "2", "Y",
+    ]
+    for routeID in routeIDs {
+      for style in [UIUserInterfaceStyle.light, .dark] {
+        XCTAssertGreaterThanOrEqual(
+          contrast(KaidoTheme.routeWhite, routeColor(routeID), style: style),
+          4.5,
+          "shield \(shieldLabel(routeID)) is unreadable in \(style.rawValue)"
+        )
+      }
     }
   }
 

@@ -1,0 +1,186 @@
+{
+  "checked_at": "2026-09-07",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "parking_areas": [
+    {
+      "access_node_id": 364203262,
+      "closest_approach_meters": 146.112,
+      "interior_way": {
+        "node_ids": [
+          364203262,
+          1030436878,
+          1030436983,
+          1030436978,
+          364203264,
+          1030436801,
+          739433499,
+          1030436882,
+          364203266,
+          4080982831,
+          364203269,
+          1030436956,
+          1030436841,
+          1030436849,
+          739433498,
+          1030436863,
+          1030436865,
+          1030436974,
+          1030436852,
+          1014569566,
+          1014569598,
+          364203272,
+          1014569514,
+          1014569494,
+          364203275
+        ],
+        "nodes": [
+          {
+            "latitude": 35.4620157,
+            "longitude": 139.6814442,
+            "node_id": 364203262
+          },
+          {
+            "latitude": 35.4615431,
+            "longitude": 139.6809172,
+            "node_id": 1030436878
+          },
+          {
+            "latitude": 35.4614636,
+            "longitude": 139.680824,
+            "node_id": 1030436983
+          },
+          {
+            "latitude": 35.4613724,
+            "longitude": 139.6807172,
+            "node_id": 1030436978
+          },
+          {
+            "latitude": 35.4612707,
+            "longitude": 139.680598,
+            "node_id": 364203264
+          },
+          {
+            "latitude": 35.4611786,
+            "longitude": 139.6804635,
+            "node_id": 1030436801
+          },
+          {
+            "latitude": 35.4611425,
+            "longitude": 139.6804107,
+            "node_id": 739433499
+          },
+          {
+            "latitude": 35.4611016,
+            "longitude": 139.6803138,
+            "node_id": 1030436882
+          },
+          {
+            "latitude": 35.461044,
+            "longitude": 139.6801773,
+            "node_id": 364203266
+          },
+          {
+            "latitude": 35.4613437,
+            "longitude": 139.6798104,
+            "node_id": 4080982831
+          },
+          {
+            "latitude": 35.4615944,
+            "longitude": 139.6795034,
+            "node_id": 364203269
+          },
+          {
+            "latitude": 35.461637,
+            "longitude": 139.6795158,
+            "node_id": 1030436956
+          },
+          {
+            "latitude": 35.4617078,
+            "longitude": 139.6796044,
+            "node_id": 1030436841
+          },
+          {
+            "latitude": 35.4618071,
+            "longitude": 139.6797288,
+            "node_id": 1030436849
+          },
+          {
+            "latitude": 35.4619161,
+            "longitude": 139.6798654,
+            "node_id": 739433498
+          },
+          {
+            "latitude": 35.4619944,
+            "longitude": 139.6799614,
+            "node_id": 1030436863
+          },
+          {
+            "latitude": 35.4621001,
+            "longitude": 139.680091,
+            "node_id": 1030436865
+          },
+          {
+            "latitude": 35.4621766,
+            "longitude": 139.6801848,
+            "node_id": 1030436974
+          },
+          {
+            "latitude": 35.4624115,
+            "longitude": 139.6804727,
+            "node_id": 1030436852
+          },
+          {
+            "latitude": 35.462492,
+            "longitude": 139.6805714,
+            "node_id": 1014569566
+          },
+          {
+            "latitude": 35.4625188,
+            "longitude": 139.6806197,
+            "node_id": 1014569598
+          },
+          {
+            "latitude": 35.4625246,
+            "longitude": 139.6806639,
+            "node_id": 364203272
+          },
+          {
+            "latitude": 35.4625147,
+            "longitude": 139.6807024,
+            "node_id": 1014569514
+          },
+          {
+            "latitude": 35.4624854,
+            "longitude": 139.6807449,
+            "node_id": 1014569494
+          },
+          {
+            "latitude": 35.4620392,
+            "longitude": 139.6813164,
+            "node_id": 364203275
+          }
+        ],
+        "tags": {
+          "highway": "service",
+          "oneway": "yes",
+          "source": "Bing 2014",
+          "surface": "paved"
+        },
+        "timestamp": "2017-04-16T07:08:39Z",
+        "version": 6,
+        "way_id": 32355896
+      },
+      "parking_area_id": "shuto.pa.daikoku",
+      "return_node_id": 364203275
+    }
+  ],
+  "review_id": "shuto-parking-access-review-20260907",
+  "schema_version": "1.0",
+  "source": {
+    "api": "https://api.openstreetmap.org/api/0.6",
+    "attribution": "© OpenStreetMap contributors",
+    "licence": "ODbL-1.0",
+    "licence_uri": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "read_at": "2026-09-07T20:55:00Z"
+  }
+}

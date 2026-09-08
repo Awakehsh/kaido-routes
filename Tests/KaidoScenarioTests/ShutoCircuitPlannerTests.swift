@@ -263,11 +263,28 @@ struct ShutoCircuitPlannerTests {
       exitFacilityID: pairing.exit.facilityID,
       laps: 1
     )
-    // Ariake to Daikoku along the Bayshore measures roughly 25 km.
+    // Ariake to Daikoku along the Bayshore measures roughly 25 km, plus the
+    // Daikoku interchange loop the parking area sits inside.
     #expect(route.distanceMeters > 15_000)
     #expect(route.distanceMeters < 45_000)
     #expect(assertContinuity(route.edges))
-    #expect(route.routeIDsInOrder == ["B"])
+    // The run leaves the Bayshore for the Daikoku Line to reach the parking
+    // area, then comes back to it for the Daikoku-Futo exit.
+    #expect(route.routeIDsInOrder == ["B", "K5", "B"])
+
+    // The parking area is the point of the run: it is driven, not passed.
+    let parkingVisits = route.routePlan.occurrences.filter {
+      $0.kind == .paVisit
+    }
+    #expect(!parkingVisits.isEmpty)
+    #expect(parkingVisits.allSatisfy { $0.parkingAreaID == "shuto.pa.daikoku" })
+    // Driving the parking area is inside the toll domain — the driver has
+    // not exited — so the pairing the tariff is quoted for is untouched.
+    #expect(parkingVisits.allSatisfy { $0.tollDomainID == "shuto.toll-domain" })
+    #expect(route.exitFacility.facilityID == "shuto.ic.b.daikokufutou")
+    // The visit is a contiguous run of occurrences, not scattered edges.
+    let visitIndices = parkingVisits.map(\.index)
+    #expect(zip(visitIndices, visitIndices.dropFirst()).allSatisfy { $0 + 1 == $1 })
 
     // A tour is one reviewed pass; laps are a loop concept.
     #expect(throws: ShutoCircuitError.invalidLapCount) {

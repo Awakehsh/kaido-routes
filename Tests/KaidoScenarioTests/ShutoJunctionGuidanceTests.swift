@@ -520,34 +520,43 @@ struct ShutoJunctionGuidanceTests {
       route: route
     )
 
-    // Every junction where another route diverges from the westbound
-    // Bayshore is reviewed, so the run never passes a decision unguided.
+    // Every junction where another route diverges from the run is reviewed,
+    // so the run never passes a decision unguided. Daikoku appears twice:
+    // once leaving the Bayshore for the parking area, once rejoining it.
     #expect(
       matches.map(\.junctionNameJA)
         == [
           "葛西JCT", "辰巳JCT", "東雲JCT", "有明JCT", "大井JCT",
-          "東海JCT", "川崎浮島JCT", "大黒JCT",
+          "東海JCT", "川崎浮島JCT", "大黒JCT", "大黒JCT",
         ]
     )
-    #expect(matches.allSatisfy { $0.definition.branchSide == .straight })
-    // Daikoku additionally signs Yokohama-Yokosuka Road; each definition
-    // preserves the exact destinations and shields on its own diagram.
+    // The run holds the Bayshore westbound carriageway until Daikoku, where
+    // reaching the parking area means taking the diverging side.
+    #expect(
+      matches.dropLast(2).allSatisfy {
+        $0.definition.branchSide == .straight
+          && $0.definition.incomingDirectionJA == "西行き"
+      }
+    )
+    #expect(matches[7].definition.branchSide == .left)
+    #expect(matches[7].definition.incomingDirectionJA == "西行き")
+    // Rejoining is approached on the Daikoku Line, not the Bayshore.
+    #expect(matches[8].definition.branchSide == .straight)
+    #expect(matches[8].definition.incomingDirectionJA == "下り")
+    // Each definition preserves the exact destinations and shields on its
+    // own diagram: the operator signs the parking-area side for Tomei, and
+    // nothing here paraphrases that into a parking-area cue.
     #expect(
       matches.map(\.definition.japaneseSignText)
         == [
           "横浜", "横浜", "横浜", "横浜", "横浜",
-          "空港中央・大黒ふ頭", "横浜", "横浜公園・横横道路",
+          "空港中央・大黒ふ頭", "横浜", "東名", "横浜公園・幸浦",
         ]
     )
     #expect(
       matches.map(\.definition.routeShields)
         == Array(repeating: ["B"], count: 7)
-        + [["B", "K3", "E16"]]
-    )
-    #expect(
-      matches.allSatisfy {
-        $0.definition.incomingDirectionJA == "西行き"
-      }
+        + [["E1", "K5", "K7"], ["B", "K3"]]
     )
     for match in matches {
       let occurrence = route.routePlan.occurrence(

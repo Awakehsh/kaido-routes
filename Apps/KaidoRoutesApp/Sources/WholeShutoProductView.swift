@@ -1432,6 +1432,56 @@ struct WholeShutoProductView: View {
     }
   }
 
+  /// The parking areas the course stops at, named from the snapshot. A
+  /// course that only passes a parking area contributes nothing here: the
+  /// green line means the route drives in, not that a PA is somewhere along
+  /// the way.
+  private func circuitParkingStopNames(
+    _ circuit: ShutoCircuitDefinition
+  ) -> [String] {
+    circuit.parkingAreaStopIDs.compactMap { parkingAreaID in
+      model.database.parkingAreas
+        .first { $0.parkingAreaID == parkingAreaID }?
+        .nameJA
+    }
+  }
+
+  /// The route marks the card's experience actually drives, in course order:
+  /// the same shields the overhead signs carry, so a driver recognises the
+  /// experience by road before reading the name.
+  private func circuitShields(_ routeIDs: [String]) -> some View {
+    HStack(spacing: 4) {
+      ForEach(Array(routeIDs.enumerated()), id: \.offset) { _, routeID in
+        Text(shieldLabel(routeID))
+          .font(.system(size: 10, weight: .black, design: .rounded))
+          .foregroundStyle(KaidoTheme.routeWhite)
+          .padding(.horizontal, 5)
+          .frame(height: 18)
+          .background(routeColor(routeID))
+          .clipShape(RoundedRectangle(cornerRadius: 4))
+      }
+    }
+    // Decorative: a standalone accessibility element here would be an
+    // 18pt-tall VoiceOver stop inside the card's own button, which the
+    // hit-region audit reads as an interactive target too small to press.
+    // The card speaks the routes instead, on a target that is big enough.
+    .accessibilityHidden(true)
+  }
+
+  /// What the card's button says it drives, for a reader that never sees the
+  /// shields.
+  private func circuitRoutesAccessibilityValue(
+    _ circuit: ShutoCircuitDefinition
+  ) -> String? {
+    guard
+      let preview = model.circuitPreviewsByID[circuit.circuitID],
+      !preview.routeIDsInOrder.isEmpty
+    else { return nil }
+    return preview.routeIDsInOrder
+      .map { routeDisplayLabel($0, in: model.database) }
+      .joined(separator: " → ")
+  }
+
   private func circuitCard(
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
@@ -1459,6 +1509,11 @@ struct WholeShutoProductView: View {
           .foregroundStyle(KaidoTheme.routeGreen)
           .frame(height: 38)
         }
+        if let preview = model.circuitPreviewsByID[circuit.circuitID],
+          !preview.routeIDsInOrder.isEmpty
+        {
+          circuitShields(preview.routeIDsInOrder)
+        }
         Text(circuit.displayName(for: languageSettings.interfaceLocale))
           .font(.subheadline.weight(.bold))
           .multilineTextAlignment(.leading)
@@ -1477,9 +1532,9 @@ struct WholeShutoProductView: View {
           .monospacedDigit()
           .accessibilityIdentifier("whole-shuto-circuit-metrics-\(circuit.circuitID)")
           Text(copy.resolve(
-            japanese: "分岐案内 \(preview.junctionCount)か所 · トンネル \(preview.tunnelPercent)%",
-            simplifiedChinese: "\(preview.junctionCount) 处路口提示 · 隧道 \(preview.tunnelPercent)%",
-            english: "\(preview.junctionCount) junction cues · \(preview.tunnelPercent)% tunnel"
+            japanese: "分岐案内 \(preview.junctionCount)か所",
+            simplifiedChinese: "\(preview.junctionCount) 处路口提示",
+            english: "\(preview.junctionCount) junction cues"
           ))
           .font(.caption)
           .foregroundStyle(KaidoTheme.nightQuiet)
@@ -1493,11 +1548,18 @@ struct WholeShutoProductView: View {
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         }
-        if !circuit.paStopNamesJA.isEmpty {
-          Text(circuit.paStopNamesJA.joined(separator: "・"))
+        let parkingStopNames = circuitParkingStopNames(circuit)
+        if !parkingStopNames.isEmpty {
+          // Text alone, no parking glyph: the filled SF parking symbol
+          // renders its counter in the card ground and fails the home's
+          // contrast audit, and the green line already reads as a stop.
+          Text(parkingStopNames.joined(separator: "・"))
             .font(.caption.weight(.bold))
             .foregroundStyle(KaidoTheme.confirmedGreen)
             .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier(
+              "whole-shuto-circuit-pa-stops-\(circuit.circuitID)"
+            )
         }
       }
       .frame(width: 222, alignment: .leading)
@@ -1513,6 +1575,7 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(
       "whole-shuto-circuit-option-\(circuit.circuitID)"
     )
+    .accessibilityValue(circuitRoutesAccessibilityValue(circuit) ?? "")
   }
 
   private func selectedCircuitPanel(
@@ -1687,20 +1750,28 @@ struct WholeShutoProductView: View {
     _ circuit: ShutoCircuitDefinition
   ) -> some View {
     Group {
-      if model.isResolvingCircuitPairing {
+      if model.isResolvingCircuitPairing || awaitsCircuitPairingOrigin {
         HStack(spacing: 8) {
           ProgressView()
             .controlSize(.small)
           Text(
-            copy.resolve(
-              japanese: "現在地から入口・出口を導出中",
-              simplifiedChinese: "正在按当前位置推导入口/出口",
-              english: "Deriving entrance and exit"
-            )
+            awaitsCircuitPairingOrigin
+              ? copy.resolve(
+                japanese: "現在地を確認中",
+                simplifiedChinese: "正在定位",
+                english: "Finding your location"
+              )
+              : copy.resolve(
+                japanese: "現在地から入口・出口を導出中",
+                simplifiedChinese: "正在按当前位置推导入口/出口",
+                english: "Deriving entrance and exit"
+              )
           )
           .font(.system(size: 11.5, weight: .semibold))
           .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("whole-shuto-circuit-pairing-progress")
       } else if let entry = model.circuitEntryFacility,
         let exit = model.circuitExitFacility
       {
@@ -1818,15 +1889,34 @@ struct WholeShutoProductView: View {
         .accessibilityIdentifier("whole-shuto-circuit-pairing")
       } else {
         Text(
-          copy.resolve(
-            japanese: "この付近から入れる方向対応の入口が見つかりません",
-            simplifiedChinese: "附近没有方向匹配的可用入口",
-            english: "No direction-valid entrance reachable from here"
-          )
+          model.origin == nil
+            ? copy.resolve(
+              japanese: "現在地を取得できません。出発地を入力してください",
+              simplifiedChinese: "无法获取当前位置，请输入出发地",
+              english: "Current location unavailable — enter an origin"
+            )
+            : copy.resolve(
+              japanese: "この付近から入れる方向対応の入口が見つかりません",
+              simplifiedChinese: "附近没有方向匹配的可用入口",
+              english: "No direction-valid entrance reachable from here"
+            )
         )
         .font(.system(size: 11.5, weight: .semibold))
         .foregroundStyle(.secondary)
       }
+    }
+  }
+
+  /// A card tapped before the location fix lands has no origin to derive
+  /// from yet: the pairing is pending, not empty. Only a settled denial or
+  /// failure ends the wait.
+  private var awaitsCircuitPairingOrigin: Bool {
+    guard model.origin == nil else { return false }
+    switch planningLocation.state {
+    case .idle, .permissionRequired, .locating, .measured, .stopped:
+      return true
+    case .denied, .unavailable:
+      return false
     }
   }
 
@@ -7449,20 +7539,24 @@ func routeDisplayLabel(
   return "\(shield) · \(officialName)"
 }
 
+/// Shield grounds, each dark enough that `KaidoTheme.routeWhite` route marks
+/// clear 4.5:1 at the small sizes the shields are actually printed at. The
+/// hues stay the operator's route families; the amber `7`/`10` ground moves
+/// furthest because a highway-bright orange cannot carry light text.
 func routeColor(_ routeID: String) -> Color {
   switch routeID {
   case "C1", "1_HANEDA", "1_UENO", "5", "S1", "S2", "S5":
-    return Color(hex: 0x2877B7)
+    return Color(hex: 0x2670AD)
   case "C2", "6_MUKOJIMA", "6_MISATO", "K6":
-    return Color(hex: 0x2F8E63)
+    return Color(hex: 0x297A55)
   case "B", "9", "11", "K5":
-    return Color(hex: 0x8065A7)
+    return Color(hex: 0x7B5FA4)
   case "3", "K1", "K2", "K3":
     return Color(hex: 0x34658D)
   case "4", "K7_YOKOHAMA_KITA", "K7_YOKOHAMA_HOKUSEI":
-    return Color(hex: 0xC84E45)
+    return Color(hex: 0xBE4238)
   case "7", "10":
-    return Color(hex: 0xC9822E)
+    return Color(hex: 0x966122)
   case "2":
     return Color(hex: 0x7C5E99)
   default:

@@ -155,12 +155,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-settings-form", in: app)
         .waitForExistence(timeout: 3)
     )
-    XCTAssertTrue(
-      element("route-atlas-attribution-source", in: app).exists
-    )
-    XCTAssertTrue(
-      element("route-atlas-attribution-licence", in: app).exists
-    )
+    // The attribution section sits below the fold of a Form that keeps
+    // growing, and a Form row that has not been scrolled to has not been
+    // instantiated, so both rows have to be revealed rather than asserted
+    // into existence where they happen to sit today.
+    _ = revealInformationRow("route-atlas-attribution-source", in: app)
 
     // The map data licence text now hangs off the attribution row itself,
     // so "About this map" carries source and licence together.
@@ -1399,10 +1398,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-guidance-instruction", in: junctionApp)
         .label.contains("向左分岔")
     )
+    // The control speaks the chosen announcement mode before the speech
+    // status, so a driver hears which mode produced the state.
     XCTAssertEqual(
       element("whole-shuto-guidance-speech", in: junctionApp).value
         as? String,
-      "等待已审核提示"
+      "全部播报 · 等待已审核提示"
     )
     junctionApp.terminate()
 

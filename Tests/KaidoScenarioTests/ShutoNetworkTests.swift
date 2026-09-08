@@ -20,7 +20,20 @@ struct ShutoNetworkTests {
       }
     )
     #expect(database.parkingAreas.count == 19)
-    #expect(database.edges.count == 24_299)
+    #expect(database.edges.count == 24_323)
+    // Parking areas are labelled points unless a parking-access review has
+    // supplied the interior the network build drops; Daikoku is the one a
+    // route experience stops at, so it is the one that has to be drivable.
+    let daikokuPA = try #require(
+      database.parkingAreas.first { $0.parkingAreaID == "shuto.pa.daikoku" }
+    )
+    #expect(daikokuPA.isDrivable)
+    #expect(daikokuPA.interiorEdgeIDs?.count == 24)
+    #expect(
+      database.edges
+        .filter { $0.kind == "PARKING" }
+        .allSatisfy { $0.routeMemberships.isEmpty }
+    )
     let komatsugawa = try #require(
       database.junctions.first {
         $0.junctionID == "shuto.jct.jct_komatsugawa"

@@ -1081,6 +1081,7 @@ struct WholeShutoProductView: View {
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(KaidoTheme.positionCyan)
           .frame(minHeight: 44)
+          .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("whole-shuto-drive-history-open")

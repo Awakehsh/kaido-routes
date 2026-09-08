@@ -4,20 +4,27 @@ import XCTest
 final class KRU09AccessibilityUITests: XCTestCase {
   func testWholeShutoDefaultHomeAccessibilityAudit() throws {
     continueAfterFailure = true
-    let app = XCUIApplication()
-    app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT",
-      "-app.kaidoroutes.language.interface",
-      "en",
-      "-app.kaidoroutes.language.guidance-voice",
-      "ja-JP",
-    ]
-    app.launchSilently()
-    XCTAssertTrue(
-      element("whole-shuto-planning-dock", in: app)
-        .waitForExistence(timeout: 5)
-    )
-    try performAccessibilityAudit(in: app)
+    for isLoading in [true, false] {
+      let app = XCUIApplication()
+      app.launchArguments = [
+        "-RESET-NAVIGATION-CHECKPOINT",
+        "-app.kaidoroutes.language.interface", "en",
+        "-app.kaidoroutes.language.guidance-voice", "ja-JP",
+      ]
+      if isLoading { app.launchArguments.append("-HOLD-CIRCUIT-PREVIEWS") }
+      app.launchSilently()
+      XCTAssertTrue(element("whole-shuto-planning-dock", in: app).waitForExistence(timeout: 5))
+      let metrics = element("whole-shuto-circuit-metrics-shuto.circuit.c1-inner", in: app)
+      if isLoading {
+        XCTAssertFalse(metrics.exists)
+        let history = app.buttons["whole-shuto-drive-history-open"]
+        XCTAssertGreaterThanOrEqual(history.frame.height, 44)
+      } else {
+        XCTAssertTrue(metrics.waitForExistence(timeout: 30))
+      }
+      try performAccessibilityAudit(in: app)
+      app.terminate()
+    }
   }
 
   func testWholeShutoDeterministicReviewAccessibilityAudit() throws {

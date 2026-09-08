@@ -66,3 +66,21 @@ for live navigation. Route cards continue to advertise only actual stops.
 The deferred recovery-candidate ordering and Ohashi JCT issue remain outside
 this work. Product releases and bundle hashes are rebuilt from the updated
 network; synthetic/runtime checks are distinct from field evidence.
+
+## Verification on 2026-09-08
+
+- Swift core: 556 tests passed, including all 19 PA cases and repeated-lap visits.
+- Portable E2E: 73 scenarios and 517 assertions passed; schema validation passed.
+- Python: 258 tests and facility-candidate review verification passed.
+- Live source refresh reproduces the review bytes; replaying the two reviews
+  reproduces the distributed database bytes. All five rebuilt foreground
+  products and the retained joint-release fixture passed validation.
+- iPhone 17 Pro / iOS 26.5 Simulator: the initial full run passed 368 of 371
+  tests. Two existing UI assertions were repaired by the concurrent main-branch
+  update; the saved-route test now submits through the keyboard action instead
+  of an English button label. The final affected set passed all seven tests,
+  with no skips or expected failures.
+- Physical iPhone: Debug signing/build verification passed and the bundled
+  database exactly matches the repository with 19 PA interiors. Installation
+  is blocked by `DeviceLocked`; installation, launch and field behavior are
+  not claimed by this result.

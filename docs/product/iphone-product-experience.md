@@ -198,23 +198,38 @@ The editor previews the concrete route shields and distance before **Use this
 route** applies a new exact `RoutePlan`. Opening or dismissing the editor
 never marks a draft as selected. Selecting another option immediately clears
 any stale access or egress preview unless the complete comparison has already
-cached the exact option's two bounded legs. While replacement surface legs
+cached the exact option's required bounded legs. While replacement surface legs
 resolve, the new option remains selected and the journey start action stays
 unavailable; only the latest selection may publish resolved surface legs. A
 selected custom route restores as custom only when its exact snapshot-bound
 plan can be reconstructed.
 
-### Optional destination
+### Journey ending
 
-A journey may end as a circuit — a directional exit and surface egress near
-the origin — or continue to a searched destination. The destination field
-appears after route choice as an optional step. Typing presents a compact list
-of address and point-of-interest candidates. Selecting one resolves a single
-coordinate and places its destination marker on the map; if suggestions are
-unavailable, the entered name remains usable by the normal search action. The
-bounded provider resolves the egress leg to that destination under the same
-fail-closed rules as every journey: missing either surface leg blocks review
-and start rather than silently skipping part of the journey.
+After choosing a route, the driver selects **Return to start**, **End at an
+expressway exit**, or **Continue to another place**. Loops default to the fixed
+planning origin; one-way tours and exact custom routes default to their planned
+directional exit. Opening a saved loop uses the new journey origin, not an old
+recorded location. The ending is visible in route review and persists with the
+journey checkpoint.
+
+Return to start resolves surface egress to the origin captured before departure.
+Continue to another place offers place suggestions and address search, then
+resolves the onward leg without replacing the selected Shuto route. Cancelling
+an edit preserves the previous ending. A search failure leaves the edit open
+with a retry message. Required surface legs must resolve before starting.
+
+End at an expressway exit completes only after the planned exit handoff; it has
+no onward surface leg and never fabricates a return journey. Changing the exit
+replans explicitly: circuit choices retain their course and lap count, while
+custom choices must produce a legal directional route. Invalid exit choices
+leave the existing plan intact. Optional onward guidance starts automatically
+after the highway segment; the app does not require a destination prompt at the
+exit while driving.
+
+The map corner shows only the KAIDO wordmark. Route choice, scope, route names,
+and lap counts belong in the route controls and review, not in the brand mark.
+**Route map / Map** names the two map presentations.
 
 Ordinary-road access, egress, and live rerouting use the same persisted
 preference. **Major roads first** requests provider alternatives and may accept

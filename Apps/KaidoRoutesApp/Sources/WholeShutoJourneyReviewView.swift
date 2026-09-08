@@ -8,6 +8,8 @@ struct WholeShutoJourneyReviewView: View {
   @ObservedObject var model: WholeShutoProductModel
   @ObservedObject var languageSettings: KaidoLanguageSettingsModel
   @ObservedObject var savedRoutes: SavedRouteLibraryModel
+  @ObservedObject var placeSearch: WholeShutoPlaceSearchController
+  @State private var showsJourneyEnding = false
   /// Starting a live drive also needs the location session, which the
   /// product view owns, so the action is handed in.
   var onStartLiveDrive: () -> Void = {}
@@ -20,6 +22,11 @@ struct WholeShutoJourneyReviewView: View {
         VStack(spacing: 18) {
           journeyMetrics
           routePassport
+          Button { showsJourneyEnding = true } label: {
+            Label(model.journeyEnding.label(for: interfaceLocale), systemImage: "flag.checkered")
+              .frame(maxWidth: .infinity, minHeight: 44)
+          }
+          .accessibilityIdentifier("whole-shuto-review-edit-ending")
           availabilitySummary
           SavedRouteSavePanel(
             library: savedRoutes,
@@ -48,6 +55,10 @@ struct WholeShutoJourneyReviewView: View {
     .presentationContentInteraction(.scrolls)
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-journey-review")
+    .sheet(isPresented: $showsJourneyEnding) {
+      WholeShutoJourneyEndingView(model: model, placeSearch: placeSearch)
+        .environment(\.kaidoInterfaceLocale, interfaceLocale)
+    }
     .onChange(of: model.phase) { _, phase in
       if phase != .review {
         dismiss()
@@ -206,31 +217,33 @@ struct WholeShutoJourneyReviewView: View {
         tint: KaidoTheme.evidenceCoral
       )
 
-      surfaceLeg(
-        label: copy.resolve(
-          japanese: "目的地まで",
-          simplifiedChinese: "前往目的地",
-          english: "TO DESTINATION"
-        ),
-        route: model.egressRoute,
-        accessibilityIdentifier: "whole-shuto-egress-leg"
-      )
+      if model.journeyEnding != .exit {
+        surfaceLeg(
+          label: copy.resolve(
+            japanese: "目的地まで",
+            simplifiedChinese: "前往目的地",
+            english: "TO DESTINATION"
+          ),
+          route: model.egressRoute,
+          accessibilityIdentifier: "whole-shuto-egress-leg"
+        )
 
-      endpoint(
-        symbol: "flag.checkered",
-        eyebrow: copy.resolve(
-          japanese: "目的地",
-          simplifiedChinese: "目的地",
-          english: "DESTINATION"
-        ),
-        title: model.destination?.title ?? "—",
-        detail: copy.resolve(
-          japanese: "全行程の終点",
-          simplifiedChinese: "完整行程终点",
-          english: "End of full journey"
-        ),
-        tint: KaidoTheme.evidenceCoral
-      )
+        endpoint(
+          symbol: "flag.checkered",
+          eyebrow: copy.resolve(
+            japanese: "目的地",
+            simplifiedChinese: "目的地",
+            english: "DESTINATION"
+          ),
+          title: model.destination?.title ?? "—",
+          detail: copy.resolve(
+            japanese: "全行程の終点",
+            simplifiedChinese: "完整行程终点",
+            english: "End of full journey"
+          ),
+          tint: KaidoTheme.evidenceCoral
+        )
+      }
     }
     .padding(14)
     .background(KaidoTheme.nightRaised)

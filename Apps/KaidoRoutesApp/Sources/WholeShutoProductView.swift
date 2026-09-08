@@ -1449,10 +1449,7 @@ struct WholeShutoProductView: View {
   /// The route marks the card's experience actually drives, in course order:
   /// the same shields the overhead signs carry, so a driver recognises the
   /// experience by road before reading the name.
-  private func circuitShields(
-    _ routeIDs: [String],
-    circuitID: String
-  ) -> some View {
+  private func circuitShields(_ routeIDs: [String]) -> some View {
     HStack(spacing: 4) {
       ForEach(Array(routeIDs.enumerated()), id: \.offset) { _, routeID in
         Text(shieldLabel(routeID))
@@ -1464,12 +1461,25 @@ struct WholeShutoProductView: View {
           .clipShape(RoundedRectangle(cornerRadius: 4))
       }
     }
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(
-      routeIDs.map { routeDisplayLabel($0, in: model.database) }
-        .joined(separator: " → ")
-    )
-    .accessibilityIdentifier("whole-shuto-circuit-shields-\(circuitID)")
+    // Decorative: a standalone accessibility element here would be an
+    // 18pt-tall VoiceOver stop inside the card's own button, which the
+    // hit-region audit reads as an interactive target too small to press.
+    // The card speaks the routes instead, on a target that is big enough.
+    .accessibilityHidden(true)
+  }
+
+  /// What the card's button says it drives, for a reader that never sees the
+  /// shields.
+  private func circuitRoutesAccessibilityValue(
+    _ circuit: ShutoCircuitDefinition
+  ) -> String? {
+    guard
+      let preview = model.circuitPreviewsByID[circuit.circuitID],
+      !preview.routeIDsInOrder.isEmpty
+    else { return nil }
+    return preview.routeIDsInOrder
+      .map { routeDisplayLabel($0, in: model.database) }
+      .joined(separator: " → ")
   }
 
   private func circuitCard(
@@ -1502,7 +1512,7 @@ struct WholeShutoProductView: View {
         if let preview = model.circuitPreviewsByID[circuit.circuitID],
           !preview.routeIDsInOrder.isEmpty
         {
-          circuitShields(preview.routeIDsInOrder, circuitID: circuit.circuitID)
+          circuitShields(preview.routeIDsInOrder)
         }
         Text(circuit.displayName(for: languageSettings.interfaceLocale))
           .font(.subheadline.weight(.bold))
@@ -1565,6 +1575,7 @@ struct WholeShutoProductView: View {
     .accessibilityIdentifier(
       "whole-shuto-circuit-option-\(circuit.circuitID)"
     )
+    .accessibilityValue(circuitRoutesAccessibilityValue(circuit) ?? "")
   }
 
   private func selectedCircuitPanel(

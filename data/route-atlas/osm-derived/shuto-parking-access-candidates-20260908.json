@@ -1,0 +1,2901 @@
+{
+  "attribution": "© OpenStreetMap contributors",
+  "kind": "PARKING_ACCESS_CANDIDATE_AUDIT",
+  "licence": "ODbL-1.0",
+  "licence_uri": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "limitations": [
+    "Not an approved access review or importer input.",
+    "One shortest directed path per boundary pair; bounded to 800 m starts and 2 km paths.",
+    "A nearby official label or an OSM area name does not establish legal directional access.",
+    "Current OSM geometry is not proof of geometry in the pinned historical extract.",
+    "NO_PATH_IN_BOUNDED_READ does not mean no road exists."
+  ],
+  "network_sha256": "831a162e7260447fc130dcf0dc4d3e4b39cd2f5d3c5ae19d6197f29e813d4c26",
+  "network_snapshot_id": "shuto-official-2026-07-29-osm-2026-08-04",
+  "parking_areas": [
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 2618098829,
+          "access_route_ids": [
+            "1_HANEDA"
+          ],
+          "closest_approach_meters": 61.327,
+          "length_meters": 433.584,
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 4972837154,
+          "return_route_ids": [
+            "1_HANEDA"
+          ],
+          "segments": [
+            {
+              "from_node_id": 2618098829,
+              "segment_index": 0,
+              "to_node_id": 4972837136,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 4972837136,
+              "segment_index": 1,
+              "to_node_id": 9695318789,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 9695318789,
+              "segment_index": 2,
+              "to_node_id": 4972837137,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 4972837137,
+              "segment_index": 3,
+              "to_node_id": 7963668437,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 7963668437,
+              "segment_index": 0,
+              "to_node_id": 4972837138,
+              "way_id": 853831007
+            },
+            {
+              "from_node_id": 4972837138,
+              "segment_index": 0,
+              "to_node_id": 4972837139,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837139,
+              "segment_index": 1,
+              "to_node_id": 4972837140,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837140,
+              "segment_index": 2,
+              "to_node_id": 7963668439,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668439,
+              "segment_index": 3,
+              "to_node_id": 4972837141,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837141,
+              "segment_index": 4,
+              "to_node_id": 7963668440,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668440,
+              "segment_index": 5,
+              "to_node_id": 4972837142,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837142,
+              "segment_index": 6,
+              "to_node_id": 4972837143,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837143,
+              "segment_index": 7,
+              "to_node_id": 7963668441,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668441,
+              "segment_index": 8,
+              "to_node_id": 4972837144,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837144,
+              "segment_index": 9,
+              "to_node_id": 4972837160,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837160,
+              "segment_index": 0,
+              "to_node_id": 10588753877,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 10588753877,
+              "segment_index": 1,
+              "to_node_id": 6323119739,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119739,
+              "segment_index": 2,
+              "to_node_id": 4972837145,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837145,
+              "segment_index": 3,
+              "to_node_id": 6323119738,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119738,
+              "segment_index": 4,
+              "to_node_id": 6323119737,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119737,
+              "segment_index": 5,
+              "to_node_id": 4972837146,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837146,
+              "segment_index": 6,
+              "to_node_id": 4972837147,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837147,
+              "segment_index": 7,
+              "to_node_id": 4972837148,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837148,
+              "segment_index": 8,
+              "to_node_id": 10588753879,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 10588753879,
+              "segment_index": 9,
+              "to_node_id": 4972837149,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837149,
+              "segment_index": 0,
+              "to_node_id": 4972837150,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837150,
+              "segment_index": 1,
+              "to_node_id": 4972837151,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837151,
+              "segment_index": 2,
+              "to_node_id": 4972837152,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837152,
+              "segment_index": 3,
+              "to_node_id": 4972837153,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837153,
+              "segment_index": 0,
+              "to_node_id": 7963668438,
+              "way_id": 507859760
+            },
+            {
+              "from_node_id": 7963668438,
+              "segment_index": 0,
+              "to_node_id": 4972837154,
+              "way_id": 853831008
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "covered": "yes",
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2022-04-26T14:57:21Z",
+              "url": "https://www.openstreetmap.org/way/507859758",
+              "version": 3,
+              "way_id": 507859758
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/853831007",
+              "version": 1,
+              "way_id": 853831007
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859759",
+              "version": 2,
+              "way_id": 507859759
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2023-01-28T11:31:43Z",
+              "url": "https://www.openstreetmap.org/way/507859762",
+              "version": 4,
+              "way_id": 507859762
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859763",
+              "version": 3,
+              "way_id": 507859763
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859760",
+              "version": 3,
+              "way_id": 507859760
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/853831008",
+              "version": 1,
+              "way_id": 853831008
+            }
+          ]
+        },
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 4362178705,
+          "access_route_ids": [
+            "1_HANEDA"
+          ],
+          "closest_approach_meters": 124.293,
+          "length_meters": 418.374,
+          "osm_rest_area_names_touched": [
+            "平和島PA (下り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 5602329959,
+          "return_route_ids": [
+            "1_HANEDA"
+          ],
+          "segments": [
+            {
+              "from_node_id": 4362178705,
+              "segment_index": 0,
+              "to_node_id": 5602329957,
+              "way_id": 586347926
+            },
+            {
+              "from_node_id": 5602329957,
+              "segment_index": 1,
+              "to_node_id": 5602329958,
+              "way_id": 586347926
+            },
+            {
+              "from_node_id": 5602329958,
+              "segment_index": 2,
+              "to_node_id": 5602329959,
+              "way_id": 586347926
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2019-03-07T14:25:06Z",
+              "url": "https://www.openstreetmap.org/way/586347926",
+              "version": 2,
+              "way_id": 586347926
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "首都高速1号羽田線",
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/560259107",
+          "way_id": 560259107
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/675183883",
+          "way_id": 675183883
+        }
+      ],
+      "name_ja": "平和島PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "平和島PA (上り)",
+          "way_id": 507859761
+        },
+        {
+          "name": "平和島PA (下り)",
+          "way_id": 687049310
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/heiwajima-inbound",
+      "parking_area_id": "shuto.pa.heiwajima-inbound",
+      "source": {
+        "sha256": "d8c01daefc62c67e2415a1f7494833bc04ab70397047ade63d241a1a898d8fc5",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.73765,35.584273,139.74564999999998,35.590273"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 2618098829,
+          "access_route_ids": [
+            "1_HANEDA"
+          ],
+          "closest_approach_meters": 176.041,
+          "length_meters": 433.584,
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 4972837154,
+          "return_route_ids": [
+            "1_HANEDA"
+          ],
+          "segments": [
+            {
+              "from_node_id": 2618098829,
+              "segment_index": 0,
+              "to_node_id": 4972837136,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 4972837136,
+              "segment_index": 1,
+              "to_node_id": 9695318789,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 9695318789,
+              "segment_index": 2,
+              "to_node_id": 4972837137,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 4972837137,
+              "segment_index": 3,
+              "to_node_id": 7963668437,
+              "way_id": 507859758
+            },
+            {
+              "from_node_id": 7963668437,
+              "segment_index": 0,
+              "to_node_id": 4972837138,
+              "way_id": 853831007
+            },
+            {
+              "from_node_id": 4972837138,
+              "segment_index": 0,
+              "to_node_id": 4972837139,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837139,
+              "segment_index": 1,
+              "to_node_id": 4972837140,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837140,
+              "segment_index": 2,
+              "to_node_id": 7963668439,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668439,
+              "segment_index": 3,
+              "to_node_id": 4972837141,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837141,
+              "segment_index": 4,
+              "to_node_id": 7963668440,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668440,
+              "segment_index": 5,
+              "to_node_id": 4972837142,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837142,
+              "segment_index": 6,
+              "to_node_id": 4972837143,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837143,
+              "segment_index": 7,
+              "to_node_id": 7963668441,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 7963668441,
+              "segment_index": 8,
+              "to_node_id": 4972837144,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837144,
+              "segment_index": 9,
+              "to_node_id": 4972837160,
+              "way_id": 507859759
+            },
+            {
+              "from_node_id": 4972837160,
+              "segment_index": 0,
+              "to_node_id": 10588753877,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 10588753877,
+              "segment_index": 1,
+              "to_node_id": 6323119739,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119739,
+              "segment_index": 2,
+              "to_node_id": 4972837145,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837145,
+              "segment_index": 3,
+              "to_node_id": 6323119738,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119738,
+              "segment_index": 4,
+              "to_node_id": 6323119737,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 6323119737,
+              "segment_index": 5,
+              "to_node_id": 4972837146,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837146,
+              "segment_index": 6,
+              "to_node_id": 4972837147,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837147,
+              "segment_index": 7,
+              "to_node_id": 4972837148,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837148,
+              "segment_index": 8,
+              "to_node_id": 10588753879,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 10588753879,
+              "segment_index": 9,
+              "to_node_id": 4972837149,
+              "way_id": 507859762
+            },
+            {
+              "from_node_id": 4972837149,
+              "segment_index": 0,
+              "to_node_id": 4972837150,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837150,
+              "segment_index": 1,
+              "to_node_id": 4972837151,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837151,
+              "segment_index": 2,
+              "to_node_id": 4972837152,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837152,
+              "segment_index": 3,
+              "to_node_id": 4972837153,
+              "way_id": 507859763
+            },
+            {
+              "from_node_id": 4972837153,
+              "segment_index": 0,
+              "to_node_id": 7963668438,
+              "way_id": 507859760
+            },
+            {
+              "from_node_id": 7963668438,
+              "segment_index": 0,
+              "to_node_id": 4972837154,
+              "way_id": 853831008
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "covered": "yes",
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2022-04-26T14:57:21Z",
+              "url": "https://www.openstreetmap.org/way/507859758",
+              "version": 3,
+              "way_id": 507859758
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/853831007",
+              "version": 1,
+              "way_id": 853831007
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859759",
+              "version": 2,
+              "way_id": 507859759
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2023-01-28T11:31:43Z",
+              "url": "https://www.openstreetmap.org/way/507859762",
+              "version": 4,
+              "way_id": 507859762
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859763",
+              "version": 3,
+              "way_id": 507859763
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/507859760",
+              "version": 3,
+              "way_id": 507859760
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2020-10-01T14:37:16Z",
+              "url": "https://www.openstreetmap.org/way/853831008",
+              "version": 1,
+              "way_id": 853831008
+            }
+          ]
+        },
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 4362178705,
+          "access_route_ids": [
+            "1_HANEDA"
+          ],
+          "closest_approach_meters": 207.902,
+          "length_meters": 418.374,
+          "osm_rest_area_names_touched": [
+            "平和島PA (下り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 5602329959,
+          "return_route_ids": [
+            "1_HANEDA"
+          ],
+          "segments": [
+            {
+              "from_node_id": 4362178705,
+              "segment_index": 0,
+              "to_node_id": 5602329957,
+              "way_id": 586347926
+            },
+            {
+              "from_node_id": 5602329957,
+              "segment_index": 1,
+              "to_node_id": 5602329958,
+              "way_id": 586347926
+            },
+            {
+              "from_node_id": 5602329958,
+              "segment_index": 2,
+              "to_node_id": 5602329959,
+              "way_id": 586347926
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2019-03-07T14:25:06Z",
+              "url": "https://www.openstreetmap.org/way/586347926",
+              "version": 2,
+              "way_id": 586347926
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "首都高速1号羽田線",
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/560259107",
+          "way_id": 560259107
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "平和島PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/675183883",
+          "way_id": 675183883
+        }
+      ],
+      "name_ja": "平和島PA（下り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "平和島PA (上り)",
+          "way_id": 507859761
+        },
+        {
+          "name": "平和島PA (下り)",
+          "way_id": 687049310
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/heiwajima-outbound",
+      "parking_area_id": "shuto.pa.heiwajima-outbound",
+      "source": {
+        "sha256": "5667ab36f6eb39a0dffb0e32a3b0c6a8f7960727b67eb71f52c94d4c8ba1f85d",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.73709897620728,35.581643535273095,139.74509897620726,35.587643535273095"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 6352448395,
+          "access_route_ids": [
+            "3"
+          ],
+          "closest_approach_meters": 8.926,
+          "length_meters": 74.983,
+          "osm_rest_area_names_touched": [
+            "用賀PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 6447380792,
+          "return_route_ids": [
+            "3"
+          ],
+          "segments": [
+            {
+              "from_node_id": 6352448395,
+              "segment_index": 0,
+              "to_node_id": 6352448396,
+              "way_id": 678426242
+            },
+            {
+              "from_node_id": 6352448396,
+              "segment_index": 0,
+              "to_node_id": 6456705535,
+              "way_id": 678426243
+            },
+            {
+              "from_node_id": 6456705535,
+              "segment_index": 1,
+              "to_node_id": 6352448397,
+              "way_id": 678426243
+            },
+            {
+              "from_node_id": 6352448397,
+              "segment_index": 2,
+              "to_node_id": 6352448398,
+              "way_id": 678426243
+            },
+            {
+              "from_node_id": 6352448398,
+              "segment_index": 0,
+              "to_node_id": 6447380792,
+              "way_id": 678426244
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-09-05T07:07:36Z",
+              "url": "https://www.openstreetmap.org/way/678426242",
+              "version": 3,
+              "way_id": 678426242
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2019-05-08T00:28:50Z",
+              "url": "https://www.openstreetmap.org/way/678426243",
+              "version": 2,
+              "way_id": 678426243
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-09-05T07:07:36Z",
+              "url": "https://www.openstreetmap.org/way/678426244",
+              "version": 3,
+              "way_id": 678426244
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "用賀PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "用賀PA (上り)",
+          "way_id": 529109989
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yoga",
+      "parking_area_id": "shuto.pa.yoga",
+      "source": {
+        "sha256": "335a1f27ba32c356f5d3383572f963acccfb9818ffffa43f50942ebe22aef652",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.62749070000004,35.62342729999999,139.63549070000002,35.62942729999999"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 295431505,
+          "access_route_ids": [
+            "4"
+          ],
+          "closest_approach_meters": 12.555,
+          "length_meters": 86.97,
+          "osm_rest_area_names_touched": [
+            "永福PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 279076838,
+          "return_route_ids": [
+            "4"
+          ],
+          "segments": [
+            {
+              "from_node_id": 295431505,
+              "segment_index": 0,
+              "to_node_id": 13296669194,
+              "way_id": 1449651626
+            },
+            {
+              "from_node_id": 13296669194,
+              "segment_index": 0,
+              "to_node_id": 13296669193,
+              "way_id": 1449651625
+            },
+            {
+              "from_node_id": 13296669193,
+              "segment_index": 0,
+              "to_node_id": 279076834,
+              "way_id": 27514034
+            },
+            {
+              "from_node_id": 279076834,
+              "segment_index": 1,
+              "to_node_id": 279076835,
+              "way_id": 27514034
+            },
+            {
+              "from_node_id": 279076835,
+              "segment_index": 2,
+              "to_node_id": 295431506,
+              "way_id": 27514034
+            },
+            {
+              "from_node_id": 295431506,
+              "segment_index": 3,
+              "to_node_id": 279076837,
+              "way_id": 27514034
+            },
+            {
+              "from_node_id": 279076837,
+              "segment_index": 4,
+              "to_node_id": 279076838,
+              "way_id": 27514034
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes"
+              },
+              "timestamp": "2025-11-11T13:29:32Z",
+              "url": "https://www.openstreetmap.org/way/1449651626",
+              "version": 1,
+              "way_id": 1449651626
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes"
+              },
+              "timestamp": "2025-11-11T13:29:32Z",
+              "url": "https://www.openstreetmap.org/way/1449651625",
+              "version": 1,
+              "way_id": 1449651625
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes"
+              },
+              "timestamp": "2025-11-11T13:29:32Z",
+              "url": "https://www.openstreetmap.org/way/27514034",
+              "version": 4,
+              "way_id": 27514034
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "永福PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "永福PA (上り)",
+          "way_id": 658997126
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/eifuku",
+      "parking_area_id": "shuto.pa.eifuku",
+      "source": {
+        "sha256": "3fb83df947d9a14c9a87ed12146fee1b8b6ac25780cf20fa19af81623380cc21",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.639728,35.665227,139.64772799999997,35.671227"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 1237984842,
+          "access_route_ids": [
+            "4"
+          ],
+          "closest_approach_meters": 178.566,
+          "length_meters": 106.627,
+          "osm_rest_area_names_touched": [
+            "代々木PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 295394427,
+          "return_route_ids": [
+            "4"
+          ],
+          "segments": [
+            {
+              "from_node_id": 1237984842,
+              "segment_index": 0,
+              "to_node_id": 8384640341,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 8384640341,
+              "segment_index": 1,
+              "to_node_id": 1521126914,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 1521126914,
+              "segment_index": 2,
+              "to_node_id": 8384640339,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 8384640339,
+              "segment_index": 3,
+              "to_node_id": 295394417,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 295394417,
+              "segment_index": 4,
+              "to_node_id": 295394418,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 295394418,
+              "segment_index": 5,
+              "to_node_id": 1237984823,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 1237984823,
+              "segment_index": 6,
+              "to_node_id": 8384640340,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 8384640340,
+              "segment_index": 7,
+              "to_node_id": 295394419,
+              "way_id": 107771259
+            },
+            {
+              "from_node_id": 295394419,
+              "segment_index": 8,
+              "to_node_id": 295394427,
+              "way_id": 107771259
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes"
+              },
+              "timestamp": "2026-01-03T11:27:42Z",
+              "url": "https://www.openstreetmap.org/way/107771259",
+              "version": 4,
+              "way_id": 107771259
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "代々木PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/26957080",
+          "way_id": 26957080
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "代々木PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/107771260",
+          "way_id": 107771260
+        }
+      ],
+      "name_ja": "代々木PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "代々木PA (上り)",
+          "way_id": 107771168
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yoyogi",
+      "parking_area_id": "shuto.pa.yoyogi",
+      "source": {
+        "sha256": "ebca09c7090f007e3a8035ece1f491bc693fb148025450e1b78225ddbbc9594c",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.6915821762912,35.678270772587275,139.6995821762912,35.684270772587276"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 6170336607,
+          "access_route_ids": [
+            "5"
+          ],
+          "closest_approach_meters": 175.644,
+          "length_meters": 130.116,
+          "osm_rest_area_names_touched": [
+            "志村PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 6170336612,
+          "return_route_ids": [
+            "5"
+          ],
+          "segments": [
+            {
+              "from_node_id": 6170336607,
+              "segment_index": 0,
+              "to_node_id": 6170336608,
+              "way_id": 659036654
+            },
+            {
+              "from_node_id": 6170336608,
+              "segment_index": 1,
+              "to_node_id": 6170336610,
+              "way_id": 659036654
+            },
+            {
+              "from_node_id": 6170336610,
+              "segment_index": 2,
+              "to_node_id": 6170336611,
+              "way_id": 659036654
+            },
+            {
+              "from_node_id": 6170336611,
+              "segment_index": 3,
+              "to_node_id": 6170336622,
+              "way_id": 659036654
+            },
+            {
+              "from_node_id": 6170336622,
+              "segment_index": 4,
+              "to_node_id": 6170336623,
+              "way_id": 659036654
+            },
+            {
+              "from_node_id": 6170336623,
+              "segment_index": 0,
+              "to_node_id": 12475367833,
+              "way_id": 1023392643
+            },
+            {
+              "from_node_id": 12475367833,
+              "segment_index": 1,
+              "to_node_id": 6170336624,
+              "way_id": 1023392643
+            },
+            {
+              "from_node_id": 6170336624,
+              "segment_index": 2,
+              "to_node_id": 12475367877,
+              "way_id": 1023392643
+            },
+            {
+              "from_node_id": 12475367877,
+              "segment_index": 3,
+              "to_node_id": 6170336600,
+              "way_id": 1023392643
+            },
+            {
+              "from_node_id": 6170336600,
+              "segment_index": 0,
+              "to_node_id": 12475367834,
+              "way_id": 659036655
+            },
+            {
+              "from_node_id": 12475367834,
+              "segment_index": 1,
+              "to_node_id": 6170336614,
+              "way_id": 659036655
+            },
+            {
+              "from_node_id": 6170336614,
+              "segment_index": 2,
+              "to_node_id": 6170336613,
+              "way_id": 659036655
+            },
+            {
+              "from_node_id": 6170336613,
+              "segment_index": 3,
+              "to_node_id": 12475367878,
+              "way_id": 659036655
+            },
+            {
+              "from_node_id": 12475367878,
+              "segment_index": 4,
+              "to_node_id": 12475367879,
+              "way_id": 659036655
+            },
+            {
+              "from_node_id": 12475367879,
+              "segment_index": 5,
+              "to_node_id": 6170336612,
+              "way_id": 659036655
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2025-01-05T09:51:17Z",
+              "url": "https://www.openstreetmap.org/way/659036654",
+              "version": 4,
+              "way_id": 659036654
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2025-01-05T09:51:17Z",
+              "url": "https://www.openstreetmap.org/way/1023392643",
+              "version": 2,
+              "way_id": 1023392643
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes",
+                "service": "driveway"
+              },
+              "timestamp": "2025-01-05T09:51:17Z",
+              "url": "https://www.openstreetmap.org/way/659036655",
+              "version": 4,
+              "way_id": 659036655
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "志村PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "志村PA (上り)",
+          "way_id": 659036653
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/shimura",
+      "parking_area_id": "shuto.pa.shimura",
+      "source": {
+        "sha256": "72941804a06cd995a1d6d25bc62770e82b61e581f8a7b3569d0f5064c2bb75e5",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.6785717762137,35.771019224870564,139.68657177621367,35.777019224870564"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [],
+      "existing_parking_way_candidates": [
+        {
+          "name": "南池袋パーキングエリア",
+          "osm_rest_area_names_touched": [
+            "南池袋PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/292083252",
+          "way_id": 292083252
+        }
+      ],
+      "name_ja": "南池袋PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "南池袋PA (上り)",
+          "way_id": 659044511
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/minami-ikebukuro",
+      "parking_area_id": "shuto.pa.minami-ikebukuro",
+      "source": {
+        "sha256": "4c2bfef23460c859595bfd42351cdf5757dfd8f33a31e9d1e5c7975a2c64370b",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.716288476212,35.720300127661154,139.72428847621197,35.726300127661155"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 13601079254,
+          "access_route_ids": [
+            "6_MUKOJIMA",
+            "9"
+          ],
+          "closest_approach_meters": 188.743,
+          "length_meters": 112.573,
+          "osm_rest_area_names_touched": [
+            "箱崎PA"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 2689533451,
+          "return_route_ids": [
+            "6_MUKOJIMA",
+            "9"
+          ],
+          "segments": [
+            {
+              "from_node_id": 13601079254,
+              "segment_index": 0,
+              "to_node_id": 8027503087,
+              "way_id": 263330206
+            },
+            {
+              "from_node_id": 8027503087,
+              "segment_index": 1,
+              "to_node_id": 4972829161,
+              "way_id": 263330206
+            },
+            {
+              "from_node_id": 4972829161,
+              "segment_index": 0,
+              "to_node_id": 5977851146,
+              "way_id": 633246923
+            },
+            {
+              "from_node_id": 5977851146,
+              "segment_index": 1,
+              "to_node_id": 5977851145,
+              "way_id": 633246923
+            },
+            {
+              "from_node_id": 5977851145,
+              "segment_index": 2,
+              "to_node_id": 2689533506,
+              "way_id": 633246923
+            },
+            {
+              "from_node_id": 2689533506,
+              "segment_index": 0,
+              "to_node_id": 5348554378,
+              "way_id": 263330211
+            },
+            {
+              "from_node_id": 5348554378,
+              "segment_index": 1,
+              "to_node_id": 2689533503,
+              "way_id": 263330211
+            },
+            {
+              "from_node_id": 2689533503,
+              "segment_index": 2,
+              "to_node_id": 5348554395,
+              "way_id": 263330211
+            },
+            {
+              "from_node_id": 5348554395,
+              "segment_index": 3,
+              "to_node_id": 2689533451,
+              "way_id": 263330211
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bicycle": "no",
+                "bridge": "yes",
+                "foot": "no",
+                "highway": "service",
+                "layer": "2",
+                "motorcar": "designated",
+                "motorcycle": "designated",
+                "oneway": "yes",
+                "smoothness": "excellent",
+                "source": "Bing 2014",
+                "surface": "paved",
+                "toll": "yes"
+              },
+              "timestamp": "2026-02-26T05:34:43Z",
+              "url": "https://www.openstreetmap.org/way/263330206",
+              "version": 13,
+              "way_id": 263330206
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "layer": "-1",
+                "oneway": "yes",
+                "service": "parking_aisle",
+                "tunnel": "yes"
+              },
+              "timestamp": "2020-01-26T16:50:45Z",
+              "url": "https://www.openstreetmap.org/way/633246923",
+              "version": 3,
+              "way_id": 633246923
+            },
+            {
+              "tags": {
+                "bicycle": "no",
+                "bridge": "yes",
+                "foot": "no",
+                "highway": "service",
+                "layer": "2",
+                "motorcar": "designated",
+                "motorcycle": "designated",
+                "oneway": "yes",
+                "smoothness": "excellent",
+                "source": "Bing 2014",
+                "surface": "paved",
+                "toll": "yes"
+              },
+              "timestamp": "2024-05-29T12:11:18Z",
+              "url": "https://www.openstreetmap.org/way/263330211",
+              "version": 9,
+              "way_id": 263330211
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "箱崎PA",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "箱崎PA",
+          "way_id": 1156533647
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/hakozaki",
+      "parking_area_id": "shuto.pa.hakozaki",
+      "source": {
+        "sha256": "bd4270be55499af54c19b52e449b5fb9da775c535645902ea92c115ad39d2723",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.7824695762106,35.679373929910525,139.79046957621057,35.685373929910526"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 1671664572,
+          "access_route_ids": [
+            "6_MUKOJIMA"
+          ],
+          "closest_approach_meters": 209.183,
+          "length_meters": 174.723,
+          "osm_rest_area_names_touched": [
+            "駒形PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 3935796661,
+          "return_route_ids": [
+            "6_MUKOJIMA"
+          ],
+          "segments": [
+            {
+              "from_node_id": 1671664572,
+              "segment_index": 0,
+              "to_node_id": 1674175126,
+              "way_id": 154971211
+            },
+            {
+              "from_node_id": 1674175126,
+              "segment_index": 1,
+              "to_node_id": 1674175096,
+              "way_id": 154971211
+            },
+            {
+              "from_node_id": 1674175096,
+              "segment_index": 2,
+              "to_node_id": 4972827102,
+              "way_id": 154971211
+            },
+            {
+              "from_node_id": 4972827102,
+              "segment_index": 3,
+              "to_node_id": 1674175074,
+              "way_id": 154971211
+            },
+            {
+              "from_node_id": 1674175074,
+              "segment_index": 4,
+              "to_node_id": 3935796661,
+              "way_id": 154971211
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bicycle": "no",
+                "bridge": "yes",
+                "foot": "no",
+                "highway": "service",
+                "lanes": "2",
+                "layer": "4",
+                "motorcar": "designated",
+                "motorcycle": "designated",
+                "oneway": "yes",
+                "source": "Bing 2014",
+                "surface": "asphalt",
+                "toll": "yes"
+              },
+              "timestamp": "2025-05-06T12:30:53Z",
+              "url": "https://www.openstreetmap.org/way/154971211",
+              "version": 9,
+              "way_id": 154971211
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "駒形PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "駒形PA (上り)",
+          "way_id": 507858409
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/komagata",
+      "parking_area_id": "shuto.pa.komagata",
+      "source": {
+        "sha256": "f673f080fb425e3fe366f323b76d6583989a5cf458f076dea032ff4fc05d9b17",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.7900408762115,35.70194422867038,139.79804087621147,35.70794422867038"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 2569233045,
+          "access_route_ids": [
+            "6_MISATO"
+          ],
+          "closest_approach_meters": 219.639,
+          "length_meters": 62.299,
+          "osm_rest_area_names_touched": [
+            "加平PA (下り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 2569233094,
+          "return_route_ids": [
+            "6_MISATO"
+          ],
+          "segments": [
+            {
+              "from_node_id": 2569233045,
+              "segment_index": 0,
+              "to_node_id": 2569233048,
+              "way_id": 250488079
+            },
+            {
+              "from_node_id": 2569233048,
+              "segment_index": 1,
+              "to_node_id": 2569233089,
+              "way_id": 250488079
+            },
+            {
+              "from_node_id": 2569233089,
+              "segment_index": 2,
+              "to_node_id": 2569233094,
+              "way_id": 250488079
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "2",
+                "oneway": "yes",
+                "service": "parking_aisle",
+                "source": "Bing"
+              },
+              "timestamp": "2013-12-07T05:13:22Z",
+              "url": "https://www.openstreetmap.org/way/250488079",
+              "version": 2,
+              "way_id": 250488079
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "加平PA (下り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/250488080",
+          "way_id": 250488080
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "加平PA (下り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/763418628",
+          "way_id": 763418628
+        }
+      ],
+      "name_ja": "加平PA（下り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "加平PA (下り)",
+          "way_id": 250488075
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/kahei",
+      "parking_area_id": "shuto.pa.kahei",
+      "source": {
+        "sha256": "466a7593e9c999008dca54d19090f83c49012a3b9f209dd97c33dd3bf6beffe9",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.8181448762138,35.773809324717014,139.8261448762138,35.779809324717014"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 953997769,
+          "access_route_ids": [
+            "6_MISATO"
+          ],
+          "closest_approach_meters": 42.163,
+          "length_meters": 202.125,
+          "osm_rest_area_names_touched": [
+            "八潮PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 953997785,
+          "return_route_ids": [
+            "6_MISATO"
+          ],
+          "segments": [
+            {
+              "from_node_id": 953997769,
+              "segment_index": 0,
+              "to_node_id": 13093727858,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 13093727858,
+              "segment_index": 1,
+              "to_node_id": 2924564861,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564861,
+              "segment_index": 2,
+              "to_node_id": 2924564862,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564862,
+              "segment_index": 3,
+              "to_node_id": 2924564863,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564863,
+              "segment_index": 4,
+              "to_node_id": 2924564864,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564864,
+              "segment_index": 5,
+              "to_node_id": 2924564865,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564865,
+              "segment_index": 6,
+              "to_node_id": 2924564866,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564866,
+              "segment_index": 7,
+              "to_node_id": 2924564867,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564867,
+              "segment_index": 8,
+              "to_node_id": 13093727847,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 13093727847,
+              "segment_index": 9,
+              "to_node_id": 2924564874,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 2924564874,
+              "segment_index": 0,
+              "to_node_id": 2924564875,
+              "way_id": 288901862
+            },
+            {
+              "from_node_id": 2924564875,
+              "segment_index": 1,
+              "to_node_id": 2924564876,
+              "way_id": 288901862
+            },
+            {
+              "from_node_id": 2924564876,
+              "segment_index": 2,
+              "to_node_id": 2924564877,
+              "way_id": 288901862
+            },
+            {
+              "from_node_id": 2924564877,
+              "segment_index": 3,
+              "to_node_id": 2924564878,
+              "way_id": 288901862
+            },
+            {
+              "from_node_id": 2924564878,
+              "segment_index": 19,
+              "to_node_id": 12491740545,
+              "way_id": 288901861
+            },
+            {
+              "from_node_id": 12491740545,
+              "segment_index": 20,
+              "to_node_id": 953997785,
+              "way_id": 288901861
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle",
+                "source": "GSImaps/ort",
+                "surface": "paved"
+              },
+              "timestamp": "2025-08-24T03:22:05Z",
+              "url": "https://www.openstreetmap.org/way/288901861",
+              "version": 5,
+              "way_id": 288901861
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle",
+                "source": "GSImaps/ort",
+                "surface": "paved"
+              },
+              "timestamp": "2025-08-24T03:22:05Z",
+              "url": "https://www.openstreetmap.org/way/288901862",
+              "version": 4,
+              "way_id": 288901862
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "八潮PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/81816300",
+          "way_id": 81816300
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "八潮PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/81816303",
+          "way_id": 81816303
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "八潮PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/81816418",
+          "way_id": 81816418
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "八潮PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/288896620",
+          "way_id": 288896620
+        }
+      ],
+      "name_ja": "八潮PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "八潮PA (上り)",
+          "way_id": 289000543
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/yashio",
+      "parking_area_id": "shuto.pa.yashio",
+      "source": {
+        "sha256": "c7b94a30f705abe38be61583a160b1b5c8337fe1a83fd530f48d7c331d827d1f",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.83830600000002,35.806778,139.846306,35.812778"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 31300447,
+          "access_route_ids": [
+            "9"
+          ],
+          "closest_approach_meters": 161.704,
+          "length_meters": 218.723,
+          "osm_rest_area_names_touched": [],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 7565871411,
+          "return_route_ids": [
+            "9"
+          ],
+          "segments": [
+            {
+              "from_node_id": 31300447,
+              "segment_index": 0,
+              "to_node_id": 3799088497,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 3799088497,
+              "segment_index": 1,
+              "to_node_id": 31300454,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 31300454,
+              "segment_index": 2,
+              "to_node_id": 7565871410,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 7565871410,
+              "segment_index": 3,
+              "to_node_id": 7565871411,
+              "way_id": 809137047
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bicycle": "no",
+                "bridge": "yes",
+                "foot": "no",
+                "highway": "service",
+                "layer": "3",
+                "motorcar": "designated",
+                "motorcycle": "designated",
+                "oneway": "yes",
+                "smoothness": "excellent",
+                "source": "Bing 2014",
+                "surface": "paved",
+                "toll": "yes"
+              },
+              "timestamp": "2023-10-30T21:55:15Z",
+              "url": "https://www.openstreetmap.org/way/809137047",
+              "version": 2,
+              "way_id": 809137047
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "辰巳第一PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "辰巳第一PA (上り)",
+          "way_id": 507860076
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/tatsumi-1",
+      "parking_area_id": "shuto.pa.tatsumi-1",
+      "source": {
+        "sha256": "eb77c0a2b1d5947210adc628cc4fe8fcaac386aa57798e021a835dd212a19318",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.80280717620928,35.64036793205237,139.81080717620927,35.64636793205237"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 31300447,
+          "access_route_ids": [
+            "9"
+          ],
+          "closest_approach_meters": 274.455,
+          "length_meters": 218.723,
+          "osm_rest_area_names_touched": [],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 7565871411,
+          "return_route_ids": [
+            "9"
+          ],
+          "segments": [
+            {
+              "from_node_id": 31300447,
+              "segment_index": 0,
+              "to_node_id": 3799088497,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 3799088497,
+              "segment_index": 1,
+              "to_node_id": 31300454,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 31300454,
+              "segment_index": 2,
+              "to_node_id": 7565871410,
+              "way_id": 809137047
+            },
+            {
+              "from_node_id": 7565871410,
+              "segment_index": 3,
+              "to_node_id": 7565871411,
+              "way_id": 809137047
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bicycle": "no",
+                "bridge": "yes",
+                "foot": "no",
+                "highway": "service",
+                "layer": "3",
+                "motorcar": "designated",
+                "motorcycle": "designated",
+                "oneway": "yes",
+                "smoothness": "excellent",
+                "source": "Bing 2014",
+                "surface": "paved",
+                "toll": "yes"
+              },
+              "timestamp": "2023-10-30T21:55:15Z",
+              "url": "https://www.openstreetmap.org/way/809137047",
+              "version": 2,
+              "way_id": 809137047
+            }
+          ]
+        },
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 7565908026,
+          "access_route_ids": [
+            "9"
+          ],
+          "closest_approach_meters": 268.382,
+          "length_meters": 33.369,
+          "osm_rest_area_names_touched": [
+            "辰巳第二PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 3799199133,
+          "return_route_ids": [
+            "9"
+          ],
+          "segments": [
+            {
+              "from_node_id": 7565908026,
+              "segment_index": 0,
+              "to_node_id": 3799199135,
+              "way_id": 809140340
+            },
+            {
+              "from_node_id": 3799199135,
+              "segment_index": 15,
+              "to_node_id": 7565908013,
+              "way_id": 376509517
+            },
+            {
+              "from_node_id": 7565908013,
+              "segment_index": 16,
+              "to_node_id": 7565908014,
+              "way_id": 376509517
+            },
+            {
+              "from_node_id": 7565908014,
+              "segment_index": 17,
+              "to_node_id": 7565908017,
+              "way_id": 376509517
+            },
+            {
+              "from_node_id": 7565908017,
+              "segment_index": 18,
+              "to_node_id": 3799199133,
+              "way_id": 376509517
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "3",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-05-28T11:12:58Z",
+              "url": "https://www.openstreetmap.org/way/809140340",
+              "version": 1,
+              "way_id": 809140340
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "3",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-05-28T11:12:58Z",
+              "url": "https://www.openstreetmap.org/way/376509517",
+              "version": 2,
+              "way_id": 376509517
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "辰巳第二PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/809140339",
+          "way_id": 809140339
+        }
+      ],
+      "name_ja": "辰巳第二PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "辰巳第二PA (上り)",
+          "way_id": 490619001
+        },
+        {
+          "name": "辰巳第一PA (上り)",
+          "way_id": 507860076
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/tatsumi-2",
+      "parking_area_id": "shuto.pa.tatsumi-2",
+      "source": {
+        "sha256": "5068d05b21b33c4d51561ad022266f1e875bd43d45014e7907b35e20debaac28",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.80922607620946,35.6423722319424,139.81722607620944,35.6483722319424"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": true,
+          "access_node_id": 31252809,
+          "access_route_ids": [
+            "11"
+          ],
+          "closest_approach_meters": 226.911,
+          "length_meters": 392.297,
+          "osm_rest_area_names_touched": [
+            "芝浦PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": true,
+          "return_node_id": 31252808,
+          "return_route_ids": [
+            "11"
+          ],
+          "segments": [
+            {
+              "from_node_id": 31252809,
+              "segment_index": 0,
+              "to_node_id": 1832774286,
+              "way_id": 4848741
+            },
+            {
+              "from_node_id": 1832774286,
+              "segment_index": 1,
+              "to_node_id": 1832774287,
+              "way_id": 4848741
+            },
+            {
+              "from_node_id": 1832774287,
+              "segment_index": 2,
+              "to_node_id": 1832774288,
+              "way_id": 4848741
+            },
+            {
+              "from_node_id": 1832774288,
+              "segment_index": 0,
+              "to_node_id": 1832774289,
+              "way_id": 820360944
+            },
+            {
+              "from_node_id": 1832774289,
+              "segment_index": 1,
+              "to_node_id": 31252823,
+              "way_id": 820360944
+            },
+            {
+              "from_node_id": 31252823,
+              "segment_index": 2,
+              "to_node_id": 31252824,
+              "way_id": 820360944
+            },
+            {
+              "from_node_id": 31252824,
+              "segment_index": 0,
+              "to_node_id": 1832774290,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 1832774290,
+              "segment_index": 1,
+              "to_node_id": 1832774291,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 1832774291,
+              "segment_index": 2,
+              "to_node_id": 31252825,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 31252825,
+              "segment_index": 3,
+              "to_node_id": 570804525,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804525,
+              "segment_index": 4,
+              "to_node_id": 570804527,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804527,
+              "segment_index": 5,
+              "to_node_id": 570804528,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804528,
+              "segment_index": 6,
+              "to_node_id": 570804530,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804530,
+              "segment_index": 7,
+              "to_node_id": 570804532,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804532,
+              "segment_index": 8,
+              "to_node_id": 570804535,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804535,
+              "segment_index": 9,
+              "to_node_id": 570804536,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804536,
+              "segment_index": 10,
+              "to_node_id": 570804538,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804538,
+              "segment_index": 11,
+              "to_node_id": 570804540,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 570804540,
+              "segment_index": 12,
+              "to_node_id": 1832774281,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 1832774281,
+              "segment_index": 13,
+              "to_node_id": 1832774282,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 1832774282,
+              "segment_index": 14,
+              "to_node_id": 31252820,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 31252820,
+              "segment_index": 15,
+              "to_node_id": 31252821,
+              "way_id": 45067778
+            },
+            {
+              "from_node_id": 31252821,
+              "segment_index": 0,
+              "to_node_id": 31252822,
+              "way_id": 45067779
+            },
+            {
+              "from_node_id": 31252822,
+              "segment_index": 1,
+              "to_node_id": 1832774283,
+              "way_id": 45067779
+            },
+            {
+              "from_node_id": 1832774283,
+              "segment_index": 2,
+              "to_node_id": 1832774284,
+              "way_id": 45067779
+            },
+            {
+              "from_node_id": 1832774284,
+              "segment_index": 0,
+              "to_node_id": 5598363629,
+              "way_id": 820360945
+            },
+            {
+              "from_node_id": 5598363629,
+              "segment_index": 1,
+              "to_node_id": 31252808,
+              "way_id": 820360945
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "4",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-06-28T07:08:28Z",
+              "url": "https://www.openstreetmap.org/way/4848741",
+              "version": 7,
+              "way_id": 4848741
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "3",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-06-28T07:08:28Z",
+              "url": "https://www.openstreetmap.org/way/820360944",
+              "version": 1,
+              "way_id": 820360944
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "1",
+                "oneway": "yes"
+              },
+              "timestamp": "2015-04-22T17:36:25Z",
+              "url": "https://www.openstreetmap.org/way/45067778",
+              "version": 4,
+              "way_id": 45067778
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "3",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-06-28T07:08:28Z",
+              "url": "https://www.openstreetmap.org/way/45067779",
+              "version": 5,
+              "way_id": 45067779
+            },
+            {
+              "tags": {
+                "bridge": "yes",
+                "highway": "service",
+                "layer": "4",
+                "oneway": "yes"
+              },
+              "timestamp": "2020-06-28T07:08:28Z",
+              "url": "https://www.openstreetmap.org/way/820360945",
+              "version": 1,
+              "way_id": 820360945
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "芝浦PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/4848740",
+          "way_id": 4848740
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "芝浦PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/749205419",
+          "way_id": 749205419
+        }
+      ],
+      "name_ja": "芝浦PA（上り）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "芝浦PA (上り)",
+          "way_id": 585884541
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/shibaura",
+      "parking_area_id": "shuto.pa.shibaura",
+      "source": {
+        "sha256": "75618534059cb39420d167d7af0994cf6b4b9e1ef818c6f9bdede43a36b64fe2",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.75096417620935,35.641509231989744,139.75896417620933,35.647509231989744"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [],
+      "existing_parking_way_candidates": [],
+      "name_ja": "市川PA（西行き）",
+      "nearby_osm_rest_areas": [],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/ichikawa",
+      "parking_area_id": "shuto.pa.ichikawa",
+      "source": {
+        "sha256": "cfdf9d23c95cf877de03b5cd84c4d2b94153363011e1acd6b66c79c5ae18d044",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.9203874697754,35.67420109999999,139.92838746977537,35.68020109999999"
+      },
+      "status": "NO_PATH_IN_BOUNDED_READ"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 4157120425,
+          "access_route_ids": [
+            "B"
+          ],
+          "closest_approach_meters": 231.648,
+          "length_meters": 416.855,
+          "osm_rest_area_names_touched": [
+            "大井PA (西行き)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 4157120428,
+          "return_route_ids": [
+            "B"
+          ],
+          "segments": [
+            {
+              "from_node_id": 4157120425,
+              "segment_index": 0,
+              "to_node_id": 4157120434,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120434,
+              "segment_index": 1,
+              "to_node_id": 4157120433,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120433,
+              "segment_index": 2,
+              "to_node_id": 4157120432,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120432,
+              "segment_index": 3,
+              "to_node_id": 4157120431,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120431,
+              "segment_index": 4,
+              "to_node_id": 4157120430,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120430,
+              "segment_index": 5,
+              "to_node_id": 4157120429,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120429,
+              "segment_index": 6,
+              "to_node_id": 4157120428,
+              "way_id": 675182036
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway",
+                "source": "digitalglobe"
+              },
+              "timestamp": "2019-03-07T14:19:21Z",
+              "url": "https://www.openstreetmap.org/way/675182036",
+              "version": 1,
+              "way_id": 675182036
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "大井PA（西行き）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "大井PA (東行き)",
+          "way_id": 414591151
+        },
+        {
+          "name": "大井PA (西行き)",
+          "way_id": 414591154
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/oi-westbound",
+      "parking_area_id": "shuto.pa.oi-westbound",
+      "source": {
+        "sha256": "ba27fdf02aa158e0c29f361a3de6c9ce5ce39e3197854868c9c3079c3608ac28",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.74891957620764,35.59103853475809,139.75691957620762,35.59703853475809"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 4157120425,
+          "access_route_ids": [
+            "B"
+          ],
+          "closest_approach_meters": 43.114,
+          "length_meters": 416.855,
+          "osm_rest_area_names_touched": [
+            "大井PA (西行き)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 4157120428,
+          "return_route_ids": [
+            "B"
+          ],
+          "segments": [
+            {
+              "from_node_id": 4157120425,
+              "segment_index": 0,
+              "to_node_id": 4157120434,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120434,
+              "segment_index": 1,
+              "to_node_id": 4157120433,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120433,
+              "segment_index": 2,
+              "to_node_id": 4157120432,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120432,
+              "segment_index": 3,
+              "to_node_id": 4157120431,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120431,
+              "segment_index": 4,
+              "to_node_id": 4157120430,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120430,
+              "segment_index": 5,
+              "to_node_id": 4157120429,
+              "way_id": 675182036
+            },
+            {
+              "from_node_id": 4157120429,
+              "segment_index": 6,
+              "to_node_id": 4157120428,
+              "way_id": 675182036
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "driveway",
+                "source": "digitalglobe"
+              },
+              "timestamp": "2019-03-07T14:19:21Z",
+              "url": "https://www.openstreetmap.org/way/675182036",
+              "version": 1,
+              "way_id": 675182036
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [],
+      "name_ja": "大井PA（東行き）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "大井PA (東行き)",
+          "way_id": 414591151
+        },
+        {
+          "name": "大井PA (西行き)",
+          "way_id": 414591154
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/oi-eastbound",
+      "parking_area_id": "shuto.pa.oi-eastbound",
+      "source": {
+        "sha256": "23b08e48af7ccab616f417083d7df2a19943417834a35d65e5ae7635e5435b1b",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.75103900000002,35.589392,139.759039,35.595392"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    },
+    {
+      "candidates": [
+        {
+          "access_has_existing_onward_edges": false,
+          "access_node_id": 308934727,
+          "access_route_ids": [
+            "S1"
+          ],
+          "closest_approach_meters": 251.688,
+          "length_meters": 290.615,
+          "osm_rest_area_names_touched": [
+            "川口PA (上り)"
+          ],
+          "return_has_existing_incoming_edges": false,
+          "return_node_id": 308934811,
+          "return_route_ids": [
+            "S1"
+          ],
+          "segments": [
+            {
+              "from_node_id": 308934727,
+              "segment_index": 0,
+              "to_node_id": 12036909945,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909945,
+              "segment_index": 1,
+              "to_node_id": 5982528969,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 5982528969,
+              "segment_index": 2,
+              "to_node_id": 12036909944,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909944,
+              "segment_index": 3,
+              "to_node_id": 308934728,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934728,
+              "segment_index": 4,
+              "to_node_id": 6440443721,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 6440443721,
+              "segment_index": 5,
+              "to_node_id": 12036909943,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909943,
+              "segment_index": 6,
+              "to_node_id": 308934729,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934729,
+              "segment_index": 7,
+              "to_node_id": 6440443722,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 6440443722,
+              "segment_index": 8,
+              "to_node_id": 308934730,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934730,
+              "segment_index": 9,
+              "to_node_id": 6440443723,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 6440443723,
+              "segment_index": 10,
+              "to_node_id": 12036909942,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909942,
+              "segment_index": 11,
+              "to_node_id": 308934750,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934750,
+              "segment_index": 12,
+              "to_node_id": 6440443724,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 6440443724,
+              "segment_index": 13,
+              "to_node_id": 12036909941,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909941,
+              "segment_index": 14,
+              "to_node_id": 308934756,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934756,
+              "segment_index": 15,
+              "to_node_id": 12036909950,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 12036909950,
+              "segment_index": 16,
+              "to_node_id": 308934757,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934757,
+              "segment_index": 17,
+              "to_node_id": 308934764,
+              "way_id": 1299417625
+            },
+            {
+              "from_node_id": 308934764,
+              "segment_index": 0,
+              "to_node_id": 6440443725,
+              "way_id": 687045302
+            },
+            {
+              "from_node_id": 6440443725,
+              "segment_index": 1,
+              "to_node_id": 12036936304,
+              "way_id": 687045302
+            },
+            {
+              "from_node_id": 12036936304,
+              "segment_index": 2,
+              "to_node_id": 6440443726,
+              "way_id": 687045302
+            },
+            {
+              "from_node_id": 6440443726,
+              "segment_index": 4,
+              "to_node_id": 9687044705,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 9687044705,
+              "segment_index": 5,
+              "to_node_id": 9687044704,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 9687044704,
+              "segment_index": 6,
+              "to_node_id": 9687044706,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 9687044706,
+              "segment_index": 7,
+              "to_node_id": 308934786,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934786,
+              "segment_index": 8,
+              "to_node_id": 308934788,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934788,
+              "segment_index": 9,
+              "to_node_id": 12036909949,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 12036909949,
+              "segment_index": 10,
+              "to_node_id": 308934792,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934792,
+              "segment_index": 11,
+              "to_node_id": 12036909948,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 12036909948,
+              "segment_index": 12,
+              "to_node_id": 308934794,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934794,
+              "segment_index": 13,
+              "to_node_id": 12036909947,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 12036909947,
+              "segment_index": 14,
+              "to_node_id": 308934797,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934797,
+              "segment_index": 15,
+              "to_node_id": 308934868,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934868,
+              "segment_index": 16,
+              "to_node_id": 12036909946,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 12036909946,
+              "segment_index": 17,
+              "to_node_id": 308934803,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 308934803,
+              "segment_index": 18,
+              "to_node_id": 5982528970,
+              "way_id": 44351819
+            },
+            {
+              "from_node_id": 5982528970,
+              "segment_index": 19,
+              "to_node_id": 308934811,
+              "way_id": 44351819
+            }
+          ],
+          "ways": [
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2024-07-06T02:04:12Z",
+              "url": "https://www.openstreetmap.org/way/1299417625",
+              "version": 1,
+              "way_id": 1299417625
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2024-07-06T02:04:12Z",
+              "url": "https://www.openstreetmap.org/way/687045302",
+              "version": 2,
+              "way_id": 687045302
+            },
+            {
+              "tags": {
+                "highway": "service",
+                "oneway": "yes",
+                "service": "parking_aisle"
+              },
+              "timestamp": "2024-07-06T02:04:12Z",
+              "url": "https://www.openstreetmap.org/way/44351819",
+              "version": 6,
+              "way_id": 44351819
+            }
+          ]
+        }
+      ],
+      "existing_parking_way_candidates": [
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "川口PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/28127734",
+          "way_id": 28127734
+        },
+        {
+          "name": "",
+          "osm_rest_area_names_touched": [
+            "川口PA (上り)"
+          ],
+          "url": "https://www.openstreetmap.org/way/44351818",
+          "way_id": 44351818
+        }
+      ],
+      "name_ja": "川口PA（上り）（川口ハイウェイオアシス）",
+      "nearby_osm_rest_areas": [
+        {
+          "name": "川口PA (上り)",
+          "way_id": 28127745
+        }
+      ],
+      "official_page_url": "https://www.shutoko-sv.jp/pa/kawaguchi",
+      "parking_area_id": "shuto.pa.kawaguchi",
+      "source": {
+        "sha256": "116410bb87697d80ec49b3b0c60c49bfdee8801137ab78fe84d89a5344a65fca",
+        "url": "https://api.openstreetmap.org/api/0.6/map.json?bbox=139.7398,35.846795,139.74779999999998,35.852795"
+      },
+      "status": "NEEDS_IDENTITY_AND_DIRECTION_REVIEW"
+    }
+  ],
+  "read_at": "2026-09-08"
+}

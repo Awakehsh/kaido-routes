@@ -12,6 +12,161 @@ import XCTest
 @MainActor
 final class WholeShutoProductModelTests: XCTestCase {
 
+  func testJourneyEndingChangesPreserveRouteAndRestoreFixedOrigin() async throws {
+    let store = WholeShutoMemoryCheckpointStore()
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: store
+    )
+    model.preparePreviewJourney()
+    let route = try XCTUnwrap(model.selectedRoute)
+    let origin = try XCTUnwrap(model.origin)
+    model.selectJourneyEnding(.returnToOrigin)
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.destination, origin)
+    XCTAssertEqual(model.selectedRoute, route)
+    XCTAssertEqual(model.egressRoute?.coordinates.last, origin.coordinate)
+    XCTAssertEqual(store.checkpoint?.journeyEnding, .returnToOrigin)
+
+    let target = WholeShutoPlace(title: "Other place", coordinate: .init(latitude: 35.45, longitude: 139.64))
+    model.selectJourneyEnding(.destination, destination: target)
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.selectedRoute, route)
+    XCTAssertEqual(model.egressRoute?.coordinates.last, target.coordinate)
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+
+    model.selectJourneyEnding(.exit)
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.selectedRoute, route)
+    XCTAssertNil(model.egressRoute)
+    XCTAssertEqual(model.destination?.coordinate, route.coordinates.last)
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertNotNil(model.plannedPreviewDurationSeconds)
+    model.startNavigationSimulation(autoplay: false)
+    let restored = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: store
+    )
+    XCTAssertEqual(restored.journeyEnding, .exit)
+    XCTAssertEqual(restored.selectedRoute, route)
+    XCTAssertNil(restored.egressRoute)
+    XCTAssertEqual(restored.phase, .surfaceAccess)
+  }
+
+  func testExitEndingCompletesWithoutInventingSurfaceEgress() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    model.selectJourneyEnding(.exit)
+    await waitForEndingRoutes(model)
+    model.startNavigationSimulation(autoplay: false)
+    for _ in 0..<20_000 where model.phase != .completed { await model.advanceSimulationForTesting() }
+    XCTAssertEqual(model.phase, .completed)
+    XCTAssertNil(model.egressRoute)
+    XCTAssertEqual(model.currentCoordinate, model.selectedRoute?.coordinates.last)
+  }
+
+  func testTourDefaultsToExitAndLoopDefaultsToFixedStart() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
+    )
+    model.selectCurrentOrigin(.init(latitude: 35.6586, longitude: 139.7454))
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.journeyEnding, .returnToOrigin)
+    XCTAssertEqual(model.destination, model.origin)
+    model.reset()
+    model.selectCurrentOrigin(.init(latitude: 35.6586, longitude: 139.7454))
+    let tour = try XCTUnwrap(ShutoCircuitDefinition.bundled.first { $0.kind == .tour })
+    model.selectCircuit(tour)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.journeyEnding, .exit)
+    XCTAssertNil(model.egressRoute)
+  }
+
+  func testExitChangeRetainsCircuitAndLapsAndRejectsInvalidExit() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
+    )
+    model.selectCurrentOrigin(.init(latitude: 35.6586, longitude: 139.7454))
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+    model.selectCircuitLaps(2)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForEndingRoutes(model)
+    let original = try XCTUnwrap(model.selectedRoute)
+    do {
+      try await model.selectJourneyExit("missing-exit")
+      XCTFail("An unavailable exit must be rejected")
+    } catch {}
+    XCTAssertEqual(model.selectedRoute?.routePlan.id, original.routePlan.id)
+    XCTAssertEqual(model.journeyEnding, .returnToOrigin)
+    let candidates = try await model.journeyExitCandidates()
+    let alternative = try XCTUnwrap(candidates.first { $0.facilityID != original.exitFacility.facilityID })
+    try await model.selectJourneyExit(alternative.facilityID)
+    await waitForEndingRoutes(model)
+    XCTAssertEqual(model.selectedRoute?.exitFacility.facilityID, alternative.facilityID)
+    XCTAssertEqual(model.selectedCircuit, .c1Inner)
+    XCTAssertEqual(model.circuitLaps, 2)
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertEqual(model.journeyEnding, .exit)
+    XCTAssertNil(model.egressRoute)
+  }
+
+  func testMissingAccessStillBlocksAnExitOnlyJourney() async throws {
+    let resolver = WholeShutoRecoveringSurfaceRouteResolver()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: resolver, checkpointStore: nil
+    )
+    model.selectCurrentOrigin(.init(latitude: 35.6586, longitude: 139.7454))
+    model.prepareCustomRouteDraft()
+    XCTAssertTrue(model.applyCustomRoute())
+    await waitForEndingRoutes(model)
+    XCTAssertFalse(model.isJourneyReadyForPreview)
+    XCTAssertFalse(model.canStartLiveNavigation)
+    XCTAssertEqual(model.failureCode, "SURFACE_ROUTE_UNAVAILABLE")
+    let started = await model.startLiveJourney()
+    XCTAssertFalse(started)
+    await resolver.setAvailable(true)
+    model.retrySurfaceRoutes()
+    await waitForEndingRoutes(model)
+    XCTAssertTrue(model.isJourneyReadyForPreview)
+    XCTAssertNil(model.egressRoute)
+  }
+
+  func testOnwardDestinationStartsAutomaticallyAfterExit() async throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    let plan = try XCTUnwrap(model.selectedRoute?.routePlan)
+    let target = WholeShutoPlace(title: "Onward stop", coordinate: .init(latitude: 35.45, longitude: 139.64))
+    model.selectJourneyEnding(.destination, destination: target)
+    await waitForEndingRoutes(model)
+    model.startNavigationSimulation(autoplay: false)
+    for _ in 0..<20_000 where model.phase != .surfaceEgress && model.phase != .completed {
+      await model.advanceSimulationForTesting()
+    }
+    XCTAssertEqual(model.phase, .surfaceEgress)
+    XCTAssertEqual(model.selectedRoute?.routePlan.id, plan.id)
+    XCTAssertEqual(model.egressRoute?.coordinates.last, target.coordinate)
+    for _ in 0..<1_000 where model.phase != .completed {
+      await model.advanceSimulationForTesting()
+    }
+    XCTAssertEqual(model.phase, .completed)
+    XCTAssertEqual(model.currentCoordinate, target.coordinate)
+  }
+
+  private func waitForEndingRoutes(_ model: WholeShutoProductModel) async {
+    for _ in 0..<400 where model.isUpdatingSurfaceRoute {
+      try? await Task.sleep(for: .milliseconds(20))
+    }
+    XCTAssertFalse(model.isUpdatingSurfaceRoute)
+  }
+
   func testSpeechRecoveryStalePositionCancelsObsoleteManeuver() async throws {
     let output = SpeechRecoveryAppOutput()
     let model = try await speechRecoveryModel(output: output)
@@ -1274,6 +1429,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.selectCustomEntry(facilityID: "shuto.ic.b.urayasu")
     model.selectCustomExit(facilityID: "shuto.ic.9.fukudumi")
     XCTAssertTrue(model.applyCustomRoute())
+    model.selectJourneyEnding(.returnToOrigin)
     for _ in 0..<300
     where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute {
       try? await Task.sleep(nanoseconds: 50_000_000)
@@ -1954,7 +2110,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
-  func testCustomRouteFromTheHomeCatalogIsARoundTrip() {
+  func testCustomRouteFromTheHomeCatalogEndsAtItsExit() {
     let model = WholeShutoProductModel(checkpointStore: nil)
     // Tokyo Tower: the nearest enterable facility seeds the draft.
     model.selectCurrentOrigin(
@@ -1971,7 +2127,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.isCustomRouteSelected)
     XCTAssertEqual(
       model.destination?.coordinate,
-      model.origin?.coordinate
+      model.selectedRoute?.coordinates.last
     )
   }
 
@@ -2230,11 +2386,11 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.origin?.coordinate, origin)
     XCTAssertEqual(
       model.destination?.coordinate,
-      circuitRoute.exitFacility.coordinate
+      origin
     )
     XCTAssertEqual(
       model.destination?.title,
-      circuitRoute.exitFacility.nameJA
+      model.origin?.title
     )
     XCTAssertNotNil(model.accessRoute)
     XCTAssertNotNil(model.egressRoute)

@@ -39,8 +39,9 @@ before trusting any guidance this product gives.
   geographic MapKit map, and a whole-route track map that fits the entire route
   in one readable frame with every on-route IC, JCT, and PA labeled.
 - Gates every drive behind one parked review pass that combines bounded surface
-  access, the exact Shuto route, and surface egress. A missing surface leg
-  blocks the start rather than silently skipping part of the journey.
+  access, the exact Shuto route, and the selected ending: return to the fixed
+  start, finish at the directional exit, or continue to another place. A missing
+  required surface leg blocks the start; exit-only journeys have no onward leg.
 - Drives with a direction-following camera, a dominant next-decision prompt,
   junction insets, and preparation followed by final maneuver guidance drawn
   from reviewed exact JCT movements. Each stage speaks once; short approaches
@@ -85,9 +86,9 @@ swift run kaido-release validate-product \
 ```
 
 Every pull request runs the `verify` workflow, which classifies the changed
-paths, then runs the deterministic suites, 11 critical App unit classes, six
-whole-Shuto App-model journeys, and one route-selection-to-live-navigation UI
-smoke in a single stable `xcodebuild` session. Documentation-only changes
+paths, then runs the deterministic suites, critical App unit classes,
+whole-Shuto App-model journeys, and route-selection, journey-ending, and
+live-navigation UI checks in a single stable `xcodebuild` session. Documentation-only changes
 finish after the lightweight classification. The `Verification gate` job
 reports the single required result. The production joint-release validator
 checks the retained K7 product artifact as a deterministic regression anchor;

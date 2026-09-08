@@ -37,6 +37,7 @@ struct WholeShutoProductView: View {
   @State private var showsSettings = false
   @State private var showsRouteCustomization = false
   @State private var showsJourneyReview = false
+  @State private var showsJourneyEnding = false
   @State private var showsSavedRoutes = false
   @State private var showsDriveHistory = false
   @State private var isImportingSavedRoute = false
@@ -128,11 +129,17 @@ struct WholeShutoProductView: View {
       WholeShutoCustomRouteSheet(model: model)
         .environment(\.colorScheme, .dark)
     }
+    .sheet(isPresented: $showsJourneyEnding) {
+      WholeShutoJourneyEndingView(model: model, placeSearch: placeSearch)
+        .environment(\.kaidoInterfaceLocale, languageSettings.interfaceLocale)
+        .environment(\.colorScheme, .dark)
+    }
     .sheet(isPresented: $showsJourneyReview) {
       WholeShutoJourneyReviewView(
         model: model,
         languageSettings: languageSettings,
         savedRoutes: savedRoutes,
+        placeSearch: placeSearch,
         onStartLiveDrive: beginLiveDrive
       )
       .environment(\.colorScheme, .dark)
@@ -711,15 +718,37 @@ struct WholeShutoProductView: View {
     VStack(alignment: .leading, spacing: 0) {
       if model.phase == .planning {
         Text("KAIDO")
-          .font(.body.weight(.black))
+          .font(.caption2.weight(.black))
           .fontDesign(.rounded)
           .tracking(1.7)
           .foregroundStyle(KaidoTheme.routeWhite)
       }
       Text(topTitle)
+        .accessibilityIdentifier("whole-shuto-route-title")
         .font(.headline.weight(.black))
         .fontDesign(.rounded)
         .foregroundStyle(KaidoTheme.routeWhite)
+        .lineLimit(3)
+      if model.phase == .completed {
+        Text(copy.resolve(japanese: "行程完了", simplifiedChinese: "行程完成", english: "Journey complete"))
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(KaidoTheme.nightQuiet)
+      } else if isDriving && !model.isLiveDrive {
+        Text(copy.resolve(japanese: "ナビプレビュー", simplifiedChinese: "导航预演", english: "Navigation preview"))
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(KaidoTheme.nightQuiet)
+      }
+      if let circuit = model.selectedCircuit,
+        model.phase == .planning || model.isCircuitRouteSelected,
+        circuit.kind == .loop {
+        Text(copy.resolve(japanese: "\(model.circuitLaps)周", simplifiedChinese: "\(model.circuitLaps) 圈", english: model.circuitLaps == 1 ? "1 lap" : "\(model.circuitLaps) laps"))
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(KaidoTheme.nightQuiet)
+      } else if model.phase == .planning && model.selectedCircuit == nil {
+        Text(copy.resolve(japanese: "首都高", simplifiedChinese: "首都高", english: "Shuto"))
+          .font(.caption2)
+          .foregroundStyle(KaidoTheme.nightQuiet)
+      }
     }
     .fixedSize(horizontal: false, vertical: true)
     .layoutPriority(1)
@@ -778,9 +807,9 @@ struct WholeShutoProductView: View {
         .network,
         symbol: "point.3.connected.trianglepath.dotted",
         label: copy.resolve(
-          japanese: "路線",
-          simplifiedChinese: "路线",
-          english: "ROUTES"
+          japanese: "ルート図",
+          simplifiedChinese: "路线图",
+          english: "ROUTE MAP"
         )
       )
       mapModeButton(
@@ -2601,6 +2630,21 @@ struct WholeShutoProductView: View {
 
       routeBoundaryPair
 
+      Button { showsJourneyEnding = true } label: {
+        HStack {
+          VStack(alignment: .leading, spacing: 3) {
+            Text(copy.resolve(japanese: "行程の終点", simplifiedChinese: "行程结束于", english: "Journey ends at"))
+              .font(.caption)
+            Text(model.journeyEnding.label(for: languageSettings.interfaceLocale))
+              .font(.subheadline.weight(.semibold))
+          }
+          Spacer()
+          Image(systemName: "chevron.right")
+        }
+        .frame(minHeight: 44)
+      }
+      .accessibilityIdentifier("whole-shuto-edit-ending")
+
       routeReviewAction
     }
     .padding(.horizontal, 16)
@@ -3900,37 +3944,16 @@ struct WholeShutoProductView: View {
   }
 
   private var topTitle: String {
-    if model.phase == .completed {
-      return copy.resolve(
-        japanese: "行程完了",
-        simplifiedChinese: "行程完成",
-        english: "JOURNEY COMPLETE"
-      )
+    if let circuit = model.selectedCircuit,
+      model.phase == .planning || model.isCircuitRouteSelected {
+      return circuit.displayName(for: languageSettings.interfaceLocale)
     }
-    if isDriving {
-      return model.isLiveDrive
-        ? copy.resolve(
-          japanese: "首都高ナビ",
-          simplifiedChinese: "首都高导航",
-          english: "SHUTO NAVIGATION"
-        )
-        : copy.resolve(
-          japanese: "首都高ナビプレビュー",
-          simplifiedChinese: "首都高导航预演",
-          english: "SHUTO NAVIGATION PREVIEW"
-        )
+    if let route = model.selectedRoute {
+      return "\(route.entryFacility.nameJA) → \(route.exitFacility.nameJA)"
     }
-    return model.phase == .review
-      ? copy.resolve(
-        japanese: "ルートを選択",
-        simplifiedChinese: "选择路线",
-        english: "CHOOSE A ROUTE"
-      )
-      : copy.resolve(
-        japanese: "首都高全体",
-        simplifiedChinese: "首都高全网",
-        english: "WHOLE SHUTO"
-      )
+    return copy.resolve(
+      japanese: "ルートを選ぶ", simplifiedChinese: "选择路线", english: "Choose a route"
+    )
   }
 
   private var routeSummaryTitle: String {

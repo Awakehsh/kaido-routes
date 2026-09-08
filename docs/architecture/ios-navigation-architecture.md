@@ -2280,3 +2280,14 @@ routing excludes `PARKING` edges; the interior carries no numbered-route
 membership and never becomes a fare shortcut. Shared approach/return roads keep
 their original role. A modelled interior alone does not authorize an unsupported
 external-expressway entrance or enroll the route for live navigation.
+
+### Pre-departure journey ending
+
+The App persists an explicit journey ending alongside the exact route checkpoint:
+return to the fixed planning origin, complete at the directional exit handoff,
+or continue to a selected destination. Older checkpoints without this field
+retain their existing destination and surface legs. Exit-only journeys require
+surface access but no provider egress; the existing exit-handoff completion path
+ends them. Other endings require resolved access and egress. Changing the onward
+destination invalidates cached surface comparisons and does not alter RoutePlan.
+Changing an exit is an explicit route edit; a circuit retains its course and laps.

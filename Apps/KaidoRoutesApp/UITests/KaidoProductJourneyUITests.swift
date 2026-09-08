@@ -3,6 +3,85 @@ import XCTest
 
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
+  func testJourneyEndingCanBeChangedBeforeDeparture() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface", "zh-Hans"
+    ]
+    app.launchSilently()
+    let title = element("whole-shuto-route-title", in: app)
+    XCTAssertTrue(title.waitForExistence(timeout: 8))
+    let routeTitle = title.label
+    XCTAssertFalse(routeTitle.contains("首都高全体"))
+    let edit = element("whole-shuto-edit-ending", in: app)
+    XCTAssertTrue(edit.waitForExistence(timeout: 5))
+    edit.tap()
+    element("whole-shuto-ending-returnToOrigin", in: app).tap()
+    element("whole-shuto-ending-apply", in: app).tap()
+    XCTAssertTrue(edit.waitForExistence(timeout: 5))
+    XCTAssertTrue(edit.label.contains("返回出发地"))
+    XCTAssertEqual(title.label, routeTitle)
+    edit.tap()
+    element("whole-shuto-ending-destination", in: app).tap()
+    let search = element("whole-shuto-ending-search", in: app)
+    XCTAssertTrue(search.waitForExistence(timeout: 3))
+    XCTAssertFalse(element("whole-shuto-ending-apply", in: app).isEnabled)
+    app.buttons["取消"].tap()
+    XCTAssertTrue(edit.label.contains("返回出发地"))
+    edit.tap()
+    element("whole-shuto-ending-exit", in: app).tap()
+    XCTAssertTrue(element("whole-shuto-ending-exit-picker", in: app).exists)
+    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    screenshot.name = "Journey ending choices"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    element("whole-shuto-ending-apply", in: app).tap()
+    XCTAssertTrue(edit.waitForExistence(timeout: 5))
+    XCTAssertTrue(edit.label.contains("在高速出口结束"))
+    XCTAssertEqual(title.label, routeTitle)
+  }
+
+  func testSelectedCircuitContinuesToSearchedPlace() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-SEARCH-PREVIEW",
+      "-app.kaidoroutes.language.interface", "zh-Hans"
+    ]
+    app.launchSilently()
+    let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
+    XCTAssertTrue(circuit.waitForExistence(timeout: 8))
+    circuit.tap()
+    let start = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(start.waitForExistence(timeout: 5))
+    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "isEnabled == true"), object: start
+    )], timeout: 15), .completed)
+    start.tap()
+    let close = element("whole-shuto-review-close", in: app)
+    XCTAssertTrue(close.waitForExistence(timeout: 8))
+    close.tap()
+    let title = element("whole-shuto-route-title", in: app).label
+    XCTAssertTrue(title.contains("都心环状线"))
+    element("whole-shuto-edit-ending", in: app).tap()
+    element("whole-shuto-ending-destination", in: app).tap()
+    let field = element("whole-shuto-ending-search", in: app)
+    field.tap()
+    field.typeText("东京")
+    let suggestion = element("whole-shuto-ending-suggestion-preview.tokyo-tower", in: app)
+    XCTAssertTrue(suggestion.waitForExistence(timeout: 5))
+    suggestion.tap()
+    element("whole-shuto-ending-apply", in: app).tap()
+    let review = element("whole-shuto-review-journey", in: app)
+    XCTAssertTrue(review.waitForExistence(timeout: 5))
+    XCTAssertEqual(element("whole-shuto-route-title", in: app).label, title)
+    review.tap()
+    XCTAssertTrue(app.staticTexts["东京塔"].waitForExistence(timeout: 5))
+    XCTAssertTrue(element("whole-shuto-start-simulation", in: app).isEnabled)
+  }
+
   func testDefaultLaunchMakesWholeShutoMapTheProduct() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -46,6 +125,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       element("whole-shuto-network-map", in: app)
         .waitForExistence(timeout: 3)
     )
+    XCTAssertEqual(element("whole-shuto-route-title", in: app).label, "选择路线")
     let networkMap = element("whole-shuto-network-map", in: app)
     let browseValue = networkMap.value as? String ?? ""
     XCTAssertFalse(

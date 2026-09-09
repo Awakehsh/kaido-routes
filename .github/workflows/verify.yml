@@ -183,6 +183,7 @@ jobs:
             -only-testing:KaidoRoutesAppTests/ReleasedProductRouteAuthoringModelTests \
             -only-testing:KaidoRoutesAppTests/RouteAtlasAttributionTests \
             -only-testing:KaidoRoutesAppTests/RouteExperiencePresentationTests \
+            -only-testing:KaidoRoutesAppTests/WholeShutoParkingStopTests \
             -only-testing:KaidoRoutesAppTests/SavedRouteLibraryModelTests \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testJourneyEndingChangesPreserveRouteAndRestoreFixedOrigin \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testExitEndingCompletesWithoutInventingSurfaceEgress \
@@ -204,6 +205,7 @@ jobs:
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testWholeShutoAddsAndRemovesDirectionalParkingStop \
             -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \
             CODE_SIGNING_ALLOWED=NO \
             | tee "$RUNNER_TEMP/KaidoRoutesApp-critical.log"

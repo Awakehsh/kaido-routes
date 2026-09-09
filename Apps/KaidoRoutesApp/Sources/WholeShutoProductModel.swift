@@ -246,6 +246,11 @@ enum WholeShutoJourneyEnding: String, Codable, CaseIterable {
   case destination
 }
 
+struct WholeShutoParkingStopSelection: Codable, Equatable, Sendable {
+  let baseRoutePlan: RoutePlan
+  let parkingAreaIDs: [String]
+}
+
 struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   static let currentSchemaVersion = "2.0"
 
@@ -275,6 +280,7 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let liveNavigationCheckpoint: NavigationSessionCheckpoint?
   var driveRecord: WholeShutoDriveRecord? = nil
   var journeyEnding: WholeShutoJourneyEnding? = nil
+  var parkingStops: WholeShutoParkingStopSelection? = nil
 }
 
 @MainActor
@@ -338,6 +344,7 @@ private struct WholeShutoResolvedSavedRoute {
   let circuit: ShutoCircuitDefinition?
   let circuitLaps: Int?
   let templateParameters: [String: String]
+  let parkingStops: WholeShutoParkingStopSelection?
 }
 
 enum WholeShutoNetworkCatalog {
@@ -429,6 +436,8 @@ final class WholeShutoProductModel: ObservableObject {
     [:]
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
+  @Published private(set) var parkingStopSelection: WholeShutoParkingStopSelection?
+  @Published private(set) var isUpdatingParkingStops = false
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
   @Published private(set) var isCircuitRouteSelected = false
   @Published private(set) var circuitTariffBandsByFacilityID: [String: ShutoTariffBand] = [:]
@@ -802,6 +811,7 @@ final class WholeShutoProductModel: ObservableObject {
   /// admission matches the full selected RoutePlan value.
   var canStartLiveNavigation: Bool {
     !isStartingLiveNavigation
+      && !isUpdatingParkingStops
       && accessRoute != nil
       && (journeyEnding == .exit || egressRoute != nil)
       && !isUpdatingSurfaceRoute
@@ -812,7 +822,7 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var liveNavigationBlockerCode: String? {
-    if isStartingLiveNavigation {
+    if isStartingLiveNavigation || isUpdatingParkingStops {
       return Self.liveNavigationPreparingCode
     }
     if isUpdatingSurfaceRoute {
@@ -1118,6 +1128,11 @@ final class WholeShutoProductModel: ObservableObject {
       parameters["circuit_id"] = selectedCircuit.circuitID
       parameters["laps"] = String(circuitLaps)
     }
+    if let parkingStopSelection,
+      let data = try? JSONEncoder().encode(parkingStopSelection),
+      let encoded = String(data: data, encoding: .utf8) {
+      parameters["parking_stops"] = encoded
+    }
     return parameters
   }
 
@@ -1236,6 +1251,7 @@ final class WholeShutoProductModel: ObservableObject {
       circuitRecommendation = recommendation
       isCircuitRouteSelected = true
     }
+    parkingStopSelection = resolved.parkingStops
     selectedSavedRouteTemplateParameters =
       resolved.templateParameters.isEmpty
       ? nil : resolved.templateParameters
@@ -1740,6 +1756,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   var isJourneyReadyForPreview: Bool {
     phase == .review
+      && !isUpdatingParkingStops
       && selectedRoute != nil
       && accessRoute != nil
       && (journeyEnding == .exit || egressRoute != nil)
@@ -2068,23 +2085,26 @@ final class WholeShutoProductModel: ObservableObject {
     let laps = circuitLaps + 1
     let database = database
     let preference = route.preference
+    let stopIDs = parkingStopSelection?.parkingAreaIDs ?? []
     let prepared = await Task.detached(priority: .userInitiated) {
       () -> (
         ShutoPlannedRoute,
         WholeShutoLiveJourneyAdmission,
         ShutoPlannedRouteRuntimeAssets,
         KaidoProductNavigationRuntime,
-        [WholeShutoJunctionPrompt]
+        [WholeShutoJunctionPrompt],
+        ShutoPlannedRoute
       )? in
       do {
         let planner = try ShutoRoutePlanner(database: database)
-        let extended = try planner.planCircuit(
+        let base = try planner.planCircuit(
           circuit: circuit,
           entryFacilityID: entryFacilityID,
           exitFacilityID: exitFacilityID,
           laps: laps,
           preference: preference
         )
+        let extended = try planner.addingParkingStops(stopIDs, to: base)
         guard case .available(let admission) = admissionResolver(extended)
         else {
           return nil
@@ -2103,7 +2123,7 @@ final class WholeShutoProductModel: ObservableObject {
           database: database,
           route: extended
         )
-        return (extended, admission, assets, runtime, prompts)
+        return (extended, admission, assets, runtime, prompts, base)
       } catch {
         return nil
       }
@@ -2146,6 +2166,8 @@ final class WholeShutoProductModel: ObservableObject {
           .surfaceEgressDistanceMeters,
         totalScoreMeters: previousRecommendation.totalScoreMeters
       )
+      parkingStopSelection = stopIDs.isEmpty ? nil : .init(baseRoutePlan: prepared.5.routePlan, parkingAreaIDs: stopIDs)
+      selectedSavedRouteTemplateParameters = nil
       circuitLaps = laps
       runtimeAssets = prepared.2
       liveDriveSession = session
@@ -2941,6 +2963,7 @@ final class WholeShutoProductModel: ObservableObject {
     circuitRecommendation = nil
     isCircuitRouteSelected = false
     selectedSavedRouteTemplateParameters = nil
+    parkingStopSelection = nil
   }
 
   func prepareCustomRouteDraft() {
@@ -3010,7 +3033,11 @@ final class WholeShutoProductModel: ObservableObject {
 
   @discardableResult
   func applyCustomRoute() -> Bool {
-    guard let origin, let route = customDraftRoute else { return false }
+    guard let origin, let base = customDraftRoute else { return false }
+    let stopIDs = parkingStopSelection?.parkingAreaIDs ?? []
+    let route: ShutoPlannedRoute
+    do { route = try planner.addingParkingStops(stopIDs, to: base) }
+    catch { failureCode = "PARKING_STOP_UNAVAILABLE"; return false }
     let destination: WholeShutoPlace
     switch phase {
     case .review:
@@ -3047,6 +3074,7 @@ final class WholeShutoProductModel: ObservableObject {
     customRecommendation = recommendation
     isCustomRouteSelected = true
     clearCircuitRouteSelection()
+    parkingStopSelection = stopIDs.isEmpty ? nil : .init(baseRoutePlan: base.routePlan, parkingAreaIDs: stopIDs)
     preference = route.preference
     failureCode = nil
     resolveSurfaceRoutes(
@@ -3086,6 +3114,72 @@ final class WholeShutoProductModel: ObservableObject {
     persistCheckpoint()
   }
 
+  private func parkingBaseRoute() throws -> ShutoPlannedRoute {
+    guard let route = selectedRoute else { throw ShutoNetworkError.routeUnavailable }
+    guard let selection = parkingStopSelection else { return route }
+    if isCircuitRouteSelected, let circuit = selectedCircuit {
+      let base = try planner.planCircuit(
+        circuit: circuit, entryFacilityID: route.entryFacility.facilityID,
+        exitFacilityID: route.exitFacility.facilityID, laps: circuitLaps,
+        preference: route.preference
+      )
+      guard base.routePlan == selection.baseRoutePlan else { throw ShutoNetworkError.routeUnavailable }
+      return base
+    }
+    return try planner.restore(routePlan: selection.baseRoutePlan, preference: route.preference)
+  }
+
+  func journeyParkingStopOptions() async throws -> [ShutoParkingStopOption] {
+    guard phase == .review else { return [] }
+    let base = try parkingBaseRoute()
+    let planner = planner
+    return await Task.detached(priority: .userInitiated) {
+      planner.parkingStopOptions(for: base)
+    }.value
+  }
+
+  var includedParkingStops: [ShutoNetworkDatabase.ParkingArea] {
+    let base = parkingStopSelection?.baseRoutePlan ?? selectedRoute?.routePlan
+    let ids = Set(base?.occurrences.compactMap(\.parkingAreaID) ?? [])
+    return database.parkingAreas.filter { ids.contains($0.parkingAreaID) }
+  }
+
+  func selectJourneyParkingStops(_ ids: [String]) async throws {
+    guard phase == .review, !isUpdatingParkingStops,
+      let previous = selectedRecommendation, let origin, let destination
+    else { throw ShutoNetworkError.routeUnavailable }
+    let base = try parkingBaseRoute()
+    let planner = planner
+    isUpdatingParkingStops = true
+    defer { isUpdatingParkingStops = false }
+    let route = try await Task.detached(priority: .userInitiated) {
+      try planner.addingParkingStops(ids.sorted(), to: base)
+    }.value
+    guard phase == .review, selectedRoute == previous.route else {
+      throw ShutoNetworkError.routeUnavailable
+    }
+    let recommendation = ShutoRouteRecommendation(
+      route: route,
+      surfaceAccessDistanceMeters: previous.surfaceAccessDistanceMeters,
+      surfaceEgressDistanceMeters: previous.surfaceEgressDistanceMeters,
+      totalScoreMeters: previous.totalScoreMeters + route.distanceMeters - previous.route.distanceMeters
+    )
+    if isCircuitRouteSelected {
+      circuitRecommendation = recommendation
+    } else if isCustomRouteSelected {
+      customRecommendation = recommendation
+      customDraftRoute = route
+    } else {
+      recommendations[selectedRecommendationIndex] = recommendation
+    }
+    parkingStopSelection = ids.isEmpty ? nil : .init(baseRoutePlan: base.routePlan, parkingAreaIDs: ids.sorted())
+    selectedSavedRouteTemplateParameters = nil
+    clearRouteChoiceEvaluation()
+    resolveSurfaceRoutes(for: recommendation, origin: origin, destination: destination)
+    failureCode = nil
+    persistCheckpoint()
+  }
+
   func journeyExitCandidates() async throws -> [ShutoNetworkDatabase.Facility] {
     guard let route = selectedRoute else { return [] }
     let planner = planner
@@ -3111,7 +3205,8 @@ final class WholeShutoProductModel: ObservableObject {
     let planner = planner
     let circuit = isCircuitRouteSelected ? selectedCircuit : nil
     let laps = circuitLaps
-    let route = try await Task.detached(priority: .userInitiated) {
+    let stopIDs = parkingStopSelection?.parkingAreaIDs ?? []
+    let base = try await Task.detached(priority: .userInitiated) {
       if let circuit {
         return try planner.planCircuit(
           circuit: circuit, entryFacilityID: previous.entryFacility.facilityID,
@@ -3123,6 +3218,7 @@ final class WholeShutoProductModel: ObservableObject {
         exitFacilityID: facilityID, preference: previous.preference
       )
     }.value
+    let route = try planner.addingParkingStops(stopIDs, to: base)
     guard phase == .review, selectedRoute == previous, let origin else { return }
     let accessDistance = Self.distance(origin.coordinate, route.coordinates.first ?? route.entryFacility.coordinate)
     let recommendation = ShutoRouteRecommendation(
@@ -3140,6 +3236,8 @@ final class WholeShutoProductModel: ObservableObject {
       customRecommendation = recommendation
       isCustomRouteSelected = true
     }
+    parkingStopSelection = stopIDs.isEmpty ? nil : .init(baseRoutePlan: base.routePlan, parkingAreaIDs: stopIDs)
+    selectedSavedRouteTemplateParameters = nil
     selectJourneyEnding(.exit)
   }
 
@@ -5109,7 +5207,7 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     var restoredCircuit: ShutoCircuitDefinition?
-    let route: ShutoPlannedRoute
+    var route: ShutoPlannedRoute
     do {
       if checkpoint.routeSelectionSource == .circuit {
         guard
@@ -5135,9 +5233,13 @@ final class WholeShutoProductModel: ObservableObject {
           throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
         }
         route = try planner.restore(
-          routePlan: checkpoint.routePlan,
+          routePlan: checkpoint.parkingStops?.baseRoutePlan ?? checkpoint.routePlan,
           preference: checkpoint.preference
         )
+      }
+      if let stops = checkpoint.parkingStops {
+        guard stops.baseRoutePlan == route.routePlan else { throw ShutoNetworkError.routeUnavailable }
+        route = try planner.addingParkingStops(stops.parkingAreaIDs, to: route)
       }
       guard route.routePlan == checkpoint.routePlan else {
         throw WholeShutoSavedRouteResolutionError.invalidRoutePlan
@@ -5195,6 +5297,7 @@ final class WholeShutoProductModel: ObservableObject {
       clearCustomRouteSelection()
     }
     selectedRecommendationIndex = 0
+    parkingStopSelection = checkpoint.parkingStops
     accessRoute = checkpoint.accessRoute
     egressRoute = checkpoint.egressRoute
     phase = checkpoint.phase
@@ -5356,7 +5459,8 @@ final class WholeShutoProductModel: ObservableObject {
       liveNavigationCheckpoint:
         isLiveDrive ? liveNavigationCheckpoint : nil,
       driveRecord: isLiveDrive && showsDriveRecord ? driveRecord : nil,
-      journeyEnding: journeyEnding
+      journeyEnding: journeyEnding,
+      parkingStops: parkingStopSelection
     )
     guard let checkpointStore else { return }
     do {
@@ -5951,6 +6055,7 @@ final class WholeShutoProductModel: ObservableObject {
     customPreference = .recommended
     customDraftRoute = nil
     selectedSavedRouteTemplateParameters = nil
+    parkingStopSelection = nil
   }
 
   private func facility(
@@ -6007,6 +6112,9 @@ final class WholeShutoProductModel: ObservableObject {
       selectionSource = .custom
     }
 
+    let parkingStops = try templateParameters["parking_stops"].map {
+      try JSONDecoder().decode(WholeShutoParkingStopSelection.self, from: Data($0.utf8))
+    }
     do {
       let route: ShutoPlannedRoute
       let circuit: ShutoCircuitDefinition?
@@ -6030,10 +6138,10 @@ final class WholeShutoProductModel: ObservableObject {
           laps: laps,
           preference: routePreference
         )
-        guard planned.routePlan == routePlan else {
+        guard planned.routePlan == (parkingStops?.baseRoutePlan ?? routePlan) else {
           throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
         }
-        route = planned
+        route = try planner.addingParkingStops(parkingStops?.parkingAreaIDs ?? [], to: planned)
         circuit = resolvedCircuit
         circuitLaps = laps
       case .custom, .recommended:
@@ -6042,13 +6150,15 @@ final class WholeShutoProductModel: ObservableObject {
         else {
           throw WholeShutoSavedRouteResolutionError.invalidTemplateMetadata
         }
-        route = try planner.restore(
-          routePlan: routePlan,
+        let base = try planner.restore(
+          routePlan: parkingStops?.baseRoutePlan ?? routePlan,
           preference: routePreference
         )
+        route = try planner.addingParkingStops(parkingStops?.parkingAreaIDs ?? [], to: base)
         circuit = nil
         circuitLaps = nil
       }
+      guard route.routePlan == routePlan else { throw ShutoNetworkError.routeUnavailable }
       _ = try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
         route: route
@@ -6058,7 +6168,8 @@ final class WholeShutoProductModel: ObservableObject {
         selectionSource: selectionSource,
         circuit: circuit,
         circuitLaps: circuitLaps,
-        templateParameters: templateParameters
+        templateParameters: templateParameters,
+        parkingStops: parkingStops
       )
     } catch {
       if let resolutionError = error

@@ -10,6 +10,7 @@ struct WholeShutoJourneyReviewView: View {
   @ObservedObject var savedRoutes: SavedRouteLibraryModel
   @ObservedObject var placeSearch: WholeShutoPlaceSearchController
   @State private var showsJourneyEnding = false
+  @State private var showsParkingStops = false
   /// Starting a live drive also needs the location session, which the
   /// product view owns, so the action is handed in.
   var onStartLiveDrive: () -> Void = {}
@@ -27,6 +28,11 @@ struct WholeShutoJourneyReviewView: View {
               .frame(maxWidth: .infinity, minHeight: 44)
           }
           .accessibilityIdentifier("whole-shuto-review-edit-ending")
+          Button { showsParkingStops = true } label: {
+            Label(copy.resolve(japanese: "PAに立ち寄る", simplifiedChinese: "PA 停靠", english: "PA stops"), systemImage: "parkingsign.circle")
+              .frame(maxWidth: .infinity, minHeight: 44)
+          }
+          .accessibilityIdentifier("whole-shuto-review-edit-parking-stops")
           availabilitySummary
           SavedRouteSavePanel(
             library: savedRoutes,
@@ -57,6 +63,10 @@ struct WholeShutoJourneyReviewView: View {
     .accessibilityIdentifier("whole-shuto-journey-review")
     .sheet(isPresented: $showsJourneyEnding) {
       WholeShutoJourneyEndingView(model: model, placeSearch: placeSearch)
+        .environment(\.kaidoInterfaceLocale, interfaceLocale)
+    }
+    .sheet(isPresented: $showsParkingStops) {
+      WholeShutoParkingStopsView(model: model)
         .environment(\.kaidoInterfaceLocale, interfaceLocale)
     }
     .onChange(of: model.phase) { _, phase in

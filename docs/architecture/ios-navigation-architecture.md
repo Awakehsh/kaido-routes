@@ -2284,6 +2284,31 @@ membership and never becomes a fare shortcut. Shared approach/return roads keep
 their original role. A modelled interior alone does not authorize an unsupported
 external-expressway entrance or enroll the route for live navigation.
 
+### Selected parking-area stops
+
+After route selection, the review offers a PA-stop editor for catalog, custom
+and saved routes. Candidates must connect from an exact earlier route node,
+traverse their complete reviewed interior, and return to the same or a later
+occurrence. Each connecting leg and the replaced bypass are bounded to 3 km
+inside the directed expressway graph. Search stops on reaching the selected
+route, and cannot cross another parking interior or replace a lap boundary.
+Facility proximity candidates are not exit authority: PA ramps can appear in
+those candidate lists, so they cannot be used to exclude PA access.
+
+Selected stops occur once, on the first compatible pass, and are assembled in
+route order. Overlapping incompatible detours reject the edit atomically. The
+remaining route edges, entrance, exit, and lap count are retained; lap boundaries
+move with the inserted geometry. Tariff pairing is unchanged. Stops required by
+the named course remain listed as included.
+
+The App retains the exact base RoutePlan and selected PA IDs as one parking-stop
+selection. Checkpoints and shared-route template metadata preserve that selection;
+restoring replays it against the validated base and requires exact full-plan
+equality. Removing added stops restores the original plan. Exit edits and added
+laps retain selected stops or reject the change. Stop editing is available only
+before departure. A new plan resolves its own foreground navigation admission;
+missing guidance or recovery evidence remains a visible blocker.
+
 ### Pre-departure journey ending
 
 The App persists an explicit journey ending alongside the exact route checkpoint:

@@ -35,6 +35,9 @@ before trusting any guidance this product gives.
   Mirai, and the Yokohama Bay Bridge that also enters Daikoku PA. The driver picks a route, never designs
   an entrance: selecting one derives the direction-valid pairing, offers a 1–9
   lap count on loops, and shows a tariff band from dated operator evidence.
+- Lets the driver add reachable PA stops from journey review, with actual
+  directional access and return, one visit on the first pass, and saved-route
+  restoration.
 - Presents three maps for one selected route — the whole-network line map, the
   geographic MapKit map, and a whole-route track map that fits the entire route
   in one readable frame with every on-route IC, JCT, and PA labeled.

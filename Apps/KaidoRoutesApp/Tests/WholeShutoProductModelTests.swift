@@ -2698,7 +2698,10 @@ final class WholeShutoProductModelTests: XCTestCase {
   }
 
   func testCircuitSelectionDerivesThePairingFromOrigin() async {
-    let model = WholeShutoProductModel(checkpointStore: nil)
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = WholeShutoProductModel(checkpointStore: nil, driveRecordPreferenceStore: defaults)
     // Near Hatsudai, west side of the C2 loop.
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
@@ -2729,9 +2732,13 @@ final class WholeShutoProductModelTests: XCTestCase {
   }
 
   func testReleasedC1CatalogStillRecommendsHatsudaiFromHatsudai() async {
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
-      checkpointStore: nil
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
@@ -2843,10 +2850,14 @@ final class WholeShutoProductModelTests: XCTestCase {
   }
 
   func testCircuitJourneyIsARoundTripThroughTheReviewGate() async {
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
     let model = WholeShutoProductModel(
       locationProvider: WholeShutoUnexpectedLocationProvider(),
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
-      checkpointStore: nil
+      checkpointStore: nil,
+      driveRecordPreferenceStore: defaults
     )
     let origin = ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
     model.selectCurrentOrigin(origin)

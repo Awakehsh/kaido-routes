@@ -12,6 +12,7 @@ public enum NavigationRuntimePolicyIssue: Equatable, Sendable {
   case invalidRecoveryCandidate(String)
   case duplicateRecoveryCandidate
   case missingReleasedEgress
+  case unexpectedParkingAreaEgress
   case invalidEgressOption(String)
   case duplicateEgressOptionID(String)
   case invalidLapBoundaries
@@ -34,6 +35,8 @@ public enum NavigationRuntimePolicyIssue: Equatable, Sendable {
       "INVALID_RUNTIME_RECOVERY_CANDIDATE"
     case .duplicateRecoveryCandidate:
       "DUPLICATE_RUNTIME_RECOVERY_CANDIDATE"
+    case .unexpectedParkingAreaEgress:
+      "UNEXPECTED_PARKING_AREA_EGRESS"
     case .missingReleasedEgress:
       "MISSING_RELEASED_RUNTIME_EGRESS"
     case .invalidEgressOption:
@@ -229,7 +232,10 @@ public struct ReleasedNavigationRuntimePolicy: Codable, Equatable, Sendable {
       }
     }
 
-    if egressOptions.isEmpty {
+    if routePlan.destinationParkingAreaID != nil && !egressOptions.isEmpty {
+      issues.append(.unexpectedParkingAreaEgress)
+    }
+    if egressOptions.isEmpty && routePlan.destinationParkingAreaID == nil {
       issues.append(.missingReleasedEgress)
     }
     let egressIDs = egressOptions.map(\.id)

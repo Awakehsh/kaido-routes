@@ -4,49 +4,64 @@ import XCTest
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
 
-  func testWholeShutoAddsAndRemovesDirectionalParkingStop() {
+  func testDaikokuRecommendationEndsAtPA() {
     continueAfterFailure = false
     let app = XCUIApplication()
-    app.launchArguments = [
-      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW",
-      "-app.kaidoroutes.language.interface", "en",
-      "-app.kaidoroutes.surface-route.preference", "PREFER_HIGHWAYS",
-    ]
+    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW", "-app.kaidoroutes.language.interface", "en"]
     app.launchSilently()
     let circuit = element("whole-shuto-circuit-option-shuto.circuit.wangan-daikoku-run", in: app)
     XCTAssertTrue(circuit.waitForExistence(timeout: 8))
     circuit.tap()
-    let useRoute = element("whole-shuto-start-circuit", in: app)
-    XCTAssertTrue(useRoute.waitForExistence(timeout: 5))
-    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: useRoute)], timeout: 20), .completed)
-    useRoute.tap()
-    let edit = element("whole-shuto-review-edit-parking-stops", in: app)
-    XCTAssertTrue(edit.waitForExistence(timeout: 8))
-    edit.tap()
-    let stop = app.buttons["whole-shuto-parking-stop-shuto.pa.oi-westbound"]
-    XCTAssertTrue(stop.waitForExistence(timeout: 8))
-    XCTAssertFalse(app.buttons["whole-shuto-parking-stop-shuto.pa.oi-eastbound"].exists)
-    stop.tap()
-    XCTAssertTrue(stop.isSelected)
-    element("whole-shuto-parking-stops-apply", in: app).tap()
-    let summary = element("whole-shuto-review-parking-stops", in: app)
-    XCTAssertTrue(summary.waitForExistence(timeout: 10))
-    let picture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-    picture.lifetime = .keepAlways
-    add(picture)
-    XCTAssertTrue(summary.label.contains("大井PA"), summary.label)
-    XCTAssertTrue(summary.label.contains("大黒PA"))
+    let use = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(use.waitForExistence(timeout: 5))
+    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: use)], timeout: 20), .completed)
+    let pairing = element("whole-shuto-circuit-pairing", in: app)
+    XCTAssertTrue(pairing.label.contains("大黒PA"))
+    XCTAssertFalse(pairing.label.contains("RECOMMENDED EXIT"))
+    use.tap()
+    let destination = element("whole-shuto-route-destination", in: app)
+    XCTAssertTrue(destination.waitForExistence(timeout: 8))
+    XCTAssertTrue(destination.label.contains("DESTINATION"))
+    XCTAssertTrue(destination.label.contains("大黒PA"))
+    XCTAssertFalse(element("whole-shuto-review-edit-parking-stops", in: app).exists)
     let start = element("whole-shuto-start-live-drive", in: app)
     XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: start)], timeout: 20), .completed)
-    edit.tap()
-    XCTAssertTrue(stop.waitForExistence(timeout: 8))
-    XCTAssertTrue(stop.isSelected)
-    stop.tap()
-    element("whole-shuto-parking-stops-apply", in: app).tap()
-    XCTAssertTrue(summary.waitForExistence(timeout: 10))
-    XCTAssertFalse(summary.label.contains("大井PA"))
-    XCTAssertTrue(summary.label.contains("大黒PA"))
+    let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    image.name = "Daikoku PA destination"
+    image.lifetime = .keepAlways
+    add(image)
   }
+
+  func testPAIsSelectedThroughDestinationSearch() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = ["-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-SEARCH-PREVIEW", "-app.kaidoroutes.language.interface", "zh-Hans"]
+    app.launchSilently()
+    let circuit = element("whole-shuto-circuit-option-shuto.circuit.c1-inner", in: app)
+    XCTAssertTrue(circuit.waitForExistence(timeout: 8))
+    circuit.tap()
+    let use = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(use.waitForExistence(timeout: 5))
+    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: use)], timeout: 20), .completed)
+    use.tap()
+    let edit = element("whole-shuto-review-edit-ending", in: app)
+    XCTAssertTrue(edit.waitForExistence(timeout: 8))
+    edit.tap()
+    element("whole-shuto-ending-destination", in: app).tap()
+    let search = app.textFields["whole-shuto-ending-search"]
+    XCTAssertTrue(search.waitForExistence(timeout: 5))
+    search.tap()
+    search.typeText("大黑")
+    let pa = element("whole-shuto-ending-suggestion-shuto-pa:shuto.pa.daikoku", in: app)
+    XCTAssertTrue(pa.waitForExistence(timeout: 5))
+    pa.tap()
+    element("whole-shuto-ending-apply", in: app).tap()
+    let destination = element("whole-shuto-route-destination", in: app)
+    XCTAssertTrue(destination.waitForExistence(timeout: 15))
+    XCTAssertTrue(destination.label.contains("大黒PA"), destination.label)
+    XCTAssertTrue(destination.label.contains("目的地"))
+  }
+
   func testJourneyEndingCanBeChangedBeforeDeparture() {
     continueAfterFailure = false
     let app = XCUIApplication()
@@ -1970,7 +1985,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertTrue(circuit.waitForExistence(timeout: 5))
     if circuitID == "shuto.circuit.scenic-grand-tour" {
-      let parkingStop = element("whole-shuto-circuit-pa-stops-\(circuitID)", in: app)
+      let parkingStop = element("whole-shuto-circuit-destination-\(circuitID)", in: app)
       XCTAssertTrue(parkingStop.exists)
       XCTAssertTrue(parkingStop.label.contains("大黒PA"))
     }
@@ -1996,7 +2011,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(element("whole-shuto-journey-review", in: app).waitForExistence(timeout: 8))
 
     if circuitID == "shuto.circuit.scenic-grand-tour" {
-      let parkingStop = element("whole-shuto-review-parking-stops", in: app)
+      let parkingStop = element("whole-shuto-route-destination", in: app)
       XCTAssertTrue(parkingStop.exists)
       XCTAssertTrue(parkingStop.label.contains("大黒PA"))
     }

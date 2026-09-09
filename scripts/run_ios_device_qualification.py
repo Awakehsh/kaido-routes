@@ -31,16 +31,16 @@ C1_PRODUCT_RELEASE_RESOURCE = (
     "c1-inner-shibakoen-shiodome-product-release.json"
 )
 WANGAN_PRODUCT_RELEASE_RESOURCE = (
-    "wangan-westbound-chidoricho-daikokufutou-product-release.json"
+    "wangan-westbound-chidoricho-daikoku-pa-product-release.json"
 )
 C2_PRODUCT_RELEASE_RESOURCE = (
     "c2-inner-oujiminami-shikahamabashi-product-release.json"
 )
 DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
-    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+    "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"
 )
 SCENIC_PRODUCT_RELEASE_RESOURCE = (
-    "scenic-harumi-daikokufutou-product-release.json"
+    "scenic-harumi-daikoku-pa-product-release.json"
 )
 REQUIRED_FOREGROUND_LOCATION_TEST = (
     "KaidoProductJourneyUITests/"

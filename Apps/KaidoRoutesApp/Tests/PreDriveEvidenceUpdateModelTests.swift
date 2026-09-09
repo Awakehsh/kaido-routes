@@ -627,7 +627,7 @@ private func makeSignedPreDriveEvidenceUpdate(
             TariffQuote(
               id: "\(releaseID).tariff",
               entryFacilityID: routePlan.entryFacilityID,
-              exitFacilityID: routePlan.exitFacilityID,
+              exitFacilityID: routePlan.exitFacilityID!,
               vehicleClass: .standard,
               paymentMethod: .etc,
               tariffVersionID: "\(releaseID).tariff-version",

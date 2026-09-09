@@ -1153,7 +1153,7 @@ func appBundleStagingPreparesPreDriveEvidence() throws {
             TariffQuote(
               id: "test.tariff.standard-etc.active",
               entryFacilityID: routePlan.entryFacilityID,
-              exitFacilityID: routePlan.exitFacilityID,
+              exitFacilityID: routePlan.exitFacilityID!,
               vehicleClass: .standard,
               paymentMethod: .etc,
               tariffVersionID: "test.tariff.v1",

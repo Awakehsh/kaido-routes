@@ -417,7 +417,7 @@ private func releasedAuthoringFixture() -> ReleasedAuthoringFixture {
             movementTollDomainID: "test.toll",
             outgoingEdgeID: "test.edge.exit",
             outgoingEdgeTollDomainID: "test.toll",
-            destination: .exitFacility(routePlan.exitFacilityID)
+            destination: .exitFacility(routePlan.exitFacilityID!)
           ),
         ]
       )

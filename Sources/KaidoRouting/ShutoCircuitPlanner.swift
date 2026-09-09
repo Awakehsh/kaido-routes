@@ -48,6 +48,12 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   public let exitDirectionsByRouteID: [String: String]?
   /// Unordered for `.loop`, ordered course for `.tour`.
   public let anchors: [Anchor]
+  public var defaultDestinationParkingAreaID: String? {
+    switch circuitID {
+    case Self.wanganDaikokuRun.circuitID, Self.daikokuYokohamaLoop.circuitID, Self.scenicGrandTour.circuitID: "shuto.pa.daikoku"
+    default: nil
+    }
+  }
   /// Parking areas the course actually drives into, in course order. This
   /// is read off the anchors rather than listed separately so a card can
   /// never advertise a stop the route does not make.
@@ -746,7 +752,8 @@ extension ShutoRoutePlanner {
   public func planCircuit(
     circuit: ShutoCircuitDefinition,
     entryFacilityID: String,
-    exitFacilityID: String,
+    exitFacilityID: String? = nil,
+    destinationParkingAreaID: String? = nil,
     laps: Int,
     preference: ShutoRoutePreference = .recommended
   ) throws -> ShutoPlannedRoute {
@@ -765,11 +772,12 @@ extension ShutoRoutePlanner {
     else {
       throw ShutoNetworkError.facilityUnavailable
     }
-    guard let exitFacility = facilitiesByID[exitFacilityID],
-      isEligibleExit(exitFacility, for: circuit)
-    else {
-      throw ShutoNetworkError.facilityUnavailable
-    }
+    let parkingID = destinationParkingAreaID ?? (exitFacilityID == nil ? circuit.defaultDestinationParkingAreaID : nil)
+    let parking = database.parkingAreas.first { $0.parkingAreaID == parkingID }
+    let exitFacility = parkingID == nil ? exitFacilityID.flatMap { facilitiesByID[$0] } : nil
+    guard (parking?.isDrivable == true && exitFacility == nil)
+      || (parking == nil && exitFacility.map { isEligibleExit($0, for: circuit) } == true)
+    else { throw ShutoNetworkError.facilityUnavailable }
 
     let isMember: (ShutoNetworkDatabase.Edge) -> Bool = { edge in
       edge.routeMemberships.contains {
@@ -780,7 +788,7 @@ extension ShutoRoutePlanner {
       edge.kind == "PARKING" ? .infinity : edge.lengthMeters * (isMember(edge) ? 1 : 25)
     }
     var viability: [Int64: Bool] = [:]
-    let traversal = try circuitTraversal(
+    var traversal = try circuitTraversal(
       circuit: circuit,
       entryFacility: entryFacility,
       isMember: isMember,
@@ -788,6 +796,22 @@ extension ShutoRoutePlanner {
       viability: &viability
     )
 
+    var tailEdges: [ShutoNetworkDatabase.Edge]
+    if let parking, let access = parking.accessNodeID {
+      let arrival = try parkingArrivalEdges(parking)
+      if circuit.kind == .tour, parkingID == circuit.defaultDestinationParkingAreaID,
+        let start = traversal.bodyEdges.firstIndex(where: { $0.edgeID == parking.interiorEdgeIDs?.first }) {
+        traversal.bodyEdges = Array(traversal.bodyEdges.prefix(start)) + arrival
+        traversal.finalNode = arrival.last!.toNodeID
+        tailEdges = []
+      } else {
+        let connection: [ShutoNetworkDatabase.Edge]
+        if traversal.finalNode == access { connection = [] }
+        else if let path = circuitDijkstra(from: traversal.finalNode, cost: cost, isTarget: { $0 == access }) { connection = path.edges }
+        else { throw ShutoNetworkError.routeUnavailable }
+        tailEdges = connection + arrival
+      }
+    } else if let exitFacility {
     // Exit tail from the body's final node onto the exit ramp.
     let exitEdgesByNode = Dictionary(
       grouping: exitFacility.exitEdgeCandidates.compactMap {
@@ -809,10 +833,12 @@ extension ShutoRoutePlanner {
     else {
       throw ShutoNetworkError.routeUnavailable
     }
-    var tailEdges = tail.edges
+    tailEdges = tail.edges
     if tailEdges.last?.edgeID != exitChoice.edge.edgeID {
       tailEdges.append(exitChoice.edge)
     }
+
+    } else { throw ShutoNetworkError.facilityUnavailable }
 
     // Assemble: approach + one-time entry + body + tail, with distinct
     // occurrences per lap. Laps legitimately repeat edge IDs, but never the
@@ -848,10 +874,11 @@ extension ShutoRoutePlanner {
       routeEdges: routeEdges,
       planID:
         "\(circuit.circuitID).\(entryFacility.facilityID)."
-        + "\(exitFacility.facilityID).x\(laps)."
+        + "\(parkingID ?? exitFacility!.facilityID).x\(laps)."
         + preference.rawValue.lowercased(),
       entryFacility: entryFacility,
       exitFacility: exitFacility,
+      destinationParkingArea: parking,
       preference: preference,
       lapBoundaryOccurrenceIndices: lapBoundaryOccurrenceIndices
     )
@@ -867,10 +894,10 @@ extension ShutoRoutePlanner {
     let entryEdges: [ShutoNetworkDatabase.Edge]
     /// One complete lap for a loop (join-to-join), or the tour's ordered
     /// anchor pass.
-    let bodyEdges: [ShutoNetworkDatabase.Edge]
+    var bodyEdges: [ShutoNetworkDatabase.Edge]
     /// Where the exit tail begins: the cycle's join node for a loop, the
     /// last anchor's settled node for a tour.
-    let finalNode: Int64
+    var finalNode: Int64
   }
 
   /// Entrance approach plus the experience body: one closed loop through the
@@ -1241,7 +1268,7 @@ extension ShutoRoutePlanner {
     ).first
   }
 
-  private func circuitDijkstra(
+  func circuitDijkstra(
     from node: Int64,
     cost: (ShutoNetworkDatabase.Edge) -> Double,
     isTarget: (Int64) -> Bool
@@ -1249,7 +1276,7 @@ extension ShutoRoutePlanner {
     circuitDijkstra(seeds: nil, start: node, cost: cost, isTarget: isTarget)
   }
 
-  private func circuitDijkstra(
+  func circuitDijkstra(
     seeds: [(edge: ShutoNetworkDatabase.Edge, cost: Double)],
     cost: (ShutoNetworkDatabase.Edge) -> Double,
     isTarget: (Int64) -> Bool
@@ -1259,7 +1286,7 @@ extension ShutoRoutePlanner {
 
   /// Dijkstra that stops at the first settled node satisfying `isTarget`.
   /// Either `seeds` (initial edges with entry costs) or `start` must be given.
-  private func circuitDijkstra(
+  func circuitDijkstra(
     seeds: [(edge: ShutoNetworkDatabase.Edge, cost: Double)]?,
     start: Int64?,
     cost: (ShutoNetworkDatabase.Edge) -> Double,

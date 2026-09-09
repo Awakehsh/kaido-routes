@@ -65,8 +65,8 @@
 		4707E3A6AC64A43BE01C8592 /* WholeShutoPlaceSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0325E5DA555448A0B84E92 /* WholeShutoPlaceSearch.swift */; };
 		4767D9F49ECEF92725DEB827 /* SurfaceGuidancePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A2BD1B1026BC96F01064FC0 /* SurfaceGuidancePresentation.swift */; };
 		476B06F09A52A69218B6E50E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */; };
-		485F417D7CBAECDF7CD9DA21 /* scenic-harumi-daikokufutou-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */; };
 		4CD09D0C79719A9593F042D3 /* SurfaceGuidancePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D1D1B6472277FCF3A5265C8 /* SurfaceGuidancePresentationTests.swift */; };
+		4D05A9A7B7E10FEBE93A1F0D /* WholeShutoParkingDestinationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32AB01EB48CB3DE3DDC993B8 /* WholeShutoParkingDestinationTests.swift */; };
 		4E417044D493DCB7948A36CA /* ReleasedPreDriveReviewAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */; };
 		50F7388D9A32451D365016AA /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */; };
 		50FF65EF256B2837555718F1 /* KaidoLanguageSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFDC5907A1BC3584C333F793 /* KaidoLanguageSettingsModel.swift */; };
@@ -78,9 +78,9 @@
 		57829BA952B3751A1BFAE2F7 /* AccessibilityPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FDEE275E0DBC31F898BA4AF /* AccessibilityPresentationTests.swift */; };
 		596E9BAB3B8898BF6F376F66 /* ProductMapPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FE65BD55093E129E001ACC7 /* ProductMapPresentation.swift */; };
 		5A17461F9788177CFEB81559 /* WholeShutoPlaceSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */; };
-		5A8C6FF6A1D1466FAB742B4D /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */; };
 		5AF7405A190D46C2DFC2BFC5 /* NavigationDirectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B2C9A1B077BC60411BCE86 /* NavigationDirectionPresentation.swift */; };
 		60D3A41D68FDBD7D42B484F7 /* PreDriveReviewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */; };
+		634507EE66CE11E793DAF13C /* scenic-harumi-daikoku-pa-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = CFF48D41A24F3B322ADC10F8 /* scenic-harumi-daikoku-pa-product-release.json */; };
 		63E970D570EA5576C405BC52 /* C2NavigationSimulationCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD0405FCF6D31299D402AA9 /* C2NavigationSimulationCheckpoint.swift */; };
 		662B88AFA6B0F34490E16BC8 /* PreDriveEvidenceUpdateModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4D63D422B5B3BEB535A9FB /* PreDriveEvidenceUpdateModelTests.swift */; };
 		671E16E37ACA407EB59980C1 /* ReleasedProductRouteAuthoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A8B0425C0CC1F8FA065C1E /* ReleasedProductRouteAuthoringView.swift */; };
@@ -96,6 +96,7 @@
 		83C0DA0AB4B4AC2FE0B37685 /* WholeShutoCircuitPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BB42819267BFC864279543 /* WholeShutoCircuitPreview.swift */; };
 		841565C0474C09A23C617351 /* GuidanceLanguagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E8C76F7E6532336CDD0F93 /* GuidanceLanguagePreviewView.swift */; };
 		849BF0098114A8C312385F9C /* WholeShutoProductModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */; };
+		84FE008E51460C32124A03B9 /* daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = AAF17439F9A53F5C78AA6B69 /* daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json */; };
 		85750FE5B66D3EC99D5B58FB /* WholeShutoPlanningLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BED1ED1DA8F4825026BE701 /* WholeShutoPlanningLocation.swift */; };
 		85C674A8426D06B48ED788F7 /* NavigationDirectionPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513FF3BEE47FE636B05D5775 /* NavigationDirectionPresentationTests.swift */; };
 		86F626BF00728796BE3E1ECC /* EntranceRecommendationModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */; };
@@ -105,7 +106,6 @@
 		8FD82720A2E114FCF69A0913 /* SVGDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB5D61A98CB97E44D303AEC4 /* SVGDocumentView.swift */; };
 		909E7D0B346C9262E90C031C /* ProductRuntimeDrivingSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D732025FBD031E83CAF8F68 /* ProductRuntimeDrivingSurface.swift */; };
 		933250A124B4B18A5C48BF84 /* ReviewedJunctionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74868FE276DA071B41A17E1 /* ReviewedJunctionView.swift */; };
-		98950D234F00697C62B50ECF /* wangan-westbound-chidoricho-daikokufutou-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = 2585B4B30CCB02C8B3693F6E /* wangan-westbound-chidoricho-daikokufutou-product-release.json */; };
 		9AB557C7D61A3F0F978EB360 /* GuidanceLanguagePreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143F085A1EAFEE61D890FB8D /* GuidanceLanguagePreviewModelTests.swift */; };
 		9C228CFD1D027B401F4B8B48 /* RouteExperienceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC47F9C0741F7D959EA38B5 /* RouteExperienceUITests.swift */; };
 		9F8AB6CB19E6094A764D5647 /* EntranceRecommendationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DB70931089A7F81AE44D31 /* EntranceRecommendationView.swift */; };
@@ -135,7 +135,6 @@
 		BE5D8080326ADECF7D124B2C /* DATA-LICENSES.md in Resources */ = {isa = PBXBuildFile; fileRef = 69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */; };
 		BF9A8C170E739B830BB78600 /* KaidoTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9AB830F5C99CAC0D5E4E89 /* KaidoTheme.swift */; };
 		C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */ = {isa = PBXBuildFile; fileRef = 64D7D57200F5A1FF4D631BC2 /* k7-northwest-260721-directed-database.json */; };
-		C5F73FCAC28641360024B28B /* WholeShutoParkingStopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00469A737BBDA41859FC1B1 /* WholeShutoParkingStopTests.swift */; };
 		C761E584BB6922A734653C9E /* ProductPrivacyDisclosureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3A347D84B33D5AAB7D8743 /* ProductPrivacyDisclosureTests.swift */; };
 		C99DB12D9900D0ED4C6F67B8 /* InternalLocationCalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A29BADA2DFB4418389E861A /* InternalLocationCalibrationModel.swift */; };
 		CABFBDC28C01E07693A64781 /* BundledProductReleaseCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7738D0CC954922A7B094FA /* BundledProductReleaseCatalogTests.swift */; };
@@ -151,6 +150,7 @@
 		E0E010C348B56A895ED13E36 /* RouteExperiencePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFBFBDE5334E8B0E5B08498 /* RouteExperiencePresentationTests.swift */; };
 		E59C1A3700EA94AF253BBC53 /* ProductJunctionInsetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285D35C9D855FBA6B08F704E /* ProductJunctionInsetView.swift */; };
 		E6D5B3411B23A3A3CC0B5DC4 /* PhysicalAudioQualificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */; };
+		E8E331F6764EF25B928E36AB /* wangan-westbound-chidoricho-daikoku-pa-product-release.json in Resources */ = {isa = PBXBuildFile; fileRef = 443B741A406DDFCAFC998047 /* wangan-westbound-chidoricho-daikoku-pa-product-release.json */; };
 		EB9E33B1837B9E11C01BE548 /* KaidoPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 55CA08F012ED78E3B6403A9D /* KaidoPresentation */; };
 		EDAC0E9181F85ED0E70DA712 /* ProductNavigationRuntimeModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */; };
 		EE2095C8B683BEBA65A3BC25 /* SyntheticDrivingPreviewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */; };
@@ -162,7 +162,6 @@
 		F815C81DE2CF396F6157F974 /* KaidoAppleAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 979F0DF2D8FF6A142C418A82 /* KaidoAppleAdapters */; };
 		FA2443F23B10D16E1407FB84 /* SavedRouteLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3B53DC4DAC4186DC2F3FEEB /* SavedRouteLibraryView.swift */; };
 		FB308B360BDC095EF539C493 /* WholeShutoLiveJourneyAdmission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */; };
-		FDB511CCE21064BFAD8419E2 /* WholeShutoParkingStopsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B9EC9801C189411533DD4B7 /* WholeShutoParkingStopsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -205,7 +204,6 @@
 		20E264620254982057122D82 /* GuidanceSpeechProsodyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceSpeechProsodyTests.swift; sourceTree = "<group>"; };
 		21EC9E55887FD44C8699F108 /* KaidoProductJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoProductJourneyView.swift; sourceTree = "<group>"; };
 		25764130E5590ADC3D3E7158 /* BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BundledProductReleaseDescriptor+releasedK7AobaKohoku.swift"; sourceTree = "<group>"; };
-		2585B4B30CCB02C8B3693F6E /* wangan-westbound-chidoricho-daikokufutou-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "wangan-westbound-chidoricho-daikokufutou-product-release.json"; sourceTree = "<group>"; };
 		285D35C9D855FBA6B08F704E /* ProductJunctionInsetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductJunctionInsetView.swift; sourceTree = "<group>"; };
 		28D52FB9F585EC5403D669D2 /* PreDriveReviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewModel.swift; sourceTree = "<group>"; };
 		2940C3E443E4E0CE8AECA910 /* ProductMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMapView.swift; sourceTree = "<group>"; };
@@ -218,6 +216,7 @@
 		2E6E5EFF9C6EA822392F9579 /* WholeShutoNetworkOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoNetworkOverviewView.swift; sourceTree = "<group>"; };
 		3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductModelTests.swift; sourceTree = "<group>"; };
 		313817A04D3745DA3B692788 /* WholeShutoAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoAttribution.swift; sourceTree = "<group>"; };
+		32AB01EB48CB3DE3DDC993B8 /* WholeShutoParkingDestinationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoParkingDestinationTests.swift; sourceTree = "<group>"; };
 		37030EBBC3D8321FBC21C013 /* XCUIApplication+SilentAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+SilentAudio.swift"; sourceTree = "<group>"; };
 		3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "k7-aoba-kohoku-product-release.json"; sourceTree = "<group>"; };
 		3FF8AE670E31999C405C8AEF /* GuidanceVoiceSetupModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceVoiceSetupModel.swift; sourceTree = "<group>"; };
@@ -226,6 +225,7 @@
 		41A215108E1FC296D2F221BB /* ParkedRouteEditorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkedRouteEditorModel.swift; sourceTree = "<group>"; };
 		4353A7C0060DDDFD297D330B /* BundledProductReleaseCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledProductReleaseCatalog.swift; sourceTree = "<group>"; };
 		44252DA4C7228D8FF042990B /* ProductNavigationRuntimeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNavigationRuntimeModel.swift; sourceTree = "<group>"; };
+		443B741A406DDFCAFC998047 /* wangan-westbound-chidoricho-daikoku-pa-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "wangan-westbound-chidoricho-daikoku-pa-product-release.json"; sourceTree = "<group>"; };
 		4860344042C17F616B51F445 /* RouteAtlasAttribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasAttribution.swift; sourceTree = "<group>"; };
 		49835B009E287E91711B8440 /* KaidoRoutesAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KaidoRoutesAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B612524090282FD210010B6 /* ProductPrivacyDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductPrivacyDisclosure.swift; sourceTree = "<group>"; };
@@ -255,7 +255,6 @@
 		69147BBABA2EF4B7E19789F2 /* DATA-LICENSES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "DATA-LICENSES.md"; sourceTree = "<group>"; };
 		6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "c1-inner-shibakoen-shiodome-product-release.json"; sourceTree = "<group>"; };
 		6B873DEC75409AAFB65937FC /* WholeShutoProductView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoProductView.swift; sourceTree = "<group>"; };
-		6B9EC9801C189411533DD4B7 /* WholeShutoParkingStopsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoParkingStopsView.swift; sourceTree = "<group>"; };
 		724E1A967B66218F66338316 /* C2NavigationDemoModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2NavigationDemoModelTests.swift; sourceTree = "<group>"; };
 		7285F0D9E6592F67177F0C3E /* KaidoInterfaceLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoInterfaceLocalization.swift; sourceTree = "<group>"; };
 		7736D4DA384D6C8C19BC71A7 /* C2RouteMapDemoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2RouteMapDemoUITests.swift; sourceTree = "<group>"; };
@@ -264,6 +263,7 @@
 		7DB10DCDB5DE91AA259C3374 /* k7-northwest-up-schematic-layout-candidate.svg */ = {isa = PBXFileReference; name = "k7-northwest-up-schematic-layout-candidate.svg"; path = "data/route-atlas/design/k7-northwest-up-schematic-layout-candidate.svg"; sourceTree = "<group>"; };
 		7F7C73907F15E829FA68F725 /* GuidanceLanguagePreviewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceLanguagePreviewModel.swift; sourceTree = "<group>"; };
 		808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		80B26E9619EA66F5E72B0A68 /* kaido-routes-pa-destination */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "kaido-routes-pa-destination"; path = .; sourceTree = SOURCE_ROOT; };
 		81A8B0425C0CC1F8FA065C1E /* ReleasedProductRouteAuthoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedProductRouteAuthoringView.swift; sourceTree = "<group>"; };
 		840075C8ECA7E7DE38E7CA3C /* RouteAtlasAttributionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteAtlasAttributionTests.swift; sourceTree = "<group>"; };
 		854053935371D02A8D7FA02C /* ReleasedRouteAtlasOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedRouteAtlasOverlayView.swift; sourceTree = "<group>"; };
@@ -281,32 +281,30 @@
 		9D3A347D84B33D5AAB7D8743 /* ProductPrivacyDisclosureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductPrivacyDisclosureTests.swift; sourceTree = "<group>"; };
 		9DC9AA866756A460B50F87FB /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9DFBFBDE5334E8B0E5B08498 /* RouteExperiencePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteExperiencePresentationTests.swift; sourceTree = "<group>"; };
-		9FBED816EA5A81A86D19FBDA /* kaido-routes-pa-stops */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "kaido-routes-pa-stops"; path = .; sourceTree = SOURCE_ROOT; };
 		A29CAA7001DCF9EF232B946B /* KRU09AccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KRU09AccessibilityUITests.swift; sourceTree = "<group>"; };
 		A437502620FD5CCA04946CD2 /* route-atlas-attribution-catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "route-atlas-attribution-catalog.json"; path = "data/route-atlas/attribution/route-atlas-attribution-catalog.json"; sourceTree = "<group>"; };
 		A4CDBBFC239E662E4EB5D756 /* ProductNavigationRuntimeModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNavigationRuntimeModelTests.swift; sourceTree = "<group>"; };
+		AAF17439F9A53F5C78AA6B69 /* daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"; sourceTree = "<group>"; };
 		AD18271D219AF8FB4C72DC68 /* shuto-whole-network-20260804.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "shuto-whole-network-20260804.json"; path = "data/route-atlas/osm-derived/shuto-whole-network-20260804.json"; sourceTree = "<group>"; };
 		AE06593404F9897BBE1EECFC /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		AE9FE55ECE6700CA7B314230 /* C2GeographicRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = C2GeographicRoute.swift; sourceTree = "<group>"; };
 		AF15120C1A23DE1F49A10BF1 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
-		B00469A737BBDA41859FC1B1 /* WholeShutoParkingStopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoParkingStopTests.swift; sourceTree = "<group>"; };
 		B1754D0B3FE5250D4AABFFC1 /* EntranceRecommendationModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntranceRecommendationModelTests.swift; sourceTree = "<group>"; };
 		B1B699DE0B2A6865D8098DFF /* PhysicalAudioQualificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysicalAudioQualificationUITests.swift; sourceTree = "<group>"; };
 		B3512D6D318BE2C5B1E03B89 /* GuidanceVoiceSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidanceVoiceSetupView.swift; sourceTree = "<group>"; };
 		BC0F8D70D2982940B15C5D30 /* DriveHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveHistoryView.swift; sourceTree = "<group>"; };
-		BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "scenic-harumi-daikokufutou-product-release.json"; sourceTree = "<group>"; };
 		BDCE7C8BB4AC641AC2D81189 /* KaidoMapPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KaidoMapPalette.swift; sourceTree = "<group>"; };
 		BE76289EC570C8F9B8864AE7 /* WholeShutoJourneyEndingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoJourneyEndingView.swift; sourceTree = "<group>"; };
 		BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoPlaceSearchTests.swift; sourceTree = "<group>"; };
 		C58E83A4DC20AADFB1B2ACA9 /* PreDriveReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreDriveReviewView.swift; sourceTree = "<group>"; };
 		C68D697CA5443959E84E8E3A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"; sourceTree = "<group>"; };
 		C836965E12C990BA77B852C6 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "c2-inner-oujiminami-shikahamabashi-product-release.json"; sourceTree = "<group>"; };
 		CCA5555BEBBE87EAAC5F97D7 /* ReleasedPreDriveReviewAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleasedPreDriveReviewAdapter.swift; sourceTree = "<group>"; };
 		CD289A633C0766AE7B609BBB /* SyntheticProductRuntimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticProductRuntimeView.swift; sourceTree = "<group>"; };
 		CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticDrivingPreviewModelTests.swift; sourceTree = "<group>"; };
 		CFD2D2EDE8B84321C2C4F521 /* SavedRouteLibraryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRouteLibraryModel.swift; sourceTree = "<group>"; };
+		CFF48D41A24F3B322ADC10F8 /* scenic-harumi-daikoku-pa-product-release.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "scenic-harumi-daikoku-pa-product-release.json"; sourceTree = "<group>"; };
 		D08D9DCF72937204851E6C51 /* WholeShutoSurfaceRouteResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WholeShutoSurfaceRouteResolver.swift; sourceTree = "<group>"; };
 		D6736A54DBD926E1D2965FE9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D7BCE0D5D6D140E232C6C0B6 /* SavedRouteLibraryModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRouteLibraryModelTests.swift; sourceTree = "<group>"; };
@@ -368,14 +366,14 @@
 				D6736A54DBD926E1D2965FE9 /* Assets.xcassets */,
 				6924B37777ADB5A2DA1A6F86 /* c1-inner-shibakoen-shiodome-product-release.json */,
 				C8F4CB3DB0080FBFE6E0901F /* c2-inner-oujiminami-shikahamabashi-product-release.json */,
-				C7E77C2B670148C5108727F4 /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json */,
+				AAF17439F9A53F5C78AA6B69 /* daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json */,
 				3F7012F60E810F26B38A972E /* k7-aoba-kohoku-product-release.json */,
 				AE06593404F9897BBE1EECFC /* Localizable.strings */,
 				5A14EC675AE55EDC7B937A76 /* Localizable.strings */,
 				808A5729C39F912F292AF813 /* PrivacyInfo.xcprivacy */,
-				BD7F375B1BD279B028FB4997 /* scenic-harumi-daikokufutou-product-release.json */,
+				CFF48D41A24F3B322ADC10F8 /* scenic-harumi-daikoku-pa-product-release.json */,
 				FC5E8902DCF6DB8722F58181 /* synthetic-product-runtime-preview.json */,
-				2585B4B30CCB02C8B3693F6E /* wangan-westbound-chidoricho-daikokufutou-product-release.json */,
+				443B741A406DDFCAFC998047 /* wangan-westbound-chidoricho-daikoku-pa-product-release.json */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -427,7 +425,7 @@
 				CEB8ED588AB564F6358D154F /* SyntheticDrivingPreviewModelTests.swift */,
 				FC391ECE79DA9EEFC6D198F0 /* SyntheticProductRuntimeTests.swift */,
 				E729B5FD665FA2783F79978F /* WholeShutoDriveRecordTests.swift */,
-				B00469A737BBDA41859FC1B1 /* WholeShutoParkingStopTests.swift */,
+				32AB01EB48CB3DE3DDC993B8 /* WholeShutoParkingDestinationTests.swift */,
 				BFB8FB89399FBEB49ED719E3 /* WholeShutoPlaceSearchTests.swift */,
 				3128FC6C7F9ECF1EC546B56B /* WholeShutoProductModelTests.swift */,
 			);
@@ -596,7 +594,6 @@
 				0E6AFC75CA28D669D84FB2F2 /* WholeShutoJourneyReviewView.swift */,
 				0E0E1B92ECC5F3D6842D7F17 /* WholeShutoLiveJourneyAdmission.swift */,
 				2E6E5EFF9C6EA822392F9579 /* WholeShutoNetworkOverviewView.swift */,
-				6B9EC9801C189411533DD4B7 /* WholeShutoParkingStopsView.swift */,
 				EA0325E5DA555448A0B84E92 /* WholeShutoPlaceSearch.swift */,
 				5BED1ED1DA8F4825026BE701 /* WholeShutoPlanningLocation.swift */,
 				585D8C199F1B1DEFBE693839 /* WholeShutoProductModel.swift */,
@@ -612,7 +609,7 @@
 		B8E1BD3838F91AF3F2A70CE0 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				9FBED816EA5A81A86D19FBDA /* kaido-routes-pa-stops */,
+				80B26E9619EA66F5E72B0A68 /* kaido-routes-pa-destination */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -749,18 +746,18 @@
 				D9DA8D74EBCD52E47B1DD727 /* c1-inner-shibakoen-shiodome-product-release.json in Resources */,
 				17DE47CC2DCB6BEC688F7290 /* c2-b-20260729-geographic-route.json in Resources */,
 				BD073C925A7F718C73B7F5CF /* c2-inner-oujiminami-shikahamabashi-product-release.json in Resources */,
-				5A8C6FF6A1D1466FAB742B4D /* daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json in Resources */,
+				84FE008E51460C32124A03B9 /* daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json in Resources */,
 				36670BFBFA13819C2634FB16 /* k7-aoba-kohoku-product-release.json in Resources */,
 				9FA9A38618E777012F472E10 /* k7-aoba-to-kohoku-pre-drive-evidence.json in Resources */,
 				C25B16EC89CBA4FC0538D756 /* k7-northwest-260721-directed-database.json in Resources */,
 				03DB3A344A501784A33E0EBE /* k7-northwest-up-aoba-to-kohoku-osm-directed-candidate.json in Resources */,
 				56BA1A9B39639CA7CD7E49F5 /* k7-northwest-up-schematic-layout-candidate.svg in Resources */,
 				B0D80A3B61AD987BABA0C185 /* route-atlas-attribution-catalog.json in Resources */,
-				485F417D7CBAECDF7CD9DA21 /* scenic-harumi-daikokufutou-product-release.json in Resources */,
+				634507EE66CE11E793DAF13C /* scenic-harumi-daikoku-pa-product-release.json in Resources */,
 				211ED91DCD10DE378C66C716 /* shuto-route-atlas-recognition-reference.svg in Resources */,
 				81801BF41CD099F27C8B94A7 /* shuto-whole-network-20260804.json in Resources */,
 				2CF691B8B6F3BDF54DA7EEEA /* synthetic-product-runtime-preview.json in Resources */,
-				98950D234F00697C62B50ECF /* wangan-westbound-chidoricho-daikokufutou-product-release.json in Resources */,
+				E8E331F6764EF25B928E36AB /* wangan-westbound-chidoricho-daikoku-pa-product-release.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -807,7 +804,7 @@
 				EE2095C8B683BEBA65A3BC25 /* SyntheticDrivingPreviewModelTests.swift in Sources */,
 				6E68F9CECE3EB180CCF7A871 /* SyntheticProductRuntimeTests.swift in Sources */,
 				18D1E35E5D2E762BAE5ADF87 /* WholeShutoDriveRecordTests.swift in Sources */,
-				C5F73FCAC28641360024B28B /* WholeShutoParkingStopTests.swift in Sources */,
+				4D05A9A7B7E10FEBE93A1F0D /* WholeShutoParkingDestinationTests.swift in Sources */,
 				5A17461F9788177CFEB81559 /* WholeShutoPlaceSearchTests.swift in Sources */,
 				849BF0098114A8C312385F9C /* WholeShutoProductModelTests.swift in Sources */,
 			);
@@ -903,7 +900,6 @@
 				F0BDB7C776E286F447A5A8D2 /* WholeShutoJourneyReviewView.swift in Sources */,
 				FB308B360BDC095EF539C493 /* WholeShutoLiveJourneyAdmission.swift in Sources */,
 				44C3504E6B2151998C6D1683 /* WholeShutoNetworkOverviewView.swift in Sources */,
-				FDB511CCE21064BFAD8419E2 /* WholeShutoParkingStopsView.swift in Sources */,
 				4707E3A6AC64A43BE01C8592 /* WholeShutoPlaceSearch.swift in Sources */,
 				85750FE5B66D3EC99D5B58FB /* WholeShutoPlanningLocation.swift in Sources */,
 				4184B60786F78FA50517D541 /* WholeShutoProductModel.swift in Sources */,

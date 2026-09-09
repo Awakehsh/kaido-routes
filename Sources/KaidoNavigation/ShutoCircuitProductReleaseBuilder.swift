@@ -38,12 +38,11 @@ public enum ShutoCircuitProductReleaseBuilder {
   public static let exitFacilityID = "shuto.ic.c1.shiodome"
   public static let releaseDate = "2026-09-07"
   public static let releasedAt = "2026-09-07T00:00:00+09:00"
+  public static let daikokuParkingAreaID = "shuto.pa.daikoku"
   public static let wanganCircuitID =
     "shuto.circuit.wangan-daikoku-run"
   public static let wanganEntryFacilityID =
     "shuto.ic.b.chidoricho"
-  public static let wanganExitFacilityID =
-    "shuto.ic.b.daikokufutou"
   public static let c2CircuitID =
     "shuto.circuit.c2-inner-bayshore"
   public static let c2EntryFacilityID =
@@ -54,14 +53,10 @@ public enum ShutoCircuitProductReleaseBuilder {
     "shuto.circuit.daikoku-yokohama-loop"
   public static let daikokuEntryFacilityID =
     "shuto.ic.b.wangankanpachi"
-  public static let daikokuExitFacilityID =
-    "shuto.ic.b.daikokufutou"
   public static let scenicCircuitID =
     "shuto.circuit.scenic-grand-tour"
   public static let scenicEntryFacilityID =
     "shuto.ic.10.harumi"
-  public static let scenicExitFacilityID =
-    "shuto.ic.b.daikokufutou"
 
   public static func plannedRoute(
     database: ShutoNetworkDatabase
@@ -107,7 +102,6 @@ public enum ShutoCircuitProductReleaseBuilder {
     return try ShutoRoutePlanner(database: database).planCircuit(
       circuit: circuit,
       entryFacilityID: entryFacilityID,
-      exitFacilityID: wanganExitFacilityID,
       laps: 1
     )
   }
@@ -125,7 +119,7 @@ public enum ShutoCircuitProductReleaseBuilder {
         database: database,
         entryFacilityID: entryFacilityID
       ),
-      releaseKey: "wangan-westbound-\(entryKey)-daikokufutou",
+      releaseKey: "wangan-westbound-\(entryKey)-daikoku-pa",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -172,7 +166,6 @@ public enum ShutoCircuitProductReleaseBuilder {
     return try ShutoRoutePlanner(database: database).planCircuit(
       circuit: circuit,
       entryFacilityID: daikokuEntryFacilityID,
-      exitFacilityID: daikokuExitFacilityID,
       laps: 1
     )
   }
@@ -183,7 +176,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     try buildArtifact(
       database: database,
       route: plannedDaikokuRoute(database: database),
-      releaseKey: "daikoku-yokohama-wangankanpachi-daikokufutou",
+      releaseKey: "daikoku-yokohama-wangankanpachi-daikoku-pa",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -201,7 +194,6 @@ public enum ShutoCircuitProductReleaseBuilder {
     return try ShutoRoutePlanner(database: database).planCircuit(
       circuit: circuit,
       entryFacilityID: scenicEntryFacilityID,
-      exitFacilityID: scenicExitFacilityID,
       laps: 1
     )
   }
@@ -212,7 +204,7 @@ public enum ShutoCircuitProductReleaseBuilder {
     try buildArtifact(
       database: database,
       route: plannedScenicRoute(database: database),
-      releaseKey: "scenic-harumi-daikokufutou",
+      releaseKey: "scenic-harumi-daikoku-pa",
       preferredRecoveryTriggerID: nil
     )
   }
@@ -362,15 +354,15 @@ public enum ShutoCircuitProductReleaseBuilder {
         firstRouteOccurrenceID: route.routePlan.occurrences[0].id
       ),
       recoveryCandidates: releaseRecovery.map { [$0] } ?? [],
-      egressOptions: [
+      egressOptions: route.exitFacility.map { exit in [
         EgressOption(
           id: egressOptionID,
           firstEligibleOccurrenceID: route.routePlan.occurrences.last!.id,
-          exitFacilityID: route.exitFacility.facilityID,
+          exitFacilityID: exit.facilityID,
           egressOccurrenceIDs: [route.edges.last!.edgeID],
           isReleased: true
         )
-      ],
+      ] } ?? [],
       // The planner's lap marks become released structure, so the navigation
       // core can find one lap ahead on its own.
       lapBoundaryOccurrenceIDs: route.lapBoundaryOccurrenceIndices.compactMap {
@@ -508,7 +500,8 @@ public enum ShutoCircuitProductReleaseBuilder {
         initialEdgeID: route.routePlan.occurrences[0].entityID,
         initialEdgeTollDomainID:
           route.routePlan.occurrences[0].tollDomainID!,
-        directExitFacilityID: route.exitFacility.facilityID,
+        directExitFacilityID: route.exitFacility?.facilityID,
+        directParkingAreaID: route.destinationParkingArea?.parkingAreaID,
         directRouteOccurrences: route.routePlan.occurrences
       )
     }
@@ -531,7 +524,7 @@ public enum ShutoCircuitProductReleaseBuilder {
               destination:
                 offset + 1 < reviewedMovements.count
                 ? .decisionPoint(decisionID(reviewedMovements[offset + 1]))
-                : .exitFacility(route.exitFacility.facilityID)
+                : (route.destinationParkingArea.map { ReviewedRouteEditorDestination.parkingArea($0.parkingAreaID) } ?? .exitFacility(route.exitFacility!.facilityID))
             )
           ]
         )
@@ -558,13 +551,13 @@ public enum ShutoCircuitProductReleaseBuilder {
         .simplifiedChinese: "王子南入口",
         .english: "Oji-minami entrance",
       ]
-    case "daikoku-yokohama-wangankanpachi-daikokufutou":
+    case "daikoku-yokohama-wangankanpachi-daikoku-pa":
       entranceTitle = [
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "湾岸环八入口",
         .english: "Wangan-Kanpachi entrance",
       ]
-    case "scenic-harumi-daikokufutou":
+    case "scenic-harumi-daikoku-pa":
       entranceTitle = [
         .japanese: "\(route.entryFacility.nameJA)入口",
         .simplifiedChinese: "晴海入口",

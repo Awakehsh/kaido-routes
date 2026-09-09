@@ -312,6 +312,7 @@ struct ProductTopologyFacilityPresentation: Equatable, Sendable {
   ) -> ProductTopologyFacilityPresentation? {
     let bundle = release.navigation.bundle
     let routePlan = bundle.routePlan
+    guard let exitFacilityID = routePlan.exitFacilityID else { return nil }
     let editorCatalog = bundle.editorCatalog
     let presentationCatalog = bundle.editorPresentationCatalog
     let definition = release.routeAtlas.definition
@@ -442,7 +443,7 @@ struct ProductTopologyFacilityPresentation: Equatable, Sendable {
       + junctionLandmarks.sorted { $0.occurrenceIndex < $1.occurrenceIndex }
       + [
         ProductTopologyLandmark(
-          id: routePlan.exitFacilityID,
+          id: exitFacilityID,
           kind: .exit,
           occurrenceIndex: exitOccurrence.index,
           point: exitPoint,

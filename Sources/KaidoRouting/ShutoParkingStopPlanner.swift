@@ -98,6 +98,7 @@ extension ShutoRoutePlanner {
       routeEdges: edges,
       planID: base.routePlan.id + ".pa." + selected.map(\.id).joined(separator: "+"),
       entryFacility: base.entryFacility, exitFacility: base.exitFacility,
+      destinationParkingArea: base.destinationParkingArea,
       preference: base.preference, lapBoundaryOccurrenceIndices: boundaries
     )
   }

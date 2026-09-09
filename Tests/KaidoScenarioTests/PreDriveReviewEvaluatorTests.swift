@@ -37,7 +37,7 @@ func preDriveReviewBindsExactRouteEvidence() throws {
   let proposed = TariffQuote(
     id: "test.quote.proposed",
     entryFacilityID: routePlan.entryFacilityID,
-    exitFacilityID: routePlan.exitFacilityID,
+    exitFacilityID: routePlan.exitFacilityID!,
     vehicleClass: .standard,
     paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",
@@ -69,7 +69,7 @@ func preDriveReviewRejectsInvalidNonActiveEvidence() {
   let invalidProposed = TariffQuote(
     id: "test.quote.proposed",
     entryFacilityID: routePlan.entryFacilityID,
-    exitFacilityID: routePlan.exitFacilityID,
+    exitFacilityID: routePlan.exitFacilityID!,
     vehicleClass: .standard,
     paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",
@@ -98,7 +98,7 @@ func preDriveReviewRejectsVehicleClassDrift() {
   let mismatchedProposed = TariffQuote(
     id: "test.quote.proposed.other-vehicle",
     entryFacilityID: routePlan.entryFacilityID,
-    exitFacilityID: routePlan.exitFacilityID,
+    exitFacilityID: routePlan.exitFacilityID!,
     vehicleClass: .lightMotorcycle,
     paymentMethod: .etc,
     tariffVersionID: "test.tariff.proposed",

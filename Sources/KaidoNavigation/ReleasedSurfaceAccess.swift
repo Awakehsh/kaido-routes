@@ -5,6 +5,7 @@ import KaidoSurfaceRouting
 
 public enum JourneyFinishPolicy: String, Codable, CaseIterable, Hashable, Sendable {
   case fixedExit = "FIXED_EXIT"
+  case parkingArea = "PARKING_AREA"
   case returnNearOrigin = "RETURN_NEAR_ORIGIN"
   case finishOnRequest = "FINISH_ON_REQUEST"
 }
@@ -371,7 +372,7 @@ public enum JourneyPlanCompiler {
       accessLeg: nil,
       returnTarget: nil,
       entryTransition: bundle.runtimePolicy.entryTransition,
-      finishPolicy: .fixedExit,
+      finishPolicy: bundle.routePlan.destinationParkingAreaID == nil ? .fixedExit : .parkingArea,
       precomputedEgressOptions: bundle.runtimePolicy.egressOptions,
       selectedEgressOptionID: selectedEgress?.id,
       egressLeg: nil,
@@ -454,6 +455,9 @@ public enum JourneyPlanCompiler {
       guard selectedEgressOptionID != nil else {
         throw JourneyPlanCompilerError.finishPolicyNotReleased(finishPolicy)
       }
+    case .parkingArea:
+      guard bundle.routePlan.destinationParkingAreaID != nil else { throw JourneyPlanCompilerError.finishPolicyNotReleased(finishPolicy) }
+      selectedEgressOptionID = nil
     case .finishOnRequest:
       selectedEgressOptionID = nil
     case .returnNearOrigin:
@@ -997,6 +1001,10 @@ extension JourneyPlan {
         issues.append(.invalidFinishComposition)
       }
       if egressLeg != nil {
+        issues.append(.invalidFinishComposition)
+      }
+    case .parkingArea:
+      if bundle.routePlan.destinationParkingAreaID == nil || selectedEgressOptionID != nil || egressLeg != nil || !precomputedEgressOptions.isEmpty {
         issues.append(.invalidFinishComposition)
       }
     case .finishOnRequest:

@@ -55,7 +55,7 @@ struct WholeShutoSurfaceRouteChoiceEvaluator: Sendable {
       let entry = recommendation.route.coordinates.first
         ?? recommendation.route.entryFacility.coordinate
       let exit = recommendation.route.coordinates.last
-        ?? recommendation.route.exitFacility.coordinate
+        ?? recommendation.route.destinationCoordinate
       async let access = resolver.route(
         from: origin,
         to: entry,

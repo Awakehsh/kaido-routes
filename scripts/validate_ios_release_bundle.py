@@ -68,22 +68,22 @@ C1_ENTRY_FACILITY_ID = "shuto.ic.c1.shibakouen"
 C1_EXIT_FACILITY_ID = "shuto.ic.c1.shiodome"
 C1_ROUTE_OCCURRENCE_COUNT = 632
 WANGAN_PRODUCT_RELEASE_RESOURCE = (
-    "wangan-westbound-chidoricho-daikokufutou-product-release.json"
+    "wangan-westbound-chidoricho-daikoku-pa-product-release.json"
 )
 WANGAN_PRODUCT_RELEASE_SOURCE = (
     "data/product/releases/"
-    "wangan-westbound-chidoricho-daikokufutou-product-release.json"
+    "wangan-westbound-chidoricho-daikoku-pa-product-release.json"
 )
 WANGAN_PRODUCT_RELEASE_ID = (
-    "shutoko.product.wangan-westbound-chidoricho-daikokufutou.2026-09-07"
+    "shutoko.product.wangan-westbound-chidoricho-daikoku-pa.2026-09-07"
 )
 WANGAN_ROUTE_PLAN_ID = (
     "shuto.circuit.wangan-daikoku-run.shuto.ic.b.chidoricho."
-    "shuto.ic.b.daikokufutou.x1.recommended"
+    "shuto.pa.daikoku.x1.recommended"
 )
 WANGAN_ENTRY_FACILITY_ID = "shuto.ic.b.chidoricho"
-WANGAN_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
-WANGAN_ROUTE_OCCURRENCE_COUNT = 562
+WANGAN_EXIT_FACILITY_ID = None
+WANGAN_ROUTE_OCCURRENCE_COUNT = 441
 C2_PRODUCT_RELEASE_RESOURCE = (
     "c2-inner-oujiminami-shikahamabashi-product-release.json"
 )
@@ -102,39 +102,38 @@ C2_ENTRY_FACILITY_ID = "shuto.ic.c2.oujiminami"
 C2_EXIT_FACILITY_ID = "shuto.ic.s1.shikahamabashi"
 C2_ROUTE_OCCURRENCE_COUNT = 2_196
 DAIKOKU_PRODUCT_RELEASE_RESOURCE = (
-    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+    "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"
 )
 DAIKOKU_PRODUCT_RELEASE_SOURCE = (
     "data/product/releases/"
-    "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json"
+    "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json"
 )
 DAIKOKU_PRODUCT_RELEASE_ID = (
-    "shutoko.product.daikoku-yokohama-wangankanpachi-"
-    "daikokufutou.2026-09-07"
+    "shutoko.product.daikoku-yokohama-wangankanpachi-daikoku-pa.2026-09-07"
 )
 DAIKOKU_ROUTE_PLAN_ID = (
     "shuto.circuit.daikoku-yokohama-loop.shuto.ic.b.wangankanpachi."
-    "shuto.ic.b.daikokufutou.x1.recommended"
+    "shuto.pa.daikoku.x1.recommended"
 )
 DAIKOKU_ENTRY_FACILITY_ID = "shuto.ic.b.wangankanpachi"
-DAIKOKU_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
-DAIKOKU_ROUTE_OCCURRENCE_COUNT = 556
+DAIKOKU_EXIT_FACILITY_ID = None
+DAIKOKU_ROUTE_OCCURRENCE_COUNT = 658
 SCENIC_PRODUCT_RELEASE_RESOURCE = (
-    "scenic-harumi-daikokufutou-product-release.json"
+    "scenic-harumi-daikoku-pa-product-release.json"
 )
 SCENIC_PRODUCT_RELEASE_SOURCE = (
-    "data/product/releases/scenic-harumi-daikokufutou-product-release.json"
+    "data/product/releases/scenic-harumi-daikoku-pa-product-release.json"
 )
 SCENIC_PRODUCT_RELEASE_ID = (
-    "shutoko.product.scenic-harumi-daikokufutou.2026-09-07"
+    "shutoko.product.scenic-harumi-daikoku-pa.2026-09-07"
 )
 SCENIC_ROUTE_PLAN_ID = (
     "shuto.circuit.scenic-grand-tour.shuto.ic.10.harumi."
-    "shuto.ic.b.daikokufutou.x1.recommended"
+    "shuto.pa.daikoku.x1.recommended"
 )
 SCENIC_ENTRY_FACILITY_ID = "shuto.ic.10.harumi"
-SCENIC_EXIT_FACILITY_ID = "shuto.ic.b.daikokufutou"
-SCENIC_ROUTE_OCCURRENCE_COUNT = 970
+SCENIC_EXIT_FACILITY_ID = None
+SCENIC_ROUTE_OCCURRENCE_COUNT = 849
 DATA_LICENSES_RESOURCE = "DATA-LICENSES.md"
 EXPECTED_OSM_ATTRIBUTION = "© OpenStreetMap contributors"
 EXPECTED_OSM_LICENSE = "ODbL-1.0"
@@ -822,8 +821,9 @@ def validate_foreground_product_release(
     release_id: str,
     route_plan_id: str,
     entry_facility_id: str,
-    exit_facility_id: str,
+    exit_facility_id: str | None,
     occurrence_count: int,
+    destination_parking_area_id: str | None = None,
 ) -> None:
     artifact = read_json_object(
         app / resource,
@@ -874,6 +874,9 @@ def validate_foreground_product_release(
         exit_facility_id,
         f"{label} exit facility",
     )
+    require_equal(route_plan.get("destination_parking_area_id"), destination_parking_area_id, f"{label} PA destination")
+    if destination_parking_area_id is not None:
+        require_equal(navigation.get("runtime_policy", {}).get("egress_options"), [], f"{label} must not include an exit handoff")
     occurrences = route_plan.get("occurrences")
     if not isinstance(occurrences, list):
         raise ReleaseBundleValidationError(
@@ -884,6 +887,9 @@ def validate_foreground_product_release(
         occurrence_count,
         f"{label} RoutePlan occurrence count",
     )
+    if destination_parking_area_id is not None:
+        require_equal(occurrences[-1].get("kind"), "PA_VISIT", f"{label} parking arrival")
+        require_equal(occurrences[-1].get("parking_area_id"), destination_parking_area_id, f"{label} parking arrival binding")
     atlas = artifact.get("route_atlas_release")
     atlas_route_plan = (
         atlas.get("route_plan") if isinstance(atlas, dict) else None
@@ -914,6 +920,7 @@ def validate_foreground_product_releases(app: Path) -> None:
         route_plan_id=WANGAN_ROUTE_PLAN_ID,
         entry_facility_id=WANGAN_ENTRY_FACILITY_ID,
         exit_facility_id=WANGAN_EXIT_FACILITY_ID,
+        destination_parking_area_id="shuto.pa.daikoku",
         occurrence_count=WANGAN_ROUTE_OCCURRENCE_COUNT,
     )
     validate_foreground_product_release(
@@ -934,6 +941,7 @@ def validate_foreground_product_releases(app: Path) -> None:
         route_plan_id=DAIKOKU_ROUTE_PLAN_ID,
         entry_facility_id=DAIKOKU_ENTRY_FACILITY_ID,
         exit_facility_id=DAIKOKU_EXIT_FACILITY_ID,
+        destination_parking_area_id="shuto.pa.daikoku",
         occurrence_count=DAIKOKU_ROUTE_OCCURRENCE_COUNT,
     )
     validate_foreground_product_release(
@@ -944,6 +952,7 @@ def validate_foreground_product_releases(app: Path) -> None:
         route_plan_id=SCENIC_ROUTE_PLAN_ID,
         entry_facility_id=SCENIC_ENTRY_FACILITY_ID,
         exit_facility_id=SCENIC_EXIT_FACILITY_ID,
+        destination_parking_area_id="shuto.pa.daikoku",
         occurrence_count=SCENIC_ROUTE_OCCURRENCE_COUNT,
     )
 

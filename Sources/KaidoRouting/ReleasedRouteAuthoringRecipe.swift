@@ -115,8 +115,9 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     }
 
     let occurrences = routePlan.occurrences
-    if let directExitFacilityID = entrance.directExitFacilityID {
-      guard directExitFacilityID == routePlan.exitFacilityID,
+    if entrance.directExitFacilityID != nil || entrance.directParkingAreaID != nil {
+      guard entrance.directExitFacilityID == routePlan.exitFacilityID,
+        entrance.directParkingAreaID == routePlan.destinationParkingAreaID,
         entrance.directRouteOccurrences == occurrences
       else {
         throw ReleasedRouteAuthoringError.destinationMismatch(
@@ -182,6 +183,8 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
       switch (choice.destination, isFinalStep) {
       case (.decisionPoint(let nextDecisionPointID), false):
         currentDecisionPointID = nextDecisionPointID
+      case (.parkingArea(let parkingID), true) where parkingID == routePlan.destinationParkingAreaID:
+        break
       case (.exitFacility(let exitFacilityID), true)
       where exitFacilityID == routePlan.exitFacilityID:
         break
@@ -251,7 +254,7 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
     guard !normalized(routePlan.id).isEmpty,
       !normalized(routePlan.networkSnapshotID).isEmpty,
       !normalized(routePlan.entryFacilityID).isEmpty,
-      !normalized(routePlan.exitFacilityID).isEmpty,
+      routePlan.hasValidDestination,
       !routePlan.occurrences.isEmpty,
       routePlan.actualDistanceKM.map({ $0.isFinite && $0 > 0 }) != false
     else {
@@ -323,6 +326,7 @@ public struct ReleasedRouteAuthoringRecipe: Equatable, Sendable {
       && authored.networkSnapshotID == released.networkSnapshotID
       && authored.entryFacilityID == released.entryFacilityID
       && authored.exitFacilityID == released.exitFacilityID
+      && authored.destinationParkingAreaID == released.destinationParkingAreaID
       && authored.recoveryPolicy == released.recoveryPolicy
     else {
       return false

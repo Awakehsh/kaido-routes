@@ -154,6 +154,7 @@ enum WholeShutoLiveLocationState: String, Equatable, Sendable {
 struct WholeShutoPlace: Codable, Equatable, Sendable {
   let title: String
   let coordinate: ShutoCoordinate
+  var parkingAreaID: String? = nil
 }
 
 struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
@@ -261,7 +262,7 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let origin: WholeShutoPlace
   let destination: WholeShutoPlace
   let entryFacilityID: String
-  let exitFacilityID: String
+  let exitFacilityID: String?
   let routePlan: RoutePlan
   let preference: ShutoRoutePreference
   let routeSelectionSource: WholeShutoRouteSelectionSource
@@ -437,7 +438,6 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var isResolvingCircuitPairing = false
   @Published private(set) var circuitLaps = 1
   @Published private(set) var parkingStopSelection: WholeShutoParkingStopSelection?
-  @Published private(set) var isUpdatingParkingStops = false
   @Published private(set) var circuitRecommendation: ShutoRouteRecommendation?
   @Published private(set) var isCircuitRouteSelected = false
   @Published private(set) var circuitTariffBandsByFacilityID: [String: ShutoTariffBand] = [:]
@@ -717,7 +717,7 @@ final class WholeShutoProductModel: ObservableObject {
           let route = try? planner.planCircuit(
             circuit: circuit,
             entryFacilityID: entranceID,
-            exitFacilityID: exit.facilityID,
+            exitFacilityID: circuit.defaultDestinationParkingAreaID == nil ? exit.facilityID : nil,
             laps: 1
           ),
           let layout = RouteTrackMapLayout.make(
@@ -793,6 +793,9 @@ final class WholeShutoProductModel: ObservableObject {
       : nil
   }
 
+  var endsAtParkingArea: Bool { selectedRoute?.destinationParkingArea != nil }
+  var requiresSurfaceEgress: Bool { journeyEnding != .exit && !endsAtParkingArea }
+
   var selectedRoute: ShutoPlannedRoute? {
     selectedRecommendation?.route
   }
@@ -811,9 +814,8 @@ final class WholeShutoProductModel: ObservableObject {
   /// admission matches the full selected RoutePlan value.
   var canStartLiveNavigation: Bool {
     !isStartingLiveNavigation
-      && !isUpdatingParkingStops
       && accessRoute != nil
-      && (journeyEnding == .exit || egressRoute != nil)
+      && (!requiresSurfaceEgress || egressRoute != nil)
       && !isUpdatingSurfaceRoute
       && matchingLiveAdmissions.count == 1
       && matchingLiveRuntimeAssets != nil
@@ -822,13 +824,13 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var liveNavigationBlockerCode: String? {
-    if isStartingLiveNavigation || isUpdatingParkingStops {
+    if isStartingLiveNavigation {
       return Self.liveNavigationPreparingCode
     }
     if isUpdatingSurfaceRoute {
       return Self.surfaceRoutePreparingCode
     }
-    if accessRoute == nil || (journeyEnding != .exit && egressRoute == nil) {
+    if accessRoute == nil || (requiresSurfaceEgress && egressRoute == nil) {
       return "SURFACE_ROUTE_UNAVAILABLE"
     }
     let count = matchingLiveAdmissions.count
@@ -1022,15 +1024,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var selectedTariffBand: ShutoTariffBand? {
-    if isCircuitRouteSelected, let circuitPairingBand {
-      return circuitPairingBand
-    }
-    guard let route = selectedRoute else { return nil }
-    return try? planner.tariffBand(
-      entryFacilityID: route.entryFacility.facilityID,
-      exitFacilityID: route.exitFacility.facilityID,
-      evidence: .etcNormalCarActive
-    )
+    guard let route = selectedRoute, let exit = route.exitFacility else { return nil }
+    if isCircuitRouteSelected, let circuitPairingBand { return circuitPairingBand }
+    return try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
   }
 
   var activeSurfaceInstruction: String? {
@@ -1191,9 +1187,9 @@ final class WholeShutoProductModel: ObservableObject {
       title: currentLocationTitle,
       coordinate: originCoordinate
     )
-    journeyEnding = resolved.circuit?.kind == .loop ? .returnToOrigin : .exit
+    journeyEnding = route.destinationParkingArea != nil ? .destination : (resolved.circuit?.kind == .loop ? .returnToOrigin : .exit)
     let destinationPlace = journeyEnding == .returnToOrigin
-      ? originPlace : exitDestination(for: route)
+      ? originPlace : routeDestination(for: route)
     originQuery = originPlace.title
     destinationQuery = destinationPlace.title
     origin = originPlace
@@ -1207,7 +1203,7 @@ final class WholeShutoProductModel: ObservableObject {
       route.coordinates.first ?? route.entryFacility.coordinate
     )
     let egressDistance = Self.distance(
-      route.coordinates.last ?? route.exitFacility.coordinate,
+      route.destinationCoordinate,
       destinationPlace.coordinate
     )
     let recommendation = ShutoRouteRecommendation(
@@ -1223,7 +1219,7 @@ final class WholeShutoProductModel: ObservableObject {
       customRecommendation = recommendation
       isCustomRouteSelected = true
       customEntryFacilityID = route.entryFacility.facilityID
-      customExitFacilityID = route.exitFacility.facilityID
+      customExitFacilityID = route.exitFacility?.facilityID
       customPreference = route.preference
       customDraftRoute = route
     case .circuit:
@@ -1237,12 +1233,10 @@ final class WholeShutoProductModel: ObservableObject {
       circuitLaps = laps
       circuitEntranceCandidates = [route.entryFacility]
       circuitEntryFacilityID = route.entryFacility.facilityID
-      circuitExitFacilityID = route.exitFacility.facilityID
-      circuitPairingBand = try? planner.tariffBand(
-        entryFacilityID: route.entryFacility.facilityID,
-        exitFacilityID: route.exitFacility.facilityID,
-        evidence: .etcNormalCarActive
-      )
+      circuitExitFacilityID = route.exitFacility?.facilityID
+      circuitPairingBand = route.exitFacility.flatMap { exit in
+        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
+      }
       circuitEntranceDistanceMeters = accessDistance
       circuitTariffBandsByFacilityID =
         circuitPairingBand.map {
@@ -1695,7 +1689,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard
       let route = selectedRoute,
       let accessRoute,
-      journeyEnding == .exit || egressRoute != nil
+      !requiresSurfaceEgress || egressRoute != nil
     else {
       return nil
     }
@@ -1709,7 +1703,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard
       let route = selectedRoute,
       let accessRoute,
-      journeyEnding == .exit || egressRoute != nil
+      !requiresSurfaceEgress || egressRoute != nil
     else {
       return nil
     }
@@ -1756,10 +1750,9 @@ final class WholeShutoProductModel: ObservableObject {
 
   var isJourneyReadyForPreview: Bool {
     phase == .review
-      && !isUpdatingParkingStops
       && selectedRoute != nil
       && accessRoute != nil
-      && (journeyEnding == .exit || egressRoute != nil)
+      && (!requiresSurfaceEgress || egressRoute != nil)
       && !isUpdatingSurfaceRoute
   }
 
@@ -2074,7 +2067,6 @@ final class WholeShutoProductModel: ObservableObject {
       let admissionResolver = liveJourneyAdmissionResolver,
       let previousRecommendation = circuitRecommendation,
       let entryFacilityID = circuitEntryFacilityID,
-      let exitFacilityID = circuitExitFacilityID,
       ShutoCircuitDefinition.loopLapRange.contains(circuitLaps + 1)
     else {
       return false
@@ -2100,7 +2092,8 @@ final class WholeShutoProductModel: ObservableObject {
         let base = try planner.planCircuit(
           circuit: circuit,
           entryFacilityID: entryFacilityID,
-          exitFacilityID: exitFacilityID,
+          exitFacilityID: route.exitFacility?.facilityID,
+          destinationParkingAreaID: route.destinationParkingArea?.parkingAreaID,
           laps: laps,
           preference: preference
         )
@@ -2444,7 +2437,7 @@ final class WholeShutoProductModel: ObservableObject {
           to: selectedRecommendation.route.entryFacility.coordinate
         )
         egressRoute = Self.previewSurfaceRoute(
-          from: selectedRecommendation.route.exitFacility.coordinate,
+          from: selectedRecommendation.route.destinationCoordinate,
           to: Self.previewDestination.coordinate
         )
         phase = .review
@@ -2574,8 +2567,8 @@ final class WholeShutoProductModel: ObservableObject {
           coordinate: route.entryFacility.coordinate
         )
         let previewDestination = WholeShutoPlace(
-          title: route.exitFacility.nameJA,
-          coordinate: route.exitFacility.coordinate
+          title: route.destinationNameJA,
+          coordinate: route.destinationCoordinate
         )
         originQuery = previewOrigin.title
         destinationQuery = previewDestination.title
@@ -2595,7 +2588,7 @@ final class WholeShutoProductModel: ObservableObject {
           to: route.entryFacility.coordinate
         )
         egressRoute = Self.previewSurfaceRoute(
-          from: route.exitFacility.coordinate,
+          from: route.destinationCoordinate,
           to: previewDestination.coordinate
         )
         guard
@@ -2639,20 +2632,26 @@ final class WholeShutoProductModel: ObservableObject {
         let resolvedDestination = try await resolveDestination(
           near: resolvedOrigin.coordinate
         )
-        let routes = try planner.recommend(
-          from: resolvedOrigin.coordinate,
-          to: resolvedDestination.coordinate,
-          preference: preference
-        )
+        let routes: [ShutoRouteRecommendation]
+        if let parkingID = resolvedDestination.parkingAreaID {
+          routes = planner.recommend(from: resolvedOrigin.coordinate, destinationParkingAreaID: parkingID, preference: preference)
+        } else {
+          routes = try planner.recommend(from: resolvedOrigin.coordinate, to: resolvedDestination.coordinate, preference: preference)
+        }
         guard !routes.isEmpty else {
           throw WholeShutoProductError.noExpresswayRoute
         }
-        let evaluation = await routeChoiceEvaluator.evaluate(
+        let evaluation: WholeShutoRouteChoiceEvaluation
+        if resolvedDestination.parkingAreaID != nil {
+          evaluation = .init(recommendations: routes, surfaceRoutesByRoutePlanID: [:], usesComparableProviderMetrics: false)
+        } else {
+          evaluation = await routeChoiceEvaluator.evaluate(
           recommendations: routes,
           origin: resolvedOrigin.coordinate,
           destination: resolvedDestination.coordinate,
           preference: surfaceRoutePreference
         )
+        }
         origin = resolvedOrigin
         destination = resolvedDestination
         recommendations = evaluation.recommendations
@@ -2724,19 +2723,26 @@ final class WholeShutoProductModel: ObservableObject {
     facility(id: circuitExitFacilityID)
   }
 
+  var circuitDestinationNameJA: String? {
+    if let parkingID = selectedCircuit?.defaultDestinationParkingAreaID {
+      return database.parkingAreas.first { $0.parkingAreaID == parkingID }?.nameJA
+    }
+    return circuitExitFacility?.nameJA
+  }
+
   var canStartCircuitJourney: Bool {
     phase == .planning
       && !isResolvingCircuitPairing
       && selectedCircuit != nil
       && circuitEntryFacilityID != nil
-      && circuitExitFacilityID != nil
+      && (circuitExitFacilityID != nil || selectedCircuit?.defaultDestinationParkingAreaID != nil)
       && origin != nil
   }
 
   func selectCircuit(_ circuit: ShutoCircuitDefinition) {
     guard phase == .planning else { return }
     selectedCircuit = circuit
-    journeyEnding = circuit.kind == .loop ? .returnToOrigin : .exit
+    journeyEnding = circuit.defaultDestinationParkingAreaID != nil ? .destination : (circuit.kind == .loop ? .returnToOrigin : .exit)
     circuitLaps = 1
     circuitEntranceCandidates = []
     circuitEntryFacilityID = nil
@@ -2809,7 +2815,7 @@ final class WholeShutoProductModel: ObservableObject {
     if let previous = circuitPairingOriginCoordinate,
       Self.distance(previous, origin.coordinate) < 50,
       circuitEntryFacilityID != nil,
-      circuitExitFacilityID != nil
+      (circuitExitFacilityID != nil || selectedCircuit?.defaultDestinationParkingAreaID != nil)
     {
       return
     }
@@ -2880,11 +2886,11 @@ final class WholeShutoProductModel: ObservableObject {
         self.circuitEntranceCandidates = resolvedCandidates
         self.circuitEntryFacilityID =
           resolvedPairing?.entrance.facilityID
-        self.circuitExitFacilityID = resolvedPairing?.exit.facilityID
-        self.circuitPairingBand = resolvedPairing?.tariffBand
+        self.circuitExitFacilityID = circuit.defaultDestinationParkingAreaID == nil ? resolvedPairing?.exit.facilityID : nil
+        self.circuitPairingBand = circuit.defaultDestinationParkingAreaID == nil ? resolvedPairing?.tariffBand : nil
         self.circuitEntranceDistanceMeters =
           resolvedPairing?.entranceDistanceMeters
-        self.circuitTariffBandsByFacilityID = resolvedBands
+        self.circuitTariffBandsByFacilityID = circuit.defaultDestinationParkingAreaID == nil ? resolvedBands : [:]
         self.isResolvingCircuitPairing = false
         if self.startsCircuitJourneyAfterPairing {
           self.startsCircuitJourneyAfterPairing = false
@@ -2903,7 +2909,6 @@ final class WholeShutoProductModel: ObservableObject {
       phase == .planning,
       let circuit = selectedCircuit,
       let entryFacilityID = circuitEntryFacilityID,
-      let exitFacilityID = circuitExitFacilityID,
       let origin
     else {
       return false
@@ -2912,7 +2917,7 @@ final class WholeShutoProductModel: ObservableObject {
       let route = try planner.planCircuit(
         circuit: circuit,
         entryFacilityID: entryFacilityID,
-        exitFacilityID: exitFacilityID,
+        exitFacilityID: circuit.defaultDestinationParkingAreaID != nil && journeyEnding != .exit ? nil : circuitExitFacilityID,
         laps: circuit.kind == .loop ? circuitLaps : 1
       )
       circuitTariffTask?.cancel()
@@ -2922,8 +2927,8 @@ final class WholeShutoProductModel: ObservableObject {
       clearCustomRouteSelection()
       recommendations = []
       selectedRecommendationIndex = 0
-      let journeyDestination = journeyEnding == .exit
-        ? exitDestination(for: route) : origin
+      let journeyDestination = route.destinationParkingArea != nil || journeyEnding == .exit
+        ? routeDestination(for: route) : origin
       destination = journeyDestination
       destinationQuery = journeyDestination.title
       selectedDestinationTitle = journeyDestination.title
@@ -2932,7 +2937,7 @@ final class WholeShutoProductModel: ObservableObject {
         route.coordinates.first ?? route.entryFacility.coordinate
       )
       let egressDistance = Self.distance(
-        route.coordinates.last ?? route.exitFacility.coordinate,
+        route.destinationCoordinate,
         journeyDestination.coordinate
       )
       let recommendation = ShutoRouteRecommendation(
@@ -2942,6 +2947,8 @@ final class WholeShutoProductModel: ObservableObject {
         totalScoreMeters:
           route.distanceMeters + accessDistance + egressDistance
       )
+      if route.destinationParkingArea != nil { circuitPairingBand = nil }
+      circuitExitFacilityID = route.exitFacility?.facilityID
       circuitRecommendation = recommendation
       isCircuitRouteSelected = true
       preference = route.preference
@@ -2972,7 +2979,7 @@ final class WholeShutoProductModel: ObservableObject {
       guard let route = selectedRoute else { return }
       let draft = customRecommendation?.route ?? route
       customEntryFacilityID = draft.entryFacility.facilityID
-      customExitFacilityID = draft.exitFacility.facilityID
+      customExitFacilityID = draft.exitFacility?.facilityID
       customPreference = draft.preference
       refreshCustomRouteDraft()
     case .planning:
@@ -3042,10 +3049,13 @@ final class WholeShutoProductModel: ObservableObject {
     switch phase {
     case .review:
       guard let existing = self.destination else { return false }
-      destination = journeyEnding == .exit ? exitDestination(for: route) : existing
+      if existing.parkingAreaID != nil && route.destinationParkingArea == nil {
+        journeyEnding = .exit
+      }
+      destination = journeyEnding == .exit ? routeDestination(for: route) : existing
     case .planning:
       journeyEnding = .exit
-      destination = exitDestination(for: route)
+      destination = routeDestination(for: route)
       cancelSurfaceRouteResolution()
       clearRouteChoiceEvaluation()
       recommendations = []
@@ -3062,7 +3072,7 @@ final class WholeShutoProductModel: ObservableObject {
       route.coordinates.first ?? route.entryFacility.coordinate
     )
     let egressDistance = Self.distance(
-      route.coordinates.last ?? route.exitFacility.coordinate,
+      route.destinationCoordinate,
       destination.coordinate
     )
     let recommendation = ShutoRouteRecommendation(
@@ -3085,10 +3095,11 @@ final class WholeShutoProductModel: ObservableObject {
     return true
   }
 
-  private func exitDestination(for route: ShutoPlannedRoute) -> WholeShutoPlace {
+  private func routeDestination(for route: ShutoPlannedRoute) -> WholeShutoPlace {
     WholeShutoPlace(
-      title: route.exitFacility.nameJA,
-      coordinate: route.coordinates.last ?? route.exitFacility.coordinate
+      title: route.destinationNameJA,
+      coordinate: route.destinationCoordinate,
+      parkingAreaID: route.destinationParkingArea?.parkingAreaID
     )
   }
 
@@ -3100,7 +3111,7 @@ final class WholeShutoProductModel: ObservableObject {
     let target: WholeShutoPlace
     switch ending {
     case .returnToOrigin: target = origin
-    case .exit: target = exitDestination(for: recommendation.route)
+    case .exit: target = routeDestination(for: recommendation.route)
     case .destination:
       guard let place else { return }
       target = place
@@ -3114,70 +3125,50 @@ final class WholeShutoProductModel: ObservableObject {
     persistCheckpoint()
   }
 
-  private func parkingBaseRoute() throws -> ShutoPlannedRoute {
-    guard let route = selectedRoute else { throw ShutoNetworkError.routeUnavailable }
-    guard let selection = parkingStopSelection else { return route }
-    if isCircuitRouteSelected, let circuit = selectedCircuit {
-      let base = try planner.planCircuit(
-        circuit: circuit, entryFacilityID: route.entryFacility.facilityID,
-        exitFacilityID: route.exitFacility.facilityID, laps: circuitLaps,
-        preference: route.preference
-      )
-      guard base.routePlan == selection.baseRoutePlan else { throw ShutoNetworkError.routeUnavailable }
-      return base
-    }
-    return try planner.restore(routePlan: selection.baseRoutePlan, preference: route.preference)
-  }
-
-  func journeyParkingStopOptions() async throws -> [ShutoParkingStopOption] {
-    guard phase == .review else { return [] }
-    let base = try parkingBaseRoute()
+  func selectJourneyParkingDestination(_ parkingID: String) async throws {
+    guard phase == .review, let previous = selectedRoute, let origin else { throw ShutoNetworkError.routeUnavailable }
     let planner = planner
-    return await Task.detached(priority: .userInitiated) {
-      planner.parkingStopOptions(for: base)
-    }.value
-  }
-
-  var includedParkingStops: [ShutoNetworkDatabase.ParkingArea] {
-    let base = parkingStopSelection?.baseRoutePlan ?? selectedRoute?.routePlan
-    let ids = Set(base?.occurrences.compactMap(\.parkingAreaID) ?? [])
-    return database.parkingAreas.filter { ids.contains($0.parkingAreaID) }
-  }
-
-  func selectJourneyParkingStops(_ ids: [String]) async throws {
-    guard phase == .review, !isUpdatingParkingStops,
-      let previous = selectedRecommendation, let origin, let destination
-    else { throw ShutoNetworkError.routeUnavailable }
-    let base = try parkingBaseRoute()
-    let planner = planner
-    isUpdatingParkingStops = true
-    defer { isUpdatingParkingStops = false }
+    let circuit = isCircuitRouteSelected ? selectedCircuit : nil
+    let laps = circuitLaps
     let route = try await Task.detached(priority: .userInitiated) {
-      try planner.addingParkingStops(ids.sorted(), to: base)
+      if let circuit {
+        return try planner.planCircuit(circuit: circuit, entryFacilityID: previous.entryFacility.facilityID, destinationParkingAreaID: parkingID, laps: laps, preference: previous.preference)
+      }
+      return try planner.plan(entryFacilityID: previous.entryFacility.facilityID, destinationParkingAreaID: parkingID, preference: previous.preference)
     }.value
-    guard phase == .review, selectedRoute == previous.route else {
-      throw ShutoNetworkError.routeUnavailable
-    }
-    let recommendation = ShutoRouteRecommendation(
-      route: route,
-      surfaceAccessDistanceMeters: previous.surfaceAccessDistanceMeters,
-      surfaceEgressDistanceMeters: previous.surfaceEgressDistanceMeters,
-      totalScoreMeters: previous.totalScoreMeters + route.distanceMeters - previous.route.distanceMeters
-    )
-    if isCircuitRouteSelected {
+    guard phase == .review, selectedRoute == previous else { return }
+    let access = Self.distance(origin.coordinate, route.coordinates.first ?? route.entryFacility.coordinate)
+    let recommendation = ShutoRouteRecommendation(route: route, surfaceAccessDistanceMeters: access, surfaceEgressDistanceMeters: 0, totalScoreMeters: route.distanceMeters + access)
+    if circuit != nil {
       circuitRecommendation = recommendation
-    } else if isCustomRouteSelected {
-      customRecommendation = recommendation
-      customDraftRoute = route
+      circuitExitFacilityID = nil
+      circuitPairingBand = nil
     } else {
-      recommendations[selectedRecommendationIndex] = recommendation
+      recommendations = []
+      selectedRecommendationIndex = 0
+      customRecommendation = recommendation
+      isCustomRouteSelected = true
+      customDraftRoute = route
+      customEntryFacilityID = route.entryFacility.facilityID
+      customExitFacilityID = nil
     }
-    parkingStopSelection = ids.isEmpty ? nil : .init(baseRoutePlan: base.routePlan, parkingAreaIDs: ids.sorted())
+    parkingStopSelection = nil
     selectedSavedRouteTemplateParameters = nil
+    journeyEnding = .destination
+    let place = routeDestination(for: route)
+    destination = place
+    destinationQuery = place.title
+    selectedDestinationTitle = place.title
     clearRouteChoiceEvaluation()
-    resolveSurfaceRoutes(for: recommendation, origin: origin, destination: destination)
-    failureCode = nil
+    resolveSurfaceRoutes(for: recommendation, origin: origin, destination: place)
     persistCheckpoint()
+  }
+
+  func prepareExitForOnwardJourney() async throws {
+    guard endsAtParkingArea else { return }
+    let candidates = try await journeyExitCandidates()
+    guard let exit = candidates.first else { throw ShutoNetworkError.routeUnavailable }
+    try await selectJourneyExit(exit.facilityID)
   }
 
   func journeyExitCandidates() async throws -> [ShutoNetworkDatabase.Facility] {
@@ -3198,7 +3189,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   func selectJourneyExit(_ facilityID: String) async throws {
     guard phase == .review, let previous = selectedRoute else { return }
-    if previous.exitFacility.facilityID == facilityID {
+    if previous.exitFacility?.facilityID == facilityID {
       selectJourneyEnding(.exit)
       return
     }
@@ -3298,11 +3289,11 @@ final class WholeShutoProductModel: ObservableObject {
     let entryFallback = recommendation.route.entryFacility.coordinate
     let exit =
       recommendation.route.coordinates.last
-      ?? recommendation.route.exitFacility.coordinate
-    let exitFallback = recommendation.route.exitFacility.coordinate
+      ?? recommendation.route.destinationCoordinate
+    let exitFallback = recommendation.route.destinationCoordinate
     let resolver = surfaceRouteResolver
     let preference = surfaceRoutePreference
-    let endsAtExit = journeyEnding == .exit
+    let endsAtExit = !requiresSurfaceEgress
     surfaceRouteRequestID = requestID
     surfaceRouteTask = Task { [weak self] in
       func leg(
@@ -3424,7 +3415,7 @@ final class WholeShutoProductModel: ObservableObject {
           route: route,
           runtimeAssets: assets,
           configuration: NavigationDriveSimulationConfiguration(
-            sampleFractions: [0.15, 0.5, 0.85],
+            sampleFractions: route.destinationParkingArea == nil ? [0.15, 0.5, 0.85] : [0.15, 0.5, 0.95],
             maximumSampleSpacingMeters: 30,
             timing: .routeSpeed,
             horizontalAccuracyMeters: 2,
@@ -3792,6 +3783,7 @@ final class WholeShutoProductModel: ObservableObject {
       case .expressway:
         let update = try await session.observe(observation)
         applyNavigationUpdate(update, persistsCheckpoint: false)
+        if phase == .completed { return }
         await synchronizeLiveTunnelState(
           from: update.matcherEstimate,
           session: session
@@ -4219,7 +4211,7 @@ final class WholeShutoProductModel: ObservableObject {
     guard let entry = DriveHistoryEntry(
       record: driveRecord, routePlan: route.routePlan,
       routeName: route.routeIDsInOrder.joined(separator: " · ") + " · "
-        + route.entryFacility.nameJA + " → " + route.exitFacility.nameJA,
+        + route.entryFacility.nameJA + " → " + route.destinationNameJA,
       templateParameters: savedRouteTemplateParameters, arrived: arrived
     ) else { return }
     do {
@@ -4859,6 +4851,18 @@ final class WholeShutoProductModel: ObservableObject {
     }
     runtimeRecoveryTargetOccurrenceID =
       update.navigationSnapshot.recovery.chosenRejoinOccurrenceID
+    if update.navigationSnapshot.journeyPhase == .completed, endsAtParkingArea {
+      if let progress = runtimeAssets?.project(update.matcherEstimate) {
+        recordLapProgress(occurrenceID: progress.occurrenceID, atMilliseconds: update.matcherEstimate.estimatedAtMilliseconds)
+      }
+      runtimeCoordinate = selectedRoute?.destinationCoordinate
+      runtimeOccurrenceID = nil
+      presentationProjection = nil
+      clearTunnelEstimate()
+      invalidatePlaybackTask()
+      completeLiveJourney()
+      return
+    }
     publishPresentationAndScheduleSpeech(from: update)
     if update.navigationSnapshot.journeyPhase == .routeRecovery {
       clearTunnelEstimate()
@@ -5121,6 +5125,10 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func completeExpresswayObservationReplay() {
+    if endsAtParkingArea {
+      if phase != .completed { isPlaying = false; failureCode = "PARKING_AREA_ARRIVAL_UNCONFIRMED" }
+      return
+    }
     guard phase == .expressway else {
       isPlaying = false
       failureCode = "WHOLE_SHUTO_ENTRY_TRANSITION_UNCONFIRMED"
@@ -5223,6 +5231,7 @@ final class WholeShutoProductModel: ObservableObject {
           circuit: circuit,
           entryFacilityID: checkpoint.entryFacilityID,
           exitFacilityID: checkpoint.exitFacilityID,
+          destinationParkingAreaID: checkpoint.routePlan.destinationParkingAreaID,
           laps: laps,
           preference: checkpoint.preference
         )
@@ -5275,7 +5284,7 @@ final class WholeShutoProductModel: ObservableObject {
       customRecommendation = restoredRecommendation
       isCustomRouteSelected = true
       customEntryFacilityID = route.entryFacility.facilityID
-      customExitFacilityID = route.exitFacility.facilityID
+      customExitFacilityID = route.exitFacility?.facilityID
       customPreference = route.preference
       customDraftRoute = route
     case .circuit:
@@ -5284,12 +5293,10 @@ final class WholeShutoProductModel: ObservableObject {
       selectedCircuit = restoredCircuit
       circuitLaps = checkpoint.circuitLaps ?? 1
       circuitEntryFacilityID = route.entryFacility.facilityID
-      circuitExitFacilityID = route.exitFacility.facilityID
-      circuitPairingBand = try? planner.tariffBand(
-        entryFacilityID: route.entryFacility.facilityID,
-        exitFacilityID: route.exitFacility.facilityID,
-        evidence: .etcNormalCarActive
-      )
+      circuitExitFacilityID = route.exitFacility?.facilityID
+      circuitPairingBand = route.exitFacility.flatMap { exit in
+        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
+      }
       circuitRecommendation = restoredRecommendation
       isCircuitRouteSelected = true
     case .recommended:
@@ -5365,7 +5372,7 @@ final class WholeShutoProductModel: ObservableObject {
         route: route,
         runtimeAssets: assets,
         configuration: NavigationDriveSimulationConfiguration(
-          sampleFractions: [0.15, 0.5, 0.85],
+          sampleFractions: route.destinationParkingArea == nil ? [0.15, 0.5, 0.85] : [0.15, 0.5, 0.95],
           maximumSampleSpacingMeters: 30,
           timing: .routeSpeed,
           horizontalAccuracyMeters: 2,
@@ -5432,7 +5439,7 @@ final class WholeShutoProductModel: ObservableObject {
       origin: origin,
       destination: destination,
       entryFacilityID: route.entryFacility.facilityID,
-      exitFacilityID: route.exitFacility.facilityID,
+      exitFacilityID: route.exitFacility?.facilityID,
       routePlan: route.routePlan,
       preference: route.preference,
       routeSelectionSource:
@@ -6135,6 +6142,7 @@ final class WholeShutoProductModel: ObservableObject {
           circuit: resolvedCircuit,
           entryFacilityID: routePlan.entryFacilityID,
           exitFacilityID: routePlan.exitFacilityID,
+          destinationParkingAreaID: routePlan.destinationParkingAreaID,
           laps: laps,
           preference: routePreference
         )

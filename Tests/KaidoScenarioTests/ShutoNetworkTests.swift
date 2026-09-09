@@ -243,7 +243,7 @@ struct ShutoNetworkTests {
     #expect(recommendations.count <= 3)
     #expect(
       recommendations.allSatisfy {
-        $0.route.entryFacility.canEnter && $0.route.exitFacility.canExit
+        $0.route.entryFacility.canEnter && ($0.route.exitFacility?.canExit == true)
       }
     )
     #expect(

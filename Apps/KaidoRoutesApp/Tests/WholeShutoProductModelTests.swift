@@ -66,7 +66,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.currentCoordinate, model.selectedRoute?.coordinates.last)
   }
 
-  func testTourDefaultsToExitAndLoopDefaultsToFixedStart() async throws {
+  func testDaikokuDefaultsToPAAndC1ReturnsToStart() async throws {
     let model = WholeShutoProductModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
     )
@@ -84,7 +84,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     await waitForCircuitPairing(model)
     XCTAssertTrue(model.startCircuitJourney())
     await waitForEndingRoutes(model)
-    XCTAssertEqual(model.journeyEnding, .exit)
+    XCTAssertEqual(model.journeyEnding, .destination)
+    XCTAssertEqual(model.selectedRoute?.routePlan.destinationParkingAreaID, "shuto.pa.daikoku")
+    XCTAssertNil(model.selectedRoute?.exitFacility)
+    XCTAssertNil(model.egressRoute)
     XCTAssertNil(model.egressRoute)
   }
 
@@ -106,10 +109,10 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.selectedRoute?.routePlan.id, original.routePlan.id)
     XCTAssertEqual(model.journeyEnding, .returnToOrigin)
     let candidates = try await model.journeyExitCandidates()
-    let alternative = try XCTUnwrap(candidates.first { $0.facilityID != original.exitFacility.facilityID })
+    let alternative = try XCTUnwrap(candidates.first { $0.facilityID != original.exitFacility?.facilityID })
     try await model.selectJourneyExit(alternative.facilityID)
     await waitForEndingRoutes(model)
-    XCTAssertEqual(model.selectedRoute?.exitFacility.facilityID, alternative.facilityID)
+    XCTAssertEqual(model.selectedRoute?.exitFacility?.facilityID, alternative.facilityID)
     XCTAssertEqual(model.selectedCircuit, .c1Inner)
     XCTAssertEqual(model.circuitLaps, 2)
     XCTAssertTrue(model.isCircuitRouteSelected)
@@ -910,7 +913,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     XCTAssertEqual(
       model.circuitExitFacilityID,
-      ShutoCircuitProductReleaseBuilder.wanganExitFacilityID
+      nil
     )
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
@@ -977,10 +980,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       model.circuitEntryFacilityID,
       ShutoCircuitProductReleaseBuilder.daikokuEntryFacilityID
     )
-    XCTAssertNotNil(
-      model.circuitExitFacilityID,
-      "Selecting the entrance must derive a direction-valid exit."
-    )
+    XCTAssertNil(model.circuitExitFacilityID)
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
     XCTAssertEqual(model.phase, .review)
@@ -1014,7 +1014,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
     XCTAssertEqual(
       model.circuitExitFacilityID,
-      ShutoCircuitProductReleaseBuilder.scenicExitFacilityID
+      nil
     )
     XCTAssertTrue(model.startCircuitJourney())
     await waitForLiveNavigationPreparation(model)
@@ -3259,7 +3259,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       slowEntry: slowRoute.coordinates.first
         ?? slowRoute.entryFacility.coordinate,
       slowExit: slowRoute.coordinates.last
-        ?? slowRoute.exitFacility.coordinate
+        ?? slowRoute.destinationCoordinate
     )
 
     model.selectRecommendation(at: 1)
@@ -3322,7 +3322,7 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     let draft = try XCTUnwrap(model.customDraftRoute)
     XCTAssertEqual(draft.entryFacility.facilityID, entryID)
-    XCTAssertEqual(draft.exitFacility.facilityID, exitID)
+    XCTAssertEqual(draft.exitFacility?.facilityID, exitID)
     XCTAssertEqual(draft.preference, .fewerJunctions)
     XCTAssertTrue(model.canApplyCustomRoute)
     XCTAssertTrue(model.applyCustomRoute())
@@ -3330,7 +3330,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertTrue(model.isCustomRouteSelected)
     XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
     XCTAssertEqual(model.selectedRoute?.entryFacility.facilityID, entryID)
-    XCTAssertEqual(model.selectedRoute?.exitFacility.facilityID, exitID)
+    XCTAssertEqual(model.selectedRoute?.exitFacility?.facilityID, exitID)
 
     for _ in 0..<100 where model.isUpdatingSurfaceRoute {
       await Task.yield()
@@ -3639,8 +3639,8 @@ final class WholeShutoProductModelTests: XCTestCase {
       originalRoute.entryFacility.facilityID
     )
     XCTAssertEqual(
-      restored.selectedRoute?.exitFacility.facilityID,
-      originalRoute.exitFacility.facilityID
+      restored.selectedRoute?.exitFacility?.facilityID,
+      originalRoute.exitFacility?.facilityID
     )
     XCTAssertTrue(restored.restoredFromCheckpoint)
     XCTAssertFalse(restored.isPlaying)

@@ -5,6 +5,7 @@ import KaidoNavigation
 import KaidoPresentation
 import KaidoRouting
 import KaidoSurfaceRouting
+import MapKit
 import XCTest
 
 @testable import KaidoRoutesApp
@@ -386,14 +387,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
         from: [fastest, simpler],
-        preference: .majorRoads
+        preference: .avoidHighways
       ),
       simpler
     )
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
         from: [fastest, simpler],
-        preference: .fastest
+        preference: .preferHighways
       ),
       fastest
     )
@@ -424,7 +425,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
         from: [overPercentageLimit, shortFastRoute],
-        preference: .majorRoads
+        preference: .avoidHighways
       ),
       shortFastRoute
     )
@@ -440,7 +441,7 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(
       WholeShutoMapKitSurfaceRouteResolver.selectRoute(
         from: [overAbsoluteLimit, longFastRoute],
-        preference: .majorRoads
+        preference: .avoidHighways
       ),
       longFastRoute
     )
@@ -461,8 +462,8 @@ final class WholeShutoProductModelTests: XCTestCase {
       driveRecordPreferenceStore: defaults
     )
 
-    XCTAssertEqual(model.surfaceRoutePreference, .majorRoads)
-    model.setSurfaceRoutePreference(.fastest)
+    XCTAssertEqual(model.surfaceRoutePreference, .preferHighways)
+    model.setSurfaceRoutePreference(.preferHighways)
     model.selectCurrentOrigin(
       WholeShutoProductModel.previewOrigin.coordinate
     )
@@ -477,25 +478,93 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertEqual(model.phase, .review)
     let plannedPreferences = await resolver.recordedPreferences()
     XCTAssertFalse(plannedPreferences.isEmpty)
-    XCTAssertTrue(plannedPreferences.allSatisfy { $0 == .fastest })
+    XCTAssertTrue(plannedPreferences.allSatisfy { $0 == .preferHighways })
 
-    model.setSurfaceRoutePreference(.majorRoads)
+    model.setSurfaceRoutePreference(.avoidHighways)
     for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
       await Task.yield()
     }
     let replannedPreferences = await resolver.recordedPreferences()
     XCTAssertEqual(
       Array(replannedPreferences.suffix(2)),
-      [.majorRoads, .majorRoads]
+      [.avoidHighways, .avoidHighways]
     )
 
-    model.setSurfaceRoutePreference(.fastest)
+    model.setSurfaceRoutePreference(.preferHighways)
     let reopened = WholeShutoProductModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil,
       driveRecordPreferenceStore: defaults
     )
-    XCTAssertEqual(reopened.surfaceRoutePreference, .fastest)
+    XCTAssertEqual(reopened.surfaceRoutePreference, .preferHighways)
+  }
+
+  func testHighwayPreferenceReachesMapKitAndUsesBoundedAlternatives() {
+    let origin = WholeShutoProductModel.previewOrigin.coordinate
+    let destination = WholeShutoProductModel.previewDestination.coordinate
+    let request = WholeShutoMapKitSurfaceRouteResolver.request(
+      from: origin, to: destination, preference: .preferHighways
+    )
+    XCTAssertEqual(request.highwayPreference, .any)
+    XCTAssertEqual(request.tollPreference, .any)
+    let avoiding = WholeShutoMapKitSurfaceRouteResolver.request(
+      from: origin, to: destination, preference: .avoidHighways
+    )
+    XCTAssertEqual(avoiding.highwayPreference, .avoid)
+    XCTAssertEqual(avoiding.tollPreference, .avoid)
+    func route(seconds: Double, highway: Bool) -> WholeShutoSurfaceRoute {
+      WholeShutoSurfaceRoute(
+        coordinates: [origin, destination], distanceMeters: 8_000,
+        expectedTravelTimeSeconds: seconds, instructions: [],
+        hasHighways: highway, hasTolls: highway
+      )
+    }
+    let ordinary = route(seconds: 600, highway: false)
+    let highway = route(seconds: 650, highway: true)
+    let detour = route(seconds: 900, highway: true)
+    XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+      from: [ordinary, highway], preference: .preferHighways
+    ), highway)
+    XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+      from: [ordinary, highway], preference: .avoidHighways
+    ), ordinary)
+    XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+      from: [ordinary, detour], preference: .preferHighways
+    ), ordinary)
+    XCTAssertEqual(WholeShutoMapKitSurfaceRouteResolver.selectRoute(
+      from: [highway], preference: .avoidHighways
+    ), highway)
+  }
+
+  func testTourHighwayPreferenceRecomputesNearbyConnectingEntrance() async throws {
+    let suiteName = UUID().uuidString
+    let defaults = UserDefaults(suiteName: suiteName)!
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil, driveRecordPreferenceStore: defaults
+    )
+    let harumi = try XCTUnwrap(model.database.directionalFacilities.first {
+      $0.facilityID == "shuto.ic.10.harumi"
+    })
+    model.selectCurrentOrigin(harumi.coordinate)
+    model.selectCircuit(.wanganDaikokuRun)
+    await waitForCircuitPairing(model)
+    XCTAssertEqual(model.circuitEntryFacilityID, harumi.facilityID)
+    model.setSurfaceRoutePreference(.avoidHighways)
+    XCTAssertFalse(model.canStartCircuitJourney)
+    await waitForCircuitPairing(model)
+    XCTAssertEqual(model.circuitEntranceCandidates.first?.routeID, "B")
+    XCTAssertFalse(model.circuitEntranceCandidates.contains { $0.facilityID == harumi.facilityID })
+    model.setSurfaceRoutePreference(.preferHighways)
+    await waitForCircuitPairing(model)
+    XCTAssertEqual(model.circuitEntryFacilityID, harumi.facilityID)
+    XCTAssertTrue(model.startCircuitJourney())
+    await waitForLiveNavigationPreparation(model)
+    XCTAssertTrue(model.canStartLiveNavigation)
+    XCTAssertTrue(model.selectedRoute?.routePlan.occurrences.contains {
+      $0.kind == .paVisit && $0.parkingAreaID == "shuto.pa.daikoku"
+    } == true)
   }
 
   func testRouteJoinIsNeitherOfferedNorDeclarableOutsideALiveEntry() async {
@@ -935,9 +1004,7 @@ final class WholeShutoProductModelTests: XCTestCase {
       try ShutoCircuitProductReleaseBuilder
       .plannedScenicRoute(database: model.database)
 
-    model.selectCurrentOrigin(
-      ShutoCoordinate(latitude: 35.6812, longitude: 139.7671)
-    )
+    model.selectCurrentOrigin(expected.entryFacility.coordinate)
     model.selectCircuit(.scenicGrandTour)
     await waitForCircuitPairing(model)
 

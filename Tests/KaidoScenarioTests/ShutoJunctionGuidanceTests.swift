@@ -497,10 +497,9 @@ struct ShutoJunctionGuidanceTests {
     let database = try loadDatabase()
     let planner = try ShutoRoutePlanner(database: database)
     let entrance = try #require(
-      planner.circuitEntranceCandidates(
-        for: .wanganDaikokuRun,
-        origin: nil
-      ).first
+      database.directionalFacilities.first {
+        $0.facilityID == "shuto.ic.b.chidoricho"
+      }
     )
     let pairing = try planner.recommendedCircuitPairing(
       for: .wanganDaikokuRun,

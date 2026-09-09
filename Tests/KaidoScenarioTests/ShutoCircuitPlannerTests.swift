@@ -320,7 +320,7 @@ struct ShutoCircuitPlannerTests {
     // Sugita) head away from the course and never appear.
     #expect(
       entrances.allSatisfy {
-        $0.entranceDirections.contains("西行き")
+        ($0.routeID != "B" || $0.entranceDirections.contains("西行き"))
           && $0.facilityID != "shuto.ic.b.sankeien"
           && $0.facilityID != "shuto.ic.b.sugita"
           && $0.facilityID != "shuto.ic.b.daikokufutou"
@@ -347,7 +347,7 @@ struct ShutoCircuitPlannerTests {
     #expect(assertContinuity(route.edges))
     // The run leaves the Bayshore for the Daikoku Line to reach the parking
     // area, then comes back to it for the Daikoku-Futo exit.
-    #expect(route.routeIDsInOrder == ["B", "K5", "B"])
+    #expect(Array(route.routeIDsInOrder.suffix(3)) == ["B", "K5", "B"])
 
     // The parking area is the point of the run: it is driven, not passed.
     let parkingVisits = route.routePlan.occurrences.filter {
@@ -372,6 +372,32 @@ struct ShutoCircuitPlannerTests {
         laps: 2
       )
     }
+  }
+
+  @Test("a tour can join from the nearest connecting expressway entrance")
+  func tourAcceptsNearbyConnectingEntrance() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let harumi = try #require(database.directionalFacilities.first {
+      $0.facilityID == "shuto.ic.10.harumi"
+    })
+    let pairing = try planner.recommendedCircuitPairing(
+      for: .wanganDaikokuRun,
+      origin: harumi.coordinate,
+      evidence: .etcNormalCarActive
+    )
+    #expect(pairing.entrance.facilityID == harumi.facilityID)
+    let route = try planner.planCircuit(
+      circuit: .wanganDaikokuRun,
+      entryFacilityID: pairing.entrance.facilityID,
+      exitFacilityID: pairing.exit.facilityID,
+      laps: 1
+    )
+    #expect(route.routeIDsInOrder == ["10", "B", "K5", "B"])
+    #expect(assertContinuity(route.edges))
+    #expect(route.routePlan.occurrences.contains {
+      $0.parkingAreaID == "shuto.pa.daikoku" && $0.kind == .paVisit
+    })
   }
 
   @Test("the Daikoku Yokohama loop closes in the supported direction")
@@ -457,6 +483,12 @@ struct ShutoCircuitPlannerTests {
     #expect(assertContinuity(route.edges))
     let traversed = Set(route.routeIDsInOrder)
     #expect(traversed.isSuperset(of: ["10", "B", "1_HANEDA", "K1", "K3"]))
+    let parkingArea = try #require(loadDatabase().parkingAreas.first {
+      $0.parkingAreaID == "shuto.pa.daikoku"
+    })
+    #expect(route.routePlan.occurrences.filter {
+      $0.parkingAreaID == parkingArea.parkingAreaID && $0.kind == .paVisit
+    }.count == parkingArea.interiorEdgeIDs?.count)
   }
 
   @Test("a radial entrance pairs to the honest cheapest loop excursion")

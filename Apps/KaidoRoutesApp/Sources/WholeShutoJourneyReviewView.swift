@@ -204,6 +204,18 @@ struct WholeShutoJourneyReviewView: View {
 
       expresswayLeg
 
+      if !parkingStopNames.isEmpty {
+        HStack(spacing: 12) {
+          Text(copy.resolve(japanese: "立ち寄り", simplifiedChinese: "停靠", english: "STOP"))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Text(parkingStopNames.joined(separator: "・"))
+            .font(.subheadline.bold())
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("whole-shuto-review-parking-stops")
+      }
+
       endpoint(
         symbol: "arrow.up.right",
         eyebrow: copy.resolve(
@@ -251,6 +263,15 @@ struct WholeShutoJourneyReviewView: View {
     .overlay {
       RoundedRectangle(cornerRadius: 18)
         .stroke(KaidoTheme.nightDivider, lineWidth: 1)
+    }
+  }
+
+  private var parkingStopNames: [String] {
+    let ids = model.selectedRoute?.routePlan.occurrences.compactMap(\.parkingAreaID) ?? []
+    var seen: Set<String> = []
+    return ids.compactMap { id in
+      guard seen.insert(id).inserted else { return nil }
+      return model.database.parkingAreas.first { $0.parkingAreaID == id }?.nameJA
     }
   }
 

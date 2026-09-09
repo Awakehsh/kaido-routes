@@ -32,7 +32,7 @@ before trusting any guidance this product gives.
   loop closed by the Bayshore Route, the Bayshore westbound run that leaves
   the Bayshore at Daikoku to drive into Daikoku PA itself,
   the Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge. The driver picks a route, never designs
+  Mirai, and the Yokohama Bay Bridge that also enters Daikoku PA. The driver picks a route, never designs
   an entrance: selecting one derives the direction-valid pairing, offers a 1–9
   lap count on loops, and shows a tariff band from dated operator evidence.
 - Presents three maps for one selected route — the whole-network line map, the

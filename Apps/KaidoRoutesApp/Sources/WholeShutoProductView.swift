@@ -7126,9 +7126,9 @@ private struct WholeShutoSettingsView: View {
         Section {
           Picker(
             copy.resolve(
-              japanese: "一般道",
-              simplifiedChinese: "普通道路",
-              english: "Surface roads"
+              japanese: "高速道路",
+              simplifiedChinese: "高速道路",
+              english: "Highways"
             ),
             selection: Binding(
               get: { model.surfaceRoutePreference },
@@ -7137,26 +7137,26 @@ private struct WholeShutoSettingsView: View {
           ) {
             Text(
               copy.resolve(
-                japanese: "広い道を優先",
-                simplifiedChinese: "大路优先",
-                english: "Major roads first"
+                japanese: "高速道路を優先",
+                simplifiedChinese: "高速为主",
+                english: "Prefer highways"
               )
             )
-            .tag(WholeShutoSurfaceRoutePreference.majorRoads)
+            .tag(WholeShutoSurfaceRoutePreference.preferHighways)
             .accessibilityIdentifier(
-              "whole-shuto-surface-route-preference-major-roads"
+              "whole-shuto-surface-route-preference-prefer-highways"
             )
 
             Text(
               copy.resolve(
-                japanese: "速さを優先",
-                simplifiedChinese: "更快路线",
-                english: "Faster route"
+                japanese: "できるだけ避ける",
+                simplifiedChinese: "尽量回避",
+                english: "Avoid when possible"
               )
             )
-            .tag(WholeShutoSurfaceRoutePreference.fastest)
+            .tag(WholeShutoSurfaceRoutePreference.avoidHighways)
             .accessibilityIdentifier(
-              "whole-shuto-surface-route-preference-fastest"
+              "whole-shuto-surface-route-preference-avoid-highways"
             )
           }
           .accessibilityIdentifier(
@@ -7172,19 +7172,19 @@ private struct WholeShutoSettingsView: View {
           )
         } footer: {
           Text(
-            model.surfaceRoutePreference == .majorRoads
+            model.surfaceRoutePreference == .avoidHighways
               ? copy.resolve(
                 japanese:
-                  "無理のない迂回範囲で曲がる回数が少なく流れの良い候補を選びます。出発地や目的地の近くでは細い道を通る場合があります。",
+                  "選んだルート以外は、できるだけ一般道へ。",
                 simplifiedChinese:
-                  "会在合理绕行范围内选择转弯更少、通行更顺的候选路线；起点或终点附近仍可能经过小路。",
+                  "保留所选路线，接驳尽量走普通道路。",
                 english:
-                  "Prefers simpler, smoother alternatives within a reasonable detour. Small roads may still be necessary near the start or destination."
+                  "Keep your route; prefer local roads for connections."
               )
               : copy.resolve(
-                japanese: "利用できる一般道候補のうち、所要時間が最も短い経路を選びます。",
-                simplifiedChinese: "选择预计用时最短的可用普通道路路线。",
-                english: "Chooses the available surface-road route with the shortest ETA."
+                japanese: "近くの入口から高速道路へ。追加料金は別途。",
+                simplifiedChinese: "优先就近上高速，额外通行费另计。",
+                english: "Prefer a nearby highway entrance. Extra tolls may apply."
               )
           )
         }

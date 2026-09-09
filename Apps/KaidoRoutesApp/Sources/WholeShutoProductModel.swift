@@ -163,6 +163,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
   let instructions: [String]
   let steps: [WholeShutoSurfaceRouteStep]?
   let guidanceLanguageCode: String?
+  let hasHighways: Bool?
+  let hasTolls: Bool?
 
   init(
     coordinates: [ShutoCoordinate],
@@ -170,7 +172,9 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     expectedTravelTimeSeconds: Double,
     instructions: [String],
     steps: [WholeShutoSurfaceRouteStep]? = nil,
-    guidanceLanguageCode: String? = nil
+    guidanceLanguageCode: String? = nil,
+    hasHighways: Bool? = nil,
+    hasTolls: Bool? = nil
   ) {
     self.coordinates = coordinates
     self.distanceMeters = distanceMeters
@@ -178,6 +182,8 @@ struct WholeShutoSurfaceRoute: Codable, Equatable, Sendable {
     self.instructions = instructions
     self.steps = steps
     self.guidanceLanguageCode = guidanceLanguageCode
+    self.hasHighways = hasHighways
+    self.hasTolls = hasTolls
   }
 }
 
@@ -655,7 +661,7 @@ final class WholeShutoProductModel: ObservableObject {
       driveRecordPreferenceStore.string(
         forKey: Self.surfaceRoutePreferenceDefaultsKey
       ).flatMap(WholeShutoSurfaceRoutePreference.init(rawValue:))
-      ?? .majorRoads
+      ?? .preferHighways
     waysByID = Dictionary(
       uniqueKeysWithValues: resolvedDatabase.ways.map {
         ($0.wayID, $0)
@@ -2211,6 +2217,10 @@ final class WholeShutoProductModel: ObservableObject {
     )
     guard preference != surfaceRoutePreference else { return }
     surfaceRoutePreference = preference
+    if phase == .planning, selectedCircuit != nil {
+      resolveCircuitPairing(entranceOverride: nil)
+      return
+    }
     guard
       phase == .review,
       let recommendation = selectedRecommendation,
@@ -2694,6 +2704,7 @@ final class WholeShutoProductModel: ObservableObject {
 
   var canStartCircuitJourney: Bool {
     phase == .planning
+      && !isResolvingCircuitPairing
       && selectedCircuit != nil
       && circuitEntryFacilityID != nil
       && circuitExitFacilityID != nil
@@ -2797,12 +2808,14 @@ final class WholeShutoProductModel: ObservableObject {
     isResolvingCircuitPairing = true
     let planner = planner
     let originCoordinate = origin?.coordinate
+    let includeConnectingEntrances = surfaceRoutePreference == .preferHighways
     circuitPairingOriginCoordinate = originCoordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
       [weak self] in
       let candidates = planner.circuitEntranceCandidates(
         for: circuit,
-        origin: originCoordinate
+        origin: originCoordinate,
+        includeConnectingEntrances: includeConnectingEntrances
       )
       let overriddenEntranceID =
         candidates.contains(where: { $0.facilityID == entranceOverride })

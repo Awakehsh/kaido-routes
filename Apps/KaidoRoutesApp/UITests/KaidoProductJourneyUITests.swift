@@ -288,7 +288,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
   }
 
-  func testWholeShutoSettingsSwitchOrdinaryRoadPreference() {
+  func testWholeShutoSettingsSwitchHighwayPreference() {
     continueAfterFailure = false
     let app = XCUIApplication()
     app.launchArguments = [
@@ -296,7 +296,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
       "-app.kaidoroutes.language.interface",
       "en",
       "-app.kaidoroutes.surface-route.preference",
-      "MAJOR_ROADS",
+      "PREFER_HIGHWAYS",
     ]
     app.launchSilently()
     returnWholeShutoToPlanning(in: app)
@@ -312,25 +312,25 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(preference.waitForExistence(timeout: 3))
     XCTAssertTrue(
       [preference.label, preference.value as? String ?? ""]
-        .contains { $0.contains("Major roads first") }
+        .contains { $0.contains("Prefer highways") }
     )
     preference.tap()
 
     let fastest = element(
-      "whole-shuto-surface-route-preference-fastest",
+      "whole-shuto-surface-route-preference-avoid-highways",
       in: app
     )
     XCTAssertTrue(fastest.waitForExistence(timeout: 3))
     fastest.tap()
     XCTAssertTrue(
       [preference.label, preference.value as? String ?? ""]
-        .contains { $0.contains("Faster route") }
+        .contains { $0.contains("Avoid when possible") }
     )
 
     let screenshot = XCTAttachment(
       screenshot: XCUIScreen.main.screenshot()
     )
-    screenshot.name = "Whole Shuto ordinary-road preference"
+    screenshot.name = "Whole Shuto highway preference"
     screenshot.lifetime = .keepAlways
     add(screenshot)
   }
@@ -1925,6 +1925,11 @@ final class KaidoProductJourneyUITests: XCTestCase {
       in: app
     )
     XCTAssertTrue(circuit.waitForExistence(timeout: 5))
+    if circuitID == "shuto.circuit.scenic-grand-tour" {
+      let parkingStop = element("whole-shuto-circuit-pa-stops-\(circuitID)", in: app)
+      XCTAssertTrue(parkingStop.exists)
+      XCTAssertTrue(parkingStop.label.contains("大黒PA"))
+    }
     circuit.tap()
     let startCircuit = element("whole-shuto-start-circuit", in: app)
     XCTAssertTrue(startCircuit.waitForExistence(timeout: 5))
@@ -1945,6 +1950,12 @@ final class KaidoProductJourneyUITests: XCTestCase {
     startCircuit.tap()
 
     XCTAssertTrue(element("whole-shuto-journey-review", in: app).waitForExistence(timeout: 8))
+
+    if circuitID == "shuto.circuit.scenic-grand-tour" {
+      let parkingStop = element("whole-shuto-review-parking-stops", in: app)
+      XCTAssertTrue(parkingStop.exists)
+      XCTAssertTrue(parkingStop.label.contains("大黒PA"))
+    }
 
     let startLiveDrive = app.buttons["whole-shuto-start-live-drive"]
     XCTAssertTrue(startLiveDrive.waitForExistence(timeout: 5))

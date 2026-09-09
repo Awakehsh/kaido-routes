@@ -37,6 +37,12 @@ internal review workbench.
   ordered course. Avoid when possible keeps the selected Shuto course but
   prefers its own entrances and ordinary roads on connecting legs. Connecting
   tolls are outside the Shuto estimate.
+- After selecting a route, PA stops can be added from journey review. Only
+  direction-compatible local access/return paths are offered. Each added PA is
+  visited on the first pass; the route, lap count and tariff pairing are retained.
+  Included course stops remain required. Added stops can be removed, saved and
+  restored, and appear by name in review. This is planning/runtime coverage,
+  not current-opening or physical-road qualification.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

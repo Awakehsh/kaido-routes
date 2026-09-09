@@ -3,6 +3,50 @@ import XCTest
 
 @MainActor
 final class KaidoProductJourneyUITests: XCTestCase {
+
+  func testWholeShutoAddsAndRemovesDirectionalParkingStop() {
+    continueAfterFailure = false
+    let app = XCUIApplication()
+    app.launchArguments = [
+      "-RESET-NAVIGATION-CHECKPOINT", "-WHOLE-SHUTO-RECOMMENDED-LIVE-ROUTE-PREVIEW",
+      "-app.kaidoroutes.language.interface", "en",
+      "-app.kaidoroutes.surface-route.preference", "PREFER_HIGHWAYS",
+    ]
+    app.launchSilently()
+    let circuit = element("whole-shuto-circuit-option-shuto.circuit.wangan-daikoku-run", in: app)
+    XCTAssertTrue(circuit.waitForExistence(timeout: 8))
+    circuit.tap()
+    let useRoute = element("whole-shuto-start-circuit", in: app)
+    XCTAssertTrue(useRoute.waitForExistence(timeout: 5))
+    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: useRoute)], timeout: 20), .completed)
+    useRoute.tap()
+    let edit = element("whole-shuto-review-edit-parking-stops", in: app)
+    XCTAssertTrue(edit.waitForExistence(timeout: 8))
+    edit.tap()
+    let stop = app.buttons["whole-shuto-parking-stop-shuto.pa.oi-westbound"]
+    XCTAssertTrue(stop.waitForExistence(timeout: 8))
+    XCTAssertFalse(app.buttons["whole-shuto-parking-stop-shuto.pa.oi-eastbound"].exists)
+    stop.tap()
+    XCTAssertTrue(stop.isSelected)
+    element("whole-shuto-parking-stops-apply", in: app).tap()
+    let summary = element("whole-shuto-review-parking-stops", in: app)
+    XCTAssertTrue(summary.waitForExistence(timeout: 10))
+    let picture = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    picture.lifetime = .keepAlways
+    add(picture)
+    XCTAssertTrue(summary.label.contains("大井PA"), summary.label)
+    XCTAssertTrue(summary.label.contains("大黒PA"))
+    let start = element("whole-shuto-start-live-drive", in: app)
+    XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: start)], timeout: 20), .completed)
+    edit.tap()
+    XCTAssertTrue(stop.waitForExistence(timeout: 8))
+    XCTAssertTrue(stop.isSelected)
+    stop.tap()
+    element("whole-shuto-parking-stops-apply", in: app).tap()
+    XCTAssertTrue(summary.waitForExistence(timeout: 10))
+    XCTAssertFalse(summary.label.contains("大井PA"))
+    XCTAssertTrue(summary.label.contains("大黒PA"))
+  }
   func testJourneyEndingCanBeChangedBeforeDeparture() {
     continueAfterFailure = false
     let app = XCUIApplication()

@@ -61,7 +61,9 @@ an entrance on the connecting expressway.
 
 Default route recipes retain their existing stops. Modelling a PA does not
 silently add a stop to every route that passes it, or enroll arbitrary routes
-for live navigation. Route cards continue to advertise only actual stops.
+for live navigation. Route cards continue to advertise only actual stops. Journey review now offers
+optional PA stops whose directed local access and return fit the selected route;
+added stops are visited on the first pass and retained in saved routes.
 
 The deferred recovery-candidate ordering and Ohashi JCT issue remain outside
 this work. Product releases and bundle hashes are rebuilt from the updated

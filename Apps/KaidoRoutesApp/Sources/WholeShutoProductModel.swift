@@ -547,6 +547,7 @@ final class WholeShutoProductModel: ObservableObject {
   private var noticeSequence = 0
   private var pendingNotice: GuidanceSpeechCommand?
   private var positionLossAnnounced = false
+  private var positionLossAnnouncedAtMilliseconds: Int?
   private var isStaticJunctionPreview = false
   private var selectedOriginTitle: String?
   private var selectedDestinationTitle: String?
@@ -569,6 +570,8 @@ final class WholeShutoProductModel: ObservableObject {
   private let nowMillisecondsProvider: () -> Int
 
   static let liveLocationStaleAfterMilliseconds = 10_000
+  /// A second loss inside this window stays silent, and so does its recovery.
+  static let positionLossAnnouncementCooldownMilliseconds = 60_000
   static let tunnelEstimateRefreshMilliseconds = 1_000
   static let liveCheckpointPersistenceIntervalMilliseconds = 5_000
   static let surfaceRerouteRequiredOffRouteObservations = 2
@@ -3658,10 +3661,11 @@ final class WholeShutoProductModel: ObservableObject {
       return
     }
     let observation = envelope.observation
+    // Horizontal accuracy is an input to the surface corridor width, never a
+    // reason to call the position lost: an on-route fix at 50 m accuracy under
+    // an elevated road is still the car's position.
     if phase == .surfaceAccess || phase == .surfaceEgress {
-      guard observation.receivedAtMilliseconds - observation.observedAtMilliseconds < 10_000,
-        observation.horizontalAccuracyMeters > 0,
-        observation.horizontalAccuracyMeters < 30
+      guard observation.receivedAtMilliseconds - observation.observedAtMilliseconds < 10_000
       else {
         liveLocationState = .degraded
         liveLocationIssueCode = "CORE_LOCATION_SURFACE_FIX_UNCERTAIN"
@@ -3737,10 +3741,9 @@ final class WholeShutoProductModel: ObservableObject {
         {
           applyLiveActorSnapshot(update.navigationSnapshot)
         }
-        if let rejection = update.rejectionReason {
-          liveLocationState = .degraded
-          liveLocationIssueCode = rejection.rawValue
-        }
+        // A rejected ramp admission only says the car is not on the ramp yet.
+        // The surface polyline still owns the position, so the state stays
+        // available and the driver keeps the approach guidance.
       case .entryTransition:
         guard var adapter = liveEntryTransitionAdapter else {
           throw WholeShutoProductError.noExpresswayRoute
@@ -4428,6 +4431,7 @@ final class WholeShutoProductModel: ObservableObject {
     surfaceSpeechGeneration = 0
     pendingNotice = nil
     positionLossAnnounced = false
+    positionLossAnnouncedAtMilliseconds = nil
     runtimeAssets = nil
     driveSimulator = nil
     liveDriveSession = nil
@@ -4915,6 +4919,7 @@ final class WholeShutoProductModel: ObservableObject {
     speechCoordinator?.stop()
     pendingNotice = nil
     positionLossAnnounced = false
+    positionLossAnnouncedAtMilliseconds = nil
     let coordinator = try GuidanceSpeechCoordinator(
       expectedRoutePlanID: routePlanID,
       output: speechOutput
@@ -5574,8 +5579,12 @@ final class WholeShutoProductModel: ObservableObject {
     }
     liveLocationState = .stale
     speechCoordinator?.invalidateGuidance(keepingNotices: true)
-    if !positionLossAnnounced {
+    let cooledDown = positionLossAnnouncedAtMilliseconds.map {
+      nowMilliseconds - $0 >= Self.positionLossAnnouncementCooldownMilliseconds
+    } ?? true
+    if !positionLossAnnounced, cooledDown {
       positionLossAnnounced = true
+      positionLossAnnouncedAtMilliseconds = nowMilliseconds
       announceJourneyNotice(.positionLost)
     }
     liveLocationIssueCode = "CORE_LOCATION_NO_RECENT_FIX"

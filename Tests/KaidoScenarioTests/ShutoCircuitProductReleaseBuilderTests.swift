@@ -163,7 +163,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 17)
+    #expect(release.navigation.bundle.releasedGuidance.count == 19)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,

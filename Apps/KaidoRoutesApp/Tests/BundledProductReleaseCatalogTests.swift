@@ -126,11 +126,11 @@ final class BundledProductReleaseCatalogTests: XCTestCase {
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.routePlan.occurrences.count,
-      718
+      970
     )
     XCTAssertEqual(
       scenic.release.navigation.bundle.releasedGuidance.count,
-      17
+      19
     )
     XCTAssertNotNil(scenic.release.foregroundLiveInputAuthority)
   }

@@ -60,7 +60,7 @@ map as context, an explicit current-location origin chip, and the named
 route-experience catalog — versioned candidate templates over the bundled
 planning snapshot, covering the drives the audience actually runs (the C1
 inner loop, the C2-plus-Bayshore grand loop,
-the Bayshore run ending at Daikoku PA, the Yokohama-side Daikoku loop, and an
+the Bayshore run visiting Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
 entry for interface language, guidance voice, ordinary-road routing preference,
@@ -139,8 +139,10 @@ band, and never recommends an exit sharing the entrance's name (same-named
 ramps bill as one toll point, as the operator's Daikoku-Futo page and fare
 search confirm across its Bayshore and Daikoku Line ramps). An entrance on
 a member route must still match the experience's carriageway direction
-(the opposite loop is a different experience), and ordered tours keep
-their selected direction-valid entrances and exits throughout. The pairing appears as one
+(the opposite loop is a different experience), and ordered tours accept nearby connecting-expressway entrances while keeping
+every anchor in course order. Highway preference defaults to prefer highways;
+avoid when possible limits recommendations to entrances on the chosen course
+and prefers ordinary roads for connecting legs. The pairing appears as one
 factual line on the card; expanding it reveals the ranked alternatives so
 a driver can correct a poor location fix or prefer a different entrance,
 but the default path never asks the driver to assemble a pairing.

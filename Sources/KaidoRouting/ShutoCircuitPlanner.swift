@@ -254,7 +254,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
   /// The scenic grand tour the snapshot's junction movements support: Harumi
   /// onto the Bayshore westbound, the Haneda Line down past the airport, the
   /// Yokohane Line through Minato Mirai, the Kariba Line to Honmoku, and the
-  /// Bayshore over the Yokohama Bay Bridge to finish beside Daikoku PA.
+  /// Bayshore over the Yokohama Bay Bridge to visit Daikoku PA.
   public static let scenicGrandTour = ShutoCircuitDefinition(
     circuitID: "shuto.circuit.scenic-grand-tour",
     displayNameJA: "横浜絶景ツアー（羽田・みなとみらい・ベイブリッジ）",
@@ -277,6 +277,7 @@ public struct ShutoCircuitDefinition: Equatable, Identifiable, Sendable {
       .facility("shuto.ic.k1.koyasu"),
       .facility("shuto.ic.k1.minatomirai"),
       .facility("shuto.ic.k3.shinyamashita"),
+      .parkingArea("shuto.pa.daikoku"),
     ],
     landmarkNamesJA: [
       "羽田空港",
@@ -393,33 +394,24 @@ extension ShutoRoutePlanner {
     }
   }
 
-  /// Loops accept off-member entrances the reachability gates admit — the
+  /// Experiences accept off-member entrances the reachability gates admit — the
   /// fare rule's shortest-path pricing makes a minimum-band excursion
   /// possible from almost any ramp, so a radial entrance legally joining
   /// the loop is a first-class start. An entrance on a member route still
   /// has to match the experience's carriageway direction: an opposite-loop
-  /// ramp is a different experience, not an approach. Tours keep their
-  /// reviewed maps everywhere because their course identity depends on
-  /// them.
+  /// ramp is a different experience, not an approach. Tours still traverse
+  /// every anchor in order after the connecting expressway approach.
   private func isEligibleEntrance(
     _ facility: ShutoNetworkDatabase.Facility,
     for circuit: ShutoCircuitDefinition
   ) -> Bool {
     guard facility.canEnter else { return false }
-    switch circuit.kind {
-    case .loop:
-      guard circuit.memberRouteIDs.contains(facility.routeID) else {
-        return true
-      }
-      return circuit.entranceDirectionsByRouteID[facility.routeID].map {
-        facility.entranceDirections.contains($0)
-      } ?? false
-    case .tour:
-      return circuit.memberRouteIDs.contains(facility.routeID)
-        && circuit.entranceDirectionsByRouteID[facility.routeID].map {
-          facility.entranceDirections.contains($0)
-        } ?? false
+    guard circuit.memberRouteIDs.contains(facility.routeID) else {
+      return true
     }
+    return circuit.entranceDirectionsByRouteID[facility.routeID].map {
+      facility.entranceDirections.contains($0)
+    } ?? false
   }
 
   private func isEligibleExit(
@@ -453,10 +445,12 @@ extension ShutoRoutePlanner {
   /// ramps behind nearer radial approaches.
   public func circuitEntranceCandidates(
     for circuit: ShutoCircuitDefinition,
-    origin: ShutoCoordinate? = nil
+    origin: ShutoCoordinate? = nil,
+    includeConnectingEntrances: Bool = true
   ) -> [ShutoNetworkDatabase.Facility] {
     let eligible = database.directionalFacilities.filter {
       isEligibleEntrance($0, for: circuit)
+        && (includeConnectingEntrances || circuit.memberRouteIDs.contains($0.routeID))
     }
     let ranked: [ShutoNetworkDatabase.Facility]
     if let origin {

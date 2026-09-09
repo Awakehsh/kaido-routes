@@ -16,7 +16,9 @@ internal review workbench.
   planning surface — the C1 inner loop, the C2 inner loop closed by the
   Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
   Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge finishing at the Daikoku-Futo exit. The driver
+  Mirai, and the Yokohama Bay Bridge, entering Daikoku PA before the
+  Daikoku-Futo exit. Both one-way Daikoku experiences include the complete
+  reviewed PA path. The driver
   chooses a route, never designs an entrance or exit: selecting an
   experience derives the pairing automatically (nearest reachable
   direction-valid entrance, and for loops the exit whose pairing lands in
@@ -30,6 +32,11 @@ internal review workbench.
   shortest all-Shuto path between entry and exit, lap count never changes
   the band. Destination search remains an optional continuation below the
   catalog.
+- Highway preference defaults to prefer highways: nearby connecting-expressway
+  entrances can feed both loops and one-way tours without removing their
+  ordered course. Avoid when possible keeps the selected Shuto course but
+  prefers its own entrances and ordinary roads on connecting legs. Connecting
+  tolls are outside the Shuto estimate.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every

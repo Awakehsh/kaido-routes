@@ -116,8 +116,8 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
-  func testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes() async throws {
-    for (observedAt, accuracy) in [(10.0, 5.0), (30.0, 100.0)] {
+  func testSpeechRecoveryRejectsStaleButKeepsInaccurateSurfaceFixes() async throws {
+    for (observedAt, accuracy, accepted) in [(10.0, 5.0, false), (30.0, 100.0, true)] {
       let output = SpeechRecoveryAppOutput()
       output.autoFinish = true
       let model = try await speechRecoveryModel(output: output, resolver: SpeechRecoveryShortStepResolver())
@@ -130,13 +130,94 @@ final class WholeShutoProductModelTests: XCTestCase {
           longitude: start.longitude + (end.longitude - start.longitude) * 0.325),
         altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 1,
         timestamp: Date(timeIntervalSince1970: observedAt))
+      let notices = output.commands.filter { $0.identity.anchorID == "JOURNEY_STATUS" }.count
       await model.consumeForegroundNavigationLocations([location], receivedAt: Date(timeIntervalSince1970: 30))
-      XCTAssertEqual(model.liveLocationState, .degraded)
-      XCTAssertFalse(model.hasCurrentGuidancePosition)
-      XCTAssertEqual(model.progressFraction, 0)
-      XCTAssertEqual(output.commands.filter { $0.identity.anchorID == "PROVIDER_SURFACE_STEP" }.count, 1)
+      if accepted {
+        XCTAssertEqual(model.liveLocationState, .available)
+        XCTAssertEqual(model.positionState, .surfacePreview)
+        XCTAssertTrue(model.hasCurrentGuidancePosition)
+        XCTAssertEqual(model.progressFraction, 0.325, accuracy: 0.02)
+      } else {
+        XCTAssertEqual(model.liveLocationState, .degraded)
+        XCTAssertFalse(model.hasCurrentGuidancePosition)
+        XCTAssertEqual(model.progressFraction, 0)
+      }
+      XCTAssertEqual(
+        output.commands.filter { $0.identity.anchorID == "JOURNEY_STATUS" }.count, notices)
+      // The accepted fix sits in the second step, so its instruction is spoken.
+      XCTAssertEqual(
+        output.commands.filter { $0.identity.anchorID == "PROVIDER_SURFACE_STEP" }.count,
+        accepted ? 2 : 1)
       model.reset()
     }
+  }
+
+  func testRejectedRampAdmissionKeepsTheSurfacePositionAvailable() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output, resolver: SpeechRecoveryShortStepResolver())
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    let end = try XCTUnwrap(route.coordinates.last)
+    // Inside the 80 m admission zone but outside the 60 m handoff radius,
+    // every fix also goes through ramp admission. Heading the wrong way
+    // cannot be admitted, but the car is still on the surface polyline.
+    // The fixture's straight line is far longer than its nominal distance,
+    // so measure the 70 m on the ground.
+    let metersPerDegree = 111_320.0
+    let northMeters = (end.latitude - start.latitude) * metersPerDegree
+    let eastMeters =
+      (end.longitude - start.longitude) * metersPerDegree * cos(start.latitude * .pi / 180)
+    let fraction = 1 - 70 / (northMeters * northMeters + eastMeters * eastMeters).squareRoot()
+    let nearEnd = ShutoCoordinate(
+      latitude: start.latitude + (end.latitude - start.latitude) * fraction,
+      longitude: start.longitude + (end.longitude - start.longitude) * fraction)
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "surface.near-end.rejected", coordinate: nearEnd, atMilliseconds: 30_000,
+        courseDegrees: 270))
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertNil(model.liveLocationIssueCode)
+    XCTAssertEqual(model.positionState, .surfacePreview)
+    XCTAssertTrue(model.hasCurrentGuidancePosition)
+    XCTAssertTrue(output.commands.filter { $0.identity.anchorID == "JOURNEY_STATUS" }.isEmpty)
+    model.reset()
+  }
+
+  func testPositionLossNoticeStaysSilentInsideTheCooldown() async throws {
+    let output = SpeechRecoveryAppOutput()
+    output.autoFinish = true
+    let model = try await speechRecoveryModel(output: output)
+    let route = try XCTUnwrap(model.accessRoute)
+    let start = try XCTUnwrap(route.coordinates.first)
+    func count(_ fragment: String) -> Int {
+      output.commands.filter { $0.identity.promptID.contains(fragment) }.count
+    }
+
+    model.evaluateLiveLocationFreshness(atMilliseconds: 100_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(count("positionLost"), 1)
+
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "loss.recovered.0", coordinate: start, atMilliseconds: 101_000))
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(count("positionRecovered"), 1)
+
+    // A second loss 20 s after the first is a flapping signal, not news.
+    model.evaluateLiveLocationFreshness(atMilliseconds: 120_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(count("positionLost"), 1)
+
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(id: "loss.recovered.1", coordinate: start, atMilliseconds: 121_000))
+    XCTAssertEqual(model.liveLocationState, .available)
+    XCTAssertEqual(count("positionRecovered"), 1)
+
+    model.evaluateLiveLocationFreshness(atMilliseconds: 170_000)
+    XCTAssertEqual(model.liveLocationState, .stale)
+    XCTAssertEqual(count("positionLost"), 2)
+    model.reset()
   }
 
   private func speechRecoveryModel(

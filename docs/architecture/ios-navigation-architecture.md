@@ -100,8 +100,12 @@ replace only the active MapKit surface leg from the current coordinate; a
 15-second cooldown prevents request churn, and the exact Shuto plan is never
 recomputed. While the device fix remains outside that surface leg, presentation
 reports that the drive is waiting to join the route; it does not relabel a valid
-fix as weak positioning. Planning location and replay never run in the
-background; only the explicitly user-started live session does. No current path
+fix as weak positioning. On the surface legs horizontal accuracy only widens the
+on-route corridor and never marks weak positioning, and a rejected ramp
+admission inside the approach zone leaves the surface position available. The
+spoken position-lost notice belongs to a stale fix alone, at most once per
+60 seconds, so a flapping signal stays silent. Planning location and replay
+never run in the background; only the explicitly user-started live session does. No current path
 supplies tunnel
 dead-reckoning authority. The live adapter drives the actor's tunnel entry/exit
 and multi-observation reacquisition state. For a tagged tunnel or covered edge only, the App may

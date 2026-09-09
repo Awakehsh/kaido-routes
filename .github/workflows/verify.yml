@@ -192,7 +192,9 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryStalePositionCancelsObsoleteManeuver \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryCurrentStepPrecedesPreviewAfterFixGap \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRetriesAnUnstartedJunctionThroughLiveObservations \
-            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleAndInaccurateSurfaceFixes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testSpeechRecoveryRejectsStaleButKeepsInaccurateSurfaceFixes \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testRejectedRampAdmissionKeepsTheSurfacePositionAvailable \
+            -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testPositionLossNoticeStaysSilentInsideTheCooldown \
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
             -only-testing:KaidoRoutesAppUITests/KRU09AccessibilityUITests \

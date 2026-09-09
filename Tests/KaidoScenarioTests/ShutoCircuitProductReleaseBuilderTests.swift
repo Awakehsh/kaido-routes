@@ -48,9 +48,8 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    // Two more than the run that skipped the parking area: reaching it
-    // crosses the Daikoku interchange going in and coming back out.
-    #expect(release.navigation.bundle.releasedGuidance.count == 16)
+    // Arrival in the PA has no return-junction or exit cue.
+    #expect(release.navigation.bundle.releasedGuidance.count == 14)
     // The parking area is driven, and driving it is recorded as such.
     #expect(
       release.navigation.bundle.routePlan.occurrences.contains {
@@ -163,7 +162,7 @@ struct ShutoCircuitProductReleaseBuilderTests {
 
     #expect(release.foregroundLiveInputAuthority != nil)
     #expect(release.navigation.bundle.routePlan == route.routePlan)
-    #expect(release.navigation.bundle.releasedGuidance.count == 19)
+    #expect(release.navigation.bundle.releasedGuidance.count == 17)
     #expect(
       try ShutoPlannedRouteRuntimeCompiler.compile(
         database: database,
@@ -310,9 +309,9 @@ struct ShutoCircuitProductReleaseBuilderTests {
       ),
       (
         appResource:
-          "wangan-westbound-chidoricho-daikokufutou-product-release.json",
+          "wangan-westbound-chidoricho-daikoku-pa-product-release.json",
         trackedResource:
-          "wangan-westbound-chidoricho-daikokufutou-product-release.json",
+          "wangan-westbound-chidoricho-daikoku-pa-product-release.json",
         artifact:
           try ShutoCircuitProductReleaseBuilder.buildWanganArtifact(
             database: database
@@ -329,9 +328,9 @@ struct ShutoCircuitProductReleaseBuilderTests {
       ),
       (
         appResource:
-          "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json",
+          "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json",
         trackedResource:
-          "daikoku-yokohama-wangankanpachi-daikokufutou-product-release.json",
+          "daikoku-yokohama-wangankanpachi-daikoku-pa-product-release.json",
         artifact:
           try ShutoCircuitProductReleaseBuilder.buildDaikokuArtifact(
             database: database
@@ -339,9 +338,9 @@ struct ShutoCircuitProductReleaseBuilderTests {
       ),
       (
         appResource:
-          "scenic-harumi-daikokufutou-product-release.json",
+          "scenic-harumi-daikoku-pa-product-release.json",
         trackedResource:
-          "scenic-harumi-daikokufutou-product-release.json",
+          "scenic-harumi-daikoku-pa-product-release.json",
         artifact:
           try ShutoCircuitProductReleaseBuilder.buildScenicArtifact(
             database: database

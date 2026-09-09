@@ -65,7 +65,14 @@ public enum SharedRouteCodec {
     if plan.id.isEmpty { errors.append("EMPTY_PLAN_ID") }
     if plan.networkSnapshotID.isEmpty { errors.append("EMPTY_NETWORK_SNAPSHOT_ID") }
     if plan.entryFacilityID.isEmpty { errors.append("EMPTY_ENTRY_FACILITY_ID") }
-    if plan.exitFacilityID.isEmpty { errors.append("EMPTY_EXIT_FACILITY_ID") }
+    switch (plan.exitFacilityID, plan.destinationParkingAreaID) {
+    case (.some(let id), .none) where !id.isEmpty: break
+    case (.none, .some(let id)) where !id.isEmpty:
+      if plan.occurrences.last?.parkingAreaID != id || plan.occurrences.last?.kind != .paVisit {
+        errors.append("INVALID_PARKING_AREA_DESTINATION")
+      }
+    default: errors.append("INVALID_ROUTE_DESTINATION")
+    }
     if plan.occurrences.isEmpty { errors.append("EMPTY_ROUTE_OCCURRENCES") }
 
     let occurrenceIDs = plan.occurrences.map(\.id)

@@ -16,9 +16,8 @@ internal review workbench.
   planning surface — the C1 inner loop, the C2 inner loop closed by the
   Bayshore Route, the Bayshore westbound run that drives into Daikoku PA, the
   Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge, entering Daikoku PA before the
-  Daikoku-Futo exit. Both one-way Daikoku experiences include the complete
-  reviewed PA path. The driver
+  Mirai, and the Yokohama Bay Bridge. These three Daikoku experiences end
+  inside the PA, including completion of the chosen laps on the loop. The driver
   chooses a route, never designs an entrance or exit: selecting an
   experience derives the pairing automatically (nearest reachable
   direction-valid entrance, and for loops the exit whose pairing lands in
@@ -37,12 +36,11 @@ internal review workbench.
   ordered course. Avoid when possible keeps the selected Shuto course but
   prefers its own entrances and ordinary roads on connecting legs. Connecting
   tolls are outside the Shuto estimate.
-- After selecting a route, PA stops can be added from journey review. Only
-  direction-compatible local access/return paths are offered. Each added PA is
-  visited on the first pass; the route, lap count and tariff pairing are retained.
-  Included course stops remain required. Added stops can be removed, saved and
-  restored, and appear by name in review. This is planning/runtime coverage,
-  not current-opening or physical-road qualification.
+- PAs appear in destination search alongside other places. Selecting one
+  plans its exact directional access and an arrival point on the reviewed
+  parking interior. There is no separate stop-selection screen. A PA-ended
+  route has no exit, exit handoff, surface egress or entrance/exit tariff quote.
+  Arrival completes automatically from resolved position evidence inside the PA.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every
@@ -184,8 +182,9 @@ internal review workbench.
   an independently persisted guidance-voice language.
 
 Journey review offers return to the fixed start, finish at the selected exit, or
-continue to a searched place. Loops default to return; tours and custom routes
-default to exit. Exit-only journeys have no onward surface leg. The map corner
+continue to a searched place, including a PA. The three Daikoku recommendations
+default to Daikoku PA; other loops default to return and exact entry/exit routes
+default to their chosen exit. Exit-only journeys have no onward surface leg. The map corner
 shows only the KAIDO wordmark; route details remain in the route controls and review.
 
 The previous C2 and K7 artifacts remain useful deterministic fixtures. They are

@@ -358,7 +358,7 @@ struct ShutoCircuitPlannerTests {
     // Driving the parking area is inside the toll domain — the driver has
     // not exited — so the pairing the tariff is quoted for is untouched.
     #expect(parkingVisits.allSatisfy { $0.tollDomainID == "shuto.toll-domain" })
-    #expect(route.exitFacility.facilityID == "shuto.ic.b.daikokufutou")
+    #expect(route.exitFacility?.facilityID == "shuto.ic.b.daikokufutou")
     // The visit is a contiguous run of occurrences, not scattered edges.
     let visitIndices = parkingVisits.map(\.index)
     #expect(zip(visitIndices, visitIndices.dropFirst()).allSatisfy { $0 + 1 == $1 })

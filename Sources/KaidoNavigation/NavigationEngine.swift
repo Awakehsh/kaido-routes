@@ -207,6 +207,7 @@ public struct NavigationEngine: Sendable {
   }
 
   public mutating func observeLocation(_ observation: LocationObservation) {
+    guard snapshot.journeyPhase != .completed else { return }
     let confidence = observation.effectiveConfidence
     snapshot.locationConfidence = confidence
     snapshot.markerStyle = confidence <= .low ? "ESTIMATED" : "MEASURED"
@@ -277,6 +278,7 @@ public struct NavigationEngine: Sendable {
       ?? singletonCandidateOccurrenceID
     {
       advance(to: occurrenceID)
+      completeParkingArrival(observation)
       return
     }
 
@@ -286,8 +288,33 @@ public struct NavigationEngine: Sendable {
       let currentIndex = snapshot.currentOccurrenceIndex ?? -1
       if let occurrence = routePlan.occurrence(entityID: entityID, after: currentIndex - 1) {
         advance(to: occurrence.id)
+        completeParkingArrival(observation)
       }
     }
+  }
+
+  private mutating func completeParkingArrival(_ observation: LocationObservation) {
+    guard snapshot.journeyPhase == .strictRoute,
+      observation.candidateResolution == .resolved,
+      let plan = configuration.routePlan, let parkingID = plan.destinationParkingAreaID,
+      let index = snapshot.currentOccurrenceIndex,
+      plan.occurrences[index...].allSatisfy({ $0.kind == .paVisit && $0.parkingAreaID == parkingID })
+    else { return }
+    // Arrival is inside the final PA visit, not at a particular parking bay.
+    // Earlier PA visits cannot finish a route that still has road or lap edges.
+    for occurrence in plan.occurrences where occurrence.index > index {
+      appendUnique(occurrence.id, to: &snapshot.skippedOccurrenceIDs)
+    }
+    snapshot.journeyPhase = .completed
+    snapshot.lastPhaseTransitionTrigger = "PARKING_AREA_DESTINATION_REACHED"
+    snapshot.completedOccurrenceIDs = plan.occurrences
+      .filter { $0.index <= index && !snapshot.skippedOccurrenceIDs.contains($0.id) }.map(\.id)
+    snapshot.pendingOccurrenceIDs = []
+    snapshot.currentOccurrenceID = nil
+    snapshot.currentOccurrenceIndex = nil
+    snapshot.strictRouteAutoCommitAllowed = false
+    snapshot.activeGuidanceFrame = nil
+    snapshot.guidancePlanningStatus = .inactive
   }
 
   public mutating func observeBranch(_ observation: BranchObservation) {

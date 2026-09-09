@@ -60,13 +60,12 @@ map as context, an explicit current-location origin chip, and the named
 route-experience catalog — versioned candidate templates over the bundled
 planning snapshot, covering the drives the audience actually runs (the C1
 inner loop, the C2-plus-Bayshore grand loop,
-the Bayshore run visiting Daikoku PA, the Yokohama-side Daikoku loop, and an
+the Bayshore run ending inside Daikoku PA, the Yokohama-side Daikoku loop, and an
 ordered multi-route scenic grand tour), plus saved routes and one advanced
 custom-route entry at the end of the catalog. Parked chrome keeps one Settings
 entry for interface language, guidance voice, ordinary-road routing preference,
-known map limitations, privacy, and licences. **Major roads first** is the
-default; **Faster route** remains available for drivers who prefer the quickest
-provider candidate. OSM source and licence credit sits under the title as a compact
+known map limitations, privacy, and licences. **Prefer highways** is the
+default, with **Avoid when possible** as the alternative. OSM source and licence credit sits under the title as a compact
 caption, adjacent to the map and off the road drawing. Each catalog card presents the
 route as a finished experience: its directional shape thumbnail, reference
 distance and duration, reviewed junction count, mapped tunnel share, landmark
@@ -210,14 +209,16 @@ plan can be reconstructed.
 
 After choosing a route, the driver selects **Return to start**, **End at an
 expressway exit**, or **Continue to another place**. Loops default to the fixed
-planning origin; one-way tours and exact custom routes default to their planned
-directional exit. Opening a saved loop uses the new journey origin, not an old
+planning origin, except the Daikoku loop. The three Daikoku recommendations
+finish inside Daikoku PA; exact entry/exit routes finish at their chosen exit. Opening a saved loop uses the new journey origin, not an old
 recorded location. The ending is visible in route review and persists with the
 journey checkpoint.
 
 Return to start resolves surface egress to the origin captured before departure.
-Continue to another place offers place suggestions and address search, then
-resolves the onward leg without replacing the selected Shuto route. Cancelling
+Continue to another place offers place suggestions and address search. PAs
+appear here as destinations with their own facility identity. Selecting a PA
+plans the final expressway approach and ends navigation inside the parking area;
+ordinary destinations use a legal exit and an onward surface leg. Cancelling
 an edit preserves the previous ending. A search failure leaves the edit open
 with a retry message. Required surface legs must resolve before starting.
 

@@ -10,7 +10,6 @@ struct WholeShutoJourneyReviewView: View {
   @ObservedObject var savedRoutes: SavedRouteLibraryModel
   @ObservedObject var placeSearch: WholeShutoPlaceSearchController
   @State private var showsJourneyEnding = false
-  @State private var showsParkingStops = false
   /// Starting a live drive also needs the location session, which the
   /// product view owns, so the action is handed in.
   var onStartLiveDrive: () -> Void = {}
@@ -28,11 +27,6 @@ struct WholeShutoJourneyReviewView: View {
               .frame(maxWidth: .infinity, minHeight: 44)
           }
           .accessibilityIdentifier("whole-shuto-review-edit-ending")
-          Button { showsParkingStops = true } label: {
-            Label(copy.resolve(japanese: "PAに立ち寄る", simplifiedChinese: "PA 停靠", english: "PA stops"), systemImage: "parkingsign.circle")
-              .frame(maxWidth: .infinity, minHeight: 44)
-          }
-          .accessibilityIdentifier("whole-shuto-review-edit-parking-stops")
           availabilitySummary
           SavedRouteSavePanel(
             library: savedRoutes,
@@ -65,10 +59,6 @@ struct WholeShutoJourneyReviewView: View {
       WholeShutoJourneyEndingView(model: model, placeSearch: placeSearch)
         .environment(\.kaidoInterfaceLocale, interfaceLocale)
     }
-    .sheet(isPresented: $showsParkingStops) {
-      WholeShutoParkingStopsView(model: model)
-        .environment(\.kaidoInterfaceLocale, interfaceLocale)
-    }
     .onChange(of: model.phase) { _, phase in
       if phase != .review {
         dismiss()
@@ -94,9 +84,9 @@ struct WholeShutoJourneyReviewView: View {
         .foregroundStyle(KaidoTheme.routeWhite)
         Text(
           copy.resolve(
-            japanese: "入口から出口まで、選択したルートを固定します",
-            simplifiedChinese: "从入口到出口，按你选择的路线预演",
-            english: "Preview the exact route you selected from entry to exit"
+            japanese: model.endsAtParkingArea ? "選んだルートでPAへ向かいます" : "入口から出口まで、選択したルートを固定します",
+            simplifiedChinese: model.endsAtParkingArea ? "沿所选路线前往 PA" : "从入口到出口，按你选择的路线预演",
+            english: model.endsAtParkingArea ? "Follow your selected route to the PA" : "Preview the exact route you selected from entry to exit"
           )
         )
         .font(.system(size: 11, weight: .bold))
@@ -227,19 +217,20 @@ struct WholeShutoJourneyReviewView: View {
       }
 
       endpoint(
-        symbol: "arrow.up.right",
+        symbol: model.endsAtParkingArea ? "parkingsign" : "arrow.up.right",
         eyebrow: copy.resolve(
-          japanese: "出口",
-          simplifiedChinese: "出口",
-          english: "EXIT"
+          japanese: model.endsAtParkingArea ? "目的地" : "出口",
+          simplifiedChinese: model.endsAtParkingArea ? "目的地" : "出口",
+          english: model.endsAtParkingArea ? "DESTINATION" : "EXIT"
         ),
-        title: model.selectedRoute?.exitFacility.nameJA ?? "—",
-        detail: model.selectedRoute?.exitFacility.exitDirections
+        title: model.selectedRoute?.destinationNameJA ?? "—",
+        detail: model.selectedRoute?.exitFacility?.exitDirections
           .joined(separator: " / ") ?? "",
         tint: KaidoTheme.evidenceCoral
       )
+      .accessibilityIdentifier("whole-shuto-route-destination")
 
-      if model.journeyEnding != .exit {
+      if model.requiresSurfaceEgress {
         surfaceLeg(
           label: copy.resolve(
             japanese: "目的地まで",
@@ -280,7 +271,7 @@ struct WholeShutoJourneyReviewView: View {
     let ids = model.selectedRoute?.routePlan.occurrences.compactMap(\.parkingAreaID) ?? []
     var seen: Set<String> = []
     return ids.compactMap { id in
-      guard seen.insert(id).inserted else { return nil }
+      guard id != model.selectedRoute?.destinationParkingArea?.parkingAreaID, seen.insert(id).inserted else { return nil }
       return model.database.parkingAreas.first { $0.parkingAreaID == id }?.nameJA
     }
   }

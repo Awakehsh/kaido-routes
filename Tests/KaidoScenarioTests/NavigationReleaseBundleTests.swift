@@ -1021,7 +1021,7 @@ func navigationReleaseBundleFixture() -> NavigationReleaseBundleFixture {
       EgressOption(
         id: "test.egress.release-bundle",
         firstEligibleOccurrenceID: "test.occurrence.loop-edge-2",
-        exitFacilityID: routePlan.exitFacilityID,
+        exitFacilityID: routePlan.exitFacilityID!,
         egressOccurrenceIDs: [
           "test.egress.release-bundle.movement",
           "test.egress.release-bundle.edge",

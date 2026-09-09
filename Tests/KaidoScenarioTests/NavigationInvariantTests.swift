@@ -407,7 +407,7 @@ func unavailableRecoveryClearsStaleEgressAuthority() {
         EgressOption(
           id: "test.egress",
           firstEligibleOccurrenceID: "second",
-          exitFacilityID: routePlan.exitFacilityID,
+          exitFacilityID: routePlan.exitFacilityID!,
           egressOccurrenceIDs: ["test.egress.edge"],
           isReleased: true
         )
@@ -466,7 +466,7 @@ func exitHandoffCompletionFailsClosedUntilTerminalProgress() {
   let egress = EgressOption(
     id: "test.egress.exit-handoff",
     firstEligibleOccurrenceID: "second",
-    exitFacilityID: routePlan.exitFacilityID,
+    exitFacilityID: routePlan.exitFacilityID!,
     egressOccurrenceIDs: ["second"],
     isReleased: true
   )

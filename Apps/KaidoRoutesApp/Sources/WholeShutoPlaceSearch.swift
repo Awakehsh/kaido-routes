@@ -103,10 +103,13 @@ final class WholeShutoPlaceSearchController:
     selectedSuggestion = nil
     localMatches = localSuggestionsByID.values
       .filter { suggestion in
-        suggestion.title.localizedCaseInsensitiveContains(normalized)
-          || suggestion.subtitle.localizedCaseInsensitiveContains(normalized)
+        let query = Self.searchKey(normalized)
+        return [suggestion.title, suggestion.subtitle, suggestion.id].contains { Self.searchKey($0).contains(query) }
       }
       .sorted {
+        let firstIsPA = localPlacesByID[$0.id]?.parkingAreaID != nil
+        let secondIsPA = localPlacesByID[$1.id]?.parkingAreaID != nil
+        if firstIsPA != secondIsPA { return firstIsPA }
         if $0.isShutoFacility != $1.isShutoFacility {
           return $0.isShutoFacility
         }
@@ -132,6 +135,11 @@ final class WholeShutoPlaceSearchController:
       )
     }
     completer?.queryFragment = normalized
+  }
+
+  private static func searchKey(_ text: String) -> String {
+    (text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text)
+      .replacingOccurrences(of: "黒", with: "黑").lowercased()
   }
 
   func resolve(

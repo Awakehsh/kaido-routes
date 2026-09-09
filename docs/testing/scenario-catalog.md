@@ -115,3 +115,5 @@ The following are permanent rejection tests once UI or analytics exist:
 - no implication that a PA is guaranteed open;
 - no claim that an estimated toll or position is confirmed;
 - no route start when a required safety-relevant movement is stale or conflicted.
+
+- `KR-S35`: PA destination arrival completes inside the parking area without an exit handoff.

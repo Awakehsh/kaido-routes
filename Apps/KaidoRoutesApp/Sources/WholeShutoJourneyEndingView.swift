@@ -163,14 +163,15 @@ struct WholeShutoJourneyEndingView: View {
     .interactiveDismissDisabled(isApplying)
     .task {
       ending = model.journeyEnding
-      exitID = model.selectedRoute?.exitFacility.facilityID ?? ""
-      exits = model.selectedRoute.map { [$0.exitFacility] } ?? []
+      exitID = model.selectedRoute?.exitFacility?.facilityID ?? ""
+      exits = model.selectedRoute?.exitFacility.map { [$0] } ?? []
       if ending == .destination {
         destination = model.destination
         query = model.destination?.title ?? ""
       }
       do {
         exits = try await model.journeyExitCandidates()
+        if exitID.isEmpty { exitID = exits.first?.facilityID ?? "" }
       } catch {
         self.error = copy.resolve(
           japanese: "他の出口を確認できません。現在の出口はそのまま使えます。",
@@ -189,7 +190,9 @@ struct WholeShutoJourneyEndingView: View {
       defer { isApplying = false }
       do {
         switch ending {
-        case .returnToOrigin: model.selectJourneyEnding(.returnToOrigin)
+        case .returnToOrigin:
+          try await model.prepareExitForOnwardJourney()
+          model.selectJourneyEnding(.returnToOrigin)
         case .exit: try await model.selectJourneyExit(exitID)
         case .destination:
           let place: WholeShutoPlace
@@ -198,7 +201,12 @@ struct WholeShutoJourneyEndingView: View {
           } else {
             place = try await model.resolveJourneyDestination(query)
           }
-          model.selectJourneyEnding(.destination, destination: place)
+          if let parkingID = place.parkingAreaID {
+            try await model.selectJourneyParkingDestination(parkingID)
+          } else {
+            try await model.prepareExitForOnwardJourney()
+            model.selectJourneyEnding(.destination, destination: place)
+          }
         }
         dismiss()
       } catch {

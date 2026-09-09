@@ -2,7 +2,7 @@
 
 Kaido Routes is a route-first iPhone navigation product for the Shuto
 Expressway. A driver chooses a route experience first, derives a
-direction-valid entrance and exit from the current origin, optionally adds a
+direction-valid entrance and an exit or PA destination from the current origin, optionally adds a
 final destination, reviews the exact Shuto route and junction sequence, then
 replays the journey from surface access through surface egress. Live navigation
 starts only in the foreground and only when the selected route matches an exact
@@ -30,14 +30,13 @@ before trusting any guidance this product gives.
   workbench.
 - Leads with a named route-experience catalog: the C1 inner loop, the C2 inner
   loop closed by the Bayshore Route, the Bayshore westbound run that leaves
-  the Bayshore at Daikoku to drive into Daikoku PA itself,
+  the Bayshore at Daikoku to finish inside Daikoku PA,
   the Yokohama-side Daikoku loop, and a scenic grand tour past Haneda, Minato
-  Mirai, and the Yokohama Bay Bridge that also enters Daikoku PA. The driver picks a route, never designs
+  Mirai, and the Yokohama Bay Bridge. All three finish at Daikoku PA. The driver picks a route, never designs
   an entrance: selecting one derives the direction-valid pairing, offers a 1–9
   lap count on loops, and shows a tariff band from dated operator evidence.
-- Lets the driver add reachable PA stops from journey review, with actual
-  directional access and return, one visit on the first pass, and saved-route
-  restoration.
+- Includes PAs in destination search. A PA destination ends the Shuto route
+  inside the parking area, with no exit or onward surface leg.
 - Presents three maps for one selected route — the whole-network line map, the
   geographic MapKit map, and a whole-route track map that fits the entire route
   in one readable frame with every on-route IC, JCT, and PA labeled.

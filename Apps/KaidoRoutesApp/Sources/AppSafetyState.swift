@@ -436,14 +436,14 @@ final class KaidoRoutesAppModel: ObservableObject {
       vehicleClass: session.vehicleClass,
       paymentMethod: session.paymentMethod,
       passageEvidence: .noKnownConflictRealtimeUnconfirmed,
-      tariffQuotes: [
+      tariffQuotes: routePlan.exitFacilityID.map { exitID in [
         TariffQuote(
           id:
             "preview.synthetic.rehearsal."
             + "\(session.vehicleClass.rawValue.lowercased())."
             + "\(session.paymentMethod.rawValue.lowercased())",
           entryFacilityID: routePlan.entryFacilityID,
-          exitFacilityID: routePlan.exitFacilityID,
+          exitFacilityID: exitID,
           vehicleClass: session.vehicleClass,
           paymentMethod: session.paymentMethod,
           tariffVersionID: "preview.synthetic.rehearsal.tariff.v1",
@@ -455,7 +455,7 @@ final class KaidoRoutesAppModel: ObservableObject {
           officialQueryReference:
             "https://example.com/kaido-routes/synthetic-rehearsal"
         )
-      ]
+      ] } ?? []
     )
   }
 }

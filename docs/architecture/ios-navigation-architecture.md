@@ -2284,38 +2284,38 @@ membership and never becomes a fare shortcut. Shared approach/return roads keep
 their original role. A modelled interior alone does not authorize an unsupported
 external-expressway entrance or enroll the route for live navigation.
 
-### Selected parking-area stops
+### Parking-area destinations
 
-After route selection, the review offers a PA-stop editor for catalog, custom
-and saved routes. Candidates must connect from an exact earlier route node,
-traverse their complete reviewed interior, and return to the same or a later
-occurrence. Each connecting leg and the replaced bypass are bounded to 3 km
-inside the directed expressway graph. Search stops on reaching the selected
-route, and cannot cross another parking interior or replace a lap boundary.
-Facility proximity candidates are not exit authority: PA ramps can appear in
-those candidate lists, so they cannot be used to exclude PA access.
+A RoutePlan has exactly one terminal facility: `exitFacilityID` or
+`destinationParkingAreaID`. A PA destination ends with a `PA_VISIT` occurrence
+on the reviewed interior, at the path node nearest the PA point. It has no
+return ramp, exit handoff, surface-egress leg or entry/exit tariff quote. The
+reviewed editor catalog carries an explicit PA destination and the release
+binds the complete route, guidance and matcher corridor to it.
 
-Selected stops occur once, on the first compatible pass, and are assembled in
-route order. Overlapping incompatible detours reject the edit atomically. The
-remaining route edges, entrance, exit, and lap count are retained; lap boundaries
-move with the inserted geometry. Tariff pairing is unchanged. Stops required by
-the named course remain listed as included.
+The Bayshore Daikoku run, Daikoku Yokohama loop and scenic tour default to
+Daikoku PA. The loop completes its requested laps before its final approach to
+the PA. PAs are local, identity-bearing destination-search results; they are
+never handed to a surface provider as an untyped nearby point. Choosing an
+ordinary onward destination from a PA-ended journey first plans a legal exit.
 
-The App retains the exact base RoutePlan and selected PA IDs as one parking-stop
-selection. Checkpoints and shared-route template metadata preserve that selection;
-restoring replays it against the validated base and requires exact full-plan
-equality. Removing added stops restores the original plan. Exit edits and added
-laps retain selected stops or reject the change. Stop editing is available only
-before departure. A new plan resolves its own foreground navigation admission;
-missing guidance or recovery evidence remains a visible blocker.
+The navigation actor completes only on a resolved high-confidence match inside
+the final contiguous visit to the destination PA. Earlier visits cannot finish
+remaining road or lap occurrences. Remaining parking-interior geometry is marked
+untraversed rather than counted as driven. No exact parking-bay coordinate or
+exit handoff is required; later position callbacks cannot resume the journey.
+Replay exercises the same arrival path. Existing saved routes and checkpoints
+retain their exact destination type; legacy authored PA visits remain readable,
+but the product has no separate PA-stop editor.
 
 ### Pre-departure journey ending
 
 The App persists an explicit journey ending alongside the exact route checkpoint:
 return to the fixed planning origin, complete at the directional exit handoff,
-or continue to a selected destination. Older checkpoints without this field
+or continue to a selected destination. A PA destination finishes inside the
+expressway network without surface egress. Older checkpoints without this field
 retain their existing destination and surface legs. Exit-only journeys require
 surface access but no provider egress; the existing exit-handoff completion path
-ends them. Other endings require resolved access and egress. Changing the onward
+ends them. Ordinary onward destinations require resolved access and egress. Changing the onward
 destination invalidates cached surface comparisons and does not alter RoutePlan.
 Changing an exit is an explicit route edit; a circuit retains its course and laps.

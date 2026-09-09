@@ -305,6 +305,11 @@ struct WholeShutoProductView: View {
         ),
         WholeShutoPlace(title: title, coordinate: facility.coordinate)
       )
+    } + database.parkingAreas.map { parking in
+      (
+        WholeShutoPlaceSuggestion(id: "shuto-pa:\(parking.parkingAreaID)", title: parking.nameJA, subtitle: "PA · \(parking.directionJA ?? "")", isShutoFacility: true),
+        WholeShutoPlace(title: parking.nameJA, coordinate: parking.coordinate, parkingAreaID: parking.parkingAreaID)
+      )
     }
   }
 
@@ -1549,7 +1554,13 @@ struct WholeShutoProductView: View {
             .fixedSize(horizontal: false, vertical: true)
         }
         let parkingStopNames = circuitParkingStopNames(circuit)
-        if !parkingStopNames.isEmpty {
+        if let parking = model.database.parkingAreas.first(where: { $0.parkingAreaID == circuit.defaultDestinationParkingAreaID }) {
+          Text(copy.resolve(japanese: "目的地：", simplifiedChinese: "目的地：", english: "Destination: ") + parking.nameJA)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(KaidoTheme.confirmedGreen)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("whole-shuto-circuit-destination-\(circuit.circuitID)")
+        } else if !parkingStopNames.isEmpty {
           // Text alone, no parking glyph: the filled SF parking symbol
           // renders its counter in the card ground and fails the home's
           // contrast audit, and the green line already reads as a stop.
@@ -1724,15 +1735,8 @@ struct WholeShutoProductView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
       }
       .buttonStyle(.plain)
-      .disabled(
-        model.circuitEntryFacilityID == nil
-          || model.circuitExitFacilityID == nil
-          || waitsForCircuitLocation
-      )
-      .opacity(
-        model.circuitEntryFacilityID == nil
-          || model.circuitExitFacilityID == nil ? 0.45 : 1
-      )
+      .disabled(!model.canStartCircuitJourney || waitsForCircuitLocation)
+      .opacity(model.canStartCircuitJourney ? 1 : 0.45)
       .accessibilityIdentifier("whole-shuto-start-circuit")
     }
     .padding(12)
@@ -1762,9 +1766,9 @@ struct WholeShutoProductView: View {
                 english: "Finding your location"
               )
               : copy.resolve(
-                japanese: "現在地から入口・出口を導出中",
-                simplifiedChinese: "正在按当前位置推导入口/出口",
-                english: "Deriving entrance and exit"
+                japanese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "現在地から入口・出口を導出中" : "入口を選択中",
+                simplifiedChinese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "正在按当前位置推导入口/出口" : "正在选择入口",
+                english: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "Deriving entrance and exit" : "Choosing an entrance"
               )
           )
           .font(.system(size: 11.5, weight: .semibold))
@@ -1773,7 +1777,7 @@ struct WholeShutoProductView: View {
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("whole-shuto-circuit-pairing-progress")
       } else if let entry = model.circuitEntryFacility,
-        let exit = model.circuitExitFacility
+        let destinationName = model.circuitDestinationNameJA
       {
         VStack(alignment: .leading, spacing: 4) {
           HStack(spacing: 5) {
@@ -1807,17 +1811,17 @@ struct WholeShutoProductView: View {
             VStack(alignment: .leading, spacing: 2) {
               Text(
                 copy.resolve(
-                  japanese: "おすすめ出口",
-                  simplifiedChinese: "推荐出口",
-                  english: "RECOMMENDED EXIT"
+                  japanese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "おすすめ出口" : "目的地",
+                  simplifiedChinese: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "推荐出口" : "目的地",
+                  english: model.selectedCircuit?.defaultDestinationParkingAreaID == nil ? "RECOMMENDED EXIT" : "DESTINATION"
                 )
               )
               .font(.caption2.weight(.semibold))
               .foregroundStyle(.secondary)
-              Text(exit.nameJA)
+              Text(destinationName)
                 .font(.system(size: 13, weight: .bold))
             }
-            if entry.etcOnly || exit.etcOnly {
+            if entry.etcOnly || model.circuitExitFacility?.etcOnly == true {
               Text("ETC")
                 .font(.system(size: 9, weight: .bold))
                 .padding(.horizontal, 5)
@@ -2702,13 +2706,13 @@ struct WholeShutoProductView: View {
           usesExpandedTextLayout ? .degrees(90) : .zero
         )
       routeBoundary(
-        title: model.selectedRoute?.exitFacility.nameJA ?? "—",
-        detail: (model.selectedRoute?.exitFacility.exitDirections ?? [])
+        title: model.selectedRoute?.destinationNameJA ?? "—",
+        detail: (model.selectedRoute?.exitFacility?.exitDirections ?? [])
           .joined(separator: " / "),
         label: copy.resolve(
-          japanese: "出口",
-          simplifiedChinese: "出口",
-          english: "EXIT"
+          japanese: model.endsAtParkingArea ? "目的地" : "出口",
+          simplifiedChinese: model.endsAtParkingArea ? "目的地" : "出口",
+          english: model.endsAtParkingArea ? "DESTINATION" : "EXIT"
         ),
         tint: KaidoTheme.evidenceCoral
       )
@@ -3937,7 +3941,7 @@ struct WholeShutoProductView: View {
     guard let route = model.selectedRoute else { return "" }
     return
       "\(entryName(route.entryFacility.nameJA)) → "
-      + exitName(route.exitFacility.nameJA)
+      + routeDestinationName(route)
   }
 
   private func recommendationLabel(at index: Int) -> String {
@@ -4002,9 +4006,13 @@ struct WholeShutoProductView: View {
       )
   }
 
+  private func routeDestinationName(_ route: ShutoPlannedRoute) -> String {
+    route.destinationParkingArea == nil ? exitName(route.destinationNameJA) : route.destinationNameJA
+  }
+
   private func routeBoundarySummary(_ route: ShutoPlannedRoute) -> String {
     "\(entryName(route.entryFacility.nameJA)) → "
-      + exitName(route.exitFacility.nameJA)
+      + routeDestinationName(route)
   }
 
   private func expresswayDistanceLabel(_ distanceMeters: Double) -> String {
@@ -4173,9 +4181,9 @@ struct WholeShutoProductView: View {
       )
     case .exitTransition:
       return copy.resolve(
-        japanese: "\(exitName(route.exitFacility.nameJA))から退出",
-        simplifiedChinese: "从 \(exitName(route.exitFacility.nameJA))驶出",
-        english: "Leave from \(exitName(route.exitFacility.nameJA))"
+        japanese: "\(routeDestinationName(route))から退出",
+        simplifiedChinese: "从 \(routeDestinationName(route))驶出",
+        english: "Leave from \(routeDestinationName(route))"
       )
     case .surfaceEgress:
       let destination =
@@ -4574,7 +4582,7 @@ struct WholeShutoProductView: View {
     guard let route = model.selectedRoute else { return "" }
     return
       "\(entryName(route.entryFacility.nameJA)) → "
-      + exitName(route.exitFacility.nameJA)
+      + routeDestinationName(route)
   }
 
   private var journeyRemainingLabel: String {
@@ -5620,12 +5628,12 @@ private struct WholeShutoNetworkDiagram: View {
         )
         marker(
           context: &context,
-          at: transform.point(selectedRoute.exitFacility.coordinate),
+          at: transform.point(selectedRoute.destinationCoordinate),
           color: KaidoTheme.evidenceCoral,
           label: copy.resolve(
-            japanese: "出",
-            simplifiedChinese: "出",
-            english: "X"
+            japanese: selectedRoute.destinationParkingArea != nil ? "PA" : "出",
+            simplifiedChinese: selectedRoute.destinationParkingArea != nil ? "PA" : "出",
+            english: selectedRoute.destinationParkingArea != nil ? "PA" : "X"
           )
         )
       }
@@ -6179,17 +6187,14 @@ private struct WholeShutoGeographicMap: View {
           )
         }
         Annotation(
-          facilityBoundaryName(
-            route.exitFacility.nameJA,
-            isEntry: false
-          ),
-          coordinate: route.exitFacility.coordinate.mapCoordinate
+          route.destinationParkingArea == nil ? facilityBoundaryName(route.destinationNameJA, isEntry: false) : route.destinationNameJA,
+          coordinate: route.destinationCoordinate.mapCoordinate
         ) {
           WholeShutoMapMarker(
             text: copy.resolve(
-              japanese: "出",
-              simplifiedChinese: "出",
-              english: "X"
+              japanese: route.destinationParkingArea != nil ? "PA" : "出",
+              simplifiedChinese: route.destinationParkingArea != nil ? "PA" : "出",
+              english: route.destinationParkingArea != nil ? "PA" : "X"
             ),
             color: KaidoTheme.evidenceCoral
           )

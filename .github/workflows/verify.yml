@@ -204,6 +204,9 @@ jobs:
             -only-testing:KaidoRoutesAppTests/WholeShutoProductModelTests/testCompletedJourneyPreviewKeepsTheArrivalSummaryUntilDone \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testJourneyEndingCanBeChangedBeforeDeparture \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testSelectedCircuitContinuesToSearchedPlace \
+            -only-testing:KaidoRoutesAppTests/WholeShutoPlaceSearchTests \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDestinationSearchSelectsOneResolvedPlace \
+            -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDeniedLocationRequiresAManualOriginBeforeRouteSearch \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testExactCustomRouteWithReviewedGuidanceStartsLiveNavigation \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testDaikokuRecommendationEndsAtPA \
             -only-testing:KaidoRoutesAppUITests/KaidoProductJourneyUITests/testPAIsSelectedThroughDestinationSearch \

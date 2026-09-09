@@ -26,6 +26,7 @@ struct WholeShutoJourneyEndingView: View {
   @ObservedObject var placeSearch: WholeShutoPlaceSearchController
   @State private var ending: WholeShutoJourneyEnding = .returnToOrigin
   @State private var query = ""
+  @FocusState private var searchFocused: Bool
   @State private var destination: WholeShutoPlace?
   @State private var exitID = ""
   @State private var exits: [ShutoNetworkDatabase.Facility] = []
@@ -93,10 +94,39 @@ struct WholeShutoJourneyEndingView: View {
               text: $query
             )
             .accessibilityIdentifier("whole-shuto-ending-search")
+            .focused($searchFocused)
+            .submitLabel(.search)
+            .onSubmit(search)
             .onChange(of: query) {
-              if destination?.title != query { destination = nil }
-              placeSearch.update(
-                query: query, near: model.destination?.coordinate ?? model.origin?.coordinate)
+              error = nil
+              if destination?.title != query {
+                destination = nil
+                placeSearch.update(
+                  query: query, near: model.destination?.coordinate ?? model.origin?.coordinate)
+              }
+            }
+            Button(copy.resolve(japanese: "検索", simplifiedChinese: "搜索", english: "Search"), action: search)
+              .accessibilityIdentifier("whole-shuto-ending-search-submit")
+              .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if placeSearch.state == .searching {
+              ProgressView(copy.resolve(japanese: "検索中", simplifiedChinese: "正在搜索", english: "Searching"))
+                .accessibilityIdentifier("whole-shuto-ending-search-progress")
+            } else if placeSearch.state == .empty {
+              Text(copy.resolve(
+                japanese: "見つかりません。別の名前や住所で検索してください。",
+                simplifiedChinese: "未找到地点，请换个名称或地址。",
+                english: "No places found. Try another name or address."))
+                .accessibilityIdentifier("whole-shuto-ending-search-empty")
+            } else if placeSearch.state == .unavailable {
+              Text(copy.resolve(
+                japanese: "検索できません。接続を確認して再検索してください。",
+                simplifiedChinese: "搜索失败，请检查网络后重试。",
+                english: "Search unavailable. Check your connection and retry."))
+                .accessibilityIdentifier("whole-shuto-ending-search-unavailable")
+            }
+            if let destination {
+              Label(destination.title, systemImage: "checkmark.circle.fill")
+                .accessibilityIdentifier("whole-shuto-ending-selected-place")
             }
             ForEach(placeSearch.suggestions) { suggestion in
               Button {
@@ -107,6 +137,7 @@ struct WholeShutoJourneyEndingView: View {
                     let place = try await placeSearch.resolve(suggestion)
                     destination = place
                     query = place.title
+                    searchFocused = false
                     error = nil
                   } catch { showSearchError() }
                 }
@@ -141,8 +172,7 @@ struct WholeShutoJourneyEndingView: View {
           .accessibilityIdentifier("whole-shuto-ending-apply")
           .disabled(
             isApplying
-              || (ending == .destination
-                && query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+              || (ending == .destination && destination == nil)
           )
         }
       }
@@ -183,6 +213,16 @@ struct WholeShutoJourneyEndingView: View {
     .onDisappear { placeSearch.dismissResults() }
   }
 
+  private func search() {
+    destination = nil
+    error = nil
+    searchFocused = false
+    Task {
+      await placeSearch.search(
+        query: query, near: model.destination?.coordinate ?? model.origin?.coordinate)
+    }
+  }
+
   private func apply() {
     isApplying = true
     error = nil
@@ -195,12 +235,7 @@ struct WholeShutoJourneyEndingView: View {
           model.selectJourneyEnding(.returnToOrigin)
         case .exit: try await model.selectJourneyExit(exitID)
         case .destination:
-          let place: WholeShutoPlace
-          if let destination {
-            place = destination
-          } else {
-            place = try await model.resolveJourneyDestination(query)
-          }
+          guard let place = destination else { return }
           if let parkingID = place.parkingAreaID {
             try await model.selectJourneyParkingDestination(parkingID)
           } else {

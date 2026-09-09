@@ -62,6 +62,7 @@ struct WholeShutoProductView: View {
   @State private var trackMapPan = CGSize.zero
   @State private var trackMapUserAdjustedViewport = false
   @FocusState private var focusedPlanningField: WholeShutoPlanningField?
+  @State private var planningSearchField: WholeShutoPlanningField?
 
   init(
     model: WholeShutoProductModel? = nil,
@@ -246,19 +247,16 @@ struct WholeShutoProductView: View {
       updatePlanningPlaceSearch()
     }
     .onChange(of: focusedPlanningField) { _, newField in
-      if newField != nil {
+      if let newField {
+        planningSearchField = newField
         updatePlanningPlaceSearch()
-      } else {
-        placeSearch.dismissResults()
       }
     }
     .onChange(of: planningLocation.snapshot?.coordinate.latitude) {
       handlePlanningLocationUpdate()
-      updatePlanningPlaceSearch()
     }
     .onChange(of: planningLocation.snapshot?.coordinate.longitude) {
       handlePlanningLocationUpdate()
-      updatePlanningPlaceSearch()
     }
     .onChange(of: planningLocation.state) {
       handlePlanningLocationUpdate()
@@ -2217,23 +2215,17 @@ struct WholeShutoProductView: View {
 
   @ViewBuilder
   private var planningPlaceSearchResults: some View {
-    if focusedPlanningField != nil {
+    if planningSearchField != nil {
       switch placeSearch.state {
-      case .searching, .resolving:
+      case .searching:
         HStack(spacing: 8) {
           ProgressView()
           Text(
-            placeSearch.state == .resolving
-              ? copy.resolve(
-                japanese: "目的地を確認中",
-                simplifiedChinese: "正在确认目的地",
-                english: "Confirming destination"
-              )
-              : copy.resolve(
-                japanese: "検索中",
-                simplifiedChinese: "正在搜索",
-                english: "Searching"
-              )
+            copy.resolve(
+              japanese: "検索中",
+              simplifiedChinese: "正在搜索",
+              english: "Searching"
+            )
           )
           Spacer()
         }
@@ -2242,9 +2234,25 @@ struct WholeShutoProductView: View {
         .padding(.horizontal, 12)
         .frame(height: 36)
         .accessibilityIdentifier("whole-shuto-place-search-progress")
-      case .results:
+      case .results, .unavailable:
         VStack(spacing: 0) {
-          ForEach(placeSearch.suggestions.prefix(4)) { suggestion in
+          if placeSearch.state == .unavailable {
+            HStack(spacing: 7) {
+              Image(systemName: "wifi.exclamationmark")
+              Text(
+                copy.resolve(
+                  japanese: "検索できません。接続を確認して再検索してください。",
+                  simplifiedChinese: "搜索失败，请检查网络后重试。",
+                  english: "Search unavailable. Check your connection and retry."
+                )
+              )
+              Spacer()
+            }
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(KaidoTheme.signalAmber)
+            .accessibilityIdentifier("whole-shuto-place-search-unavailable")
+          }
+          ForEach(placeSearch.suggestions) { suggestion in
             Button {
               selectPlanningSuggestion(suggestion)
             } label: {
@@ -2302,7 +2310,7 @@ struct WholeShutoProductView: View {
               "whole-shuto-place-suggestion-\(suggestion.id)"
             )
 
-            if suggestion.id != placeSearch.suggestions.prefix(4).last?.id {
+            if suggestion.id != placeSearch.suggestions.last?.id {
               Divider()
                 .padding(.leading, 44)
             }
@@ -2314,21 +2322,14 @@ struct WholeShutoProductView: View {
           RoundedRectangle(cornerRadius: 12)
             .stroke(KaidoTheme.nightDivider, lineWidth: 1)
         }
-      case .unavailable:
-        HStack(spacing: 7) {
-          Image(systemName: "wifi.exclamationmark")
-          Text(
-            copy.resolve(
-              japanese: "候補を取得できません。入力した名称で検索できます",
-              simplifiedChinese: "暂时无法获取建议，仍可按输入名称查找",
-              english: "Suggestions unavailable. Search the entered name"
-            )
-          )
-          Spacer()
-        }
-        .font(.system(size: 10, weight: .bold))
-        .foregroundStyle(KaidoTheme.signalAmber)
-        .accessibilityIdentifier("whole-shuto-place-search-unavailable")
+      case .empty:
+        Text(copy.resolve(
+          japanese: "見つかりません。別の名前や住所で検索してください。",
+          simplifiedChinese: "未找到地点，请换个名称或地址。",
+          english: "No places found. Try another name or address."))
+          .font(.footnote)
+          .foregroundStyle(KaidoTheme.nightQuiet)
+          .accessibilityIdentifier("whole-shuto-place-search-empty")
       case .idle:
         EmptyView()
       }
@@ -2421,16 +2422,12 @@ struct WholeShutoProductView: View {
   }
 
   private var canSubmitRoutePlan: Bool {
-    let hasDestination = !model.destinationQuery.trimmingCharacters(
-      in: .whitespacesAndNewlines
-    ).isEmpty
+    let hasDestination = model.hasSelectedDestinationPreview
     let hasRequiredManualOrigin =
       !(showsManualOrigin
         || planningLocation.state == .denied
         || planningLocation.state == .unavailable)
-      || !model.originQuery.trimmingCharacters(
-        in: .whitespacesAndNewlines
-      ).isEmpty
+      || model.hasSelectedOriginPreview
     return hasDestination
       && hasRequiredManualOrigin
       && !model.isPlanning
@@ -2438,6 +2435,7 @@ struct WholeShutoProductView: View {
   }
 
   private func beginRoutePlanning() {
+    guard canSubmitRoutePlan else { return }
     focusedPlanningField = nil
     placeSearch.dismissResults()
 
@@ -2562,24 +2560,26 @@ struct WholeShutoProductView: View {
           .lineLimit(1)
           .minimumScaleFactor(0.72)
         TextField(prompt, text: text)
+          .accessibilityIdentifier(accessibilityIdentifier)
           .font(.system(size: 14, weight: .bold))
           .foregroundStyle(KaidoTheme.routeWhite)
           .lineLimit(1)
           .minimumScaleFactor(0.72)
           .textInputAutocapitalization(.never)
           .focused($focusedPlanningField, equals: focus)
-          .submitLabel(focus == .destination ? .route : .next)
-          .onSubmit {
-            if focus == .origin {
-              focusedPlanningField = .destination
-            } else if !model.destinationQuery.isEmpty {
-              model.planJourney()
-            }
-          }
+          .submitLabel(.search)
+          .onSubmit { searchPlanningPlaces(for: focus) }
       }
+      Button(copy.resolve(japanese: "検索", simplifiedChinese: "搜索", english: "Search")) {
+        searchPlanningPlaces(for: focus)
+      }
+      .font(.system(size: 13, weight: .bold))
+      .frame(minWidth: 44, minHeight: 44)
+      .disabled(text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+      .accessibilityIdentifier(focus == .destination
+        ? "whole-shuto-destination-search-submit" : "whole-shuto-origin-search-submit")
     }
     .frame(height: 52)
-    .accessibilityIdentifier(accessibilityIdentifier)
   }
 
   private var routeReview: some View {
@@ -4637,10 +4637,8 @@ struct WholeShutoProductView: View {
   }
 
   private func updatePlanningPlaceSearch() {
-    guard
-      model.phase == .planning,
-      let focusedPlanningField
-    else {
+    guard model.phase == .planning else { return }
+    guard let focusedPlanningField = focusedPlanningField ?? planningSearchField else {
       placeSearch.dismissResults()
       return
     }
@@ -4676,10 +4674,22 @@ struct WholeShutoProductView: View {
     )
   }
 
+  private func searchPlanningPlaces(for field: WholeShutoPlanningField) {
+    planningSearchField = field
+    focusedPlanningField = nil
+    if field == .destination { model.clearDestinationPreview() }
+    else { model.clearOriginPreview() }
+    Task {
+      await placeSearch.search(
+        query: field == .origin ? model.originQuery : model.destinationQuery,
+        near: planningLocation.snapshot?.coordinate ?? model.origin?.coordinate)
+    }
+  }
+
   private func selectPlanningSuggestion(
     _ suggestion: WholeShutoPlaceSuggestion
   ) {
-    guard let field = focusedPlanningField else { return }
+    guard let field = planningSearchField else { return }
     Task {
       do {
         let place = try await placeSearch.resolve(suggestion)
@@ -4693,7 +4703,7 @@ struct WholeShutoProductView: View {
           focusedPlanningField = nil
         }
       } catch {
-        // The typed query remains available for the normal route-search path.
+        // The search controller exposes the failure beside the search action.
       }
     }
   }

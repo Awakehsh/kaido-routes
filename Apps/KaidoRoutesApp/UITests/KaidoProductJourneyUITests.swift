@@ -128,10 +128,24 @@ final class KaidoProductJourneyUITests: XCTestCase {
     element("whole-shuto-ending-destination", in: app).tap()
     let field = element("whole-shuto-ending-search", in: app)
     field.tap()
+    field.typeText("NoSuchPlace")
+    XCTAssertFalse(element("whole-shuto-ending-apply", in: app).isEnabled)
+    element("whole-shuto-ending-search-submit", in: app).tap()
+    XCTAssertTrue(element("whole-shuto-ending-search-empty", in: app).waitForExistence(timeout: 5))
+    field.tap()
+    field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "NoSuchPlace".count))
     field.typeText("东京")
+    element("whole-shuto-ending-search-submit", in: app).tap()
+    XCTAssertFalse(element("whole-shuto-ending-apply", in: app).isEnabled)
     let suggestion = element("whole-shuto-ending-suggestion-preview.tokyo-tower", in: app)
     XCTAssertTrue(suggestion.waitForExistence(timeout: 5))
     suggestion.tap()
+    XCTAssertTrue(element("whole-shuto-ending-selected-place", in: app).waitForExistence(timeout: 5))
+    XCTAssertTrue(element("whole-shuto-ending-apply", in: app).isEnabled)
+    let selection = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    selection.name = "Selected onward destination"
+    selection.lifetime = .keepAlways
+    add(selection)
     element("whole-shuto-ending-apply", in: app).tap()
     let review = element("whole-shuto-review-journey", in: app)
     XCTAssertTrue(review.waitForExistence(timeout: 5))
@@ -873,6 +887,8 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(destination.waitForExistence(timeout: 5))
     destination.tap()
     destination.typeText("东京")
+    XCTAssertFalse(app.buttons["whole-shuto-plan-route"].isEnabled)
+    app.buttons["whole-shuto-destination-search-submit"].tap()
 
     let suggestion = app.buttons[
       "whole-shuto-place-suggestion-preview.tokyo-tower"
@@ -1200,11 +1216,21 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertFalse(planRoute.isEnabled)
 
     destination.tap()
-    destination.typeText("东京塔")
+    destination.typeText("芝浦")
+    XCTAssertFalse(planRoute.isEnabled)
+    app.buttons["whole-shuto-destination-search-submit"].tap()
+    let shibaura = app.buttons["whole-shuto-place-suggestion-shuto-facility:shuto.ic.1-haneda.shibaura"]
+    XCTAssertTrue(shibaura.waitForExistence(timeout: 5))
+    shibaura.tap()
     XCTAssertFalse(planRoute.isEnabled)
 
     origin.tap()
-    origin.typeText("东京站")
+    origin.typeText("銀座")
+    XCTAssertFalse(planRoute.isEnabled)
+    app.buttons["whole-shuto-origin-search-submit"].tap()
+    let ginza = app.buttons["whole-shuto-place-suggestion-shuto-facility:shuto.ic.c1.ginza"]
+    XCTAssertTrue(ginza.waitForExistence(timeout: 5))
+    ginza.tap()
     XCTAssertTrue(planRoute.isEnabled)
 
     let manualOriginScreenshot = XCTAttachment(

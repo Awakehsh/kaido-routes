@@ -8,6 +8,13 @@ curated PA set at the default frame, then names those places and every
 bundled PA once pinched in. Its route-first home
 offers named experiences, automatic direction-valid entrance/exit pairing,
 1–9 laps for loops, and exact custom routes before the optional destination.
+Destination search and the journey-ending editor use an explicit Search action
+(or keyboard Search), followed by a choice of place and address. Only the chosen
+place's coordinate can be confirmed; unselected text never chooses the first
+result automatically. Bundled ICs and PAs remain locally searchable, while Apple
+MapKit supplies online place results. Empty results and service failures are
+visible; editing the query invalidates the choice and any pending old results.
+Location updates do not reset the search list or dismiss the ending editor's results.
 Automatic circuit pairing keeps the nearest bounded radial candidates and every
 direction-valid member-route entrance. It prefers a complete foreground-release
 pairing over a closer preview-only pairing, labels access beyond 16 km as long,

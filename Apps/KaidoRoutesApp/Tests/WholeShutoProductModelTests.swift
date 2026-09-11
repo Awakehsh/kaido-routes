@@ -3004,7 +3004,6 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.prepareCustomRouteDraft()
 
     XCTAssertTrue(model.editsSelectedCircuit)
-    XCTAssertTrue(model.editorOffersExit)
     let entryID = try XCTUnwrap(model.customEntryFacilityID)
     XCTAssertEqual(model.customEntryCandidates.first?.facilityID, entryID)
     XCTAssertEqual(
@@ -3037,16 +3036,14 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertNotEqual(model.customExitFacilityID, offCourse.facilityID)
   }
 
-  func testCircuitReviewEditorKeepsAParkingAreaEndingAndOffersNoExit()
-    async throws
-  {
+  func testParkingAreaEndedExperienceEditsAsAnExplicitRoute() async throws {
     let model = WholeShutoProductModel(
       locationProvider: WholeShutoUnexpectedLocationProvider(),
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil
     )
     // Odaiba: the Bayshore run starts at a westbound Bayshore entrance and
-    // ends inside Daikoku PA.
+    // ends inside Daikoku PA, so it has no exit to keep.
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6270, longitude: 139.7750)
     )
@@ -3056,37 +3053,33 @@ final class WholeShutoProductModelTests: XCTestCase {
     for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
       await Task.yield()
     }
-    let planned = try XCTUnwrap(model.selectedRoute)
-    let parkingAreaID = try XCTUnwrap(planned.destinationParkingArea?.parkingAreaID)
+    XCTAssertNotNil(model.selectedRoute?.destinationParkingArea)
 
     model.prepareCustomRouteDraft()
 
-    XCTAssertTrue(model.editsSelectedCircuit)
-    XCTAssertFalse(model.editorOffersExit)
-    XCTAssertTrue(model.customExitCandidates.isEmpty)
+    // Choosing an exit leaves the PA ending, so this is the explicit
+    // entrance/exit editor: every offered exit is reachable from the entry.
+    XCTAssertFalse(model.editsSelectedCircuit)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    let entryID = try XCTUnwrap(model.customEntryFacilityID)
+    let reachable = Set(
+      model.planner.exitCandidates(
+        model.database.directionalFacilities,
+        reachableAfterEntering: entryID
+      ).map(\.facilityID)
+    )
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertEqual(Set(model.customExitCandidates.map(\.facilityID)), reachable)
+
+    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
     let draft = try XCTUnwrap(model.customDraftRoute)
-    XCTAssertEqual(draft.destinationParkingArea?.parkingAreaID, parkingAreaID)
-
-    let otherEntrance = try XCTUnwrap(
-      model.customEntryCandidates.first {
-        $0.facilityID != model.customEntryFacilityID
-      }
-    )
-    model.selectCustomEntry(facilityID: otherEntrance.facilityID)
-    let redrafted = try XCTUnwrap(model.customDraftRoute)
-    XCTAssertEqual(redrafted.entryFacility.facilityID, otherEntrance.facilityID)
-    XCTAssertEqual(redrafted.destinationParkingArea?.parkingAreaID, parkingAreaID)
+    XCTAssertEqual(draft.exitFacility?.facilityID, "shuto.ic.b.daikokufutou")
+    XCTAssertNil(draft.destinationParkingArea)
     XCTAssertTrue(model.applyCustomRoute())
-
-    XCTAssertTrue(model.isCircuitRouteSelected)
-    XCTAssertEqual(
-      model.selectedCircuit?.circuitID,
-      ShutoCircuitDefinition.wanganDaikokuRun.circuitID
-    )
-    XCTAssertEqual(model.selectedRoute?.routePlan, redrafted.routePlan)
-    XCTAssertEqual(model.circuitEntryFacilityID, otherEntrance.facilityID)
-    XCTAssertNil(model.circuitExitFacilityID)
-    XCTAssertTrue(model.endsAtParkingArea)
+    XCTAssertTrue(model.isCustomRouteSelected)
+    XCTAssertFalse(model.isCircuitRouteSelected)
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
   }
 
   func testCircuitReviewEditorKeepsTheCircuitAndLapsWhenApplied() async throws {

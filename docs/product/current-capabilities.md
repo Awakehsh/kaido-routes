@@ -47,7 +47,9 @@ internal review workbench.
   candidate identifies its directional entrance and exit. Editing a selected
   route experience keeps it: the editor offers the experience's direction-valid
   entrances and only the exits it reaches after the chosen entrance, then
-  re-plans the same experience and lap count. A custom pairing offers only
+  re-plans the same experience and lap count. An experience that ends inside
+  a PA has no exit to keep, so choosing an exit there authors an explicit
+  entrance/exit route. A custom pairing offers only
   exits a directed path reaches from its entry. When the bounded
   surface provider resolves both ordinary-road legs for every exact candidate,
   the row uses those comparable ETAs for ordering and shows full-journey preview

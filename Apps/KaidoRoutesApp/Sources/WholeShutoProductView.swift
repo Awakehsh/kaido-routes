@@ -4949,7 +4949,6 @@ private struct WholeShutoCustomRouteSheet: View {
           ) {
             model.selectCustomEntry(facilityID: $0)
           }
-          if model.editorOffersExit {
           facilitySelector(
             title: copy.resolve(
               japanese: "出口",
@@ -4977,7 +4976,6 @@ private struct WholeShutoCustomRouteSheet: View {
               model.destination?.coordinate ?? model.origin?.coordinate
           ) {
             model.selectCustomExit(facilityID: $0)
-          }
           }
           preferenceSelector
         }
@@ -5076,8 +5074,7 @@ private struct WholeShutoCustomRouteSheet: View {
       }
 
       routeEndpoint(
-        model.customDraftRoute?.destinationNameJA
-          ?? model.customExitFacility?.nameJA ?? "—",
+        model.customExitFacility?.nameJA ?? "—",
         tint: KaidoTheme.evidenceCoral
       )
     }

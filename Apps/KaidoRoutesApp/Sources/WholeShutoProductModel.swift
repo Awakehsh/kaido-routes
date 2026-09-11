@@ -1316,23 +1316,16 @@ final class WholeShutoProductModel: ObservableObject {
 
   /// The route experience the editor is refining: the review phase opens the
   /// editor over a selected circuit and keeps it. Nil while authoring an
-  /// exact custom pairing.
+  /// exact custom pairing, and for an experience that ends inside a PA: its
+  /// identity is that ending, so choosing an exit there authors an explicit
+  /// entrance/exit route instead.
   private var editedCircuit: ShutoCircuitDefinition? {
-    phase == .review && isCircuitRouteSelected ? selectedCircuit : nil
+    phase == .review && isCircuitRouteSelected
+      && selectedRoute?.destinationParkingArea == nil
+      ? selectedCircuit : nil
   }
 
   var editsSelectedCircuit: Bool { editedCircuit != nil }
-
-  /// The PA an edited experience ends inside, when it does. Such an
-  /// experience has no exit to offer.
-  private var editedCircuitParkingAreaID: String? {
-    editedCircuit != nil
-      ? selectedRoute?.destinationParkingArea?.parkingAreaID : nil
-  }
-
-  var editorOffersExit: Bool {
-    !(editedCircuit != nil && editedCircuitParkingAreaID != nil)
-  }
 
   var customEntryCandidates: [ShutoNetworkDatabase.Facility] {
     if editedCircuit != nil {
@@ -6153,23 +6146,9 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func refreshCustomRouteDraft() {
-    guard let entryFacilityID = customEntryFacilityID else {
-      customDraftRoute = nil
-      return
-    }
-    if let circuit = editedCircuit, let parkingAreaID = editedCircuitParkingAreaID {
-      // An experience that ends inside a PA keeps that destination; only
-      // the entrance is the driver's to change.
-      customDraftRoute = try? planner.planCircuit(
-        circuit: circuit,
-        entryFacilityID: entryFacilityID,
-        destinationParkingAreaID: parkingAreaID,
-        laps: circuit.kind == .loop ? circuitLaps : 1,
-        preference: customPreference
-      )
-      return
-    }
-    guard let exitFacilityID = customExitFacilityID,
+    guard
+      let entryFacilityID = customEntryFacilityID,
+      let exitFacilityID = customExitFacilityID,
       entryFacilityID != exitFacilityID
     else {
       customDraftRoute = nil
@@ -6199,9 +6178,7 @@ final class WholeShutoProductModel: ObservableObject {
     }
     if let circuit = editedCircuit {
       reachableExitCandidates =
-        editedCircuitParkingAreaID != nil
-        ? []
-        : (try? planner.circuitExitCandidates(
+        (try? planner.circuitExitCandidates(
           for: circuit,
           afterEntering: entryFacilityID
         )) ?? []

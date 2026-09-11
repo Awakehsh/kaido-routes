@@ -206,6 +206,9 @@ the experience reaches after that entrance in driving order, and applying
 re-plans the same experience with the same lap count. Changing the entrance
 keeps a still-reachable exit and otherwise falls back to the soonest forward
 exit. The experience is never replaced by a point-to-point shortest path.
+An experience that ends inside a PA has no exit to keep: opening the editor
+there authors an explicit entrance/exit route, and choosing an exit leaves the
+PA ending.
 The editor previews the concrete route shields and distance before **Use this
 route** applies a new exact `RoutePlan`. Opening or dismissing the editor
 never marks a draft as selected. Selecting another option immediately clears

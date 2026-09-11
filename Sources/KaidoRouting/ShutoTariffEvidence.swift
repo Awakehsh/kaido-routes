@@ -17,6 +17,10 @@ public struct ShutoTariffEvidence: Equatable, Sendable {
   public let consumptionTaxRate: Double
   public let sourceURL: String
   public let checkedAt: String
+  /// First and last JST calendar day ("YYYY-MM-DD") the rule is payable;
+  /// nil leaves that side open.
+  public let effectiveFrom: String?
+  public let effectiveUntil: String?
 
   public init(
     tariffID: String,
@@ -29,7 +33,9 @@ public struct ShutoTariffEvidence: Equatable, Sendable {
     fixedYen: Double,
     consumptionTaxRate: Double,
     sourceURL: String,
-    checkedAt: String
+    checkedAt: String,
+    effectiveFrom: String? = nil,
+    effectiveUntil: String? = nil
   ) {
     self.tariffID = tariffID
     self.status = status
@@ -42,12 +48,14 @@ public struct ShutoTariffEvidence: Equatable, Sendable {
     self.consumptionTaxRate = consumptionTaxRate
     self.sourceURL = sourceURL
     self.checkedAt = checkedAt
+    self.effectiveFrom = effectiveFrom
+    self.effectiveUntil = effectiveUntil
   }
 
-  /// Normal car, ETC. Checked on the operator ETC fee page; the announced
-  /// 2026-10-01 revision remains PROPOSED and is intentionally not encoded.
-  public static let etcNormalCarActive = ShutoTariffEvidence(
-    tariffID: "shutoko.tariff.etc.normal-car.active",
+  /// Normal car, ETC, until the 2026-10-01 revision. Checked on the operator
+  /// ETC fee page, which on 2026-09-12 still quoted this rule as current.
+  public static let etcNormalCarUntil2026September = ShutoTariffEvidence(
+    tariffID: "shutoko.tariff.etc.normal-car.until-2026-09",
     status: "ACTIVE",
     vehicleClassJA: "普通車",
     paymentJA: "ETC",
@@ -57,11 +65,43 @@ public struct ShutoTariffEvidence: Equatable, Sendable {
     fixedYen: 150,
     consumptionTaxRate: 0.10,
     sourceURL: "https://www.shutoko.jp/fee/fee-info/pay_etc/",
-    checkedAt: "2026-08-03"
+    checkedAt: "2026-09-12",
+    effectiveUntil: "2026-09-30"
   )
 
+  /// Normal car, ETC, from the 2026-10-01 revision. The operator's revision
+  /// site, checked 2026-09-12, states verbatim that the rate per kilometre
+  /// rises for a normal car from 29.52 to 32.472 yen at 00:00 on
+  /// 2026-10-01, that the 300 yen lower limit and the 55.0 km upper-limit
+  /// distance are kept, and that cash vehicles pay the ETC upper limit. The
+  /// upper amount is the operator's own formula at 55.0 km,
+  /// (55.0 × 32.472 + 150) × 1.10 = 2,129.6, in the 10 yen unit the current
+  /// cap also uses: 2,130 yen. Earlier than its first day the selector
+  /// below never returns it, so a dated future rule is never quoted early.
+  public static let etcNormalCarFrom2026October = ShutoTariffEvidence(
+    tariffID: "shutoko.tariff.etc.normal-car.from-2026-10",
+    status: "ACTIVE",
+    vehicleClassJA: "普通車",
+    paymentJA: "ETC",
+    minimumYen: 300,
+    maximumYen: 2_130,
+    yenPerKilometer: 32.472,
+    fixedYen: 150,
+    consumptionTaxRate: 0.10,
+    sourceURL: "https://www.shutoko.jp/ss/2026ryoukin-kaitei/",
+    checkedAt: "2026-09-12",
+    effectiveFrom: "2026-10-01"
+  )
+
+  /// The normal-car ETC rule payable on one JST calendar day ("YYYY-MM-DD").
+  public static func etcNormalCar(effectiveOn day: String) -> ShutoTariffEvidence {
+    etcNormalCarFrom2026October.effectiveFrom.map { day >= $0 } == true
+      ? etcNormalCarFrom2026October
+      : etcNormalCarUntil2026September
+  }
+
   /// Pre-tax-rounding amount for a tariff distance; callers decide banding.
-  func rawYen(forTariffDistanceMeters meters: Double) -> Double {
+  package func rawYen(forTariffDistanceMeters meters: Double) -> Double {
     (meters / 1_000 * yenPerKilometer + fixedYen)
       * (1 + consumptionTaxRate)
   }

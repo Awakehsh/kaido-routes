@@ -1052,6 +1052,27 @@ final class WholeShutoProductModel: ObservableObject {
     }
   }
 
+  /// The normal-car ETC rule payable today in Japan, so a revision the
+  /// operator has dated takes over on its day without a release.
+  var activeTariffEvidence: ShutoTariffEvidence {
+    .etcNormalCar(effectiveOn: Self.jstCalendarDay(nowMillisecondsProvider()))
+  }
+
+  private static let jstDayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(identifier: "Asia/Tokyo")
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter
+  }()
+
+  static func jstCalendarDay(_ milliseconds: Int) -> String {
+    jstDayFormatter.string(
+      from: Date(timeIntervalSince1970: Double(milliseconds) / 1_000)
+    )
+  }
+
   var selectedTariffBand: ShutoTariffBand? {
     guard let route = selectedRoute, let exit = route.exitFacility else { return nil }
     if joinedOccurrenceID != nil {
@@ -1061,11 +1082,11 @@ final class WholeShutoProductModel: ObservableObject {
       return try? planner.tariffBand(
         entryFacilityID: declaredEntryFacilityID,
         exitFacilityID: exit.facilityID,
-        evidence: .etcNormalCarActive
+        evidence: activeTariffEvidence
       )
     }
     if isCircuitRouteSelected, let circuitPairingBand { return circuitPairingBand }
-    return try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
+    return try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: activeTariffEvidence)
   }
 
   /// True while a declared join stands for the entrance and the driver has
@@ -1350,7 +1371,7 @@ final class WholeShutoProductModel: ObservableObject {
       circuitEntryFacilityID = route.entryFacility.facilityID
       circuitExitFacilityID = route.exitFacility?.facilityID
       circuitPairingBand = route.exitFacility.flatMap { exit in
-        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
+        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: activeTariffEvidence)
       }
       circuitEntranceDistanceMeters = accessDistance
       circuitTariffBandsByFacilityID =
@@ -3007,6 +3028,7 @@ final class WholeShutoProductModel: ObservableObject {
     isResolvingCircuitPairing = true
     let planner = planner
     let originCoordinate = origin?.coordinate
+    let tariffEvidence = activeTariffEvidence
     let includeConnectingEntrances = surfaceRoutePreference == .preferHighways
     circuitPairingOriginCoordinate = originCoordinate
     circuitTariffTask = Task.detached(priority: .userInitiated) {
@@ -3028,7 +3050,7 @@ final class WholeShutoProductModel: ObservableObject {
           for: circuit,
           entranceFacilityID: $0,
           origin: originCoordinate,
-          evidence: .etcNormalCarActive
+          evidence: tariffEvidence
         )
       }
       var bands: [String: ShutoTariffBand] = [:]
@@ -3043,7 +3065,7 @@ final class WholeShutoProductModel: ObservableObject {
             for: circuit,
             entranceFacilityID: candidate.facilityID,
             origin: originCoordinate,
-            evidence: .etcNormalCarActive
+            evidence: tariffEvidence
           ))?.tariffBand
       }
       let resolvedPairing = pairing
@@ -3276,7 +3298,7 @@ final class WholeShutoProductModel: ObservableObject {
         try? planner.tariffBand(
           entryFacilityID: route.entryFacility.facilityID,
           exitFacilityID: exit.facilityID,
-          evidence: .etcNormalCarActive
+          evidence: activeTariffEvidence
         )
       }
       circuitEntranceDistanceMeters = accessDistance
@@ -3453,7 +3475,7 @@ final class WholeShutoProductModel: ObservableObject {
       circuitExitFacilityID = facilityID
       circuitPairingBand = try? planner.tariffBand(
         entryFacilityID: route.entryFacility.facilityID,
-        exitFacilityID: facilityID, evidence: .etcNormalCarActive
+        exitFacilityID: facilityID, evidence: activeTariffEvidence
       )
     } else {
       customRecommendation = recommendation
@@ -5539,7 +5561,7 @@ final class WholeShutoProductModel: ObservableObject {
       circuitEntryFacilityID = route.entryFacility.facilityID
       circuitExitFacilityID = route.exitFacility?.facilityID
       circuitPairingBand = route.exitFacility.flatMap { exit in
-        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: .etcNormalCarActive)
+        try? planner.tariffBand(entryFacilityID: route.entryFacility.facilityID, exitFacilityID: exit.facilityID, evidence: activeTariffEvidence)
       }
       circuitRecommendation = restoredRecommendation
       isCircuitRouteSelected = true

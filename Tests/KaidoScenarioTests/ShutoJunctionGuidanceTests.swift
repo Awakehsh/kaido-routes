@@ -505,7 +505,7 @@ struct ShutoJunctionGuidanceTests {
       for: .wanganDaikokuRun,
       entranceFacilityID: entrance.facilityID,
       origin: nil,
-      evidence: .etcNormalCarActive
+      evidence: .etcNormalCarUntil2026September
     )
     let route = try planner.planCircuit(
       circuit: .wanganDaikokuRun,

@@ -420,19 +420,39 @@ A drive can also start when the car is already on the expressway. No phone
 sensor separates an elevated Shuto carriageway from the surface road beneath
 it — factory navigation units solve this with a wheel-speed pulse, a gyro, and
 3D road elevation, and still misread the Shuto — so such a drive never meets
-the reviewed ramp and would wait in `ENTRY_TRANSITION` indefinitely. The
-product follows the same answer Japanese phone navigation settled on: give the
-driver the one-tap correction the sensors cannot make. After 60 seconds in
-`ENTRY_TRANSITION` the App offers "already on the expressway".
+the reviewed ramp and would wait for it indefinitely. The product follows the
+same answer Japanese phone navigation settled on: give the driver the one-tap
+correction the sensors cannot make, but only where the sensors say it is
+plausible. During `SURFACE_ACCESS` and `ENTRY_TRANSITION` the App feeds every
+fix to a second matcher session over the same release-bound corridor
+(`liveRouteJoinObserver`) as an on-route position, with no admission
+consequence. `RouteJoinOffer` shows "already on the expressway" once that
+estimate passes the join admission's own position gate and continuity run
+(below), and withdraws it ten seconds after the run last held: the matcher
+abstains for a few fixes at a time on real geometry, and a button that
+vanished for each of them would flicker while driving. A car on the
+ordinary-road approach, on the ramp, or anywhere the matcher cannot place it
+sees no offer. Declaring from `SURFACE_ACCESS` ends the surface leg and moves
+the drive to `ENTRY_TRANSITION`, where the join takes the next fixes.
 
 The declaration grants no position. It opens `RouteJoinAdmission` for 45
 seconds, during which `CoreLocationEntryTransitionAdapter.adaptRouteJoin`
 offers the matcher's own estimate — including the occurrence it resolved —
 with none of `adapt`'s route-head substitution. The admission is deliberately
 stricter than ramp entry, because no reviewed edge sequence backs the
-transition: HIGH confidence only, a single candidate edge, a 30-degree heading
-window instead of 45, and three fixes that hold the same plan occurrence with
-no gap over six seconds. `NavigationEngine.joinStrictRoute` then records every
+transition: a 30-degree heading window instead of 45, a resolved edge and plan
+occurrence at MEDIUM or better, and a `RouteJoinRun` of three consecutive
+fixes no more than six seconds apart whose occurrences advance forward along
+the plan by no more than the matcher's longitudinal candidate window (12).
+MEDIUM is admitted deliberately: the matcher caps an estimate at LOW whenever
+an independent edge — a stacked or parallel carriageway — competes, so MEDIUM
+means only that a longitudinally adjacent plan segment was also near the fix.
+On the bundled snapshot a mainline occurrence is one OSM segment of a few tens
+of metres, so at driving speed consecutive fixes fall on successive occurrences
+and list the neighbouring segment as a second candidate; the earlier contract
+(HIGH only, single candidate, one held occurrence) was observed on 2026-09-11
+over 29 consecutive on-route C1 fixes never to be satisfiable while moving.
+`NavigationEngine.joinStrictRoute` then records every
 occurrence ahead of the join as skipped rather than completed, so the journey
 never claims passage it has no evidence for, and stamps
 `DRIVER_DECLARED_ROUTE_JOIN` so a join stays distinguishable from ramp entry

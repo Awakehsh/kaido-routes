@@ -55,7 +55,7 @@ func declaredRouteJoinEntersStrictRouteAtMatchedOccurrence() async throws {
   #expect(await runtime.session.isAlreadyOnRouteDeclared == false)
 }
 
-@Test("A run that changes occurrence restarts instead of joining")
+@Test("A run that moves backward restarts instead of joining")
 func routeJoinRequiresOneSteadyOccurrence() async throws {
   let runtime = try routeJoinRuntime(id: "test.product-release.join-drift")
   let context = runtime.entryTransitionAdmissionContext
@@ -115,21 +115,24 @@ func routeJoinEvidenceFailsClosed() async throws {
   )
   #expect(simulated.rejectionReason == .simulatedLocation)
 
+  // MEDIUM already means no independent carriageway competes; LOW does not.
   let weak = try await runtime.session.observeRouteJoinEvidence(
     routeJoinEvidence(
       context: context,
       id: "closed.2",
       at: 1_200,
-      confidence: .medium
+      confidence: .low
     )
   )
   #expect(weak.rejectionReason == .insufficientConfidence)
 
+  // Indistinguishable geometry leaves the matcher without an edge at all.
   let ambiguous = try await runtime.session.observeRouteJoinEvidence(
     routeJoinEvidence(
       context: context,
       id: "closed.3",
       at: 1_300,
+      directedEdgeID: nil,
       candidateEdgeIDs: ["test.edge.loop", "test.edge.exit"]
     )
   )
@@ -204,6 +207,144 @@ func routeJoinDeclarationCanBeWithdrawn() async throws {
   #expect(withdrawn.rejectionReason == .notDeclaredByDriver)
 }
 
+@Test("A run that advances along the plan joins at its latest occurrence")
+func routeJoinFollowsForwardProgressAlongThePlan() async throws {
+  let runtime = try routeJoinRuntime(id: "test.product-release.join-forward")
+  let context = runtime.entryTransitionAdmissionContext
+  _ = await runtime.session.start()
+  _ = await runtime.session.declareAlreadyOnRoute(atMilliseconds: 1_000)
+
+  // Short segments put consecutive fixes on successive occurrences, and a
+  // fix near a segment boundary lists the neighbouring segment as well.
+  let first = try await runtime.session.observeRouteJoinEvidence(
+    routeJoinEvidence(
+      context: context, id: "forward.0", at: 1_500,
+      occurrenceID: "test.occurrence.loop-edge-1",
+      candidateEdgeIDs: ["test.edge.loop", "test.edge.loop-1"],
+      confidence: .medium
+    )
+  )
+  #expect(first.status == .observing)
+  let second = try await runtime.session.observeRouteJoinEvidence(
+    routeJoinEvidence(
+      context: context, id: "forward.1", at: 2_500,
+      occurrenceID: "test.occurrence.loop-movement-2"
+    )
+  )
+  #expect(second.status == .observing)
+  let third = try await runtime.session.observeRouteJoinEvidence(
+    routeJoinEvidence(
+      context: context, id: "forward.2", at: 3_500,
+      candidateEdgeIDs: ["test.edge.loop", "test.edge.loop-1"],
+      confidence: .medium
+    )
+  )
+  #expect(third.status == .joined)
+  #expect(third.joinedOccurrenceID == routeJoinOccurrenceID)
+  #expect(third.navigationSnapshot.currentOccurrenceID == routeJoinOccurrenceID)
+  #expect(
+    third.navigationSnapshot.skippedOccurrenceIDs == [
+      "test.occurrence.entry",
+      "test.occurrence.loop-movement-1",
+      "test.occurrence.loop-edge-1",
+      "test.occurrence.loop-movement-2",
+    ]
+  )
+}
+
+@Test("A run that jumps further ahead than the candidate window restarts")
+func routeJoinRejectsALeapAlongThePlan() throws {
+  let occurrences = (0..<40).map {
+    RouteOccurrence(
+      id: "test.occurrence.long.\($0)", index: $0, kind: .edge,
+      entityID: "test.edge.long.\($0)"
+    )
+  }
+  let plan = RoutePlan(
+    id: "test.plan.long", networkSnapshotID: "test.snapshot.long",
+    entryFacilityID: "test.entrance.long", exitFacilityID: "test.exit.long",
+    recoveryPolicy: .strict, occurrences: occurrences
+  )
+  var run = RouteJoinRun(routePlan: plan)
+  let window = RouteJoinRun.maximumOccurrenceAdvance
+  func extended(_ index: Int, at: Int) -> Bool {
+    run.extend(occurrenceID: occurrences[index].id, atMilliseconds: at)
+  }
+  // Advancing by the whole window still continues the run.
+  #expect(!extended(0, at: 1_000))
+  #expect(!extended(window, at: 2_000))
+  #expect(extended(2 * window, at: 3_000))
+  // One occurrence beyond the window is a leap, and the run starts over.
+  #expect(!extended(3 * window + 1, at: 4_000))
+  #expect(!extended(3 * window + 1, at: 5_000))
+  #expect(extended(3 * window + 2, at: 6_000))
+  let unknown = run.extend(
+    occurrenceID: "test.occurrence.not-in-plan", atMilliseconds: 7_000
+  )
+  #expect(!unknown)
+}
+
+@Test("The declaration is offered only after a steady on-route run")
+func routeJoinOfferNeedsASteadyHeadingCompatibleRun() throws {
+  let context = try routeJoinRuntime(id: "test.product-release.join-offer")
+    .entryTransitionAdmissionContext
+  var offer = RouteJoinOffer(routePlan: navigationReleaseBundleFixture().routePlan)
+  func observed(
+    _ id: String, at: Int, occurrenceID: String? = routeJoinOccurrenceID,
+    directedEdgeID: String? = "test.edge.loop",
+    candidateEdgeIDs: [String]? = nil, confidence: MatcherConfidence = .high,
+    headingErrorDegrees: Double? = 2
+  ) -> Bool {
+    offer.observe(
+      routeJoinEvidence(
+        context: context, id: id, at: at, occurrenceID: occurrenceID,
+        directedEdgeID: directedEdgeID, candidateEdgeIDs: candidateEdgeIDs,
+        confidence: confidence, headingErrorDegrees: headingErrorDegrees
+      )
+    )
+  }
+
+  // MEDIUM with a neighbouring segment as second candidate is the ordinary
+  // on-route estimate at driving speed and counts toward the offer.
+  #expect(
+    !observed(
+      "o.0", at: 1_000, candidateEdgeIDs: ["test.edge.loop", "test.edge.loop-1"],
+      confidence: .medium
+    )
+  )
+  #expect(!observed("o.1", at: 2_000))
+  #expect(observed("o.2", at: 3_000))
+  #expect(observed("o.3", at: 4_000))
+
+  // A fix the matcher cannot place breaks the run, but the offer outlives
+  // it for a short grace so a momentary abstention does not flicker it off.
+  #expect(observed("o.4", at: 5_000, occurrenceID: nil))
+  #expect(observed("o.5", at: 14_000, confidence: .low))
+  #expect(!observed("o.6", at: 15_000, confidence: .low))
+
+  // Once withdrawn, every gate refusal keeps it withdrawn, and a single good
+  // fix after a refusal is only the start of a new run.
+  #expect(!observed("o.7", at: 16_000))
+  #expect(!observed("o.8", at: 17_000, headingErrorDegrees: 45))
+  #expect(!observed("o.9", at: 18_000, headingErrorDegrees: nil))
+  #expect(!observed("o.10", at: 19_000, directedEdgeID: nil))
+  #expect(!observed("o.11", at: 20_000, occurrenceID: "test.occurrence.not-in-plan"))
+  #expect(!observed("o.12", at: 21_000))
+  #expect(!observed("o.13", at: 22_000))
+  #expect(observed("o.14", at: 23_000))
+
+  // Forward progress along the plan continues the run; a pause longer than
+  // the car could stay unobserved starts it over and, past the grace,
+  // withdraws the offer until three fresh fixes hold.
+  #expect(observed("o.15", at: 24_000, occurrenceID: "test.occurrence.loop-edge-1"))
+  #expect(!observed("o.16", at: 40_000, occurrenceID: "test.occurrence.loop-edge-1"))
+  #expect(!observed("o.17", at: 41_000, occurrenceID: "test.occurrence.loop-movement-2"))
+  #expect(observed("o.18", at: 42_000))
+
+  offer.reset()
+  #expect(!observed("o.19", at: 43_000))
+}
+
 private let routeJoinOccurrenceID = "test.occurrence.loop-edge-2"
 
 private func routeJoinRuntime(
@@ -229,7 +370,7 @@ private func routeJoinEvidence(
   id: String,
   at: Int,
   occurrenceID: String? = routeJoinOccurrenceID,
-  directedEdgeID: String = "test.edge.loop",
+  directedEdgeID: String? = "test.edge.loop",
   candidateEdgeIDs: [String]? = nil,
   confidence: MatcherConfidence = .high,
   headingErrorDegrees: Double? = 2,
@@ -242,7 +383,7 @@ private func routeJoinEvidence(
     receivedAtMilliseconds: at,
     occurrenceID: occurrenceID,
     directedEdgeID: directedEdgeID,
-    candidateEdgeIDs: candidateEdgeIDs ?? [directedEdgeID],
+    candidateEdgeIDs: candidateEdgeIDs ?? [directedEdgeID ?? "test.edge.loop"],
     confidence: confidence,
     headingErrorDegrees: headingErrorDegrees,
     isSimulatedBySoftware: isSimulated

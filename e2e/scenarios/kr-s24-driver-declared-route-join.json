@@ -10,12 +10,13 @@
     "release-identity",
     "fail-closed"
   ],
-  "purpose": "Let a drive that starts while already on the expressway leave ENTRY_TRANSITION, because no sensor separates an elevated carriageway from the surface road beneath it, while keeping the position with the route-aware matcher: the declaration opens a bounded window, three steady HIGH fixes on one exact plan occurrence authorize the join, and every occurrence ahead of it is recorded as skipped rather than driven.",
+  "purpose": "Let a drive that starts while already on the expressway leave ENTRY_TRANSITION, because no sensor separates an elevated carriageway from the surface road beneath it, while keeping the position with the route-aware matcher: the declaration opens a bounded window, three consecutive heading-compatible fixes the matcher places on the plan at MEDIUM or better and that advance forward along it authorize the join at the latest occurrence, and every occurrence ahead of it is recorded as skipped rather than driven.",
   "evidence": {
     "classification": "SYNTHETIC",
     "sources": [],
     "limitations": [
-      "Coordinates, confidence, and heading values are synthetic; this scenario proves the deterministic admission contract only and establishes no field accuracy for stacked-road discrimination."
+      "Coordinates, confidence, and heading values are synthetic; this scenario proves the deterministic admission contract only and establishes no field accuracy for stacked-road discrimination.",
+      "MEDIUM is admitted because the bundled snapshot's mainline occurrences are OSM segments of a few tens of metres: at driving speed consecutive fixes fall on successive occurrences and usually list the neighbouring segment as a second candidate, so a contract demanding HIGH on one held occurrence was observed (2026-09-11, C1 outer, 29 consecutive on-route fixes) never to be satisfiable while moving."
     ],
     "release_blockers": [
       "Field evidence that a declared join lands on the correct carriageway on the real Shuto network remains required before this path is claimed as navigation-grade."
@@ -195,12 +196,13 @@
       "type": "ROUTE_JOIN_EVIDENCE_OBSERVED",
       "payload": {
         "observation_id": "join.0",
-        "occurrence_id": "test.occurrence.route-join.second",
-        "directed_edge_id": "test.edge.route-join.downstream",
+        "occurrence_id": "test.occurrence.route-join.first",
+        "directed_edge_id": "test.edge.route-join.mainline",
         "candidate_edge_ids": [
-          "test.edge.route-join.downstream"
+          "test.edge.route-join.downstream",
+          "test.edge.route-join.mainline"
         ],
-        "confidence": "HIGH",
+        "confidence": "MEDIUM",
         "heading_error_degrees": 2,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
@@ -230,9 +232,10 @@
         "occurrence_id": "test.occurrence.route-join.second",
         "directed_edge_id": "test.edge.route-join.downstream",
         "candidate_edge_ids": [
-          "test.edge.route-join.downstream"
+          "test.edge.route-join.downstream",
+          "test.edge.route-join.mainline"
         ],
-        "confidence": "HIGH",
+        "confidence": "MEDIUM",
         "heading_error_degrees": 2,
         "source": "CORE_LOCATION_ROUTE_AWARE_MATCHER"
       }
@@ -282,7 +285,7 @@
       "subject": "route_join.admission.status",
       "matcher": "EQUALS",
       "expected": "OBSERVING",
-      "rationale": "Two fixes cannot prove the matcher has settled on one occurrence."
+      "rationale": "Two fixes cannot prove the matcher is following the plan."
     },
     {
       "id": "two-fixes-keep-entry-transition",
@@ -300,7 +303,7 @@
       "subject": "journey.phase",
       "matcher": "EQUALS",
       "expected": "STRICT_ROUTE",
-      "rationale": "Three steady HIGH fixes on one exact plan occurrence authorize the declared join."
+      "rationale": "Three consecutive heading-compatible fixes the matcher places on the plan, advancing forward along it at MEDIUM or better, authorize the declared join."
     },
     {
       "id": "join-lands-on-the-matched-occurrence",
@@ -309,7 +312,7 @@
       "subject": "navigation.current_occurrence_id",
       "matcher": "EQUALS",
       "expected": "test.occurrence.route-join.second",
-      "rationale": "The driver supplies the intent; the matcher supplies the position."
+      "rationale": "The driver supplies the intent; the matcher supplies the position, and the join lands on the latest occurrence of the run."
     },
     {
       "id": "join-trigger-is-auditable",

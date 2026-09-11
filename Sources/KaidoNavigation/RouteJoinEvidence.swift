@@ -130,8 +130,6 @@ package struct RouteJoinAdmissionDecision: Equatable, Sendable {
 package struct RouteJoinAdmission: Sendable {
   static let maximumEvidenceAgeMilliseconds = 10_000
   static let maximumHeadingErrorDegrees = 30.0
-  static let minimumObservationCount = 3
-  static let maximumGapMilliseconds = 6_000
   /// A declaration the matcher cannot honor within this window lapses, so the
   /// App reports an honest failure instead of joining minutes later from a
   /// place the driver never confirmed.
@@ -139,21 +137,52 @@ package struct RouteJoinAdmission: Sendable {
 
   package let context: EntryTransitionAdmissionContext
 
-  private let planOccurrenceIDs: Set<String>
+  private var run: RouteJoinRun
   private var declaredAtMilliseconds: Int?
-  private var candidateOccurrenceID: String?
-  private var observationCount = 0
   private var lastObservationID: String?
   private var lastObservedAtMilliseconds: Int?
   private var lastReceivedAtMilliseconds: Int?
-  private var lastAcceptedAtMilliseconds: Int?
 
   package init(
     context: EntryTransitionAdmissionContext,
     routePlan: RoutePlan
   ) {
     self.context = context
-    planOccurrenceIDs = Set(routePlan.occurrences.map(\.id))
+    run = RouteJoinRun(routePlan: routePlan)
+  }
+
+  /// Why one matcher estimate cannot stand as an on-route position. Shared
+  /// with `RouteJoinOffer`, so the driver is invited to declare only where a
+  /// join could follow.
+  ///
+  /// MEDIUM is accepted: the matcher already caps an estimate at LOW when an
+  /// independent edge — a stacked or parallel carriageway — competes, so
+  /// MEDIUM means only that longitudinally adjacent plan segments were also
+  /// near the fix, which on the bundled snapshot's short OSM segments is the
+  /// ordinary case at driving speed.
+  package static func positionRejection(
+    of evidence: RouteJoinEvidence
+  ) -> RouteJoinRejectionReason? {
+    guard evidence.confidence == .high || evidence.confidence == .medium
+    else {
+      return .insufficientConfidence
+    }
+    guard evidence.directedEdgeID != nil else {
+      return .ambiguousEdge
+    }
+    guard let headingErrorDegrees = evidence.headingErrorDegrees,
+      headingErrorDegrees.isFinite,
+      (0...180).contains(headingErrorDegrees)
+    else {
+      return .missingHeading
+    }
+    guard headingErrorDegrees <= Self.maximumHeadingErrorDegrees else {
+      return .headingMismatch
+    }
+    guard evidence.occurrenceID != nil else {
+      return .unresolvedOccurrence
+    }
+    return nil
   }
 
   package var isDeclared: Bool { declaredAtMilliseconds != nil }
@@ -236,49 +265,22 @@ package struct RouteJoinAdmission: Sendable {
     guard evidence.source == .coreLocationRouteAwareMatcher else {
       return rejected(.unsupportedEvidenceSource)
     }
-    guard evidence.confidence == .high else {
-      resetContinuity()
-      return rejected(.insufficientConfidence)
+    if let reason = Self.positionRejection(of: evidence) {
+      run.reset()
+      return rejected(reason)
     }
-    guard let directedEdgeID = evidence.directedEdgeID,
-      evidence.candidateEdgeIDs == [directedEdgeID]
+    guard let occurrenceID = evidence.occurrenceID,
+      run.contains(occurrenceID: occurrenceID)
     else {
-      resetContinuity()
-      return rejected(.ambiguousEdge)
-    }
-    guard let headingErrorDegrees = evidence.headingErrorDegrees,
-      headingErrorDegrees.isFinite,
-      (0...180).contains(headingErrorDegrees)
-    else {
-      resetContinuity()
-      return rejected(.missingHeading)
-    }
-    guard headingErrorDegrees <= Self.maximumHeadingErrorDegrees else {
-      resetContinuity()
-      return rejected(.headingMismatch)
-    }
-    guard let occurrenceID = evidence.occurrenceID else {
-      resetContinuity()
-      return rejected(.unresolvedOccurrence)
-    }
-    guard planOccurrenceIDs.contains(occurrenceID) else {
-      resetContinuity()
+      run.reset()
       return rejected(.occurrenceNotInPlan)
     }
-
-    // A run that drifts onto a different occurrence, or pauses long enough for
-    // the car to have moved somewhere unobserved, starts over rather than
-    // joining at a place two distant fixes happened to agree on.
-    let continuesRun =
-      candidateOccurrenceID == occurrenceID
-      && lastAcceptedAtMilliseconds.map({
-        evidence.observedAtMilliseconds - $0 <= Self.maximumGapMilliseconds
-      }) == true
-    candidateOccurrenceID = occurrenceID
-    observationCount = continuesRun ? observationCount + 1 : 1
-    lastAcceptedAtMilliseconds = evidence.observedAtMilliseconds
-
-    guard observationCount >= Self.minimumObservationCount else {
+    guard
+      run.extend(
+        occurrenceID: occurrenceID,
+        atMilliseconds: evidence.observedAtMilliseconds
+      )
+    else {
       return RouteJoinAdmissionDecision(
         status: .observing,
         rejectionReason: nil,
@@ -302,9 +304,7 @@ package struct RouteJoinAdmission: Sendable {
   }
 
   private mutating func resetContinuity() {
-    candidateOccurrenceID = nil
-    observationCount = 0
-    lastAcceptedAtMilliseconds = nil
+    run.reset()
   }
 
   private func rejected(
@@ -315,5 +315,130 @@ package struct RouteJoinAdmission: Sendable {
       rejectionReason: reason,
       joinedOccurrenceID: nil
     )
+  }
+}
+
+/// The continuity the offer and the admission both demand: consecutive fixes
+/// the matcher places on plan occurrences that move forward by no more than
+/// the longitudinal candidate window, no more than six seconds apart.
+///
+/// On the bundled snapshot a mainline occurrence is one OSM segment of a few
+/// tens of metres, so at driving speed consecutive fixes land on successive
+/// occurrences. A run that had to hold one occurrence three times would admit
+/// only a car in a traffic jam. A fix that moves backward, jumps further ahead
+/// than the window, or arrives after a gap starts the run over rather than
+/// joining at a place two distant fixes happened to agree on.
+package struct RouteJoinRun: Sendable {
+  package static let minimumObservationCount = 3
+  package static let maximumGapMilliseconds = 6_000
+  package static let maximumOccurrenceAdvance =
+    RouteMatcherCorridor.longitudinalCandidateOccurrenceWindow
+
+  private let occurrenceIndexByID: [String: Int]
+  private var lastOccurrenceIndex: Int?
+  private var lastAcceptedAtMilliseconds: Int?
+  private var observationCount = 0
+
+  package init(routePlan: RoutePlan) {
+    occurrenceIndexByID = Dictionary(
+      routePlan.occurrences.map { ($0.id, $0.index) },
+      uniquingKeysWith: { first, _ in first }
+    )
+  }
+
+  package func contains(occurrenceID: String) -> Bool {
+    occurrenceIndexByID[occurrenceID] != nil
+  }
+
+  /// Extends the run with one placed fix and reports whether it now holds.
+  package mutating func extend(
+    occurrenceID: String,
+    atMilliseconds: Int
+  ) -> Bool {
+    guard let index = occurrenceIndexByID[occurrenceID] else {
+      reset()
+      return false
+    }
+    let continuesRun =
+      lastOccurrenceIndex.map({
+        index >= $0 && index - $0 <= Self.maximumOccurrenceAdvance
+      }) == true
+      && lastAcceptedAtMilliseconds.map({
+        atMilliseconds - $0 <= Self.maximumGapMilliseconds
+      }) == true
+    observationCount = continuesRun ? observationCount + 1 : 1
+    lastOccurrenceIndex = index
+    lastAcceptedAtMilliseconds = atMilliseconds
+    return observationCount >= Self.minimumObservationCount
+  }
+
+  package mutating func reset() {
+    lastOccurrenceIndex = nil
+    lastAcceptedAtMilliseconds = nil
+    observationCount = 0
+  }
+}
+
+/// Decides when the driver may be offered the "already on the expressway"
+/// declaration.
+///
+/// The offer appears only where the sensors say it is plausible: the
+/// route-aware matcher's own estimate, judged by the same position gate and
+/// continuity run the join admission applies, has held the plan on
+/// consecutive fixes. Anywhere else — a surface street, the entry ramp, a fix
+/// the matcher cannot place — the offer is absent, so the driver is never
+/// invited to declare a position the drive could not honor. The offer grants
+/// nothing: `RouteJoinAdmission` still decides the join.
+public struct RouteJoinOffer: Sendable {
+  public static var minimumObservationCount: Int {
+    RouteJoinRun.minimumObservationCount
+  }
+  /// How long the offer outlives the last fix that held the run. The matcher
+  /// abstains for a few fixes at a time on real geometry — LOW at a segment
+  /// boundary, LOST for one bad fix — and a button that vanished for each of
+  /// them would flicker while driving. The join itself never inherits this
+  /// grace: its run still restarts on every such fix.
+  public static let withdrawalGraceMilliseconds = 10_000
+
+  private var run: RouteJoinRun
+  private var lastHeldAtMilliseconds: Int?
+
+  public init(routePlan: RoutePlan) {
+    run = RouteJoinRun(routePlan: routePlan)
+  }
+
+  /// Folds one on-route estimate in and reports whether the declaration may
+  /// be offered after it.
+  public mutating func observe(_ evidence: RouteJoinEvidence) -> Bool {
+    let holds: Bool
+    if RouteJoinAdmission.positionRejection(of: evidence) == nil,
+      let occurrenceID = evidence.occurrenceID,
+      run.contains(occurrenceID: occurrenceID)
+    {
+      holds = run.extend(
+        occurrenceID: occurrenceID,
+        atMilliseconds: evidence.observedAtMilliseconds
+      )
+    } else {
+      run.reset()
+      holds = false
+    }
+    if holds {
+      lastHeldAtMilliseconds = evidence.observedAtMilliseconds
+      return true
+    }
+    guard let lastHeldAtMilliseconds,
+      evidence.observedAtMilliseconds - lastHeldAtMilliseconds
+        <= Self.withdrawalGraceMilliseconds
+    else {
+      self.lastHeldAtMilliseconds = nil
+      return false
+    }
+    return true
+  }
+
+  public mutating func reset() {
+    run.reset()
+    lastHeldAtMilliseconds = nil
   }
 }

@@ -630,6 +630,136 @@ final class WholeShutoProductModelTests: XCTestCase {
     model.reset()
   }
 
+  func testRouteJoinIsOfferedOnlyWhereTheMatcherHoldsTheRoute() async throws {
+    var nowMilliseconds = 1_000
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      nowMillisecondsProvider: { nowMilliseconds }
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6777, longitude: 139.7708)
+    )
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    XCTAssertTrue(
+      model.canStartLiveNavigation,
+      model.liveNavigationBlockerCode ?? "no blocker code"
+    )
+    let route = try XCTUnwrap(model.selectedRoute)
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+
+    // On the ordinary-road approach nothing is offered: the car is where
+    // the surface leg expects it.
+    let origin = try XCTUnwrap(model.origin?.coordinate)
+    for index in 0..<4 {
+      nowMilliseconds += 1_000
+      await model.consumeLiveObservationForTesting(
+        Self.liveLocationEnvelope(
+          id: "join.surface.\(index)",
+          coordinate: origin,
+          atMilliseconds: nowMilliseconds,
+          speedMetersPerSecond: 8
+        )
+      )
+    }
+    XCTAssertEqual(model.phase, .surfaceAccess)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+
+    // Deep inside the loop, far from the planned ramp, consecutive fixes on
+    // one plan edge make the declaration plausible — and only then is it
+    // offered, while the phase stays where the surface leg left it.
+    var observationIndex = 0
+    func driveOnRoute(from edgeIndex: Int, count: Int) async -> Int? {
+      var offeredAfter: Int?
+      for step in 0..<count {
+        let index = edgeIndex + step / 2
+        let start = route.coordinates[index]
+        let end = route.coordinates[index + 1]
+        let fraction = step % 2 == 0 ? 0.25 : 0.75
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "join.route.\(observationIndex)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude
+                + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude
+                + (end.longitude - start.longitude) * fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 18
+          )
+        )
+        if offeredAfter == nil, model.routeJoinState == .offered {
+          offeredAfter = step + 1
+        }
+      }
+      return offeredAfter
+    }
+    let deepEdgeIndex = route.edges.count / 2
+    let offeredAfter = await driveOnRoute(from: deepEdgeIndex, count: 8)
+    XCTAssertEqual(model.routeJoinState, .offered)
+    XCTAssertGreaterThanOrEqual(
+      try XCTUnwrap(offeredAfter),
+      RouteJoinOffer.minimumObservationCount
+    )
+    XCTAssertEqual(model.phase, .surfaceAccess)
+
+    // A fix the matcher cannot place, past the offer's grace, withdraws it.
+    nowMilliseconds += RouteJoinOffer.withdrawalGraceMilliseconds + 1_000
+    await model.consumeLiveObservationForTesting(
+      Self.liveLocationEnvelope(
+        id: "join.away",
+        coordinate: ShutoCoordinate(latitude: 35.75, longitude: 139.90),
+        atMilliseconds: nowMilliseconds,
+        speedMetersPerSecond: 18
+      )
+    )
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+
+    _ = await driveOnRoute(from: deepEdgeIndex + 4, count: 8)
+    XCTAssertEqual(model.routeJoinState, .offered)
+
+    // Declaring from the surface leg ends it; the join then needs the
+    // matcher's own run before the drive is on the expressway.
+    let declared = await model.declareAlreadyOnRoute()
+    XCTAssertTrue(declared)
+    XCTAssertEqual(model.phase, .entryTransition)
+    XCTAssertEqual(model.routeJoinState, .resolving)
+    XCTAssertNil(model.runtimeOccurrenceID)
+
+    var joinEdgeIndex = deepEdgeIndex + 8
+    for _ in 0..<5 where model.phase != .expressway {
+      _ = await driveOnRoute(from: joinEdgeIndex, count: 6)
+      joinEdgeIndex += 3
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertEqual(model.routeJoinState, .unavailable)
+    let joinedOccurrenceID = try XCTUnwrap(model.runtimeOccurrenceID)
+    let joinedIndex = try XCTUnwrap(
+      route.routePlan.occurrence(id: joinedOccurrenceID)?.index
+    )
+    XCTAssertGreaterThan(joinedIndex, 0)
+    XCTAssertGreaterThan(model.progressFraction, 0)
+
+    model.reset()
+  }
+
   func testLongSurfaceAccessCanReachReleasedCircuitNavigation() async throws {
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),

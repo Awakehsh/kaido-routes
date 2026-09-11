@@ -61,7 +61,7 @@ struct RouteAtlasHomeView: View {
           .tracking(-0.8)
           .foregroundStyle(KaidoTheme.routeWhite)
 
-        Text("ROUTE ATLAS")
+        Text("首都高速 · ROUTE ATLAS")
           .font(.system(size: 10, weight: .bold, design: .monospaced))
           .tracking(1.35)
           .foregroundStyle(KaidoTheme.muted)

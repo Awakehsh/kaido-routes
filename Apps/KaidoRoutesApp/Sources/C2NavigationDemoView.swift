@@ -158,9 +158,9 @@ struct C2NavigationDemoView: View {
 
         Text(
           copy.resolve(
-            japanese: "一般道 → 首都高 → 一般道を一つのナビに",
-            simplifiedChinese: "地面道路 → 首都高 → 地面道路，一次完成",
-            english: "Surface roads → Shuto route → surface roads"
+            japanese: "一般道 → 高速道路 → 一般道を一つのナビに",
+            simplifiedChinese: "地面道路 → 高速 → 地面道路，一次完成",
+            english: "Surface roads → expressway route → surface roads"
           )
         )
         .font(.system(size: 11, weight: .bold))
@@ -1161,9 +1161,9 @@ struct C2NavigationDemoView: View {
       )
     case .entryTransition:
       copy.resolve(
-        japanese: "首都高へ進入",
-        simplifiedChinese: "正在进入首都高",
-        english: "Entering Shuto Expressway"
+        japanese: "高速道路へ進入",
+        simplifiedChinese: "正在进入高速",
+        english: "Entering the expressway"
       )
     case .expressway:
       "C2 + B"
@@ -1307,9 +1307,9 @@ struct C2NavigationDemoView: View {
       )
     case .expressway:
       return copy.resolve(
-        japanese: "首都高公式の方向・分岐情報を反映",
-        simplifiedChinese: "方向与分岔信息已按首都高官方资料核对",
-        english: "Directions and branches checked against official Shuto sources"
+        japanese: "事業者公式の方向・分岐情報を反映",
+        simplifiedChinese: "方向与分岔信息已按运营方官方资料核对",
+        english: "Directions and branches checked against official operator sources"
       )
     case .exitTransition:
       return copy.resolve(

@@ -361,9 +361,9 @@ struct WholeShutoJourneyReviewView: View {
       HStack {
         Text(
           copy.resolve(
-            japanese: "選択した首都高ルート",
-            simplifiedChinese: "已选择的首都高路线",
-            english: "SELECTED SHUTO ROUTE"
+            japanese: "選択した高速ルート",
+            simplifiedChinese: "已选择的高速路线",
+            english: "SELECTED EXPRESSWAY ROUTE"
           )
         )
         .font(.system(size: 8, weight: .black, design: .rounded))
@@ -667,11 +667,11 @@ struct WholeShutoJourneyReviewView: View {
       Text(
         copy.resolve(
           japanese:
-            "一般道はMapKitの経路を案内し、首都高では審査済みの分岐だけを音声案内します。",
+            "一般道はMapKitの経路を案内し、高速道路では審査済みの分岐だけを音声案内します。",
           simplifiedChinese:
-            "普通道路沿 MapKit 路线导航；进入首都高后只播报已审核的分岔。",
+            "普通道路沿 MapKit 路线导航；进入高速后只播报已审核的分岔。",
           english:
-            "Surface guidance follows MapKit; on Shuto, only reviewed junctions are spoken."
+            "Surface guidance follows MapKit; on the expressway, only reviewed junctions are spoken."
         )
       )
       .font(.system(size: 8, weight: .bold))

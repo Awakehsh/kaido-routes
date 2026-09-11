@@ -235,9 +235,9 @@ struct WholeShutoNetworkOverviewView: View {
     .accessibilityIdentifier("whole-shuto-network-map")
     .accessibilityLabel(
       copy.resolve(
-        japanese: "首都高全体路線図",
-        simplifiedChinese: "首都高全网线路图",
-        english: "Whole-Shuto network map"
+        japanese: "全体路線図",
+        simplifiedChinese: "全网线路图",
+        english: "Whole-network map"
       )
     )
     .accessibilityValue(

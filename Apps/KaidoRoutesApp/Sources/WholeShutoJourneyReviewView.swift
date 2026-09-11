@@ -196,10 +196,18 @@ struct WholeShutoJourneyReviewView: View {
           simplifiedChinese: "入口",
           english: "ENTRY"
         ),
-        title: model.selectedRoute?.entryFacility.nameJA ?? "—",
-        detail: model.selectedRoute?.entryFacility.entranceDirections
+        title: model.driveEntryFacility?.nameJA
+          ?? (model.entryIsUnconfirmed
+            ? copy.resolve(
+              japanese: "入口未確認",
+              simplifiedChinese: "入口未确认",
+              english: "Entry unconfirmed"
+            )
+            : "—"),
+        detail: model.driveEntryFacility?.entranceDirections
           .joined(separator: " / ") ?? "",
-        tint: KaidoTheme.positionCyan
+        tint: model.entryIsUnconfirmed
+          ? KaidoTheme.signalAmber : KaidoTheme.positionCyan
       )
 
       expresswayLeg
@@ -475,6 +483,19 @@ struct WholeShutoJourneyReviewView: View {
     accessibilityValue: String
   ) {
     let evidence = ShutoTariffEvidence.etcNormalCarActive
+    if model.entryIsUnconfirmed {
+      // Priced between toll points: with no known entrance only the cap is
+      // honest, and it is labeled as a cap rather than an estimate.
+      return (
+        copy.resolve(
+          japanese: "入口未確認・上限 ¥\(evidence.maximumYen)",
+          simplifiedChinese: "入口未确认·上限 ¥\(evidence.maximumYen)",
+          english: "Entry unconfirmed · up to ¥\(evidence.maximumYen)"
+        ) + " · ETC · \(evidence.checkedAt)",
+        KaidoTheme.signalAmber,
+        "ENTRY_UNCONFIRMED_CAP · \(evidence.checkedAt)"
+      )
+    }
     guard let band = model.selectedTariffBand else {
       return (
         copy.resolve(

@@ -467,7 +467,13 @@ over 29 consecutive on-route C1 fixes never to be satisfiable while moving.
 occurrence ahead of the join as skipped rather than completed, so the journey
 never claims passage it has no evidence for, and stamps
 `DRIVER_DECLARED_ROUTE_JOIN` so a join stays distinguishable from ramp entry
-in the audit state. A declaration the matcher cannot honor lapses and the App
+in the audit state. The App reads that stamp to leave the entrance
+unconfirmed: the review names no entrance, the toll row shows only the cap
+(the Shuto tariff is priced between toll points, so no band exists without an
+entrance), and the drive record is saved as "入口未確認". Parked at the end,
+the driver may name the entrance from the ones whose ramp lands on a plan
+edge ahead of the joined occurrence; the band and the record follow. Ramp
+entry, and a lap added after ramp entry, never trigger this. A declaration the matcher cannot honor lapses and the App
 says so. KR-S24 executes the positive and fail-closed paths.
 
 The join is deterministic policy only. Whether a declared join lands on the

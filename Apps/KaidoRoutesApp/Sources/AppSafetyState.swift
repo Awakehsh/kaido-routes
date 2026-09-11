@@ -96,11 +96,11 @@ enum RouteAtlasMode: String, CaseIterable, Hashable, Identifiable, Sendable {
     case .network:
       copy.resolve(
         japanese:
-          "北を上に固定した首都高速の全体識別図。26 路線を識別できますが、ナビには使用できません。",
+          "北を上に固定した高速道路網の全体識別図。26 路線を識別できますが、ナビには使用できません。",
         simplifiedChinese:
-          "固定北向首都高速全网识别图。二十六条路线已识别，不可用于导航。",
+          "固定北向高速路网全网识别图。二十六条路线已识别，不可用于导航。",
         english:
-          "North-up Shuto Expressway recognition atlas. Twenty-six routes are identified; it is not navigation authority."
+          "North-up expressway network recognition atlas. Twenty-six routes are identified; it is not navigation authority."
       )
     case .k7Evidence:
       copy.resolve(

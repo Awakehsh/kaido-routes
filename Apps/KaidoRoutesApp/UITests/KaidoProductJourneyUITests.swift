@@ -73,7 +73,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     let title = element("whole-shuto-route-summary-title", in: app)
     XCTAssertTrue(title.waitForExistence(timeout: 8))
     let routeTitle = title.label
-    XCTAssertFalse(routeTitle.contains("首都高全体"))
+    XCTAssertFalse(routeTitle.contains("全体路線図"))
     let edit = element("whole-shuto-edit-ending", in: app)
     XCTAssertTrue(edit.waitForExistence(timeout: 5))
     edit.tap()
@@ -183,7 +183,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     )
     XCTAssertEqual(
       element("whole-shuto-network-map", in: app).label,
-      "首都高全网线路图"
+      "全网线路图"
     )
     XCTAssertFalse(
       element("whole-shuto-geographic-map", in: app).exists
@@ -1424,7 +1424,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     for value in [recommendedValue, alternativeValue] {
       XCTAssertTrue(value.contains("入口"))
       XCTAssertTrue(value.contains("出口"))
-      XCTAssertTrue(value.contains("首都高"))
+      XCTAssertFalse(value.contains("首都高"))
     }
     XCTAssertTrue(recommendedRoute.isSelected)
     alternativeRoute.tap()
@@ -2111,7 +2111,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     XCTAssertTrue(done.waitForNonExistence(timeout: 3))
     waitForLayoutSettlement()
     XCTAssertTrue(
-      app.staticTexts["WHOLE SHUTO"]
+      app.staticTexts["CHOOSE A ROUTE"]
         .waitForExistence(timeout: 3)
     )
     XCTAssertTrue(
@@ -2150,7 +2150,7 @@ final class KaidoProductJourneyUITests: XCTestCase {
     waitForLayoutSettlement()
 
     XCTAssertTrue(
-      app.staticTexts["首都高全体"]
+      app.staticTexts["ルートを選ぶ"]
         .waitForExistence(timeout: 3)
     )
     assertMapFirstPlanningLayout(in: app)

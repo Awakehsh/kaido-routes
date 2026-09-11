@@ -1066,9 +1066,9 @@ struct WholeShutoProductView: View {
         }
 
         Text(copy.resolve(
-          japanese: "首都高区間の参考値 · 接続道路と渋滞は含みません",
-          simplifiedChinese: "首都高路段参考 · 不含接驳与实时路况",
-          english: "Shuto reference · excludes access roads and live traffic"
+          japanese: "高速区間の参考値 · 接続道路と渋滞は含みません",
+          simplifiedChinese: "高速路段参考 · 不含接驳与实时路况",
+          english: "Expressway reference · excludes access roads and live traffic"
         ))
         .font(.caption)
         .foregroundStyle(KaidoTheme.nightQuiet)
@@ -2274,7 +2274,7 @@ struct WholeShutoProductView: View {
                       .foregroundStyle(KaidoTheme.routeWhite)
                       .lineLimit(1)
                     if suggestion.isShutoFacility {
-                      Text("SHUTO")
+                      Text("EXPWY")
                         .font(.system(size: 8, weight: .black, design: .rounded))
                         .foregroundStyle(KaidoTheme.night)
                         .padding(.horizontal, 5)
@@ -2666,9 +2666,9 @@ struct WholeShutoProductView: View {
     VStack(alignment: .trailing, spacing: 1) {
       Text(
         copy.resolve(
-          japanese: "首都高",
-          simplifiedChinese: "首都高",
-          english: "SHUTO"
+          japanese: "高速",
+          simplifiedChinese: "高速",
+          english: "EXPRESSWAY"
         )
       )
       .font(.body.weight(.black))
@@ -3474,9 +3474,9 @@ struct WholeShutoProductView: View {
         .buttonStyle(WholeShutoCircleButtonStyle(isDriving: true))
         .accessibilityLabel(
           copy.resolve(
-            japanese: "首都高区間を完了",
-            simplifiedChinese: "完成首都高速路段",
-            english: "Finish Shuto section"
+            japanese: "高速区間を完了",
+            simplifiedChinese: "完成高速路段",
+            english: "Finish expressway section"
           )
         )
         .accessibilityIdentifier("whole-shuto-finish-expressway")
@@ -4072,9 +4072,9 @@ struct WholeShutoProductView: View {
 
   private func expresswayDistanceLabel(_ distanceMeters: Double) -> String {
     copy.resolve(
-      japanese: "首都高 \(distanceLabel(distanceMeters))",
-      simplifiedChinese: "首都高 \(distanceLabel(distanceMeters))",
-      english: "SHUTO \(distanceLabel(distanceMeters))"
+      japanese: "高速 \(distanceLabel(distanceMeters))",
+      simplifiedChinese: "高速 \(distanceLabel(distanceMeters))",
+      english: "EXPRESSWAY \(distanceLabel(distanceMeters))"
     )
   }
 
@@ -4143,9 +4143,9 @@ struct WholeShutoProductView: View {
       )
     case .entryTransition:
       copy.resolve(
-        japanese: "首都高へ進入",
-        simplifiedChinese: "进入首都高",
-        english: "ENTER SHUTO EXPRESSWAY"
+        japanese: "高速道路へ進入",
+        simplifiedChinese: "进入高速",
+        english: "ENTER THE EXPRESSWAY"
       )
     case .expressway:
       if model.presentationProjection?.voice.stage == .prepare {
@@ -4163,9 +4163,9 @@ struct WholeShutoProductView: View {
       }
     case .exitTransition:
       copy.resolve(
-        japanese: "首都高を退出",
-        simplifiedChinese: "驶出首都高",
-        english: "EXIT SHUTO EXPRESSWAY"
+        japanese: "高速道路を退出",
+        simplifiedChinese: "驶出高速",
+        english: "EXIT THE EXPRESSWAY"
       )
     case .surfaceEgress:
       copy.resolve(
@@ -4205,9 +4205,9 @@ struct WholeShutoProductView: View {
       let routeLabel =
         route.routeIDsInOrder.first.map(shieldLabel)
         ?? copy.resolve(
-          japanese: "首都高",
-          simplifiedChinese: "首都高",
-          english: "Shuto Expressway"
+          japanese: "高速道路",
+          simplifiedChinese: "高速",
+          english: "the expressway"
         )
       return copy.resolve(
         japanese: "\(route.entryFacility.nameJA)から \(routeLabel) へ",
@@ -4898,9 +4898,9 @@ struct WholeShutoProductView: View {
       )
     case "NO_SHUTO_ROUTE":
       return copy.resolve(
-        japanese: "進行方向が有効な首都高ルートが見つかりません",
-        simplifiedChinese: "未找到方向合法的首都高路线",
-        english: "No direction-valid Shuto route found"
+        japanese: "進行方向が有効な高速ルートが見つかりません",
+        simplifiedChinese: "未找到方向合法的高速路线",
+        english: "No direction-valid expressway route found"
       )
     default:
       return copy.resolve(
@@ -5803,7 +5803,7 @@ private struct WholeShutoNetworkDiagram: View {
     }
     .overlay(alignment: .bottomTrailing) {
       VStack(alignment: .trailing, spacing: 2) {
-        Text("SHUTO NETWORK")
+        Text("NETWORK")
           .font(.system(size: 8, weight: .black, design: .monospaced))
           .tracking(0.8)
         Text(
@@ -5828,9 +5828,9 @@ private struct WholeShutoNetworkDiagram: View {
     .accessibilityIdentifier("whole-shuto-network-map")
     .accessibilityLabel(
       copy.resolve(
-        japanese: "首都高全体路線図",
-        simplifiedChinese: "首都高全网线路图",
-        english: "Whole-Shuto network map"
+        japanese: "全体路線図",
+        simplifiedChinese: "全网线路图",
+        english: "Whole-network map"
       )
     )
     .accessibilityValue(
@@ -7354,9 +7354,9 @@ private struct WholeShutoSettingsView: View {
               english: "Data"
             ),
             value: copy.resolve(
-              japanese: "首都高公式 · OSM 形状候補",
-              simplifiedChinese: "首都高官方 · OSM 几何候选",
-              english: "Shuto official · OSM geometry"
+              japanese: "事業者公式 · OSM 形状候補",
+              simplifiedChinese: "运营方官方 · OSM 几何候选",
+              english: "Operator official · OSM geometry"
             )
           )
 

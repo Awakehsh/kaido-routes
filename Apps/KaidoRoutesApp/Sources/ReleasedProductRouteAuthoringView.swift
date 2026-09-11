@@ -325,11 +325,11 @@ struct ReleasedProductRouteAuthoringPanel: View {
         ),
         detail: copy.resolve(
           japanese:
-            "首都高の公式5区分から選択します。支払方法は別に選択します。",
+            "事業者の公式5区分から選択します。支払方法は別に選択します。",
           simplifiedChinese:
-            "请从首都高官方五类车型中选择；支付方式另行选择。",
+            "请从运营方官方五类车型中选择；支付方式另行选择。",
           english:
-            "Choose one of Shuto Expressway's five official classes. Select payment separately."
+            "Choose one of the operator's five official classes. Select payment separately."
         )
       )
 
@@ -572,7 +572,7 @@ struct ReleasedProductRouteAuthoringPanel: View {
         simplifiedChinese:
           "选择车型后可以查看本次行程对应的费用信息；不选择也可继续确认已验证路线。",
         english:
-          "Choose a Shuto vehicle class to view matching toll information. The reviewed route remains available without it."
+          "Choose a vehicle class to view matching toll information. The reviewed route remains available without it."
       )
     }
     if code

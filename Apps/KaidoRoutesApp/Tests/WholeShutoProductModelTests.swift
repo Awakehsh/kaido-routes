@@ -568,6 +568,12 @@ final class WholeShutoProductModelTests: XCTestCase {
     }
 
     XCTAssertEqual(model.phase, .expressway)
+    // Ramp entry vouches for the planned entrance.
+    XCTAssertFalse(model.entryIsUnconfirmed)
+    XCTAssertEqual(
+      model.driveEntryFacility?.facilityID,
+      threeLapRoute.entryFacility.facilityID
+    )
     for _ in 0..<200 where model.remainingWholeLapsAhead == 0 {
       try? await Task.sleep(nanoseconds: 25_000_000)
     }
@@ -632,12 +638,14 @@ final class WholeShutoProductModelTests: XCTestCase {
 
   func testRouteJoinIsOfferedOnlyWhereTheMatcherHoldsTheRoute() async throws {
     var nowMilliseconds = 1_000
+    let history = MemoryDriveHistoryStore()
     let model = WholeShutoForegroundReleaseFactory.makeModel(
       surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
       checkpointStore: nil,
       liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
       speechOutput: WholeShutoRecordingSpeechOutput(),
-      nowMillisecondsProvider: { nowMilliseconds }
+      nowMillisecondsProvider: { nowMilliseconds },
+      driveHistoryStore: history
     )
     model.selectCurrentOrigin(
       ShutoCoordinate(latitude: 35.6777, longitude: 139.7708)
@@ -757,7 +765,126 @@ final class WholeShutoProductModelTests: XCTestCase {
     XCTAssertGreaterThan(joinedIndex, 0)
     XCTAssertGreaterThan(model.progressFraction, 0)
 
+    // The join proves where the car is, not where it entered: no entrance,
+    // no band, only the cap — until the driver names one of the entrances
+    // whose ramp lands on the plan ahead of the join.
+    XCTAssertTrue(model.entryIsUnconfirmed)
+    XCTAssertNil(model.driveEntryFacility)
+    XCTAssertNil(model.selectedTariffBand)
+    let candidates = model.declarableEntryCandidates
+    XCTAssertFalse(candidates.isEmpty)
+    let upstreamEdgeIDs = Set(route.edges.prefix(joinedIndex).map(\.edgeID))
+    for candidate in candidates {
+      XCTAssertTrue(candidate.canEnter)
+      XCTAssertTrue(
+        candidate.entryEdgeCandidates.contains {
+          upstreamEdgeIDs.contains($0.edgeID)
+        },
+        candidate.facilityID
+      )
+    }
+    XCTAssertTrue(
+      candidates.contains { $0.facilityID == route.entryFacility.facilityID }
+    )
+    let offCourse = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.canEnter && $0.routeID == "K1"
+      }
+    )
+    model.declareEntry(facilityID: offCourse.facilityID)
+    XCTAssertTrue(model.entryIsUnconfirmed)
+
+    let namedEntry = try XCTUnwrap(candidates.first)
+    model.declareEntry(facilityID: namedEntry.facilityID)
+    XCTAssertFalse(model.entryIsUnconfirmed)
+    XCTAssertEqual(model.driveEntryFacility?.facilityID, namedEntry.facilityID)
+    XCTAssertEqual(
+      model.selectedTariffBand,
+      try model.planner.tariffBand(
+        entryFacilityID: namedEntry.facilityID,
+        exitFacilityID: route.exitFacility.facilityID,
+        evidence: .etcNormalCarActive
+      )
+    )
+
     model.reset()
+    let record = try XCTUnwrap(history.load().first)
+    XCTAssertTrue(record.routeName.contains(namedEntry.nameJA + " → "))
+    XCTAssertFalse(record.routeName.contains("入口未確認"))
+  }
+
+  func testDeclaredJoinLeavesTheEntranceUnconfirmedInTheDriveRecord() async throws {
+    var nowMilliseconds = 1_000
+    let history = MemoryDriveHistoryStore()
+    let model = WholeShutoForegroundReleaseFactory.makeModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil,
+      liveLocationSource: WholeShutoBackgroundNavigationLocationSource(),
+      speechOutput: WholeShutoRecordingSpeechOutput(),
+      nowMillisecondsProvider: { nowMilliseconds },
+      driveHistoryStore: history
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6777, longitude: 139.7708)
+    )
+    model.selectCircuit(.c1Outer)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_200
+    where model.isPreparingLiveNavigation || model.isUpdatingSurfaceRoute
+      || !model.canStartLiveNavigation
+    {
+      try? await Task.sleep(nanoseconds: 50_000_000)
+    }
+    let route = try XCTUnwrap(model.selectedRoute)
+    let started = await model.startLiveJourney()
+    XCTAssertTrue(started, model.failureCode ?? "no failure code")
+
+    var observationIndex = 0
+    func driveOnRoute(from edgeIndex: Int, count: Int) async {
+      for step in 0..<count {
+        let index = edgeIndex + step / 2
+        let start = route.coordinates[index]
+        let end = route.coordinates[index + 1]
+        let fraction = step % 2 == 0 ? 0.25 : 0.75
+        observationIndex += 1
+        nowMilliseconds += 1_000
+        await model.consumeLiveObservationForTesting(
+          Self.liveLocationEnvelope(
+            id: "unconfirmed.\(observationIndex)",
+            coordinate: ShutoCoordinate(
+              latitude: start.latitude
+                + (end.latitude - start.latitude) * fraction,
+              longitude: start.longitude
+                + (end.longitude - start.longitude) * fraction
+            ),
+            atMilliseconds: nowMilliseconds,
+            courseDegrees: Self.bearing(from: start, to: end),
+            speedMetersPerSecond: 18
+          )
+        )
+      }
+    }
+    var edgeIndex = route.edges.count / 2
+    for _ in 0..<6 where model.routeJoinState != .offered {
+      await driveOnRoute(from: edgeIndex, count: 4)
+      edgeIndex += 2
+    }
+    let declared = await model.declareAlreadyOnRoute()
+    XCTAssertTrue(declared)
+    for _ in 0..<6 where model.phase != .expressway {
+      await driveOnRoute(from: edgeIndex, count: 6)
+      edgeIndex += 3
+    }
+    XCTAssertEqual(model.phase, .expressway)
+    XCTAssertTrue(model.entryIsUnconfirmed)
+
+    // Ending the drive without naming the entrance records it as unknown
+    // rather than as the planned entrance the car never used.
+    model.reset()
+    let record = try XCTUnwrap(history.load().first)
+    XCTAssertTrue(record.routeName.contains("入口未確認 → "))
+    XCTAssertFalse(record.routeName.contains(route.entryFacility.nameJA + " → "))
   }
 
   func testLongSurfaceAccessCanReachReleasedCircuitNavigation() async throws {

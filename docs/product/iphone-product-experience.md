@@ -175,6 +175,14 @@ count never changes the quoted band; the entrance/exit pairing does. A
 minimum-band pairing may be labeled factually; promotional or competitive copy
 is not allowed.
 
+A drive that joined the route by the driver's declaration, rather than through
+the planned entrance ramp, has no entrance the product can vouch for. Its
+review and its summary say the entry is unconfirmed, the toll row shows only
+the tariff cap labeled as a cap, and the drive record is saved without an
+entrance name. At the end of the drive the driver can name the entrance from
+the ones the plan passed before the join point; the band and the record then
+follow that declaration. Nothing is assumed in between.
+
 Lap count is an explicit route parameter. When the origin favors a radial
 route, recommendations include radial entrances whose legal JCT movements join
 the selected loop; the preview shows the join and return movements as ordered

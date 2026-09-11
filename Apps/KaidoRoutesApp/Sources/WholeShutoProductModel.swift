@@ -264,6 +264,8 @@ struct WholeShutoJourneyCheckpoint: Codable, Equatable, Sendable {
   let runtimeAssetIdentity: ShutoRuntimeAssetIdentity?
   let liveNavigationCheckpoint: NavigationSessionCheckpoint?
   var driveRecord: WholeShutoDriveRecord? = nil
+  var joinedOccurrenceID: String? = nil
+  var declaredEntryFacilityID: String? = nil
 }
 
 @MainActor
@@ -540,6 +542,15 @@ final class WholeShutoProductModel: ObservableObject {
   /// sees reaches the navigation session or the ramp admission.
   private var liveRouteJoinObserver: CoreLocationEntryTransitionAdapter?
   private var routeJoinOffer: RouteJoinOffer?
+  /// The plan occurrence a driver-declared join landed on. Ramp admission
+  /// proves the planned entrance; a declared join proves only this place, so
+  /// until the driver names the entrance it stays unconfirmed and no tariff
+  /// band is quoted for it.
+  @Published private(set) var joinedOccurrenceID: String?
+  /// The entrance the driver named after a declared join.
+  @Published private(set) var declaredEntryFacilityID: String?
+  private var enteredThroughRamp = false
+  private var driveRecordArrived = false
   private let driveRecordPreferenceStore: UserDefaults
   static let showsDriveRecordDefaultsKey = "app.kaidoroutes.drive-record.shown"
   static let surfaceRoutePreferenceDefaultsKey =
@@ -999,15 +1010,101 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var selectedTariffBand: ShutoTariffBand? {
+    guard let route = selectedRoute else { return nil }
+    if joinedOccurrenceID != nil {
+      // The Shuto tariff is priced between toll points, so without a known
+      // entrance there is no band to quote — only the cap.
+      guard let declaredEntryFacilityID else { return nil }
+      return try? planner.tariffBand(
+        entryFacilityID: declaredEntryFacilityID,
+        exitFacilityID: route.exitFacility.facilityID,
+        evidence: .etcNormalCarActive
+      )
+    }
     if isCircuitRouteSelected, let circuitPairingBand {
       return circuitPairingBand
     }
-    guard let route = selectedRoute else { return nil }
     return try? planner.tariffBand(
       entryFacilityID: route.entryFacility.facilityID,
       exitFacilityID: route.exitFacility.facilityID,
       evidence: .etcNormalCarActive
     )
+  }
+
+  /// True while a declared join stands for the entrance and the driver has
+  /// not named it.
+  var entryIsUnconfirmed: Bool {
+    joinedOccurrenceID != nil && declaredEntryFacilityID == nil
+  }
+
+  /// The entrance this drive can vouch for: the planned one after ramp
+  /// entry, the declared one after a join, nothing while unconfirmed.
+  var driveEntryFacility: ShutoNetworkDatabase.Facility? {
+    if joinedOccurrenceID != nil {
+      return facility(id: declaredEntryFacilityID)
+    }
+    return selectedRoute?.entryFacility
+  }
+
+  /// Entrances the drive could have used before the join: the ones whose
+  /// entry ramp lands on a plan edge ahead of the joined occurrence, nearest
+  /// behind the join first. The planned entrance is always among them.
+  var declarableEntryCandidates: [ShutoNetworkDatabase.Facility] {
+    guard let joinedOccurrenceID, let route = selectedRoute,
+      let joinedIndex = route.routePlan.occurrence(id: joinedOccurrenceID)?.index
+    else { return [] }
+    var indexByEdgeID: [String: Int] = [:]
+    for (index, edge) in route.edges.prefix(joinedIndex).enumerated() {
+      indexByEdgeID[edge.edgeID] = index
+    }
+    return database.directionalFacilities
+      .compactMap { facility -> (ShutoNetworkDatabase.Facility, Int)? in
+        guard facility.canEnter,
+          let index = facility.entryEdgeCandidates
+            .compactMap({ indexByEdgeID[$0.edgeID] }).max()
+        else { return nil }
+        return (facility, index)
+      }
+      .sorted {
+        if $0.1 != $1.1 { return $0.1 > $1.1 }
+        return $0.0.facilityID < $1.0.facilityID
+      }
+      .map(\.0)
+  }
+
+  /// Names the entrance the driver used after a declared join. Re-saves the
+  /// drive record when it already ended, so the history stops reading
+  /// "entrance unconfirmed".
+  func declareEntry(facilityID: String) {
+    guard
+      declarableEntryCandidates.contains(where: { $0.facilityID == facilityID })
+    else { return }
+    declaredEntryFacilityID = facilityID
+    if driveRecord.endedAtMilliseconds != nil {
+      saveDriveHistoryEntry()
+    }
+    persistCheckpoint()
+  }
+
+  /// The Japanese name the drive record carries for its entrance.
+  private var driveEntryNameJA: String {
+    driveEntryFacility?.nameJA ?? "入口未確認"
+  }
+
+  private func recordExpresswayEntry(from snapshot: NavigationSnapshot) {
+    guard joinedOccurrenceID == nil, !enteredThroughRamp else { return }
+    if snapshot.lastPhaseTransitionTrigger == "DRIVER_DECLARED_ROUTE_JOIN" {
+      joinedOccurrenceID = snapshot.currentOccurrenceID
+    } else {
+      enteredThroughRamp = true
+    }
+  }
+
+  private func resetDriveEntry() {
+    joinedOccurrenceID = nil
+    declaredEntryFacilityID = nil
+    enteredThroughRamp = false
+    driveRecordArrived = false
   }
 
   var activeSurfaceInstruction: String? {
@@ -3309,6 +3406,7 @@ final class WholeShutoProductModel: ObservableObject {
     lastLiveObservationAtMilliseconds = nil
     liveVehicleCourseDegrees = nil
     lastLiveCheckpointPersistedAtMilliseconds = nil
+    resetDriveEntry()
     cancelSurfaceReroute()
     guard matchingLiveAdmissions.count == 1,
       let admission = matchingLiveAdmissions.first,
@@ -3895,6 +3993,7 @@ final class WholeShutoProductModel: ObservableObject {
         cancelSurfaceReroute()
         speechCoordinator?.stopProviderSurface()
         resetRouteJoinOffer()
+        recordExpresswayEntry(from: snapshot)
         phase = .expressway
         progressFraction = 0
         announceJourneyNotice(.enteredExpressway)
@@ -4013,15 +4112,21 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   private func finishDriveRecord(arrived: Bool) {
-    guard isLiveDrive, showsDriveRecord, driveRecord.endedAtMilliseconds == nil,
-      let route = selectedRoute
+    guard isLiveDrive, showsDriveRecord, driveRecord.endedAtMilliseconds == nil
     else { return }
     driveRecord.finish(atMilliseconds: nowMillisecondsProvider())
+    driveRecordArrived = arrived
+    saveDriveHistoryEntry()
+  }
+
+  private func saveDriveHistoryEntry() {
+    guard let route = selectedRoute else { return }
     guard let entry = DriveHistoryEntry(
       record: driveRecord, routePlan: route.routePlan,
       routeName: route.routeIDsInOrder.joined(separator: " · ") + " · "
-        + route.entryFacility.nameJA + " → " + route.exitFacility.nameJA,
-      templateParameters: savedRouteTemplateParameters, arrived: arrived
+        + driveEntryNameJA + " → " + route.exitFacility.nameJA,
+      templateParameters: savedRouteTemplateParameters,
+      arrived: driveRecordArrived
     ) else { return }
     do {
       try driveHistoryStore.save(entry)
@@ -4186,6 +4291,7 @@ final class WholeShutoProductModel: ObservableObject {
     driveRecord = WholeShutoDriveRecord()
     remainingWholeLapsAhead = 0
     resetRouteJoinOffer()
+    resetDriveEntry()
     invalidatePlaybackTask()
     cancelSurfaceRouteResolution()
     cancelSurfaceReroute()
@@ -4680,6 +4786,7 @@ final class WholeShutoProductModel: ObservableObject {
         return
       }
       resetRouteJoinOffer()
+      recordExpresswayEntry(from: update.navigationSnapshot)
       phase = .expressway
       progressFraction = 0
     }
@@ -5118,6 +5225,8 @@ final class WholeShutoProductModel: ObservableObject {
         driveRecord = checkpoint.driveRecord
           ?? WholeShutoDriveRecord(startedAtMilliseconds: nowMillisecondsProvider())
       }
+      joinedOccurrenceID = checkpoint.joinedOccurrenceID
+      declaredEntryFacilityID = checkpoint.declaredEntryFacilityID
       liveLocationIssueCode = "LIVE_RESUME_REQUIRED"
       matcherConfidence = .low
       runtimeOccurrenceID = checkpoint.runtimeOccurrenceID
@@ -5250,7 +5359,9 @@ final class WholeShutoProductModel: ObservableObject {
         ? runtimeAssets?.runtimeAssetIdentity : nil,
       liveNavigationCheckpoint:
         isLiveDrive ? liveNavigationCheckpoint : nil,
-      driveRecord: isLiveDrive && showsDriveRecord ? driveRecord : nil
+      driveRecord: isLiveDrive && showsDriveRecord ? driveRecord : nil,
+      joinedOccurrenceID: joinedOccurrenceID,
+      declaredEntryFacilityID: declaredEntryFacilityID
     )
     guard let checkpointStore else { return }
     do {

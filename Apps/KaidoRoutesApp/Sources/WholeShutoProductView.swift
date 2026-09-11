@@ -3647,6 +3647,9 @@ struct WholeShutoProductView: View {
         Spacer()
       }
 
+      if model.entryIsUnconfirmed {
+        arrivalEntryDeclaration
+      }
       arrivalDriveRecord
       if model.showsDriveRecord, model.driveRecord.hasRecordedIntervals {
         Button(copy.resolve(japanese: "走行履歴を見る", simplifiedChinese: "查看行程记录", english: "View drive history")) {
@@ -3686,6 +3689,60 @@ struct WholeShutoProductView: View {
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("whole-shuto-arrival-dock")
+  }
+
+  /// After a declared join the drive knows where it was placed, not where
+  /// it entered. Parked at the end, the driver can name the entrance from
+  /// the ones the plan passed before the join; the toll and the drive record
+  /// follow, and nothing is assumed until then.
+  private var arrivalEntryDeclaration: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(
+        copy.resolve(
+          japanese: "どの入口から入りましたか？",
+          simplifiedChinese: "这次从哪个入口进入的？",
+          english: "Which entrance did you use?"
+        )
+      )
+      .font(.system(size: 11, weight: .black, design: .rounded))
+      .foregroundStyle(KaidoTheme.signalAmber)
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(model.declarableEntryCandidates) { facility in
+            Button {
+              model.declareEntry(facilityID: facility.facilityID)
+            } label: {
+              HStack(spacing: 5) {
+                Text(shieldLabel(facility.routeID))
+                  .font(.system(size: 9, weight: .black, design: .rounded))
+                  .foregroundStyle(KaidoTheme.night)
+                  .padding(.horizontal, 5)
+                  .frame(height: 16)
+                  .background(KaidoTheme.routeGreen)
+                  .clipShape(RoundedRectangle(cornerRadius: 4))
+                Text(facility.nameJA)
+                  .font(.system(size: 12, weight: .bold))
+                  .foregroundStyle(KaidoTheme.routeWhite)
+              }
+              .padding(.horizontal, 12)
+              .frame(minHeight: 44)
+              .background(KaidoTheme.nightRaised)
+              .clipShape(RoundedRectangle(cornerRadius: 10))
+              .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                  .stroke(KaidoTheme.nightDivider, lineWidth: 1)
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(
+              "whole-shuto-declare-entry-\(facility.facilityID)"
+            )
+          }
+        }
+      }
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("whole-shuto-entry-declaration")
   }
 
   private var speechControls: some View {
@@ -3955,9 +4012,7 @@ struct WholeShutoProductView: View {
 
   private var routeSummarySubtitle: String {
     guard let route = model.selectedRoute else { return "" }
-    return
-      "\(entryName(route.entryFacility.nameJA)) → "
-      + exitName(route.exitFacility.nameJA)
+    return driveEntryLabel + " → " + exitName(route.exitFacility.nameJA)
   }
 
   private func recommendationLabel(at index: Int) -> String {
@@ -4592,9 +4647,20 @@ struct WholeShutoProductView: View {
 
   private var drivingBoundaryLabel: String {
     guard let route = model.selectedRoute else { return "" }
-    return
-      "\(entryName(route.entryFacility.nameJA)) → "
-      + exitName(route.exitFacility.nameJA)
+    return driveEntryLabel + " → " + exitName(route.exitFacility.nameJA)
+  }
+
+  /// The entrance the drive can vouch for; a declared join leaves it
+  /// unconfirmed until the driver names it.
+  private var driveEntryLabel: String {
+    if let entry = model.driveEntryFacility {
+      return entryName(entry.nameJA)
+    }
+    return copy.resolve(
+      japanese: "入口未確認",
+      simplifiedChinese: "入口未确认",
+      english: "Entry unconfirmed"
+    )
   }
 
   private var journeyRemainingLabel: String {

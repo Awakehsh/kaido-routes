@@ -107,7 +107,7 @@ RoutePlan
   network_snapshot_id
   entry_facility_id
   occurrences[]
-  exit_facility_id
+  exit_facility_id OR destination_parking_area_id (exactly one)
   recovery_policy
 
 RouteOccurrence
@@ -169,6 +169,9 @@ release authority.
 Zero matches are unavailable, multiple matches are ambiguous, and only one
 whole-value match returns a release ID. The result does not compile, migrate,
 or execute the route.
+
+A PA destination ends with a PA_VISIT bound to that PA. It has no exit facility
+or return occurrence after arrival.
 
 ## Reviewed route-component requirements
 

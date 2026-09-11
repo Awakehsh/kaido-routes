@@ -520,13 +520,11 @@ private struct WholeShutoSearchPreviewHost: View {
 
   init() {
     let coordinate = WholeShutoSearchPreviewLocationProvider.coordinate
-    _model = StateObject(
-      wrappedValue: WholeShutoProductModel(
-        locationProvider: WholeShutoSearchPreviewLocationProvider(),
-        surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
-        checkpointStore: nil
-      )
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoSearchPreviewLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(), checkpointStore: nil
     )
+    _model = StateObject(wrappedValue: model)
     _planningLocation = StateObject(
       wrappedValue: WholeShutoPlanningLocationController(
         previewSnapshot: WholeShutoPlanningLocationSnapshot(
@@ -571,7 +569,7 @@ private struct WholeShutoSearchPreviewHost: View {
               )
             )
           ),
-        ]
+        ] + WholeShutoProductView.localSearchPlaces(in: model.database)
       )
     )
   }

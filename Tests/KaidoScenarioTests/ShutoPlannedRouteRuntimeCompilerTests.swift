@@ -267,7 +267,7 @@ struct ShutoPlannedRouteRuntimeCompilerTests {
     try driftedDatabase.validate()
     let driftedRoute = try ShutoRoutePlanner(database: driftedDatabase).plan(
       entryFacilityID: route.routePlan.entryFacilityID,
-      exitFacilityID: route.routePlan.exitFacilityID
+      exitFacilityID: route.routePlan.exitFacilityID!
     )
     let driftedAssets = try ShutoPlannedRouteRuntimeCompiler.compile(
       database: driftedDatabase,

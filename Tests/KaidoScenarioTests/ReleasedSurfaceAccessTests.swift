@@ -1682,7 +1682,7 @@ private func releasedSurfaceAccessDefinition(
       ),
       entryTransitionDirectedEdgeIDs:
         fixture.runtimePolicy.entryTransition.directedEdgeIDs,
-      compatibleExitFacilityIDs: [fixture.routePlan.exitFacilityID],
+      compatibleExitFacilityIDs: [fixture.routePlan.exitFacilityID!],
       forbiddenEarlyExpresswayEdgeIDs: ["test.expressway.forbidden"],
       forbiddenTollDomainIDs: ["test.toll.forbidden"]
     ),

@@ -112,12 +112,8 @@
 - Keep the product lawful and safe. A drive record is the driver's own
   history and may be shown: elapsed time, distance, lap count and lap splits,
   and the drive's own average, maximum, and minimum speed. It is one setting
-  the driver can switch off, and it reports what happened without ever
-  encouraging what happens next. Never turn it into competition: no targets,
-  goals, rankings, leaderboards, comparison against other drivers or past
-  drives, records to beat, or any prompt to go faster. Do not add unsafe
-  interaction mechanics, and never require touch while driving to reach any
-  of it.
+  the driver can switch off. Do not add unsafe interaction mechanics, and
+  never require touch while driving to reach any of it.
 
 ## Architecture boundaries
 

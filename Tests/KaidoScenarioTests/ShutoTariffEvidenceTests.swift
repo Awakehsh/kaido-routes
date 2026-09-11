@@ -33,7 +33,7 @@ struct ShutoTariffEvidenceTests {
     )
     let band = try planner.tariffBand(
       entryFacilityID: circuit.routePlan.entryFacilityID,
-      exitFacilityID: circuit.routePlan.exitFacilityID,
+      exitFacilityID: circuit.routePlan.exitFacilityID!,
       evidence: .etcNormalCarActive
     )
 

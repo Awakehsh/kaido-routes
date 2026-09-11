@@ -297,11 +297,12 @@ public enum PreDriveEvidenceBundleAuthor {
           vehicleClass: evidence.vehicleClass,
           paymentMethod: evidence.paymentMethod,
           passageEvidence: evidence.passageEvidence,
-          tariffQuotes: evidence.tariffQuotes.map { quote in
-            TariffQuote(
+          tariffQuotes: evidence.tariffQuotes.compactMap { quote -> TariffQuote? in
+            guard let exitID = routePlan.exitFacilityID else { return nil }
+            return TariffQuote(
               id: quote.id,
               entryFacilityID: routePlan.entryFacilityID,
-              exitFacilityID: routePlan.exitFacilityID,
+              exitFacilityID: exitID,
               vehicleClass: evidence.vehicleClass,
               paymentMethod: evidence.paymentMethod,
               tariffVersionID: quote.tariffVersionID,

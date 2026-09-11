@@ -91,7 +91,8 @@ public struct RoutePlan: Codable, Equatable, Sendable {
   public let id: String
   public let networkSnapshotID: String
   public let entryFacilityID: String
-  public let exitFacilityID: String
+  public let exitFacilityID: String?
+  public let destinationParkingAreaID: String?
   public let recoveryPolicy: RecoveryPolicy
   public let actualDistanceKM: Double?
   public let occurrences: [RouteOccurrence]
@@ -100,7 +101,8 @@ public struct RoutePlan: Codable, Equatable, Sendable {
     id: String,
     networkSnapshotID: String,
     entryFacilityID: String,
-    exitFacilityID: String,
+    exitFacilityID: String? = nil,
+    destinationParkingAreaID: String? = nil,
     recoveryPolicy: RecoveryPolicy,
     actualDistanceKM: Double? = nil,
     occurrences: [RouteOccurrence]
@@ -109,9 +111,20 @@ public struct RoutePlan: Codable, Equatable, Sendable {
     self.networkSnapshotID = networkSnapshotID
     self.entryFacilityID = entryFacilityID
     self.exitFacilityID = exitFacilityID
+    self.destinationParkingAreaID = destinationParkingAreaID
     self.recoveryPolicy = recoveryPolicy
     self.actualDistanceKM = actualDistanceKM
     self.occurrences = occurrences
+  }
+
+  public var hasValidDestination: Bool {
+    switch (exitFacilityID, destinationParkingAreaID) {
+    case (.some(let id), .none): return !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    case (.none, .some(let id)):
+      return !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        && occurrences.last?.kind == .paVisit && occurrences.last?.parkingAreaID == id
+    default: return false
+    }
   }
 
   public func occurrence(id: String) -> RouteOccurrence? {
@@ -127,6 +140,7 @@ public struct RoutePlan: Codable, Equatable, Sendable {
     case networkSnapshotID = "network_snapshot_id"
     case entryFacilityID = "entry_facility_id"
     case exitFacilityID = "exit_facility_id"
+    case destinationParkingAreaID = "destination_parking_area_id"
     case recoveryPolicy = "recovery_policy"
     case actualDistanceKM = "actual_distance_km"
     case occurrences

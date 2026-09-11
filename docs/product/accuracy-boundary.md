@@ -38,8 +38,9 @@ The product distinguishes what is known from what is still unconfirmed:
   the exact Shuto plan and the opposite surface leg remain unchanged. Entry
   evidence takes over only near the exact directional ramp. A valid device fix
   that has not joined the surface route is labeled as waiting to join the route,
-  not as weak positioning; genuinely stale or low-confidence positioning keeps
-  the separate degraded warning.
+  not as weak positioning, and a coarse but on-route fix is still the position;
+  genuinely stale positioning keeps the separate degraded warning and speaks it
+  at most once per minute.
 - The default App's Core Location lifecycle keeps planning location
   foreground-only, while an explicitly foreground-started live navigation
   session continues through screen lock or temporary app switching and stops

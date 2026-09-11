@@ -3162,8 +3162,8 @@ struct WholeShutoProductView: View {
                 english: "POSITION UNCONFIRMED · RETRY"
               )
               : copy.resolve(
-                japanese: "すでに首都高を走行中",
-                simplifiedChinese: "我已在首都高上",
+                japanese: "すでに高速道路を走行中",
+                simplifiedChinese: "我已在高速上",
                 english: "ALREADY ON THE EXPRESSWAY"
               )
           )

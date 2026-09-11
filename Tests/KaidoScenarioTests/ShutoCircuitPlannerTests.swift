@@ -571,6 +571,43 @@ struct ShutoCircuitPlannerTests {
     }
   }
 
+  @Test("reachable exits are exactly the exits the planner can pair with an entrance")
+  func reachableExitsAgreeWithPlanning() throws {
+    let database = try loadDatabase()
+    let planner = try ShutoRoutePlanner(database: database)
+    let exits = database.directionalFacilities.filter(\.canExit)
+    let entrances = database.directionalFacilities.filter(\.canEnter)
+    let sampledEntrances = stride(from: 0, to: entrances.count, by: 34)
+      .map { entrances[$0] }
+    let sampledExits = stride(from: 0, to: exits.count, by: 5)
+      .map { exits[$0] }
+    #expect(sampledEntrances.count >= 4 && sampledExits.count >= 25)
+    for entrance in sampledEntrances {
+      let reachable = Set(
+        planner.exitCandidates(
+          exits,
+          reachableAfterEntering: entrance.facilityID
+        ).map(\.facilityID)
+      )
+      #expect(!reachable.isEmpty, Comment(rawValue: entrance.facilityID))
+      for exit in sampledExits where exit.facilityID != entrance.facilityID {
+        let plans =
+          (try? planner.plan(
+            entryFacilityID: entrance.facilityID,
+            exitFacilityID: exit.facilityID
+          )) != nil
+        #expect(
+          plans == reachable.contains(exit.facilityID),
+          Comment(rawValue: "\(entrance.facilityID) -> \(exit.facilityID)")
+        )
+      }
+    }
+    #expect(
+      planner.exitCandidates(exits, reachableAfterEntering: "shuto.ic.missing")
+        .isEmpty
+    )
+  }
+
   private func loadDatabase() throws -> ShutoNetworkDatabase {
     let repositoryRoot = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent()

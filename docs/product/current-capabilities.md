@@ -44,7 +44,13 @@ internal review workbench.
 - Routing ranks compatible entrances and exits for arbitrary origin and
   destination coordinates, then searches the directed whole-network graph.
 - Route choice keeps recommendations and exact customization together. Every
-  candidate identifies its directional entrance and exit. When the bounded
+  candidate identifies its directional entrance and exit. Editing a selected
+  route experience keeps it: the editor offers the experience's direction-valid
+  entrances and only the exits it reaches after the chosen entrance, then
+  re-plans the same experience and lap count. An experience that ends inside
+  a PA has no exit to keep, so choosing an exit there authors an explicit
+  entrance/exit route. A custom pairing offers only
+  exits a directed path reaches from its entry. When the bounded
   surface provider resolves both ordinary-road legs for every exact candidate,
   the row uses those comparable ETAs for ordering and shows full-journey preview
   time and distance. A partial provider result preserves deterministic Kaido

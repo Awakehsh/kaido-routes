@@ -423,7 +423,16 @@ final class WholeShutoProductModel: ObservableObject {
   @Published private(set) var routeChoiceMetricsByRoutePlanID:
     [String: WholeShutoRouteChoiceMetrics] = [:]
   @Published private(set) var isCustomRouteSelected = false
-  @Published private(set) var customEntryFacilityID: String?
+  @Published private(set) var customEntryFacilityID: String? {
+    didSet { refreshReachableExitCandidates() }
+  }
+  /// Exits the route editor may offer after its current entrance: a selected
+  /// route experience's own forward-ranked exits, or every exit some directed
+  /// all-Shuto path reaches for an exact custom pairing. Recomputed whenever
+  /// the entrance changes, so the editor never lists a pairing the planner
+  /// would refuse.
+  @Published private(set) var reachableExitCandidates:
+    [ShutoNetworkDatabase.Facility] = []
   @Published private(set) var customExitFacilityID: String?
   @Published private(set) var customPreference: ShutoRoutePreference =
     .recommended
@@ -1311,8 +1320,27 @@ final class WholeShutoProductModel: ObservableObject {
       && selectedOriginTitle == originQuery
   }
 
+  /// The route experience the editor is refining: the review phase opens the
+  /// editor over a selected circuit and keeps it. Nil while authoring an
+  /// exact custom pairing, and for an experience that ends inside a PA: its
+  /// identity is that ending, so choosing an exit there authors an explicit
+  /// entrance/exit route instead.
+  private var editedCircuit: ShutoCircuitDefinition? {
+    phase == .review && isCircuitRouteSelected
+      && selectedRoute?.destinationParkingArea == nil
+      ? selectedCircuit : nil
+  }
+
+  var editsSelectedCircuit: Bool { editedCircuit != nil }
+
   var customEntryCandidates: [ShutoNetworkDatabase.Facility] {
-    rankedCustomFacilities(
+    if editedCircuit != nil {
+      return pinningSelection(
+        circuitEntranceCandidates,
+        selectedFacilityID: customEntryFacilityID
+      )
+    }
+    return rankedCustomFacilities(
       from: origin?.coordinate,
       selectedFacilityID: customEntryFacilityID,
       isEligible: \.canEnter
@@ -1320,7 +1348,13 @@ final class WholeShutoProductModel: ObservableObject {
   }
 
   var customExitCandidates: [ShutoNetworkDatabase.Facility] {
-    rankedCustomFacilities(
+    if editedCircuit != nil {
+      return pinningSelection(
+        reachableExitCandidates,
+        selectedFacilityID: customExitFacilityID
+      )
+    }
+    let ranked = rankedCustomFacilities(
       // A home-authored custom route is a round trip. Its destination is
       // intentionally committed only when the draft is applied, so the
       // origin is also the correct reference for nearby exits while editing.
@@ -1328,6 +1362,9 @@ final class WholeShutoProductModel: ObservableObject {
       selectedFacilityID: customExitFacilityID,
       isEligible: \.canExit
     )
+    guard customEntryFacilityID != nil else { return ranked }
+    let reachable = Set(reachableExitCandidates.map(\.facilityID))
+    return ranked.filter { reachable.contains($0.facilityID) }
   }
 
   var customEntryFacility: ShutoNetworkDatabase.Facility? {
@@ -3015,6 +3052,9 @@ final class WholeShutoProductModel: ObservableObject {
     case .review:
       guard let route = selectedRoute else { return }
       let draft = customRecommendation?.route ?? route
+      if let circuit = editedCircuit, circuitEntranceCandidates.count <= 1 {
+        resolveCircuitEntranceCandidatesForEditor(circuit)
+      }
       customEntryFacilityID = draft.entryFacility.facilityID
       customExitFacilityID = draft.exitFacility?.facilityID
       customPreference = draft.preference
@@ -3055,16 +3095,28 @@ final class WholeShutoProductModel: ObservableObject {
   func selectCustomEntry(facilityID: String) {
     guard let facility = facility(id: facilityID),
       facility.canEnter,
-      facility.operationalStatus == "AVAILABLE"
+      facility.operationalStatus == "AVAILABLE",
+      editedCircuit == nil
+        || circuitEntranceCandidates.contains(where: {
+          $0.facilityID == facilityID
+        })
     else { return }
     customEntryFacilityID = facilityID
+    // An exit the new entrance cannot reach is not kept as a broken draft:
+    // an experience falls back to its soonest forward exit, a custom pairing
+    // waits for the driver to choose again.
+    if let exitID = customExitFacilityID,
+      !reachableExitCandidates.contains(where: { $0.facilityID == exitID })
+    {
+      customExitFacilityID =
+        editedCircuit != nil ? reachableExitCandidates.first?.facilityID : nil
+    }
     refreshCustomRouteDraft()
   }
 
   func selectCustomExit(facilityID: String) {
-    guard let facility = facility(id: facilityID),
-      facility.canExit,
-      facility.operationalStatus == "AVAILABLE"
+    guard
+      reachableExitCandidates.contains(where: { $0.facilityID == facilityID })
     else { return }
     customExitFacilityID = facilityID
     refreshCustomRouteDraft()
@@ -3118,9 +3170,30 @@ final class WholeShutoProductModel: ObservableObject {
       surfaceEgressDistanceMeters: egressDistance,
       totalScoreMeters: route.distanceMeters + accessDistance + egressDistance
     )
-    customRecommendation = recommendation
-    isCustomRouteSelected = true
-    clearCircuitRouteSelection()
+    if editedCircuit != nil {
+      // The draft is the same experience with another pairing, so the
+      // circuit, its lap count, and its saved-route identity stay selected.
+      circuitEntryFacilityID = route.entryFacility.facilityID
+      circuitExitFacilityID = route.exitFacility?.facilityID
+      circuitPairingBand = route.exitFacility.flatMap { exit in
+        try? planner.tariffBand(
+          entryFacilityID: route.entryFacility.facilityID,
+          exitFacilityID: exit.facilityID,
+          evidence: .etcNormalCarActive
+        )
+      }
+      circuitEntranceDistanceMeters = accessDistance
+      if let band = circuitPairingBand {
+        circuitTariffBandsByFacilityID[route.entryFacility.facilityID] = band
+      }
+      circuitEntranceWasOverridden = true
+      circuitRecommendation = recommendation
+      selectedSavedRouteTemplateParameters = nil
+    } else {
+      customRecommendation = recommendation
+      isCustomRouteSelected = true
+      clearCircuitRouteSelection()
+    }
     parkingStopSelection = stopIDs.isEmpty ? nil : .init(baseRoutePlan: base.routePlan, parkingAreaIDs: stopIDs)
     preference = route.preference
     failureCode = nil
@@ -3130,6 +3203,31 @@ final class WholeShutoProductModel: ObservableObject {
       destination: destination
     )
     return true
+  }
+
+  /// A restored circuit knows only its own entrance. The editor needs the
+  /// experience's full direction-valid list, resolved off the main actor
+  /// exactly as the planning-time pairing resolves it.
+  private func resolveCircuitEntranceCandidatesForEditor(
+    _ circuit: ShutoCircuitDefinition
+  ) {
+    let planner = planner
+    let originCoordinate = origin?.coordinate
+    circuitTariffTask?.cancel()
+    circuitTariffTask = Task.detached(priority: .userInitiated) {
+      [weak self] in
+      let candidates = planner.circuitEntranceCandidates(
+        for: circuit,
+        origin: originCoordinate
+      )
+      await MainActor.run { [weak self] in
+        guard let self, !Task.isCancelled,
+          self.phase == .review,
+          self.selectedCircuit?.circuitID == circuit.circuitID
+        else { return }
+        self.circuitEntranceCandidates = candidates
+      }
+    }
   }
 
   private func routeDestination(for route: ShutoPlannedRoute) -> WholeShutoPlace {
@@ -6090,10 +6188,39 @@ final class WholeShutoProductModel: ObservableObject {
       customDraftRoute = nil
       return
     }
+    if let circuit = editedCircuit {
+      customDraftRoute = try? planner.planCircuit(
+        circuit: circuit,
+        entryFacilityID: entryFacilityID,
+        exitFacilityID: exitFacilityID,
+        laps: circuit.kind == .loop ? circuitLaps : 1,
+        preference: customPreference
+      )
+      return
+    }
     customDraftRoute = try? planner.plan(
       entryFacilityID: entryFacilityID,
       exitFacilityID: exitFacilityID,
       preference: customPreference
+    )
+  }
+
+  private func refreshReachableExitCandidates() {
+    guard let entryFacilityID = customEntryFacilityID else {
+      reachableExitCandidates = []
+      return
+    }
+    if let circuit = editedCircuit {
+      reachableExitCandidates =
+        (try? planner.circuitExitCandidates(
+          for: circuit,
+          afterEntering: entryFacilityID
+        )) ?? []
+      return
+    }
+    reachableExitCandidates = planner.exitCandidates(
+      database.directionalFacilities,
+      reachableAfterEntering: entryFacilityID
     )
   }
 
@@ -6266,15 +6393,22 @@ final class WholeShutoProductModel: ObservableObject {
         }
         return $0.facilityID < $1.facilityID
       }
+    return pinningSelection(ranked, selectedFacilityID: selectedFacilityID)
+  }
+
+  private func pinningSelection(
+    _ candidates: [ShutoNetworkDatabase.Facility],
+    selectedFacilityID: String?
+  ) -> [ShutoNetworkDatabase.Facility] {
     guard let selectedFacilityID,
-      let selected = ranked.first(where: {
+      let selected = candidates.first(where: {
         $0.facilityID == selectedFacilityID
       })
     else {
-      return ranked
+      return candidates
     }
     return [selected]
-      + ranked.filter { $0.facilityID != selectedFacilityID }
+      + candidates.filter { $0.facilityID != selectedFacilityID }
   }
 
   private func primaryRouteID(

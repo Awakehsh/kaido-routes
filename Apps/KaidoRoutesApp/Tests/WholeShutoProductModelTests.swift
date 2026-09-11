@@ -3113,6 +3113,198 @@ final class WholeShutoProductModelTests: XCTestCase {
     )
   }
 
+  func testCircuitReviewEditorOffersOnlyExitsTheExperienceReachesAfterTheEntrance()
+    async throws
+  {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c2InnerWithBayshore)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    model.prepareCustomRouteDraft()
+
+    XCTAssertTrue(model.editsSelectedCircuit)
+    let entryID = try XCTUnwrap(model.customEntryFacilityID)
+    XCTAssertEqual(model.customEntryCandidates.first?.facilityID, entryID)
+    XCTAssertEqual(
+      Set(model.customEntryCandidates.map(\.facilityID)),
+      Set(model.circuitEntranceCandidates.map(\.facilityID))
+    )
+    let exits = model.customExitCandidates
+    let reachable = Set(
+      try model.planner.circuitExitCandidates(
+        for: .c2InnerWithBayshore,
+        afterEntering: entryID
+      ).map(\.facilityID)
+    )
+    XCTAssertFalse(exits.isEmpty)
+    XCTAssertEqual(Set(exits.map(\.facilityID)), reachable)
+    XCTAssertEqual(exits.first?.facilityID, model.customExitFacilityID)
+    // The experience runs C2 inner; an outer-loop exit is geodesically near
+    // the course but not on it, and the editor no longer lists it.
+    XCTAssertLessThan(
+      exits.count,
+      model.database.directionalFacilities.filter(\.canExit).count
+    )
+    let offCourse = try XCTUnwrap(
+      model.database.directionalFacilities.first {
+        $0.canExit && $0.routeID == "C2" && $0.exitDirections == ["外回り"]
+      }
+    )
+    XCTAssertFalse(exits.contains { $0.facilityID == offCourse.facilityID })
+    model.selectCustomExit(facilityID: offCourse.facilityID)
+    XCTAssertNotEqual(model.customExitFacilityID, offCourse.facilityID)
+  }
+
+  func testParkingAreaEndedExperienceEditsAsAnExplicitRoute() async throws {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    // Odaiba: the Bayshore run starts at a westbound Bayshore entrance and
+    // ends inside Daikoku PA, so it has no exit to keep.
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6270, longitude: 139.7750)
+    )
+    model.selectCircuit(.wanganDaikokuRun)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    XCTAssertNotNil(model.selectedRoute?.destinationParkingArea)
+
+    model.prepareCustomRouteDraft()
+
+    // Choosing an exit leaves the PA ending, so this is the explicit
+    // entrance/exit editor: every offered exit is reachable from the entry.
+    XCTAssertFalse(model.editsSelectedCircuit)
+    XCTAssertNil(model.customExitFacilityID)
+    XCTAssertNil(model.customDraftRoute)
+    let entryID = try XCTUnwrap(model.customEntryFacilityID)
+    let reachable = Set(
+      model.planner.exitCandidates(
+        model.database.directionalFacilities,
+        reachableAfterEntering: entryID
+      ).map(\.facilityID)
+    )
+    XCTAssertFalse(model.customExitCandidates.isEmpty)
+    XCTAssertEqual(Set(model.customExitCandidates.map(\.facilityID)), reachable)
+
+    model.selectCustomExit(facilityID: "shuto.ic.b.daikokufutou")
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.exitFacility?.facilityID, "shuto.ic.b.daikokufutou")
+    XCTAssertNil(draft.destinationParkingArea)
+    XCTAssertTrue(model.applyCustomRoute())
+    XCTAssertTrue(model.isCustomRouteSelected)
+    XCTAssertFalse(model.isCircuitRouteSelected)
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
+  }
+
+  func testCircuitReviewEditorKeepsTheCircuitAndLapsWhenApplied() async throws {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c2InnerWithBayshore)
+    model.selectCircuitLaps(2)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    let plannedExitID = try XCTUnwrap(model.circuitExitFacilityID)
+
+    model.prepareCustomRouteDraft()
+    let otherExit = try XCTUnwrap(
+      model.customExitCandidates.first { $0.facilityID != plannedExitID }
+    )
+    model.selectCustomExit(facilityID: otherExit.facilityID)
+
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.exitFacility?.facilityID, otherExit.facilityID)
+    // The draft is still two laps of the experience, not a shortest path.
+    XCTAssertGreaterThan(draft.distanceMeters, 100_000)
+    XCTAssertTrue(model.applyCustomRoute())
+
+    XCTAssertTrue(model.isCircuitRouteSelected)
+    XCTAssertFalse(model.isCustomRouteSelected)
+    XCTAssertEqual(
+      model.selectedCircuit?.circuitID,
+      ShutoCircuitDefinition.c2InnerWithBayshore.circuitID
+    )
+    XCTAssertEqual(model.selectedRoute?.routePlan, draft.routePlan)
+    XCTAssertEqual(model.circuitExitFacilityID, otherExit.facilityID)
+    XCTAssertNotNil(model.circuitPairingBand)
+    XCTAssertEqual(model.savedRouteTemplateParameters["source"], "CIRCUIT")
+    XCTAssertEqual(model.savedRouteTemplateParameters["laps"], "2")
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+    XCTAssertEqual(
+      model.egressRoute?.coordinates.first,
+      draft.coordinates.last
+    )
+  }
+
+  func testCircuitReviewEditorEntranceChangeRefreshesTheExits() async throws {
+    let model = WholeShutoProductModel(
+      locationProvider: WholeShutoUnexpectedLocationProvider(),
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.selectCurrentOrigin(
+      ShutoCoordinate(latitude: 35.6798, longitude: 139.6862)
+    )
+    model.selectCircuit(.c1Inner)
+    await waitForCircuitPairing(model)
+    XCTAssertTrue(model.startCircuitJourney())
+    for _ in 0..<1_000 where model.isUpdatingSurfaceRoute {
+      await Task.yield()
+    }
+
+    model.prepareCustomRouteDraft()
+    let otherEntrance = try XCTUnwrap(
+      model.customEntryCandidates.first {
+        $0.facilityID != model.customEntryFacilityID
+      }
+    )
+    model.selectCustomEntry(facilityID: otherEntrance.facilityID)
+
+    XCTAssertEqual(model.customEntryFacilityID, otherEntrance.facilityID)
+    let exitID = try XCTUnwrap(model.customExitFacilityID)
+    XCTAssertTrue(
+      model.customExitCandidates.contains { $0.facilityID == exitID }
+    )
+    XCTAssertEqual(
+      Set(model.customExitCandidates.map(\.facilityID)),
+      Set(
+        try model.planner.circuitExitCandidates(
+          for: .c1Inner,
+          afterEntering: otherEntrance.facilityID
+        ).map(\.facilityID)
+      )
+    )
+    let draft = try XCTUnwrap(model.customDraftRoute)
+    XCTAssertEqual(draft.entryFacility.facilityID, otherEntrance.facilityID)
+    XCTAssertEqual(draft.exitFacility?.facilityID, exitID)
+  }
+
   func testCircuitReviewCheckpointDoesNotRestoreStaleOrigin() async {
     let store = WholeShutoMemoryCheckpointStore()
     let model = WholeShutoProductModel(
@@ -3561,6 +3753,40 @@ final class WholeShutoProductModelTests: XCTestCase {
 
     XCTAssertFalse(model.isCustomRouteSelected)
     XCTAssertNotEqual(model.selectedRoute?.routePlan, draft.routePlan)
+  }
+
+  func testCustomExitCandidatesFollowTheChosenEntry() throws {
+    let model = WholeShutoProductModel(
+      surfaceRouteResolver: WholeShutoPreviewSurfaceRouteResolver(),
+      checkpointStore: nil
+    )
+    model.preparePreviewJourney()
+    model.prepareCustomRouteDraft()
+    XCTAssertFalse(model.editsSelectedCircuit)
+
+    let entryID = "shuto.ic.c1.takaracho"
+    model.selectCustomEntry(facilityID: entryID)
+
+    let allExits = model.database.directionalFacilities.filter(\.canExit)
+    let reachable = Set(
+      model.planner.exitCandidates(
+        allExits,
+        reachableAfterEntering: entryID
+      ).map(\.facilityID)
+    )
+    XCTAssertFalse(reachable.isEmpty)
+    XCTAssertEqual(Set(model.customExitCandidates.map(\.facilityID)), reachable)
+    XCTAssertEqual(
+      model.customExitCandidates.first?.facilityID,
+      model.customExitFacilityID
+    )
+    // An exit no directed path reaches is refused rather than drafted.
+    if let unreachable = allExits.first(where: {
+      !reachable.contains($0.facilityID)
+    }) {
+      model.selectCustomExit(facilityID: unreachable.facilityID)
+      XCTAssertNotEqual(model.customExitFacilityID, unreachable.facilityID)
+    }
   }
 
   func testCustomRouteReviewCheckpointDoesNotRestoreStaleOrigin() async throws {

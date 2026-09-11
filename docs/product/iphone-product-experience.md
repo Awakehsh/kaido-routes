@@ -193,8 +193,22 @@ denied or unavailable request returns to the manual origin field. Entry and
 exit candidates are distance ordered from the route's origin (or destination
 when editing an existing point-to-point journey), keep the current selection at
 the leading edge, show direction and straight-line distance, and can be filtered
-by IC name or route shield. Empty filters and unavailable origins explain the
-next action instead of rendering an unlabeled blank row.
+by IC name or route shield. Once an entry is chosen, the exit list holds only
+exits some directed all-Shuto path reaches from it; an exit the new entry
+cannot reach is cleared rather than kept as a broken draft. Empty filters and
+unavailable origins explain the next action instead of rendering an unlabeled
+blank row.
+
+The same editor opens from a selected route experience's review as **Change
+entrance and exit**, and it keeps the experience. Its entries are the
+experience's direction-valid entrances from the origin, its exits are the ones
+the experience reaches after that entrance in driving order, and applying
+re-plans the same experience with the same lap count. Changing the entrance
+keeps a still-reachable exit and otherwise falls back to the soonest forward
+exit. The experience is never replaced by a point-to-point shortest path.
+An experience that ends inside a PA has no exit to keep: opening the editor
+there authors an explicit entrance/exit route, and choosing an exit leaves the
+PA ending.
 The editor previews the concrete route shields and distance before **Use this
 route** applies a new exact `RoutePlan`. Opening or dismissing the editor
 never marks a draft as selected. Selecting another option immediately clears

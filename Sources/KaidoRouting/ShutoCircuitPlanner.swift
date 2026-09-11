@@ -624,6 +624,32 @@ extension ShutoRoutePlanner {
       .map(\.0)
   }
 
+  /// Exits some directed all-Shuto path reaches after entering at one
+  /// facility, in the same order the caller passes them. An editor that
+  /// offers only these can never draft a pairing `plan` would refuse.
+  public func exitCandidates(
+    _ candidates: [ShutoNetworkDatabase.Facility],
+    reachableAfterEntering entryFacilityID: String
+  ) -> [ShutoNetworkDatabase.Facility] {
+    guard let entry = facilitiesByID[entryFacilityID], entry.canEnter
+    else { return [] }
+    let cost: (ShutoNetworkDatabase.Edge) -> Double = {
+      self.edgeCost($0, preference: .recommended)
+    }
+    var reachable: Set<Int64> = []
+    for candidate in entry.entryEdgeCandidates {
+      guard let edge = edgesByID[candidate.edgeID] else { continue }
+      reachable.formUnion(forwardDistances(from: edge.toNodeID, cost: cost).keys)
+    }
+    return candidates.filter { facility in
+      facility.canExit
+        && facility.exitEdgeCandidates.contains {
+          guard let edge = edgesByID[$0.edgeID] else { return false }
+          return reachable.contains(edge.fromNodeID)
+        }
+    }
+  }
+
   /// The derived pairing an experience card shows: nearest reachable
   /// entrance, and — for loops — the exit whose pairing lands in the lowest
   /// tariff band, tie-broken by shortest forward travel. Tours keep their

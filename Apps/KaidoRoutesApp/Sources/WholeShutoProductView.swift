@@ -4940,6 +4940,11 @@ private struct WholeShutoCustomRouteSheet: View {
             candidates: model.customEntryCandidates,
             selectedFacilityID: model.customEntryFacilityID,
             usesEntranceDirection: true,
+            orderingLabel: copy.resolve(
+              japanese: "近い順 · 選択中を先頭表示",
+              simplifiedChinese: "按距离排序 · 已选项置顶",
+              english: "Nearest first · selection pinned"
+            ),
             identifierPrefix: "whole-shuto-custom-entry",
             query: $entryQuery,
             referenceCoordinate: model.origin?.coordinate
@@ -4956,6 +4961,17 @@ private struct WholeShutoCustomRouteSheet: View {
             candidates: model.customExitCandidates,
             selectedFacilityID: model.customExitFacilityID,
             usesEntranceDirection: false,
+            orderingLabel: model.editsSelectedCircuit
+              ? copy.resolve(
+                japanese: "入口からの走行順 · 選択中を先頭表示",
+                simplifiedChinese: "按从入口起的行驶顺序 · 已选项置顶",
+                english: "In driving order from the entrance · selection pinned"
+              )
+              : copy.resolve(
+                japanese: "近い順 · 選択中を先頭表示",
+                simplifiedChinese: "按距离排序 · 已选项置顶",
+                english: "Nearest first · selection pinned"
+              ),
             identifierPrefix: "whole-shuto-custom-exit",
             query: $exitQuery,
             referenceCoordinate:
@@ -5101,6 +5117,7 @@ private struct WholeShutoCustomRouteSheet: View {
     candidates: [ShutoNetworkDatabase.Facility],
     selectedFacilityID: String?,
     usesEntranceDirection: Bool,
+    orderingLabel: String,
     identifierPrefix: String,
     query: Binding<String>,
     referenceCoordinate: ShutoCoordinate?,
@@ -5131,15 +5148,9 @@ private struct WholeShutoCustomRouteSheet: View {
           .fontDesign(.rounded)
           .foregroundStyle(KaidoTheme.nightQuiet)
         Spacer()
-        Text(
-          copy.resolve(
-            japanese: "近い順 · 選択中を先頭表示",
-            simplifiedChinese: "按距离排序 · 已选项置顶",
-            english: "Nearest first · selection pinned"
-          )
-        )
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(KaidoTheme.nightQuiet)
+        Text(orderingLabel)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(KaidoTheme.nightQuiet)
       }
 
       HStack(spacing: 8) {
